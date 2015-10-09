@@ -1,0 +1,52 @@
+#!/bin/sh
+
+
+PROGRAM=$1
+shift
+
+TMPDIR=`mktemp -d /tmp/singularity-build.XXXXXXXX`
+INCLUDE="/bin/sh"
+
+
+
+includefile() {
+    for file in $@; do
+        DIRNAME=`dirname $file`
+        if [ ! -d "$TMPDIR/$DIRNAME" ]; then
+            mkdir -p "$TMPDIR/$DIRNAME"
+        fi
+        cp -L "$file" "$TMPDIR/$file"
+    done
+}
+
+
+includelddeps() {
+    for file in $@; do
+        ldd $file | sed -e 's@ @\n@g' | while read i; do
+            test -f "$i" && echo $i
+            if [ -f "$i" ]; then
+                includefile $i
+            fi
+        done
+    done
+}
+
+cleanup() {
+    rm -rf $TMPDIR
+}
+
+
+
+includefile $PROGRAM
+includelddeps $PROGRAM
+
+includefile $INCLUDE
+includelddeps $INCLUDE
+
+
+mv $TMPDIR test.chroot
+
+
+
+cleanup
+exit
