@@ -2,11 +2,8 @@
 
 
 PROGRAM=$1
-shift
-
 TMPDIR=`mktemp -d /tmp/singularity-build.XXXXXXXX`
 INCLUDE="/bin/sh"
-
 
 
 includefile() {
@@ -23,7 +20,6 @@ includefile() {
 includelddeps() {
     for file in $@; do
         ldd $file | sed -e 's@ @\n@g' | while read i; do
-            test -f "$i" && echo $i
             if [ -f "$i" ]; then
                 includefile $i
             fi
@@ -37,15 +33,24 @@ cleanup() {
 
 
 
-includefile $PROGRAM
-includelddeps $PROGRAM
-
-includefile $INCLUDE
-includelddeps $INCLUDE
 
 
-mv $TMPDIR test.chroot
 
+if PROGRAM_BIN=`which $PROGRAM 2>/dev/null`; then
+    PROGRAM_NAME=`basename $PROGRAM_BIN`
+
+    includefile $PROGRAM_BIN
+    includelddeps $PROGRAM_BIN
+
+    includefile $INCLUDE
+    includelddeps $INCLUDE
+
+    echo "#!/bin/sh" > $TMPDIR/run
+    echo "$PROGRAM_BIN \$@" >> $TMPDIR/run
+
+    (cd $TMPDIR; find . | cpio -o --quiet -H newc ) | gzip -c9 > $PROGRAM_NAME.sapp
+
+fi
 
 
 cleanup
