@@ -25,6 +25,9 @@ int main(int argc, char *argv[]) {
     char *run_cmd;
     char *arg_string;
     char *bind_mountpoint;
+    char cwd[BUFF];
+
+    getcwd(cwd, BUFF);
 
     seteuid(uid);
 
@@ -59,7 +62,7 @@ int main(int argc, char *argv[]) {
     snprintf(rmtmpdir, /*sizeof(mktmpdir)*/ SMALLBUFF, "rm -rf %s", tmpdir);
     snprintf(explode_sapp, BUFF + sapp_file_len, "zcat %s | (cd %s; cpio -id --quiet)", sapp_file, tmpdir);
     snprintf(run_cmd, BUFF, "/run %s", arg_string);
-    snprintf(bind_mountpoint, BUFF, "%s/rootfs", tmpdir);
+    snprintf(bind_mountpoint, BUFF, "%s/home", tmpdir);
 
     //Prepare
     system(mktmpdir);
@@ -69,20 +72,27 @@ int main(int argc, char *argv[]) {
     //Chroot
     seteuid(0);
     //mount("/", bind_mountpoint, "", "bind");
-    if ( mount("/", bind_mountpoint, "", MS_BIND, NULL) != 0 ) {
+    if ( mount("/home", bind_mountpoint, "", MS_BIND, NULL) != 0 ) {
         printf("Mount failed\n\n");
     }
-    chroot(tmpdir);
 
-    //Work
-    seteuid(uid);
-    chdir("/");
-    symlink("/rootfs/tmp", "/tmp");
-    system(run_cmd);
+    pid_t forkpid = fork();
+    if ( forkpid == 0 ) {
+        //Work
+        chroot(tmpdir);
+        chdir(cwd);
+        seteuid(uid);
+        system(run_cmd);
+        exit(0);
+    } else if ( forkpid > 0 ) {
+        //get exit of child... later
+        wait(-1);
+    } else {
+        printf("Could not fork!!!\n");
+    }
 
     //Root Cleanup
-    seteuid(0);
-    if ( umount("/rootfs") != 0) {
+    if ( umount(bind_mountpoint) != 0) {
         printf("Umount failed\n\n");
     }
 
