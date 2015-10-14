@@ -33,9 +33,6 @@ cleanup() {
 
 
 
-
-
-
 if PROGRAM_BIN=`which $PROGRAM 2>/dev/null`; then
     PROGRAM_NAME=`basename $PROGRAM_BIN`
 
@@ -47,6 +44,7 @@ if PROGRAM_BIN=`which $PROGRAM 2>/dev/null`; then
 
     echo "#!/bin/sh" > $TMPDIR/run
     echo "$PROGRAM_BIN \$@" >> $TMPDIR/run
+    chmod +x $TMPDIR/run
 
     (cd $TMPDIR; find . | cpio -o --quiet -H newc ) | gzip -c9 > $PROGRAM_NAME.sapp
 

@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <sys/mount.h>
+#include <unistd.h>
 
 
 int main(int argc, char *argv[]) {
@@ -63,23 +64,27 @@ int main(int argc, char *argv[]) {
     //Prepare
     system(mktmpdir);
     system(explode_sapp);
-    mkdir(bind_mountpoint);
+    mkdir(bind_mountpoint, 0770);
 
     //Chroot
     seteuid(0);
     //mount("/", bind_mountpoint, "", "bind");
-    mount("/tmp", bind_mountpoint, "", "bind");
+    if ( mount("/", bind_mountpoint, "", MS_BIND, NULL) != 0 ) {
+        printf("Mount failed\n\n");
+    }
     chroot(tmpdir);
 
     //Work
     seteuid(uid);
     chdir("/");
-    //symlink("/rootfs/tmp", "/tmp");
+    symlink("/rootfs/tmp", "/tmp");
     system(run_cmd);
 
     //Root Cleanup
     seteuid(0);
-    umount(bind_mountpoint);
+    if ( umount("/rootfs") != 0) {
+        printf("Umount failed\n\n");
+    }
 
     //User Cleanup
     seteuid(uid);
