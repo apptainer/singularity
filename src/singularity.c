@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     char *explode_sapp;
     char *run_cmd;
     char *arg_string;
-    char *bind_mountpoint;
+//    char *bind_mountpoint;
     char cwd[BUFF];
 
     getcwd(cwd, BUFF);
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     explode_sapp = (char *) malloc(BUFF + sapp_file_len);
     run_cmd = (char *) malloc(BUFF + arg_string_len);
     arg_string = (char *) malloc(arg_string_len);
-    bind_mountpoint = (char *) malloc(BUFF);
+//    bind_mountpoint = (char *) malloc(BUFF);
 
     strcpy(sapp_file, argv[1]);
 
@@ -62,19 +62,22 @@ int main(int argc, char *argv[]) {
     snprintf(rmtmpdir, /*sizeof(mktmpdir)*/ SMALLBUFF, "rm -rf %s", tmpdir);
     snprintf(explode_sapp, BUFF + sapp_file_len, "zcat %s | (cd %s; cpio -id --quiet)", sapp_file, tmpdir);
     snprintf(run_cmd, BUFF, "/run %s", arg_string);
-    snprintf(bind_mountpoint, BUFF, "%s/home", tmpdir);
+//    snprintf(bind_mountpoint, BUFF, "%s/home", tmpdir);
 
     //Prepare
     system(mktmpdir);
     system(explode_sapp);
-    mkdir(bind_mountpoint, 0770);
+//    mkdir(bind_mountpoint, 0770);
 
     //Chroot
     seteuid(0);
-    //mount("/", bind_mountpoint, "", "bind");
+    /*
+     * It doesn't appear that the mount is necessary.. the chdir command
+     * escapes the chroot! Is this reliable?
     if ( mount("/home", bind_mountpoint, "", MS_BIND, NULL) != 0 ) {
         printf("Mount failed\n\n");
     }
+    */
 
     pid_t forkpid = fork();
     if ( forkpid == 0 ) {
@@ -92,9 +95,12 @@ int main(int argc, char *argv[]) {
     }
 
     //Root Cleanup
+    /*
+     * Uncomment if we end up doing the mount
     if ( umount(bind_mountpoint) != 0) {
         printf("Umount failed\n\n");
     }
+    */
 
     //User Cleanup
     seteuid(uid);
