@@ -1,5 +1,5 @@
 
-dist_bin_SCRIPTS = wwvnfs wwbootstrap wwmkchroot
+dist_bin_SCRIPTS = singularity-build
 
 MAINTAINERCLEANFILES = Makefile.in
 

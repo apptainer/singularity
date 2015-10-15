@@ -1,49 +1,18 @@
-%{!?_rel:%{expand:%%global _rel 0.r%(test "@SVNVERSION@" != "0000" && echo "@SVNVERSION@" || svnversion | sed 's/[^0-9].*$//' | grep '^[0-9][0-9]*$' || git svn find-rev `git show -s --pretty=format:%h` || echo 0000)}}
-%define debug_package %{nil}
-
-Summary: Monitoring Suite for Warewulf
-Name: warewulf-monitor
+Summary: The Singularity of a container
+Name: singularity
 Version: @PACKAGE_VERSION@
-Release:  %{_rel}%{?dist}
+Release: 0.1
 License: US Dept. of Energy (BSD-like)
-Group: System Environment/Clustering
+Group: System Environment/Base
 URL: http://warewulf.lbl.gov/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
-BuildRequires: json-c-devel, sqlite-devel >= 3.3.6
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
-Conflicts: warewulf-monitor-legacy
-Conflicts: warewulf-monitor-legacy-common
-Conflicts: warewulf-monitor-legacy-tools
 
 %description
-Warewulf >= 3 is a set of utilities designed to better enable
-utilization and maintenance of clusters or groups of computers.
-
-This is the monitoring module.
-
-%package cli
-Summary: Warewulf monitoring command line front end
-Group: System Environment/Monitoring
-Requires: perl-JSON, perl-JSON-XS
-Requires: %{name} = %{version}-%{release}
-Requires: warewulf-common >= 3.2
-
-%description cli
-Command line interface to the Warewulf monitoring subsystem.
-
-%package node
-Summary: Monitoring Suite for Warewulf. Node Collection.
-Group: System Environment/Clustering
-Requires: json-c
- 
-%description node
-Warewulf >= 3 is a set of utilities designed to better enable
-utilization and maintenance of clusters or groups of computers.
-
-This is the monitor-node module, that is installed onto the
-compute nodes.
-
+Singularity provides functionality to build the smallest most minimal
+possible containers, and running those containers as singlet application
+environments.
 
 %prep
 %setup
@@ -64,24 +33,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-, root, root)
-%doc AUTHORS COPYING ChangeLog INSTALL NEWS README TODO
-%attr(0755, root, root) %config /etc/init.d/aggregator
-%{_bindir}/aggregator
+%doc AUTHORS COPYING ChangeLog INSTALL NEWS README
+#attr(0755, root, root) %config /etc/init.d/aggregator
+%attr(4755, root, root) %{_bindir}/singularity
+%{_bindir}/singularity-build
 
-
-%files cli
-%defattr(-, root, root)
-%doc AUTHORS COPYING ChangeLog INSTALL NEWS README TODO
-%config(noreplace) %{_sysconfdir}/warewulf/monitor.conf
-%{perl_vendorlib}/*
-%{_bindir}/wwtop
-%{_bindir}/wwstats
-
-%files node
-%defattr(-, root, root)
-%doc AUTHORS COPYING ChangeLog INSTALL NEWS README TODO
-%attr(0755, root, root) %config /etc/init.d/collector
-%{_bindir}/collector
 
 
 %changelog
