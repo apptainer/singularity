@@ -4,6 +4,7 @@
 PROGRAM=$1
 TMPDIR=`mktemp -d /tmp/singularity-build.XXXXXXXX`
 INCLUDE="/bin/sh"
+LIBSUFFIX=`uname -p | grep -qv x86_64 || echo 64`
 
 
 includefile() {
@@ -12,16 +13,31 @@ includefile() {
         if [ ! -d "$TMPDIR/$DIRNAME" ]; then
             mkdir -p "$TMPDIR/$DIRNAME"
         fi
-        cp -L "$file" "$TMPDIR/$file"
+        if [ ! -f "$TMPDIR/$file" ]; then
+            echo "including file: $file"
+            cp -L "$file" "$TMPDIR/$file"
+        fi
     done
 }
 
+
+includelib() {
+    for file in $@; do
+        DIRNAME=`dirname $file`
+        BASENAME=`basename $file`
+        if [ ! -d "$TMPDIR/lib$LIBSUFFIX" ]; then
+            mkdir -p "$TMPDIR/lib$LIBSUFFIX"
+        fi
+        echo "including lib$LIBSUFFIX: $file"
+        cp -L "$file" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
+    done
+}
 
 includelddeps() {
     for file in $@; do
         ldd $file | sed -e 's@ @\n@g' | while read i; do
             if [ -f "$i" ]; then
-                includefile $i
+                includelib $i
             fi
         done
     done
@@ -37,10 +53,13 @@ if PROGRAM_BIN=`which $PROGRAM 2>/dev/null`; then
     PROGRAM_NAME=`basename $PROGRAM_BIN`
 
     includefile $PROGRAM_BIN
-    includelddeps $PROGRAM_BIN
-
     includefile $INCLUDE
+    includelddeps $PROGRAM_BIN
     includelddeps $INCLUDE
+
+    includefile /etc/ld.so.cache
+    includefile /etc/ld.so.conf
+    includefile /etc/ld.so.conf.d/*
 
     echo "#!/bin/sh" > $TMPDIR/run
     echo "$PROGRAM_BIN \$@" >> $TMPDIR/run
