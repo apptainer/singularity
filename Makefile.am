@@ -1,6 +1,7 @@
 SUBDIRS = bin src
 
-MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure compile config.* ltmain.sh depcomp install-sh missing stamp-* libtool.m4 lt*.m4 *.sapp
+MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure ltmain.sh depcomp install-sh missing config.* *.m4 singularity-*.tar.gz singularity-*.rpm
 DISTCLEANFILES = 
 CLEANFILES =
 EXTRA_DIST = LICENSE README NEWS ChangeLog singularity.spec
+

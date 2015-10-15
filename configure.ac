@@ -1,7 +1,7 @@
 AC_PREREQ(2.59)
 AC_INIT([singularity],[0.0.1],[gmkurtzer@lbl.gov])
 AC_CONFIG_SRCDIR([.])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([.])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
