@@ -8,7 +8,7 @@
 
 
 int main(int argc, char *argv[]) {
-    unsigned int exit_status = 0;
+    int exit_status = 255;
     int SMALLBUFF = 64;
     int BUFF = 512;
     int uid = getuid();
@@ -81,15 +81,19 @@ int main(int argc, char *argv[]) {
 
     pid_t forkpid = fork();
     if ( forkpid == 0 ) {
-        //Work
+        int retval;
+
         chroot(tmpdir);
         chdir(cwd);
         seteuid(uid);
-        system(run_cmd);
-        exit(0);
+        retval = system(run_cmd);
+        exit(WEXITSTATUS(retval));
     } else if ( forkpid > 0 ) {
         //get exit of child... later
-        wait(-1);
+        //exit_status = wait(forkpid);
+        int retval;
+        waitpid(forkpid, &retval, 0);
+        exit_status = WEXITSTATUS(retval);
     } else {
         printf("Could not fork!!!\n");
     }
