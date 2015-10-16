@@ -1,6 +1,6 @@
 Singularity is a portable application stack packaging and runtime utility.
 
-There are several methods to do portably package application stacks at
+There are several methods to implement portable application stacks at
 present. Among them are containers and virtual machines. When using these
 solutions to package a single application (or application stack), one ends
 up having to manage the entire operating system overhead just to distribute a
