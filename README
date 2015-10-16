@@ -54,7 +54,9 @@ Examples:
     systems that even have an incompatible glibc and it will run properly.
 
     $ cd ~
-    $ singularity-build /bin/find
+    $ singularity-build find.spec
+    ...
+    WROTE: find.sapp
     $ singularity find.sapp . -maxdepth 1 | grep sapp
     ./find.sapp
 
