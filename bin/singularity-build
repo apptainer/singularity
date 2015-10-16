@@ -1,7 +1,6 @@
 #!/bin/sh
 
 
-PROGRAM=$1
 TMPDIR=`mktemp -d /tmp/singularity-build.XXXXXXXX`
 INCLUDE="/bin/sh"
 LIBSUFFIX=`uname -p | grep -qv x86_64 || echo 64`
@@ -14,8 +13,32 @@ includefile() {
             mkdir -p "$TMPDIR/$DIRNAME"
         fi
         if [ ! -f "$TMPDIR/$file" ]; then
-            echo "including file: $file"
+            echo "including file:        $file"
             cp -L "$file" "$TMPDIR/$file"
+        fi
+    done
+}
+
+includebin() {
+    for file in $@; do
+        DIRNAME=`dirname $file`
+        if [ ! -d "$TMPDIR/$DIRNAME" ]; then
+            mkdir -p "$TMPDIR/$DIRNAME"
+        fi
+        if [ ! -f "$TMPDIR/$file" ]; then
+            echo "including program:     $file"
+            cp -L "$file" "$TMPDIR/$file"
+            ldd $file | sed -e 's@ @\n@g' | while read i; do
+                if [ -f "$i" ]; then
+                    echo " ->dependency:         $i"
+                    if [ ! -d "$TMPDIR/lib$LIBSUFFIX" ]; then
+                        mkdir -p "$TMPDIR/lib$LIBSUFFIX"
+                    fi
+                    if [ ! -f "$TMPDIR/lib$LIBSUFFIX/$BASENAME" ]; then
+                        cp -L "$file" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
+                    fi
+                fi
+            done
         fi
     done
 }
@@ -48,26 +71,107 @@ cleanup() {
 }
 
 
+parseconf() {
+    KEY="$1"
+    FILE="$2"
+    grep "^$KEY " $FILE | while read i; do
+        echo "$i" | sed -e "s@^$KEY @@"
+    done
+}
 
-if PROGRAM_BIN=`which $PROGRAM 2>/dev/null`; then
-    PROGRAM_NAME=`basename $PROGRAM_BIN`
 
-    includefile $PROGRAM_BIN
-    includefile $INCLUDE
-    includelddeps $PROGRAM_BIN
-    includelddeps $INCLUDE
+usage() {
+    echo "USAGE: $0 (options) [config] (output file)"
+    echo
+    echo "CONFIG:"
+    echo "  The path to the configruation file spec that defines the application"
+    echo "  stack you wish to include in the singularity package."
+    echo
+    echo "ARGUMENTS:"
+    echo "  -h      Print usage summary"
+    echo
+}
 
-    includefile /etc/ld.so.cache
-    includefile /etc/ld.so.conf
-    includefile /etc/ld.so.conf.d/*
 
-    echo "#!/bin/sh" > $TMPDIR/run
-    echo "$PROGRAM_BIN \$@" >> $TMPDIR/run
-    chmod +x $TMPDIR/run
+while getopts ":c:" opt; do
+    case $opt in
+        h)
+            usage
+            exit
+        ;;
+        \?)
+            echo "Invalid option -$OPTARG" >&2
+            exit 1
+        ;;
+        :)
+            echo "Option -$OPTARG requires an argument." >&2
+            exit 1;
+        ;;
+    esac
+done
 
-    (cd $TMPDIR; find . | cpio -o --quiet -H newc ) | gzip -c9 > $PROGRAM_NAME.sapp
+CONFIG=$1
+shift
+OUTPUT=$1
+shift
 
+if [ -z "$CONFIG" ]; then
+    usage
+    exit 1
 fi
+
+
+PROGRAM=`parseconf program $CONFIG`
+FILE=`parseconf file $CONFIG`
+RUNFILE=`parseconf run $CONFIG`
+NAME=`parseconf name $CONFIG`
+
+
+if [ -z "$PROGRAM" ]; then
+    echo "PROGRAM is undefined!"
+    exit 1
+fi
+
+
+if [ -z "$OUTPUT" ]; then
+    if [ -z "$NAME" ]; then
+        NAME=`basename $CONFIG`
+    fi
+    OUTPUT="$NAME.sapp"
+fi
+
+for i in $PROGRAM; do
+    PROGRAM_BIN=`which $i 2>/dev/null`
+    includebin $PROGRAM_BIN
+#    includelddeps $PROGRAM_BIN
+    if [ -z "$PROGFIRST" ]; then
+        PROGFIRST="$i"
+    fi
+done 
+
+for i in $FILE; do
+    includefile $i
+done
+
+
+includebin $INCLUDE
+#includelddeps $INCLUDE
+includefile /etc/ld.so.cache
+includefile /etc/ld.so.conf
+includefile /etc/ld.so.conf.d/*
+
+echo "#!/bin/sh" > $TMPDIR/run
+if [ -n "$RUNFILE" ]; then
+    echo "$RUNFILE" >> $TMPDIR/run
+else
+    echo "$PROGFIRST \$@" >> $TMPDIR/run
+fi
+chmod +x $TMPDIR/run
+
+
+(cd $TMPDIR; find . | cpio -o --quiet -H newc ) | gzip -c9 > $OUTPUT
+
+echo "WROTE: $OUTPUT"
 
 
 cleanup
