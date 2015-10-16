@@ -1,1 +1,61 @@
-# singularity
+Singularity is a portable application stack packaging and runtime utility.
+
+There are several methods to do portably package application stacks at
+present. Among them are containers and virtual machines. When using these
+solutions to package a single application (or application stack), one ends
+up having to manage the entire operating system overhead just to distribute a
+single application. While virtual machines and containers have strong usage
+benefits, application portability is not an effecient use of these
+technologies.
+
+Singularity works on a completely different premis. Contrary to building and
+managing an entire operating system envrionment for the sake of portability
+and reproducibility of an application stack, Singularity works on the
+opposite premis. By scanning an application and (with the help of a
+configuration file) automatically determine what dependencies of an operating
+system is necessary in order to achieve portability, Singularity can create
+minimalistic singlet "app" which can easily be copied from system to system
+and run using Singularity on different systems.
+
+In a manner of speaking, this is an OS X style application framework for
+Linux.
+
+Singularity provides two primary functions:
+
+1. SINGULARITY-BUILD
+    This is the package build tool which is responsible for creating the
+    Singularity Application (.sapp) package which can be run as a standalone
+    program. The process of building a .sapp package is determined by a
+    configuration which defines what components of the underlying envrionment
+    should be included and how to run those components. Additionally, it
+    scans the application to identify the runtime dependencies for OS level
+    portability.
+
+    The .sapp package could be built to run exactly as it would normally be
+    called on the command line environment (e.g. arguments, files, IO, etc..)
+    or it could be packaged to be completely self contained. For example, it
+    could be reasonable for someone to want to package a web server with
+    their web application already bundled within a single .sapp file. To
+    start the entire application stack, you simply run the .sapp file through
+    Singularity (and thus it could start PostgreSQL, Apache, from within the
+    environment).
+
+2. SINGULARITY (runtime)
+    The Singularity application itself understands how to read a .sapp
+    package and executes the portable runtime envrionment. As mentioned above,
+    the package itself could be built in a manner to emulate the standard
+    runtime arguments of a standalone binary, or it could run the entire
+    application package in a self contained manner.
+
+
+Examples:
+    This is a very simple example of packaging up /bin/find and turning it
+    into a portable .sapp package. This .sapp package can be copied to other
+    systems that even have an incompatible glibc and it will run properly.
+
+    $ cd ~
+    $ singularity-build /bin/find
+    $ singularity find.sapp . -maxdepth 1 | grep sapp
+    ./find.sapp
+
+    (more examples and use-cases to come!)
