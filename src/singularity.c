@@ -27,9 +27,9 @@ int main(int argc, char *argv[]) {
 //    char *bind_mountpoint;
     char cwd[BUFF];
 
-    getcwd(cwd, BUFF);
-
     seteuid(uid);
+    
+    getcwd(cwd, BUFF);
 
     for (i = 2; i < argc; i++) {
         arg_string_len += strlen(argv[i]) + 1;
