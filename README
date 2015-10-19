@@ -64,10 +64,17 @@ configuration paramaters you can use (more options are in development):
 
 Application Spec Example:
 
+    # Name this SAPP
     name find-example
+
+    # Define the programs to include
     program /usr/bin/find /bin/xargs /bin/ls
+
+    # Define any other files you want to include
     file /etc/passwd /etc/group
     file /etc/fstab
+
+    # Use a custom runscript
     run echo "Example application stack"
     run find $@ | xargs | ls -l
 
