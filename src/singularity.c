@@ -23,7 +23,6 @@ need_help(char *arg1) {
 }
     
 mk_tmpdir(char *tmpdir) {
-
     char *mktmpdir;
 
     mktmpdir = (char *) malloc(SMALLBUFF);
@@ -34,7 +33,6 @@ mk_tmpdir(char *tmpdir) {
 }
 
 rm_tmpdir(char *tmpdir) {
-
     char *rmtmpdir;
 
     rmtmpdir = (char *) malloc(SMALLBUFF);
@@ -77,12 +75,16 @@ int main(int argc, char *argv[]) {
     snprintf(tmpdir, /*sizeof(tmpdir)*/ SMALLBUFF, "%s.%d.%d", TEMP_PATH, uid, getpid());
     mk_tmpdir(tmpdir);
 
-    //Get sapp file
+    //Get sapp file and explode the cpio archive
     sapp_file_len = strlen(argv[1]);
     sapp_file = (char *) malloc(sapp_file_len + 1);
     strcpy(sapp_file, argv[1]);
 
-    //Get app arguments
+    explode_sapp = (char *) malloc(BUFF + sapp_file_len);
+    snprintf(explode_sapp, BUFF + sapp_file_len, "zcat %s | (cd %s; cpio -id --quiet)", sapp_file, tmpdir);
+    system(explode_sapp);
+
+    //Get app arguments and create run command
     for (i = 2; i < argc; i++) {
         arg_string_len += strlen(argv[i]) + 1;
     }
@@ -96,15 +98,8 @@ int main(int argc, char *argv[]) {
         j++;
     }
     arg_string[j+1] = '\0';
-  
-    //Explode the application's cpio archive
-    explode_sapp = (char *) malloc(BUFF + sapp_file_len);
-    snprintf(explode_sapp, BUFF + sapp_file_len, "zcat %s | (cd %s; cpio -id --quiet)", sapp_file, tmpdir);
-
     run_cmd = (char *) malloc(BUFF + arg_string_len);
     snprintf(run_cmd, BUFF, "/run %s", arg_string);
-
-    system(explode_sapp);
 
     //Setup for the bind mounts
     //bind_mountpoint = (char *) malloc(BUFF);
