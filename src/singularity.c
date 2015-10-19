@@ -22,7 +22,7 @@ need_help(char *arg1) {
     }
 }
     
-mk_tmpdir(char *tmpdir) {
+mk_folder(char *tmpdir) {
     char *mktmpdir;
 
     mktmpdir = (char *) malloc(SMALLBUFF);
@@ -32,7 +32,7 @@ mk_tmpdir(char *tmpdir) {
     free(mktmpdir);
 }
 
-rm_tmpdir(char *tmpdir) {
+rm_folder(char *tmpdir) {
     char *rmtmpdir;
 
     rmtmpdir = (char *) malloc(SMALLBUFF);
@@ -40,6 +40,18 @@ rm_tmpdir(char *tmpdir) {
    
     system(rmtmpdir);
     free(rmtmpdir);
+}
+
+explode_archive(char *sapp_file, char *tmpdir) {
+    char *explode_sapp;
+    int sapp_file_len;
+
+    sapp_file_len = strlen(sapp_file);
+    explode_sapp = (char *) malloc(BUFF + sapp_file_len);
+    snprintf(explode_sapp, BUFF + sapp_file_len, "zcat %s | (cd %s; cpio -id --quiet)", sapp_file, tmpdir);
+
+    system(explode_sapp);
+    free(explode_sapp);
 }
 
 int main(int argc, char *argv[]) {
@@ -63,7 +75,6 @@ int main(int argc, char *argv[]) {
     int arg_string_len = 0;
     char *arg_string;
     char *tmpdir;
-    char *explode_sapp;
     char *run_cmd;
 //    char *bind_mountpoint;
     
@@ -73,16 +84,13 @@ int main(int argc, char *argv[]) {
     //Create tmpdir
     tmpdir = (char *) malloc(SMALLBUFF);
     snprintf(tmpdir, /*sizeof(tmpdir)*/ SMALLBUFF, "%s.%d.%d", TEMP_PATH, uid, getpid());
-    mk_tmpdir(tmpdir);
+    mk_folder(tmpdir);
 
-    //Get sapp file and explode the cpio archive
+    //Get sapp file and explode the cpio archive into TEMP dir
     sapp_file_len = strlen(argv[1]);
-    sapp_file = (char *) malloc(sapp_file_len + 1);
+    sapp_file = (char *) malloc(sapp_file_len + 1); //Plus 1 for \0
     strcpy(sapp_file, argv[1]);
-
-    explode_sapp = (char *) malloc(BUFF + sapp_file_len);
-    snprintf(explode_sapp, BUFF + sapp_file_len, "zcat %s | (cd %s; cpio -id --quiet)", sapp_file, tmpdir);
-    system(explode_sapp);
+    explode_archive(sapp_file,tmpdir);
 
     //Get app arguments and create run command
     for (i = 2; i < argc; i++) {
@@ -106,7 +114,7 @@ int main(int argc, char *argv[]) {
     //snprintf(bind_mountpoint, BUFF, "%s/home", tmpdir);
     //mkdir(bind_mountpoint, 0770);
 
-    //Start the Chroot
+    //Get down to root
     seteuid(0);
     /*
      * It doesn't appear that the mount is necessary.. the chdir command
@@ -117,15 +125,16 @@ int main(int argc, char *argv[]) {
     */
 
     pid_t forkpid = fork();
-    if ( forkpid == 0 ) {
+    if ( forkpid == 0 ) { //Child process starts here
         int retval;
-
+        //Start the chroot on TEMP dir
         chroot(tmpdir);
         chdir(cwd);
         seteuid(uid);
         retval = system(run_cmd);
-        exit(WEXITSTATUS(retval));
-    } else if ( forkpid > 0 ) {
+        exit(WEXITSTATUS(retval)); //Child stops running here
+    } else if ( forkpid > 0 ) { 
+        //Parent process
         //get exit of child... later
         //exit_status = wait(forkpid);
         int retval;
@@ -145,7 +154,7 @@ int main(int argc, char *argv[]) {
 
     //User Cleanup
     seteuid(uid);
-    //rm_tmpdir(tmpdir);
+    //rm_folder(tmpdir);
 
     return(exit_status);
 }
