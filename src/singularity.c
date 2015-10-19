@@ -97,8 +97,6 @@ int main(int argc, char *argv[]) {
     }
     arg_string[j+1] = '\0';
   
-    return(0);
-
     //Explode the application's cpio archive
     explode_sapp = (char *) malloc(BUFF + sapp_file_len);
     snprintf(explode_sapp, BUFF + sapp_file_len, "zcat %s | (cd %s; cpio -id --quiet)", sapp_file, tmpdir);
