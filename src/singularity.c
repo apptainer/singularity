@@ -4,6 +4,10 @@
 #include <string.h>
 #include <sys/mount.h>
 #include <unistd.h>
+
+#define TEMP_PATH "/tmp/.singularity."
+#define SMALLBUFF 64
+#define BUFF 512
       
 show_usage() {
     printf("Usage : singularity filename.sapp application-arguments\n");
@@ -18,6 +22,28 @@ need_help(char *arg1) {
     }
 }
     
+mk_tmpdir(char *tmpdir) {
+
+    char *mktmpdir;
+
+    mktmpdir = (char *) malloc(SMALLBUFF);
+    snprintf(mktmpdir, /*sizeof(mktmpdir)*/ SMALLBUFF, "mkdir -p %s", tmpdir);
+  
+    system(mktmpdir);
+    free(mktmpdir);
+}
+
+rm_tmpdir(char *tmpdir) {
+
+    char *rmtmpdir;
+
+    rmtmpdir = (char *) malloc(SMALLBUFF);
+    snprintf(rmtmpdir, /*sizeof(mktmpdir)*/ SMALLBUFF, "rm -rf %s", tmpdir);
+   
+    system(rmtmpdir);
+    free(rmtmpdir);
+}
+
 int main(int argc, char *argv[]) {
 
     //Make sure the UID is set back to the user
@@ -33,29 +59,30 @@ int main(int argc, char *argv[]) {
     }
 
     int i=0, j=0;
-    int SMALLBUFF = 64;
-    int BUFF = 512;
     char cwd[BUFF];
     int sapp_file_len;
     char *sapp_file;
     int arg_string_len = 0;
     char *arg_string;
     char *tmpdir;
-    char *mktmpdir;
-    char *rmtmpdir;
     char *explode_sapp;
     char *run_cmd;
 //    char *bind_mountpoint;
     
     getcwd(cwd, BUFF);
 
+    //Setup temporary space to work with
+    //Create tmpdir
+    tmpdir = (char *) malloc(SMALLBUFF);
+    snprintf(tmpdir, /*sizeof(tmpdir)*/ SMALLBUFF, "%s.%d.%d", TEMP_PATH, uid, getpid());
+    mk_tmpdir(tmpdir);
+
     //Get sapp file
     sapp_file_len = strlen(argv[1]);
     sapp_file = (char *) malloc(sapp_file_len + 1);
     strcpy(sapp_file, argv[1]);
 
-
-   //Get app arguments
+    //Get app arguments
     for (i = 2; i < argc; i++) {
         arg_string_len += strlen(argv[i]) + 1;
     }
@@ -69,19 +96,8 @@ int main(int argc, char *argv[]) {
         j++;
     }
     arg_string[j+1] = '\0';
-
-
-    //Setup temporary space to work with
-    tmpdir = (char *) malloc(SMALLBUFF);
-    snprintf(tmpdir, /*sizeof(tmpdir)*/ SMALLBUFF, "/tmp/.singularity.%d.%d", uid, getpid());
-
-    mktmpdir = (char *) malloc(SMALLBUFF);
-    snprintf(mktmpdir, /*sizeof(mktmpdir)*/ SMALLBUFF, "mkdir -p %s", tmpdir);
-
-    rmtmpdir = (char *) malloc(SMALLBUFF);
-    snprintf(rmtmpdir, /*sizeof(mktmpdir)*/ SMALLBUFF, "rm -rf %s", tmpdir);
-
-    system(mktmpdir);
+  
+    return(0);
 
     //Explode the application's cpio archive
     explode_sapp = (char *) malloc(BUFF + sapp_file_len);
@@ -136,7 +152,7 @@ int main(int argc, char *argv[]) {
 
     //User Cleanup
     seteuid(uid);
-    //system(rmtmpdir);
+    //rm_tmpdir(tmpdir);
 
     return(exit_status);
 }
