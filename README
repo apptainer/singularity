@@ -3,19 +3,19 @@ Singularity is a portable application stack packaging and runtime utility.
 There are several methods to implement portable application stacks at
 present. Among them are containers and virtual machines. When using these
 solutions to package a single application (or application stack), one ends
-up having to manage the entire operating system overhead just to distribute a
-single application. While virtual machines and containers have strong usage
-benefits, application portability is not an effecient use of these
-technologies.
+up having to manage the entire operating system overhead (security, updates,
+size/bulk, etc..) just to distribute a single application or workflow. While
+virtual machines and containers have strong usage benefits, application
+portability and distribution is not an effecient use of these technologies.
 
-Singularity works on a completely different premis. Contrary to building and
-managing an entire operating system envrionment for the sake of portability
-and reproducibility of an application stack, Singularity works on the
-opposite premis. By scanning an application and (with the help of a
-configuration file) automatically determine what dependencies of an operating
-system is necessary in order to achieve portability, Singularity can create
-minimalistic singlet "app" which can easily be copied from system to system
-and run using Singularity on different systems.
+Singularity works on a completely different perspective. Contrary to building
+and managing an entire operating system envrionment (for the sake of
+portability and reproducibility of an application stack), Singularity works
+on the opposite premis. By configuration of an application stack spec via a
+configuration file, coupled with automatic dependency resolution to achieve
+portability, Singularity can create minimalistic singlet "app" which can
+easily be copied from system to systemand run using Singularity on different
+systems.
 
 In a manner of speaking, this is an OS X style application framework for
 Linux.
@@ -48,12 +48,45 @@ Singularity provides two primary functions:
     application package in a self contained manner.
 
 
-Examples:
+The "Singularity Application Spec" is the configuration file to which you
+define your application stack for the build process. Here are some valid
+configuration paramaters you can use (more options are in development):
+
+    name        This is the name of the application stack
+    program     The program(s)/binaries you wish to include in this
+                application stack. This will automatically trigger
+                library dependency resolution for every program listed.
+    file        Any non-program file that you wish to include. Globs ok.
+    run         Typically the runscript will be autmatically generated
+                based on the first program defined above. You can
+                replace or customize the runscript here (multiple "run"s
+                are supported).
+
+Application Spec Example:
+
+    # Name this SAPP
+    name find-example
+
+    # Define the programs to include
+    program /usr/bin/find /bin/xargs /bin/ls
+
+    # Define any other files you want to include
+    file /etc/passwd /etc/group
+    file /etc/fstab
+
+    # Use a custom runscript
+    run echo "Example application stack"
+    run find $@ | xargs | ls -l
+
+
+Usage Examples:
     This is a very simple example of packaging up /bin/find and turning it
     into a portable .sapp package. This .sapp package can be copied to other
     systems that even have an incompatible glibc and it will run properly.
 
     $ cd ~
+    $ cat find.spec
+    program /usr/bin/find
     $ singularity-build find.spec
     ...
     WROTE: find.sapp
