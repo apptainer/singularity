@@ -76,7 +76,7 @@ Application Spec Example:
 
     # Use a custom runscript
     run echo "Example application stack"
-    run find $@ | xargs | ls -l
+    run find $@ | xargs ls -l
 
 
 Usage Examples:

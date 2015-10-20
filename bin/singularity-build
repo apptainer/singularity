@@ -159,8 +159,11 @@ includebin $INCLUDEBIN
 includefile /etc/ld.so.cache
 includefile /etc/ld.so.conf
 includefile /etc/ld.so.conf.d/*
+includefile /dev/null
 
 echo "#!/bin/sh" > $TMPDIR/run
+echo "PATH=/bin:$PATH" >> $TMPDIR/run
+echo "export PATH" >> $TMPDIR/run
 if [ -n "$RUNFILE" ]; then
     echo "$RUNFILE" >> $TMPDIR/run
 else
