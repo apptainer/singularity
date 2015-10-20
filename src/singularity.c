@@ -4,11 +4,9 @@
 #include <string.h>
 #include <sys/mount.h>
 #include <unistd.h>
+#include "constants.h"
+#include "config.h"
 
-#define TEMP_PATH "/tmp/.singularity."
-#define SMALLBUFF 64
-#define BUFF 512
-      
 show_usage() {
     printf("Usage : singularity filename.sapp application-arguments\n");
     printf("        -h|-help for this usage info\n\n");

@@ -10,7 +10,7 @@ AM_CXXFLAGS = $(INTI_CFLAGS)
 singularity_SOURCES = singularity.c
 singularity_LDADD = $(INTI_LIBS)
 
-EXTRA_DIST = config.h
+EXTRA_DIST = config.h constants.h
 
 
 setuid:
