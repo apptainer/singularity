@@ -9,7 +9,8 @@
 
 show_usage() {
     printf("Usage : singularity filename.sapp application-arguments\n");
-    printf("        -h|-help for this usage info\n\n");
+    printf("        -h|-help    for this usage info\n");
+    printf("        -d|-debug   Show debugging output\n\n");
 }
 
 need_help(char *arg1) {
@@ -19,7 +20,7 @@ need_help(char *arg1) {
        return(0);
     }
 }
-    
+
 mk_folder(char *tmpdir) {
     char *mktmpdir;
 
@@ -52,12 +53,17 @@ explode_archive(char *sapp_file, char *tmpdir) {
     free(explode_sapp);
 }
 
+void dmsg(char *message) {
+    if ( 0 ) {
+        printf(message);
+    }
+}
+
 int main(int argc, char *argv[]) {
 
     //Make sure the UID is set back to the user
     int uid = getuid();
     int euid = geteuid();
-    seteuid(uid);
 
     //Check for argument count and help option
     int exit_status = 255;
@@ -75,15 +81,20 @@ int main(int argc, char *argv[]) {
     char *tmpdir;
     char *run_cmd;
 //    char *bind_mountpoint;
+
+    seteuid(uid);
+    dmsg("Initalization...\n");
     
     getcwd(cwd, BUFF);
 
+    dmsg("Creating temporary directory space\n");
     //Setup temporary space to work with
     //Create tmpdir
     tmpdir = (char *) malloc(SMALLBUFF);
     snprintf(tmpdir, /*sizeof(tmpdir)*/ SMALLBUFF, "%s.%d.%d", TEMP_PATH, uid, getpid());
     mk_folder(tmpdir);
 
+    dmsg("Exploding the sapp file to temporary directory\n");
     //Get sapp file and explode the cpio archive into TEMP dir
     sapp_file_len = strlen(argv[1]);
     sapp_file = (char *) malloc(sapp_file_len + 1); //Plus 1 for \0
@@ -103,7 +114,7 @@ int main(int argc, char *argv[]) {
         arg_string[j] = ' ';
         j++;
     }
-    arg_string[j+1] = '\0';
+    arg_string[j] = '\0';
     run_cmd = (char *) malloc(BUFF + arg_string_len);
     snprintf(run_cmd, BUFF, "/run %s", arg_string);
 
@@ -111,9 +122,11 @@ int main(int argc, char *argv[]) {
     //bind_mountpoint = (char *) malloc(BUFF);
     //snprintf(bind_mountpoint, BUFF, "%s/home", tmpdir);
     //mkdir(bind_mountpoint, 0770);
+    
+    dmsg("Escalating privs\n");
 
-    //Get down to root
     seteuid(0);
+    //Get down to root
     /*
      * It doesn't appear that the mount is necessary.. the chdir command
      * escapes the chroot! Is this reliable?
@@ -122,13 +135,17 @@ int main(int argc, char *argv[]) {
     }
     */
 
+    dmsg("Forking\n");
     pid_t forkpid = fork();
     if ( forkpid == 0 ) { //Child process starts here
         int retval;
         //Start the chroot on TEMP dir
-        chroot(tmpdir);
-        chdir(cwd);
+        if ( chroot(tmpdir) != 0 ) {
+            printf("Error: failed chroot to: %s\n", tmpdir);
+            exit(255);
+        }
         seteuid(uid);
+        chdir(cwd);
         retval = system(run_cmd);
         exit(WEXITSTATUS(retval)); //Child stops running here
     } else if ( forkpid > 0 ) { 
@@ -138,6 +155,7 @@ int main(int argc, char *argv[]) {
         int retval;
         waitpid(forkpid, &retval, 0);
         exit_status = WEXITSTATUS(retval);
+        dmsg("Child has returned home!\n");
     } else {
         printf("Could not fork!!!\n");
     }
