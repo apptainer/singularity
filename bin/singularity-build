@@ -2,7 +2,7 @@
 
 
 TMPDIR=`mktemp -d /tmp/singularity-build.XXXXXXXX`
-INCLUDE="/bin/sh"
+INCLUDEBIN="/bin/sh"
 LIBSUFFIX=`uname -p | grep -qv x86_64 || echo 64`
 
 
@@ -35,7 +35,7 @@ includebin() {
                         mkdir -p "$TMPDIR/lib$LIBSUFFIX"
                     fi
                     if [ ! -f "$TMPDIR/lib$LIBSUFFIX/$BASENAME" ]; then
-                        cp -L "$file" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
+                        cp -L "$i" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
                     fi
                 fi
             done
@@ -154,8 +154,8 @@ for i in $FILE; do
 done
 
 
-includebin $INCLUDE
-#includelddeps $INCLUDE
+includebin $INCLUDEBIN
+
 includefile /etc/ld.so.cache
 includefile /etc/ld.so.conf
 includefile /etc/ld.so.conf.d/*
