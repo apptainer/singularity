@@ -13,6 +13,6 @@ singularity_LDADD = $(INTI_LIBS)
 EXTRA_DIST = config.h constants.h
 
 
-setuid:
+setuid: singularity
 	chown root:root singularity
 	chmod +s singularity
