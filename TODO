@@ -12,4 +12,5 @@ Singularity:
     - Debugging/Verbose output support
     - Break into multiple more maintainable source files/headers
     - Provide a security option to lock processes within the container
-
+    - Support archiving output
+    - Standardize on an output data location
