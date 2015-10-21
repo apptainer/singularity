@@ -3,7 +3,7 @@
 
 TMPDIR=`mktemp -d /tmp/singularity-build.XXXXXXXX`
 INCLUDEBIN="/bin/sh"
-LIBSUFFIX=`uname -p | grep -qv x86_64 || echo 64`
+LIBSUFFIX=`uname -m | grep -qv x86_64 || echo 64`
 
 
 includefile() {
