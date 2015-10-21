@@ -62,8 +62,24 @@ configuration paramaters you can use (more options are in development):
                 replace or customize the runscript here (multiple "run"s
                 are supported).
 
-Application Spec Example:
+SAPP Spec Example (simple):
+    In the simpliest example, you only need to include the program's location.
+    Singularity will automatically identify the binaries dependencies and
+    include them as well as create a runscript to emulate running that single
+    program when Singularity runs.
 
+    <sapp specfile>
+    # Define the problem to include
+    program /usr/bin/find
+    </sapp specfile>
+
+
+SAPP Spec Example (application stack):
+    This is a more complicated spec file example that demonstrates how you can
+    embed multiple programs, files, and commands into the SAPP file and how to
+    create a custom run command.
+
+    <sapp specfile>
     # Name this SAPP
     name find-example
 
@@ -77,6 +93,7 @@ Application Spec Example:
     # Use a custom runscript
     run echo "Example application stack"
     run find $@ | xargs ls -l
+    </sapp specfile>
 
 
 Usage Examples:
