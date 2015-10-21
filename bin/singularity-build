@@ -44,28 +44,6 @@ includebin() {
 }
 
 
-includelib() {
-    for file in $@; do
-        DIRNAME=`dirname $file`
-        BASENAME=`basename $file`
-        if [ ! -d "$TMPDIR/lib$LIBSUFFIX" ]; then
-            mkdir -p "$TMPDIR/lib$LIBSUFFIX"
-        fi
-        echo "including lib$LIBSUFFIX: $file"
-        cp -L "$file" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
-    done
-}
-
-includelddeps() {
-    for file in $@; do
-        ldd $file | sed -e 's@ @\n@g' | while read i; do
-            if [ -f "$i" ]; then
-                includelib $i
-            fi
-        done
-    done
-}
-
 cleanup() {
     rm -rf $TMPDIR
 }
