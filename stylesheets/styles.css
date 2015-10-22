@@ -3,13 +3,13 @@
 body {
   padding:50px;
   font:14px/1.5 Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color:white;
+  color:#D6E1F7;
   background-color:black;
   font-weight:300;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color:#222;
+  color:#E2EAF9;
   margin:0 0 20px;
 }
 
@@ -23,14 +23,6 @@ h1, h2, h3 {
 
 h1 {
   font-size:28px;
-}
-
-h2 {
-  color:#393939;
-}
-
-h3, h4, h5, h6 {
-  color:#494949;
 }
 
 a {
@@ -60,7 +52,7 @@ blockquote {
 
 code, pre {
   font-family:Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;
-  color:#333;
+  color:#C1CADE;
   font-size:12px;
 }
 
@@ -84,12 +76,7 @@ th, td {
 }
 
 dt {
-  color:#444;
   font-weight:700;
-}
-
-th {
-  color:#444;
 }
 
 img {
@@ -109,12 +96,14 @@ header ul {
   padding:0;
 
   background: #eee;
+/*
   background: -moz-linear-gradient(top, #f8f8f8 0%, #dddddd 100%);
   background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f8f8f8), color-stop(100%,#dddddd));
   background: -webkit-linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
   background: -o-linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
   background: -ms-linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
   background: linear-gradient(top, #f8f8f8 0%,#dddddd 100%);
+*/
 
   border-radius:5px;
   border:1px solid #d2d2d2;
@@ -132,7 +121,6 @@ header li {
 header ul a {
   line-height:1;
   font-size:11px;
-  color:#999;
   display:block;
   text-align:center;
   padding-top:6px;
@@ -140,7 +128,7 @@ header ul a {
 }
 
 strong {
-  color:#222;
+  color:#F7F9FD;
   font-weight:700;
 }
 
@@ -157,7 +145,7 @@ header ul li + li + li {
 header ul a strong {
   font-size:14px;
   display:block;
-  color:#222;
+  color:#F7F9FD;
 }
 
 section {
@@ -251,6 +239,6 @@ footer {
   body {
     padding:0.4in;
     font-size:12pt;
-    color:#444;
+    color:#D6E1F7;
   }
 }
