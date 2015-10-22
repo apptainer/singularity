@@ -3,7 +3,8 @@
 body {
   padding:50px;
   font:14px/1.5 Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color:black;
+  color:white;
+  bgcolor:black;
   font-weight:300;
 }
 
