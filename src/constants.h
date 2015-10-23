@@ -8,3 +8,10 @@
 #ifndef LIBEXECPATH
 #define LIBEXECPATH "undefined"
 #endif
+
+// Levels of outpur
+// Errors - 1
+// Watch code flow - 2
+// Debug - 3
+#define DEFAULTLEVEL 1
+

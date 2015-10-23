@@ -5,20 +5,19 @@
 #include <sys/mount.h>
 #include <unistd.h>
 #include "constants.h"
-#include "config.h"
+//#include "config.h"
 
-
-
-void dmsg(char *message) {
-    if ( 0 ) {
+int proglevel;
+void message(int msglevel,char *message) {
+    if ( msglevel <= proglevel ) {
         printf(message);
     }
 }
 
 show_usage() {
-    printf("Usage : singularity filename.sapp application-arguments\n");
-    printf("        -h|-help    for this usage info\n");
-    printf("        -d|-debug   Show debugging output\n\n");
+    message(0,"Usage : singularity filename.sapp application-arguments\n");
+    message(0,"        -h|-help    for this usage info\n");
+    message(0,"        -d|-debug   Show debugging output\n\n");
 }
 
 need_help(char *arg1) {
@@ -58,12 +57,13 @@ explode_archive(char *sapp_file, char *tmpdir) {
     snprintf(explode_sapp, BUFF + sapp_file_len, "%s/sapp_explode '%s' '%s'", LIBEXECPATH, sapp_file, tmpdir);
 
     system(explode_sapp);
-    dmsg("Finished exploding archive\n");
+    message(2,"Finished exploding archive\n");
     free(explode_sapp);
 }
 
 int main(int argc, char *argv[]) {
 
+    proglevel = DEFAULTLEVEL;
     //Make sure the UID is set back to the user
     int uid = getuid();
     int euid = geteuid();
@@ -74,6 +74,9 @@ int main(int argc, char *argv[]) {
        show_usage();
        return(exit_status);
     }
+    
+    //Check for -d if so set level to 3. For now increased to 2.
+    proglevel = 2;
 
     int i=0, j=0;
     char cwd[BUFF];
@@ -86,18 +89,18 @@ int main(int argc, char *argv[]) {
 //    char *bind_mountpoint;
 
     seteuid(uid);
-    dmsg("Initalization...\n");
+    message(2,"Initalization...\n");
     
     getcwd(cwd, BUFF);
 
-    dmsg("Creating temporary directory space\n");
+    message(2,"Creating temporary directory space\n");
     //Setup temporary space to work with
     //Create tmpdir
     tmpdir = (char *) malloc(SMALLBUFF);
     snprintf(tmpdir, /*sizeof(tmpdir)*/ SMALLBUFF, "%s.%d.%d", TEMP_PATH, uid, getpid());
     mk_folder(tmpdir);
 
-    dmsg("Exploding the sapp file to temporary directory\n");
+    message(2,"Exploding the sapp file to temporary directory\n");
     //Get sapp file and explode the cpio archive into TEMP dir
     sapp_file_len = strlen(argv[1]);
     sapp_file = (char *) malloc(sapp_file_len + 1); //Plus 1 for \0
@@ -127,7 +130,7 @@ int main(int argc, char *argv[]) {
     //snprintf(bind_mountpoint, BUFF, "%s/home", tmpdir);
     //mkdir(bind_mountpoint, 0770);
     
-    dmsg("Escalating privs\n");
+    message(2,"Escalating privs\n");
 
     seteuid(0);
     //Get down to root
@@ -135,27 +138,28 @@ int main(int argc, char *argv[]) {
      * It doesn't appear that the mount is necessary.. the chdir command
      * escapes the chroot! Is this reliable?
     if ( mount("/home", bind_mountpoint, "", MS_BIND, NULL) != 0 ) {
-        printf("Mount failed\n\n");
+        message(1,"Mount failed\n\n");
     }
     */
 
-    dmsg("Forking\n");
+    message(2,"Forking\n");
     pid_t forkpid = fork();
     if ( forkpid == 0 ) { //Child process starts here
         int retval;
-        dmsg("Hello from child spawn\n");
+        message(2,"Hello from child spawn\n");
         //Start the chroot on TEMP dir
-        dmsg("Preparing Chroot\n");
+        message(2,"Preparing Chroot\n");
         if ( chroot(tmpdir) != 0 ) {
-            printf("Error: failed chroot to: %s\n", tmpdir);
+            message(1,strcat("Error: failed chroot to:",tmpdir));
+            message(1,"\n");
             exit(255);
         }
         seteuid(uid);
-        dmsg("Changing to working dir\n");
+        message(2,"Changing to working dir\n");
         chdir(cwd);
-        dmsg("running command: ");
-        dmsg(run_cmd);
-        dmsg("\n");
+        message(3,"running command: ");
+        message(3,run_cmd);
+        message(3,"\n");
         retval = system(run_cmd);
         exit(WEXITSTATUS(retval)); //Child stops running here
     } else if ( forkpid > 0 ) { 
@@ -165,16 +169,16 @@ int main(int argc, char *argv[]) {
         int retval;
         waitpid(forkpid, &retval, 0);
         exit_status = WEXITSTATUS(retval);
-        dmsg("Child has returned home!\n");
+        message(2,"Child has returned home!\n");
     } else {
-        printf("Could not fork!!!\n");
+        message(1,"Could not fork!!!\n");
     }
 
     //Root Cleanup
     /*
      * Uncomment if we end up doing the mount
     if ( umount(bind_mountpoint) != 0) {
-        printf("Umount failed\n\n");
+        message(1,"Umount failed\n\n");
     }
     */
 
