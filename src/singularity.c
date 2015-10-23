@@ -4,31 +4,35 @@
 #include <string.h>
 #include <sys/mount.h>
 #include <unistd.h>
+#include "singularity.h"
 #include "constants.h"
-//#include "config.h"
+#include "config.h"
 
 int proglevel;
+
 void message(int msglevel,char *message) {
     if ( msglevel <= proglevel ) {
         printf(message);
     }
 }
 
-show_usage() {
+int show_usage() {
     message(0,"Usage : singularity filename.sapp application-arguments\n");
     message(0,"        -h|-help    for this usage info\n");
     message(0,"        -d|-debug   Show debugging output\n\n");
+
+    return(0);
 }
 
-need_help(char *arg1) {
+int need_help(char *arg1) {
     if( !strcmp(arg1,"-h") || !strcmp(arg1,"--h") || !strcmp(arg1,"-help") || !strcmp(arg1,"--help")) {    
        return(1);
-    } else {
-       return(0);
     }
+
+    return(0);
 }
 
-mk_folder(char *tmpdir) {
+int mk_folder(char *tmpdir) {
     char *mktmpdir;
 
     mktmpdir = (char *) malloc(SMALLBUFF);
@@ -36,9 +40,11 @@ mk_folder(char *tmpdir) {
   
     system(mktmpdir);
     free(mktmpdir);
+
+    return(0);
 }
 
-rm_folder(char *tmpdir) {
+int rm_folder(char *tmpdir) {
     char *rmtmpdir;
 
     rmtmpdir = (char *) malloc(SMALLBUFF);
@@ -46,9 +52,11 @@ rm_folder(char *tmpdir) {
    
     system(rmtmpdir);
     free(rmtmpdir);
+
+    return(0);
 }
 
-explode_archive(char *sapp_file, char *tmpdir) {
+int explode_archive(char *sapp_file, char *tmpdir) {
     char *explode_sapp;
     int sapp_file_len;
 
@@ -59,6 +67,8 @@ explode_archive(char *sapp_file, char *tmpdir) {
     system(explode_sapp);
     message(2,"Finished exploding archive\n");
     free(explode_sapp);
+
+    return(0);
 }
 
 int main(int argc, char *argv[]) {

@@ -47,7 +47,15 @@ check_valid() {
 
 # Create SAPP file header
 echo "#!/bin/env singularity" > $SAPPFILE
-echo "PAYLOAD=3" >> $SAPPFILE
+echo "PAYLOAD=7" >> $SAPPFILE
+echo "DATE='`date +%Y.%m.%d`'" >> $SAPPFILE
+echo "USER='`id -un`'" >> $SAPPFILE
+echo "BUILDHOST='`hostname`'" >> $SAPPFILE
+if [ -f "/etc/redhat-release" ]; then
+    echo "OSVERSION='`cat /etc/redhat-release`'" >> $SAPPFILE
+elif [ -f "/etc/debian-release" ]; then
+    echo "OSVERSION='`cat /etc/debian-release`'" >> $SAPPFILE
+fi
 
 (cd $DIRECTORY; find . | cpio -o --quiet -H newc ) | gzip -c9 >> $SAPPFILE
 
