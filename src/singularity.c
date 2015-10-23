@@ -5,7 +5,7 @@
 #include <sys/mount.h>
 #include <unistd.h>
 #include "constants.h"
-//#include "config.h"
+#include "config.h"
 
 int proglevel;
 void message(int msglevel,char *message) {
