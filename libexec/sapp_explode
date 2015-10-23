@@ -1,0 +1,62 @@
+#!/bin/sh
+
+SAPPFILE=$1
+DIRECTORY=$2
+
+if [ -z "$SAPPFILE" -o -z "$DIRECTORY" ]; then
+    echo "USAGE: [SAPP FILE] [EXPLODE DIRECTORY]"
+    exit 1
+fi
+
+if [ ! -f "$SAPPFILE" ]; then
+    echo "ERROR: Could not find SAPP file: $SAPPFILE"
+    exit 1
+fi
+
+if [ ! -d "$DIRECTORY" ]; then
+    if ! mkdir -p "$DIRECTORY"; then
+        echo "ERROR: Could not create target directory: $DIRECTORY"
+        exit 1
+    fi
+fi
+
+
+check_valid() {
+    STRING=$1
+    PATTERN=$2
+    case $STRING in
+        $PATTERN)
+            echo "good"
+        ;;
+        *)
+            echo "bad"
+            return 1
+        ;;
+    esac
+    return 0
+}
+
+
+# TODO Check for root here...
+
+
+# Check for SAPP file header
+
+if head -n 1 "$SAPPFILE" | grep -q "^#!/"; then
+    PAYLOAD=`head -n 2 "$SAPPFILE" | grep "^PAYLOAD=" | sed -e 's@^PAYLOAD=@@'`
+    if [ -z "$PAYLOAD" ]; then
+        # Assume the header is at least as long as the intrepter
+        PAYLOAD=2
+    else
+        if ! check_valid "$PAYLOAD" "[0-9]*"; then
+            echo "ERROR: Header Length read is not numeric."
+            exit 1
+        fi
+    fi
+fi
+
+if [ -n "$PAYLOAD" ]; then
+    tail -n "+$PAYLOAD" $SAPPFILE | zcat | (cd "$DIRECTORY"; cpio -id --quiet)
+else
+    zcat $SAPPFILE | (cd "$DIRECTORY"; cpio -id --quiet)
+fi
