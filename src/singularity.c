@@ -10,7 +10,7 @@
 
 int proglevel;
 
-void message(int msglevel,char *message) {
+int message(int msglevel,char *message) {
     if ( msglevel <= proglevel ) {
         printf(message);
     }
