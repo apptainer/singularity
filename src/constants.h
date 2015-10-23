@@ -9,7 +9,7 @@
 #define LIBEXECPATH "undefined"
 #endif
 
-// Levels of outpur
+// Levels of output
 // Errors - 1
 // Watch code flow - 2
 // Debug - 3
