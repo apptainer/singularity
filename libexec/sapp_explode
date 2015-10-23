@@ -26,7 +26,7 @@ check_valid() {
     PATTERN=$2
     case $STRING in
         $PATTERN)
-            echo "good"
+            true
         ;;
         *)
             echo "bad"

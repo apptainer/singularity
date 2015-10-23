@@ -1,6 +1,21 @@
 #!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+libexecdir="@libexecdir@"
 
 
+RETVAL=0
 TMPDIR=`mktemp -d /tmp/singularity-build.XXXXXXXX`
 INCLUDEBIN="/bin/sh"
 LIBSUFFIX=`uname -m | grep -qv x86_64 || echo 64`
@@ -150,10 +165,13 @@ fi
 chmod +x $TMPDIR/run
 
 
-(cd $TMPDIR; find . | cpio -o --quiet -H newc ) | gzip -c9 > $OUTPUT
+if $libexecdir/singularity/sapp_archive $TMPDIR $OUTPUT; then
+    echo "WROTE: $OUTPUT"
+    chmod +x $OUTPUT
+    cleanup
+else
+    RETVAL=1
+fi
 
-echo "WROTE: $OUTPUT"
 
-
-cleanup
-exit
+exit $RETVAL

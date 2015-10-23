@@ -7,6 +7,14 @@
 #include "constants.h"
 #include "config.h"
 
+
+
+void dmsg(char *message) {
+    if ( 0 ) {
+        printf(message);
+    }
+}
+
 show_usage() {
     printf("Usage : singularity filename.sapp application-arguments\n");
     printf("        -h|-help    for this usage info\n");
@@ -47,16 +55,11 @@ explode_archive(char *sapp_file, char *tmpdir) {
 
     sapp_file_len = strlen(sapp_file);
     explode_sapp = (char *) malloc(BUFF + sapp_file_len);
-    snprintf(explode_sapp, BUFF + sapp_file_len, "zcat %s | (cd %s; cpio -id --quiet)", sapp_file, tmpdir);
+    snprintf(explode_sapp, BUFF + sapp_file_len, "%s/sapp_explode '%s' '%s'", LIBEXECPATH, sapp_file, tmpdir);
 
     system(explode_sapp);
+    dmsg("Finished exploding archive\n");
     free(explode_sapp);
-}
-
-void dmsg(char *message) {
-    if ( 0 ) {
-        printf(message);
-    }
 }
 
 int main(int argc, char *argv[]) {
@@ -103,9 +106,10 @@ int main(int argc, char *argv[]) {
 
     //Get app arguments and create run command
     for (i = 2; i < argc; i++) {
-        arg_string_len += strlen(argv[i]) + 1;
+        arg_string_len += strlen(argv[i]);
     }
-    arg_string_len ++;
+    // Add spaces
+    arg_string_len += argc;
     arg_string = (char *) malloc(arg_string_len);
 
     for (i = 2; i < argc; i++) {
@@ -116,7 +120,7 @@ int main(int argc, char *argv[]) {
     }
     arg_string[j] = '\0';
     run_cmd = (char *) malloc(BUFF + arg_string_len);
-    snprintf(run_cmd, BUFF, "/run %s", arg_string);
+    snprintf(run_cmd, BUFF + arg_string_len, "/run \"%s\"", arg_string);
 
     //Setup for the bind mounts
     //bind_mountpoint = (char *) malloc(BUFF);
@@ -139,13 +143,19 @@ int main(int argc, char *argv[]) {
     pid_t forkpid = fork();
     if ( forkpid == 0 ) { //Child process starts here
         int retval;
+        dmsg("Hello from child spawn\n");
         //Start the chroot on TEMP dir
+        dmsg("Preparing Chroot\n");
         if ( chroot(tmpdir) != 0 ) {
             printf("Error: failed chroot to: %s\n", tmpdir);
             exit(255);
         }
         seteuid(uid);
+        dmsg("Changing to working dir\n");
         chdir(cwd);
+        dmsg("running command: ");
+        dmsg(run_cmd);
+        dmsg("\n");
         retval = system(run_cmd);
         exit(WEXITSTATUS(retval)); //Child stops running here
     } else if ( forkpid > 0 ) { 

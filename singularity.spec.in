@@ -37,6 +37,7 @@ rm -rf $RPM_BUILD_ROOT
 #attr(0755, root, root) %config /etc/init.d/aggregator
 %attr(4755, root, root) %{_bindir}/singularity
 %{_bindir}/singularity-build
+%{_libexecdir}/singularity
 
 
 

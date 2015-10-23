@@ -1,6 +1,7 @@
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
-DISTCLEANFILES =
-CLEANFILES = Makefile core.* *~ 
+DISTCLEANFILES = Makefile
+CLEANFILES = core.* *~ 
+AM_CFLAGS = -DLIBEXECPATH=\"$(libexecdir)/singularity\" -g
 
 
 bin_PROGRAMS = singularity

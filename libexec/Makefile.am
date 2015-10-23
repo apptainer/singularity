@@ -1,6 +1,6 @@
-scriptlibexecdir = $(libexecdir)/warewulf/wwinit
+scriptlibexecdir = $(libexecdir)/singularity
 
-dist_scriptlibexec_SCRIPTS = sapp_explode
+dist_scriptlibexec_SCRIPTS = sapp_explode sapp_archive
 
 MAINTAINERCLEANFILES = Makefile.in
 

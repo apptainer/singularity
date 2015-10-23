@@ -5,4 +5,6 @@
 #define BUFF 512
 
 
-
+#ifndef LIBEXECPATH
+#define LIBEXECPATH "undefined"
+#endif

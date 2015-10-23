@@ -31,7 +31,7 @@ check_valid() {
     PATTERN=$2
     case $STRING in
         $PATTERN)
-            echo "good"
+            true
         ;;
         *)
             echo "bad"
@@ -50,7 +50,5 @@ echo "#!/bin/env singularity" > $SAPPFILE
 echo "PAYLOAD=3" >> $SAPPFILE
 
 (cd $DIRECTORY; find . | cpio -o --quiet -H newc ) | gzip -c9 >> $SAPPFILE
-
-echo "WROTE: $SAPPFILE"
 
 exit 0
