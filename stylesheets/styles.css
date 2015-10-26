@@ -51,16 +51,13 @@ blockquote {
 }
 
 code, pre {
-  font-family:Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;
-  color:#C1CADE;
-  font-size:12px;
-}
-
-pre {
-  padding:8px 15px;
-  background: #f8f8f8;
-  border-radius:5px;
-  border:1px solid #e5e5e5;
+  font-family: Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;
+  color: #DEDEDE;
+  font-size: 12px;
+  padding: 8px 15px;
+  background: #4C4C4C;
+  border-radius: 5px;
+  border:1px solid #C9C9C9;
   overflow-x: auto;
 }
 
