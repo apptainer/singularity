@@ -30,26 +30,30 @@ Welcome to Singularity...
       </header>
       <section>
         <h1>Singularity</h1>
+<h2>Abstract</h2>
 <p>
-Singularity is a package building and runtime environment built to
+Singularity is a package building and run-time environment built to
 achieve portable application bundles which can be then run on any
-Linux system without ever having to worry about portability.
+Linux system without ever having to worry about portability. These
+portable application bundles never need to be installed, and can
+be called directly for run-time.
 </p>
 
+<h2>Background</h2>
 <p>
 There are several methods to implement portable application stacks
 at present. Among them are containers and virtual machines. But when
 using these solutions to package a single application (or application
 stack), one ends up having to manage the entire operating system
 overhead as well (this includes security, updates, the size overhead,
-etc..) just to distribute a single application or workflow. While
+etc..) just to distribute a single application or work flow. While
 virtual machines and containers have very strong usage benefits,
-application portability and distribution is not an effecient use of
+application portability and distribution is not an efficient use of
 these technologies.
 </p>
 
 <p>
-Singularity works on a completely different premis. Contrary to
+Singularity works on a completely different premise. Contrary to
 building and managing an entire operating system environment to
 distribute a custom application, configuration or demonstration,
 Singularity packages all of the required dependencies and creates an
@@ -60,27 +64,29 @@ reliably.
 <h2>Portability</h2>
 <p>
 A Singularity Application (SAPP) is a package bundle which contains
-within it all of the required depdencies necessary to run. The SAPP
-can contain anything from a simple binary executible to an entire
-pipeline or workflow of multiple applications. There could be
+within it all of the required dependencies necessary to run. The SAPP
+can contain anything from a simple binary executable to an entire
+pipeline or work flow of multiple applications. There could be
 multiple services which can be run within the SAPP environment and
 interaction with the SAPP file is fully configurable. For example
 in the simple configuration you may choose to emulate the program
 arguments so it operates just like running the application directly. 
 </p>
 
-<h2>Security</h2>
-<p>
-
-</p>
-
 <h2>Reproducibility</h2>
 <p>
-
+Each SAPP includes all of the application's necessary run-time
+libraries and can even include the required data and files for a
+particular application to run. This encapsulation of the entire
+user-space environment facilitates not only portability but also
+reproducibility.
 </p>
 
-<h2>Usage</h2>
+<h2>Example Usages</h2>
 <p>
+The following usage example creates a SAPP file for a simple 'find'
+command. The SAPP file can be copied to other operating systems and
+run there.
 <pre>
 $ cd ~
 $ cat find.spec
@@ -104,8 +110,9 @@ services derived from or using this software.
       </section>
       <footer>
         <p>
-            This project is maintained by:<br/><a href="https://gmkurtzer.github.io">Gregory M. Kurtzer</a><br/>&nbsp;<br/>
-            and hosted on <a href="https://github.com">GitHub</a>
+            Project lead: <a href="https://gmkurtzer.github.io">Gregory M. Kurtzer</a><br/>
+            Sponsored by: <a href="http://hpcs.lbl.gov/">HPC @ LBNL</a><br/>
+            Hosted on: <a href="https://github.com">GitHub</a>
         </p>
       </footer>
     </div>
