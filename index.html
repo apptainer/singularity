@@ -17,20 +17,16 @@
       <header>
         <img src="images/singularity_logo1.png" border="0"/>
         <p></p>
-
-<p>
-Welcome to Singularity...
-
-</p>
-
-        <p class="view"><a href="https://github.com/gmkurtzer/singularity">View the Project on GitHub <small>gmkurtzer/singularity</small></a></p>
-
-
         <ul>
           <li><a href="https://github.com/gmkurtzer/singularity/zipball/master">Download <strong>ZIP File</strong></a></li>
           <li><a href="https://github.com/gmkurtzer/singularity/tarball/master">Download <strong>TAR Ball</strong></a></li>
           <li><a href="https://github.com/gmkurtzer/singularity">View On <strong>GitHub</strong></a></li>
         </ul>
+
+<p>
+Welcome to Singularity...
+</p>
+
       </header>
       <section>
         <h1>Singularity</h1>
@@ -85,20 +81,31 @@ arguments so it operates just like running the application directly.
 
 <h2>Usage</h2>
 <p>
-
+<pre>
+$ cd ~
+$ cat find.spec
+program /usr/bin/find
+$ singularity-build find.spec
+   ...
+WROTE: find.sapp
+$ singularity find.sapp . -maxdepth 1 -name \*.sapp
+./find.sapp
+</pre>
 </p>
 
 <h2>License</h2>
 <p>
-
+Singularity is released under a modified BSD license. The only modification
+being that you may not use the name's of any project members or contributors
+(namely UC or the US Department of Energy) to endorse or promote products or
+services derived from or using this software.
 </p>
-
-
 
       </section>
       <footer>
-        <p>This project is maintained by <a href="https://github.com/gmkurtzer">gmkurtzer</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+        <p>
+            This project is maintained by <a href="https://gmkurtzer.github.io">Gregory M. Kurtzer</a> and hosted on <a href="https://github.com">GitHub</a>
+        </p>
       </footer>
     </div>
     <script src="javascripts/scale.fix.js"></script>
