@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     }
     
     //Check for -d if so set level to 3. For now increased to 2.
-    proglevel = 2;
+    //proglevel = 2;
 
     int i=0, j=0;
     char cwd[BUFF];
