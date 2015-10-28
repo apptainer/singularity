@@ -1,0 +1,43 @@
+#!/bin/sh
+
+
+if [ -z "$MESSAGELEVEL" ]; then
+    echo "Warning: MESSAGELEVEL is not defined!"
+fi
+
+
+message() {
+    LEVEL=$1
+    if [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
+        echo "$2"
+    fi
+    return
+}
+
+
+get_key_from_conf() {
+    KEY="$1"
+    FILE="$2"
+    RETVAL=1
+    grep -i "^$KEY: " $FILE | while read i; do
+        echo "$i" | sed -e "s@^$KEY: @@i"
+        RETVAL=0
+    done
+    return $RETVAL
+}
+
+copy_file_to_sappdir() {
+    file="$1"
+    sappdir="$2"
+    DIRNAME=`dirname $file`
+    if [ ! -d "$sappdir/$DIRNAME" ]; then
+        message 3 "creating target dir:   $DIRNAME"
+        mkdir -p "$sappdir/$DIRNAME"
+    fi
+    if [ -f "$sappdir/$file" ]; then
+        message 4 "file already included: $file"
+    else
+        message 2 "including file:        $file"
+        cp -L "$file" "$sappdir/$file"
+    fi
+}

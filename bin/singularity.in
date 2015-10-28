@@ -1,0 +1,131 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+libexecdir="@libexecdir@"
+version="@VERSION"
+
+RETVAL=0
+MESSAGELEVEL=1
+
+export prefix exec_prefix libexecdir RETVAL MESSAGELEVEL
+
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+usage() {
+    echo "USAGE: $0 (options) [config] (output file)"
+    echo
+    echo "OPTIONS:"
+    echo "    -h --help     Display this usage summary"
+    echo "       --version  Show application version"
+    echo "    -v --verbose  Increase verbosity +1"
+    echo "    -d --debug    Show debugging information"
+    echo
+    echo "COMMANDS:"
+    echo "    build         Build a new SAPP bundle based on SPEC"
+    echo "    info          Display information on a SAPP bundle"
+    echo "    run           Execute/run a SAPP bundle"
+    echo
+}
+
+message() {
+    LEVEL=$1
+    if [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
+        echo "$2"
+    fi
+    return
+}
+
+# Initial argument processing. Iterate through arguments until argument
+# is not recognized as an argument, which must mean it is a command. So
+# exit the arg processing and continue to command section.
+while true; do
+    case $1 in
+        -h|--help)
+            usage
+            exit
+        ;;
+        --version)
+            message 0 "$version"
+            exit
+        ;;
+        -d|--debug)
+            MESSAGELEVEL=5
+            message 5 "enabling debugging"
+            #set -x
+            shift
+        ;;
+        -v|--verbose)
+            MESSAGELEVEL=`expr $MESSAGELEVEL + 1`
+            message 2 "increasing verbosity level"
+            shift
+        ;;
+        -*)
+            message 1 "Unknown argument: $1"
+            exit 1
+        ;;
+        *)
+            message 4 "ending argument loop"
+            break
+        ;;
+    esac
+done
+
+
+COMMAND="$1"
+shift
+export COMMAND
+
+case $COMMAND in
+    build)
+        SPEC=$1
+        message 3 "executing build on '$SPEC'"
+        if [ -f "$libexecdir/singularity/sapp_build" ]; then
+            exec $libexecdir/singularity/sapp_build "$@"
+        else
+            echo "Could not exec $libexecdir/singularity/sapp_build"
+            exit 1
+        fi
+    ;;
+    run)
+        message 3 "executing runtime with args: $@"
+        if [ -f "$libexecdir/singularity/sapp_run" ]; then
+            exec $libexecdir/singularity/sapp_run "$@"
+        else
+            echo "Could not exec $libexecdir/singularity/sapp_run"
+            exit 1
+        fi
+    ;;
+    info)
+        SAPP=$1
+        message 3 "showing info for SAPP '$SAPP'"
+        if [ -f "$libexecdir/singularity/sapp_info" ]; then
+            exec $libexecdir/singularity/sapp_info "$SAPP"
+        else
+            echo "Could not exec $libexecdir/singularity/sapp_info"
+            exit 1
+        fi
+    ;;
+    *)
+        usage
+        RETVAL=1
+    ;;
+esac
+
+
+exit $RETVAL

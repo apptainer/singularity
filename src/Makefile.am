@@ -4,6 +4,7 @@ CLEANFILES = core.* *~
 AM_CFLAGS = -DLIBEXECPATH=\"$(libexecdir)/singularity\" -g
 
 
+bindir = $(libexecdir)/singularity
 bin_PROGRAMS = singularity
 
 AM_CXXFLAGS = $(INTI_CFLAGS)

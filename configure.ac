@@ -22,7 +22,7 @@ AC_CONFIG_FILES([
    singularity.spec
    src/Makefile
    bin/Makefile
-   bin/singularity-build
+   bin/singularity
    libexec/Makefile
 ])
 AC_OUTPUT

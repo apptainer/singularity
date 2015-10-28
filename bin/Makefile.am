@@ -1,5 +1,5 @@
 
-dist_bin_SCRIPTS = singularity-build
+dist_bin_SCRIPTS = singularity
 
 MAINTAINERCLEANFILES = Makefile.in
 
