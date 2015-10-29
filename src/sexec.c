@@ -23,7 +23,7 @@
 #include <fcntl.h>  
 #include "config.h"
 
-int main(void) {
+int main(int argc, char **argv) {
     char *sappdir;
     struct stat sappdirAttribs = {0};
     int uid = getuid();
@@ -94,7 +94,7 @@ int main(void) {
     }
 
     // Exec 
-    if ( execv("/singularity", NULL) != 0 ) {
+    if ( execv("/singularity", argv) != 0 ) {
     //if ( execv("/singularity", (char **) "") != 0 ) {
         fprintf(stderr, "ERROR: Failed to exec SAPP envrionment\n");
         return(2);
