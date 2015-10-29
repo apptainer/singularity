@@ -1,5 +1,8 @@
 #!/bin/sh
 
+HEADER_END="SINGULARITY_END_HEADER"
+export HEADER_END
+
 
 if [ -z "$MESSAGELEVEL" ]; then
     echo "Warning: MESSAGELEVEL is not defined!"
@@ -73,3 +76,18 @@ copy_file_to_sappdir() {
     fi
     return $RETVAL
 }
+
+check_pattern() {
+    STRING=$1
+    PATTERN=$2
+    case "$PATTERN" in
+        $STRING)
+            true
+        ;;
+        *)
+            return 1
+        ;;
+    esac
+    return 0
+}
+

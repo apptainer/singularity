@@ -32,6 +32,7 @@ if [ -z "$TMPDIR" ]; then
     exit 1
 fi
 
+LIBSUFFIX=`uname -m | grep -q "x86_64" && echo "64"`
 
 
 message 2 "Searching for library dependencies"

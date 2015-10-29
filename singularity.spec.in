@@ -34,10 +34,12 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-, root, root)
 %doc AUTHORS COPYING ChangeLog INSTALL NEWS README
-#attr(0755, root, root) %config /etc/init.d/aggregator
-%attr(4755, root, root) %{_bindir}/singularity
+%dir %{_libexecdir}/singularity
+%attr(4755, root, root) %{_libexecdir}/singularity/sexec
+%{_libexecdir}/singularity/functions
+%{_libexecdir}/singularity/sapp_*
 %{_bindir}/singularity
-%{_libexecdir}/singularity
+%{_bindir}/srunner
 
 
 
