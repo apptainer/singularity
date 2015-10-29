@@ -27,11 +27,16 @@
 int main(int argc, char **argv) {
     char *sappdir;
     char *singularitypath;
+    char *devdir;
+    char *devrandom;
+    char *devurandom;
+    char *devnull;
     struct stat sappdirstat;
     struct stat singularitystat;
+    int cwd_fd;
+    mode_t process_mask = umask(0);
     uid_t uid = getuid();
     gid_t gid = getgid();
-    int cwd_fd;
 
 
     // We don't run as root...
@@ -54,11 +59,6 @@ int main(int argc, char **argv) {
 
     // Get sappdir from the environment (we check on this shortly)
     sappdir = getenv("SAPPDIR");
-
-    // And define the singularity path for us to check with shortly
-    singularitypath = (char *) malloc(strlen(sappdir) + 13);
-    snprintf(singularitypath, strlen(sappdir) + 13, "%s/singularity", sappdir);
-
 
 
     /*
@@ -86,6 +86,8 @@ int main(int argc, char **argv) {
     }
 
     // Check the singularity within the SAPPDIR
+    singularitypath = (char *) malloc(strlen(sappdir) + 13);
+    snprintf(singularitypath, strlen(sappdir) + 13, "%s/singularity", sappdir);
     if (stat(singularitypath, &singularitystat) < 0) {
         fprintf(stderr, "ERROR: Could not stat %s!\n", singularitypath);
         return(1);
@@ -104,6 +106,20 @@ int main(int argc, char **argv) {
     }
 
 
+    // Define strings for device nodes
+    devdir = (char *) malloc (strlen(sappdir) + 5);
+    snprintf(devdir, strlen(sappdir) + 5, "%s/dev", sappdir);
+
+    devrandom = (char *) malloc (strlen(sappdir) + 12);
+    snprintf(devrandom, strlen(sappdir) + 12, "%s/dev/random", sappdir);
+
+    devurandom = (char *) malloc (strlen(sappdir) + 13);
+    snprintf(devurandom, strlen(sappdir) + 13, "%s/dev/urandom", sappdir);
+
+    devnull = (char *) malloc (strlen(sappdir) + 10);
+    snprintf(devnull, strlen(sappdir) + 10, "%s/dev/null", sappdir);
+
+
 
     /*
      * Warning! Danger! Entering the privledged zone!
@@ -115,11 +131,23 @@ int main(int argc, char **argv) {
         return(1);
     }
 
+    // Failure is acceptable here
+    mkdir(devdir, 0755);
+    chown(devdir, uid, gid);
+    mknod(devrandom, S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,8));
+    chown(devrandom, uid, gid);
+    mknod(devurandom, S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,9));
+    chown(devurandom, uid, gid);
+    mknod(devnull, S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,3));
+    chown(devnull, uid, gid);
+    umask(process_mask);
+
     // Do the chroot
     if ( chroot(sappdir) != 0 ) {
         fprintf(stderr, "ERROR: failed enter SAPPDIR: %s\n", sappdir);
         return(255);
     }
+
 
     // Dump all privs
     if ( setregid(gid, gid) != 0 ) {

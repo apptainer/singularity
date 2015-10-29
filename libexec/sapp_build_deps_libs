@@ -34,6 +34,8 @@ fi
 
 LIBSUFFIX=`uname -m | grep -q "x86_64" && echo "64"`
 
+INCLUDE_LIBS="/lib64/libnss_files.so.2 /lib/libnss_files.so.2 /lib64/libnss_dns.so.2 /lib/libnss_dns.so.2 /lib64/libresolv.so.2 /lib/libresolv.so.2"
+
 
 message 2 "Searching for library dependencies"
 find $TMPDIR -type f -executable -print | while read file; do
@@ -51,6 +53,21 @@ find $TMPDIR -type f -executable -print | while read file; do
             fi
         fi
     done
+done
+
+message 2 "Including statically defined libraries"
+for dep in $INCLUDE_LIBS; do
+    if [ -f "$dep" ]; then
+        BASENAME=`basename $dep`
+        message 3 "found dependency:      $dep"
+        if [ ! -d "$TMPDIR/lib$LIBSUFFIX" ]; then
+            mkdir -p "$TMPDIR/lib$LIBSUFFIX"
+        fi
+        if [ ! -f "$TMPDIR/lib$LIBSUFFIX/$BASENAME" ]; then
+            message 2 "copying dependency:    $dep"
+            cp -L "$dep" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
+        fi
+    fi
 done
 
 exit 0

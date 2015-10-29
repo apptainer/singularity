@@ -88,6 +88,21 @@ if [ "$?" -ne "0" ]; then
     exit 1
 fi
 
+message 3 "Creating template files"
+if [ ! -d "$TMPDIR/etc" ]; then
+    mkdir -p "$TMPDIR/etc"
+fi
+cat <<EOF > "$TMPDIR/etc/nsswitch.conf"
+passwd:     files sss
+shadow:     files sss
+group:      files sss
+#hosts:     db files nisplus nis dns
+hosts:      files dns myhostname
+EOF
+cat <<EOF > "$TMPDIR/etc/resolv.conf"
+nameserver 8.8.8.8
+EOF
+
 
 message 5 "Building singularity runscript"
 echo "#!/bin/sh" > $TMPDIR/singularity
