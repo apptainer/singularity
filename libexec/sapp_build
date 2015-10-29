@@ -40,9 +40,15 @@ fi
 
 NAME=`get_key_from_conf "Name" $SAPPSPEC`
 SUMMARY=`get_key_from_conf "Summary" $SAPPSPEC`
-SAPPNAME=`echo "$NAME" | sed -e 's@ @_@g'`
 TMPDIR=`mktemp -d /tmp/.singularity.XXXXXXX`
 export TMPDIR
+
+if [ -n "$NAME" ]; then
+    SAPPNAME=`echo "$NAME" | sed -e 's@ @_@g'`
+else
+    SAPPNAME=`basename $SAPPSPEC`
+    NAME="$SAPPNAME"
+fi
 
 message 1 "Building '$NAME'"
 
