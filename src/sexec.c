@@ -33,9 +33,24 @@ int main(int argc, char **argv) {
     gid_t gid = getgid();
     int cwd_fd;
 
+
+    // We don't run as root...
+    if ( uid == 0 || gid == 0 ) {
+        fprintf(stderr, "ERROR: Do not run singularities as root!\n");
+        return(255);
+    }
+
+    // Lets start off as the right user.
+    if ( seteuid(uid) != 0 ) {
+        fprintf(stderr, "ERROR: Could not set effective user privledges to %d!\n", uid);
+        return(255);
+    }
+
+
     // Get sappdir from the environment (we check on this shortly)
     sappdir = getenv("SAPPDIR");
 
+    // And define the singularity path for us to check
     singularitypath = (char *) malloc(strlen(sappdir) + 13);
     snprintf(singularitypath, strlen(sappdir) + 13, "%s/singularity", sappdir);
 
