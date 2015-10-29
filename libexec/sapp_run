@@ -81,8 +81,8 @@ for i in sapp_run_explode sapp_run_check; do
 done
 
 if [ -x "$libexecdir/singularity/sexec" ]; then
-    message 2 "Running Sexec"
-    $libexecdir/singularity/sexec "$@"
+    message 2 "Exec'ing Sexec"
+    exec $libexecdir/singularity/sexec "$@"
 fi
 
 
