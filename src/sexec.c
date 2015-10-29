@@ -37,23 +37,23 @@ int main(void) {
      */
 
     if ( cwd == NULL ) {
-        printf("ERROR: Could not obtain current working directory\n");
+        fprintf(stderr, "ERROR: Could not obtain current working directory\n");
         return(1);
     }
 
     if ( sappdir == NULL ) {
-        printf("ERROR: SAPPDIR undefined\n");
+        fprintf(stderr, "ERROR: SAPPDIR undefined\n");
         return(1);
     }
 
     if (lstat(sappdir, &sappdirAttribs) < 0) {
-        printf("ERROR: Could not stat %s\n", sappdir);
+        fprintf(stderr, "ERROR: Could not stat %s\n", sappdir);
         return(1);
     }
 
-    if ( uid != (int)sappdirAttribs.st_uid) ) {
-        printf("ERROR: Will not execute in a SAPPDIR you don't own. (%d)\n", (int)sappdirAttribs.st_uid);
-        !greturn(255);
+    if ( uid != (int)sappdirAttribs.st_uid ) {
+        fprintf(stderr, "ERROR: Will not execute in a SAPPDIR you don't own. (%s:%d)\n", sappdir, (int)sappdirAttribs.st_uid);
+        return(255);
     }
 
 
@@ -66,7 +66,7 @@ int main(void) {
 
     // Do chroot
     if ( chroot(sappdir) != 0 ) {
-        printf("ERROR: failed chroot to: %s\n", sappdir);
+        fprintf(stderr, "ERROR: failed enter SAPPDIR: %s\n", sappdir);
         return(255);
     }
 
@@ -76,12 +76,12 @@ int main(void) {
 
     // Chdir and exec code
     if ( chdir(cwd) != 0 ) {
-        printf("ERROR: Could not change to working directory\n");
+        fprintf(stderr, "ERROR: Could not change to working directory\n");
         return(1);
     }
     execv("/singularity", NULL);
 
     // We should *never* reach here, but if we do... error out hard!
-    printf("ERROR: Failed to exec SAPP file\n");
+    fprintf(stderr, "ERROR: Failed to exec SAPP file\n");
     return(255);
 }
