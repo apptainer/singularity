@@ -91,6 +91,8 @@ fi
 
 message 5 "Building singularity runscript"
 echo "#!/bin/sh" > $TMPDIR/singularity
+echo "PATH=/bin:/usr/bin:/sbin:/usr/sbin" >> $TMPDIR/singularity
+echo "export PATH" >> $TMPDIR/singularity
 get_section_from_conf "runscript" $SAPPSPEC >> $TMPDIR/singularity
 if [ "$?" -ne 0 -a -n "$runprog" ]; then
     message 2 "generating a basic singularity runscript"
