@@ -37,7 +37,7 @@ if [ -x "$SAPPDIR/singularity" ]; then
     message 2 "Using Cached environment"
 else
     message 2 "No singularity cached"
-    stdbuf -i0 -o0 cat "$SAPPFILE" | while read i; do
+    stdbuf -i0 -o0 head -n 10 "$SAPPFILE" | while read i; do
         if check_pattern "#!/*" "$i"; then
             HEADER=3
         elif [ -z "$NOTFIRST" ]; then
@@ -50,6 +50,11 @@ else
         NOTFIRST=1
     done
     PAYLOAD_START="$?"
+
+    if [ "$PAYLOAD_START" -gt 10 ]; then
+        message 0 "ERROR: Could not find end of SAPP header"
+        exit 1
+    fi
     message 3 "SAPP payload starts at $PAYLOAD_START"
 
     message 2 "Caching SAPP archive"
