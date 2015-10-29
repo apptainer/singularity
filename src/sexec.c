@@ -46,24 +46,18 @@ int main(int argc, char **argv) {
         return(255);
     }
 
-
-    // Get sappdir from the environment (we check on this shortly)
-    sappdir = getenv("SAPPDIR");
-
-    // And define the singularity path for us to check
-    singularitypath = (char *) malloc(strlen(sappdir) + 13);
-    snprintf(singularitypath, strlen(sappdir) + 13, "%s/singularity", sappdir);
-
-
-
-    /*
-     * Open a FD to the current working dir.
-     */
-
+    // Open a FD to the current working dir.
     if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
         fprintf(stderr, "ERROR: Could not open cwd fd (%s)!\n", strerror(errno));
         return(1);
     }
+
+    // Get sappdir from the environment (we check on this shortly)
+    sappdir = getenv("SAPPDIR");
+
+    // And define the singularity path for us to check with shortly
+    singularitypath = (char *) malloc(strlen(sappdir) + 13);
+    snprintf(singularitypath, strlen(sappdir) + 13, "%s/singularity", sappdir);
 
 
 
