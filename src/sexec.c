@@ -27,10 +27,6 @@
 int main(int argc, char **argv) {
     char *sappdir;
     char *singularitypath;
-    char *devdir;
-    char *devrandom;
-    char *devurandom;
-    char *devnull;
     struct stat sappdirstat;
     struct stat singularitystat;
     int cwd_fd;
@@ -106,21 +102,6 @@ int main(int argc, char **argv) {
     }
 
 
-    // Define strings for device nodes
-    devdir = (char *) malloc (strlen(sappdir) + 5);
-    snprintf(devdir, strlen(sappdir) + 5, "%s/dev", sappdir);
-
-    devrandom = (char *) malloc (strlen(sappdir) + 12);
-    snprintf(devrandom, strlen(sappdir) + 12, "%s/dev/random", sappdir);
-
-    devurandom = (char *) malloc (strlen(sappdir) + 13);
-    snprintf(devurandom, strlen(sappdir) + 13, "%s/dev/urandom", sappdir);
-
-    devnull = (char *) malloc (strlen(sappdir) + 10);
-    snprintf(devnull, strlen(sappdir) + 10, "%s/dev/null", sappdir);
-
-
-
     /*
      * Warning! Danger! Entering the privledged zone!
      */
@@ -131,23 +112,22 @@ int main(int argc, char **argv) {
         return(1);
     }
 
-    // Failure is acceptable here
-    mkdir(devdir, 0755);
-    chown(devdir, uid, gid);
-    mknod(devrandom, S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,8));
-    chown(devrandom, uid, gid);
-    mknod(devurandom, S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,9));
-    chown(devurandom, uid, gid);
-    mknod(devnull, S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,3));
-    chown(devnull, uid, gid);
-    umask(process_mask);
-
     // Do the chroot
     if ( chroot(sappdir) != 0 ) {
         fprintf(stderr, "ERROR: failed enter SAPPDIR: %s\n", sappdir);
         return(255);
     }
 
+    // Failure is acceptable here
+    mkdir("/dev", 0755);
+    chown("/dev", uid, gid);
+    mknod("/dev/null", S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,3));
+    chown("/dev/null", uid, gid);
+    mknod("/dev/random", S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,8));
+    chown("/dev/random", uid, gid);
+    mknod("/dev/urandom", S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,9));
+    chown("/dev/urandom", uid, gid);
+    umask(process_mask);
 
     // Dump all privs
     if ( setregid(gid, gid) != 0 ) {
