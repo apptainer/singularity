@@ -102,6 +102,9 @@ EOF
 cat <<EOF > "$TMPDIR/etc/resolv.conf"
 nameserver 8.8.8.8
 EOF
+cat <<EOF > "$TMPDIR/etc/hosts"
+127.0.0.1 localhost
+EOF
 
 
 message 5 "Building singularity runscript"
