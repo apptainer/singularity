@@ -1,6 +1,7 @@
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
+AM_CFLAGS = -Wall
 
 bindir = $(libexecdir)/singularity
 bin_PROGRAMS = sexec
