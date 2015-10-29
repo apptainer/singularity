@@ -17,8 +17,9 @@ version="@VERSION"
 
 RETVAL=0
 MESSAGELEVEL=1
+DEBUG=""
 
-export prefix exec_prefix libexecdir RETVAL MESSAGELEVEL
+export prefix exec_prefix libexecdir RETVAL MESSAGELEVEL DEBUG
 
 if [ -f "$libexecdir/singularity/functions" ]; then
     . "$libexecdir/singularity/functions"
@@ -66,6 +67,7 @@ while true; do
         ;;
         -d|--debug)
             MESSAGELEVEL=5
+            DEBUG=1
             message 5 "enabling debugging"
             #set -x
             shift
@@ -94,28 +96,31 @@ export COMMAND
 case $COMMAND in
     build)
         SPEC=$1
+        OUTPUT=$2
         message 3 "executing build on '$SPEC'"
         if [ -f "$libexecdir/singularity/sapp_build" ]; then
-            exec $libexecdir/singularity/sapp_build "$@"
+            exec $libexecdir/singularity/sapp_build "$SPEC" "$OUTPUT"
         else
             echo "Could not exec $libexecdir/singularity/sapp_build"
             exit 1
         fi
     ;;
     run)
-        message 3 "executing runtime with args: $@"
+        SAPPFILE=$1
+        shift
+        message 3 "executing runtime with args: $SAPPFILE '$@'"
         if [ -f "$libexecdir/singularity/sapp_run" ]; then
-            exec $libexecdir/singularity/sapp_run "$@"
+            exec $libexecdir/singularity/sapp_run "$SAPPFILE" "$@"
         else
             echo "Could not exec $libexecdir/singularity/sapp_run"
             exit 1
         fi
     ;;
     info)
-        SAPP=$1
-        message 3 "showing info for SAPP '$SAPP'"
+        SAPPFILE=$1
+        message 3 "showing info for SAPP '$SAPPFILE'"
         if [ -f "$libexecdir/singularity/sapp_info" ]; then
-            exec $libexecdir/singularity/sapp_info "$SAPP"
+            exec $libexecdir/singularity/sapp_info "$SAPPFILE"
         else
             echo "Could not exec $libexecdir/singularity/sapp_info"
             exit 1

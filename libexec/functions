@@ -8,7 +8,9 @@ fi
 
 message() {
     LEVEL=$1
-    if [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
+    if [ "$LEVEL" -eq "0" ]; then
+        echo "$2" 1>&2
+    elif [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
         echo "$2"
     fi
     return
@@ -18,26 +20,56 @@ message() {
 get_key_from_conf() {
     KEY="$1"
     FILE="$2"
-    RETVAL=1
     grep -i "^$KEY: " $FILE | while read i; do
         echo "$i" | sed -e "s@^$KEY: @@i"
-        RETVAL=0
+        return 0
     done
+    return 1
+}
+
+get_section_from_conf() {
+    SECTION="$1"
+    FILE="$2"
+    RETVAL=1
+    TOGGLE=""
+    cat $FILE | while read line; do
+        if [ -n "$TOGGLE" ]; then
+            if echo "$line" | grep -q "^%"; then
+                # we are done...
+                return 0
+            fi
+            echo "$line"
+        else
+            if echo "$line" | grep -q "%$SECTION"; then
+                TOGGLE=1
+                RETVAL=0
+            fi
+        fi
+    done
+
     return $RETVAL
 }
 
 copy_file_to_sappdir() {
     file="$1"
     sappdir="$2"
-    DIRNAME=`dirname $file`
-    if [ ! -d "$sappdir/$DIRNAME" ]; then
-        message 3 "creating target dir:   $DIRNAME"
-        mkdir -p "$sappdir/$DIRNAME"
+    if [ -n "$file" -a -n "$sappdir" ]; then
+        DIRNAME=`dirname $file`
+        RETVAL=0
+        if [ ! -d "$sappdir/$DIRNAME" ]; then
+            message 3 "creating target dir:   $DIRNAME"
+            mkdir -p "$sappdir/$DIRNAME"
+        fi
+        if [ -f "$sappdir/$file" ]; then
+            message 4 "file already included: $file"
+        elif [ -f "$file" ]; then
+            message 2 "including file:        $file"
+            cp -L "$file" "$sappdir/$file" 2>&1
+            RETVAL="$?"
+        else
+            message 0 "Could not find file: $file"
+            return 1
+        fi
     fi
-    if [ -f "$sappdir/$file" ]; then
-        message 4 "file already included: $file"
-    else
-        message 2 "including file:        $file"
-        cp -L "$file" "$sappdir/$file"
-    fi
+    return $RETVAL
 }

@@ -33,19 +33,68 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 
+runprog=""
 
-
-for i in `get_key_from_conf "Files" $SAPPSPEC`; do
-    copy_file_to_sappdir "$i" "$TMPDIR"
+message 3 "Evaluating specfile for 'program'"
+# Pull in defined keys that specify files
+for i in `get_key_from_conf "program" $SAPPSPEC`; do
+    if FULLFILE=`which $i 2>/dev/null`; then
+        copy_file_to_sappdir "$FULLFILE" "$TMPDIR"
+        if [ -z "$runprog" ]; then
+            message 5 "Setting 'runprog' to '$FULLFILE'"
+            runprog="$FULLFILE"
+        fi
+    else
+        message 0 "Error: failed processing program: $i"
+        exit 1
+    fi
 done
+if [ "$?" -ne "0" ]; then
+    exit 1
+fi
 
-copy_file_to_sappdir "/bin/sh" "$TMPDIR"
+message 3 "Evaluating specfile for 'requires'"
+for i in `get_key_from_conf "requires" $SAPPSPEC`; do
+    if ! copy_file_to_sappdir "$i" "$TMPDIR"; then
+        message 0 "Error: failed processing requires: $i"
+        exit 1
+    fi
+done
+if [ "$?" -ne "0" ]; then
+    exit 1
+fi
 
+# Pull in the %files section of the spec
+message 3 "Evaluating specfile for section 'files'"
+get_section_from_conf "files" $SAPPSPEC | while read i; do
+    if ! copy_file_to_sappdir "$i" "$TMPDIR"; then
+        message 0 "Error: failed processing file: $i"
+        exit 1
+    fi
+done
+if [ "$?" -ne "0" ]; then
+    exit 1
+fi
+
+# Things we always just must have
+message 3 "Evaluating specfile for hard coded requirements"
+for i in /bin/sh; do
+    if ! copy_file_to_sappdir "$i" "$TMPDIR"; then
+        message 0 "Error: failed processing requires: $i"
+        exit 1
+    fi
+done
+if [ "$?" -ne "0" ]; then
+    exit 1
+fi
+
+
+message 5 "Building singularity runscript"
 echo "#!/bin/sh" > $TMPDIR/singularity
-get_key_from_conf "script" $SAPPSPEC >> $TMPDIR/singularity
-if [ "$?" -ne 0 ]; then
+get_section_from_conf "runscript" $SAPPSPEC >> $TMPDIR/singularity
+if [ "$?" -ne 0 -a -n "$runprog" ]; then
     message 2 "generating a basic singularity runscript"
-    echo "exec $runprog \"$@\"" >> $TMPDIR/singularity
+    echo "exec $runprog \"\$@\"" >> $TMPDIR/singularity
 fi
 chmod 755 $TMPDIR/singularity
 

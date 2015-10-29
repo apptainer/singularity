@@ -33,7 +33,6 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 
-message 1 "building SAPP file..."
 (cd $TMPDIR; find . | cpio -o --quiet -H newc ) | gzip -c9 >> $SAPPFILE
 message 0 "WROTE: $SAPPFILE"
 
