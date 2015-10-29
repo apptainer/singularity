@@ -12,7 +12,6 @@
  *
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -27,12 +26,20 @@
 
 int main(int argc, char **argv) {
     char *sappdir;
-    struct stat sappdirAttribs = {0};
+    char *singularitypath;
+    struct stat sappdirstat;
+    struct stat singularitystat;
     uid_t uid = getuid();
     gid_t gid = getgid();
     int cwd_fd;
 
+    // Get sappdir from the environment (we check on this shortly)
     sappdir = getenv("SAPPDIR");
+
+    singularitypath = (char *) malloc(strlen(sappdir) + 13);
+    snprintf(singularitypath, strlen(sappdir) + 13, "%s/singularity", sappdir);
+
+
 
     /*
      * Open a FD to the current working dir.
@@ -44,24 +51,49 @@ int main(int argc, char **argv) {
     }
 
 
+
     /*
      * Sanity Checks, exit if any don't match.
      */
 
+    // Make sure SAPPDIR is defined
     if ( sappdir == NULL ) {
         fprintf(stderr, "ERROR: SAPPDIR undefined!\n");
         return(1);
     }
 
-    if (lstat(sappdir, &sappdirAttribs) < 0) {
+    // Check SAPPDIR
+    if (lstat(sappdir, &sappdirstat) < 0) {
         fprintf(stderr, "ERROR: Could not stat %s!\n", sappdir);
         return(1);
     }
-
-    if ( uid != (int)sappdirAttribs.st_uid ) {
-        fprintf(stderr, "ERROR: Will not execute in a SAPPDIR you don't own. (%s:%d)!\n", sappdir, (int)sappdirAttribs.st_uid);
+    if ( ! S_ISDIR(sappdirstat.st_mode) ) {
+        fprintf(stderr, "ERROR: SAPPDIR (%s) must be a SAPP directory!\n", sappdir);
+        return(1);
+    }
+    if ( uid != (int)sappdirstat.st_uid ) {
+        fprintf(stderr, "ERROR: Will not execute in a SAPPDIR you don't own. (%s:%d)!\n", sappdir, (int)sappdirstat.st_uid);
         return(255);
     }
+
+    // Check the singularity within the SAPPDIR
+    if (stat(singularitypath, &singularitystat) < 0) {
+        fprintf(stderr, "ERROR: Could not stat %s!\n", singularitypath);
+        return(1);
+    }
+    if ( ! S_ISREG(singularitystat.st_mode) ) {
+        fprintf(stderr, "ERROR: The singularity is not found in SAPPDIR!\n");
+        return(1);
+    }
+    if ( uid != (int)singularitystat.st_uid ) {
+        fprintf(stderr, "ERROR: Will not execute a singularity you don't own. (%d)!\n", (int)sappdirstat.st_uid);
+        return(255);
+    }
+    if ( ! (S_IXUSR & singularitystat.st_mode) ) {
+        fprintf(stderr, "ERROR: The singularity can not be executed!\n");
+        return(1);
+    }
+
 
 
     /*
@@ -74,13 +106,13 @@ int main(int argc, char **argv) {
         return(1);
     }
 
-    // Do chroot before dropping privs to escape chroot
+    // Do the chroot
     if ( chroot(sappdir) != 0 ) {
         fprintf(stderr, "ERROR: failed enter SAPPDIR: %s\n", sappdir);
         return(255);
     }
 
-    // Dump privs
+    // Dump all privs
     if ( setregid(gid, gid) != 0 ) {
         fprintf(stderr, "ERROR: Could not dump real/effective group privledges!\n");
         return(255);
@@ -89,6 +121,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "ERROR: Could not dump real/effective user privledges!\n");
         return(255);
     }
+
 
 
     /*
@@ -111,9 +144,8 @@ int main(int argc, char **argv) {
         return(1);
     }
 
-    // Exec 
+    // Exec the singularity
     if ( execv("/singularity", argv) != 0 ) {
-    //if ( execv("/singularity", (char **) "") != 0 ) {
         fprintf(stderr, "ERROR: Failed to exec SAPP envrionment\n");
         return(2);
     }
