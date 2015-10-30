@@ -23,12 +23,12 @@ else
 fi
 
 if [ -z "$SAPPSPEC" ]; then
-    message 1 "SAPP specfile not given"
+    message 1 "SAPP specfile not given\n"
     exit 1
 fi
 
 if [ -z "$TMPDIR" ]; then
-    message 1 "TMPDIR not given"
+    message 1 "TMPDIR not given\n"
     exit 1
 fi
 
@@ -39,18 +39,18 @@ LIBSUFFIX=`uname -m | grep -q "x86_64" && echo "64"`
 INCLUDE_LIBS="/lib64/libnss_files.so.2 /lib/libnss_files.so.2 /lib64/libnss_dns.so.2 /lib/libnss_dns.so.2 /lib64/libresolv.so.2 /lib/libresolv.so.2"
 
 
-message 2 "Searching for library dependencies"
+message 2 "Searching for library dependencies\n"
 for file in `find $TMPDIR -type f -executable -print`; do
-    message 5 "scanning executable file for dependencies: $file"
+    message 5 "scanning executable file for dependencies: $file\n"
     for dep in `ldd $file | sed -e 's@ @\n@g'`; do
         if [ -f "$dep" ]; then
             BASENAME=`basename $dep`
-            message 3 "found dependency:      $dep"
+            message 3 "found dependency:      $dep\n"
             if [ ! -d "$TMPDIR/lib$LIBSUFFIX" ]; then
                 mkdir -p "$TMPDIR/lib$LIBSUFFIX"
             fi
             if [ ! -f "$TMPDIR/lib$LIBSUFFIX/$BASENAME" ]; then
-                message 2 "copying dependency:    $dep"
+                message 2 "copying dependency:    $dep\n"
                 cp -L "$dep" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
                 RETVAL=1
             fi
@@ -58,16 +58,16 @@ for file in `find $TMPDIR -type f -executable -print`; do
     done
 done
 
-message 2 "Including statically defined libraries"
+message 2 "Including statically defined libraries\n"
 for dep in $INCLUDE_LIBS; do
     if [ -f "$dep" ]; then
         BASENAME=`basename $dep`
-        message 3 "found dependency:      $dep"
+        message 3 "found dependency:      $dep\n"
         if [ ! -d "$TMPDIR/lib$LIBSUFFIX" ]; then
             mkdir -p "$TMPDIR/lib$LIBSUFFIX"
         fi
         if [ ! -f "$TMPDIR/lib$LIBSUFFIX/$BASENAME" ]; then
-            message 2 "copying dependency:    $dep"
+            message 2 "copying dependency:    $dep\n"
             cp -L "$dep" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
             RETVAL=1
         fi

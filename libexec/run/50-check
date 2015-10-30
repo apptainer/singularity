@@ -23,18 +23,18 @@ else
 fi
 
 if [ -z "$SAPPFILE" ]; then
-    message 1 "SAPP output file not passed"
+    message 0 "SAPP output file not passed\n"
     exit 1
 fi
 
 if [ -z "$SAPPDIR" ]; then
-    message 1 "SAPPDIR not given"
+    message 0 "SAPPDIR not given\n"
     exit 1
 fi
 
-message 2 "Checking SAPP environment at: $SAPPDIR"
+message 2 "Checking SAPP environment at: $SAPPDIR\n"
 if [ ! -x "$SAPPDIR/singularity" ]; then
-    message 0 "SAPP environment is not good!"
+    message 0 "SAPP environment is not good!\n"
     exit 1
 fi
 

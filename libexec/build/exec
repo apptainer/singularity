@@ -28,12 +28,12 @@ SAPPFILE="$2"
 export SAPPSPEC SAPPFILE
 
 if [ -z "$SAPPSPEC" ]; then
-    message 1 "SAPP specfile not given"
+    message 0 "SAPP specfile not given\n"
     exit 1
 fi
 
 if [ ! -f "$SAPPSPEC" ]; then
-    message 1 "SAPP specfile not found"
+    message 0 "SAPP specfile not found\n"
     exit 1
 fi
 
@@ -49,9 +49,9 @@ else
     NAME="$SAPPNAME"
 fi
 
-message 1 "Building '$NAME'"
+message 1 "Building '$NAME'\n"
 
-message 2 "Working directory: $TMPDIR"
+message 2 "Working directory: $TMPDIR\n"
 
 
 if [ -n "$SAPPFILE" ]; then
@@ -61,7 +61,7 @@ if [ -n "$SAPPFILE" ]; then
         DIRNAME=`dirname "$SAPPFILE"`
         if [ ! -d "$DIRNAME" ]; then
             if ! mkdir -p "$DIRNAME"; then
-                message 1 "Could not create output directory"
+                message 1 "Could not create output directory\n"
                 exit 1
             fi
         fi
@@ -84,18 +84,18 @@ echo "$HEADER_END" >> $SAPPFILE
 
 for i in $libexecdir/singularity/build/[0-9]*; do
     if [ -x "$i" ]; then
-        message 3 "Running: $i"
+        message 3 "Running: $i\n"
         sh "$i" "$@"
         EXITCODE="$?"
         if [ "$EXITCODE" -ne "0" ]; then
-            message 1 "Error thrown from module: $i"
-            message 1 "Quiting!"
+            message 0 "Error thrown from module: $i\n"
+            message 0 "Quiting!\n"
             rm -f $SAPPFILE
             exit $EXITCODE
         fi
     else
-        message 1 "Error locating module: $i"
-        message 2 "Left tmpdir at $TMPDIR"
+        message 1 "Error locating module: $i\n"
+        message 2 "Left tmpdir at $TMPDIR\n"
         rm -f $SAPPFILE
         exit 1
     fi
@@ -105,7 +105,7 @@ done
 if [ -z "$DEBUG" ]; then
     rm -rf $TMPDIR
 else
-    message 5 "working directory at: $TMPDIR"
+    message 5 "working directory at: $TMPDIR\n"
 fi
 
 exit $RETVAL

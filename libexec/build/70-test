@@ -23,18 +23,18 @@ else
 fi
 
 if [ -z "$SAPPSPEC" ]; then
-    message 1 "SAPP specfile not given"
+    message 0 "SAPP specfile not given\n"
     exit 1
 fi
 
 if [ -z "$TMPDIR" ]; then
-    message 1 "TMPDIR not given"
+    message 0 "TMPDIR not given\n"
     exit 1
 fi
 
 
 # Pull in the %test section of the spec
-message 3 "Evaluating specfile for section 'test'"
+message 3 "Evaluating specfile for section 'test'\n"
 echo "#!/bin/sh" > "$TMPDIR/singularity"
 echo "PATH=/bin:/usr/bin:/sbin:/usr/sbin" >> "$TMPDIR/singularity"
 echo "set -x" >> "$TMPDIR/singularity"
@@ -48,7 +48,7 @@ if [ -s "$TMPDIR/singularity.test" ]; then
     if [ -x "$libexecdir/singularity/sexec" ]; then
         SAPPDIR="$TMPDIR"
         export SAPPDIR
-        message 1 "Running %test..."
+        message 1 "Running %test...\n"
         exec $libexecdir/singularity/sexec "$@"
     fi
 fi

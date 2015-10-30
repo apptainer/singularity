@@ -55,14 +55,6 @@ usage() {
     echo "website: http://gmkurtzer.github.io/singularity"
 }
 
-message() {
-    LEVEL=$1
-    if [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
-        echo "$2"
-    fi
-    return
-}
-
 # Initial argument processing. Iterate through arguments until argument
 # is not recognized as an argument, which must mean it is a command. So
 # exit the arg processing and continue to command section.
@@ -73,7 +65,7 @@ while true; do
             exit
         ;;
         --version)
-            message 0 "$version"
+            message 1 "$version"
             exit
         ;;
         -d|--debug)
@@ -89,7 +81,7 @@ while true; do
             shift
         ;;
         -*)
-            message 1 "Unknown argument: $1"
+            message 0 "Unknown argument: $1"
             exit 1
         ;;
         *)

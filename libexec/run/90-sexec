@@ -23,18 +23,18 @@ else
 fi
 
 if [ -z "$SAPPFILE" ]; then
-    message 1 "SAPP output file not passed"
+    message 0 "SAPP output file not passed\n"
     exit 1
 fi
 
 if [ -z "$SAPPDIR" ]; then
-    message 1 "SAPPDIR not given"
+    message 0 "SAPPDIR not given\n"
     exit 1
 fi
 
 
 if [ -x "$libexecdir/singularity/sexec" ]; then
-    message 2 "Exec'ing Sexec"
+    message 2 "Exec'ing Sexec\n"
     exec $libexecdir/singularity/sexec "$@"
 fi
 

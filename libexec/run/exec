@@ -30,12 +30,12 @@ export SAPPFILE SAPPCACHE SAPPDIR
 shift
 
 if [ -z "$SAPPFILE" ]; then
-    message 1 "SAPP file not defined"
+    message 0 "SAPP file not defined\n"
     exit 1
 fi
 
 if [ ! -f "$SAPPFILE" ]; then
-    message 1 "SAPP file ($SAPPFILE) not found"
+    message 0 "SAPP file ($SAPPFILE) not found\n"
     exit 1
 fi
 
@@ -44,10 +44,10 @@ if [ ! -d "$SAPPCACHE" ]; then
 fi
 
 
-message 2 "Running '$SAPPFILE'"
+message 2 "Running '$SAPPFILE'\n"
 
 if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
-    message 0 "ERROR: Could not obtain checksum of $SAPPFILE"
+    message 0 "ERROR: Could not obtain checksum of $SAPPFILE\n"
     exit 1
 fi
 
@@ -55,27 +55,27 @@ SAPPDIR="$SAPPCACHE/$CHECKSUM"
 
 if [ ! -d "$SAPPDIR" ]; then
     if ! mkdir -p "$SAPPDIR"; then
-        message 0 "ERROR: Could not create working directory at $SAPPDIR"
+        message 0 "ERROR: Could not create working directory at $SAPPDIR\n"
         exit 1
     fi
 fi
 
-message 2 "Working directory: $SAPPDIR"
+message 2 "Working directory: $SAPPDIR\n"
 
 
 for i in $libexecdir/singularity/run/[0-9]*; do
     if [ -f "$i" ]; then
-        message 3 "Running: $i"
+        message 3 "Running: $i\n"
         sh "$i" "$@"
         EXITCODE="$?"
         if [ "$EXITCODE" -ne "0" ]; then
-            message 1 "Error thrown from module: $i"
-            message 2 "Left tmpdir at $TMPDIR"
+            message 1 "Error thrown from module: $i\n"
+            message 2 "Left tmpdir at $TMPDIR\n"
             exit $EXITCODE
         fi
     else
-        message 1 "Error locating module: $i"
-        message 2 "Left tmpdir at $TMPDIR"
+        message 1 "Error locating module: $i\n"
+        message 2 "Left tmpdir at $TMPDIR\n"
         exit 1
     fi
 done

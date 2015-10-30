@@ -5,16 +5,33 @@ export HEADER_END
 
 
 if [ -z "$MESSAGELEVEL" ]; then
-    echo "Warning: MESSAGELEVEL is not defined!"
+    echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
+    MESSAGELEVEL=5
 fi
+
+
+
+GRAY="\e[0;37m"
+RED="\e[0;31m"
+GREEN="\e[1;32m"
+YELLOW="\e[1;33m"
+BLUE="\e[1;34m"
+PINK="\e[1;35m"
+CYAN="\e[1;36m"
+WHITE="\e[1;37m"
+NORMAL="\e[0;39m"
 
 
 message() {
     LEVEL=$1
     if [ "$LEVEL" -eq "0" ]; then
-        echo "$2" 1>&2
+        echo -ne "${RED}$2${NORMAL}" 1>&2
     elif [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
-        echo "$2"
+        if [ "$LEVEL" -eq "1" ]; then
+            echo -ne "${NORMAL}$2${NORMAL}"
+        else
+            echo -ne "${GRAY}$2${NORMAL}"
+        fi
     fi
     return
 }
@@ -58,17 +75,17 @@ copy_file_to_sappdir() {
         DIRNAME=`dirname $file`
         RETVAL=0
         if [ ! -d "$sappdir/$DIRNAME" ]; then
-            message 3 "creating target dir:   $DIRNAME"
+            message 3 "creating target dir:   $DIRNAME\n"
             mkdir -p "$sappdir/$DIRNAME"
         fi
         if [ -f "$sappdir/$file" ]; then
-            message 4 "file already included: $file"
+            message 4 "file already included: $file\n"
         elif [ -f "$file" ]; then
-            message 2 "including file:        $file"
+            message 2 "including file:        $file\n"
             cp -L "$file" "$sappdir/$file" 2>&1
             RETVAL="$?"
         else
-            message 0 "Could not find file: $file"
+            message 0 "Could not find file: $file\n"
             return 1
         fi
     fi
@@ -87,5 +104,24 @@ check_pattern() {
         ;;
     esac
     return 0
+}
+
+srun() {
+    TMPFILE=`mktemp`
+    MSG=`echo "$*" | cut -c 1-60`
+    message 1 " + $MSG"
+    "$@" >$TMPFILE 2>&1
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+        message 1 "\\033[77G${GREEN}OK${NORMAL}\n"
+    else
+        echo -en "\\033[74G"
+        message 1 "\\033[74G${RED}ERROR${NORMAL}\n"
+        cat $TMPFILE | while read i; do
+            wwprint "$i\n" YELLOW
+        done
+    fi
+    rm -f $TMPFILE
+    return $RETVAL
 }
 

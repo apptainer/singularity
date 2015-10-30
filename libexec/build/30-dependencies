@@ -23,12 +23,12 @@ else
 fi
 
 if [ -z "$SAPPSPEC" ]; then
-    message 1 "SAPP specfile not given"
+    message 0 "SAPP specfile not given\n"
     exit 1
 fi
 
 if [ -z "$TMPDIR" ]; then
-    message 1 "TMPDIR not given"
+    message 0 "TMPDIR not given\n"
     exit 1
 fi
 
@@ -36,7 +36,7 @@ fi
 for i in $libexecdir/singularity/build/deps*; do
     COMPLETE=0
     if [ -x "$i" ]; then
-        message 3 "Executing: $i"
+        message 3 "Executing: $i\n"
         sh "$i" "$@"
         RET=$?
         if [ "$RET" -eq "1" ]; then
@@ -44,7 +44,7 @@ for i in $libexecdir/singularity/build/deps*; do
             COMPLETE=1
         elif [ "$RET" -ne "0" ]; then
             # ERROR
-            message 0 "ERROR: Dependency resolution threw an error!"
+            message 0 "ERROR: Dependency resolution threw an error!\n"
             exit 1
         fi
     fi

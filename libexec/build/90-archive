@@ -23,18 +23,18 @@ else
 fi
 
 if [ -z "$SAPPFILE" ]; then
-    message 1 "SAPP output file not passwed"
+    message 0 "SAPP output file not passwed\n"
     exit 1
 fi
 
 if [ -z "$TMPDIR" ]; then
-    message 1 "TMPDIR not given"
+    message 0 "TMPDIR not given\n"
     exit 1
 fi
 
 rm -f $TMPDIR/dev/*
 
 (cd $TMPDIR; find . | cpio -o --quiet -H newc ) | gzip -c9 >> $SAPPFILE
-message 0 "WROTE: $SAPPFILE"
+message 1 "WROTE: $SAPPFILE\n"
 
 exit 0

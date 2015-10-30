@@ -23,17 +23,17 @@ else
 fi
 
 if [ -z "$SAPPSPEC" ]; then
-    message 1 "SAPP specfile not given"
+    message 0 "SAPP specfile not given\n"
     exit 1
 fi
 
 if [ -z "$TMPDIR" ]; then
-    message 1 "TMPDIR not given"
+    message 0 "TMPDIR not given\n"
     exit 1
 fi
 
 
-message 3 "Creating template files"
+message 3 "Creating template files\n"
 if [ ! -d "$TMPDIR/etc" ]; then
     mkdir -p "$TMPDIR/etc"
 fi
@@ -51,60 +51,5 @@ cat <<EOF > "$TMPDIR/etc/hosts"
 127.0.0.1 localhost
 EOF
 
-
-#message 3 "Evaluating specfile for 'exec'"
-## Pull in defined keys that specify files
-#for i in `get_key_from_conf "exec" $SAPPSPEC`; do
-#    if FULLFILE=`which $i 2>/dev/null`; then
-#        copy_file_to_sappdir "$FULLFILE" "$TMPDIR"
-#        if [ ! -f "$TMPDIR/exec" ]; then
-#            message 5 "Setting 'exec' to '$FULLFILE'"
-#            echo "#!/bin/sh" > $TMPDIR/exec
-#            echo "exec \"$FULLFILE\" \"\$@\"" >> $TMPDIR/exec
-#            chmod +x $TMPDIR/exec
-#        fi
-#    else
-#        message 0 "Error: failed processing program: $i"
-#        exit 1
-#    fi
-#done
-#if [ "$?" -ne "0" ]; then
-#    exit 1
-#fi
-#
-#message 3 "Evaluating specfile for 'requires'"
-#for i in `get_key_from_conf "requires" $SAPPSPEC`; do
-#    if ! copy_file_to_sappdir "$i" "$TMPDIR"; then
-#        message 0 "Error: failed processing requires: $i"
-#        exit 1
-#    fi
-#done
-#if [ "$?" -ne "0" ]; then
-#    exit 1
-#fi
-#
-## Pull in the %files section of the spec
-#message 3 "Evaluating specfile for section 'files'"
-#get_section_from_conf "files" $SAPPSPEC | while read i; do
-#    if ! copy_file_to_sappdir "$i" "$TMPDIR"; then
-#        message 0 "Error: failed processing file: $i"
-#        exit 1
-#    fi
-#done
-#if [ "$?" -ne "0" ]; then
-#    exit 1
-#fi
-#
-## Things we always just must have
-#message 3 "Evaluating specfile for hard coded requirements"
-#for i in /bin/sh; do
-#    if ! copy_file_to_sappdir "$i" "$TMPDIR"; then
-#        message 0 "Error: failed processing requires: $i"
-#        exit 1
-#    fi
-#done
-#if [ "$?" -ne "0" ]; then
-#    exit 1
-#fi
 
 exit 0
