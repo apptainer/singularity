@@ -29,7 +29,7 @@ else
 fi
 
 usage() {
-    echo "USAGE: $0 (options) [config] (output file)"
+    echo "USAGE: $0 (options) [command] (command options)"
     echo
     echo "OPTIONS:"
     echo "    -h --help     Display this usage summary"
@@ -38,9 +38,18 @@ usage() {
     echo "    -d --debug    Show debugging information"
     echo
     echo "COMMANDS:"
-    echo "    build         Build a new SAPP bundle based on SPEC"
-    echo "    info          Display information on a SAPP bundle"
-    echo "    run           Execute/run a SAPP bundle"
+
+    for i in $libexecdir/singularity/*; do
+        if [ -d "$i" -a -x "$i/exec" ]; then
+            NAME=`basename "$i"`
+            echo "    $NAME"
+            if [ -f "$i/usage" ]; then
+                cat "$i/usage" | while read i; do
+                    echo "        $i"
+                done
+            fi
+        fi
+    done
     echo
 }
 
@@ -97,40 +106,19 @@ else
 fi
 export COMMAND
 
-case $COMMAND in
-    build)
-        message 3 "executing build on '$SPEC'"
-        if [ -f "$libexecdir/singularity/build/exec" ]; then
-            exec $libexecdir/singularity/build/exec "$@"
-        else
-            echo "Could not exec $libexecdir/singularity/build/exec"
-            exit 1
-        fi
-    ;;
-    run)
-        message 3 "executing runtime with args: $@"
-        if [ -f "$libexecdir/singularity/run/exec" ]; then
-            exec $libexecdir/singularity/run/exec "$@"
-        else
-            echo "Could not exec $libexecdir/singularity/run/exec"
-            exit 1
-        fi
-    ;;
-    info)
-        SAPPFILE=$1
-        message 3 "showing info for SAPP '$SAPPFILE'"
-        if [ -f "$libexecdir/singularity/sapp_info" ]; then
-            exec $libexecdir/singularity/sapp_info "$SAPPFILE"
-        else
-            echo "Could not exec $libexecdir/singularity/sapp_info"
-            exit 1
-        fi
-    ;;
-    *)
-        usage
-        RETVAL=1
-    ;;
-esac
+if [ -z "$COMMAND" -o "$COMMAND" == "help" ]; then
+    usage
+    exit 0
+fi
 
+if [ -x "$libexecdir/singularity/$COMMAND/exec" ]; then
+    exec $libexecdir/singularity/$COMMAND/exec "$@"
+else
+    message 0 "Unknown command '$COMMAND'"
+    exit 1
+fi
+
+# We should never get here...
+exit 255
 
 exit $RETVAL
