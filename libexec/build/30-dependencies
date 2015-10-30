@@ -33,7 +33,7 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 
-for i in $libexecdir/singularity/_build/deps*; do
+for i in $libexecdir/singularity/build/deps*; do
     COMPLETE=0
     if [ -x "$i" ]; then
         message 3 "Executing: $i"
