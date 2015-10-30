@@ -36,13 +36,13 @@ fi
 message 3 "Evaluating specfile for 'exec'\n"
 # Pull in defined keys that specify files
 for i in `get_key_from_conf "exec" $SAPPSPEC`; do
-    if FULLFILE=`which $i 2>/dev/null`; then
+    if FULLFILE=`which "$i" 2>/dev/null`; then
         copy_file_to_sappdir "$FULLFILE" "$TMPDIR"
         if [ ! -f "$TMPDIR/exec" ]; then
             message 5 "Setting 'exec' to '$FULLFILE'\n"
-            echo "#!/bin/sh" > $TMPDIR/exec
-            echo "exec \"$FULLFILE\" \"\$@\"" >> $TMPDIR/exec
-            chmod +x $TMPDIR/exec
+            echo "#!/bin/sh" > "$TMPDIR/exec"
+            echo "exec \"$FULLFILE\" \"\$@\"" >> "$TMPDIR/exec"
+            chmod +x "$TMPDIR/exec"
         fi
     else
         message 0 "Error: failed processing program: $i\n"

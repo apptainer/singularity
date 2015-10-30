@@ -53,6 +53,7 @@ usage() {
     echo
     echo "For any additional help or support visit the Singularity"
     echo "website: http://gmkurtzer.github.io/singularity"
+    echo
 }
 
 # Initial argument processing. Iterate through arguments until argument
@@ -114,5 +115,3 @@ fi
 
 # We should never get here...
 exit 255
-
-exit $RETVAL

@@ -34,7 +34,9 @@ fi
 
 rm -f $TMPDIR/dev/*
 
-(cd $TMPDIR; find . | cpio -o --quiet -H newc ) | gzip -c9 >> $SAPPFILE
+(cd "$TMPDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
 message 1 "WROTE: $SAPPFILE\n"
+
+chmod +x "$SAPPFILE"
 
 exit 0

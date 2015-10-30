@@ -82,7 +82,7 @@ done
 
 if [ -x "$libexecdir/singularity/sexec" ]; then
     message 2 "Exec'ing Sexec\n"
-    exec $libexecdir/singularity/sexec "$@"
+    exec "$libexecdir/singularity/sexec" "$@"
 fi
 
 

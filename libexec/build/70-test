@@ -49,7 +49,7 @@ if [ -s "$TMPDIR/singularity.test" ]; then
         SAPPDIR="$TMPDIR"
         export SAPPDIR
         message 1 "Running %test...\n"
-        exec $libexecdir/singularity/sexec "$@"
+        exec "$libexecdir/singularity/sexec" "$@"
     fi
 fi
 

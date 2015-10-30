@@ -51,6 +51,6 @@ else
     fi
 fi
 rm -f "$TMPDIR/singularity.runscript"
-chmod 755 $TMPDIR/singularity
+chmod 755 "$TMPDIR/singularity"
 
 exit 0
