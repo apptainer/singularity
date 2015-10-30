@@ -80,5 +80,11 @@ for i in $libexecdir/singularity/run/[0-9]*; do
     fi
 done
 
+if [ -x "$libexecdir/singularity/sexec" ]; then
+    message 2 "Exec'ing Sexec\n"
+    exec $libexecdir/singularity/sexec "$@"
+fi
+
+
 
 exit $RETVAL
