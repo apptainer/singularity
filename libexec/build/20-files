@@ -33,16 +33,35 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 
-runprog=""
+message 3 "Creating template files"
+if [ ! -d "$TMPDIR/etc" ]; then
+    mkdir -p "$TMPDIR/etc"
+fi
+cat <<EOF > "$TMPDIR/etc/nsswitch.conf"
+passwd:     files sss
+shadow:     files sss
+group:      files sss
+#hosts:     db files nisplus nis dns
+hosts:      files dns myhostname
+EOF
+cat <<EOF > "$TMPDIR/etc/resolv.conf"
+nameserver 8.8.8.8
+EOF
+cat <<EOF > "$TMPDIR/etc/hosts"
+127.0.0.1 localhost
+EOF
 
-message 3 "Evaluating specfile for 'program'"
+
+message 3 "Evaluating specfile for 'exec'"
 # Pull in defined keys that specify files
-for i in `get_key_from_conf "program" $SAPPSPEC`; do
+for i in `get_key_from_conf "exec" $SAPPSPEC`; do
     if FULLFILE=`which $i 2>/dev/null`; then
         copy_file_to_sappdir "$FULLFILE" "$TMPDIR"
-        if [ -z "$runprog" ]; then
-            message 5 "Setting 'runprog' to '$FULLFILE'"
-            runprog="$FULLFILE"
+        if [ ! -f "$TMPDIR/exec" ]; then
+            message 5 "Setting 'exec' to '$FULLFILE'"
+            echo "#!/bin/sh" > $TMPDIR/exec
+            echo "exec \"$FULLFILE\" \"\$@\"" >> $TMPDIR/exec
+            chmod +x $TMPDIR/exec
         fi
     else
         message 0 "Error: failed processing program: $i"
@@ -87,35 +106,5 @@ done
 if [ "$?" -ne "0" ]; then
     exit 1
 fi
-
-message 3 "Creating template files"
-if [ ! -d "$TMPDIR/etc" ]; then
-    mkdir -p "$TMPDIR/etc"
-fi
-cat <<EOF > "$TMPDIR/etc/nsswitch.conf"
-passwd:     files sss
-shadow:     files sss
-group:      files sss
-#hosts:     db files nisplus nis dns
-hosts:      files dns myhostname
-EOF
-cat <<EOF > "$TMPDIR/etc/resolv.conf"
-nameserver 8.8.8.8
-EOF
-cat <<EOF > "$TMPDIR/etc/hosts"
-127.0.0.1 localhost
-EOF
-
-
-message 5 "Building singularity runscript"
-echo "#!/bin/sh" > $TMPDIR/singularity
-echo "PATH=/bin:/usr/bin:/sbin:/usr/sbin" >> $TMPDIR/singularity
-echo "export PATH" >> $TMPDIR/singularity
-get_section_from_conf "runscript" $SAPPSPEC >> $TMPDIR/singularity
-if [ "$?" -ne 0 -a -n "$runprog" ]; then
-    message 2 "generating a basic singularity runscript"
-    echo "exec $runprog \"\$@\"" >> $TMPDIR/singularity
-fi
-chmod 755 $TMPDIR/singularity
 
 exit 0

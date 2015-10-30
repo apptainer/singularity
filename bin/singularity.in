@@ -99,24 +99,20 @@ export COMMAND
 
 case $COMMAND in
     build)
-        SPEC=$1
-        OUTPUT=$2
         message 3 "executing build on '$SPEC'"
-        if [ -f "$libexecdir/singularity/sapp_build" ]; then
-            exec $libexecdir/singularity/sapp_build "$SPEC" "$OUTPUT"
+        if [ -f "$libexecdir/singularity/build/exec" ]; then
+            exec $libexecdir/singularity/build/exec "$@"
         else
-            echo "Could not exec $libexecdir/singularity/sapp_build"
+            echo "Could not exec $libexecdir/singularity/build/exec"
             exit 1
         fi
     ;;
     run)
-        SAPPFILE=$1
-        shift
-        message 3 "executing runtime with args: $SAPPFILE '$@'"
-        if [ -f "$libexecdir/singularity/sapp_run" ]; then
-            exec $libexecdir/singularity/sapp_run "$SAPPFILE" "$@"
+        message 3 "executing runtime with args: $@"
+        if [ -f "$libexecdir/singularity/run/exec" ]; then
+            exec $libexecdir/singularity/run/exec "$@"
         else
-            echo "Could not exec $libexecdir/singularity/sapp_run"
+            echo "Could not exec $libexecdir/singularity/run/exec"
             exit 1
         fi
     ;;

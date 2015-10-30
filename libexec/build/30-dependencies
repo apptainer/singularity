@@ -22,8 +22,8 @@ else
     exit 1
 fi
 
-if [ -z "$SAPPFILE" ]; then
-    message 1 "SAPP output file not passwed"
+if [ -z "$SAPPSPEC" ]; then
+    message 1 "SAPP specfile not given"
     exit 1
 fi
 
@@ -33,7 +33,21 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 
-(cd $TMPDIR; find . | cpio -o --quiet -H newc ) | gzip -c9 >> $SAPPFILE
-message 0 "WROTE: $SAPPFILE"
+for i in $libexecdir/singularity/_build/deps*; do
+    COMPLETE=0
+    if [ -x "$i" ]; then
+        message 3 "Executing: $i"
+        sh "$i" "$@"
+        RET=$?
+        if [ "$RET" -eq "1" ]; then
+            # No new deps
+            COMPLETE=1
+        elif [ "$RET" -ne "0" ]; then
+            # ERROR
+            message 0 "ERROR: Dependency resolution threw an error!"
+            exit 1
+        fi
+    fi
+done
 
 exit 0

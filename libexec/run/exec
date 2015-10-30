@@ -63,10 +63,10 @@ fi
 message 2 "Working directory: $SAPPDIR"
 
 
-for i in sapp_run_explode sapp_run_check; do
-    if [ -f "$libexecdir/singularity/$i" ]; then
-        message 3 "Running: $libexecdir/singularity/$i"
-        sh "$libexecdir/singularity/$i"
+for i in $libexecdir/singularity/run/[0-9]*; do
+    if [ -f "$i" ]; then
+        message 3 "Running: $i"
+        sh "$i" "$@"
         EXITCODE="$?"
         if [ "$EXITCODE" -ne "0" ]; then
             message 1 "Error thrown from module: $i"
@@ -74,16 +74,11 @@ for i in sapp_run_explode sapp_run_check; do
             exit $EXITCODE
         fi
     else
-        message 1 "Error locating module: $libexecdir/singularity/$i"
+        message 1 "Error locating module: $i"
         message 2 "Left tmpdir at $TMPDIR"
         exit 1
     fi
 done
-
-if [ -x "$libexecdir/singularity/sexec" ]; then
-    message 2 "Exec'ing Sexec"
-    exec $libexecdir/singularity/sexec "$@"
-fi
 
 
 exit $RETVAL

@@ -32,6 +32,8 @@ if [ -z "$SAPPDIR" ]; then
     exit 1
 fi
 
+
+
 message 2 "Checking for cached singularity SAPP environment"
 if [ -x "$SAPPDIR/singularity" ]; then
     message 2 "Using Cached environment"

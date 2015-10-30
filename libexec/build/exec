@@ -37,7 +37,6 @@ if [ ! -f "$SAPPSPEC" ]; then
     exit 1
 fi
 
-
 NAME=`get_key_from_conf "Name" $SAPPSPEC`
 SUMMARY=`get_key_from_conf "Summary" $SAPPSPEC`
 TMPDIR=`mktemp -d /tmp/.singularity.XXXXXXX`
@@ -78,24 +77,24 @@ fi
 
 
 
-echo "#!/usr/bin/env srunner" > $SAPPFILE
+echo "#!/usr/bin/env sapprun" > $SAPPFILE
 echo "Name: $NAME" >> $SAPPFILE
 echo "Summary: $SUMMARY" >> $SAPPFILE
 echo "$HEADER_END" >> $SAPPFILE
 
-for i in sapp_build_base sapp_build_deps_libs sapp_build_archive; do
-    if [ -f "$libexecdir/singularity/$i" ]; then
-        message 3 "Running: $libexecdir/singularity/$i"
-        sh "$libexecdir/singularity/$i"
+for i in $libexecdir/singularity/_build/[0-9]*; do
+    if [ -x "$i" ]; then
+        message 3 "Running: $i"
+        sh "$i" "$@"
         EXITCODE="$?"
         if [ "$EXITCODE" -ne "0" ]; then
             message 1 "Error thrown from module: $i"
-            message 2 "Left tmpdir at $TMPDIR"
+            message 1 "Quiting!"
             rm -f $SAPPFILE
             exit $EXITCODE
         fi
     else
-        message 1 "Error locating module: $libexecdir/singularity/$i"
+        message 1 "Error locating module: $i"
         message 2 "Left tmpdir at $TMPDIR"
         rm -f $SAPPFILE
         exit 1
