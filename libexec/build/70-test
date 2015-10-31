@@ -42,8 +42,8 @@ get_section_from_conf "test" "$SAPPSPEC" >> "$TMPDIR/singularity.test"
 
 if [ -s "$TMPDIR/singularity.test" ]; then
     cat "$TMPDIR/singularity.test" >> "$TMPDIR/singularity"
-    rm -f "$TMPDIR/singularity.test"
     chmod 755 "$TMPDIR/singularity"
+    rm -f "$TMPDIR/singularity.test"
 
     if [ -x "$libexecdir/singularity/sexec" ]; then
         SAPPDIR="$TMPDIR"
@@ -52,5 +52,6 @@ if [ -s "$TMPDIR/singularity.test" ]; then
         exec "$libexecdir/singularity/sexec" "$@"
     fi
 fi
+rm -f "$TMPDIR/singularity.test"
 
 exit 0
