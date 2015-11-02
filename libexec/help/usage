@@ -1,0 +1,5 @@
+Provide help and basic usage summary on any of the Singularity
+commands.
+
+USAGE:
+    singularity help [command]

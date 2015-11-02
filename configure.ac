@@ -26,5 +26,6 @@ AC_CONFIG_FILES([
    libexec/Makefile
    libexec/build/Makefile
    libexec/run/Makefile
+   libexec/help/Makefile
 ])
 AC_OUTPUT

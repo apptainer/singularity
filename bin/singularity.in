@@ -31,7 +31,7 @@ fi
 usage() {
     echo "USAGE: $0 (options) [command] (command options)"
     echo
-    echo "OPTIONS:"
+    echo "GLOBAL OPTIONS:"
     echo "    -h --help     Display this usage summary"
     echo "       --version  Show application version"
     echo "    -v --verbose  Increase verbosity +1"
@@ -66,27 +66,27 @@ while true; do
             exit
         ;;
         --version)
-            message 1 "$version"
+            message 1 "$version\n"
             exit
         ;;
         -d|--debug)
             MESSAGELEVEL=5
             DEBUG=1
-            message 5 "enabling debugging"
+            message 5 "enabling debugging\n"
             #set -x
             shift
         ;;
         -v|--verbose)
             MESSAGELEVEL=`expr $MESSAGELEVEL + 1`
-            message 2 "increasing verbosity level"
+            message 2 "increasing verbosity level\n"
             shift
         ;;
         -*)
-            message 0 "Unknown argument: $1"
+            message 0 "Unknown argument: $1\n"
             exit 1
         ;;
         *)
-            message 4 "ending argument loop"
+            message 4 "ending argument loop\n"
             break
         ;;
     esac
@@ -101,7 +101,7 @@ else
 fi
 export COMMAND
 
-if [ -z "$COMMAND" -o "$COMMAND" == "help" ]; then
+if [ -z "$COMMAND" ]; then
     usage
     exit 0
 fi
@@ -109,7 +109,7 @@ fi
 if [ -x "$libexecdir/singularity/$COMMAND/exec" ]; then
     exec $libexecdir/singularity/$COMMAND/exec "$@"
 else
-    message 0 "Unknown command '$COMMAND'"
+    message 0 "Unknown command '$COMMAND'\n"
     exit 1
 fi
 

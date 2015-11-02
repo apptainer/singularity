@@ -1,0 +1,42 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+
+COMMAND="$1"
+RETVAL=0
+export COMMAND
+shift
+
+if [ -z "$COMMAND" ]; then
+    COMMAND="help"
+fi
+
+if [ -f "$libexecdir/singularity/$COMMAND/help" ]; then
+    cat "$libexecdir/singularity/$COMMAND/help";
+else
+    message 0 "No additional help is provided for that command\n"
+    RETVAL=1
+fi
+
+exit $RETVAL
