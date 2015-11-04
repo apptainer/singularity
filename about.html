@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Singularity</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <img src="images/singularity_logo1.png" border="0"/>
+        <p></p>
+<p>
+<strong>&raquo;&nbsp;<a href="index.html">Home</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="about.html">About</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="use-cases.html">Use Cases</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="docs.html">Documentation</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="help.html">Getting help</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="download.html">Download</a></strong><br/>
+</p>
+
+<hr/>
+<p>
+Singularity creates a new application distribution paradigm by
+utilizing a combination of both packaging and container ideas and
+maintaining the historical precendent of standardized workflows.
+</p>
+<p>
+Learn more about Singularity <a href="about.html">here!</a>
+</p>
+
+        <p></p>
+      </header>
+      <section>
+
+<h1>About Singularity</h1>
+<h2>Background</h2>
+<p>
+Software development on Linux is moving in a new direction. Thanks to
+advances in virtualization and container technologies, developers are
+finding it very convient to distribute instances of their
+build/development envrionment in addition or instead of source code
+alone. There are some benefits and drawbacks to this model.
+</p>
+<p>
+Some of the benefits of distributing software in this fashion include
+being able to provide a configuration free implementation which can
+easily be replicated to distribute a software or workflow. The user
+does not need to worry about managing potentially complicated
+dependency chains nor worry about configuration nuances. But the
+drawback are numerous and tend to focus on two major ares. To achieve
+a portable environment the container is usually a complete operating
+system image. This means the overhead involved with management and
+distribution is far from neglidgable (e.g. size, security, updates,
+trust, etc.). Additionally containers and virtual machines may not
+fit a standardized workflow that requires command line usage without
+root escalation.
+</p>
+
+<h2>The Solution</h2>
+<p>
+Singularity is a package build and run-time environment designed to
+achieve portable application (Singularity Application / SAPP)
+packages which can be then run on any Linux system without ever
+having to worry about portability or dependencies. SAPP packages
+never need to be installed, and can be executed directly at
+run-time as either a contained environment or used like any standard
+Linux program!
+</p>
+
+<h2>Portability</h2>
+<p>
+A Singularity Application (SAPP) is a package bundle which contains
+within it all of the required dependencies necessary to run. It is
+like having a statically compiled binary which can be distributed
+easily from system to system without concern of even the C library
+compatibility.
+
+
+The SAPP
+can contain anything from a simple binary executable to an entire
+pipeline or work flow of multiple applications. There could be
+multiple services which can be run within the SAPP environment and
+interaction with the SAPP file is fully configurable. For example
+in the simple configuration you may choose to emulate the program
+arguments so it operates just like running the application directly. 
+</p>
+
+<h2>Reproducibility</h2>
+<p>
+Each SAPP includes all of the application's necessary run-time
+libraries and can even include the required data and files for a
+particular application to run. This encapsulation of the entire
+user-space environment facilitates not only portability but also
+reproducibility.
+</p>
+
+<h2>License</h2>
+<p>
+Singularity is released under a modified BSD license. The only modification
+being that you may not use the name's of any project members or contributors
+(namely UC or the US Department of Energy) to endorse or promote products or
+services derived from or using this software.
+</p>
+
+      </section>
+      <footer>
+        <p>
+            <small>
+                Project lead: <a href="https://gmkurtzer.github.io">Gregory M. Kurtzer</a><br/>
+                Sponsored by: <a href="http://hpcs.lbl.gov/">HPC @ LBNL</a><br/>
+                Hosted on: <a href="https://github.com">GitHub</a>
+            </small>
+        </p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
