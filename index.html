@@ -29,21 +29,20 @@
 <strong>&raquo;&nbsp;<a href="docs.html">Documentation</a></strong><br/>
 <strong>&raquo;<a href="help.html">Getting help</a></strong><br/>
 </p>
+<p>
+Singularity is a package building and run-time environment built to
+achieve portable application bundles which can be then run on any
+Linux system without ever having to worry about portability or
+dependencies. These portable Singularity application bundles never
+need to be installed, and can be executed directly at run-time!
+</p>
+
 
         <p></p>
       </header>
       <section>
 
-<h1>Singularity</h1>
-<h2>Abstract</h2>
-<p>
-Singularity is a package building and run-time environment built to
-achieve portable application bundles which can be then run on any
-Linux system without ever having to worry about portability. These
-portable application bundles never need to be installed, and can
-be called directly for run-time.
-</p>
-
+<h1>About Singularity</h1>
 <h2>Background</h2>
 <p>
 There are several methods to implement portable application stacks
@@ -69,7 +68,13 @@ reliably.
 <h2>Portability</h2>
 <p>
 A Singularity Application (SAPP) is a package bundle which contains
-within it all of the required dependencies necessary to run. The SAPP
+within it all of the required dependencies necessary to run. It is
+like having a statically compiled binary which can be distributed
+easily from system to system without concern of even the C library
+compatibility.
+
+
+The SAPP
 can contain anything from a simple binary executable to an entire
 pipeline or work flow of multiple applications. There could be
 multiple services which can be run within the SAPP environment and
@@ -85,26 +90,6 @@ libraries and can even include the required data and files for a
 particular application to run. This encapsulation of the entire
 user-space environment facilitates not only portability but also
 reproducibility.
-</p>
-
-<h2>Example Usages</h2>
-<p>
-The following usage example creates a SAPP file for a simple 'find'
-command. The SAPP file can be copied to other operating systems and
-run there.
-<pre>
-$ cd ~
-$ cat find.spec
-program /usr/bin/find
-$ singularity-build find.spec
-   ...
-WROTE: find.sapp
-$ singularity find.sapp . -maxdepth 1 -name \*.sapp
-./find.sapp
-</pre>
-</p>
-<p>
-More examples coming...
 </p>
 
 <h2>License</h2>
