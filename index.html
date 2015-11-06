@@ -44,7 +44,49 @@ Learn more about Singularity <a href="about.html">here!</a>
 <p>
 Watch the 10 minute introduction video below!
 </p>
+
+<script language="javascript" type="text/javascript">
+
+    $(function() {
+        var videoModal = $('#video-modal').overlay({
+            expose: {
+                color: 'black',
+                loadSpeed: 200,
+                opacity: 0.85
+            },
+            closeOnClick: true,
+            api: true
+        });
+
+        $('.video-link').click(function() {
+            videoModal.load();
+
+            var videoUrl = $(this).attr('href');
+            var flashvars = {};
+            var params = {
+                allowFullScreen: "true",
+                allowscriptaccess: "always"
+            };
+            var attributes = {};
+
+            swfobject.embedSWF(videoUrl, 'video-container', '425', '344', '9.0.0', '', flashvars, params, attributes);
+
+            return false;
+        });
+    });
+</script>
+
+<a href="http://www.youtube.com/v/607RMNoJfl4&hl=en_US&fs=1&autoplay=1"
+    class="video-link">Video 2</a>
+
+<div class="modal" id="video-modal">
+    <div id="video-container" style="width: 425px; height: 344px;"></div>
+</div>
+
+
+
 <p>
+
 <iframe width="560" height="315" src="https://www.youtube.com/embed/KGzixMgx8ZA" frameborder="0" allowfullscreen></iframe>
 </p>
 
