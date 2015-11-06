@@ -21,16 +21,20 @@
     <script type="text/javascript">
 
         $(document).ready(function() {
-            $(".various").fancybox({
+            $(".fancybox-media").fancybox({
 //                maxWidth    : 800,
 //                maxHeight   : 600,
 //                fitToView   : false,
 //                width       : '70%',
 //                height      : '70%',
 //                autoSize    : false,
-                closeClick  : false,
+//                closeClick  : false,
                 openEffect  : 'elastic',
                 closeEffect : 'elastic',
+                padding     : 0,
+                helpers : {
+                    media : {}
+                }
             });
         });
     </script>
@@ -71,7 +75,7 @@ Watch the 10 minute introduction video below!
 
 <hr/>
 
-<a class="various fancybox.iframe" href="http://www.youtube.com/embed/KGzixMgx8ZA?autoplay=1">Youtube (iframe)</a>
+<a class="fancybox-media" href="http://www.youtube.com/embed/KGzixMgx8ZA?autoplay=1">Youtube (iframe)</a>
 
 
 <hr/>
