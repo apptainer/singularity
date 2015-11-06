@@ -78,6 +78,9 @@ dt {
 
 img {
   max-width:100%;
+  border-color: gray;
+  border-radius: 10px;
+  border-width: 1px;
 }
 
 header {
