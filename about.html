@@ -26,17 +26,6 @@
 <strong>&raquo;&nbsp;<a href="download.html">Download</a></strong><br/>
 </p>
 
-<hr/>
-<p>
-Singularity creates a new application distribution paradigm by
-utilizing a combination of both packaging and container ideas and
-maintaining the historical precendent of standardized workflows.
-</p>
-<p>
-Learn more about Singularity <a href="about.html">here!</a>
-</p>
-
-        <p></p>
       </header>
       <section>
 
@@ -45,8 +34,8 @@ Learn more about Singularity <a href="about.html">here!</a>
 <p>
 Software development on Linux is moving in a new direction. Thanks to
 advances in virtualization and container technologies, developers are
-finding it very convient to distribute instances of their
-build/development envrionment in addition or instead of source code
+finding it very convient to distribute instances of their entire
+build/development envrionment in addition to or instead of source code
 alone. There are some benefits and drawbacks to this model.
 </p>
 <p>
@@ -54,46 +43,60 @@ Some of the benefits of distributing software in this fashion include
 being able to provide a configuration free implementation which can
 easily be replicated to distribute a software or workflow. The user
 does not need to worry about managing potentially complicated
-dependency chains nor worry about configuration nuances. But the
-drawback are numerous and tend to focus on two major ares. To achieve
-a portable environment the container is usually a complete operating
-system image. This means the overhead involved with management and
-distribution is far from neglidgable (e.g. size, security, updates,
-trust, etc.). Additionally containers and virtual machines may not
-fit a standardized workflow that requires command line usage without
-root escalation.
+dependency chains nor worry about configuration nuances.
 </p>
-
-<h2>The Solution</h2>
 <p>
-Singularity is a package build and run-time environment designed to
-achieve portable application (Singularity Application / SAPP)
-packages which can be then run on any Linux system without ever
-having to worry about portability or dependencies. SAPP packages
-never need to be installed, and can be executed directly at
-run-time as either a contained environment or used like any standard
-Linux program!
+But the drawback are numerous but tend to focus on several major areas:
+container overhead, container technology and architecture concerns (e.g.
+privledge escalation and network/file system access), and workflow
+compatibility.
 </p>
 
-<h2>Portability</h2>
+<h2>The Singularity Solution</h2>
+<p>
+By combining the model of application packaging with containers the
+benefts are numerous! We can now address the above mentioned drawbacks
+that we have seen in containers using a very intuitive and
+architecturally non-invasive userspace solution.
+</p>
+<p>
+Singularity containers are purposed built and can include a simple
+binary and library stack or a complicated workflow which includes both
+network and file system access (or anything inbetween). The
+Singularity Application containers (SAPPs) are then completely portable
+with their only dependency being Singularity running on the target
+system.
+</p>
+<p>
+Because Singularity runs 100% from user space and all container
+contents are always executed as the runtime user (non-root) security
+concerns are greatly mitigated. On a multi-user resource there is no
+longer a need to VLAN a network which is isolated from other users and
+file systems. Additionally access to file systems is achieved internally
+without the use of bind mounts and relative paths have direct access in
+and out of the container thus supporting standard command line usage and
+integration with existing workflows (e.g. batch schedulers).
+</p>
+
+<h3>Portability</h3>
 <p>
 A Singularity Application (SAPP) is a package bundle which contains
 within it all of the required dependencies necessary to run. It is
 like having a statically compiled binary which can be distributed
 easily from system to system without concern of even the C library
 compatibility.
-
-
-The SAPP
-can contain anything from a simple binary executable to an entire
-pipeline or work flow of multiple applications. There could be
-multiple services which can be run within the SAPP environment and
-interaction with the SAPP file is fully configurable. For example
-in the simple configuration you may choose to emulate the program
-arguments so it operates just like running the application directly. 
+</p>
+<p>
+The SAPP package can contain anything from a simple binary
+executable to an entire pipeline or work flow of multiple
+applications. There could be multiple services which can be run
+within the SAPP environment and interaction with the SAPP file is
+fully configurable. For example in the simple configuration you may
+choose to emulate the program arguments so it operates just like
+running the application directly. 
 </p>
 
-<h2>Reproducibility</h2>
+<h3>Reproducibility</h3>
 <p>
 Each SAPP includes all of the application's necessary run-time
 libraries and can even include the required data and files for a
@@ -102,7 +105,7 @@ user-space environment facilitates not only portability but also
 reproducibility.
 </p>
 
-<h2>License</h2>
+<h3>License</h3>
 <p>
 Singularity is released under a modified BSD license. The only modification
 being that you may not use the name's of any project members or contributors
