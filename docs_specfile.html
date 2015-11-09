@@ -95,6 +95,30 @@ section will be executed as a shell script within the SAPP envrionment (containe
 thus standard shell syntax is not only supported but required.
 </li>
 </ul>
+</p>
+<h2>Examples</h2>
+<p>
+<h3>A minimal specfile illustrating how to package a system command</h3>
+<pre>
+Name: find
+Exec: /bin/find
+</pre>
+<h3>How to package a workflow</h3>
+<pre>
+Name: services
+
+%files
+/bin/grep
+/etc/services
+
+%runscript
+for i in $@; do
+    grep "$i" /etc/services
+done
+</pre>
+
+
+
 
 
 </p>
