@@ -27,23 +27,37 @@
 <strong>&raquo;&nbsp;<a href="download.html">Download</a></strong><br/>
 </p>
 
-<hr/>
-<p>
-Singularity creates a new application distribution paradigm by
-utilizing a combination of both packaging and container ideas and
-maintaining the historical precendent of standardized workflows.
-</p>
-<p>
-Learn more about Singularity <a href="about.html">here!</a>
-</p>
-
         <p></p>
       </header>
       <section>
-<h1>Installation</h1>
 &laquo;&nbsp;<a href="docs.html">Back to Documentation</a>
+<h1>Installation</h1>
 <p>
+<h2>Build From Source</h2>
+Presently, Singularity is only available in source code form and can only
+be compiled and run on Linux systems. To obtain and compile the code, do
+the following:
+<pre>
+$ git clone -b master --single-branch https://github.com/gmkurtzer/singularity.git
+$ cd singularity
+$ sh ./autogen.sh
+$ ./configure --prefix=/usr/local
+$ make
+$ sudo make install
+</pre>
 
+<h2>Build an RPM From Source</h2>
+Like the above, you can build an RPM of Singularity so it can be more easily
+managed, upgraded and removed. To obtain, compile and build the RPM do the
+following:
+<pre>
+$ git clone -b master --single-branch https://github.com/gmkurtzer/singularity.git
+$ cd singularity
+$ sh ./autogen.sh
+$ make dist
+$ rpmbuild -ta singularity-*.tar.gz
+$ sudo yum install ~/rpmbuild/RPMS/*/singularity-[0-9]*.rpm
+</pre>
 
 
 
