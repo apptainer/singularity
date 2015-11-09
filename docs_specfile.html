@@ -27,30 +27,77 @@
 <strong>&raquo;&nbsp;<a href="download.html">Download</a></strong><br/>
 </p>
 
-<hr/>
-<p>
-Singularity creates a new application distribution paradigm by
-utilizing a combination of both packaging and container ideas and
-maintaining the historical precendent of standardized workflows.
-</p>
-<p>
-Learn more about Singularity <a href="about.html">here!</a>
-</p>
-
         <p></p>
       </header>
       <section>
-<h1>Specfile</h1>
 &laquo;&nbsp;<a href="docs.html">Back to Documentation</a>
+<h1>Specfile</h1>
 <p>
+The Singularity specfile is designed around the notion of packaging, so some
+packaging standards have been leveraged. The specfile tells Singularity what
+components from the host operating system should be included and packaged into
+the Singularity Application (SAPP) container. This format is also young and
+more features will be included as they become needed. At present the specfile
+is divided into two areas: tags (key-value pairs which are usually for header
+information) and sections. Both are defined below:
+<h2>Key/Value Tags</h2>
+<p>
+All Tags must be defined above any sections, so they are usually found at the
+top of the specfile. They have the format "KEY: VALUE" (key name followed by a
+colon, then a single space and a single line value string). Valid tag names are
+defined below:
+<ul>
+<li>
+<strong>Name:</strong>
+Define the name of the SAPP pacakge. If this is omitted then the name is
+derived from the name of the specfile.
+<br/>
+<em>
+note: this should not have spaces or other non-file name happy characters.
+</em>
+</li>
+<li>
+<strong>Maintainer:</strong>
+The free form name and email address of the SAPP maintainer or developer that
+created and maintains this package.
+</li>
+<li>
+<strong>Exec:</strong>
+The primary binary or script that will be exec'ed when this SAPP envrionment
+is run.
+<br/>
+<em>
+note: If this tag is omitted, you must define a %runscript section!
+</em>
+</li>
+</ul>
+</p>
+<h2>Sections</h2>
+<p>
+Sections (unlike tags) are meant for multi-line information and are all prefixed
+with a '%' (percent sign). The section will include all following lines until
+either the end of the file or the next section. Supported section names are as
+follows:
+<ul>
+<li>
+<strong>%files</strong>
+This should be a list of all files from the host operating system that should be
+bundled into the SAPP envrionment. All of the programs, data, configurations, and
+files that you need to run should be listed. One line per file (globs supported).
+</li>
+<li>
+<strong>%runscript</strong>
+The runscript is the driver which gets exec'ed when the SAPP bundle is run. Iff
+you have defined an "Exec:" declaration above, then by default this written for
+you. Using this feature, you can either rewrite the default behavior or if you
+have chosen not to define "Exec:" then this section would be required. This
+section will be executed as a shell script within the SAPP envrionment (container)
+thus standard shell syntax is not only supported but required.
+</li>
+</ul>
 
 
-
-
-
-
-
-
+</p>
 </p>
 
       </section>
