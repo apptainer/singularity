@@ -99,11 +99,18 @@ thus standard shell syntax is not only supported but required.
 <h2>Examples</h2>
 <p>
 <h3>A minimal specfile illustrating how to package a system command</h3>
+Because we are using the 'Exec' tag, Singularity will automatically exec the
+container properly including pipes and pass all arguments to the program /bin/find
+properly. You would run the resulting SAPP container in the same manner as you
+would run the program being Exec'ed.
 <pre>
 Name: find
 Exec: /bin/find
 </pre>
 <h3>How to package a workflow</h3>
+This example demonstrates how to do something specific within the SAPP container.
+Here we will package up a simple data file example, and demonstrate how to use a
+shell scriptlet to do something specific with the arguments provided.
 <pre>
 Name: services
 
@@ -116,11 +123,6 @@ for i in $@; do
     grep "$i" /etc/services
 done
 </pre>
-
-
-
-
-
 </p>
 </p>
 
