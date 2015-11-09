@@ -30,9 +30,8 @@
         <p></p>
       </header>
       <section>
-<h1>Overview</h1>
 &laquo;&nbsp;<a href="docs.html">Back to Documentation</a>
-<hr/>
+<h1>Overview</h1>
 <p>
 The goal with Singularity is to build a container system which completely
 abstracts out the container so it virtually doesn't exist. Simplify the
@@ -99,7 +98,7 @@ therein.
 This can be illustrated as follows:<br/>
 <img src="images/singularity_architecture_stack.png" border="0"/>
 </p>
-<h2>Access to files</h2>
+<h2>Container access to files</h2>
 <p>
 File system access outside the container is provided and managed via a file
 descriptor to the current working directory where Singularity was initally
@@ -118,6 +117,14 @@ or other intereference with IO which may affect performance.
 Fully qualified paths would always resolve internally to the container. This
 is the fundamental mechanism to containers and necessary for applications to
 operate and resolve dependencies within the containered envrionment.
+</p>
+<p>
+The architecture as you can see is specifically designed to interoperate both
+inside and outside of the container, but there is a feature that will be
+included at some point which will lock the container so it can not be escaped
+or have any interaction with the host system. This could be very useful for
+running test environments, network services, or when you just wish to keep
+the contained envrionment contained!
 </p>
 
 
