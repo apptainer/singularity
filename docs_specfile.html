@@ -94,6 +94,12 @@ have chosen not to define "Exec:" then this section would be required. This
 section will be executed as a shell script within the SAPP environment (container)
 thus standard shell syntax is not only supported but required.
 </li>
+<li>
+<strong>%test</strong>
+Here you can run any tests to ensure that your envrionment is working properly
+before it is built and packaged into a SAPP file. The format is standard shell
+and any non zero exit is considered a failure and will thus halt the build.
+</li
 </ul>
 </p>
 <h2>Examples</h2>
@@ -126,6 +132,13 @@ Name: services
 for i in $@; do
     grep "$i" /etc/services
 done
+
+%test
+if grep -q "smtp" /etc/services; then
+    exit 0
+else
+    exit 1
+fi
 </pre>
 </p>
 </p>
