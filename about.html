@@ -34,48 +34,48 @@
 <p>
 Software development on Linux is moving in a new direction. Thanks to
 advances in virtualization and container technologies, developers are
-finding it very convient to distribute instances of their entire
-build/development envrionment in addition to or instead of source code
+finding it very convenient to distribute instances of their entire
+build/development environment in addition to or instead of source code
 alone. There are some benefits and drawbacks to this model.
 </p>
 <p>
 Some of the benefits of distributing software in this fashion include
 being able to provide a configuration free implementation which can
-easily be replicated to distribute a software or workflow. The user
+easily be replicated to distribute a software or work flow. The user
 does not need to worry about managing potentially complicated
 dependency chains nor worry about configuration nuances.
 </p>
 <p>
 But the drawback are numerous but tend to focus on several major areas:
 container overhead, container technology and architecture concerns (e.g.
-privledge escalation and network/file system access), and workflow
+privilege escalation and network/file system access), and work flow
 compatibility.
 </p>
 
 <h2>The Singularity Solution</h2>
 <p>
 By combining the model of application packaging with containers the
-benefts are numerous! We can now address the above mentioned drawbacks
+benefits are numerous! We can now address the above mentioned drawbacks
 that we have seen in containers using a very intuitive and
-architecturally non-invasive userspace solution.
+architecturally non-invasive user-space solution.
 </p>
 <p>
 Singularity containers are purposed built and can include a simple
-binary and library stack or a complicated workflow which includes both
-network and file system access (or anything inbetween). The
+binary and library stack or a complicated work flow which includes both
+network and file system access (or anything in-between). The
 Singularity Application containers (SAPPs) are then completely portable
 with their only dependency being Singularity running on the target
 system.
 </p>
 <p>
 Because Singularity runs 100% from user space and all container
-contents are always executed as the runtime user (non-root) security
+contents are always executed as the run-time user (non-root) security
 concerns are greatly mitigated. On a multi-user resource there is no
 longer a need to VLAN a network which is isolated from other users and
 file systems. Additionally access to file systems is achieved internally
 without the use of bind mounts and relative paths have direct access in
 and out of the container thus supporting standard command line usage and
-integration with existing workflows (e.g. batch schedulers).
+integration with existing work flows (e.g. batch schedulers).
 </p>
 
 <h3>Portability</h3>

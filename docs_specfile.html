@@ -49,7 +49,7 @@ defined below:
 <ul>
 <li>
 <strong>Name:</strong>
-Define the name of the SAPP pacakge. If this is omitted then the name is
+Define the name of the SAPP package. If this is omitted then the name is
 derived from the name of the specfile.
 <br/>
 <em>
@@ -63,7 +63,7 @@ created and maintains this package.
 </li>
 <li>
 <strong>Exec:</strong>
-The primary binary or script that will be exec'ed when this SAPP envrionment
+The primary binary or script that will be exec'ed when this SAPP environment
 is run.
 <br/>
 <em>
@@ -82,7 +82,7 @@ follows:
 <li>
 <strong>%files</strong>
 This should be a list of all files from the host operating system that should be
-bundled into the SAPP envrionment. All of the programs, data, configurations, and
+bundled into the SAPP environment. All of the programs, data, configurations, and
 files that you need to run should be listed. One line per file (globs supported).
 </li>
 <li>
@@ -91,7 +91,7 @@ The runscript is the driver which gets exec'ed when the SAPP bundle is run. Iff
 you have defined an "Exec:" declaration above, then by default this written for
 you. Using this feature, you can either rewrite the default behavior or if you
 have chosen not to define "Exec:" then this section would be required. This
-section will be executed as a shell script within the SAPP envrionment (container)
+section will be executed as a shell script within the SAPP environment (container)
 thus standard shell syntax is not only supported but required.
 </li>
 </ul>
@@ -109,7 +109,7 @@ would run the program being Exec'ed.
 Name: find
 Exec: /bin/find
 </pre>
-<h3>How to package a workflow</h3>
+<h3>How to package a work-flow</h3>
 <p>
 This example demonstrates how to do something specific within the SAPP container.
 Here we will package up a simple data file example, and demonstrate how to use a

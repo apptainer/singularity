@@ -35,7 +35,7 @@
 <p>
 The goal with Singularity is to build a container system which completely
 abstracts out the container so it virtually doesn't exist. Simplify the
-interface such that the container envrionment is no longer a consideration.
+interface such that the container environment is no longer a consideration.
 A good example implementation of this is how Apple's OS X deals with
 application bundles. Installing an application is as easy as obtaining
 an OS X "app" (which is actually a directory of a particular format). This
@@ -44,14 +44,14 @@ anywhere within the Finder interface (it is recommended to copy them to a
 common location by dragging them to the /Applications directory).
 </p>
 <p>
-Singularity provides both the runtime environment and also the build tools.
+Singularity provides both the run-time environment and also the build tools.
 </p>
 
 <h2>Building the SAPP</h2>
 <p>
 The process of building/creating a Singularity Application (SAPP) container
 starts with defining a Singularity specfile. The specfile resembles a
-standard packaging format (RPM inparticular) and works in a similar manner
+standard packaging format (RPM in-particular) and works in a similar manner
 to a packaging technology. The role of the specfile is to determine what
 files would go into the final SAPP package and what the SAPP container will
 do when it is executed.
@@ -59,22 +59,22 @@ do when it is executed.
 <p>
 The build process will automatically resolve dependencies (as it can), but
 it is always safest to assume you must manually specify all binaries,
-configration files, data, and operating system dependencies that are
+configuration files, data, and operating system dependencies that are
 non-standard.
 </p>
 <p>
 Singularity will take the defined files, all files that it probed which
 are dependencies, as well as other standard and necessary files and bundle
-them up into a format which Singularity can then execute at runtime.
+them up into a format which Singularity can then execute at run-time.
 </p>
 <p>
 More information about the specfile can be found on the
 <a href="docs_specfile.html">documentation page for the specfile</a>.
 </p>
 
-<h2>Runtime</h2>
+<h2>Run-time</h2>
 <p>
-Singularity is designed to run containers like any other appliction on the
+Singularity is designed to run containers like any other application on the
 system. When it is invoked, it begins a chain of events that checks the SAPP
 file, and explodes the contents of the container to disk. A very important
 note is that all of these actions are done as the user who is running
@@ -86,10 +86,10 @@ of the SAPP file.
 </p>
 <p>
 At this point, the commands, arguments, IO and pipes are all passed to the
-Singularity container executation engine which is responsible for calling the
+Singularity container execution engine which is responsible for calling the
 change root (chroot()) system call and thus moving the top of the file system
 from the host's root ('/'), to the container's root ('/') which allows the
-applications running within the container to satisify all dependencies
+applications running within the container to satisfy all dependencies
 solely within the container. This puts the container itself temporarily along
 side the host operating system as it executes the applications which exist
 therein.
@@ -101,7 +101,7 @@ This can be illustrated as follows:<br/>
 <h2>Access to files</h2>
 <p>
 File system access outside the container is provided and managed via a file
-descriptor to the current working directory where Singularity was initally
+descriptor to the current working directory where Singularity was initially
 called. Any paths which are thus defined relative to the starting directory
 will properly resolve without the need to provide any additional mount layers
 (e.g. a bind mount).
@@ -111,20 +111,20 @@ Because of how Singularity handles relative paths, it is very easy to make use
 of specialized file systems (e.g. very high speed data IO or archive storage)
 by simply starting in or pointing at the directory from the relative starting
 point. This manner of operation also puts no additional latency, bottlenecks,
-or other intereference with IO which may affect performance.
+or other interference with IO which may affect performance.
 </p>
 <p>
 Fully qualified paths would always resolve internally to the container. This
 is the fundamental mechanism to containers and necessary for applications to
-operate and resolve dependencies within the containered envrionment.
+operate and resolve dependencies within the container-ed environment.
 </p>
 <p>
-The architecture as you can see is specifically designed to interoperate both
+The architecture as you can see is specifically designed to inter-operate both
 inside and outside of the container, but there is a feature that will be
 included at some point which will lock the container so it can not be escaped
 or have any interaction with the host system. This could be very useful for
 running test environments, network services, or when you just wish to keep
-the contained envrionment contained!
+the contained environment contained!
 </p>
 
 
