@@ -32,22 +32,25 @@ if [ -z "$TMPDIR" ]; then
     exit 1
 fi
 
+if [ ! -d "$TMPDIR/c" ]; then
+    mkdir -p "$TMPDIR/c"
+fi
 
 message 3 "Creating template files\n"
-if [ ! -d "$TMPDIR/etc" ]; then
-    mkdir -p "$TMPDIR/etc"
+if [ ! -d "$TMPDIR/c/etc" ]; then
+    mkdir -p "$TMPDIR/c/etc"
 fi
-cat <<EOF > "$TMPDIR/etc/nsswitch.conf"
+cat <<EOF > "$TMPDIR/c/etc/nsswitch.conf"
 passwd:     files sss
 shadow:     files sss
 group:      files sss
 #hosts:     db files nisplus nis dns
 hosts:      files dns myhostname
 EOF
-cat <<EOF > "$TMPDIR/etc/resolv.conf"
+cat <<EOF > "$TMPDIR/c/etc/resolv.conf"
 nameserver 8.8.8.8
 EOF
-cat <<EOF > "$TMPDIR/etc/hosts"
+cat <<EOF > "$TMPDIR/c/etc/hosts"
 127.0.0.1 localhost
 EOF
 

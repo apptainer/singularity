@@ -22,8 +22,8 @@ else
     exit 1
 fi
 
-if [ -z "$SAPPFILE" ]; then
-    message 0 "SAPP output file not passwed\n"
+if [ -z "$SAPPSPEC" ]; then
+    message 0 "SAPP specfile not given\n"
     exit 1
 fi
 
@@ -32,11 +32,15 @@ if [ -z "$TMPDIR" ]; then
     exit 1
 fi
 
-rm -f $TMPDIR/c/dev/*
 
-(cd "$TMPDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
-message 1 "WROTE: $SAPPFILE\n"
+message 2 "Including SAPPFILE\n"
+cat "$SAPPSPEC" > "$TMPDIR/spec"
 
-chmod +x "$SAPPFILE"
+message 2 "Calculating container size\n"
+du -sk "$TMPDIR/c" | cut -f 1 > "$TMPDIR/size"
+
+message 2 "Calculating checksums\n"
+(cd "$TMPDIR/c"; find . -type f | xargs md5sum) > "$TMPDIR/files"
+
 
 exit 0

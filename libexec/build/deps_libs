@@ -40,18 +40,18 @@ INCLUDE_LIBS="/lib64/libnss_files.so.2 /lib/libnss_files.so.2 /lib64/libnss_dns.
 
 
 message 2 "Searching for library dependencies\n"
-for file in `find $TMPDIR -type f -executable -print`; do
+for file in `find "$TMPDIR/c" -type f -executable -print`; do
     message 5 "scanning executable file for dependencies: $file\n"
     for dep in `ldd $file | sed -e 's@ @\n@g'`; do
         if [ -f "$dep" ]; then
             BASENAME=`basename $dep`
             message 3 "found dependency:      $dep\n"
-            if [ ! -d "$TMPDIR/lib$LIBSUFFIX" ]; then
-                mkdir -p "$TMPDIR/lib$LIBSUFFIX"
+            if [ ! -d "$TMPDIR/c/lib$LIBSUFFIX" ]; then
+                mkdir -p "$TMPDIR/c/lib$LIBSUFFIX"
             fi
-            if [ ! -f "$TMPDIR/lib$LIBSUFFIX/$BASENAME" ]; then
+            if [ ! -f "$TMPDIR/c/lib$LIBSUFFIX/$BASENAME" ]; then
                 message 2 "copying dependency:    $dep\n"
-                cp -L "$dep" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
+                cp -L "$dep" "$TMPDIR/c/lib$LIBSUFFIX/$BASENAME"
                 RETVAL=1
             fi
         fi
@@ -63,12 +63,12 @@ for dep in $INCLUDE_LIBS; do
     if [ -f "$dep" ]; then
         BASENAME=`basename $dep`
         message 3 "found dependency:      $dep\n"
-        if [ ! -d "$TMPDIR/lib$LIBSUFFIX" ]; then
-            mkdir -p "$TMPDIR/lib$LIBSUFFIX"
+        if [ ! -d "$TMPDIR/c/lib$LIBSUFFIX" ]; then
+            mkdir -p "$TMPDIR/c/lib$LIBSUFFIX"
         fi
-        if [ ! -f "$TMPDIR/lib$LIBSUFFIX/$BASENAME" ]; then
+        if [ ! -f "$TMPDIR/c/lib$LIBSUFFIX/$BASENAME" ]; then
             message 2 "copying dependency:    $dep\n"
-            cp -L "$dep" "$TMPDIR/lib$LIBSUFFIX/$BASENAME"
+            cp -L "$dep" "$TMPDIR/c/lib$LIBSUFFIX/$BASENAME"
             RETVAL=1
         fi
     fi

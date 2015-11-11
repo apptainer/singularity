@@ -34,7 +34,7 @@ fi
 
 
 message 2 "Checking for cached singularity SAPP environment\n"
-if [ -x "$SAPPDIR/singularity" ]; then
+if [ -x "$SAPPDIR/c/singularity" ]; then
     message 2 "Using Cached SAPP environment\n"
 else
     message 2 "No singularity environment cached for this SAPP\n"

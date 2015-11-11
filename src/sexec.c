@@ -54,34 +54,34 @@ int main(int argc, char **argv) {
     }
 
     // Get sappdir from the environment (we check on this shortly)
-    sappdir = getenv("SAPPDIR");
+    sappdir = getenv("SAPPCONTAINER");
 
 
     /*
      * Sanity Checks, exit if any don't match.
      */
 
-    // Make sure SAPPDIR is defined
+    // Make sure SAPPCONTAINER is defined
     if ( sappdir == NULL ) {
-        fprintf(stderr, "ERROR: SAPPDIR undefined!\n");
+        fprintf(stderr, "ERROR: SAPPCONTAINER undefined!\n");
         return(1);
     }
 
-    // Check SAPPDIR
+    // Check SAPPCONTAINER
     if (lstat(sappdir, &sappdirstat) < 0) {
         fprintf(stderr, "ERROR: Could not stat %s!\n", sappdir);
         return(1);
     }
     if ( ! S_ISDIR(sappdirstat.st_mode) ) {
-        fprintf(stderr, "ERROR: SAPPDIR (%s) must be a SAPP directory!\n", sappdir);
+        fprintf(stderr, "ERROR: SAPPCONTAINER (%s) must be a SAPP directory!\n", sappdir);
         return(1);
     }
     if ( uid != (int)sappdirstat.st_uid ) {
-        fprintf(stderr, "ERROR: Will not execute in a SAPPDIR you don't own. (%s:%d)!\n", sappdir, (int)sappdirstat.st_uid);
+        fprintf(stderr, "ERROR: Will not execute in a SAPPCONTAINER you don't own. (%s:%d)!\n", sappdir, (int)sappdirstat.st_uid);
         return(255);
     }
 
-    // Check the singularity within the SAPPDIR
+    // Check the singularity within the SAPPCONTAINER
     singularitypath = (char *) malloc(strlen(sappdir) + 13);
     snprintf(singularitypath, strlen(sappdir) + 13, "%s/singularity", sappdir);
     if (stat(singularitypath, &singularitystat) < 0) {
@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
         return(1);
     }
     if ( ! S_ISREG(singularitystat.st_mode) ) {
-        fprintf(stderr, "ERROR: The singularity is not found in SAPPDIR!\n");
+        fprintf(stderr, "ERROR: The singularity is not found in SAPPCONTAINER!\n");
         return(1);
     }
     if ( uid != (int)singularitystat.st_uid ) {
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 
     // Do the chroot
     if ( chroot(sappdir) != 0 ) {
-        fprintf(stderr, "ERROR: failed enter SAPPDIR: %s\n", sappdir);
+        fprintf(stderr, "ERROR: failed enter SAPPCONTAINER: %s\n", sappdir);
         return(255);
     }
 

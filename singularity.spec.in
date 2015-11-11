@@ -40,6 +40,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/build
 %{_libexecdir}/singularity/run
 %{_libexecdir}/singularity/help
+%{_libexecdir}/singularity/cache
 %{_bindir}/singularity
 %{_bindir}/sapprun
 

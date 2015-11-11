@@ -35,23 +35,23 @@ fi
 
 # Pull in the %test section of the spec
 message 3 "Evaluating specfile for section 'test'\n"
-echo "#!/bin/sh" > "$TMPDIR/singularity"
-echo "PATH=/bin:/usr/bin:/sbin:/usr/sbin" >> "$TMPDIR/singularity"
-echo "set -x" >> "$TMPDIR/singularity"
-get_section_from_conf "test" "$SAPPSPEC" >> "$TMPDIR/singularity.test"
+echo "#!/bin/sh" > "$TMPDIR/c/singularity"
+echo "PATH=/bin:/usr/bin:/sbin:/usr/sbin" >> "$TMPDIR/c/singularity"
+echo "set -x" >> "$TMPDIR/c/singularity"
+get_section_from_conf "test" "$SAPPSPEC" >> "$TMPDIR/c/singularity.test"
 
-if [ -s "$TMPDIR/singularity.test" ]; then
-    cat "$TMPDIR/singularity.test" >> "$TMPDIR/singularity"
-    chmod 755 "$TMPDIR/singularity"
-    rm -f "$TMPDIR/singularity.test"
+if [ -s "$TMPDIR/c/singularity.test" ]; then
+    cat "$TMPDIR/c/singularity.test" >> "$TMPDIR/cingularity"
+    chmod 755 "$TMPDIR/c/singularity"
+    rm -f "$TMPDIR/c/singularity.test"
 
     if [ -x "$libexecdir/singularity/sexec" ]; then
-        SAPPDIR="$TMPDIR"
-        export SAPPDIR
+        SAPPCONTAINER="$TMPDIR/c"
+        export SAPPCONTAINER
         message 1 "Running %test...\n"
         exec "$libexecdir/singularity/sexec" "$@"
     fi
 fi
-rm -f "$TMPDIR/singularity.test"
+rm -f "$TMPDIR/c/singularity.test"
 
 exit 0

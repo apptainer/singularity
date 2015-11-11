@@ -1,4 +1,4 @@
-SUBDIRS = build run help
+SUBDIRS = build run help cache
 
 scriptlibexecdir = $(libexecdir)/singularity
 

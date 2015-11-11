@@ -33,7 +33,7 @@ if [ -z "$SAPPDIR" ]; then
 fi
 
 message 2 "Checking SAPP environment at: $SAPPDIR\n"
-if [ ! -x "$SAPPDIR/singularity" ]; then
+if [ ! -x "$SAPPDIR/c/singularity" ]; then
     message 0 "SAPP environment is not good!\n"
     exit 1
 fi

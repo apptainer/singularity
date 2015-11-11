@@ -25,10 +25,11 @@ fi
 
 SAPPSPEC="$1"
 SAPPFILE="$2"
-export SAPPSPEC SAPPFILE
+RETVAL=0
+export SAPPSPEC SAPPFILE RETVAL
 
 if [ -z "$SAPPSPEC" ]; then
-    message 0 "SAPP specfile not given\n"
+    message 0 "USAGE: singularity (options) build [SAPP specfile] (SAPP target)\n"
     exit 1
 fi
 

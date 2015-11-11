@@ -23,14 +23,21 @@ else
 fi
 
 
+cleanup() {
+    BAIL_OUT=1
+}
+
+trap cleanup SIGHUP SIGINT SIGTERM
+
 SAPPFILE="$1"
 SAPPCACHE="$HOME/.sapp-cache"
 SAPPDIR=""
-export SAPPFILE SAPPCACHE SAPPDIR
+RETVAL=0
+export SAPPFILE SAPPCACHE SAPPDIR RETVAL
 shift
 
 if [ -z "$SAPPFILE" ]; then
-    message 0 "SAPP file not defined\n"
+    message 0 "USAGE: singularity (options) run [SAPP File] (SAPP options)\n"
     exit 1
 fi
 
@@ -51,7 +58,7 @@ if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
     exit 1
 fi
 
-SAPPDIR="$SAPPCACHE/$CHECKSUM"
+SAPPDIR="$SAPPCACHE/$SAPPFILE/$CHECKSUM"
 
 if [ ! -d "$SAPPDIR" ]; then
     if ! mkdir -p "$SAPPDIR"; then
@@ -80,11 +87,40 @@ for i in $libexecdir/singularity/run/[0-9]*; do
     fi
 done
 
-if [ -x "$libexecdir/singularity/sexec" ]; then
-    message 2 "Exec'ing Sexec\n"
-    exec "$libexecdir/singularity/sexec" "$@"
+if [ -n "$BAIL_OUT" ]; then
+    exit 1
 fi
 
 
+cleanup() {
+    exec 2>/dev/null
+    if [ -n "$CHILD_PID" ]; then
+        kill -9 "$CHILD_PID" >/dev/null 2>&1
+        sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/pids"
+    fi
+}
+
+
+# Create a seperate thread to run the exec
+( 
+    if [ -x "$libexecdir/singularity/sexec" ]; then
+        message 2 "Exec'ing Sexec\n"
+        SAPPCONTAINER="$SAPPDIR/c"
+        export SAPPCONTAINER
+        exec "$libexecdir/singularity/sexec" "$@"
+    fi
+) &
+
+CHILD_PID=$!
+echo -ne "$CHILD_PID " >> "$SAPPDIR/pids"
+
+message 2 "Waiting for pid $CHILD_PID to complete\n"
+
+wait $CHILD_PID
+RETVAL=$?
+
+message 2 "Completed job.. cleaning up\n"
+
+sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/pids"
 
 exit $RETVAL

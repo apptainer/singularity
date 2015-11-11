@@ -37,13 +37,7 @@ message 3 "Evaluating specfile for 'exec'\n"
 # Pull in defined keys that specify files
 for i in `get_key_from_conf "exec" $SAPPSPEC`; do
     if FULLFILE=`which "$i" 2>/dev/null`; then
-        copy_file_to_sappdir "$FULLFILE" "$TMPDIR"
-        if [ ! -f "$TMPDIR/exec" ]; then
-            message 5 "Setting 'exec' to '$FULLFILE'\n"
-            echo "#!/bin/sh" > "$TMPDIR/exec"
-            echo "exec \"$FULLFILE\" \"\$@\"" >> "$TMPDIR/exec"
-            chmod +x "$TMPDIR/exec"
-        fi
+        copy_file_to_sappdir "$FULLFILE" "$TMPDIR/c"
     else
         message 0 "Error: failed processing program: $i\n"
         exit 1
@@ -55,7 +49,7 @@ fi
 
 message 3 "Evaluating specfile for 'requires'\n"
 for i in `get_key_from_conf "requires" $SAPPSPEC`; do
-    if ! copy_file_to_sappdir "$i" "$TMPDIR"; then
+    if ! copy_file_to_sappdir "$i" "$TMPDIR/c"; then
         message 0 "Error: failed processing requires: $i\n"
         exit 1
     fi
@@ -67,7 +61,7 @@ fi
 # Pull in the %files section of the spec
 message 3 "Evaluating specfile for section 'files'\n"
 get_section_from_conf "files" $SAPPSPEC | while read i; do
-    if ! copy_file_to_sappdir "$i" "$TMPDIR"; then
+    if ! copy_file_to_sappdir "$i" "$TMPDIR/c"; then
         message 0 "Error: failed processing file: $i\n"
         exit 1
     fi
@@ -79,7 +73,7 @@ fi
 # Things we always just must have
 message 3 "Evaluating specfile for hard coded requirements\n"
 for i in /bin/sh; do
-    if ! copy_file_to_sappdir "$i" "$TMPDIR"; then
+    if ! copy_file_to_sappdir "$i" "$TMPDIR/c"; then
         message 0 "Error: failed processing requires: $i\n"
         exit 1
     fi
