@@ -38,10 +38,9 @@ if [ -z "$COMMAND" ]; then
     exit 1
 fi
 
-message 1 "Module is still under development\n"
-
 case "$COMMAND" in
     list)
+        printf "%-30s %-10s %-8s\n" "SAPPNAME" "SIZE" "STATE"
         for i in $SAPPCACHE/*/*/c/singularity; do
             if [ -f "$i" ]; then
                 CONTAINER=`dirname "$i"`
