@@ -27,16 +27,16 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$TMPDIR" ]; then
-    message 0 "ERROR: TMPDIR not given\n"
+if [ -z "$SAPPDIR" ]; then
+    message 0 "ERROR: SAPPDIR not given\n"
     exit 1
 fi
 
 
 
-if [ ! -d "$TMPDIR/c" ]; then
-    if ! mkdir -p "$TMPDIR/c" 2>/dev/null; then
-        message 0 "ERROR: Could not container directory $TMPDIR/c\n";
+if [ ! -d "$SAPPDIR/c" ]; then
+    if ! mkdir -p "$SAPPDIR/c" 2>/dev/null; then
+        message 0 "ERROR: Could not container directory $SAPPDIR/c\n";
         exit 1
     fi
 fi
@@ -46,7 +46,7 @@ fi
 message 3 "Evaluating specfile for 'exec'\n"
 for i in `get_key_from_conf "exec" $SAPPSPEC`; do
     if FULLFILE=`which "$i" 2>/dev/null`; then
-        copy_file_to_sappdir "$FULLFILE" "$TMPDIR/c"
+        copy_file_to_sappdir "$FULLFILE"
     else
         message 0 "Error: failed processing program: $i\n"
         exit 1
@@ -58,10 +58,13 @@ fi
 
 # Pull in the %files section of the spec
 message 3 "Evaluating specfile for section 'files'\n"
-get_section_from_conf "files" $SAPPSPEC | while read i; do
-    if ! copy_file_to_sappdir "$i" "$TMPDIR/c"; then
-        message 0 "Error: failed processing file: $i\n"
-        exit 1
+get_section_from_conf "files" $SAPPSPEC | while read file dir; do
+    if [ -n "$file" ]; then
+        message 2 "Will copy file into SAPPDIR: $file\n"
+        if ! copy_file_to_sappdir "$file" "$dir"; then
+            message 0 "Error: failed processing file: $a\n"
+            exit 1
+        fi
     fi
 done
 if [ "$?" -ne "0" ]; then
@@ -71,7 +74,7 @@ fi
 # Things we always just must have
 message 3 "Evaluating specfile for hard coded requirements\n"
 for i in /bin/sh; do
-    if ! copy_file_to_sappdir "$i" "$TMPDIR/c"; then
+    if ! copy_file_to_sappdir "$i"; then
         message 0 "Error: failed processing requires: $i\n"
         exit 1
     fi

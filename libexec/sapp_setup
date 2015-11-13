@@ -27,31 +27,31 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$TMPDIR" ]; then
-    message 0 "ERROR: TMPDIR not given\n"
+if [ -z "$SAPPDIR" ]; then
+    message 0 "ERROR: SAPPDIR not given\n"
     exit 1
 fi
 
 
 
-if [ ! -d "$TMPDIR/c/etc" ]; then
-    if ! mkdir -p "$TMPDIR/c/etc" 2>/dev/null; then
-        message 0 "ERROR: Could not create directory $TMPDIR/c/etc\n"
+if [ ! -d "$SAPPDIR/c/etc" ]; then
+    if ! mkdir -p "$SAPPDIR/c/etc" 2>/dev/null; then
+        message 0 "ERROR: Could not create directory $SAPPDIR/c/etc\n"
     fi
 fi
 
 
 message 3 "Creating template files\n"
-cat <<EOF > "$TMPDIR/c/etc/nsswitch.conf"
+cat <<EOF > "$SAPPDIR/c/etc/nsswitch.conf"
 passwd:     files sss
 shadow:     files sss
 group:      files sss
 hosts:      files dns myhostname
 EOF
-cat <<EOF > "$TMPDIR/c/etc/resolv.conf"
+cat <<EOF > "$SAPPDIR/c/etc/resolv.conf"
 nameserver 8.8.8.8
 EOF
-cat <<EOF > "$TMPDIR/c/etc/hosts"
+cat <<EOF > "$SAPPDIR/c/etc/hosts"
 127.0.0.1 localhost
 EOF
 

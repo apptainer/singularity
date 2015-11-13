@@ -38,10 +38,10 @@ SAPPFILE="$2"
 RETVAL=0
 NAME=`get_key_from_conf "Name" $SAPPSPEC`
 SUMMARY=`get_key_from_conf "Summary" $SAPPSPEC`
-TMPDIR=`mktemp -d /tmp/.singularity.XXXXXXX`
+SAPPDIR=`mktemp -d /tmp/.singularity.XXXXXXX`
 MODULES="sapp_sanity sapp_setup sapp_files sapp_deps sapp_buildmeta sapp_runscripts sapp_test sapp_archive"
 
-export SAPPSPEC SAPPFILE RETVAL TMPDIR
+export SAPPSPEC SAPPFILE RETVAL SAPPDIR
 
 
 if [ -n "$NAME" ]; then
@@ -68,7 +68,7 @@ else
 fi
 
 message 1 "Building: $NAME\n"
-message 2 "Working directory: $TMPDIR\n"
+message 2 "Working directory: $SAPPDIR\n"
 message 2 "Output file: $SAPPFILE\n"
 
 
@@ -89,46 +89,11 @@ for module in $MODULES; do
     fi
 done
 
-exit 0
-
-
-
-
-
-
-
-
-
-
-echo "#!/usr/bin/env sapprun" > $SAPPFILE
-echo "Name: $NAME" >> $SAPPFILE
-echo "Summary: $SUMMARY" >> $SAPPFILE
-echo "$HEADER_END" >> $SAPPFILE
-
-for i in $libexecdir/singularity/build/[0-9]*; do
-    if [ -x "$i" ]; then
-        message 3 "Running: $i\n"
-        sh "$i" "$@"
-        EXITCODE="$?"
-        if [ "$EXITCODE" -ne "0" ]; then
-            message 0 "Error thrown from module: $i\n"
-            message 0 "Quiting!\n"
-            rm -f $SAPPFILE
-            exit $EXITCODE
-        fi
-    else
-        message 1 "Error locating module: $i\n"
-        message 2 "Left tmpdir at $TMPDIR\n"
-        rm -f $SAPPFILE
-        exit 1
-    fi
-
-done
-
 if [ -z "$DEBUG" ]; then
-    rm -rf $TMPDIR
+    rm -rf "$SAPPDIR"
 else
-    message 5 "working directory at: $TMPDIR\n"
+    message 5 "working directory at: $SAPPDIR\n"
 fi
 
-exit $RETVAL
+
+exit 0

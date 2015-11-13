@@ -32,15 +32,15 @@ if [ -z "$SAPPFILE" ]; then
     exit 1
 fi
 
-if [ -z "$TMPDIR" ]; then
-    message 0 "ERROR: TMPDIR not given\n"
+if [ -z "$SAPPDIR" ]; then
+    message 0 "ERROR: SAPPDIR not given\n"
     exit 1
 fi
 
 
 
-if [ ! -d "$TMPDIR" ]; then
-    if ! mkdir -p "$TMPDIR" 2>/dev/null; then
+if [ ! -d "$SAPPDIR" ]; then
+    if ! mkdir -p "$SAPPDIR" 2>/dev/null; then
         message 0 "ERROR: Could not create temporary directory\n";
         exit 1
     fi

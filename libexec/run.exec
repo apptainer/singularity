@@ -23,13 +23,6 @@ else
 fi
 
 
-cleanup() {
-    echo "Bailing out!"
-    BAIL_OUT=1
-}
-
-trap cleanup SIGHUP SIGINT SIGTERM
-
 SAPPFILE="$1"
 SAPPCACHE="$HOME/.sapp-cache"
 SAPPDIR=""
@@ -101,10 +94,6 @@ for module in $MODULES; do
     fi
 done
 
-
-if [ -n "$BAIL_OUT" ]; then
-    exit 1
-fi
 
 message 2 "Checking SAPP environment at: $SAPPDIR\n"
 if [ ! -x "$SAPPDIR/c/singularity" ]; then

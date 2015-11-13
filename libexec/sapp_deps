@@ -27,8 +27,8 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$TMPDIR" ]; then
-    message 0 "TMPDIR not given\n"
+if [ -z "$SAPPDIR" ]; then
+    message 0 "SAPPDIR not given\n"
     exit 1
 fi
 

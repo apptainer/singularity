@@ -70,24 +70,37 @@ get_section_from_conf() {
 
 copy_file_to_sappdir() {
     file="$1"
-    sappdir="$2"
-    if [ -n "$file" -a -n "$sappdir" ]; then
-        DIRNAME=`dirname $file`
-        RETVAL=0
-        if [ ! -d "$sappdir/$DIRNAME" ]; then
-            message 3 "creating target dir:   $DIRNAME\n"
-            mkdir -p "$sappdir/$DIRNAME"
-        fi
-        if [ -f "$sappdir/$file" ]; then
-            message 4 "file already included: $file\n"
-        elif [ -f "$file" ]; then
-            message 2 "including file:        $file\n"
-            cp -L "$file" "$sappdir/$file" 2>&1
-            RETVAL="$?"
-        else
-            message 0 "Could not find file: $file\n"
-            return 1
-        fi
+    targetdir="$2"
+    sappdir="$SAPPDIR/c"
+    RETVAL=0
+
+    if [ -z "$SAPPDIR" ]; then
+        message 0 "ERROR: SAPPDIR not defined\n"
+        exit 1
+    fi
+
+    if [ -z "$file" ]; then
+        message 0 "ERROR: called copy_file_to_sappdir with no file\n"
+        return 0
+    fi
+
+    if [ -z "$targetdir" ]; then
+        targetdir=`dirname "$file"`
+    fi
+
+    if [ ! -d "$sappdir/$targetdir" ]; then
+        message 3 "creating target dir:   $targetdir\n"
+        mkdir -p "$sappdir/$targetdir"
+    fi
+    if [ -f "$sappdir/$file" ]; then
+        message 4 "file already included: $file\n"
+    elif [ -f "$file" ]; then
+        message 2 "including file:        $file:$targetdir\n"
+        cp -L "$file" "$sappdir/$targetdir" 2>&1
+        RETVAL="$?"
+    else
+        message 0 "Could not find file: $file\n"
+        return 1
     fi
     return $RETVAL
 }

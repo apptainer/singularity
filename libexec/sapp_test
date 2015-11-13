@@ -27,8 +27,8 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$TMPDIR" ]; then
-    message 0 "ERROR: TMPDIR not given\n"
+if [ -z "$SAPPDIR" ]; then
+    message 0 "ERROR: SAPPDIR not given\n"
     exit 1
 fi
 
@@ -40,7 +40,7 @@ fi
 
 
 # Set the necessary bits for sexec and the singularity driver to run
-SAPPCONTAINER="$TMPDIR/c"
+SAPPCONTAINER="$SAPPDIR/c"
 SINGULARITY_COMMAND="test"
 export SAPPCONTAINER SINGULARITY_COMMAND
 

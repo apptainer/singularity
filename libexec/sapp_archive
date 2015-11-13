@@ -27,16 +27,16 @@ if [ -z "$SAPPFILE" ]; then
     exit 1
 fi
 
-if [ -z "$TMPDIR" ]; then
-    message 0 "ERROR: TMPDIR not given\n"
+if [ -z "$SAPPDIR" ]; then
+    message 0 "ERROR: SAPPDIR not given\n"
     exit 1
 fi
 
 
 # These get added by Sexec during the %test
-rm -f $TMPDIR/c/dev/null
-rm -f $TMPDIR/c/dev/urandom
-rm -f $TMPDIR/c/dev/random
+rm -f $SAPPDIR/c/dev/null
+rm -f $SAPPDIR/c/dev/urandom
+rm -f $SAPPDIR/c/dev/random
 
 echo "#!/usr/bin/env sapprun" > $SAPPFILE
 echo "Name: $NAME" >> $SAPPFILE
@@ -44,7 +44,7 @@ echo "Summary: $SUMMARY" >> $SAPPFILE
 echo "$HEADER_END" >> $SAPPFILE
 
 
-(cd "$TMPDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
+(cd "$SAPPDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
 message 1 "WROTE: $SAPPFILE\n"
 
 chmod +x "$SAPPFILE"

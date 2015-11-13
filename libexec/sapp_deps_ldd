@@ -27,8 +27,8 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$TMPDIR" ]; then
-    message 1 "TMPDIR not given\n"
+if [ -z "$SAPPDIR" ]; then
+    message 1 "SAPPDIR not given\n"
     exit 1
 fi
 
@@ -39,14 +39,14 @@ INCLUDE_LIBS="/lib64/libnss_files.so.2 /lib/libnss_files.so.2 /lib64/libnss_dns.
 RETVAL=1
 
 LIBSUFFIX=`uname -m | grep -q "x86_64" && echo "64"`
-LIBDIR="$TMPDIR/c/lib$LIBSUFFIX"
+LIBDIR="$SAPPDIR/c/lib$LIBSUFFIX"
 if [ ! -d "$LIBDIR" ]; then
     mkdir -p "$LIBDIR"
 fi
 
 
 message 2 "Searching for library dependencies\n"
-for file in `find "$TMPDIR/c" -type f -executable -print`; do
+for file in `find "$SAPPDIR/c" -type f -executable -print`; do
     message 5 "scanning executable file for dependencies: $file\n"
     for dep in `ldd $file | sed -e 's@ @\n@g'`; do
         if [ -f "$dep" ]; then

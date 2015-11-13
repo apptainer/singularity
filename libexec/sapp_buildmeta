@@ -27,20 +27,20 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$TMPDIR" ]; then
-    message 0 "ERROR: TMPDIR not given\n"
+if [ -z "$SAPPDIR" ]; then
+    message 0 "ERROR: SAPPDIR not given\n"
     exit 1
 fi
 
 
 message 2 "Including SAPPFILE\n"
-cat "$SAPPSPEC" > "$TMPDIR/spec"
+cat "$SAPPSPEC" > "$SAPPDIR/spec"
 
 message 2 "Calculating container size\n"
-du -sk "$TMPDIR/c" | cut -f 1 > "$TMPDIR/size"
+du -sk "$SAPPDIR/c" | cut -f 1 > "$SAPPDIR/size"
 
 message 2 "Calculating checksums\n"
-(cd "$TMPDIR/c"; find . -type f | xargs md5sum) > "$TMPDIR/files"
+(cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
 
 
 exit 0
