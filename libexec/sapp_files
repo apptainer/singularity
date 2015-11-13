@@ -23,34 +23,32 @@ else
 fi
 
 if [ -z "$SAPPSPEC" ]; then
-    message 0 "SAPP specfile not given\n"
+    message 0 "ERROR: SAPP specfile not given\n"
     exit 1
 fi
 
 if [ -z "$TMPDIR" ]; then
-    message 0 "TMPDIR not given\n"
+    message 0 "ERROR: TMPDIR not given\n"
     exit 1
 fi
 
 
-message 3 "Evaluating specfile for 'exec'\n"
+
+if [ ! -d "$TMPDIR/c" ]; then
+    if ! mkdir -p "$TMPDIR/c" 2>/dev/null; then
+        message 0 "ERROR: Could not container directory $TMPDIR/c\n";
+        exit 1
+    fi
+fi
+
+
 # Pull in defined keys that specify files
+message 3 "Evaluating specfile for 'exec'\n"
 for i in `get_key_from_conf "exec" $SAPPSPEC`; do
     if FULLFILE=`which "$i" 2>/dev/null`; then
         copy_file_to_sappdir "$FULLFILE" "$TMPDIR/c"
     else
         message 0 "Error: failed processing program: $i\n"
-        exit 1
-    fi
-done
-if [ "$?" -ne "0" ]; then
-    exit 1
-fi
-
-message 3 "Evaluating specfile for 'requires'\n"
-for i in `get_key_from_conf "requires" $SAPPSPEC`; do
-    if ! copy_file_to_sappdir "$i" "$TMPDIR/c"; then
-        message 0 "Error: failed processing requires: $i\n"
         exit 1
     fi
 done

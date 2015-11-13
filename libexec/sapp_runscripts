@@ -1,0 +1,97 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+if [ -z "$SAPPSPEC" ]; then
+    message 0 "ERROR: SAPP specfile not given\n"
+    exit 1
+fi
+
+if [ -z "$TMPDIR" ]; then
+    message 0 "ERROR: TMPDIR not given\n"
+    exit 1
+fi
+
+
+
+message 3 "Building primary singularity exec driver\n"
+if ! touch "$TMPDIR/c/singularity" 2>/dev/null; then
+    message 0 "ERROR: Could not create runscript driver\n"
+    exit 1
+fi
+
+cat <<EOF > "$TMPDIR/c/singularity"
+#!/bin/sh
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+export PATH
+if [ -n "\$SINGULARITY_COMMAND" -a "\$SINGULARITY_COMMAND" == "run" ]; then
+    if [ -x "/singularity.exec" ]; then
+        exec /singularity.exec "\$@"
+    else
+        echo "ERROR: Could not exec the singularity"
+        exit 1
+    fi
+elif [ "\$SINGULARITY_COMMAND" == "test" ]; then
+    if [ -x "/singularity.test" ]; then
+        exec /singularity.test "\$@"
+    else
+        echo "ERROR: Could not exec the singularity"
+        exit 1
+    fi
+elif [ "\$SINGULARITY_COMMAND" == "shell" ]; then
+    exec /bin/sh -l
+else
+    echo "ERROR: Unknown singularity exec command"
+    exit 1
+fi
+EOF
+
+
+message 3 "Building singularity test runscript\n"
+echo "#!/bin/sh" > "$TMPDIR/c/singularity.test"
+echo "set -x" >> "$TMPDIR/c/singularity.test"
+get_section_from_conf "test" "$SAPPSPEC" >> "$TMPDIR/c/singularity.test"
+
+
+message 5 "Building singularity main runscript\n"
+echo "#!/bin/sh" > "$TMPDIR/c/singularity.exec"
+get_section_from_conf "runscript" "$SAPPSPEC" > "$TMPDIR/c/singularity.runscript"
+
+if [ -s "$TMPDIR/c/singularity.runscript" ]; then
+    cat "$TMPDIR/c/singularity.runscript" >> "$TMPDIR/c/singularity.exec"
+else
+    message 2 "generating a basic singularity runscript\n"
+    if OUTPUT=`get_key_from_conf "exec" "$SAPPSPEC"`; then
+        echo "exec \"$OUTPUT\" \"\$@\"" >> "$TMPDIR/c/singularity.exec"
+    else
+        message 0 "ERROR: no runscript or program to exec defined!\n"
+        exit 1
+    fi
+fi
+
+rm -f "$TMPDIR/c/singularity.runscript"
+chmod 755 "$TMPDIR/c/singularity"
+chmod 755 "$TMPDIR/c/singularity.exec"
+chmod 755 "$TMPDIR/c/singularity.test"
+
+exit 0

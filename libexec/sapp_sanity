@@ -22,21 +22,35 @@ else
     exit 1
 fi
 
+if [ -z "$SAPPSPEC" ]; then
+    message 0 "ERROR: SAPP specfile not given\n"
+    exit 1
+fi
+
 if [ -z "$SAPPFILE" ]; then
-    message 0 "SAPP output file not passwed\n"
+    message 0 "ERROR: SAPP output file not passed\n"
     exit 1
 fi
 
 if [ -z "$TMPDIR" ]; then
-    message 0 "TMPDIR not given\n"
+    message 0 "ERROR: TMPDIR not given\n"
     exit 1
 fi
 
-rm -f $TMPDIR/c/dev/*
 
-(cd "$TMPDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
-message 1 "WROTE: $SAPPFILE\n"
 
-chmod +x "$SAPPFILE"
+if [ ! -d "$TMPDIR" ]; then
+    if ! mkdir -p "$TMPDIR" 2>/dev/null; then
+        message 0 "ERROR: Could not create temporary directory\n";
+        exit 1
+    fi
+fi
+
+if ! touch "$SAPPFILE" 2>/dev/null; then
+    message 0 "ERROR: Could not create $SAPPFILE"
+    exit 1
+fi
+
+
 
 exit 0

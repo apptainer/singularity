@@ -32,8 +32,8 @@ if [ -z "$COMMAND" ]; then
     COMMAND="help"
 fi
 
-if [ -f "$libexecdir/singularity/$COMMAND/help" ]; then
-    cat "$libexecdir/singularity/$COMMAND/help";
+if [ -f "$libexecdir/singularity/${COMMAND}.help" ]; then
+    cat "$libexecdir/singularity/${COMMAND}.help";
 else
     message 0 "No additional help is provided for that command\n"
     RETVAL=1

@@ -24,6 +24,7 @@ fi
 
 
 cleanup() {
+    echo "Bailing out!"
     BAIL_OUT=1
 }
 
@@ -34,6 +35,7 @@ SAPPCACHE="$HOME/.sapp-cache"
 SAPPDIR=""
 RETVAL=0
 SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
+MODULES="sapp_explode"
 export SAPPFILE SAPPCACHE SAPPDIR RETVAL SAPPNAME
 shift
 
@@ -43,16 +45,25 @@ if [ -z "$SAPPFILE" ]; then
 fi
 
 if [ ! -f "$SAPPFILE" ]; then
-    message 0 "SAPP file ($SAPPFILE) not found\n"
+    message 0 "ERROR: SAPP file ($SAPPFILE) not found\n"
     exit 1
 fi
 
-if [ ! -d "$SAPPCACHE" ]; then
-    mkdir -p "$SAPPCACHE"
+if [ ! -x "$libexecdir/singularity/sexec" ]; then
+    message 0 "ERROR: Sexec not found\n"
+    exit 1
 fi
 
 
-message 2 "Running '$SAPPFILE'\n"
+
+
+if [ ! -d "$SAPPCACHE" ]; then
+    if ! mkdir -p "$SAPPCACHE" 2>/dev/null; then
+        message 0 "ERROR: Could not create SAPPCACHE ($SAPPCACHE)\n"
+        exit 1
+    fi
+fi
+
 
 if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
     message 0 "ERROR: Could not obtain checksum of $SAPPFILE\n"
@@ -68,37 +79,47 @@ if [ ! -d "$SAPPDIR" ]; then
     fi
 fi
 
+
+
+message 2 "Running '$SAPPFILE'\n"
 message 2 "Working directory: $SAPPDIR\n"
 
 
-for i in $libexecdir/singularity/run/[0-9]*; do
-    if [ -f "$i" ]; then
-        message 3 "Running: $i\n"
-        sh "$i" "$@"
-        EXITCODE="$?"
+for module in $MODULES; do
+    if [ -x "$libexecdir/singularity/$module" ]; then
+        message 3 "Running module: $module\n"
+        sh "$libexecdir/singularity/$module"
+        EXITCODE=$?
         if [ "$EXITCODE" -ne "0" ]; then
-            message 1 "Error thrown from module: $i\n"
-            message 2 "Left tmpdir at $TMPDIR\n"
+            message 0 "Error thrown from module: $i\n"
+            message 0 "Quiting!\n"
             exit $EXITCODE
         fi
     else
-        message 1 "Error locating module: $i\n"
-        message 2 "Left tmpdir at $TMPDIR\n"
+        message 0 "Could not execute singularity module: $module\n"
         exit 1
     fi
 done
+
 
 if [ -n "$BAIL_OUT" ]; then
     exit 1
 fi
 
-
-if [ -x "$libexecdir/singularity/sexec" ]; then
-    message 2 "Exec'ing Sexec\n"
-    SAPPCONTAINER="$SAPPDIR/c"
-    export SAPPCONTAINER
-    exec "$libexecdir/singularity/sexec" "$@"
+message 2 "Checking SAPP environment at: $SAPPDIR\n"
+if [ ! -x "$SAPPDIR/c/singularity" ]; then
+    message 0 "SAPP environment is not good!\n"
+    exit 1
 fi
+
+
+SAPPCONTAINER="$SAPPDIR/c"
+SINGULARITY_COMMAND="run"
+export SAPPCONTAINER SINGULARITY_COMMAND
+
+message 2 "Exec'ing Sexec\n"
+exec "$libexecdir/singularity/sexec" "$@"
+
 
 # we should never get here
 exit 255

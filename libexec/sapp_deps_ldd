@@ -32,11 +32,17 @@ if [ -z "$TMPDIR" ]; then
     exit 1
 fi
 
-RETVAL=0
+INCLUDE_LIBS="/lib64/libnss_files.so.2 /lib/libnss_files.so.2 /lib64/libnss_dns.so.2 /lib/libnss_dns.so.2 /lib64/libresolv.so.2 /lib/libresolv.so.2"
+
+# '1' is the return value if nothing gets updated, so if we update anything
+# we set this to '0'
+RETVAL=1
 
 LIBSUFFIX=`uname -m | grep -q "x86_64" && echo "64"`
-
-INCLUDE_LIBS="/lib64/libnss_files.so.2 /lib/libnss_files.so.2 /lib64/libnss_dns.so.2 /lib/libnss_dns.so.2 /lib64/libresolv.so.2 /lib/libresolv.so.2"
+LIBDIR="$TMPDIR/c/lib$LIBSUFFIX"
+if [ ! -d "$LIBDIR" ]; then
+    mkdir -p "$LIBDIR"
+fi
 
 
 message 2 "Searching for library dependencies\n"
@@ -46,30 +52,25 @@ for file in `find "$TMPDIR/c" -type f -executable -print`; do
         if [ -f "$dep" ]; then
             BASENAME=`basename $dep`
             message 3 "found dependency:      $dep\n"
-            if [ ! -d "$TMPDIR/c/lib$LIBSUFFIX" ]; then
-                mkdir -p "$TMPDIR/c/lib$LIBSUFFIX"
-            fi
-            if [ ! -f "$TMPDIR/c/lib$LIBSUFFIX/$BASENAME" ]; then
+            if [ ! -f "$LIBDIR/$BASENAME" ]; then
                 message 2 "copying dependency:    $dep\n"
-                cp -L "$dep" "$TMPDIR/c/lib$LIBSUFFIX/$BASENAME"
-                RETVAL=1
+                cp -L "$dep" "$LIBDIR/$BASENAME"
+                RETVAL=0
             fi
         fi
     done
 done
+
 
 message 2 "Including statically defined libraries\n"
 for dep in $INCLUDE_LIBS; do
     if [ -f "$dep" ]; then
         BASENAME=`basename $dep`
         message 3 "found dependency:      $dep\n"
-        if [ ! -d "$TMPDIR/c/lib$LIBSUFFIX" ]; then
-            mkdir -p "$TMPDIR/c/lib$LIBSUFFIX"
-        fi
-        if [ ! -f "$TMPDIR/c/lib$LIBSUFFIX/$BASENAME" ]; then
+        if [ ! -f "$LIBDIR/$BASENAME" ]; then
             message 2 "copying dependency:    $dep\n"
-            cp -L "$dep" "$TMPDIR/c/lib$LIBSUFFIX/$BASENAME"
-            RETVAL=1
+            cp -L "$dep" "$LIBDIR/$BASENAME"
+            RETVAL=0
         fi
     fi
 done

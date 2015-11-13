@@ -23,24 +23,29 @@ else
 fi
 
 if [ -z "$SAPPSPEC" ]; then
-    message 0 "SAPP specfile not given\n"
+    message 0 "ERROR: SAPP specfile not given\n"
     exit 1
 fi
 
 if [ -z "$TMPDIR" ]; then
-    message 0 "TMPDIR not given\n"
+    message 0 "ERROR: TMPDIR not given\n"
+    exit 1
+fi
+
+if [ ! -x "$libexecdir/singularity/sexec" ]; then
+    message 0 "ERROR: Sexec not found\n"
     exit 1
 fi
 
 
-message 2 "Including SAPPFILE\n"
-cat "$SAPPSPEC" > "$TMPDIR/spec"
 
-message 2 "Calculating container size\n"
-du -sk "$TMPDIR/c" | cut -f 1 > "$TMPDIR/size"
+# Set the necessary bits for sexec and the singularity driver to run
+SAPPCONTAINER="$TMPDIR/c"
+SINGULARITY_COMMAND="test"
+export SAPPCONTAINER SINGULARITY_COMMAND
 
-message 2 "Calculating checksums\n"
-(cd "$TMPDIR/c"; find . -type f | xargs md5sum) > "$TMPDIR/files"
+message 1 "Running %test...\n"
+exec "$libexecdir/singularity/sexec" "$@"
 
-
+# Should never get here
 exit 0

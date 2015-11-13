@@ -1,4 +1,0 @@
-This will run the SAPP bundle in a semi-contained environment
-so any arguments you pass should be relative to your current
-working directory (e.g. referencing a file path starting from
-'/' will fail).

@@ -39,17 +39,14 @@ usage() {
     echo
     echo "COMMANDS:"
 
-    for i in $libexecdir/singularity/*; do
-        if [ -d "$i" -a -x "$i/exec" ]; then
-            NAME=`basename "$i"`
-            echo "    $NAME"
-            if [ -f "$i/usage" ]; then
-                cat "$i/usage" | while read i; do
-                    echo "        $i"
-                done
-            fi
+    for i in $libexecdir/singularity/*.summary; do
+        if [ -f "$i" ]; then
+            NAME=`basename "$i" | sed -e 's@.summary@@'`
+            SUMMARY=`cat "$i"`
+            printf "    %-10s %s\n" "$NAME" "$SUMMARY"
         fi
     done
+
     echo
     echo "For any additional help or support visit the Singularity"
     echo "website: http://gmkurtzer.github.io/singularity"
@@ -92,22 +89,16 @@ while true; do
     esac
 done
 
-
-if [ -n "$SINGULARITY_COMMAND" ]; then
-    COMMAND="$SINGULARITY_COMMAND"
-else
-    COMMAND="$1"
-    shift
-fi
-export COMMAND
+COMMAND="$1"
+shift
 
 if [ -z "$COMMAND" ]; then
     usage
     exit 0
 fi
 
-if [ -x "$libexecdir/singularity/$COMMAND/exec" ]; then
-    exec $libexecdir/singularity/$COMMAND/exec "$@"
+if [ -x "$libexecdir/singularity/$COMMAND.exec" ]; then
+    exec $libexecdir/singularity/$COMMAND.exec "$@"
 else
     message 0 "Unknown command '$COMMAND'\n"
     exit 1

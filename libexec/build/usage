@@ -1,3 +1,0 @@
-This command builds the SAPP bundle from a specification
-file (which you must provide). The format of the spec file
-can be found in the Singularity documentation.

@@ -23,31 +23,24 @@ else
 fi
 
 if [ -z "$SAPPSPEC" ]; then
-    message 0 "SAPP specfile not given\n"
+    message 0 "ERROR: SAPP specfile not given\n"
     exit 1
 fi
 
 if [ -z "$TMPDIR" ]; then
-    message 0 "TMPDIR not given\n"
+    message 0 "ERROR: TMPDIR not given\n"
     exit 1
 fi
 
 
-for i in $libexecdir/singularity/build/deps_*; do
-    COMPLETE=0
-    if [ -x "$i" ]; then
-        message 3 "Executing: $i\n"
-        sh "$i" "$@"
-        RET=$?
-        if [ "$RET" -eq "1" ]; then
-            # No new deps
-            COMPLETE=1
-        elif [ "$RET" -ne "0" ]; then
-            # ERROR
-            message 0 "ERROR: Dependency resolution threw an error!\n"
-            exit 1
-        fi
-    fi
-done
+message 2 "Including SAPPFILE\n"
+cat "$SAPPSPEC" > "$TMPDIR/spec"
+
+message 2 "Calculating container size\n"
+du -sk "$TMPDIR/c" | cut -f 1 > "$TMPDIR/size"
+
+message 2 "Calculating checksums\n"
+(cd "$TMPDIR/c"; find . -type f | xargs md5sum) > "$TMPDIR/files"
+
 
 exit 0

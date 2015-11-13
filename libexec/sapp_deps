@@ -33,24 +33,28 @@ if [ -z "$TMPDIR" ]; then
 fi
 
 
-message 5 "Building singularity runscript\n"
-echo "#!/bin/sh" > "$TMPDIR/c/singularity"
-echo "PATH=/bin:/usr/bin:/sbin:/usr/sbin" >> "$TMPDIR/c/singularity"
-echo "export PATH" >> "$TMPDIR/c/singularity"
-get_section_from_conf "runscript" "$SAPPSPEC" >> "$TMPDIR/c/singularity.runscript"
-
-if [ -s "$TMPDIR/c/singularity.runscript" ]; then
-    cat "$TMPDIR/c/singularity.runscript" >> "$TMPDIR/c/singularity"
-else
-    message 2 "generating a basic singularity runscript\n"
-    if OUTPUT=`get_key_from_conf "exec" "$SAPPSPEC"`; then
-        echo "exec \"$OUTPUT\" \"\$@\"" >> "$TMPDIR/c/singularity"
-    else
-        message 0 "ERROR: no runscript or program to exec defined!\n"
-        exit 1
+while true; do
+    UPDATED=0
+    for i in $libexecdir/singularity/sapp_deps_*; do
+        if [ -x "$i" ]; then
+            message 3 "Executing: $i\n"
+            sh "$i" "$@"
+            RET=$?
+            if [ "$RET" -eq "0" ]; then
+                UPDATED=1
+            elif [ "$RET" -eq "1" ]; then
+                # no new deps
+                true
+            else
+                # ERROR
+                message 0 "ERROR: Dependency resolution threw an error!\n"
+                exit 1
+            fi
+        fi
+    done
+    if [ "$UPDATED" -eq "0" ]; then
+        break
     fi
-fi
-rm -f "$TMPDIR/c/singularity.runscript"
-chmod 755 "$TMPDIR/c/singularity"
+done
 
 exit 0

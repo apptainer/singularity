@@ -23,31 +23,30 @@ else
 fi
 
 if [ -z "$SAPPFILE" ]; then
-    message 0 "SAPP output file not passed\n"
+    message 0 "ERROR: SAPP output file not passwed\n"
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "SAPPDIR not given\n"
+if [ -z "$TMPDIR" ]; then
+    message 0 "ERROR: TMPDIR not given\n"
     exit 1
 fi
 
 
-FILES="/etc/resolv.conf
-       /proc/cpuinfo
-       /proc/meminfo"
+# These get added by Sexec during the %test
+rm -f $TMPDIR/c/dev/null
+rm -f $TMPDIR/c/dev/urandom
+rm -f $TMPDIR/c/dev/random
+
+echo "#!/usr/bin/env sapprun" > $SAPPFILE
+echo "Name: $NAME" >> $SAPPFILE
+echo "Summary: $SUMMARY" >> $SAPPFILE
+echo "$HEADER_END" >> $SAPPFILE
 
 
-for f in $FILES; do
-    if [ -f "$SAPPDIR/c/$f" ]; then
-        message 2 "Not creating file, already exists: $f\n"
-    else
-        BASEDIR=`dirname "$f"`
-        if [ ! -d "$SAPPDIR/c/$BASEDIR" ]; then
-            mkdir -p "$SAPPDIR/c/$BASEDIR"
-        fi
-        cp -rap "$f" "$SAPPDIR/c/$f"
-    fi
-done
+(cd "$TMPDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
+message 1 "WROTE: $SAPPFILE\n"
+
+chmod +x "$SAPPFILE"
 
 exit 0
