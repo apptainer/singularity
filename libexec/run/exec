@@ -33,7 +33,8 @@ SAPPFILE="$1"
 SAPPCACHE="$HOME/.sapp-cache"
 SAPPDIR=""
 RETVAL=0
-export SAPPFILE SAPPCACHE SAPPDIR RETVAL
+SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
+export SAPPFILE SAPPCACHE SAPPDIR RETVAL SAPPNAME
 shift
 
 if [ -z "$SAPPFILE" ]; then
@@ -58,7 +59,7 @@ if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
     exit 1
 fi
 
-SAPPDIR="$SAPPCACHE/$SAPPFILE/$CHECKSUM"
+SAPPDIR="$SAPPCACHE/$SAPPNAME/$CHECKSUM"
 
 if [ ! -d "$SAPPDIR" ]; then
     if ! mkdir -p "$SAPPDIR"; then
@@ -92,35 +93,12 @@ if [ -n "$BAIL_OUT" ]; then
 fi
 
 
-cleanup() {
-    exec 2>/dev/null
-    if [ -n "$CHILD_PID" ]; then
-        kill -9 "$CHILD_PID" >/dev/null 2>&1
-        sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/pids"
-    fi
-}
+if [ -x "$libexecdir/singularity/sexec" ]; then
+    message 2 "Exec'ing Sexec\n"
+    SAPPCONTAINER="$SAPPDIR/c"
+    export SAPPCONTAINER
+    exec "$libexecdir/singularity/sexec" "$@"
+fi
 
-
-# Create a seperate thread to run the exec
-( 
-    if [ -x "$libexecdir/singularity/sexec" ]; then
-        message 2 "Exec'ing Sexec\n"
-        SAPPCONTAINER="$SAPPDIR/c"
-        export SAPPCONTAINER
-        exec "$libexecdir/singularity/sexec" "$@"
-    fi
-) &
-
-CHILD_PID=$!
-echo -ne "$CHILD_PID " >> "$SAPPDIR/pids"
-
-message 2 "Waiting for pid $CHILD_PID to complete\n"
-
-wait $CHILD_PID
-RETVAL=$?
-
-message 2 "Completed job.. cleaning up\n"
-
-sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/pids"
-
-exit $RETVAL
+# we should never get here
+exit 255

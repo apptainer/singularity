@@ -40,7 +40,7 @@ fi
 
 case "$COMMAND" in
     list)
-        printf "%-30s %-10s %-8s\n" "SAPPNAME" "SIZE" "STATE"
+        printf "%-30s %-10s\n" "SAPPNAME" "SIZE"
         for i in $SAPPCACHE/*/*/c/singularity; do
             if [ -f "$i" ]; then
                 CONTAINER=`dirname "$i"`
@@ -48,18 +48,31 @@ case "$COMMAND" in
                 SAPPDIR=`dirname "$CHECKSUMDIR"`
                 SAPPNAME=`basename "$SAPPDIR"`
                 SIZE=`cat $CHECKSUMDIR/size 2>&1 || echo "unknown"`
-                if [ -s "$CHECKSUMDIR/pids" ]; then
-                    STATE="running"
-                else
-                    STATE="idle"
-                fi
-                printf "%-30s %-10s %-8s\n" "$SAPPNAME" "$SIZE" "$STATE"
+                printf "%-30s %-10s\n" "$SAPPNAME" "$SIZE"
             fi
         done
     ;;
     show)
     ;;
     clean)
+        if [ -n "$1" ]; then
+            for i in $1; do
+                if [ -d "$SAPPCACHE/$i" ]; then
+                    message 1 "Removing cached SAPP: $i\n"
+                    rm -rf "$SAPPCACHE/$i"
+                else
+                    message 0 "SAPP not found: $i\n"
+                fi
+            done
+        else
+            for i in $SAPPCACHE/*; do
+                if [ -d "$i" ]; then
+                    NAME=`basename "$i"`
+                    message 1 "Removing cached SAPP: $NAME\n"
+                    rm -rf "$i"
+                fi
+            done
+        fi
     ;;
     *)
         message 0 "ERROR: Unknown command: $COMMAND\n"

@@ -22,31 +22,31 @@ else
     exit 1
 fi
 
-if [ -z "$SAPPSPEC" ]; then
-    message 0 "SAPP specfile not given\n"
+if [ -z "$SAPPFILE" ]; then
+    message 0 "SAPP output file not passed\n"
     exit 1
 fi
 
-if [ -z "$TMPDIR" ]; then
-    message 0 "TMPDIR not given\n"
+if [ -z "$SAPPDIR" ]; then
+    message 0 "SAPPDIR not given\n"
     exit 1
 fi
 
 
-for i in $libexecdir/singularity/build/deps_*; do
-    COMPLETE=0
-    if [ -x "$i" ]; then
-        message 3 "Executing: $i\n"
-        sh "$i" "$@"
-        RET=$?
-        if [ "$RET" -eq "1" ]; then
-            # No new deps
-            COMPLETE=1
-        elif [ "$RET" -ne "0" ]; then
-            # ERROR
-            message 0 "ERROR: Dependency resolution threw an error!\n"
-            exit 1
+FILES="/etc/resolv.conf
+       /proc/cpuinfo
+       /proc/meminfo"
+
+
+for f in $FILES; do
+    if [ -f "$SAPPDIR/c/$f" ]; then
+        message 2 "Not creating file, already exists: $f\n"
+    else
+        BASEDIR=`dirname "$f"`
+        if [ ! -d "$SAPPDIR/c/$BASEDIR" ]; then
+            mkdir -p "$SAPPDIR/c/$BASEDIR"
         fi
+        cp -rap "$f" "$SAPPDIR/c/$f"
     fi
 done
 
