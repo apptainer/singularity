@@ -56,7 +56,7 @@ case "$COMMAND" in
     ;;
     clean)
         if [ -n "$1" ]; then
-            for i in $1; do
+            for i in $@; do
                 if [ -d "$SAPPCACHE/$i" ]; then
                     message 1 "Removing cached SAPP: $i\n"
                     rm -rf "$SAPPCACHE/$i"
