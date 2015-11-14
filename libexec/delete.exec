@@ -42,7 +42,7 @@ fi
 
 message 1 "Deleting '$SAPPNAME'\n"
 
-if ! run_module sappdir_remove; then
+if ! run_module sappdir_delete; then
     message 0 "Could not delete: $SAPPNAME\n"
     exit 255
 fi
