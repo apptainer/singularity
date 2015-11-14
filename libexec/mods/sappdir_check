@@ -27,14 +27,15 @@ if [ -z "$SAPPFILE" ]; then
     exit 1
 fi
 
+
 if [ -z "$SAPPDIR" ]; then
     message 0 "SAPPDIR not given\n"
     exit 1
 fi
 
 if [ ! -f "$SAPPDIR/sum" ]; then
-    message 0 "SAPP container not found\n"
-    exit 1
+    message 2 "No previous checksum to stat\n"
+    exit 0
 fi
 
 
@@ -44,12 +45,7 @@ if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
 fi
 
 PREV_SUM=`cat "$SAPPDIR/sum"`
-if [ "$PREV_SUM" == "$CHECKSUM" ]; then
-    message 2 "Using cached SAPP\n"
-    exit 0
-else
-    message 1 "A previous version of this SAPP container exists in\n"
-    message 1 "the cache! Clean this cache first.\n"
+if [ "$PREV_SUM" != "$CHECKSUM" ]; then
     exit 1
 fi
 

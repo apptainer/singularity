@@ -36,6 +36,7 @@ usage() {
     echo "       --version  Show application version"
     echo "    -v --verbose  Increase verbosity +1"
     echo "    -d --debug    Show debugging information"
+    echo "    -q --quiet    Only print errors"
     echo
     echo "COMMANDS:"
 
@@ -61,6 +62,10 @@ while true; do
         -h|--help)
             usage
             exit
+        ;;
+        -q|--quiet)
+            MESSAGELEVEL=0
+            shift 
         ;;
         --version)
             message 1 "$version\n"

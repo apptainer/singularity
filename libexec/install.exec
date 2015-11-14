@@ -25,12 +25,9 @@ fi
 
 SAPPFILE="$1"
 SAPPCACHE="$HOME/.sapp-cache"
-SAPPDIR=""
-RETVAL=0
 SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
 SAPPDIR="$SAPPCACHE/$SAPPNAME"
-MODULES="sappdir_check explode filecheck"
-export SAPPFILE SAPPCACHE SAPPDIR RETVAL SAPPNAME
+export SAPPFILE SAPPCACHE SAPPDIR SAPPNAME
 shift
 
 if [ -z "$SAPPFILE" ]; then
@@ -43,45 +40,22 @@ if [ ! -f "$SAPPFILE" ]; then
     exit 1
 fi
 
-if [ ! -x "$libexecdir/singularity/sexec" ]; then
-    message 0 "ERROR: Sexec not found\n"
-    exit 1
+
+message 1 "Installing: $SAPPFILE\n"
+
+if ! run_module sappdir_check; then
+    message 2 "Cleaning previous SAPP container cache\n"
+    run_module sappdir_remove
+fi
+
+if ! run_module explode; then
+    exit 255
+fi
+if ! run_module filecheck; then
+    exit 255
 fi
 
 
-if [ ! -d "$SAPPCACHE" ]; then
-    if ! mkdir -p "$SAPPCACHE" 2>/dev/null; then
-        message 0 "ERROR: Could not create SAPPCACHE ($SAPPCACHE)\n"
-        exit 1
-    fi
-fi
-
-if [ ! -d "$SAPPDIR" ]; then
-    if ! mkdir -p "$SAPPDIR"; then
-        message 0 "ERROR: Could not create working directory at $SAPPDIR\n"
-        exit 1
-    fi
-fi
-
-
-message 2 "Running '$SAPPFILE'\n"
-message 2 "Working directory: $SAPPDIR\n"
-
-
-for module in $MODULES; do
-    if [ -x "$libexecdir/singularity/mods/$module" ]; then
-        message 3 "Running module: $module\n"
-        sh "$libexecdir/singularity/mods/$module"
-        EXITCODE=$?
-        if [ "$EXITCODE" -ne "0" ]; then
-            message 0 "ERROR: Module $module threw an error\n"
-            exit $EXITCODE
-        fi
-    else
-        message 0 "Could not execute singularity module: $module\n"
-        exit 1
-    fi
-done
 
 # If we get here, exit ok.
 exit 0

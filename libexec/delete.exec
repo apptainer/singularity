@@ -22,31 +22,29 @@ else
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+
+SAPPNAME="$1"
+SAPPCACHE="$HOME/.sapp-cache"
+SAPPDIR="$SAPPCACHE/$SAPPNAME"
+export SAPPCACHE SAPPDIR SAPPNAME
+shift
+
+if [ -z "$SAPPNAME" ]; then
+    message 0 "USAGE: singularity (options) run [SAPP File] (SAPP options)\n"
     exit 1
 fi
 
-if [ ! -d "$SAPPDIR/c" ]; then
-    message 0 "ERROR: SAPP directory not found\n"
+if [ ! -x "$libexecdir/singularity/sexec" ]; then
+    message 0 "ERROR: Sexec not found\n"
     exit 1
 fi
 
-if [ ! -f "$SAPPDIR/files" ]; then
-    message 0 "ERROR: File checksums not found for this SAPP\n"
-    exit 1
-fi
 
-cd "$SAPPDIR/c" 2>/dev/null
-if [ "$?" -ne "0" ]; then
-    message 0 "ERROR: Could not chdir to SAPP directory\n"
-    exit 1
-fi
+message 1 "Deleting '$SAPPNAME'\n"
 
-md5sum -c "$SAPPDIR/files" >/dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-    message 0 "ERROR: Cached file check failed! Maybe clean cache?\n"
-    exit 1
+if ! run_module sappdir_remove; then
+    message 0 "Could not delete: $SAPPNAME\n"
+    exit 255
 fi
 
 exit 0

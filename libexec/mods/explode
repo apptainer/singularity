@@ -32,6 +32,13 @@ if [ -z "$SAPPDIR" ]; then
     exit 1
 fi
 
+if [ ! -d "$SAPPDIR" ]; then
+    if ! mkdir -p "$SAPPDIR" 2>/dev/null; then
+        message 0 "ERROR: Could not create SAPPDIR ($SAPPDIR)\n"
+        exit 1
+    fi
+fi
+
 if [ -d "$SAPPDIR/c" ]; then
     message 3 "Not exploding archive, directory already exists\n"
     exit 0
@@ -57,7 +64,7 @@ if [ "$PAYLOAD_START" -gt 10 ]; then
 fi
 message 3 "SAPP payload starts at $PAYLOAD_START\n"
 
-message 2 "Caching SAPP archive\n"
+message 2 "Caching SAPP archive to: $SAPPDIR\n"
 tail -n "+$PAYLOAD_START" "$SAPPFILE" | gunzip -dc | (cd "$SAPPDIR"; cpio -id --quiet)
 
 md5sum "$SAPPFILE" | awk '{print $1}' > "$SAPPDIR/sum"

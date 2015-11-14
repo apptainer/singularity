@@ -1,0 +1,9 @@
+USAGE: singularity (options) delete [SAPP Name]
+
+This will delete the internal Singularity cache of the SAPP container.
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+

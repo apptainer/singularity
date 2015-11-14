@@ -23,23 +23,15 @@ else
 fi
 
 
-SAPPFILE="$1"
+SAPPNAME="$1"
 SAPPCACHE="$HOME/.sapp-cache"
-SAPPDIR=""
-RETVAL=0
-SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
 SAPPDIR="$SAPPCACHE/$SAPPNAME"
-MODULES="sappdir_check filecheck"
-export SAPPFILE SAPPCACHE SAPPDIR RETVAL SAPPNAME
+MODULES="filecheck"
+export SAPPCACHE SAPPDIR RETVAL SAPPNAME
 shift
 
-if [ -z "$SAPPFILE" ]; then
+if [ -z "$SAPPNAME" ]; then
     message 0 "USAGE: singularity (options) run [SAPP File] (SAPP options)\n"
-    exit 1
-fi
-
-if [ ! -f "$SAPPFILE" ]; then
-    message 0 "ERROR: SAPP file ($SAPPFILE) not found\n"
     exit 1
 fi
 
@@ -56,16 +48,7 @@ if [ ! -d "$SAPPCACHE" ]; then
     fi
 fi
 
-if [ ! -d "$SAPPDIR" ]; then
-    if ! mkdir -p "$SAPPDIR"; then
-        message 0 "ERROR: Could not create working directory at $SAPPDIR\n"
-        exit 1
-    fi
-fi
-
-
-message 2 "Running '$SAPPFILE'\n"
-message 2 "Working directory: $SAPPDIR\n"
+message 2 "Running '$SAPPNAME'\n"
 
 
 for module in $MODULES; do
@@ -84,13 +67,6 @@ for module in $MODULES; do
 done
 
 
-message 2 "Checking SAPP environment at: $SAPPDIR\n"
-if [ ! -x "$SAPPDIR/c/singularity" ]; then
-    message 0 "SAPP environment is not good!\n"
-    exit 1
-fi
-
-
 SAPPCONTAINER="$SAPPDIR/c"
 SINGULARITY_COMMAND="run"
 export SAPPCONTAINER SINGULARITY_COMMAND
@@ -101,10 +77,10 @@ exec "$libexecdir/singularity/sexec" "$@" <&0 &
 CHILD_PID=$!
 message 2 "Waiting for child pid $CHILD_PID\n"
 
-echo -ne "$CHILD_PID " >> $SAPPDIR/pids
+echo -ne "$CHILD_PID " >> "$SAPPDIR/pids"
 wait $CHILD_PID
 
-sed -i -e "s@$CHILD_PID @@" $SAPPDIR/pids
+sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/pids"
 
 message 2 "Child pid $CHILD_PID returned\n"
 
