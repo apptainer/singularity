@@ -26,12 +26,11 @@ fi
 SAPPNAME="$1"
 SAPPCACHE="$HOME/.sapp-cache"
 SAPPDIR="$SAPPCACHE/$SAPPNAME"
-MODULES="filecheck"
-export SAPPCACHE SAPPDIR RETVAL SAPPNAME
+export SAPPCACHE SAPPDIR SAPPNAME
 shift
 
 if [ -z "$SAPPNAME" ]; then
-    message 0 "USAGE: singularity (options) run [SAPP File] (SAPP options)\n"
+    message 0 "USAGE: singularity (options) run [SAPP Name] (SAPP options)\n"
     exit 1
 fi
 
@@ -40,32 +39,15 @@ if [ ! -x "$libexecdir/singularity/sexec" ]; then
     exit 1
 fi
 
-
-if [ ! -d "$SAPPCACHE" ]; then
-    if ! mkdir -p "$SAPPCACHE" 2>/dev/null; then
-        message 0 "ERROR: Could not create SAPPCACHE ($SAPPCACHE)\n"
-        exit 1
-    fi
-fi
-
 message 2 "Running '$SAPPNAME'\n"
 
+if ! run_module sappdir_filecheck; then
+    message 0 "Not launching SAPP container\n"
+    exit 1
+fi
 
-for module in $MODULES; do
-    if [ -x "$libexecdir/singularity/mods/$module" ]; then
-        message 3 "Running module: $module\n"
-        sh "$libexecdir/singularity/mods/$module"
-        EXITCODE=$?
-        if [ "$EXITCODE" -ne "0" ]; then
-            message 0 "ERROR: Module $module threw an error\n"
-            exit $EXITCODE
-        fi
-    else
-        message 0 "Could not execute singularity module: $module\n"
-        exit 1
-    fi
-done
-
+# Catch the signal for the parent.. 
+trap true SIGINT SIGKILL
 
 SAPPCONTAINER="$SAPPDIR/c"
 SINGULARITY_COMMAND="run"

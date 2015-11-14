@@ -13,7 +13,7 @@
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 libexecdir="@libexecdir@"
-version="@VERSION"
+version="@VERSION@"
 
 RETVAL=0
 MESSAGELEVEL=1

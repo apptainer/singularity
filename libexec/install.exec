@@ -48,10 +48,10 @@ if ! run_module sappdir_check; then
     run_module sappdir_remove
 fi
 
-if ! run_module explode; then
+if ! run_module sappdir_explode; then
     exit 255
 fi
-if ! run_module filecheck; then
+if ! run_module sappdir_filecheck; then
     exit 255
 fi
 

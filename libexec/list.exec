@@ -30,7 +30,7 @@ export SAPPCACHE RETVAL COMMAND
 shift
 
 
-printf "%-30s %-10s\n" "SAPPNAME" "SIZE"
+printf "%-30s %-10s\n" "SAPPNAME" "SIZE(Kb)"
 for i in $SAPPCACHE/*/c/singularity; do
     if [ -f "$i" ]; then
         CONTAINER=`dirname "$i"`

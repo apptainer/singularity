@@ -94,9 +94,9 @@ copy_file_to_sappdir() {
     fi
     if [ -f "$sappdir/$file" ]; then
         message 2 "File already included: $file\n"
-    elif [ -f "$file" ]; then
+    elif [ -e "$file" ]; then
         message 1 "Installing file: $file\n"
-        cp -L "$file" "$sappdir/$targetdir" 2>&1
+        cp -rL "$file" "$sappdir/$targetdir" 2>&1
         RETVAL="$?"
     else
         message 0 "Could not find file: $file\n"
