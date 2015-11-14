@@ -34,7 +34,7 @@ fi
 
 
 
-message 3 "Building primary singularity exec driver\n"
+message 1 "Building primary singularity exec driver\n"
 if ! touch "$SAPPDIR/c/singularity" 2>/dev/null; then
     message 0 "ERROR: Could not create runscript driver\n"
     exit 1
@@ -67,13 +67,13 @@ fi
 EOF
 
 
-message 3 "Building singularity test runscript\n"
+message 1 "Building singularity test runscript\n"
 echo "#!/bin/sh" > "$SAPPDIR/c/singularity.test"
 echo "set -x" >> "$SAPPDIR/c/singularity.test"
 get_section_from_conf "test" "$SAPPSPEC" >> "$SAPPDIR/c/singularity.test"
 
 
-message 5 "Building singularity main runscript\n"
+message 1 "Building singularity main runscript\n"
 echo "#!/bin/sh" > "$SAPPDIR/c/singularity.exec"
 get_section_from_conf "runscript" "$SAPPSPEC" > "$SAPPDIR/c/singularity.runscript"
 

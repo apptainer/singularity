@@ -33,6 +33,7 @@ if [ -z "$SAPPDIR" ]; then
 fi
 
 
+message 1 "Invoking dependency check\n";
 while true; do
     UPDATED=0
     for i in $libexecdir/singularity/install_deps/*; do

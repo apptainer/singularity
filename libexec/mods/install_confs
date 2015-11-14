@@ -41,16 +41,21 @@ if [ ! -d "$SAPPDIR/c/etc" ]; then
 fi
 
 
-message 3 "Creating template files\n"
+message 1 "Creating template configs\n"
+message 1 "  /etc/nsswitch.conf\n";
 cat <<EOF > "$SAPPDIR/c/etc/nsswitch.conf"
 passwd:     files sss
 shadow:     files sss
 group:      files sss
 hosts:      files dns myhostname
 EOF
+
+message 1 "  /etc/resolv.conf\n";
 cat <<EOF > "$SAPPDIR/c/etc/resolv.conf"
 nameserver 8.8.8.8
 EOF
+
+message 1 "  /etc/hosts\n";
 cat <<EOF > "$SAPPDIR/c/etc/hosts"
 127.0.0.1 localhost
 EOF

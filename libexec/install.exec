@@ -29,7 +29,7 @@ SAPPDIR=""
 RETVAL=0
 SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
 SAPPDIR="$SAPPCACHE/$SAPPNAME"
-MODULES="sappdir_check filecheck"
+MODULES="sappdir_check explode filecheck"
 export SAPPFILE SAPPCACHE SAPPDIR RETVAL SAPPNAME
 shift
 
@@ -83,30 +83,5 @@ for module in $MODULES; do
     fi
 done
 
-
-message 2 "Checking SAPP environment at: $SAPPDIR\n"
-if [ ! -x "$SAPPDIR/c/singularity" ]; then
-    message 0 "SAPP environment is not good!\n"
-    exit 1
-fi
-
-
-SAPPCONTAINER="$SAPPDIR/c"
-SINGULARITY_COMMAND="run"
-export SAPPCONTAINER SINGULARITY_COMMAND
-
-message 2 "Exec'ing Sexec\n"
-exec "$libexecdir/singularity/sexec" "$@" <&0 &
-
-CHILD_PID=$!
-message 2 "Waiting for child pid $CHILD_PID\n"
-
-echo -ne "$CHILD_PID " >> $SAPPDIR/pids
-wait $CHILD_PID
-
-sed -i -e "s@$CHILD_PID @@" $SAPPDIR/pids
-
-message 2 "Child pid $CHILD_PID returned\n"
-
-# we should never get here
-exit 255
+# If we get here, exit ok.
+exit 0

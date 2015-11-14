@@ -38,7 +38,7 @@ if [ -z "$SAPPDIR" ]; then
 fi
 
 
-
+message 1 "Checking paths...\n"
 if [ ! -d "$SAPPDIR" ]; then
     if ! mkdir -p "$SAPPDIR" 2>/dev/null; then
         message 0 "ERROR: Could not create temporary directory\n";
@@ -46,8 +46,9 @@ if [ ! -d "$SAPPDIR" ]; then
     fi
 fi
 
+message 1 "Checking writable...\n"
 if ! touch "$SAPPFILE" 2>/dev/null; then
-    message 0 "ERROR: Could not create $SAPPFILE"
+    message 0 "ERROR: Could not create $SAPPFILE\n"
     exit 1
 fi
 

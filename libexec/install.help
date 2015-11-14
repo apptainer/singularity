@@ -1,0 +1,10 @@
+USAGE: singularity (options) install [SAPP File]
+
+Install a SAPP container into your Singularity environment which
+will make it available to be executed.
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+

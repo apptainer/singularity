@@ -29,7 +29,7 @@ SAPPDIR=""
 RETVAL=0
 SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
 SAPPDIR="$SAPPCACHE/$SAPPNAME"
-MODULES="explode filecheck"
+MODULES="sappdir_check explode filecheck"
 export SAPPFILE SAPPCACHE SAPPDIR RETVAL SAPPNAME
 shift
 

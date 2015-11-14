@@ -22,25 +22,20 @@ else
     exit 1
 fi
 
-if [ -z "$SAPPSPEC" ]; then
-    message 0 "ERROR: SAPP specfile not given\n"
-    exit 1
-fi
-
 if [ -z "$SAPPDIR" ]; then
     message 0 "ERROR: SAPPDIR not given\n"
     exit 1
 fi
 
+if [ ! -d "$SAPPDIR" ]; then
+    message 2 "No SAPP directory to remove, skipping...\n"
+    exit 0
+fi
 
-message 1 "Including SAPPFILE\n"
-cat "$SAPPSPEC" > "$SAPPDIR/spec"
 
-message 1 "Calculating container size\n"
-du -sk "$SAPPDIR/c" | cut -f 1 > "$SAPPDIR/size"
-
-message 1 "Calculating checksums\n"
-(cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
-
+if ! rm -rf "$SAPPDIR" >/dev/null 2>&1; then
+    message 0 "ERROR: Could not completely remove $SAPPDIR\n"
+    exit 1
+fi
 
 exit 0

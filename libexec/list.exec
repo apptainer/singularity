@@ -22,25 +22,24 @@ else
     exit 1
 fi
 
-if [ -z "$SAPPSPEC" ]; then
-    message 0 "ERROR: SAPP specfile not given\n"
-    exit 1
-fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
-    exit 1
-fi
+COMMAND="$1"
+SAPPCACHE="$HOME/.sapp-cache"
+RETVAL=0
+export SAPPCACHE RETVAL COMMAND
+shift
 
 
-message 1 "Including SAPPFILE\n"
-cat "$SAPPSPEC" > "$SAPPDIR/spec"
+printf "%-30s %-10s\n" "SAPPNAME" "SIZE"
+for i in $SAPPCACHE/*/c/singularity; do
+    if [ -f "$i" ]; then
+        CONTAINER=`dirname "$i"`
+        SAPPDIR=`dirname "$CONTAINER"`
+        SAPPNAME=`basename "$SAPPDIR"`
+        SIZE=`cat "$SAPPDIR/size" 2>/dev/null || echo "unknown"`
+        export SAPPDIR
+        printf "%-30s %-10s\n" "$SAPPNAME" "$SIZE"
+    fi
+done
 
-message 1 "Calculating container size\n"
-du -sk "$SAPPDIR/c" | cut -f 1 > "$SAPPDIR/size"
-
-message 1 "Calculating checksums\n"
-(cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
-
-
-exit 0
+exit $RETVAL

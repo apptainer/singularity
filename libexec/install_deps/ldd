@@ -53,7 +53,7 @@ for file in `find "$SAPPDIR/c" -type f -executable -print`; do
             BASENAME=`basename $dep`
             message 3 "found dependency:      $dep\n"
             if [ ! -f "$LIBDIR/$BASENAME" ]; then
-                message 2 "copying dependency:    $dep\n"
+                message 1 "Installing dependency: $dep\n"
                 cp -L "$dep" "$LIBDIR/$BASENAME"
                 RETVAL=0
             fi
@@ -68,7 +68,7 @@ for dep in $INCLUDE_LIBS; do
         BASENAME=`basename $dep`
         message 3 "found dependency:      $dep\n"
         if [ ! -f "$LIBDIR/$BASENAME" ]; then
-            message 2 "copying dependency:    $dep\n"
+            message 1 "Installing dependency: $dep\n"
             cp -L "$dep" "$LIBDIR/$BASENAME"
             RETVAL=0
         fi

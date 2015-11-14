@@ -32,23 +32,10 @@ if [ -z "$SAPPDIR" ]; then
     exit 1
 fi
 
-if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
-    message 0 "ERROR: Could not obtain checksum of $SAPPFILE\n"
-    exit 1
+if [ -d "$SAPPDIR/c" ]; then
+    message 3 "Not exploding archive, directory already exists\n"
+    exit 0
 fi
-
-if [ -f "$SAPPDIR/sum" ]; then
-    PREV_SUM=`cat "$SAPPDIR/sum"`
-    if [ "$PREV_SUM" == "$CHECKSUM" ]; then
-        message 2 "Using cached SAPP\n"
-        exit 0
-    else
-        message 1 "A previous version of this SAPP container exists in\n"
-        message 1 "the cache! Clean this cache first.\n"
-        exit 1
-    fi
-fi
-
 
 stdbuf -i0 -o0 head -n 10 "$SAPPFILE" | while read i; do
     if check_pattern "#!/*" "$i"; then
@@ -73,7 +60,7 @@ message 3 "SAPP payload starts at $PAYLOAD_START\n"
 message 2 "Caching SAPP archive\n"
 tail -n "+$PAYLOAD_START" "$SAPPFILE" | gunzip -dc | (cd "$SAPPDIR"; cpio -id --quiet)
 
-echo "$CHECKSUM" > "$SAPPDIR/sum"
+md5sum "$SAPPFILE" | awk '{print $1}' > "$SAPPDIR/sum"
 
 
 exit 0

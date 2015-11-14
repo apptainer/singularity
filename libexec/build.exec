@@ -91,7 +91,7 @@ done
 if [ -z "$DEBUG" ]; then
     rm -rf "$SAPPDIR"
 else
-    message 5 "working directory at: $SAPPDIR\n"
+    message 5 "Working directory at: $SAPPDIR\n"
 fi
 
 

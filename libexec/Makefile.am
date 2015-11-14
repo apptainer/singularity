@@ -4,8 +4,9 @@ scriptlibexecdir = $(libexecdir)/singularity
 
 dist_scriptlibexec_SCRIPTS = functions \
 	build.exec build.help build.summary \
-	cache.exec cache.help cache.summary \
+	list.exec list.help list.summary \
 	help.exec help.help help.summary \
+	install.exec install.help install.summary \
 	run.exec run.help run.summary \
 	test.exec test.summary
 

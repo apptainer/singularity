@@ -22,25 +22,36 @@ else
     exit 1
 fi
 
-if [ -z "$SAPPSPEC" ]; then
-    message 0 "ERROR: SAPP specfile not given\n"
+if [ -z "$SAPPFILE" ]; then
+    message 0 "SAPP output file not passed\n"
     exit 1
 fi
 
 if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+    message 0 "SAPPDIR not given\n"
+    exit 1
+fi
+
+if [ ! -f "$SAPPDIR/sum" ]; then
+    message 0 "SAPP container not found\n"
     exit 1
 fi
 
 
-message 1 "Including SAPPFILE\n"
-cat "$SAPPSPEC" > "$SAPPDIR/spec"
+if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
+    message 0 "ERROR: Could not obtain checksum of $SAPPFILE\n"
+    exit 1
+fi
 
-message 1 "Calculating container size\n"
-du -sk "$SAPPDIR/c" | cut -f 1 > "$SAPPDIR/size"
-
-message 1 "Calculating checksums\n"
-(cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
+PREV_SUM=`cat "$SAPPDIR/sum"`
+if [ "$PREV_SUM" == "$CHECKSUM" ]; then
+    message 2 "Using cached SAPP\n"
+    exit 0
+else
+    message 1 "A previous version of this SAPP container exists in\n"
+    message 1 "the cache! Clean this cache first.\n"
+    exit 1
+fi
 
 
 exit 0

@@ -89,13 +89,13 @@ copy_file_to_sappdir() {
     fi
 
     if [ ! -d "$sappdir/$targetdir" ]; then
-        message 3 "creating target dir:   $targetdir\n"
+        message 4 "Creating target dir:   $targetdir\n"
         mkdir -p "$sappdir/$targetdir"
     fi
     if [ -f "$sappdir/$file" ]; then
-        message 4 "file already included: $file\n"
+        message 2 "File already included: $file\n"
     elif [ -f "$file" ]; then
-        message 2 "including file:        $file:$targetdir\n"
+        message 1 "Installing file: $file\n"
         cp -L "$file" "$sappdir/$targetdir" 2>&1
         RETVAL="$?"
     else
@@ -119,22 +119,16 @@ check_pattern() {
     return 0
 }
 
-srun() {
-    TMPFILE=`mktemp`
-    MSG=`echo "$*" | cut -c 1-60`
-    message 1 " + $MSG"
-    "$@" >$TMPFILE 2>&1
+cmd() {
+    MSG=`echo "$*" | cut -c 1-68`
+    message 5 " + $MSG"
+    "$@" >/dev/null 2>&1
     RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
-        message 1 "\\033[77G${GREEN}OK${NORMAL}\n"
+        message 5 "\\033[77G${GREEN}OK${NORMAL}\n"
     else
-        echo -en "\\033[74G"
-        message 1 "\\033[74G${RED}ERROR${NORMAL}\n"
-        cat $TMPFILE | while read i; do
-            wwprint "$i\n" YELLOW
-        done
+        message 5 "\\033[74G${RED}ERROR${NORMAL}\n"
     fi
-    rm -f $TMPFILE
     return $RETVAL
 }
 
