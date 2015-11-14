@@ -42,5 +42,9 @@ du -sk "$SAPPDIR/c" | cut -f 1 > "$SAPPDIR/size"
 message 1 "Calculating checksums\n"
 (cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
 
+message 1 "Writing metadata\n"
+get_key_from_conf "Summary" "$SAPPSPEC" > "$SAPPDIR/summary"
+get_key_from_conf "Maintainer" "$SAPPSPEC" > "$SAPPDIR/maintainer"
+
 
 exit 0

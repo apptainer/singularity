@@ -1,6 +1,6 @@
 modsdir = $(libexecdir)/singularity/mods
 
-dist_mods_SCRIPTS = sappdir_filecheck sappdir_archive sappdir_archive_meta \
+dist_mods_SCRIPTS = sappdir_filecheck sappdir_archive sappdir_metadata \
 	install_deps sappdir_explode install_files install_runscripts \
 	build_sanity install_confs build_test sappdir_delete sappdir_check \
 	sappdir_idle

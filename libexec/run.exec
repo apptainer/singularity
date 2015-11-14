@@ -59,10 +59,10 @@ exec "$libexecdir/singularity/sexec" "$@" <&0 &
 CHILD_PID=$!
 message 2 "Waiting for child pid $CHILD_PID\n"
 
-echo -ne "$CHILD_PID " >> "$SAPPDIR/pids"
-wait $CHILD_PID
+echo -ne "$CHILD_PID " >> "$SAPPDIR/c/pids"
+wait $CHILD_PID 2>/dev/null
 
-sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/pids"
+sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/c/pids"
 
 message 2 "Child pid $CHILD_PID returned\n"
 

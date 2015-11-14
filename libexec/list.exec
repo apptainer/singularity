@@ -30,15 +30,21 @@ export SAPPCACHE RETVAL COMMAND
 shift
 
 
-printf "%-30s %-10s\n" "SAPPNAME" "SIZE(Kb)"
+printf "%-10s %10s %1s %s\n" "SAPPNAME" "SIZE (k)" "S" "SUMMARY"
 for i in $SAPPCACHE/*/c/singularity; do
     if [ -f "$i" ]; then
         CONTAINER=`dirname "$i"`
         SAPPDIR=`dirname "$CONTAINER"`
         SAPPNAME=`basename "$SAPPDIR"`
         SIZE=`cat "$SAPPDIR/size" 2>/dev/null || echo "unknown"`
+        SUMMARY=`cat "$SAPPDIR/summary" 2>/dev/null`
         export SAPPDIR
-        printf "%-30s %-10s\n" "$SAPPNAME" "$SIZE"
+        if [ -f "$SAPPDIR/c/pids" -a -s "$SAPPDIR/c/pids" ]; then
+            STATE="R"
+        else
+            STATE=" "
+        fi
+        printf "%-10s %10s %1s %s\n" "$SAPPNAME" "$SIZE" "$STATE" "$SUMMARY"
     fi
 done
 
