@@ -1,0 +1,50 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+if [ -z "$SAPPDIR" ]; then
+    message 0 "ERROR: SAPPDIR not given\n"
+    exit 1
+fi
+
+if [ ! -d "$SAPPDIR/c" ]; then
+    message 0 "ERROR: SAPP directory not found\n"
+    exit 1
+fi
+
+if [ ! -f "$SAPPDIR/files" ]; then
+    message 0 "ERROR: File checksums not found for this SAPP\n"
+    exit 1
+fi
+
+if ! cd "$SAPPDIR/c" 2>/dev/null; then
+    message 0 "ERROR: Could not chdir to SAPP directory\n"
+    exit 1
+fi
+
+if ! md5sum -c $SAPPDIR/files >/dev/null 2>&1; then
+    message 1 "ERROR: Cached file check failed! Maybe clean cache?\n"
+    exit 1
+fi
+
+exit 0

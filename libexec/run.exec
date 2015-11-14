@@ -28,7 +28,8 @@ SAPPCACHE="$HOME/.sapp-cache"
 SAPPDIR=""
 RETVAL=0
 SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
-MODULES="sapp_explode"
+SAPPDIR="$SAPPCACHE/$SAPPNAME"
+MODULES="explode filecheck"
 export SAPPFILE SAPPCACHE SAPPDIR RETVAL SAPPNAME
 shift
 
@@ -48,22 +49,12 @@ if [ ! -x "$libexecdir/singularity/sexec" ]; then
 fi
 
 
-
-
 if [ ! -d "$SAPPCACHE" ]; then
     if ! mkdir -p "$SAPPCACHE" 2>/dev/null; then
         message 0 "ERROR: Could not create SAPPCACHE ($SAPPCACHE)\n"
         exit 1
     fi
 fi
-
-
-if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
-    message 0 "ERROR: Could not obtain checksum of $SAPPFILE\n"
-    exit 1
-fi
-
-SAPPDIR="$SAPPCACHE/$SAPPNAME/$CHECKSUM"
 
 if [ ! -d "$SAPPDIR" ]; then
     if ! mkdir -p "$SAPPDIR"; then
@@ -73,19 +64,17 @@ if [ ! -d "$SAPPDIR" ]; then
 fi
 
 
-
 message 2 "Running '$SAPPFILE'\n"
 message 2 "Working directory: $SAPPDIR\n"
 
 
 for module in $MODULES; do
-    if [ -x "$libexecdir/singularity/$module" ]; then
+    if [ -x "$libexecdir/singularity/mods/$module" ]; then
         message 3 "Running module: $module\n"
-        sh "$libexecdir/singularity/$module"
+        sh "$libexecdir/singularity/mods/$module"
         EXITCODE=$?
         if [ "$EXITCODE" -ne "0" ]; then
-            message 0 "Error thrown from module: $i\n"
-            message 0 "Quiting!\n"
+            message 0 "ERROR: Module $module threw an error\n"
             exit $EXITCODE
         fi
     else
@@ -107,8 +96,17 @@ SINGULARITY_COMMAND="run"
 export SAPPCONTAINER SINGULARITY_COMMAND
 
 message 2 "Exec'ing Sexec\n"
-exec "$libexecdir/singularity/sexec" "$@"
+exec "$libexecdir/singularity/sexec" "$@" <&0 &
 
+CHILD_PID=$!
+message 2 "Waiting for child pid $CHILD_PID\n"
+
+echo -ne "$CHILD_PID " >> $SAPPDIR/pids
+wait $CHILD_PID
+
+sed -i -e "s@$CHILD_PID @@" $SAPPDIR/pids
+
+message 2 "Child pid $CHILD_PID returned\n"
 
 # we should never get here
 exit 255

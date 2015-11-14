@@ -39,7 +39,7 @@ RETVAL=0
 NAME=`get_key_from_conf "Name" $SAPPSPEC`
 SUMMARY=`get_key_from_conf "Summary" $SAPPSPEC`
 SAPPDIR=`mktemp -d /tmp/.singularity.XXXXXXX`
-MODULES="sapp_sanity sapp_setup sapp_files sapp_deps sapp_buildmeta sapp_runscripts sapp_test sapp_archive"
+MODULES="build_sanity install_confs install_files install_deps archive_meta install_runscripts build_test archive"
 
 export SAPPSPEC SAPPFILE RETVAL SAPPDIR
 
@@ -73,13 +73,12 @@ message 2 "Output file: $SAPPFILE\n"
 
 
 for module in $MODULES; do
-    if [ -x "$libexecdir/singularity/$module" ]; then
+    if [ -x "$libexecdir/singularity/mods/$module" ]; then
         message 3 "Running module: $module\n"
-        sh "$libexecdir/singularity/$module"
+        sh "$libexecdir/singularity/mods/$module"
         EXITCODE=$?
         if [ "$EXITCODE" -ne "0" ]; then
-            message 0 "Error thrown from module: $i\n"
-            message 0 "Quiting!\n"
+            message 0 "ERROR: Module $module threw an error\n"
             rm -f $SAPPFILE
             exit $EXITCODE
         fi

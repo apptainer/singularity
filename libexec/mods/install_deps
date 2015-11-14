@@ -35,7 +35,7 @@ fi
 
 while true; do
     UPDATED=0
-    for i in $libexecdir/singularity/sapp_deps_*; do
+    for i in $libexecdir/singularity/install_deps/*; do
         if [ -x "$i" ]; then
             message 3 "Executing: $i\n"
             sh "$i" "$@"
