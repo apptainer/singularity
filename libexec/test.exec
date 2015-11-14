@@ -1,0 +1,114 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+
+SAPPFILE="$1"
+SAPPCACHE="$HOME/.sapp-cache"
+SAPPDIR=""
+RETVAL=0
+SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
+MODULES="sapp_explode"
+export SAPPFILE SAPPCACHE SAPPDIR RETVAL SAPPNAME
+shift
+
+if [ -z "$SAPPFILE" ]; then
+    message 0 "USAGE: singularity (options) run [SAPP File] (SAPP options)\n"
+    exit 1
+fi
+
+if [ ! -f "$SAPPFILE" ]; then
+    message 0 "ERROR: SAPP file ($SAPPFILE) not found\n"
+    exit 1
+fi
+
+if [ ! -x "$libexecdir/singularity/sexec" ]; then
+    message 0 "ERROR: Sexec not found\n"
+    exit 1
+fi
+
+
+
+
+if [ ! -d "$SAPPCACHE" ]; then
+    if ! mkdir -p "$SAPPCACHE" 2>/dev/null; then
+        message 0 "ERROR: Could not create SAPPCACHE ($SAPPCACHE)\n"
+        exit 1
+    fi
+fi
+
+
+if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
+    message 0 "ERROR: Could not obtain checksum of $SAPPFILE\n"
+    exit 1
+fi
+
+SAPPDIR="$SAPPCACHE/$SAPPNAME/$CHECKSUM"
+
+if [ ! -d "$SAPPDIR" ]; then
+    if ! mkdir -p "$SAPPDIR"; then
+        message 0 "ERROR: Could not create working directory at $SAPPDIR\n"
+        exit 1
+    fi
+fi
+
+
+
+message 2 "Running '$SAPPFILE'\n"
+message 2 "Working directory: $SAPPDIR\n"
+
+
+for module in $MODULES; do
+    if [ -x "$libexecdir/singularity/$module" ]; then
+        message 3 "Running module: $module\n"
+        sh "$libexecdir/singularity/$module"
+        EXITCODE=$?
+        if [ "$EXITCODE" -ne "0" ]; then
+            message 0 "Error thrown from module: $i\n"
+            message 0 "Quiting!\n"
+            exit $EXITCODE
+        fi
+    else
+        message 0 "Could not execute singularity module: $module\n"
+        exit 1
+    fi
+done
+
+
+message 2 "Checking SAPP environment at: $SAPPDIR\n"
+if [ ! -x "$SAPPDIR/c/singularity" ]; then
+    message 0 "SAPP environment is not good!\n"
+    exit 1
+fi
+
+
+SAPPCONTAINER="$SAPPDIR/c"
+SINGULARITY_COMMAND="test"
+export SAPPCONTAINER SINGULARITY_COMMAND
+
+message 2 "Exec'ing Sexec\n"
+exec "$libexecdir/singularity/sexec" "$@"
+
+
+# we should never get here
+exit 255
