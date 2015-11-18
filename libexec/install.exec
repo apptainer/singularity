@@ -45,7 +45,7 @@ message 1 "Installing: $SAPPFILE\n"
 
 if ! run_module sappdir_check; then
     message 2 "Cleaning previous SAPP container cache\n"
-    run_module sappdir_remove
+    run_module sappdir_delete
 fi
 
 if ! run_module sappdir_explode; then
