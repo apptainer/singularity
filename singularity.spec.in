@@ -1,7 +1,7 @@
 Summary: The Singularity of a container
 Name: singularity
 Version: @PACKAGE_VERSION@
-Release: 0.1
+Release: 0.1%{?dist}
 License: US Dept. of Energy (BSD-like)
 Group: System Environment/Base
 URL: http://warewulf.lbl.gov/
