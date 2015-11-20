@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Singularity</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <img src="images/singularity_logo1.png" border="0"/>
+        <p></p>
+
+<p>
+<strong>&raquo;&nbsp;<a href="index.html">Home</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="about.html">About</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="use-cases.html">Use Cases</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="docs.html">Documentation</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="help.html">Getting help</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="download.html">Download</a></strong><br/>
+</p>
+
+        <p></p>
+      </header>
+      <section>
+&laquo;&nbsp;<a href="docs.html">Back to Documentation</a>
+<h1>FAQ</h1>
+<p>
+
+<h2>Which namespaces are virtualized? Is that selectable?</h2>
+<p>
+The goal of Singularity is to run a contained application as if it did not
+exist inside of a container. This means you want the contained application
+to run as if it existed on the host system! Namespace virtualization does
+the opposite, it segregates the contents of the container from the host.
+</p>
+<p>
+There is a feature request to optionally provide that layer of seperation
+both for testing and use cases which may require containment.
+</p>
+
+<h2>How does Singularity relate/differ from Shifter?</h2>
+<p>
+NERSC (like most HPC centers) are feeling the pressure from users asking
+for support for containers, specifically Docker. Due to the architecture
+of Docker it is very difficult (if not impossible) to properly and
+securely implement in a multi-user HPC environment. Shifter is NERSC's
+implementation to provide a Docker front-end interface to a non-Docker
+backend which integrates with the scheduler to provide a contiguous
+workflow and integration.
+</p>
+<p>
+Singularity on the other hand does not leverage the Docker workflow or
+front end at all. Singularity works on a very different premise. Instead
+of packaging the entire operating system to support a single application
+or workflow/pipeline Docker only packages what it needs, and wraps that
+into an application that can be interacted on like any other program on
+the system. For example, there is no need to integrate it into a
+scheduler or make any system changes because it can be run like any other
+application. This means it can simply be called by the user within a
+batch submission script.
+</p>
+
+
+
+</p>
+
+      </section>
+      <footer>
+        <p>
+            <small>
+                Project lead: <a href="https://gmkurtzer.github.io">Gregory M. Kurtzer</a><br/>
+                Sponsored by: <a href="http://scs.lbl.gov/">HPC @ LBNL</a><br/>
+                Hosted on: <a href="https://github.com">GitHub</a>
+            </small>
+        </p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
