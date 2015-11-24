@@ -90,10 +90,10 @@ workflow and integration.
 </p>
 <p>
 Singularity on the other hand does not leverage the Docker workflow or
-front end at all. Singularity works on a very different premise. Instead
+front end at all and generally works on a very different premise. Instead
 of packaging the entire operating system to support a single application
-or workflow/pipeline Docker only packages what it needs, and wraps that
-into an application that can be interacted on like any other program on
+(or workflow/pipeline) Singularity only packages what it needs to run, and
+wraps that into a format that can be interacted on like any other program on
 the system. For example, there is no need to integrate it into a
 scheduler or make any system changes because it can be run like any other
 application. This means it can simply be called by the user within a
@@ -112,7 +112,13 @@ batch submission script.
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+Docker has two major functions: generating, managing, building, and
+defining container images (using Dockerfiles and image revision control)
+and a runtime envrionment for containers (which leverages LXC behind the
+scenes).
+</p>
+<p>
+...
 </p>
 </div>
 </div>
