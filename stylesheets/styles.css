@@ -178,6 +178,8 @@ footer {
     display: inline-block;
     cursor: pointer;
     font-weight: bold;
+    text-decoration: underline;
+    color:#69AFF7;
 }
 
 .faq_answer_container {
