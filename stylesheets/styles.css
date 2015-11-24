@@ -172,6 +172,10 @@ footer {
   bottom:50px;
 }
 
+.faq {
+    white-space: nowrap;
+}
+
 .faq_question {
     margin: 0px;
     padding: 0px 0px 5px 0px;
