@@ -188,10 +188,10 @@ footer {
     font-size: 1em;
     margin: 0 0 20px 25px;
 }
-#faqs dt {
+#faq dt {
     background: "images/expand-icon.png" no-repeat left;
 }
-#faqs .expanded {
+#faq .expanded {
     background: "images/expanded-icon.png" no-repeat left;
 }
 
