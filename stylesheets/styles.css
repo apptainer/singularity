@@ -188,6 +188,12 @@ footer {
     font-size: 1em;
     margin: 0 0 20px 25px;
 }
+#faqs dt {
+    background: "images/expand-icon.png" no-repeat left;
+}
+#faqs .expanded {
+    background: "images/expanded-icon.png" no-repeat left;
+}
 
 @media print, screen and (max-width: 960px) {
 
