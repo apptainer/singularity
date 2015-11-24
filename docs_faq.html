@@ -5,6 +5,16 @@
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Singularity</title>
 
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+
+    <script type="text/javascript">
+        $("#faqs dd").hide();
+        $("#faqs dt").click(function () {
+            $(this).next("#faqs dd").slideToggle(500);
+            $(this).toggleClass("expanded");
+        });
+    </script>
+
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/github-light.css">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
@@ -33,6 +43,25 @@
 &laquo;&nbsp;<a href="docs.html">Back to Documentation</a>
 <h1>FAQ</h1>
 <p>
+
+<dl id="faq">
+<dt>Question 1</dt>
+<dd>Hello world... <br/>Bye.</dd>
+<dt>Question 2</dt>
+<dd>
+<p>
+The goal of Singularity is to run a contained application as if it did not
+exist inside of a container. This means you want the contained application
+to run as if it existed on the host system! Namespace virtualization does
+the opposite, it segregates the contents of the container from the host.
+</p>
+<p>
+There is a feature request to optionally provide that layer of seperation
+both for testing and use cases which may require containment.
+</p>
+</dd>
+
+</dl>
 
 <h2>Which namespaces are virtualized? Is that selectable?</h2>
 <p>
@@ -67,6 +96,42 @@ scheduler or make any system changes because it can be run like any other
 application. This means it can simply be called by the user within a
 batch submission script.
 </p>
+
+
+<h2>How does Singulairty relate/differ from Docker?</h2>
+
+<h2>How does Singulairty relate/differ from statically compiled binaries?</h2>
+
+<h2>Can you edit/modity a Singularity container once it has been instantiated?</h2>
+
+<h2>Can multiple applications be packaged into one Singularity Container?</h2>
+
+<h2>Are Singularity containers kernel dependent?</h2>
+
+<h2>How are external filesystems and paths handled in a Singularity Container?</h2>
+
+<h2>How does Singularity handle manage networking</h2>
+
+<h2>Can I run X11 apps through Singularity?</h2>
+
+<h2>Can a Singularity resolve GLIBC version mismatches?</h2>
+
+<h2>Can a Singularity container be multi-threaded?</h2>
+
+<h2>Can a Singularity container be suspended or checkpointed?</h2>
+
+<h2>Are there any special requirements to use Singularity through a job scheduler?</h2>
+
+<h2>Are there any special security concerns that Singularity introduces?</h2>
+
+<h2>What Linux distributions are you trying to get onboard</h2>
+
+<h2>What is the performance tradeoff when running an appication native or through Singularity?</h2>
+
+<h2>What is the fastest land animal?</h2>
+
+<h2>What is the average air speed velocity of an unladen swallow?</h2>
+
 
 
 
