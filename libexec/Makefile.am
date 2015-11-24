@@ -2,7 +2,7 @@ SUBDIRS = mods install_deps
 
 scriptlibexecdir = $(libexecdir)/singularity
 
-dist_scriptlibexec_SCRIPTS = functions \
+dist_scriptlibexec_SCRIPTS = functions sexec_prep \
 	build.exec build.help build.summary \
 	delete.exec delete.help delete.summary \
 	list.exec list.help list.summary \

@@ -35,10 +35,7 @@ fi
 
 # These get added by Sexec during the %test
 message 1 "Cleaning up unpackaged files\n"
-rm -f $SAPPDIR/c/dev/null
-rm -f $SAPPDIR/c/dev/urandom
-rm -f $SAPPDIR/c/dev/random
-
+rm -f $SAPPDIR/c/dev/*
 
 message 1 "Creating output SAPP container\n"
 echo "#!/usr/bin/env sapprun" > $SAPPFILE

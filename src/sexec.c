@@ -24,13 +24,21 @@
 #include <grp.h>
 #include "config.h"
 
+#ifndef LIBEXECDIR
+#define LIBEXECDIR "undefined"
+#endif
+
 int main(int argc, char **argv) {
     char *sappdir;
     char *singularitypath;
+    char *preppath;
+    char uid_string[512];
+    char gid_string[512];
     struct stat sappdirstat;
     struct stat singularitystat;
+    struct stat prepstat;
     int cwd_fd;
-    mode_t process_mask = umask(0);
+    //mode_t process_mask = umask(0);
     uid_t uid = getuid();
     gid_t gid = getgid();
 
@@ -56,6 +64,12 @@ int main(int argc, char **argv) {
     // Get sappdir from the environment (we check on this shortly)
     sappdir = getenv("SAPPCONTAINER");
 
+    // Set the Singularity User/Group ID for the sexec_prep
+    snprintf(uid_string, 511, "%d", uid);
+    setenv("SINGULARITY_UID", uid_string, 1);
+    snprintf(gid_string, 511, "%d", gid);
+    setenv("SINGULARITY_GID", gid_string, 1);
+
 
     /*
      * Sanity Checks, exit if any don't match.
@@ -80,11 +94,11 @@ int main(int argc, char **argv) {
         fprintf(stderr, "ERROR: Will not execute in a SAPPCONTAINER you don't own. (%s:%d)!\n", sappdir, (int)sappdirstat.st_uid);
         return(255);
     }
-
+    
     // Check the singularity within the SAPPCONTAINER
     singularitypath = (char *) malloc(strlen(sappdir) + 13);
     snprintf(singularitypath, strlen(sappdir) + 13, "%s/singularity", sappdir);
-    if (stat(singularitypath, &singularitystat) < 0) {
+    if ( stat(singularitypath, &singularitystat) < 0 ) {
         fprintf(stderr, "ERROR: Could not stat %s!\n", singularitypath);
         return(1);
     }
@@ -92,12 +106,32 @@ int main(int argc, char **argv) {
         fprintf(stderr, "ERROR: The singularity is not found in SAPPCONTAINER!\n");
         return(1);
     }
-    if ( uid != (int)singularitystat.st_uid ) {
+    if ( (int)singularitystat.st_uid != uid ) {
         fprintf(stderr, "ERROR: Will not execute a singularity you don't own. (%d)!\n", (int)sappdirstat.st_uid);
         return(255);
     }
     if ( ! (S_IXUSR & singularitystat.st_mode) ) {
         fprintf(stderr, "ERROR: The singularity can not be executed!\n");
+        return(1);
+    }
+
+    // Check preppath
+    preppath = (char *) malloc(strlen(LIBEXECDIR) + 24);
+    snprintf(preppath, strlen(LIBEXECDIR) + 24, "%s/singularity/sexec_prep", LIBEXECDIR);
+    if ( stat(preppath, &prepstat) < 0 ) {
+        fprintf(stderr, "ERROR: Could not stat %s!\n", preppath);
+        return(1);
+    }
+    if ( ! S_ISREG(prepstat.st_mode) ) {
+        fprintf(stderr, "ERROR: The sexec_prep is not found at: %s!\n", preppath);
+        return(1);
+    }
+    if ( (int)prepstat.st_uid != 0 ) {
+        fprintf(stderr, "ERROR: sexec_prep is not owned by root!\n");
+        return(255);
+    }
+    if ( ! (S_IXUSR & prepstat.st_mode) ) {
+        fprintf(stderr, "ERROR: The sexec_prep can not be executed!\n");
         return(1);
     }
 
@@ -108,8 +142,18 @@ int main(int argc, char **argv) {
 
     // Get root
     if ( seteuid(0) != 0 ) {
+        fprintf(stderr, "ERROR: Could not escalate effective privledges!\n");
+        return(1);
+    }
+    if ( setuid(0) != 0 ) {
         fprintf(stderr, "ERROR: Could not escalate privledges!\n");
         return(1);
+    }
+
+    // Run the sexec_prep
+    if ( system(preppath) != 0 ) {
+        fprintf(stderr, "ERROR: Failed to execute sexec_prep (%s)\n", preppath);
+        return(255);
     }
 
     // Do the chroot
@@ -117,17 +161,6 @@ int main(int argc, char **argv) {
         fprintf(stderr, "ERROR: failed enter SAPPCONTAINER: %s\n", sappdir);
         return(255);
     }
-
-    // Failure is acceptable here
-    mkdir("/dev", 0755);
-    chown("/dev", uid, gid);
-    mknod("/dev/null", S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,3));
-    chown("/dev/null", uid, gid);
-    mknod("/dev/random", S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,8));
-    chown("/dev/random", uid, gid);
-    mknod("/dev/urandom", S_IFCHR|S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH, makedev(1,9));
-    chown("/dev/urandom", uid, gid);
-    umask(process_mask);
 
     // Dump all privs
     if ( setregid(gid, gid) != 0 ) {
