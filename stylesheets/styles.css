@@ -172,7 +172,7 @@ footer {
   bottom:50px;
 }
 
-.faq {
+.faq_disabled {
     white-space: nowrap;
     vertical-align: top;
     display: table-cell;
