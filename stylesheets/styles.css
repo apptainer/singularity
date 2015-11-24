@@ -173,10 +173,10 @@ footer {
 }
 
 
-#faqs dt, #faqs dd {
+#faq dt, #faq dd {
     padding: 0 0 0 50px;
 }
-#faqs dt {
+#faq dt {
     font-size:1.5em;
     color: #9d9d9d;
     cursor: pointer;
@@ -184,7 +184,7 @@ footer {
     line-height: 37px;
     margin: 0 0 15px 25px;
 }
-#faqs dd {
+#faq dd {
     font-size: 1em;
     margin: 0 0 20px 25px;
 }
