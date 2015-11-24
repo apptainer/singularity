@@ -183,7 +183,8 @@ footer {
 .faq_answer_container {
     height: 0px;
     overflow: hidden;
-    padding: 0px;
+    padding: 20px;
+    background: #2A2A2A;
 }
 
 
