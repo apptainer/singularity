@@ -8,10 +8,17 @@
     <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
 
     <script type="text/javascript">
-        $("#faq dd").hide();
-        $("#faq dt").click(function () {
-            $(this).next("#faq dd").slideToggle(500);
-            $(this).toggleClass("expanded");
+        $(document).ready(function() {
+            $('.faq_question').click(function() {
+                if ($(this).parent().is('.open')){
+                    $(this).closest('.faq').find('.faq_answer_container').animate({'height':'0'},500);
+                    $(this).closest('.faq').removeClass('open');
+                }else{
+                    var newHeight =$(this).closest('.faq').find('.faq_answer').height() +'px';
+                    $(this).closest('.faq').find('.faq_answer_container').animate({'height':newHeight},500);
+                    $(this).closest('.faq').addClass('open');
+                }
+            });
         });
     </script>
 
@@ -44,11 +51,10 @@
 <h1>FAQ</h1>
 <p>
 
-<dl id="faq">
-<dt>Question 1</dt>
-<dd>Hello world... <br/>Bye.</dd>
-<dt>Question 2</dt>
-<dd>
+<div class="faq_container">
+<div class="faq"
+<div class="faq_question">Question 1</div>
+<div class="faq_answer">
 <p>
 The goal of Singularity is to run a contained application as if it did not
 exist inside of a container. This means you want the contained application
@@ -59,9 +65,9 @@ the opposite, it segregates the contents of the container from the host.
 There is a feature request to optionally provide that layer of seperation
 both for testing and use cases which may require containment.
 </p>
-</dd>
-
-</dl>
+</div>
+</div>
+</div>
 
 <h2>Which namespaces are virtualized? Is that selectable?</h2>
 <p>
