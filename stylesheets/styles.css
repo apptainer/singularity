@@ -177,6 +177,7 @@ footer {
 }
 
 .faq_question {
+    white-space: normal;
     margin: 0px;
     padding: 0px 0px 5px 0px;
     display: inline-block;
@@ -188,11 +189,13 @@ footer {
 }
 
 .faq_answer_container {
+    white-space: normal;
     height: 0px;
     overflow: hidden;
 }
 
 .faq_answer {
+    white-space: normal;
     background: #2A2A2A;
     margin: 20px;
 }
