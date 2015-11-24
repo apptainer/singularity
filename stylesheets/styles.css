@@ -175,6 +175,7 @@ footer {
 .faq {
     white-space: nowrap;
     vertical-align: top;
+    display: table-cell;
 }
 
 .faq_question {
