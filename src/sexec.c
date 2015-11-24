@@ -38,12 +38,18 @@ int main(int argc, char **argv) {
     struct stat singularitystat;
     struct stat prepstat;
     int cwd_fd;
+    int opt_contain = 0;
     //mode_t process_mask = umask(0);
     uid_t uid = getuid();
     gid_t gid = getgid();
 
 
-    // We don't run as root...
+    /*
+     * Prep work
+     */
+
+
+    // We don't run as root!
     if ( uid == 0 || gid == 0 ) {
         fprintf(stderr, "ERROR: Do not run singularities as root!\n");
         return(255);
@@ -55,20 +61,28 @@ int main(int argc, char **argv) {
         return(255);
     }
 
-    // Open a FD to the current working dir.
-    if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open cwd fd (%s)!\n", strerror(errno));
-        return(1);
-    }
-
     // Get sappdir from the environment (we check on this shortly)
     sappdir = getenv("SAPPCONTAINER");
+
+    // Check for SINGULARITY_CONTAIN environment variable
+    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
+        opt_contain = 1;
+    }
 
     // Set the Singularity User/Group ID for the sexec_prep
     snprintf(uid_string, 511, "%d", uid);
     setenv("SINGULARITY_UID", uid_string, 1);
     snprintf(gid_string, 511, "%d", gid);
     setenv("SINGULARITY_GID", gid_string, 1);
+
+
+    // Open a FD to the current working dir.
+    if ( opt_contain > 0 ) {
+        if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
+            fprintf(stderr, "ERROR: Could not open cwd fd (%s)!\n", strerror(errno));
+            return(1);
+        }
+    }
 
 
     /*
@@ -184,14 +198,18 @@ int main(int argc, char **argv) {
         return(1);
     }
 
-    // change directory back to starting point
-    if ( fchdir(cwd_fd) != 0 ) {
-        fprintf(stderr, "ERROR: Could not fchdir!\n");
-        return(1);
-    }
-    if ( close(cwd_fd) != 0 ) {
-        fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
-        return(1);
+    // change directory back to starting point if needed
+    if ( opt_contain > 0 ) {
+        if ( fchdir(cwd_fd) != 0 ) {
+            fprintf(stderr, "ERROR: Could not fchdir!\n");
+            return(1);
+        }
+        if ( close(cwd_fd) != 0 ) {
+            fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
+            return(1);
+        }
+    else
+        chdir("/");
     }
 
     // Exec the singularity
