@@ -172,10 +172,8 @@ footer {
   bottom:50px;
 }
 
-.faq_disabled {
-    white-space: nowrap;
-    vertical-align: top;
-    display: table-cell;
+.faq {
+    margin-bottom: 30px;
 }
 
 .faq_question {
