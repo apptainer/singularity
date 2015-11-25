@@ -77,11 +77,9 @@ int main(int argc, char **argv) {
 
 
     // Open a FD to the current working dir.
-    if ( opt_contain > 0 ) {
-        if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
-            fprintf(stderr, "ERROR: Could not open cwd fd (%s)!\n", strerror(errno));
-            return(1);
-        }
+    if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
+        fprintf(stderr, "ERROR: Could not open cwd fd (%s)!\n", strerror(errno));
+        return(1);
     }
 
 
@@ -204,12 +202,13 @@ int main(int argc, char **argv) {
             fprintf(stderr, "ERROR: Could not fchdir!\n");
             return(1);
         }
-        if ( close(cwd_fd) != 0 ) {
-            fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
-            return(1);
-        }
     else
         chdir("/");
+    }
+
+    if ( close(cwd_fd) != 0 ) {
+        fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
+        return(1);
     }
 
     // Exec the singularity

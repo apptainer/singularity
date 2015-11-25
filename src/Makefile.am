@@ -11,7 +11,3 @@ singularity_SOURCES = sexec.c
 singularity_LDADD = $(INTI_LIBS)
 
 EXTRA_DIST = config.h 
-
-setuid: sexec
-	chown root:root sexec
-	chmod +s sexec
