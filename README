@@ -47,67 +47,6 @@ Singularity provides two primary functions:
     runtime arguments of a standalone binary, or it could run the entire
     application package in a self contained manner.
 
+Please see the website for more documentation and information:
 
-The "Singularity Application Spec" is the configuration file to which you
-define your application stack for the build process. Here are some valid
-configuration paramaters you can use (more options are in development):
-
-    name        This is the name of the application stack
-    program     The program(s)/binaries you wish to include in this
-                application stack. This will automatically trigger
-                library dependency resolution for every program listed.
-    file        Any non-program file that you wish to include. Globs ok.
-    run         Typically the runscript will be autmatically generated
-                based on the first program defined above. You can
-                replace or customize the runscript here (multiple "run"s
-                are supported).
-
-SAPP Spec Example (simple):
-    In the simpliest example, you only need to include the program's location.
-    Singularity will automatically identify the binaries dependencies and
-    include them as well as create a runscript to emulate running that single
-    program when Singularity runs.
-
-    <sapp specfile>
-    # Define the problem to include
-    program /usr/bin/find
-    </sapp specfile>
-
-
-SAPP Spec Example (application stack):
-    This is a more complicated spec file example that demonstrates how you can
-    embed multiple programs, files, and commands into the SAPP file and how to
-    create a custom run command.
-
-    <sapp specfile>
-    # Name this SAPP
-    name find-example
-
-    # Define the programs to include
-    program /usr/bin/find /bin/xargs /bin/ls
-
-    # Define any other files you want to include
-    file /etc/passwd /etc/group
-    file /etc/fstab
-
-    # Use a custom runscript
-    run echo "Example application stack"
-    run find $@ | xargs ls -l
-    </sapp specfile>
-
-
-Usage Examples:
-    This is a very simple example of packaging up /bin/find and turning it
-    into a portable .sapp package. This .sapp package can be copied to other
-    systems that even have an incompatible glibc and it will run properly.
-
-    $ cd ~
-    $ cat find.spec
-    program /usr/bin/find
-    $ singularity-build find.spec
-    ...
-    WROTE: find.sapp
-    $ singularity find.sapp . -maxdepth 1 | grep sapp
-    ./find.sapp
-
-    (more examples and use-cases to come!)
+http://gmkurtzer.github.io/singularity
