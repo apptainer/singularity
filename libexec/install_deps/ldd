@@ -34,27 +34,34 @@ fi
 
 INCLUDE_LIBS="/lib64/libnss_files.so.2 /lib/libnss_files.so.2 /lib64/libnss_dns.so.2 /lib/libnss_dns.so.2 /lib64/libresolv.so.2 /lib/libresolv.so.2"
 
+INCLUDE_LIBS="libnss_files.so.* libnss_dns.so.* libresolv.so.*"
+
 # '1' is the return value if nothing gets updated, so if we update anything
 # we set this to '0'
 RETVAL=1
 
-LIBSUFFIX=`uname -m | grep -q "x86_64" && echo "64"`
-LIBDIR="$SAPPDIR/c/lib$LIBSUFFIX"
-if [ ! -d "$LIBDIR" ]; then
-    mkdir -p "$LIBDIR"
-fi
+#LIBSUFFIX=`uname -m | grep -q "x86_64" && echo "64"`
+#LIBDIR="$SAPPDIR/c/lib$LIBSUFFIX"
+#if [ ! -d "$LIBDIR" ]; then
+#    mkdir -p "$LIBDIR"
+#fi
 
 
 message 2 "Searching for library dependencies\n"
-for file in `find "$SAPPDIR/c" -type f -executable -print`; do
+for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
     message 5 "scanning executable file for dependencies: $file\n"
     for dep in `ldd $file | sed -e 's@ @\n@g'`; do
         if [ -f "$dep" ]; then
             BASENAME=`basename $dep`
             message 3 "found dependency:      $dep\n"
             if [ ! -f "$LIBDIR/$BASENAME" ]; then
-                message 1 "Installing dependency: $dep\n"
-                cp -L "$dep" "$LIBDIR/$BASENAME"
+                DIRNAME=`dirname $dep`
+                if [ ! -d "$SAPPDIR/c/$DIRNAME" ]; then
+                    LD_PATH="$DIRNAME:${LD_PATH}"
+                fi
+                #message 1 "Installing dependency: $dep\n"
+                #cp -L "$dep" "$LIBDIR/$BASENAME"
+                copy_file_to_sappdir "$dep"
                 RETVAL=0
             fi
         fi
@@ -63,16 +70,22 @@ done
 
 
 message 2 "Including statically defined libraries\n"
-for dep in $INCLUDE_LIBS; do
-    if [ -f "$dep" ]; then
-        BASENAME=`basename $dep`
-        message 3 "found dependency:      $dep\n"
-        if [ ! -f "$LIBDIR/$BASENAME" ]; then
-            message 1 "Installing dependency: $dep\n"
-            cp -L "$dep" "$LIBDIR/$BASENAME"
-            RETVAL=0
+for name in $INCLUDE_LIBS; do
+    for path in `ld --verbose | grep SEARCH_DIR | sed 's/SEARCH_DIR("\([^"]\+\)"); */\1 /g'`; do
+        if dep=`ls $path/$name 2>/dev/null`; then
+            if [ -f "$dep" ]; then
+                BASENAME=`basename $dep`
+                message 3 "found dependency:      $dep\n"
+                if [ ! -f "$LIBDIR/$BASENAME" ]; then
+                    #message 1 "Installing dependency: $dep\n"
+                    #cp -L "$dep" "$LIBDIR/$BASENAME"
+                    copy_file_to_sappdir "$dep"
+                    RETVAL=0
+                    break
+                fi
+            fi
         fi
-    fi
+    done
 done
 
 exit $RETVAL

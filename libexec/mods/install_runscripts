@@ -32,7 +32,7 @@ if [ -z "$SAPPDIR" ]; then
     exit 1
 fi
 
-
+LIB_SEARCH_PATH=`ld --verbose | grep SEARCH_DIR | sed 's/SEARCH_DIR("\([^"]\+\)"); */\1:/g'`
 
 message 1 "Building primary singularity exec driver\n"
 if ! touch "$SAPPDIR/c/singularity" 2>/dev/null; then
@@ -43,7 +43,8 @@ fi
 cat <<EOF > "$SAPPDIR/c/singularity"
 #!/bin/sh
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
-export PATH
+LD_LIBRARY_PATH="$LIB_SEARCH_PATH"
+export PATH LD_LIBRARY_PATH
 if [ -n "\$SINGULARITY_COMMAND" -a "\$SINGULARITY_COMMAND" == "run" ]; then
     if [ -x "/singularity.exec" ]; then
         exec /singularity.exec "\$@"
