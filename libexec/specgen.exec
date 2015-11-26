@@ -1,0 +1,65 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "USAGE: singularity specgen [command]"
+    exit 1
+fi
+
+
+trap true INT KILL
+
+PROGRAM=`which "$1"`
+NAME=`basename "$PROGRAM"`
+shift
+
+echo "Name: $NAME" > $NAME.sspec
+
+cat <<EOF >> $NAME.sspec
+Summary:
+Maintainer:
+
+%runscript
+exec $PROGRAM $@
+
+
+%test
+
+
+%files
+$PROGRAM
+EOF
+
+exec 3>&1
+
+strace -f -e open $PROGRAM "$@" 2>&1 >&3 3>&- | (
+    stdbuf -oL grep "open(" |\
+    stdbuf -oL grep -v "= -1" |\
+    stdbuf -oL sed -e 's/.*open("\([^"]\+\)", .* = [0-9]*$/\1/g' |\
+    stdbuf -oL grep -v "^/proc/" |\
+    stdbuf -oL grep -v "locale-archive" >> $NAME.sspec
+)
+
+exec 3>&-
+

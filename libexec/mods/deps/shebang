@@ -1,0 +1,46 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+if [ -z "$SAPPSPEC" ]; then
+    message 1 "SAPP specfile not given\n"
+    exit 1
+fi
+
+if [ -z "$SAPPDIR" ]; then
+    message 1 "SAPPDIR not given\n"
+    exit 1
+fi
+
+
+message 2 "Searching for needed interpreters\n"
+for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
+    message 5 "scanning executable file for shebang: $file\n"
+    INT=`head -n 1 $file | grep "^#\!/" | sed 's@#!\([^ ]*\).*@\1@'`
+    if [ ! -f "$SAPPDIR/c/$INT" ]; then
+        copy_file_to_sappdir "$INT"
+        RETVAL=0
+    fi
+done
+
+exit $RETVAL

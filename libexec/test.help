@@ -1,0 +1,11 @@
+USAGE: singularity (options) run [SAPP File] (SAPP options)
+
+Run any %test scriptlets that are defined for this SAPP container. If there
+is no defined %test section, then it will try to execute the shell within
+the container.
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+

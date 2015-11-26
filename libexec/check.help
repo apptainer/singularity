@@ -1,0 +1,10 @@
+USAGE: singularity (options) check [SAPP name]
+
+This will check the contents of the cached SAPP and make sure there are no
+modified files within the container.
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+
