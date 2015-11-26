@@ -112,13 +112,21 @@ batch submission script.
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Docker has two major functions: generating, managing, building, and
-defining container images (using Dockerfiles and image revision control)
-and a runtime envrionment for containers (which leverages LXC behind the
-scenes).
+Similiar to Singularity, Docker has two major functions: image management
+and a runtime architecture. But the technologies and architectures for doing
+both are very different.
 </p>
 <p>
-...
+Docker supports entire operating system images for containers and Singularity
+focuses on building process specific application based containers. Docker's
+containers have the capability of escalating privledges and running within the
+container as root, Singularity containers can not escalate privledges. Docker
+is an operating system virtualization technology where Singularity abstracts
+out the container so interaction with the container feels like interacting
+with a standard program or script on the host system. Docker is a containment
+solution built to create seperation from the host and other containers, where
+Singularity is designed to allow the container to run like any application
+such that standard permissions, workflows and processes can be used.
 </p>
 </div>
 </div>
@@ -133,7 +141,15 @@ scenes).
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+Statically compiled binaries are a good comparasion to what Singularity can do
+for a single program because it will package up all of the dynamic libraries
+and package them into a single executable (intrepreted) format.
+</p>
+<p>
+But because Singularity is actually wrapping things up in a container, you can
+do much more with it... Such as include other files, scripts, workflows, pipe
+lines, data, and multi program processes and package them into a single
+portable executable format.
 </p>
 </div>
 </div>
@@ -148,7 +164,8 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+No. While technically you could modify a SAPP container cache, it would then
+invalidate the checksums and would appear as corrupt to Singularity.
 </p>
 </div>
 </div>
@@ -163,7 +180,9 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+Yes! You can even create entire pipe lines and work flows using many
+applications, binaries, scripts, etc.. Look into the %runscript specfile
+section to define what happens when a Singularity container is run.
 </p>
 </div>
 </div>
@@ -178,7 +197,19 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+No, never. But sometimes yes. A good rule of thumb is, if you can run on a
+default vanilla kernel.org kernel, then there are probably no kernel
+dependencies you will need to consider.
+</p>
+<p>
+But, in the end Singularity is using container principals so if you are
+leveraging any kernel version or external patches/module functionality
+(e.g. OFED), then yes there maybe kernel dependencies you will need to
+consider.
+</p>
+<p>
+note: If you require kernel dependent features, a container platform is
+probably not the right solution for you.
 </p>
 </div>
 </div>
@@ -193,7 +224,31 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+Because Singularity is based on container principals, when an application
+is run from within a Singularity container it's default view of the file
+system is different from how it is on the host system. This is what allows the
+envrionment to be portable. This means that root ('/') inside the container
+*MUST* be different from the host. However it is possible to bridge (and
+differentiate) these two root file systems using relative paths Vs. full
+paths. When specify a file location to your Singularity application (SAPP)
+on your host file system, pass the relative path (any path that does not
+start with a slash '/').
+</p>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<div class="faq_container">
+<div class="faq">
+<div class="faq_question">What is the difference between full and relative paths?</div>
+<div class="faq_answer_container">
+<div class="faq_answer">
+<p>
+See the above answer to "How are external filesystems and paths handled
+in a Singularity Container?".
 </p>
 </div>
 </div>
@@ -208,7 +263,9 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+Singularity does no network isolation because it is designed to run like any
+other application on the system. It has all of the same networking privledges
+as any program running as that user.
 </p>
 </div>
 </div>
@@ -223,7 +280,7 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+In theory yes. This is still being tested.
 </p>
 </div>
 </div>
@@ -238,7 +295,8 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+Yes. Singularity containers contain their own library stack (including the
+Glibc version that they require to run).
 </p>
 </div>
 </div>
@@ -253,7 +311,8 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+Yes. Singularity imposes no limitations on forks, threads or processes in
+general.
 </p>
 </div>
 </div>
@@ -268,7 +327,13 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+Yes and maybe respectively. Any Singularity application can be suspended using
+standard Linux/Unix signals. Checkpointing requires some preloaded libraries
+to be automatically loaded with the application but because Singularity escapes
+the hosts library stack, the checkpoint libraries would not be loaded. If
+however you wanted to make a Singularity container that can be checkpointed,
+you would need to install the checkpoint libraries into the Singularity
+container via the specfile.
 </p>
 </div>
 </div>
@@ -283,7 +348,10 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+No, Singularity containers can be run via any job scheduler with no
+modifications to the scheduler configuration or architecture. This is because
+Singularity containers are designed to be run like any application on the
+system.
 </p>
 </div>
 </div>
@@ -298,7 +366,25 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+No and yes.
+</p>
+<p>
+Even though Singularity uses container principals, the Singularity containers
+are not full operating systems. They have no means to escalate privledges
+inheritantly internally. Also, Singularity contexts are always run as the user
+running them which means there is no risk with allowing the containers to
+have access and interact with the host's file system.
+</p>
+<p>
+While there is no daemon running as root, or any persistent processes which
+may be used to escalate privledges (e.g. Docker), there is a need to run some
+system calls as root in order to achieve encapsulation of the container. For
+this part of the run flow there is a single binary which is setuid called
+Sexec (Singularity Exec). This binary has been made as simple and small as
+absolutely possible, and has been audited by multiple security experts. If you
+have a knack for security, we welcome any feedback or comments on the source
+code which can be found here:
+<a href="https://github.com/gmkurtzer/singularity/blob/master/src/sexec.c">https://github.com/gmkurtzer/singularity/blob/master/src/sexec.c</a>
 </p>
 </div>
 </div>
@@ -313,7 +399,8 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+All of them! Help us out by letting them know you want Singularity to be
+included!
 </p>
 </div>
 </div>
@@ -328,7 +415,15 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+So far we have no identified any, but we are still investigating.
+</p>
+<p>
+On a related note, what we have found so far is that not all operating systems
+are created equal in terms of their build envrionment and optimized toolchains.
+RedHat for example has a very optimal tool chain which they use for their
+Enterprise product line and it is not available to other distributions (or
+rebuilds) and thus their resulting binaries and libraries have been more
+performant then other Linux distributions we have tested.
 </p>
 </div>
 </div>
@@ -343,7 +438,7 @@ Answer coming soon!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Answer coming soon!
+La Cheeta.
 </p>
 </div>
 </div>
