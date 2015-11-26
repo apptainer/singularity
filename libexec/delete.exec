@@ -23,28 +23,22 @@ else
 fi
 
 
-SAPPNAME="$1"
 SAPPCACHE="$HOME/.sapp-cache"
-SAPPDIR="$SAPPCACHE/$SAPPNAME"
-export SAPPCACHE SAPPDIR SAPPNAME
-shift
+export SAPPCACHE
 
-if [ -z "$SAPPNAME" ]; then
-    message 0 "USAGE: singularity (options) run [SAPP File] (SAPP options)\n"
+if [ -z "$1" ]; then
+    message 0 "USAGE: singularity (options) delete [SAPP Name]\n"
     exit 1
 fi
 
-if [ ! -x "$libexecdir/singularity/sexec" ]; then
-    message 0 "ERROR: Sexec not found\n"
-    exit 1
-fi
-
-
-message 1 "Deleting '$SAPPNAME'\n"
-
-if ! run_module sappdir_delete; then
-    message 0 "Could not delete: $SAPPNAME\n"
-    exit 255
-fi
+cd $SAPPCACHE
+for SAPPNAME in $@; do
+    SAPPDIR="$SAPPCACHE/$SAPPNAME"
+    export SAPPNAME SAPPDIR
+    message 1 "Deleting cache for: $SAPPNAME\n"
+    if ! run_module sappdir_delete; then
+        message 0 "Could not delete: $SAPPNAME\n"
+    fi
+done
 
 exit 0
