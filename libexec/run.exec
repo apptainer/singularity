@@ -78,6 +78,7 @@ message 2 "Waiting for child pid $CHILD_PID\n"
 
 echo -ne "$CHILD_PID " >> "$SAPPDIR/c/pids"
 wait $CHILD_PID 2>/dev/null
+RETVAL=$?
 
 sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/c/pids"
 
@@ -90,5 +91,4 @@ if ! run_module sappdir_filecheck; then
     exit 1
 fi
 
-# we should never get here
-exit 255
+exit $RETVAL
