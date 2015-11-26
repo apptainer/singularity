@@ -25,6 +25,6 @@ AC_CONFIG_FILES([
    bin/singularity
    libexec/Makefile
    libexec/mods/Makefile
-   libexec/install_deps/Makefile
+   libexec/mods/deps/Makefile
 ])
 AC_OUTPUT

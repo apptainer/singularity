@@ -42,7 +42,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/*.summary
 %{_libexecdir}/singularity/sexec_prep
 %{_libexecdir}/singularity/mods
-%{_libexecdir}/singularity/install_deps
 %{_bindir}/singularity
 %{_bindir}/sapprun
 

@@ -1,4 +1,4 @@
-SUBDIRS = mods install_deps
+SUBDIRS = mods
 
 scriptlibexecdir = $(libexecdir)/singularity
 

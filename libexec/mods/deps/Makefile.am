@@ -1,4 +1,4 @@
-depsdir = $(libexecdir)/singularity/install_deps
+depsdir = $(libexecdir)/singularity/mods/deps
 
 dist_deps_SCRIPTS = ldd
 

@@ -40,12 +40,6 @@ INCLUDE_LIBS="libnss_files.so.* libnss_dns.so.* libresolv.so.*"
 # we set this to '0'
 RETVAL=1
 
-#LIBSUFFIX=`uname -m | grep -q "x86_64" && echo "64"`
-#LIBDIR="$SAPPDIR/c/lib$LIBSUFFIX"
-#if [ ! -d "$LIBDIR" ]; then
-#    mkdir -p "$LIBDIR"
-#fi
-
 
 message 2 "Searching for library dependencies\n"
 for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
@@ -54,7 +48,7 @@ for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm 
         if [ -f "$dep" ]; then
             BASENAME=`basename $dep`
             message 3 "found dependency:      $dep\n"
-            if [ ! -f "$LIBDIR/$BASENAME" ]; then
+            if [ ! -f "$SAPPDIR/c/$dep" ]; then
                 DIRNAME=`dirname $dep`
                 if [ ! -d "$SAPPDIR/c/$DIRNAME" ]; then
                     LD_PATH="$DIRNAME:${LD_PATH}"
@@ -76,13 +70,13 @@ for name in $INCLUDE_LIBS; do
             if [ -f "$dep" ]; then
                 BASENAME=`basename $dep`
                 message 3 "found dependency:      $dep\n"
-                if [ ! -f "$LIBDIR/$BASENAME" ]; then
+                if [ ! -f "$SAPPDIR/c/$dep" ]; then
                     #message 1 "Installing dependency: $dep\n"
                     #cp -L "$dep" "$LIBDIR/$BASENAME"
                     copy_file_to_sappdir "$dep"
                     RETVAL=0
-                    break
                 fi
+                break
             fi
         fi
     done

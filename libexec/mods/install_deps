@@ -36,7 +36,7 @@ fi
 message 1 "Invoking dependency check\n";
 while true; do
     UPDATED=0
-    for i in $libexecdir/singularity/install_deps/*; do
+    for i in $libexecdir/singularity/mods/deps/*; do
         if [ -x "$i" ]; then
             message 3 "Executing: $i\n"
             sh "$i" "$@"

@@ -1,3 +1,5 @@
+SUBDIRS = deps
+
 modsdir = $(libexecdir)/singularity/mods
 
 dist_mods_SCRIPTS = sappdir_filecheck sappdir_archive sappdir_metadata \
