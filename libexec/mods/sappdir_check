@@ -35,7 +35,7 @@ fi
 
 if [ ! -f "$SAPPDIR/sum" ]; then
     message 2 "No previous checksum to stat\n"
-    exit 0
+    exit 1
 fi
 
 

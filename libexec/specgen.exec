@@ -30,6 +30,8 @@ fi
 
 trap true INT KILL
 
+PATH=$PATH:.
+
 PROGRAM=`which "$1"`
 NAME=`basename "$PROGRAM"`
 shift
@@ -57,9 +59,14 @@ strace -f -e open $PROGRAM "$@" 2>&1 >&3 3>&- | (
     stdbuf -oL grep "open(" |\
     stdbuf -oL grep -v "= -1" |\
     stdbuf -oL sed -e 's/.*open("\([^"]\+\)", .* = [0-9]*$/\1/g' |\
+    stdbuf -oL sort |\
+    stdbuf -oL uniq |\
     stdbuf -oL grep -v "^/proc/" |\
-    stdbuf -oL grep -v "locale-archive" >> $NAME.sspec
+    stdbuf -oL grep -v "^/etc/passwd" |\
+    stdbuf -oL grep -v "^/etc/group" |\
+    stdbuf -oL grep -v "^/dev/" >> $NAME.sspec
 )
 
 exec 3>&-
 
+echo "WROTE: $NAME.sspec"

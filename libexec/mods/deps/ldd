@@ -32,8 +32,6 @@ if [ -z "$SAPPDIR" ]; then
     exit 1
 fi
 
-INCLUDE_LIBS="/lib64/libnss_files.so.2 /lib/libnss_files.so.2 /lib64/libnss_dns.so.2 /lib/libnss_dns.so.2 /lib64/libresolv.so.2 /lib/libresolv.so.2"
-
 INCLUDE_LIBS="libnss_files.so.* libnss_dns.so.* libresolv.so.*"
 
 # '1' is the return value if nothing gets updated, so if we update anything

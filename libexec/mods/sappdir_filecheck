@@ -45,7 +45,7 @@ fi
 
 md5sum -c "$SAPPDIR/files" >/dev/null 2>&1
 if [ "$?" -ne "0" ]; then
-    message 0 "ERROR: Cached file check failed!\n"
+    message 0 "ERROR: Cached file check failed, something has changed!\n"
     exit 1
 fi
 
