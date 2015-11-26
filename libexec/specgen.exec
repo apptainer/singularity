@@ -43,7 +43,7 @@ Summary:
 Maintainer:
 
 %runscript
-exec $PROGRAM $@
+exec $PROGRAM "\$@"
 
 
 %test

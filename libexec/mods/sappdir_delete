@@ -28,8 +28,8 @@ if [ -z "$SAPPDIR" ]; then
 fi
 
 if [ ! -d "$SAPPDIR" ]; then
-    message 2 "No SAPP directory to remove, skipping...\n"
-    exit 0
+    message 2 "SAPP cache not installed.\n"
+    exit 1
 fi
 
 
