@@ -64,7 +64,7 @@ if ! run_module sappdir_filecheck; then
 fi
 
 # Catch the signal for the parent.. 
-trap true SIGINT SIGKILL
+trap true INT KILL
 
 SAPPCONTAINER="$SAPPDIR/c"
 SINGULARITY_COMMAND="run"
