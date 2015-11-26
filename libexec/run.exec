@@ -83,5 +83,12 @@ sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/c/pids"
 
 message 2 "Child pid $CHILD_PID returned\n"
 
+# Recheck SAPP cache
+if ! run_module sappdir_filecheck; then
+    message 0 "ERROR: Removing cached SAPP!\n"
+    run_module sappdir_delete
+    exit 1
+fi
+
 # we should never get here
 exit 255
