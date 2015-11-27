@@ -100,7 +100,17 @@ thus standard shell syntax is not only supported but required.
 Here you can run any tests to ensure that your envrionment is working properly
 before it is built and packaged into a SAPP file. The format is standard shell
 and any non zero exit is considered a failure and will thus halt the build.
-</li
+</li>
+<li>
+<strong>%packages</strong>
+You can also include the contents of an installed package (e.g. RPM and DEB).
+This will not invoke the package dependency tree, but will rather be used as a
+shortcut for identifying files to include.
+<em>
+note: Because this will install all files within the listed packages, you can
+very quickly bloat your Singularity container! You have been warned!
+</em>
+</li>
 </ul>
 </p>
 <h2>Examples</h2>
