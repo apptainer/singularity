@@ -1,0 +1,41 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+if [ -z "$SAPPSPEC" ]; then
+    message 0 "ERROR: SAPP specfile not given\n"
+    exit 1
+fi
+
+if [ -z "$SAPPDIR" ]; then
+    message 0 "ERROR: SAPPDIR not given\n"
+    exit 1
+fi
+
+BUILDROOT="$SAPPDIR/c"
+export BUILDROOT
+
+message 2 "Running post scriptlet\n"
+get_section_from_conf "post" "$SAPPSPEC" | /bin/sh -x
+
+exit $?
