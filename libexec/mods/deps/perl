@@ -41,12 +41,18 @@ for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm 
         message 5 "scanning executable perl file for deps: $file\n"
         egrep "^[ ]*use " "$file" | sed 's/use[ ]*\([^ ]*\).*;/\1/' | while read i; do
             if FILE=`perldoc -l $i 2>/dev/null`; then
-                copy_file_to_sappdir "$FILE"
+                if [ ! -f "$SAPPDIR/c/$FILE" ]; then
+                    copy_file_to_sappdir "$FILE"
+                    RETVAL=0
+                fi
             fi
         done
         egrep "^[ ]*require " "$file" | sed 's/require[ ]*\([^ ]*\).*;/\1/' | while read i; do
             if FILE=`perldoc -l $i 2>/dev/null`; then
-                copy_file_to_sappdir "$FILE"
+                if [ ! -f "$SAPPDIR/c/$FILE" ]; then
+                    copy_file_to_sappdir "$FILE"
+                    RETVAL=0
+                fi
             fi
         done
     fi

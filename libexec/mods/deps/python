@@ -41,7 +41,10 @@ for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm 
         message 5 "scanning executable python file for deps: $file\n"
         egrep "^[ ]*import " "$file" | sed 's/import[ ]*\([^ ]*\).*/\1/' | while read i; do
             if FILE=`echo -ne "import $i\nimport inspect\nprint inspect.getfile($i)\n" | python 2>/dev/null`; then
-                copy_file_to_sappdir "$FILE"
+                if [ ! -f "$SAPPDIR/c/$FILE" ]; then
+                    copy_file_to_sappdir "$FILE"
+                    RETVAL=0
+                fi
             fi
         done
     fi
