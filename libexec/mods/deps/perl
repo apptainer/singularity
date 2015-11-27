@@ -37,13 +37,18 @@ RETVAL=1
 
 message 2 "Searching for needed interpreters\n"
 for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
-    message 5 "Scanning executable file for shebang: $file\n"
-    INT=`head -n 1 $file | grep "^#\!/" | sed 's@#!\([^ ]*\).*@\1@'`
-    if [ -f "$INT" ]; then
-        if [ ! -f "$SAPPDIR/c/$INT" ]; then
-            copy_file_to_sappdir "$INT"
-            RETVAL=0
-        fi
+    if head -n 1 $file | grep "^#\!/" | grep -q perl; then
+        message 5 "scanning executable perl file for deps: $file\n"
+        egrep "^[ ]*use " "$file" | sed 's/use[ ]*\([^ ]*\).*;/\1/' | while read i; do
+            if FILE=`perldoc -l $i 2>/dev/null`; then
+                copy_file_to_sappdir "$FILE"
+            fi
+        done
+        egrep "^[ ]*require " "$file" | sed 's/require[ ]*\([^ ]*\).*;/\1/' | while read i; do
+            if FILE=`perldoc -l $i 2>/dev/null`; then
+                copy_file_to_sappdir "$FILE"
+            fi
+        done
     fi
 done
 

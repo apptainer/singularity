@@ -35,15 +35,15 @@ fi
 
 RETVAL=1
 
-message 2 "Searching for needed interpreters\n"
+message 2 "Searching for needed Python modules\n"
 for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
-    message 5 "Scanning executable file for shebang: $file\n"
-    INT=`head -n 1 $file | grep "^#\!/" | sed 's@#!\([^ ]*\).*@\1@'`
-    if [ -f "$INT" ]; then
-        if [ ! -f "$SAPPDIR/c/$INT" ]; then
-            copy_file_to_sappdir "$INT"
-            RETVAL=0
-        fi
+    if head -n 1 $file | grep "^#\!/" | grep -q python; then
+        message 5 "scanning executable python file for deps: $file\n"
+        egrep "^[ ]*import " "$file" | sed 's/import[ ]*\([^ ]*\).*/\1/' | while read i; do
+            if FILE=`echo -ne "import $i\nimport inspect\nprint inspect.getfile($i)\n" | python 2>/dev/null`; then
+                copy_file_to_sappdir "$FILE"
+            fi
+        done
     fi
 done
 
