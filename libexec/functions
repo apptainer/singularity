@@ -5,7 +5,7 @@ export HEADER_END
 
 
 if [ -z "$MESSAGELEVEL" ]; then
-    echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
+    /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     MESSAGELEVEL=5
 fi
 
@@ -25,12 +25,12 @@ NORMAL="\e[0;39m"
 message() {
     LEVEL=$1
     if [ "$LEVEL" -eq "0" ]; then
-        echo -ne "${RED}$2${NORMAL}" 1>&2
+        /bin/echo -ne "${RED}$2${NORMAL}" 1>&2
     elif [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
         if [ "$LEVEL" -eq "1" ]; then
-            echo -ne "${NORMAL}$2${NORMAL}"
+            /bin/echo -ne "${NORMAL}$2${NORMAL}"
         else
-            echo -ne "${GRAY}$2${NORMAL}"
+            /bin/echo -ne "${GRAY}$2${NORMAL}"
         fi
     fi
     return
@@ -41,7 +41,7 @@ get_key_from_conf() {
     KEY="$1"
     FILE="$2"
     if OUTPUT=`grep -i "^$KEY: " $FILE`; then
-        echo "$OUTPUT" | sed -e "s@^$KEY: @@i"
+        /bin/echo "$OUTPUT" | sed -e "s@^$KEY: @@i"
         return 0
     fi
     return 1
@@ -53,13 +53,13 @@ get_section_from_conf() {
     TOGGLE=""
     cat $FILE | while read line; do
         if [ -n "$TOGGLE" ]; then
-            if echo "$line" | grep -q "^%"; then
+            if /bin/echo "$line" | grep -q "^%"; then
                 # we are done...
                 return 0
             fi
-            echo "$line"
+            /bin/echo "$line"
         else
-            if echo "$line" | grep -q "%$SECTION"; then
+            if /bin/echo "$line" | grep -q "%$SECTION"; then
                 TOGGLE=1
             fi
         fi
@@ -120,7 +120,7 @@ check_pattern() {
 }
 
 cmd() {
-    MSG=`echo "$*" | cut -c 1-68`
+    MSG=`/bin/echo "$*" | cut -c 1-68`
     message 5 " + $MSG"
     "$@" >/dev/null 2>&1
     RETVAL=$?
