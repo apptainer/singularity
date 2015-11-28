@@ -45,6 +45,9 @@ fi
 # Pull in the %files section of the spec
 message 1 "Evaluating: %packages\n"
 get_section_from_conf "packages" $SAPPSPEC | while read pkg; do
+    if [ -z "$pkg" ]; then
+        continue
+    fi
     if [ -x "/usr/bin/rpm" ]; then
         if rpm -q "$pkg" >/dev/null 2>&1; then
             rpm -ql "$pkg" | while read i; do
