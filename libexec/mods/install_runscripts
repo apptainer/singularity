@@ -32,7 +32,7 @@ if [ -z "$SAPPDIR" ]; then
     exit 1
 fi
 
-LIB_SEARCH_PATH=`cd $SAPPDIR/c; find . -name "lib*.so*" -type f | xargs dirname | sort | uniq | sed -e 's/^\.//' | tr '\n' ':'`
+LIB_SEARCH_PATH=`cd $SAPPDIR/c; find . -name "lib*.so*" -type f | xargs -n 1 dirname | sort | uniq | sed -e 's/^\.//' | tr '\n' ':'`
 
 message 1 "Building primary singularity exec driver\n"
 if ! touch "$SAPPDIR/c/singularity" 2>/dev/null; then
