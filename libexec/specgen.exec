@@ -56,17 +56,17 @@ EOF
 exec 3>&1
 
 strace -f -e open $PROGRAM "$@" 2>&1 >&3 3>&- | (
-    stdbuf -oL grep "open(" |\
-    stdbuf -oL grep -v "= -1" |\
-    stdbuf -oL sed -e 's/.*open("\([^"]\+\)", .* = [0-9]*$/\1/g' |\
-    stdbuf -oL sort |\
-    stdbuf -oL uniq |\
-    stdbuf -oL grep -v "^/tmp/" |\
-    stdbuf -oL grep -v "^/proc/" |\
-    stdbuf -oL grep -v "^/sys/" |\
-    stdbuf -oL grep -v "^/etc/passwd" |\
-    stdbuf -oL grep -v "^/etc/group" |\
-    stdbuf -oL grep -v "^/dev/" >> $NAME.sspec
+    grep "open(" |\
+    grep -v "= -1" |\
+    sed -e 's/.*open("\([^"]\+\)", .* = [0-9]*$/\1/g' |\
+    sort |\
+    uniq |\
+    grep -v "^/tmp/" |\
+    grep -v "^/proc/" |\
+    grep -v "^/sys/" |\
+    grep -v "^/etc/passwd" |\
+    grep -v "^/etc/group" |\
+    grep -v "^/dev/" >> $NAME.sspec
 )
 
 exec 3>&-

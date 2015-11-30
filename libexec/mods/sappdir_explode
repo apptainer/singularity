@@ -44,7 +44,7 @@ if [ -d "$SAPPDIR/c" ]; then
     exit 0
 fi
 
-stdbuf -i0 -o0 head -n 10 "$SAPPFILE" | while read i; do
+head -n 10 "$SAPPFILE" | while read i; do
     if check_pattern "#!/*" "$i"; then
         HEADER=3
     elif [ -z "$NOTFIRST" ]; then
