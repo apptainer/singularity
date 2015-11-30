@@ -11,15 +11,15 @@ fi
 
 
 
-GRAY="\e[0;37m"
-RED="\e[0;31m"
-GREEN="\e[1;32m"
-YELLOW="\e[1;33m"
-BLUE="\e[1;34m"
-PINK="\e[1;35m"
-CYAN="\e[1;36m"
-WHITE="\e[1;37m"
-NORMAL="\e[0;39m"
+GRAY=`tput dim`
+RED=`tput setaf 1`
+GREEN=`tput setaf 2`
+YELLOW=`tput setaf 3`
+BLUE=`tput setaf 4`
+PINK=`tput setaf 5`
+CYAN=`tput setaf 6`
+WHITE=`tput setaf 7`
+NORMAL=`tput sgr0`
 
 
 message() {
