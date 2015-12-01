@@ -27,6 +27,25 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+
+while true; do
+    case $1 in
+        --notest)
+            NO_TEST=1
+            export NO_TEST
+            shift
+        ;;
+        -*) 
+            echo "ERROR: Unknown option: $1"
+            exit 1
+        ;;
+        *)
+            break;
+        ;;
+    esac
+done
+
+
 if [ ! -f "$1" ]; then
     message 0 "SAPP specfile not found\n"
     exit 1

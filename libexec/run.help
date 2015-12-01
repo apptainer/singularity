@@ -1,27 +1,19 @@
-USAGE: singularity (options) run [SAPP File] (SAPP options)
+USAGE: singularity (options) run [SAPP Name] (SAPP options)
 
-Execute a SAPP package and pass any arguments after the SAPP file
-to the runtime envrionment. It is important to know that while the
-SAPP environment itself runs within a contianed environment it is
-not limited to that environment unless you request it.
+Execute a SAPP package and pass any arguments after the SAPP name
+to the runtime envrionment.
 
-This is because the CWD within the envrionment is escaped and thus
-available within the contained environment. This allows the
-application stack within the SAPP package to access files directly.
-If you do not wish to leverage this behavior, you can circumvent
-this via either a command line argument or an environment variable
-(which you can configure below).
+It is important to know that while the SAPP environment itself runs within
+a contianed environment it is not limited to that environment (unless you
+request full containment). All paths relative to your current working
+directory can be accessible to the applications within your SAPP
+envrionment (relative paths are any paths that does not begin with a slash
+'/').
 
 OPTIONS:
-    -d/--dir        Use this directory as your Singularity working
-                    directory (this location (if exists) will be
-                    available and your current directory within
-                    the running SAPP context.
     -c/--contain    Contain the SAPP environment and do not make any
                     part of the host file system available (this
                     option invalidates the above --dir option).
-    -a/--archive    Archive any additions to the environment
-       --nocache    Do not cache or use a cached environment
 
 Note: The above options are are not support yet but they do illustrate
 the direction and possibilities coming soon.

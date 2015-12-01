@@ -1,53 +1,12 @@
 USAGE: singularity (options) build [SAPP specfile] (SAPP target)
 
-Build a SAPP file from a specfile template. The specfile has a basic sytax
-including key-value pairs of the following declarations:
+This command will build your SAPP container package based on a
+provided Singularity specfile (.sspec).
 
-    Name:       Define the name of the SAPP pacakge. If this is omitted
-                then the name is derived from the name of the specfile.
-                note: this should not have spaces or other non-file name
-                happy characters.
-    Exec:       The primary binary or script that will be exec'ed when this
-                SAPP envrionment is run.
-    Maintainer: The free form name and email address of the SAPP maintainer
-                or developer that created this package.
-
-The specfile also supports sections which are defined and delinated by
-section names which are defined by a percent sign ('%'). The section will
-include all following lines until either the end of the file or the next
-section. Supported section names are as follows:
-
-    %files      This should be a list of all files from the host operating
-                system that should be bundled into the SAPP envrionment.
-                All of the programs, data, configurations, and files that
-                you need to run should be listed.
-    %runscript  The runscript is the driver which gets exec'ed when the
-                SAPP bundle is run. Iff you have defined an "Exec:"
-                declaration above, then by default this written for you.
-                Using this feature, you can either rewrite the default
-                behavior or if you have chosen not to define "Exec:"
-                then this section would be required. This section will
-                be executed as a shell script within the SAPP
-                envrionment (container) thus standard shell syntax is
-                not only supported but required. 
-
-SPECFILE EXAMPLE:
-    This is a basic example which creates a SAPP package that will
-    perform a simple search for any networking protocols or ports
-    contained in /etc/services. Simple pass the argument(s) you
-    wish to search for in the command line arguments of the SAPP
-    execution.
-
-    Name: service
-    Exec: /bin/grep
-    Maintianer: Gregory M. Kurtzer <gmk@lbl.gov>
-    %files
-    /etc/services
-    %runscript
-    for i in $@; do
-        grep "$i" /etc/services
-    done
-
+OPTIONS:
+    --notest        Don't invoke the %test macro... This is
+                    necessary if you don't have a root installed
+                    version of Singularity installed.
 
 
 For additional help, please visit our public documentation pages which are

@@ -46,12 +46,12 @@ if ! run_module sappdir_filecheck; then
     exit 1
 fi
 
-# Catch the signal for the parent.. 
-trap true INT KILL
-
 SAPPCONTAINER="$SAPPDIR/c"
 SINGULARITY_COMMAND="test"
 export SAPPCONTAINER SINGULARITY_COMMAND
+
+# Catch the signal for the parent.. 
+trap true INT KILL
 
 message 2 "Exec'ing Sexec\n"
 exec "$libexecdir/singularity/sexec" "$@" <&0 &

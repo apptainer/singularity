@@ -56,7 +56,7 @@ elif [ "\$SINGULARITY_COMMAND" = "test" ]; then
     if [ -x "/singularity.test" ]; then
         exec /singularity.test "\$@"
     else
-        echo "ERROR: Could not exec the singularity"
+        echo "ERROR: Could not exec the Singularity test code"
         exit 1
     fi
 elif [ "\$SINGULARITY_COMMAND" = "shell" ]; then
@@ -71,16 +71,16 @@ EOF
 message 1 "Building singularity test runscript\n"
 echo "#!/bin/sh" > "$SAPPDIR/c/singularity.test"
 echo "set -x" >> "$SAPPDIR/c/singularity.test"
-get_section_from_conf "test" "$SAPPSPEC" >> "$SAPPDIR/c/singularity.test"
+if get_section_from_conf "test" "$SAPPSPEC" >> "$SAPPDIR/c/singularity.test"; then
+    chmod 755 "$SAPPDIR/c/singularity.test"
+else
+    rm -f "$SAPPDIR/c/singularity.test"
+fi
 
 
 message 1 "Building singularity main runscript\n"
 echo "#!/bin/sh" > "$SAPPDIR/c/singularity.exec"
-get_section_from_conf "runscript" "$SAPPSPEC" > "$SAPPDIR/c/singularity.runscript"
-
-if [ -s "$SAPPDIR/c/singularity.runscript" ]; then
-    cat "$SAPPDIR/c/singularity.runscript" >> "$SAPPDIR/c/singularity.exec"
-else
+if ! get_section_from_conf "runscript" "$SAPPSPEC" >> "$SAPPDIR/c/singularity.exec"; then
     message 2 "generating a basic singularity runscript\n"
     if OUTPUT=`get_key_from_conf "exec" "$SAPPSPEC"`; then
         echo "exec \"$OUTPUT\" \"\$@\"" >> "$SAPPDIR/c/singularity.exec"
@@ -93,6 +93,5 @@ fi
 rm -f "$SAPPDIR/c/singularity.runscript"
 chmod 755 "$SAPPDIR/c/singularity"
 chmod 755 "$SAPPDIR/c/singularity.exec"
-chmod 755 "$SAPPDIR/c/singularity.test"
 
 exit 0

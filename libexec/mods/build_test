@@ -37,6 +37,10 @@ if [ ! -x "$libexecdir/singularity/sexec" ]; then
     exit 1
 fi
 
+if [ -n "$NO_TEST" ]; then
+    message 2 "Skipping build test per user request\n"
+    exit 0
+fi
 
 
 # Set the necessary bits for sexec and the singularity driver to run
@@ -44,8 +48,12 @@ SAPPCONTAINER="$SAPPDIR/c"
 SINGULARITY_COMMAND="test"
 export SAPPCONTAINER SINGULARITY_COMMAND
 
-message 1 "Running %test...\n"
-exec "$libexecdir/singularity/sexec" "$@"
+if [ -x "$SAPPCONTAINER/singularity.test" ]; then
+    message 1 "Running %test...\n"
+    exec "$libexecdir/singularity/sexec" "$@"
+else
+    message 2 "No %test section defined... skipped\n"
+fi
 
 # Should never get here
 exit 0
