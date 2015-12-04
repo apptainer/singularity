@@ -1,16 +1,10 @@
 Singularity-build:
-    - Bring in more bundle spec inclusion directives
-    - Refactor the build process to handle all dependencies at once
-    - Additional dependencies resolution for scripts, configs, etc..
-    - Version the internals of the SAPP
     - Support a mechanism for staging data (intput and output)
-    - DNS resolution support and templates
     - Create a debugging/interactive option to include coreutils in bin
 
 
-Singularity:
-    - Debugging/Verbose output support
-    - Break into multiple more maintainable source files/headers
-    - Provide a security option to lock processes within the container
+Singularity-run:
     - Support archiving output
     - Standardize on an output data location
+    - Add a shell option for "run"
+    - Don't check against md5sums
