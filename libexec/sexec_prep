@@ -34,7 +34,9 @@ if [ ! -d "$SAPPCONTAINER/dev" ]; then
 fi
 
 for dev in $DEVICES; do
-    cp -a "$dev" "$SAPPCONTAINER/$dev"
+    if [ ! -c "$SAPPCONTAINER/$dev" ]; then
+        cp -a "$dev" "$SAPPCONTAINER/$dev"
+    fi
 done
 
 chown -R "$SINGULARITY_UID"."$SINGULARITY_GID" "$SAPPCONTAINER/dev"
