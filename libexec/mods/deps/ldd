@@ -39,45 +39,45 @@ INCLUDE_LIBS="libnss_files.so.* libnss_dns.so.* libresolv.so.*"
 RETVAL=1
 
 
-message 2 "Searching for library dependencies\n"
-for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
-    message 5 "scanning executable file for dependencies: $file\n"
-    for dep in `ldd $file | sed -e 's@ @\n@g'`; do
-        if [ -f "$dep" ]; then
-            BASENAME=`basename $dep`
-            message 3 "found dependency:      $dep\n"
-            if [ ! -f "$SAPPDIR/c/$dep" ]; then
-                DIRNAME=`dirname $dep`
-                if [ ! -d "$SAPPDIR/c/$DIRNAME" ]; then
-                    LD_PATH="$DIRNAME:${LD_PATH}"
+if [ ! -f "$SAPPDIR/deps.ldd" ]; then
+    message 2 "Including statically defined libraries\n"
+    for name in $INCLUDE_LIBS; do
+        for path in `ld --verbose | grep SEARCH_DIR | sed 's/SEARCH_DIR("\([^"]\+\)"); */\1 /g'`; do
+            if dep=`ls $path/$name 2>/dev/null`; then
+                if [ -f "$dep" ]; then
+                    message 3 "found dependency:      $dep\n"
+                    if [ ! -f "$SAPPDIR/c/$dep" ]; then
+                        copy_file_to_sappdir "$dep"
+                        RETVAL=0
+                    fi
+                    break
                 fi
-                #message 1 "Installing dependency: $dep\n"
-                #cp -L "$dep" "$LIBDIR/$BASENAME"
-                copy_file_to_sappdir "$dep"
-                RETVAL=0
             fi
-        fi
+        done
     done
-done
+fi
 
+touch "$SAPPDIR/deps.ldd"
 
-message 2 "Including statically defined libraries\n"
-for name in $INCLUDE_LIBS; do
-    for path in `ld --verbose | grep SEARCH_DIR | sed 's/SEARCH_DIR("\([^"]\+\)"); */\1 /g'`; do
-        if dep=`ls $path/$name 2>/dev/null`; then
+message 2 "Searching for library dependencies\n"
+for file in `cd "$SAPPDIR/c"; find . -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
+    if ! grep -q "^$file$" "$SAPPDIR/deps.ldd"; then
+        echo "$file" >> "$SAPPDIR/deps.ldd"
+        message 5 "scanning executable file for dependencies: $file\n"
+        for dep in `ldd $SAPPDIR/c/$file | sed -e 's@ @\n@g'`; do
             if [ -f "$dep" ]; then
-                BASENAME=`basename $dep`
                 message 3 "found dependency:      $dep\n"
                 if [ ! -f "$SAPPDIR/c/$dep" ]; then
-                    #message 1 "Installing dependency: $dep\n"
-                    #cp -L "$dep" "$LIBDIR/$BASENAME"
+                    DIRNAME=`dirname $dep`
+                    if [ ! -d "$SAPPDIR/c/$DIRNAME" ]; then
+                        LD_PATH="$DIRNAME:${LD_PATH}"
+                    fi
                     copy_file_to_sappdir "$dep"
                     RETVAL=0
                 fi
-                break
             fi
-        fi
-    done
+        done
+    fi
 done
 
 exit $RETVAL

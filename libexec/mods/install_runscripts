@@ -44,7 +44,8 @@ cat <<EOF > "$SAPPDIR/c/singularity"
 #!/bin/sh
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:$LIB_SEARCH_PATH"
-export PATH LD_LIBRARY_PATH
+LANG=C
+export PATH LD_LIBRARY_PATH LANG
 if [ -n "\$SINGULARITY_COMMAND" -a "\$SINGULARITY_COMMAND" = "run" ]; then
     if [ -x "/singularity.exec" ]; then
         exec /singularity.exec "\$@"

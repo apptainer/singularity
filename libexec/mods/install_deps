@@ -33,7 +33,7 @@ if [ -z "$SAPPDIR" ]; then
 fi
 
 
-message 1 "Invoking dependency check\n";
+message 1 "Starting dependency loop...\n"
 while true; do
     UPDATED=0
     for i in $libexecdir/singularity/mods/deps/*; do
@@ -54,7 +54,10 @@ while true; do
         fi
     done
     if [ "$UPDATED" -eq "0" ]; then
+        message 1 "Dependency checks completed\n"
         break
+    else
+        message 1 "Rechecking new files for dependencies...\n"
     fi
 done
 

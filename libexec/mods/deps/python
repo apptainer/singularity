@@ -35,18 +35,23 @@ fi
 
 RETVAL=1
 
+touch "$SAPPDIR/deps.python"
+
 message 2 "Searching for needed Python modules\n"
-for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
-    if head -n 1 $file | grep "^#\!/" | grep -q python; then
-        message 5 "scanning executable python file for deps: $file\n"
-        egrep "^[ ]*import " "$file" | sed 's/import[ ]*\([^ ]*\).*/\1/' | while read i; do
-            if FILE=`echo -ne "import $i\nimport inspect\nprint inspect.getfile($i)\n" | python 2>/dev/null`; then
-                if [ ! -f "$SAPPDIR/c/$FILE" ]; then
-                    copy_file_to_sappdir "$FILE"
-                    RETVAL=0
+for file in `cd "$SAPPDIR/c"; find . -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
+    if ! grep -q "^$file$" "$SAPPDIR/deps.perl"; then
+        echo "$file" >> "$SAPPDIR/deps.perl"
+        if head -n 1 "$SAPPDIR/c/$file" | grep "^#\!/" | grep -q python; then
+            message 5 "scanning executable python file for deps: $file\n"
+            egrep "^\s*import " "$file" | sed 's/\s*import\s*//' | sed 's/\s.*$//' | while read i; do
+                if FILE=`echo -ne "import $i\nimport inspect\nprint inspect.getfile($i)\n" | python 2>/dev/null`; then
+                    if [ ! -f "$SAPPDIR/c/$FILE" ]; then
+                        copy_file_to_sappdir "$FILE"
+                        RETVAL=0
+                    fi
                 fi
-            fi
-        done
+            done
+        fi
     fi
 done
 

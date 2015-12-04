@@ -35,11 +35,14 @@ fi
 
 RETVAL=1
 
+touch "$SAPPDIR/deps.perl"
+
 message 2 "Searching for perl dependencies\n"
-for file in `find "$SAPPDIR/c" -type f -print`; do
-#    if file -b "$file" | grep -qi perl; then
+for file in `cd "$SAPPDIR/c"; find . -type f -print`; do
+    if ! grep -q "^$file$" "$SAPPDIR/deps.perl"; then
+        echo "$file" >> "$SAPPDIR/deps.perl"
         message 5 "scanning executable perl file for deps: $file\n"
-        egrep "^\s*use " "$file" | sed 's/\s*use\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
+        egrep "^\s*use " "$SAPPDIR/c/$file" | sed 's/\s*use\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
             if FILE=`perldoc -l $i 2>/dev/null`; then
                 if [ ! -f "$SAPPDIR/c/$FILE" ]; then
                     copy_file_to_sappdir "$FILE"
@@ -47,7 +50,7 @@ for file in `find "$SAPPDIR/c" -type f -print`; do
                 fi
             fi
         done
-        egrep "^\s*no " "$file" | sed 's/\s*no\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
+        egrep "^\s*no " "$SAPPDIR/c/$file" | sed 's/\s*no\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
             if FILE=`perldoc -l $i 2>/dev/null`; then
                 if [ ! -f "$SAPPDIR/c/$FILE" ]; then
                     copy_file_to_sappdir "$FILE"
@@ -55,7 +58,7 @@ for file in `find "$SAPPDIR/c" -type f -print`; do
                 fi
             fi
         done
-        egrep "^\s*require " "$file" | sed 's/\s*require\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
+        egrep "^\s*require " "$SAPPDIR/c/$file" | sed 's/\s*require\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
             if FILE=`perldoc -l $i 2>/dev/null`; then
                 if [ ! -f "$SAPPDIR/c/$FILE" ]; then
                     copy_file_to_sappdir "$FILE"
@@ -63,7 +66,7 @@ for file in `find "$SAPPDIR/c" -type f -print`; do
                 fi
             fi
         done
-#    fi
+    fi
 done
 
 exit $RETVAL

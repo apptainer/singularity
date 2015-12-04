@@ -55,7 +55,7 @@ if [ "$?" -ne "0" ]; then
 fi
 
 # Pull in defined keys that specify files
-message 1 "Evaluating: %exec\n"
+message 1 "Evaluating: Exec\n"
 for i in `get_key_from_conf "exec" $SAPPSPEC`; do
     if FULLFILE=`which "$i" 2>/dev/null`; then
         copy_file_to_sappdir "$FULLFILE"
