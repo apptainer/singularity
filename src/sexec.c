@@ -203,7 +203,10 @@ int main(int argc, char **argv) {
             return(1);
         }
     else
-        chdir("/");
+        if ( chdir("/") != 0 ) {
+            fprintf(stderr, "ERROR: Could not changedir to /\n");
+            return(1);
+        }
     }
 
     if ( close(cwd_fd) != 0 ) {
