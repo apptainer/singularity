@@ -12,6 +12,7 @@
  *
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -22,6 +23,7 @@
 #include <sys/param.h>
 #include <errno.h> 
 #include <signal.h>
+#include <sched.h>
 #include <string.h>
 #include <fcntl.h>  
 #include <grp.h>
@@ -31,11 +33,22 @@
 #define LIBEXECDIR "undefined"
 #endif
 
+// Yes, I know... Global variables suck but necessary to pass sig to child
+pid_t child_pid = 0;
+
+
 void sighandler(int sig) {
     signal(sig, sighandler);
 
     printf("Caught signal: %d\n", sig);
     fflush(stdout);
+
+    if ( child_pid > 0 ) {
+        printf("Sending signal to child pid: %d\n", child_pid);
+        fflush(stdout);
+
+        kill(child_pid, SIGKILL);
+    }
 }
 
 
@@ -49,18 +62,14 @@ int main(int argc, char **argv) {
     int cwd_fd;
     int opt_contain = 0;
     int retval = 0;
-    pid_t child_pid;
     mode_t process_mask = umask(0);
     uid_t uid = getuid();
     gid_t gid = getgid();
 
 
-    signal(SIGINT, sighandler);
-
     /*
      * Prep work
      */
-
 
     // We don't run as root!
     if ( uid == 0 || gid == 0 ) {
@@ -152,19 +161,26 @@ int main(int argc, char **argv) {
 
     umask(process_mask);
 
-
     // Entering danger zone
     if ( seteuid(0) != 0 ) {
         fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
         return(255);
     }
 
-    if ( mount(NULL, procpath, "proc", 0, NULL) != 0 ) {
-        fprintf(stderr, "ERROR: Could not bind mount /proc\n");
+    if ( unshare(CLONE_NEWPID | CLONE_NEWNS | CLONE_FS | CLONE_FILES) != 0 ) {
+        fprintf(stderr, "ERROR: Could not create virtulized namespaces\n");
         return(255);
     }
+
+    // Mount /dev
     if ( mount("/dev", devpath, NULL, MS_BIND, NULL) != 0 ) {
-        fprintf(stderr, "ERROR: Could not bind mount /dev\n");
+        fprintf(stderr, "ERROR: Could not bind mount %s\n", devpath);
+        return(255);
+    }
+
+    // No point in carrying root around
+    if ( seteuid(uid) != 0 ) {
+        fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
         return(255);
     }
 
@@ -172,23 +188,35 @@ int main(int argc, char **argv) {
 
     if ( child_pid == 0 ) {
 
+        // Root needed for chroot and /proc mount
+        if ( seteuid(0) != 0 ) {
+            fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
+            return(255);
+        }
+
         // Do the chroot
         if ( chroot(sappdir) != 0 ) {
             fprintf(stderr, "ERROR: failed enter SAPPCONTAINER: %s\n", sappdir);
             return(255);
         }
 
-        // Dump all privs
-        if ( setregid(gid, gid) != 0 ) {
-            fprintf(stderr, "ERROR: Could not dump real/effective group privledges!\n");
-            return(255);
-        }
-        if ( setreuid(uid, uid) != 0 ) {
-            fprintf(stderr, "ERROR: Could not dump real/effective user privledges!\n");
+        // Mount up /proc
+        if ( mount("proc", "/proc", "proc", 0, NULL) != 0 ) {
+            fprintf(stderr, "ERROR: Could not bind mount /proc\n");
             return(255);
         }
 
-        // Confirm we no longer have any escalated privledges
+        // Dump all privs permanently for this process
+        if ( setregid(gid, gid) != 0 ) {
+            fprintf(stderr, "ERROR: Could not dump real and effective group privledges!\n");
+            return(255);
+        }
+        if ( setreuid(uid, uid) != 0 ) {
+            fprintf(stderr, "ERROR: Could not dump real and effective user privledges!\n");
+            return(255);
+        }
+
+        // Confirm we no longer have any escalated privledges whatsoever
         if ( setuid(0) == 0 ) {
             fprintf(stderr, "ERROR: Root not allowed here!\n");
             return(1);
@@ -214,12 +242,21 @@ int main(int argc, char **argv) {
         }
 
     } else if ( child_pid > 0 ) {
+        signal(SIGINT, sighandler);
+        signal(SIGKILL, sighandler);
+
         waitpid(child_pid, &retval, 0);
     } else {
         fprintf(stderr, "ERROR: Could not fork child process\n");
         retval++;
     }
 
+
+    // Cleanup as root
+    if ( seteuid(0) != 0 ) {
+        fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
+        return(255);
+    }
 
     if ( umount(devpath) != 0 ) {
         fprintf(stderr, "ERROR: Could not unmount %s\n", devpath);
