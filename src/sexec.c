@@ -15,10 +15,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/param.h>
 #include <errno.h> 
+#include <signal.h>
 #include <string.h>
 #include <fcntl.h>  
 #include <grp.h>
@@ -28,21 +31,31 @@
 #define LIBEXECDIR "undefined"
 #endif
 
+void sighandler(int sig) {
+    signal(sig, sighandler);
+
+    printf("Caught signal: %d\n", sig);
+    fflush(stdout);
+}
+
+
 int main(int argc, char **argv) {
     char *sappdir;
     char *singularitypath;
-    char *preppath;
-    char uid_string[512];
-    char gid_string[512];
+    char *devpath;
+    char *procpath;
     struct stat sappdirstat;
     struct stat singularitystat;
-    struct stat prepstat;
     int cwd_fd;
     int opt_contain = 0;
-    //mode_t process_mask = umask(0);
+    int retval = 0;
+    pid_t child_pid;
+    mode_t process_mask = umask(0);
     uid_t uid = getuid();
     gid_t gid = getgid();
 
+
+    signal(SIGINT, sighandler);
 
     /*
      * Prep work
@@ -68,13 +81,6 @@ int main(int argc, char **argv) {
     if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
         opt_contain = 1;
     }
-
-    // Set the Singularity User/Group ID for the sexec_prep
-    snprintf(uid_string, 511, "%d", uid);
-    setenv("SINGULARITY_UID", uid_string, 1);
-    snprintf(gid_string, 511, "%d", gid);
-    setenv("SINGULARITY_GID", gid_string, 1);
-
 
     // Open a FD to the current working dir.
     if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
@@ -127,100 +133,107 @@ int main(int argc, char **argv) {
         return(1);
     }
 
-    // Check preppath
-    preppath = (char *) malloc(strlen(LIBEXECDIR) + 24);
-    snprintf(preppath, strlen(LIBEXECDIR) + 24, "%s/singularity/sexec_prep", LIBEXECDIR);
-    if ( stat(preppath, &prepstat) < 0 ) {
-        fprintf(stderr, "ERROR: Could not stat %s!\n", preppath);
-        return(1);
-    }
-    if ( ! S_ISREG(prepstat.st_mode) ) {
-        fprintf(stderr, "ERROR: The sexec_prep is not found at: %s!\n", preppath);
-        return(1);
-    }
-    if ( (int)prepstat.st_uid != 0 ) {
-        fprintf(stderr, "ERROR: sexec_prep is not owned by root!\n");
+    // Populate paths for bind mounts
+    devpath = (char *) malloc(strlen(sappdir) + 5);
+    snprintf(devpath, strlen(sappdir) + 5, "%s/dev", sappdir);
+    procpath = (char *) malloc(strlen(sappdir) + 6);
+    snprintf(procpath, strlen(sappdir) + 6, "%s/proc", sappdir);
+
+
+    // Create directories as neccessary
+    if ( mkdir(procpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+        fprintf(stderr, "ERROR: Could not create directory %s\n", procpath);
         return(255);
     }
-    if ( ! (S_IXUSR & prepstat.st_mode) ) {
-        fprintf(stderr, "ERROR: The sexec_prep can not be executed!\n");
-        return(1);
+    if ( mkdir(devpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+        fprintf(stderr, "ERROR: Could not create directory %s\n", devpath);
+        return(255);
     }
 
+    umask(process_mask);
 
-    /*
-     * Warning! Danger! Entering the privledged zone!
-     */
 
-    // Get root
+    // Entering danger zone
     if ( seteuid(0) != 0 ) {
-        fprintf(stderr, "ERROR: Could not escalate effective privledges!\n");
-        return(1);
-    }
-    if ( setuid(0) != 0 ) {
-        fprintf(stderr, "ERROR: Could not escalate privledges!\n");
-        return(1);
-    }
-
-    // Run the sexec_prep
-    if ( system(preppath) != 0 ) {
-        fprintf(stderr, "ERROR: Failed to execute sexec_prep (%s)\n", preppath);
+        fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
         return(255);
     }
 
-    // Do the chroot
-    if ( chroot(sappdir) != 0 ) {
-        fprintf(stderr, "ERROR: failed enter SAPPCONTAINER: %s\n", sappdir);
+    if ( mount(NULL, procpath, "proc", 0, NULL) != 0 ) {
+        fprintf(stderr, "ERROR: Could not bind mount /proc\n");
+        return(255);
+    }
+    if ( mount("/dev", devpath, NULL, MS_BIND, NULL) != 0 ) {
+        fprintf(stderr, "ERROR: Could not bind mount /dev\n");
         return(255);
     }
 
-    // Dump all privs
-    if ( setregid(gid, gid) != 0 ) {
-        fprintf(stderr, "ERROR: Could not dump real/effective group privledges!\n");
-        return(255);
-    }
-    if ( setreuid(uid, uid) != 0 ) {
-        fprintf(stderr, "ERROR: Could not dump real/effective user privledges!\n");
-        return(255);
-    }
+    child_pid = fork();
 
+    if ( child_pid == 0 ) {
 
+        // Do the chroot
+        if ( chroot(sappdir) != 0 ) {
+            fprintf(stderr, "ERROR: failed enter SAPPCONTAINER: %s\n", sappdir);
+            return(255);
+        }
 
-    /*
-     * Out of the immediate danger zone... whew!
-     */
+        // Dump all privs
+        if ( setregid(gid, gid) != 0 ) {
+            fprintf(stderr, "ERROR: Could not dump real/effective group privledges!\n");
+            return(255);
+        }
+        if ( setreuid(uid, uid) != 0 ) {
+            fprintf(stderr, "ERROR: Could not dump real/effective user privledges!\n");
+            return(255);
+        }
 
-    // Confirm we no longer have any escalated privledges
-    if ( setuid(0) == 0 ) {
-        fprintf(stderr, "ERROR: Root not allowed here!\n");
-        return(1);
-    }
-
-    // change directory back to starting point if needed
-    if ( opt_contain > 0 ) {
-        if ( fchdir(cwd_fd) != 0 ) {
-            fprintf(stderr, "ERROR: Could not fchdir!\n");
+        // Confirm we no longer have any escalated privledges
+        if ( setuid(0) == 0 ) {
+            fprintf(stderr, "ERROR: Root not allowed here!\n");
             return(1);
         }
-    else
-        if ( chdir("/") != 0 ) {
-            fprintf(stderr, "ERROR: Could not changedir to /\n");
-            return(1);
+
+        // change directory back to starting point if needed
+        if ( opt_contain > 0 ) {
+            if ( fchdir(cwd_fd) != 0 ) {
+                fprintf(stderr, "ERROR: Could not fchdir!\n");
+                return(1);
+            }
+        else
+            if ( chdir("/") != 0 ) {
+                fprintf(stderr, "ERROR: Could not changedir to /\n");
+                return(1);
+            }
         }
+
+        // Exec the singularity
+        if ( execv("/singularity", argv) != 0 ) {
+            fprintf(stderr, "ERROR: Failed to exec SAPP envrionment\n");
+            return(2);
+        }
+
+    } else if ( child_pid > 0 ) {
+        waitpid(child_pid, &retval, 0);
+    } else {
+        fprintf(stderr, "ERROR: Could not fork child process\n");
+        retval++;
+    }
+
+
+    if ( umount(devpath) != 0 ) {
+        fprintf(stderr, "ERROR: Could not unmount %s\n", devpath);
+        retval++;
+    }
+    if ( umount(procpath) != 0 ) {
+        fprintf(stderr, "ERROR: Could not unmount %s\n", procpath);
+        retval++;
     }
 
     if ( close(cwd_fd) != 0 ) {
         fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
-        return(1);
+        retval++;
     }
 
-    // Exec the singularity
-    if ( execv("/singularity", argv) != 0 ) {
-        fprintf(stderr, "ERROR: Failed to exec SAPP envrionment\n");
-        return(2);
-    }
-
-    // We should *never* reach here, but if we do... error out hard!
-    fprintf(stderr, "ERROR: We should not be here!\n");
-    return(255);
+    return(retval);
 }
