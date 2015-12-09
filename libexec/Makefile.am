@@ -10,6 +10,7 @@ dist_scriptlibexec_SCRIPTS = functions sexec_prep \
 	help.exec help.help help.summary \
 	install.exec install.help install.summary \
 	run.exec run.help run.summary \
+	shell.exec shell.help shell.summary \
 	specgen.exec specgen.help specgen.summary \
 	test.exec test.help test.summary
 

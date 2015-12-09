@@ -14,6 +14,9 @@ OPTIONS:
     -c/--contain    Contain the SAPP environment and do not make any
                     part of the host file system available (this
                     option invalidates the above --dir option).
+    -n/--nocheck    As part of the normal Singularity runtime, files
+                    inside the container will be checked. This disables
+                    that check.
 
 Note: The above options are are not support yet but they do illustrate
 the direction and possibilities coming soon.

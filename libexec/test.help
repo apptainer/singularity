@@ -1,4 +1,4 @@
-USAGE: singularity (options) run [SAPP File] (SAPP options)
+USAGE: singularity (options) test [SAPP Name] (SAPP options)
 
 Run any %test scriptlets that are defined for this SAPP container. If there
 is no defined %test section, then it will try to execute the shell within

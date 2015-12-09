@@ -45,7 +45,8 @@ cat <<EOF > "$SAPPDIR/c/singularity"
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:$LIB_SEARCH_PATH"
 LANG=C
-export PATH LD_LIBRARY_PATH LANG
+PS1="singularity.\$SAPPNAME> "
+export PATH LD_LIBRARY_PATH LANG PS1
 if [ -n "\$SINGULARITY_COMMAND" -a "\$SINGULARITY_COMMAND" = "run" ]; then
     if [ -x "/singularity.exec" ]; then
         exec /singularity.exec "\$@"
@@ -60,7 +61,7 @@ elif [ "\$SINGULARITY_COMMAND" = "test" ]; then
         echo "No test code was defined"
     fi
 elif [ "\$SINGULARITY_COMMAND" = "shell" ]; then
-    exec /bin/sh -l
+    exec /bin/sh
 else
     echo "ERROR: Unknown singularity exec command"
     exit 1

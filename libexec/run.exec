@@ -29,6 +29,11 @@ while true; do
             export SINGULARITY_CONTAIN
             shift
         ;;
+        -n|--nocheck)
+            SINGULARITY_NOCHECK=1
+            export SINGULARITY_NOCHECK
+            shift
+        ;;
         -*)
             echo "ERROR: Unknown option: $1"
             exit 1
@@ -58,10 +63,15 @@ fi
 
 message 2 "Running '$SAPPNAME'\n"
 
-#if ! run_module sappdir_filecheck; then
-#    message 0 "Not launching SAPP container\n"
-#    exit 1
-#fi
+if [ -z "$SINGULARITY_NOCHECK" ]; then
+    if ! run_module sappdir_filecheck; then
+        message 0 "Not launching SAPP container\n\n"
+        message 0 "Try deleting the container, and reinstalling it:\n"
+        message 0 "    $ singularity delete $SAPPNAME\n";
+        message 0 "    $ singularity install $SAPPNAME.sapp\n\n";
+        exit 1
+    fi
+fi
 
 SAPPCONTAINER="$SAPPDIR/c"
 SINGULARITY_COMMAND="run"
