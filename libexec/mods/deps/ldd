@@ -61,7 +61,7 @@ touch "$SAPPDIR/deps.ldd"
 
 message 2 "Searching for library dependencies\n"
 for file in `cd "$SAPPDIR/c"; find . -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
-    if ! grep -q "^$file$" "$SAPPDIR/deps.ldd"; then
+    if ! grep -qF "^$file$" "$SAPPDIR/deps.ldd"; then
         echo "$file" >> "$SAPPDIR/deps.ldd"
         message 5 "scanning executable file for dependencies: $file\n"
         for dep in `ldd $SAPPDIR/c/$file | sed -e 's@ @\n@g'`; do
