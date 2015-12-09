@@ -57,8 +57,7 @@ elif [ "\$SINGULARITY_COMMAND" = "test" ]; then
     if [ -x "/singularity.test" ]; then
         exec /singularity.test "\$@"
     else
-        echo "ERROR: Could not exec the Singularity test code"
-        exit 1
+        echo "No test code was defined"
     fi
 elif [ "\$SINGULARITY_COMMAND" = "shell" ]; then
     exec /bin/sh -l
@@ -66,6 +65,7 @@ else
     echo "ERROR: Unknown singularity exec command"
     exit 1
 fi
+exit 0
 EOF
 
 

@@ -48,23 +48,8 @@ fi
 
 SAPPCONTAINER="$SAPPDIR/c"
 SINGULARITY_COMMAND="test"
-export SAPPCONTAINER SINGULARITY_COMMAND
-
-# Catch the signal for the parent.. 
-trap true INT KILL
+SINGULARITY_CONTAIN=1
+export SAPPCONTAINER SINGULARITY_COMMAND SINGULARITY_CONTAIN
 
 message 2 "Exec'ing Sexec\n"
-exec "$libexecdir/singularity/sexec" "$@" <&0 &
-
-CHILD_PID=$!
-message 2 "Waiting for child pid $CHILD_PID\n"
-
-echo -ne "$CHILD_PID " >> "$SAPPDIR/pids"
-wait $CHILD_PID
-
-sed -i -e "s@$CHILD_PID @@" "$SAPPDIR/pids"
-
-message 2 "Child pid $CHILD_PID returned\n"
-
-# we should never get here
-exit 255
+exec "$libexecdir/singularity/sexec" "$@" <&0
