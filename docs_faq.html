@@ -59,14 +59,19 @@
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-The goal of Singularity is to run a contained application as if it did not
-exist inside of a container. This means you want the contained application
-to run as if it existed on the host system! Namespace virtualization does
-the opposite, it segregates the contents of the container from the host.
+The goal of Singularity is to run an application within a contained
+environment such as it was not contained. Thus there is a balance between
+what to seperate and what not to seperate. At present the virtualized
+namespaces are process, mount points, and certain parts of the contained
+file system.
 </p>
 <p>
-There is a feature request to optionally provide that layer of seperation
-both for testing and use cases which may require containment.
+When you run your Singularity application, you may find that the process
+IDs start with 1 (one) and increment from there. You will also find that
+while the file system is contained starting with '/' (root), you can have
+access outside the container via your starting path. This means that
+relative paths will resolve outside the container, and fully qualified
+paths will resolve inside the container.
 </p>
 </div>
 </div>
