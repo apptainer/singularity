@@ -85,7 +85,14 @@ echo "#!/bin/sh" > "$SAPPDIR/c/singularity.exec"
 if ! get_section_from_conf "runscript" "$SAPPSPEC" >> "$SAPPDIR/c/singularity.exec"; then
     message 2 "generating a basic singularity runscript\n"
     if OUTPUT=`get_key_from_conf "exec" "$SAPPSPEC"`; then
-        echo "exec \"$OUTPUT\" \"\$@\"" >> "$SAPPDIR/c/singularity.exec"
+        echo "$OUTPUT" | while read prog args; do
+            if [ -n "$args" ]; then
+                echo "exec \"$prog\" \"$args\"" >> "$SAPPDIR/c/singularity.exec"
+            else
+                echo "exec \"$prog\"" >> "$SAPPDIR/c/singularity.exec"
+            fi
+            break
+        done
     else
         message 0 "ERROR: no runscript or program to exec defined!\n"
         exit 1
