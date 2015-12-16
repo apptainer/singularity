@@ -43,9 +43,11 @@ if [ "$?" -ne "0" ]; then
     exit 1
 fi
 
-md5sum -c "$SAPPDIR/files" >/dev/null 2>&1
-if [ "$?" -ne "0" ]; then
-    message 0 "ERROR: Cached file check failed, something has changed!\n"
+if ! md5sum -c "$SAPPDIR/files"; then
+    message 0 "ERROR: Cached file check failed, something has changed!\n\n"
+    message 0 "Try deleting the container, and reinstalling it:\n"
+    message 0 "    $ singularity delete $SAPPNAME\n";
+    message 0 "    $ singularity install $SAPPNAME.sapp\n\n";
     exit 1
 fi
 
