@@ -37,16 +37,20 @@ int main(int argc, char **argv) {
         return(1);
     } else if ( child == 0 ) {
         // reassign arguments -1
-        char *args [argc+1];
-        memcpy(args, argv, argc * sizeof(char*));
+        char *newargv[argc];
+        int i;
+
+        for(i=0; i<argc-1; i++) {
+            newargv[i] = argv[i+1];
+        }
+        newargv[argc-1] = NULL;
 
         // redirect stderr to stdout
         dup2(1, 2);
 
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);
 
-        execl("/bin/cat", "cat", "/etc/fstab", NULL);
-//        execvp(args[0], args);
+        execv(newargv[0], newargv);
     } else {
         char str[256*8];
         int insyscall = 0;
