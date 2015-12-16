@@ -39,15 +39,7 @@ if [ ! -x "$libexecdir/singularity/sexec" ]; then
     exit 1
 fi
 
-message 2 "Running '$SAPPNAME'\n"
-
-if ! run_module sappdir_filecheck; then
-    message 0 "Not launching SAPP container\n\n"
-    message 0 "Try deleting the container, and reinstalling it:\n"
-    message 0 "    $ singularity delete $SAPPNAME\n";
-    message 0 "    $ singularity install $SAPPNAME.sapp\n\n";
-    exit 1
-fi
+message 2 "Running a shell within '$SAPPNAME'\n"
 
 SAPPCONTAINER="$SAPPDIR/c"
 SINGULARITY_COMMAND="shell"
