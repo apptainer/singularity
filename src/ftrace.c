@@ -89,7 +89,6 @@ int main(int argc, char **argv) {
     
                         data.val = ptrace(PTRACE_PEEKDATA, child, regs.rdi + len, NULL);
                         if ( data.val == -1 ) {
-                            printf("len: %d\n", len);
                             break;
                         }
 

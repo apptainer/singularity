@@ -43,7 +43,7 @@ Summary:
 Maintainer:
 
 %runscript
-exec $PROGRAM "\$@"
+exec $PROGRAM "$@" "\$@"
 
 
 %test
@@ -55,9 +55,7 @@ EOF
 
 exec 3>&1
 
-strace -f -e open $PROGRAM "$@" 2>&1 >&3 3>&- | (
-    egrep '.*open\(.*\) = [0-9]*$' |\
-    sed -e 's/.*open("\([^"]\+\)", .*) = [0-9]*$/\1/g' |\
+$libexecdir/singularity/ftrace $PROGRAM "$@" 2>&1 >&3 3>&- | (
     sort |\
     uniq |\
     grep -v "^/tmp/" |\
