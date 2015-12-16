@@ -54,7 +54,8 @@ message 1 "Installing: $SAPPFILE\n"
 if ! run_module sappdir_explode; then
     exit 255
 fi
-if ! run_module sappdir_filecheck; then
+if ! run_module sappdir_filecheck >/dev/null 2>&1; then
+    message 0 "ERROR: Filecheck failed... Check/rebuild the original SAPP file\n"
     exit 255
 fi
 
