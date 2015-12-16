@@ -1,15 +1,6 @@
-USAGE: singularity (options) cache [cache command] (cache options)
+USAGE: singularity (options) list
 
-View and clean your Singularity cache.
-
-COMMANDS:
-    list            List the cached SAPPs
-    show            Show detailed information about the cached SAPPs
-    clean           Clean cached SAPPs
-
-OPTIONS:
-    -f/--force      Force clean the SAPPs even if Singularity thinks
-                    they are in use.
+List all of the installed Singularity containers
 
 For additional help, please visit our public documentation pages which are
 found at:

@@ -1,7 +1,7 @@
-USAGE: singularity (options) check [SAPP name]
+USAGE: singularity (options) check [container name]
 
-This will check the contents of the cached SAPP and make sure there are no
-modified files within the container.
+This will check the contents of the cached container and make sure there
+are no modified files within the envrionment.
 
 For additional help, please visit our public documentation pages which are
 found at:

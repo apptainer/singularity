@@ -1,25 +1,22 @@
-USAGE: singularity (options) run [SAPP Name] (SAPP options)
+USAGE: singularity (options) run [container name] (options)
 
-Execute a SAPP package and pass any arguments after the SAPP name
-to the runtime envrionment.
+Execute a Singularity container and pass any arguments to the runtime
+envrionment.
 
-It is important to know that while the SAPP environment itself runs within
+It is important to know that while the application itself runs within
 a contianed environment it is not limited to that environment (unless you
 request full containment). All paths relative to your current working
-directory can be accessible to the applications within your SAPP
+directory can be accessible to the applications within your container
 envrionment (relative paths are any paths that does not begin with a slash
 '/').
 
 OPTIONS:
-    -c/--contain    Contain the SAPP environment and do not make any
-                    part of the host file system available (this
+    -c/--contain    Contain the environment and do not make any part of
+                    the host file system available (this
                     option invalidates the above --dir option).
     -n/--nocheck    As part of the normal Singularity runtime, files
                     inside the container will be checked. This disables
                     that check.
-
-Note: The above options are are not support yet but they do illustrate
-the direction and possibilities coming soon.
 
 For additional help, please visit our public documentation pages which are
 found at:

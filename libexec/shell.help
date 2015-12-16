@@ -1,4 +1,4 @@
-USAGE: singularity (options) shell [SAPP Name] (SAPP options)
+USAGE: singularity (options) shell [container name]
 
 Obtain a shell within the container context for debugging.
 

@@ -1,7 +1,7 @@
-USAGE: singularity (options) build [SAPP specfile] (SAPP target)
+USAGE: singularity (options) build [Singularity specfile] (SAPP target)
 
-This command will build your SAPP container package based on a
-provided Singularity specfile (.sspec).
+This command will build your Singularity application container based on a
+provided specfile (.sspec).
 
 OPTIONS:
     --notest        Don't invoke the %test macro... This is

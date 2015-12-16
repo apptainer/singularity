@@ -1,4 +1,4 @@
-USAGE: singularity (options) run [SAPP File] (SAPP options)
+USAGE: singularity (options) help [command name]
 
 Show additional usage for any supported Singularity command using the
 syntax as defined above.
