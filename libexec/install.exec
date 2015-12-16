@@ -41,15 +41,15 @@ if [ ! -f "$SAPPFILE" ]; then
 fi
 
 
-message 1 "Installing: $SAPPFILE\n"
-
 if run_module sappdir_check; then
     message 2 "SAPP already installed into cache\n"
     exit 0
 else
-    message 2 "Cleaning previous SAPP container cache\n"
+    message 1 "Removing previous SAPP container cache\n"
     run_module sappdir_delete
 fi
+
+message 1 "Installing: $SAPPFILE\n"
 
 if ! run_module sappdir_explode; then
     exit 255
