@@ -47,9 +47,24 @@ LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:$LIB_SEARCH_PATH"
 LANG=C
 PS1="singularity.\$SAPPNAME> "
 export PATH LD_LIBRARY_PATH LANG PS1
-if [ -n "\$SINGULARITY_COMMAND" -a "\$SINGULARITY_COMMAND" = "run" ]; then
+if [ -z "\$SINGULARITY_COMMAND" ]; then
+    echo "ERROR: Singularity command undefined"
+    exit 1
+fi
+if [ "\$SINGULARITY_COMMAND" = "run" ]; then
     if [ -x "/singularity.exec" ]; then
         exec /singularity.exec "\$@"
+    else
+        echo "ERROR: Could not exec the singularity"
+        exit 1
+    fi
+elif [ "\$SINGULARITY_COMMAND" = "strace" ]; then
+    if [ ! -x "/bin/strace" -a ! -x "/usr/bin/strace" ]; then
+        echo "ERROR: strace must be built into container"
+        exit 1
+    fi
+    if [ -x "/singularity.exec" ]; then
+        exec strace -f /singularity.exec "\$@"
     else
         echo "ERROR: Could not exec the singularity"
         exit 1
@@ -58,12 +73,12 @@ elif [ "\$SINGULARITY_COMMAND" = "test" ]; then
     if [ -x "/singularity.test" ]; then
         exec /singularity.test "\$@"
     else
-        echo "No test code was defined"
+        echo "Hello from within the container... (no test code defined)"
     fi
 elif [ "\$SINGULARITY_COMMAND" = "shell" ]; then
     exec /bin/sh
 else
-    echo "ERROR: Unknown singularity exec command"
+    echo "ERROR: Unsupported singularity exec command: \$SINGULARITY_COMMAND"
     exit 1
 fi
 exit 0
