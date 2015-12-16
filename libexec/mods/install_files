@@ -53,7 +53,7 @@ whoami yes vi /etc/terminfo /usr/share/terminfo"
 
 # Things we always just must have
 message 1 "Evaluating: hard requirements\n"
-for i in "/bin/sh" "/bin/["; do
+for i in "/bin/sh"; do
     if [ -f "$i" ]; then
         if ! copy_file_to_sappdir "$i"; then
             message 0 "Error: failed processing requires: $i\n"
