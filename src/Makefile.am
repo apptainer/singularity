@@ -5,9 +5,9 @@ AM_CFLAGS = -Wall
 AM_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"
 
 bindir = $(libexecdir)/singularity
-bin_PROGRAMS = sexec
+bin_PROGRAMS = sexec ftrace
 
-singularity_SOURCES = sexec.c
-singularity_LDADD = $(INTI_LIBS)
+#singularity_SOURCES = sexec.c
+#singularity_LDADD = $(INTI_LIBS)
 
 EXTRA_DIST = config.h 

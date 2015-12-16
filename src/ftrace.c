@@ -1,70 +1,89 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/reg.h>
-#include <sys/ptrace.h>
-#include <sys/syscall.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/syscall.h>
-#include <unistd.h>
-#include <sys/reg.h>
+/*
+ *
+ * Copyright (c) 2015, Gregory M. Kurtzer
+ * All rights reserved.
+ *
+ *
+ * Copyright (c) 2015, The Regents of the University of California,
+ * through Lawrence Berkeley National Laboratory (subject to receipt of
+ * any required approvals from the U.S. Dept. of Energy).
+ * All rights reserved.
+ *
+ *
+*/
+
 #include <errno.h>
-#include <string.h>
-#include <stdio.h>
-#include <sys/types.h>
 #include <signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/reg.h>
+#include <sys/ptrace.h>
+#include <sys/syscall.h>
+#include <sys/wait.h>
 #include <sys/user.h>
+#include <unistd.h>
 
 
 
-int main() {
+int main(int argc, char **argv) {
     pid_t child;
-    long orig_eax, eax;
-    int status;
-    int insyscall =0;
+
+    // fork early
     child = fork ();
 
-    if (child == -1) 
-        printf ("Error in fork");
+    if ( child == -1 ) {
+        printf ("Error calling fork()");
+        return(1);
+    } else if ( child == 0 ) {
+        // reassign arguments -1
+        char *args [argc+1];
+        memcpy(args, argv, argc * sizeof(char*));
 
-    if (child == 0) {
-        // In the child process
+        // redirect stderr to stdout
+        dup2(1, 2);
+
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+
         execl("/bin/cat", "cat", "/etc/fstab", NULL);
-    
+//        execvp(args[0], args);
     } else {
         char str[256*8];
+        int insyscall = 0;
 
-        //In parent process
+        // loop through running binary until binary is done
         while (1){
             int syscall;
-            struct user_regs_struct u_in, u_out;            
+            struct user_regs_struct regs;
+            int status;
 
+            // wait at every ptrace stopping point
             wait (&status);
-            if (WIFEXITED(status))
+
+            // exit if the child has exited
+            if ( WIFEXITED(status) ) {
                 break;
+            }
 
-            ptrace(PTRACE_GETREGS,child, 0, &u_in);     
-            syscall = u_in.orig_rax;
+            // get the current register struct
+            ptrace(PTRACE_GETREGS,child, 0, &regs);     
+            syscall = regs.orig_rax;
 
-//            printf ("System call is : %d\n", syscall);
+            // if we are in an open() system call...
             if (syscall == SYS_open) {
-                orig_eax = ptrace (PTRACE_PEEKUSER, child, 4 * ORIG_RAX, NULL);
 
+                // check to see if we are already in the midst of a system call
                 if (insyscall == 0){
-                    long bx, cx;
                     int len = 0;
 
+                    // we need to iterate through, and pull sizeof(long)
                     while(len <= 256) {
                         union u { 
                             long val;
                             char string[sizeof(long)];
                         } data;
     
-                        data.val = ptrace(PTRACE_PEEKDATA, child, u_in.rdi + len, NULL);
+                        data.val = ptrace(PTRACE_PEEKDATA, child, regs.rdi + len, NULL);
                         if ( data.val == -1 ) {
                             printf("len: %d\n", len);
                             break;
@@ -78,19 +97,22 @@ int main() {
 
                     str[len] = '\0';
 
-
+                    // the following ptrace SYS_open will be the close
                     insyscall = 1;
                 } else {
-                    eax = ptrace(PTRACE_PEEKUSER, child, 8 * RAX, NULL);
-                    if ( eax >= 0 ) {
-                        fprintf(3, "%s\n", str);
+                    // how did the system call exit
+                    long ret = ptrace(PTRACE_PEEKUSER, child, 8 * RAX, NULL);
+                    if ( ret >= 0 ) {
+                        fprintf(stderr, "%s\n", str);
                     }
                     insyscall = 0;
                 }
             }
         
-        ptrace (PTRACE_SYSCALL, child, NULL, NULL);
+            // run and pause at the next system call
+            ptrace (PTRACE_SYSCALL, child, NULL, NULL);
         }
     }
+
     return 0;
 }
