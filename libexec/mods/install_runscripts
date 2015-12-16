@@ -87,9 +87,9 @@ if ! get_section_from_conf "runscript" "$SAPPSPEC" >> "$SAPPDIR/c/singularity.ex
     if OUTPUT=`get_key_from_conf "exec" "$SAPPSPEC"`; then
         echo "$OUTPUT" | while read prog args; do
             if [ -n "$args" ]; then
-                echo "exec \"$prog\" \"$args\"" >> "$SAPPDIR/c/singularity.exec"
+                echo "exec \"$prog\" \"$args\" \"\$@\"" >> "$SAPPDIR/c/singularity.exec"
             else
-                echo "exec \"$prog\"" >> "$SAPPDIR/c/singularity.exec"
+                echo "exec \"$prog\" \"\$@\"" >> "$SAPPDIR/c/singularity.exec"
             fi
             break
         done
