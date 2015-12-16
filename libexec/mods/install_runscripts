@@ -60,7 +60,7 @@ if test "\$SINGULARITY_COMMAND" = "run"; then
     fi
 elif test "\$SINGULARITY_COMMAND" = "strace"; then
     if test ! -x "/bin/strace" -a ! -x "/usr/bin/strace"; then
-        echo "ERROR: strace must be built into container"
+        echo "Strace is not found within the container..."
         exit 1
     fi
     if test -x "/singularity.exec"; then
