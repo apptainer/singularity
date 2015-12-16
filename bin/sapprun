@@ -10,15 +10,6 @@
 # 
 # 
 
-# Simple wrapper for singularity run
+# Simple wrapper for singularity sapprun
 
-SAPPFILE="$1"
-shift
-NAME=`echo "$SAPPFILE" | sed -e 's@.sapp@@'`
-
-if /usr/bin/env singularity --quiet install "$SAPPFILE"; then
-    exec /usr/bin/env singularity run "$NAME" "$@"
-else
-    exit 1
-fi
-
+exec /usr/bin/env singularity --quiet sapprun "$@"
