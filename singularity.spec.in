@@ -44,6 +44,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/mods
 %{_bindir}/singularity
 %{_bindir}/sapprun
+%{_bindir}/sr
 
 
 
