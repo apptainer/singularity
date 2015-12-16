@@ -14,9 +14,8 @@ OPTIONS:
     -c/--contain    Contain the environment and do not make any part of
                     the host file system available (this
                     option invalidates the above --dir option).
-    -n/--nocheck    As part of the normal Singularity runtime, files
-                    inside the container will be checked. This disables
-                    that check.
+    -s/--check      Do a file check within the container before running
+                    inside the container.
 
 For additional help, please visit our public documentation pages which are
 found at:

@@ -29,9 +29,9 @@ while true; do
             export SINGULARITY_CONTAIN
             shift
         ;;
-        -n|--nocheck)
-            SINGULARITY_NOCHECK=1
-            export SINGULARITY_NOCHECK
+        -s|--check)
+            SINGULARITY_CHECK=1
+            export SINGULARITY_CHECK
             shift
         ;;
         -*)
@@ -63,12 +63,9 @@ fi
 
 message 2 "Running '$SAPPNAME'\n"
 
-if [ -z "$SINGULARITY_NOCHECK" ]; then
+if [ -n "$SINGULARITY_CHECK" ]; then
     if ! run_module sappdir_filecheck; then
-        message 0 "Not launching SAPP container\n\n"
-        message 0 "Try deleting the container, and reinstalling it:\n"
-        message 0 "    $ singularity delete $SAPPNAME\n";
-        message 0 "    $ singularity install $SAPPNAME.sapp\n\n";
+        message 0 "Not executing container...\n"
         exit 1
     fi
 fi
