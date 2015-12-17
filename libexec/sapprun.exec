@@ -55,6 +55,8 @@ fi
 message 2 "Running '$SAPPNAME'\n"
 
 
+trap true KILL INT QUIT
+
 if ! run_module sappdir_explode; then
     exit 255
 fi
