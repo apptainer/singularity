@@ -23,11 +23,16 @@ else
 fi
 
 
+if [ -z "$CACHEDIR" ]; then
+    message 0 "ERROR: CACHEDIR is not properly defined\n"
+    exit 1
+fi
+
+
 SAPPFILE="$1"
-SAPPCACHE="$HOME/.sapp-cache"
 SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
-SAPPDIR="$SAPPCACHE/$SAPPNAME"
-export SAPPFILE SAPPCACHE SAPPDIR SAPPNAME
+SAPPDIR="$CACHEDIR/$SAPPNAME"
+export SAPPFILE SAPPDIR SAPPNAME
 shift
 
 if [ -z "$SAPPFILE" ]; then
@@ -41,12 +46,14 @@ if [ ! -f "$SAPPFILE" ]; then
 fi
 
 
-if run_module sappdir_check; then
-    message 2 "SAPP already installed into cache\n"
-    exit 0
-else
-    message 1 "Removing previous SAPP container cache\n"
-    run_module sappdir_delete
+if run_module sappdir_exists; then
+    if run_module sappdir_check; then
+        message 1 "SAPP already installed into cache\n"
+        exit 0
+    else
+        message 1 "Removing previous SAPP container cache\n"
+        run_module sappdir_delete
+    fi
 fi
 
 message 1 "Installing: $SAPPFILE\n"

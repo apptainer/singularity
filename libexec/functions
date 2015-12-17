@@ -1,7 +1,5 @@
 #!/bin/sh
 
-HEADER_END="SINGULARITY_END_HEADER"
-export HEADER_END
 
 
 if [ -z "$MESSAGELEVEL" ]; then
@@ -9,6 +7,18 @@ if [ -z "$MESSAGELEVEL" ]; then
     MESSAGELEVEL=5
 fi
 
+HEADER_END="SINGULARITY_END_HEADER"
+
+if [ -n "$SINGULARITY_CACHEDIR" ]; then
+    USERNAME=`id -un`
+    CACHEDIR="$SINGULARITY_CACHEDIR/$USERNAME/sapp-cache"
+    TMPCACHEDIR="$SINGULARITY_CACHEDIR/$USERNAME/tmp"
+else
+    CACHEDIR="$HOME/.sapp-cache"
+    TMPCACHEDIR="/tmp"
+fi
+
+export CACHEDIR TMPCACHEDIR HEADER_END
 
 
 GRAY=`tput dim`
@@ -160,3 +170,8 @@ run_module() {
     fi
     return $RETVAL
 }
+
+
+if [ "$DEBUG" = "1" ]; then
+    set -x
+fi

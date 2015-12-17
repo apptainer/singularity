@@ -44,11 +44,11 @@ fi
 
 
 # Set the necessary bits for sexec and the singularity driver to run
-SAPPCONTAINER="$SAPPDIR/c"
+CONTAINERPATH="$SAPPDIR/c"
 SINGULARITY_COMMAND="test"
-export SAPPCONTAINER SINGULARITY_COMMAND
+export CONTAINERPATH SINGULARITY_COMMAND
 
-if [ -x "$SAPPCONTAINER/singularity.test" ]; then
+if [ -x "$CONTAINERPATH/singularity.test" ]; then
     message 1 "Running %test...\n"
     exec "$libexecdir/singularity/sexec" "$@"
 else

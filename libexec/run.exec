@@ -22,6 +22,13 @@ else
     exit 1
 fi
 
+
+if [ -z "$CACHEDIR" ]; then
+    message 0 "ERROR: CACHEDIR is not properly defined\n"
+    exit 1
+fi
+
+
 while true; do
     case $1 in
         -c|--contain)
@@ -46,9 +53,8 @@ done
 
 
 SAPPNAME="$1"
-SAPPCACHE="$HOME/.sapp-cache"
-SAPPDIR="$SAPPCACHE/$SAPPNAME"
-export SAPPCACHE SAPPDIR SAPPNAME
+SAPPDIR="$CACHEDIR/$SAPPNAME"
+export SAPPDIR SAPPNAME
 shift
 
 if [ -z "$SAPPNAME" ]; then
@@ -63,6 +69,11 @@ fi
 
 message 2 "Running '$SAPPNAME'\n"
 
+if ! run_module sappdir_exists; then
+    message 0 "ERROR: '$SAPPNAME' is not installed\n"
+    exit 1
+fi
+
 if [ -n "$SINGULARITY_CHECK" ]; then
     if ! run_module sappdir_filecheck; then
         message 0 "Not executing container...\n"
@@ -70,9 +81,9 @@ if [ -n "$SINGULARITY_CHECK" ]; then
     fi
 fi
 
-SAPPCONTAINER="$SAPPDIR/c"
+CONTAINERPATH="$SAPPDIR/c"
 SINGULARITY_COMMAND="run"
-export SAPPCONTAINER SINGULARITY_COMMAND
+export CONTAINERPATH SINGULARITY_COMMAND
 
 message 2 "Exec'ing Sexec\n"
 exec "$libexecdir/singularity/sexec" "$@" <&0

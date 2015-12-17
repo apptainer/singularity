@@ -53,11 +53,11 @@ void sighandler(int sig) {
 
 
 int main(int argc, char **argv) {
-    char *sappdir;
+    char *containerpath;
     char *singularitypath;
     char *devpath;
     char *procpath;
-    struct stat sappdirstat;
+    struct stat containerpathstat;
     struct stat singularitystat;
     int cwd_fd;
     int opt_contain = 0;
@@ -83,8 +83,8 @@ int main(int argc, char **argv) {
         return(255);
     }
 
-    // Get sappdir from the environment (we check on this shortly)
-    sappdir = getenv("SAPPCONTAINER");
+    // Get containerpath from the environment (we check on this shortly)
+    containerpath = getenv("CONTAINERPATH");
 
     // Check for SINGULARITY_CONTAIN environment variable
     if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
@@ -102,39 +102,39 @@ int main(int argc, char **argv) {
      * Sanity Checks, exit if any don't match.
      */
 
-    // Make sure SAPPCONTAINER is defined
-    if ( sappdir == NULL ) {
-        fprintf(stderr, "ERROR: SAPPCONTAINER undefined!\n");
+    // Make sure CONTAINERPATH is defined
+    if ( containerpath == NULL ) {
+        fprintf(stderr, "ERROR: CONTAINERPATH undefined!\n");
         return(1);
     }
 
-    // Check SAPPCONTAINER
-    if (lstat(sappdir, &sappdirstat) < 0) {
-        fprintf(stderr, "ERROR: Could not stat %s!\n", sappdir);
+    // Check CONTAINERPATH
+    if (lstat(containerpath, &containerpathstat) < 0) {
+        fprintf(stderr, "ERROR: Could not stat %s!\n", containerpath);
         return(1);
     }
-    if ( ! S_ISDIR(sappdirstat.st_mode) ) {
-        fprintf(stderr, "ERROR: SAPPCONTAINER (%s) must be a SAPP directory!\n", sappdir);
+    if ( ! S_ISDIR(containerpathstat.st_mode) ) {
+        fprintf(stderr, "ERROR: CONTAINERPATH (%s) must be a SAPP directory!\n", containerpath);
         return(1);
     }
-    if ( uid != (int)sappdirstat.st_uid ) {
-        fprintf(stderr, "ERROR: Will not execute in a SAPPCONTAINER you don't own. (%s:%d)!\n", sappdir, (int)sappdirstat.st_uid);
+    if ( uid != (int)containerpathstat.st_uid ) {
+        fprintf(stderr, "ERROR: Will not execute in a CONTAINERPATH you don't own. (%s:%d)!\n", containerpath, (int)containerpathstat.st_uid);
         return(255);
     }
     
-    // Check the singularity within the SAPPCONTAINER
-    singularitypath = (char *) malloc(strlen(sappdir) + 13);
-    snprintf(singularitypath, strlen(sappdir) + 13, "%s/singularity", sappdir);
+    // Check the singularity within the CONTAINERPATH
+    singularitypath = (char *) malloc(strlen(containerpath) + 13);
+    snprintf(singularitypath, strlen(containerpath) + 13, "%s/singularity", containerpath);
     if ( stat(singularitypath, &singularitystat) < 0 ) {
         fprintf(stderr, "ERROR: Could not stat %s!\n", singularitypath);
         return(1);
     }
     if ( ! S_ISREG(singularitystat.st_mode) ) {
-        fprintf(stderr, "ERROR: The singularity is not found in SAPPCONTAINER!\n");
+        fprintf(stderr, "ERROR: The singularity is not found in CONTAINERPATH!\n");
         return(1);
     }
     if ( (int)singularitystat.st_uid != uid ) {
-        fprintf(stderr, "ERROR: Will not execute a singularity you don't own. (%d)!\n", (int)sappdirstat.st_uid);
+        fprintf(stderr, "ERROR: Will not execute a singularity you don't own. (%d)!\n", (int)containerpathstat.st_uid);
         return(255);
     }
     if ( ! (S_IXUSR & singularitystat.st_mode) ) {
@@ -143,10 +143,10 @@ int main(int argc, char **argv) {
     }
 
     // Populate paths for bind mounts
-    devpath = (char *) malloc(strlen(sappdir) + 5);
-    snprintf(devpath, strlen(sappdir) + 5, "%s/dev", sappdir);
-    procpath = (char *) malloc(strlen(sappdir) + 6);
-    snprintf(procpath, strlen(sappdir) + 6, "%s/proc", sappdir);
+    devpath = (char *) malloc(strlen(containerpath) + 5);
+    snprintf(devpath, strlen(containerpath) + 5, "%s/dev", containerpath);
+    procpath = (char *) malloc(strlen(containerpath) + 6);
+    snprintf(procpath, strlen(containerpath) + 6, "%s/proc", containerpath);
 
 
     // Create directories as neccessary
@@ -172,6 +172,18 @@ int main(int argc, char **argv) {
         return(255);
     }
 
+    // Recheck to see if we can stat the singularitypath as root
+    // This fails when home is exported with root_squash enabled
+    if ( stat(singularitypath, &singularitystat) < 0 ) {
+        fprintf(stderr, "ERROR: Could not stat %s as root!\n", singularitypath);
+        fprintf(stderr, "NOTE:  This maybe caused by root_squash on NFS, set environment\n");
+        fprintf(stderr, "NOTE:  variable 'SINGULARITY_CACHEDIR' and point to a different\n");
+        fprintf(stderr, "NOTE:  file system. For excample:\n\n");
+        fprintf(stderr, "NOTE:  SINGULARITY_CACHEDIR\"=/var/tmp/singularity.`uid -u`\"\n");
+        fprintf(stderr, "NOTE:  export SINGULARITY_CACHEDIR\n\n");
+        return(1);
+    }
+
     // Mount /dev
     if ( mount("/dev", devpath, NULL, MS_BIND, NULL) != 0 ) {
         fprintf(stderr, "ERROR: Could not bind mount %s\n", devpath);
@@ -195,8 +207,8 @@ int main(int argc, char **argv) {
         }
 
         // Do the chroot
-        if ( chroot(sappdir) != 0 ) {
-            fprintf(stderr, "ERROR: failed enter SAPPCONTAINER: %s\n", sappdir);
+        if ( chroot(containerpath) != 0 ) {
+            fprintf(stderr, "ERROR: failed enter CONTAINERPATH: %s\n", containerpath);
             return(255);
         }
 

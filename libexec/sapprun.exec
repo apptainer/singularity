@@ -23,12 +23,17 @@ else
 fi
 
 
+if [ -z "$CACHEDIR" ]; then
+    message 0 "ERROR: CACHEDIR is not properly defined\n"
+    exit 1
+fi
+
+
 SAPPFILE="$1"
 SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
 USERID=`id -u`
-SAPPCACHE="/tmp/"
-SAPPDIR=`mktemp -d "$SAPPCACHE/.sapprun-$USERID.XXXXXXXXX"`
-export SAPPCACHE SAPPDIR SAPPNAME SAPPFILE
+SAPPDIR=`mktemp -d "$TMPCACHEDIR/.sapprun-$USERID.XXXXXXXXX"`
+export SAPPDIR SAPPNAME SAPPFILE
 shift
 
 if [ -z "$SAPPFILE" ]; then
@@ -55,9 +60,9 @@ if ! run_module sappdir_explode; then
 fi
 
 
-SAPPCONTAINER="$SAPPDIR/c"
+CONTAINERPATH="$SAPPDIR/c"
 SINGULARITY_COMMAND="run"
-export SAPPCONTAINER SINGULARITY_COMMAND
+export CONTAINERPATH SINGULARITY_COMMAND
 
 message 2 "Exec'ing Sexec\n"
 exec "$libexecdir/singularity/sexec" "$@" <&0 &

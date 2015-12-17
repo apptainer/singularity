@@ -22,19 +22,14 @@ else
     exit 1
 fi
 
-if [ -z "$SAPPFILE" ]; then
-    message 0 "SAPP output file not passed\n"
-    exit 1
-fi
-
 if [ -z "$SAPPDIR" ]; then
     message 0 "SAPPDIR not given\n"
     exit 1
 fi
 
-
-if [ -f "$SAPPDIR/pids" -a ! -s "$SAPPDIR/pids" ]; then
-    message 2 "SAPPDIR is not idle\n"
+if [ -d "$SAPPDIR/c" ]; then
+    exit 0
+else
     exit 1
 fi
 

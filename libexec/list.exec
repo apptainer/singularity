@@ -23,15 +23,19 @@ else
 fi
 
 
+if [ -z "$CACHEDIR" ]; then
+    message 0 "ERROR: CACHEDIR is not properly defined\n"
+    exit 1
+fi
+
+
 COMMAND="$1"
-SAPPCACHE="$HOME/.sapp-cache"
 RETVAL=0
-export SAPPCACHE RETVAL COMMAND
+export COMMAND
 shift
 
-
 printf "%-20s %10s %s\n" "CONTAINER NAME" "SIZE (k)" "SUMMARY"
-for i in $SAPPCACHE/*/c/singularity; do
+for i in $CACHEDIR/*/c/singularity; do
     if [ -f "$i" ]; then
         CONTAINER=`dirname "$i"`
         SAPPDIR=`dirname "$CONTAINER"`
