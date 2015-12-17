@@ -41,47 +41,44 @@ if [ ! -d "$SAPPDIR/c" ]; then
     fi
 fi
 
+INCLUDE_FILES0="/bin/sh"
 
-DEBUGOS_FILES="arch basename cat cksum cp date dd df du echo env expand expr
-false find groups head hostid id install join link ln ls md5sum mkdir mkfifo
-mknod mktemp mv nice nl nohup nproc numfmt od pathchk ps top printenv printf
-pwd readlink realpath rm rmdir runcon seq sha1sum sha224sum sha256sum
-sha384sum sha512sum sleep sort split stat stdbuf strace stty sum sync tac
-tail tee test touch tr true tty uname unexpand uniq unlink users vdir wc who
-whoami yes vi /etc/terminfo /usr/share/terminfo"
+INCLUDE_FILES1="strace"
+
+INCLUDE_FILES2="arch cat cp date find id pwd ls ps stat touch uname"
+
+INCLUDE_FILES3="basename cksum dd df du env expand expr false groups head
+hostid install join link ln ls md5sum mkdir mkfifo mknod mktemp mv nice
+nl nohup nproc numfmt od pathchk top printenv printf readlink realpath rm
+rmdir runcon seq sort split stdbuf stty sum sync tac tail tee test tr
+true tty unexpand uniq unlink users vdir wc who whoami yes vi
+/etc/terminfo /usr/share/terminfo"
+
+DEBUGOS=`get_key_from_conf "debugos" "$SAPPSPEC"`
+
+case ${DEBUGOS:-1} in
+    no|0)   INCLUDE_FILES="$INCLUDE_FILES0" ;;
+    1)      INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1" ;;
+    2)      INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1 $INCLUDE_FILES2" ;;
+    yes|3)  INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1 $INCLUDE_FILES2 $INCLUDE_FILES3" ;;
+    *)      INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1" ;;
+esac
 
 
-# Things we always just must have
-message 1 "Evaluating: hard requirements\n"
-for i in "/bin/sh"; do
-    if [ -f "$i" ]; then
+# Build a base mini distro
+for i in $INCLUDE_FILES; do
+    if FILE=`which $i 2>/dev/null`; then
+        if ! copy_file_to_sappdir "$FILE"; then
+            message 0 "Error: failed processing requires: $FILE\n"
+            exit 1
+        fi
+    elif [ -e "$i" ]; then
         if ! copy_file_to_sappdir "$i"; then
             message 0 "Error: failed processing requires: $i\n"
             exit 1
         fi
     fi
 done
-if [ "$?" -ne "0" ]; then
-    exit 1
-fi
-
-# Build a base mini distro
-DEBUGOS=`get_key_from_conf "debugos" "$SAPPSPEC"`
-if [ -n "$DEBUGOS" -a "$DEBUGOS" != "0" -a "$DEBUGOS" != "no" ]; then
-    for i in $DEBUGOS_FILES; do
-        if FILE=`which $i 2>/dev/null`; then
-            if ! copy_file_to_sappdir "$FILE"; then
-                message 0 "Error: failed processing requires: $FILE\n"
-                exit 1
-            fi
-        elif [ -e "$i" ]; then
-            if ! copy_file_to_sappdir "$i"; then
-                message 0 "Error: failed processing requires: $i\n"
-                exit 1
-            fi
-        fi
-    done
-fi
 if [ "$?" -ne "0" ]; then
     exit 1
 fi
