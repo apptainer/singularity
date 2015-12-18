@@ -1,25 +1,23 @@
 #!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
 
+
+HEADER_END="SINGULARITY_END_HEADER"
 
 
 if [ -z "$MESSAGELEVEL" ]; then
     /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     MESSAGELEVEL=5
 fi
-
-HEADER_END="SINGULARITY_END_HEADER"
-
-if [ -n "$SINGULARITY_CACHEDIR" ]; then
-    USERNAME=`id -un`
-    CACHEDIR="$SINGULARITY_CACHEDIR/$USERNAME/sapp-cache"
-    TMPCACHEDIR="$SINGULARITY_CACHEDIR/$USERNAME/tmp"
-else
-    CACHEDIR="$HOME/.sapp-cache"
-    TMPCACHEDIR="/tmp"
-fi
-
-export CACHEDIR TMPCACHEDIR HEADER_END
-
 
 GRAY=`tput dim`
 RED=`tput setaf 1`
@@ -171,6 +169,41 @@ run_module() {
     return $RETVAL
 }
 
+
+### Do logical things here ###
+
+
+if [ -n "$SINGULARITY_CACHEDIR" ]; then
+    USERNAME=`id -un`
+    CACHEDIR="$SINGULARITY_CACHEDIR/sapp-cache.$USERNAME"
+    TMPCACHEDIR="$SINGULARITY_CACHEDIR/tmp"
+else
+    CACHEDIR="$HOME/.sapp-cache"
+    TMPCACHEDIR="/tmp"
+fi
+
+message 2 "Using CACHEDIR=$CACHEDIR\n"
+message 2 "Using TMPCACHEDIR=$TMPCACHEDIR\n"
+
+if [ ! -d "$CACHEDIR" ]; then
+    message 2 "Creating CACHEDIR: $CACHEDIR\n"
+    if ! mkdir -p "$CACHEDIR"; then
+        message 0 "ERROR: Could not create CACHEDIR ($CACHEDIR)\n"
+        exit 1
+    fi
+fi
+if [ ! -d "$TMPCACHEDIR" ]; then
+    message 2 "Creating TMPCACHEDIR: $TMPCACHEDIR\n"
+    if ! mkdir -p "$TMPCACHEDIR"; then
+        message 0 "ERROR: Could not create CACHEDIR ($TMPCACHEDIR)\n"
+        exit 1
+    fi
+fi
+
+
+### Stop doing local things here ###
+
+export CACHEDIR TMPCACHEDIR HEADER_END
 
 if [ "$DEBUG" = "1" ]; then
     set -x
