@@ -27,16 +27,16 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "ERROR: INSTALLDIR not given\n"
     exit 1
 fi
 
 
 
-if [ ! -d "$SAPPDIR/c" ]; then
-    if ! mkdir -p "$SAPPDIR/c" 2>/dev/null; then
-        message 0 "ERROR: Could not container directory $SAPPDIR/c\n";
+if [ ! -d "$INSTALLDIR/c" ]; then
+    if ! mkdir -p "$INSTALLDIR/c" 2>/dev/null; then
+        message 0 "ERROR: Could not container directory $INSTALLDIR/c\n";
         exit 1
     fi
 fi
@@ -51,7 +51,7 @@ get_section_from_conf "packages" $SAPPSPEC | while read pkg; do
     if [ -x "/usr/bin/rpm" ]; then
         if rpm -q "$pkg" >/dev/null 2>&1; then
             rpm -ql "$pkg" | while read i; do
-                if ! copy_file_to_sappdir "$i"; then
+                if ! install_file "$i"; then
                     message 0 "Error: failed processing file: $i\n"
                     exit 1
                 fi

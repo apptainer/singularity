@@ -32,15 +32,15 @@ if [ -z "$SAPPFILE" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "ERROR: INSTALLDIR not given\n"
     exit 1
 fi
 
 
 message 1 "Checking paths...\n"
-if [ ! -d "$SAPPDIR" ]; then
-    if ! mkdir -p "$SAPPDIR" 2>/dev/null; then
+if [ ! -d "$INSTALLDIR" ]; then
+    if ! mkdir -p "$INSTALLDIR" 2>/dev/null; then
         message 0 "ERROR: Could not create temporary directory\n";
         exit 1
     fi

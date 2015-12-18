@@ -27,15 +27,15 @@ if [ -z "$SAPPFILE" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "ERROR: INSTALLDIR not given\n"
     exit 1
 fi
 
 
 # These get added by Sexec during the %test
 message 1 "Cleaning up unpackaged files\n"
-rm -f $SAPPDIR/c/dev/*
+rm -f $INSTALLDIR/c/dev/*
 
 message 1 "Creating output SAPP container\n"
 echo "#!/usr/bin/env sapprun" > $SAPPFILE
@@ -44,7 +44,7 @@ echo "Summary: $SUMMARY" >> $SAPPFILE
 echo "$HEADER_END" >> $SAPPFILE
 
 
-(cd "$SAPPDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
+(cd "$INSTALLDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
 message 1 "WROTE: $SAPPFILE\n"
 
 chmod +x "$SAPPFILE"

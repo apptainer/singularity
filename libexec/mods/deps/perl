@@ -27,41 +27,41 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 1 "SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 1 "INSTALLDIR not given\n"
     exit 1
 fi
 
 
 RETVAL=1
 
-touch "$SAPPDIR/deps.perl"
+touch "$INSTALLDIR/deps.perl"
 
 message 2 "Searching for perl dependencies\n"
-for file in `cd "$SAPPDIR/c"; find . -type f -print`; do
-    if ! grep -qF "^$file$" "$SAPPDIR/deps.perl"; then
-        echo "$file" >> "$SAPPDIR/deps.perl"
+for file in `cd "$INSTALLDIR/c"; find . -type f -print`; do
+    if ! grep -qF "^$file$" "$INSTALLDIR/deps.perl"; then
+        echo "$file" >> "$INSTALLDIR/deps.perl"
         message 5 "scanning executable perl file for deps: $file\n"
-        egrep "^\s*use " "$SAPPDIR/c/$file" | sed 's/\s*use\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
+        egrep "^\s*use " "$INSTALLDIR/c/$file" | sed 's/\s*use\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
             if FILE=`perldoc -l $i 2>/dev/null`; then
-                if [ ! -f "$SAPPDIR/c/$FILE" ]; then
-                    copy_file_to_sappdir "$FILE"
+                if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
+                    install_file "$FILE"
                     RETVAL=0
                 fi
             fi
         done
-        egrep "^\s*no " "$SAPPDIR/c/$file" | sed 's/\s*no\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
+        egrep "^\s*no " "$INSTALLDIR/c/$file" | sed 's/\s*no\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
             if FILE=`perldoc -l $i 2>/dev/null`; then
-                if [ ! -f "$SAPPDIR/c/$FILE" ]; then
-                    copy_file_to_sappdir "$FILE"
+                if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
+                    install_file "$FILE"
                     RETVAL=0
                 fi
             fi
         done
-        egrep "^\s*require " "$SAPPDIR/c/$file" | sed 's/\s*require\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
+        egrep "^\s*require " "$INSTALLDIR/c/$file" | sed 's/\s*require\s*//' | sed 's/\s.*$//' | sed 's/;.*//' | while read i; do
             if FILE=`perldoc -l $i 2>/dev/null`; then
-                if [ ! -f "$SAPPDIR/c/$FILE" ]; then
-                    copy_file_to_sappdir "$FILE"
+                if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
+                    install_file "$FILE"
                     RETVAL=0
                 fi
             fi

@@ -10,25 +10,6 @@
 # 
 # 
 
-if [ -z "$libexecdir" ]; then
-    echo "Could not identify the Singularity libexecdir."
-    exit 1
-fi
-
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
-else
-    echo "Error loading functions: $libexecdir/singularity/functions"
-    exit 1
-fi
-
-
-if [ -z "$CACHEDIR" ]; then
-    message 0 "ERROR: CACHEDIR is not properly defined\n"
-    exit 1
-fi
-
-
 while true; do
     case $1 in
         -c|--contain)
@@ -37,8 +18,8 @@ while true; do
             shift
         ;;
         -s|--check)
-            SINGULARITY_CHECK=1
-            export SINGULARITY_CHECK
+            FILE_CHECK=1
+            export FILE_CHECK
             shift
         ;;
         -*)
@@ -51,39 +32,52 @@ while true; do
     esac
 done
 
-
 SAPPNAME="$1"
-SAPPDIR="$CACHEDIR/$SAPPNAME"
-export SAPPDIR SAPPNAME
+SINGULARITY_COMMAND="run"
+export SAPPNAME SINGULARITY_COMMAND
 shift
 
 if [ -z "$SAPPNAME" ]; then
-    message 0 "USAGE: singularity (options) run [SAPP Name] (SAPP options)\n"
+    echo "USAGE: singularity (options) run [container name] (options)\n"
     exit 1
 fi
 
-if [ ! -x "$libexecdir/singularity/sexec" ]; then
-    message 0 "ERROR: Sexec not found\n"
+
+## Basic sanity
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
     exit 1
 fi
 
-message 2 "Running '$SAPPNAME'\n"
+## Load functions
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
 
-if ! run_module sappdir_exists; then
+## Check required bits
+if [ -z "$CACHEDIR" ]; then
+    message 0 "ERROR: CACHEDIR is not properly defined\n"
+    exit 1
+fi
+
+if ! sappname_exists "$SAPPNAME"; then
     message 0 "ERROR: '$SAPPNAME' is not installed\n"
     exit 1
 fi
 
-if [ -n "$SINGULARITY_CHECK" ]; then
+
+## Do the work
+message 2 "Running '$SAPPNAME'\n"
+
+if [ -n "$FILE_CHECK" ]; then
     if ! run_module sappdir_filecheck; then
         message 0 "Not executing container...\n"
         exit 1
     fi
 fi
-
-CONTAINERPATH="$SAPPDIR/c"
-SINGULARITY_COMMAND="run"
-export CONTAINERPATH SINGULARITY_COMMAND
 
 message 2 "Exec'ing Sexec\n"
 exec "$libexecdir/singularity/sexec" "$@" <&0

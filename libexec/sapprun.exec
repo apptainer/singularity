@@ -10,11 +10,29 @@
 # 
 # 
 
+SAPPFILE="$1"
+USERID=`id -u`
+export SAPPFILE
+shift
+
+if [ -z "$SAPPFILE" ]; then
+    echo "USAGE: singularity (options) sapprun [SAPP file] (options...)\n"
+    exit 1
+fi
+
+if [ ! -f "$SAPPFILE" ]; then
+    echo "ERROR: SAPP file ($SAPPFILE) not found\n"
+    exit 1
+fi
+
+
+## Basic sanity
 if [ -z "$libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
     exit 1
 fi
 
+## Load functions
 if [ -f "$libexecdir/singularity/functions" ]; then
     . "$libexecdir/singularity/functions"
 else
@@ -22,55 +40,36 @@ else
     exit 1
 fi
 
-
-if [ -z "$CACHEDIR" ]; then
-    message 0 "ERROR: CACHEDIR is not properly defined\n"
+## Check required bits
+if [ -z "$SAPPNAME" ]; then
+    message 0 "ERROR: Could not determine SAPPNAME\n"
     exit 1
 fi
 
 
-SAPPFILE="$1"
-SAPPNAME=`echo $SAPPFILE | sed -e 's@.sapp$@@'`
-USERID=`id -u`
-SAPPDIR=`mktemp -d "$TMPCACHEDIR/.sapprun-$USERID.XXXXXXXXX"`
-export SAPPDIR SAPPNAME SAPPFILE
-shift
-
-if [ -z "$SAPPFILE" ]; then
-    message 0 "USAGE: singularity (options) sapprun [SAPP file] (options)\n"
-    exit 1
-fi
-
-if [ ! -f "$SAPPFILE" ]; then
-    message 0 "ERROR: SAPP file ($SAPPFILE) not found\n"
-    exit 1
-fi
-
-
-if [ ! -x "$libexecdir/singularity/sexec" ]; then
-    message 0 "ERROR: Sexec not found\n"
-    exit 1
-fi
+## Do the work
+trap true KILL INT QUIT
 
 message 2 "Running '$SAPPNAME'\n"
 
+# (re)define some variables for temporary envrionment
+SAPPDIR=`mktemp -d "$TMPCACHEDIR/.sapprun-$USERID.XXXXXXXXX"`
+INSTALLDIR="$SAPPDIR"
+CONTAINERPATH="$SAPPDIR/c"
+SINGULARITY_COMMAND="run"
+export CONTAINERPATH SINGULARITY_COMMAND INSTALLDIR SAPPDIR
 
-trap true KILL INT QUIT
-
+message 2 "Installing SAPPFILE into: $INSTALLDIR\n"
 if ! run_module sappdir_explode; then
     exit 255
 fi
 
-
-CONTAINERPATH="$SAPPDIR/c"
-SINGULARITY_COMMAND="run"
-export CONTAINERPATH SINGULARITY_COMMAND
-
-message 2 "Exec'ing Sexec\n"
+message 2 "Exec'ing Sexec in: $CONTAINERPATH\n"
 exec "$libexecdir/singularity/sexec" "$@" <&0 &
 
 wait
 
+message 2 "Deleting SAPPDIR at: $SAPPDIR\n"
 if ! run_module sappdir_delete; then
     exit 255
 fi

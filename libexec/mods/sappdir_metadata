@@ -27,24 +27,24 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "ERROR: INSTALLDIR not given\n"
     exit 1
 fi
 
 
 message 1 "Including SAPPFILE\n"
-cat "$SAPPSPEC" > "$SAPPDIR/spec"
+cat "$SAPPSPEC" > "$INSTALLDIR/spec"
 
 message 1 "Calculating container size\n"
-du -sk "$SAPPDIR/c" | cut -f 1 > "$SAPPDIR/size"
+du -sk "$INSTALLDIR/c" | cut -f 1 > "$INSTALLDIR/size"
 
 message 1 "Calculating checksums\n"
-(cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
+(cd "$INSTALLDIR/c"; find . -type f | xargs md5sum) > "$INSTALLDIR/files"
 
 message 1 "Writing metadata\n"
-get_key_from_conf "Summary" "$SAPPSPEC" > "$SAPPDIR/summary"
-get_key_from_conf "Maintainer" "$SAPPSPEC" > "$SAPPDIR/maintainer"
+get_key_from_conf "Summary" "$SAPPSPEC" > "$INSTALLDIR/summary"
+get_key_from_conf "Maintainer" "$SAPPSPEC" > "$INSTALLDIR/maintainer"
 
 
 exit 0

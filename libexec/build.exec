@@ -10,24 +10,6 @@
 # 
 # 
 
-if [ -z "$libexecdir" ]; then
-    echo "Could not identify the Singularity libexecdir."
-    exit 1
-fi
-
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
-else
-    echo "Error loading functions: $libexecdir/singularity/functions"
-    exit 1
-fi
-
-if [ -z "$1" ]; then
-    message 0 "USAGE: singularity (options) build [SAPP specfile] (SAPP target)\n"
-    exit 1
-fi
-
-
 while true; do
     case $1 in
         --notest)
@@ -45,22 +27,51 @@ while true; do
     esac
 done
 
+SAPPSPEC="$1"
+SAPPFILE="$2"
+export SAPPSPEC SAPPFILE
 
-if [ ! -f "$1" ]; then
-    message 0 "SAPP specfile not found\n"
+if [ -z "$SAPPSPEC" ]; then
+    echo "USAGE: singularity (options) build [specfile] (target)\n"
+    exit 1
+fi
+
+if [ ! -f "$SAPPSPEC" ]; then
+    echo "SAPP specfile not found\n"
     exit 1
 fi
 
 
-SAPPSPEC="$1"
-SAPPFILE="$2"
+
+## Basic sanity
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+## Check required bits
+if [ -z "$CACHEDIR" ]; then
+    message 0 "ERROR: CACHEDIR is not properly defined\n"
+    exit 1
+fi
+
+
+## Do the work
 RETVAL=0
 NAME=`get_key_from_conf "Name" $SAPPSPEC`
 SUMMARY=`get_key_from_conf "Summary" $SAPPSPEC`
-SAPPDIR=`mktemp -d /tmp/.singularity.XXXXXXX`
+INSTALLDIR=`mktemp -d /tmp/.singularity.XXXXXXX`
 MODULES="build_sanity install_pkgs install_confs install_files install_deps sappdir_postscript sappdir_metadata install_runscripts build_test sappdir_archive"
 
-export SAPPSPEC SAPPFILE RETVAL SAPPDIR
+export INSTALLDIR
 
 
 if [ -n "$NAME" ]; then
@@ -87,7 +98,7 @@ else
 fi
 
 message 1 "Building: $NAME\n"
-message 2 "Working directory: $SAPPDIR\n"
+message 2 "Install directory: $INSTALLDIR\n"
 message 2 "Output file: $SAPPFILE\n"
 
 
@@ -108,9 +119,9 @@ for module in $MODULES; do
 done
 
 if [ -z "$DEBUG" ]; then
-    rm -rf "$SAPPDIR"
+    rm -rf "$INSTALLDIR"
 else
-    message 5 "Working directory at: $SAPPDIR\n"
+    message 1 "Install directory left at: $INSTALLDIR\n"
 fi
 
 

@@ -27,13 +27,13 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "ERROR: INSTALLDIR not given\n"
     exit 1
 fi
 
-BUILDROOT="$SAPPDIR/c"
-export BUILDROOT
+INSTALLROOT="$INSTALLDIR/c"
+export INSTALLROOT
 
 message 2 "Running post scriptlet\n"
 get_section_from_conf "post" "$SAPPSPEC" | /bin/sh -x

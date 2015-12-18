@@ -27,20 +27,20 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "ERROR: INSTALLDIR not given\n"
     exit 1
 fi
 
-LIB_SEARCH_PATH=`cd $SAPPDIR/c; find . -name "lib*.so*" -type f | xargs -n 1 dirname | sort | uniq | sed -e 's/^\.//' | tr '\n' ':'`
+LIB_SEARCH_PATH=`cd "$INSTALLDIR/c"; find . -name "lib*.so*" -type f | xargs -n 1 dirname 2>/dev/null | sort | uniq | sed -e 's/^\.//' | tr '\n' ':'`
 
 message 1 "Building primary singularity exec driver\n"
-if ! touch "$SAPPDIR/c/singularity" 2>/dev/null; then
+if ! touch "$INSTALLDIR/c/singularity" 2>/dev/null; then
     message 0 "ERROR: Could not create runscript driver\n"
     exit 1
 fi
 
-cat <<EOF > "$SAPPDIR/c/singularity"
+cat <<EOF > "$INSTALLDIR/c/singularity"
 #!/bin/sh
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
 LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:$LIB_SEARCH_PATH"
@@ -86,25 +86,25 @@ EOF
 
 
 message 1 "Building singularity test runscript\n"
-echo "#!/bin/sh" > "$SAPPDIR/c/singularity.test"
-echo "set -x" >> "$SAPPDIR/c/singularity.test"
-if get_section_from_conf "test" "$SAPPSPEC" >> "$SAPPDIR/c/singularity.test"; then
-    chmod 755 "$SAPPDIR/c/singularity.test"
+echo "#!/bin/sh" > "$INSTALLDIR/c/singularity.test"
+echo "set -x" >> "$INSTALLDIR/c/singularity.test"
+if get_section_from_conf "test" "$SAPPSPEC" >> "$INSTALLDIR/c/singularity.test"; then
+    chmod 755 "$INSTALLDIR/c/singularity.test"
 else
-    rm -f "$SAPPDIR/c/singularity.test"
+    rm -f "$INSTALLDIR/c/singularity.test"
 fi
 
 
 message 1 "Building singularity main runscript\n"
-echo "#!/bin/sh" > "$SAPPDIR/c/singularity.exec"
-if ! get_section_from_conf "runscript" "$SAPPSPEC" >> "$SAPPDIR/c/singularity.exec"; then
+echo "#!/bin/sh" > "$INSTALLDIR/c/singularity.exec"
+if ! get_section_from_conf "runscript" "$SAPPSPEC" >> "$INSTALLDIR/c/singularity.exec"; then
     message 2 "generating a basic singularity runscript\n"
     if OUTPUT=`get_key_from_conf "exec" "$SAPPSPEC"`; then
         echo "$OUTPUT" | while read prog args; do
             if [ -n "$args" ]; then
-                echo "exec \"$prog\" \"$args\" \"\$@\"" >> "$SAPPDIR/c/singularity.exec"
+                echo "exec \"$prog\" \"$args\" \"\$@\"" >> "$INSTALLDIR/c/singularity.exec"
             else
-                echo "exec \"$prog\" \"\$@\"" >> "$SAPPDIR/c/singularity.exec"
+                echo "exec \"$prog\" \"\$@\"" >> "$INSTALLDIR/c/singularity.exec"
             fi
             break
         done
@@ -114,8 +114,8 @@ if ! get_section_from_conf "runscript" "$SAPPSPEC" >> "$SAPPDIR/c/singularity.ex
     fi
 fi
 
-rm -f "$SAPPDIR/c/singularity.runscript"
-chmod 755 "$SAPPDIR/c/singularity"
-chmod 755 "$SAPPDIR/c/singularity.exec"
+rm -f "$INSTALLDIR/c/singularity.runscript"
+chmod 755 "$INSTALLDIR/c/singularity"
+chmod 755 "$INSTALLDIR/c/singularity.exec"
 
 exit 0

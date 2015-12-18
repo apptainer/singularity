@@ -27,8 +27,8 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 1 "SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 1 "INSTALLDIR not given\n"
     exit 1
 fi
 
@@ -39,15 +39,15 @@ INCLUDE_LIBS="libnss_files.so.* libnss_dns.so.* libresolv.so.*"
 RETVAL=1
 
 
-if [ ! -f "$SAPPDIR/deps.ldd" ]; then
+if [ ! -f "$INSTALLDIR/deps.ldd" ]; then
     message 2 "Including statically defined libraries\n"
     for name in $INCLUDE_LIBS; do
         for path in `ld --verbose | grep SEARCH_DIR | sed 's/SEARCH_DIR("\([^"]\+\)"); */\1 /g'`; do
             if dep=`ls $path/$name 2>/dev/null`; then
                 if [ -f "$dep" ]; then
                     message 3 "found dependency:      $dep\n"
-                    if [ ! -f "$SAPPDIR/c/$dep" ]; then
-                        copy_file_to_sappdir "$dep"
+                    if [ ! -f "$INSTALLDIR/c/$dep" ]; then
+                        install_file "$dep"
                         RETVAL=0
                     fi
                     break
@@ -57,22 +57,22 @@ if [ ! -f "$SAPPDIR/deps.ldd" ]; then
     done
 fi
 
-touch "$SAPPDIR/deps.ldd"
+touch "$INSTALLDIR/deps.ldd"
 
 message 2 "Searching for library dependencies\n"
-for file in `cd "$SAPPDIR/c"; find . -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
-    if ! grep -qF "^$file$" "$SAPPDIR/deps.ldd"; then
-        echo "$file" >> "$SAPPDIR/deps.ldd"
+for file in `cd "$INSTALLDIR/c"; find . -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
+    if ! grep -qF "^$file$" "$INSTALLDIR/deps.ldd"; then
+        echo "$file" >> "$INSTALLDIR/deps.ldd"
         message 5 "scanning executable file for dependencies: $file\n"
-        for dep in `ldd $SAPPDIR/c/$file | sed -e 's@ @\n@g'`; do
+        for dep in `ldd $INSTALLDIR/c/$file | sed -e 's@ @\n@g'`; do
             if [ -f "$dep" ]; then
                 message 3 "found dependency:      $dep\n"
-                if [ ! -f "$SAPPDIR/c/$dep" ]; then
+                if [ ! -f "$INSTALLDIR/c/$dep" ]; then
                     DIRNAME=`dirname $dep`
-                    if [ ! -d "$SAPPDIR/c/$DIRNAME" ]; then
+                    if [ ! -d "$INSTALLDIR/c/$DIRNAME" ]; then
                         LD_PATH="$DIRNAME:${LD_PATH}"
                     fi
-                    copy_file_to_sappdir "$dep"
+                    install_file "$dep"
                     RETVAL=0
                 fi
             fi

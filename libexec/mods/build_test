@@ -27,8 +27,8 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "ERROR: INSTALLDIR not given\n"
     exit 1
 fi
 
@@ -44,7 +44,7 @@ fi
 
 
 # Set the necessary bits for sexec and the singularity driver to run
-CONTAINERPATH="$SAPPDIR/c"
+CONTAINERPATH="$INSTALLDIR/c"
 SINGULARITY_COMMAND="test"
 export CONTAINERPATH SINGULARITY_COMMAND
 

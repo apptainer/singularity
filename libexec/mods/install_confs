@@ -27,23 +27,23 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "ERROR: INSTALLDIR not given\n"
     exit 1
 fi
 
 
 
-if [ ! -d "$SAPPDIR/c/etc" ]; then
-    if ! mkdir -p "$SAPPDIR/c/etc" 2>/dev/null; then
-        message 0 "ERROR: Could not create directory $SAPPDIR/c/etc\n"
+if [ ! -d "$INSTALLDIR/c/etc" ]; then
+    if ! mkdir -p "$INSTALLDIR/c/etc" 2>/dev/null; then
+        message 0 "ERROR: Could not create directory $INSTALLDIR/c/etc\n"
     fi
 fi
 
 
 message 1 "Creating template configs\n"
 message 1 "  /etc/nsswitch.conf\n";
-cat <<EOF > "$SAPPDIR/c/etc/nsswitch.conf"
+cat <<EOF > "$INSTALLDIR/c/etc/nsswitch.conf"
 passwd:     files sss
 shadow:     files sss
 group:      files sss
@@ -51,12 +51,12 @@ hosts:      files dns myhostname
 EOF
 
 message 1 "  /etc/resolv.conf\n";
-cat <<EOF > "$SAPPDIR/c/etc/resolv.conf"
+cat <<EOF > "$INSTALLDIR/c/etc/resolv.conf"
 nameserver 8.8.8.8
 EOF
 
 message 1 "  /etc/hosts\n";
-cat <<EOF > "$SAPPDIR/c/etc/hosts"
+cat <<EOF > "$INSTALLDIR/c/etc/hosts"
 127.0.0.1 localhost
 EOF
 

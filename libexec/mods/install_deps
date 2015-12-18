@@ -27,8 +27,8 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "INSTALLDIR not given\n"
     exit 1
 fi
 

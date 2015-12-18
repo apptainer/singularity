@@ -27,16 +27,15 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 0 "ERROR: INSTALLDIR not given\n"
     exit 1
 fi
 
 
-
-if [ ! -d "$SAPPDIR/c" ]; then
-    if ! mkdir -p "$SAPPDIR/c" 2>/dev/null; then
-        message 0 "ERROR: Could not container directory $SAPPDIR/c\n";
+if [ ! -d "$INSTALLDIR/c" ]; then
+    if ! mkdir -p "$INSTALLDIR/c" 2>/dev/null; then
+        message 0 "ERROR: Could not container directory $INSTALLDIR/c\n";
         exit 1
     fi
 fi
@@ -61,6 +60,7 @@ case ${DEBUGOS:-1} in
     1)      INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1" ;;
     2)      INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1 $INCLUDE_FILES2" ;;
     yes|3)  INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1 $INCLUDE_FILES2 $INCLUDE_FILES3" ;;
+    [0-9]*) INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1 $INCLUDE_FILES2 $INCLUDE_FILES3" ;;
     *)      INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1" ;;
 esac
 
@@ -68,12 +68,12 @@ esac
 # Build a base mini distro
 for i in $INCLUDE_FILES; do
     if FILE=`which $i 2>/dev/null`; then
-        if ! copy_file_to_sappdir "$FILE"; then
+        if ! install_file "$FILE"; then
             message 0 "Error: failed processing requires: $FILE\n"
             exit 1
         fi
     elif [ -e "$i" ]; then
-        if ! copy_file_to_sappdir "$i"; then
+        if ! install_file "$i"; then
             message 0 "Error: failed processing requires: $i\n"
             exit 1
         fi
@@ -87,7 +87,7 @@ fi
 message 1 "Evaluating: Exec\n"
 get_key_from_conf "exec" "$SAPPSPEC" | while read prog args; do
     if FULLFILE=`which "$prog" 2>/dev/null`; then
-        copy_file_to_sappdir "$FULLFILE"
+        install_file "$FULLFILE"
     else
         message 0 "Error: failed processing program: $prog\n"
         exit 1
@@ -101,7 +101,7 @@ fi
 message 1 "Evaluating: %files\n"
 get_section_from_conf "files" "$SAPPSPEC" | while read file dir; do
     if [ -n "$file" ]; then
-        if ! copy_file_to_sappdir "$file" "$dir"; then
+        if ! install_file "$file" "$dir"; then
             message 0 "Error: failed processing file: $a\n"
             exit 1
         fi

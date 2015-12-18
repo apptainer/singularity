@@ -27,8 +27,8 @@ if [ -z "$SAPPSPEC" ]; then
     exit 1
 fi
 
-if [ -z "$SAPPDIR" ]; then
-    message 1 "SAPPDIR not given\n"
+if [ -z "$INSTALLDIR" ]; then
+    message 1 "INSTALLDIR not given\n"
     exit 1
 fi
 
@@ -36,12 +36,12 @@ fi
 RETVAL=1
 
 message 2 "Searching for needed interpreters\n"
-for file in `find "$SAPPDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
+for file in `find "$INSTALLDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
     message 5 "Scanning executable file for shebang: $file\n"
     INT=`head -n 1 $file | grep "^#\!/" | sed 's@#!\([^ ]*\).*@\1@'`
     if [ -f "$INT" ]; then
-        if [ ! -f "$SAPPDIR/c/$INT" ]; then
-            copy_file_to_sappdir "$INT"
+        if [ ! -f "$INSTALLDIR/c/$INT" ]; then
+            install_file "$INT"
             RETVAL=0
         fi
     fi
