@@ -60,7 +60,7 @@ SINGULARITY_COMMAND="run"
 export CONTAINERPATH SINGULARITY_COMMAND INSTALLDIR SAPPDIR
 
 message 2 "Installing SAPPFILE into: $INSTALLDIR\n"
-if ! run_module sappdir_explode; then
+if ! run_module sappfile_install; then
     exit 255
 fi
 
