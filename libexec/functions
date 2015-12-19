@@ -144,16 +144,32 @@ check_pattern() {
 
 cmd() {
     MSG=`/bin/echo "$*" | cut -c 1-68`
-    message 5 " + $MSG"
+    message 2 " + $MSG"
     "$@" >/dev/null 2>&1
     RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
-        message 5 "\\033[77G${GREEN}OK${NORMAL}\n"
+        message 2 "\\033[77G${GREEN}OK${NORMAL}\n"
     else
-        message 5 "\\033[74G${RED}ERROR${NORMAL}\n"
+        message 2 "\\033[74G${RED}ERROR${NORMAL}\n"
     fi
     return $RETVAL
 }
+
+
+exe() {
+    ERROR="$1"
+    shift
+    cmd "$@"
+    CODE="$?"
+    if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
+        echo "ERROR: '$@' = $CODE"
+        exit 1
+    elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
+        echo "ERROR: '$@' = $CODE"
+        exit 1
+    fi
+}
+
 
 
 run_module() {
