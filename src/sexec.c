@@ -254,10 +254,12 @@ int main(int argc, char **argv) {
         }
 
     } else if ( child_pid > 0 ) {
+        int tmpstatus;
         signal(SIGINT, sighandler);
         signal(SIGKILL, sighandler);
 
-        waitpid(child_pid, &retval, 0);
+        waitpid(child_pid, &tmpstatus, 0);
+        retval = WEXITSTATUS(tmpstatus);
     } else {
         fprintf(stderr, "ERROR: Could not fork child process\n");
         retval++;
