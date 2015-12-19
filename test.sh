@@ -11,32 +11,16 @@ if [ ! -f "libexec/functions" ]; then
 fi
 
 MESSAGELEVEL=2
-export MESSAGELEVEL
+TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
+SINGULARITY_CACHEDIR="$TEMPDIR"
+export SINGULARITY_CACHEDIR MESSAGELEVEL
 
 . ./libexec/functions
 
-exe1() {
-    ERROR="$1"
-    shift
-    echo -ne "+ $@\n"
-    $@
-    CODE="$?"
-    if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
-        echo "ERROR: '$@' = $CODE"
-        exit 1
-    elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
-        echo "ERROR: '$@' = $CODE"
-        exit 1
-    fi
-}
 
-TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
-SINGULARITY_CACHEDIR="$TEMPDIR"
-
-export SINGULARITY_CACHEDIR
 
 echo "Gaining/checking sudo access..."
-exe 0 sudo true
+sudo true
 
 echo "Building/Installing Singularity to temporary directory"
 exe 0 sh ./autogen.sh --prefix="$TEMPDIR"
@@ -68,6 +52,10 @@ exe 0 singularity install cat.sapp
 exe 0 singularity list
 exe 0 singularity check cat
 exe 0 singularity run cat example.sspec
+exe 0 singularity run cat /etc/hosts
+exe 0 singularity run cat /etc/resolv.conf
+exe 1 singularity run cat /etc/passwd
+exe 1 singularity run cat /etc/shadow
 echo "Testing pipeline"
 if ! cat example.sspec | singularity run cat | grep -q '^Name'; then
     echo "failed: cat example.sspec | singularity run cat | grep -q '^Name'"
@@ -79,6 +67,23 @@ echo "echo hello world" | exe 0 singularity shell cat
 exe 0 singularity delete cat
 exe 1 singularity list
 
+echo "Testing base Singularity functions"
+exe 0 singularity
+exe 0 singularity help
+exe 0 singularity help build
+exe 0 singularity help check
+exe 0 singularity help delete
+exe 0 singularity help help
+exe 0 singularity help install
+exe 0 singularity help list
+exe 0 singularity help run
+exe 0 singularity help shell
+exe 0 singularity help specgen
+exe 0 singularity help strace
+exe 1 singularity help blahblah
+exe 0 singularity -h
+exe 0 singularity --help
+exe 0 singularity --version
 
 
 
@@ -86,3 +91,8 @@ exe 1 singularity list
 echo "Cleaning up"
 exe 0 popd
 exe 0 rm -rf "$TEMPDIR/tmp"
+exe 0 make maintainer-clean
+
+echo
+echo "Done. All tests completed successfully"
+echo
