@@ -7,7 +7,6 @@ EXTRA_DIST = LICENSE README NEWS ChangeLog singularity.spec
 
 
 install-perms: install
-	sudo chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec_prep
 	sudo chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec
 	sudo chmod +s $(DESTDIR)$(libexecdir)/singularity/sexec
 
