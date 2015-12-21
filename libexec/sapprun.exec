@@ -67,10 +67,13 @@ fi
 message 2 "Exec'ing Sexec in: $CONTAINERPATH\n"
 exec "$libexecdir/singularity/sexec" "$@" <&0 &
 
-wait
+wait $!
+EXITVAL="$?"
 
 message 2 "Deleting SAPPDIR at: $SAPPDIR\n"
 if ! run_module sappdir_delete; then
     exit 255
 fi
 
+
+exit "$EXITVAL"
