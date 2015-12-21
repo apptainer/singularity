@@ -31,14 +31,17 @@ NORMAL=`tput sgr0`
 
 
 message() {
-    LEVEL=$1
+    LEVEL="$1"
+    shift
+    MESSAGE="$1"
+    shift
     if [ "$LEVEL" -eq "0" ]; then
-        /bin/echo -ne "${RED}$2${NORMAL}" 1>&2
+        printf "${RED}$MESSAGE${NORMAL}" "$@" 1>&2
     elif [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
         if [ "$LEVEL" -eq "1" ]; then
-            /bin/echo -ne "${NORMAL}$2${NORMAL}"
+            printf "${NORMAL}$MESSAGE${NORMAL}" "$@"
         else
-            /bin/echo -ne "${GRAY}$2${NORMAL}"
+            printf "${GRAY}$MESSAGE${NORMAL}" "$@"
         fi
     fi
     return
@@ -143,30 +146,32 @@ check_pattern() {
 }
 
 cmd() {
-    MSG=`/bin/echo "$*" | cut -c 1-68`
-    message 2 " + $MSG"
+    message 1 " + %-68.68s" "$*"
     "$@" >/dev/null 2>&1
     RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
-        message 2 "\\033[77G${GREEN}OK${NORMAL}\n"
+        message 2 "${GREEN}OK${NORMAL}\n"
     else
-        message 2 "\\033[74G${RED}ERROR${NORMAL}\n"
+        message 2 "${RED}ERROR${NORMAL}\n"
     fi
     return $RETVAL
 }
 
 
-exe() {
+stest() {
     ERROR="$1"
     shift
-    cmd "$@"
+    message 1 " + %-60.60s " "$*"
+    "$@" >/dev/null 2>&1
     CODE="$?"
     if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
-        echo "ERROR: '$@' = $CODE"
+        message 1 "%10s ${RED}ERROR${NORMAL}\n" "(retval=$CODE)"
         exit 1
     elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
-        echo "ERROR: '$@' = $CODE"
+        message 1 "%10s ${RED}ERROR${NORMAL}\n" "(retval=$CODE)"
         exit 1
+    else
+        message 1 "%10s ${GREEN}OK${NORMAL}\n" "(retval=$CODE)"
     fi
 }
 
