@@ -90,8 +90,51 @@ stest 0 sh -c "echo 'echo hello' | singularity shell cat | grep -q 'hello'"
 stest 0 singularity strace cat example.sspec
 stest 0 singularity test cat
 
+# Basic usage tests succeeded, now check specfile functionality
+stest 0 sh -c "echo 'Name: cat1' > example.sspec"
+stest 0 sh -c "echo 'Exec: /bin/cat1' >> example.sspec"
+stest 1 singularity --quiet build example.sspec
+stest 0 sh -c "echo 'Name: ls' > example.sspec"
+stest 0 sh -c "echo 'Exec: /bin/ls' >> example.sspec"
+stest 0 sh -c "echo 'DebugOS: 0' >> example.sspec"
+stest 0 singularity --quiet build example.sspec
+stest 0 singularity install ls.sapp
+stest 0 sh -c "singularity run ls example.sspec | grep -q 'example.sspec'"
+stest 1 singularity strace ls
+stest 0 sh -c "echo 'Name: which' > example.sspec"
+stest 0 sh -c "echo 'Exec: /bin/which' >> example.sspec"
+stest 0 sh -c "echo 'DebugOS: 3' >> example.sspec"
+stest 0 singularity --quiet build example.sspec
+stest 0 singularity install which.sapp
+stest 0 singularity run which ls
+stest 0 singularity run which which
+stest 0 singularity run which strace
+stest 0 singularity run which ps
+stest 0 singularity run which uname
+stest 1 singularity run which blahblah
+stest 0 sh -c "echo -e 'Name: ls' > example.sspec"
+stest 0 sh -c "echo -e '%files\n/bin/ls' >> example.sspec"
+stest 0 sh -c "echo -e '%packages\nwhich' >> example.sspec"
+stest 0 sh -c "echo -e '%test\necho 'hello123'' >> example.sspec"
+stest 1 singularity --quiet build example.sspec
+stest 0 sh -c "echo -e '%runscript\nexec /bin/ls ls.sapp' >> example.sspec"
+stest 0 singularity --quiet build example.sspec
+stest 0 singularity install ls.sapp
+stest 0 singularity run ls
+stest 0 sh -c "singularity run ls example.sspec | grep -q 'ls.sapp'"
+stest 1 sh -c "singularity run ls example.sspec | grep -q 'example.sspec'"
+stest 0 sh -c "singularity test ls | grep -q 'hello123'"
+stest 0 sh -c "echo 'which ls' | singularity shell ls"
+stest 1 sh -c "echo 'which blahblah' | singularity shell ls"
+
+
+
+
+
 # Cleaning up
 stest 0 singularity delete cat
+stest 0 singularity delete ls
+stest 0 singularity delete which
 stest 1 singularity list
 
 
