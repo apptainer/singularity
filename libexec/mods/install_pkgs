@@ -43,7 +43,7 @@ fi
 
 
 # Pull in the %files section of the spec
-message 1 "Evaluating: %packages\n"
+message 1 "Evaluating: \%packages\n"
 get_section_from_conf "packages" $SAPPSPEC | while read pkg; do
     if [ -z "$pkg" ]; then
         continue

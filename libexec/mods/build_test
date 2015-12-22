@@ -49,10 +49,10 @@ SINGULARITY_COMMAND="test"
 export CONTAINERPATH SINGULARITY_COMMAND
 
 if [ -x "$CONTAINERPATH/singularity.test" ]; then
-    message 1 "Running %test...\n"
+    message 1 "Running \%test...\n"
     exec "$libexecdir/singularity/sexec" "$@"
 else
-    message 2 "No %test section defined... skipped\n"
+    message 2 "No \%test section defined... skipped\n"
 fi
 
 # Should never get here
