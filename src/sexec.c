@@ -44,7 +44,7 @@ void sighandler(int sig) {
     fflush(stdout);
 
     if ( child_pid > 0 ) {
-        printf("Sending signal to child pid: %d\n", child_pid);
+        printf("Sending SIGKILL to child pid: %d\n", child_pid);
         fflush(stdout);
 
         kill(child_pid, SIGKILL);
@@ -167,6 +167,7 @@ int main(int argc, char **argv) {
         return(255);
     }
 
+    // Separate out the appropriate namespaces
     if ( unshare(CLONE_NEWPID | CLONE_NEWNS | CLONE_FS | CLONE_FILES) != 0 ) {
         fprintf(stderr, "ERROR: Could not create virtulized namespaces\n");
         return(255);
@@ -182,12 +183,6 @@ int main(int argc, char **argv) {
         fprintf(stderr, "NOTE:  SINGULARITY_CACHEDIR\"=/var/tmp/singularity.`uid -u`\"\n");
         fprintf(stderr, "NOTE:  export SINGULARITY_CACHEDIR\n\n");
         return(1);
-    }
-
-    // Mount /dev
-    if ( mount("/dev", devpath, NULL, MS_BIND, NULL) != 0 ) {
-        fprintf(stderr, "ERROR: Could not bind mount %s\n", devpath);
-        return(255);
     }
 
     // No point in carrying root around
@@ -209,6 +204,12 @@ int main(int argc, char **argv) {
         // Do the chroot
         if ( chroot(containerpath) != 0 ) {
             fprintf(stderr, "ERROR: failed enter CONTAINERPATH: %s\n", containerpath);
+            return(255);
+        }
+
+        // Mount /dev
+        if ( mount("dev", "/dev", "devtmpfs", MS_NOEXEC | MS_NOSUID , NULL) != 0 ) {
+            fprintf(stderr, "ERROR: Could not bind mount %s\n", devpath);
             return(255);
         }
 
@@ -257,6 +258,7 @@ int main(int argc, char **argv) {
         int tmpstatus;
         signal(SIGINT, sighandler);
         signal(SIGKILL, sighandler);
+        signal(SIGQUIT, sighandler);
 
         waitpid(child_pid, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
