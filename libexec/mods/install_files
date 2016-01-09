@@ -98,7 +98,7 @@ if [ "$?" -ne "0" ]; then
 fi
 
 # Pull in the %files section of the spec
-message 1 "Evaluating: \%files\n"
+message 1 "Evaluating: files\n"
 get_section_from_conf "files" "$SAPPSPEC" | while read file dir; do
     if [ -n "$file" ]; then
         if ! install_file "$file" "$dir"; then
