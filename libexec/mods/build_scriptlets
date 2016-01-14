@@ -47,7 +47,9 @@ DESTDIR="$INSTALLDIR/c"
 export INSTALLROOT DESTDIR
 
 
+message 1 "Running prep scriptlet\n"
 ( get_section_from_conf "prep" "$SAPPSPEC" || exit 1 ) | /bin/sh -x
+message 1 "Running build scriptlet\n"
 ( get_section_from_conf "build" "$SAPPSPEC" || exit 1 ) | /bin/sh -x
 
 
