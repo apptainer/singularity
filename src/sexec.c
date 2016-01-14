@@ -185,9 +185,9 @@ int main(int argc, char **argv) {
         return(1);
     }
 
-    // No point in carrying root around
+    // Drop privledges for fork and parent
     if ( seteuid(uid) != 0 ) {
-        fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
+        fprintf(stderr, "ERROR: Could not drop effective user privledges!\n");
         return(255);
     }
 
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
 
         // Root needed for chroot and /proc mount
         if ( seteuid(0) != 0 ) {
-            fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
+            fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
             return(255);
         }
 
