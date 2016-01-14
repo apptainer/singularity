@@ -38,12 +38,19 @@ if [ -z "$INSTALLDIR" ]; then
 fi
 
 
-message 2 "Checking SAPPFILE is writable...\n"
-if ! touch "$SAPPFILE" 2>/dev/null; then
-    message 0 "ERROR: Could not create $SAPPFILE\n"
-    exit 1
+message 1 "Creating paths...\n"
+if [ ! -d "$INSTALLDIR" ]; then
+    if ! mkdir -p "$INSTALLDIR" 2>/dev/null; then
+        message 0 "ERROR: Could not create temporary directory\n";
+        exit 1
+    fi
 fi
-
+if [ ! -d "$INSTALLDIR/c" ]; then
+    if ! mkdir -p "$INSTALLDIR/c" 2>/dev/null; then
+        message 0 "ERROR: Could not create temporary root directory\n";
+        exit 1
+    fi
+fi
 
 
 exit 0

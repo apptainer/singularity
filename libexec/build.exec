@@ -69,7 +69,7 @@ RETVAL=0
 NAME=`get_key_from_conf "Name" $SAPPSPEC`
 SUMMARY=`get_key_from_conf "Summary" $SAPPSPEC`
 INSTALLDIR=`mktemp -d /tmp/.singularity.XXXXXXX`
-MODULES="build_sanity install_pkgs install_confs install_files install_deps post_install_check sappdir_postscript sappdir_metadata install_runscripts build_test sappdir_archive"
+MODULES="build_sanity build_prep build_scriptlets install_pkgs install_confs install_files install_deps install_scriptlets post_install_check sappdir_postscript sappdir_metadata install_runscripts build_test sappdir_archive"
 
 export INSTALLDIR
 

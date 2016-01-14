@@ -33,13 +33,6 @@ if [ -z "$INSTALLDIR" ]; then
 fi
 
 
-if [ ! -d "$INSTALLDIR/c" ]; then
-    if ! mkdir -p "$INSTALLDIR/c" 2>/dev/null; then
-        message 0 "ERROR: Could not container directory $INSTALLDIR/c\n";
-        exit 1
-    fi
-fi
-
 INCLUDE_FILES0="/bin/sh"
 
 INCLUDE_FILES1="strace"

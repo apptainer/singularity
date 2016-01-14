@@ -37,13 +37,18 @@ if [ -z "$INSTALLDIR" ]; then
     exit 1
 fi
 
-
-message 2 "Checking SAPPFILE is writable...\n"
-if ! touch "$SAPPFILE" 2>/dev/null; then
-    message 0 "ERROR: Could not create $SAPPFILE\n"
+if [ ! -d "$INSTALLDIR/c" ]; then
+    message 0 "ERROR: INSTALLROOT ($INSTALLDIR/c) not present\n"
     exit 1
 fi
 
+INSTALLROOT="$INSTALLDIR/c"
+DESTDIR="$INSTALLDIR/c"
+export INSTALLROOT DESTDIR
+
+
+( get_section_from_conf "prep" "$SAPPSPEC" || exit 1 ) | /bin/sh -x
+( get_section_from_conf "build" "$SAPPSPEC" || exit 1 ) | /bin/sh -x
 
 
 exit 0
