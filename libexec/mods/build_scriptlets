@@ -46,11 +46,20 @@ INSTALLROOT="$INSTALLDIR/c"
 DESTDIR="$INSTALLDIR/c"
 export INSTALLROOT DESTDIR
 
+cd "$INSTALLROOT"
 
 message 1 "Running prep scriptlet\n"
 ( get_section_from_conf "prep" "$SAPPSPEC" || exit 1 ) | /bin/sh -x
+if [ "$?" != "0" ]; then
+    message 0 "ERROR: 'prep' scriptlet exited non-zero\n"
+    exit 1
+fi
 message 1 "Running build scriptlet\n"
 ( get_section_from_conf "build" "$SAPPSPEC" || exit 1 ) | /bin/sh -x
+if [ "$?" != "0" ]; then
+    message 0 "ERROR: 'build' scriptlet exited non-zero\n"
+    exit 1
+fi
 
 
 exit 0
