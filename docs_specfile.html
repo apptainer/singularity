@@ -116,6 +116,26 @@ note: Because this will install all files within the listed packages, you can
 very quickly bloat your Singularity container! You have been warned!
 </em>
 </li>
+<li>
+<strong>%build</strong>
+Here you can add a shell scriptlet which can be used to prepare components,
+data, programs, etc. that will be part of your container. If the scriptlet
+exits with an error condition (any exit code greater then 0/zero), then the
+build will also error.
+</li>
+<li>
+<strong>%install</strong>
+This is a shell scriptlet similiar to %build which should be used to install into
+the container. The temporary container location can be address via the envrionment
+variable <em>$INSTALLROOT</em> so an install command should have the format:
+<pre>
+%install
+mkdir -p $INSTALLROOT/bin
+cp /bin/cat $INSTALLROOT/bin/cat
+</pre>
+If the scriptlet exits with an error condition (any exit code greater then
+0/zero), then the build will also error.
+</li>
 </ul>
 </p>
 <h2>Examples</h2>
