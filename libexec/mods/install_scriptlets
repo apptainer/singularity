@@ -47,7 +47,7 @@ DESTDIR="$INSTALLDIR/c"
 export INSTALLROOT DESTDIR
 
 message 1 "Running install scriptlet\n"
-( get_section_from_conf "install" "$SAPPSPEC" || exit 1 ) | (cd "$INSTALLROOT"; /bin/sh -x)
+( get_section_from_conf "install" "$SAPPSPEC" || exit 1 ) | /bin/sh -x
 if [ "$?" != "0" ]; then
     message 0 "ERROR: 'install' scriptlet exited non-zero\n"
     exit 1
