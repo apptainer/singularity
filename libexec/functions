@@ -102,7 +102,7 @@ install_file() {
         return 0
     fi
 
-    for i in "$file"; do # This expands globs
+    for i in $file; do # This expands globs
         if [ -n "$targetdir" ]; then
             target="$targetdir"
         else
