@@ -173,6 +173,21 @@ int main(int argc, char **argv) {
         return(255);
     }
 
+    // Privitize the mount namespaces (thank you for the pointer Doug Jacobsen!)
+    if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) != 0 ) {
+        // I am not sure if this error needs to be caught, maybe it will fail
+        // on older kernels? If so, we can fix then.
+        fprintf(stderr, "ERROR: Could not make mountspaces private\n");
+        return(255);
+    }
+
+    // Mount /dev
+    if ( mount("/dev", devpath, NULL, MS_BIND, NULL) != 0 ) {
+        fprintf(stderr, "ERROR: Could not bind mount /dev\n");
+        return(255);
+    }
+
+
     // Recheck to see if we can stat the singularitypath as root
     // This fails when home is exported with root_squash enabled
     if ( stat(singularitypath, &singularitystat) < 0 ) {
@@ -204,12 +219,6 @@ int main(int argc, char **argv) {
         // Do the chroot
         if ( chroot(containerpath) != 0 ) {
             fprintf(stderr, "ERROR: failed enter CONTAINERPATH: %s\n", containerpath);
-            return(255);
-        }
-
-        // Mount /dev
-        if ( mount("dev", "/dev", "devtmpfs", MS_NOEXEC | MS_NOSUID , NULL) != 0 ) {
-            fprintf(stderr, "ERROR: Could not bind mount %s\n", devpath);
             return(255);
         }
 
@@ -264,22 +273,6 @@ int main(int argc, char **argv) {
         retval = WEXITSTATUS(tmpstatus);
     } else {
         fprintf(stderr, "ERROR: Could not fork child process\n");
-        retval++;
-    }
-
-
-    // Cleanup as root
-    if ( seteuid(0) != 0 ) {
-        fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
-        return(255);
-    }
-
-    if ( umount(devpath) != 0 ) {
-        fprintf(stderr, "ERROR: Could not unmount %s\n", devpath);
-        retval++;
-    }
-    if ( umount(procpath) != 0 ) {
-        fprintf(stderr, "ERROR: Could not unmount %s\n", procpath);
         retval++;
     }
 
