@@ -142,6 +142,7 @@ int main(int argc, char **argv) {
         return(1);
     }
 
+
     // Populate paths for bind mounts
     devpath = (char *) malloc(strlen(containerpath) + 5);
     snprintf(devpath, strlen(containerpath) + 5, "%s/dev", containerpath);
@@ -246,13 +247,13 @@ int main(int argc, char **argv) {
 
         // change directory back to starting point if needed
         if ( opt_contain > 0 ) {
-            if ( fchdir(cwd_fd) != 0 ) {
-                fprintf(stderr, "ERROR: Could not fchdir!\n");
-                return(1);
-            }
-        else
             if ( chdir("/") != 0 ) {
                 fprintf(stderr, "ERROR: Could not changedir to /\n");
+                return(1);
+            }
+        } else {
+            if ( fchdir(cwd_fd) != 0 ) {
+                fprintf(stderr, "ERROR: Could not fchdir!\n");
                 return(1);
             }
         }
