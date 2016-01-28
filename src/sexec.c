@@ -28,6 +28,7 @@
 #include <fcntl.h>  
 #include <grp.h>
 #include "config.h"
+#include "util.h"
 
 #ifndef LIBEXECDIR
 #define LIBEXECDIR "undefined"
@@ -53,12 +54,14 @@ void sighandler(int sig) {
 
 
 int main(int argc, char **argv) {
+    char *homepath;
+    char *containerhomepath;
     char *containerpath;
     char *singularitypath;
     char *devpath;
+    char *tmppath;
     char *procpath;
-    struct stat containerpathstat;
-    struct stat singularitystat;
+    char cwd[PATH_MAX];
     int cwd_fd;
     int opt_contain = 0;
     int retval = 0;
@@ -86,6 +89,9 @@ int main(int argc, char **argv) {
     // Get containerpath from the environment (we check on this shortly)
     containerpath = getenv("CONTAINERPATH");
 
+    // Get user's home directory from the environment (we check on this shortly)
+    homepath = getenv("HOME");
+
     // Check for SINGULARITY_CONTAIN environment variable
     if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
         opt_contain = 1;
@@ -97,47 +103,48 @@ int main(int argc, char **argv) {
         return(1);
     }
 
+    if ( getcwd(cwd, PATH_MAX) == NULL ) {
+        fprintf(stderr, "Could not obtain current directory path\n");
+        return(1);
+    }
+
 
     /*
      * Sanity Checks, exit if any don't match.
      */
 
-    // Make sure CONTAINERPATH is defined
+    // Check CONTAINERPATH
     if ( containerpath == NULL ) {
         fprintf(stderr, "ERROR: CONTAINERPATH undefined!\n");
         return(1);
     }
-
-    // Check CONTAINERPATH
-    if (lstat(containerpath, &containerpathstat) < 0) {
-        fprintf(stderr, "ERROR: Could not stat %s!\n", containerpath);
+    if ( s_is_dir(containerpath) < 0 ) {
+        fprintf(stderr, "ERROR: Container path is not a directory: %s!\n", containerpath);
         return(1);
     }
-    if ( ! S_ISDIR(containerpathstat.st_mode) ) {
-        fprintf(stderr, "ERROR: CONTAINERPATH (%s) must be a SAPP directory!\n", containerpath);
-        return(1);
-    }
-    if ( uid != (int)containerpathstat.st_uid ) {
-        fprintf(stderr, "ERROR: Will not execute in a CONTAINERPATH you don't own. (%s:%d)!\n", containerpath, (int)containerpathstat.st_uid);
+    if ( s_is_owner(containerpath, uid) < 0 ) {
+        fprintf(stderr, "ERROR: Will not execute in a CONTAINERPATH you don't own: %s\n", containerpath);
         return(255);
     }
+
+    // Check HOME
+    if ( homepath == NULL ) {
+        fprintf(stderr, "WARNING: Could not obtain your home directory path, not linking to container.\n");
+    }
+
     
     // Check the singularity within the CONTAINERPATH
     singularitypath = (char *) malloc(strlen(containerpath) + 13);
     snprintf(singularitypath, strlen(containerpath) + 13, "%s/singularity", containerpath);
-    if ( stat(singularitypath, &singularitystat) < 0 ) {
-        fprintf(stderr, "ERROR: Could not stat %s!\n", singularitypath);
-        return(1);
-    }
-    if ( ! S_ISREG(singularitystat.st_mode) ) {
+    if ( s_is_file(singularitypath) < 0 ) {
         fprintf(stderr, "ERROR: The singularity is not found in CONTAINERPATH!\n");
         return(1);
     }
-    if ( (int)singularitystat.st_uid != uid ) {
-        fprintf(stderr, "ERROR: Will not execute a singularity you don't own. (%d)!\n", (int)containerpathstat.st_uid);
+    if ( s_is_owner(singularitypath, uid) < 0 ) {
+        fprintf(stderr, "ERROR: Will not execute a singularity you don't own: %s!\n", singularitypath);
         return(255);
     }
-    if ( ! (S_IXUSR & singularitystat.st_mode) ) {
+    if ( s_is_exec(singularitypath) < 0 ) {
         fprintf(stderr, "ERROR: The singularity can not be executed!\n");
         return(1);
     }
@@ -146,17 +153,28 @@ int main(int argc, char **argv) {
     // Populate paths for bind mounts
     devpath = (char *) malloc(strlen(containerpath) + 5);
     snprintf(devpath, strlen(containerpath) + 5, "%s/dev", containerpath);
+    tmppath = (char *) malloc(strlen(containerpath) + 5);
+    snprintf(tmppath, strlen(containerpath) + 5, "%s/tmp", containerpath);
     procpath = (char *) malloc(strlen(containerpath) + 6);
     snprintf(procpath, strlen(containerpath) + 6, "%s/proc", containerpath);
-
+    containerhomepath = (char *) malloc(strlen(containerpath) + strlen(homepath) + 1);
+    snprintf(containerhomepath, strlen(containerpath) + strlen(homepath) + 1, "%s%s", containerpath, homepath);
 
     // Create directories as neccessary
-    if ( mkdir(procpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+    if ( s_mkpath(procpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
         fprintf(stderr, "ERROR: Could not create directory %s\n", procpath);
         return(255);
     }
-    if ( mkdir(devpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+    if ( s_mkpath(devpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
         fprintf(stderr, "ERROR: Could not create directory %s\n", devpath);
+        return(255);
+    }
+    if ( s_mkpath(tmppath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+        fprintf(stderr, "ERROR: Could not create directory %s\n", tmppath);
+        return(255);
+    }
+    if ( s_mkpath(containerhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+        fprintf(stderr, "ERROR: Could not create directory %s\n", homepath);
         return(255);
     }
 
@@ -188,10 +206,22 @@ int main(int argc, char **argv) {
         return(255);
     }
 
+    // Mount any other file systems
+    if ( opt_contain == 0 ) {
+        if ( mount(homepath, containerhomepath, NULL, MS_BIND, NULL) != 0 ) {
+            fprintf(stderr, "ERROR: Could not bind mount %s\n", homepath);
+            return(255);
+        }
+        if ( mount("/tmp", tmppath, NULL, MS_BIND, NULL) != 0 ) {
+            fprintf(stderr, "ERROR: Could not bind mount %s\n", tmppath);
+            return(255);
+        }
+    }
+
 
     // Recheck to see if we can stat the singularitypath as root
     // This fails when home is exported with root_squash enabled
-    if ( stat(singularitypath, &singularitystat) < 0 ) {
+    if ( s_is_exec(singularitypath) < 0 ) {
         fprintf(stderr, "ERROR: Could not stat %s as root!\n", singularitypath);
         fprintf(stderr, "NOTE:  This maybe caused by root_squash on NFS, set environment\n");
         fprintf(stderr, "NOTE:  variable 'SINGULARITY_CACHEDIR' and point to a different\n");
@@ -252,9 +282,16 @@ int main(int argc, char **argv) {
                 return(1);
             }
         } else {
-            if ( fchdir(cwd_fd) != 0 ) {
-                fprintf(stderr, "ERROR: Could not fchdir!\n");
-                return(1);
+            if (strncmp(homepath, cwd, strlen(homepath)) == 0 ) {
+                if ( chdir(cwd) != 0 ) {
+                    fprintf(stderr, "ERROR: Could not fchdir!\n");
+                    return(1);
+                }
+            } else {
+                if ( fchdir(cwd_fd) != 0 ) {
+                    fprintf(stderr, "ERROR: Could not fchdir!\n");
+                    return(1);
+                }
             }
         }
 
