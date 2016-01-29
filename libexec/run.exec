@@ -22,6 +22,12 @@ while true; do
             export FILE_CHECK
             shift
         ;;
+        -d|--dir)
+            shift
+            SINGULARITY_SCRATCH="$1"
+            export SINGULARITY_SCRATCH
+            shift
+        ;;
         -*)
             echo "ERROR: Unknown option: $1"
             exit 1
