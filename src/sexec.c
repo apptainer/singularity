@@ -181,15 +181,16 @@ int main(int argc, char **argv) {
     if ( homepath != NULL ) {
         containerhomepath = (char *) malloc(strlen(containerpath) + strlen(homepath) + 1);
         snprintf(containerhomepath, strlen(containerpath) + strlen(homepath) + 1, "%s%s", containerpath, homepath);
-        if ( s_is_dir(homepath) < 0 ) {
+        if ( s_is_dir(homepath) == 0 ) {
+            if ( s_is_dir(containerhomepath) < 0 ) {
+                if ( s_mkpath(containerhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+                    fprintf(stderr, "ERROR: Could not create directory %s\n", homepath);
+                    return(255);
+                }
+            }
+        } else {
             fprintf(stderr, "WARNING: Could not locate your home directory (%s), not linking to container.\n", homepath);
             homepath = NULL;
-        }
-        if ( s_is_dir(containerhomepath) < 0 ) {
-            if ( s_mkpath(containerhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-                fprintf(stderr, "ERROR: Could not create directory %s\n", homepath);
-                return(255);
-            }
         }
     } else {
         fprintf(stderr, "WARNING: Could not obtain your home directory path, not linking to container.\n");
@@ -203,18 +204,35 @@ int main(int argc, char **argv) {
             fprintf(stderr, "ERROR: Overlapping paths (scratch and home)!\n");
             return(255);
         }
+        if ( strncmp(scratchpath, "/lib", 4) == 0 ) {
+            fprintf(stderr, "ERROR: Can not link scratch directory over /lib\n");
+            return(255);
+        }
+        if ( strncmp(scratchpath, "/bin", 4) == 0 ) {
+            fprintf(stderr, "ERROR: Can not link scratch directory over /bin\n");
+            return(255);
+        }
+        if ( strncmp(scratchpath, "/sbin", 4) == 0 ) {
+            fprintf(stderr, "ERROR: Can not link scratch directory over /sbin\n");
+            return(255);
+        }
+        if ( strncmp(scratchpath, "/etc", 4) == 0 ) {
+            fprintf(stderr, "ERROR: Can not link scratch directory over /etc\n");
+            return(255);
+        }
 
         containerscratchpath = (char *) malloc(strlen(containerpath) + strlen(scratchpath) + 1);
         snprintf(containerscratchpath, strlen(containerpath) + strlen(scratchpath) + 1, "%s%s", containerpath, scratchpath);
-        if ( s_is_dir(scratchpath) < 0 ) {
+        if ( s_is_dir(scratchpath) == 0 ) {
+            if ( s_is_dir(containerscratchpath) < 0 ) {
+                if ( s_mkpath(containerscratchpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+                    fprintf(stderr, "ERROR: Could not create directory %s\n", scratchpath);
+                    return(255);
+                }
+            }
+        } else {
             fprintf(stderr, "WARNING: Could not locate your scratch directory (%s), not linking to container.\n", scratchpath);
             scratchpath = NULL;
-        }
-        if ( s_is_dir(containerscratchpath) < 0 ) {
-            if ( s_mkpath(containerscratchpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-                fprintf(stderr, "ERROR: Could not create directory %s\n", scratchpath);
-                return(255);
-            }
         }
     }
 
