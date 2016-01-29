@@ -17,6 +17,8 @@ OPTIONS:
     -s/--check      Do a file check within the container before running
                     inside the container.
     -d/--dir        Link a scratch or working directory path into container
+                    (you can also export the environment variable
+                    SINGULARITY_SCRATCH="..." for this feature)
 
 For additional help, please visit our public documentation pages which are
 found at:
