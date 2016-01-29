@@ -103,3 +103,20 @@ int s_mkpath(char *dir, mode_t mode) {
 
     return mkdir(dir, mode);
 }
+
+
+
+// TODO: This needs to remove only until a second path argument
+int s_rmdir(char *dir) {
+    if (!dir) {
+        return(-1);
+    }
+
+    if (strlen(dir) == 1 && dir[0] == '/') {
+        return(0);
+    }
+
+    s_rmdir(dirname(strdupa(dir)));
+
+    return unlink(dir);
+}

@@ -55,24 +55,26 @@ void sighandler(int sig) {
 
 int main(int argc, char **argv) {
     char *homepath;
-    char *containerhomepath;
+    char *scratchpath;
+    char *containerhomepath = '\0';
+    char *containerscratchpath = '\0';
     char *containerpath;
     char *singularitypath;
-    char *devpath;
-    char *tmppath;
-    char *procpath;
+    char *containerdevpath;
+    char *containertmppath;
+    char *containerprocpath;
     char cwd[PATH_MAX];
     int cwd_fd;
     int opt_contain = 0;
     int retval = 0;
-    mode_t process_mask = umask(0);
     uid_t uid = getuid();
     gid_t gid = getgid();
+    mode_t initial_umask = umask(0);
 
 
-    /*
-     * Prep work
-     */
+    //****************************************************************************//
+    // Sanity
+    //****************************************************************************//
 
     // We don't run as root!
     if ( uid == 0 || gid == 0 ) {
@@ -80,38 +82,34 @@ int main(int argc, char **argv) {
         return(255);
     }
 
-    // Lets start off as the right user.
-    if ( seteuid(uid) != 0 ) {
+    // Lets start off and confirm non-root
+    if ( seteuid(uid) < 0 ) {
         fprintf(stderr, "ERROR: Could not set effective user privledges to %d!\n", uid);
         return(255);
     }
-
-    // Get containerpath from the environment (we check on this shortly)
-    containerpath = getenv("CONTAINERPATH");
-
-    // Get user's home directory from the environment (we check on this shortly)
-    homepath = getenv("HOME");
 
     // Check for SINGULARITY_CONTAIN environment variable
     if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
         opt_contain = 1;
     }
 
-    // Open a FD to the current working dir.
+    // Figure out where we start
     if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
         fprintf(stderr, "ERROR: Could not open cwd fd (%s)!\n", strerror(errno));
         return(1);
     }
-
     if ( getcwd(cwd, PATH_MAX) == NULL ) {
         fprintf(stderr, "Could not obtain current directory path\n");
         return(1);
     }
 
 
-    /*
-     * Sanity Checks, exit if any don't match.
-     */
+    //****************************************************************************//
+    // Sanity
+    //****************************************************************************//
+
+    // Get containerpath from the environment (we check on this shortly)
+    containerpath = getenv("CONTAINERPATH");
 
     // Check CONTAINERPATH
     if ( containerpath == NULL ) {
@@ -125,11 +123,6 @@ int main(int argc, char **argv) {
     if ( s_is_owner(containerpath, uid) < 0 ) {
         fprintf(stderr, "ERROR: Will not execute in a CONTAINERPATH you don't own: %s\n", containerpath);
         return(255);
-    }
-
-    // Check HOME
-    if ( homepath == NULL ) {
-        fprintf(stderr, "WARNING: Could not obtain your home directory path, not linking to container.\n");
     }
 
     
@@ -150,50 +143,104 @@ int main(int argc, char **argv) {
     }
 
 
-    // Populate paths for bind mounts
-    devpath = (char *) malloc(strlen(containerpath) + 5);
-    snprintf(devpath, strlen(containerpath) + 5, "%s/dev", containerpath);
-    tmppath = (char *) malloc(strlen(containerpath) + 5);
-    snprintf(tmppath, strlen(containerpath) + 5, "%s/tmp", containerpath);
-    procpath = (char *) malloc(strlen(containerpath) + 6);
-    snprintf(procpath, strlen(containerpath) + 6, "%s/proc", containerpath);
-    containerhomepath = (char *) malloc(strlen(containerpath) + strlen(homepath) + 1);
-    snprintf(containerhomepath, strlen(containerpath) + strlen(homepath) + 1, "%s%s", containerpath, homepath);
+    //****************************************************************************//
+    // Setup For Bind Mounts
+    //****************************************************************************//
 
-    // Create directories as neccessary
-    if ( s_mkpath(procpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-        fprintf(stderr, "ERROR: Could not create directory %s\n", procpath);
-        return(255);
+    // Populate paths for system bind mounts
+    containerdevpath = (char *) malloc(strlen(containerpath) + 5);
+    snprintf(containerdevpath, strlen(containerpath) + 5, "%s/dev", containerpath);
+    containerprocpath = (char *) malloc(strlen(containerpath) + 6);
+    snprintf(containerprocpath, strlen(containerpath) + 6, "%s/proc", containerpath);
+    containertmppath = (char *) malloc(strlen(containerpath) + 5);
+    snprintf(containertmppath, strlen(containerpath) + 5, "%s/tmp", containerpath);
+
+    // Create system directories as neccessary
+    if ( s_is_dir(containerprocpath) < 0 ) {
+        if ( s_mkpath(containerprocpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+            fprintf(stderr, "ERROR: Could not create directory %s\n", containerprocpath);
+            return(255);
+        }
     }
-    if ( s_mkpath(devpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-        fprintf(stderr, "ERROR: Could not create directory %s\n", devpath);
-        return(255);
+    if ( s_is_dir(containerdevpath) < 0 ) {
+        if ( s_mkpath(containerdevpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+            fprintf(stderr, "ERROR: Could not create directory %s\n", containerdevpath);
+            return(255);
+        }
     }
-    if ( s_mkpath(tmppath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-        fprintf(stderr, "ERROR: Could not create directory %s\n", tmppath);
-        return(255);
-    }
-    if ( s_mkpath(containerhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-        fprintf(stderr, "ERROR: Could not create directory %s\n", homepath);
-        return(255);
+    if ( s_is_dir(containertmppath) < 0 ) {
+        if ( s_mkpath(containertmppath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+            fprintf(stderr, "ERROR: Could not create directory %s\n", containertmppath);
+            return(255);
+        }
     }
 
-    umask(process_mask);
+
+    // Get the home path from the environment and setup
+    homepath = getenv("HOME");
+    if ( homepath != NULL ) {
+        containerhomepath = (char *) malloc(strlen(containerpath) + strlen(homepath) + 1);
+        snprintf(containerhomepath, strlen(containerpath) + strlen(homepath) + 1, "%s%s", containerpath, homepath);
+        if ( s_is_dir(homepath) < 0 ) {
+            fprintf(stderr, "WARNING: Could not locate your home directory (%s), not linking to container.\n", homepath);
+            homepath = NULL;
+        }
+        if ( s_is_dir(containerhomepath) < 0 ) {
+            if ( s_mkpath(containerhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+                fprintf(stderr, "ERROR: Could not create directory %s\n", homepath);
+                return(255);
+            }
+        }
+    } else {
+        fprintf(stderr, "WARNING: Could not obtain your home directory path, not linking to container.\n");
+    }
+
+
+    // Get the scratch path from the environment and setup
+    scratchpath = getenv("SINGULARITY_SCRATCH");
+    if ( scratchpath != NULL ) {
+        if ( ( strncmp(homepath, scratchpath, strlen(homepath)) == 0 ) || ( strncmp(homepath, scratchpath, strlen(scratchpath)) == 0 ) ) {
+            fprintf(stderr, "ERROR: Overlapping paths (scratch and home)!\n");
+            return(255);
+        }
+
+        containerscratchpath = (char *) malloc(strlen(containerpath) + strlen(scratchpath) + 1);
+        snprintf(containerscratchpath, strlen(containerpath) + strlen(scratchpath) + 1, "%s%s", containerpath, scratchpath);
+        if ( s_is_dir(scratchpath) < 0 ) {
+            fprintf(stderr, "WARNING: Could not locate your scratch directory (%s), not linking to container.\n", scratchpath);
+            scratchpath = NULL;
+        }
+        if ( s_is_dir(containerscratchpath) < 0 ) {
+            if ( s_mkpath(containerscratchpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+                fprintf(stderr, "ERROR: Could not create directory %s\n", scratchpath);
+                return(255);
+            }
+        }
+    }
+
+
+    // Reset umask back to where we have started
+    umask(initial_umask);
+
+
+    //****************************************************************************//
+    // Do root bits
+    //****************************************************************************//
 
     // Entering danger zone
-    if ( seteuid(0) != 0 ) {
+    if ( seteuid(0) < 0 ) {
         fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
         return(255);
     }
 
     // Separate out the appropriate namespaces
-    if ( unshare(CLONE_NEWPID | CLONE_NEWNS | CLONE_FS | CLONE_FILES) != 0 ) {
+    if ( unshare(CLONE_NEWPID | CLONE_NEWNS | CLONE_FS | CLONE_FILES) < 0 ) {
         fprintf(stderr, "ERROR: Could not create virtulized namespaces\n");
         return(255);
     }
 
     // Privitize the mount namespaces (thank you for the pointer Doug Jacobsen!)
-    if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) != 0 ) {
+    if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
         // I am not sure if this error needs to be caught, maybe it will fail
         // on older kernels? If so, we can fix then.
         fprintf(stderr, "ERROR: Could not make mountspaces private\n");
@@ -201,19 +248,27 @@ int main(int argc, char **argv) {
     }
 
     // Mount /dev
-    if ( mount("/dev", devpath, NULL, MS_BIND, NULL) != 0 ) {
+    if ( mount("/dev", containerdevpath, NULL, MS_BIND, NULL) < 0 ) {
         fprintf(stderr, "ERROR: Could not bind mount /dev\n");
         return(255);
     }
 
     // Mount any other file systems
     if ( opt_contain == 0 ) {
-        if ( mount(homepath, containerhomepath, NULL, MS_BIND, NULL) != 0 ) {
-            fprintf(stderr, "ERROR: Could not bind mount %s\n", homepath);
-            return(255);
+        if ( scratchpath != NULL ) {
+            if ( mount(scratchpath, containerscratchpath, NULL, MS_BIND, NULL) < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount %s\n", scratchpath);
+                return(255);
+            }
         }
-        if ( mount("/tmp", tmppath, NULL, MS_BIND, NULL) != 0 ) {
-            fprintf(stderr, "ERROR: Could not bind mount %s\n", tmppath);
+        if ( homepath != NULL ) {
+            if ( mount(homepath, containerhomepath, NULL, MS_BIND, NULL) < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount %s\n", homepath);
+                return(255);
+            }
+        }
+        if ( mount("/tmp", containertmppath, NULL, MS_BIND, NULL) < 0 ) {
+            fprintf(stderr, "ERROR: Could not bind mount %s\n", containertmppath);
             return(255);
         }
     }
@@ -232,7 +287,7 @@ int main(int argc, char **argv) {
     }
 
     // Drop privledges for fork and parent
-    if ( seteuid(uid) != 0 ) {
+    if ( seteuid(uid) < 0 ) {
         fprintf(stderr, "ERROR: Could not drop effective user privledges!\n");
         return(255);
     }
@@ -242,29 +297,29 @@ int main(int argc, char **argv) {
     if ( child_pid == 0 ) {
 
         // Root needed for chroot and /proc mount
-        if ( seteuid(0) != 0 ) {
+        if ( seteuid(0) < 0 ) {
             fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
             return(255);
         }
 
         // Do the chroot
-        if ( chroot(containerpath) != 0 ) {
+        if ( chroot(containerpath) < 0 ) {
             fprintf(stderr, "ERROR: failed enter CONTAINERPATH: %s\n", containerpath);
             return(255);
         }
 
         // Mount up /proc
-        if ( mount("proc", "/proc", "proc", 0, NULL) != 0 ) {
+        if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
             fprintf(stderr, "ERROR: Could not bind mount /proc\n");
             return(255);
         }
 
         // Dump all privs permanently for this process
-        if ( setregid(gid, gid) != 0 ) {
+        if ( setregid(gid, gid) < 0 ) {
             fprintf(stderr, "ERROR: Could not dump real and effective group privledges!\n");
             return(255);
         }
-        if ( setreuid(uid, uid) != 0 ) {
+        if ( setreuid(uid, uid) < 0 ) {
             fprintf(stderr, "ERROR: Could not dump real and effective user privledges!\n");
             return(255);
         }
@@ -277,18 +332,18 @@ int main(int argc, char **argv) {
 
         // change directory back to starting point if needed
         if ( opt_contain > 0 ) {
-            if ( chdir("/") != 0 ) {
+            if ( chdir("/") < 0 ) {
                 fprintf(stderr, "ERROR: Could not changedir to /\n");
                 return(1);
             }
         } else {
             if (strncmp(homepath, cwd, strlen(homepath)) == 0 ) {
-                if ( chdir(cwd) != 0 ) {
+                if ( chdir(cwd) < 0 ) {
                     fprintf(stderr, "ERROR: Could not fchdir!\n");
                     return(1);
                 }
             } else {
-                if ( fchdir(cwd_fd) != 0 ) {
+                if ( fchdir(cwd_fd) < 0 ) {
                     fprintf(stderr, "ERROR: Could not fchdir!\n");
                     return(1);
                 }
@@ -296,7 +351,7 @@ int main(int argc, char **argv) {
         }
 
         // Exec the singularity
-        if ( execv("/singularity", argv) != 0 ) {
+        if ( execv("/singularity", argv) < 0 ) {
             fprintf(stderr, "ERROR: Failed to exec SAPP envrionment\n");
             return(2);
         }
@@ -314,7 +369,7 @@ int main(int argc, char **argv) {
         retval++;
     }
 
-    if ( close(cwd_fd) != 0 ) {
+    if ( close(cwd_fd) < 0 ) {
         fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
         retval++;
     }

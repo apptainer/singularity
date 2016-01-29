@@ -18,5 +18,7 @@ int s_is_dir(char *path);
 int s_is_exec(char *path);
 int s_is_owner(char *path, uid_t uid);
 int s_mkpath(char *dir, mode_t mode);
+int s_rmdir(char *dir);
+
 
 
