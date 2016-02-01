@@ -86,51 +86,6 @@ get_section_from_conf() {
     return 0
 }
 
-install_file() {
-    file="$1"
-    targetdir="$2"
-    installdir="$INSTALLDIR/c"
-    RETVAL=0
-
-    if [ -z "$INSTALLDIR" ]; then
-        message 0 "ERROR: INSTALLDIR not defined\n"
-        exit 1
-    fi
-
-    if [ -z "$file" ]; then
-        message 0 "ERROR: called install_file with no file\n"
-        return 0
-    fi
-
-    for i in $file; do # This expands globs
-        if [ -n "$targetdir" ]; then
-            target="$targetdir"
-        else
-            target=`dirname "$i"`
-        fi
-
-        if [ ! -d "$installdir/$target" ]; then
-            message 4 "Creating target dir:   $target\n"
-            mkdir -p "$installdir/$target"
-        fi
-        if [ -f "$installdir/$i" ]; then
-            message 2 "File already included: $i\n"
-        elif [ -f "$i" ]; then
-            message 1 "Installing file: $i\n"
-            cp -L "$i" "$installdir/$target" 2>&1
-            RETVAL="$?"
-        elif [ -d "$i" ]; then
-            message 1 "Installing dir: $i\n"
-            cp -rL "$i" "$installdir/$target" 2>&1
-            RETVAL="$?"
-        else
-            message 0 "Could not find file: $i\n"
-            return 1
-        fi
-    done
-    return $RETVAL
-}
-
 check_pattern() {
     STRING=$1
     PATTERN=$2

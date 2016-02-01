@@ -59,15 +59,16 @@ esac
 
 
 # Build a base mini distro
+message 1 "Building base container\n"
 for i in $INCLUDE_FILES; do
-    if FILE=`which $i 2>/dev/null`; then
-        if ! install_file "$FILE"; then
-            message 0 "Error: failed processing requires: $FILE\n"
+    if FILE=`which --skip-functions --skip-alias $i 2>/dev/null`; then
+        if ! /bin/sh -c "$libexecdir/singularity/mods/install_file $FILE /bin"; then
+            message 0 "ERROR: Failed processing file: $FILE\n"
             exit 1
         fi
     elif [ -e "$i" ]; then
-        if ! install_file "$i"; then
-            message 0 "Error: failed processing requires: $i\n"
+        if ! /bin/sh -c "$libexecdir/singularity/mods/install_file $i"; then
+            message 0 "ERROR: Failed processing file: $i\n"
             exit 1
         fi
     fi
@@ -79,10 +80,13 @@ fi
 # Pull in defined keys that specify files
 message 1 "Evaluating: Exec\n"
 get_key_from_conf "exec" "$SAPPSPEC" | while read prog args; do
-    if FULLFILE=`which "$prog" 2>/dev/null`; then
-        install_file "$FULLFILE"
+    if FULLFILE=`which --show-dot "$prog" 2>/dev/null`; then
+        /bin/sh -c "$libexecdir/singularity/mods/install_file $FULLFILE /bin"
+    elif [ -e "$prog" ]; then
+        message 0 "ERROR: Defined 'exec' is not executable: $prog\n"
+        exit 1
     else
-        message 0 "Error: failed processing program: $prog\n"
+        message 0 "ERROR: Defined 'exec' is not found: $prog\n"
         exit 1
     fi
 done
@@ -94,8 +98,8 @@ fi
 message 1 "Evaluating: files\n"
 get_section_from_conf "files" "$SAPPSPEC" | while read file dir; do
     if [ -n "$file" ]; then
-        if ! install_file "$file" "$dir"; then
-            message 0 "Error: failed processing file: $a\n"
+        if ! /bin/sh -c "$libexecdir/singularity/mods/install_file $file $dir"; then
+            message 0 "ERROR: Failed processing file: $a\n"
             exit 1
         fi
     fi
