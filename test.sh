@@ -102,6 +102,9 @@ stest 0 singularity install ls.sapp
 stest 0 sh -c "singularity run ls example.sspec | grep -q 'example.sspec'"
 stest 1 singularity strace ls
 
+stest 0 singularity run ls ls.sapp
+stest 1 singularity run --contain ls ls.sapp
+
 stest 0 sh -c "echo 'Name: which' > example.sspec"
 stest 0 sh -c "echo 'Exec: /bin/which' >> example.sspec"
 stest 0 sh -c "echo 'DebugOS: 3' >> example.sspec"
