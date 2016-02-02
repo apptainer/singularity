@@ -28,7 +28,16 @@ if [ -z "$INSTALLDIR" ]; then
 fi
 
 
-trap exit KILL INT QUIT
+killme() {
+    message 0 "Killing subprocess: "
+    pkill -P $$
+    trap true INT
+    wait
+    exit 1
+}
+
+trap killme KILL INT QUIT
+
 
 
 run_resolver() {
@@ -45,10 +54,12 @@ run_resolver() {
 
 
 dep_resolver() {
-    if [ -f "$1" ]; then
-        if [ -x "$1" ]; then
+    if [ -f "$INSTALLDIR/c/$1" ]; then
+        if [ -x "$INSTALLDIR/c/$1" ]; then
+            message 2 "Calling executable file dependency resolver on: $1\n"
             run_resolver exe "$1"
         fi
+        message 2 "Calling plain file dependency resolver on: $1\n"
         run_resolver reg "$1"
     fi
 }

@@ -42,15 +42,16 @@ fi
 
 cat <<EOF > "$INSTALLDIR/c/singularity"
 #!/bin/sh
-PATH=/bin:/usr/bin:/sbin:/usr/sbin
-LD_LIBRARY_PATH="\$LD_LIBRARY_PATH:$LIB_SEARCH_PATH"
-LANG=C
-PS1="singularity.\$SAPPNAME> "
-export PATH LD_LIBRARY_PATH LANG PS1
+
+if [ -f "/singularity.env" ]; then
+    . /singularity.env
+fi
+
 if test -z "\$SINGULARITY_COMMAND"; then
     echo "ERROR: Singularity command undefined"
     exit 1
 fi
+
 if test "\$SINGULARITY_COMMAND" = "run"; then
     if test -x "/singularity.exec"; then
         exec /singularity.exec "\$@"
