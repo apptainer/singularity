@@ -106,7 +106,13 @@ int main(int argc, char **argv) {
                     // how did the system call exit
                     long ret = ptrace(PTRACE_PEEKUSER, child, 8 * RAX, NULL);
                     if ( ret >= 0 ) {
-                        fprintf(stderr, "%s\n", str);
+                        if ( strncmp(str, "/dev", 4) == 0 ) {
+                        } else if ( strncmp(str, "/etc", 4) == 0 ) {
+                        } else if ( strncmp(str, "/sys", 4) == 0 ) {
+                        } else if ( strncmp(str, "/proc", 5) == 0 ) {
+                        } else {
+                            fprintf(stderr, "%s\n", str);
+                        }
                     }
                     insyscall = 0;
                 }

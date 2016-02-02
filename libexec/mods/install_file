@@ -28,6 +28,9 @@ if [ -z "$INSTALLDIR" ]; then
 fi
 
 
+trap exit KILL INT QUIT
+
+
 run_resolver() {
     TYPE="$1"
     shift
@@ -42,13 +45,20 @@ run_resolver() {
 
 
 dep_resolver() {
-    if [ -f "$1" -a -x "$1" ]; then
-        run_resolver exe "$1"
+    if [ -f "$1" ]; then
+        if [ -x "$1" ]; then
+            run_resolver exe "$1"
+        fi
+        run_resolver reg "$1"
     fi
 }
 
 file="$1"
 dir="$2"
+
+if [ -f "$INSTALLDIR/c/$file" ]; then
+    exit 0
+fi
 
 if [ -e "$file" ]; then
     filename=`basename "$file"`

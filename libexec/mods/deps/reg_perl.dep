@@ -33,18 +33,19 @@ if [ -z "$INSTALLDIR" ]; then
 fi
 
 
-RETVAL=1
 
-message 2 "Searching for needed interpreters\n"
-for file in `find "$INSTALLDIR/c" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -print`; do
-    message 5 "Scanning executable file for shebang: $file\n"
-    INT=`head -n 1 $file | grep "^#\!/" | sed 's@#!\([^ ]*\).*@\1@'`
-    if [ -f "$INT" ]; then
-        if [ ! -f "$INSTALLDIR/c/$INT" ]; then
-            install_file "$INT"
-            RETVAL=0
-        fi
-    fi
+
+for file in $@; do
+    egrep "^\s*(use|require|no)\s*" "$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
+        $libexecdir/singularity/ftrace `which perl` -M"$req" -e 'exit;' 2>&1 >/dev/null | while read FILE; do
+            if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
+                if ! /bin/sh -c "$libexecdir/singularity/mods/install_file $FILE"; then
+                    message 0 "ERROR: Failed installing file: $FILE\n"
+                    exit 1
+                fi
+            fi
+        done
+    done
 done
 
-exit $RETVAL
+exit 0

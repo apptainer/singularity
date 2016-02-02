@@ -101,10 +101,11 @@ if ! get_section_from_conf "runscript" "$SAPPSPEC" >> "$INSTALLDIR/c/singularity
     message 2 "generating a basic singularity runscript\n"
     if OUTPUT=`get_key_from_conf "exec" "$SAPPSPEC"`; then
         echo "$OUTPUT" | while read prog args; do
+            progname=`basename "$prog"`
             if [ -n "$args" ]; then
-                echo "exec \"$prog\" \"$args\" \"\$@\"" >> "$INSTALLDIR/c/singularity.exec"
+                echo "exec \"/bin/$progname\" \"$args\" \"\$@\"" >> "$INSTALLDIR/c/singularity.exec"
             else
-                echo "exec \"$prog\" \"\$@\"" >> "$INSTALLDIR/c/singularity.exec"
+                echo "exec \"/bin/$progname\" \"\$@\"" >> "$INSTALLDIR/c/singularity.exec"
             fi
             break
         done
