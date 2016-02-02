@@ -36,16 +36,18 @@ fi
 
 
 for file in $@; do
-    egrep "^\s*(use|require|no)\s*" "$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
-        $libexecdir/singularity/ftrace `which perl` -M"$req" -e 'exit;' 2>&1 >/dev/null | while read FILE; do
-            if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
-                if ! /bin/sh -c "$libexecdir/singularity/mods/install_file $FILE"; then
-                    message 0 "ERROR: Failed installing file: $FILE\n"
-                    exit 1
+    if file "$INSTALLDIR/c/$file" | grep -q "Perl"; then
+        egrep "^\s*(use|require|no)\s*" "$INSTALLDIR/c/$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
+            $libexecdir/singularity/ftrace `which perl` -M"$req" -e 'exit;' 2>&1 >/dev/null | while read FILE; do
+                if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
+                    if ! /bin/sh -c "$libexecdir/singularity/mods/install_file $FILE"; then
+                        message 0 "ERROR: Failed installing file: $FILE\n"
+                        exit 1
+                    fi
                 fi
-            fi
+            done
         done
-    done
+    fi
 done
 
 exit 0
