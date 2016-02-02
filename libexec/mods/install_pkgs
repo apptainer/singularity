@@ -43,7 +43,7 @@ get_section_from_conf "packages" $SAPPSPEC | while read pkg; do
     if [ -x "/usr/bin/rpm" ]; then
         if rpm -q "$pkg" >/dev/null 2>&1; then
             rpm -ql "$pkg" | while read i; do
-                if ! install_file "$i"; then
+                if ! /bin/sh -c "$libexecdir/singularity/mods/install_file $i"; then
                     message 0 "Error: failed processing file: $i\n"
                     exit 1
                 fi
