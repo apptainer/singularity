@@ -36,9 +36,6 @@ fi
 message 1 "Including SAPPFILE\n"
 cat "$SAPPSPEC" > "$INSTALLDIR/spec"
 
-message 1 "Calculating container size\n"
-du -sk "$INSTALLDIR/c" | cut -f 1 > "$INSTALLDIR/size"
-
 message 1 "Calculating checksums\n"
 (cd "$INSTALLDIR/c"; find . -type f | xargs md5sum) > "$INSTALLDIR/files"
 

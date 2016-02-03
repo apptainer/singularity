@@ -44,7 +44,7 @@ if [ -z "$1" ]; then
     SHOWALL="*"
 fi
 
-printf "%-20s %10s %s\n" "CONTAINER NAME" "SIZE (k)" "SUMMARY"
+printf "%-20s %10s %s\n" "CONTAINER NAME" "SIZE (Mb)" "SUMMARY"
 
 cd "$CACHEDIR"
 for c in $@ $SHOWALL; do

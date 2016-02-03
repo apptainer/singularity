@@ -64,7 +64,13 @@ message 3 "SAPP payload starts at $PAYLOAD_START\n"
 message 2 "Caching SAPP archive to: $SAPPDIR\n"
 tail -n "+$PAYLOAD_START" "$SAPPFILE" | gunzip -dc | (cd "$SAPPDIR"; cpio -id --quiet)
 
+message 2 "Caching MD5sum of SAPPFILE\n"
 md5sum "$SAPPFILE" | awk '{print $1}' > "$SAPPDIR/sum"
+
+message 2 "Caching container size\n"
+SIZE_K=`du -sk "$SAPPDIR/c" | cut -f 1`
+SIZE_M=`echo -ne "scale=1\n$SIZE_K/ 1024\n" | bc`
+echo $SIZE_M > "$SAPPDIR/size"
 
 
 exit 0
