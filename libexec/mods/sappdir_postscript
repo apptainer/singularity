@@ -35,7 +35,7 @@ fi
 INSTALLROOT="$INSTALLDIR/c"
 export INSTALLROOT
 
-message 2 "Running post scriptlet\n"
+message 1 "Running post scriptlet\n"
 get_section_from_conf "post" "$SAPPSPEC" | /bin/sh -x
 
 exit $?

@@ -64,5 +64,11 @@ if [ -f "$INSTALLDIR/c/etc/shadow" ]; then
     cat /dev/null > "$INSTALLDIR/c/etc/shadow"
 fi
 
+LOCALE_ARCHIVE=`find $INSTALLDIR/c -type f -name "locale-archive"`
+if [ -n "$LOCALE_ARCHIVE" ]; then
+    message 1 "Found locale-archive, removing...\n"
+    rm -f $LOCALE_ARCHIVE
+fi
+
 
 exit 0
