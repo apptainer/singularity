@@ -1,5 +1,10 @@
+General:
+    - Move all shell scripts to shell libraries
+        - Create: function::load to load libraries in
+
 Singularity-build:
     - Support a mechanism for staging data (intput and output)
+    - Move all file copies to shell functions instead of seperate scripts
 
 
 Singularity-run:
