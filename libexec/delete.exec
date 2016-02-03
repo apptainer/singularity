@@ -47,7 +47,7 @@ RETVAL=0
 
 cd "$CACHEDIR"
 for c in $@; do
-    if sappname_exists "$c"; then
+    if [ -d "$CACHEDIR/$c" ]; then
         SAPPDIR="$CACHEDIR/$c"
         export SAPPDIR
         if run_module sappdir_delete; then
