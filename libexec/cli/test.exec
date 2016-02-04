@@ -27,6 +27,15 @@ fi
 load_mod cache
 load_mod sexec
 
+if [ -z "$1" ]; then
+    echo "USAGE: singularity (options) test [container name]\n"
+    exit 1
+fi
+
+if ! cache_sappexists "$1"; then
+    message 0 "ERROR: '$1' is not installed\n"
+    exit 1
+fi
 
 SAPPNAME="$1"
 SINGULARITY_COMMAND="test"
@@ -34,16 +43,6 @@ SAPPDIR=`cache_sappdir "$SAPPNAME"`
 CONTAINERPATH="$SAPPDIR/c"
 export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
 shift
-
-if [ -z "$SAPPNAME" ]; then
-    echo "USAGE: singularity (options) test [container name]\n"
-    exit 1
-fi
-
-if ! cache_sappexists "$SAPPNAME"; then
-    message 0 "ERROR: '$SAPPNAME' is not installed\n"
-    exit 1
-fi
 
 
 ## Do the work
