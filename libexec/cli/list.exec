@@ -25,26 +25,21 @@ else
     exit 1
 fi
 
-## Check required bits
-if [ -z "$CACHEDIR" ]; then
-    message 0 "ERROR: CACHEDIR is not properly defined\n"
-    exit 1
-fi
-
-if [ ! -d "$CACHEDIR" ]; then
-    message 0 "ERROR: Cache directory is not present ($CACHEDIR)\n"
-    exit 1
-fi
+load_mod cache
 
 
-## Do the work
 RETVAL=1
 
-if [ -z "$1" ]; then
-    SHOWALL="*"
-fi
 
 printf "%-20s %10s %s\n" "CONTAINER NAME" "SIZE (Mb)" "SUMMARY"
+for SAPPNAME in `cache_sapplist "$@"`; do
+    SIZE=`cache_sappsize "$SAPPNAME"`
+    SUMMARY=`cache_sappsummary "$SAPPNAME"`
+    printf "%-20s %10s %s\n" "$SAPPNAME" "$SIZE" "$SUMMARY"
+done
+
+exit $RETVAL
+
 
 cd "$CACHEDIR"
 for c in $@ $SHOWALL; do

@@ -11,6 +11,25 @@
 # 
 
 
+# Basic sanity
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+load_mod install
+load_mod cache
+load_mod sappfile
+
+
 INCLUDE_FILES0="/bin/sh"
 
 INCLUDE_FILES1="strace"
@@ -57,28 +76,6 @@ if [ ! -f "$SAPPSPEC" ]; then
 fi
 
 
-
-## Basic sanity
-if [ -z "$libexecdir" ]; then
-    echo "Could not identify the Singularity libexecdir."
-    exit 1
-fi
-
-## Load functions
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
-else
-    echo "Error loading functions: $libexecdir/singularity/functions"
-    exit 1
-fi
-
-## Check required bits
-if [ -z "$CACHEDIR" ]; then
-    message 0 "ERROR: CACHEDIR is not properly defined\n"
-    exit 1
-fi
-
-
 ## Do the work
 RETVAL=0
 NAME=`get_key_from_conf "Name" $SAPPSPEC`
@@ -87,8 +84,6 @@ INSTALLDIR=`mktemp -d /tmp/.singularity.XXXXXXX`
 INSTALLROOT="$INSTALLDIR/c"
 DESTDIR="$INSTALLDIR/c"
 export INSTALLDIR INSTALLROOT DESTDIR
-
-load_mod install
 
 
 

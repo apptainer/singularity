@@ -10,20 +10,6 @@
 # 
 # 
 
-SAPPFILE="$1"
-shift
-export SAPPFILE
-
-if [ -z "$SAPPFILE" ]; then
-    echo "USAGE: singularity (options) install [SAPP file]\n"
-    exit 1
-fi
-
-if [ ! -f "$SAPPFILE" ]; then
-    echo "ERROR: SAPP file ($SAPPFILE) not found\n"
-    exit 1
-fi
-
 ## Basic sanity
 if [ -z "$libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -38,43 +24,51 @@ else
     exit 1
 fi
 
-## Check required bits
-if [ -z "$SAPPDIR" ]; then
-    message 0 "ERROR: SAPPDIR resolution failed\n"
+load_mod cache
+load_mod sappfile
+
+
+SAPPFILE="$1"
+shift
+export SAPPFILE
+
+if [ -z "$SAPPFILE" ]; then
+    echo "USAGE: singularity (options) install [SAPP file]\n"
+    exit 1
+fi
+
+if [ ! -f "$SAPPFILE" ]; then
+    echo "ERROR: SAPP file ($SAPPFILE) not found\n"
     exit 1
 fi
 
 
-## Do the work
-if sappname_exists "$SAPPNAME"; then
-    if ! CHECKSUM=`md5sum "$SAPPFILE" | awk '{print $1}'`; then
-        message 0 "ERROR: Could not obtain checksum of $SAPPFILE\n"
+SAPPNAME=`sappfile_name "$SAPPFILE"`
+SAPPSUM=`sappfile_sum "$SAPPFILE"`
+
+if CACHED_SAPPSUM=`cache_sappsum "$SAPPNAME"`; then
+    message 1 "SAPP cache exists for: $SAPPNAME\n"
+    if [ "$CACHED_SAPPSUM" != "$SAPPSUM" ]; then
+        REMOVE_PREVIOUS=1
+    else
+        message 1 "Checking files in the cache\n"
+        if cache_sappfilecheck "$SAPPNAME" >/dev/null; then
+            message 1 "Leaving installed version installed\n"
+            exit 0
+        else
+            REMOVE_PREVIOUS=1
+        fi
+    fi
+fi
+
+if [ -n "$REMOVE_PREVIOUS" ]; then
+    message 1 "Removing previous SAPP cache\n"
+    if ! cache_sappdelete "$SAPPNAME"; then
+        message 0 "ERROR: Could not delete previous SAPP cache: $SAPPNAME\n"
         exit 1
     fi
-
-    PREV_SUM=`cat "$SAPPDIR/sum"`
-    if [ "$PREV_SUM" == "$CHECKSUM" ]; then
-        message 1 "Container is already installed\n"
-        exit 0
-    else
-        message 1 "Removing previous SAPP container cache\n"
-        run_module sappdir_delete
-    fi
 fi
 
-message 1 "Installing: $SAPPFILE\n"
+cache_sappinstall "$SAPPFILE"
 
-if ! run_module sappfile_install >/dev/null 2>&1; then
-    message 0 "ERROR: Failed installing the container: $SAPPFILE\n"
-    exit 255
-fi
-
-if ! run_module sappdir_filecheck >/dev/null 2>&1; then
-    message 0 "ERROR: Filecheck failed... Check/rebuild the original SAPP file\n"
-    exit 255
-fi
-
-
-
-# If we get here, exit ok.
-exit 0
+message 1 "Done...\n"

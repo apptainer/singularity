@@ -1,0 +1,44 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+
+HEADER_END="SINGULARITY_END_HEADER"
+export HEADER_END
+
+
+
+sappfile_name() {
+    SAPPFILE="$1"
+
+    if [ -z "$SAPPFILE" ]; then
+        message 0 "ERROR: SAPPFILE undefined\n"
+        exit 1
+    fi
+
+    basename "$SAPPFILE" | sed -e 's@.sapp$@@'
+}
+
+
+sappfile_sum() {
+    SAPPFILE="$1"
+
+    if [ -z "$SAPPFILE" ]; then
+        message 0 "ERROR: SAPPFILE undefined\n"
+        exit 1
+    fi
+    if [ ! -f "$SAPPFILE" ]; then
+        message 0 "ERROR: Could not find: $SAPPFILE\n"
+        exit 1
+    fi
+
+    md5sum "$SAPPFILE" | cut -d " " -f 1
+}

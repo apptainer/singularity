@@ -10,16 +10,6 @@
 # 
 # 
 
-SAPPNAME="$1"
-shift
-export SAPPNAME
-
-if [ -z "$SAPPNAME" ]; then
-    echo "USAGE: singularity (options) check [SAPP Name]\n"
-    exit 1
-fi
-
-
 ## Basic sanity
 if [ -z "$libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -34,9 +24,15 @@ else
     exit 1
 fi
 
-## Check required bits
-if [ -z "$CACHEDIR" ]; then
-    message 0 "ERROR: CACHEDIR is not properly defined\n"
+load_mod cache
+
+
+SAPPNAME="$1"
+shift
+export SAPPNAME
+
+if [ -z "$SAPPNAME" ]; then
+    echo "USAGE: singularity (options) check [SAPP Name]\n"
     exit 1
 fi
 
@@ -44,7 +40,7 @@ fi
 ## Do the work
 message 2 "Checking '$SAPPNAME'\n"
 
-if ! sappname_exists "$SAPPNAME"; then
+if ! cache_sappexist "$SAPPNAME"; then
     message 0 "ERROR: '$SAPPNAME' is not installed\n"
     exit 1
 fi

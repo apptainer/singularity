@@ -11,9 +11,6 @@
 # 
 
 
-HEADER_END="SINGULARITY_END_HEADER"
-
-
 if [ -z "$MESSAGELEVEL" ]; then
     /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     MESSAGELEVEL=5
@@ -160,73 +157,6 @@ load_mod() {
     fi
 }
 
-### Do logical things here ###
-
-
-if [ -z "$CACHEDIR" -o -z "$TMPCACHEDIR" ]; then
-    if [ -n "$SINGULARITY_CACHEDIR" ]; then
-        USERNAME=`id -un`
-        CACHEDIR="$SINGULARITY_CACHEDIR/cache.$USERNAME"
-        TMPCACHEDIR="$SINGULARITY_CACHEDIR/tmp.$USERNAME"
-    else
-        CACHEDIR="$HOME/.singularity-cache"
-        TMPCACHEDIR="/tmp"
-    fi
-
-    message 2 "Using CACHEDIR=$CACHEDIR\n"
-    message 2 "Using TMPCACHEDIR=$TMPCACHEDIR\n"
-fi
-
-if [ ! -d "$CACHEDIR" ]; then
-    message 2 "Creating CACHEDIR: $CACHEDIR\n"
-    if ! mkdir -p "$CACHEDIR"; then
-        message 0 "ERROR: Could not create CACHEDIR ($CACHEDIR)\n"
-        exit 1
-    fi
-fi
-if [ ! -d "$TMPCACHEDIR" ]; then
-    message 2 "Creating TMPCACHEDIR: $TMPCACHEDIR\n"
-    if ! mkdir -p "$TMPCACHEDIR"; then
-        message 0 "ERROR: Could not create CACHEDIR ($TMPCACHEDIR)\n"
-        exit 1
-    fi
-fi
-
-
-if [ -z "$SAPPNAME" -a -n "$SAPPFILE" ]; then
-    SAPPNAME=`basename "$SAPPFILE" | sed -e 's@.sapp$@@'`
-fi
-if [ -z "$SAPPDIR" -a -n "$SAPPNAME" ]; then
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
-fi
-if [ -z "$CONTAINERPATH" -a -n "$SAPPDIR" ]; then
-    CONTAINERPATH="$SAPPDIR/c"
-fi
-
-
-export SAPPNAME SAPPDIR CONTAINERPATH
-
-### Declare functions that depend on local bits above ###
-
-sappname_exists() {
-    SAPPNAME="$1"
-    sappdir_exists "$CACHEDIR/$SAPPNAME"
-    return $?
-}
-
-sappdir_exists() {
-    SAPPDIR="$1"
-    if [ -x "$SAPPDIR/c/singularity" ]; then
-        return 0
-    elif [ -d "$SAPPDIR" ]; then
-        return 1
-    else
-        return 2
-    fi
-}
-
-
-export CACHEDIR TMPCACHEDIR HEADER_END
 
 if [ "$DEBUG" = "1" ]; then
     set -x

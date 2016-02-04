@@ -10,17 +10,6 @@
 # 
 # 
 
-SAPPNAME="$1"
-SINGULARITY_COMMAND="test"
-export SAPPNAME SINGULARITY_COMMAND
-shift
-
-if [ -z "$SAPPNAME" ]; then
-    echo "USAGE: singularity (options) test [container name]\n"
-    exit 1
-fi
-
-
 ## Basic sanity
 if [ -z "$libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -35,13 +24,23 @@ else
     exit 1
 fi
 
-## Check required bits
-if [ -z "$CACHEDIR" ]; then
-    message 0 "ERROR: CACHEDIR is not properly defined\n"
+load_mod cache
+load_mod sexec
+
+
+SAPPNAME="$1"
+SINGULARITY_COMMAND="test"
+SAPPDIR=`cache_sappdir "$SAPPNAME"`
+CONTAINERPATH="$SAPPDIR/c"
+export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
+shift
+
+if [ -z "$SAPPNAME" ]; then
+    echo "USAGE: singularity (options) test [container name]\n"
     exit 1
 fi
 
-if ! sappname_exists "$SAPPNAME"; then
+if ! cache_sappexists "$SAPPNAME"; then
     message 0 "ERROR: '$SAPPNAME' is not installed\n"
     exit 1
 fi
@@ -51,5 +50,5 @@ fi
 message 2 "Testing '$SAPPNAME'\n"
 
 message 2 "Exec'ing Sexec\n"
-exec "$libexecdir/singularity/sexec" "$@" <&0
+sexec_exec "$@" <&0
 

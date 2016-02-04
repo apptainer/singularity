@@ -10,12 +10,6 @@
 # 
 # 
 
-if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) delete [container name]...\n"
-    exit 1
-fi
-
-
 ## Basic sanity
 if [ -z "$libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -30,38 +24,26 @@ else
     exit 1
 fi
 
-## Check required bits
-if [ -z "$CACHEDIR" ]; then
-    message 0 "ERROR: CACHEDIR is not properly defined\n"
+load_mod cache
+
+
+# Check args and print usage if necessary
+if [ -z "$1" ]; then
+    echo "USAGE: singularity (options) delete [container name]...\n"
     exit 1
 fi
 
-if [ ! -d "$CACHEDIR" ]; then
-    message 0 "ERROR: Cache directory is not present ($CACHEDIR)\n"
-    exit 1
-fi
 
+RETVAL=1
 
-## Do the work
-RETVAL=0
-
-cd "$CACHEDIR"
-for c in $@; do
-    if [ -d "$CACHEDIR/$c" ]; then
-        SAPPDIR="$CACHEDIR/$c"
-        export SAPPDIR
-        if run_module sappdir_delete; then
-            message 1 "Deleted container cache: $c\n"
-        else
-            message 0 "Could not delete: $c\n"
-            RETVAL=1
-        fi
-    elif [ "$c" = "*" ]; then
-        message 0 "No Containers installed\n"
+for c in `cache_sapplist "$@"`; do
+    if cache_sappdelete "$c"; then
+        message 1 "Deleted container cache: $c\n"
+        RETVAL=0
     else
-        message 0 "Unknown container name: $c\n"
-        RETVAL=1
+        message 0 "Could not delete: $c\n"
     fi
 done
 
-exit 0
+
+exit $RETVAL

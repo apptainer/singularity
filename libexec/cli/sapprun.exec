@@ -10,6 +10,24 @@
 # 
 # 
 
+## Basic sanity
+if [ -z "$libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$libexecdir/singularity/functions" ]; then
+    . "$libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $libexecdir/singularity/functions"
+    exit 1
+fi
+
+load_mod cache
+load_mod sexec
+
+
 SAPPFILE="$1"
 USERID=`id -u`
 export SAPPFILE
@@ -26,26 +44,6 @@ if [ ! -f "$SAPPFILE" ]; then
 fi
 
 
-## Basic sanity
-if [ -z "$libexecdir" ]; then
-    echo "Could not identify the Singularity libexecdir."
-    exit 1
-fi
-
-## Load functions
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
-else
-    echo "Error loading functions: $libexecdir/singularity/functions"
-    exit 1
-fi
-
-## Check required bits
-if [ -z "$SAPPNAME" ]; then
-    message 0 "ERROR: Could not determine SAPPNAME\n"
-    exit 1
-fi
-
 
 ## Do the work
 trap true KILL INT QUIT
@@ -53,25 +51,26 @@ trap true KILL INT QUIT
 message 2 "Running '$SAPPNAME'\n"
 
 # (re)define some variables for temporary envrionment
-SAPPDIR=`mktemp -d "$TMPCACHEDIR/.sapprun-$USERID.XXXXXXXXX"`
-INSTALLDIR="$SAPPDIR"
+CACHEDIR=`mktemp -d "$TMPCACHEDIR/.sapprun-$USERID.XXXXXXXXX"`
+SAPPNAME=`sappfile_name "$SAPPFILE"`
+SAPPDIR="$CACHEDIR/$SAPPNAME"
 CONTAINERPATH="$SAPPDIR/c"
 SINGULARITY_COMMAND="run"
-export CONTAINERPATH SINGULARITY_COMMAND INSTALLDIR SAPPDIR
+export CONTAINERPATH CACHEDIR SINGULARITY_COMMAND
 
-message 2 "Installing SAPPFILE into: $INSTALLDIR\n"
-if ! run_module sappfile_install; then
+message 2 "Installing SAPPFILE into: $CACHEDIR\n"
+if ! cache_sappinstall "$SAPPFILE"; then
     exit 255
 fi
 
 message 2 "Exec'ing Sexec in: $CONTAINERPATH\n"
-exec "$libexecdir/singularity/sexec" "$@" <&0 &
+sexec_exec "$@" <&0 &
 
 wait $!
 EXITVAL="$?"
 
-message 2 "Deleting SAPPDIR at: $SAPPDIR\n"
-if ! run_module sappdir_delete; then
+message 2 "Deleting CACHEDIR at: $CACHEDIR\n"
+if ! rm -rf "$CACHEDIR"; then
     exit 255
 fi
 
