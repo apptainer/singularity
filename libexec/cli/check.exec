@@ -40,15 +40,14 @@ fi
 ## Do the work
 message 2 "Checking '$SAPPNAME'\n"
 
-if ! cache_sappexist "$SAPPNAME"; then
+if ! cache_sappexists "$SAPPNAME"; then
     message 0 "ERROR: '$SAPPNAME' is not installed\n"
     exit 1
 fi
 
 
-if ! run_module sappdir_filecheck; then
+if ! cache_sappfilecheck "$SAPPNAME"; then
     exit 1
 fi
 
-message 1 "'$SAPPNAME' check: OK\n"
 exit 0

@@ -36,24 +36,7 @@ for SAPPNAME in `cache_sapplist "$@"`; do
     SIZE=`cache_sappsize "$SAPPNAME"`
     SUMMARY=`cache_sappsummary "$SAPPNAME"`
     printf "%-20s %10s %s\n" "$SAPPNAME" "$SIZE" "$SUMMARY"
-done
-
-exit $RETVAL
-
-
-cd "$CACHEDIR"
-for c in $@ $SHOWALL; do
-    if sappname_exists "$c"; then
-        SAPPDIR="$CACHEDIR/$c"
-        SIZE=`cat "$SAPPDIR/size" 2>/dev/null || echo "unknown"`
-        SUMMARY=`cat "$SAPPDIR/summary" 2>/dev/null`
-        printf "%-20s %10s %s\n" "$c" "$SIZE" "$SUMMARY"
-        RETVAL=0
-    elif [ "$c" = "*" ]; then
-        true
-    else
-        message 0 "Unknown container name: $c\n"
-    fi
+    RETVAL=0
 done
 
 exit $RETVAL
