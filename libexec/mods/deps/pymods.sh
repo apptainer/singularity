@@ -1,0 +1,31 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+TXT_RESOLVERS="pymods_resolver $TXT_RESOLVERS"
+
+
+pymods_resolver() {
+    for file in $@; do
+        if file "$file" | grep -q "Python"; then
+            INCLUDE_PY=1
+            egrep "^\s*(import)\s*" "$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
+                $libexecdir/singularity/ftrace `which python` -c 'import $req' 2>&1 >/dev/null | while read FILE; do
+                    if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
+                        install_file "$FILE"
+                    fi
+                done
+            done
+        fi
+    done
+}
+
+
