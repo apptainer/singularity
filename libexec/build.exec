@@ -101,6 +101,14 @@ message 1 "Building: $NAME.sapp\n"
 message 2 "Install directory: $INSTALLDIR\n"
 message 2 "Output file: $SAPPFILE\n"
 
+set -x
+mkdir -p $INSTALLDIR/c
+load_mod build
+load_mod install
+install_file /bin/ls
+
+exit
+
 
 for module in $MODULES; do
     if [ -x "$libexecdir/singularity/mods/$module" ]; then
