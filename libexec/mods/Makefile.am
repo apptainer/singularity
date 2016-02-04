@@ -1,9 +1,7 @@
-SUBDIRS = deps
-
 modsdir = $(libexecdir)/singularity/mods
 
-dist_mods_SCRIPTS = sappdir_filecheck install_file sappdir_delete sappfile_install  \
-	build.sh install.sh
+dist_mods_SCRIPTS = sappdir_filecheck sappdir_delete sappfile_install  \
+	install.smod interpreter.dep ldd.dep perlmods.dep pymods.dep
 
 MAINTAINERCLEANFILES = Makefile.in
 

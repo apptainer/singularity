@@ -37,11 +37,9 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_libexecdir}/singularity
 %attr(4755, root, root) %{_libexecdir}/singularity/sexec
 %{_libexecdir}/singularity/functions
-%{_libexecdir}/singularity/*.exec
-%{_libexecdir}/singularity/*.help
-%{_libexecdir}/singularity/*.summary
 %{_libexecdir}/singularity/ftrace
 %{_libexecdir}/singularity/mods
+%{_libexecdir}/singularity/cli
 %{_bindir}/singularity
 %{_bindir}/sapprun
 %{_bindir}/sr

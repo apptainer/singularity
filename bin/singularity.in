@@ -40,7 +40,7 @@ usage() {
     echo
     echo "COMMANDS:"
 
-    for i in $libexecdir/singularity/*.summary; do
+    for i in $libexecdir/singularity/cli/*.summary; do
         if [ -f "$i" ]; then
             NAME=`basename "$i" | sed -e 's@.summary@@'`
             SUMMARY=`cat "$i"`
@@ -102,8 +102,8 @@ if [ -z "$COMMAND" ]; then
     exit 0
 fi
 
-if [ -x "$libexecdir/singularity/$COMMAND.exec" ]; then
-    exec $libexecdir/singularity/$COMMAND.exec "$@"
+if [ -x "$libexecdir/singularity/cli/$COMMAND.exec" ]; then
+    exec $libexecdir/singularity/cli/$COMMAND.exec "$@"
 else
     message 0 "Unknown command '$COMMAND'\n"
     exit 1

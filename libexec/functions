@@ -152,8 +152,11 @@ load_mod() {
         message 0 "ERROR: libexecdir not defined, are you running this from within Singularity?\n"
         exit 1
     fi
-    if [ -f "$libexecdir/singularity/mods/$MOD.sh" ]; then
-        . "$libexecdir/singularity/mods/$MOD.sh"
+    if [ -f "$libexecdir/singularity/mods/$MOD.smod" ]; then
+        . "$libexecdir/singularity/mods/$MOD.smod"
+    else
+        message 0 "ERROR: Could not load Singularity module: $MOD\n"
+        exit 1
     fi
 }
 

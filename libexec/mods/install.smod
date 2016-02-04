@@ -18,7 +18,7 @@ TXT_RESOLVERS=" " # Run these on all text scripts and data files
 export ALL_RESOLVERS BIN_RESOLVERS TXT_RESOLVERS
 
 
-for i in $libexecdir/singularity/mods/deps/*.sh; do
+for i in $libexecdir/singularity/mods/*.dep; do
     if [ -f "$i" ]; then
         . "$i"
     fi
