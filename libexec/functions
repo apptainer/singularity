@@ -128,21 +128,6 @@ stest() {
 }
 
 
-
-run_module() {
-    MODULE="$1"
-    RETVAL=255
-    if [ -x "$libexecdir/singularity/mods/$MODULE" ]; then
-        message 3 "Running module: $MODULE\n"
-        sh "$libexecdir/singularity/mods/$MODULE"
-        RETVAL=$?
-    else
-        message 0 "ERROR: Unknown module: $MODULE\n"
-    fi
-    return $RETVAL
-}
-
-
 load_mod() {
     MOD="$1"
     if [ -z "$libexecdir" ]; then
