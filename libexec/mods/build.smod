@@ -380,7 +380,7 @@ if test -z "\$SINGULARITY_COMMAND"; then
     exit 1
 fi
 
-if test "\$SINGULARITY_COMMAND" = "run"; then
+if test "\$SINGULARITY_COMMAND" = "run" -o -n "\$SINGULARITY_INSHELL"; then
     if test -x "/.singularity.exec"; then
         exec /.singularity.exec "\$@"
     else
@@ -405,6 +405,8 @@ elif test "\$SINGULARITY_COMMAND" = "test"; then
         echo "Hello from within the container... (no test code defined)"
     fi
 elif test "\$SINGULARITY_COMMAND" = "shell"; then
+    SINGULARITY_INSHELL=1
+    export SINGULARITY_INSHELL
     exec /bin/sh
 else
     echo "ERROR: Unsupported singularity exec command: \$SINGULARITY_COMMAND"
