@@ -2,10 +2,10 @@
 
 if autoreconf -V >/dev/null 2>&1 ; then
     set -x
-    autoreconf -f -i
+    autoreconf -i
 else
     set -x
-    libtoolize -f -c
+    libtoolize -c
     aclocal
     autoheader
     autoconf
