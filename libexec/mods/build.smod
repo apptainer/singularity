@@ -39,7 +39,7 @@ run_scriptlet() {
         return 1
     fi
 
-    message 1 "Running install scriptlet\n"
+    message 1 "Running $SCRIPTLET scriptlet\n"
     ( get_section_from_conf "$SCRIPTLET" "$SAPPSPEC" || exit 1 ) | /bin/sh -x
     if [ "$?" != "0" ]; then
         message 0 "ERROR: '$SCRIPTLET' scriptlet exited non-zero\n"
