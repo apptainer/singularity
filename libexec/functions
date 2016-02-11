@@ -121,19 +121,25 @@ cmd() {
 
 stest() {
     ERROR="$1"
+    TMPFILE=`mktemp`
     shift
     message 1 " + %-60.60s " "$*"
-    "$@" >/dev/null 2>&1
+    "$@" >$TMPFILE 2>&1
     CODE="$?"
     if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
         message 1 "%10s ${RED}ERROR${NORMAL}\n" "(retval=$CODE)"
+        tail "$TMPFILE"
+        echo "Full output in: $TMPFILE"
         exit 1
     elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
         message 1 "%10s ${RED}ERROR${NORMAL}\n" "(retval=$CODE)"
+        tail "$TMPFILE"
+        echo "Full output in: $TMPFILE"
         exit 1
     else
         message 1 "%10s ${GREEN}OK${NORMAL}\n" "(retval=$CODE)"
     fi
+    rm -f "$TMPFILE"
 }
 
 
