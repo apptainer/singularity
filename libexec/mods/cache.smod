@@ -59,7 +59,7 @@ cache_sappinstall() {
         exit 1
     fi
     if ! sappfile_issapp "$SAPPFILE"; then
-        message 0 "ERROR: file is not SAPP file: $SAPPFILE\n"
+        message 0 "ERROR: File is not Singularity App/container: $SAPPFILE\n"
         exit 1
     fi
     if [ -z "$SAPPNAME" -a -n "$SAPPFILE" ]; then
