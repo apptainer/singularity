@@ -31,12 +31,12 @@ message 2 "TXT_RESOLVERS='$TXT_RESOLVERS'\n";
 
 dep_resolver() {
     if [ -f "$1" ]; then
-        if file "$1" | egrep -q "ELF"; then
+        if file -L "$1" | egrep -q "ELF"; then
             for i in $BIN_RESOLVERS; do
                 eval $i "$1"
             done
         fi
-        if file "$1" | egrep -q "ASCII|script"; then
+        if file -L "$1" | egrep -q "ASCII|script"; then
             for i in $TXT_RESOLVERS; do
                 eval $i "$1"
             done
@@ -49,12 +49,11 @@ dep_resolver() {
 
 
 
-install_file() {
+install_single_file() {
     file="$1"
     dir="$2"
 
     if [ -f "$INSTALLDIR/c/$file" ]; then
-    echo "file already installed"
         return 0
     fi
 
@@ -72,7 +71,7 @@ install_file() {
             message 0 "ERROR: Could not copy file to container: $file\n"
             exit 1
         fi
-        if ! dep_resolver "$INSTALLDIR/c/$dir/$filename"; then
+        if ! dep_resolver "$file"; then
             message 0 "ERROR: Could not resolve dependencies for: $file\n"
             exit 1
         fi
@@ -83,5 +82,13 @@ install_file() {
 }
 
 
+install_file() {
+    file="$1"
+    dir="$2"
 
-
+    /bin/sh -c "find $file" | while read i; do
+        if [ ! -d "$i" ]; then
+            install_single_file "$i" "$dir"
+        fi
+    done
+}

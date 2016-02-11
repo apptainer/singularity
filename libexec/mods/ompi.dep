@@ -1,0 +1,26 @@
+#!/bin/sh
+# 
+# Copyright (c) 2015-2016, Gregory M. Kurtzer
+# All rights reserved.
+# 
+# Copyright (c) 2015-2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+# 
+# 
+
+BIN_RESOLVERS="openmpi_resolver $BIN_RESOLVERS"
+
+
+openmpi_resolver() {
+    for file in $@; do
+        if check_pattern "*/libopen-rte.so.*" "$file"; then
+            LIBDIR=`dirname "$file"`
+            PREFIX=`dirname "$LIBDIR"`
+            install_file "$LIBDIR/openmpi/*.so"
+            install_file "$PREFIX/share/openmpi/*.txt"
+        fi
+    done
+}
+
