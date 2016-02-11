@@ -54,7 +54,8 @@ install_file() {
     dir="$2"
 
     if [ -f "$INSTALLDIR/c/$file" ]; then
-        exit 0
+    echo "file already installed"
+        return 0
     fi
 
     if [ -e "$file" ]; then
