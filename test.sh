@@ -10,6 +10,7 @@ if [ ! -f "libexec/functions" ]; then
     exit 1
 fi
 
+
 MESSAGELEVEL=2
 TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
 SINGULARITY_CACHEDIR="$TEMPDIR"
@@ -21,13 +22,23 @@ export SINGULARITY_CACHEDIR MESSAGELEVEL
 echo "${BLUE}Gaining/checking sudo access...${NORMAL}"
 sudo true
 
-echo "${BLUE}Building/Installing Singularity to temporary directory${NORMAL}"
-stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
-stest 0 make
-stest 0 make install
-stest 0 sudo make install-perms
+if [ -z "$CLEAN_SHELL" ]; then
+    echo "${BLUE}Building/Installing Singularity to temporary directory${NORMAL}"
+    stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
+    stest 0 make
+    stest 0 make install
+    stest 0 sudo make install-perms
+    echo "Reinvoking in a clean shell"
+    sleep 1
+    exec env -i CLEAN_SHELL=1 PATH="/bin:/usr/bin:/sbin:/usr/sbin" sh "$0" "$*"
+fi
 
 PATH="$TEMPDIR/bin:$PATH"
+
+echo
+echo "${BLUE}SINGULARITY_CACHEDIR=$SINGULARITY_CACHEDIR${NORMAL}"
+echo "${BLUE}PATH=$PATH${NORMAL}"
+echo
 
 echo "${BLUE}Creating temp working space at: $TEMPDIR${NORMAL}"
 stest 0 mkdir -p "$TEMPDIR"
