@@ -15,10 +15,65 @@ HEADER_END="SINGULARITY_END_HEADER"
 export HEADER_END
 
 
+sappfile_issapp() {
+    SAPPFILE="$1"
+    if [ -z "$SAPPFILE" ]; then
+        message 0 "ERROR: SAPPFILE undefined\n"
+        exit 1
+    fi
+    if [ ! -f "$SAPPFILE" ]; then
+        message 0 "ERROR: SAPPFILE not found: $SAPPFILE\n"
+        exit 1
+    fi
+
+    egrep -q "^$SINGULARITY_END_HEADER$" "$SAPPFILE"
+    return $?
+}
+
+
+sappfile_payload() {
+    SAPPFILE="$1"
+    RETVAL=0
+
+    if [ -z "$SAPPFILE" ]; then
+        sed -e "0,/^$HEADER_END$/d"
+        RETVAL=$?
+    else
+        if [ ! -f "$SAPPFILE" ]; then
+            message 0 "ERROR: SAPPFILE not found: $SAPPFILE\n"
+            exit 1
+        fi
+
+        sed -e "0,/^$HEADER_END$/d" "$SAPPFILE"
+        RETVAL=$?
+    fi
+
+    return $RETVAL
+}
+
+
+sappfile_header() {
+    SAPPFILE="$1"
+    RETVAL=0
+
+    if [ -z "$SAPPFILE" ]; then
+        sed -n "2,/^$HEADER_END$/p" | head -n -1
+        RETVAL=$?
+    else
+        if [ ! -f "$SAPPFILE" ]; then
+            message 0 "ERROR: SAPPFILE not found: $SAPPFILE\n"
+            exit 1
+        fi
+
+        sed -n "2,/^$HEADER_END$/p" "$SAPPFILE" | head -n -1
+        RETVAL=$?
+    fi
+
+    return $RETVAL
+}
 
 sappfile_name() {
     SAPPFILE="$1"
-
     if [ -z "$SAPPFILE" ]; then
         message 0 "ERROR: SAPPFILE undefined\n"
         exit 1
