@@ -92,6 +92,7 @@ cache_sappinstall() {
         egrep "(:|,)$USER(,|$)" /etc/group 2>/dev/null >> "$SAPPDIR/c/etc/group"
     fi
 
+    return 0
 }
 
 
