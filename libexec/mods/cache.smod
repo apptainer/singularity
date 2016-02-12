@@ -92,6 +92,23 @@ cache_sappinstall() {
         egrep "(:|,)$USER(,|$)" /etc/group 2>/dev/null >> "$SAPPDIR/c/etc/group"
     fi
 
+
+    return 0
+}
+
+
+cache_filesum() {
+    SAPPNAME="$1"
+    SAPPDIR="$CACHEDIR/$SAPPNAME"
+
+    if [ -z "$SAPPNAME" ]; then
+        message 0 "ERROR: SAPPNAME undefined\n"
+        exit 1
+    fi
+
+    message 1 "Calculating checksums\n"
+    (cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
+
     return 0
 }
 

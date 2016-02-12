@@ -70,5 +70,6 @@ if [ -n "$REMOVE_PREVIOUS" ]; then
 fi
 
 cache_sappinstall "$SAPPFILE"
+cache_filesum "$SAPPNAME"
 
 message 1 "Done...\n"
