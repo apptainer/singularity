@@ -27,6 +27,10 @@ rmdir runcon seq sort split stdbuf stty sum sync tac tail tee test tr
 true tty unexpand uniq unlink users vdir wc who whoami yes vi
 /etc/terminfo /usr/share/terminfo"
 
+INCLUDE_LIBS="libnss_files*.so.*"
+
+LIBDIR=`uname -p | grep -q x86_64 && echo "/lib64" || echo "/lib"`
+
 
 run_scriptlet() {
     SCRIPTLET="$1"
@@ -190,9 +194,19 @@ build_runtime() {
             fi
         fi
     done
-    if [ "$?" -ne "0" ]; then
-        return 1
-    fi
+
+    for i in $INCLUDE_LIBS; do
+        FILE=`find /lib* /usr/lib* -maxdepth 1 -name "$i"`
+        if [ -n "$FILE" ]; then
+            if ! install_file "$FILE" "$LIBDIR"; then
+                message 0 "ERROR: Could not install: $FILE\n"
+                exit 1
+            fi
+        else
+            message 2 "Could not locate library: $FILE\n";
+        fi
+    done
+
 
     return 0
 }
