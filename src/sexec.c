@@ -45,7 +45,7 @@ void sighandler(int sig) {
     fflush(stdout);
 
     if ( child_pid > 0 ) {
-        printf("Sending SIGKILL to child pid: %d\n", child_pid);
+        printf("Singularity is sending SIGKILL to child pid: %d\n", child_pid);
         fflush(stdout);
 
         kill(child_pid, SIGKILL);
