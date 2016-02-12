@@ -1,14 +1,35 @@
 #!/bin/sh
-# 
+#
 # Copyright (c) 2015-2016, Gregory M. Kurtzer
 # All rights reserved.
-# 
+#
 # Copyright (c) 2015-2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of
 # any required approvals from the U.S. Dept. of Energy).
 # All rights reserved.
-# 
-# 
+#
+# Copyright (c) 2016       Intel, Inc. All rights reserved.
+#
+#
+# OpenMPI dynamically loads plugin libraries from a
+# directory located under its install prefix. As these
+# libraries are only loaded after start of execution, we
+# cannot detect them with strace - therefore, we have to
+# manually slurp them up here.
+#
+# OpenMPI's help system also relies on a set of text files
+# that contain all the verbose help messages. While these
+# aren't technically required (as they are only used in
+# cases of abnormal termination), users generally prefer to
+# have the clearer explanations, so slurp those up too
+#
+# Finally, we pickup /usr/bin/ssh. This is only required for
+# the case where someone executes "singularity run mycontainer"
+# as MPI interprets this as a singleton, which means we have
+# to setup a daemon within the container to "shepherd" the
+# singleton. The daemon requires access to ssh for those
+# cases where the user calls MPI_Comm_spawn and wants to
+# launch a secondary job on additional nodes.
 
 BIN_RESOLVERS="openmpi_resolver $BIN_RESOLVERS"
 
@@ -20,6 +41,8 @@ openmpi_resolver() {
             PREFIX=`dirname "$LIBDIR"`
             install_file "$LIBDIR/openmpi/*.so"
             install_file "$PREFIX/share/openmpi/*.txt"
+            install_file "$PREFIX/bin/orted"
+            install_file "/usr/bin/ssh"
         fi
     done
 }
