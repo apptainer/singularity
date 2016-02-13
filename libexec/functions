@@ -27,7 +27,7 @@ WHITE=`tput -Txterm setaf 7 2>/dev/null`
 NORMAL=`tput -Txterm sgr0 2>/dev/null`
 
 if [ -z "$USER" ]; then
-    USER=`id -in`
+    USER=`id -un`
     export USER
 fi
 if [ -z "$HOME" ]; then
