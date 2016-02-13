@@ -61,10 +61,22 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+if [ -f "$1" ]; then
+    if sappfile_issapp "$1"; then
+        REAL_SAPP_NAME=`sappfile_name "$1"`
+        message 0 "ERROR: This appears to be a SAPP file, not a container name\n\n"
+        message 1 "Perhaps try this:\n"
+        message 1 "    $ singularity install $1\n"
+        message 1 "    $ singularity run $REAL_SAPP_NAME\n\n"
+        exit 1
+    fi
+fi
+
 if ! cache_sappexists "$1"; then
     message 0 "ERROR: '$1' is not installed\n"
     exit 1
 fi
+
 
 SAPPNAME="$1"
 SINGULARITY_COMMAND="run"
