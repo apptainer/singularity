@@ -79,7 +79,9 @@ sappfile_name() {
         exit 1
     fi
 
-    basename "$SAPPFILE" | sed -e 's@.sapp$@@'
+    sappfile_header "$SAPPFILE" | get_key_from_conf "name"
+
+    #basename "$SAPPFILE" | sed -e 's@.sapp$@@'
 }
 
 
