@@ -24,14 +24,15 @@ sudo true
 
 if [ -z "$CLEAN_SHELL" ]; then
     echo "${BLUE}Building/Installing Singularity to temporary directory${NORMAL}"
-    stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
-    stest 0 make
-    stest 0 make install
-    stest 0 sudo make install-perms
     echo "Reinvoking in a clean shell"
     sleep 1
     exec env -i CLEAN_SHELL=1 PATH="/bin:/usr/bin:/sbin:/usr/sbin" sh "$0" "$*"
 fi
+
+stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
+stest 0 make
+stest 0 make install
+stest 0 sudo make install-perms
 
 PATH="$TEMPDIR/bin:$PATH"
 
@@ -74,7 +75,6 @@ stest 1 ls $TEMPDIR/tmp/*
 stest 0 ./cat.sapp example.sspec
 stest 0 ./cat.sapp /etc/hosts
 stest 0 ./cat.sapp /etc/resolv.conf
-stest 1 ./cat.sapp /etc/passwd
 stest 1 ./cat.sapp /etc/shadow
 stest 0 sh -c "cat example.sspec | ./cat.sapp | grep -q '^Name'"
 stest 1 ls $TEMPDIR/tmp/*
@@ -89,7 +89,6 @@ stest 0 singularity check cat
 stest 0 singularity run cat example.sspec
 stest 0 singularity run cat /etc/hosts
 stest 0 singularity run cat /etc/resolv.conf
-stest 1 singularity run cat /etc/passwd
 stest 1 singularity run cat /etc/shadow
 stest 0 sh -c "cat example.sspec | singularity run cat | grep -q '^Name'"
 
