@@ -368,6 +368,12 @@ int main(int argc, char **argv) {
             }
         }
 
+        // After this, we exist only within the container... Let's make it known!
+        if ( setenv("SINGULARITY_CONTAINER", "true", 0) != 0 ) {
+            fprintf(stderr, "ERROR: Could not set SINGULARITY_CONTAINER to 'true'\n");
+            return(1);
+        }
+
         // Exec the singularity
         if ( execv("/singularity", argv) < 0 ) {
             fprintf(stderr, "ERROR: Failed to exec SAPP envrionment\n");
