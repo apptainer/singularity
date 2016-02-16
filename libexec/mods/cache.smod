@@ -188,7 +188,6 @@ cache_sappexists() {
     elif [ -d "$SAPPDIR" ]; then
         message 0 "ERROR: Invalid container cache: $SAPPNAME\n"
     fi
-    message 0 "ERROR: Uncached container: $SAPPNAME\n"
     return 1
 }
 
