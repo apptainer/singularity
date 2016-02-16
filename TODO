@@ -8,3 +8,5 @@ Singularity-build:
 Singularity-run:
     - Support archiving output
     - Standardize on an output data location
+    - Exec'ing container does a "s install; s run.." and leaves cached
+    - Running container.sapp should work
