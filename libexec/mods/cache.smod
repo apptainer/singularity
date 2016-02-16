@@ -14,18 +14,15 @@
 load_mod sappfile
 
 
-if [ -z "$CACHEDIR" -o -z "$TMPCACHEDIR" ]; then
+if [ -z "$CACHEDIR" ]; then
     if [ -n "$SINGULARITY_CACHEDIR" ]; then
         USERNAME=`id -un`
         CACHEDIR="$SINGULARITY_CACHEDIR/cache.$USERNAME"
-        TMPCACHEDIR="$SINGULARITY_CACHEDIR/tmp.$USERNAME"
     else
         CACHEDIR="$HOME/.singularity-cache"
-        TMPCACHEDIR="/tmp"
     fi
 
     message 2 "Using CACHEDIR=$CACHEDIR\n"
-    message 2 "Using TMPCACHEDIR=$TMPCACHEDIR\n"
 fi
 
 if [ ! -d "$CACHEDIR" ]; then
@@ -35,15 +32,8 @@ if [ ! -d "$CACHEDIR" ]; then
         exit 1
     fi
 fi
-if [ ! -d "$TMPCACHEDIR" ]; then
-    message 2 "Creating TMPCACHEDIR: $TMPCACHEDIR\n"
-    if ! mkdir -p "$TMPCACHEDIR"; then
-        message 0 "ERROR: Could not create CACHEDIR ($TMPCACHEDIR)\n"
-        exit 1
-    fi
-fi
 
-export CACHEDIR TMPCACHEDIR
+export CACHEDIR
 
 
 cache_sappinstall() {

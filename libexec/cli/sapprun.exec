@@ -46,21 +46,22 @@ fi
 
 
 ## Do the work
-trap true KILL INT QUIT
 
 message 2 "Running '$SAPPNAME'\n"
 
 # (re)define some variables for temporary envrionment
-CACHEDIR=`mktemp -d "$TMPCACHEDIR/.sapprun-$USERID.XXXXXXXXX"`
 SAPPNAME=`sappfile_name "$SAPPFILE"`
 SAPPDIR="$CACHEDIR/$SAPPNAME"
 CONTAINERPATH="$SAPPDIR/c"
 SINGULARITY_COMMAND="run"
-export CONTAINERPATH CACHEDIR SINGULARITY_COMMAND
+export CONTAINERPATH SINGULARITY_COMMAND
 
-message 2 "Installing SAPPFILE into: $CACHEDIR\n"
-if ! cache_sappinstall "$SAPPFILE"; then
-    exit 255
+
+if ! cache_sappexists "$SAPPNAME"; then
+    message 2 "Installing SAPPFILE into: $CACHEDIR\n"
+    if ! cache_sappinstall "$SAPPFILE"; then
+        exit 255
+    fi
 fi
 
 message 2 "Exec'ing Sexec in: $CONTAINERPATH\n"
@@ -68,11 +69,6 @@ sexec_exec "$@" <&0 &
 
 wait $!
 EXITVAL="$?"
-
-message 2 "Deleting CACHEDIR at: $CACHEDIR\n"
-if ! rm -rf "$CACHEDIR"; then
-    exit 255
-fi
 
 
 exit "$EXITVAL"
