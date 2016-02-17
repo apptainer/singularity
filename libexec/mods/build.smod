@@ -31,6 +31,9 @@ INCLUDE_LIBS="libnss_files*.so.*"
 
 LIBDIR=`uname -p | grep -q x86_64 && echo "/lib64" || echo "/lib"`
 
+# Generate a UUID
+SINGULARITY_UUID=`cat /proc/sys/kernel/random/uuid`
+
 
 run_scriptlet() {
     SCRIPTLET="$1"
@@ -492,8 +495,11 @@ build_meta() {
     cat "$SAPPSPEC" > "$INSTALLDIR/spec"
 
     message 1 "Writing metadata\n"
+    get_key_from_conf "name" "$SAPPSPEC" > "$INSTALLDIR/name"
     get_key_from_conf "Summary" "$SAPPSPEC" > "$INSTALLDIR/summary"
     get_key_from_conf "Maintainer" "$SAPPSPEC" > "$INSTALLDIR/maintainer"
+
+    echo "$SINGULARITY_UUID" > "$INSTALLDIR/uuid"
 
     return 0
 }
@@ -509,7 +515,9 @@ build_sappfile() {
     echo "#!/usr/bin/env sapprun" > $SAPPFILE
     echo "Name: $NAME" >> $SAPPFILE
     echo "Summary: $SUMMARY" >> $SAPPFILE
+    echo "UUID: $SINGULARITY_UUID" >> $SAPPFILE
     echo "$HEADER_END" >> $SAPPFILE
+
 
     (cd "$INSTALLDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
     message 1 "WROTE: $SAPPFILE\n"

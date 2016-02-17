@@ -13,6 +13,8 @@
 
 load_mod sappfile
 
+UUID_DIR="u"
+NAME_DIR="n"
 
 if [ -z "$CACHEDIR" ]; then
     if [ -n "$SINGULARITY_CACHEDIR" ]; then
@@ -33,13 +35,23 @@ if [ ! -d "$CACHEDIR" ]; then
     fi
 fi
 
+if [ ! -d "$CACHEDIR/$UUID_DIR" ]; then
+    message 2 "Creating UUID_DIR: $CACHEDIR/$UUID_DIR\n"
+    mkdir -p "$CACHEDIR/$UUID_DIR"
+fi
+if [ ! -d "$CACHEDIR/$NAME_DIR" ]; then
+    message 2 "Creating NAME_DIR: $CACHEDIR/$NAME_DIR\n"
+    mkdir -p "$CACHEDIR/$NAME_DIR"
+fi
+
 export CACHEDIR
 
 
 
 cache_sappinstall() {
-    SAPPNAME="$1"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
+    SAPPFILE="$1"
+    SAPPUUID=`sappfile_uuid "$SAPPFILE"`
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
     if [ ! -d "$SAPPDIR" ]; then
         message 2 "Creating SAPP cache directory\n"
@@ -51,27 +63,24 @@ cache_sappinstall() {
 
     exec 99> "$SAPPDIR/lock"
     if flock -x -n 99; then
-        _sappinstall "$@"
+        _sappinstall "$SAPPFILE" "$SAPPUUID"
         flock -u 99
     else
         message 2 "Waiting on another installation process to complete...\n"
         flock -x 99
     fi
 
-    cache_sappcheck "$SAPPNAME"
+    cache_sappcheck "$SAPPUUID"
 
     return $?
 }
 
 _sappinstall() {
-    SAPPNAME="$1"
-    SAPPFILE="$2"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
+    SAPPFILE="$1"
+    SAPPUUID="$2"
+    SAPPNAME=`sappfile_name "$SAPPFILE"`
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
-        exit 1
-    fi
     if [ -z "$SAPPFILE" ]; then
         message 0 "ERROR: SAPPFILE undefined\n"
         exit 1
@@ -85,30 +94,9 @@ _sappinstall() {
         exit 1
     fi
 
-    if ! SAPPSUM=`sappfile_sum "$SAPPFILE"`; then
-        message 0 "ERROR: Could not obtain checksum for $SAPPFILE\n"
-        exit 1
-    fi
-
-    if cache_sappexists "$SAPPNAME"; then
-        message 2 "Comparing checksums of packages\n"
-        if CACHED_SAPPSUM=`cache_sappsum "$SAPPNAME"`; then
-            if [ "$CACHED_SAPPSUM" = "$SAPPSUM" ]; then
-                message 2 "Singularity container is already installed: $SAPPNAME\n"
-                return 0
-            else
-                message 2 "Removing previous Singularity container\n"
-                if ! cache_sappdelete "$SAPPNAME"; then
-                    message 0 "ERROR: Could not delete previous SAPP cache: $SAPPNAME\n"
-                    exit 1
-                fi
-                message 2 "Recreating SAPP cache directory\n"
-                if ! mkdir -p "$SAPPDIR"; then
-                    message 0 "ERROR: Could not create SAPP cache directory: $SAPPDIR\n"
-                    exit 1
-                fi
-            fi
-        fi
+    if cache_sappexists "$SAPPUUID"; then
+        message 2 "Singularity container is already installed: $SAPPNAME\n"
+        return 0
     fi
 
     message 2 "Installing Singularity Container...\n"
@@ -133,39 +121,10 @@ _sappinstall() {
     message 2 "Calculating checksums\n"
     (cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
 
+    message 2 "Adding UUID to name file\n"
+    echo "$SAPPUUID" >> "$CACHEDIR/$NAME_DIR/$SAPPNAME"
+
     return 0
-}
-
-
-cache_sappsum() {
-    SAPPNAME="$1"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
-
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
-        exit 1
-    fi
-
-    if [ ! -f "$SAPPDIR/sum" ]; then
-        return 1
-    fi
-    cat "$SAPPDIR/sum"
-}
-
-
-cache_sappsummary() {
-    SAPPNAME="$1"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
-
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
-        exit 1
-    fi
-
-    if [ ! -f "$SAPPDIR/summary" ]; then
-        return 1
-    fi
-    cat "$SAPPDIR/summary"
 }
 
 
@@ -176,19 +135,102 @@ cache_sappdir() {
         message 0 "ERROR: SAPPNAME undefined\n"
         exit 1
     fi
-    if ! cache_sappexists "$SAPPNAME"; then
+
+    if UUID=`cache_sappuuid "$SAPPNAME"`; then
+        echo "$CACHEDIR/$UUID_DIR/$UUID"
+        return 0
+    else
         return 1
     fi
-    echo "$CACHEDIR/$SAPPNAME"
+}
+
+cache_sappuuid() {
+    SAPPNAME="$1"
+
+    if [ -z "$SAPPNAME" ]; then
+        message 0 "ERROR: SAPPNAME undefined\n"
+        exit 1
+    fi
+
+    if [ -f "$CACHEDIR/$NAME_DIR/$SAPPNAME" ]; then
+        tail -n 1 "$CACHEDIR/$NAME_DIR/$SAPPNAME"
+    else
+        return 1
+    fi
+}
+
+cache_sappnameexists() {
+    SAPPNAME="$1"
+
+    if [ -z "$SAPPNAME" ]; then
+        message 0 "ERROR: SAPPNAME undefined\n"
+        exit 1
+    fi
+
+    if [ -f "$CACHEDIR/$NAME_DIR/$SAPPNAME" -a -s "$CACHEDIR/$NAME_DIR/$SAPPNAME" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+cache_sappname() {
+    SAPPUUID="$1"
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
+
+    if [ -z "$SAPPUUID" ]; then
+        message 0 "ERROR: SAPPUUID undefined\n"
+        exit 1
+    fi
+
+    if [ ! -f "$SAPPDIR/name" ]; then
+        echo "UNDEFINED"
+        return 1
+    fi
+    cat "$SAPPDIR/name"
+}
+
+
+cache_sappsum() {
+    SAPPUUID="$1"
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
+
+    if [ -z "$SAPPUUID" ]; then
+        message 0 "ERROR: SAPPUUID undefined\n"
+        exit 1
+    fi
+
+    if [ ! -f "$SAPPDIR/sum" ]; then
+        echo "UNDEFINED"
+        return 1
+    fi
+    cat "$SAPPDIR/sum"
+}
+
+
+cache_sappsummary() {
+    SAPPUUID="$1"
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
+
+    if [ -z "$SAPPUUID" ]; then
+        message 0 "ERROR: SAPPUUID undefined\n"
+        exit 1
+    fi
+
+    if [ ! -f "$SAPPDIR/summary" ]; then
+        echo "UNDEFINED"
+        return 1
+    fi
+    cat "$SAPPDIR/summary"
 }
 
 
 cache_sappsize() {
-    SAPPNAME="$1"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
+    SAPPUUID="$1"
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
+    if [ -z "$SAPPUUID" ]; then
+        message 0 "ERROR: SAPPUUID undefined\n"
         exit 1
     fi
 
@@ -199,11 +241,11 @@ cache_sappsize() {
 
 
 cache_sappexists() {
-    SAPPNAME="$1"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
+    SAPPUUID="$1"
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
+    if [ -z "$SAPPUUID" ]; then
+        message 0 "ERROR: SAPP UUID undefined\n"
         exit 1
     fi
 
@@ -214,12 +256,24 @@ cache_sappexists() {
 }
 
 cache_sappdelete() {
-    SAPPNAME="$1"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
+    SAPPUUID="$1"
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
+    if [ -z "$SAPPUUID" ]; then
+        message 0 "ERROR: SAPP UUID undefined\n"
         exit 1
+    fi
+
+    if [ -f "$SAPPDIR/name" ]; then
+        NAME=`cat "$SAPPDIR/name"`
+    fi
+    if [ -f "$CACHEDIR/$NAME_DIR/$NAME" ]; then
+        if ! sed -i "/^$SAPPUUID$/d" "$CACHEDIR/$NAME_DIR/$NAME"; then
+            message 0 "WARNING: Could not remove UUID from name file\n"
+        fi
+        if [ ! -s "$CACHEDIR/$NAME_DIR/$NAME" ]; then
+            rm -f "$CACHEDIR/$NAME_DIR/$NAME"
+        fi
     fi
 
     if ! rm -rf "$SAPPDIR" >/dev/null 2>&1; then
@@ -229,15 +283,12 @@ cache_sappdelete() {
 }
 
 cache_sapplist() {
-    if [ -z "$1" ]; then
-        ALL="*"
-    fi
-    if cd "$CACHEDIR" 2>/dev/null; then
-        for i in $@ $ALL; do
-            if [ "$i" = "*" ]; then
+    if cd "$CACHEDIR/$UUID_DIR" 2>/dev/null; then
+        for spec in */spec; do
+            if [ "$spec" = "*/spec" ]; then
                 return 0
-            elif cache_sappexists "$i"; then
-                echo "$i"
+            else
+                dirname "$spec"
             fi
         done
     fi
@@ -273,11 +324,11 @@ cache_sappfilecheck() {
 
 
 cache_sappcheck() {
-    SAPPNAME="$1"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
+    SAPPUUID="$1"
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
+    if [ -z "$SAPPUUID" ]; then
+        message 0 "ERROR: SAPP UUID undefined\n"
         exit 1
     fi
 

@@ -31,11 +31,12 @@ load_mod cache
 RETVAL=1
 
 
-printf "%-20s %10s %s\n" "CONTAINER NAME" "SIZE (Mb)" "SUMMARY"
-for SAPPNAME in `cache_sapplist "$@"`; do
-    SIZE=`cache_sappsize "$SAPPNAME"`
-    SUMMARY=`cache_sappsummary "$SAPPNAME"`
-    printf "%-20s %10s %s\n" "$SAPPNAME" "$SIZE" "$SUMMARY"
+printf "%-20s %-37s %10s %s\n" "CONTAINER NAME" "UUID" "SIZE(Mb)" "SUMMARY"
+for SAPPUUID in `cache_sapplist "$@"`; do
+    NAME=`cache_sappname "$SAPPUUID"`
+    SIZE=`cache_sappsize "$SAPPUUID"`
+    SUMMARY=`cache_sappsummary "$SAPPUUID"`
+    printf "%-20s %-37s %10s %s\n" "$NAME" "$SAPPUUID" "$SIZE" "$SUMMARY"
     RETVAL=0
 done
 

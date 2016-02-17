@@ -46,7 +46,7 @@ fi
 if ! cache_sappexists "$SAPPNAME"; then
     message 1 "Installing: $SAPPNAME\n"
 
-    cache_sappinstall "$SAPPNAME" "$SAPPFILE"
+    cache_sappinstall "$SAPPFILE"
 
     message 1 "Done...\n"
 else
