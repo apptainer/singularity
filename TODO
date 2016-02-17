@@ -4,6 +4,9 @@ Singularity-build:
     - Support a mechanism for staging data (intput and output)
     - Test to make sure a specfile is a specfile before building
 
+Singularity-install:
+    - Lock on installs (mkdir ...; flock until done)
+
 
 Singularity-run:
     - Support archiving output
