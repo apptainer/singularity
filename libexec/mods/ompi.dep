@@ -23,13 +23,6 @@
 # cases of abnormal termination), users generally prefer to
 # have the clearer explanations, so slurp those up too
 #
-# Finally, we pickup /usr/bin/ssh. This is only required for
-# the case where someone executes "singularity run mycontainer"
-# as MPI interprets this as a singleton, which means we have
-# to setup a daemon within the container to "shepherd" the
-# singleton. The daemon requires access to ssh for those
-# cases where the user calls MPI_Comm_spawn and wants to
-# launch a secondary job on additional nodes.
 
 BIN_RESOLVERS="openmpi_resolver $BIN_RESOLVERS"
 
@@ -41,8 +34,6 @@ openmpi_resolver() {
             PREFIX=`dirname "$LIBDIR"`
             install_file "$LIBDIR/openmpi/*.so"
             install_file "$PREFIX/share/openmpi/*.txt"
-            install_file "$PREFIX/bin/orted"
-            install_file "/usr/bin/ssh"
         fi
     done
 }
