@@ -69,6 +69,7 @@ stest 0 singularity --version
 stest 0 sh -c "echo 'Name: cat' > example.sspec"
 stest 0 sh -c "echo 'Exec: /bin/cat' >> example.sspec"
 stest 0 singularity --quiet build example.sspec
+stest 1 singularity list
 
 # Running basic tests on sapp directly
 stest 1 ls $TEMPDIR/tmp/*
@@ -80,7 +81,6 @@ stest 0 sh -c "cat example.sspec | ./cat.sapp | grep -q '^Name'"
 stest 1 ls $TEMPDIR/tmp/*
 
 # Making sure cache is empty and installing cat.sapp
-stest 1 singularity list
 stest 0 singularity install cat.sapp
 stest 0 singularity list
 stest 0 singularity check cat

@@ -313,31 +313,28 @@ cache_sapplist() {
 }
 
 cache_sappfilecheck() {
-message 0 "FIXME: Update to uuid\n"
-    SAPPNAME="$1"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
+    SAPPUUID="$1"
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
+    if [ -z "$SAPPUUID" ]; then
+        message 0 "ERROR: SAPP UUID undefined\n"
         exit 1
     fi
+
     if [ ! -f "$SAPPDIR/files" ]; then
         message 0 "ERROR: File checksums not found for this SAPP\n"
         exit 1
     fi
-    ( if cache_sappexists "$SAPPNAME"; then
+    if cache_sappuuidexists "$SAPPUUID"; then
         if ! cd "$SAPPDIR/c" 2>/dev/null; then
             message 0 "ERROR: Could not chdir to SAPP directory\n"
-            exit 1
+            return 1
         fi
 
         if ! md5sum -c "$SAPPDIR/files"; then
             message 0 "ERROR: Cached file check failed, something has changed!\n"
-            exit 1
+            return 1
         fi
-    fi )
-    if [ "$?" != "0" ]; then
-        return 1
     fi
 }
 
