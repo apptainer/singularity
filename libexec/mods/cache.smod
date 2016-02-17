@@ -129,19 +129,15 @@ _sappinstall() {
 
 
 cache_sappdir() {
-    SAPPNAME="$1"
+    SAPPUUID="$1"
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
+    if [ -z "$SAPPUUID" ]; then
+        message 0 "ERROR: SAPPUUID undefined\n"
         exit 1
     fi
 
-    if UUID=`cache_sappuuid "$SAPPNAME"`; then
-        echo "$CACHEDIR/$UUID_DIR/$UUID"
-        return 0
-    else
-        return 1
-    fi
+    echo "$SAPPDIR"
 }
 
 cache_sappuuid() {
@@ -152,7 +148,9 @@ cache_sappuuid() {
         exit 1
     fi
 
-    if [ -f "$CACHEDIR/$NAME_DIR/$SAPPNAME" ]; then
+    if cache_sappexists "$SAPPNAME"; then
+        echo "$SAPPNAME"
+    elif [ -f "$CACHEDIR/$NAME_DIR/$SAPPNAME" ]; then
         tail -n 1 "$CACHEDIR/$NAME_DIR/$SAPPNAME"
     else
         return 1

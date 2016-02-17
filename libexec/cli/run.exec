@@ -62,16 +62,22 @@ if [ -z "$1" ]; then
 fi
 
 if [ -f "$1" ]; then
-    SAPPUUID=`sappfile_name "$1"`
-    if ! cache_sappexists "$SAPPUUID"; then
-        message 2 "Installing SAPPFILE into: $CACHEDIR\n"
-        if ! cache_sappinstall "$1"; then
-            exit 255
+    if sappfile_issapp "$1"; then
+        SAPPUUID=`sappfile_name "$1"`
+        if ! cache_sappexists "$SAPPUUID"; then
+            message 2 "Installing SAPPFILE into: $CACHEDIR\n"
+            if ! cache_sappinstall "$1"; then
+                exit 255
+            fi
         fi
+    else
+        message 0 "ERROR: '$1' is not a Singularity container\n"
+        exit 255
     fi
 else
     SAPPNAME="$1"
-    if ! cache_sappnameexists "$SAPPNAME"; then
+    #if ! cache_sappnameexists "$SAPPNAME"; then
+    if ! SAPPUUID=`cache_sappuuid "$SAPPNAME"`; then
         message 0 "ERROR: Singularity container is not installed: $SAPPNAME\n"
         exit 255
     fi
@@ -79,7 +85,7 @@ fi
 
 message 2 "SAPPFILE name: $SAPPNAME\n"
 
-SAPPDIR=`cache_sappdir "$SAPPNAME"`
+SAPPDIR=`cache_sappdir "$SAPPUUID"`
 SINGULARITY_COMMAND="run"
 CONTAINERPATH="$SAPPDIR/c"
 export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
@@ -94,6 +100,5 @@ if [ -n "$FILE_CHECK" ]; then
     fi
 fi
 
-message 2 "Exec'ing Sexec\n"
 sexec_exec "$@" <&0
 
