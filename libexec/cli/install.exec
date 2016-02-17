@@ -29,8 +29,8 @@ load_mod sappfile
 
 
 SAPPFILE="$1"
+SAPPNAME=`sappfile_name "$SAPPFILE"`
 shift
-export SAPPFILE
 
 if [ -z "$SAPPFILE" ]; then
     echo "USAGE: singularity (options) install [SAPP file]\n"
@@ -43,33 +43,12 @@ if [ ! -f "$SAPPFILE" ]; then
 fi
 
 
-SAPPNAME=`sappfile_name "$SAPPFILE"`
-SAPPSUM=`sappfile_sum "$SAPPFILE"`
+if ! cache_sappexists "$SAPPNAME"; then
+    message 1 "Installing: $SAPPNAME\n"
 
-if CACHED_SAPPSUM=`cache_sappsum "$SAPPNAME"`; then
-    message 1 "SAPP cache exists for: $SAPPNAME\n"
-    if [ "$CACHED_SAPPSUM" != "$SAPPSUM" ]; then
-        REMOVE_PREVIOUS=1
-    else
-        message 1 "Checking files in the cache\n"
-        if cache_sappfilecheck "$SAPPNAME" >/dev/null; then
-            message 1 "Leaving installed version installed\n"
-            exit 0
-        else
-            REMOVE_PREVIOUS=1
-        fi
-    fi
+    cache_sappinstall "$SAPPNAME" "$SAPPFILE"
+
+    message 1 "Done...\n"
+else
+    message 1 "Singularity container is already installed: $SAPPNAME\n"
 fi
-
-if [ -n "$REMOVE_PREVIOUS" ]; then
-    message 1 "Removing previous SAPP cache\n"
-    if ! cache_sappdelete "$SAPPNAME"; then
-        message 0 "ERROR: Could not delete previous SAPP cache: $SAPPNAME\n"
-        exit 1
-    fi
-fi
-
-cache_sappinstall "$SAPPFILE"
-cache_filesum "$SAPPNAME"
-
-message 1 "Done...\n"

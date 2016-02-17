@@ -29,8 +29,7 @@ load_mod sexec
 
 
 SAPPFILE="$1"
-USERID=`id -u`
-export SAPPFILE
+SAPPNAME=`sappfile_name "$SAPPFILE"`
 shift
 
 if [ -z "$SAPPFILE" ]; then
@@ -45,30 +44,19 @@ fi
 
 
 
-## Do the work
-
 message 2 "Running '$SAPPNAME'\n"
 
-# (re)define some variables for temporary envrionment
-SAPPNAME=`sappfile_name "$SAPPFILE"`
+## (re)define some variables for temporary envrionment
 SAPPDIR="$CACHEDIR/$SAPPNAME"
 CONTAINERPATH="$SAPPDIR/c"
 SINGULARITY_COMMAND="run"
 export CONTAINERPATH SINGULARITY_COMMAND
 
 
-if ! cache_sappexists "$SAPPNAME"; then
-    message 2 "Installing SAPPFILE into: $CACHEDIR\n"
-    if ! cache_sappinstall "$SAPPFILE"; then
-        exit 255
-    fi
+if ! cache_sappinstall "$SAPPNAME" "$SAPPFILE"; then
+    message 0 "ERROR: Failed installing Singularity container: $SAPPNAME\n"
+    exit 255
 fi
 
 message 2 "Exec'ing Sexec in: $CONTAINERPATH\n"
-sexec_exec "$@" <&0 &
-
-wait $!
-EXITVAL="$?"
-
-
-exit "$EXITVAL"
+sexec_exec "$@" <&0

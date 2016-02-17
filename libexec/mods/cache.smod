@@ -36,10 +36,42 @@ fi
 export CACHEDIR
 
 
+
 cache_sappinstall() {
-    SAPPFILE="$1"
+    SAPPNAME="$1"
     SAPPDIR="$CACHEDIR/$SAPPNAME"
 
+    if [ ! -d "$SAPPDIR" ]; then
+        message 2 "Creating SAPP cache directory\n"
+        if ! mkdir -p "$SAPPDIR"; then
+            message 0 "ERROR: Could not create SAPP cache directory: $SAPPDIR\n"
+            exit 1
+        fi
+    fi
+
+    exec 99> "$SAPPDIR/lock"
+    if flock -x -n 99; then
+        _sappinstall "$@"
+        flock -u 99
+    else
+        message 2 "Waiting on another installation process to complete...\n"
+        flock -x 99
+    fi
+
+    cache_sappcheck "$SAPPNAME"
+
+    return $?
+}
+
+_sappinstall() {
+    SAPPNAME="$1"
+    SAPPFILE="$2"
+    SAPPDIR="$CACHEDIR/$SAPPNAME"
+
+    if [ -z "$SAPPNAME" ]; then
+        message 0 "ERROR: SAPPNAME undefined\n"
+        exit 1
+    fi
     if [ -z "$SAPPFILE" ]; then
         message 0 "ERROR: SAPPFILE undefined\n"
         exit 1
@@ -52,18 +84,34 @@ cache_sappinstall() {
         message 0 "ERROR: File is not Singularity App/container: $SAPPFILE\n"
         exit 1
     fi
-    if [ -z "$SAPPNAME" -a -n "$SAPPFILE" ]; then
-        SAPPNAME=`basename "$SAPPFILE" | sed -e 's@.sapp$@@'`
+
+    if ! SAPPSUM=`sappfile_sum "$SAPPFILE"`; then
+        message 0 "ERROR: Could not obtain checksum for $SAPPFILE\n"
+        exit 1
     fi
-    if [ ! -d "$SAPPDIR" ]; then
-        message 2 "Creating SAPP cache directory\n"
-        if ! mkdir -p "$SAPPDIR"; then
-            message 0 "ERROR: Could not create SAPP cache directory: $SAPPDIR\n"
-            exit 1
+
+    if cache_sappexists "$SAPPNAME"; then
+        message 2 "Comparing checksums of packages\n"
+        if CACHED_SAPPSUM=`cache_sappsum "$SAPPNAME"`; then
+            if [ "$CACHED_SAPPSUM" = "$SAPPSUM" ]; then
+                message 2 "Singularity container is already installed: $SAPPNAME\n"
+                return 0
+            else
+                message 2 "Removing previous Singularity container\n"
+                if ! cache_sappdelete "$SAPPNAME"; then
+                    message 0 "ERROR: Could not delete previous SAPP cache: $SAPPNAME\n"
+                    exit 1
+                fi
+                message 2 "Recreating SAPP cache directory\n"
+                if ! mkdir -p "$SAPPDIR"; then
+                    message 0 "ERROR: Could not create SAPP cache directory: $SAPPDIR\n"
+                    exit 1
+                fi
+            fi
         fi
     fi
 
-    message 1 "Installing Singularity Container...\n"
+    message 2 "Installing Singularity Container...\n"
     message 2 "Caching SAPP archive to: $SAPPDIR\n"
     sappfile_payload "$SAPPFILE" | gunzip -dc | (cd "$SAPPDIR"; cpio -id --quiet)
     message 2 "Caching MD5sum of SAPPFILE\n"
@@ -82,21 +130,7 @@ cache_sappinstall() {
         egrep "(:|,)$USER(,|$)" /etc/group 2>/dev/null >> "$SAPPDIR/c/etc/group"
     fi
 
-
-    return 0
-}
-
-
-cache_filesum() {
-    SAPPNAME="$1"
-    SAPPDIR="$CACHEDIR/$SAPPNAME"
-
-    if [ -z "$SAPPNAME" ]; then
-        message 0 "ERROR: SAPPNAME undefined\n"
-        exit 1
-    fi
-
-    message 1 "Calculating checksums\n"
+    message 2 "Calculating checksums\n"
     (cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
 
     return 0
@@ -173,10 +207,8 @@ cache_sappexists() {
         exit 1
     fi
 
-    if [ -x "$SAPPDIR/c/singularity" ]; then
+    if [ -d "$SAPPDIR/c" ]; then
         return 0
-    elif [ -d "$SAPPDIR" ]; then
-        message 0 "ERROR: Invalid container cache: $SAPPNAME\n"
     fi
     return 1
 }
@@ -239,4 +271,24 @@ cache_sappfilecheck() {
     fi
 }
 
+
+cache_sappcheck() {
+    SAPPNAME="$1"
+    SAPPDIR="$CACHEDIR/$SAPPNAME"
+
+    if [ -z "$SAPPNAME" ]; then
+        message 0 "ERROR: SAPPNAME undefined\n"
+        exit 1
+    fi
+
+    if [ ! -d "$SAPPDIR" ]; then
+        return 1
+    fi
+
+    if [ ! -x "$SAPPDIR/c/singularity" ]; then
+        return 1
+    fi
+
+    return 0
+}
 
