@@ -28,25 +28,28 @@ load_mod cache
 load_mod sexec
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) test [container name]\n"
-    exit 1
-fi
-
-if ! cache_sappexists "$1"; then
-    message 0 "ERROR: '$1' is not installed\n"
+    echo "USAGE: singularity (options) test [container name]"
     exit 1
 fi
 
 SAPPNAME="$1"
+
+if ! SAPPUUID=`cache_sappname2uuid "$1"`; then
+    message 0 "ERROR: Singularity container is not installed: $SAPPNAME\n"
+    exit 255
+fi
+
+if ! SAPPDIR=`cache_sappdir "$SAPPUUID"`; then
+    message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
+    exit 255
+fi
+
 SINGULARITY_COMMAND="test"
-SAPPDIR=`cache_sappdir "$SAPPNAME"`
 CONTAINERPATH="$SAPPDIR/c"
 export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
 shift
 
-
-## Do the work
-message 2 "Testing '$SAPPNAME'\n"
+message 2 "Starting a test in '$SAPPNAME'\n"
 
 message 2 "Exec'ing Sexec\n"
 sexec_exec "$@" <&0

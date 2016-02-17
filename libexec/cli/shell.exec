@@ -32,14 +32,19 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if ! cache_sappexists "$1"; then
-    message 0 "ERROR: '$1' is not installed\n"
-    exit 1
+SAPPNAME="$1"
+
+if ! SAPPUUID=`cache_sappname2uuid "$1"`; then
+    message 0 "ERROR: Singularity container is not installed: $SAPPNAME\n"
+    exit 255
 fi
 
-SAPPNAME="$1"
+if ! SAPPDIR=`cache_sappdir "$SAPPUUID"`; then
+    message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
+    exit 255
+fi
+
 SINGULARITY_COMMAND="shell"
-SAPPDIR=`cache_sappdir "$SAPPNAME"`
 CONTAINERPATH="$SAPPDIR/c"
 export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
 shift

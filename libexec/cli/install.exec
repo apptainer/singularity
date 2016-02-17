@@ -29,6 +29,7 @@ load_mod sappfile
 
 
 SAPPFILE="$1"
+SAPPUUID=`sappfile_uuid "$SAPPFILE"`
 SAPPNAME=`sappfile_name "$SAPPFILE"`
 shift
 
@@ -43,12 +44,12 @@ if [ ! -f "$SAPPFILE" ]; then
 fi
 
 
-if ! cache_sappexists "$SAPPNAME"; then
-    message 1 "Installing: $SAPPNAME\n"
+if ! cache_sappuuidexists "$SAPPUUID"; then
+    message 1 "Installing: $SAPPNAME:$SAPPUUID\n"
 
     cache_sappinstall "$SAPPFILE"
 
     message 1 "Done...\n"
 else
-    message 1 "Singularity container is already installed: $SAPPNAME\n"
+    message 1 "Singularity container is already installed: $SAPPNAME:$SAPPUUID\n"
 fi
