@@ -1,7 +1,6 @@
 cliexecdir = $(libexecdir)/singularity/cli
 
-dist_cliexec_SCRIPTS = sapprun.exec \
-	build.exec build.help build.summary \
+dist_cliexec_SCRIPTS = build.exec build.help build.summary \
 	check.exec check.help check.summary \
 	delete.exec delete.help delete.summary \
 	list.exec list.help list.summary \
