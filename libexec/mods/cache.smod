@@ -157,6 +157,23 @@ cache_sappuuid() {
     fi
 }
 
+cache_sappuuids() {
+    SAPPNAME="$1"
+
+    if [ -z "$SAPPNAME" ]; then
+        message 0 "ERROR: SAPPNAME undefined\n"
+        exit 1
+    fi
+
+    if cache_sappexists "$SAPPNAME"; then
+        echo "$SAPPNAME"
+    elif [ -f "$CACHEDIR/$NAME_DIR/$SAPPNAME" ]; then
+        cat "$CACHEDIR/$NAME_DIR/$SAPPNAME"
+    else
+        return 1
+    fi
+}
+
 cache_sappnameexists() {
     SAPPNAME="$1"
 

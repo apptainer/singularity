@@ -36,13 +36,15 @@ fi
 
 RETVAL=1
 
-for uuid in $@; do
-    if cache_sappdelete "$uuid"; then
-        message 1 "Deleted container cache: $uuid\n"
-        RETVAL=0
-    else
-        message 0 "Could not delete: $uuid\n"
-    fi
+for name in $@; do
+    for uuid in `cache_sappuuids "$name"`; do
+        if cache_sappdelete "$uuid"; then
+            message 1 "Deleted container cache: $uuid\n"
+            RETVAL=0
+        else
+            message 0 "Could not delete: $uuid\n"
+        fi
+    done
 done
 
 
