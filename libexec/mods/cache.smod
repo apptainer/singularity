@@ -251,8 +251,8 @@ cache_sappsummary() {
         exit 1
     fi
 
-    if [ ! -f "$SAPPDIR/summary" ]; then
-        echo "UNDEFINED"
+    if [ ! -f "$SAPPDIR/summary" -o ! -s "$SAPPDIR/summary" ]; then
+        echo "--"
         return 1
     fi
     cat "$SAPPDIR/summary"
@@ -302,12 +302,18 @@ cache_sappdelete() {
 }
 
 cache_sapplist() {
-    if [ -z "$1" ]; then
-        ALL="*"
+    if cd "$CACHEDIR/$UUID_DIR" 2>/dev/null; then
+        for uuid in $@; do
+            if [ -d "$uuid" ]; then
+                echo "$uuid"
+            fi
+        done
     fi
     if cd "$CACHEDIR/$NAME_DIR" 2>/dev/null; then
-        for name in `ls -t $@ $ALL 2>/dev/null`; do
-            cat "$name"
+        for name in `ls -t $@ 2>/dev/null`; do
+            if [ -f "$name" ]; then
+                cat "$name"
+            fi
         done
     fi
 }
