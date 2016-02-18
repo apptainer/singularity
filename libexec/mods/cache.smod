@@ -129,6 +129,9 @@ _sappinstall() {
     message 2 "Adding UUID to name file\n"
     echo "$SAPPUUID" >> "$CACHEDIR/$NAME_DIR/$SAPPNAME"
 
+    message 2 "Finishing up container installation\n"
+    date > "$SAPPDIR/installed"
+
     return 0
 }
 
@@ -201,17 +204,16 @@ cache_sappuuid2name() {
 
 cache_sappnameexists() {
     SAPPNAME="$1"
+    SAPPUUID=`cache_sappname2uuid "$SAPPNAME"`
 
     if [ -z "$SAPPNAME" ]; then
         message 0 "ERROR: SAPPNAME undefined\n"
         exit 1
     fi
 
-    if [ -f "$CACHEDIR/$NAME_DIR/$SAPPNAME" -a -s "$CACHEDIR/$NAME_DIR/$SAPPNAME" ]; then
-        return 0
-    else
-        return 1
-    fi
+    cache_sappuuidexists "$SAPPUUID"
+
+    return $?
 }
 
 cache_sappuuidexists() {
@@ -223,7 +225,7 @@ cache_sappuuidexists() {
         exit 1
     fi
 
-    if [ -d "$SAPPDIR/c" ]; then
+    if [ -f "$SAPPDIR/installed" ]; then
         return 0
     fi
     return 1
