@@ -45,11 +45,11 @@ fi
 
 
 if ! cache_sappuuidexists "$SAPPUUID"; then
-    message 1 "Installing: $SAPPNAME:$SAPPUUID\n"
+    message 1 "Installing: $SAPPNAME ($SAPPUUID)\n"
 
     cache_sappinstall "$SAPPFILE"
 
     message 1 "Done...\n"
 else
-    message 1 "Singularity container is already installed: $SAPPNAME:$SAPPUUID\n"
+    message 1 "Singularity container is already installed: $SAPPNAME ($SAPPUUID)\n"
 fi
