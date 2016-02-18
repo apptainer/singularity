@@ -44,6 +44,10 @@ if [ ! -d "$CACHEDIR/$NAME_DIR" ]; then
     message 2 "Creating NAME_DIR: $CACHEDIR/$NAME_DIR\n"
     mkdir -p "$CACHEDIR/$NAME_DIR"
 fi
+if [ ! -d "$CACHEDIR/$LOCK_DIR" ]; then
+    message 2 "Creating LOCK_DIR: $CACHEDIR/$LOCK_DIR\n"
+    mkdir -p "$CACHEDIR/$LOCK_DIR"
+fi
 
 export CACHEDIR
 
@@ -52,17 +56,9 @@ export CACHEDIR
 cache_sappinstall() {
     SAPPFILE="$1"
     SAPPUUID=`sappfile_uuid "$SAPPFILE"`
-    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
+    LOCKFILE="$CACHEDIR/$LOCK_DIR/$SAPPUUID.lock"
 
-    if [ ! -d "$SAPPDIR" ]; then
-        message 2 "Creating SAPP cache directory\n"
-        if ! mkdir -p "$SAPPDIR"; then
-            message 0 "ERROR: Could not create SAPP cache directory: $SAPPDIR\n"
-            exit 1
-        fi
-    fi
-
-    exec 99> "$SAPPDIR/lock"
+    exec 99> "$LOCKFILE"
     if flock -x -n 99; then
         _sappinstall "$SAPPFILE" "$SAPPUUID"
         flock -u 99
@@ -98,6 +94,14 @@ _sappinstall() {
     if cache_sappuuidexists "$SAPPUUID"; then
         message 2 "Singularity container is already installed: $SAPPNAME\n"
         return 0
+    fi
+
+    if [ ! -d "$SAPPDIR" ]; then
+        message 2 "Creating SAPP cache directory\n"
+        if ! mkdir -p "$SAPPDIR"; then
+            message 0 "ERROR: Could not create SAPP cache directory: $SAPPDIR\n"
+            exit 1
+        fi
     fi
 
     message 2 "Installing Singularity Container...\n"
