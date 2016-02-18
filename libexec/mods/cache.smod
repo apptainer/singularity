@@ -306,19 +306,22 @@ cache_sappdelete() {
 }
 
 cache_sapplist() {
-    if cd "$CACHEDIR/$UUID_DIR" 2>/dev/null; then
-        for uuid in $@; do
-            if [ -d "$uuid" ]; then
-                echo "$uuid"
-            fi
-        done
-    fi
     if cd "$CACHEDIR/$NAME_DIR" 2>/dev/null; then
         for name in `ls -t $@ 2>/dev/null`; do
             if [ -f "$name" ]; then
                 cat "$name"
+                FOUND=1
             fi
         done
+    fi
+    if [ -z "$FOUND" ]; then
+        if cd "$CACHEDIR/$UUID_DIR" 2>/dev/null; then
+            for uuid in $@; do
+                if [ -d "$uuid" ]; then
+                    echo "$uuid"
+                fi
+            done
+        fi
     fi
 }
 
