@@ -4,8 +4,8 @@ CLEANFILES = core.* *~
 AM_CFLAGS = -Wall
 AM_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"
 
-bindir = $(libexecdir)/singularity
-bin_PROGRAMS = sexec ftrace
+libexecbindir = $(libexecdir)/singularity
+libexecbin_PROGRAMS = sexec ftrace sapplauncher
 
 sexec_SOURCES = sexec.c util.c util.h
 
