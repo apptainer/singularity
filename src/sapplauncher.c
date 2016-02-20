@@ -39,6 +39,6 @@ int main(int argc, char **argv) {
         params[i+3] = argv[i];
     }
 
-    execv("/bin/env", params);
+    execv(ENV_BIN, params);
     return(255);
 }
