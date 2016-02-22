@@ -35,8 +35,11 @@ src/Makefile.in
 src/config.h
 src/config.h.in
 src/ftrace
-src/ftrace.o
 src/sexec
-src/sexec.o
+src/sappbuild
+src/sappdump
+src/sapplauncher
+src/sappmeta
+src/*.o
 src/stamp-h1
-src/util.o
+singularity-*.tar.gz
