@@ -12,4 +12,6 @@ sappbuild_SOURCES = sappbuild.c sappmetadata.c sappmetadata.h
 sappdump_SOURCES = sappdump.c sappmetadata.c sappmetadata.h
 sappmeta_SOURCES = sappdump.c sappmetadata.c sappmetadata.h
 
+sapplauncher_LDFLAGS = --static
+
 EXTRA_DIST = config.h 

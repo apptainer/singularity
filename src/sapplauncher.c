@@ -29,12 +29,12 @@ int main(int argc, char **argv) {
     char *params[argc+3];
     int i;
 
-    params[0] = (char *) malloc(strlen(ENV_BIN));
-    strcpy(params[0], ENV_BIN);
-    params[1] = (char *) malloc(strlen(SINGULARITY_BIN));
-    strcpy(params[1], SINGULARITY_BIN);
-    params[2] = (char *) malloc(strlen(SINGULARITY_CMD));
-    strcpy(params[2], SINGULARITY_CMD);
+    params[0] = (char *) malloc(strlen(ENV_BIN) + 1);
+    memcpy(params[0], ENV_BIN, sizeof(ENV_BIN));
+    params[1] = (char *) malloc(strlen(SINGULARITY_BIN) + 1);
+    memcpy(params[1], SINGULARITY_BIN, sizeof(SINGULARITY_BIN));
+    params[2] = (char *) malloc(strlen(SINGULARITY_CMD) + 1);
+    memcpy(params[2], SINGULARITY_CMD, sizeof(SINGULARITY_CMD));
     for (i=0; i <= argc; i++) {
         params[i+3] = argv[i];
     }
