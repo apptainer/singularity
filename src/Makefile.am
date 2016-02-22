@@ -8,8 +8,8 @@ libexecbindir = $(libexecdir)/singularity
 libexecbin_PROGRAMS = sexec ftrace sapplauncher sappbuild sappdump sappmeta
 
 sexec_SOURCES = sexec.c util.c util.h
-sappbuild_SOURCES = sappbuild.c sappheader.c sappheader.h
-sappdump_SOURCES = sappdump.c sappheader.c sappheader.h
-sappmeta_SOURCES = sappdump.c sappheader.c sappheader.h
+sappbuild_SOURCES = sappbuild.c sappmetadata.c sappmetadata.h
+sappdump_SOURCES = sappdump.c sappmetadata.c sappmetadata.h
+sappmeta_SOURCES = sappdump.c sappmetadata.c sappmetadata.h
 
 EXTRA_DIST = config.h 

@@ -20,13 +20,13 @@
 //
 //  * LIBEXECDIR/sapplauncher
 //  * argv[2]: Container archive
-//  * createheader(headerstruct) (library function in sappheader.c)
+//  * createheader(headerstruct) (library function in sappmetadata.c)
 //
 
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
-#include "sappheader.h"
+#include "sappmetadata.h"
 
 
 #ifndef LIBEXECDIR
