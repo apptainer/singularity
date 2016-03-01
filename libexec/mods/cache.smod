@@ -59,14 +59,14 @@ cache_sappinstall() {
     LOCKFILE="$CACHEDIR/$LOCK_DIR/$SAPPUUID.lock"
 
     (
-        if flock -x -n 99; then
+        if flock -x -n 9; then
             _sappinstall "$SAPPFILE" "$SAPPUUID"
-            flock -u 99
+            flock -u 9
         else
             message 2 "Waiting on another installation process to complete...\n"
-            flock -x 99
+            flock -x 9
         fi
-    ) 99> "$LOCKFILE"
+    ) 9> "$LOCKFILE"
 
     cache_sappcheck "$SAPPUUID"
 
