@@ -32,6 +32,8 @@ message() {
     if [ -z "$MESSAGE" ]; then
         return 0
     fi
+    shift
+    shift
     if [ "$LEVEL" -eq "0" ]; then
         tput -Txterm setaf 1 2>/dev/null
         printf "$MESSAGE" "$@" 1>&2
