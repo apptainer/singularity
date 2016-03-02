@@ -7,6 +7,7 @@ autom4te.cache/
 bin/Makefile
 bin/Makefile.in
 bin/singularity
+compile
 config.guess
 config.log
 config.status
