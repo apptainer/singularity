@@ -276,7 +276,7 @@ cache_sappsize() {
     fi
 
     SIZE_K=`du -sk "$SAPPDIR/c" | cut -f 1`
-    SIZE_M=`echo -ne "scale=1\n$SIZE_K/ 1024\n" | bc`
+    SIZE_M=`echo "scale=1; $SIZE_K/ 1024" | bc`
     echo $SIZE_M
 }
 
