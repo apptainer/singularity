@@ -185,7 +185,7 @@ build_runtime() {
     message 1 "Building the runtime level: $RUNTIMELEVEL\n"
 
     for i in $INCLUDE_FILES; do
-        if FILE=`which --skip-functions --skip-alias $i 2>/dev/null`; then
+        if FILE=`singularity_which $i 2>/dev/null`; then
             if ! install_file "$FILE" "/bin"; then
                 message 0 "ERROR: Could not install: $FILE\n"
                 exit 1
@@ -223,7 +223,7 @@ build_packageinstall() {
 
     message 1 "Evaluating: Exec\n"
     get_key_from_conf "exec" "$SAPPSPEC" | while read prog args; do
-        if FULLFILE=`which --show-dot "$prog" 2>/dev/null`; then
+        if FULLFILE=`singularity_which "$prog" 2>/dev/null`; then
             if ! install_file "$FULLFILE" "/bin"; then
                 message 0 "ERROR: Could not install: $i\n"
                 exit 1

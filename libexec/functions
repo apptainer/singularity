@@ -152,6 +152,25 @@ load_mod() {
 }
 
 
+# Different versions of which respond differently (print aliases, or take
+# different arguments)
+singularity_which() {
+    i="$1"
+    if [ -x "$i" ]; then
+        echo "$i"
+        return 0
+    fi
+    for p in `echo $PATH | sed -e 's/:/ /g'`; do
+        if [ -x "$p/$i" ]; then
+            echo "$p/$i"
+            return 0
+        fi
+    done
+    return 1
+}
+
+
+
 if [ "$DEBUG" = "1" ]; then
     set -x
 fi
