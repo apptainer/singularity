@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#define ENV_BIN "/bin/env"
+#define ENV_BIN "/usr/bin/env"
 #define SINGULARITY_BIN "singularity"
 #define SINGULARITY_CMD "run"
 
