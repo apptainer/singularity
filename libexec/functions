@@ -28,9 +28,10 @@ fi
 
 message() {
     LEVEL="$1"
-    shift
-    MESSAGE="$1"
-    shift
+    MESSAGE="$2"
+    if [ -z "$MESSAGE" ]; then
+        return 0
+    fi
     if [ "$LEVEL" -eq "0" ]; then
         tput -Txterm setaf 1 2>/dev/null
         printf "$MESSAGE" "$@" 1>&2
@@ -44,7 +45,7 @@ message() {
             tput -Txterm sgr0 2>/dev/null
         fi
     fi
-    return
+    return 0
 }
 
 

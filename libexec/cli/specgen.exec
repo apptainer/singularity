@@ -24,6 +24,11 @@ else
     exit 1
 fi
 
+if [ -z "$1" ]; then
+    echo "USAGE: singularity specgen [command] (args)"
+    exit 1
+fi
+
 
 PATH="$PATH:."
 PROGRAM=`singularity_which "$1"`

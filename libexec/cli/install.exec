@@ -31,7 +31,6 @@ load_mod sappfile
 SAPPFILE="$1"
 SAPPUUID=`sappfile_uuid "$SAPPFILE"`
 SAPPNAME=`sappfile_name "$SAPPFILE"`
-shift
 
 if [ -z "$SAPPFILE" ]; then
     echo "USAGE: singularity (options) install [SAPP file]\n"
@@ -42,7 +41,6 @@ if [ ! -f "$SAPPFILE" ]; then
     echo "ERROR: SAPP file ($SAPPFILE) not found\n"
     exit 1
 fi
-
 
 if ! cache_sappuuidexists "$SAPPUUID"; then
     message 1 "Installing: $SAPPNAME ($SAPPUUID)\n"
