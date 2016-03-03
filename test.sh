@@ -130,7 +130,7 @@ stest 1 singularity run which blahblah
 stest 0 sh -c "/bin/echo -e 'Name: ls' > example.sspec"
 stest 0 sh -c "/bin/echo -e '%files\n/bin/ls' >> example.sspec"
 #stest 0 sh -c "/bin/echo -e '%packages\nwhich' >> example.sspec"
-stest 0 sh -c "/bin/echo -e '%test\n/bin/echo 'hello123'' >> example.sspec"
+stest 0 sh -c "/bin/echo -e '%test\necho 'hello123'' >> example.sspec"
 stest 1 singularity --quiet build example.sspec
 stest 0 sh -c "/bin/echo -e '%runscript\nexec /bin/ls ls.sapp' >> example.sspec"
 stest 0 singularity --quiet build example.sspec
