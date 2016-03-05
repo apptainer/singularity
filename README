@@ -11,10 +11,10 @@ portability and distribution is not an efficient use of these technologies.
 Singularity works on a completely different perspective. Contrary to building
 and managing an entire operating system environment (for the sake of
 portability and reproducibility of an application stack), Singularity works
-on the opposite premis. By configuration of an application stack spec via a
+on the opposite premise. By configuration of an application stack spec via a
 configuration file, coupled with automatic dependency resolution to achieve
 portability, Singularity can create minimalistic singlet "app" which can
-easily be copied from system to systemand run using Singularity on different
+easily be copied from system to system and run using Singularity on different
 systems.
 
 In a manner of speaking, this is an OS X style application framework for
