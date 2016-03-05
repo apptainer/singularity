@@ -1,12 +1,12 @@
 #!/bin/sh
 
 if [ ! -f "autogen.sh" ]; then
-    echo "ERROR: Run this from the singularity source root"
+    /bin/echo "ERROR: Run this from the singularity source root"
     exit 1
 fi
 
 if [ ! -f "libexec/functions" ]; then
-    echo "ERROR: Could not find functions file"
+    /bin/echo "ERROR: Could not find functions file"
     exit 1
 fi
 
@@ -19,14 +19,14 @@ export SINGULARITY_CACHEDIR MESSAGELEVEL
 . ./libexec/functions
 
 
-echo "${BLUE}Gaining/checking sudo access...${NORMAL}"
+/bin/echo "${BLUE}Gaining/checking sudo access...${NORMAL}"
 sudo true
 
 if [ -z "$CLEAN_SHELL" ]; then
-    echo "${BLUE}Building/Installing Singularity to temporary directory${NORMAL}"
-    echo "Reinvoking in a clean shell"
+    /bin/echo "${BLUE}Building/Installing Singularity to temporary directory${NORMAL}"
+    /bin/echo "Reinvoking in a clean shell"
     sleep 1
-    exec env -i CLEAN_SHELL=1 PATH="/bin:/usr/bin:/sbin:/usr/sbin" sh "$0" "$*"
+    exec env -i CLEAN_SHELL=1 PATH="/bin:/usr/bin:/sbin:/usr/sbin" bash "$0" "$*"
 fi
 
 stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
@@ -36,16 +36,16 @@ stest 0 sudo make install-perms
 
 PATH="$TEMPDIR/bin:$PATH"
 
-echo
-echo "${BLUE}SINGULARITY_CACHEDIR=$SINGULARITY_CACHEDIR${NORMAL}"
-echo "${BLUE}PATH=$PATH${NORMAL}"
-echo
+/bin/echo
+/bin/echo "${BLUE}SINGULARITY_CACHEDIR=$SINGULARITY_CACHEDIR${NORMAL}"
+/bin/echo "${BLUE}PATH=$PATH${NORMAL}"
+/bin/echo
 
-echo "${BLUE}Creating temp working space at: $TEMPDIR${NORMAL}"
+/bin/echo "${BLUE}Creating temp working space at: $TEMPDIR${NORMAL}"
 stest 0 mkdir -p "$TEMPDIR"
 stest 0 pushd "$TEMPDIR"
 
-echo "${BLUE}Running tests...${NORMAL}"
+/bin/echo "${BLUE}Running tests...${NORMAL}"
 
 # Testing singularity internal commands
 stest 0 singularity
@@ -66,8 +66,8 @@ stest 0 singularity --help
 stest 0 singularity --version
 
 # Creating a minimal container
-stest 0 sh -c "echo 'Name: cat' > example.sspec"
-stest 0 sh -c "echo 'Exec: /bin/cat' >> example.sspec"
+stest 0 sh -c "/bin/echo 'Name: cat' > example.sspec"
+stest 0 sh -c "/bin/echo 'Exec: /bin/cat' >> example.sspec"
 stest 0 singularity --quiet build example.sspec
 stest 1 singularity list
 
@@ -93,20 +93,20 @@ stest 1 singularity run cat /etc/shadow
 stest 0 sh -c "cat example.sspec | singularity run cat | grep -q '^Name'"
 
 # Checking additional tests and functions of installed containers
-stest 0 sh -c "echo 'exit' | singularity shell cat"
-stest 1 sh -c "echo 'exit 1' | singularity shell cat"
-stest 0 sh -c "echo 'echo hello' | singularity shell cat | grep -q 'hello'"
+stest 0 sh -c "/bin/echo 'exit' | singularity shell cat"
+stest 1 sh -c "/bin/echo 'exit 1' | singularity shell cat"
+stest 0 sh -c "/bin/echo 'echo hello' | singularity shell cat | grep -q 'hello'"
 stest 0 singularity strace cat example.sspec
 stest 0 singularity test cat
 
 # Basic usage tests succeeded, now check specfile functionality
-stest 0 sh -c "echo 'Name: cat1' > example.sspec"
-stest 0 sh -c "echo 'Exec: /bin/cat1' >> example.sspec"
+stest 0 sh -c "/bin/echo 'Name: cat1' > example.sspec"
+stest 0 sh -c "/bin/echo 'Exec: /bin/cat1' >> example.sspec"
 stest 1 singularity --quiet build example.sspec
 
-stest 0 sh -c "echo 'Name: ls' > example.sspec"
-stest 0 sh -c "echo 'Exec: /bin/ls' >> example.sspec"
-stest 0 sh -c "echo 'DebugOS: 0' >> example.sspec"
+stest 0 sh -c "/bin/echo 'Name: ls' > example.sspec"
+stest 0 sh -c "/bin/echo 'Exec: /bin/ls' >> example.sspec"
+stest 0 sh -c "/bin/echo 'DebugOS: 0' >> example.sspec"
 stest 0 singularity --quiet build example.sspec
 stest 0 singularity install ls.sapp
 stest 0 sh -c "singularity run ls example.sspec | grep -q 'example.sspec'"
@@ -115,9 +115,9 @@ stest 1 singularity strace ls
 stest 0 singularity run ls ls.sapp
 stest 1 singularity run --contain ls ls.sapp
 
-stest 0 sh -c "echo 'Name: which' > example.sspec"
-stest 0 sh -c "echo 'Exec: /bin/which' >> example.sspec"
-stest 0 sh -c "echo 'DebugOS: 3' >> example.sspec"
+stest 0 sh -c "/bin/echo 'Name: which' > example.sspec"
+stest 0 sh -c "/bin/echo 'Exec: /bin/which' >> example.sspec"
+stest 0 sh -c "/bin/echo 'DebugOS: 3' >> example.sspec"
 stest 0 singularity --quiet build example.sspec
 stest 0 singularity install which.sapp
 stest 0 singularity run which ls
@@ -127,38 +127,38 @@ stest 0 singularity run which ps
 stest 0 singularity run which uname
 stest 1 singularity run which blahblah
 
-stest 0 sh -c "echo -e 'Name: ls' > example.sspec"
-stest 0 sh -c "echo -e '%files\n/bin/ls' >> example.sspec"
-stest 0 sh -c "echo -e '%packages\nwhich' >> example.sspec"
-stest 0 sh -c "echo -e '%test\necho 'hello123'' >> example.sspec"
+stest 0 sh -c "/bin/echo -e 'Name: ls' > example.sspec"
+stest 0 sh -c "/bin/echo -e '%files\n/bin/ls' >> example.sspec"
+#stest 0 sh -c "/bin/echo -e '%packages\nwhich' >> example.sspec"
+stest 0 sh -c "/bin/echo -e '%test\necho 'hello123'' >> example.sspec"
 stest 1 singularity --quiet build example.sspec
-stest 0 sh -c "echo -e '%runscript\nexec /bin/ls ls.sapp' >> example.sspec"
+stest 0 sh -c "/bin/echo -e '%runscript\nexec /bin/ls ls.sapp' >> example.sspec"
 stest 0 singularity --quiet build example.sspec
 stest 0 singularity install ls.sapp
 stest 0 singularity run ls
 stest 0 sh -c "singularity run ls example.sspec | grep -q 'ls.sapp'"
 stest 1 sh -c "singularity run ls example.sspec | grep -q 'example.sspec'"
 stest 0 sh -c "singularity test ls | grep -q 'hello123'"
-stest 0 sh -c "echo 'which ls' | singularity shell ls"
-stest 1 sh -c "echo 'which blahblah' | singularity shell ls"
+#stest 0 sh -c "/bin/echo 'which ls' | singularity shell ls"
+#stest 1 sh -c "/bin/echo 'which blahblah' | singularity shell ls"
 
-stest 0 sh -c "echo -e 'Name: ls' > example.sspec"
-stest 0 sh -c "echo 'Exec: /bin/ls' >> example.sspec"
-stest 0 sh -c "echo -e '%build\ntouch \$INSTALLROOT/test1' >> example.sspec"
-stest 0 sh -c "echo -e '%install\ntouch \$INSTALLROOT/test2' >> example.sspec"
+stest 0 sh -c "/bin/echo -e 'Name: ls' > example.sspec"
+stest 0 sh -c "/bin/echo 'Exec: /bin/ls' >> example.sspec"
+stest 0 sh -c "/bin/echo -e '%build\ntouch \$INSTALLROOT/test1' >> example.sspec"
+stest 0 sh -c "/bin/echo -e '%install\ntouch \$INSTALLROOT/test2' >> example.sspec"
 stest 0 singularity --quiet build example.sspec
 stest 0 singularity install ls.sapp
 stest 0 singularity run ls /test1
 stest 0 singularity run ls /test2
 
-stest 0 sh -c "echo -e 'Name: ls' > example.sspec"
-stest 0 sh -c "echo 'Exec: /bin/ls' >> example.sspec"
-stest 0 sh -c "echo -e '%build\nexit 1' >> example.sspec"
+stest 0 sh -c "/bin/echo -e 'Name: ls' > example.sspec"
+stest 0 sh -c "/bin/echo 'Exec: /bin/ls' >> example.sspec"
+stest 0 sh -c "/bin/echo -e '%build\nexit 1' >> example.sspec"
 stest 1 singularity --quiet build example.sspec
 
-stest 0 sh -c "echo -e 'Name: ls' > example.sspec"
-stest 0 sh -c "echo 'Exec: /bin/ls' >> example.sspec"
-stest 0 sh -c "echo -e '%install\nexit 1' >> example.sspec"
+stest 0 sh -c "/bin/echo -e 'Name: ls' > example.sspec"
+stest 0 sh -c "/bin/echo 'Exec: /bin/ls' >> example.sspec"
+stest 0 sh -c "/bin/echo -e '%install\nexit 1' >> example.sspec"
 stest 1 singularity --quiet build example.sspec
 
 
@@ -173,11 +173,11 @@ stest 1 singularity list
 
 
 
-echo "${BLUE}Cleaning up${NORMAL}"
+/bin/echo "${BLUE}Cleaning up${NORMAL}"
 stest 0 popd
 stest 0 rm -rf "$TEMPDIR"
 stest 0 make maintainer-clean
 
-echo
-echo "${GREEN}Done. All tests completed successfully${NORMAL}"
-echo
+/bin/echo
+/bin/echo "${GREEN}Done. All tests completed successfully${NORMAL}"
+/bin/echo

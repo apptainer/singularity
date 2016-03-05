@@ -26,7 +26,6 @@ fi
 COMMAND="$1"
 RETVAL=0
 export COMMAND
-shift
 
 if [ -z "$COMMAND" ]; then
     COMMAND="help"

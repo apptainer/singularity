@@ -24,9 +24,14 @@ else
     exit 1
 fi
 
+if [ -z "$1" ]; then
+    echo "USAGE: singularity specgen [command] (args)"
+    exit 1
+fi
+
 
 PATH="$PATH:."
-PROGRAM=`which "$1"`
+PROGRAM=`singularity_which "$1"`
 NAME=`basename "$PROGRAM"`
 shift
 
@@ -42,7 +47,7 @@ Maintainer:
 DebugOS: 1
 
 %runscript
-exec $PROGRAM "$@" "\$@"
+exec $PROGRAM "\$@"
 
 
 %test

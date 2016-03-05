@@ -185,7 +185,7 @@ build_runtime() {
     message 1 "Building the runtime level: $RUNTIMELEVEL\n"
 
     for i in $INCLUDE_FILES; do
-        if FILE=`which --skip-functions --skip-alias $i 2>/dev/null`; then
+        if FILE=`singularity_which $i 2>/dev/null`; then
             if ! install_file "$FILE" "/bin"; then
                 message 0 "ERROR: Could not install: $FILE\n"
                 exit 1
@@ -223,7 +223,7 @@ build_packageinstall() {
 
     message 1 "Evaluating: Exec\n"
     get_key_from_conf "exec" "$SAPPSPEC" | while read prog args; do
-        if FULLFILE=`which --show-dot "$prog" 2>/dev/null`; then
+        if FULLFILE=`singularity_which "$prog" 2>/dev/null`; then
             if ! install_file "$FULLFILE" "/bin"; then
                 message 0 "ERROR: Could not install: $i\n"
                 exit 1
@@ -371,17 +371,19 @@ build_runscripts() {
     LIB_SEARCH_PATH=`cd "$INSTALLDIR/c"; find . -name "lib*.so*" -type f | xargs -n 1 dirname 2>/dev/null | sort | uniq | sed -e 's/^\.//' | tr '\n' ':'`
     PYTHONHOME=`cd "$INSTALLDIR/c"; find . \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -name python -print | sed -e 's/^\.//' | sed -e 's/\/bin\/python$//'`
 
-    echo "declare -x PATH=/bin:/usr/bin:/sbin:/usr/sbin" >> "$INSTALLDIR/c/.singularity.env"
-    echo "declare -x LANG=C" >> "$INSTALLDIR/c/.singularity.env"
-    echo "declare -x PS1=\"singularity.\$SAPPNAME> \"" >> "$INSTALLDIR/c/.singularity.env"
+    echo "PATH=/bin:/usr/bin:/sbin:/usr/sbin" >> "$INSTALLDIR/c/.singularity.env"
+    echo "LANG=C" >> "$INSTALLDIR/c/.singularity.env"
+    echo "PS1=\"singularity.\$SAPPNAME> \"" >> "$INSTALLDIR/c/.singularity.env"
 
     if [ -n "$LIB_SEARCH_PATH" ]; then
-        echo "declare -x LD_LIBRARY_PATH=\"\$LD_LIBRARY_PATH:$LIB_SEARCH_PATH\"" >> "$INSTALLDIR/c/.singularity.env"
+        echo "LD_LIBRARY_PATH=\"\$LD_LIBRARY_PATH:$LIB_SEARCH_PATH\"" >> "$INSTALLDIR/c/.singularity.env"
     fi
 
     if [ -n "$PYTHONHOME" ]; then
-        echo "declare -x PYTHONHOME=\"$PYTHONHOME\"" >> "$INSTALLDIR/c/.singularity.env"
+        echo "PYTHONHOME=\"$PYTHONHOME\"" >> "$INSTALLDIR/c/.singularity.env"
     fi
+
+    echo "export PATH LANG PS1 LD_LIBRARY_PATH PYTHONHOME" >> "$INSTALLDIR/c/.singularity.env"
 
 
     message 1 "Building singularity main runscript\n"

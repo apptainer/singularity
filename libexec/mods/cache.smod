@@ -58,14 +58,15 @@ cache_sappinstall() {
     SAPPUUID=`sappfile_uuid "$SAPPFILE"`
     LOCKFILE="$CACHEDIR/$LOCK_DIR/$SAPPUUID.lock"
 
-    exec 99> "$LOCKFILE"
-    if flock -x -n 99; then
-        _sappinstall "$SAPPFILE" "$SAPPUUID"
-        flock -u 99
-    else
-        message 2 "Waiting on another installation process to complete...\n"
-        flock -x 99
-    fi
+    (
+        if flock -x -n 9; then
+            _sappinstall "$SAPPFILE" "$SAPPUUID"
+            flock -u 9
+        else
+            message 2 "Waiting on another installation process to complete...\n"
+            flock -x 9
+        fi
+    ) 9> "$LOCKFILE"
 
     cache_sappcheck "$SAPPUUID"
 
@@ -275,7 +276,7 @@ cache_sappsize() {
     fi
 
     SIZE_K=`du -sk "$SAPPDIR/c" | cut -f 1`
-    SIZE_M=`echo -ne "scale=1\n$SIZE_K/ 1024\n" | bc`
+    SIZE_M=`echo "scale=1; $SIZE_K/ 1024" | bc`
     echo $SIZE_M
 }
 
