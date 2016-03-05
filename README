@@ -6,7 +6,7 @@ solutions to package a single application (or application stack), one ends
 up having to manage the entire operating system overhead (security, updates,
 size/bulk, etc..) just to distribute a single application or workflow. While
 virtual machines and containers have strong usage benefits, application
-portability and distribution is not an effecient use of these technologies.
+portability and distribution is not an efficient use of these technologies.
 
 Singularity works on a completely different perspective. Contrary to building
 and managing an entire operating system environment (for the sake of
