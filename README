@@ -9,7 +9,7 @@ virtual machines and containers have strong usage benefits, application
 portability and distribution is not an effecient use of these technologies.
 
 Singularity works on a completely different perspective. Contrary to building
-and managing an entire operating system envrionment (for the sake of
+and managing an entire operating system environment (for the sake of
 portability and reproducibility of an application stack), Singularity works
 on the opposite premis. By configuration of an application stack spec via a
 configuration file, coupled with automatic dependency resolution to achieve
@@ -26,7 +26,7 @@ Singularity provides two primary functions:
     This is the package build tool which is responsible for creating the
     Singularity Application (.sapp) package which can be run as a standalone
     program. The process of building a .sapp package is determined by a
-    configuration which defines what components of the underlying envrionment
+    configuration which defines what components of the underlying environment
     should be included and how to run those components. Additionally, it
     scans the application to identify the runtime dependencies for OS level
     portability.
@@ -42,7 +42,7 @@ Singularity provides two primary functions:
 
 2. SINGULARITY (runtime)
     The Singularity application itself understands how to read a .sapp
-    package and executes the portable runtime envrionment. As mentioned above,
+    package and executes the portable runtime environment. As mentioned above,
     the package itself could be built in a manner to emulate the standard
     runtime arguments of a standalone binary, or it could run the entire
     application package in a self contained manner.
