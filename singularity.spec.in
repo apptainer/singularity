@@ -8,7 +8,6 @@ URL: http://warewulf.lbl.gov/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
-BuildRequires: glibc-static
 
 %description
 Singularity provides functionality to build the smallest most minimal
@@ -37,12 +36,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS COPYING ChangeLog INSTALL NEWS README
 %dir %{_libexecdir}/singularity
 %attr(4755, root, root) %{_libexecdir}/singularity/sexec
-%{_libexecdir}/singularity/ftrace
-%{_libexecdir}/singularity/sapplauncher
-%{_libexecdir}/singularity/sappbuild
-%{_libexecdir}/singularity/sappdump
-%{_libexecdir}/singularity/sappmeta
 %{_libexecdir}/singularity/functions
+%{_libexecdir}/singularity/ftrace
 %{_libexecdir}/singularity/mods
 %{_libexecdir}/singularity/cli
 %{_bindir}/singularity
