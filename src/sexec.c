@@ -252,8 +252,28 @@ int main(int argc, char **argv) {
     }
 
     // Separate out the appropriate namespaces
-    if ( unshare(CLONE_NEWPID | CLONE_NEWNS | CLONE_FS | CLONE_FILES) < 0 ) {
-        fprintf(stderr, "ERROR: Could not create virtulized namespaces\n");
+    if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
+        if ( unshare(CLONE_NEWPID) < 0 ) {
+            fprintf(stderr, "ERROR: Could not virtulized PID namespace\n");
+            return(255);
+        }
+    }
+    if ( getenv("SINGULARITY_NO_NAMESPACE_FS") == NULL ) {
+        if ( unshare(CLONE_FS) < 0 ) {
+            fprintf(stderr, "ERROR: Could not virtulized file system namespace\n");
+            return(255);
+        }
+    }
+    if ( getenv("SINGULARITY_NO_NAMESPACE_FILES") == NULL ) {
+        if ( unshare(CLONE_FILES) < 0 ) {
+            fprintf(stderr, "ERROR: Could not virtulized file descriptor namespace\n");
+            return(255);
+        }
+    }
+
+    // Always virtualize our mount namespace
+    if ( unshare(CLONE_NEWNS) < 0 ) {
+        fprintf(stderr, "ERROR: Could not virtulized mount namespace\n");
         return(255);
     }
 
