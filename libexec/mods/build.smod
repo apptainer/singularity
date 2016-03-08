@@ -477,7 +477,7 @@ build_test() {
         return 1
     fi
 
-    message 1 "Running test...\n"
+    echo "Running test..."
     CONTAINERPATH="$INSTALLDIR/c"
     SINGULARITY_COMMAND="test"
     export CONTAINERPATH SINGULARITY_COMMAND
@@ -522,7 +522,7 @@ build_sappfile() {
 
 
     (cd "$INSTALLDIR"; find . | cpio -o --quiet -H newc ) | gzip -c9 >> "$SAPPFILE"
-    message 1 "WROTE: $SAPPFILE\n"
+    echo "WROTE: $SAPPFILE"
 
     chmod +x "$SAPPFILE"
 
