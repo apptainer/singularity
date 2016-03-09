@@ -72,7 +72,7 @@ if [ -f "$1" ]; then
             fi
         fi
     else
-        message 0 "ERROR: '$1' is not a Singularity container\n"
+        message 0 "ERROR: file '$1' exists and is not a SAPP file!\n"
         exit 255
     fi
 else
