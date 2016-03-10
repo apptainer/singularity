@@ -29,6 +29,7 @@ if [ -z "$CLEAN_SHELL" ]; then
     exec env -i CLEAN_SHELL=1 PATH="/bin:/usr/bin:/sbin:/usr/sbin" bash "$0" "$*"
 fi
 
+make clean >/dev/null 2>&1
 stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
 stest 0 make
 stest 0 make install

@@ -472,12 +472,6 @@ int main(int argc, char **argv) {
 
     chdir("/");
 
-    if ( scratchpath != NULL ) {
-        if ( umount(containerscratchpath) != 0 ) {
-            fprintf(stderr, "WARNING: Could not unmount %s\n", containerscratchpath);
-            retval++;
-        }
-    }
     if ( umount(containerdevpath) != 0 ) {
         fprintf(stderr, "WARNING: Could not unmount %s\n", containerdevpath);
         retval++;
@@ -492,6 +486,12 @@ int main(int argc, char **argv) {
     }
 
     if ( opt_contain == 0 ) {
+        if ( scratchpath != NULL ) {
+            if ( umount(containerscratchpath) != 0 ) {
+                fprintf(stderr, "WARNING: Could not unmount %s\n", containerscratchpath);
+                retval++;
+            }
+        }
         if ( umount(containertmppath) != 0 ) {
             fprintf(stderr, "WARNING: Could not unmount %s\n", containertmppath);
             retval++;
