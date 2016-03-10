@@ -61,6 +61,7 @@ int main(int argc, char **argv) {
     char *containerpath;
     char *singularitypath;
     char *containerdevpath;
+    char *containersyspath;
     char *containertmppath;
     char *containerprocpath;
     char cwd[PATH_MAX];
@@ -70,6 +71,7 @@ int main(int argc, char **argv) {
     uid_t uid = getuid();
     gid_t gid = getgid();
     mode_t initial_umask = umask(0);
+
 
 
     //****************************************************************************//
@@ -150,6 +152,8 @@ int main(int argc, char **argv) {
     // Populate paths for system bind mounts
     containerdevpath = (char *) malloc(strlen(containerpath) + 5);
     snprintf(containerdevpath, strlen(containerpath) + 5, "%s/dev", containerpath);
+    containersyspath = (char *) malloc(strlen(containerpath) + 5);
+    snprintf(containersyspath, strlen(containerpath) + 5, "%s/sys", containerpath);
     containerprocpath = (char *) malloc(strlen(containerpath) + 6);
     snprintf(containerprocpath, strlen(containerpath) + 6, "%s/proc", containerpath);
     containertmppath = (char *) malloc(strlen(containerpath) + 5);
@@ -165,6 +169,12 @@ int main(int argc, char **argv) {
     if ( s_is_dir(containerdevpath) < 0 ) {
         if ( s_mkpath(containerdevpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containerdevpath);
+            return(255);
+        }
+    }
+    if ( s_is_dir(containersyspath) < 0 ) {
+        if ( s_mkpath(containersyspath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+            fprintf(stderr, "ERROR: Could not create directory %s\n", containersyspath);
             return(255);
         }
     }
@@ -252,25 +262,42 @@ int main(int argc, char **argv) {
     }
 
     // Separate out the appropriate namespaces
+#ifdef NS_CLONE_NEWPID
     if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
         if ( unshare(CLONE_NEWPID) < 0 ) {
             fprintf(stderr, "ERROR: Could not virtulized PID namespace\n");
             return(255);
         }
     }
+#else
+#ifdef NS_CLONE_PID
+    // This is for older legacy CLONE_PID
+    if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
+        if ( unshare(CLONE_PID) < 0 ) {
+            fprintf(stderr, "ERROR: Could not virtulized PID namespace\n");
+            return(255);
+        }
+    }
+#endif
+#endif
+#ifdef NS_CLONE_FS
     if ( getenv("SINGULARITY_NO_NAMESPACE_FS") == NULL ) {
         if ( unshare(CLONE_FS) < 0 ) {
             fprintf(stderr, "ERROR: Could not virtulized file system namespace\n");
             return(255);
         }
     }
+#endif
+#ifdef NS_CLONE_FILES
     if ( getenv("SINGULARITY_NO_NAMESPACE_FILES") == NULL ) {
         if ( unshare(CLONE_FILES) < 0 ) {
             fprintf(stderr, "ERROR: Could not virtulized file descriptor namespace\n");
             return(255);
         }
     }
+#endif
 
+#ifdef NS_CLONE_NEWNS
     // Always virtualize our mount namespace
     if ( unshare(CLONE_NEWNS) < 0 ) {
         fprintf(stderr, "ERROR: Could not virtulized mount namespace\n");
@@ -284,12 +311,26 @@ int main(int argc, char **argv) {
         fprintf(stderr, "ERROR: Could not make mountspaces private\n");
         return(255);
     }
+#endif
 
     // Mount /dev
     if ( mount("/dev", containerdevpath, NULL, MS_BIND, NULL) < 0 ) {
         fprintf(stderr, "ERROR: Could not bind mount /dev\n");
         return(255);
     }
+
+    // Mount /sys
+    if ( mount("/sys", containersyspath, NULL, MS_BIND, NULL) < 0 ) {
+        fprintf(stderr, "ERROR: Could not bind mount /sys\n");
+        return(255);
+    }
+#ifndef NS_CLONE_NEWNS
+    // Mount up /proc
+    if ( mount("/proc", containerprocpath, NULL, MS_BIND, NULL) < 0 ) {
+        fprintf(stderr, "ERROR: Could not bind mount /proc: %s\n", strerror(errno));
+        return(255);
+    }
+#endif
 
     // Mount any other file systems
     if ( opt_contain == 0 ) {
@@ -299,15 +340,15 @@ int main(int argc, char **argv) {
                 return(255);
             }
         }
+        if ( mount("/tmp", containertmppath, NULL, MS_BIND, NULL) < 0 ) {
+            fprintf(stderr, "ERROR: Could not bind mount %s\n", containertmppath);
+            return(255);
+        }
         if ( homepath != NULL ) {
             if ( mount(homepath, containerhomepath, NULL, MS_BIND, NULL) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount %s\n", homepath);
                 return(255);
             }
-        }
-        if ( mount("/tmp", containertmppath, NULL, MS_BIND, NULL) < 0 ) {
-            fprintf(stderr, "ERROR: Could not bind mount %s\n", containertmppath);
-            return(255);
         }
     }
 
@@ -346,11 +387,13 @@ int main(int argc, char **argv) {
             return(255);
         }
 
+#ifdef NS_CLONE_NEWNS
         // Mount up /proc
         if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
-            fprintf(stderr, "ERROR: Could not bind mount /proc\n");
+            fprintf(stderr, "ERROR: Could not mount /proc: %s\n", strerror(errno));
             return(255);
         }
+#endif
 
         // Dump all privs permanently for this process
         if ( setregid(gid, gid) < 0 ) {
@@ -377,7 +420,7 @@ int main(int argc, char **argv) {
         } else {
             if (strncmp(homepath, cwd, strlen(homepath)) == 0 ) {
                 if ( chdir(cwd) < 0 ) {
-                    fprintf(stderr, "ERROR: Could not fchdir!\n");
+                    fprintf(stderr, "ERROR: Could not chdir!\n");
                     return(1);
                 }
             } else {
@@ -417,6 +460,58 @@ int main(int argc, char **argv) {
         fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
         retval++;
     }
+
+#ifndef NS_CLONE_NEWNS
+    // If we did not create a new mount namespace, unmount as needed
+
+    // Root needed again to umount
+    if ( seteuid(0) < 0 ) {
+        fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
+        return(255);
+    }
+
+    chdir("/");
+
+    if ( scratchpath != NULL ) {
+        if ( umount(containerscratchpath) != 0 ) {
+            fprintf(stderr, "WARNING: Could not unmount %s\n", containerscratchpath);
+            retval++;
+        }
+    }
+    if ( umount(containerdevpath) != 0 ) {
+        fprintf(stderr, "WARNING: Could not unmount %s\n", containerdevpath);
+        retval++;
+    }
+    if ( umount(containersyspath) != 0 ) {
+        fprintf(stderr, "WARNING: Could not unmount %s\n", containersyspath);
+        retval++;
+    }
+    if ( umount(containerprocpath) != 0 ) {
+        fprintf(stderr, "WARNING: Could not unmount %s\n", containerprocpath);
+        retval++;
+    }
+
+    if ( opt_contain == 0 ) {
+        if ( umount(containertmppath) != 0 ) {
+            fprintf(stderr, "WARNING: Could not unmount %s\n", containertmppath);
+            retval++;
+        }
+        if ( umount(containerhomepath) != 0 ) {
+            fprintf(stderr, "WARNING: Could not unmount %s: %s\n", containerhomepath, strerror(errno));
+            retval++;
+        }
+    }
+
+    // Dump all privs permanently at this point
+    if ( setregid(gid, gid) < 0 ) {
+        fprintf(stderr, "ERROR: Could not dump real and effective group privledges!\n");
+        return(255);
+    }
+    if ( setreuid(uid, uid) < 0 ) {
+        fprintf(stderr, "ERROR: Could not dump real and effective user privledges!\n");
+        return(255);
+    }
+#endif
 
     return(retval);
 }
