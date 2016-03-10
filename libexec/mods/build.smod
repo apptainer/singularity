@@ -480,7 +480,8 @@ build_test() {
     echo "Running test..."
     CONTAINERPATH="$INSTALLDIR/c"
     SINGULARITY_COMMAND="test"
-    export CONTAINERPATH SINGULARITY_COMMAND
+    SINGULARITY_CONTAIN=1
+    export CONTAINERPATH SINGULARITY_COMMAND SINGULARITY_CONTAIN
     sh -c "$libexecdir/singularity/sexec" "$@"
 
     return 0
