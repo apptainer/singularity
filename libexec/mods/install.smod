@@ -51,29 +51,42 @@ dep_resolver() {
 
 install_single_file() {
     file="$1"
-    dir="$2"
+    targetpath="$2"
 
     if [ -f "$INSTALLDIR/c/$file" ]; then
         return 0
     fi
 
     if [ -e "$file" ]; then
-        filename=`basename "$file"`
-        if [ -z "$dir" ]; then
-            dir=`dirname "$file"`
-        fi
-        if [ ! -d "$INSTALLDIR/c/$dir" ]; then
-            mkdir -p "$INSTALLDIR/c/$dir"
-        fi
+        if [ -d "$file" ]; then
+            if [ ! -d "$INSTALLDIR/c/$file" ]; then
+                if [ -z "$targetpath" ]; then
+                    message 1 "Creating dir   : $file\n"
+                    mkdir -p "$INSTALLDIR/c/$file"
+                else
+                    message 1 "Creating dir   : $targetpath\n"
+                    mkdir -p "$INSTALLDIR/c/$targetpath"
+                fi
+                return 0
+            fi
+        else
+            filename=`basename "$file"`
+            if [ -z "$targetpath" ]; then
+                targetpath=`dirname "$file"`
+            fi
+            if [ ! -d "$INSTALLDIR/c/$targetpath" ]; then
+                mkdir -p "$INSTALLDIR/c/$targetpath"
+            fi
 
-        message 1 "Installing file: $dir/$filename\n"
-        if ! /bin/cp -arpL "$file" "$INSTALLDIR/c/$dir/"; then
-            message 0 "ERROR: Could not copy file to container: $file\n"
-            exit 1
-        fi
-        if ! dep_resolver "$file"; then
-            message 0 "ERROR: Could not resolve dependencies for: $file\n"
-            exit 1
+            message 1 "Installing file: $targetpath/$filename\n"
+            if ! /bin/cp -apL "$file" "$INSTALLDIR/c/$targetpath/$filename"; then
+                message 0 "ERROR: Could not copy file to container: $file\n"
+                exit 1
+            fi
+            if ! dep_resolver "$file"; then
+                message 0 "ERROR: Could not resolve dependencies for: $file\n"
+                exit 1
+            fi
         fi
     else
         message 0 "ERROR: File not found: $file\n"
@@ -81,14 +94,19 @@ install_single_file() {
     fi
 }
 
-
 install_file() {
     file="$1"
-    dir="$2"
+    target="$2"
 
-    /bin/sh -c "find $file" | while read i; do
-        if [ ! -d "$i" ]; then
-            install_single_file "$i" "$dir"
-        fi
-    done
+    if [ -f "$file" -o -L "$file" ]; then
+        install_single_file "$file" "$target"
+    elif [ -d "$file" -o -L "$file" ]; then
+        /bin/sh -c "find '$file'" | while read i; do
+            install_single_file "$i" "$target"
+        done
+    else
+        message 0 "ERROR: defined file does not exist: $file\n"
+        exit 1
+    fi
+
 }

@@ -251,9 +251,9 @@ build_fileinstall() {
     fi
 
     message 1 "Evaluating: files\n"
-    get_section_from_conf "files" "$SAPPSPEC" | while read file dir; do
+    get_section_from_conf "files" "$SAPPSPEC" | while read file; do
         if [ -n "$file" ]; then
-            if ! install_file "$file" "$dir"; then
+            if ! install_file "$file"; then
                 message 0 "ERROR: Could not install: $i\n"
                 exit 1
             fi
