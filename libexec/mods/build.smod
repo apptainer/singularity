@@ -340,12 +340,13 @@ build_filecleanup() {
         return 1
     fi
 
-#    # TODO: Make this configurable
-#    LOCALE_ARCHIVE=`find $INSTALLDIR/c -type f -name "locale-archive"`
-#    if [ -n "$LOCALE_ARCHIVE" ]; then
-#        message 1 "Found locale-archive, removing...\n"
-#        rm -f $LOCALE_ARCHIVE
-#    fi
+    if OUTPUT=`get_key_from_conf "NoLocale" "$SAPPSPEC"`; then
+        if check_pattern 'y*' "$OUTPUT"; then
+            message 1 "Removing all locales\n";
+            find "$INSTALLDIR/c/" -name "*locale*" -type f | xargs rm -f
+            find "$INSTALLDIR/c/" -path '*/LC_MESSAGES/*.mo' -type f | xargs rm -f
+        fi
+    fi
 
     message 1 "Cleaning up device files\n"
     rm -f $INSTALLDIR/c/dev/*
@@ -531,6 +532,14 @@ build_sappfile() {
 }
 
 
+build_cleanup() {
+    if [ -n "$INSTALLDIR" ]; then
+        message 1 "Cleaning up temporary files...\n"
+        rm -rf "$INSTALLDIR"
+    fi
+}
+
+
 build_all() {
     if [ -z "$BUILD_INIT" ]; then
         message 0 "ERROR: Has build_init() been run?\n"
@@ -550,6 +559,7 @@ build_all() {
     build_test                  || return 1
     build_meta                  || return 1
     build_sappfile              || return 1
+    build_cleanup               || return 1
 
     return 0
 }
