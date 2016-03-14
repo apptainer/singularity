@@ -94,19 +94,25 @@ install_single_file() {
     fi
 }
 
+
+
 install_file() {
     file="$1"
     target="$2"
 
     if [ -f "$file" -o -L "$file" ]; then
         install_single_file "$file" "$target"
-    elif [ -d "$file" -o -L "$file" ]; then
-        /bin/sh -c "find '$file'" | while read i; do
-            install_single_file "$i" "$target"
-        done
     else
-        message 0 "ERROR: defined file does not exist: $file\n"
-        exit 1
+        FOUND=0
+        for i in `/bin/sh -c "find $file"`; do
+            install_single_file "$i" "$target"
+            FOUND=1
+        done
+        if [ "$FOUND" = "0" ]; then
+            return 1
+        fi
     fi
+
+    return 0
 
 }
