@@ -340,12 +340,12 @@ build_filecleanup() {
         return 1
     fi
 
-    # TODO: Make this configurable
-    LOCALE_ARCHIVE=`find $INSTALLDIR/c -type f -name "locale-archive"`
-    if [ -n "$LOCALE_ARCHIVE" ]; then
-        message 1 "Found locale-archive, removing...\n"
-        rm -f $LOCALE_ARCHIVE
-    fi
+#    # TODO: Make this configurable
+#    LOCALE_ARCHIVE=`find $INSTALLDIR/c -type f -name "locale-archive"`
+#    if [ -n "$LOCALE_ARCHIVE" ]; then
+#        message 1 "Found locale-archive, removing...\n"
+#        rm -f $LOCALE_ARCHIVE
+#    fi
 
     message 1 "Cleaning up device files\n"
     rm -f $INSTALLDIR/c/dev/*
