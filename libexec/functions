@@ -90,8 +90,8 @@ get_section_from_conf() {
 }
 
 check_pattern() {
-    STRING=$1
-    PATTERN=$2
+    STRING="$1"
+    PATTERN="$2"
     case "$PATTERN" in
         $STRING)
             true
