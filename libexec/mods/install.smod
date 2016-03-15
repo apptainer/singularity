@@ -30,6 +30,9 @@ message 2 "TXT_RESOLVERS='$TXT_RESOLVERS'\n";
 
 
 dep_resolver() {
+    if [ -n "$NODEPS" ]; then
+        return 0
+    fi
     if [ -f "$1" ]; then
         FILE=`file -L "$1"`
         message 2 "Evaluating file: $1 ($FILE)\n"
@@ -54,6 +57,7 @@ dep_resolver() {
             ;;
         esac
     fi
+    return 0
 }
 
 

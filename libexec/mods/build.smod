@@ -114,11 +114,17 @@ build_init() {
         exit 1
     fi
 
+    if OUTPUT=`get_key_from_conf "NoDeps" "$SAPPSPEC"`; then
+        if check_pattern 'y*' "$OUTPUT"; then
+            NODEPS=1
+        fi
+    fi
+
     message 1 "Singularity App Container Name: $NAME.sapp\n"
     message 2 "Output file: $SAPPFILE\n"
     message 2 "Install directory: $INSTALLDIR\n"
 
-    export NAME SAPPNAME SAPPFILE INSTALLDIR INSTALLROOT DESTDIR BUILD_INIT
+    export NAME SAPPNAME SAPPFILE INSTALLDIR INSTALLROOT DESTDIR BUILD_INIT NODEPS
 
     return 0
 }
