@@ -16,9 +16,19 @@ TXT_RESOLVERS="script_resolver $BIN_RESOLVERS"
 
 script_resolver() {
     for file in $@; do
-        INT=`head -n 1 "$file" | grep "^#\!/" | sed 's@#!\([^ ]*\).*@\1@'`
-        if [ -f "$INT" -a ! -f "$INSTALLDIR/c/$INT" ]; then
-            install_file "$INT"
+        LINE=`head -n 1 "$file" | grep "^#\!/"`
+        if check_pattern "#!/usr/bin/env *" "$LINE"; then
+            INT=`echo "$LINE" | sed -e 's@#![^ ]*[ ]*@@'`
+            INT_PATH=`singularity_which "$INT"`
+            if [ -n "$INT_PATH" ]; then
+                install_file "/usr/bin/env"
+                install_file "$INT_PATH"
+            fi
+        else
+            INT=`echo "$LINE" | sed -e 's@#!\([^ ]*\).*@\1@'`
+            if [ -f "$INT" -a ! -f "$INSTALLDIR/c/$INT" ]; then
+                install_file "$INT"
+            fi
         fi
     done
 }
