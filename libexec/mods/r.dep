@@ -9,15 +9,22 @@
 # All rights reserved.
 #
 
-TXT_RESOLVERS="r_resolver $TXT_RESOLVERS"
+TXT_RESOLVERS="r_txt_resolver $TXT_RESOLVERS"
+BIN_RESOLVERS="r_bin_resolver $BIN_RESOLVERS"
 
 
-r_resolver() {
+r_bin_resolver() {
     for file in $@; do
         if check_pattern "*/bin/Rscript" "$file"; then
             R_CMD=`echo $file | sed -e 's/script$//'`
             install_file "$R_CMD"
-        elif check_pattern "*/bin/R" "$file"; then
+        fi
+    done
+}
+
+r_txt_resolver() {
+    for file in $@; do
+        if check_pattern "*/bin/R" "$file"; then
             R_HOME_DIR=`grep "^R_HOME_DIR=" /usr/bin/R | sed -s 's/.*=//'`            
             if [ -z "$R_HOME_DIR" ]; then
                 message 0 "ERROR: Could not resolve R_HOME_DIR from: $file\n"
