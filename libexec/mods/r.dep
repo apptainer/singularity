@@ -14,7 +14,10 @@ TXT_RESOLVERS="r_resolver $TXT_RESOLVERS"
 
 r_resolver() {
     for file in $@; do
-        if check_pattern "*/bin/R" "$file"; then
+        if check_pattern "*/bin/Rscript" "$file"; then
+            R_CMD=`echo $file | sed -e 's/script$//'`
+            install_file "$R_CMD"
+        elif check_pattern "*/bin/R" "$file"; then
             R_HOME_DIR=`grep "^R_HOME_DIR=" /usr/bin/R | sed -s 's/.*=//'`            
             if [ -z "$R_HOME_DIR" ]; then
                 message 0 "ERROR: Could not resolve R_HOME_DIR from: $file\n"
@@ -40,7 +43,7 @@ r_resolver() {
             install_file "$R_HOME_DIR/etc"
             install_file "/bin/uname"
             install_file "/bin/rm"
-            install_file "/bin/sed"
+            install_file "/usr/bin/sed"
         fi
     done
 }
