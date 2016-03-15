@@ -31,19 +31,28 @@ message 2 "TXT_RESOLVERS='$TXT_RESOLVERS'\n";
 
 dep_resolver() {
     if [ -f "$1" ]; then
-        if file -L "$1" | egrep -q "ELF"; then
-            for i in $BIN_RESOLVERS; do
-                eval $i "$1"
-            done
-        fi
-        if file -L "$1" | egrep -q "ASCII|script"; then
-            for i in $TXT_RESOLVERS; do
-                eval $i "$1"
-            done
-        fi
-        for i in $ALL_RESOLVERS; do
-            eval $i "$1"
-        done
+        FILE=`file -L "$1"`
+        message 2 "Evaluating file: $1 ($FILE)\n"
+        case "$FILE" in
+            *ELF*)
+                for i in $BIN_RESOLVERS; do
+                    message 3 "calling bin_resolvers on: $1 : $i\n"
+                    eval $i "$1"
+                done
+            ;;
+            *ASCII*)
+                for i in $TXT_RESOLVERS; do
+                    message 3 "calling txt_resolvers on: $1 : $i\n"
+                    eval $i "$1"
+                done
+            ;;
+            *) 
+                for i in $ALL_RESOLVERS; do
+                    message 3 "calling all_resolvers on: $1 : $i\n"
+                    eval $i "$1"
+                done
+            ;;
+        esac
     fi
 }
 
