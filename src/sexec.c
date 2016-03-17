@@ -390,7 +390,7 @@ int main(int argc, char **argv) {
         }
         // Mount /sys
         if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
-            fprintf(stderr, "ERROR: Could not mount /sys\n", strerror(errno));
+            fprintf(stderr, "ERROR: Could not mount /sys: %s\n", strerror(errno));
             return(255);
         }
 #endif
