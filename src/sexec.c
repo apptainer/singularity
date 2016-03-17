@@ -166,15 +166,15 @@ int main(int argc, char **argv) {
             return(255);
         }
     }
-    if ( s_is_dir(containerdevpath) < 0 ) {
-        if ( s_mkpath(containerdevpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-            fprintf(stderr, "ERROR: Could not create directory %s\n", containerdevpath);
-            return(255);
-        }
-    }
     if ( s_is_dir(containersyspath) < 0 ) {
         if ( s_mkpath(containersyspath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containersyspath);
+            return(255);
+        }
+    }
+    if ( s_is_dir(containerdevpath) < 0 ) {
+        if ( s_mkpath(containerdevpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+            fprintf(stderr, "ERROR: Could not create directory %s\n", containerdevpath);
             return(255);
         }
     }
@@ -265,7 +265,7 @@ int main(int argc, char **argv) {
 #ifdef NS_CLONE_NEWPID
     if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
         if ( unshare(CLONE_NEWPID) < 0 ) {
-            fprintf(stderr, "ERROR: Could not virtulized PID namespace\n");
+            fprintf(stderr, "ERROR: Could not virtulize PID namespace\n");
             return(255);
         }
     }
@@ -274,7 +274,7 @@ int main(int argc, char **argv) {
     // This is for older legacy CLONE_PID
     if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
         if ( unshare(CLONE_PID) < 0 ) {
-            fprintf(stderr, "ERROR: Could not virtulized PID namespace\n");
+            fprintf(stderr, "ERROR: Could not virtulize PID namespace\n");
             return(255);
         }
     }
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
 #ifdef NS_CLONE_FS
     if ( getenv("SINGULARITY_NO_NAMESPACE_FS") == NULL ) {
         if ( unshare(CLONE_FS) < 0 ) {
-            fprintf(stderr, "ERROR: Could not virtulized file system namespace\n");
+            fprintf(stderr, "ERROR: Could not virtulize file system namespace\n");
             return(255);
         }
     }
@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
 #ifdef NS_CLONE_FILES
     if ( getenv("SINGULARITY_NO_NAMESPACE_FILES") == NULL ) {
         if ( unshare(CLONE_FILES) < 0 ) {
-            fprintf(stderr, "ERROR: Could not virtulized file descriptor namespace\n");
+            fprintf(stderr, "ERROR: Could not virtulize file descriptor namespace\n");
             return(255);
         }
     }
@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
 #ifdef NS_CLONE_NEWNS
     // Always virtualize our mount namespace
     if ( unshare(CLONE_NEWNS) < 0 ) {
-        fprintf(stderr, "ERROR: Could not virtulized mount namespace\n");
+        fprintf(stderr, "ERROR: Could not virtulize mount namespace\n");
         return(255);
     }
 
@@ -308,22 +308,17 @@ int main(int argc, char **argv) {
     if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
         // I am not sure if this error needs to be caught, maybe it will fail
         // on older kernels? If so, we can fix then.
-        fprintf(stderr, "ERROR: Could not make mountspaces private\n");
+        fprintf(stderr, "ERROR: Could not make mountspaces private: %s\n", strerror(errno));
         return(255);
     }
 #endif
 
     // Mount /dev
     if ( mount("/dev", containerdevpath, NULL, MS_BIND, NULL) < 0 ) {
-        fprintf(stderr, "ERROR: Could not bind mount /dev\n");
+        fprintf(stderr, "ERROR: Could not bind mount /dev: %s\n", strerror(errno));
         return(255);
     }
 
-    // Mount /sys
-    if ( mount("/sys", containersyspath, NULL, MS_BIND, NULL) < 0 ) {
-        fprintf(stderr, "ERROR: Could not bind mount /sys\n");
-        return(255);
-    }
 #ifndef NS_CLONE_NEWNS
     // Mount up /proc
     if ( mount("/proc", containerprocpath, NULL, MS_BIND, NULL) < 0 ) {
@@ -336,17 +331,17 @@ int main(int argc, char **argv) {
     if ( opt_contain == 0 ) {
         if ( scratchpath != NULL ) {
             if ( mount(scratchpath, containerscratchpath, NULL, MS_BIND, NULL) < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind mount %s\n", scratchpath);
+                fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", scratchpath, strerror(errno));
                 return(255);
             }
         }
         if ( mount("/tmp", containertmppath, NULL, MS_BIND, NULL) < 0 ) {
-            fprintf(stderr, "ERROR: Could not bind mount %s\n", containertmppath);
+            fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", containertmppath, strerror(errno));
             return(255);
         }
         if ( homepath != NULL ) {
             if ( mount(homepath, containerhomepath, NULL, MS_BIND, NULL) < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind mount %s\n", homepath);
+                fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", homepath, strerror(errno));
                 return(255);
             }
         }
@@ -391,6 +386,11 @@ int main(int argc, char **argv) {
         // Mount up /proc
         if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
             fprintf(stderr, "ERROR: Could not mount /proc: %s\n", strerror(errno));
+            return(255);
+        }
+        // Mount /sys
+        if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
+            fprintf(stderr, "ERROR: Could not mount /sys\n", strerror(errno));
             return(255);
         }
 #endif
