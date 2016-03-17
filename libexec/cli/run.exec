@@ -27,6 +27,7 @@ fi
 load_mod cache
 load_mod sexec
 
+eval set -- `parse_opts "$@"`
 
 while true; do
     case $1 in
@@ -61,33 +62,42 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if [ -f "$1" ]; then
-    if sappfile_issapp "$1"; then
-        SAPPUUID=`sappfile_uuid "$1"`
-        SAPPNAME=`sappfile_name "$1"`
-        if ! cache_sappuuidexists "$SAPPUUID"; then
-            message 2 "Installing SAPPFILE into: $CACHEDIR\n"
-            if ! cache_sappinstall "$1"; then
-                exit 255
-            fi
-        fi
-    else
-        message 0 "ERROR: file '$1' exists and is not a SAPP file!\n"
+if cache_runkeyexists "$1"; then
+    SAPPNAME="$1"
+    
+    if ! SAPPDIR=`cache_runkeydir "$1"`; then
+        message 0 "ERROR: Could not identify cache directory for runkey '$1'\n"
         exit 255
     fi
-else
+
+elif cache_sappnameexists "$1"; then
     SAPPNAME="$1"
     if ! SAPPUUID=`cache_sappname2uuid "$SAPPNAME"`; then
         message 0 "ERROR: Singularity container is not installed: $SAPPNAME\n"
         exit 255
     fi
-fi
 
-message 2 "SAPPFILE name: $SAPPNAME\n"
+    if ! SAPPDIR=`cache_sappdir "$SAPPUUID"`; then
+        message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
+        exit 255
+    fi
 
-if ! SAPPDIR=`cache_sappdir "$SAPPUUID"`; then
-    message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
-    exit 255
+elif test -f "$1" && sappfile_issapp "$1"; then
+    SAPPUUID=`sappfile_uuid "$1"`
+    SAPPNAME=`sappfile_name "$1"`
+    if ! cache_sappuuidexists "$SAPPUUID"; then
+        message 2 "Installing SAPPFILE into: $CACHEDIR\n"
+        if ! cache_sappinstall "$1"; then
+            exit 255
+        fi
+    fi
+    if ! SAPPDIR=`cache_sappdir "$SAPPUUID"`; then
+        message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
+        exit 255
+    fi
+else
+    message 0 "ERROR: Could not resolve container reference: $1\n"
+    exit 1
 fi
 
 SINGULARITY_COMMAND="run"

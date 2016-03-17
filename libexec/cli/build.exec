@@ -27,6 +27,8 @@ fi
 
 load_mod build
 
+eval set -- `parse_opts "$@"`
+
 while true; do
     case $1 in
         --notest)

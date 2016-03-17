@@ -16,6 +16,7 @@ load_mod sappfile
 UUID_DIR="containers"
 NAME_DIR="names"
 LOCK_DIR="locks"
+RUNKEY_DIR="runkeys"
 
 if [ -z "$CACHEDIR" ]; then
     if [ -n "$SINGULARITY_CACHEDIR" ]; then
@@ -48,14 +49,20 @@ if [ ! -d "$CACHEDIR/$LOCK_DIR" ]; then
     message 2 "Creating LOCK_DIR: $CACHEDIR/$LOCK_DIR\n"
     mkdir -p "$CACHEDIR/$LOCK_DIR"
 fi
+if [ ! -d "$CACHEDIR/$RUNKEY_DIR" ]; then
+    message 2 "Creating RUNKEY_DIR: $CACHEDIR/$RUNKEY_DIR\n"
+    mkdir -p "$CACHEDIR/$RUNKEY_DIR"
+fi
 
 export CACHEDIR
 
 
 
 cache_sappinstall() {
-    SAPPFILE="$1"
-    SAPPUUID=`sappfile_uuid "$SAPPFILE"`
+    if [ -z "$SAPPUUID" ]; then
+        SAPPUUID=`sappfile_uuid "$SAPPFILE"`
+    fi
+
     LOCKFILE="$CACHEDIR/$LOCK_DIR/$SAPPUUID.lock"
 
     (
@@ -74,11 +81,6 @@ cache_sappinstall() {
 }
 
 _sappinstall() {
-    SAPPFILE="$1"
-    SAPPUUID="$2"
-    SAPPNAME=`sappfile_name "$SAPPFILE"`
-    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
-
     if [ -z "$SAPPFILE" ]; then
         message 0 "ERROR: SAPPFILE undefined\n"
         exit 1
@@ -91,6 +93,15 @@ _sappinstall() {
         message 0 "ERROR: File is not Singularity App/container: $SAPPFILE\n"
         exit 1
     fi
+
+    if [ -z "$SAPPUUID" ]; then
+        SAPPUUID=`sappfile_uuid "$SAPPFILE"`
+    fi
+    if [ -z "$SAPPNAME" ]; then
+        SAPPNAME=`sappfile_name "$SAPPFILE"`
+    fi
+
+    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
     if cache_sappuuidexists "$SAPPUUID"; then
         message 2 "Singularity container is already installed: $SAPPNAME\n"
@@ -130,6 +141,11 @@ _sappinstall() {
     message 2 "Adding UUID to name file\n"
     echo "$SAPPUUID" >> "$CACHEDIR/$NAME_DIR/$SAPPNAME"
 
+    if [ -n "$SAPPRUNKEY" ]; then
+        message 2 "Adding RUNKEY link\n"
+        ln -sf "../$UUID_DIR/$SAPPUUID" "$CACHEDIR/$RUNKEY_DIR/$SAPPRUNKEY"
+    fi
+
     message 2 "Finishing up container installation\n"
     date > "$SAPPDIR/installed"
 
@@ -137,20 +153,38 @@ _sappinstall() {
 }
 
 
+cache_runkeydir() {
+    RUNKEY="$1"
+
+    if [ -z "$RUNKEY" ]; then
+        message 0 "ERROR: RUNKEY undefined\n"
+        exit 1
+    fi
+
+    if [ -d "$CACHEDIR/$RUNKEY_DIR/$RUNKEY" ]; then
+        echo "$CACHEDIR/$RUNKEY_DIR/$RUNKEY"
+    else
+        return 1
+    fi
+
+    return 0
+}
+
 cache_sappdir() {
     SAPPUUID="$1"
-    SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
     if [ -z "$SAPPUUID" ]; then
         message 0 "ERROR: SAPPUUID undefined\n"
         exit 1
     fi
 
-    if [ ! -d "$SAPPDIR" ]; then
+    if [ -d "$CACHEDIR/$UUID_DIR/$SAPPUUID" ]; then
+        echo "$CACHEDIR/$UUID_DIR/$SAPPUUID"
+    else
         return 1
     fi
 
-    echo "$SAPPDIR"
+    return 0
 }
 
 cache_sappname2uuid() {
@@ -202,19 +236,30 @@ cache_sappuuid2name() {
     cat "$SAPPDIR/name"
 }
 
+cache_runkeyexists() {
+    RUNKEY="$1"
+
+    if [ -f "$CACHEDIR/$RUNKEY_DIR/$RUNKEY/installed" ]; then
+        return 0
+    fi
+
+    return 1
+}
 
 cache_sappnameexists() {
     SAPPNAME="$1"
-    SAPPUUID=`cache_sappname2uuid "$SAPPNAME"`
 
     if [ -z "$SAPPNAME" ]; then
         message 0 "ERROR: SAPPNAME undefined\n"
         exit 1
     fi
 
-    cache_sappuuidexists "$SAPPUUID"
+    if SAPPUUID=`cache_sappname2uuid "$SAPPNAME"`; then
+        cache_sappuuidexists "$SAPPUUID"
+        return $?
+    fi
 
-    return $?
+    return 1
 }
 
 cache_sappuuidexists() {
