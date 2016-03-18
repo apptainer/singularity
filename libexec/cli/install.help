@@ -3,6 +3,13 @@ USAGE: singularity (options) install [SAPP file]
 Install a Singularity container into your local environment which will
 make it available to be executed.
 
+OPTIONS:
+    -k/--runkey     This option sets a key to be associated with the
+                    installed container. You can then run a container
+                    using this key name and short circuit several cache
+                    checks.
+
+
 For additional help, please visit our public documentation pages which are
 found at:
 

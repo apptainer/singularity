@@ -10,6 +10,9 @@ directory can be accessible to the applications within your container
 envrionment (relative paths are any paths that does not begin with a slash
 '/').
 
+You can reference the container by name, UUID or if installed with the
+'runkey' option.
+
 OPTIONS:
     -c/--contain    Contain the environment and do not make any part of
                     the host file system available (this
