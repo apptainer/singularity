@@ -27,7 +27,9 @@ fi
 load_mod cache
 load_mod sexec
 
+set -f
 eval set -- `parse_opts "$@"`
+set +f
 
 while true; do
     case $1 in
@@ -109,7 +111,7 @@ CONTAINERPATH="$SAPPDIR/c"
 export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
 shift
 
-message 2 "Running '$SAPPNAME'\n"
+message 2 "Running '$SAPPNAME' ($@)\n"
 
 if [ -n "$FILE_CHECK" ]; then
     if ! cache_sappfilecheck "$SAPPNAME"; then
