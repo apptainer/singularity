@@ -175,22 +175,22 @@ singularity_which() {
 
 parse_opts() {
     NEWOPTS=""
-    for i in $@; do
-        case "$i" in
+    while [ -n "$1" ]; do
+        case "$1" in
             -*=*)
-                ARG1=`echo -n "$i" | cut -d = -f 1`
-                ARG2=`echo -n "$i" | cut -d = -f 2`
+                ARG1=`echo -n "$1" | cut -d = -f 1`
+                ARG2=`echo -n "$1" | cut -d = -f 2`
                 NEWOPTS="$NEWOPTS \"$ARG1\" \"$ARG2\""
                 shift
                 continue
             ;;
             --*)
-                NEWOPTS="$NEWOPTS \"$i\""
+                NEWOPTS="$NEWOPTS \"$1\""
                 shift
                 continue
             ;;
             -*)
-                for o in `echo -n "$i" | sed 's/^-//' | sed 's/./-& /g'`; do
+                for o in `echo -n "$1" | sed 's/^-//' | sed 's/./-& /g'`; do
                     NEWOPTS="$NEWOPTS \"$o\""
                 done
                 shift

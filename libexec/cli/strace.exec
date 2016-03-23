@@ -34,12 +34,12 @@ fi
 
 SAPPNAME="$1"
 
-if ! SAPPUUID=`cache_sappname2uuid "$1"`; then
+if ! cache_sappname2uuid "$SAPPNAME" "SAPPUUID"; then
     message 0 "ERROR: Singularity container is not installed: $SAPPNAME\n"
     exit 255
 fi
 
-if ! SAPPDIR=`cache_sappdir "$SAPPUUID"`; then
+if ! cache_sappdir "$SAPPUUID" "SAPPDIR"; then
     message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
     exit 255
 fi

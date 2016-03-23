@@ -35,7 +35,7 @@ if [ -z "$SAPPNAME" ]; then
     exit 1
 fi
 
-if ! SAPPUUID=`cache_sappname2uuid "$SAPPNAME"`; then
+if ! cache_sappname2uuid "$SAPPNAME" "SAPPUUID"; then
     message 0 "ERROR: Singularity container is not installed: $SAPPNAME\n"
     exit 255
 fi

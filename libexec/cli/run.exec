@@ -62,22 +62,23 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-if cache_runkeyexists "$1"; then
+if cache_runkey_sappdir "$1" "SAPPDIR"; then
     SAPPNAME="$1"
-    
-    if ! SAPPDIR=`cache_runkeydir "$1"`; then
+
+    if [ -z "$SAPPDIR" ]; then
         message 0 "ERROR: Could not identify cache directory for runkey '$1'\n"
         exit 255
     fi
 
 elif cache_sappnameexists "$1"; then
     SAPPNAME="$1"
-    if ! SAPPUUID=`cache_sappname2uuid "$SAPPNAME"`; then
+
+    if ! cache_sappname2uuid "$SAPPNAME" "SAPPUUID"; then
         message 0 "ERROR: Singularity container is not installed: $SAPPNAME\n"
         exit 255
     fi
 
-    if ! SAPPDIR=`cache_sappdir "$SAPPUUID"`; then
+    if ! cache_sappdir "$SAPPUUID" "SAPPDIR"; then
         message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
         exit 255
     fi
@@ -91,7 +92,10 @@ elif test -f "$1" && sappfile_issapp "$1"; then
             exit 255
         fi
     fi
-    if ! SAPPDIR=`cache_sappdir "$SAPPUUID"`; then
+
+    cache_sappdir "$SAPPUUID" "SAPPDIR"
+
+    if [ -z "$SAPPDIR" ]; then
         message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
         exit 255
     fi

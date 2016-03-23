@@ -37,12 +37,14 @@ fi
 RETVAL=1
 
 for uuid in `cache_sapplist "$@"`; do
-    SAPPNAME=`cache_sappuuid2name "$uuid"`
-    if cache_sappdelete "$uuid"; then
-        message 1 "Deleted container cache: $SAPPNAME ($uuid)\n"
-        RETVAL=0
-    else
-        message 0 "Could not delete: $SAPPNAME ($uuid)\n"
+    if cache_sappuuid2name "$uuid" "SAPPNAME"; then
+        if cache_sappdelete "$uuid"; then
+            message 1 "Deleted container cache: $SAPPNAME ($uuid)\n"
+            RETVAL=0
+        else
+            message 0 "Could not delete: $SAPPNAME ($uuid)\n"
+        fi
+
     fi
 done
 
