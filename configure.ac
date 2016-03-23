@@ -9,13 +9,17 @@ if test -z "$prefix" -o "$prefix" = "NONE" ; then
 fi
 AC_SUBST(PREFIX, $prefix)
 
+AC_CANONICAL_TARGET
+case $target_cpu in
+  x86_64) : ;;
+  i386) : ;;
+  *) AC_MSG_ERROR([Architecture $target_cpu not supported]) ;;
+esac
+
 AC_PROG_INSTALL
 AM_INIT_AUTOMAKE
 AC_PROG_LIBTOOL
 AC_PROG_CC
-
-dnl# Add default flags
-dnlCFLAGS="-std=gnu99 $CFLAGS"
 
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
@@ -98,6 +102,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
 
 
 AC_SUBST(NAMESPACE_DEFINES)
+
+AC_CHECK_DECLS([MS_PRIVATE,MS_REC], [],
+               [AC_MSG_ERROR([Required mount(2) flags not available])],
+               [[#include <sys/mount.h>]])
 
 
 AC_CONFIG_FILES([
