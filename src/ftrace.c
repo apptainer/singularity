@@ -33,7 +33,6 @@
 
 
 
-
 int main(int argc, char **argv) {
     pid_t child;
 
@@ -79,7 +78,11 @@ int main(int argc, char **argv) {
 
             // get the current register struct
             ptrace(PTRACE_GETREGS,child, 0, &regs);     
+#ifdef ARCH_x86_64
             syscall = regs.orig_rax;
+#elif ARCH_i386
+            syscall = regs.orig_eax;
+#endif
 
             // if we are in an open() system call...
             if (syscall == SYS_open) {
@@ -94,8 +97,12 @@ int main(int argc, char **argv) {
                             long val;
                             char string[sizeof(long)];
                         } data;
-    
+
+#ifdef ARCH_x86_64
                         data.val = ptrace(PTRACE_PEEKDATA, child, regs.rdi + len, NULL);
+#elif ARCH_i386
+                        data.val = ptrace(PTRACE_PEEKDATA, child, regs.edi + len, NULL);
+#endif
                         if ( data.val == -1 ) {
                             break;
                         }
@@ -112,7 +119,11 @@ int main(int argc, char **argv) {
                     insyscall = 1;
                 } else {
                     // how did the system call exit
+#ifdef ARCH_x86_64
                     long ret = ptrace(PTRACE_PEEKUSER, child, 8 * RAX, NULL);
+#elif ARCH_i386
+                    long ret = ptrace(PTRACE_PEEKUSER, child, 8 * EAX, NULL);
+#endif
                     if ( ret >= 0 ) {
                         if ( strncmp(str, "/dev", 4) == 0 ) {
                         } else if ( strncmp(str, "/etc", 4) == 0 ) {

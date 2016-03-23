@@ -2,7 +2,8 @@ MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
 AM_CFLAGS = -Wall
-AM_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\" $(NAMESPACE_DEFINES)
+sexec_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\" $(NAMESPACE_DEFINES)
+ftrace_CPPFLAGS = -DARCH_$(build_cpu)
 
 bindir = $(libexecdir)/singularity
 bin_PROGRAMS = sexec ftrace
