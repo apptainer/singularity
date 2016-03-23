@@ -25,7 +25,7 @@ TXT_RESOLVERS="perlmods_resolver $TXT_RESOLVERS"
 
 perlmods_resolver() {
     for file in $@; do
-        if file "$file" | grep -q "Perl"; then
+        if file "$file" | grep -qi "perl"; then
             egrep "^\s*(use|require|no)\s*" "$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
                 $libexecdir/singularity/ftrace `which perl` -M"$req" -e 'exit;' 2>&1 >/dev/null | while read FILE; do
                     if [ ! -f "$INSTALLDIR/c/$FILE" ]; then

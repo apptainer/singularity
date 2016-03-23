@@ -53,7 +53,7 @@ dep_resolver() {
                     eval $i "$1"
                 done
             ;;
-            *ASCII*)
+            *ASCII*|*text*)
                 for i in $TXT_RESOLVERS; do
                     message 3 "calling txt_resolvers on: $1 : $i\n"
                     eval $i "$1"
