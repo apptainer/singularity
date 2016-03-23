@@ -8,5 +8,6 @@ bindir = $(libexecdir)/singularity
 bin_PROGRAMS = sexec ftrace
 
 sexec_SOURCES = sexec.c util.c util.h
+ftrace_SOURCES = ftrace.c util.c util.h
 
 EXTRA_DIST = config.h 

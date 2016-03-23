@@ -29,6 +29,8 @@
 #include <sys/wait.h>
 #include <sys/user.h>
 #include <unistd.h>
+#include "util.h"
+
 
 
 
@@ -117,7 +119,9 @@ int main(int argc, char **argv) {
                         } else if ( strncmp(str, "/sys", 4) == 0 ) {
                         } else if ( strncmp(str, "/proc", 5) == 0 ) {
                         } else {
-                            fprintf(stderr, "%s\n", str);
+                            if ( s_is_dir(str) < 0 ) {
+                                fprintf(stderr, "%s\n", str);
+                            }
                         }
                     }
                     insyscall = 0;
