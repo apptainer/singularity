@@ -65,8 +65,9 @@ dep_resolver() {
 install_single_file() {
     file="$1"
     targetpath="$2"
+    filename=`basename "$file"`
 
-    if [ -f "$INSTALLDIR/c/$file" ]; then
+    if [ -f "$INSTALLDIR/c/$targetpath/$filename" ]; then
         return 0
     fi
 
@@ -83,7 +84,6 @@ install_single_file() {
                 return 0
             fi
         else
-            filename=`basename "$file"`
             if [ -z "$targetpath" ]; then
                 targetpath=`dirname "$file"`
             fi
