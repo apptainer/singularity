@@ -27,7 +27,7 @@ rmdir runcon seq sort split stdbuf stty sum sync tac tail tee test tr
 true tty unexpand uniq unlink users vdir wc who whoami yes vi
 /etc/terminfo /usr/share/terminfo"
 
-INCLUDE_LIBS="libnss_files*.so.*"
+INCLUDE_LIBS="libnss_files*.so.* libnss_myhostname.so.* libnss_dns.so.*"
 
 LIBDIR=`uname -p | grep -q x86_64 && echo "/lib64" || echo "/lib"`
 
@@ -192,7 +192,7 @@ build_runtime() {
 
     for i in $INCLUDE_FILES; do
         if FILE=`singularity_which $i 2>/dev/null`; then
-            if ! install_file "$FILE" "/bin"; then
+            if ! install_file "$FILE"; then
                 message 0 "ERROR: Could not install: $FILE\n"
                 exit 1
             fi
@@ -205,7 +205,7 @@ build_runtime() {
     done
 
     for i in $INCLUDE_LIBS; do
-        FILE=`find /lib* /usr/lib* -maxdepth 1 -name "$i"`
+        FILE=`find /lib* /usr/lib* -maxdepth 1 -name "$i" 2>/dev/null`
         if [ -n "$FILE" ]; then
             if ! install_file "$FILE" "$LIBDIR"; then
                 message 0 "ERROR: Could not install: $FILE\n"
