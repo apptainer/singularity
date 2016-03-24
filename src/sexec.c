@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
 #endif
 
     // Mount /dev
-    if ( mount("/dev", containerdevpath, NULL, MS_BIND, NULL) < 0 ) {
+    if ( mount("/dev", containerdevpath, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
         fprintf(stderr, "ERROR: Could not bind mount /dev: %s\n", strerror(errno));
         return(255);
     }
@@ -330,12 +330,12 @@ int main(int argc, char **argv) {
     // Mount any other file systems
     if ( opt_contain == 0 ) {
         if ( scratchpath != NULL ) {
-            if ( mount(scratchpath, containerscratchpath, NULL, MS_BIND, NULL) < 0 ) {
+            if ( mount(scratchpath, containerscratchpath, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", scratchpath, strerror(errno));
                 return(255);
             }
         }
-        if ( mount("/tmp", containertmppath, NULL, MS_BIND, NULL) < 0 ) {
+        if ( mount("/tmp", containertmppath, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
             fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", containertmppath, strerror(errno));
             return(255);
         }
