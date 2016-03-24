@@ -293,42 +293,22 @@ build_configs() {
     fi
 
 
-    message 1 "  /etc/nsswitch.conf\n";
-    echo "passwd:     files sss" > "$INSTALLDIR/c/etc/nsswitch.conf"
-    echo "shadow:     files sss" >> "$INSTALLDIR/c/etc/nsswitch.conf"
-    echo "group:      files sss" >> "$INSTALLDIR/c/etc/nsswitch.conf"
-    echo "hosts:      files dns myhostname" >> "$INSTALLDIR/c/etc/nsswitch.conf"
+    message 1 "Including sanitized /etc/passwd\n"
+    while read line; do
+        ID=`echo "$line" | awk -F: '{print $3}'`
+        if [ "$ID" -le 500 ]; then
+            echo $line
+        fi
+    done < "/etc/passwd" > "$INSTALLDIR/c/etc/passwd"
 
-    message 1 "  /etc/resolv.conf\n";
-    echo "nameserver 8.8.8.8" > "$INSTALLDIR/c/etc/resolv.conf"
-
-    message 1 "  /etc/hosts\n";
-    echo "127.0.0.1 localhost" > "$INSTALLDIR/c/etc/hosts"
-
-    message 1 "Checking for files that need santizing\n"
-    if [ -f "$INSTALLDIR/c/etc/passwd" ]; then
-        message 1 "Found /etc/passwd in container, sanitizing it...\n"
-        while read line; do
-            ID=`echo "$line" | awk -F: '{print $3}'`
-            if [ "$ID" -le 500 ]; then
-                echo $line
-            fi
-        done < "$INSTALLDIR/c/etc/passwd" > "$INSTALLDIR/c/etc/passwd.1"
-        cat "$INSTALLDIR/c/etc/passwd.1" > "$INSTALLDIR/c/etc/passwd"
-        rm -f "$INSTALLDIR/c/etc/passwd.1"
-    fi
-
-    if [ -f "$INSTALLDIR/c/etc/group" ]; then
-        message 1 "Found /etc/group in container, sanitizing it...\n"
-        while read line; do
-            ID=`echo "$line" | awk -F: '{print $3}'`
-            if [ "$ID" -le 500 ]; then
-                echo $line
-            fi
-        done < "$INSTALLDIR/c/etc/group" > "$INSTALLDIR/c/etc/group.1"
-        cat "$INSTALLDIR/c/etc/group.1" > "$INSTALLDIR/c/etc/group"
-        rm -f "$INSTALLDIR/c/etc/group.1"
-    fi
+    message 1 "Including sanitized /etc/group\n"
+    message 1 "Found /etc/group in container, sanitizing it...\n"
+    while read line; do
+        ID=`echo "$line" | awk -F: '{print $3}'`
+        if [ "$ID" -le 500 ]; then
+            echo $line
+        fi
+    done < "/etc/group" > "$INSTALLDIR/c/etc/group"
 
     if [ -f "$INSTALLDIR/c/etc/shadow" ]; then
         message 1 "Found /etc/shadow in container, sanitizing it...\n"
