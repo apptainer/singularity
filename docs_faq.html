@@ -73,6 +73,12 @@ access outside the container via your starting path. This means that
 relative paths will resolve outside the container, and fully qualified
 paths will resolve inside the container.
 </p>
+<p>
+To achieve this behavior, you will find that several Linux namespaces are
+seperated (PIDS, file systems and descriptors, mounts, and root file
+system). These can be enabled or disabled by the build and what namespaces
+the host system supports as well as through envrionment variables.
+</p>
 </div>
 </div>
 </div>
@@ -90,9 +96,10 @@ NERSC (like most HPC centers) are feeling the pressure from users asking
 for support for containers, specifically Docker. Due to the architecture
 of Docker it is very difficult (if not impossible) to properly and
 securely implement in a multi-user HPC environment. Shifter is NERSC's
-implementation to provide a Docker front-end interface to a non-Docker
-backend which integrates with the scheduler to provide a contiguous
-workflow and integration.
+implementation to provide a Docker compatible front-end interface to a
+non-Docker backend which integrates with the scheduler and underlying
+operating host operating system to provide a contiguous workflow and
+integration.
 </p>
 <p>
 Singularity on the other hand does not leverage the Docker workflow or
@@ -203,15 +210,19 @@ section to define what happens when a Singularity container is run.
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-No, never. But sometimes yes. A good rule of thumb is, if you can run on a
-default vanilla kernel.org kernel, then there are probably no kernel
-dependencies you will need to consider.
+No, never. But sometimes yes.
 </p>
 <p>
-But, in the end Singularity is using container principals so if you are
-leveraging any kernel version or external patches/module functionality
-(e.g. OFED), then yes there maybe kernel dependencies you will need to
-consider.
+Singularity is using standard container principals and methods so if you
+are leveraging any kernel version specific or external patches/module
+functionality (e.g. OFED), then yes there maybe kernel dependencies you will
+need to consider.
+</p>
+<p>
+Luckily most people that would hit this are people that are using Singularity
+to interoperate with an HPC (High Performance Computing) system where there
+are highly tuned interconnects and file systems you wish to make effecient
+use of. In this case, See the documentation of MPI with Singularity.
 </p>
 <p>
 note: If you require kernel dependent features, a container platform is
@@ -286,7 +297,7 @@ as any program running as that user.
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-In theory yes. This is still being tested.
+Yes. This works exactly as you would expect it too.
 </p>
 </div>
 </div>
@@ -421,7 +432,8 @@ included!
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-So far we have no identified any, but we are still investigating.
+So far we have not identified any appreciable regressions (even in parallel
+applications running across nodes with InfiniBand).
 </p>
 <p>
 On a related note, what we have found so far is that not all operating systems
@@ -430,6 +442,69 @@ RedHat for example has a very optimal tool chain which they use for their
 Enterprise product line and it is not available to other distributions (or
 rebuilds) and thus their resulting binaries and libraries have been more
 performant then other Linux distributions we have tested.
+</p>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<div class="faq_container">
+<div class="faq">
+<div class="faq_question">Does Singularity work on HPC cluster environments?</div>
+<div class="faq_answer_container">
+<div class="faq_answer">
+<p>
+Yes! HPC was one of the primary use cases in mind when Singularity was
+created.
+</p>
+<p>
+Most people that are currently integrating containers on HPC resources do it
+by creating virtual clusters within the physical host cluster. This precludes
+the virtual cluster from having access to the host cluster's high performance
+fabric, file systems and other investments which make an HPC system high
+performance.
+</p>
+</p>
+Singularity on the other hand allows one to keep the high performance in High
+Performance Computing by containerizing applications and supporting a runtime
+which seemlessly interfaces with the host system and existing envrionments.
+</p>
+<p>
+Go here for more information:
+<a href="docs_hpc.html">Singularity in HPC environments</a>
+</p>
+</div>
+</div>
+</div>
+</div>
+
+
+
+
+<div class="faq_container">
+<div class="faq">
+<div class="faq_question">Can I containerize my MPI application with Singularity and run it properly on an HPC system?</div>
+<div class="faq_answer_container">
+<div class="faq_answer">
+<p>
+Yes! HPC was one of the primary use cases in mind when Singularity was
+created.
+</p>
+<p>
+While we know for a fact that Singularity can support multiple MPI
+implementations, we have spent a considerable effort working with Open MPI
+as well as adding a Singularity module into Open MPI (v2) such that running
+at extreme scale will be as effecient as possible.
+</p>
+</p>
+note: We have seen no major performance impact from running a job in a
+Singularity container.
+</p>
+<p>
+Go here for more information:
+<a href="docs_hpc.html">Singularity in HPC environments</a>
 </p>
 </div>
 </div>
