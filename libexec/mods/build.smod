@@ -27,7 +27,7 @@ rmdir runcon seq sort split stdbuf stty sum sync tac tail tee test tr
 true tty unexpand uniq unlink users vdir wc who whoami yes vi
 /etc/terminfo /usr/share/terminfo"
 
-INCLUDE_LIBS="libnss_files*.so.* libnss_myhostname.so.* libnss_dns.so.*"
+INCLUDE_LIBS="libnss_files*.so.* libnss_myhostname.so.* libnss_dns.so.* libnss?.so libnssutil?.so"
 
 LIBDIR=`uname -p | grep -q x86_64 && echo "/lib64" || echo "/lib"`
 
