@@ -67,20 +67,22 @@ install_single_file() {
     targetpath="$2"
     filename=`basename "$file"`
 
-    if [ -f "$INSTALLDIR/c/$targetpath/$filename" ]; then
+    message 2 "Called install_single_file on: '$file', '$targetpath'\n"
+
+    if [ -z "$targetpath" ]; then
+        targetpath=`dirname "$file"`
+    fi
+
+    if [ -e "$INSTALLDIR/c/$targetpath/$filename" ]; then
+        message 2 "File exists, skipping: $targetpath/$filename\n"
         return 0
     fi
 
     if [ -e "$file" ]; then
         if [ -d "$file" ]; then
-            if [ ! -d "$INSTALLDIR/c/$file" ]; then
-                if [ -z "$targetpath" ]; then
-                    message 1 "Creating dir   : $file\n"
-                    mkdir -p "$INSTALLDIR/c/$file"
-                else
-                    message 1 "Creating dir   : $targetpath\n"
-                    mkdir -p "$INSTALLDIR/c/$targetpath"
-                fi
+            if [ ! -d "$INSTALLDIR/c/$targetpath/$filename" ]; then
+                message 1 "Creating dir   : $targetpath/$filename\n"
+                mkdir -p "$INSTALLDIR/c/$targetpath/$filename"
                 return 0
             fi
         else
@@ -88,6 +90,7 @@ install_single_file() {
                 targetpath=`dirname "$file"`
             fi
             if [ ! -d "$INSTALLDIR/c/$targetpath" ]; then
+                message 1 "Creating dir   : $targetpath/$filename\n"
                 mkdir -p "$INSTALLDIR/c/$targetpath"
             fi
 
