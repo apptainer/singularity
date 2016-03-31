@@ -202,7 +202,10 @@ parse_opts() {
             ;;
         esac
     done
-    echo "$NEWOPTS"
+    # Eww, this is bad I know... Would be better just to pass the variable
+    # around without making ad-hoc modifications... Got a better idea, let
+    # me know! (gmk)
+    echo "$NEWOPTS" | sed -e 's/\\/\\\\/g'
 }
 
 
