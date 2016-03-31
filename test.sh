@@ -117,7 +117,7 @@ stest 0 singularity run ls ls.sapp
 stest 1 singularity run --contain ls ls.sapp
 
 stest 0 sh -c "/bin/echo 'Name: which' > example.sspec"
-stest 0 sh -c "/bin/echo 'Exec: /bin/which' >> example.sspec"
+stest 0 sh -c "/bin/echo 'Exec: /usr/bin/which' >> example.sspec"
 stest 0 sh -c "/bin/echo 'DebugOS: 3' >> example.sspec"
 stest 0 singularity --quiet build example.sspec
 stest 0 singularity install which.sapp
