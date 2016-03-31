@@ -90,7 +90,7 @@ install_single_file() {
                 targetpath=`dirname "$file"`
             fi
             if [ ! -d "$INSTALLDIR/c/$targetpath" ]; then
-                message 1 "Creating dir   : $targetpath/$filename\n"
+                message 1 "Creating dir   : $targetpath\n"
                 mkdir -p "$INSTALLDIR/c/$targetpath"
             fi
 
