@@ -1,13 +1,13 @@
 USAGE: singularity (options) run [container name] (options)
 
 Execute a Singularity container and pass any arguments to the runtime
-envrionment.
+environment.
 
 It is important to know that while the application itself runs within
 a contianed environment it is not limited to that environment (unless you
 request full containment). All paths relative to your current working
 directory can be accessible to the applications within your container
-envrionment (relative paths are any paths that does not begin with a slash
+environment (relative paths are any paths that does not begin with a slash
 '/').
 
 You can reference the container by name, UUID or if installed with the

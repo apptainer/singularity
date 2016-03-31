@@ -439,7 +439,7 @@ int main(int argc, char **argv) {
 
         // Exec the singularity
         if ( execv("/singularity", argv) < 0 ) {
-            fprintf(stderr, "ERROR: Failed to exec SAPP envrionment\n");
+            fprintf(stderr, "ERROR: Failed to exec SAPP environment\n");
             return(2);
         }
 
