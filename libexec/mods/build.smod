@@ -205,7 +205,7 @@ build_runtime() {
     done
 
     for i in $INCLUDE_LIBS; do
-        FILE=`find /lib* /usr/lib* -maxdepth 1 -name "$i" 2>/dev/null`
+        FILE=`find /lib* /usr/lib* -maxdepth 1 -name "$i" 2>/dev/null | head -n 1`
         if [ -n "$FILE" ]; then
             if ! install_file "$FILE" "$LIBDIR"; then
                 message 0 "ERROR: Could not install: $FILE\n"
