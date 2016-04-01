@@ -16,9 +16,13 @@ if test -L "$1"; then
     # First check to see if it is a symlink, if so let's run it as we would
     # a multi-purpose executable
     COMMAND=`basename "$1"`
-    SAPP=`readlink "$COMMAND"`
+    SAPP=`readlink "$1"`
     shift
-    exec /usr/bin/env singularity --quiet run --cmd="$COMMAND" "$SAPP" "$@"
+    if test -f "$SAPP"; then
+        exec /usr/bin/env singularity --quiet run --cmd="$COMMAND" "$SAPP" "$@"
+    else
+        echo "ERROR: Linked Singularity container is not found: $SAPP"
+    fi
 elif test -x "$1"; then
     # If it is executable, lets run it normally via Singularity
     exec /usr/bin/env singularity --quiet run "$@"
