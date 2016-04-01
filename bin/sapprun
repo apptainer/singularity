@@ -12,4 +12,20 @@
 
 # Simple wrapper for singularity sapprun
 
-exec /usr/bin/env singularity --quiet run "$@"
+if test -L "$1"; then
+    # First check to see if it is a symlink, if so let's run it as we would
+    # a multi-purpose executable
+    COMMAND=`basename "$1"`
+    SAPP=`readlink "$COMMAND"`
+    shift
+    exec /usr/bin/env singularity --quiet run --cmd="$COMMAND" "$SAPP" "$@"
+elif test -x "$1"; then
+    # If it is executable, lets run it normally via Singularity
+    exec /usr/bin/env singularity --quiet run "$@"
+elif test -f "$1"; then
+    echo "ERROR: Singularity container is not executable"
+else
+    echo "ERROR: Could not locate Singularity container file (SAPP)"
+fi
+
+exit 255
