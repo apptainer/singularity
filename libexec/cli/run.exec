@@ -33,7 +33,7 @@ set +f
 
 while true; do
     case $1 in
-        -c|--contain)
+        -C|--contain)
             SINGULARITY_CONTAIN=1
             export SINGULARITY_CONTAIN
             shift
@@ -47,6 +47,12 @@ while true; do
             shift
             SINGULARITY_SCRATCH="$1"
             export SINGULARITY_SCRATCH
+            shift
+        ;;
+        -c|--cmd)
+            shift
+            SINGULARITY_ALTERNATECOMMAND="$1"
+            export SINGULARITY_ALTERNATECOMMAND
             shift
         ;;
         -*)
