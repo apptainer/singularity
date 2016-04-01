@@ -120,7 +120,7 @@ install_file() {
         install_single_file "$file" "$target"
     else
         FOUND=0
-        for i in `/bin/sh -c "find $file"`; do
+        for i in `/bin/sh -c "find $file" 2>/dev/null || echo "$file"`; do
             install_single_file "$i" "$target"
             FOUND=1
         done
