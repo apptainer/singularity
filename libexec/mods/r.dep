@@ -48,9 +48,9 @@ r_txt_resolver() {
             install_file "$R_HOME_DIR/library/*/*/*.so"
             install_file "$R_HOME_DIR/modules"
             install_file "$R_HOME_DIR/etc"
-            install_file "/bin/uname"
-            install_file "/bin/rm"
-            install_file "/usr/bin/sed"
+            install_file `singularity_which uname`
+            install_file `singularity_which rm`
+            install_file `singularity_which sed`
         fi
     done
 }
