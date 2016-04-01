@@ -387,7 +387,9 @@ if test -z "\$SINGULARITY_COMMAND"; then
 fi
 
 if test "\$SINGULARITY_COMMAND" = "run" -o -n "\$SINGULARITY_INSHELL"; then
-    if test -x "/.singularity.exec"; then
+    if test -n "\$SINGULARITY_ALTERNATECOMMAND"; then
+        exec \$SINGULARITY_ALTERNATECOMMAND "\$@"
+    elif test -x "/.singularity.exec"; then
         exec /.singularity.exec "\$@"
     else
         echo "ERROR: Could not exec the singularity"
