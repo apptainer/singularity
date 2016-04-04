@@ -224,7 +224,7 @@ cache_sappsummary() {
     fi
 
     if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary" -a -s "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary" ]; then
-        read tmp < "$CACHEDIR/$UUID_DIR/$SAPPUUID/sum"
+        read tmp < "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary"
         eval "$VARNAME='$tmp'"
         return 0
     fi
