@@ -3,6 +3,9 @@ General:
 Singularity-build:
     - Support a mechanism for staging data (intput and output)
     - Test to make sure a specfile is a specfile before building
+    - If sensitive files (/etc/passwd, /etc/hosts) is in %files,
+      should we trust it? Request from:
+      https://github.com/gmkurtzer/singularity/issues/16
 
 Singularity-install:
     - Lock on installs (mkdir ...; flock until done)
