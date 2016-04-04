@@ -456,7 +456,7 @@ _sappinstall() {
     message 2 "Including host's /etc/resolv.conf\n";
     /bin/cp /etc/resolv.conf "$SAPPDIR/c/etc/resolv.conf"
 
-    message 1 "Including host's /etc/hosts\n";
+    message 2 "Including host's /etc/hosts\n";
     /bin/cp /etc/hosts "$SAPPDIR/c/etc/hosts"
 
     message 2 "Calculating checksums\n"
