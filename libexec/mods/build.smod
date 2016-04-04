@@ -29,8 +29,6 @@ true tty unexpand uniq unlink users vdir wc who whoami yes vi
 
 INCLUDE_LIBS="libnss_files*.so.* libnss_myhostname.so.* libnss_dns.so.* libnss?.so libnssutil?.so"
 
-LIBDIR=`uname -p | grep -q x86_64 && echo "/lib64" || echo "/lib"`
-
 # Generate a UUID
 SINGULARITY_UUID=`cat /proc/sys/kernel/random/uuid`
 
