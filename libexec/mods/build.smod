@@ -205,17 +205,15 @@ build_runtime() {
     done
 
     for i in $INCLUDE_LIBS; do
-        FILE=`find /lib* /usr/lib* -maxdepth 2 -name "$i" 2>/dev/null | head -n 1`
-        if [ -n "$FILE" ]; then
-            if ! install_file "$FILE" "$LIBDIR"; then
-                message 0 "ERROR: Could not install: $FILE\n"
-                exit 1
+        for FILE in `find /lib* /usr/lib* -maxdepth 2 -name "$i" 2>/dev/null`; do
+            if [ -e "$FILE" ]; then
+                if ! install_file "$FILE"; then
+                    message 0 "ERROR: Could not install: $FILE\n"
+                    exit 1
+                fi
             fi
-        else
-            message 2 "Could not locate library: $FILE\n";
-        fi
+        done
     done
-
 
     return 0
 }
