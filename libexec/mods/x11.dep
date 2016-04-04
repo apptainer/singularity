@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Copyright (c) 2015-2016, Gregory M. Kurtzer
+# All rights reserved.
+#
+# Copyright (c) 2015-2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of
+# any required approvals from the U.S. Dept. of Energy).
+# All rights reserved.
+#
+# Copyright (c) 2016       Intel, Inc. All rights reserved.
+#
+#
+# OpenMPI dynamically loads plugin libraries from a
+# directory located under its install prefix. As these
+# libraries are only loaded after start of execution, we
+# cannot detect them with strace - therefore, we have to
+# manually slurp them up here.
+#
+# OpenMPI's help system also relies on a set of text files
+# that contain all the verbose help messages. While these
+# aren't technically required (as they are only used in
+# cases of abnormal termination), users generally prefer to
+# have the clearer explanations, so slurp those up too
+#
+
+BIN_RESOLVERS="x11_resolver $BIN_RESOLVERS"
+
+
+x11_resolver() {
+    for file in $@; do
+        if check_pattern "*/libX11.so.*" "$file"; then
+            if test -d "/usr/share/X11/locale"; then
+                install_file "/usr/share/X11/locale"
+            elif test -d "/usr/lib/X11/locale"; then
+                install_file "/usr/lib/X11/locale"
+            else
+                message 0 "WARNING: Could not locate X11 locales...\n"
+            fi
+        fi
+    done
+}
+
