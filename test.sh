@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ ! -f "autogen.sh" ]; then
     /bin/echo "ERROR: Run this from the singularity source root"
@@ -16,18 +16,18 @@ TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
 SINGULARITY_CACHEDIR="$TEMPDIR"
 export SINGULARITY_CACHEDIR MESSAGELEVEL
 
-. ./libexec/functions
 
-
-/bin/echo "${BLUE}Gaining/checking sudo access...${NORMAL}"
+/bin/echo "Gaining/checking sudo access..."
 sudo true
 
 if [ -z "$CLEAN_SHELL" ]; then
-    /bin/echo "${BLUE}Building/Installing Singularity to temporary directory${NORMAL}"
+    /bin/echo "Building/Installing Singularity to temporary directory"
     /bin/echo "Reinvoking in a clean shell"
     sleep 1
     exec env -i CLEAN_SHELL=1 PATH="/bin:/usr/bin:/sbin:/usr/sbin" bash "$0" "$*"
 fi
+
+. ./libexec/functions
 
 make clean >/dev/null 2>&1
 stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
