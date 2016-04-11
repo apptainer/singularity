@@ -29,6 +29,7 @@ int is_blk(char *path);
 int s_mkpath(char *dir, mode_t mode);
 int s_rmdir(char *dir);
 int intlen(int input);
+char *int2str(int num);
 int copy_file(char * source, char * dest);
 char *joinpath(char * path1, char * path2);
 char *strjoin(char *str1, char *str2);

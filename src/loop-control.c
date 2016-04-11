@@ -38,38 +38,48 @@
 #define LO_FLAGS_AUTOCLEAR 4
 #endif
 
+#define MAX_LOOP_DEVS 128
+
 
 
 char * obtain_loop_dev(void) {
     char * loop_device;
-    int loop_control;
-    int devnum;
+    int devnum = -1;
+    int i;
 
-    //printf("Opening loop-control device\n");
-    if ( ( loop_control = open("/dev/loop-control", O_RDWR)) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open loop-control device: %s\n", strerror(errno));
-        return(NULL);
-    }
+    // We brute force this to be compatible with older loop implementations
+    // that don't provide /dev/loop-control
+    for( i=0; i < MAX_LOOP_DEVS; i++ ) {
+        char *test_loopdev = strjoin("/dev/loop", int2str(i));
+        struct loop_info loop_status = {0};
+        int loop_fd;
 
-    //printf("Sending loop-control LOOP_CTL_GET_FREE\n");
-    if ( ( devnum = ioctl(loop_control, LOOP_CTL_GET_FREE) ) < 0 ) {
-        fprintf(stderr, "ERROR: Could not get a loop device number: %s\n", strerror(errno));
-        return(NULL);
-    }
-    //printf("Got new loop device number: %d\n", devnum);
+        if ( ( loop_fd = open(test_loopdev, O_RDONLY) ) < 0 ) {
+            if ( ioctl(loop_fd, LOOP_GET_STATUS, &loop_status) < 0 ) {
+                devnum = i;
+                break;
+            }
 
-    close(loop_control);
-
-    loop_device = (char*) malloc(intlen(devnum) + 12);
-    snprintf(loop_device, intlen(devnum) + 11, "/dev/loop%d", devnum);
-
-    //printf("Checking for loop device: %s\n", *loop_device);
-    if ( is_blk(loop_device) < 0 ) {
-        //printf("Creating loop device: %s\n", *loop_device);
-        if ( mknod(loop_device, S_IFBLK | 0644, makedev(7, devnum)) < 0 ) {
-            //fprintf(stderr, "Could not create %s: %s\n", *loop_device, strerror(errno));
-            return(NULL);
+        } else {
+            devnum = i;
+            break;
         }
+    }
+
+    if ( devnum >= 0 ) {
+        loop_device = (char*) malloc(intlen(devnum) + 12);
+        snprintf(loop_device, intlen(devnum) + 11, "/dev/loop%d", devnum);
+
+        //printf("Checking for loop device: %s\n", *loop_device);
+        if ( is_blk(loop_device) < 0 ) {
+            //printf("Creating loop device: %s\n", *loop_device);
+            if ( mknod(loop_device, S_IFBLK | 0644, makedev(7, devnum)) < 0 ) {
+                //fprintf(stderr, "Could not create %s: %s\n", *loop_device, strerror(errno));
+                return(NULL);
+            }
+        }
+    } else {
+        return(NULL);
     }
 
     return(loop_device);

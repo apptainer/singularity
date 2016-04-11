@@ -138,7 +138,7 @@ int main(int argc, char ** argv) {
         char *containername = basename(strdup(containerimage));
         
         prompt = (char *) malloc(strlen(containerimage) + strlen(mountpoint) + 15);
-        snprintf(prompt, strlen(containerimage) + strlen(mountpoint) + 15, "Singularity/%s> ", containername, mountpoint);
+        snprintf(prompt, strlen(containerimage) + strlen(mountpoint) + 15, "Singularity/%s> ", containername);
 
         setenv("PS1", prompt, 1);
 
