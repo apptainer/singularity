@@ -33,8 +33,80 @@
       <section>
 &laquo;&nbsp;<a href="docs.html">Back to Documentation</a>
 <h1>Singularity in an HPC Environment</h1>
+<p>
+One of the architecturly defined features in Singularity is that it can execute
+containers like they are native programs or scripts on a host computer. As a
+result, integration with schedulers is simple and runs exactly as you would
+expect. All standard input, output, error, pipes, IPC, and other communication
+pathways that locally running progams employ are syncronized with the applications
+running locally within the container.
+</p>
+<p>
+Additionally because Singularity is not emulating a full hardware level
+virtulization paradigm, there is no need to seperate out any sandboxed networks
+or file systems because there is no concept of user-escalation within a container.
+Users can run Singularity containers just as they run any other program on the
+HPC resource.
+</p>
+<p>
+Another result of the Singularity architecture is the ability to properly integrate
+with the Message Passing Interface (MPI). Work has already been done for out of the
+box compatibility with Open MPI (both in Open MPI v2.x as well as part of
+Singularity). Here is a document that illustrates the Open MPI/Singularity workflow:
+</p>
+<img src="images/singularity-openmpi.png" border="0">
+<p>
+From the above image you can follow the invocation pathway:
+<ol>
+<li>mpirun is called by the resource manager or the user directly from a shell</li>
+<li>Open MPI then calls the process management daemon (ORTED)</li>
+<li>The ORTED process launches the Singularity container requested by the mpirun command</li>
+<li>Singularity builds the container and namespace environment</li>
+<li>Singularity then launches the MPI application within the container</li>
+<li>The MPI application launches and loads the Open MPI libraries</li>
+<li>The Open MPI libraries connect back to the ORTED process via the Process Management Interface (PMI)</li>
+</ol>
+At this point the processes within the container run as they would normally directly
+on the host at full bandwidth! This entire process happens behind the scenes, and
+from the user's perspective running via MPI is as simple as just calling mpirun as
+they would normally:
+<pre>
+$ mpirun -np 20 ./ring.sapp 
+Process 0 sending 10 to 1, tag 201 (20 processes in ring)
+Process 0 sent to 1
+Process 0 decremented value: 9
+Process 0 decremented value: 8
+Process 0 decremented value: 7
+Process 0 decremented value: 6
+Process 0 decremented value: 5
+Process 0 decremented value: 4
+Process 0 decremented value: 3
+Process 0 decremented value: 2
+Process 0 decremented value: 1
+Process 0 decremented value: 0
+Process 0 exiting
+Process 1 exiting
+Process 2 exiting
+Process 3 exiting
+Process 4 exiting
+Process 5 exiting
+Process 6 exiting
+Process 7 exiting
+Process 8 exiting
+Process 9 exiting
+Process 10 exiting
+Process 11 exiting
+Process 12 exiting
+Process 13 exiting
+Process 14 exiting
+Process 15 exiting
+Process 16 exiting
+Process 17 exiting
+Process 18 exiting
+Process 19 exiting
+</pre>
+</p>
 
-Coming soon...
 
 
 
