@@ -463,11 +463,19 @@ _sappinstall() {
     echo "group:      files sss" >> "$SAPPDIR/c/etc/nsswitch.conf"
     echo "hosts:      files dns myhostname" >> "$SAPPDIR/c/etc/nsswitch.conf"
 
-    message 2 "Including host's /etc/resolv.conf\n";
-    /bin/cp /etc/resolv.conf "$SAPPDIR/c/etc/resolv.conf"
+    if [ -e "$SAPPDIR/c/etc/resolv.conf" ]; then
+        message 1 "Not updating the /etc/resolv.conf as it exists in the container\n"
+    else
+        message 2 "Including host's /etc/resolv.conf\n";
+        /bin/cp /etc/resolv.conf "$SAPPDIR/c/etc/resolv.conf"
+    fi
 
-    message 2 "Including host's /etc/hosts\n";
-    /bin/cp /etc/hosts "$SAPPDIR/c/etc/hosts"
+    if [ -e "$SAPPDIR/c/etc/hosts" ]; then
+        message 1 "Not updating the /etc/hosts as it exists in the container\n"
+    else
+        message 2 "Including host's /etc/hosts\n";
+        /bin/cp /etc/hosts "$SAPPDIR/c/etc/hosts"
+    fi
 
     message 2 "Calculating checksums\n"
     (cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
