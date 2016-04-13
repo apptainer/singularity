@@ -308,7 +308,6 @@ build_configs() {
     done < "/etc/passwd" > "$INSTALLDIR/c/etc/passwd"
 
     message 2 "Including sanitized /etc/group\n"
-    message 2 "Found /etc/group in container, sanitizing it...\n"
     while read line; do
         ID=`echo "$line" | awk -F: '{print $3}'`
         if [ "$ID" -le 500 ]; then
