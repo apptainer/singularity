@@ -83,7 +83,7 @@ get_section_from_conf() {
         message 0 "File not found ($FILE)\n"
         exit 1
     fi
-    if ! grep -q "^%$SECTION" "$FILE"; then
+    if ! grep -q "^%$SECTION\$" "$FILE"; then
         return 1
     fi
     cat "$FILE" | while read line; do
@@ -94,7 +94,7 @@ get_section_from_conf() {
             fi
             /bin/echo "$line"
         else
-            if /bin/echo "$line" | grep -q "^%$SECTION"; then
+            if /bin/echo "$line" | grep -q "^%$SECTION\$"; then
                 TOGGLE=1
             fi
         fi
