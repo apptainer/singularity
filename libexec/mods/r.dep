@@ -38,11 +38,11 @@ r_txt_resolver() {
         if check_pattern "*/bin/R" "$file"; then
             R_HOME_DIR=`grep "^R_HOME_DIR=" /usr/bin/R | sed -s 's/.*=//'`            
             if [ -z "$R_HOME_DIR" ]; then
-                message 0 "ERROR: Could not resolve R_HOME_DIR from: $file\n"
+                message 0 "Could not resolve R_HOME_DIR from: $file\n"
                 exit 255
             fi
             if [ ! -d "$R_HOME_DIR" ]; then
-                message 0 "ERROR: R_HOME_DIR path not found: $R_HOME_DIR\n"
+                message 0 "R_HOME_DIR path not found: $R_HOME_DIR\n"
                 exit 255
             fi
             install_file "/usr/*/locale/locale-archive"

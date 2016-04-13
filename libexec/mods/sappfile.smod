@@ -28,11 +28,11 @@ export HEADER_END
 sappfile_issapp() {
     SAPPFILE="$1"
     if [ -z "$SAPPFILE" ]; then
-        message 0 "ERROR: SAPPFILE undefined\n"
+        message 0 "SAPPFILE undefined\n"
         exit 1
     fi
     if [ ! -f "$SAPPFILE" ]; then
-        message 0 "ERROR: SAPPFILE not found: $SAPPFILE\n"
+        message 0 "SAPPFILE not found: $SAPPFILE\n"
         exit 1
     fi
 
@@ -50,7 +50,7 @@ sappfile_payload() {
         RETVAL=$?
     else
         if [ ! -f "$SAPPFILE" ]; then
-            message 0 "ERROR: SAPPFILE not found: $SAPPFILE\n"
+            message 0 "SAPPFILE not found: $SAPPFILE\n"
             exit 1
         fi
 
@@ -71,7 +71,7 @@ sappfile_header() {
         RETVAL=$?
     else
         if [ ! -f "$SAPPFILE" ]; then
-            message 0 "ERROR: SAPPFILE not found: $SAPPFILE\n"
+            message 0 "SAPPFILE not found: $SAPPFILE\n"
             exit 1
         fi
 
@@ -85,7 +85,7 @@ sappfile_header() {
 sappfile_name() {
     SAPPFILE="$1"
     if [ -z "$SAPPFILE" ]; then
-        message 0 "ERROR: SAPPFILE undefined\n"
+        message 0 "SAPPFILE undefined\n"
         exit 1
     fi
 
@@ -97,7 +97,7 @@ sappfile_name() {
 sappfile_uuid() {
     SAPPFILE="$1"
     if [ -z "$SAPPFILE" ]; then
-        message 0 "ERROR: SAPPFILE undefined\n"
+        message 0 "SAPPFILE undefined\n"
         exit 1
     fi
 
@@ -110,11 +110,11 @@ sappfile_sum() {
     SAPPFILE="$1"
 
     if [ -z "$SAPPFILE" ]; then
-        message 0 "ERROR: SAPPFILE undefined\n"
+        message 0 "SAPPFILE undefined\n"
         exit 1
     fi
     if [ ! -f "$SAPPFILE" ]; then
-        message 0 "ERROR: Could not find: $SAPPFILE\n"
+        message 0 "Could not find: $SAPPFILE\n"
         exit 1
     fi
 

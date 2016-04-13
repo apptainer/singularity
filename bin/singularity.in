@@ -27,7 +27,7 @@ libexecdir="@libexecdir@"
 version="@VERSION@"
 
 RETVAL=0
-MESSAGELEVEL=1
+MESSAGELEVEL=2
 DEBUG=""
 
 export prefix exec_prefix libexecdir RETVAL MESSAGELEVEL DEBUG
@@ -83,7 +83,7 @@ while true; do
             shift 
         ;;
         --version)
-            message 1 "$version\n"
+            message 2 "$version\n"
             exit
         ;;
         -d|--debug)
@@ -95,7 +95,7 @@ while true; do
         ;;
         -v|--verbose)
             MESSAGELEVEL=`expr $MESSAGELEVEL + 1`
-            message 2 "increasing verbosity level\n"
+            message 3 "increasing verbosity level\n"
             shift
         ;;
         -*)
@@ -103,7 +103,7 @@ while true; do
             exit 1
         ;;
         *)
-            message 4 "ending argument loop\n"
+            message 5 "ending argument loop\n"
             break
         ;;
     esac

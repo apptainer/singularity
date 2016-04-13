@@ -11,7 +11,7 @@ if [ ! -f "libexec/functions" ]; then
 fi
 
 
-MESSAGELEVEL=2
+MESSAGELEVEL=3
 TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
 SINGULARITY_CACHEDIR="$TEMPDIR"
 export SINGULARITY_CACHEDIR MESSAGELEVEL

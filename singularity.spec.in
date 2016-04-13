@@ -8,6 +8,7 @@ URL: http://warewulf.lbl.gov/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
+Requires: strace
 
 %description
 Singularity provides functionality to build the smallest most minimal

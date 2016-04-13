@@ -46,18 +46,18 @@ SINGULARITY_UUID=`cat /proc/sys/kernel/random/uuid`
 run_scriptlet() {
     SCRIPTLET="$1"
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
     if [ -z "$SCRIPTLET" ]; then
-        message 0 "ERROR: called run_scriptlet() with no script name\n"
+        message 0 "called run_scriptlet() with no script name\n"
         return 1
     fi
 
-    message 1 "Running $SCRIPTLET scriptlet\n"
+    message 2 "Running $SCRIPTLET scriptlet\n"
     ( get_section_from_conf "$SCRIPTLET" "$SAPPSPEC" || exit 1 ) | /bin/sh -x
     if [ "$?" != "0" ]; then
-        message 0 "ERROR: '$SCRIPTLET' scriptlet exited non-zero\n"
+        message 0 "'$SCRIPTLET' scriptlet exited non-zero\n"
         return 1
     fi
 
@@ -70,11 +70,11 @@ build_init() {
     SAPPSPEC="$1"
     SAPPFILE="$2"
     if [ -z "$SAPPSPEC" ]; then
-        message 0 "ERROR: Specfile is undefined\n"
+        message 0 "Specfile is undefined\n"
         return 1
     fi
     if [ ! -f "$SAPPSPEC" ]; then
-        message 0 "ERROR: No such specfile: $SAPPSPEC\n"
+        message 0 "No such specfile: $SAPPSPEC\n"
         return 1
     fi
 
@@ -99,7 +99,7 @@ build_init() {
             DIRNAME=`dirname "$SAPPFILE"`
             if [ ! -d "$DIRNAME" ]; then
                 if ! mkdir -p "$DIRNAME"; then
-                    message 1 "Could not create output directory\n"
+                    message 2 "Could not create output directory\n"
                     exit 1
                 fi
             fi
@@ -108,17 +108,17 @@ build_init() {
         SAPPFILE="$SAPPNAME.sapp"
     fi
 
-    message 1 "Creating temporary container path...\n"
+    message 2 "Creating temporary container path...\n"
     if [ ! -d "$INSTALLDIR/c" ]; then
         if ! mkdir -p "$INSTALLDIR/c" 2>/dev/null; then
-            message 0 "ERROR: Could not create temporary root directory\n";
+            message 0 "Could not create temporary root directory\n";
             exit 1
         fi
     fi
 
-    message 2 "Checking SAPPFILE is writable...\n"
+    message 3 "Checking SAPPFILE is writable...\n"
     if ! touch "$SAPPFILE" 2>/dev/null; then
-        message 0 "ERROR: Could not create $SAPPFILE\n"
+        message 0 "Could not create $SAPPFILE\n"
         exit 1
     fi
 
@@ -128,9 +128,9 @@ build_init() {
         fi
     fi
 
-    message 1 "Singularity App Container Name: $NAME.sapp\n"
-    message 2 "Output file: $SAPPFILE\n"
-    message 2 "Install directory: $INSTALLDIR\n"
+    message 2 "Singularity App Container Name: $NAME.sapp\n"
+    message 3 "Output file: $SAPPFILE\n"
+    message 3 "Install directory: $INSTALLDIR\n"
 
     export NAME SAPPNAME SAPPFILE INSTALLDIR INSTALLROOT DESTDIR BUILD_INIT NODEPS
 
@@ -146,11 +146,11 @@ build_buildscriptlet() {
 
 build_packages() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
-    message 1 "Evaluating: packages\n"
+    message 2 "Evaluating: packages\n"
     get_section_from_conf "packages" $SAPPSPEC | while read pkg; do
         if [ -z "$pkg" ]; then
             continue
@@ -167,7 +167,7 @@ build_packages() {
                 message 0 "Package is not installed: $pkg\n"
             fi
         elif [ -x "/usr/bin/dpkg" ]; then
-            message 0 "ERROR: We don't support dpkg yet... Coming soon!\n"
+            message 0 "We don't support dpkg yet... Coming soon!\n"
             exit 1
         fi
     done
@@ -181,7 +181,7 @@ build_packages() {
 
 build_runtime() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
@@ -196,17 +196,17 @@ build_runtime() {
         *)          RUNTIMELEVEL=1; INCLUDE_FILES="$INCLUDE_FILES0 $INCLUDE_FILES1"; message 0 "WARNING: DebugOS value unknown, using default\n" ;;
     esac
 
-    message 1 "Building the runtime level: $RUNTIMELEVEL\n"
+    message 2 "Building the runtime level: $RUNTIMELEVEL\n"
 
     for i in $INCLUDE_FILES; do
         if FILE=`singularity_which $i 2>/dev/null`; then
             if ! install_file "$FILE"; then
-                message 0 "ERROR: Could not install: $FILE\n"
+                message 0 "Could not install: $FILE\n"
                 exit 1
             fi
         elif [ -e "$i" ]; then
             if ! install_file "$i"; then
-                message 0 "ERROR: Could not install: $i\n"
+                message 0 "Could not install: $i\n"
                 exit 1
             fi
         fi
@@ -216,7 +216,7 @@ build_runtime() {
         for FILE in `find /lib* /usr/lib* -maxdepth 2 -name "$i" 2>/dev/null`; do
             if [ -e "$FILE" ]; then
                 if ! install_file "$FILE"; then
-                    message 0 "ERROR: Could not install: $FILE\n"
+                    message 0 "Could not install: $FILE\n"
                     exit 1
                 fi
             fi
@@ -229,22 +229,22 @@ build_runtime() {
 
 build_packageinstall() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
-    message 1 "Evaluating: Exec\n"
+    message 2 "Evaluating: Exec\n"
     get_key_from_conf "exec" "$SAPPSPEC" | while read prog args; do
         if FULLFILE=`singularity_which "$prog" 2>/dev/null`; then
             if ! install_file "$FULLFILE" "/bin"; then
-                message 0 "ERROR: Could not install: $i\n"
+                message 0 "Could not install: $i\n"
                 exit 1
             fi
         elif [ -e "$prog" ]; then
-            message 0 "ERROR: Defined 'exec' is not executable: $prog\n"
+            message 0 "Defined 'exec' is not executable: $prog\n"
             exit 1
         else
-            message 0 "ERROR: Defined 'exec' is not found: $prog\n"
+            message 0 "Defined 'exec' is not found: $prog\n"
             exit 1
         fi
     done
@@ -258,15 +258,15 @@ build_packageinstall() {
 
 build_fileinstall() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
-    message 1 "Evaluating: files\n"
+    message 2 "Evaluating: files\n"
     get_section_from_conf "files" "$SAPPSPEC" | while read file; do
         if [ -n "$file" ]; then
             if ! install_file "$file"; then
-                message 0 "ERROR: Could not install: $i\n"
+                message 0 "Could not install: $i\n"
                 exit 1
             fi
         fi
@@ -287,19 +287,19 @@ build_installscriptlet() {
 
 build_configs() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
-    message 1 "Creating template configs\n"
+    message 2 "Creating template configs\n"
     if [ ! -d "$INSTALLDIR/c/etc" ]; then
         if ! mkdir -p "$INSTALLDIR/c/etc" 2>/dev/null; then
-            message 0 "ERROR: Could not create directory $INSTALLDIR/c/etc\n"
+            message 0 "Could not create directory $INSTALLDIR/c/etc\n"
         fi
     fi
 
 
-    message 1 "Including sanitized /etc/passwd\n"
+    message 2 "Including sanitized /etc/passwd\n"
     while read line; do
         ID=`echo "$line" | awk -F: '{print $3}'`
         if [ "$ID" -le 500 ]; then
@@ -307,8 +307,8 @@ build_configs() {
         fi
     done < "/etc/passwd" > "$INSTALLDIR/c/etc/passwd"
 
-    message 1 "Including sanitized /etc/group\n"
-    message 1 "Found /etc/group in container, sanitizing it...\n"
+    message 2 "Including sanitized /etc/group\n"
+    message 2 "Found /etc/group in container, sanitizing it...\n"
     while read line; do
         ID=`echo "$line" | awk -F: '{print $3}'`
         if [ "$ID" -le 500 ]; then
@@ -317,7 +317,7 @@ build_configs() {
     done < "/etc/group" > "$INSTALLDIR/c/etc/group"
 
     if [ -f "$INSTALLDIR/c/etc/shadow" ]; then
-        message 1 "Found /etc/shadow in container, sanitizing it...\n"
+        message 2 "Found /etc/shadow in container, sanitizing it...\n"
         cat /dev/null > "$INSTALLDIR/c/etc/shadow"
     fi
 
@@ -328,19 +328,19 @@ build_configs() {
 
 build_filecleanup() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
     if OUTPUT=`get_key_from_conf "NoLocale" "$SAPPSPEC"`; then
         if check_pattern 'y*' "$OUTPUT"; then
-            message 1 "Removing all locales\n";
+            message 2 "Removing all locales\n";
             find "$INSTALLDIR/c/" -name "*locale*" -type f | xargs rm -f
             find "$INSTALLDIR/c/" -path '*/LC_MESSAGES/*.mo' -type f | xargs rm -f
         fi
     fi
 
-    message 1 "Cleaning up device files\n"
+    message 2 "Cleaning up device files\n"
     rm -f $INSTALLDIR/c/dev/*
 
     return 0
@@ -356,11 +356,11 @@ build_postscriptlet() {
 
 build_runscripts() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
-    message 1 "Defining container shell environment\n"
+    message 2 "Defining container shell environment\n"
     LIB_SEARCH_PATH=`cd "$INSTALLDIR/c"; find . -name "lib*.so*" -type f | xargs -n 1 dirname 2>/dev/null | sort | uniq | sed -e 's/^\.//' | tr '\n' ':'`
     PYTHONHOME=`cd "$INSTALLDIR/c"; find . \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -name python -print | sed -e 's/^\.//' | sed -e 's/\/bin\/python$//'`
 
@@ -379,7 +379,7 @@ build_runscripts() {
     echo "export PATH LANG PS1 LD_LIBRARY_PATH PYTHONHOME" >> "$INSTALLDIR/c/.singularity.env"
 
 
-    message 1 "Building singularity main runscript\n"
+    message 2 "Building singularity main runscript\n"
 cat <<EOF > "$INSTALLDIR/c/singularity"
 #!/bin/sh
 
@@ -429,7 +429,7 @@ fi
 exit 0
 EOF
 
-    message 1 "Building singularity test runscript\n"
+    message 2 "Building singularity test runscript\n"
     echo "#!/bin/sh" > "$INSTALLDIR/c/.singularity.test"
     echo "set -x" >> "$INSTALLDIR/c/.singularity.test"
     if get_section_from_conf "test" "$SAPPSPEC" >> "$INSTALLDIR/c/.singularity.test"; then
@@ -438,10 +438,10 @@ EOF
         rm -f "$INSTALLDIR/c/.singularity.test"
     fi
 
-    message 1 "Building singularity exec runscript\n"
+    message 2 "Building singularity exec runscript\n"
     echo "#!/bin/sh" > "$INSTALLDIR/c/.singularity.exec"
     if ! get_section_from_conf "runscript" "$SAPPSPEC" >> "$INSTALLDIR/c/.singularity.exec"; then
-        message 2 "generating a basic singularity runscript\n"
+        message 3 "generating a basic singularity runscript\n"
         if OUTPUT=`get_key_from_conf "exec" "$SAPPSPEC"`; then
             echo "$OUTPUT" | while read prog args; do
                 progname=`basename "$prog"`
@@ -453,7 +453,7 @@ EOF
                 break
             done
         else
-            message 0 "ERROR: no runscript or program to exec defined!\n"
+            message 0 "no runscript or program to exec defined!\n"
             exit 1
         fi
     fi
@@ -468,7 +468,7 @@ EOF
 
 build_test() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
@@ -485,14 +485,14 @@ build_test() {
 
 build_meta() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
-    message 1 "Including specfile\n"
+    message 2 "Including specfile\n"
     cat "$SAPPSPEC" > "$INSTALLDIR/spec"
 
-    message 1 "Writing metadata\n"
+    message 2 "Writing metadata\n"
     get_key_from_conf "name" "$SAPPSPEC" > "$INSTALLDIR/name"
     get_key_from_conf "Summary" "$SAPPSPEC" > "$INSTALLDIR/summary"
     get_key_from_conf "Maintainer" "$SAPPSPEC" > "$INSTALLDIR/maintainer"
@@ -505,11 +505,11 @@ build_meta() {
 
 build_sappfile() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 
-    message 1 "Creating output SAPP container\n"
+    message 2 "Creating output SAPP container\n"
     echo "#!/usr/bin/env sapprun" > $SAPPFILE
     echo "Name: $NAME" >> $SAPPFILE
     echo "Summary: $SUMMARY" >> $SAPPFILE
@@ -528,7 +528,7 @@ build_sappfile() {
 
 build_cleanup() {
     if [ -n "$INSTALLDIR" ]; then
-        message 1 "Cleaning up temporary files...\n"
+        message 2 "Cleaning up temporary files...\n"
         rm -rf "$INSTALLDIR"
     fi
 }
@@ -536,7 +536,7 @@ build_cleanup() {
 
 build_all() {
     if [ -z "$BUILD_INIT" ]; then
-        message 0 "ERROR: Has build_init() been run?\n"
+        message 0 "Has build_init() been run?\n"
         return 1
     fi
 

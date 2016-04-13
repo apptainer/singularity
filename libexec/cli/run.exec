@@ -84,7 +84,7 @@ if cache_runkey_sappdir "$1" "SAPPDIR"; then
     SAPPNAME="$1"
 
     if [ -z "$SAPPDIR" ]; then
-        message 0 "ERROR: Could not identify cache directory for runkey '$1'\n"
+        message 0 "Could not identify cache directory for runkey '$1'\n"
         exit 255
     fi
 
@@ -92,12 +92,12 @@ elif cache_sappnameexists "$1"; then
     SAPPNAME="$1"
 
     if ! cache_sappname2uuid "$SAPPNAME" "SAPPUUID"; then
-        message 0 "ERROR: Singularity container is not installed: $SAPPNAME\n"
+        message 0 "Singularity container is not installed: $SAPPNAME\n"
         exit 255
     fi
 
     if ! cache_sappdir "$SAPPUUID" "SAPPDIR"; then
-        message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
+        message 0 "Could not identify cache directory for $SAPPUUID\n"
         exit 255
     fi
 
@@ -105,7 +105,7 @@ elif test -f "$1" && sappfile_issapp "$1"; then
     SAPPUUID=`sappfile_uuid "$1"`
     SAPPNAME=`sappfile_name "$1"`
     if ! cache_sappuuidexists "$SAPPUUID"; then
-        message 2 "Installing SAPPFILE into: $CACHEDIR\n"
+        message 3 "Installing SAPPFILE into: $CACHEDIR\n"
         if ! cache_sappinstall "$1"; then
             exit 255
         fi
@@ -114,11 +114,11 @@ elif test -f "$1" && sappfile_issapp "$1"; then
     cache_sappdir "$SAPPUUID" "SAPPDIR"
 
     if [ -z "$SAPPDIR" ]; then
-        message 0 "ERROR: Could not identify cache directory for $SAPPUUID\n"
+        message 0 "Could not identify cache directory for $SAPPUUID\n"
         exit 255
     fi
 else
-    message 0 "ERROR: Could not resolve container reference: $1\n"
+    message 0 "Could not resolve container reference: $1\n"
     exit 1
 fi
 
@@ -127,7 +127,7 @@ CONTAINERPATH="$SAPPDIR/c"
 export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
 shift
 
-message 2 "Running '$SAPPNAME' ($@)\n"
+message 3 "Running '$SAPPNAME' ($@)\n"
 
 if [ -n "$FILE_CHECK" ]; then
     if ! cache_sappfilecheck "$SAPPNAME"; then
