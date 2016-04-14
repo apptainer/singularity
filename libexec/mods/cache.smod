@@ -36,31 +36,31 @@ if [ -z "$CACHEDIR" ]; then
         CACHEDIR="$HOME/.singularity-cache"
     fi
 
-    message 3 "Using CACHEDIR=$CACHEDIR\n"
+    message 2 "Using CACHEDIR=$CACHEDIR\n"
 fi
 
 if [ ! -d "$CACHEDIR" ]; then
-    message 3 "Creating CACHEDIR: $CACHEDIR\n"
+    message 2 "Creating CACHEDIR: $CACHEDIR\n"
     if ! mkdir -p "$CACHEDIR"; then
-        message 0 "Could not create CACHEDIR ($CACHEDIR)\n"
+        message ERROR "Could not create CACHEDIR ($CACHEDIR)\n"
         exit 1
     fi
 fi
 
 if [ ! -d "$CACHEDIR/$UUID_DIR" ]; then
-    message 3 "Creating UUID_DIR: $CACHEDIR/$UUID_DIR\n"
+    message 2 "Creating UUID_DIR: $CACHEDIR/$UUID_DIR\n"
     mkdir -p "$CACHEDIR/$UUID_DIR"
 fi
 if [ ! -d "$CACHEDIR/$NAME_DIR" ]; then
-    message 3 "Creating NAME_DIR: $CACHEDIR/$NAME_DIR\n"
+    message 2 "Creating NAME_DIR: $CACHEDIR/$NAME_DIR\n"
     mkdir -p "$CACHEDIR/$NAME_DIR"
 fi
 if [ ! -d "$CACHEDIR/$LOCK_DIR" ]; then
-    message 3 "Creating LOCK_DIR: $CACHEDIR/$LOCK_DIR\n"
+    message 2 "Creating LOCK_DIR: $CACHEDIR/$LOCK_DIR\n"
     mkdir -p "$CACHEDIR/$LOCK_DIR"
 fi
 if [ ! -d "$CACHEDIR/$RUNKEY_DIR" ]; then
-    message 3 "Creating RUNKEY_DIR: $CACHEDIR/$RUNKEY_DIR\n"
+    message 2 "Creating RUNKEY_DIR: $CACHEDIR/$RUNKEY_DIR\n"
     mkdir -p "$CACHEDIR/$RUNKEY_DIR"
 fi
 
@@ -75,7 +75,7 @@ cache_sappuuidexists() {
     SAPPUUID="$1"
 
     if [ -z "$SAPPUUID" ]; then
-        message 0 "SAPP UUID undefined\n"
+        message ERROR "SAPP UUID undefined\n"
         exit 1
     fi
 
@@ -92,7 +92,7 @@ cache_sappnameexists() {
     SAPPNAME="$1"
 
     if [ -z "$SAPPNAME" ]; then
-        message 0 "SAPPNAME undefined\n"
+        message ERROR "SAPPNAME undefined\n"
         exit 1
     fi
 
@@ -135,7 +135,7 @@ cache_sappdir() {
     VARNAME="$2"
 
     if [ -z "$SAPPUUID" ]; then
-        message 0 "SAPPUUID undefined\n"
+        message ERROR "SAPPUUID undefined\n"
         exit 1
     fi
 
@@ -156,7 +156,7 @@ cache_sappname2uuid() {
     VARNAME="$2"
 
     if [ -z "$SAPPNAME" ]; then
-        message 0 "SAPPNAME undefined\n"
+        message ERROR "SAPPNAME undefined\n"
         exit 1
     fi
 
@@ -181,7 +181,7 @@ cache_sappuuid2name() {
     VARNAME="$2"
 
     if [ -z "$SAPPUUID" ]; then
-        message 0 "SAPPUUID undefined\n"
+        message ERROR "SAPPUUID undefined\n"
         exit 1
     fi
 
@@ -205,7 +205,7 @@ disabled_cache_sappsum() {
     VARNAME="$2"
 
     if [ -z "$SAPPUUID" ]; then
-        message 0 "SAPPUUID undefined\n"
+        message ERROR "SAPPUUID undefined\n"
         exit 1
     fi
 
@@ -229,7 +229,7 @@ cache_sappsummary() {
     VARNAME="$2"
 
     if [ -z "$SAPPUUID" ]; then
-        message 0 "SAPPUUID undefined\n"
+        message ERROR "SAPPUUID undefined\n"
         exit 1
     fi
 
@@ -253,7 +253,7 @@ cache_sappsize() {
     VARNAME="$2"
 
     if [ -z "$SAPPUUID" ]; then
-        message 0 "SAPPUUID undefined\n"
+        message ERROR "SAPPUUID undefined\n"
         exit 1
     fi
 
@@ -280,7 +280,7 @@ cache_sappdelete() {
     SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
     if [ -z "$SAPPUUID" ]; then
-        message 0 "SAPP UUID undefined\n"
+        message ERROR "SAPP UUID undefined\n"
         exit 1
     fi
 
@@ -289,7 +289,7 @@ cache_sappdelete() {
     fi
     if [ -f "$CACHEDIR/$NAME_DIR/$NAME" ]; then
         if ! sed -i "/^$SAPPUUID$/d" "$CACHEDIR/$NAME_DIR/$NAME"; then
-            message 0 "WARNING: Could not remove UUID from name file\n"
+            message ERROR "WARNING: Could not remove UUID from name file\n"
         fi
         if [ ! -s "$CACHEDIR/$NAME_DIR/$NAME" ]; then
             rm -f "$CACHEDIR/$NAME_DIR/$NAME"
@@ -297,7 +297,7 @@ cache_sappdelete() {
     fi
 
     if ! rm -rf "$SAPPDIR" >/dev/null 2>&1; then
-        message 0 "Could not completely remove $SAPPNAME\n"
+        message ERROR "Could not completely remove $SAPPNAME\n"
         exit 1
     fi
 }
@@ -327,22 +327,22 @@ cache_sappfilecheck() {
     SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
     if [ -z "$SAPPUUID" ]; then
-        message 0 "SAPP UUID undefined\n"
+        message ERROR "SAPP UUID undefined\n"
         exit 1
     fi
 
     if [ ! -f "$SAPPDIR/files" ]; then
-        message 0 "File checksums not found for this SAPP\n"
+        message ERROR "File checksums not found for this SAPP\n"
         exit 1
     fi
     if cache_sappuuidexists "$SAPPUUID"; then
         if ! cd "$SAPPDIR/c" 2>/dev/null; then
-            message 0 "Could not chdir to SAPP directory\n"
+            message ERROR "Could not chdir to SAPP directory\n"
             return 1
         fi
 
         if ! md5sum -c "$SAPPDIR/files"; then
-            message 0 "Cached file check failed, something has changed!\n"
+            message ERROR "Cached file check failed, something has changed!\n"
             return 1
         fi
     fi
@@ -354,7 +354,7 @@ cache_sappcheck() {
     SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
     if [ -z "$SAPPUUID" ]; then
-        message 0 "SAPP UUID undefined\n"
+        message ERROR "SAPP UUID undefined\n"
         exit 1
     fi
 
@@ -386,7 +386,7 @@ cache_sappinstall() {
             _sappinstall "$SAPPFILE" "$SAPPUUID"
             flock -u 9
         else
-            message 3 "Waiting on another installation process to complete...\n"
+            message 2 "Waiting on another installation process to complete...\n"
             flock -x 9
         fi
     ) 9> "$LOCKFILE"
@@ -398,15 +398,15 @@ cache_sappinstall() {
 
 _sappinstall() {
     if [ -z "$SAPPFILE" ]; then
-        message 0 "SAPPFILE undefined\n"
+        message ERROR "SAPPFILE undefined\n"
         exit 1
     fi
     if [ ! -f "$SAPPFILE" ]; then
-        message 0 "Could not find: $SAPPFILE\n"
+        message ERROR "Could not find: $SAPPFILE\n"
         exit 1
     fi
     if ! sappfile_issapp "$SAPPFILE"; then
-        message 0 "File is not Singularity App/container: $SAPPFILE\n"
+        message ERROR "File is not Singularity App/container: $SAPPFILE\n"
         exit 1
     fi
 
@@ -420,70 +420,70 @@ _sappinstall() {
     SAPPDIR="$CACHEDIR/$UUID_DIR/$SAPPUUID"
 
     if [ -n "$SAPPRUNKEY" ]; then
-        message 3 "Adding RUNKEY link\n"
+        message 2 "Adding RUNKEY link\n"
         if ! ln -sf "../$UUID_DIR/$SAPPUUID" "$CACHEDIR/$RUNKEY_DIR/$SAPPRUNKEY" 2>/dev/null; then
-            message 0 "Could not create runkey\n"
+            message ERROR "Could not create runkey\n"
             exit 1
         fi
     fi
 
     if cache_sappuuidexists "$SAPPUUID"; then
-        message 3 "Singularity container is already installed: $SAPPNAME\n"
+        message 2 "Singularity container is already installed: $SAPPNAME\n"
         return 0
     fi
 
     if [ ! -d "$SAPPDIR" ]; then
-        message 3 "Creating SAPP cache directory\n"
+        message 2 "Creating SAPP cache directory\n"
         if ! mkdir -p "$SAPPDIR"; then
-            message 0 "Could not create SAPP cache directory: $SAPPDIR\n"
+            message ERROR "Could not create SAPP cache directory: $SAPPDIR\n"
             exit 1
         fi
     fi
 
-    message 3 "Installing Singularity Container...\n"
-    message 3 "Caching SAPP archive to: $SAPPDIR\n"
+    message 2 "Installing Singularity Container...\n"
+    message 2 "Caching SAPP archive to: $SAPPDIR\n"
     sappfile_payload "$SAPPFILE" | gunzip -dc | (cd "$SAPPDIR"; cpio -id --quiet)
 
     if [ ! -d "$SAPPDIR/c/etc/" ]; then
         mkdir -p "$SAPPDIR/c/etc/"
     fi
     if [ -n "$USER" ]; then
-        message 3 "Including user's entry in /etc/passwd\n"
+        message 2 "Including user's entry in /etc/passwd\n"
         grep "^$USER:" /etc/passwd 2>/dev/null >> "$SAPPDIR/c/etc/passwd"
-        message 3 "Including user's primary group entry in /etc/group\n"
+        message 2 "Including user's primary group entry in /etc/group\n"
         GID=`id -g`
         grep ":x:$GID:" /etc/group 2>/dev/null >> "$SAPPDIR/c/etc/group"
-        message 3 "Including user's supplementary group entries in /etc/group\n"
+        message 2 "Including user's supplementary group entries in /etc/group\n"
         egrep "(:|,)$USER(,|$)" /etc/group 2>/dev/null >> "$SAPPDIR/c/etc/group"
     fi
 
-    message 3 "Creating default /etc/nsswitch.conf\n";
+    message 2 "Creating default /etc/nsswitch.conf\n";
     echo "passwd:     files sss" > "$SAPPDIR/c/etc/nsswitch.conf"
     echo "shadow:     files sss" >> "$SAPPDIR/c/etc/nsswitch.conf"
     echo "group:      files sss" >> "$SAPPDIR/c/etc/nsswitch.conf"
     echo "hosts:      files dns myhostname" >> "$SAPPDIR/c/etc/nsswitch.conf"
 
     if [ -e "$SAPPDIR/c/etc/resolv.conf" ]; then
-        message 1 "Not updating the /etc/resolv.conf as it exists in the container\n"
+        message WARN "Not updating the /etc/resolv.conf as it exists in the container\n"
     else
-        message 3 "Including host's /etc/resolv.conf\n";
+        message 2 "Including host's /etc/resolv.conf\n";
         /bin/cp /etc/resolv.conf "$SAPPDIR/c/etc/resolv.conf"
     fi
 
     if [ -e "$SAPPDIR/c/etc/hosts" ]; then
-        message 1 "Not updating the /etc/hosts as it exists in the container\n"
+        message WARN "Not updating the /etc/hosts as it exists in the container\n"
     else
-        message 3 "Including host's /etc/hosts\n";
+        message 2 "Including host's /etc/hosts\n";
         /bin/cp /etc/hosts "$SAPPDIR/c/etc/hosts"
     fi
 
-    message 3 "Calculating checksums\n"
+    message 2 "Calculating checksums\n"
     (cd "$SAPPDIR/c"; find . -type f | xargs md5sum) > "$SAPPDIR/files"
 
-    message 3 "Adding UUID to name file\n"
+    message 2 "Adding UUID to name file\n"
     echo "$SAPPUUID" >> "$CACHEDIR/$NAME_DIR/$SAPPNAME"
 
-    message 3 "Finishing up container installation\n"
+    message 2 "Finishing up container installation\n"
     date > "$SAPPDIR/installed"
 
     return 0

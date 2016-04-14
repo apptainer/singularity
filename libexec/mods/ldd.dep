@@ -29,7 +29,7 @@ ldd_resolver() {
     for file in $@; do
         for dep in `ldd $file | sed -e 's@ @\n@g'`; do
             if [ -f "$dep" ]; then
-                message 4 "found dependency:      $dep\n"
+                message 3 "found dependency:      $dep\n"
                 if [ ! -f "$INSTALLDIR/c/$dep" ]; then
                     install_file "$dep"
                 fi

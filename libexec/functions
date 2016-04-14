@@ -44,23 +44,24 @@ message() {
     fi
     shift
     shift
-    if [ "$LEVEL" -eq "0" ]; then
-        tput -Txterm setaf 1 2>/dev/null
-        printf "ERROR: $MESSAGE" "$@" 1>&2
-        tput -Txterm sgr0 2>/dev/null
-    elif [ "$LEVEL" -eq "1" ]; then
-        tput -Txterm setaf 3 2>/dev/null
-        printf "WARN: $MESSAGE" "$@" 1>&2
-        tput -Txterm sgr0 2>/dev/null
-    elif [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
-        if [ "$LEVEL" -eq "2" ]; then
-            printf "$MESSAGE" "$@"
-        else
-            tput -Txterm setaf 7 2>/dev/null
-            printf "${GRAY}$MESSAGE${NORMAL}" "$@"
+    case "$LEVEL" in
+        e|error|E|ERROR)
+            tput -Txterm setaf 1 2>/dev/null
+            printf "ERROR: $MESSAGE" "$@" 1>&2
             tput -Txterm sgr0 2>/dev/null
-        fi
-    fi
+        ;;
+        w|warn|warning|W|WARN|WARNING)
+            tput -Txterm setaf 3 2>/dev/null
+            printf "WARN: $MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
+        [1-5])
+            if [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
+                printf "$MESSAGE" "$@"
+            fi
+        ;;
+    esac
+
     return 0
 }
 
@@ -80,7 +81,7 @@ get_section_from_conf() {
     FILE="$2"
     TOGGLE=""
     if [ ! -f "$FILE" ]; then
-        message 0 "File not found ($FILE)\n"
+        message ERROR "File not found ($FILE)\n"
         exit 1
     fi
     if ! grep -q "^%$SECTION\$" "$FILE"; then
@@ -118,13 +119,13 @@ check_pattern() {
 }
 
 cmd() {
-    message 3 " + %-68.68s" "$*"
+    message 2 " + %-68.68s" "$*"
     "$@" >/dev/null 2>&1
     RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
-        message 3 "OK\n"
+        message 2 "OK\n"
     else
-        message 3 "ERROR\n"
+        message 2 "ERROR\n"
     fi
     return $RETVAL
 }
@@ -134,21 +135,21 @@ stest() {
     ERROR="$1"
     TMPFILE=`mktemp`
     shift
-    message 3 " + %-60.60s " "$*"
+    message 2 " + %-60.60s " "$*"
     "$@" >$TMPFILE 2>&1
     CODE="$?"
     if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
-        message 3 "%10s ERROR\n" "(retval=$CODE)"
+        message 2 "%10s ERROR\n" "(retval=$CODE)"
         tail "$TMPFILE"
         echo "Full output in: $TMPFILE"
         exit 1
     elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
-        message 3 "%10s ERROR\n" "(retval=$CODE)"
+        message 2 "%10s ERROR\n" "(retval=$CODE)"
         tail "$TMPFILE"
         echo "Full output in: $TMPFILE"
         exit 1
     else
-        message 3 "%10s OK\n" "(retval=$CODE)"
+        message 2 "%10s OK\n" "(retval=$CODE)"
     fi
     rm -f "$TMPFILE"
 }
@@ -157,13 +158,13 @@ stest() {
 load_mod() {
     MOD="$1"
     if [ -z "$libexecdir" ]; then
-        message 0 "libexecdir not defined, are you running this from within Singularity?\n"
+        message ERROR "libexecdir not defined, are you running this from within Singularity?\n"
         exit 1
     fi
     if [ -f "$libexecdir/singularity/mods/$MOD.smod" ]; then
         . "$libexecdir/singularity/mods/$MOD.smod"
     else
-        message 0 "Could not load Singularity module: $MOD\n"
+        message ERROR "Could not load Singularity module: $MOD\n"
         exit 1
     fi
 }

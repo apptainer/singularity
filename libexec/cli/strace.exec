@@ -45,12 +45,12 @@ fi
 SAPPNAME="$1"
 
 if ! cache_sappname2uuid "$SAPPNAME" "SAPPUUID"; then
-    message 0 "Singularity container is not installed: $SAPPNAME\n"
+    message ERROR "Singularity container is not installed: $SAPPNAME\n"
     exit 255
 fi
 
 if ! cache_sappdir "$SAPPUUID" "SAPPDIR"; then
-    message 0 "Could not identify cache directory for $SAPPUUID\n"
+    message ERROR "Could not identify cache directory for $SAPPUUID\n"
     exit 255
 fi
 
@@ -59,8 +59,8 @@ CONTAINERPATH="$SAPPDIR/c"
 export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
 shift
 
-message 3 "Starting strace in '$SAPPNAME'\n"
+message 2 "Starting strace in '$SAPPNAME'\n"
 
-message 3 "Exec'ing Sexec\n"
+message 2 "Exec'ing Sexec\n"
 sexec_exec "$@" <&0
 

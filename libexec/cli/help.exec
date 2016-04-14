@@ -44,7 +44,7 @@ fi
 if [ -f "$libexecdir/singularity/cli/${COMMAND}.help" ]; then
     cat "$libexecdir/singularity/cli/${COMMAND}.help";
 else
-    message 0 "No additional help is provided for that command\n"
+    message ERROR "No additional help is provided for that command\n"
     RETVAL=1
 fi
 

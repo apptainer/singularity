@@ -46,16 +46,16 @@ if [ -z "$SAPPNAME" ]; then
 fi
 
 if ! cache_sappname2uuid "$SAPPNAME" "SAPPUUID"; then
-    message 0 "Singularity container is not installed: $SAPPNAME\n"
+    message ERROR "Singularity container is not installed: $SAPPNAME\n"
     exit 255
 fi
 
 
 ## Do the work
-message 3 "Checking '$SAPPNAME'\n"
+message 2 "Checking '$SAPPNAME'\n"
 
 if ! cache_sappuuidexists "$SAPPUUID"; then
-    message 0 "'$SAPPNAME' is not installed\n"
+    message ERROR "'$SAPPNAME' is not installed\n"
     exit 1
 fi
 

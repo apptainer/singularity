@@ -34,9 +34,9 @@ for i in $libexecdir/singularity/mods/*.dep; do
     fi
 done
 
-message 3 "ALL_RESOLVERS='$ALL_RESOLVERS'\n";
-message 3 "BIN_RESOLVERS='$BIN_RESOLVERS'\n";
-message 3 "TXT_RESOLVERS='$TXT_RESOLVERS'\n";
+message 2 "ALL_RESOLVERS='$ALL_RESOLVERS'\n";
+message 2 "BIN_RESOLVERS='$BIN_RESOLVERS'\n";
+message 2 "TXT_RESOLVERS='$TXT_RESOLVERS'\n";
 
 
 dep_resolver() {
@@ -45,23 +45,23 @@ dep_resolver() {
     fi
     if [ -f "$1" ]; then
         FILE=`file -L "$1"`
-        message 3 "Evaluating file: $1 ($FILE)\n"
+        message 2 "Evaluating file: $1 ($FILE)\n"
         case "$FILE" in
             *ELF*)
                 for i in $BIN_RESOLVERS; do
-                    message 4 "calling bin_resolvers on: $1 : $i\n"
+                    message 3 "calling bin_resolvers on: $1 : $i\n"
                     eval $i "$1"
                 done
             ;;
             *ASCII*)
                 for i in $TXT_RESOLVERS; do
-                    message 4 "calling txt_resolvers on: $1 : $i\n"
+                    message 3 "calling txt_resolvers on: $1 : $i\n"
                     eval $i "$1"
                 done
             ;;
             *) 
                 for i in $ALL_RESOLVERS; do
-                    message 4 "calling all_resolvers on: $1 : $i\n"
+                    message 3 "calling all_resolvers on: $1 : $i\n"
                     eval $i "$1"
                 done
             ;;
@@ -77,21 +77,21 @@ install_single_file() {
     targetpath="$2"
     filename=`basename "$file"`
 
-    message 3 "Called install_single_file on: '$file', '$targetpath'\n"
+    message 2 "Called install_single_file on: '$file', '$targetpath'\n"
 
     if [ -z "$targetpath" ]; then
         targetpath=`dirname "$file"`
     fi
 
     if [ -e "$INSTALLDIR/c/$targetpath/$filename" ]; then
-        message 3 "File exists, skipping: $targetpath/$filename\n"
+        message 2 "File exists, skipping: $targetpath/$filename\n"
         return 0
     fi
 
     if [ -e "$file" ]; then
         if [ -d "$file" ]; then
             if [ ! -d "$INSTALLDIR/c/$targetpath/$filename" ]; then
-                message 2 "Creating dir   : $targetpath/$filename\n"
+                message 1 "Creating dir   : $targetpath/$filename\n"
                 mkdir -p "$INSTALLDIR/c/$targetpath/$filename"
                 return 0
             fi
@@ -100,22 +100,22 @@ install_single_file() {
                 targetpath=`dirname "$file"`
             fi
             if [ ! -d "$INSTALLDIR/c/$targetpath" ]; then
-                message 2 "Creating dir   : $targetpath\n"
+                message 1 "Creating dir   : $targetpath\n"
                 mkdir -p "$INSTALLDIR/c/$targetpath"
             fi
 
-            message 2 "Installing file: $targetpath/$filename\n"
+            message 1 "Installing file: $targetpath/$filename\n"
             if ! /bin/cp -apL "$file" "$INSTALLDIR/c/$targetpath/$filename"; then
-                message 0 "Could not copy file to container: $file\n"
+                message ERROR "Could not copy file to container: $file\n"
                 exit 1
             fi
             if ! dep_resolver "$file"; then
-                message 0 "Could not resolve dependencies for: $file\n"
+                message ERROR "Could not resolve dependencies for: $file\n"
                 exit 1
             fi
         fi
     else
-        message 0 "File not found: $file\n"
+        message ERROR "File not found: $file\n"
         exit 1
     fi
 }

@@ -68,7 +68,7 @@ if [ -z "$SAPPSPEC" ]; then
 fi
 
 if [ ! -f "$SAPPSPEC" ]; then
-    message 0 "Singularity specfile not found: $SAPPSPEC\n"
+    message ERROR "Singularity specfile not found: $SAPPSPEC\n"
     exit 1
 fi
 

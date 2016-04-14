@@ -27,7 +27,7 @@ libexecdir="@libexecdir@"
 version="@VERSION@"
 
 RETVAL=0
-MESSAGELEVEL=2
+MESSAGELEVEL=1
 DEBUG=""
 
 export prefix exec_prefix libexecdir RETVAL MESSAGELEVEL DEBUG
@@ -83,27 +83,27 @@ while true; do
             shift 
         ;;
         --version)
-            message 2 "$version\n"
+            message 1 "$version\n"
             exit
         ;;
         -d|--debug)
             MESSAGELEVEL=5
             DEBUG=1
-            message 5 "enabling debugging\n"
+            message 4 "enabling debugging\n"
             #set -x
             shift
         ;;
         -v|--verbose)
             MESSAGELEVEL=`expr $MESSAGELEVEL + 1`
-            message 3 "increasing verbosity level\n"
+            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
             shift
         ;;
         -*)
-            message 0 "Unknown argument: $1\n"
+            message ERROR "Unknown argument: $1\n"
             exit 1
         ;;
         *)
-            message 5 "ending argument loop\n"
+            message 4 "ending argument loop\n"
             break
         ;;
     esac
@@ -121,7 +121,7 @@ shift
 if [ -x "$libexecdir/singularity/cli/$COMMAND.exec" ]; then
     exec $libexecdir/singularity/cli/$COMMAND.exec "$@"
 else
-    message 0 "Unknown command '$COMMAND'\n"
+    message ERROR "Unknown command '$COMMAND'\n"
     exit 1
 fi
 

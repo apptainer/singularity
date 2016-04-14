@@ -31,7 +31,7 @@ x11_resolver() {
             elif test -d "/usr/lib/X11/locale"; then
                 install_file "/usr/lib/X11/locale"
             else
-                message 0 "WARNING: Could not locate X11 locales...\n"
+                message ERROR "WARNING: Could not locate X11 locales...\n"
             fi
         fi
     done
