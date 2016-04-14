@@ -42,6 +42,9 @@ RETVAL=1
 
 printf "%-20s %-37s %12s %s\n" "CONTAINER NAME" "UUID" "SIZE" "SUMMARY"
 for SAPPUUID in `cache_sapplist "$@"`; do
+    NAME="undefined"
+    SUMMARY="undefined"
+    SIZE="0"
     cache_sappuuid2name "$SAPPUUID" "NAME"
     cache_sappsummary "$SAPPUUID" "SUMMARY"
     cache_sappsize "$SAPPUUID" "SIZE"
