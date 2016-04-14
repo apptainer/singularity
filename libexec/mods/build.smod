@@ -496,6 +496,19 @@ build_meta() {
     get_key_from_conf "Summary" "$SAPPSPEC" > "$INSTALLDIR/summary"
     get_key_from_conf "Maintainer" "$SAPPSPEC" > "$INSTALLDIR/maintainer"
 
+    if [ -f "/etc/os-release" ]; then
+        ID=`grep "^ID=" /etc/os-release | sed -e 's/ID="//' | sed -e 's/"$//'`
+        VERSION_ID=`grep "^VERSION_ID=" /etc/os-release | sed -e 's/VERSION_ID="//' | sed -e 's/"$//'`
+    elif [ -f "/etc/redhat-release" ]; then
+        ID=`cat /etc/redhat-release | sed s/\ .*//`
+        VERSION_ID=`cat /etc/redhat-release | sed s/.*release\ // | sed 's/\..*$//'`
+    else
+        ID="non-lsb"
+        VERSION_ID=""
+    fi
+    echo "$ID $VERSION_ID" > "$INSTALLDIR/build_dist"
+    uname -r > "$INSTALLDIR/build_kernel"
+
     echo "$SINGULARITY_UUID" > "$INSTALLDIR/uuid"
 
     return 0

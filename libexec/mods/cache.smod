@@ -186,8 +186,7 @@ cache_sappuuid2name() {
     fi
 
     if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/name" ]; then
-        read tmp < "$CACHEDIR/$UUID_DIR/$SAPPUUID/name"
-        read $VARNAME <<< "$tmp"
+        read $VARNAME < "$CACHEDIR/$UUID_DIR/$SAPPUUID/name"
         return 0
     fi
 
@@ -210,8 +209,7 @@ disabled_cache_sappsum() {
     fi
 
     if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/sum" ]; then
-        read tmp < "$CACHEDIR/$UUID_DIR/$SAPPUUID/sum"
-        read $VARNAME <<< "$tmp"
+        read $VARNAME < "$CACHEDIR/$UUID_DIR/$SAPPUUID/sum"
         return 0
     fi
 
@@ -234,12 +232,56 @@ cache_sappsummary() {
     fi
 
     if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary" -a -s "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary" ]; then
-        read tmp < "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary"
-        read $VARNAME <<< "$tmp"
+        read $VARNAME < "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary"
         return 0
     fi
 
     eval "$VARNAME='--'"
+    return 1
+}
+
+
+
+# INPUT 1: SAPP UUID
+# INPUT 2: Variable name to populate the SAPP build_dist
+# RETURN: True if that UUID is installed and the name is properly defined
+cache_sappbuilddist() {
+    SAPPUUID="$1"
+    VARNAME="$2"
+
+    if [ -z "$SAPPUUID" ]; then
+        message ERROR "SAPPUUID undefined\n"
+        exit 1
+    fi
+
+    if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/build_dist" -a -s "$CACHEDIR/$UUID_DIR/$SAPPUUID/build_dist" ]; then
+        read $VARNAME < "$CACHEDIR/$UUID_DIR/$SAPPUUID/build_dist"
+        return 0
+    fi
+
+    eval "$VARNAME='n/a'"
+    return 1
+}
+
+
+# INPUT 1: SAPP UUID
+# INPUT 2: Variable name to populate the SAPP build_kernel
+# RETURN: True if that UUID is installed and the name is properly defined
+cache_sappbuildkernel() {
+    SAPPUUID="$1"
+    VARNAME="$2"
+
+    if [ -z "$SAPPUUID" ]; then
+        message ERROR "SAPPUUID undefined\n"
+        exit 1
+    fi
+
+    if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/build_kernel" -a -s "$CACHEDIR/$UUID_DIR/$SAPPUUID/build_kernel" ]; then
+        read $VARNAME < "$CACHEDIR/$UUID_DIR/$SAPPUUID/build_kernel"
+        return 0
+    fi
+
+    eval "$VARNAME='n/a'"
     return 1
 }
 
