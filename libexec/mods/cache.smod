@@ -120,7 +120,7 @@ cache_runkey_sappdir() {
     VARNAME="$2"
 
     if [ -f "$CACHEDIR/$RUNKEY_DIR/$RUNKEY/installed" ]; then
-        eval "$VARNAME='$CACHEDIR/$RUNKEY_DIR/$RUNKEY'"
+        read $VARNAME <<< "$CACHEDIR/$RUNKEY_DIR/$RUNKEY"
         return 0
     fi
 
@@ -140,7 +140,7 @@ cache_sappdir() {
     fi
 
     if [ -d "$CACHEDIR/$UUID_DIR/$SAPPUUID" ]; then
-        eval "$VARNAME='$CACHEDIR/$UUID_DIR/$SAPPUUID'"
+        read $VARNAME <<< "$CACHEDIR/$UUID_DIR/$SAPPUUID"
         return 0
     fi
 
@@ -161,11 +161,11 @@ cache_sappname2uuid() {
     fi
 
     if cache_sappuuidexists "$SAPPNAME"; then
-        eval "$VARNAME='$SAPPNAME'"
+        read $VARNAME <<< $SAPPNAME
         return 0
     elif [ -f "$CACHEDIR/$NAME_DIR/$SAPPNAME" ]; then
         TMP=`tail -n 1 "$CACHEDIR/$NAME_DIR/$SAPPNAME"`
-        eval "$VARNAME='$TMP'"
+        read $VARNAME <<< $TMP
         return 0
     fi
 
@@ -187,7 +187,7 @@ cache_sappuuid2name() {
 
     if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/name" ]; then
         read tmp < "$CACHEDIR/$UUID_DIR/$SAPPUUID/name"
-        eval "$VARNAME='$tmp'"
+        read $VARNAME <<< "$tmp"
         return 0
     fi
 
@@ -211,7 +211,7 @@ disabled_cache_sappsum() {
 
     if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/sum" ]; then
         read tmp < "$CACHEDIR/$UUID_DIR/$SAPPUUID/sum"
-        eval "$VARNAME='$tmp'"
+        read $VARNAME <<< "$tmp"
         return 0
     fi
 
@@ -235,7 +235,7 @@ cache_sappsummary() {
 
     if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary" -a -s "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary" ]; then
         read tmp < "$CACHEDIR/$UUID_DIR/$SAPPUUID/summary"
-        eval "$VARNAME='$tmp'"
+        read $VARNAME <<< "$tmp"
         return 0
     fi
 
@@ -259,7 +259,7 @@ cache_sappsize() {
 
     if [ -d "$CACHEDIR/$UUID_DIR/$SAPPUUID/c" ]; then
         SIZE=`du -sh "$CACHEDIR/$UUID_DIR/$SAPPUUID/c" | cut -f 1`
-        eval "$VARNAME='$SIZE'"
+        read $VARNAME <<< "$SIZE"
         return 0
     fi
 
