@@ -110,7 +110,7 @@ cache_sappnameexists() {
 
 
 
-###### OUTPUT #######
+###### POINTER #######
 
 # INPUT 1: Runkey name
 # INPUT 2: Variable name to populate the SAPPDIR location
@@ -271,9 +271,18 @@ cache_sappsize() {
 
 
 
-###### TODO #######
+###### OUTPUT #######
 
 
+cache_sappnamelist() {
+    if cd "$CACHEDIR/$NAME_DIR" 2>/dev/null; then
+        for name in `ls -t $@ 2>/dev/null`; do
+            if [ -f "$name" ]; then
+                echo "$name"
+            fi
+        done
+    fi
+}
 
 cache_sappdelete() {
     SAPPUUID="$1"

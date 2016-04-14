@@ -3,6 +3,7 @@ cliexecdir = $(libexecdir)/singularity/cli
 dist_cliexec_SCRIPTS = build.exec build.help build.summary \
 	check.exec check.help check.summary \
 	delete.exec delete.help delete.summary \
+	delete-old.exec delete-old.help delete-old.summary \
 	list.exec list.help list.summary \
 	help.exec help.help help.summary \
 	install.exec install.help install.summary \

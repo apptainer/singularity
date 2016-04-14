@@ -36,27 +36,45 @@ fi
 
 load_mod cache
 
+set -f
+eval set -- `parse_opts "$@"`
+set +f
 
-# Check args and print usage if necessary
-if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) delete [container name]..."
-    exit 1
-fi
-
-
-RETVAL=1
-
-for uuid in `cache_sapplist "$@"`; do
-    if cache_sappuuid2name "$uuid" "SAPPNAME"; then
-        if cache_sappdelete "$uuid"; then
-            message 1 "Deleted container cache: $SAPPNAME ($uuid)\n"
-            RETVAL=0
-        else
-            message ERROR "Could not delete: $SAPPNAME ($uuid)\n"
-        fi
-
-    fi
+while true; do
+    case $1 in
+        -n|--nodel)
+            message 2 "Not deleting any container caches\n"
+            NODEL=1
+            export NODEL
+            shift
+        ;;
+        -*)
+            echo "ERROR: Unknown option: $1"
+            exit 1
+        ;;
+        *)
+            break;
+        ;;
+    esac
 done
 
 
-exit $RETVAL
+for SAPPNAME in `cache_sappnamelist "$@"`; do
+    cache_sappname2uuid "$SAPPNAME" "LASTSAPPUUID"
+    for SAPPUUID in `cache_sapplist "$SAPPNAME"`; do
+        if [ "$SAPPUUID" != "$LASTSAPPUUID" ]; then
+            if [ -z "$NODEL" ]; then
+                if cache_sappdelete "$SAPPUUID"; then
+                    message 1 "Deleted container cache: $SAPPNAME ($SAPPUUID)\n"
+                    RETVAL=0
+                else
+                    message ERROR "Could not delete: $SAPPNAME ($SAPPUUID)\n"
+                fi
+            else
+                message 1 "Old container cache found: $SAPPNAME ($SAPPUUID)\n"
+            fi
+        fi
+    done
+done
+
+exit 0
