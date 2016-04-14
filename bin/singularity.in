@@ -51,10 +51,10 @@ usage() {
     echo
     echo "COMMANDS:"
 
-    for i in $libexecdir/singularity/cli/*.summary; do
-        if [ -f "$i" ]; then
-            NAME=`basename "$i" | sed -e 's@.summary@@'`
-            SUMMARY=`cat "$i"`
+    ls $libexecdir/singularity/cli/*.summary | sed -e 's/.summary//' | sort | while read i; do
+        if [ -f "$i.summary" ]; then
+            NAME=`basename "$i"`
+            SUMMARY=`cat "$i.summary"`
             printf "    %-10s %s\n" "$NAME" "$SUMMARY"
         fi
     done
