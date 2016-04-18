@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
 #ifdef ARCH_x86_64
                     long ret = ptrace(PTRACE_PEEKUSER, child, 8 * RAX, NULL);
 #elif ARCH_i386
-                    long ret = ptrace(PTRACE_PEEKUSER, child, 4 * ORIG_EAX, NULL);
+                    long ret = ptrace(PTRACE_PEEKUSER, child, 4 * EAX, NULL);
 #endif
                     if ( ret >= 0 ) {
                         if ( strncmp(str, "/dev", 4) == 0 ) {
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
                         } else if ( strncmp(str, "/sys", 4) == 0 ) {
                         } else if ( strncmp(str, "/proc", 5) == 0 ) {
                         } else {
-                            if ( s_is_dir(str) < 0 ) {
+                            if ( s_is_file(str) == 0 ) {
                                 fprintf(stderr, "%s\n", str);
                             }
                         }
