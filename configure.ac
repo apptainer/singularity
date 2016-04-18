@@ -11,10 +11,17 @@ AC_SUBST(PREFIX, $prefix)
 
 AC_CANONICAL_TARGET
 case $target_cpu in
-  x86_64) : ;;
-  i386) : ;;
-  *) AC_MSG_ERROR([Architecture $target_cpu not supported]) ;;
+    x86_64)
+        SINGULARITY_ARCH=x86_64
+    ;;
+    i?86)
+        SINGULARITY_ARCH=i386
+    ;;
+    *)
+        AC_MSG_ERROR([Architecture $target_cpu not supported])
+    ;;
 esac
+AC_SUBST(SINGULARITY_ARCH)
 
 AC_PROG_INSTALL
 AM_INIT_AUTOMAKE

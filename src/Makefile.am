@@ -3,7 +3,7 @@ DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
 AM_CFLAGS = -Wall
 sexec_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\" $(NAMESPACE_DEFINES)
-ftrace_CPPFLAGS = -DARCH_$(build_cpu)
+ftrace_CPPFLAGS = -DARCH_$(SINGULARITY_ARCH)
 
 bindir = $(libexecdir)/singularity
 bin_PROGRAMS = sexec ftrace

@@ -31,6 +31,11 @@
 #include <unistd.h>
 #include "util.h"
 
+#ifndef ARCH_x86_64
+#ifndef ARCH_i386
+#error Singularity build arch not supported
+#endif
+#endif
 
 
 int main(int argc, char **argv) {
