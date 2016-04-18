@@ -61,6 +61,7 @@ int main(int argc, char **argv) {
         dup2(1, 2);
 
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+        ptrace(PTRACE_SETOPTIONS, 0, NULL, PTRACE_O_TRACECLONE|PTRACE_O_TRACEFORK|PTRACE_O_TRACEVFORK);
 
         execv(newargv[0], newargv);
     } else {
@@ -74,7 +75,8 @@ int main(int argc, char **argv) {
             int status;
 
             // wait at every ptrace stopping point
-            wait (&status);
+            //wait (&status);
+            waitpid(-1, &status, __WALL);
 
             // exit if the child has exited
             if ( WIFEXITED(status) ) {
@@ -141,6 +143,15 @@ int main(int argc, char **argv) {
                         }
                     }
                     insyscall = 0;
+                }
+
+            // Catching the fork/clone is very fustratingly not working. If you got
+            // an idea on how to fix this, please!
+            } else if (syscall == SYS_clone || syscall == SYS_fork || syscall == SYS_vfork) {
+                long new_child = 0;
+                if (ptrace(PTRACE_GETEVENTMSG, child, NULL, &new_child) != -1) {
+                    //printf("%ld: created child: %ld\n", child, new_child);
+                    ptrace(PTRACE_CONT, new_child, 0, 0);
                 }
             }
         
