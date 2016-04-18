@@ -36,6 +36,7 @@ src/Makefile.in
 src/config.h
 src/config.h.in
 src/ftrace
+src/ftype
 src/sexec
 src/sappbuild
 src/sappdump
