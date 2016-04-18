@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 #ifdef ARCH_x86_64
                         data.val = ptrace(PTRACE_PEEKDATA, child, regs.rdi + len, NULL);
 #elif ARCH_i386
-                        data.val = ptrace(PTRACE_PEEKDATA, child, regs.edi + len, NULL);
+                        data.val = ptrace(PTRACE_PEEKDATA, child, regs.ebx + len, NULL);
 #endif
                         if ( data.val == -1 ) {
                             break;
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
 #ifdef ARCH_x86_64
                     long ret = ptrace(PTRACE_PEEKUSER, child, 8 * RAX, NULL);
 #elif ARCH_i386
-                    long ret = ptrace(PTRACE_PEEKUSER, child, 8 * EAX, NULL);
+                    long ret = ptrace(PTRACE_PEEKUSER, child, 4 * ORIG_EAX, NULL);
 #endif
                     if ( ret >= 0 ) {
                         if ( strncmp(str, "/dev", 4) == 0 ) {
