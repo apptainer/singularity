@@ -20,6 +20,7 @@
 
 
 int s_is_file(char *path);
+int s_is_link(char *path);
 int s_is_dir(char *path);
 int s_is_exec(char *path);
 int s_is_owner(char *path, uid_t uid);

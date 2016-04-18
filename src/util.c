@@ -33,12 +33,27 @@
 #include "config.h"
 
 
-
 int s_is_file(char *path) {
     struct stat filestat;
 
     // Stat path
     if (lstat(path, &filestat) < 0) {
+        return(-1);
+    }
+
+    // Test path
+    if ( S_ISREG(filestat.st_mode) ) {
+        return(0);
+    }
+
+    return(-1);
+}
+
+int s_is_link(char *path) {
+    struct stat filestat;
+
+    // Stat path
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
