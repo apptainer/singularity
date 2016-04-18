@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
                 sub[a] = data[a+2];
             }
 
-            printf("exe-script %s\n", sub);
+            printf("exe-ascii %s\n", sub);
         } else {
             for(i=128; i<1024; i++) {
                 data[i] = fgetc(fd);

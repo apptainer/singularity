@@ -44,28 +44,29 @@ dep_resolver() {
         return 0
     fi
     if [ -f "$1" ]; then
-        FILE=`file -L "$1"`
-        message 2 "Evaluating file: $1 ($FILE)\n"
-        case "$FILE" in
-            *ELF*)
-                for i in $BIN_RESOLVERS; do
-                    message 3 "calling bin_resolvers on: $1 : $i\n"
-                    eval $i "$1"
-                done
-            ;;
-            *ASCII*|*text*)
-                for i in $TXT_RESOLVERS; do
-                    message 3 "calling txt_resolvers on: $1 : $i\n"
-                    eval $i "$1"
-                done
-            ;;
-            *) 
-                for i in $ALL_RESOLVERS; do
-                    message 3 "calling all_resolvers on: $1 : $i\n"
-                    eval $i "$1"
-                done
-            ;;
-        esac
+        if FILE=`$libexecdir/singularity/ftype "$1"`; then
+            message 2 "Evaluating file: $1 ($FILE)\n"
+            case "$FILE" in
+                exe-binary*)
+                    for i in $BIN_RESOLVERS; do
+                        message 3 "calling bin_resolvers on: $1 : $i\n"
+                        eval $i "$1"
+                    done
+                ;;
+                *ascii*)
+                    for i in $TXT_RESOLVERS; do
+                        message 3 "calling txt_resolvers on: $1 : $i\n"
+                        eval $i "$1"
+                    done
+                ;;
+                *) 
+                    for i in $ALL_RESOLVERS; do
+                        message 3 "calling all_resolvers on: $1 : $i\n"
+                        eval $i "$1"
+                    done
+                ;;
+            esac
+        fi
     fi
     return 0
 }
