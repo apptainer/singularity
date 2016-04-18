@@ -17,6 +17,9 @@ case $target_cpu in
     i?86)
         SINGULARITY_ARCH=i386
     ;;
+    athlon)
+        SINGULARITY_ARCH=i386
+    ;;
     *)
         AC_MSG_ERROR([Architecture $target_cpu not supported])
     ;;
