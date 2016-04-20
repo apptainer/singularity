@@ -66,7 +66,6 @@ int main(int argc, char **argv) {
         execv(newargv[0], newargv);
     } else {
         char str[256*8];
-        int insyscall = 0;
 
         // loop through running binary until binary is done
         while (1){
@@ -93,40 +92,35 @@ int main(int argc, char **argv) {
 #endif
 
             // if we are in an open() system call...
-            if (syscall == SYS_open) {
+            if (syscall == SYS_open || syscall == SYS_execve) {
+                int len = 0;
 
-                // check to see if we are already in the midst of a system call
-                if (insyscall == 0){
-                    int len = 0;
-
-                    // we need to iterate through, and pull sizeof(long)
-                    while(len <= 256) {
-                        union u { 
-                            long val;
-                            char string[sizeof(long)];
-                        } data;
+                // we need to iterate through, and pull sizeof(long)
+                while(len <= 256) {
+                    union u { 
+                        long val;
+                        char string[sizeof(long)];
+                    } data;
 
 #ifdef ARCH_x86_64
-                        data.val = ptrace(PTRACE_PEEKDATA, pid, regs.rdi + len, NULL);
+                    data.val = ptrace(PTRACE_PEEKDATA, pid, regs.rdi + len, NULL);
 #elif ARCH_i386
-                        data.val = ptrace(PTRACE_PEEKDATA, pid, regs.ebx + len, NULL);
+                    data.val = ptrace(PTRACE_PEEKDATA, pid, regs.ebx + len, NULL);
 #endif
-                        if ( data.val == -1 ) {
-                            break;
-                        }
-
-                        memcpy(str + len, data.string, sizeof(long));
-
-                        len += sizeof(long);
-
+                    if ( data.val == -1 ) {
+                        break;
                     }
 
-                    str[len] = '\0';
+                    memcpy(str + len, data.string, sizeof(long));
 
-                    // the following ptrace SYS_open will be the close
-                    insyscall = 1;
-                } else {
-                    // how did the system call exit
+                    len += sizeof(long);
+
+                }
+
+                str[len] = '\0';
+
+                if ( syscall == SYS_open ) {
+                    // how did open() exit
 #ifdef ARCH_x86_64
                     long ret = ptrace(PTRACE_PEEKUSER, pid, 8 * RAX, NULL);
 #elif ARCH_i386
@@ -134,7 +128,6 @@ int main(int argc, char **argv) {
 #endif
                     if ( ret >= 0 ) {
                         if ( strncmp(str, "/dev", 4) == 0 ) {
-                        } else if ( strncmp(str, "/etc", 4) == 0 ) {
                         } else if ( strncmp(str, "/sys", 4) == 0 ) {
                         } else if ( strncmp(str, "/proc", 5) == 0 ) {
                         } else {
@@ -143,7 +136,11 @@ int main(int argc, char **argv) {
                             }
                         }
                     }
-                    insyscall = 0;
+                } else if ( syscall == SYS_execve ) {
+                    if ( s_is_exec(str) == 0 ) {
+                        fprintf(stderr, "%s\n", str);
+                    }
+
                 }
 
             // Catching the fork/clone is very fustratingly not working. If you got
