@@ -298,7 +298,6 @@ build_configs() {
         fi
     fi
 
-
     message 1 "Including sanitized /etc/passwd\n"
     while read line; do
         ID=`echo "$line" | awk -F: '{print $3}'`
@@ -316,8 +315,18 @@ build_configs() {
     done < "/etc/group" > "$INSTALLDIR/c/etc/group"
 
     if [ -f "$INSTALLDIR/c/etc/shadow" ]; then
-        message 1 "Found /etc/shadow in container, sanitizing it...\n"
+        message WARNING "Found /etc/shadow in container, sanitizing it...\n"
         cat /dev/null > "$INSTALLDIR/c/etc/shadow"
+    fi
+
+    if [ -f "$INSTALLDIR/c/etc/machine-id" ]; then
+        message WARNING "Found /etc/machine-id in container, sanitizing it...\n"
+        if OPENSSL=`singularity_which openssl`; then
+            $OPENSSL rand -hex 16 > "$INSTALLDIR/c/etc/machine-id1"
+            mv --force "$INSTALLDIR/c/etc/machine-id1" "$INSTALLDIR/c/etc/machine-id"
+        else
+            message ERROR "Could not sanitize /etc/machine-id because openssl is not in path\n"
+        fi
     fi
 
     return 0
