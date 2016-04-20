@@ -73,18 +73,19 @@ int main(int argc, char **argv) {
             int syscall;
             struct user_regs_struct regs;
             int status;
+            pid_t pid;
 
             // wait at every ptrace stopping point
             //wait (&status);
-            waitpid(-1, &status, __WALL);
+            pid = waitpid(-1, &status, __WALL);
 
-            // exit if the child has exited
-            if ( WIFEXITED(status) ) {
+            // exit if the process has exited
+            if ( pid == child && WIFEXITED(status) ) {
                 break;
             }
 
             // get the current register struct
-            ptrace(PTRACE_GETREGS,child, 0, &regs);     
+            ptrace(PTRACE_GETREGS, pid, 0, &regs);     
 #ifdef ARCH_x86_64
             syscall = regs.orig_rax;
 #elif ARCH_i386
@@ -106,9 +107,9 @@ int main(int argc, char **argv) {
                         } data;
 
 #ifdef ARCH_x86_64
-                        data.val = ptrace(PTRACE_PEEKDATA, child, regs.rdi + len, NULL);
+                        data.val = ptrace(PTRACE_PEEKDATA, pid, regs.rdi + len, NULL);
 #elif ARCH_i386
-                        data.val = ptrace(PTRACE_PEEKDATA, child, regs.ebx + len, NULL);
+                        data.val = ptrace(PTRACE_PEEKDATA, pid, regs.ebx + len, NULL);
 #endif
                         if ( data.val == -1 ) {
                             break;
@@ -127,9 +128,9 @@ int main(int argc, char **argv) {
                 } else {
                     // how did the system call exit
 #ifdef ARCH_x86_64
-                    long ret = ptrace(PTRACE_PEEKUSER, child, 8 * RAX, NULL);
+                    long ret = ptrace(PTRACE_PEEKUSER, pid, 8 * RAX, NULL);
 #elif ARCH_i386
-                    long ret = ptrace(PTRACE_PEEKUSER, child, 4 * EAX, NULL);
+                    long ret = ptrace(PTRACE_PEEKUSER, pid, 4 * EAX, NULL);
 #endif
                     if ( ret >= 0 ) {
                         if ( strncmp(str, "/dev", 4) == 0 ) {
@@ -137,7 +138,7 @@ int main(int argc, char **argv) {
                         } else if ( strncmp(str, "/sys", 4) == 0 ) {
                         } else if ( strncmp(str, "/proc", 5) == 0 ) {
                         } else {
-                            if ( s_is_file(str) == 0 ) {
+                            if ( s_is_file(str) == 0 || s_is_link(str) == 0 ) {
                                 fprintf(stderr, "%s\n", str);
                             }
                         }
@@ -148,15 +149,18 @@ int main(int argc, char **argv) {
             // Catching the fork/clone is very fustratingly not working. If you got
             // an idea on how to fix this, please!
             } else if (syscall == SYS_clone || syscall == SYS_fork || syscall == SYS_vfork) {
-                long new_child = 0;
-                if (ptrace(PTRACE_GETEVENTMSG, child, NULL, &new_child) != -1) {
-                    //printf("%ld: created child: %ld\n", child, new_child);
-                    ptrace(PTRACE_CONT, new_child, 0, 0);
+#ifdef ARCH_x86_64
+                long pid2 = ptrace(PTRACE_PEEKUSER, pid, 8 * RAX);
+#elif ARCH_i386
+                long pid2 = ptrace(PTRACE_PEEKUSER, pid, 4 * EAX);
+#endif
+                if ( pid2 > 0 ) {
+                    ptrace(PTRACE_ATTACH, pid2, NULL, NULL);
                 }
             }
-        
+
             // run and pause at the next system call
-            ptrace (PTRACE_SYSCALL, child, NULL, NULL);
+            ptrace (PTRACE_SYSCALL, pid, NULL, NULL);
         }
     }
 
