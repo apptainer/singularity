@@ -25,13 +25,15 @@ TXT_RESOLVERS="pymods_resolver $TXT_RESOLVERS"
 
 pymods_resolver() {
     for file in $@; do
-        egrep "^\s*(import)\s*" "$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
-            $libexecdir/singularity/ftrace `which python` -c "import $req" 2>&1 >/dev/null | while read FILE; do
-                if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
-                    install_file "$FILE"
-                fi
+        if egrep -q " python | Python |^import |^def .*:$" "$file"; then # First decide if this is a python script
+            egrep "^\s*(import)\s*" "$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
+                $libexecdir/singularity/ftrace `which python` -c "import $req" 2>&1 >/dev/null | while read FILE; do
+                    if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
+                        install_file "$FILE"
+                    fi
+                done
             done
-        done
+        fi
     done
 }
 

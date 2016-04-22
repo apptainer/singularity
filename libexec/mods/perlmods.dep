@@ -25,13 +25,15 @@ TXT_RESOLVERS="perlmods_resolver $TXT_RESOLVERS"
 
 perlmods_resolver() {
     for file in $@; do
-        egrep "^\s*(use|require|no)\s*" "$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
-            $libexecdir/singularity/ftrace `which perl` -M"$req" -e 'exit;' 2>&1 >/dev/null | while read FILE; do
-                if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
-                    install_file "$FILE"
-                fi
+        if egrep -q " perl | Perl |^package |^use |^sub " "$file"; then # First decide if this is a perl script
+            egrep "^\s*(use|require|no)\s*" "$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
+                $libexecdir/singularity/ftrace `which perl` -M"$req" -e 'exit;' 2>&1 >/dev/null | while read FILE; do
+                    if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
+                        install_file "$FILE"
+                    fi
+                done
             done
-        done
+        fi
     done
 }
 
