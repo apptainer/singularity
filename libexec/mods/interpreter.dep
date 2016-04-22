@@ -42,7 +42,7 @@ script_resolver() {
                 message ERROR "Could not resolve script intrepreter\n"
                 exit 255
             fi
-            install_file "$INT"
+            install_file "$INT_PATH"
         fi
     done
 }
