@@ -26,19 +26,23 @@ TXT_RESOLVERS="script_resolver $BIN_RESOLVERS"
 
 script_resolver() {
     for file in $@; do
-        LINE=`head -n 1 "$file" | grep "^#\!/"`
-        if check_pattern "#!/usr/bin/env *" "$LINE"; then
-            INT=`echo "$LINE" | sed -e 's@#![^ ]*[ ]*@@'`
-            INT_PATH=`singularity_which "$INT"`
-            if [ -n "$INT_PATH" ]; then
-                install_file "/usr/bin/env"
-                install_file "$INT_PATH"
+        read int < "$file"
+        if [[ "$int" =~ \#![[:space:]]*((/[^[:space:]]+)?/bin/env)[[:space:]]+([^[:space:]]+) ]]; then
+            env=${BASH_REMATCH[1]}
+            INT_PATH=`singularity_which "${BASH_REMATCH[3]}"`
+            if [ -z "$INT_PATH" ]; then
+                message ERROR "Could not resolve script intrepreter\n"
+                exit 255
             fi
-        else
-            INT=`echo "$LINE" | sed -e 's@#!\([^ ]*\).*@\1@'`
-            if [ -f "$INT" -a ! -f "$INSTALLDIR/c/$INT" ]; then
-                install_file "$INT"
+            install_file $env
+            install_file "$INT_PATH"
+        elif [[ "$int" =~ \#![[:space:]]*(/[^[:space:]]+) ]]; then
+            INT_PATH=${BASH_REMATCH[1]}
+            if [ -z "$INT_PATH" ]; then
+                message ERROR "Could not resolve script intrepreter\n"
+                exit 255
             fi
+            install_file "$INT"
         fi
     done
 }
