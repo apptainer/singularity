@@ -370,7 +370,6 @@ build_runscripts() {
 
     message 1 "Defining container shell environment\n"
     LIB_SEARCH_PATH=`cd "$INSTALLDIR/c"; find . -name "lib*.so*" -type f | xargs -n 1 dirname 2>/dev/null | sort | uniq | sed -e 's/^\.//' | tr '\n' ':'`
-    PYTHONHOME=`cd "$INSTALLDIR/c"; find . \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -path '*/bin/python[0-9]*' -print | sed -e 's/^\.//' | sed -e 's/\/bin\/python.*$//' | head -n 1`
 
     echo "PATH=/bin:/usr/bin:/sbin:/usr/sbin" >> "$INSTALLDIR/c/.singularity.env"
     echo "LANG=C" >> "$INSTALLDIR/c/.singularity.env"
@@ -380,11 +379,7 @@ build_runscripts() {
         echo "LD_LIBRARY_PATH=\"\$LD_LIBRARY_PATH:$LIB_SEARCH_PATH\"" >> "$INSTALLDIR/c/.singularity.env"
     fi
 
-    if [ -n "$PYTHONHOME" ]; then
-        echo "PYTHONHOME=\"$PYTHONHOME\"" >> "$INSTALLDIR/c/.singularity.env"
-    fi
-
-    echo "export PATH LANG PS1 LD_LIBRARY_PATH PYTHONHOME" >> "$INSTALLDIR/c/.singularity.env"
+    echo "export PATH LANG PS1 LD_LIBRARY_PATH" >> "$INSTALLDIR/c/.singularity.env"
 
 
     message 1 "Building singularity main runscript\n"
