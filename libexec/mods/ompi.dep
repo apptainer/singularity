@@ -39,13 +39,12 @@ BIN_RESOLVERS="openmpi_resolver $BIN_RESOLVERS"
 
 
 openmpi_resolver() {
-    for file in $@; do
-        if check_pattern "*/libopen-rte.so.*" "$file"; then
-            LIBDIR=`dirname "$file"`
-            PREFIX=`dirname "$LIBDIR"`
-            install_file "$LIBDIR/openmpi/*.so"
-            install_file "$PREFIX/share/openmpi/*.txt"
-        fi
-    done
+    file="$1"
+    if check_pattern "*/libopen-rte.so.*" "$file"; then
+        LIBDIR=`dirname "$file"`
+        PREFIX=`dirname "$LIBDIR"`
+        install_file "$LIBDIR/openmpi/*.so"
+        install_file "$PREFIX/share/openmpi/*.txt"
+    fi
 }
 

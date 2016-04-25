@@ -26,15 +26,14 @@ BIN_RESOLVERS="ldd_resolver $BIN_RESOLVERS"
 
 
 ldd_resolver() {
-    for file in $@; do
-        for dep in `ldd $file | sed -e 's@ @\n@g'`; do
-            if [ -f "$dep" ]; then
-                message 3 "found dependency:      $dep\n"
-                if [ ! -f "$INSTALLDIR/c/$dep" ]; then
-                    install_file "$dep"
-                fi
+    file="$1"
+    for dep in `ldd $file 2>/dev/null | sed -e 's@ @\n@g'`; do
+        if [ -f "$dep" ]; then
+            message 3 "found dependency:      $dep\n"
+            if [ ! -f "$INSTALLDIR/c/$dep" ]; then
+                install_file "$dep"
             fi
-        done
+        fi
     done
 }
 

@@ -44,25 +44,26 @@ dep_resolver() {
         return 0
     fi
     if [ -f "$1" ]; then
-        if FILE=`$libexecdir/singularity/ftype "$1"`; then
-            message 2 "Evaluating file: $1 ($FILE)\n"
-            case "$FILE" in
+        read TYPE OPTS < <(/usr/libexec/singularity/ftype "$1")
+        if [ -n "$TYPE" ]; then
+            message 2 "Evaluating file: $1 ($TYPE)\n"
+            case "$TYPE" in
                 exe-binary*)
                     for i in $BIN_RESOLVERS; do
                         message 3 "calling bin_resolvers on: $1 : $i\n"
-                        eval $i "$1"
+                        eval $i "$1" "$OPTS"
                     done
                 ;;
                 *ascii*)
                     for i in $TXT_RESOLVERS; do
                         message 3 "calling txt_resolvers on: $1 : $i\n"
-                        eval $i "$1"
+                        eval $i "$1" "$OPTS"
                     done
                 ;;
                 *) 
                     for i in $ALL_RESOLVERS; do
                         message 3 "calling all_resolvers on: $1 : $i\n"
-                        eval $i "$1"
+                        eval $i "$1" "$OPTS"
                     done
                 ;;
             esac

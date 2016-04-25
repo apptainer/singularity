@@ -24,16 +24,15 @@ BIN_RESOLVERS="x11_resolver $BIN_RESOLVERS"
 
 
 x11_resolver() {
-    for file in $@; do
-        if check_pattern "*/libX11.so.*" "$file"; then
-            if test -d "/usr/share/X11/locale"; then
-                install_file "/usr/share/X11/locale"
-            elif test -d "/usr/lib/X11/locale"; then
-                install_file "/usr/lib/X11/locale"
-            else
-                message ERROR "WARNING: Could not locate X11 locales...\n"
-            fi
+    file="$1"
+    if check_pattern "*/libX11.so.*" "$file"; then
+        if test -d "/usr/share/X11/locale"; then
+            install_file "/usr/share/X11/locale"
+        elif test -d "/usr/lib/X11/locale"; then
+            install_file "/usr/lib/X11/locale"
+        else
+            message ERROR "WARNING: Could not locate X11 locales...\n"
         fi
-    done
+    fi
 }
 

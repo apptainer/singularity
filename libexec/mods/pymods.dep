@@ -24,17 +24,27 @@ TXT_RESOLVERS="pymods_resolver $TXT_RESOLVERS"
 
 
 pymods_resolver() {
-    for file in $@; do
-        if egrep -q " python | Python |^import |^def .*:$" "$file"; then # First decide if this is a python script
-            egrep "^\s*(import)\s*" "$file" | sed -e 's/^\s*\S*\s*\(\S*\).*/\1/' | while read req; do
-                $libexecdir/singularity/ftrace `which python` -c "import $req" 2>&1 >/dev/null | while read FILE; do
-                    if [ ! -f "$INSTALLDIR/c/$FILE" ]; then
-                        install_file "$FILE"
+    file="$1"
+    int="$2"
+
+    if [ -f "$file" ]; then
+        case "$int" in
+            *python*)
+                imports=$(awk '
+                    $1=="from" && $3=="import" {list = list "import " $2 ";"}
+                    $1=="import" {list = list "import "
+                    for (i=2; i<=NF; i++) {
+                    if ($i ~ "^#") next
+                    list = list $i
+                    if ($i ~ /;$/) next}
+                    list = list ";"}
+                    END {print list}' "$file")
+                "$libexecdir/singularity/ftrace" $int -c "$imports" 2>&1 >/dev/null | while read dep; do
+                    if [ ! -f "$INSTALLDIR/c/$dep" ]; then
+                        install_file "$dep"
                     fi
                 done
-            done
-        fi
-    done
+            ;;
+        esac
+    fi
 }
-
-

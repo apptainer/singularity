@@ -25,25 +25,24 @@ TXT_RESOLVERS="script_resolver $BIN_RESOLVERS"
 
 
 script_resolver() {
-    for file in $@; do
-        read int < "$file"
-        if [[ "$int" =~ \#![[:space:]]*((/[^[:space:]]+)?/bin/env)[[:space:]]+([^[:space:]]+) ]]; then
-            env=${BASH_REMATCH[1]}
-            INT_PATH=`singularity_which "${BASH_REMATCH[3]}"`
-            if [ -z "$INT_PATH" ]; then
-                message ERROR "Could not resolve script intrepreter\n"
-                exit 255
-            fi
-            install_file $env
-            install_file "$INT_PATH"
-        elif [[ "$int" =~ \#![[:space:]]*(/[^[:space:]]+) ]]; then
-            INT_PATH=${BASH_REMATCH[1]}
-            if [ -z "$INT_PATH" ]; then
-                message ERROR "Could not resolve script intrepreter\n"
-                exit 255
-            fi
-            install_file "$INT_PATH"
+    file="$1"
+    read int < "$file"
+    if [[ "$int" =~ \#![[:space:]]*((/[^[:space:]]+)?/bin/env)[[:space:]]+([^[:space:]]+) ]]; then
+        env=${BASH_REMATCH[1]}
+        INT_PATH=`singularity_which "${BASH_REMATCH[3]}"`
+        if [ -z "$INT_PATH" ]; then
+            message ERROR "Could not resolve script intrepreter\n"
+            exit 255
         fi
-    done
+        install_file $env
+        install_file "$INT_PATH"
+    elif [[ "$int" =~ \#![[:space:]]*(/[^[:space:]]+) ]]; then
+        INT_PATH=${BASH_REMATCH[1]}
+        if [ -z "$INT_PATH" ]; then
+            message ERROR "Could not resolve script intrepreter\n"
+            exit 255
+        fi
+        install_file "$INT_PATH"
+    fi
 }
 
