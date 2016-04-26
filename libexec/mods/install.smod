@@ -44,7 +44,7 @@ dep_resolver() {
         return 0
     fi
     if [ -f "$1" ]; then
-        read TYPE OPTS < <(/usr/libexec/singularity/ftype "$1")
+        read TYPE OPTS < <($libexecdir/singularity/ftype "$1")
         if [ -n "$TYPE" ]; then
             message 2 "Evaluating file: $1 ($TYPE)\n"
             case "$TYPE" in
