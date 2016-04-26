@@ -9,9 +9,9 @@ dist_cliexec_SCRIPTS = build.exec build.help build.summary \
 	install.exec install.help install.summary \
 	run.exec run.help run.summary \
 	shell.exec shell.help shell.summary \
+	show.exec show.help show.summary \
 	specgen.exec specgen.help specgen.summary \
 	strace.exec strace.help strace.summary \
 	test.exec test.help test.summary
 
 MAINTAINERCLEANFILES = Makefile.in
-
