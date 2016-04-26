@@ -1,23 +1,23 @@
 #!/bin/bash
-# 
+#
 # Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
-# 
+#
 # “Singularity” Copyright (c) 2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
+#
 # If you have questions about your rights to use or distribute this software,
 # please contact Berkeley Lab's Innovation & Partnerships Office at
 # IPO@lbl.gov.
-# 
+#
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
 # the U.S. Government has been granted for itself and others acting on its
 # behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
 # to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
+# perform publicly and display publicly, and to permit other to do so.
+#
+#
 
 
 
@@ -240,6 +240,74 @@ cache_sappsummary() {
     return 1
 }
 
+
+# INPUT 1: SAPP UUID
+# INPUT 2: Variable name to populate the SAPP installed; human readable timestamp
+# RETURN: True if that UUID is installed and the name is properly defined
+cache_sapptimestamp() {
+    SAPPUUID="$1"
+    VARNAME="$2"
+
+    if [ -z "$SAPPUUID" ]; then
+        message ERROR "SAPPUUID undefined\n"
+        exit 1
+    fi
+
+    if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/installed" -a -s "$CACHEDIR/$UUID_DIR/$SAPPUUID/installed" ]; then
+        read $VARNAME < "$CACHEDIR/$UUID_DIR/$SAPPUUID/installed"
+        return 0
+    fi
+
+    eval "$VARNAME='--'"
+    return 1
+}
+
+
+# INPUT 1: SAPP UUID
+# INPUT 2: Variable name to populate the SAPP maintainer
+# RETURN: True if that UUID is installed and the name is properly defined
+cache_sappmaintainer() {
+    SAPPUUID="$1"
+    VARNAME="$2"
+
+    if [ -z "$SAPPUUID" ]; then
+        message ERROR "SAPPUUID undefined\n"
+        exit 1
+    fi
+
+    if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/maintainer" -a -s "$CACHEDIR/$UUID_DIR/$SAPPUUID/maintainer" ]; then
+        read $VARNAME < "$CACHEDIR/$UUID_DIR/$SAPPUUID/maintainer"
+        return 0
+    fi
+
+    eval "$VARNAME='--'"
+    return 1
+}
+
+
+
+
+# INPUT 1: SAPP UUID
+# INPUT 2: Variable name to populate the SAPP NB_FILES
+# RETURN: True if that UUID is installed and the name is properly defined
+cache_sappnbfiles() {
+    SAPPUUID="$1"
+    VARNAME="$2"
+
+    if [ -z "$SAPPUUID" ]; then
+        message ERROR "SAPPUUID undefined\n"
+        exit 1
+    fi
+
+    if [ -f "$CACHEDIR/$UUID_DIR/$SAPPUUID/files" -a -s "$CACHEDIR/$UUID_DIR/$SAPPUUID/files" ]; then
+        NB_FILES=`wc -l "$CACHEDIR/$UUID_DIR/$SAPPUUID/files" | cut -f 1 -d" "`
+        read $VARNAME <<< "$NB_FILES"
+        return 0
+    fi
+
+    eval "$VARNAME='--'"
+    return 1
+}
 
 
 # INPUT 1: SAPP UUID
@@ -539,6 +607,3 @@ _sappinstall() {
 
     return 0
 }
-
-
-
