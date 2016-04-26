@@ -65,7 +65,13 @@ RETVAL=1
 
 NAME="undefined"
 SUMMARY="undefined"
+TIMESTAMP="undefined"
 SIZE="0"
+MAINTAINER="undefined"
+BUILD_DISTR="undefined"
+BUILD_KERN="undefined"
+NB_FILES=0
+
 cache_sappuuid2name "$SAPPUUID" "NAME"
 cache_sappsummary "$SAPPUUID" "SUMMARY"
 cache_sapptimestamp "$SAPPUUID" "TIMESTAMP"
