@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <linux/loop.h>
 #include <unistd.h>
-#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h> 
@@ -31,14 +30,19 @@
 #include <fcntl.h>
 
 #include "config.h"
+#include "loop-control.h"
+
+
+#ifndef LO_FLAGS_AUTOCLEAR
+#define LO_FLAGS_AUTOCLEAR 4
+#endif
 
 
 
-char * obtain_loop_dev() {
+int obtain_loop_dev(char **loop_device) {
     int loop_control;
     int devnum;
     int tmp_devnum;
-    char * loop_device;
     int loop_device_len = 1;
 
     printf("Opening loop-control device\n");
@@ -63,28 +67,32 @@ char * obtain_loop_dev() {
 
     printf("Caculated loop_device_len: %d\n", loop_device_len + 12);
 
-    loop_device = (char*) malloc(loop_device_len + 12);
-    snprintf(loop_device, loop_device_len + 11, "/dev/loop%d", devnum);
+    *loop_device = (char*) malloc(loop_device_len + 12);
+    snprintf(*loop_device, loop_device_len + 11, "/dev/loop%d", devnum);
 
-    printf("Checking for loop device: %s\n", loop_device);
-    if ( access(loop_device, R_OK) < 0 ) {
-        printf("Creating loop device: %s\n", loop_device);
-        if ( mknod(loop_device, S_IFBLK | 0644, makedev(7, devnum)) < 0 ) {
-            fprintf(stderr, "Could not create %s: %s\n", loop_device, strerror(errno));
+    printf("Checking for loop device: %s\n", *loop_device);
+    if ( access(*loop_device, R_OK) < 0 ) {
+        printf("Creating loop device: %s\n", *loop_device);
+        if ( mknod(*loop_device, S_IFBLK | 0644, makedev(7, devnum)) < 0 ) {
+            fprintf(stderr, "Could not create %s: %s\n", *loop_device, strerror(errno));
+            return(-1);
         }
     }
 
-    return(loop_device);
+    return(0);
 }
 
 
 
-int mount_image(char * image_path, char * mount_point) {
+int associate_loop_dev(char * image_path, char * loop_device) {
     int image_fd;
     int loop_fd;
-    uid_t uid = getuid();
-    gid_t gid = getgid();
+    struct loop_info64 lo64 = {0};
+    int offset = 0;
 
+    lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
+    strncpy((char*)lo64.lo_file_name, image_path, LO_NAME_SIZE);
+    lo64.lo_offset = offset;
 
     printf("Opening image: %s\n", image_path);
     if ( (image_fd = open(image_path, O_RDWR)) < 0 ) {
@@ -92,9 +100,7 @@ int mount_image(char * image_path, char * mount_point) {
         return(-1);
     }
 
-
     printf("Opening loop device: %s\n", loop_device);
-
     if ( ( loop_fd = open(loop_device, O_RDWR) ) < 0 ) {
         fprintf(stderr, "ERROR: Failed to open %s: %s\n", loop_device, strerror(errno));
         return(-1);
@@ -106,23 +112,11 @@ int mount_image(char * image_path, char * mount_point) {
         return(-1);
     }
 
-    printf("Mounting image to %s\n", mount_point);
-
-    //if ( mount(loop_device, mount_point, "ext3", 0, "uid=1000,gid=1000") < 0 ) {
-    if ( mount(loop_device, mount_point, "ext4", 0, "") < 0 ) {
-        fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+    if ( ioctl(loop_fd, LOOP_SET_STATUS64, &lo64) < 0 ) {
+        (void)ioctl(loop_fd, LOOP_CLR_FD, 0);
+        fprintf(stderr, "ERROR: Failed to set loop flags on %s: %s\n", loop_device, strerror(errno));
         return(-1);
     }
 
 }
 
-
-//https://github.com/alexchamberlain/piimg/blob/master/lib/loopdev.c
-
-
-int main(int argc, char **argv) {
-    
-    mount_image(argv[1], argv[2]);
-
-    return(0);
-}
