@@ -6,10 +6,11 @@ sexec_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\" $(NAMESPACE_DEFINES)
 ftrace_CPPFLAGS = -DARCH_$(SINGULARITY_ARCH)
 
 bindir = $(libexecdir)/singularity
-bin_PROGRAMS = sexec ftrace ftype
+bin_PROGRAMS = sexec ftrace ftype sexecimg
 
 sexec_SOURCES = sexec.c util.c util.h
 ftrace_SOURCES = ftrace.c util.c util.h
 ftype_SOURCES = ftype.c util.c util.h
+sexecimg_SOURCES = sexec-img.c util.c loop-control.c mounts.c
 
 EXTRA_DIST = config.h 

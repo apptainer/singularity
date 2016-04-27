@@ -62,7 +62,7 @@ int mount_image(char * image_path, char * mount_point) {
 
     printf("Mounting image to %s\n", mount_point);
 
-    if ( mount(loop_device, mount_point, "ext4", 0, "") < 0 ) {
+    if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
         fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
         return(-1);
     }
