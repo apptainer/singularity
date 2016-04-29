@@ -63,13 +63,6 @@ void sighandler(int sig) {
 
 
 int main(int argc, char **argv) {
-//    char *containerhomepath = '\0';
-//    char *containerscratchpath = '\0';
-//    char *singularitypath;
-//    char *containerdevpath;
-//    char *containersyspath;
-//    char *containertmppath;
-//    char *containerprocpath;
     char *containerimage;
     char cwd[PATH_MAX];
     int cwd_fd;
@@ -155,68 +148,6 @@ char containerpath[5] = "/mnt\0";
 //    }
 
 
-    //****************************************************************************//
-    // Setup For Bind Mounts
-    //****************************************************************************//
-
-    // Populate paths for system bind mounts
-//    containerdevpath = (char *) malloc(strlen(containerimage) + 5);
-//    snprintf(containerdevpath, strlen(containerimage) + 5, "%s/dev", containerimage);
-//    containersyspath = (char *) malloc(strlen(containerimage) + 5);
-//    snprintf(containersyspath, strlen(containerimage) + 5, "%s/sys", containerimage);
-//    containerprocpath = (char *) malloc(strlen(containerimage) + 6);
-//    snprintf(containerprocpath, strlen(containerimage) + 6, "%s/proc", containerimage);
-//    containertmppath = (char *) malloc(strlen(containerimage) + 5);
-//    snprintf(containertmppath, strlen(containerimage) + 5, "%s/tmp", containerimage);
-//
-//    // Create system directories as neccessary
-//    if ( s_is_dir(containerprocpath) < 0 ) {
-//        if ( s_mkpath(containerprocpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-//            fprintf(stderr, "ERROR: Could not create directory %s\n", containerprocpath);
-//            return(255);
-//        }
-//    }
-//    if ( s_is_dir(containersyspath) < 0 ) {
-//        if ( s_mkpath(containersyspath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-//            fprintf(stderr, "ERROR: Could not create directory %s\n", containersyspath);
-//            return(255);
-//        }
-//    }
-//    if ( s_is_dir(containerdevpath) < 0 ) {
-//        if ( s_mkpath(containerdevpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-//            fprintf(stderr, "ERROR: Could not create directory %s\n", containerdevpath);
-//            return(255);
-//        }
-//    }
-//    if ( s_is_dir(containertmppath) < 0 ) {
-//        if ( s_mkpath(containertmppath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-//            fprintf(stderr, "ERROR: Could not create directory %s\n", containertmppath);
-//            return(255);
-//        }
-//    }
-//
-//
-//    // Get the home path from the environment and setup
-//    homepath = getenv("HOME");
-//    if ( homepath != NULL ) {
-//        containerhomepath = (char *) malloc(strlen(containerimage) + strlen(homepath) + 1);
-//        snprintf(containerhomepath, strlen(containerimage) + strlen(homepath) + 1, "%s%s", containerimage, homepath);
-//        if ( s_is_dir(homepath) == 0 ) {
-//            if ( s_is_dir(containerhomepath) < 0 ) {
-//                if ( s_mkpath(containerhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-//                    fprintf(stderr, "ERROR: Could not create directory %s\n", homepath);
-//                    return(255);
-//                }
-//            }
-//        } else {
-//            fprintf(stderr, "WARNING: Could not locate your home directory (%s), not linking to container.\n", homepath);
-//            homepath = NULL;
-//        }
-//    } else {
-//        fprintf(stderr, "WARNING: Could not obtain your home directory path, not linking to container.\n");
-//    }
-//
-//
 //    // Get the scratch path from the environment and setup
 //    scratchpath = getenv("SINGULARITY_SCRATCH");
 //    if ( scratchpath != NULL ) {
@@ -330,54 +261,6 @@ char containerpath[5] = "/mnt\0";
         }
     }
 //#endif
-
-//
-//    // Mount /dev
-//    if ( mount("/dev", containerdevpath, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
-//        fprintf(stderr, "ERROR: Could not bind mount /dev: %s\n", strerror(errno));
-//        return(255);
-//    }
-//
-//#ifndef NS_CLONE_NEWNS
-//    // Mount up /proc
-//    if ( mount("/proc", containerprocpath, NULL, MS_BIND, NULL) < 0 ) {
-//        fprintf(stderr, "ERROR: Could not bind mount /proc: %s\n", strerror(errno));
-//        return(255);
-//    }
-//#endif
-//
-//    // Mount any other file systems
-//    if ( opt_contain == 0 ) {
-//        if ( scratchpath != NULL ) {
-//            if ( mount(scratchpath, containerscratchpath, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
-//                fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", scratchpath, strerror(errno));
-//                return(255);
-//            }
-//        }
-//        if ( mount("/tmp", containertmppath, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
-//            fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", containertmppath, strerror(errno));
-//            return(255);
-//        }
-//        if ( homepath != NULL ) {
-//            if ( mount(homepath, containerhomepath, NULL, MS_BIND, NULL) < 0 ) {
-//                fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", homepath, strerror(errno));
-//                return(255);
-//            }
-//        }
-//    }
-//
-//
-//    // Recheck to see if we can stat the singularitypath as root
-//    // This fails when home is exported with root_squash enabled
-//    if ( s_is_exec(singularitypath) < 0 ) {
-//        fprintf(stderr, "ERROR: Could not stat %s as root!\n", singularitypath);
-//        fprintf(stderr, "NOTE:  This maybe caused by root_squash on NFS, set environment\n");
-//        fprintf(stderr, "NOTE:  variable 'SINGULARITY_CACHEDIR' and point to a different\n");
-//        fprintf(stderr, "NOTE:  file system. For excample:\n\n");
-//        fprintf(stderr, "NOTE:  SINGULARITY_CACHEDIR\"=/var/tmp/singularity.`uid -u`\"\n");
-//        fprintf(stderr, "NOTE:  export SINGULARITY_CACHEDIR\n\n");
-//        return(1);
-//    }
 
     // Drop privledges for fork and parent
     if ( seteuid(uid) < 0 ) {
