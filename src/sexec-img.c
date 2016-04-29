@@ -288,31 +288,31 @@ char containerpath[5] = "/mnt\0";
             }
 
 
-            if ( mount_bind(containerpath, "/dev") < 0 ) {
+            if ( mount_bind(containerpath, "/dev", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount /dev\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/tmp") < 0 ) {
+            if ( mount_bind(containerpath, "/tmp", 1) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount /dev\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, getenv("HOME")) < 0 ) {
+            if ( mount_bind(containerpath, getenv("HOME"), 1) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount home dir: %s\n", getenv("HOME"));
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/resolv.conf") < 0 ) {
+            if ( mount_bind(containerpath, "/etc/resolv.conf", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/resolv.conf\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/passwd") < 0 ) {
+            if ( mount_bind(containerpath, "/etc/passwd", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/passwd\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/group") < 0 ) {
+            if ( mount_bind(containerpath, "/etc/group", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/group\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/hosts") < 0 ) {
+            if ( mount_bind(containerpath, "/etc/hosts", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/hosts\n");
                 return(255);
             }
@@ -335,6 +335,9 @@ char containerpath[5] = "/mnt\0";
                 fprintf(stderr, "ERROR: Could not mount /sys: %s\n", strerror(errno));
                 return(255);
             }
+
+//TODO: Create, and update mtab.
+
 //#endif
         }
 

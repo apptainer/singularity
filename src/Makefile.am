@@ -21,6 +21,6 @@ bin_PROGRAMS = ftrace ftype sexec sexecimg
 sexec_SOURCES = sexec.c util.c util.h
 ftrace_SOURCES = ftrace.c util.c util.h
 ftype_SOURCES = ftype.c util.c util.h
-sexecimg_SOURCES = sexec-img.c util.c loop-control.c mounts.c
+sexecimg_SOURCES = sexec-img.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h
 
 EXTRA_DIST = config.h 

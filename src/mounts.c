@@ -70,7 +70,7 @@ int mount_image(char * image_path, char * mount_point) {
 }
 
 
-int mount_bind(char * image_path, char * mount_point) {
+int mount_bind(char * image_path, char * mount_point, int readwrite) {
     char * image_mount_point;
 
     image_mount_point = (char *) malloc(strlen(mount_point) + strlen(image_path) + 3);
@@ -113,6 +113,14 @@ int mount_bind(char * image_path, char * mount_point) {
         fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", mount_point, strerror(errno));
         return(255);
     }
+
+    if ( readwrite <= 0 ) {
+        if ( mount(NULL, image_mount_point, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, "remount,ro") < 0 ) {
+            fprintf(stderr, "ERROR: Could not make bind mount read only %s: %s\n", mount_point, strerror(errno));
+            return(255);
+        }
+    }
+
 
     return(0);
 }
