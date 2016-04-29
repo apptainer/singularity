@@ -63,19 +63,17 @@ void sighandler(int sig) {
 
 
 int main(int argc, char **argv) {
-    char *homepath;
-    char *scratchpath;
 //    char *containerhomepath = '\0';
 //    char *containerscratchpath = '\0';
-    char *containerimage;
 //    char *singularitypath;
 //    char *containerdevpath;
 //    char *containersyspath;
 //    char *containertmppath;
 //    char *containerprocpath;
+    char *containerimage;
     char cwd[PATH_MAX];
     int cwd_fd;
-    int opt_contain = 0;
+//    int opt_contain = 0;
     int retval = 0;
     uid_t uid = getuid();
     gid_t gid = getgid();
@@ -100,10 +98,10 @@ char containerpath[5] = "/mnt\0";
         return(255);
     }
 
-    // Check for SINGULARITY_CONTAIN environment variable
-    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
-        opt_contain = 1;
-    }
+//    // Check for SINGULARITY_CONTAIN environment variable
+//    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
+//        opt_contain = 1;
+//    }
 
     // Figure out where we start
     if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
@@ -121,11 +119,11 @@ char containerpath[5] = "/mnt\0";
     //****************************************************************************//
 
     // Get containerimage from the environment (we check on this shortly)
-    containerimage = getenv("CONTAINERIMAGE");
+    containerimage = getenv("SINGULARITY_IMAGE");
 
     // Check CONTAINERIMAGE
     if ( containerimage == NULL ) {
-        fprintf(stderr, "ERROR: CONTAINERIMAGE undefined!\n");
+        fprintf(stderr, "ERROR: SINGULARITY_IMAGE undefined!\n");
         return(1);
     }
     if ( s_is_dir(containerpath) < 0 ) {
@@ -390,6 +388,13 @@ char containerpath[5] = "/mnt\0";
     child_pid = fork();
 
     if ( child_pid == 0 ) {
+        char * container_name = basename(strdup(containerimage));
+        char * prompt;
+
+        prompt = (char *) malloc(strlen(container_name) + 4);
+        snprintf(prompt, strlen(container_name) + 4, "%s> ", container_name);
+
+        setenv("PS1", prompt, 1);
 
         if ( getenv("SINGULARITY_NOCHROOT") == NULL ) {
 
@@ -399,28 +404,33 @@ char containerpath[5] = "/mnt\0";
                 return(255);
             }
 
+
             if ( mount_bind(containerpath, "/dev") < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount /dev\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/resolv.conf") < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind mount /etc/resolv.conf\n");
-                return(255);
-            }
-            if ( mount_bind(containerpath, "/etc/passwd") < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind mount /etc/passwd\n");
-                return(255);
-            }
-            if ( mount_bind(containerpath, "/etc/group") < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind mount /etc/group\n");
-                return(255);
-            }
-            if ( mount_bind(containerpath, "/etc/group") < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind mount /etc/group\n");
+            if ( mount_bind(containerpath, "/tmp") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount /dev\n");
                 return(255);
             }
             if ( mount_bind(containerpath, getenv("HOME")) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount home dir: %s\n", getenv("HOME"));
+                return(255);
+            }
+            if ( mount_bind(containerpath, "/etc/resolv.conf") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind /etc/resolv.conf\n");
+                return(255);
+            }
+            if ( mount_bind(containerpath, "/etc/passwd") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind /etc/passwd\n");
+                return(255);
+            }
+            if ( mount_bind(containerpath, "/etc/group") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind /etc/group\n");
+                return(255);
+            }
+            if ( mount_bind(containerpath, "/etc/hosts") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind /etc/hosts\n");
                 return(255);
             }
 
@@ -443,8 +453,6 @@ char containerpath[5] = "/mnt\0";
                 return(255);
             }
 //#endif
-        } else {
-            setenv("PS1", "SINGULARITY> ", 0);
         }
 
         // Dump all privs permanently for this process

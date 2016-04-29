@@ -59,7 +59,7 @@ int mount_image(char * image_path, char * mount_point) {
         return(-1);
     }
 
-    printf("Mounting image to %s\n", mount_point);
+    //printf("Mounting image to %s\n", mount_point);
 
     if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
         fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
@@ -89,13 +89,13 @@ int mount_bind(char * image_path, char * mount_point) {
             FILE *fd;
             char * image_mount_point_dir = dirname(strdup(image_mount_point));
 
-printf("Need to create directory: '%s'\n", image_mount_point_dir);
+            //printf("Need to create directory: '%s'\n", image_mount_point_dir);
             if ( s_mkpath(image_mount_point_dir, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
                 fprintf(stderr, "ERROR: Could not make path to %s: %s\n", image_mount_point, strerror(errno));
                 return(-1);
             }
 
-printf("Creating bind file %s\n", image_mount_point);
+            //printf("Creating bind file %s\n", image_mount_point);
             fd = fopen(image_mount_point, "w");
            if ( fd == NULL ) {
                 fprintf(stderr, "ERROR: Could not create file mount point %s: %s\n", image_mount_point, strerror(errno));
@@ -107,7 +107,7 @@ printf("Creating bind file %s\n", image_mount_point);
         return(-1);
     }
 
-    printf("Bind mounting: %s -> %s\n", mount_point, image_mount_point);
+    //printf("Bind mounting: %s -> %s\n", mount_point, image_mount_point);
 
     if ( mount(mount_point, image_mount_point, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
         fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", mount_point, strerror(errno));
