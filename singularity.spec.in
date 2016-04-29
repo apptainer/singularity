@@ -37,6 +37,7 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS COPYING ChangeLog INSTALL NEWS README
 %dir %{_libexecdir}/singularity
 %attr(4755, root, root) %{_libexecdir}/singularity/sexec
+%attr(4755, root, root) %{_libexecdir}/singularity/sexecimg
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/ftrace
 %{_libexecdir}/singularity/ftype
