@@ -64,6 +64,7 @@ void sighandler(int sig) {
 
 int main(int argc, char **argv) {
     char *containerimage;
+    char *homepath;
     char cwd[PATH_MAX];
     int cwd_fd;
 //    int opt_contain = 0;
@@ -111,6 +112,7 @@ char containerpath[5] = "/mnt\0";
     // Sanity
     //****************************************************************************//
 
+    homepath = getenv("HOME");
     // Get containerimage from the environment (we check on this shortly)
     containerimage = getenv("SINGULARITY_IMAGE");
 
@@ -220,11 +222,17 @@ char containerpath[5] = "/mnt\0";
     }
 //#endif
 
-    if ( mount_image(containerimage, containerpath) < 0 ) {
-        fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
-        return(255);
+    if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
+        if ( mount_image(containerimage, containerpath, 0) < 0 ) {
+            fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
+            return(255);
+        }
+    } else {
+        if ( mount_image(containerimage, containerpath, 1) < 0 ) {
+            fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
+            return(255);
+        }
     }
-
 
 
 //#ifdef NS_CLONE_NEWPID
@@ -387,12 +395,27 @@ char containerpath[5] = "/mnt\0";
             return(1);
         }
 
-//        // Exec the singularity
-//        if ( execv("/singularity", argv) < 0 ) {
-//            fprintf(stderr, "ERROR: Failed to exec SAPP environment\n");
-//            return(2);
-//        }
-        execv("/bin/bash", argv);
+        if (strncmp(homepath, cwd, strlen(homepath)) == 0 ) {
+            if ( chdir(cwd) < 0 ) {
+                fprintf(stderr, "ERROR: Could not chdir!\n");
+               return(1);
+            }
+        } else {
+            if ( fchdir(cwd_fd) < 0 ) {
+                fprintf(stderr, "ERROR: Could not fchdir!\n");
+                return(1);
+            }
+        }
+
+        if ( argv[1] != NULL && strcmp(argv[1], "shell") == 0) {
+            execv("/bin/sh", &argv[1]);
+        } else if ( s_is_exec("/singularity") == 0 ) {
+            printf("Launching /singularity\n");
+            execv("/singularity", argv);
+        } else {
+            printf("No command specified, launching /bin/sh\n");
+            execv("/bin/sh", argv);
+        }
 
     } else if ( child_pid > 0 ) {
         int tmpstatus;

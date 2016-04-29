@@ -36,7 +36,7 @@
 #include "loop-control.h"
 
 
-int mount_image(char * image_path, char * mount_point) {
+int mount_image(char * image_path, char * mount_point, int writable) {
     char * loop_device;
 
     if ( s_is_file(image_path) < 0 ) {
@@ -61,16 +61,23 @@ int mount_image(char * image_path, char * mount_point) {
 
     //printf("Mounting image to %s\n", mount_point);
 
-    if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
-        fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
-        return(-1);
+    if ( writable > 0 ) {
+        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
+            fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+            return(-1);
+        }
+    } else {
+        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard") < 0 ) {
+            fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+            return(-1);
+        }
     }
 
     return(0);
 }
 
 
-int mount_bind(char * image_path, char * mount_point, int readwrite) {
+int mount_bind(char * image_path, char * mount_point, int writable) {
     char * image_mount_point;
 
     image_mount_point = (char *) malloc(strlen(mount_point) + strlen(image_path) + 3);
@@ -114,7 +121,7 @@ int mount_bind(char * image_path, char * mount_point, int readwrite) {
         return(255);
     }
 
-    if ( readwrite <= 0 ) {
+    if ( writable <= 0 ) {
         if ( mount(NULL, image_mount_point, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, "remount,ro") < 0 ) {
             fprintf(stderr, "ERROR: Could not make bind mount read only %s: %s\n", mount_point, strerror(errno));
             return(255);
