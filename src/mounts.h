@@ -20,4 +20,4 @@
 
 
 int mount_image(char * image_path, char * mount_point, int writable);
-int mount_bind(char * image_path, char * mount_point, int writable);
+int mount_bind(char * image_path, char * source, char * dest, int writable);

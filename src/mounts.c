@@ -77,53 +77,53 @@ int mount_image(char * image_path, char * mount_point, int writable) {
 }
 
 
-int mount_bind(char * image_path, char * mount_point, int writable) {
-    char * image_mount_point;
+int mount_bind(char * image_path, char * source, char * dest, int writable) {
+    char * image_dest;
 
-    image_mount_point = (char *) malloc(strlen(mount_point) + strlen(image_path) + 3);
-    snprintf(image_mount_point, strlen(mount_point) + strlen(image_path) + 3, "%s%s", image_path, mount_point);
+    image_dest = (char *) malloc(strlen(dest) + strlen(image_path) + 3);
+    snprintf(image_dest, strlen(dest) + strlen(image_path) + 3, "%s%s", image_path, dest);
 
     // Check to see if the mount point exists
-    if ( s_is_dir(mount_point) == 0 ) {
-        if ( s_is_dir(image_mount_point) != 0 ) {
-            if ( s_mkpath(image_mount_point, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
-                fprintf(stderr, "ERROR: Could not make path to %s: %s\n", image_mount_point, strerror(errno));
+    if ( s_is_dir(source) == 0 ) {
+        if ( s_is_dir(image_dest) != 0 ) {
+            if ( s_mkpath(image_dest, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
+                fprintf(stderr, "ERROR: Could not make path to %s: %s\n", image_dest, strerror(errno));
                 return(-1);
             }
         }
-    } else if ( s_is_file(mount_point) == 0 ) {
-        if ( s_is_file(image_mount_point) != 0 ) {
+    } else if ( s_is_file(source) == 0 ) {
+        if ( s_is_file(image_dest) != 0 ) {
             FILE *fd;
-            char * image_mount_point_dir = dirname(strdup(image_mount_point));
+            char * image_dest_dir = dirname(strdup(image_dest));
 
             //printf("Need to create directory: '%s'\n", image_mount_point_dir);
-            if ( s_mkpath(image_mount_point_dir, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
-                fprintf(stderr, "ERROR: Could not make path to %s: %s\n", image_mount_point, strerror(errno));
+            if ( s_mkpath(image_dest_dir, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
+                fprintf(stderr, "ERROR: Could not make path to %s: %s\n", image_dest_dir, strerror(errno));
                 return(-1);
             }
 
             //printf("Creating bind file %s\n", image_mount_point);
-            fd = fopen(image_mount_point, "w");
+            fd = fopen(image_dest, "w");
            if ( fd == NULL ) {
-                fprintf(stderr, "ERROR: Could not create file mount point %s: %s\n", image_mount_point, strerror(errno));
+                fprintf(stderr, "ERROR: Could not create file mount point %s: %s\n", image_dest, strerror(errno));
             }
             fclose(fd);
         }
     } else {
-        fprintf(stderr, "ERROR: Can not bind mount non-existant source: %s\n", mount_point);
+        fprintf(stderr, "ERROR: Can not bind mount non-existant source: %s\n", source);
         return(-1);
     }
 
     //printf("Bind mounting: %s -> %s\n", mount_point, image_mount_point);
 
-    if ( mount(mount_point, image_mount_point, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
-        fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", mount_point, strerror(errno));
+    if ( mount(source, image_dest, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
+        fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", dest, strerror(errno));
         return(255);
     }
 
     if ( writable <= 0 ) {
-        if ( mount(NULL, image_mount_point, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, "remount,ro") < 0 ) {
-            fprintf(stderr, "ERROR: Could not make bind mount read only %s: %s\n", mount_point, strerror(errno));
+        if ( mount(NULL, image_dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, "remount,ro") < 0 ) {
+            fprintf(stderr, "ERROR: Could not make bind mount read only %s: %s\n", dest, strerror(errno));
             return(255);
         }
     }
