@@ -42,6 +42,9 @@
 #ifndef LIBEXECDIR
 #define LIBEXECDIR "undefined"
 #endif
+#ifndef SYSCONFDIR
+#define SYSCONFDIR "/etc"
+#endif
 
 // Yes, I know... Global variables suck but necessary to pass sig to child
 pid_t child_pid = 0;
@@ -279,8 +282,12 @@ char containerpath[5] = "/mnt\0";
     child_pid = fork();
 
     if ( child_pid == 0 ) {
-        char * container_name = basename(strdup(containerimage));
+        char * mtab;
         char * prompt;
+        char * container_name = basename(strdup(containerimage));
+
+        mtab = (char *) malloc(strlen(SYSCONFDIR) + 27);
+        snprintf(mtab, strlen(SYSCONFDIR) + 27, "%s/singularity/default-mtab", SYSCONFDIR);
 
         prompt = (char *) malloc(strlen(container_name) + 4);
         snprintf(prompt, strlen(container_name) + 4, "%s> ", container_name);
@@ -296,33 +303,41 @@ char containerpath[5] = "/mnt\0";
             }
 
 
-            if ( mount_bind(containerpath, "/dev", 0) < 0 ) {
+            if ( mount_bind(containerpath, "/dev", "/dev", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount /dev\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/tmp", 1) < 0 ) {
+            if ( mount_bind(containerpath, "/tmp", "/tmp", 1) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount /dev\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, getenv("HOME"), 1) < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind mount home dir: %s\n", getenv("HOME"));
+            if ( mount_bind(containerpath, homepath, homepath, 1) < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount home dir: %s\n", homepath);
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/resolv.conf", 0) < 0 ) {
+            if ( mount_bind(containerpath, "/etc/resolv.conf", "/etc/resolv.conf", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/resolv.conf\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/passwd", 0) < 0 ) {
+            if ( mount_bind(containerpath, "/etc/passwd", "/etc/passwd", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/passwd\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/group", 0) < 0 ) {
+            if ( mount_bind(containerpath, "/etc/group", "/etc/group", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/group\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/hosts", 0) < 0 ) {
+            if ( mount_bind(containerpath, "/etc/hosts", "/etc/hosts", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/hosts\n");
                 return(255);
+            }
+            if ( s_is_file(mtab) == 0 ) {
+                if ( mount_bind(containerpath, mtab, "/etc/mtab", 0) < 0 ) {
+                    fprintf(stderr, "ERROR: Could not bind %s\n", mtab);
+                    return(255);
+                }
+            } else {
+                fprintf(stderr, "WARNING: Could not open %s\n", mtab);
             }
 
 
@@ -410,7 +425,6 @@ char containerpath[5] = "/mnt\0";
         if ( argv[1] != NULL && strcmp(argv[1], "shell") == 0) {
             execv("/bin/sh", &argv[1]);
         } else if ( s_is_exec("/singularity") == 0 ) {
-            printf("Launching /singularity\n");
             execv("/singularity", argv);
         } else {
             printf("No command specified, launching /bin/sh\n");

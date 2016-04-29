@@ -3,6 +3,7 @@ DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
 AM_CFLAGS = -Wall
 sexec_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\" $(NAMESPACE_DEFINES)
+sexecimg_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(NAMESPACE_DEFINES)
 ftrace_CPPFLAGS = -DARCH_$(SINGULARITY_ARCH)
 
 dist_suidPROGRAM_INSTALL = ${INSTALL} -m 640

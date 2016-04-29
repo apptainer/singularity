@@ -122,6 +122,7 @@ AC_CONFIG_FILES([
    Makefile
    singularity.spec
    src/Makefile
+   etc/Makefile
    bin/Makefile
    bin/singularity
    libexec/Makefile
