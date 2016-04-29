@@ -30,6 +30,8 @@
 #include <string.h>
 #include <fcntl.h>  
 #include <libgen.h>
+#include <assert.h>
+
 #include "config.h"
 
 
@@ -121,12 +123,20 @@ int s_mkpath(char *dir, mode_t mode) {
         return(0);
     }
 
+    if ( s_is_dir(dir) == 0 ) {
+        // Directory already exists, stop...
+        return(0);
+    }
+
     s_mkpath(dirname(strdupa(dir)), mode);
 
-    return mkdir(dir, mode);
+    if ( mkdir(dir, mode) < 0 ) {
+        printf("ERROR: Could not mkdir: %s\n", strerror(errno));
+        return(-1);
+    }
+
+    return(0);
 }
-
-
 
 // TODO: This needs to remove only until a second path argument
 int s_rmdir(char *dir) {

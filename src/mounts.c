@@ -28,6 +28,7 @@
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>
+#include <libgen.h>
 
 #include "config.h"
 #include "mounts.h"
@@ -37,8 +38,6 @@
 
 int mount_image(char * image_path, char * mount_point) {
     char * loop_device;
-    uid_t uid = getuid();
-    gid_t gid = getgid();
 
     if ( s_is_file(image_path) < 0 ) {
         fprintf(stderr, "ERROR: Could not access image file: %s\n", image_path);
@@ -71,3 +70,49 @@ int mount_image(char * image_path, char * mount_point) {
 }
 
 
+int mount_bind(char * image_path, char * mount_point) {
+    char * image_mount_point;
+
+    image_mount_point = (char *) malloc(strlen(mount_point) + strlen(image_path) + 3);
+    snprintf(image_mount_point, strlen(mount_point) + strlen(image_path) + 3, "%s%s", image_path, mount_point);
+
+    // Check to see if the mount point exists
+    if ( s_is_dir(mount_point) == 0 ) {
+        if ( s_is_dir(image_mount_point) != 0 ) {
+            if ( s_mkpath(image_mount_point, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
+                fprintf(stderr, "ERROR: Could not make path to %s: %s\n", image_mount_point, strerror(errno));
+                return(-1);
+            }
+        }
+    } else if ( s_is_file(mount_point) == 0 ) {
+        if ( s_is_file(image_mount_point) != 0 ) {
+            FILE *fd;
+            char * image_mount_point_dir = dirname(strdup(image_mount_point));
+
+printf("Need to create directory: '%s'\n", image_mount_point_dir);
+            if ( s_mkpath(image_mount_point_dir, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
+                fprintf(stderr, "ERROR: Could not make path to %s: %s\n", image_mount_point, strerror(errno));
+                return(-1);
+            }
+
+printf("Creating bind file %s\n", image_mount_point);
+            fd = fopen(image_mount_point, "w");
+           if ( fd == NULL ) {
+                fprintf(stderr, "ERROR: Could not create file mount point %s: %s\n", image_mount_point, strerror(errno));
+            }
+            fclose(fd);
+        }
+    } else {
+        fprintf(stderr, "ERROR: Can not bind mount non-existant source: %s\n", mount_point);
+        return(-1);
+    }
+
+    printf("Bind mounting: %s -> %s\n", mount_point, image_mount_point);
+
+    if ( mount(mount_point, image_mount_point, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
+        fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", mount_point, strerror(errno));
+        return(255);
+    }
+
+    return(0);
+}

@@ -6,7 +6,8 @@ CLEANFILES =
 EXTRA_DIST = LICENSE README NEWS ChangeLog singularity.spec
 
 
-install-perms: install
-	sudo chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec
-	sudo chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec
+install-perms:
+	@echo
+	@echo "install-perms is no longer required"
+	@echo
 

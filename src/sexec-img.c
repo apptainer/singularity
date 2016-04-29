@@ -391,30 +391,61 @@ char containerpath[5] = "/mnt\0";
 
     if ( child_pid == 0 ) {
 
-        // Root needed for chroot and /proc mount
-        if ( seteuid(0) < 0 ) {
-            fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
-            return(255);
-        }
+        if ( getenv("SINGULARITY_NOCHROOT") == NULL ) {
 
-        // Do the chroot
-        if ( chroot(containerpath) < 0 ) {
-            fprintf(stderr, "ERROR: failed enter CONTAINERIMAGE: %s\n", containerpath);
-            return(255);
-        }
+            // Root needed for chroot and /proc mount
+            if ( seteuid(0) < 0 ) {
+                fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
+                return(255);
+            }
+
+            if ( mount_bind(containerpath, "/dev") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount /dev\n");
+                return(255);
+            }
+            if ( mount_bind(containerpath, "/etc/resolv.conf") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount /etc/resolv.conf\n");
+                return(255);
+            }
+            if ( mount_bind(containerpath, "/etc/passwd") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount /etc/passwd\n");
+                return(255);
+            }
+            if ( mount_bind(containerpath, "/etc/group") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount /etc/group\n");
+                return(255);
+            }
+            if ( mount_bind(containerpath, "/etc/group") < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount /etc/group\n");
+                return(255);
+            }
+            if ( mount_bind(containerpath, getenv("HOME")) < 0 ) {
+                fprintf(stderr, "ERROR: Could not bind mount home dir: %s\n", getenv("HOME"));
+                return(255);
+            }
+
+
+            // Do the chroot
+            if ( chroot(containerpath) < 0 ) {
+                fprintf(stderr, "ERROR: failed enter CONTAINERIMAGE: %s\n", containerpath);
+                return(255);
+            }
 
 //#ifdef NS_CLONE_NEWNS
-        // Mount up /proc
-        if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
-            fprintf(stderr, "ERROR: Could not mount /proc: %s\n", strerror(errno));
-            return(255);
-        }
-        // Mount /sys
-        if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
-            fprintf(stderr, "ERROR: Could not mount /sys: %s\n", strerror(errno));
-            return(255);
-        }
+            // Mount up /proc
+            if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
+                fprintf(stderr, "ERROR: Could not mount /proc: %s\n", strerror(errno));
+                return(255);
+            }
+            // Mount /sys
+            if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
+                fprintf(stderr, "ERROR: Could not mount /sys: %s\n", strerror(errno));
+                return(255);
+            }
 //#endif
+        } else {
+            setenv("PS1", "SINGULARITY> ", 0);
+        }
 
         // Dump all privs permanently for this process
         if ( setregid(gid, gid) < 0 ) {
@@ -451,6 +482,10 @@ char containerpath[5] = "/mnt\0";
 //                }
 //            }
 //        }
+
+
+
+
 
         // After this, we exist only within the container... Let's make it known!
         if ( setenv("SINGULARITY_CONTAINER", "true", 0) != 0 ) {

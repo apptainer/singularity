@@ -167,25 +167,25 @@ int main(int argc, char **argv) {
 
     // Create system directories as neccessary
     if ( s_is_dir(containerprocpath) < 0 ) {
-        if ( s_mkpath(containerprocpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+        if ( s_mkpath(containerprocpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containerprocpath);
             return(255);
         }
     }
     if ( s_is_dir(containersyspath) < 0 ) {
-        if ( s_mkpath(containersyspath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+        if ( s_mkpath(containersyspath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containersyspath);
             return(255);
         }
     }
     if ( s_is_dir(containerdevpath) < 0 ) {
-        if ( s_mkpath(containerdevpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+        if ( s_mkpath(containerdevpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containerdevpath);
             return(255);
         }
     }
     if ( s_is_dir(containertmppath) < 0 ) {
-        if ( s_mkpath(containertmppath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+        if ( s_mkpath(containertmppath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containertmppath);
             return(255);
         }
@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
         snprintf(containerhomepath, strlen(containerpath) + strlen(homepath) + 1, "%s%s", containerpath, homepath);
         if ( s_is_dir(homepath) == 0 ) {
             if ( s_is_dir(containerhomepath) < 0 ) {
-                if ( s_mkpath(containerhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+                if ( s_mkpath(containerhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
                     fprintf(stderr, "ERROR: Could not create directory %s\n", homepath);
                     return(255);
                 }
@@ -241,7 +241,7 @@ int main(int argc, char **argv) {
         snprintf(containerscratchpath, strlen(containerpath) + strlen(scratchpath) + 1, "%s%s", containerpath, scratchpath);
         if ( s_is_dir(scratchpath) == 0 ) {
             if ( s_is_dir(containerscratchpath) < 0 ) {
-                if ( s_mkpath(containerscratchpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
+                if ( s_mkpath(containerscratchpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
                     fprintf(stderr, "ERROR: Could not create directory %s\n", scratchpath);
                     return(255);
                 }
