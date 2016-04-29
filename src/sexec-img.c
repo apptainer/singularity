@@ -427,7 +427,7 @@ char containerpath[5] = "/mnt\0";
         } else if ( s_is_exec("/singularity") == 0 ) {
             execv("/singularity", argv);
         } else {
-            printf("No command specified, launching /bin/sh\n");
+            printf("No command specified, launching 'shell'\n");
             execv("/bin/sh", argv);
         }
 
