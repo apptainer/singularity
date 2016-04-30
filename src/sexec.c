@@ -33,6 +33,7 @@
 #include <string.h>
 #include <fcntl.h>  
 #include <grp.h>
+#include <libgen.h>
 
 #include "config.h"
 #include "util.h"
@@ -70,6 +71,7 @@ void sighandler(int sig) {
 
 int main(int argc, char ** argv) {
     char *containerimage;
+    char *containername;
     char *containerpath;
     char *homepath;
     char *command;
@@ -134,6 +136,8 @@ int main(int argc, char ** argv) {
 
     containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
     snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
+
+    containername = basename(strdup(containerimage));
 
     if ( seteuid(0) < 0 ) {
         fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
@@ -237,10 +241,13 @@ int main(int argc, char ** argv) {
 
     if ( child_pid == 0 ) {
         char *mtab;
-        char *container_name = basename(strdup(containerimage));
+        char *prompt;
 
         mtab = (char *) malloc(strlen(SYSCONFDIR) + 27);
         snprintf(mtab, strlen(SYSCONFDIR) + 27, "%s/singularity/default-mtab", SYSCONFDIR);
+
+        prompt = (char *) malloc(strlen(containername) + 3);
+        snprintf(prompt, strlen(containername) + 3, "%s> ", containername);
 
         if ( seteuid(0) < 0 ) {
             fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
@@ -379,12 +386,14 @@ int main(int argc, char ** argv) {
         }
 
         free(mtab);
-        free(prompt);
 
         if ( command == NULL ) {
             fprintf(stderr, "No command specified, launching 'shell'\n");
             argv[0] = strdup("/bin/sh");
-            execv("/bin/sh", argv);
+            setenv("PS1", prompt, 1);
+            if ( execv("/bin/sh", argv) != 0 ) {
+                fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
+            }
         } else if ( strcmp(command, "run") == 0 ) {
             if ( s_is_exec("/singularity") == 0 ) {
                 argv[0] = strdup("/singularity");
@@ -394,12 +403,14 @@ int main(int argc, char ** argv) {
             } else {
                 fprintf(stderr, "No Singularity runscript found, launching 'shell'\n");
                 argv[0] = strdup("/bin/sh");
+                setenv("PS1", prompt, 1);
                 if ( execv("/bin/sh", argv) != 0 ) {
                     fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
                 }
             }
         } else if ( strcmp(command, "shell") == 0 ) {
             argv[0] = strdup("/bin/sh");
+            setenv("PS1", prompt, 1);
             if ( execv("/bin/sh", argv) != 0 ) {
                 fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
             }
@@ -413,6 +424,11 @@ int main(int argc, char ** argv) {
                 fprintf(stderr, "ERROR: no command given to execute\n");
                 return(1);
             }
+        } else if ( strcmp(command, "mount") == 0 ) {
+            fprintf(stderr, "The Image '%s' is mounted at: %s\n\n", containerimage, containerpath);
+            fprintf(stderr, "The file system will automatically unmount when you exit this shell!\n");
+            setenv("CONTAINERPATH", containerpath, 1);
+            execv("/bin/sh", argv);
         } else {
             fprintf(stderr, "ERROR: Unrecognized Singularity command: %s\n", command);
             return(1);
