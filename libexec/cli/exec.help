@@ -1,4 +1,4 @@
-USAGE: singularity (options) exec [container name] [command] (options)
+USAGE: singularity (options) exec [container path] [command] (options)
 
 This command will allow you to execute any program within the given
 container image.

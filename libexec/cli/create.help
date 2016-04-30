@@ -1,7 +1,6 @@
-USAGE: singularity (options) shell [container path] (options)
+USAGE: singularity (options) image-create [container path]
 
-Obtain a shell (/bin/sh) within the container image.
-
+...
 
 For additional help, please visit our public documentation pages which are
 found at:

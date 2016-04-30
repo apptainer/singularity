@@ -1,4 +1,4 @@
-USAGE: singularity (options) mount [container name]
+USAGE: singularity (options) mount [container path]
 
 ...
 

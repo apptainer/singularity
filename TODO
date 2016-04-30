@@ -1,12 +1,7 @@
-General:
-
-Singularity-build:
-    - Support a mechanism for staging data (intput and output)
-    - Test to make sure a specfile is a specfile before building
-
-Singularity-install:
 
 
-Singularity-run:
-    - Support archiving output
-    - Standardize on an output data location
+* Share loop device on same image:user
+* Lock for loop device obtaining
+* Create "singularity config file.img" for first run configurations (or similar)
+* Create "singularity install file.img /path/to/recipe"
+* Add relevent runtime options to all commands
