@@ -1,8 +1,9 @@
-USAGE: singularity (options) show [container name/UUID]
+USAGE: singularity (options) mount [container name]
 
-Display informations about a Singularity container.
+...
 
 For additional help, please visit our public documentation pages which are
 found at:
 
     http://gmkurtzer.github.io/singularity
+

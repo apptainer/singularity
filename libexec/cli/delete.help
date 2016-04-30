@@ -1,9 +1,0 @@
-USAGE: singularity (options) delete [container name]
-
-This will delete the internal cache of the Singularity container.
-
-For additional help, please visit our public documentation pages which are
-found at:
-
-    http://gmkurtzer.github.io/singularity
-

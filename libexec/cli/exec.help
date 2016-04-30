@@ -1,7 +1,7 @@
-USAGE: singularity (options) run [container name] (options)
+USAGE: singularity (options) exec [container name] [command] (options)
 
-This command will launch a Singularity container and execute a runscript
-if one is defined for that container.
+This command will allow you to execute any program within the given
+container image.
 
 OPTIONS:
     -w/--writable   By default all Singularity containers are available as

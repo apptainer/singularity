@@ -34,33 +34,33 @@ else
     exit 1
 fi
 
-load_mod cache
-load_mod sexec
+
+while true; do
+    case $1 in
+        -w|--writable)
+            shift
+            SINGULARITY_WRITABLE=1
+            export SINGULARITY_WRITABLE
+        ;;
+        -*)
+            echo "ERROR: Unknown option: $1"
+            exit 1
+        ;;
+        *)
+            break;
+        ;;
+    esac
+done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) shell [container name]"
+    echo "USAGE: singularity (options) shell [container image] (options)\n"
     exit 1
 fi
 
-SAPPNAME="$1"
-
-if ! cache_sappname2uuid "$SAPPNAME" "SAPPUUID"; then
-    message ERROR "Singularity container is not installed: $SAPPNAME\n"
-    exit 255
-fi
-
-if ! cache_sappdir "$SAPPUUID" "SAPPDIR"; then
-    message ERROR "Could not identify cache directory for $SAPPUUID\n"
-    exit 255
-fi
-
 SINGULARITY_COMMAND="shell"
-CONTAINERPATH="$SAPPDIR/c"
-export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
+SINGULARITY_IMAGE="$1"
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
+export SINGULARITY_COMMAND SINGULARITY_IMAGE PATH
 shift
 
-message 2 "Starting a shell in '$SAPPNAME'\n"
-
-message 2 "Exec'ing Sexec\n"
-sexec_exec "$@" <&0
-
+exec "$libexecdir/singularity/sexec" "$@" <&0

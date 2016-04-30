@@ -1,9 +1,7 @@
 USAGE: singularity (options) shell [container name]
 
-Obtain a shell within the container context for debugging.
+Obtain a shell (/bin/sh) within the container image.
 
-Note: You should also include the specfile directive "DebugOS: 1" to have
-many of the standard shell programs installed into your container.
 
 For additional help, please visit our public documentation pages which are
 found at:

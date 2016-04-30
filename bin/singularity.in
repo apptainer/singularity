@@ -68,9 +68,9 @@ usage() {
 # Initial argument processing. Iterate through arguments until argument
 # is not recognized as an argument, which must mean it is a command. So
 # exit the arg processing and continue to command section.
-set -f
-eval set -- `parse_opts "$@"`
-set +f
+#set -f
+#eval set -- `parse_opts "$@"`
+#set +f
 
 while true; do
     case $1 in

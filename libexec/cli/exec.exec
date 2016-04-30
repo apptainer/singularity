@@ -34,20 +34,17 @@ else
     exit 1
 fi
 
-load_mod cache
-load_mod sappfile
-
-set -f
-eval set -- `parse_opts "$@"`
-set +f
 
 while true; do
     case $1 in
-        -k|--runkey)
+        -w|--writable)
             shift
-            SAPPRUNKEY="$1"
-            export SAPPRUNKEY
-            shift
+            SINGULARITY_WRITABLE=1
+            export SINGULARITY_WRITABLE
+        ;;
+        -*)
+            echo "ERROR: Unknown option: $1"
+            exit 1
         ;;
         *)
             break;
@@ -55,30 +52,18 @@ while true; do
     esac
 done
 
-
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) install (install options) [SAPP file]\n"
+    echo "USAGE: singularity (options) exec [container image] [command] (options)\n"
     exit 1
 fi
 
+SINGULARITY_COMMAND="exec"
+SINGULARITY_IMAGE="$1"
+SINGULARITY_EXEC="$2"
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
+export SINGULARITY_COMMAND SINGULARITY_IMAGE PATH SINGULARITY_EXEC
+shift
+shift
 
-SAPPFILE="$1"
-SAPPUUID=`sappfile_uuid "$SAPPFILE"`
-SAPPNAME=`sappfile_name "$SAPPFILE"`
 
-export SAPPFILE SAPPUUID SAPPNAME
-
-if [ ! -f "$SAPPFILE" ]; then
-    echo "ERROR: SAPP file ($SAPPFILE) not found\n"
-    exit 1
-fi
-
-if ! cache_sappuuidexists "$SAPPUUID"; then
-    message 1 "Installing: $SAPPNAME ($SAPPUUID)\n"
-
-    cache_sappinstall
-
-    message 1 "Done...\n"
-else
-    message 1 "Singularity container is already installed: $SAPPNAME ($SAPPUUID)\n"
-fi
+exec "$libexecdir/singularity/sexec" "$@" <&0
