@@ -237,16 +237,10 @@ int main(int argc, char ** argv) {
 
     if ( child_pid == 0 ) {
         char *mtab;
-        char *prompt;
         char *container_name = basename(strdup(containerimage));
 
         mtab = (char *) malloc(strlen(SYSCONFDIR) + 27);
         snprintf(mtab, strlen(SYSCONFDIR) + 27, "%s/singularity/default-mtab", SYSCONFDIR);
-
-        prompt = (char *) malloc(strlen(container_name) + 4);
-        snprintf(prompt, strlen(container_name) + 4, "%s> ", container_name);
-
-        setenv("PS1", prompt, 1);
 
         if ( seteuid(0) < 0 ) {
             fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
