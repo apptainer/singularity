@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[1.0],[gmkurtzer@lbl.gov])
+AC_INIT([singularity],[2.0],[gmkurtzer@lbl.gov])
 AC_CONFIG_SRCDIR([.])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([.])
