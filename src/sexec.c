@@ -45,6 +45,9 @@
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"
 #endif
+#ifndef LOCALSTATEDIR
+#define LOCALSTATEDIR "/var/"
+#endif
 
 // Yes, I know... Global variables suck but necessary to pass sig to child
 pid_t child_pid = 0;
@@ -65,40 +68,37 @@ void sighandler(int sig) {
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char ** argv) {
     char *containerimage;
+    char *containerpath;
     char *homepath;
+    char *command;
+    char *command_exec;
     char cwd[PATH_MAX];
     int cwd_fd;
-//    int opt_contain = 0;
     int retval = 0;
     uid_t uid = getuid();
     gid_t gid = getgid();
-    mode_t initial_umask = umask(0);
-
-char containerpath[5] = "/mnt\0";
 
 
     //****************************************************************************//
-    // Sanity
+    // Init
     //****************************************************************************//
 
-//    // We don't run as root!
-//    if ( uid == 0 || gid == 0 ) {
-//        fprintf(stderr, "ERROR: Do not run singularities as root!\n");
-//        return(255);
-//    }
-
-    // Lets start off and confirm non-root
+    // Lets start off as the calling UID
     if ( seteuid(uid) < 0 ) {
         fprintf(stderr, "ERROR: Could not set effective user privledges to %d!\n", uid);
         return(255);
     }
 
-//    // Check for SINGULARITY_CONTAIN environment variable
-//    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
-//        opt_contain = 1;
-//    }
+    homepath = getenv("HOME");
+    containerimage = getenv("SINGULARITY_IMAGE");
+    command = getenv("SINGULARITY_COMMAND");
+    command_exec = getenv("SINGULARITY_EXEC");
+
+    unsetenv("SINGULARITY_IMAGE");
+    unsetenv("SINGULARITY_COMMAND");
+    unsetenv("SINGULARITY_EXEC");
 
     // Figure out where we start
     if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
@@ -110,106 +110,48 @@ char containerpath[5] = "/mnt\0";
         return(1);
     }
 
-
-    //****************************************************************************//
-    // Sanity
-    //****************************************************************************//
-
-    homepath = getenv("HOME");
-    // Get containerimage from the environment (we check on this shortly)
-    containerimage = getenv("SINGULARITY_IMAGE");
-
-    // Check CONTAINERIMAGE
     if ( containerimage == NULL ) {
         fprintf(stderr, "ERROR: SINGULARITY_IMAGE undefined!\n");
         return(1);
     }
-    if ( s_is_dir(containerpath) < 0 ) {
-        fprintf(stderr, "ERROR: Container path is not a directory: %s!\n", containerpath);
+
+    if ( s_is_file(containerimage) != 0 ) {
+        fprintf(stderr, "ERROR: Container image path is invalid: %s\n", containerimage);
         return(1);
     }
+
     // TODO: Offer option to only run containers owned by root (so root can approve
     // containers)
-//    if ( s_is_owner(containerimage, uid) < 0 ) {
-//        fprintf(stderr, "ERROR: Will not execute in a CONTAINERIMAGE you don't own: %s\n", containerimage);
-//        return(255);
-//    }
-
-    
-    // Check the singularity within the CONTAINERPATH
-//    singularitypath = (char *) malloc(strlen(containerimage) + 13);
-//    snprintf(singularitypath, strlen(containerimage) + 13, "%s/singularity", containerimage);
-//    if ( s_is_file(singularitypath) < 0 ) {
-//        fprintf(stderr, "ERROR: The singularity is not found in CONTAINERPATH!\n");
-//        return(1);
-//    }
-//    if ( s_is_owner(singularitypath, uid) < 0 ) {
-//        fprintf(stderr, "ERROR: Will not execute a singularity you don't own: %s!\n", singularitypath);
-//        return(255);
-//    }
-//    if ( s_is_exec(singularitypath) < 0 ) {
-//        fprintf(stderr, "ERROR: The singularity can not be executed!\n");
-//        return(1);
-//    }
-
-
-//    // Get the scratch path from the environment and setup
-//    scratchpath = getenv("SINGULARITY_SCRATCH");
-//    if ( scratchpath != NULL ) {
-//        if ( ( strncmp(homepath, scratchpath, strlen(homepath)) == 0 ) || ( strncmp(homepath, scratchpath, strlen(scratchpath)) == 0 ) ) {
-//            fprintf(stderr, "ERROR: Overlapping paths (scratch and home)!\n");
-//            return(255);
-//        }
-//        if ( strncmp(scratchpath, "/lib", 4) == 0 ) {
-//            fprintf(stderr, "ERROR: Can not link scratch directory over /lib\n");
-//            return(255);
-//        }
-//        if ( strncmp(scratchpath, "/bin", 4) == 0 ) {
-//            fprintf(stderr, "ERROR: Can not link scratch directory over /bin\n");
-//            return(255);
-//        }
-//        if ( strncmp(scratchpath, "/sbin", 4) == 0 ) {
-//            fprintf(stderr, "ERROR: Can not link scratch directory over /sbin\n");
-//            return(255);
-//        }
-//        if ( strncmp(scratchpath, "/etc", 4) == 0 ) {
-//            fprintf(stderr, "ERROR: Can not link scratch directory over /etc\n");
-//            return(255);
-//        }
-//
-//        containerscratchpath = (char *) malloc(strlen(containerimage) + strlen(scratchpath) + 1);
-//        snprintf(containerscratchpath, strlen(containerimage) + strlen(scratchpath) + 1, "%s%s", containerimage, scratchpath);
-//        if ( s_is_dir(scratchpath) == 0 ) {
-//            if ( s_is_dir(containerscratchpath) < 0 ) {
-//                if ( s_mkpath(containerscratchpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
-//                    fprintf(stderr, "ERROR: Could not create directory %s\n", scratchpath);
-//                    return(255);
-//                }
-//            }
-//        } else {
-//            fprintf(stderr, "WARNING: Could not locate your scratch directory (%s), not linking to container.\n", scratchpath);
-//            scratchpath = NULL;
-//        }
-//    }
-//
-
-    // Reset umask back to where we have started
-    umask(initial_umask);
+    if ( s_is_owner(containerimage, uid) < 0 && s_is_owner(containerimage, 0) < 0 ) {
+        fprintf(stderr, "ERROR: Will not execute in a CONTAINERIMAGE you (or root) does not own: %s\n", containerimage);
+        return(255);
+    }
 
 
     //****************************************************************************//
-    // Do root bits
+    // Setup
     //****************************************************************************//
 
-    // Entering danger zone
+    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
+    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
+
     if ( seteuid(0) < 0 ) {
         fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
         return(255);
     }
 
-    // Separate out the appropriate namespaces
+    if ( s_is_dir(containerpath) < 0 ) {
+        if ( s_mkpath(containerpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) < 0 ) {
+            fprintf(stderr, "ERROR: Could not create directory %s: %s\n", containerpath, strerror(errno));
+            return(255);
+        }
+    }
 
-//#ifdef NS_CLONE_NEWNS
+    
+    //****************************************************************************//
+    // Setup namespaces
+    //****************************************************************************//
+
     // Always virtualize our mount namespace
     if ( unshare(CLONE_NEWNS) < 0 ) {
         fprintf(stderr, "ERROR: Could not virtulize mount namespace\n");
@@ -223,9 +165,53 @@ char containerpath[5] = "/mnt\0";
         fprintf(stderr, "ERROR: Could not make mountspaces private: %s\n", strerror(errno));
         return(255);
     }
-//#endif
+
+
+#ifdef NS_CLONE_NEWPID
+    if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
+        unsetenv("SINGULARITY_NO_NAMESPACE_PID");
+        if ( unshare(CLONE_NEWPID) < 0 ) {
+            fprintf(stderr, "ERROR: Could not virtulize PID namespace\n");
+            return(255);
+        }
+    }
+#else
+#ifdef NS_CLONE_PID
+    // This is for older legacy CLONE_PID
+    if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
+        unsetenv("SINGULARITY_NO_NAMESPACE_PID");
+        if ( unshare(CLONE_PID) < 0 ) {
+            fprintf(stderr, "ERROR: Could not virtulize PID namespace\n");
+            return(255);
+        }
+    }
+#endif
+#endif
+#ifdef NS_CLONE_FS
+    if ( getenv("SINGULARITY_NO_NAMESPACE_FS") == NULL ) {
+        unsetenv("SINGULARITY_NO_NAMESPACE_FS");
+        if ( unshare(CLONE_FS) < 0 ) {
+            fprintf(stderr, "ERROR: Could not virtulize file system namespace\n");
+            return(255);
+        }
+    }
+#endif
+#ifdef NS_CLONE_FILES
+    if ( getenv("SINGULARITY_NO_NAMESPACE_FILES") == NULL ) {
+        unsetenv("SINGULARITY_NO_NAMESPACE_FILES");
+        if ( unshare(CLONE_FILES) < 0 ) {
+            fprintf(stderr, "ERROR: Could not virtulize file descriptor namespace\n");
+            return(255);
+        }
+    }
+#endif
+
+    //****************************************************************************//
+    // Mount image
+    //****************************************************************************//
 
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
+        unsetenv("SINGULARITY_WRITABLE");
         if ( mount_image(containerimage, containerpath, 0) < 0 ) {
             fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
             return(255);
@@ -237,41 +223,9 @@ char containerpath[5] = "/mnt\0";
         }
     }
 
-
-//#ifdef NS_CLONE_NEWPID
-    if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
-        if ( unshare(CLONE_NEWPID) < 0 ) {
-            fprintf(stderr, "ERROR: Could not virtulize PID namespace\n");
-            return(255);
-        }
-    }
-//#else
-//#ifdef NS_CLONE_PID
-//    // This is for older legacy CLONE_PID
-//    if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
-//        if ( unshare(CLONE_PID) < 0 ) {
-//            fprintf(stderr, "ERROR: Could not virtulize PID namespace\n");
-//            return(255);
-//        }
-//    }
-//#endif
-//#endif
-//#ifdef NS_CLONE_FS
-    if ( getenv("SINGULARITY_NO_NAMESPACE_FS") == NULL ) {
-        if ( unshare(CLONE_FS) < 0 ) {
-            fprintf(stderr, "ERROR: Could not virtulize file system namespace\n");
-            return(255);
-        }
-    }
-//#endif
-//#ifdef NS_CLONE_FILES
-    if ( getenv("SINGULARITY_NO_NAMESPACE_FILES") == NULL ) {
-        if ( unshare(CLONE_FILES) < 0 ) {
-            fprintf(stderr, "ERROR: Could not virtulize file descriptor namespace\n");
-            return(255);
-        }
-    }
-//#endif
+    //****************************************************************************//
+    // Fork child in new namespaces
+    //****************************************************************************//
 
     // Drop privledges for fork and parent
     if ( seteuid(uid) < 0 ) {
@@ -282,9 +236,9 @@ char containerpath[5] = "/mnt\0";
     child_pid = fork();
 
     if ( child_pid == 0 ) {
-        char * mtab;
-        char * prompt;
-        char * container_name = basename(strdup(containerimage));
+        char *mtab;
+        char *prompt;
+        char *container_name = basename(strdup(containerimage));
 
         mtab = (char *) malloc(strlen(SYSCONFDIR) + 27);
         snprintf(mtab, strlen(SYSCONFDIR) + 27, "%s/singularity/default-mtab", SYSCONFDIR);
@@ -294,27 +248,56 @@ char containerpath[5] = "/mnt\0";
 
         setenv("PS1", prompt, 1);
 
-        if ( getenv("SINGULARITY_NOCHROOT") == NULL ) {
+        if ( seteuid(0) < 0 ) {
+            fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
+            return(255);
+        }
 
-            // Root needed for chroot and /proc mount
-            if ( seteuid(0) < 0 ) {
-                fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
-                return(255);
-            }
-
+        if ( getenv("SINGULARITY_NO_NAMESPACE_ROOTFS") == NULL ) {
+            unsetenv("SINGULARITY_NO_NAMESPACE_ROOTFS");
 
             if ( mount_bind(containerpath, "/dev", "/dev", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind mount /dev\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/tmp", "/tmp", 1) < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind mount /dev\n");
-                return(255);
+
+            if ( getenv("SINGULARITY_NO_SHARE") == NULL ) {
+                unsetenv("SINGULARITY_NO_SHARE");
+
+                if ( getenv("SINGULARITY_NO_SHARE_TMP") == NULL ) {
+                    unsetenv("SINGULARITY_NO_SHARE_TMP");
+                    if ( mount_bind(containerpath, "/tmp", "/tmp", 1) < 0 ) {
+                        fprintf(stderr, "ERROR: Could not bind mount /tmp\n");
+                        return(255);
+                    }
+                    if ( mount_bind(containerpath, "/var/tmp", "/var/tmp", 1) < 0 ) {
+                        fprintf(stderr, "ERROR: Could not bind mount /var/tmp\n");
+                        return(255);
+                    }
+                }
+
+                if ( getenv("SINGULARITY_NO_SHARE_HOME") == NULL ) {
+                    unsetenv("SINGULARITY_NO_SHARE_HOME");
+                    if ( mount_bind(containerpath, homepath, homepath, 1) < 0 ) {
+                        fprintf(stderr, "ERROR: Could not bind mount home dir: %s\n", homepath);
+                        return(255);
+                    }
+                }
+
+            } else {
+                if ( s_is_dir(homepath) != 0 ) {
+                    if ( s_mkpath(homepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0 ) {
+                        fprintf(stderr, "ERROR: Could not create directory %s: %s\n", homepath, strerror(errno));
+                        return(255);
+                    }
+                    if ( chown(homepath, uid, gid) != 0 ) {
+                        fprintf(stderr, "ERROR: Could not set ownership of home (%s): %s\n", homepath, strerror(errno));
+                        return(255);
+                    }
+                }
+                strcpy(cwd, homepath);
             }
-            if ( mount_bind(containerpath, homepath, homepath, 1) < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind mount home dir: %s\n", homepath);
-                return(255);
-            }
+
             if ( mount_bind(containerpath, "/etc/resolv.conf", "/etc/resolv.conf", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/resolv.conf\n");
                 return(255);
@@ -331,15 +314,15 @@ char containerpath[5] = "/mnt\0";
                 fprintf(stderr, "ERROR: Could not bind /etc/hosts\n");
                 return(255);
             }
+
             if ( s_is_file(mtab) == 0 ) {
                 if ( mount_bind(containerpath, mtab, "/etc/mtab", 0) < 0 ) {
                     fprintf(stderr, "ERROR: Could not bind %s\n", mtab);
                     return(255);
                 }
             } else {
-                fprintf(stderr, "WARNING: Could not open %s\n", mtab);
+                fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", mtab);
             }
-
 
             // Do the chroot
             if ( chroot(containerpath) < 0 ) {
@@ -347,7 +330,20 @@ char containerpath[5] = "/mnt\0";
                 return(255);
             }
 
-//#ifdef NS_CLONE_NEWNS
+            // Make these, just incase they don't already exist
+            if ( s_is_dir("/proc") != 0 ) {
+                if ( s_mkpath("/proc", S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0 ) {
+                    fprintf(stderr, "ERROR: Could not create directory /proc: %s\n", strerror(errno));
+                    return(255);
+                }
+            }
+            if ( s_is_dir("/sys") != 0 ) {
+                if ( s_mkpath("/sys", S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0 ) {
+                    fprintf(stderr, "ERROR: Could not create directory /sys: %s\n", strerror(errno));
+                    return(255);
+                }
+            }
+
             // Mount up /proc
             if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
                 fprintf(stderr, "ERROR: Could not mount /proc: %s\n", strerror(errno));
@@ -358,13 +354,9 @@ char containerpath[5] = "/mnt\0";
                 fprintf(stderr, "ERROR: Could not mount /sys: %s\n", strerror(errno));
                 return(255);
             }
-
-//TODO: Create, and update mtab.
-
-//#endif
         }
 
-        // Dump all privs permanently for this process
+        // No more privledge escalation for the child thread
         if ( setregid(gid, gid) < 0 ) {
             fprintf(stderr, "ERROR: Could not dump real and effective group privledges!\n");
             return(255);
@@ -374,62 +366,65 @@ char containerpath[5] = "/mnt\0";
             return(255);
         }
 
-//        // Confirm we no longer have any escalated privledges whatsoever
-//        if ( setuid(0) == 0 ) {
-//            fprintf(stderr, "ERROR: Root not allowed here!\n");
-//            return(1);
-//        }
-//
-//        // change directory back to starting point if needed
-//        if ( opt_contain > 0 ) {
-//            if ( chdir("/") < 0 ) {
-//                fprintf(stderr, "ERROR: Could not changedir to /\n");
-//                return(1);
-//            }
-//        } else {
-//            if (strncmp(homepath, cwd, strlen(homepath)) == 0 ) {
-//                if ( chdir(cwd) < 0 ) {
-//                    fprintf(stderr, "ERROR: Could not chdir!\n");
-//                    return(1);
-//                }
-//            } else {
-//                if ( fchdir(cwd_fd) < 0 ) {
-//                    fprintf(stderr, "ERROR: Could not fchdir!\n");
-//                    return(1);
-//                }
-//            }
-//        }
-
-
-
-
-
         // After this, we exist only within the container... Let's make it known!
         if ( setenv("SINGULARITY_CONTAINER", "true", 0) != 0 ) {
             fprintf(stderr, "ERROR: Could not set SINGULARITY_CONTAINER to 'true'\n");
             return(1);
         }
 
-        if (strncmp(homepath, cwd, strlen(homepath)) == 0 ) {
+        if ( s_is_dir(cwd) == 0 ) {
             if ( chdir(cwd) < 0 ) {
-                fprintf(stderr, "ERROR: Could not chdir!\n");
-               return(1);
+                fprintf(stderr, "ERROR: Could not chdir to: %s\n", cwd);
+                return(1);
             }
         } else {
             if ( fchdir(cwd_fd) < 0 ) {
-                fprintf(stderr, "ERROR: Could not fchdir!\n");
+                fprintf(stderr, "ERROR: Could not fchdir to cwd\n");
                 return(1);
             }
         }
 
-        if ( argv[1] != NULL && strcmp(argv[1], "shell") == 0) {
-            execv("/bin/sh", &argv[1]);
-        } else if ( s_is_exec("/singularity") == 0 ) {
-            execv("/singularity", argv);
-        } else {
-            printf("No command specified, launching 'shell'\n");
+        free(mtab);
+        free(prompt);
+
+        if ( command == NULL ) {
+            fprintf(stderr, "No command specified, launching 'shell'\n");
+            argv[0] = strdup("/bin/sh");
             execv("/bin/sh", argv);
+        } else if ( strcmp(command, "run") == 0 ) {
+            if ( s_is_exec("/singularity") == 0 ) {
+                argv[0] = strdup("/singularity");
+                if ( execv("/singularity", argv) != 0 ) {
+                    fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
+                }
+            } else {
+                fprintf(stderr, "No Singularity runscript found, launching 'shell'\n");
+                argv[0] = strdup("/bin/sh");
+                if ( execv("/bin/sh", argv) != 0 ) {
+                    fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
+                }
+            }
+        } else if ( strcmp(command, "shell") == 0 ) {
+            argv[0] = strdup("/bin/sh");
+            if ( execv("/bin/sh", argv) != 0 ) {
+                fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
+            }
+        } else if ( strcmp(command, "exec") == 0 ) {
+            if ( command_exec != NULL ) {
+                argv[0] = strdup(command_exec);
+                if ( execv(command_exec, argv) != 0 ) {
+                    fprintf(stderr, "ERROR: exec of '%s' failed: %s\n", command_exec, strerror(errno));
+                }
+            } else {
+                fprintf(stderr, "ERROR: no command given to execute\n");
+                return(1);
+            }
+        } else {
+            fprintf(stderr, "ERROR: Unrecognized Singularity command: %s\n", command);
+            return(1);
         }
+
+        return(255);
 
     } else if ( child_pid > 0 ) {
         int tmpstatus;
@@ -449,57 +444,7 @@ char containerpath[5] = "/mnt\0";
         retval++;
     }
 
-//#ifndef NS_CLONE_NEWNS
-//    // If we did not create a new mount namespace, unmount as needed
-//
-//    // Root needed again to umount
-//    if ( seteuid(0) < 0 ) {
-//        fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
-//        return(255);
-//    }
-//
-//    chdir("/");
-//
-//    if ( umount(containerdevpath) != 0 ) {
-//        fprintf(stderr, "WARNING: Could not unmount %s\n", containerdevpath);
-//        retval++;
-//    }
-//    if ( umount(containersyspath) != 0 ) {
-//        fprintf(stderr, "WARNING: Could not unmount %s\n", containersyspath);
-//        retval++;
-//    }
-//    if ( umount(containerprocpath) != 0 ) {
-//        fprintf(stderr, "WARNING: Could not unmount %s\n", containerprocpath);
-//        retval++;
-//    }
-//
-//    if ( opt_contain == 0 ) {
-//        if ( scratchpath != NULL ) {
-//            if ( umount(containerscratchpath) != 0 ) {
-//                fprintf(stderr, "WARNING: Could not unmount %s\n", containerscratchpath);
-//                retval++;
-//            }
-//        }
-//        if ( umount(containertmppath) != 0 ) {
-//            fprintf(stderr, "WARNING: Could not unmount %s\n", containertmppath);
-//            retval++;
-//        }
-//        if ( umount(containerhomepath) != 0 ) {
-//            fprintf(stderr, "WARNING: Could not unmount %s: %s\n", containerhomepath, strerror(errno));
-//            retval++;
-//        }
-//    }
-//
-//    // Dump all privs permanently at this point
-//    if ( setregid(gid, gid) < 0 ) {
-//        fprintf(stderr, "ERROR: Could not dump real and effective group privledges!\n");
-//        return(255);
-//    }
-//    if ( setreuid(uid, uid) < 0 ) {
-//        fprintf(stderr, "ERROR: Could not dump real and effective user privledges!\n");
-//        return(255);
-//    }
-//#endif
+    free(containerpath);
 
     return(retval);
 }
