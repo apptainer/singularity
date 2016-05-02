@@ -32,7 +32,7 @@
 
 #include "config.h"
 #include "loop-control.h"
-
+#include "util.h"
 
 #ifndef LO_FLAGS_AUTOCLEAR
 #define LO_FLAGS_AUTOCLEAR 4
@@ -43,8 +43,6 @@
 int obtain_loop_dev(char **loop_device) {
     int loop_control;
     int devnum;
-    int tmp_devnum;
-    int loop_device_len = 1;
 
     //printf("Opening loop-control device\n");
     if ( ( loop_control = open("/dev/loop-control", O_RDWR)) < 0 ) {
@@ -61,15 +59,8 @@ int obtain_loop_dev(char **loop_device) {
 
     close(loop_control);
 
-    tmp_devnum = devnum;
-    while (tmp_devnum /= 10) {
-        loop_device_len ++;
-    }
-
-    //printf("Caculated loop_device_len: %d\n", loop_device_len + 12);
-
-    *loop_device = (char*) malloc(loop_device_len + 12);
-    snprintf(*loop_device, loop_device_len + 11, "/dev/loop%d", devnum);
+    *loop_device = (char*) malloc(intlen(devnum) + 12);
+    snprintf(*loop_device, intlen(devnum) + 11, "/dev/loop%d", devnum);
 
     //printf("Checking for loop device: %s\n", *loop_device);
     if ( access(*loop_device, R_OK) < 0 ) {
