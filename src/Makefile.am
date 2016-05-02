@@ -18,6 +18,6 @@ bin_PROGRAMS = ftrace ftype sexec
 
 ftrace_SOURCES = ftrace.c util.c util.h
 ftype_SOURCES = ftype.c util.c util.h
-sexec_SOURCES = sexec.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h
+sexec_SOURCES = sexec.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h user.c user.h
 
 EXTRA_DIST = config.h 
