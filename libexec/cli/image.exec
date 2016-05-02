@@ -70,6 +70,11 @@ case "$SUBCOMMAND" in
         IMAGE_FILE="$1"
         shift
 
+        if [ -z "$IMAGE_FILE" ]; then
+            message ERROR "You must supply a path to an image to create\n"
+            exit 1
+        fi
+
         if ! DD_PATH=`singularity_which dd`; then
             message ERROR "Could not locate program: dd\n"
             exit 255
@@ -95,7 +100,7 @@ case "$SUBCOMMAND" in
     ;;
 
     *)
-        echo "ERROR: Unknown subcommand: $1" >&2
+        echo "ERROR: Unknown subcommand: $SUBCOMMAND" >&2
         exit 255
     ;;
 esac
