@@ -36,8 +36,9 @@
 #include <libgen.h>
 
 #include "config.h"
-#include "util.h"
 #include "mounts.h"
+#include "util.h"
+#include "user.h"
 
 
 #ifndef LIBEXECDIR
@@ -76,6 +77,7 @@ int main(int argc, char ** argv) {
     char *homepath;
     char *command;
     char *command_exec;
+    char *runpath;
     char cwd[PATH_MAX];
     int cwd_fd;
     int retval = 0;
@@ -101,6 +103,14 @@ int main(int argc, char ** argv) {
     unsetenv("SINGULARITY_IMAGE");
     unsetenv("SINGULARITY_COMMAND");
     unsetenv("SINGULARITY_EXEC");
+
+    containername = basename(strdup(containerimage));
+
+    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
+    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
+
+    runpath = (char *) malloc(strlen(LOCALSTATEDIR) + strlen(containername) + intlen(uid) + 20);
+    snprintf(runpath, strlen(LOCALSTATEDIR) + strlen(containername) + intlen(uid) + 20, "%s/singularity/run/%d/%s", LOCALSTATEDIR, uid, containername);
 
     // Figure out where we start
     if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
@@ -134,11 +144,6 @@ int main(int argc, char ** argv) {
     // Setup
     //****************************************************************************//
 
-    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
-    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
-
-    containername = basename(strdup(containerimage));
-
     if ( seteuid(0) < 0 ) {
         fprintf(stderr, "ERROR: Could not escalate effective user privledges!\n");
         return(255);
@@ -151,6 +156,13 @@ int main(int argc, char ** argv) {
         }
     }
 
+    printf("Creating dir: %s\n", runpath);
+    if ( s_is_dir(runpath) < 0 ) {
+        if ( s_mkpath(runpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) < 0 ) {
+            fprintf(stderr, "ERROR: Could not create directory %s: %s\n", runpath, strerror(errno));
+            return(255);
+        }
+    }
     
     //****************************************************************************//
     // Setup namespaces
@@ -241,13 +253,50 @@ int main(int argc, char ** argv) {
 
     if ( child_pid == 0 ) {
         char *mtab;
+        char *nsswitch;
         char *prompt;
+        char *local_passwd;
+        char *container_passwd;
+        char *local_group;
+        char *container_group;
 
         mtab = (char *) malloc(strlen(SYSCONFDIR) + 27);
         snprintf(mtab, strlen(SYSCONFDIR) + 27, "%s/singularity/default-mtab", SYSCONFDIR);
 
-        prompt = (char *) malloc(strlen(containername) + 3);
-        snprintf(prompt, strlen(containername) + 3, "%s> ", containername);
+        nsswitch = (char *) malloc(strlen(SYSCONFDIR) + 36);
+        snprintf(mtab, strlen(SYSCONFDIR) + 36, "%s/singularity/default-nsswitch.conf", SYSCONFDIR);
+
+        local_passwd = (char *) malloc(strlen(runpath) + 9);
+        snprintf(local_passwd, strlen(runpath) + 9, "%s/passwd", runpath);
+
+        container_passwd = (char *) malloc(strlen(containerpath) + 13);
+        snprintf(container_passwd, strlen(containerpath) + 13, "%s/etc/passwd", containerpath);
+
+        local_group = (char *) malloc(strlen(runpath) + 8);
+        snprintf(local_group, strlen(runpath) + 8, "%s/group", runpath);
+
+        container_group = (char *) malloc(strlen(containerpath) + 12);
+        snprintf(container_group, strlen(containerpath) + 12, "%s/etc/group", containerpath);
+
+
+        prompt = (char *) malloc(strlen(containerimage) + 22);
+        if ( uid == 0 ) {
+            snprintf(prompt, strlen(containerimage) + 22, "[\\u@Singularity:%s \\W]# ", containername);
+        } else {
+            snprintf(prompt, strlen(containerimage) + 22, "[\\u@Singularity:%s \\W]$ ", containername);
+        }
+
+        setenv("PS1", prompt, 1);
+
+        if ( build_passwd(container_passwd, local_passwd) < 0 ) {
+            fprintf(stderr, "ERROR: Failed creating template password file\n");
+            return(255);
+        }
+
+        if ( build_group(container_group, local_group) < 0 ) {
+            fprintf(stderr, "ERROR: Failed creating template group file\n");
+            return(255);
+        }
 
         if ( seteuid(0) < 0 ) {
             fprintf(stderr, "ERROR: Could not re-escalate effective user privledges!\n");
@@ -303,19 +352,31 @@ int main(int argc, char ** argv) {
                 fprintf(stderr, "ERROR: Could not bind /etc/resolv.conf\n");
                 return(255);
             }
-            if ( mount_bind(containerpath, "/etc/passwd", "/etc/passwd", 0) < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind /etc/passwd\n");
-                return(255);
-            }
-            if ( mount_bind(containerpath, "/etc/group", "/etc/group", 0) < 0 ) {
-                fprintf(stderr, "ERROR: Could not bind /etc/group\n");
-                return(255);
-            }
             if ( mount_bind(containerpath, "/etc/hosts", "/etc/hosts", 0) < 0 ) {
                 fprintf(stderr, "ERROR: Could not bind /etc/hosts\n");
                 return(255);
             }
 
+            if ( s_is_file(container_passwd) == 0 ) {
+                if ( mount_bind(containerpath, local_passwd, "/etc/passwd", 0) < 0 ) {
+                    fprintf(stderr, "ERROR: Could not bind /etc/passwd\n");
+                    return(255);
+                }
+            }
+            if ( s_is_file(container_group) == 0 ) {
+                if ( mount_bind(containerpath, local_group, "/etc/group", 0) < 0 ) {
+                    fprintf(stderr, "ERROR: Could not bind /etc/group\n");
+                    return(255);
+                }
+            }
+            if ( s_is_file(nsswitch) == 0 ) {
+                if ( mount_bind(containerpath, nsswitch, "/etc/nsswitch.conf", 0) < 0 ) {
+                    fprintf(stderr, "ERROR: Could not bind %s\n", nsswitch);
+                    return(255);
+                }
+            } else {
+                fprintf(stderr, "WARNING: Template /etc/nsswitch.conf does not exist: %s\n", nsswitch);
+            }
             if ( s_is_file(mtab) == 0 ) {
                 if ( mount_bind(containerpath, mtab, "/etc/mtab", 0) < 0 ) {
                     fprintf(stderr, "ERROR: Could not bind %s\n", mtab);
@@ -390,7 +451,6 @@ int main(int argc, char ** argv) {
         if ( command == NULL ) {
             fprintf(stderr, "No command specified, launching 'shell'\n");
             argv[0] = strdup("/bin/sh");
-            setenv("PS1", prompt, 1);
             if ( execv("/bin/sh", argv) != 0 ) {
                 fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
             }
@@ -403,14 +463,12 @@ int main(int argc, char ** argv) {
             } else {
                 fprintf(stderr, "No Singularity runscript found, launching 'shell'\n");
                 argv[0] = strdup("/bin/sh");
-                setenv("PS1", prompt, 1);
                 if ( execv("/bin/sh", argv) != 0 ) {
                     fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
                 }
             }
         } else if ( strcmp(command, "shell") == 0 ) {
             argv[0] = strdup("/bin/sh");
-            setenv("PS1", prompt, 1);
             if ( execv("/bin/sh", argv) != 0 ) {
                 fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
             }
@@ -424,11 +482,6 @@ int main(int argc, char ** argv) {
                 fprintf(stderr, "ERROR: no command given to execute\n");
                 return(1);
             }
-        } else if ( strcmp(command, "mount") == 0 ) {
-            fprintf(stderr, "The Image '%s' is mounted at: %s\n\n", containerimage, containerpath);
-            fprintf(stderr, "The file system will automatically unmount when you exit this shell!\n");
-            setenv("CONTAINERPATH", containerpath, 1);
-            execv("/bin/sh", argv);
         } else {
             fprintf(stderr, "ERROR: Unrecognized Singularity command: %s\n", command);
             return(1);

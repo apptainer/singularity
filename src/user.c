@@ -76,7 +76,7 @@ int build_group(char *template, char *output) {
         return(-1);
     }
 
-    if ( gid == 0 ) {
+    if ( gid != 0 ) {
         FILE *fd_output;
         struct group *grent = getgrgid(gid);
         char **member;
