@@ -152,3 +152,49 @@ int s_rmdir(char *dir) {
 
     return unlink(dir);
 }
+
+int intlen(int input) {
+    unsigned int len = 1;
+
+    while (input /= 10) {
+        len ++;
+    }
+
+    return(len);
+}
+
+
+int copy_file(char * source, char * dest) {
+    char c;
+    FILE * fd_s;
+    FILE * fd_d;
+
+    if ( s_is_file(source) < 0 ) {
+        printf("No such file: %s->%s\n", source, dest);
+        return(-1);
+    }
+
+    fd_s = fopen(source, "r");
+    if ( fd_s == NULL ) {
+        fprintf(stderr, "ERROR: Could not read %s: %s\n", source, strerror(errno));
+        return(-1);
+    }
+
+    fd_d = fopen(dest, "w");
+    if ( fd_s == NULL ) {
+        fclose(fd_s);
+        fprintf(stderr, "ERROR: Could not write %s: %s\n", dest, strerror(errno));
+        return(-1);
+    }
+
+    while ( ( c = fgetc(fd_s) ) != EOF ) {
+        fputc(c, fd_d);
+    }
+
+    fclose(fd_s);
+    fclose(fd_d);
+
+    return(0);
+}
+
+

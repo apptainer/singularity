@@ -26,6 +26,6 @@ int s_is_exec(char *path);
 int s_is_owner(char *path, uid_t uid);
 int s_mkpath(char *dir, mode_t mode);
 int s_rmdir(char *dir);
-
-
+int intlen(int input);
+int copy_file(char * source, char * dest);
 
