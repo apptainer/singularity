@@ -28,5 +28,5 @@ int s_mkpath(char *dir, mode_t mode);
 int s_rmdir(char *dir);
 int intlen(int input);
 int copy_file(char * source, char * dest);
-char * containerized_path(char * containerpath, char * path);
+char * joinpath(char * path1, char * path2);
 

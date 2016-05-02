@@ -198,11 +198,11 @@ int copy_file(char * source, char * dest) {
 }
 
 
-char * containerized_path(char * containerpath, char * path) {
+char * joinpath(char * path1, char * path2) {
     char *ret;
 
-    ret = (char *) malloc(strlen(containerpath) + strlen(path) + 2);
-    snprintf(ret, strlen(containerpath) + strlen(path) + 2, "%s/%s", containerpath, path);
+    ret = (char *) malloc(strlen(path1) + strlen(path2) + 2);
+    snprintf(ret, strlen(path1) + strlen(path2) + 2, "%s/%s", path1, path2);
 
     return(ret);
 }

@@ -75,29 +75,25 @@ int mount_image(char * image_path, char * mount_point, int writable) {
 }
 
 
-int mount_bind(char * image_path, char * source, char * dest, int writable) {
-    char * image_dest;
-
-    image_dest = (char *) malloc(strlen(dest) + strlen(image_path) + 3);
-    snprintf(image_dest, strlen(dest) + strlen(image_path) + 3, "%s%s", image_path, dest);
+int mount_bind(char * source, char * dest, int writable) {
 
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {
         fprintf(stderr, "ERROR: Bind source path is not a file or directory: %s\n", source);
         return(1);
     }
 
-    if ( is_dir(image_dest) != 0 && is_file(image_dest) != 0 ) {
+    if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
         fprintf(stderr, "ERROR: Container bind path is not a file or directory: %s\n", dest);
         return(1);
     }
 
-    if ( mount(source, image_dest, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
+    if ( mount(source, dest, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
         fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", dest, strerror(errno));
         return(-1);
     }
 
     if ( writable <= 0 ) {
-        if ( mount(NULL, image_dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, "remount,ro") < 0 ) {
+        if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, "remount,ro") < 0 ) {
             fprintf(stderr, "ERROR: Could not make bind mount read only %s: %s\n", dest, strerror(errno));
             return(-1);
         }

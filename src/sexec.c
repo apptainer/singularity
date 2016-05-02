@@ -73,7 +73,7 @@ void sighandler(int sig) {
 int main(int argc, char ** argv) {
     char *containerimage;
     char *containername;
-    char *mountpoint;
+    char *containerpath;
     char *homepath;
     char *command;
     char *command_exec;
@@ -133,8 +133,8 @@ int main(int argc, char ** argv) {
 
     containername = basename(strdup(containerimage));
 
-    mountpoint = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
-    snprintf(mountpoint, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
+    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
+    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
 
     runpath = (char *) malloc(strlen(LOCALSTATEDIR) + strlen(containername) + intlen(uid) + 20);
     snprintf(runpath, strlen(LOCALSTATEDIR) + strlen(containername) + intlen(uid) + 20, "%s/singularity/run/%d/%s", LOCALSTATEDIR, uid, containername);
@@ -149,9 +149,9 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    if ( is_dir(mountpoint) < 0 ) {
-        if ( s_mkpath(mountpoint, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) < 0 ) {
-            fprintf(stderr, "ABORT: Could not create directory %s: %s\n", mountpoint, strerror(errno));
+    if ( is_dir(containerpath) < 0 ) {
+        if ( s_mkpath(containerpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) < 0 ) {
+            fprintf(stderr, "ABORT: Could not create directory %s: %s\n", containerpath, strerror(errno));
             return(255);
         }
     }
@@ -227,12 +227,12 @@ int main(int argc, char ** argv) {
 
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         unsetenv("SINGULARITY_WRITABLE");
-        if ( mount_image(containerimage, mountpoint, 0) < 0 ) {
+        if ( mount_image(containerimage, containerpath, 0) < 0 ) {
             fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
             return(255);
         }
     } else {
-        if ( mount_image(containerimage, mountpoint, 1) < 0 ) {
+        if ( mount_image(containerimage, containerpath, 1) < 0 ) {
             fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
             return(255);
         }
@@ -251,16 +251,12 @@ int main(int argc, char ** argv) {
     child_pid = fork();
 
     if ( child_pid == 0 ) {
-        char *mtab;
-        char *nsswitch;
+        char *nsswitch = joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf");
         char *prompt;
         char *local_passwd;
         char *container_passwd;
         char *local_group;
         char *container_group;
-
-        mtab = (char *) malloc(strlen(SYSCONFDIR) + 27);
-        snprintf(mtab, strlen(SYSCONFDIR) + 27, "%s/singularity/default-mtab", SYSCONFDIR);
 
         nsswitch = (char *) malloc(strlen(SYSCONFDIR) + 36);
         snprintf(nsswitch, strlen(SYSCONFDIR) + 36, "%s/singularity/default-nsswitch.conf", SYSCONFDIR);
@@ -268,14 +264,14 @@ int main(int argc, char ** argv) {
         local_passwd = (char *) malloc(strlen(runpath) + 9);
         snprintf(local_passwd, strlen(runpath) + 9, "%s/passwd", runpath);
 
-        container_passwd = (char *) malloc(strlen(mountpoint) + 13);
-        snprintf(container_passwd, strlen(mountpoint) + 13, "%s/etc/passwd", mountpoint);
+        container_passwd = (char *) malloc(strlen(containerpath) + 13);
+        snprintf(container_passwd, strlen(containerpath) + 13, "%s/etc/passwd", containerpath);
 
         local_group = (char *) malloc(strlen(runpath) + 8);
         snprintf(local_group, strlen(runpath) + 8, "%s/group", runpath);
 
-        container_group = (char *) malloc(strlen(mountpoint) + 12);
-        snprintf(container_group, strlen(mountpoint) + 12, "%s/etc/group", mountpoint);
+        container_group = (char *) malloc(strlen(containerpath) + 12);
+        snprintf(container_group, strlen(containerpath) + 12, "%s/etc/group", containerpath);
 
 
         prompt = (char *) malloc(strlen(containerimage) + 22);
@@ -305,7 +301,7 @@ int main(int argc, char ** argv) {
         if ( getenv("SINGULARITY_NO_NAMESPACE_ROOTFS") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_ROOTFS");
 
-            if ( mount_bind(mountpoint, "/dev", "/dev", 0) < 0 ) {
+            if ( mount_bind("/dev", joinpath(containerpath, "/dev"), 0) < 0 ) {
                 fprintf(stderr, "ABORT: Could not bind mount /dev\n");
                 return(255);
             }
@@ -315,11 +311,11 @@ int main(int argc, char ** argv) {
 
                 if ( getenv("SINGULARITY_NO_SHARE_TMP") == NULL ) {
                     unsetenv("SINGULARITY_NO_SHARE_TMP");
-                    if ( mount_bind(mountpoint, "/tmp", "/tmp", 1) < 0 ) {
+                    if ( mount_bind("/tmp", joinpath(containerpath, "/tmp"), 1) < 0 ) {
                         fprintf(stderr, "ABORT: Could not bind mount /tmp\n");
                         return(255);
                     }
-                    if ( mount_bind(mountpoint, "/var/tmp", "/var/tmp", 1) < 0 ) {
+                    if ( mount_bind("/var/tmp", joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
                         fprintf(stderr, "ABORT: Could not bind mount /var/tmp\n");
                         return(255);
                     }
@@ -328,26 +324,17 @@ int main(int argc, char ** argv) {
                 if ( getenv("SINGULARITY_NO_SHARE_HOME") == NULL ) {
                     unsetenv("SINGULARITY_NO_SHARE_HOME");
                     if ( strncmp(homepath, "/home", 5) == 0 ) {
-                        char *tmpuserhomepath;
-                        char *tmphomepath;
-
-                        tmphomepath = (char *) malloc(strlen(runpath) + 6);
-                        snprintf(tmphomepath, strlen(runpath) + 6, "%s/home", runpath);
-
-                        tmpuserhomepath = (char *) malloc(strlen(runpath) + strlen(homepath) + 2);
-                        snprintf(tmpuserhomepath, strlen(runpath) + strlen(homepath) + 2, "%s/%s", runpath, homepath);
-
-                        if ( s_mkpath(tmpuserhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) < 0 ) {
-                            fprintf(stderr, "ABORT: Could not create tmp home dir space at %s: %s\n", tmpuserhomepath, strerror(errno));
+                        if ( s_mkpath(joinpath(runpath, homepath), S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) < 0 ) {
+                            fprintf(stderr, "ABORT: Could not create tmp home dir space at %s: %s\n", joinpath(runpath, homepath), strerror(errno));
                             return(255);
                         }
 
-                        if ( mount_bind("", homepath, tmpuserhomepath, 1) < 0 ) {
-                            fprintf(stderr, "ABORT: Could not bind mount home to tmphome: %s\n", tmpuserhomepath);
+                        if ( mount_bind(homepath, joinpath(runpath, homepath), 1) < 0 ) {
+                            fprintf(stderr, "ABORT: Could not bind mount home to tmphome: %s\n", joinpath(runpath, homepath));
                             return(255);
                         }
 
-                        if ( mount_bind(mountpoint, tmphomepath, "/home", 1) < 0 ) {
+                        if ( mount_bind(joinpath(runpath, homepath), joinpath(containerpath, "/home"), 1) < 0 ) {
                             fprintf(stderr, "ABORT: Could not bind mount home dir: %s\n", homepath);
                             return(255);
                         }
@@ -370,38 +357,38 @@ int main(int argc, char ** argv) {
                 strcpy(cwd, homepath);
             }
 
-            if (is_file(containerized_path(mountpoint, "/etc/resolv.conf")) == 0 ) {
-                if ( mount_bind(mountpoint, "/etc/resolv.conf", "/etc/resolv.conf", 0) < 0 ) {
+            if (is_file(joinpath(containerpath, "/etc/resolv.conf")) == 0 ) {
+                if ( mount_bind("/etc/resolv.conf", joinpath(containerpath, "/etc/resolv.conf"), 0) < 0 ) {
                     fprintf(stderr, "ABORT: Could not bind /etc/resolv.conf\n");
                     return(255);
                 }
             }
-            if (is_file(containerized_path(mountpoint, "/etc/hosts")) == 0 ) {
-                if ( mount_bind(mountpoint, "/etc/hosts", "/etc/hosts", 0) < 0 ) {
+            if (is_file(joinpath(containerpath, "/etc/hosts")) == 0 ) {
+                if ( mount_bind("/etc/hosts", joinpath(containerpath, "/etc/hosts"), 0) < 0 ) {
                     fprintf(stderr, "ABORT: Could not bind /etc/hosts\n");
                     return(255);
                 }
             }
 
-            if (is_file(containerized_path(mountpoint, "/etc/passwd")) == 0 ) {
+            if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
                 if ( is_file(container_passwd) == 0 ) {
-                    if ( mount_bind(mountpoint, local_passwd, "/etc/passwd", 0) < 0 ) {
+                    if ( mount_bind(local_passwd, joinpath(containerpath, "/etc/passwd"), 0) < 0 ) {
                         fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
                         return(255);
                     }
                 }
             }
-            if (is_file(containerized_path(mountpoint, "/etc/group")) == 0 ) {
+            if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
                 if ( is_file(container_group) == 0 ) {
-                    if ( mount_bind(mountpoint, local_group, "/etc/group", 0) < 0 ) {
+                    if ( mount_bind(local_group, joinpath(containerpath, "/etc/group"), 0) < 0 ) {
                         fprintf(stderr, "ABORT: Could not bind /etc/group\n");
                         return(255);
                     }
                 }
             }
-            if (is_file(containerized_path(mountpoint, "/etc/nsswitch.conf")) == 0 ) {
+            if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
                 if ( is_file(nsswitch) == 0 ) {
-                    if ( mount_bind(mountpoint, nsswitch, "/etc/nsswitch.conf", 0) < 0 ) {
+                    if ( mount_bind(nsswitch, joinpath(containerpath, "/etc/nsswitch.conf"), 0) < 0 ) {
                         fprintf(stderr, "ABORT: Could not bind %s\n", nsswitch);
                         return(255);
                     }
@@ -410,20 +397,20 @@ int main(int argc, char ** argv) {
                 }
             }
 
-            if (is_file(containerized_path(mountpoint, "/etc/mtab")) == 0 ) {
-                if ( is_file(mtab) == 0 ) {
-                    if ( mount_bind(mountpoint, mtab, "/etc/mtab", 0) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind %s\n", mtab);
+            if (is_file(joinpath(containerpath, "/etc/mtab")) == 0 ) {
+                if ( is_file(joinpath(runpath, "/mtab")) == 0 ) {
+                    if ( mount_bind(joinpath(runpath, "/mtab"), joinpath(containerpath, "/etc/mtab"), 0) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind %s\n", joinpath(runpath, "/mtab"));
                         return(255);
                     }
                 } else {
-                    fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", mtab);
+                    fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", joinpath(runpath, "/mtab"));
                 }
             }
 
             // Do the chroot
-            if ( chroot(mountpoint) < 0 ) {
-                fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", mountpoint);
+            if ( chroot(containerpath) < 0 ) {
+                fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", containerpath);
                 return(255);
             }
 
@@ -480,8 +467,6 @@ int main(int argc, char ** argv) {
                 return(1);
             }
         }
-
-        free(mtab);
 
         if ( command == NULL ) {
             fprintf(stderr, "No command specified, launching 'shell'\n");
@@ -542,7 +527,7 @@ int main(int argc, char ** argv) {
         retval++;
     }
 
-    free(mountpoint);
+    free(containerpath);
 
     return(retval);
 }
