@@ -71,35 +71,48 @@ void sighandler(int sig) {
 
 
 int main(int argc, char ** argv) {
-    char *containerimage = strdup(argv[1]);
-    char *containerpath = strdup(argv[2]);
+    char *containerimage;
+    char *mountpoint;
     int retval = 0;
+    uid_t uid = geteuid();
 
+    if ( uid != 0 ) {
+        fprintf(stderr, "ABORT: Calling user must be root\n");
+        return(1);
+    }
 
-    //****************************************************************************//
-    // Setup namespaces
-    //****************************************************************************//
+    if ( argv[1] == NULL || argv[2] == NULL ) {
+        fprintf(stderr, "USAGE: %s [singularity container image] [mount point]\n", argv[0]);
+        return(1);
+    }
 
-    // Always virtualize our mount namespace
+    containerimage = strdup(argv[1]);
+    mountpoint = strdup(argv[2]);
+
+    if ( s_is_file(containerimage) < 0 ) {
+        fprintf(stderr, "ABORT: Container image not found: %s\n", containerimage);
+        return(1);
+    }
+
+    if ( s_is_dir(mountpoint) < 0 ) {
+        fprintf(stderr, "ABORT: Mount point must be a directory: %s\n", mountpoint);
+        return(1);
+    }
+
     if ( unshare(CLONE_NEWNS) < 0 ) {
-        fprintf(stderr, "ERROR: Could not virtulize mount namespace\n");
+        fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
         return(255);
     }
 
-    // Privitize the mount namespaces (thank you for the pointer Doug Jacobsen!)
     if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
         // I am not sure if this error needs to be caught, maybe it will fail
         // on older kernels? If so, we can fix then.
-        fprintf(stderr, "ERROR: Could not make mountspaces private: %s\n", strerror(errno));
+        fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
         return(255);
     }
 
 
-    //****************************************************************************//
-    // Mount image
-    //****************************************************************************//
-
-    if ( mount_image(containerimage, containerpath, 1) < 0 ) {
+    if ( mount_image(containerimage, mountpoint, 1) < 0 ) {
         fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
         return(255);
     }
@@ -110,17 +123,17 @@ int main(int argc, char ** argv) {
         char *prompt;
         char *containername = basename(strdup(containerimage));
         
-        prompt = (char *) malloc(strlen(containerimage) + strlen(containerpath) + 12);
-        snprintf(prompt, strlen(containerimage) + 12, "[\\u@%s(%s) \\W]# ", containername, containerpath);
+        prompt = (char *) malloc(strlen(containerimage) + strlen(mountpoint) + 19);
+        snprintf(prompt, strlen(containerimage) + 19, "Singularity.%s(%s) \\W> ", containername, mountpoint);
 
-        printf("\nMounting %s at %s\n", containerimage, containerpath);
+        printf("\nMounting %s at %s\n", containerimage, mountpoint);
         printf("\nThis mount is only available from this shell, thus when you exit this\n");
         printf("shell the Singularity container will be automatically unmounted.\n\n");
 
         setenv("PS1", prompt, 1);
 
         if ( execv("/bin/sh", &argv[3]) != 0 ) {
-            fprintf(stderr, "ERROR: exec of /bin/sh failed: %s\n", strerror(errno));
+            fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
         }
 
     } else if ( child_pid > 0 ) {
@@ -133,7 +146,7 @@ int main(int argc, char ** argv) {
         retval = WEXITSTATUS(tmpstatus);
 
     } else {
-        fprintf(stderr, "ERROR: Could not fork child process\n");
+        fprintf(stderr, "ABORT: Could not fork child process\n");
         retval++;
     }
 

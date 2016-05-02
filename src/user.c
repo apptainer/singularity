@@ -64,8 +64,6 @@ int build_passwd(char *template, char *output) {
 int build_group(char *template, char *output) {
     gid_t gid = getgid();
 
-    printf("Building group file: %s, %s\n", template, output);
-
     if ( s_is_file(template) < 0 ) {
         fprintf(stderr, "ERROR: Template group file not found: %s\n", template);
         return(-1);

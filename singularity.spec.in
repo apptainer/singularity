@@ -42,6 +42,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/ftrace
 %{_libexecdir}/singularity/ftype
 %{_libexecdir}/singularity/mods
+%{_libexecdir}/singularity/mount
 %{_libexecdir}/singularity/cli
 %{_bindir}/singularity
 %{_bindir}/sapprun

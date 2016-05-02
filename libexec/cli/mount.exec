@@ -37,11 +37,6 @@ fi
 
 while true; do
     case $1 in
-        -w|--writable)
-            shift
-            SINGULARITY_WRITABLE=1
-            export SINGULARITY_WRITABLE
-        ;;
         -*)
             echo "ERROR: Unknown option: $1"
             exit 1
@@ -53,18 +48,8 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) run [container image] (options)\n"
+    echo "USAGE: singularity (options) mount [Singularity container image] [mount point]\n"
     exit 1
 fi
 
-SINGULARITY_NO_NAMESPACE_ROOTFS=1
-SINGULARITY_WRITABLE=1
-SINGULARITY_COMMAND="mount"
-SINGULARITY_IMAGE="$1"
-PS1="singularity> "
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
-export SINGULARITY_COMMAND SINGULARITY_IMAGE SINGULARITY_NO_NAMESPACE_ROOTFS PS1 SINGULARITY_WRITABLE
-shift
-
-
-exec "$libexecdir/singularity/sexec"
+exec "$libexecdir/singularity/mount" "$@"
