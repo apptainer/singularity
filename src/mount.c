@@ -123,16 +123,14 @@ int main(int argc, char ** argv) {
         char *prompt;
         char *containername = basename(strdup(containerimage));
         
-        prompt = (char *) malloc(strlen(containerimage) + strlen(mountpoint) + 19);
-        snprintf(prompt, strlen(containerimage) + 19, "Singularity.%s(%s) \\W> ", containername, mountpoint);
-
-        printf("\nMounting %s at %s\n", containerimage, mountpoint);
-        printf("\nThis mount is only available from this shell, thus when you exit this\n");
-        printf("shell the Singularity container will be automatically unmounted.\n\n");
+        prompt = (char *) malloc(strlen(containerimage) + strlen(mountpoint) + 12);
+        snprintf(prompt, strlen(containerimage) + strlen(mountpoint) + 11, "\\u@%s(%s) \\W> ", containername, mountpoint);
 
         setenv("PS1", prompt, 1);
 
-        if ( execv("/bin/sh", &argv[3]) != 0 ) {
+        argv[2] = strdup("/bin/sh");
+
+        if ( execv("/bin/sh", &argv[2]) != 0 ) {
             fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
         }
 

@@ -52,4 +52,9 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-exec "$libexecdir/singularity/mount" "$@"
+IMAGE="$1"
+MOUNT="$2"
+shift
+shift
+
+exec "$libexecdir/singularity/mount" "$IMAGE" "$MOUNT" "$@"
