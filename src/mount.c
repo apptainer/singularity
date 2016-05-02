@@ -128,6 +128,12 @@ int main(int argc, char ** argv) {
 
         setenv("PS1", prompt, 1);
 
+        if ( getenv("SINGULARITY_QUIET") == NULL ) {
+            fprintf(stderr, "\nMounting image %s at %s\n\n", containerimage, mountpoint);
+            fprintf(stderr, "Invoking a new shell to which the mountpoint will be visible. When\n");
+            fprintf(stderr, "this shell exits, the mount point will automatically be unmounted.\n\n");
+        }
+
         argv[2] = strdup("/bin/sh");
 
         if ( execv("/bin/sh", &argv[2]) != 0 ) {
