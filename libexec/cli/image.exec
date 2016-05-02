@@ -56,30 +56,49 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) create [container image] (options)\n"
+    echo "USAGE: singularity (options) image [container image] (options)\n"
     exit 1
 fi
 
 
-IMAGE_FILE="$1"
-IMAGE_SIZE=`echo "$IMAGE_SIZE * (1024 * 1024)" | bc`
+SUBCOMMAND="$1"
 shift
 
-if ! DD_PATH=`singularity_which dd`; then
-    message ERROR "Could not locate program: dd\n"
-    exit 255
-fi
+case "$SUBCOMMAND" in
+    create)
+        IMAGE_BYTES=`echo "$IMAGE_SIZE * (1024 * 1024)" | bc`
+        IMAGE_FILE="$1"
+        shift
 
-if ! MKFS_PATH=`singularity_which mkfs.ext4`; then
-    message ERROR "Could not locate program: mkfs.ext4\n"
-    exit 255
-fi
+        if ! DD_PATH=`singularity_which dd`; then
+            message ERROR "Could not locate program: dd\n"
+            exit 255
+        fi
 
-if ! touch "$IMAGE_FILE" 2>/dev/null; then
-    message ERROR "Could not create image: $IMAGE_FILE\n"
-    exit 1
-fi
+        if ! MKFS_PATH=`singularity_which mkfs.ext4`; then
+            message ERROR "Could not locate program: mkfs.ext4\n"
+            exit 255
+        fi
 
-eval $DD_PATH of="$IMAGE_FILE" bs=1 count=0 seek="$IMAGE_SIZE"
-eval $MKFS_PATH -F "$IMAGE_FILE"
+        if ! touch "$IMAGE_FILE" 2>/dev/null; then
+            message ERROR "Could not create image: $IMAGE_FILE\n"
+            exit 1
+        fi
 
+        echo "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MB..."
+        eval $DD_PATH of="$IMAGE_FILE" bs=1 count=0 seek="$IMAGE_BYTES" 2>/dev/null
+
+        echo "Formatting image..."
+        eval $MKFS_PATH -q -F "$IMAGE_FILE"
+
+        echo "Done. Image can be found at: $IMAGE_FILE"
+    ;;
+
+    *)
+        echo "ERROR: Unknown subcommand: $1" >&2
+        exit 255
+    ;;
+esac
+
+
+exit 0

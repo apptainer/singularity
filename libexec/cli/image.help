@@ -1,0 +1,18 @@
+USAGE: singularity (options) image [command] (options)
+
+This is the Singularity disk image helper utility. 
+
+SUB-COMMANDS:
+    create:     Create and format a new Singularity raw disk image
+
+
+OPTIONS:
+    -s/--size   Specify a size for an operation (default 2GB)
+
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+
