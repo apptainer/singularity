@@ -14,10 +14,11 @@ install-exec-hook:
 	fi
 
 bindir = $(libexecdir)/singularity
-bin_PROGRAMS = ftrace ftype sexec
+bin_PROGRAMS = ftrace ftype sexec mount
 
 ftrace_SOURCES = ftrace.c util.c util.h
 ftype_SOURCES = ftype.c util.c util.h
 sexec_SOURCES = sexec.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h user.c user.h
+mount_SOURCES = mount.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h
 
 EXTRA_DIST = config.h 
