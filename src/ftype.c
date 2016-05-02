@@ -40,14 +40,14 @@ int main(int argc, char **argv) {
     }
 
 
-    if ( s_is_file(argv[1] ) != 0 && s_is_link(argv[1] ) != 0 ) {
+    if ( is_file(argv[1] ) != 0 && is_link(argv[1] ) != 0 ) {
         printf("is not file: %s\n", argv[1]);
         return(255);
     }
 
     fd = fopen(argv[1], "r");
 
-    if ( s_is_exec(argv[1]) == 0 ) {
+    if ( is_exec(argv[1]) == 0 ) {
         for(i=0; i<128; i++) {
             data[i] = fgetc(fd);
         }

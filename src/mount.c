@@ -89,12 +89,12 @@ int main(int argc, char ** argv) {
     containerimage = strdup(argv[1]);
     mountpoint = strdup(argv[2]);
 
-    if ( s_is_file(containerimage) < 0 ) {
+    if ( is_file(containerimage) < 0 ) {
         fprintf(stderr, "ABORT: Container image not found: %s\n", containerimage);
         return(1);
     }
 
-    if ( s_is_dir(mountpoint) < 0 ) {
+    if ( is_dir(mountpoint) < 0 ) {
         fprintf(stderr, "ABORT: Mount point must be a directory: %s\n", mountpoint);
         return(1);
     }

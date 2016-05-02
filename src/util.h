@@ -19,13 +19,14 @@
  */
 
 
-int s_is_file(char *path);
-int s_is_link(char *path);
-int s_is_dir(char *path);
-int s_is_exec(char *path);
-int s_is_owner(char *path, uid_t uid);
+int is_file(char *path);
+int is_link(char *path);
+int is_dir(char *path);
+int is_exec(char *path);
+int is_owner(char *path, uid_t uid);
 int s_mkpath(char *dir, mode_t mode);
 int s_rmdir(char *dir);
 int intlen(int input);
 int copy_file(char * source, char * dest);
+char * containerized_path(char * containerpath, char * path);
 

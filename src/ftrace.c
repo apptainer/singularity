@@ -131,13 +131,13 @@ int main(int argc, char **argv) {
                         } else if ( strncmp(str, "/sys", 4) == 0 ) {
                         } else if ( strncmp(str, "/proc", 5) == 0 ) {
                         } else {
-                            if ( s_is_file(str) == 0 || s_is_link(str) == 0 ) {
+                            if ( is_file(str) == 0 || is_link(str) == 0 ) {
                                 fprintf(stderr, "%s\n", str);
                             }
                         }
                     }
                 } else if ( syscall == SYS_execve ) {
-                    if ( s_is_exec(str) == 0 ) {
+                    if ( is_exec(str) == 0 ) {
                         fprintf(stderr, "%s\n", str);
                     }
 

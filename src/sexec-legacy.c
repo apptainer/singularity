@@ -124,11 +124,11 @@ int main(int argc, char **argv) {
         fprintf(stderr, "ERROR: CONTAINERPATH undefined!\n");
         return(1);
     }
-    if ( s_is_dir(containerpath) < 0 ) {
+    if ( is_dir(containerpath) < 0 ) {
         fprintf(stderr, "ERROR: Container path is not a directory: %s!\n", containerpath);
         return(1);
     }
-    if ( s_is_owner(containerpath, uid) < 0 ) {
+    if ( is_owner(containerpath, uid) < 0 ) {
         fprintf(stderr, "ERROR: Will not execute in a CONTAINERPATH you don't own: %s\n", containerpath);
         return(255);
     }
@@ -137,15 +137,15 @@ int main(int argc, char **argv) {
     // Check the singularity within the CONTAINERPATH
     singularitypath = (char *) malloc(strlen(containerpath) + 13);
     snprintf(singularitypath, strlen(containerpath) + 13, "%s/singularity", containerpath);
-    if ( s_is_file(singularitypath) < 0 ) {
+    if ( is_file(singularitypath) < 0 ) {
         fprintf(stderr, "ERROR: The singularity is not found in CONTAINERPATH!\n");
         return(1);
     }
-    if ( s_is_owner(singularitypath, uid) < 0 ) {
+    if ( is_owner(singularitypath, uid) < 0 ) {
         fprintf(stderr, "ERROR: Will not execute a singularity you don't own: %s!\n", singularitypath);
         return(255);
     }
-    if ( s_is_exec(singularitypath) < 0 ) {
+    if ( is_exec(singularitypath) < 0 ) {
         fprintf(stderr, "ERROR: The singularity can not be executed!\n");
         return(1);
     }
@@ -166,25 +166,25 @@ int main(int argc, char **argv) {
     snprintf(containertmppath, strlen(containerpath) + 5, "%s/tmp", containerpath);
 
     // Create system directories as neccessary
-    if ( s_is_dir(containerprocpath) < 0 ) {
+    if ( is_dir(containerprocpath) < 0 ) {
         if ( s_mkpath(containerprocpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containerprocpath);
             return(255);
         }
     }
-    if ( s_is_dir(containersyspath) < 0 ) {
+    if ( is_dir(containersyspath) < 0 ) {
         if ( s_mkpath(containersyspath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containersyspath);
             return(255);
         }
     }
-    if ( s_is_dir(containerdevpath) < 0 ) {
+    if ( is_dir(containerdevpath) < 0 ) {
         if ( s_mkpath(containerdevpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containerdevpath);
             return(255);
         }
     }
-    if ( s_is_dir(containertmppath) < 0 ) {
+    if ( is_dir(containertmppath) < 0 ) {
         if ( s_mkpath(containertmppath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
             fprintf(stderr, "ERROR: Could not create directory %s\n", containertmppath);
             return(255);
@@ -197,8 +197,8 @@ int main(int argc, char **argv) {
     if ( homepath != NULL ) {
         containerhomepath = (char *) malloc(strlen(containerpath) + strlen(homepath) + 1);
         snprintf(containerhomepath, strlen(containerpath) + strlen(homepath) + 1, "%s%s", containerpath, homepath);
-        if ( s_is_dir(homepath) == 0 ) {
-            if ( s_is_dir(containerhomepath) < 0 ) {
+        if ( is_dir(homepath) == 0 ) {
+            if ( is_dir(containerhomepath) < 0 ) {
                 if ( s_mkpath(containerhomepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IWGRP | S_IROTH | S_IXOTH) > 0 ) {
                     fprintf(stderr, "ERROR: Could not create directory %s\n", homepath);
                     return(255);
@@ -239,8 +239,8 @@ int main(int argc, char **argv) {
 
         containerscratchpath = (char *) malloc(strlen(containerpath) + strlen(scratchpath) + 1);
         snprintf(containerscratchpath, strlen(containerpath) + strlen(scratchpath) + 1, "%s%s", containerpath, scratchpath);
-        if ( s_is_dir(scratchpath) == 0 ) {
-            if ( s_is_dir(containerscratchpath) < 0 ) {
+        if ( is_dir(scratchpath) == 0 ) {
+            if ( is_dir(containerscratchpath) < 0 ) {
                 if ( s_mkpath(containerscratchpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) > 0 ) {
                     fprintf(stderr, "ERROR: Could not create directory %s\n", scratchpath);
                     return(255);
@@ -356,7 +356,7 @@ int main(int argc, char **argv) {
 
     // Recheck to see if we can stat the singularitypath as root
     // This fails when home is exported with root_squash enabled
-    if ( s_is_exec(singularitypath) < 0 ) {
+    if ( is_exec(singularitypath) < 0 ) {
         fprintf(stderr, "ERROR: Could not stat %s as root!\n", singularitypath);
         fprintf(stderr, "NOTE:  This maybe caused by root_squash on NFS, set environment\n");
         fprintf(stderr, "NOTE:  variable 'SINGULARITY_CACHEDIR' and point to a different\n");

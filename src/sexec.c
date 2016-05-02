@@ -119,14 +119,14 @@ int main(int argc, char ** argv) {
         return(1);
     }
 
-    if ( s_is_file(containerimage) != 0 ) {
+    if ( is_file(containerimage) != 0 ) {
         fprintf(stderr, "ABORT: Container image path is invalid: %s\n", containerimage);
         return(1);
     }
 
     // TODO: Offer option to only run containers owned by root (so root can approve
     // containers)
-    if ( s_is_owner(containerimage, uid) < 0 && s_is_owner(containerimage, 0) < 0 ) {
+    if ( is_owner(containerimage, uid) < 0 && is_owner(containerimage, 0) < 0 ) {
         fprintf(stderr, "ABORT: Will not execute in a CONTAINERIMAGE you (or root) does not own: %s\n", containerimage);
         return(255);
     }
@@ -149,14 +149,14 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    if ( s_is_dir(mountpoint) < 0 ) {
+    if ( is_dir(mountpoint) < 0 ) {
         if ( s_mkpath(mountpoint, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) < 0 ) {
             fprintf(stderr, "ABORT: Could not create directory %s: %s\n", mountpoint, strerror(errno));
             return(255);
         }
     }
 
-    if ( s_is_dir(runpath) < 0 ) {
+    if ( is_dir(runpath) < 0 ) {
         if ( s_mkpath(runpath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) < 0 ) {
             fprintf(stderr, "ABORT: Could not create directory %s: %s\n", runpath, strerror(errno));
             return(255);
@@ -357,7 +357,7 @@ int main(int argc, char ** argv) {
                 }
 
             } else {
-                if ( s_is_dir(homepath) != 0 ) {
+                if ( is_dir(homepath) != 0 ) {
                     if ( s_mkpath(homepath, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0 ) {
                         fprintf(stderr, "ABORT: Could not create directory %s: %s\n", homepath, strerror(errno));
                         return(255);
@@ -370,42 +370,55 @@ int main(int argc, char ** argv) {
                 strcpy(cwd, homepath);
             }
 
-            if ( mount_bind(mountpoint, "/etc/resolv.conf", "/etc/resolv.conf", 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/resolv.conf\n");
-                return(255);
+            if (is_file(containerized_path(mountpoint, "/etc/resolv.conf")) == 0 ) {
+                if ( mount_bind(mountpoint, "/etc/resolv.conf", "/etc/resolv.conf", 0) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind /etc/resolv.conf\n");
+                    return(255);
+                }
             }
-            if ( mount_bind(mountpoint, "/etc/hosts", "/etc/hosts", 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/hosts\n");
-                return(255);
+            if (is_file(containerized_path(mountpoint, "/etc/hosts")) == 0 ) {
+                if ( mount_bind(mountpoint, "/etc/hosts", "/etc/hosts", 0) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind /etc/hosts\n");
+                    return(255);
+                }
             }
 
-            if ( s_is_file(container_passwd) == 0 ) {
-                if ( mount_bind(mountpoint, local_passwd, "/etc/passwd", 0) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
-                    return(255);
+            if (is_file(containerized_path(mountpoint, "/etc/passwd")) == 0 ) {
+                if ( is_file(container_passwd) == 0 ) {
+                    if ( mount_bind(mountpoint, local_passwd, "/etc/passwd", 0) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
+                        return(255);
+                    }
                 }
             }
-            if ( s_is_file(container_group) == 0 ) {
-                if ( mount_bind(mountpoint, local_group, "/etc/group", 0) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind /etc/group\n");
-                    return(255);
+            if (is_file(containerized_path(mountpoint, "/etc/group")) == 0 ) {
+                if ( is_file(container_group) == 0 ) {
+                    if ( mount_bind(mountpoint, local_group, "/etc/group", 0) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind /etc/group\n");
+                        return(255);
+                    }
                 }
             }
-            if ( s_is_file(nsswitch) == 0 ) {
-                if ( mount_bind(mountpoint, nsswitch, "/etc/nsswitch.conf", 0) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind %s\n", nsswitch);
-                    return(255);
+            if (is_file(containerized_path(mountpoint, "/etc/nsswitch.conf")) == 0 ) {
+                if ( is_file(nsswitch) == 0 ) {
+                    if ( mount_bind(mountpoint, nsswitch, "/etc/nsswitch.conf", 0) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind %s\n", nsswitch);
+                        return(255);
+                    }
+                } else {
+                    fprintf(stderr, "WARNING: Template /etc/nsswitch.conf does not exist: %s\n", nsswitch);
                 }
-            } else {
-                fprintf(stderr, "WARNING: Template /etc/nsswitch.conf does not exist: %s\n", nsswitch);
             }
-            if ( s_is_file(mtab) == 0 ) {
-                if ( mount_bind(mountpoint, mtab, "/etc/mtab", 0) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind %s\n", mtab);
-                    return(255);
+
+            if (is_file(containerized_path(mountpoint, "/etc/mtab")) == 0 ) {
+                if ( is_file(mtab) == 0 ) {
+                    if ( mount_bind(mountpoint, mtab, "/etc/mtab", 0) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind %s\n", mtab);
+                        return(255);
+                    }
+                } else {
+                    fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", mtab);
                 }
-            } else {
-                fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", mtab);
             }
 
             // Do the chroot
@@ -415,13 +428,13 @@ int main(int argc, char ** argv) {
             }
 
             // Make these, just incase they don't already exist
-            if ( s_is_dir("/proc") != 0 ) {
+            if ( is_dir("/proc") != 0 ) {
                 if ( s_mkpath("/proc", S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0 ) {
                     fprintf(stderr, "ABORT: Could not create directory /proc: %s\n", strerror(errno));
                     return(255);
                 }
             }
-            if ( s_is_dir("/sys") != 0 ) {
+            if ( is_dir("/sys") != 0 ) {
                 if ( s_mkpath("/sys", S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0 ) {
                     fprintf(stderr, "ABORT: Could not create directory /sys: %s\n", strerror(errno));
                     return(255);
@@ -456,7 +469,7 @@ int main(int argc, char ** argv) {
             return(1);
         }
 
-        if ( s_is_dir(cwd) == 0 ) {
+        if ( is_dir(cwd) == 0 ) {
             if ( chdir(cwd) < 0 ) {
                 fprintf(stderr, "ABORT: Could not chdir to: %s\n", cwd);
                 return(1);
@@ -477,7 +490,7 @@ int main(int argc, char ** argv) {
                 fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
             }
         } else if ( strcmp(command, "run") == 0 ) {
-            if ( s_is_exec("/singularity") == 0 ) {
+            if ( is_exec("/singularity") == 0 ) {
                 argv[0] = strdup("/singularity");
                 if ( execv("/singularity", argv) != 0 ) {
                     fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));

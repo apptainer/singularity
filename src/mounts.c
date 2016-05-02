@@ -39,12 +39,12 @@
 int mount_image(char * image_path, char * mount_point, int writable) {
     char * loop_device;
 
-    if ( s_is_file(image_path) < 0 ) {
+    if ( is_file(image_path) < 0 ) {
         fprintf(stderr, "ERROR: Could not access image file: %s\n", image_path);
         return(-1);
     }
 
-    if ( s_is_dir(mount_point) < 0 ) {
+    if ( is_dir(mount_point) < 0 ) {
         fprintf(stderr, "ERROR: Mount point is not available: %s\n", mount_point);
         return(-1);
     }
@@ -81,12 +81,12 @@ int mount_bind(char * image_path, char * source, char * dest, int writable) {
     image_dest = (char *) malloc(strlen(dest) + strlen(image_path) + 3);
     snprintf(image_dest, strlen(dest) + strlen(image_path) + 3, "%s%s", image_path, dest);
 
-    if ( s_is_dir(source) != 0 && s_is_file(source) != 0 ) {
+    if ( is_dir(source) != 0 && is_file(source) != 0 ) {
         fprintf(stderr, "ERROR: Bind source path is not a file or directory: %s\n", source);
         return(1);
     }
 
-    if ( s_is_dir(image_dest) != 0 && s_is_file(image_dest) != 0 ) {
+    if ( is_dir(image_dest) != 0 && is_file(image_dest) != 0 ) {
         fprintf(stderr, "ERROR: Container bind path is not a file or directory: %s\n", dest);
         return(1);
     }

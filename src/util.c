@@ -35,11 +35,11 @@
 #include "config.h"
 
 
-int s_is_file(char *path) {
+int is_file(char *path) {
     struct stat filestat;
 
     // Stat path
-    if (stat(path, &filestat) < 0) {
+    if (lstat(path, &filestat) < 0) {
         return(-1);
     }
 
@@ -51,7 +51,7 @@ int s_is_file(char *path) {
     return(-1);
 }
 
-int s_is_link(char *path) {
+int is_link(char *path) {
     struct stat filestat;
 
     // Stat path
@@ -67,7 +67,7 @@ int s_is_link(char *path) {
     return(-1);
 }
 
-int s_is_dir(char *path) {
+int is_dir(char *path) {
     struct stat filestat;
 
     // Stat path
@@ -83,7 +83,7 @@ int s_is_dir(char *path) {
     return(-1);
 }
 
-int s_is_exec(char *path) {
+int is_exec(char *path) {
     struct stat filestat;
 
     // Stat path
@@ -99,7 +99,7 @@ int s_is_exec(char *path) {
     return(-1);
 }
 
-int s_is_owner(char *path, uid_t uid) {
+int is_owner(char *path, uid_t uid) {
     struct stat filestat;
 
     // Stat path
@@ -123,7 +123,7 @@ int s_mkpath(char *dir, mode_t mode) {
         return(0);
     }
 
-    if ( s_is_dir(dir) == 0 ) {
+    if ( is_dir(dir) == 0 ) {
         // Directory already exists, stop...
         return(0);
     }
@@ -169,7 +169,7 @@ int copy_file(char * source, char * dest) {
     FILE * fd_s;
     FILE * fd_d;
 
-    if ( s_is_file(source) < 0 ) {
+    if ( is_file(source) < 0 ) {
         printf("No such file: %s->%s\n", source, dest);
         return(-1);
     }
@@ -198,3 +198,11 @@ int copy_file(char * source, char * dest) {
 }
 
 
+char * containerized_path(char * containerpath, char * path) {
+    char *ret;
+
+    ret = (char *) malloc(strlen(containerpath) + strlen(path) + 2);
+    snprintf(ret, strlen(containerpath) + strlen(path) + 2, "%s/%s", containerpath, path);
+
+    return(ret);
+}
