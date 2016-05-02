@@ -92,6 +92,9 @@ int mount_bind(char * image_path, char * source, char * dest, int writable) {
             }
         }
     } else if ( s_is_file(source) == 0 ) {
+        if ( s_is_link(image_dest) == 0 ) {
+            unlink(image_dest);
+        }
         if ( s_is_file(image_dest) != 0 ) {
             FILE *fd;
             char * image_dest_dir = dirname(strdup(image_dest));
@@ -104,7 +107,7 @@ int mount_bind(char * image_path, char * source, char * dest, int writable) {
 
             //printf("Creating bind file %s\n", image_mount_point);
             fd = fopen(image_dest, "w");
-           if ( fd == NULL ) {
+            if ( fd == NULL ) {
                 fprintf(stderr, "ERROR: Could not create file mount point %s: %s\n", image_dest, strerror(errno));
             }
             fclose(fd);
