@@ -2,6 +2,13 @@ USAGE: singularity (options) shell [container path] (options)
 
 Obtain a shell (/bin/sh) within the container image.
 
+note: When invoking a shell within a container, the container image is
+by default writable.
+
+OPTIONS:
+    -C/--contain    This option disables the automatic sharing of writable
+                    filesystems on your host (e.g. $HOME and /tmp).
+
 
 For additional help, please visit our public documentation pages which are
 found at:

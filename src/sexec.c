@@ -268,10 +268,15 @@ int main(int argc, char ** argv) {
         char *prompt;
         char *basehomepath = strjoin("/", strtok(strdup(homepath), "/"));
 
-        // If we aren't sharing our home with the host, create a non-persistant one
-        if ( getenv("SINGULARITY_NO_SHARE_HOME") != NULL ) {
+        // When we contain, we need temporary directories for what should be
+        // writable
+        if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
             if ( s_mkpath(joinpath(tmpdir, homepath), 0750) < 0 ) {
-                fprintf(stderr, "ABORT: Failed creating home directory path mask\n");
+                fprintf(stderr, "ABORT: Failed creating temporary directory %s: %s\n", joinpath(tmpdir, homepath), strerror(errno));
+                return(255);
+            }
+            if ( s_mkpath(joinpath(tmpdir, "/tmp"), 0750) < 0 ) {
+                fprintf(stderr, "ABORT: Failed creating temporary directory %s: %s\n", joinpath(tmpdir, "/tmp"), strerror(errno));
                 return(255);
             }
         }
@@ -353,35 +358,45 @@ int main(int argc, char ** argv) {
             }
         }
 
-        if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
-            if ( mount_bind("/tmp", joinpath(containerpath, "/tmp"), 1) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind mount /tmp\n");
-                return(255);
-            }
-        }
-        if ( is_dir(joinpath(containerpath, "/var/tmp")) == 0 ) {
-            if ( mount_bind("/var/tmp", joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind mount /var/tmp\n");
-                return(255);
-            }
-        }
+        if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
+            unsetenv("SINGULARITY_CONTAIN");
 
-        if ( is_dir(joinpath(containerpath, basehomepath)) == 0 ){
-            if ( getenv("SINGULARITY_NO_SHARE_HOME") == NULL ) {
-                unsetenv("SINGULARITY_NO_SHARE_HOME");
+            if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
+                if ( mount_bind("/tmp", joinpath(containerpath, "/tmp"), 1) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind mount /tmp\n");
+                    return(255);
+                }
+            }
+            if ( is_dir(joinpath(containerpath, "/var/tmp")) == 0 ) {
+                if ( mount_bind("/var/tmp", joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind mount /var/tmp\n");
+                    return(255);
+                }
+            }
+    
+            if ( is_dir(joinpath(containerpath, basehomepath)) == 0 ){
                 if ( mount_bind(basehomepath, joinpath(containerpath, basehomepath), 1) < 0 ) {
                     fprintf(stderr, "ABORT: Could not bind home path to container %s: %s\n", homepath, strerror(errno));
                     return(255);
                 }
             } else {
-                if ( mount_bind(joinpath(tmpdir, basehomepath), joinpath(containerpath, basehomepath), 1) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind base home path to container %s: %s\n", basehomepath, strerror(errno));
-                    return(255);
-                }
-                strcpy(cwd, homepath);
+                fprintf(stderr, "WARNING: Directory not existant in container: %s\n", basehomepath);
             }
+
         } else {
-            fprintf(stderr, "WARNING: Directory not existant in container: %s\n", basehomepath);
+            if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/tmp"), 1) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/tmp", strerror(errno));
+                return(255);
+            }
+            if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/var/tmp", strerror(errno));
+                return(255);
+            }
+            if ( mount_bind(joinpath(tmpdir, basehomepath), joinpath(containerpath, basehomepath), 1) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", basehomepath, strerror(errno));
+                return(255);
+            }
+            strcpy(cwd, homepath);
         }
 
 

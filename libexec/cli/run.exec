@@ -42,6 +42,11 @@ while true; do
             SINGULARITY_WRITABLE=1
             export SINGULARITY_WRITABLE
         ;;
+        -C|--contain)
+            shift
+            SINGULARITY_CONTAIN=1
+            export SINGULARITY_CONTAIN
+        ;;
         -*)
             echo "ERROR: Unknown option: $1"
             exit 1

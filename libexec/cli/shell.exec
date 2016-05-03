@@ -37,6 +37,11 @@ fi
 
 while true; do
     case $1 in
+        -C|--contain)
+            shift
+            SINGULARITY_CONTAIN=1
+            export SINGULARITY_CONTAIN
+        ;;
         -*)
             echo "ERROR: Unknown option: $1"
             exit 1
