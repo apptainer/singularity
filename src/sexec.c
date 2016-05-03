@@ -497,7 +497,7 @@ int main(int argc, char ** argv) {
         } else if ( strcmp(command, "exec") == 0 ) {
             char *args[4];
 
-            args[0] = strdup("/bin/sh");
+            args[0] = strdup("Singularity");
             args[1] = strdup("-c");
             args[2] = strdup(argv[1]);
             args[3] = NULL;
