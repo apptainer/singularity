@@ -78,6 +78,7 @@ int main(int argc, char ** argv) {
     char *command;
     char *command_exec;
     char *runpath;
+    char *tmpdir = strjoin("/tmp/.singularity-", random_string(10));
     char cwd[PATH_MAX];
     int cwd_fd;
     int retval = 0;
@@ -85,9 +86,9 @@ int main(int argc, char ** argv) {
     gid_t gid = getgid();
 
 
-    //****************************************************************************//
-    // Init
-    //****************************************************************************//
+//****************************************************************************//
+// Init                                                                       //
+//****************************************************************************//
 
     // Lets start off as the calling UID
     if ( seteuid(uid) < 0 ) {
@@ -140,9 +141,15 @@ int main(int argc, char ** argv) {
     snprintf(runpath, strlen(LOCALSTATEDIR) + strlen(containername) + intlen(uid) + 20, "%s/singularity/run/%d/%s", LOCALSTATEDIR, uid, containername);
 
 
-    //****************************************************************************//
-    // Setup
-    //****************************************************************************//
+//****************************************************************************//
+// Setup                                                                      //
+//****************************************************************************//
+
+    if ( s_mkpath(tmpdir, 0750) < 0 ) {
+        fprintf(stderr, "ABORT: Could not temporary directory %s: %s\n", tmpdir, strerror(errno));
+        return(255);
+    }
+
 
     if ( seteuid(0) < 0 ) {
         fprintf(stderr, "ABORT: Could not escalate effective user privledges!\n");
@@ -163,23 +170,23 @@ int main(int argc, char ** argv) {
         }
     }
     
-    //****************************************************************************//
-    // Setup namespaces
-    //****************************************************************************//
+//****************************************************************************//
+// Setup initial namespaces                                                   //
+//****************************************************************************//
 
-    // Always virtualize our mount namespace
-    if ( unshare(CLONE_NEWNS) < 0 ) {
-        fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
-        return(255);
-    }
+        if ( unshare(CLONE_NEWNS) < 0 ) {
+            fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
+            return(255);
+        }
 
-    // Privitize the mount namespaces (thank you for the pointer Doug Jacobsen!)
-    if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
-        // I am not sure if this error needs to be caught, maybe it will fail
-        // on older kernels? If so, we can fix then.
-        fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
-        return(255);
-    }
+        // Privitize the mount namespaces (thank you for the pointer Doug Jacobsen!)
+        if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
+            // I am not sure if this error needs to be caught, maybe it will fail
+            // on older kernels? If so, we can fix then.
+            fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
+            return(255);
+        }
+
 
 
 #ifdef NS_CLONE_NEWPID
@@ -221,9 +228,10 @@ int main(int argc, char ** argv) {
     }
 #endif
 
-    //****************************************************************************//
-    // Mount image
-    //****************************************************************************//
+
+//****************************************************************************//
+// Mount image                                                                //
+//****************************************************************************//
 
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         unsetenv("SINGULARITY_WRITABLE");
@@ -238,9 +246,10 @@ int main(int argc, char ** argv) {
         }
     }
 
-    //****************************************************************************//
-    // Fork child in new namespaces
-    //****************************************************************************//
+
+//****************************************************************************//
+// Fork child in new namespaces                                               //
+//****************************************************************************//
 
     // Drop privledges for fork and parent
     if ( seteuid(uid) < 0 ) {
@@ -250,13 +259,32 @@ int main(int argc, char ** argv) {
 
     child_pid = fork();
 
+
+//****************************************************************************//
+// Child's init                                                               //
+//****************************************************************************//
+//
     if ( child_pid == 0 ) {
         char *prompt;
+        char *basehomepath = strjoin("/", strtok(strdup(homepath), "/"));
 
-        prompt = (char *) malloc(strlen(containername) + 10);
-        snprintf(prompt, strlen(containerimage) + 10, "\\u@%s \\W> ", containername);
-        setenv("PS1", prompt, 1);
+        // If we aren't sharing our home with the host, create a non-persistant one
+        if ( getenv("SINGULARITY_NO_SHARE_HOME") != NULL ) {
+            if ( s_mkpath(joinpath(tmpdir, homepath), 0750) < 0 ) {
+                fprintf(stderr, "ABORT: Failed creating home directory path mask\n");
+                return(255);
+            }
+        }
 
+        if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
+            fprintf(stderr, "ABORT: Failed creating template password file\n");
+            return(255);
+        }
+
+        if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
+            fprintf(stderr, "ABORT: Failed creating template group file\n");
+            return(255);
+        }
 
         if ( seteuid(0) < 0 ) {
             fprintf(stderr, "ABORT: Could not re-escalate effective user privledges!\n");
@@ -264,144 +292,135 @@ int main(int argc, char ** argv) {
         }
 
 
-        if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(runpath, "/passwd")) < 0 ) {
-            fprintf(stderr, "ABORT: Failed creating template password file\n");
-            return(255);
-        }
+//****************************************************************************//
+// Setup additional namespaces                                                //
+//****************************************************************************//
 
-        if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(runpath, "/group")) < 0 ) {
-            fprintf(stderr, "ABORT: Failed creating template group file\n");
-            return(255);
-        }
+//****************************************************************************//
+// Bind mounts                                                                //
+//****************************************************************************//
 
-
-        if ( getenv("SINGULARITY_NO_NAMESPACE_ROOTFS") == NULL ) {
-            unsetenv("SINGULARITY_NO_NAMESPACE_ROOTFS");
-
-            if ( is_dir(joinpath(containerpath, "/dev/")) == 0 ) {
-                if ( mount_bind("/dev", joinpath(containerpath, "/dev"), 0) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind mount /dev\n");
-                    return(255);
-                }
-            }
-
-            if (is_file(joinpath(containerpath, "/etc/resolv.conf")) == 0 ) {
-                if ( mount_bind("/etc/resolv.conf", joinpath(containerpath, "/etc/resolv.conf"), 0) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind /etc/resolv.conf\n");
-                    return(255);
-                }
-            }
-
-            if (is_file(joinpath(containerpath, "/etc/hosts")) == 0 ) {
-                if ( mount_bind("/etc/hosts", joinpath(containerpath, "/etc/hosts"), 0) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind /etc/hosts\n");
-                    return(255);
-                }
-            }
-
-            if ( is_file(joinpath(runpath, "/passwd")) == 0 ) {
-                if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
-                    if ( mount_bind(joinpath(runpath, "/passwd"), joinpath(containerpath, "/etc/passwd"), 0) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
-                        return(255);
-                    }
-                }
-            }
-
-            if ( is_file(joinpath(runpath, "/group")) == 0 ) {
-                if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
-                    if ( mount_bind(joinpath(runpath, "/group"), joinpath(containerpath, "/etc/group"), 0) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind /etc/group\n");
-                        return(255);
-                    }
-                }
-            }
-
-            if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
-                if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf")) == 0 ) {
-                    if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), 0) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind %s\n", joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"));
-                        return(255);
-                    }
-                } else {
-                    fprintf(stderr, "WARNING: Template /etc/nsswitch.conf does not exist: %s\n", joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"));
-                }
-            }
-
-            if (is_file(joinpath(containerpath, "/etc/mtab")) == 0 ) {
-                if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-mtab")) == 0 ) {
-                    if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-mtab"), joinpath(containerpath, "/etc/mtab"), 0) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind %s\n", joinpath(runpath, "/mtab"));
-                        return(255);
-                    }
-                } else {
-                    fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", joinpath(runpath, "/mtab"));
-                }
-            }
-
-
-            if ( getenv("SINGULARITY_NO_SHARE") == NULL ) {
-                unsetenv("SINGULARITY_NO_SHARE");
-
-                if ( getenv("SINGULARITY_NO_SHARE_TMP") == NULL ) {
-                    unsetenv("SINGULARITY_NO_SHARE_TMP");
-                    if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
-                        if ( mount_bind("/tmp", joinpath(containerpath, "/tmp"), 1) < 0 ) {
-                            fprintf(stderr, "ABORT: Could not bind mount /tmp\n");
-                            return(255);
-                        }
-                    }
-                    if ( is_dir(joinpath(containerpath, "/var/tmp")) == 0 ) {
-                        if ( mount_bind("/var/tmp", joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
-                            fprintf(stderr, "ABORT: Could not bind mount /var/tmp\n");
-                            return(255);
-                        }
-                    }
-                }
-
-                if ( getenv("SINGULARITY_NO_SHARE_HOME") == NULL ) {
-                    unsetenv("SINGULARITY_NO_SHARE_HOME");
-
-                    char * basehomedir = strtok(homepath, "/");
-
-                    if ( is_dir(joinpath(containerpath, basehomedir)) == 0 ) {
-                        if ( mount_bind(joinpath("/", basehomedir), joinpath(containerpath, basehomedir), 1) < 0 ) {
-                            fprintf(stderr, "ABORT: Could not bind mount base home dir: %s\n", basehomedir);
-                            return(255);
-                        }
-                    } else {
-                        fprintf(stderr, "WARNING: Base home directory not present, not mounting: %s\n", basehomedir);
-                    }
-                }
-
-            } else {
-                strcpy(cwd, "/");
-            }
-
-
-            // Do the chroot
-            if ( chroot(containerpath) < 0 ) {
-                fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", containerpath);
+        if ( is_dir(joinpath(containerpath, "/dev/")) == 0 ) {
+            if ( mount_bind("/dev", joinpath(containerpath, "/dev"), 0) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind mount /dev\n");
                 return(255);
             }
+        }
 
-            // Mount up /proc
-            if ( is_dir("/proc") == 0 ) {
-                if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not mount /proc: %s\n", strerror(errno));
-                    return(255);
-                }
-            }
-            // Mount /sys
-            if ( is_dir("/sys") == 0 ) {
-                if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not mount /sys: %s\n", strerror(errno));
-                    return(255);
-                }
+        if (is_file(joinpath(containerpath, "/etc/resolv.conf")) == 0 ) {
+            if ( mount_bind("/etc/resolv.conf", joinpath(containerpath, "/etc/resolv.conf"), 0) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind /etc/resolv.conf\n");
+                return(255);
             }
         }
 
-        // No more privledge escalation for the child thread
+        if (is_file(joinpath(containerpath, "/etc/hosts")) == 0 ) {
+            if ( mount_bind("/etc/hosts", joinpath(containerpath, "/etc/hosts"), 0) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind /etc/hosts\n");
+                return(255);
+            }
+        }
+
+        if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
+            if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 0) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
+                return(255);
+            }
+        }
+
+        if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
+            if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), 0) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind /etc/group\n");
+                return(255);
+            }
+        }
+
+        if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
+            if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf")) == 0 ) {
+                if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), 0) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind %s\n", joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"));
+                    return(255);
+                }
+            } else {
+                fprintf(stderr, "WARNING: Template /etc/nsswitch.conf does not exist: %s\n", joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"));
+            }
+        }
+
+        if (is_file(joinpath(containerpath, "/etc/mtab")) == 0 ) {
+            if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-mtab")) == 0 ) {
+                if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-mtab"), joinpath(containerpath, "/etc/mtab"), 0) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind %s\n", joinpath(runpath, "/mtab"));
+                    return(255);
+                }
+            } else {
+                fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", joinpath(runpath, "/mtab"));
+            }
+        }
+
+        if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
+            if ( mount_bind("/tmp", joinpath(containerpath, "/tmp"), 1) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind mount /tmp\n");
+                return(255);
+            }
+        }
+        if ( is_dir(joinpath(containerpath, "/var/tmp")) == 0 ) {
+            if ( mount_bind("/var/tmp", joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind mount /var/tmp\n");
+                return(255);
+            }
+        }
+
+        if ( is_dir(joinpath(containerpath, basehomepath)) == 0 ){
+            if ( getenv("SINGULARITY_NO_SHARE_HOME") == NULL ) {
+                unsetenv("SINGULARITY_NO_SHARE_HOME");
+                if ( mount_bind(basehomepath, joinpath(containerpath, basehomepath), 1) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind home path to container %s: %s\n", homepath, strerror(errno));
+                    return(255);
+                }
+            } else {
+                if ( mount_bind(joinpath(tmpdir, basehomepath), joinpath(containerpath, basehomepath), 1) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind base home path to container %s: %s\n", basehomepath, strerror(errno));
+                    return(255);
+                }
+                strcpy(cwd, homepath);
+            }
+        } else {
+            fprintf(stderr, "WARNING: Directory not existant in container: %s\n", basehomepath);
+        }
+
+
+//****************************************************************************//
+// Enter the file system                                                      //
+//****************************************************************************//
+
+        if ( chroot(containerpath) < 0 ) {
+            fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", containerpath);
+            return(255);
+        }
+
+
+//****************************************************************************//
+// Setup real mounts within the container                                     //
+//****************************************************************************//
+
+        if ( is_dir("/proc") == 0 ) {
+            if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
+                fprintf(stderr, "ABORT: Could not mount /proc: %s\n", strerror(errno));
+                return(255);
+            }
+        }
+        if ( is_dir("/sys") == 0 ) {
+            if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
+                fprintf(stderr, "ABORT: Could not mount /sys: %s\n", strerror(errno));
+                return(255);
+            }
+        }
+
+
+//****************************************************************************//
+// Drop all privledges for good                                               //
+//****************************************************************************//
+
         if ( setregid(gid, gid) < 0 ) {
             fprintf(stderr, "ABORT: Could not dump real and effective group privledges!\n");
             return(255);
@@ -410,6 +429,15 @@ int main(int argc, char ** argv) {
             fprintf(stderr, "ABORT: Could not dump real and effective user privledges!\n");
             return(255);
         }
+
+
+//****************************************************************************//
+// Setup final envrionment                                                    //
+//****************************************************************************//
+
+        prompt = (char *) malloc(strlen(containername) + 10);
+        snprintf(prompt, strlen(containerimage) + 10, "\\u@%s \\W> ", containername);
+        setenv("PS1", prompt, 1);
 
         // After this, we exist only within the container... Let's make it known!
         if ( setenv("SINGULARITY_CONTAINER", "true", 0) != 0 ) {
@@ -429,12 +457,18 @@ int main(int argc, char ** argv) {
             }
         }
 
+
+//****************************************************************************//
+// Execv to container process                                                 //
+//****************************************************************************//
+
         if ( command == NULL ) {
             fprintf(stderr, "No command specified, launching 'shell'\n");
             argv[0] = strdup("/bin/sh");
             if ( execv("/bin/sh", argv) != 0 ) {
                 fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
             }
+
         } else if ( strcmp(command, "run") == 0 ) {
             if ( is_exec("/singularity") == 0 ) {
                 argv[0] = strdup("/singularity");
@@ -448,27 +482,44 @@ int main(int argc, char ** argv) {
                     fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
                 }
             }
-        } else if ( strcmp(command, "shell") == 0 ) {
-            argv[0] = strdup("/bin/sh");
-            if ( execv("/bin/sh", argv) != 0 ) {
-                fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
-            }
+
         } else if ( strcmp(command, "exec") == 0 ) {
             if ( command_exec != NULL ) {
-                argv[0] = strdup(command_exec);
-                if ( execv(command_exec, argv) != 0 ) {
+                char *args[argc+1];
+                int i;
+
+                args[0] = strdup("/bin/sh");
+                args[1] = strdup("-c");
+                for(i = 1; i <= argc; i++) {
+                    args[i+1] = strdup(argv[i]);
+                }
+//                argv[0] = strdup(command_exec);
+//                if ( execv(command_exec, argv) != 0 ) {
+                if ( execv("/bin/sh", args) != 0 ) {
                     fprintf(stderr, "ABORT: exec of '%s' failed: %s\n", command_exec, strerror(errno));
                 }
             } else {
                 fprintf(stderr, "ABORT: no command given to execute\n");
                 return(1);
             }
+
+        } else if ( strcmp(command, "shell") == 0 ) {
+            argv[0] = strdup("/bin/sh");
+            if ( execv("/bin/sh", argv) != 0 ) {
+                fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
+            }
+
         } else {
             fprintf(stderr, "ABORT: Unrecognized Singularity command: %s\n", command);
             return(1);
         }
 
         return(255);
+
+
+//****************************************************************************//
+// Parent process waits for child                                             //
+//****************************************************************************//
 
     } else if ( child_pid > 0 ) {
         int tmpstatus;
@@ -483,12 +534,22 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
+
+//****************************************************************************//
+// Finall wrap up before exiting                                              //
+//****************************************************************************//
+
     if ( close(cwd_fd) < 0 ) {
         fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
         retval++;
     }
 
+    if ( s_rmdir(tmpdir) < 0 ) {
+        fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
+    }
+
     free(containerpath);
+    free(tmpdir);
 
     return(retval);
 }

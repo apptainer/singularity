@@ -19,6 +19,7 @@
  */
 
 
+#define _XOPEN_SOURCE 500 // For nftw
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +32,8 @@
 #include <fcntl.h>  
 #include <libgen.h>
 #include <assert.h>
+#include <ftw.h>
+#include <time.h>
 
 #include "config.h"
 
@@ -138,19 +141,14 @@ int s_mkpath(char *dir, mode_t mode) {
     return(0);
 }
 
-// TODO: This needs to remove only until a second path argument
+int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+    printf("remove(%s)\n", fpath);
+
+    return(remove(fpath));
+}
+
 int s_rmdir(char *dir) {
-    if (!dir) {
-        return(-1);
-    }
-
-    if (strlen(dir) == 1 && dir[0] == '/') {
-        return(0);
-    }
-
-    s_rmdir(dirname(strdupa(dir)));
-
-    return unlink(dir);
+    return(nftw(dir, _unlink, 32, FTW_DEPTH));
 }
 
 int intlen(int input) {
@@ -198,11 +196,38 @@ int copy_file(char * source, char * dest) {
 }
 
 
-char * joinpath(char * path1, char * path2) {
+char *joinpath(char * path1, char * path2) {
     char *ret;
 
     ret = (char *) malloc(strlen(path1) + strlen(path2) + 2);
     snprintf(ret, strlen(path1) + strlen(path2) + 2, "%s/%s", path1, path2);
+
+    return(ret);
+}
+
+char *strjoin(char *str1, char *str2) {
+    char *ret;
+
+    ret = (char *) malloc(strlen(str1) + strlen(str2) + 1);
+    snprintf(ret, strlen(str1) + strlen(str2) + 1, "%s%s", str1, str2);
+
+    return(ret);
+}
+
+char *random_string(int length) {
+    static const char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    char *ret;
+    int i;
+    int pid = getpid();
+
+    ret = (char *) malloc(length);
+ 
+    srand(time(NULL) * pid);
+    for (i = 0; i < length; ++i) {
+        ret[i] = characters[rand() % (sizeof(characters) - 1)];
+    }
+ 
+    ret[length] = '\0';
 
     return(ret);
 }

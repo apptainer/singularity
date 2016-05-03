@@ -28,5 +28,7 @@ int s_mkpath(char *dir, mode_t mode);
 int s_rmdir(char *dir);
 int intlen(int input);
 int copy_file(char * source, char * dest);
-char * joinpath(char * path1, char * path2);
+char *joinpath(char * path1, char * path2);
+char *strjoin(char *str1, char *str2);
+char *random_string(int length);
 
