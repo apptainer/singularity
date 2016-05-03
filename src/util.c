@@ -142,8 +142,7 @@ int s_mkpath(char *dir, mode_t mode) {
 }
 
 int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-    printf("remove(%s)\n", fpath);
-
+//    printf("remove(%s)\n", fpath);
     return(remove(fpath));
 }
 
