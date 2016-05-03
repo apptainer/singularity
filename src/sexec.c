@@ -236,12 +236,12 @@ int main(int argc, char ** argv) {
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         unsetenv("SINGULARITY_WRITABLE");
         if ( mount_image(containerimage, containerpath, 0) < 0 ) {
-            fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
+            fprintf(stderr, "ABORT: exiting...\n");
             return(255);
         }
     } else {
         if ( mount_image(containerimage, containerpath, 1) < 0 ) {
-            fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
+            fprintf(stderr, "ABORT: exiting...\n");
             return(255);
         }
     }
