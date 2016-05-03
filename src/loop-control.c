@@ -40,38 +40,39 @@
 
 
 
-int obtain_loop_dev(char **loop_device) {
+char * obtain_loop_dev(void) {
+    char * loop_device;
     int loop_control;
     int devnum;
 
     //printf("Opening loop-control device\n");
     if ( ( loop_control = open("/dev/loop-control", O_RDWR)) < 0 ) {
         fprintf(stderr, "ERROR: Could not open loop-control device: %s\n", strerror(errno));
-        return(-1);
+        return(NULL);
     }
 
     //printf("Sending loop-control LOOP_CTL_GET_FREE\n");
     if ( ( devnum = ioctl(loop_control, LOOP_CTL_GET_FREE) ) < 0 ) {
         fprintf(stderr, "ERROR: Could not get a loop device number: %s\n", strerror(errno));
-        return(-1);
+        return(NULL);
     }
     //printf("Got new loop device number: %d\n", devnum);
 
     close(loop_control);
 
-    *loop_device = (char*) malloc(intlen(devnum) + 12);
-    snprintf(*loop_device, intlen(devnum) + 11, "/dev/loop%d", devnum);
+    loop_device = (char*) malloc(intlen(devnum) + 12);
+    snprintf(loop_device, intlen(devnum) + 11, "/dev/loop%d", devnum);
 
     //printf("Checking for loop device: %s\n", *loop_device);
-    if ( access(*loop_device, R_OK) < 0 ) {
+    if ( is_blk(loop_device) < 0 ) {
         //printf("Creating loop device: %s\n", *loop_device);
-        if ( mknod(*loop_device, S_IFBLK | 0644, makedev(7, devnum)) < 0 ) {
-            fprintf(stderr, "Could not create %s: %s\n", *loop_device, strerror(errno));
-            return(-1);
+        if ( mknod(loop_device, S_IFBLK | 0644, makedev(7, devnum)) < 0 ) {
+            //fprintf(stderr, "Could not create %s: %s\n", *loop_device, strerror(errno));
+            return(NULL);
         }
     }
 
-    return(0);
+    return(loop_device);
 }
 
 

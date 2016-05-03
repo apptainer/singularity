@@ -24,6 +24,7 @@ int is_link(char *path);
 int is_dir(char *path);
 int is_exec(char *path);
 int is_owner(char *path, uid_t uid);
+int is_blk(char *path);
 int s_mkpath(char *dir, mode_t mode);
 int s_rmdir(char *dir);
 int intlen(int input);

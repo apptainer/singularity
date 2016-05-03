@@ -49,7 +49,9 @@ int mount_image(char * image_path, char * mount_point, int writable) {
         return(-1);
     }
 
-    if ( obtain_loop_dev(&loop_device) < 0 ) {
+    loop_device = obtain_loop_dev();
+
+    if ( loop_device == NULL ) {
         fprintf(stderr, "FAILED: Could not obtain loop device\n");
         return(-1);
     }

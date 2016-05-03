@@ -19,7 +19,7 @@
  */
 
 
-int obtain_loop_dev(char **loop_device);
+char *obtain_loop_dev(void);
 int associate_loop_dev(char * image_path, char * loop_device);
 
 

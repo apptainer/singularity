@@ -117,6 +117,23 @@ int is_owner(char *path, uid_t uid) {
     return(-1);
 }
 
+int is_blk(char *path) {
+    struct stat filestat;
+
+    // Stat path
+    if (lstat(path, &filestat) < 0) {
+        return(-1);
+    }
+
+    // Test path
+    if ( S_ISBLK(filestat.st_mode) ) {
+        return(0);
+    }
+
+    return(-1);
+}
+
+
 int s_mkpath(char *dir, mode_t mode) {
     if (!dir) {
         return(-1);
