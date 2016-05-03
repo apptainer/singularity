@@ -59,11 +59,9 @@ fi
 
 SINGULARITY_COMMAND="exec"
 SINGULARITY_IMAGE="$1"
-SINGULARITY_EXEC="$2"
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
-export SINGULARITY_COMMAND SINGULARITY_IMAGE PATH SINGULARITY_EXEC
-shift
+export SINGULARITY_COMMAND SINGULARITY_IMAGE PATH
 shift
 
 
-exec "$libexecdir/singularity/sexec" "$@" <&0
+exec "$libexecdir/singularity/sexec" "$*" <&0

@@ -263,7 +263,7 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 // Child's init                                                               //
 //****************************************************************************//
-//
+
     if ( child_pid == 0 ) {
         char *prompt;
         char *basehomepath = strjoin("/", strtok(strdup(homepath), "/"));
@@ -291,10 +291,6 @@ int main(int argc, char ** argv) {
             return(255);
         }
 
-
-//****************************************************************************//
-// Setup additional namespaces                                                //
-//****************************************************************************//
 
 //****************************************************************************//
 // Bind mounts                                                                //
@@ -484,23 +480,15 @@ int main(int argc, char ** argv) {
             }
 
         } else if ( strcmp(command, "exec") == 0 ) {
-            if ( command_exec != NULL ) {
-                char *args[argc+1];
-                int i;
+            char *args[4];
 
-                args[0] = strdup("/bin/sh");
-                args[1] = strdup("-c");
-                for(i = 1; i <= argc; i++) {
-                    args[i+1] = strdup(argv[i]);
-                }
-//                argv[0] = strdup(command_exec);
-//                if ( execv(command_exec, argv) != 0 ) {
-                if ( execv("/bin/sh", args) != 0 ) {
-                    fprintf(stderr, "ABORT: exec of '%s' failed: %s\n", command_exec, strerror(errno));
-                }
-            } else {
-                fprintf(stderr, "ABORT: no command given to execute\n");
-                return(1);
+            args[0] = strdup("/bin/sh");
+            args[1] = strdup("-c");
+            args[2] = strdup(argv[1]);
+            args[3] = NULL;
+
+            if ( execv("/bin/sh", args) != 0 ) {
+                fprintf(stderr, "ABORT: exec of '%s' failed: %s\n", command_exec, strerror(errno));
             }
 
         } else if ( strcmp(command, "shell") == 0 ) {
