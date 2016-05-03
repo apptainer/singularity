@@ -25,6 +25,7 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/file.h>
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>
@@ -37,11 +38,29 @@
 
 
 int mount_image(char * image_path, char * mount_point, int writable) {
+    int image_fd;
     char * loop_device;
 
     if ( is_file(image_path) < 0 ) {
         fprintf(stderr, "ERROR: Could not access image file: %s\n", image_path);
         return(-1);
+    }
+
+    if ( (image_fd = open(image_path, O_RDWR)) < 0 ) {
+        fprintf(stderr, "ERROR: Could not open image %s: %s\n", image_path, strerror(errno));
+        return(-1);
+    }
+
+    if ( writable == 1 ) {
+        if ( flock(image_fd, LOCK_EX | LOCK_NB) < 0 ) {
+            fprintf(stderr, "ABORT: Image is locked by another process\n");
+            return(-1);
+        }
+    } else {
+        if ( flock(image_fd, LOCK_SH | LOCK_NB) < 0 ) {
+            fprintf(stderr, "ABORT: Image is locked by another process\n");
+            return(-1);
+        }
     }
 
     if ( is_dir(mount_point) < 0 ) {
@@ -56,7 +75,7 @@ int mount_image(char * image_path, char * mount_point, int writable) {
         return(-1);
     }
 
-    if ( associate_loop_dev(image_path, loop_device) < 0 ) {
+    if ( associate_loop(image_fd, loop_device) < 0 ) {
         fprintf(stderr, "FAILED: Could not associate loop device\n");
         return(-1);
     }
