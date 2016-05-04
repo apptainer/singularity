@@ -63,9 +63,10 @@ follows:
     /home/gmk/demo
     [gmk@centos7-x64 demo]$ echo "world" > hello
     [gmk@centos7-x64 demo]$ singularity shell /tmp/Centos-7.img 
+    gmk@Centos-7.img demo> pwd
+    /home/gmk/demo
     gmk@Centos-7.img demo> cat hello
     world
-    gmk@Centos-7.img demo> 
 
 Once the developer has completed their environment the image file can be
 compressed and copied to any other system that has Singularity installed.
@@ -96,7 +97,7 @@ Here is an example bootstrap definition file for Centos:
     
     Initalize
     
-    InstallPkgs python procps-ng vim-minimal
+    InstallPkgs coreutils python strace vim-minimal
     
     Finalize
 
@@ -106,8 +107,7 @@ Singularity container image as follows:
     [gmk@centos7-x64 demo]$ sudo singularity image create /tmp/Centos-7.img
     [gmk@centos7-x64 demo]$ sudo singularity bootstrap /tmp/Centos-7.img centos.def
 
-From there we can immeadiatly start executing commands within the
-container:
+From there we can immeadiatly start using the container:
 
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python --version
     Python 2.7.5
