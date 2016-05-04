@@ -97,10 +97,6 @@ Here is an example bootstrap definition file for Centos:
     Initalize
     
     InstallPkgs python procps-ng vim-minimal
-    InstallFile /bin/strace /bin/
-    
-    RunScript 'echo "Hello World"'
-    RunScript 'exec /usr/bin/python "$@"'
     
     Finalize
 
