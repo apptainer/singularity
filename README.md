@@ -110,7 +110,8 @@ Singularity container image as follows:
     [gmk@centos7-x64 demo]$ sudo singularity image create /tmp/Centos-7.img
     [gmk@centos7-x64 demo]$ sudo singularity bootstrap /tmp/Centos-7.img centos.def
 
-From there we can immeadiatly start executing commands within the container:
+From there we can immeadiatly start executing commands within the
+container:
 
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python --version
     Python 2.7.5
@@ -118,6 +119,17 @@ From there we can immeadiatly start executing commands within the container:
     hello world
     [gmk@centos7-x64 demo]$ 
 
+And if I do this same process again, while changing the **VERSION**
+string in the bootstrap defition to **6**, I can essentially build a
+Centos-6 image in exactly the same manner as above. Doing so reveals
+this:
+
+    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img python --version
+    Python 2.6.6
+    [gmk@centos7-x64 demo]$ 
+
+And as expected, the Python version we now see is what comes from by 
+default in Centos-6.
 
 # Webpage
 We are working on documentation and web pages now, but checkout the work
