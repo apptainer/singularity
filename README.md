@@ -50,10 +50,10 @@ And if you wanted to do the same thing as root:
     root
     root@Centos-7.img demo> 
 
-note: By default, Singularity launches the container image in read
+*note: By default, Singularity launches the container image in read
 only mode (so it can be easily launched in parallel). The -w option
 used above tells Singularity to mount the image in read/write mode such
-that root can now make changes to the container.
+that root can now make changes to the container.*
 
 Additionally relevent file systems on your host are automatically shared
 within the context of your container. This can be demonstrated as
