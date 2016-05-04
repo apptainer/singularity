@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/file.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -37,6 +38,7 @@
 
 #include "config.h"
 #include "mounts.h"
+#include "loop-control.h"
 #include "util.h"
 #include "user.h"
 
@@ -77,11 +79,15 @@ int main(int argc, char ** argv) {
     char *homepath;
     char *command;
     char *command_exec;
-    char *runpath;
-    char *tmpdir = strjoin("/tmp/.singularity-", random_string(10));
+    char *tmpdir;
+    char *lockfile;
+    char *loop_dev_cache;
+    char *loop_dev;
     char *basehomepath;
     char cwd[PATH_MAX];
     int cwd_fd;
+    int lockfile_fd;
+    int containerimage_fd;
     int retval = 0;
     uid_t uid = getuid();
     gid_t gid = getgid();
@@ -149,16 +155,28 @@ int main(int argc, char ** argv) {
     containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
     snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
 
-    runpath = (char *) malloc(strlen(LOCALSTATEDIR) + strlen(containername) + intlen(uid) + 20);
-    snprintf(runpath, strlen(LOCALSTATEDIR) + strlen(containername) + intlen(uid) + 20, "%s/singularity/run/%d/%s", LOCALSTATEDIR, uid, containername);
+    tmpdir = strjoin("/tmp/.singularity-", file_id(containerimage));
+    lockfile = joinpath(tmpdir, "lock");
+    loop_dev_cache = joinpath(tmpdir, "loop_dev");
 
 
 //****************************************************************************//
 // Setup                                                                      //
 //****************************************************************************//
 
+
     if ( s_mkpath(tmpdir, 0750) < 0 ) {
         fprintf(stderr, "ABORT: Could not temporary directory %s: %s\n", tmpdir, strerror(errno));
+        return(255);
+    }
+
+    lockfile_fd = open(lockfile, O_RDONLY | O_CREAT, 0644);
+    if ( lockfile_fd < 0 ) {
+        fprintf(stderr, "ERROR: Could not create lock file %s: %s\n", lockfile, strerror(errno));
+        return(255);
+    }
+    if ( flock(lockfile_fd, LOCK_SH | LOCK_NB) < 0 ) {
+        fprintf(stderr, "ERROR: Could not obtain shared lock on %s: %s\n", lockfile, strerror(errno));
         return(255);
     }
 
@@ -174,7 +192,6 @@ int main(int argc, char ** argv) {
         }
     }
 
-
     if ( seteuid(0) < 0 ) {
         fprintf(stderr, "ABORT: Could not escalate effective user privledges!\n");
         return(255);
@@ -187,31 +204,23 @@ int main(int argc, char ** argv) {
         }
     }
 
-    if ( is_dir(runpath) < 0 ) {
-        if ( s_mkpath(runpath, 0700) < 0 ) {
-            fprintf(stderr, "ABORT: Could not create directory %s: %s\n", runpath, strerror(errno));
-            return(255);
-        }
+
+//****************************************************************************//
+// Setup namespaces                                                           //
+//****************************************************************************//
+
+    if ( unshare(CLONE_NEWNS) < 0 ) {
+        fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
+        return(255);
     }
-    
-//****************************************************************************//
-// Setup initial namespaces                                                   //
-//****************************************************************************//
 
-        if ( unshare(CLONE_NEWNS) < 0 ) {
-            fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
-            return(255);
-        }
-
-        // Privitize the mount namespaces (thank you for the pointer Doug Jacobsen!)
-        if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
-            // I am not sure if this error needs to be caught, maybe it will fail
-            // on older kernels? If so, we can fix then.
-            fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
-            return(255);
-        }
-
-
+    // Privitize the mount namespaces (thank you for the pointer Doug Jacobsen!)
+    if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
+        // I am not sure if this error needs to be caught, maybe it will fail
+        // on older kernels? If so, we can fix then.
+        fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
+        return(255);
+    }
 
 #ifdef NS_CLONE_NEWPID
     if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
@@ -257,14 +266,39 @@ int main(int argc, char ** argv) {
 // Mount image                                                                //
 //****************************************************************************//
 
+    if ( ( containerimage_fd = open(containerimage, O_RDONLY) ) < 0 ) {
+        fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
+        return(255);
+    }
+
+    if ( is_file(loop_dev_cache) == 0 ) {
+        loop_dev = filecat(loop_dev_cache);
+    } else {
+        //TODO: Better error checking...
+        loop_dev = obtain_loop_dev();
+        if ( associate_loop(containerimage_fd, loop_dev) < 0 ) {
+            fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
+            return(255);
+        }
+        fileput(loop_dev_cache, loop_dev);
+    }
+
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         unsetenv("SINGULARITY_WRITABLE");
-        if ( mount_image(containerimage, containerpath, 0) < 0 ) {
+        if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
+            fprintf(stderr, "ABORT: Image is locked by another process\n");
+            return(5);
+        }
+        if ( mount_image(loop_dev, containerpath, 0) < 0 ) {
             fprintf(stderr, "ABORT: exiting...\n");
             return(255);
         }
     } else {
-        if ( mount_image(containerimage, containerpath, 1) < 0 ) {
+        if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
+            fprintf(stderr, "ABORT: Image is locked by another process\n");
+            return(5);
+        }
+        if ( mount_image(loop_dev, containerpath, 1) < 0 ) {
             fprintf(stderr, "ABORT: exiting...\n");
             return(255);
         }
@@ -280,14 +314,18 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
-        fprintf(stderr, "ABORT: Failed creating template password file\n");
-        return(255);
+    if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
+        if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
+            fprintf(stderr, "ABORT: Failed creating template password file\n");
+            return(255);
+        }
     }
 
-    if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
-        fprintf(stderr, "ABORT: Failed creating template group file\n");
-        return(255);
+    if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
+        if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
+            fprintf(stderr, "ABORT: Failed creating template group file\n");
+            return(255);
+        }
     }
 
 
@@ -349,11 +387,11 @@ int main(int argc, char ** argv) {
     if (is_file(joinpath(containerpath, "/etc/mtab")) == 0 ) {
         if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-mtab")) == 0 ) {
             if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-mtab"), joinpath(containerpath, "/etc/mtab"), 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind %s\n", joinpath(runpath, "/mtab"));
+                fprintf(stderr, "ABORT: Could not bind %s\n", joinpath(SYSCONFDIR, "/singularity/default-mtab"));
                 return(255);
             }
         } else {
-            fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", joinpath(runpath, "/mtab"));
+            fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", joinpath(SYSCONFDIR, "/singularity/default-mtab"));
         }
     }
 
@@ -557,10 +595,18 @@ int main(int argc, char ** argv) {
         retval++;
     }
 
-    if ( s_rmdir(tmpdir) < 0 ) {
-        fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
+    if ( flock(lockfile_fd, LOCK_EX | LOCK_NB) == 0 ) {
+        close(lockfile_fd);
+        if ( s_rmdir(tmpdir) < 0 ) {
+            fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
+        }
+    } else {
+        printf("Not removing tmpdir, lock still\n");
     }
 
+    close(containerimage_fd);
+
+    free(lockfile);
     free(containerpath);
     free(tmpdir);
 

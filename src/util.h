@@ -19,6 +19,7 @@
  */
 
 
+char *file_id(char *path);
 int is_file(char *path);
 int is_link(char *path);
 int is_dir(char *path);
@@ -32,4 +33,5 @@ int copy_file(char * source, char * dest);
 char *joinpath(char * path1, char * path2);
 char *strjoin(char *str1, char *str2);
 char *random_string(int length);
-
+char *filecat(char *path);
+int fileput(char *path, char *string);

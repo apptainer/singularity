@@ -113,40 +113,4 @@ int associate_loop(int image_fd, char * loop_device) {
     return(0);
 }
 
-int associate_loop_dev(char * image_path, char * loop_device) {
-    int image_fd;
-    int loop_fd;
-    struct loop_info64 lo64 = {0};
-    int offset = 0;
-
-    lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
-    strncpy((char*)lo64.lo_file_name, image_path, LO_NAME_SIZE);
-    lo64.lo_offset = offset;
-
-    //printf("Opening image: %s\n", image_path);
-    if ( (image_fd = open(image_path, O_RDWR)) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open image %s: %s\n", image_path, strerror(errno));
-        return(-1);
-    }
-
-    //printf("Opening loop device: %s\n", loop_device);
-    if ( ( loop_fd = open(loop_device, O_RDWR) ) < 0 ) {
-        fprintf(stderr, "ERROR: Failed to open %s: %s\n", loop_device, strerror(errno));
-        return(-1);
-    }
-
-    //printf("Associating image to loop device\n");
-    if ( ioctl(loop_fd, LOOP_SET_FD, image_fd) < 0 ) {
-        fprintf(stderr, "ERROR: Failed to associate image to loop\n");
-        return(-1);
-    }
-
-    if ( ioctl(loop_fd, LOOP_SET_STATUS64, &lo64) < 0 ) {
-        (void)ioctl(loop_fd, LOOP_CLR_FD, 0);
-        fprintf(stderr, "ERROR: Failed to set loop flags on %s: %s\n", loop_device, strerror(errno));
-        return(-1);
-    }
-
-    return(0);
-}
 

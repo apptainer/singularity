@@ -38,6 +38,22 @@
 #include "config.h"
 
 
+char *file_id(char *path) {
+    struct stat filestat;
+    char *ret;
+    uid_t uid = getuid();
+
+    // Stat path
+    if (lstat(path, &filestat) < 0) {
+        return(NULL);
+    }
+
+    ret = (char *) malloc(128);
+    snprintf(ret, 128, "%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino);
+    return(ret);
+}
+
+
 int is_file(char *path) {
     struct stat filestat;
 
@@ -247,3 +263,60 @@ char *random_string(int length) {
 
     return(ret);
 }
+
+int fileput(char *path, char *string) {
+    FILE *fd;
+
+    fd = fopen(path, "w");
+    if ( fd == NULL ) {
+        fprintf(stderr, "ERROR: Could not write to %s: %s\n", path, strerror(errno));
+        return(-1);
+    }
+
+    fprintf(fd, "%s", string);
+    fclose(fd);
+
+    return(0);
+}
+
+char *filecat(char *path) {
+    char *ret;
+    FILE *fd;
+    char c;
+    long length;
+    long pos = 0;
+    
+    if ( is_file(path) < 0 ) {
+        fprintf(stderr, "ERROR: Could not find %s\n", path);
+        return(NULL);
+    }
+
+    fd = fopen(path, "r");
+    if ( fd == NULL ) {
+        fprintf(stderr, "ERROR: Could not read from %s: %s\n", path, strerror(errno));
+        return(NULL);
+    }
+
+
+    if ( fseek(fd, 0L, SEEK_END) < 0 ) {
+        fprintf(stderr, "ERROR: Could not seek to end of file %s: %s\n", path, strerror(errno));
+        return(NULL);
+    }
+
+    length = ftell(fd);
+
+    rewind(fd);
+
+    ret = (char *) malloc(length+1);
+
+    while ( ( c = fgetc(fd) ) != EOF ) {
+        ret[pos] = c;
+        pos++;
+    }
+    ret[length+1] = '\0';
+
+    fclose(fd);
+
+    return(ret);
+}
+
