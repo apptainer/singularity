@@ -271,7 +271,7 @@ int main(int argc, char ** argv) {
 // Mount image                                                                //
 //****************************************************************************//
 
-    if ( ( containerimage_fd = open(containerimage, O_RDONLY) ) < 0 ) {
+    if ( ( containerimage_fd = open(containerimage, O_RDWR) ) < 0 ) {
         fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
         return(255);
     }
