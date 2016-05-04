@@ -6,6 +6,9 @@ note: When invoking a shell within a container, the container image is
 by default writable.
 
 OPTIONS:
+    -w/--writable   By default all Singularity containers are available as
+                    read only. This option makes the file system accessible
+                    as read/write.
     -C/--contain    This option disables the automatic sharing of writable
                     filesystems on your host (e.g. $HOME and /tmp).
 
