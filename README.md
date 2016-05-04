@@ -74,6 +74,51 @@ changes to the image once on that system. But you will be able to use
 the container and access the data and files outside the container as
 easily as you would on your development system or virtual machine.
 
+## Portability of Singularity container images
+Singularity images are highly portable between Linux distributions (as
+long as the binary format is the same). You can generate your image on
+Debian or Centos, and run it on Mint or Slackware.
+
+Generally when building an image from scratch you must build it from a
+compatible host. This is because you are essentially bootstrapping the
+image from scratch using the distribution specific tools it comes with
+(e.g. Red Hat does not provide Debian's debootstrap). But once the
+image has been bootstrapped and includes the necessary bits to become
+self hosting (e.g. YUM on Centos and apt-get on Debian/Ubuntu) then
+the process of managing the container becomes distribution independent.
+
+Here is an example bootstrap definition file for Centos:
+
+    # Use shell lingo to determine version and repository location
+    VERSION=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
+    
+    PackageRepo "http://mirror.centos.org/centos-${VERSION}/${VERSION}/os/\$basearch/"
+    
+    Initalize
+    
+    InstallPkgs python procps-ng vim-minimal
+    InstallFile /bin/strace /bin/
+    
+    RunScript 'echo "Hello World"'
+    RunScript 'exec /usr/bin/python "$@"'
+    
+    Finalize
+
+Once you have created your bootstrap definition, you can build your
+Singularity container image as follows:
+
+    [gmk@centos7-x64 demo]$ sudo singularity image create /tmp/Centos-7.img
+    [gmk@centos7-x64 demo]$ sudo singularity bootstrap /tmp/Centos-7.img centos.def
+
+From there we can immeadiatly start executing commands within the container:
+
+    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python --version
+    Python 2.7.5
+    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python hello.py 
+    hello world
+    [gmk@centos7-x64 demo]$ 
+
+
 # Webpage
 We are working on documentation and web pages now, but checkout the work
 in progress here:
