@@ -120,9 +120,10 @@ container:
     [gmk@centos7-x64 demo]$ 
 
 And if I do this same process again, while changing the **VERSION**
-string in the bootstrap defition to **6**, I can essentially build a
-Centos-6 image in exactly the same manner as above. Doing so reveals
-this:
+string in the bootstrap defition to **6** (where previously it was
+automatically ascertained by querying the RPM database), we can
+essentially build a Centos-6 image in exactly the same manner as
+above. Doing so reveals this:
 
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img python --version
     Python 2.6.6
