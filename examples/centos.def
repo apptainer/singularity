@@ -7,12 +7,7 @@ MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
 Setup
 Bootstrap
 
-InstallPkgs python procps-ng vim-minimal
-InstallFile ~/bin/test.sh /usr/bin/
-InstallFile ~/bin/script.py /usr/bin/
-
-RunScript "echo \"Hello World\""
-RunScript "exec /usr/bin/python \"$@\""
+#InstallPkgs python procps-ng vim-minimal
 
 Cleanup
 
