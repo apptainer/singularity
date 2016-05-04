@@ -26,7 +26,7 @@ container image (and not on the metadata server!).
 
 ## Mobility of Compute
 With Singularity, developers who like to be able to easily control their
-own environment will love Singularities flexibility. Singularity does not
+own environment will love Singularity's flexibility. Singularity does not
 provide a pathway for escalation of privledge (as do other container
 platforms which are thus not applicable for multi-tennant resources) so
 you must be able to become root on the host system (or virtual machine)
