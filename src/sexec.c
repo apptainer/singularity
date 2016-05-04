@@ -626,8 +626,16 @@ int main(int argc, char ** argv) {
 
             } else if ( strcmp(command, "shell") == 0 ) {
                 if ( is_exec("/bin/bash") == 0 ) {
-                    argv[0] = strdup("/bin/bash");
-                    if ( execv("/bin/bash", argv) != 0 ) {
+                    char *args[argc+1];
+                    int i;
+
+                    args[0] = strdup("/bin/bash");
+                    args[1] = strdup("--norc");
+                    for(i=1; i<=argc; i++) {
+                        args[i+1] = argv[i];
+                    }
+
+                    if ( execv("/bin/bash", args) != 0 ) {
                         fprintf(stderr, "ABORT: exec of /bin/bash failed: %s\n", strerror(errno));
                     }
                 } else {
