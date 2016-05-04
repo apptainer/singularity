@@ -1,8 +1,6 @@
 AC_PREREQ(2.59)
 AC_INIT([singularity],[2.0],[gmkurtzer@lbl.gov])
-AC_CONFIG_SRCDIR([.])
-AC_CONFIG_HEADERS([src/config.h])
-AC_CONFIG_MACRO_DIR([.])
+
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -26,6 +24,10 @@ case $target_cpu in
 esac
 AC_SUBST(SINGULARITY_ARCH)
 
+AM_INIT_AUTOMAKE([foreign])
+AC_CONFIG_SRCDIR([.])
+AC_CONFIG_HEADERS([src/config.h])
+AC_CONFIG_MACRO_DIR([.])
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_CC

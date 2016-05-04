@@ -1,4 +1,4 @@
-USAGE: singularity (options) build [container path]
+USAGE: singularity (options) bootstrap [container path] [bootstrap defition]
 
 ...
 

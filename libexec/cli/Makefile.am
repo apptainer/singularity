@@ -1,7 +1,7 @@
 cliexecdir = $(libexecdir)/singularity/cli
 
 dist_cliexec_SCRIPTS = help.exec help.help help.summary \
-			build.exec build.help build.summary \
+			bootstrap.exec bootstrap.help bootstrap.summary \
 			exec.exec exec.help exec.summary \
 			image.exec image.help image.summary \
 			mount.exec mount.help mount.summary \
