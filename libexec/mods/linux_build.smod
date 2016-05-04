@@ -1,0 +1,118 @@
+#!/bin/bash
+# 
+# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# 
+# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+# 
+# If you have questions about your rights to use or distribute this software,
+# please contact Berkeley Lab's Innovation & Partnerships Office at
+# IPO@lbl.gov.
+# 
+# NOTICE.  This Software was developed under funding from the U.S. Department of
+# Energy and the U.S. Government consequently retains certain rights. As such,
+# the U.S. Government has been granted for itself and others acting on its
+# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+# to reproduce, distribute copies to the public, prepare derivative works, and
+# perform publicly and display publicly, and to permit other to do so. 
+# 
+# 
+
+# Things that should always exist in a Singularity container
+DIRS="/home /tmp /etc /root"
+FILES="/etc/mtab /etc/resolv.conf /etc/nsswitch.conf /etc/passwd /etc/group /etc/hosts"
+
+
+#TODO: Add lots of distributions here!
+if [ -f "/etc/redhat-release" ]; then
+    DISTRIBUTION='redhat'
+elif [ -f "/etc/debian_release" ]; then
+    DISTRIBUTION='debian'
+else
+    echo
+    echo "ERROR: Singularity can't handle your distribution (yet)..."
+    echo "ERROR: Create an issue here to let us know:"
+    echo
+    echo "       https://github.com/gmkurtzer/singularity/issues/new"
+    echo
+    exit 1
+fi
+
+
+# Function templates
+PackageRepo() {
+    echo "Function 'PackageRepo' has not been defined for your distribution"
+    return 0
+}
+
+Initalize() {
+    echo "Function 'Initalize' has not been defined for your distribution"
+    return 0
+}
+
+InstallPkgs() {
+    echo "Function 'InstallPkgs' has not been defined for your distribution"
+    return 0
+}
+
+if ! singularity_import "linux_build_$DISTRIBUTION"; then
+    exit 255
+fi
+
+
+# General functions
+InstallFile() {
+    SOURCE="$1"
+    DEST="$2"
+
+    if [ -z "$SOURCE" ]; then
+        echo "InstallFile: Must be called with a source file!" >&2
+        exit 1
+    fi
+
+    if [ ! -e "$SOURCE" ]; then
+        echo "InstallFile: No such file or directory ($SOURCE)" >&2
+        exit 1
+    fi
+
+    if [ -z "$DEST" ]; then
+        DEST="$SOURCE"
+    fi
+
+    DEST_DIR=`dirname "$DEST"`
+
+    if [ ! -d "$SINGULARITY_BUILD_ROOT/$DEST_DIR" ]; then
+        mkdir -p "$SINGULARITY_BUILD_ROOT/$DEST_DIR"
+    fi
+
+    cp -rap "$SOURCE" "$SINGULARITY_BUILD_ROOT/$DEST"
+}
+
+
+Finalize() {
+    for i in $DIRS; do
+        if [ ! -d "$SINGULARITY_BUILD_ROOT/$i" ]; then
+            mkdir -p "$SINGULARITY_BUILD_ROOT/$i"
+        fi
+    done
+
+    for i in $FILES; do
+        if [ ! -f "$SINGULARITY_BUILD_ROOT/$i" ]; then
+            if [ -e "$SINGULARITY_BUILD_ROOT/$i" ]; then
+                rm -rf "$SINGULARITY_BUILD_ROOT/$i"
+            fi
+            touch "$SINGULARITY_BUILD_ROOT/$i"
+        fi
+    done
+}
+
+RunScript() {
+    if [ ! -f "$SINGULARITY_BUILD_ROOT/singularity" ]; then
+        echo '#!/bin/sh'    > "$SINGULARITY_BUILD_ROOT/singularity"
+        echo                >> "$SINGULARITY_BUILD_ROOT/singularity"
+        chmod +x "$SINGULARITY_BUILD_ROOT/singularity"
+    fi
+
+    echo "$*" >> "$SINGULARITY_BUILD_ROOT/singularity"
+}

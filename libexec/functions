@@ -161,7 +161,7 @@ stest() {
 }
 
 
-load_mod() {
+singularity_import() {
     MOD="$1"
     if [ -z "$libexecdir" ]; then
         message ERROR "libexecdir not defined, are you running this from within Singularity?\n"

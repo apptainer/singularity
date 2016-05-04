@@ -20,31 +20,29 @@
 # 
 
 
-TXT_RESOLVERS="pymods_resolver $TXT_RESOLVERS"
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
+
+singularity_import linux_build
+
+BUILD_SPEC="$1"
+shift
+
+if [ -f "$BUILD_SPEC" ]; then
+    # sourcing without a leading slash is weird and requires PATH
+    PATH=".:$PATH"
+    . $BUILD_SPEC
+fi
 
 
-pymods_resolver() {
-    file="$1"
-    int="$2"
-
-    if [ -f "$file" ]; then
-        case "$int" in
-            *python*)
-                imports=$(awk '
-                    $1=="from" && $3=="import" {list = list "import " $2 ";"}
-                    $1=="import" {list = list "import "
-                    for (i=2; i<=NF; i++) {
-                    if ($i ~ "^#") next
-                    list = list $i
-                    if ($i ~ /;$/) next}
-                    list = list ";"}
-                    END {print list}' "$file")
-                "$libexecdir/singularity/ftrace" $int -c "$imports" 2>&1 >/dev/null | while read dep; do
-                    if [ ! -f "$INSTALLDIR/c/$dep" ]; then
-                        install_file "$dep"
-                    fi
-                done
-            ;;
-        esac
-    fi
-}

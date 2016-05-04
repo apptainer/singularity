@@ -55,7 +55,9 @@ fi
 IMAGE="$1"
 shift
 
+SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_QUIET=1
-export SINGULARITY_QUIET
+SINGULARITY_BUILD_ROOT="/mnt"
+export SINGULARITY_QUIET SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
 
-exec "$libexecdir/singularity/mount" "$IMAGE" "/mnt" "$libexecdir/singularity/mkroot/driver.sh" "$@"
+exec "$libexecdir/singularity/mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$libexecdir/singularity/build.sh" "$@"

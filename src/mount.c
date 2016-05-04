@@ -38,6 +38,7 @@
 #include "config.h"
 #include "mounts.h"
 #include "util.h"
+#include "loop-control.h"
 
 
 #ifndef LIBEXECDIR
@@ -73,7 +74,9 @@ void sighandler(int sig) {
 int main(int argc, char ** argv) {
     char *containerimage;
     char *mountpoint;
+    char *loop_dev;
     int retval = 0;
+    int containerimage_fd;
     uid_t uid = geteuid();
 
     if ( uid != 0 ) {
@@ -112,8 +115,19 @@ int main(int argc, char ** argv) {
     }
 
 
-    if ( mount_image(containerimage, mountpoint, 1) < 0 ) {
-        fprintf(stderr, "FAILED: Could not mount image: %s\n", containerimage);
+    if ( ( containerimage_fd = open(containerimage, O_RDWR) ) < 0 ) {
+        fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
+        return(255);
+    }
+
+    loop_dev = obtain_loop_dev();
+    if ( associate_loop(containerimage_fd, loop_dev) < 0 ) {
+        fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
+        return(255);
+    }
+
+    if ( mount_image(loop_dev, mountpoint, 1) < 0 ) {
+        fprintf(stderr, "ABORT: exiting...\n");
         return(255);
     }
 
