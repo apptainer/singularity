@@ -38,41 +38,16 @@
 
 
 int mount_image(char * loop_device, char * mount_point, int writable) {
-//    int image_fd;
-//
-//    if ( (image_fd = open(image_path, O_RDWR)) < 0 ) {
-//        fprintf(stderr, "ERROR: Could not open image %s: %s\n", image_path, strerror(errno));
-//        return(-1);
-//    }
-//
-//    if ( writable == 1 ) {
-//        if ( flock(image_fd, LOCK_EX | LOCK_NB) < 0 ) {
-//            fprintf(stderr, "ABORT: Image is locked by another process\n");
-//            return(-1);
-//        }
-//    } else {
-//        if ( flock(image_fd, LOCK_SH | LOCK_NB) < 0 ) {
-//            fprintf(stderr, "ABORT: Image is locked by another process\n");
-//            return(-1);
-//        }
-//    }
-//
+
     if ( is_dir(mount_point) < 0 ) {
         fprintf(stderr, "ERROR: Mount point is not available: %s\n", mount_point);
         return(-1);
     }
 
-//    loop_device = obtain_loop_dev();
-//
-//    if ( loop_device == NULL ) {
-//        fprintf(stderr, "FAILED: Could not obtain loop device\n");
-//        return(-1);
-//    }
-//
-//    if ( associate_loop(image_fd, loop_device) < 0 ) {
-//        fprintf(stderr, "FAILED: Could not associate loop device\n");
-//        return(-1);
-//    }
+    if ( is_blk(loop_device) < 0 ) {
+        fprintf(stderr, "ERROR: Loop device is not a block dev: %s\n", loop_device);
+        return(-1);
+    }
 
     if ( writable > 0 ) {
         if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
