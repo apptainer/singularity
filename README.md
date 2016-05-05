@@ -80,35 +80,48 @@ Singularity images are highly portable between Linux distributions (as
 long as the binary format is the same). You can generate your image on
 Debian or Centos, and run it on Mint or Slackware.
 
-Generally when building an image from scratch you must build it from a
-compatible host. This is because you are essentially bootstrapping the
-image from scratch using the distribution specific tools it comes with
-(e.g. Red Hat does not provide Debian's debootstrap). But once the
-image has been bootstrapped and includes the necessary bits to become
-self hosting (e.g. YUM on Centos and apt-get on Debian/Ubuntu) then
-the process of managing the container becomes distribution independent.
+Within a particular container one can include their programs, data,
+scripts and pipelines and thus portable to any other architecture
+compatible Linux system or distribution.
 
-Here is an example bootstrap definition file for Centos:
+## Bootstrapping new images
+Generally when bootstrapping an image from scratch you must build it from
+a compatible host. This is because you must use the distribution specific
+tools it comes with (e.g. Red Hat does not provide Debian's debootstrap).
+But once the image has been bootstrapped and includes the necessary bits
+to be self hosting (e.g. YUM on Centos and apt-get on Debian/Ubuntu) then
+the process of managing the container can be implemented from within the
+container.
+
+The process of building a bootstrap starts with a definition
+specification. The defition file describes how you want the operating
+system to be built, what should go inside it and any additional
+modifications necessary.
+
+Here is an example of a very simple bootstrap definition file for Centos:
 
     # Use shell lingo to determine version and repository location
-    VERSION=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
+    VERSION=7
     
     PackageRepo "http://mirror.centos.org/centos-${VERSION}/${VERSION}/os/\$basearch/"
     
     Initalize
     
-    InstallPkgs coreutils python strace vim-minimal
+    InstallPkgs centos-release coreutils python strace vim-minimal
     
     Finalize
 
 Once you have created your bootstrap definition, you can build your
-Singularity container image as follows:
+Singularity container image by first creating a blank image, and then
+bootstrapping using your defintion file:
 
     [gmk@centos7-x64 demo]$ sudo singularity image create /tmp/Centos-7.img
     [gmk@centos7-x64 demo]$ sudo singularity bootstrap /tmp/Centos-7.img centos.def
 
 From there we can immeadiatly start using the container:
 
+    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img cat /etc/redhat-release 
+    CentOS Linux release 7.2.1511 (Core) 
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python --version
     Python 2.7.5
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python hello.py 
@@ -116,11 +129,13 @@ From there we can immeadiatly start using the container:
     [gmk@centos7-x64 demo]$ 
 
 And if I do this same process again, while changing the **VERSION**
-string in the bootstrap defition to **6** (where previously it was
+variable in the bootstrap defition to **6** (where previously it was
 automatically ascertained by querying the RPM database), we can
 essentially build a Centos-6 image in exactly the same manner as
 above. Doing so reveals this:
 
+    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img cat /etc/redhat-release 
+    CentOS release 6.7 (Final)
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img python --version
     Python 2.6.6
     [gmk@centos7-x64 demo]$ 
