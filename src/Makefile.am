@@ -11,6 +11,8 @@ install-exec-hook:
 	@if test "$$UID" = "0"; then \
 		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec"; \
 		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec; \
+		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec"; \
+		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec; \
 	fi
 
 bindir = $(libexecdir)/singularity
