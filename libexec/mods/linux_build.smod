@@ -27,7 +27,7 @@ FILES="/etc/mtab /etc/resolv.conf /etc/nsswitch.conf /etc/passwd /etc/group /etc
 #TODO: Add lots of distributions here!
 if [ -f "/etc/redhat-release" ]; then
     DISTRIBUTION='redhat'
-elif [ -f "/etc/debian_release" ]; then
+elif [ -f "/etc/debian_version" ]; then
     DISTRIBUTION='debian'
 else
     echo
@@ -41,11 +41,6 @@ fi
 
 
 # Function templates
-PackageRepo() {
-    echo "Function 'PackageRepo' has not been defined for your distribution"
-    return 0
-}
-
 Initalize() {
     echo "Function 'Initalize' has not been defined for your distribution"
     return 0
@@ -56,12 +51,25 @@ InstallPkgs() {
     return 0
 }
 
+
 if ! singularity_import "linux_build_$DISTRIBUTION"; then
     exit 255
 fi
 
 
+
 # General functions
+
+Mirror() {
+    MIRROR="$1"
+    export MIRROR
+}
+
+OSVersion() {
+    VERSION="$1"
+    export VERSION
+}
+
 InstallFile() {
     SOURCE="$1"
     DEST="$2"
@@ -114,5 +122,12 @@ RunScript() {
         chmod +x "$SINGULARITY_BUILD_ROOT/singularity"
     fi
 
-    echo "$*" >> "$SINGULARITY_BUILD_ROOT/singularity"
+    echo "$@" >> "$SINGULARITY_BUILD_ROOT/singularity"
+}
+
+RunCmd() {
+    if ! chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c "$@"; then
+        message ERROR "Failed to run: $*\n"
+        exit 1
+    fi
 }

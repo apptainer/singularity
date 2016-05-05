@@ -36,25 +36,18 @@ YUM_CMD="$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot
 #PackageRepo "http://mirror.centos.org/centos-${VERSION}/${VERSION}/os/\$basearch/"
 
 
-PackageRepo() {
-    YUM_MIRROR="$1"
-    export YUM_MIRROR
+OSVersion() {
+    return 0
 }
 
 
 Initalize() {
-    if [ -z "$YUM_MIRROR" ]; then
+    if [ -z "$MIRROR" ]; then
         echo "ERROR: You must define the PackageRepo in recipe"
         return 1
     fi
 
     mkdir -p "$SINGULARITY_BUILD_ROOT"
-#    mkdir -p $SINGULARITY_BUILD_ROOT/etc
-
-#    VERSION=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
-
-#    cp -rap /etc/yum.conf /etc/yum.repos.d $SINGULARITY_BUILD_ROOT/etc
-#    sed -i -e "s/\$releasever/$VERSION/g" `find $SINGULARITY_BUILD_ROOT/etc/yum* -type f`
 
     YUM_CONF_DIRNAME=`dirname $YUM_CONF`
     mkdir -m 0755 -p "$SINGULARITY_BUILD_ROOT/$YUM_CONF_DIRNAME"
@@ -74,7 +67,7 @@ Initalize() {
 
     echo "[$REPO_NAME]" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
     echo 'name=Linux $releasever - $basearch' >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-    echo "baseurl=$YUM_MIRROR" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
+    echo "baseurl=$MIRROR" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
     echo "enabled=1" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
     echo "gpgcheck=0" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
 

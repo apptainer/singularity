@@ -1,0 +1,52 @@
+#!/bin/bash
+# 
+# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# 
+# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+# 
+# If you have questions about your rights to use or distribute this software,
+# please contact Berkeley Lab's Innovation & Partnerships Office at
+# IPO@lbl.gov.
+# 
+# NOTICE.  This Software was developed under funding from the U.S. Department of
+# Energy and the U.S. Government consequently retains certain rights. As such,
+# the U.S. Government has been granted for itself and others acting on its
+# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+# to reproduce, distribute copies to the public, prepare derivative works, and
+# perform publicly and display publicly, and to permit other to do so. 
+# 
+# 
+
+
+
+if ! APT_PATH=`singularity_which apt-get`; then
+    message ERROR "apt-get is not in PATH... Is this really Debian?\n"
+    return 255
+fi
+
+if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
+    message ERROR "debootstrap is not in PATH... Perhaps 'apt-get install' it?\n"
+    return 255
+fi
+
+
+
+Initalize() {
+
+    if ! eval "$DEBOOTSTRAP_PATH --variant=minbase '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
+        exit 1
+    fi
+
+    return 0
+}
+
+
+InstallPkgs() {
+    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH install $*'"; then
+        exit 1
+    fi
+
+    return 0
+}
