@@ -35,7 +35,7 @@ fi
 
 Initalize() {
 
-    if ! eval "$DEBOOTSTRAP_PATH --variant=minbase '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
+    if ! eval "$DEBOOTSTRAP_PATH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
         exit 1
     fi
 
