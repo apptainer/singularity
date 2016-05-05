@@ -508,8 +508,8 @@ int main(int argc, char ** argv) {
 // Setup final envrionment                                                    //
 //****************************************************************************//
 
-        prompt = (char *) malloc(strlen(containername) + 10);
-        snprintf(prompt, strlen(containerimage) + 10, "\\u@%s \\W> ", containername);
+        prompt = (char *) malloc(strlen(containername) + 16);
+        snprintf(prompt, strlen(containerimage) + 16, "Singularity/%s> ", containername);
         setenv("PS1", prompt, 1);
 
         // After this, we exist only within the container... Let's make it known!
