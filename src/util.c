@@ -58,7 +58,7 @@ int is_file(char *path) {
     struct stat filestat;
 
     // Stat path
-    if (lstat(path, &filestat) < 0) {
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
