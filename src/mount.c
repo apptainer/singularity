@@ -148,10 +148,10 @@ int main(int argc, char ** argv) {
             fprintf(stderr, "this shell exits, the mount point will automatically be unmounted.\n\n");
         }
 
-        argv[2] = strdup("/bin/sh");
+        argv[2] = strdup("/bin/bash");
 
-        if ( execv("/bin/sh", &argv[2]) != 0 ) {
-            fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
+        if ( execv("/bin/bash", &argv[2]) != 0 ) {
+            fprintf(stderr, "ABORT: exec of /bin/bash failed: %s\n", strerror(errno));
         }
 
     } else if ( child_pid > 0 ) {

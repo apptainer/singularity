@@ -28,12 +28,13 @@ if ! YUM_PATH=`singularity_which yum`; then
 fi
 
 
+VERSION=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
+MIRROR="http://mirror.centos.org/centos-${VERSION}/${VERSION}/os/\$basearch/"
+
+
 REPO_NAME="os-base"
 YUM_CONF="/yum.conf"
 YUM_CMD="$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y"
-
-#VERSION=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
-#PackageRepo "http://mirror.centos.org/centos-${VERSION}/${VERSION}/os/\$basearch/"
 
 
 OSVersion() {
@@ -41,10 +42,10 @@ OSVersion() {
 }
 
 
-Initalize() {
+Bootstrap() {
     if [ -z "$MIRROR" ]; then
-        echo "ERROR: You must define the PackageRepo in recipe"
-        return 1
+        echo "ERROR: MIRROR is not defined, have you configure 'MirrorURL'?"
+        exit 1
     fi
 
     mkdir -p "$SINGULARITY_BUILD_ROOT"
@@ -71,12 +72,24 @@ Initalize() {
     echo "enabled=1" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
     echo "gpgcheck=0" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
 
+    if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install yum"; then
+        exit 1
+    fi
+
     return 0
 }
 
 
 InstallPkgs() {
     if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then
+        exit 1
+    fi
+
+    return 0
+}
+
+Finalize() {
+    if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --installroot $SINGULARITY_BUILD_ROOT clean"; then
         exit 1
     fi
 

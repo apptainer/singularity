@@ -1,15 +1,14 @@
 # Use shell lingo to determine version and repository location
-VERSION=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
+RELEASE=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
 
 
-PackageRepo "http://mirror.centos.org/centos-${VERSION}/${VERSION}/os/\$basearch/"
+MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
 
-Initalize
+Bootstrap
 
 InstallPkgs yum procps-ng vim-minimal
+
 InstallFile /bin/strace /bin/
 
 RunScript 'echo "Hello World"'
 RunScript 'exec /usr/bin/python "$@"'
-
-Finalize

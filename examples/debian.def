@@ -1,0 +1,7 @@
+MirrorURL "http://ftp.us.debian.org/debian/"
+OSVersion "stable"
+
+Bootstrap
+
+InstallPkgs vim
+

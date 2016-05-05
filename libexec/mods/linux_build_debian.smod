@@ -33,7 +33,16 @@ fi
 
 
 
-Initalize() {
+Bootstrap() {
+    if [ -z "$MIRROR" ]; then
+        echo "ERROR: MIRROR is not defined, have you configure 'MirrorURL'?"
+        exit 1
+    fi
+
+    if [ -z "$VERSION" ]; then
+        echo "ERROR: VERSION is not defined, have you set 'OSVersion'?"
+        exit 1
+    fi
 
     if ! eval "$DEBOOTSTRAP_PATH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
         exit 1
@@ -45,6 +54,14 @@ Initalize() {
 
 InstallPkgs() {
     if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH install $*'"; then
+        exit 1
+    fi
+
+    return 0
+}
+
+Finalize() {
+    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH clean"; then
         exit 1
     fi
 

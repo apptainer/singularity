@@ -39,10 +39,14 @@ singularity_import linux_build
 BUILD_SPEC="$1"
 shift
 
+# Always run these checks
+SanityCheck
+PreSetup
+
 if [ -f "$BUILD_SPEC" ]; then
     # sourcing without a leading slash is weird and requires PATH
     PATH=".:$PATH"
     . $BUILD_SPEC
 fi
 
-
+Finalize

@@ -41,13 +41,19 @@ fi
 
 
 # Function templates
-Initalize() {
-    echo "Function 'Initalize' has not been defined for your distribution"
+SanityCheck() {
+    return 0
+}
+
+Bootstrap() {
     return 0
 }
 
 InstallPkgs() {
-    echo "Function 'InstallPkgs' has not been defined for your distribution"
+    return 0
+}
+
+Finalize() {
     return 0
 }
 
@@ -60,7 +66,7 @@ fi
 
 # General functions
 
-Mirror() {
+MirrorURL() {
     MIRROR="$1"
     export MIRROR
 }
@@ -98,7 +104,7 @@ InstallFile() {
 }
 
 
-Finalize() {
+PreSetup() {
     for i in $DIRS; do
         if [ ! -d "$SINGULARITY_BUILD_ROOT/$i" ]; then
             mkdir -p "$SINGULARITY_BUILD_ROOT/$i"

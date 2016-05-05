@@ -1,0 +1,7 @@
+MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
+OSVersion "lucid"
+
+Bootstrap
+
+InstallPkgs vim
+
