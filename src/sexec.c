@@ -398,17 +398,6 @@ int main(int argc, char ** argv) {
         }
     }
 
-    if (is_file(joinpath(containerpath, "/etc/mtab")) == 0 ) {
-        if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-mtab")) == 0 ) {
-            if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-mtab"), joinpath(containerpath, "/etc/mtab"), 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind %s\n", joinpath(SYSCONFDIR, "/singularity/default-mtab"));
-                return(255);
-            }
-        } else {
-            fprintf(stderr, "WARNING: Template /etc/mtab does not exist: %s\n", joinpath(SYSCONFDIR, "/singularity/default-mtab"));
-        }
-    }
-
     if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
         unsetenv("SINGULARITY_CONTAIN");
 

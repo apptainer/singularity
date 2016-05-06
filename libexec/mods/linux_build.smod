@@ -23,22 +23,7 @@
 DIRS="/home /tmp /etc /root"
 EMPTY_FILES="/etc/mtab /etc/resolv.conf /etc/nsswitch.conf /etc/passwd /etc/group /etc/hosts"
 TMP_REAL_FILES="/etc/resolv.conf /etc/hosts"
-
-
-#TODO: Add lots of distributions here!
-if [ -f "/etc/redhat-release" ]; then
-    DISTRIBUTION='redhat'
-elif [ -f "/etc/debian_version" ]; then
-    DISTRIBUTION='debian'
-else
-    echo
-    echo "ERROR: Singularity can't handle your distribution (yet)..."
-    echo "ERROR: Create an issue here to let us know:"
-    echo
-    echo "       https://github.com/gmkurtzer/singularity/issues/new"
-    echo
-    exit 1
-fi
+TMPDIR=`mktemp -d /tmp/singularity-bootstrap.XXXXXXX`
 
 
 # Function templates
@@ -47,25 +32,50 @@ SanityCheck() {
 }
 
 Bootstrap() {
+    if [ ! -f "$TMPDIR/type" ]; then
+        echo "Bootstrap: You must first call 'DistType'!" >&2
+        exit 5
+    fi
     return 0
 }
 
 InstallPkgs() {
+    if [ ! -f "$TMPDIR/type" ]; then
+        echo "InstallPkgs: You must first call 'DistType'!" >&2
+        exit 5
+    fi
     return 0
 }
 
 Cleanup() {
+    if [ ! -f "$TMPDIR/type" ]; then
+        echo "Cleanup: You must first call 'DistType'!" >&2
+        exit 5
+    fi
     return 0
 }
 
 
-if ! singularity_import "linux_build_$DISTRIBUTION"; then
-    exit 255
-fi
-
-
-
 # General functions
+
+DistType() {
+    TYPE="$1"
+
+    if [ -z "$TYPE" ]; then
+        echo "DistType: Requires an argument!" 2>&2
+        exit 1
+    fi
+
+    if [ -f "$libexecdir/singularity/mods/linux_build_$TYPE.smod" ]; then
+        . "$libexecdir/singularity/mods/linux_build_$TYPE.smod"
+    else
+        echo "DistType: Unrecognized Distribution type: $TYPE" >&2
+        exit 255
+    fi
+
+    echo "$TYPE" > "$TMPDIR/type"
+
+}
 
 MirrorURL() {
     MIRROR="$1"
@@ -143,4 +153,6 @@ Finalize() {
             > "$SINGULARITY_BUILD_ROOT/$i"
         fi
     done
+
+    echo "singularity / rootfs rw 0 0" > "$SINGULARITY_BUILD_ROOT/etc/mtab"
 }

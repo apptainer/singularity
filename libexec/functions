@@ -171,8 +171,9 @@ singularity_import() {
         . "$libexecdir/singularity/mods/$MOD.smod"
     else
         message ERROR "Could not load Singularity module: $MOD\n"
-        exit 1
+        exit 255
     fi
+    return 0
 }
 
 
