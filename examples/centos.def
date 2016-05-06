@@ -12,3 +12,5 @@ InstallFile /bin/strace /bin/
 
 RunScript 'echo "Hello World"'
 RunScript 'exec /usr/bin/python "$@"'
+
+Cleanup

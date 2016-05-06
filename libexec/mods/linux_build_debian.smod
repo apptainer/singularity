@@ -60,7 +60,7 @@ InstallPkgs() {
     return 0
 }
 
-Finalize() {
+Cleanup() {
     if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH clean"; then
         exit 1
     fi

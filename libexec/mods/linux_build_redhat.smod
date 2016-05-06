@@ -88,7 +88,7 @@ InstallPkgs() {
     return 0
 }
 
-Finalize() {
+Cleanup() {
     if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --installroot $SINGULARITY_BUILD_ROOT clean"; then
         exit 1
     fi

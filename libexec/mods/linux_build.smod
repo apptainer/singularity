@@ -21,7 +21,8 @@
 
 # Things that should always exist in a Singularity container
 DIRS="/home /tmp /etc /root"
-FILES="/etc/mtab /etc/resolv.conf /etc/nsswitch.conf /etc/passwd /etc/group /etc/hosts"
+EMPTY_FILES="/etc/mtab /etc/resolv.conf /etc/nsswitch.conf /etc/passwd /etc/group /etc/hosts"
+TMP_REAL_FILES="/etc/resolv.conf /etc/hosts"
 
 
 #TODO: Add lots of distributions here!
@@ -53,7 +54,7 @@ InstallPkgs() {
     return 0
 }
 
-Finalize() {
+Cleanup() {
     return 0
 }
 
@@ -111,13 +112,8 @@ PreSetup() {
         fi
     done
 
-    for i in $FILES; do
-        if [ ! -f "$SINGULARITY_BUILD_ROOT/$i" ]; then
-            if [ -e "$SINGULARITY_BUILD_ROOT/$i" ]; then
-                rm -rf "$SINGULARITY_BUILD_ROOT/$i"
-            fi
-            touch "$SINGULARITY_BUILD_ROOT/$i"
-        fi
+    for i in $TMP_REAL_FILES; do
+        cp "$i" "$SINGULARITY_BUILD_ROOT/$i"
     done
 }
 
@@ -136,4 +132,15 @@ RunCmd() {
         message ERROR "Failed to run: $*\n"
         exit 1
     fi
+}
+
+Finalize() {
+    for i in $EMPTY_FILES; do
+        if [ ! -f "$SINGULARITY_BUILD_ROOT/$i" ]; then
+            if [ -e "$SINGULARITY_BUILD_ROOT/$i" ]; then
+                rm -rf "$SINGULARITY_BUILD_ROOT/$i"
+            fi
+            > "$SINGULARITY_BUILD_ROOT/$i"
+        fi
+    done
 }
