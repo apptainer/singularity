@@ -21,15 +21,14 @@
 
 
 
-echo "Checking for yum..."
 if ! YUM_PATH=`singularity_which yum`; then
-    message ERROR "YUM is not in PATH... Is this really Red Hat?\n"
+    message ERROR "YUM is not in PATH!\n"
     return 255
 fi
 
 
-VERSION=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
-MIRROR="http://mirror.centos.org/centos-${VERSION}/${VERSION}/os/\$basearch/"
+RELEASE=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
+MIRROR="http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
 
 
 REPO_NAME="os-base"
@@ -92,6 +91,9 @@ Cleanup() {
     if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --installroot $SINGULARITY_BUILD_ROOT clean all"; then
         exit 1
     fi
+
+    # Remove RPM locks
+    rm -f "$SINGULARITY_BUILD_ROOT/var/lib/rpm/__*"
 
     return 0
 }

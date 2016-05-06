@@ -21,11 +21,6 @@
 
 
 
-if ! APT_PATH=`singularity_which apt-get`; then
-    message ERROR "apt-get is not in PATH... Is this really Debian?\n"
-    return 255
-fi
-
 if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     message ERROR "debootstrap is not in PATH... Perhaps 'apt-get install' it?\n"
     return 255
