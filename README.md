@@ -100,16 +100,15 @@ modifications necessary.
 
 Here is an example of a very simple bootstrap definition file for Centos:
 
-    # Use shell lingo to determine version and repository location
-    VERSION=7
-    
-    PackageRepo "http://mirror.centos.org/centos-${VERSION}/${VERSION}/os/\$basearch/"
-    
-    Initalize
-    
-    InstallPkgs centos-release coreutils python strace vim-minimal
-    
-    Finalize
+    RELEASE=7
+     
+    MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
+     
+    Bootstrap
+     
+    InstallPkgs procps-ng vim-minimal
+     
+    Cleanup
 
 Once you have created your bootstrap definition, you can build your
 Singularity container image by first creating a blank image, and then
