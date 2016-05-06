@@ -98,7 +98,7 @@ case "$SUBCOMMAND" in
 
         echo "Done. Image can be found at: $IMAGE_FILE"
     ;;
-    expand)
+    grow)
         IMAGE_BYTES=$(($IMAGE_SIZE * 1024 * 1024))
         IMAGE_FILE="$1"
         shift
