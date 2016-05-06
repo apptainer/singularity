@@ -35,7 +35,7 @@ else
 fi
 
 
-IMAGE_SIZE="2048"
+IMAGE_SIZE="768"
 
 
 while true; do
