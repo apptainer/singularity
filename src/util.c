@@ -193,6 +193,15 @@ int intlen(int input) {
     return(len);
 }
 
+char *int2str(int num) {
+    char *ret;
+    
+    ret = (char *) malloc(intlen(num) + 1);
+
+    snprintf(ret, intlen(num) + 1, "%d", num);
+
+    return(ret);
+}
 
 int copy_file(char * source, char * dest) {
     char c;
