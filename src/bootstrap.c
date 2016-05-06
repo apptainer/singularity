@@ -41,10 +41,43 @@
 #include "loop-control.h"
 
 
+#ifndef LIBEXECDIR
+#define LIBEXECDIR "undefined"
+#endif
+#ifndef SYSCONFDIR
+#define SYSCONFDIR "/etc"
+#endif
+#ifndef LOCALSTATEDIR
+#define LOCALSTATEDIR "/var/"
+#endif
+
+
+// Yes, I know... Global variables suck but necessary to pass sig to child
+pid_t child_pid = 0;
+
+
+void sighandler(int sig) {
+    signal(sig, sighandler);
+
+    printf("Caught signal: %d\n", sig);
+    fflush(stdout);
+
+    if ( child_pid > 0 ) {
+        printf("Singularity is sending SIGKILL to child pid: %d\n", child_pid);
+        fflush(stdout);
+
+        kill(child_pid, SIGKILL);
+    }
+}
+
+
 int main(int argc, char ** argv) {
     char *containerimage;
     char *mountpoint;
+    char *bootstrap_script;
+    char *defintion_script;
     char *loop_dev;
+    int retval = 0;
     int containerimage_fd;
     uid_t uid = geteuid();
 
@@ -54,12 +87,15 @@ int main(int argc, char ** argv) {
     }
 
     if ( argv[1] == NULL || argv[2] == NULL ) {
-        fprintf(stderr, "USAGE: %s [singularity container image] [mount point]\n", argv[0]);
+        fprintf(stderr, "USAGE: %s [singularity container image] [bootstrap definition]\n", argv[0]);
         return(1);
     }
 
     containerimage = strdup(argv[1]);
-    mountpoint = strdup(argv[2]);
+    defintion_script = strdup(argv[2]);
+    bootstrap_script = strjoin(LIBEXECDIR, "/singularity/bootstrap.sh");
+
+    mountpoint = getenv("SINGULARITY_BUILD_ROOT");
 
     if ( is_file(containerimage) < 0 ) {
         fprintf(stderr, "ABORT: Container image not found: %s\n", containerimage);
@@ -71,13 +107,23 @@ int main(int argc, char ** argv) {
         return(1);
     }
 
+    if ( unshare(CLONE_NEWNS) < 0 ) {
+        fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
+        return(255);
+    }
+
+    if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
+        fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
+        return(255);
+    }
+
+
     if ( ( containerimage_fd = open(containerimage, O_RDWR) ) < 0 ) {
         fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
         return(255);
     }
 
     loop_dev = obtain_loop_dev();
-
     if ( associate_loop(containerimage_fd, loop_dev) < 0 ) {
         fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
         return(255);
@@ -88,5 +134,33 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    return(0);
+    child_pid = fork();
+
+    if ( child_pid == 0 ) {
+        char *exec[4];
+
+        exec[0] = strdup("/bin/bash");
+        exec[1] = strdup(bootstrap_script);
+        exec[2] = strdup(defintion_script);
+        exec[3] = NULL;
+
+        if ( execv("/bin/bash", exec) != 0 ) {
+            fprintf(stderr, "ABORT: exec of bootstrap failed: %s\n", strerror(errno));
+        }
+
+    } else if ( child_pid > 0 ) {
+        int tmpstatus;
+        signal(SIGINT, sighandler);
+        signal(SIGKILL, sighandler);
+        signal(SIGQUIT, sighandler);
+
+        waitpid(child_pid, &tmpstatus, 0);
+        retval = WEXITSTATUS(tmpstatus);
+
+    } else {
+        fprintf(stderr, "ABORT: Could not fork child process\n");
+        retval++;
+    }
+
+    return(retval);
 }

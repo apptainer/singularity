@@ -53,6 +53,8 @@ if [ -z "$1" ]; then
 fi
 
 IMAGE="$1"
+DEFINITION="$2"
+shift
 shift
 
 SINGULARITY_libexecdir="$libexecdir"
@@ -60,4 +62,4 @@ SINGULARITY_QUIET=1
 SINGULARITY_BUILD_ROOT="/mnt"
 export SINGULARITY_QUIET SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
 
-exec "$libexecdir/singularity/mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$libexecdir/singularity/build.sh" "$@"
+exec "$libexecdir/singularity/bootstrap" "$IMAGE" "$DEFINITION"
