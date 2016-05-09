@@ -559,9 +559,16 @@ int main(int argc, char ** argv) {
             }
 
         } else if ( strcmp(command, "shell") == 0 ) {
-            argv[0] = strdup("/bin/sh");
-            if ( execv("/bin/sh", argv) != 0 ) {
-                fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
+            if ( is_exec("/bin/bash") == 0 ) {
+                argv[0] = strdup("/bin/bash");
+                if ( execv("/bin/bash", argv) != 0 ) {
+                    fprintf(stderr, "ABORT: exec of /bin/bash failed: %s\n", strerror(errno));
+                }
+            } else {
+                argv[0] = strdup("/bin/sh");
+                if ( execv("/bin/sh", argv) != 0 ) {
+                    fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
+                }
             }
 
         } else {
