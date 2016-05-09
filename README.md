@@ -101,9 +101,9 @@ modifications necessary.
 Here is an example of a very simple bootstrap definition file for Centos:
 
     RELEASE=7
-     
     MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
      
+    Setup
     Bootstrap
      
     InstallPkgs procps-ng vim-minimal
