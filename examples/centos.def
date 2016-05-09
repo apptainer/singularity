@@ -4,8 +4,15 @@ RELEASE=`rpm -qf /etc/redhat-release  --qf '%{VERSION}\n'`
 DistType "redhat"
 MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
 
+Setup
 Bootstrap
 
-InstallPkgs yum procps-ng vim-minimal
+InstallPkgs python procps-ng vim-minimal
+InstallFile ~/bin/test.sh /usr/bin/
+InstallFile ~/bin/script.py /usr/bin/
+
+RunScript "echo \"Hello World\""
+RunScript "exec /usr/bin/python \"$@\""
 
 Cleanup
+
