@@ -30,6 +30,7 @@
 
 
 #include "config.h"
+#include "file.h"
 #include "util.h"
 
 

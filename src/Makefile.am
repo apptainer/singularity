@@ -19,10 +19,10 @@ install-exec-hook:
 bindir = $(libexecdir)/singularity
 bin_PROGRAMS = ftrace ftype sexec mount bootstrap
 
-ftrace_SOURCES = ftrace.c util.c util.h
-ftype_SOURCES = ftype.c util.c util.h
-sexec_SOURCES = sexec.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h user.c user.h
-mount_SOURCES = mount.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h
-bootstrap_SOURCES = bootstrap.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h
+ftrace_SOURCES = ftrace.c file.c file.h
+ftype_SOURCES = ftype.c util.c util.h file.c file.h
+sexec_SOURCES = sexec.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h user.c user.h file.c file.h
+mount_SOURCES = mount.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h file.c file.h
+bootstrap_SOURCES = bootstrap.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h file.c file.h
 
 EXTRA_DIST = config.h 

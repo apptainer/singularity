@@ -29,7 +29,7 @@
 #include <sys/wait.h>
 #include <sys/user.h>
 #include <unistd.h>
-#include "util.h"
+#include "file.h"
 
 #ifndef ARCH_x86_64
 #ifndef ARCH_i386

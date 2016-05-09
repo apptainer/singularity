@@ -40,6 +40,7 @@
 #include "mounts.h"
 #include "loop-control.h"
 #include "util.h"
+#include "file.h"
 #include "user.h"
 
 

@@ -37,7 +37,7 @@
 
 #include "config.h"
 #include "mounts.h"
-#include "util.h"
+#include "file.h"
 #include "loop-control.h"
 
 

@@ -33,6 +33,7 @@
 #include "config.h"
 #include "loop-control.h"
 #include "util.h"
+#include "file.h"
 
 #ifndef LO_FLAGS_AUTOCLEAR
 #define LO_FLAGS_AUTOCLEAR 4

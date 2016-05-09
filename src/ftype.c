@@ -25,8 +25,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-
-#include "util.h"
+#include "file.h"
 
 
 int main(int argc, char **argv) {
