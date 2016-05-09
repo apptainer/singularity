@@ -26,6 +26,11 @@ if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     return 255
 fi
 
+if ! APT_PATH=`singularity_which apt-get`; then
+    message ERROR "apt-get is not in PATH... Perhaps install it?\n"
+    return 255
+fi
+
 
 
 Bootstrap() {
@@ -48,8 +53,8 @@ Bootstrap() {
 
 
 InstallPkgs() {
-    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH install $*'"; then
-        exit 1
+    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH -y install $*'"; then
+        return 1
     fi
 
     return 0
@@ -57,7 +62,7 @@ InstallPkgs() {
 
 Cleanup() {
     if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH clean"; then
-        exit 1
+        return 1
     fi
 
     return 0
