@@ -40,7 +40,7 @@ OSVersion() {
 }
 
 
-Bootstrap() {
+Setup() {
     if [ -z "$MIRROR" ]; then
         echo "ERROR: MIRROR is not defined, have you configure 'MirrorURL'?"
         exit 1
@@ -70,13 +70,16 @@ Bootstrap() {
     echo "enabled=1" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
     echo "gpgcheck=0" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
 
+    return 0
+}
+
+Bootstrap() {
     if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $RELEASE_PKG yum"; then
         exit 1
     fi
 
     return 0
 }
-
 
 InstallPkgs() {
     if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then

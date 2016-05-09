@@ -31,6 +31,10 @@ SanityCheck() {
     return 0
 }
 
+Setup() {
+    return 0
+}
+
 Bootstrap() {
     if [ ! -f "$TMPDIR/type" ]; then
         echo "Bootstrap: You must first call 'DistType'!" >&2
@@ -75,16 +79,21 @@ DistType() {
 
     echo "$TYPE" > "$TMPDIR/type"
 
+    return 0
 }
 
 MirrorURL() {
     MIRROR="$1"
     export MIRROR
+
+    return 0
 }
 
 OSVersion() {
     VERSION="$1"
     export VERSION
+
+    return 0
 }
 
 InstallFile() {
@@ -93,12 +102,12 @@ InstallFile() {
 
     if [ -z "$SOURCE" ]; then
         echo "InstallFile: Must be called with a source file!" >&2
-        exit 1
+        return 1
     fi
 
     if [ ! -e "$SOURCE" ]; then
         echo "InstallFile: No such file or directory ($SOURCE)" >&2
-        exit 1
+        return 1
     fi
 
     if [ -z "$DEST" ]; then
@@ -112,6 +121,7 @@ InstallFile() {
     fi
 
     cp -rap "$SOURCE" "$SINGULARITY_BUILD_ROOT/$DEST"
+    return 0
 }
 
 
@@ -125,6 +135,8 @@ PreSetup() {
     for i in $TMP_REAL_FILES; do
         cp "$i" "$SINGULARITY_BUILD_ROOT/$i"
     done
+
+    return 0
 }
 
 RunScript() {
@@ -135,13 +147,17 @@ RunScript() {
     fi
 
     echo "$@" >> "$SINGULARITY_BUILD_ROOT/singularity"
+
+    return 0
 }
 
 RunCmd() {
     if ! chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c "$@"; then
         message ERROR "Failed to run: $*\n"
-        exit 1
+        return 1
     fi
+
+    return 0
 }
 
 Finalize() {
@@ -155,4 +171,13 @@ Finalize() {
     done
 
     echo "singularity / rootfs rw 0 0" > "$SINGULARITY_BUILD_ROOT/etc/mtab"
+    if [ ! -x "$SINGULARITY_BUILD_ROOT/singularity" ]; then
+        echo "#!/bin/sh" > "$SINGULARITY_BUILD_ROOT/singularity"
+        echo "echo \"There is no runscript defined for this container.\"" >> "$SINGULARITY_BUILD_ROOT/singularity"
+        echo "echo" >> "$SINGULARITY_BUILD_ROOT/singularity"
+        echo "echo \"You can find the template within the container at '/singularity'\"" >> "$SINGULARITY_BUILD_ROOT/singularity"
+        echo "echo" >> "$SINGULARITY_BUILD_ROOT/singularity"
+
+        chmod 755 "$SINGULARITY_BUILD_ROOT/singularity"
+    fi
 }
