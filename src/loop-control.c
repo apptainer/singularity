@@ -55,8 +55,10 @@ char * obtain_loop_dev(void) {
         struct loop_info loop_status = {0};
         int loop_fd;
 
-        if ( ( loop_fd = open(test_loopdev, O_RDONLY) ) < 0 ) {
-            if ( ioctl(loop_fd, LOOP_GET_STATUS, &loop_status) < 0 ) {
+        if ( ( loop_fd = open(test_loopdev, O_RDONLY) ) >= 0 ) {
+            int ret = ioctl(loop_fd, LOOP_GET_STATUS, &loop_status);
+            close(loop_fd);
+            if ( ret != 0 ) {
                 devnum = i;
                 break;
             }
