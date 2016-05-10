@@ -116,9 +116,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
 
 AC_SUBST(NAMESPACE_DEFINES)
 
-AC_CHECK_DECLS([MS_PRIVATE,MS_REC], [],
-               [AC_MSG_ERROR([Required mount(2) flags not available])],
-               [[#include <sys/mount.h>]])
+#AC_CHECK_DECLS([MS_PRIVATE,MS_REC], [],
+#               [AC_MSG_ERROR([Required mount(2) flags not available])],
+#               [[#include <sys/mount.h>]])
 
 
 AC_CONFIG_FILES([

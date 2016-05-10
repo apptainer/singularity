@@ -52,6 +52,14 @@
 #define LOCALSTATEDIR "/var/"
 #endif
 
+#ifndef MS_PRIVATE
+#define MS_PRIVATE (1<<18)
+#endif
+#ifndef MS_REC
+#define MS_REC 16384
+#endif
+
+
 
 // Yes, I know... Global variables suck but necessary to pass sig to child
 pid_t child_pid = 0;
