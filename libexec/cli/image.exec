@@ -80,8 +80,8 @@ case "$SUBCOMMAND" in
             exit 255
         fi
 
-        if ! MKFS_PATH=`singularity_which mkfs.ext4`; then
-            message ERROR "Could not locate program: mkfs.ext4\n"
+        if ! MKFS_PATH=`singularity_which mkfs.ext3`; then
+            message ERROR "Could not locate program: mkfs.ext3\n"
             exit 255
         fi
 

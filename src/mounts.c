@@ -36,6 +36,10 @@
 #include "file.h"
 #include "loop-control.h"
 
+#ifndef MS_REC
+#define MS_REC 16384
+#endif
+
 
 int mount_image(char * loop_device, char * mount_point, int writable) {
 
@@ -50,14 +54,18 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
     }
 
     if ( writable > 0 ) {
-        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
-            fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
-            return(-1);
+        if ( mount(loop_device, mount_point, "ext3", MS_NOSUID, "discard") < 0 ) {
+            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
+                fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+                return(-1);
+            }
         }
     } else {
-        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard") < 0 ) {
-            fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
-            return(-1);
+        if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "discard") < 0 ) {
+            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard") < 0 ) {
+                fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+                return(-1);
+            }
         }
     }
 
