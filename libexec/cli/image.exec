@@ -80,9 +80,11 @@ case "$SUBCOMMAND" in
             exit 255
         fi
 
-        if ! MKFS_PATH=`singularity_which mkfs.ext3`; then
-            message ERROR "Could not locate program: mkfs.ext3\n"
-            exit 255
+        if ! MKFS_PATH=`singularity_which mkfs.ext4`; then
+            if ! MKFS_PATH=`singularity_which mkfs.ext3`; then
+                message ERROR "Could not locate program: mkfs.ext3/4\n"
+                exit 255
+            fi
         fi
 
         if ! touch "$IMAGE_FILE" 2>/dev/null; then
