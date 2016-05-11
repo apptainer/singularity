@@ -35,6 +35,7 @@ else
 fi
 
 
+PATH=/sbin:/usr/sbin:$PATH
 IMAGE_SIZE="1024"
 
 
