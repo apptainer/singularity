@@ -87,7 +87,6 @@ int main(int argc, char ** argv) {
     char *containerpath;
     char *homepath;
     char *command;
-    char *command_exec;
     char *tmpdir;
     char *lockfile;
     char *loop_dev_cache;
@@ -116,7 +115,6 @@ int main(int argc, char ** argv) {
     homepath = getenv("HOME");
     containerimage = getenv("SINGULARITY_IMAGE");
     command = getenv("SINGULARITY_COMMAND");
-    command_exec = getenv("SINGULARITY_EXEC");
 
     unsetenv("SINGULARITY_IMAGE");
     unsetenv("SINGULARITY_COMMAND");
@@ -555,15 +553,9 @@ int main(int argc, char ** argv) {
             }
 
         } else if ( strcmp(command, "exec") == 0 ) {
-            char *args[4];
 
-            args[0] = strdup("Singularity");
-            args[1] = strdup("-c");
-            args[2] = strdup(argv[1]);
-            args[3] = NULL;
-
-            if ( execv("/bin/sh", args) != 0 ) {
-                fprintf(stderr, "ABORT: exec of '%s' failed: %s\n", command_exec, strerror(errno));
+            if ( execvp(argv[1], &argv[1]) != 0 ) {
+                fprintf(stderr, "ABORT: execvp of '%s' failed: %s\n", argv[1], strerror(errno));
             }
 
         } else if ( strcmp(command, "shell") == 0 ) {

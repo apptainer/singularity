@@ -69,4 +69,4 @@ export SINGULARITY_COMMAND SINGULARITY_IMAGE PATH
 shift
 
 
-exec "$libexecdir/singularity/sexec" "$*" <&0
+exec "$libexecdir/singularity/sexec" "$@" <&0
