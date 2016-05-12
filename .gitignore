@@ -1,5 +1,6 @@
 *~
-COPYING
+src/*.o
+singularity-*.tar.gz
 Makefile
 Makefile.in
 aclocal.m4
@@ -14,6 +15,8 @@ config.status
 config.sub
 configure
 depcomp
+etc/Makefile
+etc/Makefile.in
 install-sh
 libexec/Makefile
 libexec/Makefile.in
@@ -33,15 +36,12 @@ singularity.spec
 src/.deps/
 src/Makefile
 src/Makefile.in
+src/bootstrap
 src/config.h
 src/config.h.in
 src/ftrace
 src/ftype
+src/mount
 src/sexec
-src/sappbuild
-src/sappdump
-src/sapplauncher
-src/sappmeta
-src/*.o
 src/stamp-h1
-singularity-*.tar.gz
+
