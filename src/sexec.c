@@ -62,8 +62,8 @@
 #endif
 
 
-pid_t management_fork_pid = 0;
 pid_t namespace_fork_pid = 0;
+pid_t exec_fork_pid = 0;
 
 
 void sighandler(int sig) {
@@ -72,15 +72,15 @@ void sighandler(int sig) {
     printf("Caught signal: %d\n", sig);
     fflush(stdout);
 
+    if ( exec_fork_pid > 0 ) {
+        fprintf(stderr, "Singularity is sending SIGKILL to child pid: %d\n", exec_fork_pid);
+
+        kill(exec_fork_pid, SIGKILL);
+    }
     if ( namespace_fork_pid > 0 ) {
         fprintf(stderr, "Singularity is sending SIGKILL to child pid: %d\n", namespace_fork_pid);
 
         kill(namespace_fork_pid, SIGKILL);
-    }
-    if ( management_fork_pid > 0 ) {
-        fprintf(stderr, "Singularity is sending SIGKILL to child pid: %d\n", management_fork_pid);
-
-        kill(management_fork_pid, SIGKILL);
     }
 }
 
@@ -103,12 +103,13 @@ int main(int argc, char ** argv) {
     int loop_fd = -1;
     int lockfile_fd;
     int retval = 0;
+    int bind_mount_writable = 0;
     uid_t uid = getuid();
     gid_t gid = getgid();
 
 
 //****************************************************************************//
-// Init                                                                       //
+// Init
 //****************************************************************************//
 
     signal(SIGINT, sighandler);
@@ -118,6 +119,10 @@ int main(int argc, char ** argv) {
     // Lets start off as the calling UID
     if ( seteuid(uid) < 0 ) {
         fprintf(stderr, "ABORT: Could not set effective user privledges to %d!\n", uid);
+        return(255);
+    }
+    if ( setegid(gid) < 0 ) {
+        fprintf(stderr, "ABORT: Could not set effective group privledges to %d!\n", gid);
         return(255);
     }
 
@@ -178,7 +183,7 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Setup                                                                      //
+// Setup
 //****************************************************************************//
 
     if ( s_mkpath(tmpdir, 0750) < 0 ) {
@@ -233,10 +238,20 @@ int main(int argc, char ** argv) {
         }
     }
 
+
+//****************************************************************************//
+// We are now running with escalated privleges until we exec
+//****************************************************************************//
+
     if ( seteuid(0) < 0 ) {
         fprintf(stderr, "ABORT: Could not escalate effective user privledges!\n");
         return(255);
     }
+    if ( setegid(0) < 0 ) {
+        fprintf(stderr, "ABORT: Could not escalate effective group privledges!\n");
+        return(255);
+    }
+
 
     if ( is_dir(containerpath) < 0 ) {
         if ( s_mkpath(containerpath, 0755) < 0 ) {
@@ -281,14 +296,14 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Outside fork
+// Management fork
 //****************************************************************************//
 
-    management_fork_pid = fork();
-    if ( management_fork_pid == 0 ) {
+    namespace_fork_pid = fork();
+    if ( namespace_fork_pid == 0 ) {
 
 //****************************************************************************//
-// Setup namespaces                                                           //
+// Setup namespaces
 //****************************************************************************//
 
         if ( unshare(CLONE_NEWNS) < 0 ) {
@@ -345,7 +360,7 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Mount image                                                                //
+// Mount image
 //****************************************************************************//
 
         if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
@@ -363,13 +378,8 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Drop privileges for temporary file generation                              //
+// Temporary file generation
 //****************************************************************************//
-
-        if ( seteuid(uid) < 0 ) {
-            fprintf(stderr, "ABORT: Could not drop effective user privledges!\n");
-            return(255);
-        }
 
         if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
             if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
@@ -385,55 +395,24 @@ int main(int argc, char ** argv) {
             }
         }
 
-
-//****************************************************************************//
-// Bind mounts                                                                //
-//****************************************************************************//
-
-        if ( seteuid(0) < 0 ) {
-            fprintf(stderr, "ABORT: Could not re-escalate effective user privledges!\n");
-            return(255);
-        }
-
-        if ( is_dir(joinpath(containerpath, "/dev/")) == 0 ) {
-            if ( mount_bind("/dev", joinpath(containerpath, "/dev"), 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind mount /dev\n");
+        if ( is_file(joinpath(tmpdir, "/resolv.conf")) < 0 ) {
+            if ( copy_file("/etc/resolv.conf", joinpath(tmpdir, "/resolv.conf")) < 0 ) {
+                fprintf(stderr, "ABORT: Failed copying temporary resolv.conf\n");
                 return(255);
             }
         }
 
-        if (is_file(joinpath(containerpath, "/etc/resolv.conf")) == 0 ) {
-            if ( mount_bind("/etc/resolv.conf", joinpath(containerpath, "/etc/resolv.conf"), 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/resolv.conf\n");
+        if ( is_file(joinpath(tmpdir, "/hosts")) < 0 ) {
+            if ( copy_file("/etc/hosts", joinpath(tmpdir, "/hosts")) < 0 ) {
+                fprintf(stderr, "ABORT: Failed copying temporary hosts\n");
                 return(255);
             }
         }
 
-        if (is_file(joinpath(containerpath, "/etc/hosts")) == 0 ) {
-            if ( mount_bind("/etc/hosts", joinpath(containerpath, "/etc/hosts"), 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/hosts\n");
-                return(255);
-            }
-        }
-
-        if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
-            if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
-                return(255);
-            }
-        }
-
-        if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
-            if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/group\n");
-                return(255);
-            }
-        }
-
-        if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
+        if ( is_file(joinpath(tmpdir, "/nsswitch.conf")) < 0 ) {
             if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf")) == 0 ) {
-                if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), 0) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind %s\n", joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"));
+                if ( copy_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(tmpdir, "/nsswitch.conf")) < 0 ) {
+                    fprintf(stderr, "ABORT: Failed copying temporary nsswitch.conf\n");
                     return(255);
                 }
             } else {
@@ -441,8 +420,15 @@ int main(int argc, char ** argv) {
             }
         }
 
+
+//****************************************************************************//
+// Bind mounts
+//****************************************************************************//
+
         if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
             unsetenv("SINGULARITY_CONTAIN");
+
+            bind_mount_writable = 1;
 
             if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
                 if ( mount_bind("/tmp", joinpath(containerpath, "/tmp"), 1) < 0 ) {
@@ -456,46 +442,90 @@ int main(int argc, char ** argv) {
                     return(255);
                 }
             }
-
             if ( is_dir(joinpath(containerpath, basehomepath)) == 0 ){
                 if ( mount_bind(basehomepath, joinpath(containerpath, basehomepath), 1) < 0 ) {
                     fprintf(stderr, "ABORT: Could not bind home path to container %s: %s\n", homepath, strerror(errno));
                     return(255);
                 }
-            } else {
-                fprintf(stderr, "WARNING: Directory not existant in container: %s\n", basehomepath);
             }
-
         } else {
-            if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/tmp"), 1) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/tmp", strerror(errno));
-                return(255);
+
+            if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
+                if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/tmp"), 1) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/tmp", strerror(errno));
+                    return(255);
+                }
             }
-            if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/var/tmp", strerror(errno));
-                return(255);
+            if ( is_dir(joinpath(containerpath, "/var/tmp")) == 0 ) {
+                if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/var/tmp", strerror(errno));
+                    return(255);
+                }
             }
-            if ( mount_bind(joinpath(tmpdir, basehomepath), joinpath(containerpath, basehomepath), 1) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", basehomepath, strerror(errno));
-                return(255);
+            if ( is_dir(joinpath(containerpath, basehomepath)) == 0 ){
+                if ( mount_bind(joinpath(tmpdir, basehomepath), joinpath(containerpath, basehomepath), 1) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", basehomepath, strerror(errno));
+                    return(255);
+                }
             }
             strcpy(cwd, homepath);
         }
 
+        if ( is_dir(joinpath(containerpath, "/dev/")) == 0 ) {
+            if ( mount_bind("/dev", joinpath(containerpath, "/dev"), bind_mount_writable) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind mount /dev\n");
+                return(255);
+            }
+        }
+
+        if (is_file(joinpath(containerpath, "/etc/resolv.conf")) == 0 ) {
+            if ( mount_bind(joinpath(tmpdir, "/resolv.conf"), joinpath(containerpath, "/etc/resolv.conf"), bind_mount_writable) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind /etc/resolv.conf\n");
+                return(255);
+            }
+        }
+
+        if (is_file(joinpath(containerpath, "/etc/hosts")) == 0 ) {
+            if ( mount_bind(joinpath(tmpdir, "hosts"), joinpath(containerpath, "/etc/hosts"), bind_mount_writable) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind /etc/hosts\n");
+                return(255);
+            }
+        }
+
+        if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
+            if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), bind_mount_writable) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
+                return(255);
+            }
+        }
+
+        if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
+            if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), bind_mount_writable) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind /etc/group\n");
+                return(255);
+            }
+        }
+
+        if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
+            if ( mount_bind(joinpath(tmpdir, "/nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), bind_mount_writable) != 0 ) {
+                fprintf(stderr, "ABORT: Could not bind /etc/nsswitch.conf\n");
+                return(255);
+            }
+        }
 
 
 //****************************************************************************//
-// Fork child in new namespaces                                               //
+// Fork child in new namespaces
 //****************************************************************************//
 
-        namespace_fork_pid = fork();
+        exec_fork_pid = fork();
 
-        if ( namespace_fork_pid == 0 ) {
+        if ( exec_fork_pid == 0 ) {
             char *prompt;
 
 
 //****************************************************************************//
-// Enter the file system                                                      //
+// Enter the file system
 //****************************************************************************//
 
             if ( chroot(containerpath) < 0 ) {
@@ -505,7 +535,7 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Setup real mounts within the container                                     //
+// Setup real mounts within the container
 //****************************************************************************//
 
             if ( is_dir("/proc") == 0 ) {
@@ -523,7 +553,7 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Drop all privledges for good                                               //
+// Drop all privledges for good
 //****************************************************************************//
 
             if ( setregid(gid, gid) < 0 ) {
@@ -537,7 +567,7 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Setup final envrionment                                                    //
+// Setup final envrionment
 //****************************************************************************//
 
             prompt = (char *) malloc(strlen(containername) + 16);
@@ -564,7 +594,7 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Execv to container process                                                 //
+// Execv to container process
 //****************************************************************************//
 
             if ( command == NULL ) {
@@ -619,10 +649,10 @@ int main(int argc, char ** argv) {
 // Outer child waits for inner child
 //****************************************************************************//
 
-        } else if ( namespace_fork_pid > 0 ) {
+        } else if ( exec_fork_pid > 0 ) {
             int tmpstatus;
 
-            waitpid(namespace_fork_pid, &tmpstatus, 0);
+            waitpid(exec_fork_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
         } else {
             fprintf(stderr, "ABORT: Could not fork namespace process\n");
@@ -630,10 +660,10 @@ int main(int argc, char ** argv) {
         }
         return(retval);
 
-    } else if ( management_fork_pid > 0 ) {
+    } else if ( namespace_fork_pid > 0 ) {
         int tmpstatus;
 
-        waitpid(management_fork_pid, &tmpstatus, 0);
+        waitpid(namespace_fork_pid, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
     } else {
         fprintf(stderr, "ABORT: Could not fork management process\n");
@@ -642,7 +672,7 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Finall wrap up before exiting                                              //
+// Finall wrap up before exiting
 //****************************************************************************//
 
     if ( close(cwd_fd) < 0 ) {
@@ -652,15 +682,15 @@ int main(int argc, char ** argv) {
 
     if ( flock(tmpdirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         close(tmpdirlock_fd);
-        if ( s_rmdir(tmpdir) < 0 ) {
-            fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
-        }
-    
         if ( seteuid(0) < 0 ) {
             fprintf(stderr, "ABORT: Could not re-escalate effective user privledges!\n");
             return(255);
         }
 
+        if ( s_rmdir(tmpdir) < 0 ) {
+            fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
+        }
+    
         // Dissociate loops from here Just incase autoflush didn't work.
         (void)disassociate_loop(loop_fd);
 
