@@ -660,6 +660,13 @@ int main(int argc, char ** argv) {
         } else if ( exec_fork_pid > 0 ) {
             int tmpstatus;
 
+            strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
+
+            if ( seteuid(uid) < 0 ) {
+                fprintf(stderr, "ABORT: Could not set effective user privledges to %d!\n", uid);
+                return(255);
+            }
+
             waitpid(exec_fork_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
         } else {
@@ -670,6 +677,13 @@ int main(int argc, char ** argv) {
 
     } else if ( namespace_fork_pid > 0 ) {
         int tmpstatus;
+
+        strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
+
+        if ( seteuid(uid) < 0 ) {
+            fprintf(stderr, "ABORT: Could not set effective user privledges to %d!\n", uid);
+            return(255);
+        }
 
         waitpid(namespace_fork_pid, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
