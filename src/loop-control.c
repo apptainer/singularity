@@ -110,9 +110,9 @@ int associate_loop(int image_fd, int loop_fd) {
     }
 
     if ( ioctl(loop_fd, LOOP_GET_STATUS64, &lo64_test) == 0 ) {
-        (void)ioctl(loop_fd, LOOP_CLR_FD, 0);
-        if ( lo64.lo_flags != lo64_test.lo_flags ) {
-            fprintf(stderr, "ERROR: Failed to get loop flags on loop device\n");
+        if ( ( lo64.lo_flags & lo64_test.lo_flags ) == 0 ) {
+            (void)ioctl(loop_fd, LOOP_CLR_FD, 0);
+            fprintf(stderr, "ERROR: Loop flags not equal (%d:%d)\n", lo64.lo_flags, lo64_test.lo_flags);
             return(-1);
         }
     } else {
