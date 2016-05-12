@@ -53,7 +53,7 @@ Bootstrap() {
 
 
 InstallPkgs() {
-    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH -y install $*'"; then
+    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH -y --force-yes install $*'"; then
         return 1
     fi
 
@@ -61,7 +61,7 @@ InstallPkgs() {
 }
 
 Cleanup() {
-    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH clean"; then
+    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c '$APT_PATH clean'"; then
         return 1
     fi
 
