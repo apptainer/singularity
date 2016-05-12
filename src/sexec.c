@@ -96,6 +96,7 @@ int main(int argc, char ** argv) {
     int cwd_fd;
     int tmpdirlock_fd;
     int containerimage_fd;
+    int loop_fd = -1;
     int lockfile_fd;
     int retval = 0;
     uid_t uid = getuid();
@@ -192,6 +193,26 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
+    if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
+        if ( ( containerimage_fd = open(containerimage, O_RDONLY) ) < 0 ) {
+            fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
+            return(255);
+        }
+        if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
+            fprintf(stderr, "ABORT: Image is locked by another process\n");
+            return(5);
+        }
+    } else {
+        if ( ( containerimage_fd = open(containerimage, O_RDWR) ) < 0 ) {
+            fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
+            return(255);
+        }
+        if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
+            fprintf(stderr, "ABORT: Image is locked by another process\n");
+            return(5);
+        }
+    }
+
     // When we contain, we need temporary directories for what should be writable
     if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
         if ( s_mkpath(joinpath(tmpdir, homepath), 0750) < 0 ) {
@@ -278,14 +299,15 @@ int main(int argc, char ** argv) {
 // Mount image                                                                //
 //****************************************************************************//
 
-    if ( ( containerimage_fd = open(containerimage, O_RDWR) ) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
-        return(255);
-    }
-
     if ( flock(lockfile_fd, LOCK_EX | LOCK_NB) == 0 ) {
         loop_dev = obtain_loop_dev();
-        if ( associate_loop(containerimage_fd, loop_dev) < 0 ) {
+
+        if ( ( loop_fd = open(loop_dev, O_RDWR) ) < 0 ) {
+            fprintf(stderr, "ERROR: Failed to open %s: %s\n", loop_dev, strerror(errno));
+            return(-1);
+        }
+
+        if ( associate_loop(containerimage_fd, loop_fd) < 0 ) {
             fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
             return(255);
         }
@@ -294,6 +316,7 @@ int main(int argc, char ** argv) {
             fprintf(stderr, "ERROR: Could not write to loop_dev_cache %s: %s\n", loop_dev_cache, strerror(errno));
             return(255);
         }
+
         flock(lockfile_fd, LOCK_SH | LOCK_NB);
 
     } else {
@@ -302,23 +325,20 @@ int main(int argc, char ** argv) {
             fprintf(stderr, "ERROR: Could not retrieve loop_dev_cache from %s\n", loop_dev_cache);
             return(255);
         }
+
+        if ( ( loop_fd = open(loop_dev, O_RDWR) ) < 0 ) {
+            fprintf(stderr, "ERROR: Failed to open %s: %s\n", loop_dev, strerror(errno));
+            return(-1);
+        }
     }
 
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         unsetenv("SINGULARITY_WRITABLE");
-        if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
-            fprintf(stderr, "ABORT: Image is locked by another process\n");
-            return(5);
-        }
         if ( mount_image(loop_dev, containerpath, 0) < 0 ) {
             fprintf(stderr, "ABORT: exiting...\n");
             return(255);
         }
     } else {
-        if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
-            fprintf(stderr, "ABORT: Image is locked by another process\n");
-            return(5);
-        }
         if ( mount_image(loop_dev, containerpath, 1) < 0 ) {
             fprintf(stderr, "ABORT: exiting...\n");
             return(255);
@@ -611,6 +631,20 @@ int main(int argc, char ** argv) {
         if ( s_rmdir(tmpdir) < 0 ) {
             fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
         }
+    
+        if ( seteuid(0) < 0 ) {
+            fprintf(stderr, "ABORT: Could not re-escalate effective user privledges!\n");
+            return(255);
+        }
+
+        // Dissociate loops from here Just incase autoflush didn't work.
+        (void)disassociate_loop(loop_fd);
+
+        if ( seteuid(uid) < 0 ) {
+            fprintf(stderr, "ABORT: Could not drop effective user privledges!\n");
+            return(255);
+        }
+
     } else {
 //        printf("Not removing tmpdir, lock still\n");
     }

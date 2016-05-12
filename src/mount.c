@@ -46,6 +46,7 @@ int main(int argc, char ** argv) {
     char *mountpoint;
     char *loop_dev;
     int containerimage_fd;
+    int loop_fd;
     uid_t uid = geteuid();
 
     if ( uid != 0 ) {
@@ -78,7 +79,12 @@ int main(int argc, char ** argv) {
 
     loop_dev = obtain_loop_dev();
 
-    if ( associate_loop(containerimage_fd, loop_dev) < 0 ) {
+    if ( ( loop_fd = open(loop_dev, O_RDWR) ) < 0 ) {
+        fprintf(stderr, "ERROR: Failed to open %s: %s\n", loop_dev, strerror(errno));
+        return(-1);
+    }
+
+    if ( associate_loop(containerimage_fd, loop_fd) < 0 ) {
         fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
         return(255);
     }
