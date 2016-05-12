@@ -86,13 +86,13 @@ int mount_bind(char * source, char * dest, int writable) {
     }
 
     if ( mount(source, dest, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
-        fprintf(stderr, "ERROR: Could not bind mount %s: %s\n", dest, strerror(errno));
+        fprintf(stderr, "ERROR: Could not bind %s: %s\n", dest, strerror(errno));
         return(-1);
     }
 
     if ( writable <= 0 ) {
         if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
-            fprintf(stderr, "ERROR: Could not make bind mount read only %s: %s\n", dest, strerror(errno));
+            fprintf(stderr, "ERROR: Could not bind read only %s: %s\n", dest, strerror(errno));
             return(-1);
         }
     }

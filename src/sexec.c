@@ -208,7 +208,7 @@ int main(int argc, char ** argv) {
 
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         if ( ( containerimage_fd = open(containerimage, O_RDONLY) ) < 0 ) {
-            fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
+            fprintf(stderr, "ERROR: Could not open image for reading %s: %s\n", containerimage, strerror(errno));
             return(255);
         }
         if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
@@ -217,7 +217,7 @@ int main(int argc, char ** argv) {
         }
     } else {
         if ( ( containerimage_fd = open(containerimage, O_RDWR) ) < 0 ) {
-            fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
+            fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", containerimage, strerror(errno));
             return(255);
         }
         if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
