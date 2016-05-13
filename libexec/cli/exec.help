@@ -10,6 +10,13 @@ OPTIONS:
     -C/--contain    This option disables the automatic sharing of writable
                     filesystems on your host (e.g. $HOME and /tmp).
 
+EXAMPLES:
+    
+    $ singularity exec /tmp/Debian.img cat /etc/debian_version
+    $ singularity exec /tmp/Debian.img python ./hello_world.py
+    $ cat hello_world.py | singularity exec /tmp/Debian.img python
+    $ sudo singularity exec --writable /tmp/Debian.img apt-get update
+
 For additional help, please visit our public documentation pages which are
 found at:
 

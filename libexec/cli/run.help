@@ -1,7 +1,12 @@
 USAGE: singularity (options) run [container path] (options)
 
 This command will launch a Singularity container and execute a runscript
-if one is defined for that container.
+if one is defined for that container. The runscript is a file at
+'/singularity'. If this file is present (and executable) then this
+command will execute that file within the container automatically. All
+arguments following the container name will be passed directly to the
+runscript.
+
 
 OPTIONS:
     -w/--writable   By default all Singularity containers are available as
@@ -9,6 +14,15 @@ OPTIONS:
                     as read/write.
     -C/--contain    This option disables the automatic sharing of writable
                     filesystems on your host (e.g. $HOME and /tmp).
+
+EXAMPLES:
+
+    $ singularity exec /tmp/Debian.img cat /singularity
+    #!/bin/sh
+    echo "Hello world: $@"
+    $ singularity run /tmp/Debian.img one two three
+    Hello world: one two three
+
 
 For additional help, please visit our public documentation pages which are
 found at:

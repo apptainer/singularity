@@ -5,12 +5,28 @@ Obtain a shell (/bin/sh) within the container image.
 note: When invoking a shell within a container, the container image is
 by default writable.
 
+
 OPTIONS:
     -w/--writable   By default all Singularity containers are available as
                     read only. This option makes the file system accessible
                     as read/write.
     -C/--contain    This option disables the automatic sharing of writable
                     filesystems on your host (e.g. $HOME and /tmp).
+
+
+EXAMPLES:
+
+    $ singularity shell /tmp/Debian.img
+    Singularity/Debian.img> pwd
+    /home/gmk/test
+    Singularity/Debian.img> exit
+    $ singularity shell -C /tmp/Debian.img
+    Singularity/Debian.img> pwd
+    /home/gmk
+    Singularity/Debian.img> ls -l
+    total 0
+    Singularity/Debian.img> exit
+    $ sudo singularity shell -w /tmp/Debian.img
 
 
 For additional help, please visit our public documentation pages which are

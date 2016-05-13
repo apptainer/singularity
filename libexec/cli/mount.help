@@ -1,6 +1,14 @@
 USAGE: singularity (options) mount [container path]
 
-...
+Use this command to implement a standard loop mount on the container
+image.
+
+note: This command must be executed as root.
+
+EXAMPLES:
+
+    $ sudo singularity mount /tmp/Debian.img /mnt
+    $ sudo umount /mnt
 
 For additional help, please visit our public documentation pages which are
 found at:

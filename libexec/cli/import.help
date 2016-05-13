@@ -7,10 +7,11 @@ format or the command will fail.
 The tar archive can be anything from a root file system, to a layer you
 wish to add to a container, to an existing docker image.
 
+note: This command must be executed as root.
+
 OPTIONS:
     -f/--file       Use an input file instead of a pipe
        --command    Replace the tar command (DEFAULT: 'tar xf -')
-
 
 EXAMPLES:
 
