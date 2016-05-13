@@ -81,13 +81,13 @@ void sighandler(int sig) {
 
 
 int main(int argc, char ** argv) {
+    FILE *loop_fp;
+    FILE *containerimage_fp;
     char *containerimage;
     char *mountpoint;
     char *loop_dev;
     char *shell;
     int retval = 0;
-    int containerimage_fd;
-    int loop_fd;
     uid_t uid = geteuid();
 
     if ( uid != 0 ) {
@@ -129,19 +129,19 @@ int main(int argc, char ** argv) {
     }
 
 
-    if ( ( containerimage_fd = open(containerimage, O_RDWR) ) < 0 ) {
+    if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
         fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
         return(255);
     }
 
     loop_dev = obtain_loop_dev();
 
-    if ( ( loop_fd = open(loop_dev, O_RDWR) ) < 0 ) {
+    if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
         fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
         return(-1);
     }
 
-    if ( associate_loop(containerimage_fd, loop_fd) < 0 ) {
+    if ( associate_loop(containerimage_fp, loop_fp) < 0 ) {
         fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
         return(255);
     }

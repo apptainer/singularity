@@ -34,6 +34,7 @@
 #include "loop-control.h"
 #include "util.h"
 #include "file.h"
+#include "image.h"
 
 #ifndef LO_FLAGS_AUTOCLEAR
 #define LO_FLAGS_AUTOCLEAR 4
@@ -91,12 +92,13 @@ char * obtain_loop_dev(void) {
 
 
 
-int associate_loop(int image_fd, int loop_fd) {
+int associate_loop(FILE *image_fp, FILE *loop_fp) {
     struct loop_info64 lo64 = {0};
-    int offset = 0;
+    int image_fd = fileno(image_fp);
+    int loop_fd = fileno(loop_fp);
 
     lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
-    lo64.lo_offset = offset;
+    lo64.lo_offset = image_offset(image_fp);
 
     if ( ioctl(loop_fd, LOOP_SET_FD, image_fd) < 0 ) {
         fprintf(stderr, "ERROR: Failed to associate image to loop\n");
@@ -113,7 +115,9 @@ int associate_loop(int image_fd, int loop_fd) {
 }
 
 
-int disassociate_loop(int loop_fd) {
+int disassociate_loop(FILE *loop_fp) {
+    int loop_fd = fileno(loop_fp);
+
     if ( ioctl(loop_fd, LOOP_CLR_FD, 0) != 0 ) {
         fprintf(stderr, "ERROR: Could not clear loop device\n");
         return(-1);

@@ -16,11 +16,35 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
- */
+*/
+
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "file.h"
 
 
-char *obtain_loop_dev(void);
-int associate_loop(FILE *image_fp, FILE *loop_device_fp);
-int disassociate_loop(FILE *loop_fp);
+int image_offset(FILE *image_fp) {
+    int ret = 0;
+    int i = 0;
+    int c;
 
+    rewind(image_fp);
 
+    while (i < 24 && (c = fgetc(image_fp)) != EOF) {
+        if ( c == '\n' ) {
+            ret = i + 1;
+            break;
+        }
+        i++;
+    }
+
+    rewind(image_fp);
+
+    return(ret);
+}

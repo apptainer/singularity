@@ -19,8 +19,4 @@
  */
 
 
-char *obtain_loop_dev(void);
-int associate_loop(FILE *image_fp, FILE *loop_device_fp);
-int disassociate_loop(FILE *loop_fp);
-
-
+int image_offset(FILE *image_fp);

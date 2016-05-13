@@ -87,6 +87,8 @@ void sighandler(int sig) {
 
 
 int main(int argc, char ** argv) {
+    FILE *containerimage_fp;
+    FILE *loop_fp;
     char *containerimage;
     char *containername;
     char *containerpath;
@@ -102,7 +104,6 @@ int main(int argc, char ** argv) {
     int cwd_fd;
     int tmpdirlock_fd;
     int containerimage_fd;
-    int loop_fd = -1;
     int lockfile_fd;
     int retval = 0;
     int bind_mount_writable = 0;
@@ -210,19 +211,21 @@ int main(int argc, char ** argv) {
     }
 
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
-        if ( ( containerimage_fd = open(containerimage, O_RDONLY) ) < 0 ) {
+        if ( ( containerimage_fp = fopen(containerimage, "r") ) < 0 ) {
             fprintf(stderr, "ERROR: Could not open image for reading %s: %s\n", containerimage, strerror(errno));
             return(255);
         }
+        containerimage_fd = fileno(containerimage_fp);
         if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
             fprintf(stderr, "ABORT: Image is locked by another process\n");
             return(5);
         }
     } else {
-        if ( ( containerimage_fd = open(containerimage, O_RDWR) ) < 0 ) {
+        if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
             fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", containerimage, strerror(errno));
             return(255);
         }
+        containerimage_fd = fileno(containerimage_fp);
         if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
             fprintf(stderr, "ABORT: Image is locked by another process\n");
             return(5);
@@ -266,12 +269,12 @@ int main(int argc, char ** argv) {
     if ( flock(lockfile_fd, LOCK_EX | LOCK_NB) == 0 ) {
         loop_dev = obtain_loop_dev();
 
-        if ( ( loop_fd = open(loop_dev, O_RDWR) ) < 0 ) {
+        if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
             fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
             return(255);
         }
 
-        if ( associate_loop(containerimage_fd, loop_fd) < 0 ) {
+        if ( associate_loop(containerimage_fp, loop_fp) < 0 ) {
             fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
             return(255);
         }
@@ -290,7 +293,7 @@ int main(int argc, char ** argv) {
             return(255);
         }
 
-        if ( ( loop_fd = open(loop_dev, O_RDWR) ) < 0 ) {
+        if ( ( loop_fp = fopen(loop_dev, "r") ) < 0 ) {
             fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
             return(255);
         }
@@ -745,7 +748,7 @@ int main(int argc, char ** argv) {
         }
     
         // Dissociate loops from here Just incase autoflush didn't work.
-        (void)disassociate_loop(loop_fd);
+        (void)disassociate_loop(loop_fp);
 
         if ( seteuid(uid) < 0 ) {
             fprintf(stderr, "ABORT: Could not drop effective user privledges!\n");

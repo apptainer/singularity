@@ -60,7 +60,7 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
             if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "") < 0 ) {
                 // If that fails, finally try ext3
                 if ( mount(loop_device, mount_point, "ext3", MS_NOSUID, "") < 0 ) {
-                    fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+                    fprintf(stderr, "ERROR: Failed to mount (rw) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
                     return(-1);
                 }
             }
@@ -72,7 +72,7 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
             if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "") < 0 ) {
                 // If that fails, finally try ext3
                 if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "") < 0 ) {
-                    fprintf(stderr, "ERROR: Failed to mount '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+                    fprintf(stderr, "ERROR: Failed to mount (ro) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
                     return(-1);
                 }
             }
