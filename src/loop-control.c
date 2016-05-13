@@ -93,7 +93,6 @@ char * obtain_loop_dev(void) {
 
 int associate_loop(int image_fd, int loop_fd) {
     struct loop_info64 lo64 = {0};
-    struct loop_info lo = {0};
     int offset = 0;
 
     lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
