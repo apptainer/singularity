@@ -1,0 +1,33 @@
+USAGE: singularity (options) import [container path]
+
+Import opens standard input (stdin) and will accept tar streams to import
+into a container. Note that the stream MUST be in uncompressed tar
+format or the command will fail.
+
+The tar archive can be anything from a root file system, to a layer you
+wish to add to a container, to an existing docker image.
+
+OPTIONS:
+    -f/--file       Use an input file instead of a pipe
+       --command    Replace the tar command (DEFAULT: 'tar xf -')
+
+
+EXAMPLES:
+
+    Once you have created the base image template:
+
+    $ singularity create /tmp/Debian.img
+
+    You can then import from a tar pipe
+
+    $ gunzip -c debian.tar.gz | singularity import /tmp/Debian
+    $ cat debian.tar | singularity import /tmp/Debian.img
+    $ singularity import /tmp/Debian.img < debian.tar
+    $ docker export [container] | sudo singularity import [container].img
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+
