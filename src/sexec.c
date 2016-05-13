@@ -35,6 +35,7 @@
 #include <fcntl.h>  
 #include <grp.h>
 #include <libgen.h>
+#include <pwd.h>
 
 #include "config.h"
 #include "mounts.h"
@@ -107,6 +108,7 @@ int main(int argc, char ** argv) {
     int bind_mount_writable = 0;
     uid_t uid = getuid();
     gid_t gid = getgid();
+    struct passwd *pw = getpwuid(uid);
 
 
 //****************************************************************************//
@@ -127,7 +129,8 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    homepath = getenv("HOME");
+    //homepath = getenv("HOME");
+    homepath = pw->pw_dir;
     containerimage = getenv("SINGULARITY_IMAGE");
     command = getenv("SINGULARITY_COMMAND");
 
