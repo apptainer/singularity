@@ -31,3 +31,4 @@ int s_rmdir(char *dir);
 int copy_file(char * source, char * dest);
 char *filecat(char *path);
 int fileput(char *path, char *string);
+char * container_dir_walk(char *containerdir, char *dir);

@@ -36,6 +36,7 @@
 #include <time.h>
 
 #include "config.h"
+#include "util.h"
 
 
 char *file_id(char *path) {
@@ -271,5 +272,22 @@ char *filecat(char *path) {
     fclose(fd);
 
     return(ret);
+}
+
+char * container_dir_walk(char *containerdir, char *dir) {
+    char * testdir = strdup(dir);
+    if ( containerdir == NULL || dir == NULL ) {
+        return(NULL);
+    }
+
+    while ( testdir != NULL &&  ( strcmp(testdir, "/") != 0 ) ) {
+    printf("testing dir: %s\n", testdir);
+        if ( is_dir(joinpath(containerdir, testdir)) == 0 ) {
+            printf("found dir: (%s) %s\n", containerdir, testdir);
+            return(testdir);
+        }
+        testdir = dirname(strdup(testdir));
+    }
+    return(NULL);
 }
 
