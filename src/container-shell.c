@@ -83,9 +83,8 @@ void sighandler(int sig) {
 int main(int argc, char ** argv) {
     char *containerimage;
     char *mountpoint;
-    char *bootstrap_script;
-    char *defintion_script;
     char *loop_dev;
+    char *shell;
     int retval = 0;
     int containerimage_fd;
     int loop_fd;
@@ -97,15 +96,13 @@ int main(int argc, char ** argv) {
     }
 
     if ( argv[1] == NULL || argv[2] == NULL ) {
-        fprintf(stderr, "USAGE: %s [singularity container image] [bootstrap definition]\n", argv[0]);
+        fprintf(stderr, "USAGE: %s [singularity container image] [mount point] (shell container args)\n", argv[0]);
         return(1);
     }
 
     containerimage = strdup(argv[1]);
-    defintion_script = strdup(argv[2]);
-    bootstrap_script = strjoin(LIBEXECDIR, "/singularity/bootstrap.sh");
-
-    mountpoint = getenv("SINGULARITY_BUILD_ROOT");
+    mountpoint = strdup(argv[2]);
+    shell = getenv("SHELL");
 
     if ( is_file(containerimage) < 0 ) {
         fprintf(stderr, "ABORT: Container image not found: %s\n", containerimage);
@@ -115,6 +112,10 @@ int main(int argc, char ** argv) {
     if ( is_dir(mountpoint) < 0 ) {
         fprintf(stderr, "ABORT: Mount point must be a directory: %s\n", mountpoint);
         return(1);
+    }
+
+    if ( shell == NULL ) {
+        shell = strdup("/bin/bash");
     }
 
     if ( unshare(CLONE_NEWNS) < 0 ) {
@@ -153,15 +154,11 @@ int main(int argc, char ** argv) {
     child_pid = fork();
 
     if ( child_pid == 0 ) {
-        char *exec[4];
 
-        exec[0] = strdup("/bin/bash");
-        exec[1] = strdup(bootstrap_script);
-        exec[2] = strdup(defintion_script);
-        exec[3] = NULL;
+        argv[2] = strdup(shell);
 
-        if ( execv("/bin/bash", exec) != 0 ) {
-            fprintf(stderr, "ABORT: exec of bootstrap failed: %s\n", strerror(errno));
+        if ( execv(shell, &argv[2]) != 0 ) {
+            fprintf(stderr, "ABORT: exec of bash failed: %s\n", strerror(errno));
         }
 
     } else if ( child_pid > 0 ) {
