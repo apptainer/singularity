@@ -39,6 +39,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_libexecdir}/singularity
 %attr(4755, root, root) %{_libexecdir}/singularity/sexec
 %{_libexecdir}/singularity/bootstrap.sh
+%{_libexecdir}/singularity/copy.sh
 %{_libexecdir}/singularity/container-shell
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/ftrace

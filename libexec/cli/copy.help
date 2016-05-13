@@ -1,0 +1,9 @@
+USAGE: singularity (options) copy [container path] [source file(s)] [dest]
+
+...
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+
