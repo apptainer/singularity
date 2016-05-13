@@ -95,7 +95,8 @@ int main(int argc, char ** argv) {
     char *lockfile;
     char *loop_dev_cache;
     char *loop_dev = 0;
-    char *basehomepath;
+    char *container_homebase;
+    char *container_cwdbase;
     char cwd[PATH_MAX];
     int cwd_fd;
     int tmpdirlock_fd;
@@ -172,7 +173,6 @@ int main(int argc, char ** argv) {
     }
 
     containername = basename(strdup(containerimage));
-    basehomepath = strjoin("/", strtok(strdup(homepath), "/"));
 
     containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
     snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
@@ -425,6 +425,9 @@ int main(int argc, char ** argv) {
 // Bind mounts
 //****************************************************************************//
 
+        container_homebase = container_dir_walk(containerpath, homepath);
+        container_cwdbase = container_dir_walk(containerpath, cwd);
+
         if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
             unsetenv("SINGULARITY_CONTAIN");
 
@@ -435,19 +438,42 @@ int main(int argc, char ** argv) {
                     fprintf(stderr, "ABORT: Could not bind mount /tmp\n");
                     return(255);
                 }
+            } else {
+                fprintf(stderr, "WARNING: Could not bind non-existent /tmp directory\n");
             }
             if ( is_dir(joinpath(containerpath, "/var/tmp")) == 0 ) {
                 if ( mount_bind("/var/tmp", joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
                     fprintf(stderr, "ABORT: Could not bind mount /var/tmp\n");
                     return(255);
                 }
+            } else {
+                fprintf(stderr, "WARNING: Could not bind non-existent /var/tmp directory\n");
             }
-            if ( is_dir(joinpath(containerpath, basehomepath)) == 0 ){
-                if ( mount_bind(basehomepath, joinpath(containerpath, basehomepath), 1) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind home path to container %s: %s\n", homepath, strerror(errno));
-                    return(255);
+            if ( container_homebase != NULL ) {
+                if ( is_dir(joinpath(containerpath, container_homebase)) == 0 ){
+                    if ( mount_bind(container_homebase, joinpath(containerpath, container_homebase), 1) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind base home path to container %s: %s\n", container_homebase, strerror(errno));
+                        return(255);
+                    }
                 }
+            } else {
+                fprintf(stderr, "WARNING: Could not bind non-existent %s base directory\n", container_homebase);
             }
+            if ( container_cwdbase != NULL ) {
+                if ( strcmp(container_cwdbase, container_homebase) != 0 ) {
+                    if ( strncmp(container_cwdbase, "/tmp", 4) != 0 ) {
+                        if ( is_dir(joinpath(containerpath, container_cwdbase)) == 0 ){
+                            if ( mount_bind(container_cwdbase, joinpath(containerpath, container_cwdbase), 1) < 0 ) {
+                                fprintf(stderr, "ABORT: Could not bind base cwd path to container %s: %s\n", container_cwdbase, strerror(errno));
+                                return(255);
+                            }
+                        }
+                    }
+                }
+            } else {
+                fprintf(stderr, "WARNING: Could not bind non-existent %s base directory\n", container_cwdbase);
+            }
+
         } else {
 
             if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
@@ -455,18 +481,26 @@ int main(int argc, char ** argv) {
                     fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/tmp", strerror(errno));
                     return(255);
                 }
+            } else {
+                fprintf(stderr, "WARNING: Could not bind non-existent /tmp directory\n");
             }
             if ( is_dir(joinpath(containerpath, "/var/tmp")) == 0 ) {
                 if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
                     fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/var/tmp", strerror(errno));
                     return(255);
                 }
+            } else {
+                fprintf(stderr, "WARNING: Could not bind non-existent /var/tmp directory\n");
             }
-            if ( is_dir(joinpath(containerpath, basehomepath)) == 0 ){
-                if ( mount_bind(joinpath(tmpdir, basehomepath), joinpath(containerpath, basehomepath), 1) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", basehomepath, strerror(errno));
-                    return(255);
+            if ( container_homebase != NULL ) {
+                if ( is_dir(joinpath(containerpath, container_homebase)) == 0 ){
+                    if ( mount_bind(joinpath(tmpdir, container_homebase), joinpath(containerpath, container_homebase), 1) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind base home path to container %s: %s\n", container_homebase, strerror(errno));
+                        return(255);
+                    }
                 }
+            } else {
+                fprintf(stderr, "WARNING: Could not bind non-existent %s base directory\n", container_homebase);
             }
             strcpy(cwd, homepath);
         }

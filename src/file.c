@@ -281,9 +281,7 @@ char * container_dir_walk(char *containerdir, char *dir) {
     }
 
     while ( testdir != NULL &&  ( strcmp(testdir, "/") != 0 ) ) {
-    printf("testing dir: %s\n", testdir);
         if ( is_dir(joinpath(containerdir, testdir)) == 0 ) {
-            printf("found dir: (%s) %s\n", containerdir, testdir);
             return(testdir);
         }
         testdir = dirname(strdup(testdir));
