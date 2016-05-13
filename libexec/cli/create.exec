@@ -69,6 +69,10 @@ if [ -z "$IMAGE_FILE" ]; then
     message ERROR "You must supply a path to an image to create\n"
     exit 1
 fi
+if [ -f "$IMAGE_FILE" ]; then
+    message ERROR "Image file exists, not overwriting.\n"
+    exit 1
+fi
 
 if ! DD_PATH=`singularity_which dd`; then
     message ERROR "Could not locate program: dd\n"
@@ -88,10 +92,10 @@ if ! touch "$IMAGE_FILE" 2>/dev/null; then
 fi
 
 echo "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MB..."
-eval $DD_PATH of="$IMAGE_FILE" bs=1 count=0 seek="$IMAGE_BYTES" 2>/dev/null
+eval $DD_PATH of="$IMAGE_FILE" bs=1 count=0 seek="$IMAGE_BYTES" >/dev/null 2>&1
 
-echo "Formatting image..."
-eval $MKFS_PATH -q -F "$IMAGE_FILE"
+echo "Formatting image ($MKFS_PATH)"
+eval $MKFS_PATH -q -F "$IMAGE_FILE" >/dev/null 2>&1
 
 echo "Done. Image can be found at: $IMAGE_FILE"
 
