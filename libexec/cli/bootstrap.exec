@@ -48,7 +48,7 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) mount [Singularity container image] [mount point]\n"
+    echo "USAGE: singularity (options) bootstrap [Singularity container image] [bootstrap definition file]\n"
     exit 1
 fi
 
@@ -57,9 +57,19 @@ DEFINITION="$2"
 shift
 shift
 
+if [ ! -f "$IMAGE" ]; then
+    message ERROR "Container image does not exist: $IMAGE\n"
+    exit 1
+fi
+
+if [ ! -f "$DEFINITION" ]; then
+    message ERROR "Container bootstrap definition file does not exist: $DEFINITION\n"
+    exit 1
+fi
+
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_QUIET=1
 SINGULARITY_BUILD_ROOT="/mnt"
 export SINGULARITY_QUIET SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
 
-exec "$libexecdir/singularity/bootstrap" "$IMAGE" "$DEFINITION"
+exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$SINGULARITY_libexecdir/singularity/bootstrap.sh" "$DEFINITION"
