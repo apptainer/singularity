@@ -80,7 +80,7 @@ int main(int argc, char ** argv) {
     loop_dev = obtain_loop_dev();
 
     if ( ( loop_fd = open(loop_dev, O_RDWR) ) < 0 ) {
-        fprintf(stderr, "ERROR: Failed to open %s: %s\n", loop_dev, strerror(errno));
+        fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
         return(-1);
     }
 

@@ -77,11 +77,12 @@ char * obtain_loop_dev(void) {
         if ( is_blk(loop_device) < 0 ) {
             //printf("Creating loop device: %s\n", *loop_device);
             if ( mknod(loop_device, S_IFBLK | 0644, makedev(7, devnum)) < 0 ) {
-                //fprintf(stderr, "Could not create %s: %s\n", *loop_device, strerror(errno));
+                fprintf(stderr, "Could not create %s: %s\n", loop_device, strerror(errno));
                 return(NULL);
             }
         }
     } else {
+        fprintf(stderr, "ERROR: Could not obtain a loop device number\n");
         return(NULL);
     }
 
@@ -92,7 +93,7 @@ char * obtain_loop_dev(void) {
 
 int associate_loop(int image_fd, int loop_fd) {
     struct loop_info64 lo64 = {0};
-//    struct loop_info64 lo64_test = {0};
+    struct loop_info lo = {0};
     int offset = 0;
 
     lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
@@ -108,18 +109,6 @@ int associate_loop(int image_fd, int loop_fd) {
         fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
         return(-1);
     }
-
-//    if ( ioctl(loop_fd, LOOP_GET_STATUS64, &lo64_test) == 0 ) {
-//        if ( ( lo64.lo_flags & lo64_test.lo_flags ) == 0 ) {
-//            (void)ioctl(loop_fd, LOOP_CLR_FD, 0);
-//            fprintf(stderr, "ERROR: Loop flags not equal (%d:%d)\n", lo64.lo_flags, lo64_test.lo_flags);
-//            return(-1);
-//        }
-//    } else {
-//        (void)ioctl(loop_fd, LOOP_CLR_FD, 0);
-//        fprintf(stderr, "ERROR: Failed to get loop flags on loop device: %s\n", strerror(errno));
-//        return(-1);
-//    }
 
     return(0);
 }
