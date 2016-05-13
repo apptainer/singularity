@@ -114,7 +114,7 @@ Once you have created your bootstrap definition, you can build your
 Singularity container image by first creating a blank image, and then
 bootstrapping using your defintion file:
 
-    [gmk@centos7-x64 demo]$ sudo singularity image create /tmp/Centos-7.img
+    [gmk@centos7-x64 demo]$ sudo singularity create /tmp/Centos-7.img
     [gmk@centos7-x64 demo]$ sudo singularity bootstrap /tmp/Centos-7.img centos.def
 
 From there we can immeadiatly start using the container:
