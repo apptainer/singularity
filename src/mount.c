@@ -84,7 +84,7 @@ int main(int argc, char ** argv) {
         return(-1);
     }
 
-    if ( associate_loop(containerimage_fp, loop_fp) < 0 ) {
+    if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
         fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
         return(255);
     }

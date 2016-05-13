@@ -20,7 +20,7 @@
 
 
 char *obtain_loop_dev(void);
-int associate_loop(FILE *image_fp, FILE *loop_device_fp);
+int associate_loop(FILE *image_fp, FILE *loop_device_fp, int autoclear);
 int disassociate_loop(FILE *loop_fp);
 
 

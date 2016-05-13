@@ -37,57 +37,15 @@
 
 #include "config.h"
 #include "mounts.h"
-#include "util.h"
 #include "file.h"
 #include "loop-control.h"
-
-
-#ifndef LIBEXECDIR
-#define LIBEXECDIR "undefined"
-#endif
-#ifndef SYSCONFDIR
-#define SYSCONFDIR "/etc"
-#endif
-#ifndef LOCALSTATEDIR
-#define LOCALSTATEDIR "/var/"
-#endif
-
-#ifndef MS_PRIVATE
-#define MS_PRIVATE (1<<18)
-#endif
-#ifndef MS_REC
-#define MS_REC 16384
-#endif
-
-
-
-// Yes, I know... Global variables suck but necessary to pass sig to child
-pid_t child_pid = 0;
-
-
-void sighandler(int sig) {
-    signal(sig, sighandler);
-
-    printf("Caught signal: %d\n", sig);
-    fflush(stdout);
-
-    if ( child_pid > 0 ) {
-        printf("Singularity is sending SIGKILL to child pid: %d\n", child_pid);
-        fflush(stdout);
-
-        kill(child_pid, SIGKILL);
-    }
-}
 
 
 int main(int argc, char ** argv) {
     FILE *loop_fp;
     FILE *containerimage_fp;
     char *containerimage;
-    char *mountpoint;
     char *loop_dev;
-    char *shell;
-    int retval = 0;
     uid_t uid = geteuid();
 
     if ( uid != 0 ) {
@@ -95,39 +53,17 @@ int main(int argc, char ** argv) {
         return(1);
     }
 
-    if ( argv[1] == NULL || argv[2] == NULL ) {
-        fprintf(stderr, "USAGE: %s [singularity container image] [mount point] (shell container args)\n", argv[0]);
+    if ( argv[1] == NULL ) {
+        fprintf(stderr, "USAGE: %s [singularity container image] [mount point]\n", argv[0]);
         return(1);
     }
 
     containerimage = strdup(argv[1]);
-    mountpoint = strdup(argv[2]);
-    shell = getenv("SHELL");
 
     if ( is_file(containerimage) < 0 ) {
         fprintf(stderr, "ABORT: Container image not found: %s\n", containerimage);
         return(1);
     }
-
-    if ( is_dir(mountpoint) < 0 ) {
-        fprintf(stderr, "ABORT: Mount point must be a directory: %s\n", mountpoint);
-        return(1);
-    }
-
-    if ( shell == NULL ) {
-        shell = strdup("/bin/bash");
-    }
-
-    if ( unshare(CLONE_NEWNS) < 0 ) {
-        fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
-        return(255);
-    }
-
-    if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
-        fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
-        return(255);
-    }
-
 
     if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
         fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
@@ -141,39 +77,12 @@ int main(int argc, char ** argv) {
         return(-1);
     }
 
-    if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
+    if ( associate_loop(containerimage_fp, loop_fp, 0) < 0 ) {
         fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
         return(255);
     }
 
-    if ( mount_image(loop_dev, mountpoint, 1) < 0 ) {
-        fprintf(stderr, "ABORT: exiting...\n");
-        return(255);
-    }
+    printf("%s\n", loop_dev);
 
-    child_pid = fork();
-
-    if ( child_pid == 0 ) {
-
-        argv[2] = strdup(shell);
-
-        if ( execv(shell, &argv[2]) != 0 ) {
-            fprintf(stderr, "ABORT: exec of bash failed: %s\n", strerror(errno));
-        }
-
-    } else if ( child_pid > 0 ) {
-        int tmpstatus;
-        signal(SIGINT, sighandler);
-        signal(SIGKILL, sighandler);
-        signal(SIGQUIT, sighandler);
-
-        waitpid(child_pid, &tmpstatus, 0);
-        retval = WEXITSTATUS(tmpstatus);
-
-    } else {
-        fprintf(stderr, "ABORT: Could not fork child process\n");
-        retval++;
-    }
-
-    return(retval);
+    return(0);
 }

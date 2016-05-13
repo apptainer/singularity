@@ -92,12 +92,14 @@ char * obtain_loop_dev(void) {
 
 
 
-int associate_loop(FILE *image_fp, FILE *loop_fp) {
+int associate_loop(FILE *image_fp, FILE *loop_fp, int autoclear) {
     struct loop_info64 lo64 = {0};
     int image_fd = fileno(image_fp);
     int loop_fd = fileno(loop_fp);
 
-    lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
+    if ( autoclear > 0 ) {
+        lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
+    }
     lo64.lo_offset = image_offset(image_fp);
 
     if ( ioctl(loop_fd, LOOP_SET_FD, image_fd) < 0 ) {
