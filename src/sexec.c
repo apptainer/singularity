@@ -636,12 +636,10 @@ int main(int argc, char ** argv) {
 
             if ( command == NULL ) {
                 fprintf(stderr, "No command specified, launching 'shell'\n");
-                argv[0] = strdup("/bin/sh");
-                if ( execv("/bin/sh", argv) != 0 ) {
-                    fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
-                }
+                command = strdup("shell");
+            }
 
-            } else if ( strcmp(command, "run") == 0 ) {
+            if ( strcmp(command, "run") == 0 ) {
                 if ( is_exec("/singularity") == 0 ) {
                     argv[0] = strdup("/singularity");
                     if ( execv("/singularity", argv) != 0 ) {
@@ -649,19 +647,17 @@ int main(int argc, char ** argv) {
                     }
                 } else {
                     fprintf(stderr, "No Singularity runscript found, launching 'shell'\n");
-                    argv[0] = strdup("/bin/sh");
-                    if ( execv("/bin/sh", argv) != 0 ) {
-                        fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
-                    }
+                    command = strdup("shell");
                 }
-
-            } else if ( strcmp(command, "exec") == 0 ) {
-
+            }
+            
+            if ( strcmp(command, "exec") == 0 ) {
                 if ( execvp(argv[1], &argv[1]) != 0 ) {
                     fprintf(stderr, "ABORT: execvp of '%s' failed: %s\n", argv[1], strerror(errno));
                 }
-
-            } else if ( strcmp(command, "shell") == 0 ) {
+            }
+            
+            if ( strcmp(command, "shell") == 0 ) {
                 if ( is_exec("/bin/bash") == 0 ) {
                     char *args[argc+1];
                     int i;
@@ -681,13 +677,11 @@ int main(int argc, char ** argv) {
                         fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
                     }
                 }
-
-            } else {
-                fprintf(stderr, "ABORT: Unrecognized Singularity command: %s\n", command);
-                return(1);
             }
 
-            return(255);
+            // If we get here... we fail on bad command
+            fprintf(stderr, "ABORT: Unrecognized Singularity command: %s\n", command);
+            return(1);
 
 
 //****************************************************************************//

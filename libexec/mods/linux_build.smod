@@ -171,13 +171,4 @@ Finalize() {
     done
 
     echo "singularity / rootfs rw 0 0" > "$SINGULARITY_BUILD_ROOT/etc/mtab"
-    if [ ! -x "$SINGULARITY_BUILD_ROOT/singularity" ]; then
-        echo "#!/bin/sh" > "$SINGULARITY_BUILD_ROOT/singularity"
-        echo "echo \"There is no runscript defined for this container.\"" >> "$SINGULARITY_BUILD_ROOT/singularity"
-        echo "echo" >> "$SINGULARITY_BUILD_ROOT/singularity"
-        echo "echo \"You can find the template within the container at '/singularity'\"" >> "$SINGULARITY_BUILD_ROOT/singularity"
-        echo "echo" >> "$SINGULARITY_BUILD_ROOT/singularity"
-
-        chmod 755 "$SINGULARITY_BUILD_ROOT/singularity"
-    fi
 }
