@@ -34,8 +34,6 @@ else
     exit 1
 fi
 
-TAR_COMMAND="tar xf -"
-
 while true; do
     case $1 in
         -f|--file)
@@ -59,7 +57,7 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) import [Singularity container image] [mount point]\n"
+    echo "USAGE: singularity (options) import [Singularity container image]\n"
     exit 1
 fi
 
@@ -72,8 +70,10 @@ SINGULARITY_BUILD_ROOT="/mnt"
 PIDFILE=`mktemp /tmp/.singularity-import.XXXXXXXX`
 export SINGULARITY_QUIET SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
 
-if [ -n "$FILE" ]; then
+if [ -n "$TAR_COMMAND" ]; then
+    exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; $TAR_COMMAND"
+elif [ -n "$FILE" ]; then
     exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xvf \"$FILE\""
 else
-    exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; $TAR_COMMAND"
+    exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xvf -"
 fi
