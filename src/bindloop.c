@@ -54,7 +54,7 @@ int main(int argc, char ** argv) {
     }
 
     if ( argv[1] == NULL ) {
-        fprintf(stderr, "USAGE: %s [singularity container image] [mount point]\n", argv[0]);
+        fprintf(stderr, "USAGE: %s [singularity container image]\n", argv[0]);
         return(1);
     }
 
