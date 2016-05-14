@@ -106,18 +106,18 @@ fi
 echo "Checking image ($MKFS_PATH)"
 if ! eval $E2FSCK_PATH -fy "$LOOP_DEV" >/dev/null; then
     message ERROR "Failed checking loop image: $LOOP_DEV\n"
-    eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
+    eval "$libexecdir/singularity/image-bind" detach "$LOOP_DEV"
     exit 1
 fi
 
 echo "Growing file system"
 if ! eval $RESIZE2FS_PATH "$LOOP_DEV" >/dev/null; then
     message ERROR "Failed resizing loop image: $LOOP_DEV\n"
-    eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
+    eval "$libexecdir/singularity/image-bind" detach "$LOOP_DEV"
     exit 1
 fi
 
-eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
+eval "$libexecdir/singularity/image-bind" detach "$LOOP_DEV"
 echo "Done. Image can be found at: $IMAGE_FILE"
 
 
