@@ -1,7 +1,5 @@
-
-
-* Share loop device on same image:user
-* Lock for loop device obtaining
-* Create "singularity config file.img" for first run configurations (or similar)
-* Create "singularity install file.img /path/to/recipe"
-* Add relevent runtime options to all commands
+* Move/combine mount/container-shell -> image-mount
+* Update cli mods that use mount/container-shell
+* Update test.sh for new model
+* Update 'create' command to make containers exec
+* Move 'sapprun' to run-singularity
