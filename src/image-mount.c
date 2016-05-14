@@ -125,6 +125,23 @@ int main(int argc, char ** argv) {
         return(1);
     }
 
+    if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
+        fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
+        return(255);
+    }
+
+    if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
+        fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
+        return(-1);
+    }
+
+    loop_dev = obtain_loop_dev();
+
+    if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
+        fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
+        return(255);
+    }
+
     if ( shell == NULL ) {
         shell = strdup("/bin/bash");
     }
@@ -143,23 +160,6 @@ int main(int argc, char ** argv) {
             return(255);
         }
 
-
-        if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
-            fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
-            return(255);
-        }
-
-        loop_dev = obtain_loop_dev();
-
-        if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
-            fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-            return(-1);
-        }
-
-        if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
-            fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
-            return(255);
-        }
 
         if ( mount_image(loop_dev, mountpoint, 1) < 0 ) {
             fprintf(stderr, "ABORT: exiting...\n");
@@ -184,6 +184,7 @@ int main(int argc, char ** argv) {
             waitpid(exec_fork_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
 
+            return(retval);
         } else {
             fprintf(stderr, "ABORT: Could not exec child process\n");
             retval++;
@@ -197,7 +198,6 @@ int main(int argc, char ** argv) {
         waitpid(namespace_fork_pid, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
 
-        return(retval);
     } else {
         fprintf(stderr, "ABORT: Could not fork management process\n");
         return(255);
