@@ -61,8 +61,9 @@
 
 
 
-// Yes, I know... Global variables suck but necessary to pass sig to child
-pid_t child_pid = 0;
+pid_t namespace_fork_pid = 0;
+pid_t exec_fork_pid = 0;
+
 
 
 void sighandler(int sig) {
@@ -71,17 +72,22 @@ void sighandler(int sig) {
     printf("Caught signal: %d\n", sig);
     fflush(stdout);
 
-    if ( child_pid > 0 ) {
-        printf("Singularity is sending SIGKILL to child pid: %d\n", child_pid);
-        fflush(stdout);
+    if ( exec_fork_pid > 0 ) {
+        fprintf(stderr, "Singularity is sending SIGKILL to child pid: %d\n", exec_fork_pid);
 
-        kill(child_pid, SIGKILL);
+        kill(exec_fork_pid, SIGKILL);
+    }
+    if ( namespace_fork_pid > 0 ) {
+        fprintf(stderr, "Singularity is sending SIGKILL to child pid: %d\n", namespace_fork_pid);
+
+        kill(namespace_fork_pid, SIGKILL);
     }
 }
 
 
+
 int main(int argc, char ** argv) {
-    FILE *loop_fp;
+    FILE *loop_fp = 0;
     FILE *containerimage_fp;
     char *containerimage;
     char *mountpoint;
@@ -89,6 +95,11 @@ int main(int argc, char ** argv) {
     char *shell;
     int retval = 0;
     uid_t uid = geteuid();
+
+    signal(SIGINT, sighandler);
+    signal(SIGKILL, sighandler);
+    signal(SIGQUIT, sighandler);
+
 
     if ( uid != 0 ) {
         fprintf(stderr, "ABORT: Calling user must be root\n");
@@ -118,62 +129,84 @@ int main(int argc, char ** argv) {
         shell = strdup("/bin/bash");
     }
 
-    if ( unshare(CLONE_NEWNS) < 0 ) {
-        fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
-        return(255);
-    }
+    namespace_fork_pid = fork();
 
-    if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
-        fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
-        return(255);
-    }
+    if ( namespace_fork_pid == 0 ) {
 
-
-    if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
-        return(255);
-    }
-
-    loop_dev = obtain_loop_dev();
-
-    if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
-        fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-        return(-1);
-    }
-
-    if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
-        fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
-        return(255);
-    }
-
-    if ( mount_image(loop_dev, mountpoint, 1) < 0 ) {
-        fprintf(stderr, "ABORT: exiting...\n");
-        return(255);
-    }
-
-    child_pid = fork();
-
-    if ( child_pid == 0 ) {
-
-        argv[2] = strdup(shell);
-
-        if ( execv(shell, &argv[2]) != 0 ) {
-            fprintf(stderr, "ABORT: exec of bash failed: %s\n", strerror(errno));
+        if ( unshare(CLONE_NEWNS) < 0 ) {
+            fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
+            return(255);
         }
 
-    } else if ( child_pid > 0 ) {
+        if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
+            fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
+            return(255);
+        }
+
+
+        if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
+            fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
+            return(255);
+        }
+
+        loop_dev = obtain_loop_dev();
+
+        if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
+            fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
+            return(-1);
+        }
+
+        if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
+            fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
+            return(255);
+        }
+
+        if ( mount_image(loop_dev, mountpoint, 1) < 0 ) {
+            fprintf(stderr, "ABORT: exiting...\n");
+            return(255);
+        }
+
+        exec_fork_pid = fork();
+
+        if ( exec_fork_pid == 0 ) {
+
+            argv[2] = strdup(shell);
+
+            if ( execv(shell, &argv[2]) != 0 ) {
+                fprintf(stderr, "ABORT: exec of bash failed: %s\n", strerror(errno));
+            }
+
+        } else if ( exec_fork_pid > 0 ) {
+            int tmpstatus;
+
+            strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
+
+            waitpid(exec_fork_pid, &tmpstatus, 0);
+            retval = WEXITSTATUS(tmpstatus);
+
+        } else {
+            fprintf(stderr, "ABORT: Could not fork child process\n");
+            retval++;
+        }
+
+    } else if ( namespace_fork_pid > 0 ) {
         int tmpstatus;
-        signal(SIGINT, sighandler);
-        signal(SIGKILL, sighandler);
-        signal(SIGQUIT, sighandler);
-
-        waitpid(child_pid, &tmpstatus, 0);
+        
+        strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
+        
+        if ( seteuid(uid) < 0 ) {
+            fprintf(stderr, "ABORT: Could not set effective user privledges to %d!\n", uid);
+            return(255);
+        }   
+        
+        waitpid(namespace_fork_pid, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
-
     } else {
-        fprintf(stderr, "ABORT: Could not fork child process\n");
-        retval++;
+        fprintf(stderr, "ABORT: Could not fork management process\n");
+        return(255);
     }
+
+    (void)disassociate_loop(loop_fp);
 
     return(retval);
 }
