@@ -185,7 +185,7 @@ int main(int argc, char ** argv) {
             retval = WEXITSTATUS(tmpstatus);
 
         } else {
-            fprintf(stderr, "ABORT: Could not fork child process\n");
+            fprintf(stderr, "ABORT: Could not exec child process\n");
             retval++;
         }
 
@@ -194,19 +194,19 @@ int main(int argc, char ** argv) {
         
         strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
         
-        if ( seteuid(uid) < 0 ) {
-            fprintf(stderr, "ABORT: Could not set effective user privledges to %d!\n", uid);
-            return(255);
-        }   
-        
         waitpid(namespace_fork_pid, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
+
+        return(retval);
     } else {
         fprintf(stderr, "ABORT: Could not fork management process\n");
         return(255);
     }
 
-    (void)disassociate_loop(loop_fp);
+    if ( disassociate_loop(loop_fp) < 0 ) {
+        fprintf(stderr, "ERROR: Failed to detach loop device: %s\n", loop_dev);
+        return(255);
+    }
 
     return(retval);
 }
