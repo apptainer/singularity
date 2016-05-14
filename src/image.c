@@ -47,3 +47,43 @@ int image_offset(FILE *image_fp) {
 
     return(i+1);
 }
+
+
+int image_create(char *image, int size) {
+    FILE *image_fp;
+
+    image_fp = fopen(image, "w");
+    if ( image_fp == NULL ) {
+        fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
+        return(-1);
+    }
+
+    fprintf(image_fp, LAUNCH_STRING);
+    fseek(image_fp, size * 1024 * 1024, SEEK_CUR);
+    fprintf(image_fp, "0");
+    fclose(image_fp);
+
+    chmod(image, 0755);
+
+    return(0);
+}
+
+int image_expand(char *image, int size) {
+    FILE *image_fp;
+    long position;
+
+    image_fp = fopen(image, "r+");
+    if ( image_fp == NULL ) {
+        fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
+        return(-1);
+    }
+
+    fseek(image_fp, 0L, SEEK_END);
+    position = ftell(image_fp);
+    ftruncate(fileno(image_fp), position-1);
+    fseek(image_fp, size * 1024 * 1024, SEEK_CUR);
+    fprintf(image_fp, "0");
+    fclose(image_fp);
+
+    return(0);
+}

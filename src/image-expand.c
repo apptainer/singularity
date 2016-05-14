@@ -18,8 +18,37 @@
  * 
  */
 
-#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h> 
+#include <string.h>
+#include <fcntl.h>  
 
-int image_offset(FILE *image_fp);
-int image_create(char *image, int size);
-int image_expand(char *image, int size);
+#include "config.h"
+#include "file.h"
+#include "image.h"
+
+
+
+int main(int argc, char ** argv) {
+    long int size;
+
+    if ( argv[1] == NULL ) {
+        fprintf(stderr, "USAGE: %s [singularity container image] [increase size in MB]\n", argv[0]);
+        return(1);
+    }
+
+    if ( argv[2] == NULL ) {
+        size = 1024;
+    } else {
+        size = ( strtol(argv[2], (char **)NULL, 10) );
+    }
+
+    return(image_expand(argv[1], size));
+
+    return(0);
+}

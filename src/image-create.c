@@ -35,8 +35,6 @@
 
 
 int main(int argc, char ** argv) {
-    FILE *image_fp;
-    char *image;
     long int size;
 
     if ( argv[1] == NULL ) {
@@ -44,22 +42,13 @@ int main(int argc, char ** argv) {
         return(1);
     }
 
-    image = strdup(argv[1]);
-
     if ( argv[2] == NULL ) {
         size = 1024;
     } else {
         size = ( strtol(argv[2], (char **)NULL, 10) );
     }
 
-    image_fp = fopen(image, "w");
-
-    fprintf(image_fp, LAUNCH_STRING);
-    fseek(image_fp, size * 1024 * 1024, SEEK_CUR);
-    fprintf(image_fp, "0");
-    fclose(image_fp);
-
-    chmod(image, 0755);
+    return(image_create(argv[1], size));
 
     return(0);
 }
