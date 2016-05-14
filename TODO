@@ -1,5 +1,1 @@
-* Update cli mods that use mount/container-shell
 * Update test.sh for new model
-* Update 'create' command to make containers exec
-* Use bindloop for 'create' command
-* Move 'sapprun' to run-singularity
