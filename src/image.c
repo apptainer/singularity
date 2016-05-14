@@ -80,7 +80,10 @@ int image_expand(char *image, int size) {
 
     fseek(image_fp, 0L, SEEK_END);
     position = ftell(image_fp);
-    (void)ftruncate(fileno(image_fp), position-1);
+    if ( ftruncate(fileno(image_fp), position-1) < 0 ) {
+        fprintf(stderr, "ERROR: Failed truncating the marker bit off of image %s: %s\n", image, strerror(errno));
+        return(-1);
+    }
     fseek(image_fp, size * 1024 * 1024, SEEK_CUR);
     fprintf(image_fp, "0");
     fclose(image_fp);

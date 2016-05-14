@@ -1,13 +1,13 @@
-USAGE: singularity (options) grow [command] (options)
+USAGE: singularity (options) expand [command] (options)
 
-Grow the Singularity disk image.
+Grow the Singularity disk image by the given amount.
 
 OPTIONS:
-    -s/--size   Specify a size for an operation (default 2048MB)
+    -s/--size   Specify a size for an operation (default 512MB)
 
 EXAMPLES:
 
-    $ singularity grow --size 10240 /tmp/Debian.img
+    $ singularity expand --size 10240 /tmp/Debian.img
 
 For additional help, please visit our public documentation pages which are
 found at:
