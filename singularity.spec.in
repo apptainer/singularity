@@ -44,6 +44,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/copy.sh
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/bindloop
+%{_libexecdir}/singularity/image-create
 %{_libexecdir}/singularity/image-mount
 %{_libexecdir}/singularity/ftrace
 %{_libexecdir}/singularity/ftype

@@ -27,18 +27,17 @@
 #include <unistd.h>
 
 #include "file.h"
+#include "image.h"
 
 
 int image_offset(FILE *image_fp) {
-    int ret = 0;
     int i = 0;
     int c;
 
     rewind(image_fp);
 
-    while (i < 24 && (c = fgetc(image_fp)) != EOF) {
+    while (i < 128 && (c = fgetc(image_fp)) != EOF) {
         if ( c == '\n' ) {
-            ret = i + 1;
             break;
         }
         i++;
@@ -46,5 +45,5 @@ int image_offset(FILE *image_fp) {
 
     rewind(image_fp);
 
-    return(ret);
+    return(i+1);
 }

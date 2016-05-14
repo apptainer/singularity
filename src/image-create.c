@@ -18,6 +18,48 @@
  * 
  */
 
-#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h> 
+#include <string.h>
+#include <fcntl.h>  
 
-int image_offset(FILE *image_fp);
+#include "config.h"
+#include "file.h"
+#include "image.h"
+
+
+
+int main(int argc, char ** argv) {
+    FILE *image_fp;
+    char *image;
+    long int size;
+
+    if ( argv[1] == NULL ) {
+        fprintf(stderr, "USAGE: %s [singularity container image] [size in MB]\n", argv[0]);
+        return(1);
+    }
+
+    image = strdup(argv[1]);
+
+    if ( argv[2] == NULL ) {
+        size = 1024;
+    } else {
+        size = ( strtol(argv[2], (char **)NULL, 10) );
+    }
+
+    image_fp = fopen(image, "w");
+
+    fprintf(image_fp, LAUNCH_STRING);
+    fseek(image_fp, size * 1024 * 1024, SEEK_CUR);
+    fprintf(image_fp, "0");
+    fclose(image_fp);
+
+    chmod(image, 0755);
+
+    return(0);
+}

@@ -92,11 +92,25 @@ if ! touch "$IMAGE_FILE" 2>/dev/null; then
 fi
 
 echo "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MB..."
-eval $DD_PATH of="$IMAGE_FILE" bs=1 count=0 seek="$IMAGE_BYTES" >/dev/null 2>&1
+
+if ! eval "$libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMAGE_SIZE"; then
+    messsage ERROR "Failed creating image: $IMAGE_FILE\n"
+    exit 1
+fi
 
 echo "Formatting image ($MKFS_PATH)"
-eval $MKFS_PATH -q -F "$IMAGE_FILE" >/dev/null 2>&1
+if ! LOOP_DEV=`eval "$libexecdir/singularity/bindloop" attach "$IMAGE_FILE" 2>/dev/null`; then
+    message ERROR "Failed binding image: $IMAGE_FILE\n"
+    exit 1
+fi
 
+if ! eval $MKFS_PATH -q "$LOOP_DEV" >/dev/null; then
+    message ERROR "Failed formatting loop image: $LOOP_DEV\n"
+    eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
+    exit 1
+fi
+
+eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
 echo "Done. Image can be found at: $IMAGE_FILE"
 
 

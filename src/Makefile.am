@@ -17,11 +17,12 @@ install-exec-hook:
 	fi
 
 bindir = $(libexecdir)/singularity
-bin_PROGRAMS = ftrace ftype sexec image-mount bindloop
+bin_PROGRAMS = ftrace ftype sexec image-create image-mount bindloop
 
 ftrace_SOURCES = ftrace.c file.c file.h util.c util.h
 ftype_SOURCES = ftype.c util.c util.h file.c file.h
 sexec_SOURCES = sexec.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h user.c user.h file.c file.h image.c image.h
+image_create_SOURCES = image-create.c file.c file.h util.c util.h
 image_mount_SOURCES = image-mount.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h file.c file.h image.c image.h
 bindloop_SOURCES = bindloop.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h file.c file.h image.c image.h
 
