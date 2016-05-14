@@ -36,7 +36,7 @@ fi
 
 
 PATH=/sbin:/usr/sbin:$PATH
-IMAGE_SIZE="2048"
+IMAGE_SIZE="512"
 
 
 while true; do
@@ -57,12 +57,11 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) grow [container image] (options)\n"
+    echo "USAGE: singularity (options) expand [container image] (options)\n"
     exit 1
 fi
 
 
-IMAGE_BYTES=$(($IMAGE_SIZE * 1024 * 1024))
 IMAGE_FILE="$1"
 
 if [ -z "$IMAGE_FILE" ]; then
@@ -70,9 +69,16 @@ if [ -z "$IMAGE_FILE" ]; then
     exit 1
 fi
 
-if ! DD_PATH=`singularity_which dd`; then
-    message ERROR "Could not locate program: dd\n"
-    exit 255
+if [ ! -f "$IMAGE_FILE" ]; then
+    message ERROR "Base image file does not exist\n"
+    exit 1
+fi
+
+if ! MKFS_PATH=`singularity_which mkfs.ext4`; then
+    if ! MKFS_PATH=`singularity_which mkfs.ext3`; then
+        message ERROR "Could not locate program: mkfs.ext3/4\n"
+        exit 255
+    fi
 fi
 
 if ! RESIZE2FS_PATH=`singularity_which resize2fs`; then
@@ -85,14 +91,34 @@ if ! E2FSCK_PATH=`singularity_which e2fsck`; then
     exit 255
 fi
 
-echo "Updating image with a maximum size of ${IMAGE_SIZE}MB..."
-eval $DD_PATH of="$IMAGE_FILE" bs=1 count=0 seek="$IMAGE_BYTES" 2>/dev/null
 
-eval $E2FSCK_PATH -f "$IMAGE_FILE" >/dev/null 2>&1
+echo "Expanding sparse image by ${IMAGE_SIZE}MB..."
+if ! eval "$libexecdir/singularity/image-expand" "$IMAGE_FILE" "$IMAGE_SIZE"; then
+    messsage ERROR "Failed creating image: $IMAGE_FILE\n"
+    exit 1
+fi
 
-echo "Growing file system.."
-eval $RESIZE2FS_PATH "$IMAGE_FILE" >/dev/null 2>&1
+if ! LOOP_DEV=`eval "$libexecdir/singularity/image-bind" attach "$IMAGE_FILE" 2>/dev/null`; then
+    message ERROR "Failed binding image: $IMAGE_FILE\n"
+    exit 1
+fi
 
-echo "Done. Image has been resized to $IMAGE_SIZE MB: $IMAGE_FILE"
+echo "Checking image ($MKFS_PATH)"
+if ! eval $E2FSCK_PATH -fy "$LOOP_DEV" >/dev/null; then
+    message ERROR "Failed checking loop image: $LOOP_DEV\n"
+    eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
+    exit 1
+fi
+
+echo "Growing file system"
+if ! eval $RESIZE2FS_PATH "$LOOP_DEV" >/dev/null; then
+    message ERROR "Failed resizing loop image: $LOOP_DEV\n"
+    eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
+    exit 1
+fi
+
+eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
+echo "Done. Image can be found at: $IMAGE_FILE"
+
 
 exit 0

@@ -80,7 +80,7 @@ int image_expand(char *image, int size) {
 
     fseek(image_fp, 0L, SEEK_END);
     position = ftell(image_fp);
-    ftruncate(fileno(image_fp), position-1);
+    (void)ftruncate(fileno(image_fp), position-1);
     fseek(image_fp, size * 1024 * 1024, SEEK_CUR);
     fprintf(image_fp, "0");
     fclose(image_fp);

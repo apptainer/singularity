@@ -62,7 +62,6 @@ if [ -z "$1" ]; then
 fi
 
 
-IMAGE_BYTES=$(($IMAGE_SIZE * 1024 * 1024))
 IMAGE_FILE="$1"
 
 if [ -z "$IMAGE_FILE" ]; then
@@ -72,11 +71,6 @@ fi
 if [ -f "$IMAGE_FILE" ]; then
     message ERROR "Image file exists, not overwriting.\n"
     exit 1
-fi
-
-if ! DD_PATH=`singularity_which dd`; then
-    message ERROR "Could not locate program: dd\n"
-    exit 255
 fi
 
 if ! MKFS_PATH=`singularity_which mkfs.ext4`; then
@@ -92,18 +86,17 @@ if ! touch "$IMAGE_FILE" 2>/dev/null; then
 fi
 
 echo "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MB..."
-
 if ! eval "$libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMAGE_SIZE"; then
     messsage ERROR "Failed creating image: $IMAGE_FILE\n"
     exit 1
 fi
 
-echo "Formatting image ($MKFS_PATH)"
-if ! LOOP_DEV=`eval "$libexecdir/singularity/bindloop" attach "$IMAGE_FILE" 2>/dev/null`; then
+if ! LOOP_DEV=`eval "$libexecdir/singularity/image-bind" attach "$IMAGE_FILE" 2>/dev/null`; then
     message ERROR "Failed binding image: $IMAGE_FILE\n"
     exit 1
 fi
 
+echo "Formatting image ($MKFS_PATH)"
 if ! eval $MKFS_PATH -q "$LOOP_DEV" >/dev/null; then
     message ERROR "Failed formatting loop image: $LOOP_DEV\n"
     eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
