@@ -467,13 +467,26 @@ int main(int argc, char ** argv) {
             }
             if ( container_cwdbase != NULL ) {
                 if ( strcmp(container_cwdbase, container_homebase) != 0 ) {
-                    if ( strncmp(container_cwdbase, "/tmp", 4) != 0 ) {
+                    if ( strncmp(container_cwdbase, "/tmp", 4) != 0 &&
+                         strncmp(container_cwdbase, "/bin", 4) != 0 && 
+                         strncmp(container_cwdbase, "/usr", 4) != 0 && 
+                         strncmp(container_cwdbase, "/var", 4) != 0 && 
+                         strncmp(container_cwdbase, "/etc", 4) != 0 && 
+                         strncmp(container_cwdbase, "/dev", 4) != 0 && 
+                         strncmp(container_cwdbase, "/lib", 4) != 0 && 
+                         strncmp(container_cwdbase, "/sys", 4) != 0 && 
+                         strncmp(container_cwdbase, "/sbin", 5) != 0 && 
+                         strncmp(container_cwdbase, "/boot", 5) != 0 && 
+                         strncmp(container_cwdbase, "/proc", 5) != 0 ) {
                         if ( is_dir(joinpath(containerpath, container_cwdbase)) == 0 ){
                             if ( mount_bind(container_cwdbase, joinpath(containerpath, container_cwdbase), 1) < 0 ) {
                                 fprintf(stderr, "ABORT: Could not bind base cwd path to container %s: %s\n", container_cwdbase, strerror(errno));
                                 return(255);
                             }
                         }
+                    } else {
+                        // Current directory is on host system... change dir to home
+                        strcpy(cwd, homepath);
                     }
                 }
             } else {
