@@ -43,7 +43,6 @@
 #define MAX_LOOP_DEVS 128
 
 
-
 char * obtain_loop_dev(void) {
     char * loop_device;
     int devnum = -1;

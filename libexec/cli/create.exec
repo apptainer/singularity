@@ -99,11 +99,11 @@ fi
 echo "Formatting image ($MKFS_PATH)"
 if ! eval $MKFS_PATH -q "$LOOP_DEV" >/dev/null; then
     message ERROR "Failed formatting loop image: $LOOP_DEV\n"
-    eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
+    eval "$libexecdir/singularity/image-bind" detach "$LOOP_DEV"
     exit 1
 fi
 
-eval "$libexecdir/singularity/bindloop" detach "$LOOP_DEV"
+eval "$libexecdir/singularity/image-bind" detach "$LOOP_DEV"
 echo "Done. Image can be found at: $IMAGE_FILE"
 
 

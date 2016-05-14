@@ -31,21 +31,23 @@
 
 
 int image_offset(FILE *image_fp) {
+    int ret = 0;
     int i = 0;
     int c;
 
     rewind(image_fp);
 
-    while (i < 128 && (c = fgetc(image_fp)) != EOF) {
-        if ( c == '\n' ) {
+    for (i=0; i < 64; i++) {
+        int c = fgetc(image_fp);
+        if ( c == EOF ) {
+            break;
+        } else if ( c == '\n' ) {
+            ret = i + 1;
             break;
         }
-        i++;
     }
 
-    rewind(image_fp);
-
-    return(i+1);
+    return(ret);
 }
 
 
