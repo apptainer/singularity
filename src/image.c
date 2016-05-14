@@ -33,7 +33,6 @@
 int image_offset(FILE *image_fp) {
     int ret = 0;
     int i = 0;
-    int c;
 
     rewind(image_fp);
 
