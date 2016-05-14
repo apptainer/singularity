@@ -49,7 +49,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/ftrace
 %{_libexecdir}/singularity/ftype
 %{_bindir}/singularity
-%{_bindir}/sapprun
+%{_bindir}/run-singularity
 
 
 
