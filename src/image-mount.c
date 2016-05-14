@@ -125,6 +125,8 @@ int main(int argc, char ** argv) {
         return(1);
     }
 
+    loop_dev = obtain_loop_dev();
+
     if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
         fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
         return(255);
@@ -134,8 +136,6 @@ int main(int argc, char ** argv) {
         fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
         return(-1);
     }
-
-    loop_dev = obtain_loop_dev();
 
     if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
         fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
