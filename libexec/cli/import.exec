@@ -72,10 +72,14 @@ fi
 SINGULARITY_BUILD_ROOT="/mnt"
 export SINGULARITY_BUILD_ROOT
 
+if [ ! -d "$SINGULARITY_BUILD_ROOT" ]; then
+    mkdir -p "$SINGULARITY_BUILD_ROOT"
+fi
+
 if [ -n "$TAR_COMMAND" ]; then
-    exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; $TAR_COMMAND"
+    exec "$libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; $TAR_COMMAND"
 elif [ -n "$FILE" ]; then
-    exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xvf \"$FILE\""
+    exec "$libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xvf \"$FILE\""
 else
-    exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xvf -"
+    exec "$libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xvf -"
 fi

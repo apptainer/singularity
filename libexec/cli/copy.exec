@@ -60,9 +60,12 @@ if [ ! -f "$IMAGE" ]; then
     exit 1
 fi
 
-
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_BUILD_ROOT="/mnt"
 export SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
 
-exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$SINGULARITY_libexecdir/singularity/copy.sh" "$@"
+if [ ! -d "$SINGULARITY_BUILD_ROOT" ]; then
+    mkdir -p "$SINGULARITY_BUILD_ROOT"
+fi
+
+exec "$libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$SINGULARITY_libexecdir/singularity/copy.sh" "$@"

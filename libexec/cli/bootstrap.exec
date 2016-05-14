@@ -68,8 +68,7 @@ if [ ! -f "$DEFINITION" ]; then
 fi
 
 SINGULARITY_libexecdir="$libexecdir"
-SINGULARITY_QUIET=1
 SINGULARITY_BUILD_ROOT="/mnt"
-export SINGULARITY_QUIET SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
+export SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
 
-exec "$libexecdir/singularity/container-shell" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$SINGULARITY_libexecdir/singularity/bootstrap.sh" "$DEFINITION"
+exec "$libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$SINGULARITY_libexecdir/singularity/bootstrap.sh" "$DEFINITION"
