@@ -135,7 +135,6 @@ int main(int argc, char ** argv) {
     containerimage = getenv("SINGULARITY_IMAGE");
     command = getenv("SINGULARITY_COMMAND");
 
-    unsetenv("SINGULARITY_IMAGE");
     unsetenv("SINGULARITY_COMMAND");
     unsetenv("SINGULARITY_EXEC");
 
@@ -574,7 +573,6 @@ int main(int argc, char ** argv) {
         exec_fork_pid = fork();
 
         if ( exec_fork_pid == 0 ) {
-            char *prompt;
 
 
 //****************************************************************************//
@@ -623,10 +621,6 @@ int main(int argc, char ** argv) {
 // Setup final envrionment
 //****************************************************************************//
 
-            prompt = (char *) malloc(strlen(containername) + 16);
-            snprintf(prompt, strlen(containerimage) + 16, "Singularity/%s> ", containername);
-            setenv("PS1", prompt, 1);
-
             // After this, we exist only within the container... Let's make it known!
             if ( setenv("SINGULARITY_CONTAINER", "true", 0) != 0 ) {
                 fprintf(stderr, "ABORT: Could not set SINGULARITY_CONTAINER to 'true'\n");
@@ -674,13 +668,20 @@ int main(int argc, char ** argv) {
             }
             
             if ( strcmp(command, "shell") == 0 ) {
+                char *prompt;
+
+                prompt = (char *) malloc(strlen(containername) + 16);
+                snprintf(prompt, strlen(containerimage) + 16, "Singularity/%s> ", containername);
+                setenv("PS1", prompt, 1);
+
                 if ( is_exec("/bin/bash") == 0 ) {
-                    char *args[argc+1];
+                    char *args[argc+2];
                     int i;
 
                     args[0] = strdup("/bin/bash");
                     args[1] = strdup("--norc");
-                    for(i=1; i<=argc; i++) {
+                    args[2] = strdup("--noprofile");
+                    for(i=2; i<=argc; i++) {
                         args[i+1] = argv[i];
                     }
 
