@@ -681,8 +681,8 @@ int main(int argc, char ** argv) {
                     args[0] = strdup("/bin/bash");
                     args[1] = strdup("--norc");
                     args[2] = strdup("--noprofile");
-                    for(i=2; i<=argc; i++) {
-                        args[i+1] = argv[i];
+                    for(i=1; i<=argc; i++) {
+                        args[i+2] = argv[i];
                     }
 
                     if ( execv("/bin/bash", args) != 0 ) {
