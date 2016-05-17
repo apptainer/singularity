@@ -66,7 +66,7 @@ namespaces are process, mount points, and certain parts of the contained
 file system.
 </p>
 <p>
-When you run your Singularity application, you may find that the process
+When you run your Singularity container, you may find that the process
 IDs start with 1 (one) and increment from there. You will also find that
 while the file system is contained starting with '/' (root), you can have
 access outside the container via your starting path. This means that
@@ -95,22 +95,18 @@ the host system supports as well as through envrionment variables.
 NERSC (like most HPC centers) are feeling the pressure from users asking
 for support for containers, specifically Docker. Due to the architecture
 of Docker it is very difficult (if not impossible) to properly and
-securely implement in a multi-user HPC environment. Shifter is NERSC's
-implementation to provide a Docker compatible front-end interface to a
-non-Docker backend which integrates with the scheduler and underlying
-operating host operating system to provide a contiguous workflow and
-integration.
+securely implement in a multi-tenent HPC environment. Shifter is NERSC's
+implementation to provide a Docker compatible front-end interface to
+their extreme scale HPC resources. It is system/resource specific in
+that you must import an existing container (from Docker, Singularity,
+or other), to the host/shifter implementation.
 </p>
 <p>
-Singularity on the other hand does not leverage the Docker workflow or
-front end at all and generally works on a very different premise. Instead
-of packaging the entire operating system to support a single application
-(or workflow/pipeline) Singularity only packages what it needs to run, and
-wraps that into a format that can be interacted on like any other program on
-the system. For example, there is no need to integrate it into a
-scheduler or make any system changes because it can be run like any other
-application. This means it can simply be called by the user within a
-batch submission script.
+Singularity on the other hand does not leverage the Docker workflow and
+targets a different premise - Mobility of Compute. This makes the
+integration of Singularity non-HPC specific (even though it works very
+well with HPC) and allows the image to become the primary unit of
+mobility (you can share and operate directly on Singularity images).
 </p>
 </div>
 </div>
@@ -125,21 +121,20 @@ batch submission script.
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-Similiar to Singularity, Docker has two major functions: image management
-and a runtime architecture. But the technologies and architectures for doing
-both are very different.
+Docker has been used for a variety of purposes, but it is designed as a
+platform to provide replicatable, network service virtualation. Because of
+this basic assumption and design model, it makes it difficult to implement
+on shared HPC platforms (and thus Singularity was born). Additionally,
+Docker supports the notion of emulating full operating system enviornments
+including user context escalation.
 </p>
 <p>
-Docker supports entire operating system images for containers and Singularity
-focuses on building process specific application based containers. Docker's
-containers have the capability of escalating privledges and running within the
-container as root, Singularity containers can not escalate privledges. Docker
-is an operating system virtualization technology where Singularity abstracts
-out the container so interaction with the container feels like interacting
-with a standard program or script on the host system. Docker is a containment
-solution built to create seperation from the host and other containers, where
-Singularity is designed to allow the container to run like any application
-such that standard permissions, workflows and processes can be used.
+Singularity on the other hand does not support user escalation or context
+changes, nor does it have a root owned daemon process mananging the
+container namespaces. It also exec's the process workflow inside the
+container and seemlessly redirects all IO in and out of the container
+directly between the enviornments. This makes doing things like MPI, X11
+forwarding, and other kinds of work tasks trivial for Singularity.
 </p>
 </div>
 </div>
@@ -159,10 +154,10 @@ for a single program because it will package up all of the dynamic libraries
 and package them into a single executable (intrepreted) format.
 </p>
 <p>
-But because Singularity is actually wrapping things up in a container, you can
-do much more with it... Such as include other files, scripts, workflows, pipe
-lines, data, and multi program processes and package them into a single
-portable executable format.
+But because Singularity is actually wrapping operating system files in to a
+container, you can do much more with it... Such as include other files,
+scripts, workflows, pipe lines, data, and multi program processes and package
+them into a single portable executable format.
 </p>
 </div>
 </div>
@@ -177,8 +172,7 @@ portable executable format.
 <div class="faq_answer_container">
 <div class="faq_answer">
 <p>
-No. While technically you could modify a SAPP container cache, it would then
-invalidate the checksums and would appear as corrupt to Singularity.
+Yes, if you call it with the -w/--writable flag. (e.g. 'singularity shell --writable Container.img').
 </p>
 </div>
 </div>
@@ -194,8 +188,11 @@ invalidate the checksums and would appear as corrupt to Singularity.
 <div class="faq_answer">
 <p>
 Yes! You can even create entire pipe lines and work flows using many
-applications, binaries, scripts, etc.. Look into the %runscript specfile
-section to define what happens when a Singularity container is run.
+applications, binaries, scripts, etc.. Look into the RunScript bootstrap
+definition option to define what happens when a Singularity container is
+run (note: you can accomplish this by also creating an executable file
+within your container at /singularity and when the container is executed
+directly or via the 'run' command, this will get executed).
 </p>
 </div>
 </div>
@@ -225,6 +222,12 @@ are highly tuned interconnects and file systems you wish to make effecient
 use of. In this case, See the documentation of MPI with Singularity.
 </p>
 <p>
+There is also some level of glibc forward compatibility that must be taken
+into consideration for any container system. For example, I can take a 
+Centos-5 container and run it on Centos-7, but I can not take a Centos-7
+container and run it on Centos-5.
+</p>
+<p>
 note: If you require kernel dependent features, a container platform is
 probably not the right solution for you.
 </p>
@@ -245,11 +248,19 @@ Because Singularity is based on container principals, when an application
 is run from within a Singularity container it's default view of the file
 system is different from how it is on the host system. This is what allows the
 envrionment to be portable. This means that root ('/') inside the container
-*MUST* be different from the host. However it is possible to bridge (and
-differentiate) these two root file systems using relative paths Vs. full
-paths. When specify a file location to your Singularity application (SAPP)
-on your host file system, pass the relative path (any path that does not
-start with a slash '/').
+is different from the host!
+</p>
+<p>
+Singularity automatically tries to resolve directory mounts such that things
+will just work and be portable with whatever enviornment you are running on.
+This means that /tmp and /var/tmp are automatically shared into the container
+as is /home. Additionally, if you are in a current directory that is not a 
+system directory, Singularity will also try to bind that to your container.
+</p>
+<p>
+There is a caveat in that a directory *must* already exist within your
+container to serve as a mount point. If that directory does not exist,
+Singularity will not create it for you! You must do that.
 </p>
 </div>
 </div>
