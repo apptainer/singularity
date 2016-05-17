@@ -6,7 +6,8 @@ fi
 echo "Setting RELEASE=$RELEASE"
 
 DistType "redhat"
-MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
+MirrorURL "http://ftp.scientificlinux.org/linux/scientific/${RELEASE}x/\$basearch/os/"
+
 
 Setup
 Bootstrap

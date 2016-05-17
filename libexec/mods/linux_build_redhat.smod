@@ -31,8 +31,7 @@ RELEASE_PKG=`rpm -qf /etc/redhat-release  --qf '%{NAME}\n'`
 
 
 REPO_NAME="os-base"
-YUM_CONF="/yum.conf"
-YUM_CMD="$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y"
+YUM_CONF="/etc/bootstrap-yum.conf"
 
 
 OSVersion() {
@@ -74,7 +73,7 @@ Setup() {
 }
 
 Bootstrap() {
-    if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $RELEASE_PKG yum coreutils"; then
+    if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $RELEASE_PKG redhat-release coreutils $@"; then
         exit 1
     fi
 
@@ -82,7 +81,7 @@ Bootstrap() {
 }
 
 InstallPkgs() {
-    if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then
+    if ! eval "$YUM_PATH --nogpgcheck --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then
         exit 1
     fi
 
@@ -90,7 +89,7 @@ InstallPkgs() {
 }
 
 Cleanup() {
-    if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --installroot $SINGULARITY_BUILD_ROOT clean all"; then
+    if ! eval "$YUM_PATH --installroot $SINGULARITY_BUILD_ROOT clean all"; then
         exit 1
     fi
 

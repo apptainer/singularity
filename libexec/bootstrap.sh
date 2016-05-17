@@ -43,6 +43,7 @@ shift
 SanityCheck
 PreSetup
 
+
 if [ -f "$BUILD_SPEC" ]; then
     # sourcing without a leading slash is weird and requires PATH
     PATH=".:$PATH"
