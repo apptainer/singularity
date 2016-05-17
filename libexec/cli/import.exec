@@ -57,7 +57,7 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) import [Singularity container image]\n"
+    echo "USAGE: singularity (options) import [Singularity container image]"
     exit 1
 fi
 

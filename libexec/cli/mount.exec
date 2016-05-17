@@ -48,7 +48,7 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) mount [Singularity container image] [mount point]\n"
+    echo "USAGE: singularity (options) mount [Singularity container image] [mount point]"
     exit 1
 fi
 

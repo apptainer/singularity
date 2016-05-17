@@ -57,7 +57,7 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) create [container image] (options)\n"
+    echo "USAGE: singularity (options) create [container image] (options)"
     exit 1
 fi
 

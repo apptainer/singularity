@@ -58,7 +58,7 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) exec [container image] [command] (options)\n"
+    echo "USAGE: singularity (options) exec [container image] [command] (options)"
     exit 1
 fi
 

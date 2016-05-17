@@ -48,7 +48,7 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) bootstrap [Singularity container image] [source file(s)] [dest]\n"
+    echo "USAGE: singularity (options) bootstrap [Singularity container image] [source file(s)] [dest]"
     exit 1
 fi
 
