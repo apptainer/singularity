@@ -138,7 +138,9 @@ PreSetup() {
     done
 
     for i in $DEVS; do
-        cp -a "$i" "$SINGULARITY_BUILD_ROOT/$i"
+        if [ ! -e "$SINGULARITY_BUILD_ROOT/$i" ]; then
+            cp -a "$i" "$SINGULARITY_BUILD_ROOT/$i"
+        fi
     done
 
     return 0
