@@ -52,6 +52,7 @@ int image_offset(FILE *image_fp) {
 
 int image_create(char *image, int size) {
     FILE *image_fp;
+    int i;
 
     image_fp = fopen(image, "w");
     if ( image_fp == NULL ) {
@@ -60,7 +61,9 @@ int image_create(char *image, int size) {
     }
 
     fprintf(image_fp, LAUNCH_STRING);
-    fseek(image_fp, size * 1024 * 1024, SEEK_CUR);
+    for(i = 0; i < size; i++ ) {
+        fseek(image_fp, 1024 * 1024, SEEK_CUR);
+    }
     fprintf(image_fp, "0");
     fclose(image_fp);
 
