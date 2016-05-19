@@ -220,7 +220,7 @@ int main(int argc, char ** argv) {
             return(5);
         }
     } else {
-        if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
+        if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) {
             fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", containerimage, strerror(errno));
             return(255);
         }
