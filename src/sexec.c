@@ -170,9 +170,13 @@ int main(int argc, char ** argv) {
 
     // TODO: Offer option to only run containers owned by root (so root can approve
     // containers)
-    if ( is_owner(containerimage, uid) < 0 && is_owner(containerimage, 0) < 0 ) {
-        fprintf(stderr, "ABORT: Will not execute in a CONTAINERIMAGE you (or root) does not own: %s\n", containerimage);
-        return(255);
+//    if ( is_owner(containerimage, uid) < 0 && is_owner(containerimage, 0) < 0 ) {
+//        fprintf(stderr, "ABORT: Will not execute in a CONTAINERIMAGE you (or root) does not own: %s\n", containerimage);
+//        return(255);
+//    }
+    if ( uid == 0 && is_owner(containerimage, 0) < 0 ) {
+        fprintf(stderr, "ABORT: Root should only run containers that root owns!\n");
+        return(1);
     }
 
     containername = basename(strdup(containerimage));
@@ -210,8 +214,8 @@ int main(int argc, char ** argv) {
     }
 
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
-        if ( ( containerimage_fp = fopen(containerimage, "r") ) < 0 ) {
-            fprintf(stderr, "ERROR: Could not open image for reading %s: %s\n", containerimage, strerror(errno));
+        if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) {
+            fprintf(stderr, "ERROR: Could not open image read only %s: %s\n", containerimage, strerror(errno));
             return(255);
         }
         containerimage_fd = fileno(containerimage_fp);
@@ -221,7 +225,7 @@ int main(int argc, char ** argv) {
         }
     } else {
         if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) {
-            fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", containerimage, strerror(errno));
+            fprintf(stderr, "ERROR: Could not open image read/write %s: %s\n", containerimage, strerror(errno));
             return(255);
         }
         containerimage_fd = fileno(containerimage_fp);
