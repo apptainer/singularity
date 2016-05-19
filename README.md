@@ -127,7 +127,7 @@ From there we can immeadiatly start using the container:
     hello world
     [gmk@centos7-x64 demo]$ 
 
-And if I do this same process again, while changing the **VERSION**
+And if I do this same process again, while changing the **RELEASE**
 variable in the bootstrap defition to **6** (where previously it was
 automatically ascertained by querying the RPM database), we can
 essentially build a Centos-6 image in exactly the same manner as
