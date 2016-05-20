@@ -181,12 +181,15 @@ int main(int argc, char ** argv) {
 
     containername = basename(strdup(containerimage));
 
-    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
-    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
+//    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
+//    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
 
     tmpdir = strjoin("/tmp/.singularity-", file_id(containerimage));
     lockfile = joinpath(tmpdir, "lock");
     loop_dev_cache = joinpath(tmpdir, "loop_dev");
+
+    containerpath = (char *) malloc(strlen(tmpdir) + 5);
+    snprintf(containerpath, strlen(tmpdir) + 5, "%s/mnt", tmpdir);
 
 
 //****************************************************************************//
