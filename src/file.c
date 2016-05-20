@@ -165,7 +165,10 @@ int s_mkpath(char *dir, mode_t mode) {
         return(0);
     }
 
-    s_mkpath(dirname(strdupa(dir)), mode);
+    if ( s_mkpath(dirname(strdupa(dir)), mode) < 0 ) {
+        // Return if priors failed
+        return(-1);
+    }
 
     if ( mkdir(dir, mode) < 0 ) {
         printf("ERROR: Could not create directory %s: %s\n", dir, strerror(errno));
