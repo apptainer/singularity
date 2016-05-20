@@ -171,7 +171,6 @@ int s_mkpath(char *dir, mode_t mode) {
     }
 
     if ( mkdir(dir, mode) < 0 ) {
-        printf("ERROR: Could not create directory %s: %s\n", dir, strerror(errno));
         return(-1);
     }
 
