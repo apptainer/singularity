@@ -55,53 +55,49 @@ compatibility.
 
 <h2>The Singularity Solution</h2>
 <p>
-By combining the model of application packaging with containers, the
-benefits are numerous! We can now address the above mentioned drawbacks
-that we have seen in containers using a very intuitive and
-architecturally non-invasive user-space solution.
-</p>
-<p>
 Singularity containers are purpose built and can include a simple
 binary and library stack or a complicated work flow that includes both
 network and file system access (or anything in between). The
-Singularity Application containers (SAPPs) are then completely portable
-with their only dependency being Singularity running on the target
-system.
+Singularity container images are then completely portable to any binary
+compatible version of Linux with the only dependency being Singularity
+running on the target system.
 </p>
 <p>
-Because Singularity runs 100% from user space and all container
-contents are always executed as the run-time user (non-root), security
-concerns are greatly mitigated. On a multi-user resource there is no
-longer a need to VLAN a network which is isolated from other users and
-file systems. Additionally, access to file systems is achieved internally
-without the use of bind mounts, and relative paths have direct access in
-and out of the container, thus supporting standard command-line usage and
-integration with existing work flows (e.g., batch schedulers).
+Singularity blocks privilege escalation within the container so if you
+want to be root inside the container, you first must be root outside the
+container. This usage paradigm mitigates many of the security concerns
+that exists with containers on multi-tenant shared resources. You can
+directly call programs inside the container from outside the container
+fully incorporating pipes, standard IO, file system access, X11, and
+MPI makes it easy to incorporate into your environment.
 </p>
 
 <h3>Portability</h3>
 <p>
-A Singularity Application (SAPP) is a package bundle that contains
-within it all of the required dependencies necessary to run. It is
-like having a statically compiled binary which can be distributed
-easily from system to system without concern for even the C library
-compatibility.
+Singularity containers are designed to be as portable as possible,
+spanning many flavors and vintages of Linux. The only known i86
+limitation is the version of Linux running on the host. Singularity
+has been ported to distributions going as far back as RHEL 5 (and
+compatibles) and works on all flavors of Debian, Gentoo and
+Slackware. Within the container, there are almost no limitations
+aside from basic binary compatibility.
 </p>
 <p>
-The SAPP package can contain anything from a simple binary
-executable to an entire pipeline or work flow of multiple
-applications. There could be multiple services which can be run
-within the SAPP environment and interaction with the SAPP file is
-fully configurable. For example in the simple configuration you may
-choose to emulate the program arguments so it operates just like
-running the application directly. 
+Within the container, there could be an entire distribution of Linux
+or a very lightweight tuned set of packages to support a particular
+work-flow. The work-flow can be scripted to run completely within the
+container or interact with files and other programs outside the
+container. The container can also emulate a single program and can
+be executed directly (yes, you heard that right). Containers have
+the execute bit set such they can be executed and configured to run
+a defined script or program when executed in this manner.
 </p>
 
 <h3>Reproducibility</h3>
 <p>
-Each SAPP includes all of the application's necessary run-time
-libraries and can even include the required data and files for a
-particular application to run. This encapsulation of the entire
+Each Singularity image includes all of the application's necessary
+run-time libraries and can even include the required data and files
+for a particular application to run. This encapsulation of the entire
 user-space environment facilitates not only portability but also
 reproducibility.
 </p>
