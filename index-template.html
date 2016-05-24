@@ -30,11 +30,7 @@
                 });
         }
 
-        window.onpopstate = function(event) {
-//            alert("location: " + document.location + ", state: " + JSON.stringify(event.state));
-//        };
-
-//        $(document).ready(function() {
+        function load_page() {
             var page = location.hash.substring(1);
             if ( page == '' ) {
                 load_content("home");
@@ -42,6 +38,14 @@
                 load_content(page);
             }
         }
+
+        window.onpopstate = function(event) {
+            load_page();
+        }
+
+        $(document).ready(function() {
+            load_page();
+        });
     </script>
 
   </head>
