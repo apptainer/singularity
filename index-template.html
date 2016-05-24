@@ -30,20 +30,22 @@
                 });
         }
 
-        // Reload on back/forward buttons
-        window.onpageshow = function(event) {
-            if (event.persisted) {
-                window.location.reload() 
-            }
-        };
-
-        $(document).ready(function() {
+        function load_default() {
             var page = location.hash.substring(1);
             if ( page == '' ) {
                 load_content("home");
             } else {
                 load_content(page);
             }
+        }
+
+        // Reload on back/forward buttons
+        $(window).load(function() {
+            load_default();
+        });
+
+        $(document).ready(function() {
+            load_default();
         });
     </script>
 
