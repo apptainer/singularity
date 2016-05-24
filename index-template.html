@@ -25,7 +25,7 @@
             $("#content").load("content/" + page + ".html", "", 
                 function (responseText, textStatus, req) {
                     if ( textStatus == "error" ) {
-                        $("#content").html("<h2>ERROR: Unable to load page: " + page + "</h2>");
+                        $("#content").html("<h2>ERROR</h2>Unable to load content: " + page);
                     }
                 });
         }
