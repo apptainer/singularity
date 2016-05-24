@@ -31,10 +31,10 @@
         }
 
         window.onpopstate = function(event) {
-            alert("location: " + document.location + ", state: " + JSON.stringify(event.state));
-        };
+//            alert("location: " + document.location + ", state: " + JSON.stringify(event.state));
+//        };
 
-        $(document).ready(function() {
+//        $(document).ready(function() {
             var page = location.hash.substring(1);
             if ( page == '' ) {
                 load_content("home");
