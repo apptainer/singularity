@@ -30,6 +30,13 @@
                 });
         }
 
+        // Reload on back/forward buttons
+        window.onpageshow = function(event) {
+            if (event.persisted) {
+                window.location.reload() 
+            }
+        };
+
         $(document).ready(function() {
             var page = location.hash.substring(1);
             if ( page == '' ) {
