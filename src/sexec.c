@@ -683,6 +683,7 @@ int main(int argc, char ** argv) {
                 }
                 if ( execvp(argv[1], &argv[1]) != 0 ) {
                     fprintf(stderr, "ABORT: execvp of '%s' failed: %s\n", argv[1], strerror(errno));
+                    return(1);
                 }
             }
             
