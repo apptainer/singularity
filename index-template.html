@@ -27,7 +27,7 @@
 
         $(document).ready(function() {
             var page = location.hash.substring(1);
-            if ( typeof page === 'undefined' ) {
+            if ( page == '' ) {
                 load_content("home");
             } else {
                 load_content(page);
