@@ -390,48 +390,13 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Temporary file generation
+// Check image
 //****************************************************************************//
 
-        if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
-            if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
-                fprintf(stderr, "ABORT: Failed creating template password file\n");
-                return(255);
-            }
+        if ( is_exec(joinpath(containerpath, "/bin/sh")) < 0 ) {
+            fprintf(stderr, "ERROR: Container image does not have a valid /bin/sh\n");
+            return(1);
         }
-
-        if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
-            if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
-                fprintf(stderr, "ABORT: Failed creating template group file\n");
-                return(255);
-            }
-        }
-
-        if ( is_file(joinpath(tmpdir, "/resolv.conf")) < 0 ) {
-            if ( copy_file("/etc/resolv.conf", joinpath(tmpdir, "/resolv.conf")) < 0 ) {
-                fprintf(stderr, "ABORT: Failed copying temporary resolv.conf\n");
-                return(255);
-            }
-        }
-
-        if ( is_file(joinpath(tmpdir, "/hosts")) < 0 ) {
-            if ( copy_file("/etc/hosts", joinpath(tmpdir, "/hosts")) < 0 ) {
-                fprintf(stderr, "ABORT: Failed copying temporary hosts\n");
-                return(255);
-            }
-        }
-
-        if ( is_file(joinpath(tmpdir, "/nsswitch.conf")) < 0 ) {
-            if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf")) == 0 ) {
-                if ( copy_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(tmpdir, "/nsswitch.conf")) < 0 ) {
-                    fprintf(stderr, "ABORT: Failed copying temporary nsswitch.conf\n");
-                    return(255);
-                }
-            } else {
-                fprintf(stderr, "WARNING: Template /etc/nsswitch.conf does not exist: %s\n", joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"));
-            }
-        }
-
 
 //****************************************************************************//
 // Bind mounts
@@ -538,6 +503,12 @@ int main(int argc, char ** argv) {
         }
 
         if (is_file(joinpath(containerpath, "/etc/resolv.conf")) == 0 ) {
+            if ( is_file(joinpath(tmpdir, "/resolv.conf")) < 0 ) {
+                if ( copy_file("/etc/resolv.conf", joinpath(tmpdir, "/resolv.conf")) < 0 ) {
+                    fprintf(stderr, "ABORT: Failed copying temporary resolv.conf\n");
+                    return(255);
+                }
+            }
             if ( mount_bind(joinpath(tmpdir, "/resolv.conf"), joinpath(containerpath, "/etc/resolv.conf"), bind_mount_writable) < 0 ) {
                 fprintf(stderr, "ABORT: Could not bind /etc/resolv.conf\n");
                 return(255);
@@ -545,13 +516,26 @@ int main(int argc, char ** argv) {
         }
 
         if (is_file(joinpath(containerpath, "/etc/hosts")) == 0 ) {
+            if ( is_file(joinpath(tmpdir, "/hosts")) < 0 ) {
+                if ( copy_file("/etc/hosts", joinpath(tmpdir, "/hosts")) < 0 ) {
+                    fprintf(stderr, "ABORT: Failed copying temporary hosts\n");
+                    return(255);
+                }
+            }
             if ( mount_bind(joinpath(tmpdir, "hosts"), joinpath(containerpath, "/etc/hosts"), bind_mount_writable) < 0 ) {
                 fprintf(stderr, "ABORT: Could not bind /etc/hosts\n");
                 return(255);
             }
         }
 
+
         if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
+            if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
+                if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
+                    fprintf(stderr, "ABORT: Failed creating template password file\n");
+                    return(255);
+                }
+            }
             if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), bind_mount_writable) < 0 ) {
                 fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
                 return(255);
@@ -559,6 +543,12 @@ int main(int argc, char ** argv) {
         }
 
         if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
+            if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
+                if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
+                    fprintf(stderr, "ABORT: Failed creating template group file\n");
+                    return(255);
+                }
+            }
             if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), bind_mount_writable) < 0 ) {
                 fprintf(stderr, "ABORT: Could not bind /etc/group\n");
                 return(255);
@@ -566,6 +556,16 @@ int main(int argc, char ** argv) {
         }
 
         if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
+            if ( is_file(joinpath(tmpdir, "/nsswitch.conf")) < 0 ) {
+                if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf")) == 0 ) {
+                    if ( copy_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(tmpdir, "/nsswitch.conf")) < 0 ) {
+                        fprintf(stderr, "ABORT: Failed copying temporary nsswitch.conf\n");
+                        return(255);
+                    }
+                } else {
+                    fprintf(stderr, "WARNING: Template /etc/nsswitch.conf does not exist: %s\n", joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"));
+                }
+            }
             if ( mount_bind(joinpath(tmpdir, "/nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), bind_mount_writable) != 0 ) {
                 fprintf(stderr, "ABORT: Could not bind /etc/nsswitch.conf\n");
                 return(255);
