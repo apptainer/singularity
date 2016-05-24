@@ -38,6 +38,9 @@ singularity_import linux_build
 
 BUILD_SPEC="$1"
 shift
+TMPDIR=`mktemp -d /tmp/singularity-bootstrap.XXXXXXX`
+
+export TMPDIR
 
 # Always run these checks
 SanityCheck
@@ -51,3 +54,5 @@ if [ -f "$BUILD_SPEC" ]; then
 fi
 
 Finalize
+
+rm -rf "$TMPDIR"

@@ -24,7 +24,6 @@ DIRS="/home /tmp /etc /root /dev"
 EMPTY_FILES="/etc/mtab /etc/resolv.conf /etc/nsswitch.conf /etc/passwd /etc/group /etc/hosts"
 DEVS="/dev/null /dev/zero /dev/random /dev/urandom"
 TMP_REAL_FILES="/etc/resolv.conf /etc/hosts"
-TMPDIR=`mktemp -d /tmp/singularity-bootstrap.XXXXXXX`
 
 
 # Function templates
