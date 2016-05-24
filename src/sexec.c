@@ -120,13 +120,20 @@ int main(int argc, char ** argv) {
     signal(SIGKILL, sighandler);
     signal(SIGQUIT, sighandler);
 
+
+    // Check to make sure we are installed correctly
+    if ( seteuid(0) < 0 ) {
+        fprintf(stderr, "ABORT: Check installation, must be performed by root.\n");
+        return(255);
+    }
+
     // Lets start off as the calling UID
     if ( seteuid(uid) < 0 ) {
-        fprintf(stderr, "ABORT: Could not set effective user privledges to %d!\n", uid);
+        fprintf(stderr, "ABORT: Could not set effective uid to %d!\n", uid);
         return(255);
     }
     if ( setegid(gid) < 0 ) {
-        fprintf(stderr, "ABORT: Could not set effective group privledges to %d!\n", gid);
+        fprintf(stderr, "ABORT: Could not set effective gid to %d!\n", gid);
         return(255);
     }
 
