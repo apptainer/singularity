@@ -22,7 +22,12 @@
     <script type="text/javascript">
         function load_content(page) {
             location.hash = page;
-            $("#content").load("content/" + page + ".html");
+            $("#content").load("content/" + page + ".html", {limit: 25},
+                function (responseText, textStatus, req) {
+                    if ( textStatus == "error" ) {
+                        return "ERROR: Unable to load page: " + page;
+                    }
+                });
         }
 
         $(document).ready(function() {
