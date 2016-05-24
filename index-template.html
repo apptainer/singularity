@@ -20,13 +20,19 @@
 
 
     <script type="text/javascript">
-
         function load_content(page) {
-            $("#content").load("content/" + page);
+            location.hash = page;
+            $("#content").load("content/" + page + ".html");
         }
 
         $(document).ready(function() {
-            load_content("home.html");
+            var page = location.hash.substring(1);
+            if ( page == null ) {
+                load_content("home");
+            } else {
+                alert(page);
+                load_content("page");
+            }
         });
     </script>
 
@@ -37,13 +43,13 @@
         <img src="images/singularity_logo1.png" border="0"/>
         <p></p>
 <p>
-<strong>&raquo;&nbsp;<a href="javascript:load_content('home.html')">Home</a></strong><br/>
-<strong>&raquo;&nbsp;<a href="javascript:load_content('about.html')">About</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="javascript:load_content('home')">Home</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="javascript:load_content('about')">About</a></strong><br/>
 
-<strong>&raquo;&nbsp;<a href="javascript:load_content('use-cases.html')">Use Cases</a></strong><br/>
-<strong>&raquo;&nbsp;<a href="javascript:load_content('docs.html')">Documentation</a></strong><br/>
-<strong>&raquo;&nbsp;<a href="javascript:load_content('help.html')">Getting help</a></strong><br/>
-<strong>&raquo;&nbsp;<a href="javascript:load_content('download.html')">Download</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="javascript:load_content('use-cases')">Use Cases</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="javascript:load_content('docs')">Documentation</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="javascript:load_content('help')">Getting help</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="javascript:load_content('download')">Download</a></strong><br/>
 </p>
 
         <p></p>
