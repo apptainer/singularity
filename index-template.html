@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link rel="icon" href="/singularity/favicon.ico" sizes="16x16 32x32 48x48 64x64" type="image/vnd.microsoft.icon">
+    <title>Singularity</title>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
+
+    <link rel="stylesheet" href="jquery.fancybox.css" type="text/css" media="screen" />
+    <script type="text/javascript" src="jquery.fancybox.pack.js"></script>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+
+    <script type="text/javascript">
+
+        function load_content(page) {
+            $("#content").load("content/" + page);
+        }
+
+        $(document).ready() {
+            load_content("home.html");
+        }
+    </script>
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <img src="images/singularity_logo1.png" border="0"/>
+        <p></p>
+<p>
+<strong>&raquo;&nbsp;<a href="javascript:load_content('index.html')">Home</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="javascript:load_content('about.html')">About</a></strong><br/>
+
+<strong>&raquo;&nbsp;<a href="use-cases.html">Use Cases</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="docs.html">Documentation</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="help.html">Getting help</a></strong><br/>
+<strong>&raquo;&nbsp;<a href="download.html">Download</a></strong><br/>
+</p>
+
+        <p></p>
+      </header>
+      <section>
+
+
+<div id="content">
+Loading ...
+</div>
+
+
+      </section>
+      <footer>
+        <p>
+            <small>
+                Project lead: <a href="https://gmkurtzer.github.io">Gregory M. Kurtzer</a><br/>
+                Sponsored by: <a href="http://scs.lbl.gov/">HPC @ LBNL</a><br/>
+                Hosted on: <a href="https://github.com">GitHub</a>
+            </small>
+        </p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
