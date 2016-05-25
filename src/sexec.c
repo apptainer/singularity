@@ -445,7 +445,7 @@ int main(int argc, char ** argv) {
                 fprintf(stderr, "WARNING: No suitable base directory in container found: %s\n", homepath);
             }
             if ( container_cwdbase != NULL ) {
-                if ( strcmp(container_cwdbase, container_homebase) != 0 ) {
+                if ( strcmp(container_cwdbase, container_homebase) != 0 ) { // Currently sitting in homedir so skip
                     if ( strncmp(container_cwdbase, "/tmp", 4) != 0 &&
                          strncmp(container_cwdbase, "/bin", 4) != 0 && 
                          strncmp(container_cwdbase, "/usr", 4) != 0 && 
@@ -454,6 +454,7 @@ int main(int argc, char ** argv) {
                          strncmp(container_cwdbase, "/dev", 4) != 0 && 
                          strncmp(container_cwdbase, "/lib", 4) != 0 && 
                          strncmp(container_cwdbase, "/sys", 4) != 0 && 
+                         strncmp(container_cwdbase, "/opt", 4) != 0 && 
                          strncmp(container_cwdbase, "/sbin", 5) != 0 && 
                          strncmp(container_cwdbase, "/boot", 5) != 0 && 
                          strncmp(container_cwdbase, "/proc", 5) != 0 ) {
@@ -464,12 +465,13 @@ int main(int argc, char ** argv) {
                             }
                         }
                     } else {
-                        // Current directory is on host system... change dir to home
+                        fprintf(stderr, "WARNING: Will not bind current directory to container system path: %s\n", cwd);
                         strcpy(cwd, homepath);
                     }
                 }
             } else {
                 fprintf(stderr, "WARNING: No suitable base directory in container found: %s\n", cwd);
+                strcpy(cwd, homepath);
             }
 
         } else {
