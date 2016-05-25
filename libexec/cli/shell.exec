@@ -64,8 +64,9 @@ fi
 
 SINGULARITY_COMMAND="shell"
 SINGULARITY_IMAGE="$1"
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
-export SINGULARITY_COMMAND SINGULARITY_IMAGE PATH SINGULARITY_WRITABLE
+PATH="/bin:/sbin:/usr/bin:/usr/sbin:$PATH"
+HISTFILE="/dev/null"
+export SINGULARITY_COMMAND SINGULARITY_IMAGE PATH SINGULARITY_WRITABLE HISTFILE
 shift
 
 exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
