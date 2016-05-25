@@ -21,16 +21,16 @@
 
 
 ## Basic sanity
-if [ -z "$libexecdir" ]; then
+if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
     exit 1
 fi
 
 ## Load functions
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
 else
-    echo "Error loading functions: $libexecdir/singularity/functions"
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
 fi
 
@@ -90,12 +90,12 @@ if ! touch "$IMAGE_FILE" 2>/dev/null; then
 fi
 
 echo "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MB..."
-if ! eval "$libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMAGE_SIZE"; then
+if ! eval "$SINGULARITY_libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMAGE_SIZE"; then
     messsage ERROR "Failed creating image: $IMAGE_FILE\n"
     exit 1
 fi
 
-if ! LOOP_DEV=`eval "$libexecdir/singularity/image-bind" attach "$IMAGE_FILE" 2>/dev/null`; then
+if ! LOOP_DEV=`eval "$SINGULARITY_libexecdir/singularity/image-bind" attach "$IMAGE_FILE" 2>/dev/null`; then
     message ERROR "Failed binding image: $IMAGE_FILE\n"
     exit 1
 fi
@@ -103,11 +103,11 @@ fi
 echo "Formatting image ($MKFS_PATH)"
 if ! eval $MKFS_PATH -q "$LOOP_DEV" >/dev/null; then
     message ERROR "Failed formatting loop image: $LOOP_DEV\n"
-    eval "$libexecdir/singularity/image-bind" detach "$LOOP_DEV"
+    eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$LOOP_DEV"
     exit 1
 fi
 
-eval "$libexecdir/singularity/image-bind" detach "$LOOP_DEV"
+eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$LOOP_DEV"
 echo "Done. Image can be found at: $IMAGE_FILE"
 
 

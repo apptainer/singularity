@@ -32,6 +32,9 @@ DEBUG=""
 
 export prefix exec_prefix libexecdir RETVAL MESSAGELEVEL DEBUG
 
+# the Modules package always calls 
+unset module
+
 if [ -f "$libexecdir/singularity/functions" ]; then
     . "$libexecdir/singularity/functions"
 else
@@ -119,7 +122,7 @@ fi
 shift
 
 if [ -x "$libexecdir/singularity/cli/$COMMAND.exec" ]; then
-    exec $libexecdir/singularity/cli/$COMMAND.exec "$@"
+    exec /usr/bin/env -i SINGULARITY_libexecdir="$libexecdir" MESSAGELEVEL="$MESSAGELEVEL" PATH="$PATH" TERM="$TERM" DISPLAY="$DISPLAY" LANG="$LANG" $libexecdir/singularity/cli/$COMMAND.exec "$@"
 else
     message ERROR "Unknown command '$COMMAND'\n"
     exit 1

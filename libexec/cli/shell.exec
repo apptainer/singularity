@@ -21,16 +21,16 @@
 
 
 ## Basic sanity
-if [ -z "$libexecdir" ]; then
+if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
     exit 1
 fi
 
 ## Load functions
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
 else
-    echo "Error loading functions: $libexecdir/singularity/functions"
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
 fi
 
@@ -68,4 +68,4 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
 export SINGULARITY_COMMAND SINGULARITY_IMAGE PATH SINGULARITY_WRITABLE
 shift
 
-exec "$libexecdir/singularity/sexec" "$@" <&0
+exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0

@@ -21,16 +21,16 @@
 
 
 ## Basic sanity
-if [ -z "$libexecdir" ]; then
+if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
     exit 1
 fi
 
 ## Load functions
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
 else
-    echo "Error loading functions: $libexecdir/singularity/functions"
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
 fi
 
@@ -73,8 +73,8 @@ if [ ! -f "$DEFINITION" ]; then
     exit 1
 fi
 
-SINGULARITY_libexecdir="$libexecdir"
+SINGULARITY_libexecdir="$SINGULARITY_libexecdir"
 SINGULARITY_BUILD_ROOT="/mnt"
 export SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
 
-exec "$libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$SINGULARITY_libexecdir/singularity/bootstrap.sh" "$DEFINITION" "$@"
+exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$SINGULARITY_libexecdir/singularity/bootstrap.sh" "$DEFINITION" "$@"
