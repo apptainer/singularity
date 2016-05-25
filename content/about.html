@@ -1,3 +1,79 @@
-<h1>About</h1>
+<h1>About Singularity</h1>
+<h2>Background</h2>
+<p>
+Software development on Linux is moving in a new direction. Thanks to
+advances in virtualization and container technologies, developers are
+finding it very convenient to distribute instances of their entire
+build/development environment in addition to or instead of source code
+alone. There are some benefits and drawbacks to this model.
+</p>
+<p>
+Some of the benefits of distributing software in this fashion include
+being able to provide a configuration free implementation which can
+easily be replicated to distribute a software or work flow. The user
+does not need to worry about managing potentially complicated
+dependency chains nor worry about configuration nuances.
+</p>
+<p>
+The drawbacks are numerous, but tend to focus on several major areas:
+container overhead, container technology and architecture concerns (e.g.,
+privilege escalation and network/file system access), and work flow
+compatibility.
+</p>
 
-Hello. This is the about page.
+<h2>The Singularity Solution</h2>
+<p>
+Singularity containers are purpose built and can include a simple
+binary and library stack or a complicated work flow that includes both
+network and file system access (or anything in between). The
+Singularity container images are then completely portable to any binary
+compatible version of Linux with the only dependency being Singularity
+running on the target system.
+</p>
+<p>
+Singularity blocks privilege escalation within the container so if you
+want to be root inside the container, you first must be root outside the
+container. This usage paradigm mitigates many of the security concerns
+that exists with containers on multi-tenant shared resources. You can
+directly call programs inside the container from outside the container
+fully incorporating pipes, standard IO, file system access, X11, and
+MPI makes it easy to incorporate into your environment.
+</p>
+
+<h3>Portability</h3>
+<p>
+Singularity containers are designed to be as portable as possible,
+spanning many flavors and vintages of Linux. The only known i86
+limitation is the version of Linux running on the host. Singularity
+has been ported to distributions going as far back as RHEL 5 (and
+compatibles) and works on all flavors of Debian, Gentoo and
+Slackware. Within the container, there are almost no limitations
+aside from basic binary compatibility.
+</p>
+<p>
+Within the container, there could be an entire distribution of Linux
+or a very lightweight tuned set of packages to support a particular
+work-flow. The work-flow can be scripted to run completely within the
+container or interact with files and other programs outside the
+container. The container can also emulate a single program and can
+be executed directly (yes, you heard that right). Containers have
+the execute bit set such they can be executed and configured to run
+a defined script or program when executed in this manner.
+</p>
+
+<h3>Reproducibility</h3>
+<p>
+Each Singularity image includes all of the application's necessary
+run-time libraries and can even include the required data and files
+for a particular application to run. This encapsulation of the entire
+user-space environment facilitates not only portability but also
+reproducibility.
+</p>
+
+<h3>License</h3>
+<p>
+Singularity is released under a modified BSD license. The only modification
+being that you may not use the names of any project members or contributors
+(namely UC or the US Department of Energy) to endorse or promote products or
+services derived from or using this software.
+</p>
