@@ -442,7 +442,7 @@ int main(int argc, char ** argv) {
                     }
                 }
             } else {
-                fprintf(stderr, "WARNING: Could not bind non-existent %s base directory\n", container_homebase);
+                fprintf(stderr, "WARNING: No suitable base directory in container found: %s\n", homepath);
             }
             if ( container_cwdbase != NULL ) {
                 if ( strcmp(container_cwdbase, container_homebase) != 0 ) {
@@ -469,11 +469,10 @@ int main(int argc, char ** argv) {
                     }
                 }
             } else {
-                fprintf(stderr, "WARNING: Could not bind non-existent %s base directory\n", container_cwdbase);
+                fprintf(stderr, "WARNING: No suitable base directory in container found: %s\n", cwd);
             }
 
         } else {
-
             if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
                 if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/tmp"), 1) < 0 ) {
                     fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/tmp", strerror(errno));
@@ -498,7 +497,7 @@ int main(int argc, char ** argv) {
                     }
                 }
             } else {
-                fprintf(stderr, "WARNING: Could not bind non-existent %s base directory\n", container_homebase);
+                fprintf(stderr, "WARNING: No suitable base directory in container found: %s\n", homepath);
             }
             strcpy(cwd, homepath);
         }
