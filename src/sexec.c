@@ -440,9 +440,11 @@ int main(int argc, char ** argv) {
                         fprintf(stderr, "ABORT: Could not bind base home path to container %s: %s\n", container_homebase, strerror(errno));
                         return(255);
                     }
+                } else {
+                    fprintf(stderr, "WARNING: Home bind directory not present: %s\n", container_homebase);
                 }
             } else {
-                fprintf(stderr, "WARNING: No suitable base directory in container found: %s\n", homepath);
+                fprintf(stderr, "WARNING: Could not obtain the home directory base in container: %s\n", homepath);
             }
             if ( container_cwdbase != NULL ) {
                 if ( strcmp(container_cwdbase, container_homebase) != 0 ) { // Currently sitting in homedir so skip
@@ -463,14 +465,15 @@ int main(int argc, char ** argv) {
                                 fprintf(stderr, "ABORT: Could not bind base cwd path to container %s: %s\n", container_cwdbase, strerror(errno));
                                 return(255);
                             }
+                        } else {
+                            fprintf(stderr, "WARNING: CWD bind directory not present: %s\n", container_cwdbase);
                         }
                     } else {
-                        fprintf(stderr, "WARNING: Will not bind current directory to container system path: %s\n", cwd);
                         strcpy(cwd, homepath);
                     }
                 }
             } else {
-                fprintf(stderr, "WARNING: No suitable base directory in container found: %s\n", cwd);
+                fprintf(stderr, "WARNING: Could not obtain the current directory base in container: %s\n", homepath);
                 strcpy(cwd, homepath);
             }
 

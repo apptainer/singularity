@@ -278,16 +278,18 @@ char *filecat(char *path) {
 
 char * container_dir_walk(char *containerdir, char *dir) {
     char * testdir = strdup(dir);
+    char * prevdir;
     if ( containerdir == NULL || dir == NULL ) {
         return(NULL);
     }
 
-    while ( testdir != NULL &&  ( strcmp(testdir, "/") != 0 ) ) {
+    while ( testdir != NULL && ( strcmp(testdir, "/") != 0 ) ) {
         if ( is_dir(joinpath(containerdir, testdir)) == 0 ) {
             return(testdir);
         }
+        prevdir = strdup(testdir);
         testdir = dirname(strdup(testdir));
     }
-    return(NULL);
+    return(prevdir);
 }
 
