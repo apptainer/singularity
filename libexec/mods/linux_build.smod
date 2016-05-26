@@ -70,8 +70,8 @@ DistType() {
         exit 1
     fi
 
-    if [ -f "$libexecdir/singularity/mods/linux_build_$TYPE.smod" ]; then
-        . "$libexecdir/singularity/mods/linux_build_$TYPE.smod"
+    if [ -f "$SINGULARITY_libexecdir/singularity/mods/linux_build_$TYPE.smod" ]; then
+        . "$SINGULARITY_libexecdir/singularity/mods/linux_build_$TYPE.smod"
     else
         echo "DistType: Unrecognized Distribution type: $TYPE" >&2
         exit 255

@@ -163,12 +163,12 @@ stest() {
 
 singularity_import() {
     MOD="$1"
-    if [ -z "$libexecdir" ]; then
+    if [ -z "$SINGULARITY_libexecdir" ]; then
         message ERROR "libexecdir not defined, are you running this from within Singularity?\n"
         exit 1
     fi
-    if [ -f "$libexecdir/singularity/mods/$MOD.smod" ]; then
-        . "$libexecdir/singularity/mods/$MOD.smod"
+    if [ -f "$SINGULARITY_libexecdir/singularity/mods/$MOD.smod" ]; then
+        . "$SINGULARITY_libexecdir/singularity/mods/$MOD.smod"
     else
         message ERROR "Could not load Singularity module: $MOD\n"
         exit 255
