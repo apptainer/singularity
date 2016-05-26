@@ -468,8 +468,6 @@ int main(int argc, char ** argv) {
                         } else {
                             fprintf(stderr, "WARNING: CWD bind directory not present: %s\n", container_cwdbase);
                         }
-                    } else {
-                        strcpy(cwd, homepath);
                     }
                 }
             } else {
@@ -646,17 +644,18 @@ int main(int argc, char ** argv) {
                 return(1);
             }
 
-            if ( is_dir(cwd) == 0 ) {
-                if ( chdir(cwd) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not chdir to: %s\n", cwd);
-                    return(1);
-                }
-            } else {
-                if ( fchdir(cwd_fd) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not fchdir to cwd\n");
-                    return(1);
-                }
-            }
+// Testing if this is necessary
+//            if ( is_dir(cwd) == 0 ) {
+//                if ( chdir(cwd) < 0 ) {
+//                    fprintf(stderr, "ABORT: Could not chdir to: %s\n", cwd);
+//                    return(1);
+//                }
+//            } else {
+//                if ( fchdir(cwd_fd) < 0 ) {
+//                    fprintf(stderr, "ABORT: Could not fchdir to cwd\n");
+//                    return(1);
+//                }
+//            }
 
 
 //****************************************************************************//
