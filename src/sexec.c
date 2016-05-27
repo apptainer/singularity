@@ -644,18 +644,18 @@ int main(int argc, char ** argv) {
                 return(1);
             }
 
-// Testing if this is necessary
-//            if ( is_dir(cwd) == 0 ) {
-//                if ( chdir(cwd) < 0 ) {
-//                    fprintf(stderr, "ABORT: Could not chdir to: %s\n", cwd);
-//                    return(1);
-//                }
-//            } else {
-//                if ( fchdir(cwd_fd) < 0 ) {
-//                    fprintf(stderr, "ABORT: Could not fchdir to cwd\n");
-//                    return(1);
-//                }
-//            }
+//TODO: Fix logic so that we use cwd_fd for OS dirs
+            if ( is_dir(cwd) == 0 ) {
+               if ( chdir(cwd) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not chdir to: %s\n", cwd);
+                    return(1);
+                }
+            } else {
+                if ( fchdir(cwd_fd) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not fchdir to cwd\n");
+                    return(1);
+                }
+            }
 
 
 //****************************************************************************//
