@@ -6,13 +6,14 @@ out (stdout).
 note: This command must be executed as root.
 
 OPTIONS:
-    -f/--file       Use an input file instead of a pipe
+    -f/--file       Output to a file instead of a pipe
        --command    Replace the tar command (DEFAULT: 'tar cf - .')
 
 EXAMPLES:
 
-    $ singularity export /tmp/Debian.img > /tmp/Debian.tar
-    $ singularity export /tmp/Debian.img | gzip -9 > /tmp/Debian.tar.gz
+    $ sudo singularity export /tmp/Debian.img > /tmp/Debian.tar
+    $ sudo singularity export /tmp/Debian.img | gzip -9 > /tmp/Debian.tar.gz
+    $ sudo singularity export -f Debian.tar /tmp/Debian.img
 
 
 For additional help, please visit our public documentation pages which are

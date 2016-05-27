@@ -21,9 +21,10 @@ EXAMPLES:
 
     You can then import from a tar pipe
 
-    $ gunzip -c debian.tar.gz | singularity import /tmp/Debian
-    $ cat debian.tar | singularity import /tmp/Debian.img
-    $ singularity import /tmp/Debian.img < debian.tar
+    $ gunzip -c debian.tar.gz | sudo singularity import /tmp/Debian
+    $ cat debian.tar | sudo singularity import /tmp/Debian.img
+    $ sudo singularity import /tmp/Debian.img < debian.tar
+    $ sudo singularity import -f Debian.tar /tmp/Debian.img
     $ docker export [container] | sudo singularity import [container].img
 
 
