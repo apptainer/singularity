@@ -46,6 +46,13 @@ Bootstrap() {
         exit 1
     fi
 
+    if [ -n "$LANG" ]; then
+        if eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c 'locale-gen $LANG'" 2>/dev/null; then
+            mkdir -p "$SINGULARITY_BUILD_ROOT/etc/default/" >/dev/null 2>&1
+            echo "LANG=$LANG" > "$SINGULARITY_BUILD_ROOT/etc/default/locale"
+        fi
+    fi
+
     return 0
 }
 
