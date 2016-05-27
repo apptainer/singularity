@@ -34,101 +34,139 @@
 &laquo;&nbsp;<a href="docs.html">Back to Documentation</a>
 <h1>Overview</h1>
 <p>
-The goal with Singularity is to build a container system which completely
-abstracts out the container so it virtually doesn't exist. Simplify the
-interface such that the container environment is no longer a consideration.
-A good example implementation of this is how Apple's OS X deals with
-application bundles. Installing an application is as easy as obtaining
-an OS X "app" (which is actually a directory of a particular format). This
-application bundle directory can then be executed by double clicking it
-anywhere within the Finder interface (it is recommended to copy them to a
-common location by dragging them to the /Applications directory).
+The primary design goal of Singularity is "Mobility of Compute", which is
+defined as the ability to create, manipulate and manage your personal
+container image on a system which you control, and then be able to copy
+that image to any other (binary compatible) Linux host and run within
+your custom environment on that host; even if you do not have root on that
+target host!
 </p>
 <p>
-Singularity provides both the run-time environment and also the build tools.
+The implementation of Singularity focuses on application portability within
+a given container, while maintaining command line work-flow standards (e.g.
+standard IO, pipes, X11, MPI, networking, sockets, etc..).
 </p>
 
-<h2>Building the SAPP</h2>
+<h2>Security and privilege escalation</h2>
 <p>
-The process of building/creating a Singularity Application (SAPP) container
-starts with defining a Singularity specfile. The specfile resembles a
-standard packaging format (RPM in-particular) and works in a similar manner
-to a packaging technology. The role of the specfile is to determine what
-files would go into the final SAPP package and what the SAPP container will
-do when it is executed.
+Given the following scenario - SERVER is a shared multi-tenant resource
+to a number of users and as a result it is a large expensive resource far
+exceeding the resources of my personal workstation. But because it is a
+shared system, no users have root access and it is a controlled environment
+managed by a staff of system administrators. To keep the system secure,
+only the system administrators are granted root access and they control
+the state of the operating system. If a user is able to escalate to root
+(even within a container) on SERVER, they can do bad things to the
+network, cause denial of service to the host (as well as other hosts on
+the same network), and will have unrestricted access to file systems
+reachable by the container.
 </p>
 <p>
-The build process will automatically resolve dependencies (as it can), but
-it is always safest to assume you must manually specify all binaries,
-configuration files, data, and operating system dependencies that are
-non-standard.
-</p>
-<p>
-Singularity will take the defined files, all files that it probed which
-are dependencies, as well as other standard and necessary files and bundle
-them up into a format which Singularity can then execute at run-time.
-</p>
-<p>
-More information about the specfile can be found on the
-<a href="docs_specfile.html">documentation page for the specfile</a>.
-</p>
-
-<h2>Run-time</h2>
-<p>
-Singularity is designed to run containers like any other application on the
-system. When it is invoked, it begins a chain of events that checks the SAPP
-file, and explodes the contents of the container to disk. A very important
-note is that all of these actions are done as the user who is running
-Singularity. Every file inside the container is owned by the correct user,
-and never root! This is very important as normal escalation pathways require
-root owned files. The container files are cached in the user's home directory
-(which is soon to be configurable) based on the container name and checksum
-of the SAPP file.
-</p>
-<p>
-At this point, the commands, arguments, IO and pipes are all passed to the
-Singularity container execution engine which is responsible for calling the
-change root (chroot()) system call and thus moving the top of the file system
-from the host's root ('/'), to the container's root ('/') which allows the
-applications running within the container to satisfy all dependencies
-solely within the container. This puts the container itself temporarily along
-side the host operating system as it executes the applications which exist
-therein.
-</p>
-<p>
-This can be illustrated as follows:<br/>
-<img src="images/singularity_architecture_stack.png" border="0"/>
-</p>
-<h2>Access to files</h2>
-<p>
-File system access outside the container is provided and managed via a file
-descriptor to the current working directory where Singularity was initially
-called. Any paths which are thus defined relative to the starting directory
-will properly resolve without the need to provide any additional mount layers
-(e.g. a bind mount).
-</p>
-<p>
-Because of how Singularity handles relative paths, it is very easy to make use
-of specialized file systems (e.g. very high speed data IO or archive storage)
-by simply starting in or pointing at the directory from the relative starting
-point. This manner of operation also puts no additional latency, bottlenecks,
-or other interference with IO which may affect performance.
-</p>
-<p>
-Fully qualified paths would always resolve internally to the container. This
-is the fundamental mechanism to containers and necessary for applications to
-operate and resolve dependencies within the container-ed environment.
-</p>
-<p>
-The architecture as you can see is specifically designed to inter-operate both
-inside and outside of the container, but there is a feature that will be
-included at some point which will lock the container so it can not be escaped
-or have any interaction with the host system. This could be very useful for
-running test environments, network services, or when you just wish to keep
-the contained environment contained!
+To mitigate security concerns like this, Singularity must limit one's
+ability to escalate permission inside a container. For example, if I do
+not have root access on the target system, I should not be able to
+escalate my access within the container to root either. But if I own this
+image, there is nothing stopping me from giving myself 'sudo' access or
+to set root's password (or just remove it). Singularity prevents user
+context escalation within the container, and thus makes it possible to
+run on shared infrastructure.
 </p>
 
+<h2>The Singularity container image</h2>
+<p>
+Singularity makes use of a container image file, which physically contains
+the container. This file is a physical representation of the container
+environment itself. If you obtain an interactive shell within a Singularity
+container, you are literally within that file.
+</p>
+<p>
+Even though that file maybe owned by a particular user, when you enter the
+container image, you will see that there are files potentially owned by
+other users (namely root). And as expected, you will not be able to modify
+these files unless you have permission to do so. So even though you may own
+the image itself, that does not mean you have permission to modify the
+contents. To make changes to these files, you must first have root access
+on the host, and enter the container as root (read more about "Security and
+privilege escalation").
+</p>
+<p>
+There are numerous benefits for using a single file to represent the entire
+container:
+<ol>
+<li>Copying an entire container is a single file</li>
+<li>Permission/access to the container is managed via standard file system permissions</li>
+<li>Large scale performance (especially over parallel file systems) is very efficient</li>
+<li>No need to cache the image contents to run (especially nice on clusters)</li>
+<li>Container is a sparse file so it only consumes the disk space actually used</li>
+<li>Changes are implemented in real time (image grows and shrinks as needed)</li>
+<li>Images can serve as stand-alone programs</li>
+</ol>
+</p>
 
+<h2>Name-spaces and isolation</h2>
+<p>
+The goal of Singularity is mobility, not isolation. This means that the
+line between host and container can be blurred. Especially considering
+the user inside of a container is the same user outside the container
+means that the container becomes an alternative form of the operating
+environment. Access to one's home directory, shared file systems, and
+non-operating system directories should be as transparent as possible.
+</p>
+<p>
+Additionally what name-spaces are selected for virtualization can be
+dynamic or conditional. For example, for performance reasons Open MPI
+communicates to Singularity to disable the PID name-space to optimize
+shared memory communication speed.
+</p>
+
+<h2>Compatibility with standard work-flows</h2>
+<p>
+Singularity does it's best to abstract the complications of running an
+application in a different environment then what is expected on the host.
+For example, applications or scripts within a Singularity container can
+easily be part of a pipeline that is being executed on the host.
+Singularity containers can also be executed from a batch script or other
+program (e.g. an HPC system's resource manager) naively.
+</p>
+<p>
+Some usage examples of Singularity can be seen as follows:
+<pre>
+$ sudo singularity create /tmp/Demo.img
+$ sudo singularity bootstrap /tmp/Demo.img centos.def
+$ sudo singularity exec --writable /tmp/Demo.img yum install xterm
+$ singularity shell /tmp/Demo.img
+Singularity/Demo.img&gt; df -h
+Filesystem      Size  Used Avail Use% Mounted on
+singularity     976M  327M  582M  36% /
+Singularity/Demo.img&gt; exit
+$ singularity exec /tmp/Demo.img xterm
+$ singularity exec /tmp/Demo.img python &lt; /path/to/python/script.py
+$ cat /path/to/python/script.py | singularity exec /tmp/Demo.img python
+</pre>
+</p>
+<p>
+MPI is a pretty complicated work-flow, so here is an example of how MPI
+works through a Singularity container:
+</p>
+<img src="images/singularity_mpi.png" border="0"/>
+<p>
+... and considering the following command:
+<pre>
+$ mpirun -np X singularity exec /path/to/container.img /usr/bin/mpi_program_inside_container
+</pre>
+The work-flow is defined as follows:
+<ol>
+<li>MPIRUN is executed on the host system, so it has access and knowledge of all other nodes and has access to any host specific hardware and interfaces</li>
+<li>MPIRUN forks and execs Orted (which is the MPI process manager) for each node involved with this MPI job</li>
+<li>Orted forks the number of processes necessary to run per node and then each process execs to the command passed to MPIRUN (in this case singularity...)</li>
+<li>Each process of Singularity will open /path/to/container.img and build the container environments (sharing between them as possible)</li>
+<li>Each Singularity process will then exec the command /usr/bin/mpi_program_inside_container</li>
+<li>The program /usr/bin/mpi_program_inside_container will dynamically load the necessary libraries necessary within the container</li>
+<li>The MPI libraries within the container will contact the Orted process running on the host using the Process Management Interface (PMI)</li>
+<li>All MPI processes on all hosts are under the control of their respective Orted and thus can communicate with each other and local resources</li>
+<li>
+</ol>
+</p>
 
 
 </p>
