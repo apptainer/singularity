@@ -39,6 +39,9 @@ Bootstrap() {
         exit 1
     fi
 
+    # debootstrap will create the device entries it needs (or some versions fail)
+    /bin/sh -c "rm -rf $SINGULARITY_BUILD_ROOT/dev/*"
+
     if ! eval "$DEBOOTSTRAP_PATH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
         exit 1
     fi
