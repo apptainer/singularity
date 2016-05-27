@@ -45,8 +45,11 @@ $ sh ./autogen.sh
 $ ./configure --prefix=/usr/local
 $ make
 $ sudo make install
-$ sudo make install-perms
 </pre>
+
+note: The 'make install' is required to be run as root to get a properly installed
+Singularity implementation. If you do not run it as root, you will only be able to
+launch Singularity as root due to permission limitations.
 
 <h2>Build an RPM From Source</h2>
 Like the above, you can build an RPM of Singularity so it can be more easily
