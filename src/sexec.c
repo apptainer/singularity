@@ -539,32 +539,6 @@ int main(int argc, char ** argv) {
         }
 
 
-        if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
-            if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
-                if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
-                    fprintf(stderr, "ABORT: Failed creating template password file\n");
-                    return(255);
-                }
-            }
-            if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), bind_mount_writable) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
-                return(255);
-            }
-        }
-
-        if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
-            if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
-                if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
-                    fprintf(stderr, "ABORT: Failed creating template group file\n");
-                    return(255);
-                }
-            }
-            if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), bind_mount_writable) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/group\n");
-                return(255);
-            }
-        }
-
         if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
             if ( is_file(joinpath(tmpdir, "/nsswitch.conf")) < 0 ) {
                 if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf")) == 0 ) {
@@ -582,6 +556,33 @@ int main(int argc, char ** argv) {
             }
         }
 
+        if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
+            if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
+                if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
+                    if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
+                        fprintf(stderr, "ABORT: Failed creating template password file\n");
+                        return(255);
+                    }
+                }
+                if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), bind_mount_writable) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
+                    return(255);
+                }
+            }
+
+            if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
+                if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
+                    if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
+                        fprintf(stderr, "ABORT: Failed creating template group file\n");
+                        return(255);
+                    }
+                }
+                if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), bind_mount_writable) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not bind /etc/group\n");
+                    return(255);
+                }
+            }
+        }
 
 //****************************************************************************//
 // Fork child in new namespaces
