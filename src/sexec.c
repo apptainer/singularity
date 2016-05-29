@@ -63,25 +63,15 @@
 #endif
 
 
-pid_t namespace_fork_pid = 0;
 pid_t exec_fork_pid = 0;
-
 
 void sighandler(int sig) {
     signal(sig, sighandler);
-
-    printf("Caught signal: %d\n", sig);
-    fflush(stdout);
 
     if ( exec_fork_pid > 0 ) {
         fprintf(stderr, "Singularity is sending SIGKILL to child pid: %d\n", exec_fork_pid);
 
         kill(exec_fork_pid, SIGKILL);
-    }
-    if ( namespace_fork_pid > 0 ) {
-        fprintf(stderr, "Singularity is sending SIGKILL to child pid: %d\n", namespace_fork_pid);
-
-        kill(namespace_fork_pid, SIGKILL);
     }
 }
 
@@ -109,6 +99,7 @@ int main(int argc, char ** argv) {
     int bind_mount_writable = 0;
     uid_t uid = getuid();
     gid_t gid = getgid();
+    pid_t namespace_fork_pid = 0;
     struct passwd *pw = getpwuid(uid);
 
 
