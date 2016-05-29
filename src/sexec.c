@@ -203,26 +203,6 @@ int main(int argc, char ** argv) {
 // Setup
 //****************************************************************************//
 
-    if ( s_mkpath(tmpdir, 0750) < 0 ) {
-        fprintf(stderr, "ABORT: Could not temporary directory %s: %s\n", tmpdir, strerror(errno));
-        return(255);
-    }
-
-    tmpdirlock_fd = open(tmpdir, O_RDONLY);
-    if ( tmpdirlock_fd < 0 ) {
-        fprintf(stderr, "ERROR: Could not create lock file %s: %s\n", lockfile, strerror(errno));
-        return(255);
-    }
-    if ( flock(tmpdirlock_fd, LOCK_SH | LOCK_NB) < 0 ) {
-        fprintf(stderr, "ERROR: Could not obtain shared lock on %s: %s\n", lockfile, strerror(errno));
-        return(255);
-    }
-
-    if ( ( lockfile_fd = open(lockfile, O_CREAT | O_RDWR, 0644) ) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open lockfile %s: %s\n", lockfile, strerror(errno));
-        return(255);
-    }
-
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) {
             fprintf(stderr, "ERROR: Could not open image read only %s: %s\n", containerimage, strerror(errno));
@@ -271,12 +251,40 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
+    if ( s_mkpath(tmpdir, 0755) < 0 ) {
+        fprintf(stderr, "ABORT: Could not temporary directory %s: %s\n", tmpdir, strerror(errno));
+        return(255);
+    }
 
-    if ( is_dir(containerpath) < 0 ) {
-        if ( s_mkpath(containerpath, 0755) < 0 ) {
-            fprintf(stderr, "ABORT: Could not create directory %s: %s\n", containerpath, strerror(errno));
-            return(255);
-        }
+    if ( is_owner(tmpdir, 0) < 0 ) {
+        fprintf(stderr, "ABORT: Container working directory has wrong ownership: %s\n", tmpdir);
+        return(255);
+    }
+
+    tmpdirlock_fd = open(tmpdir, O_RDONLY);
+    if ( tmpdirlock_fd < 0 ) {
+        fprintf(stderr, "ERROR: Could not obtain lock on %s: %s\n", lockfile, strerror(errno));
+        return(255);
+    }
+
+    if ( flock(tmpdirlock_fd, LOCK_SH | LOCK_NB) < 0 ) {
+        fprintf(stderr, "ERROR: Could not obtain shared lock on %s: %s\n", lockfile, strerror(errno));
+        return(255);
+    }
+
+    if ( ( lockfile_fd = open(lockfile, O_CREAT | O_RDWR, 0644) ) < 0 ) {
+        fprintf(stderr, "ERROR: Could not open lockfile %s: %s\n", lockfile, strerror(errno));
+        return(255);
+    }
+
+    if ( s_mkpath(containerpath, 0755) < 0 ) {
+        fprintf(stderr, "ABORT: Could not create directory %s: %s\n", containerpath, strerror(errno));
+        return(255);
+    }
+
+    if ( is_owner(containerpath, 0) < 0 ) {
+        fprintf(stderr, "ABORT: Container directory is not root owned: %s\n", containerpath);
+        return(255);
     }
 
     if ( flock(lockfile_fd, LOCK_EX | LOCK_NB) == 0 ) {
