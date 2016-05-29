@@ -34,9 +34,9 @@ else
     exit 1
 fi
 
-## Configure Singularity environment
-if [ -f "$SINGULARITY_sysconfdir/singularity/environment" ]; then
-    . "$SINGULARITY_sysconfdir/singularity/environment"
+## Init Singularity environment
+if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/init"
 fi
 
 while true; do
@@ -68,8 +68,7 @@ fi
 
 SINGULARITY_COMMAND="shell"
 SINGULARITY_IMAGE="$1"
-HISTFILE="/dev/null"
-export SINGULARITY_COMMAND SINGULARITY_IMAGE SINGULARITY_WRITABLE HISTFILE
+export SINGULARITY_COMMAND SINGULARITY_IMAGE
 shift
 
 exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0

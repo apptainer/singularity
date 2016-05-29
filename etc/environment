@@ -1,8 +1,0 @@
-# Set or unset things before launching a Singularity container
-
-# Some distributions don't have /bin and /sbin in PATH anymore
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
-
-# Environment modules if set, cause errors in containers
-unset module
-

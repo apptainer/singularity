@@ -34,9 +34,9 @@ else
     exit 1
 fi
 
-## Configure Singularity environment
-if [ -f "$SINGULARITY_sysconfdir/singularity/environment" ]; then
-    . "$SINGULARITY_sysconfdir/singularity/environment"
+## Init Singularity environment
+if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/init"
 fi
 
 while true; do
