@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/param.h>
+#include <syslog.h>
 #include <errno.h> 
 #include <signal.h>
 #include <sched.h>
@@ -82,6 +83,7 @@ int main(int argc, char ** argv) {
     char *containerimage;
     char *containername;
     char *containerpath;
+    char *username;
     char *homepath;
     char *command;
     char *tmpdir;
@@ -111,6 +113,7 @@ int main(int argc, char ** argv) {
     signal(SIGKILL, sighandler);
     signal(SIGQUIT, sighandler);
 
+    openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
 
     // Check to make sure we are installed correctly
     if ( seteuid(0) < 0 ) {
@@ -130,6 +133,7 @@ int main(int argc, char ** argv) {
 
     //homepath = getenv("HOME");
     homepath = pw->pw_dir;
+    username = pw->pw_name;
     containerimage = getenv("SINGULARITY_IMAGE");
     command = getenv("SINGULARITY_COMMAND");
 
@@ -168,10 +172,6 @@ int main(int argc, char ** argv) {
 
     // TODO: Offer option to only run containers owned by root (so root can approve
     // containers)
-//    if ( is_owner(containerimage, uid) < 0 && is_owner(containerimage, 0) < 0 ) {
-//        fprintf(stderr, "ABORT: Will not execute in a CONTAINERIMAGE you (or root) does not own: %s\n", containerimage);
-//        return(255);
-//    }
     if ( uid == 0 && is_owner(containerimage, 0) < 0 ) {
         fprintf(stderr, "ABORT: Root should only run containers that root owns!\n");
         return(1);
@@ -179,15 +179,14 @@ int main(int argc, char ** argv) {
 
     containername = basename(strdup(containerimage));
 
-//    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
-//    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
-
     tmpdir = strjoin("/tmp/.singularity-", file_id(containerimage));
     lockfile = joinpath(tmpdir, "lock");
     loop_dev_cache = joinpath(tmpdir, "loop_dev");
 
     containerpath = (char *) malloc(strlen(tmpdir) + 5);
     snprintf(containerpath, strlen(tmpdir) + 5, "%s/mnt", tmpdir);
+
+    syslog(LOG_NOTICE, "User=%s[%d], Command=%s, Container=%s, CWD=%s, Arg1=%s", username, uid, command, containerimage, cwd, argv[1]);
 
 
 //****************************************************************************//
@@ -243,12 +242,13 @@ int main(int argc, char ** argv) {
     }
 
     if ( s_mkpath(tmpdir, 0755) < 0 ) {
-        fprintf(stderr, "ABORT: Could not temporary directory %s: %s\n", tmpdir, strerror(errno));
+        fprintf(stderr, "ABORT: Could not create temporary directory %s: %s\n", tmpdir, strerror(errno));
         return(255);
     }
 
     if ( is_owner(tmpdir, 0) < 0 ) {
         fprintf(stderr, "ABORT: Container working directory has wrong ownership: %s\n", tmpdir);
+        syslog(LOG_ERR, "Container working directory has wrong ownership: %s", tmpdir);
         return(255);
     }
 
@@ -275,6 +275,7 @@ int main(int argc, char ** argv) {
 
     if ( is_owner(containerpath, 0) < 0 ) {
         fprintf(stderr, "ABORT: Container directory is not root owned: %s\n", containerpath);
+        syslog(LOG_ERR, "Container directory has wrong ownership: %s", tmpdir);
         return(255);
     }
 
@@ -283,11 +284,13 @@ int main(int argc, char ** argv) {
 
         if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
             fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
+            syslog(LOG_ERR, "Failed to open loop device %s: %s", loop_dev, strerror(errno));
             return(255);
         }
 
         if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
             fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
+            syslog(LOG_ERR, "Failed to associate %s to loop device %s", containerimage, loop_dev);
             return(255);
         }
 
@@ -768,6 +771,7 @@ int main(int argc, char ** argv) {
 // Finall wrap up before exiting
 //****************************************************************************//
 
+
     if ( close(cwd_fd) < 0 ) {
         fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
         retval++;
@@ -802,6 +806,7 @@ int main(int argc, char ** argv) {
     free(lockfile);
     free(containerpath);
     free(tmpdir);
+    closelog();
 
     return(retval);
 }
