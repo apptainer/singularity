@@ -172,34 +172,6 @@ footer {
   bottom:50px;
 }
 
-.faq {
-    margin-bottom: 5px;
-}
-
-.faq_question {
-    white-space: normal;
-    margin: 0px;
-    padding: 0px 0px 5px 0px;
-    display: inline-block;
-    cursor: pointer;
-    font-weight: bold;
-    text-decoration: underline;
-    color:#69AFF7;
-    font-weight:400;
-}
-
-.faq_answer_container {
-    white-space: normal;
-    height: 0px;
-    overflow: hidden;
-}
-
-.faq_answer {
-    white-space: normal;
-    background: #2A2A2A;
-    margin: 20px;
-}
-
 
 @media print, screen and (max-width: 960px) {
 
