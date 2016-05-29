@@ -34,6 +34,10 @@ else
     exit 1
 fi
 
+## Configure Singularity environment
+if [ -f "$SINGULARITY_sysconfdir/singularity/environment" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/environment"
+fi
 
 while true; do
     case $1 in
@@ -64,9 +68,8 @@ fi
 
 SINGULARITY_COMMAND="shell"
 SINGULARITY_IMAGE="$1"
-PATH="/bin:/sbin:/usr/bin:/usr/sbin:$PATH"
 HISTFILE="/dev/null"
-export SINGULARITY_COMMAND SINGULARITY_IMAGE PATH SINGULARITY_WRITABLE HISTFILE
+export SINGULARITY_COMMAND SINGULARITY_IMAGE SINGULARITY_WRITABLE HISTFILE
 shift
 
 exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0

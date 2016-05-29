@@ -20,25 +20,28 @@
 # 
 
 
-
-prefix="@prefix@"
 exec_prefix="@exec_prefix@"
+prefix="@prefix@"
 libexecdir="@libexecdir@"
-version="@VERSION@"
+sysconfdir="@sysconfdir@"
+
+SINGULARITY_version="@VERSION@"
+SINGULARITY_libexecdir="$libexecdir"
+SINGULARITY_sysconfdir="$sysconfdir"
 
 RETVAL=0
 MESSAGELEVEL=1
 DEBUG=""
 
-export prefix exec_prefix libexecdir RETVAL MESSAGELEVEL DEBUG
+export SINGULARITY_sysconfdir SINGULARITY_libexecdir RETVAL MESSAGELEVEL DEBUG
 
 # the Modules package always calls 
 unset module
 
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
 else
-    echo "Error loading functions: $libexecdir/singularity/functions"
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
 fi
 
@@ -54,7 +57,7 @@ usage() {
     echo
     echo "COMMANDS:"
 
-    ls $libexecdir/singularity/cli/*.summary | sed -e 's/.summary//' | sort | while read i; do
+    ls $SINGULARITY_libexecdir/singularity/cli/*.summary | sed -e 's/.summary//' | sort | while read i; do
         if [ -f "$i.summary" ]; then
             NAME=`basename "$i"`
             SUMMARY=`cat "$i.summary"`
@@ -68,13 +71,6 @@ usage() {
     echo
 }
 
-# Initial argument processing. Iterate through arguments until argument
-# is not recognized as an argument, which must mean it is a command. So
-# exit the arg processing and continue to command section.
-#set -f
-#eval set -- `parse_opts "$@"`
-#set +f
-
 while true; do
     case $1 in
         -h|--help)
@@ -86,7 +82,7 @@ while true; do
             shift 
         ;;
         --version)
-            message 1 "$version\n"
+            message 1 "$SINGULARITY_version\n"
             exit
         ;;
         -d|--debug)
@@ -121,8 +117,8 @@ fi
 
 shift
 
-if [ -x "$libexecdir/singularity/cli/$COMMAND.exec" ]; then
-    exec /usr/bin/env -i SINGULARITY_libexecdir="$libexecdir" MESSAGELEVEL="$MESSAGELEVEL" PATH="$PATH" TERM="$TERM" DISPLAY="$DISPLAY" LANG="$LANG" $libexecdir/singularity/cli/$COMMAND.exec "$@"
+if [ -x "$SINGULARITY_libexecdir/singularity/cli/$COMMAND.exec" ]; then
+    exec $SINGULARITY_libexecdir/singularity/cli/$COMMAND.exec "$@"
 else
     message ERROR "Unknown command '$COMMAND'\n"
     exit 1
