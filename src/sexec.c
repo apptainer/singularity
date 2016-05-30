@@ -514,6 +514,13 @@ int main(int argc, char ** argv) {
             }
         }
 
+        if ( ( is_dir("/var/lib/dbus") == 0 ) && ( is_dir(joinpath(containerpath, "/var/lib/dbus")) == 0 ) ) {
+            if ( mount_bind("/var/lib/dbus", joinpath(containerpath, "/var/lib/dbus"), 0) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind mount /var/lib/dbus\n");
+                return(255);
+            }
+        }
+
         if (is_file(joinpath(containerpath, "/etc/resolv.conf")) == 0 ) {
             if ( is_file(joinpath(tmpdir, "/resolv.conf")) < 0 ) {
                 if ( copy_file("/etc/resolv.conf", joinpath(tmpdir, "/resolv.conf")) < 0 ) {
