@@ -269,7 +269,7 @@ char *filecat(char *path) {
         ret[pos] = c;
         pos++;
     }
-    ret[length+1] = '\0';
+    ret[pos] = '\0';
 
     fclose(fd);
 
