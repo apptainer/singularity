@@ -54,7 +54,8 @@ code, pre {
 
 p {
     padding-left: 10px;
-    margin: 0px;
+    margin-top: 0px;
+    margin-bottom: 10px;
 }
 
 #container {
