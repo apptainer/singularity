@@ -31,3 +31,30 @@ mitigate any argument clashes, Singularity must not intrepret or interfere with
 any of the command arguments or options that are not relevent for that particular
 function.
 </p>
+
+
+<h2>Singularity Help ...</h2>
+<p>
+Singularity comes with some internal documentation by using the 'help' subcommand
+followed by the subcommand you want more information about. For example:
+<pre>
+$ singularity help create
+USAGE: singularity (options) create [command] (options)
+
+Create a new Singularity formatted blank image.
+
+OPTIONS:
+    -s/--size   Specify a size for an operation (default 1GB)
+
+EXAMPLES:
+
+    $ singularity create /tmp/Debian.img
+    $ singularity create -s 4096 /tmp/Debian.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+
+$
+</pre>
