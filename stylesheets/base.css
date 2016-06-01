@@ -24,15 +24,28 @@ a {
 }
 
 h1 {
-    font-size: 36px;
+    font-size: 140%;
+    font-weight: 400;
+    margin-bottom: 5px;
 }
 
 h2 {
-    font-size: 30px;
+    font-size: 130%;
+    font-weight: 500;
+    margin-bottom: 5px;
 }
 
 h3 {
-    font-size: 26px;
+    font-size: 120%;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+h4 {
+//    color: #AF1C0E;
+    font-weight: 700;
+    font-size: 110%
+    margin-bottom: 5px;
 }
 
 code, pre {        
@@ -46,14 +59,8 @@ code, pre {
     overflow-x: auto;        
 }
 
-.loud {
-    color: #AF1C0E;
-    font-weight: 700;
-    font-size: 110%
-}
-
 p {
-    padding-left: 10px;
+    padding-left: 20px;
     margin-top: 0px;
     margin-bottom: 15px;
 }
