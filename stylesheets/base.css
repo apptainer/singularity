@@ -28,6 +28,7 @@ h1 {
     font-size: 200%;
     font-weight: 400;
     margin-bottom: 5px;
+    width: 100%;
 }
 
 h2 {
@@ -35,6 +36,7 @@ h2 {
     font-size: 160%;
     font-weight: 500;
     margin-bottom: 5px;
+    width: 100%;
 }
 
 h3 {
@@ -42,6 +44,7 @@ h3 {
     font-size: 140%;
     font-weight: 600;
     margin-bottom: 5px;
+    width: 100%;
 }
 
 h4 {
@@ -49,6 +52,7 @@ h4 {
     color: #AF1C0E;
     font-weight: 700;
     font-size: 115%
+    width: 100%;
 }
 
 code, pre {        
