@@ -37,12 +37,12 @@ h3 {
 
 #container {
     display: block;
-    margin-right: 100px;
-    margin-left: 100px;
-    padding: 10px;
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: 100px;
+    padding-left: 100px;
     display: block;
     max-width: 1000px;
-    min-width: 500px;
     border: 1px;
     clear: both;
 }
