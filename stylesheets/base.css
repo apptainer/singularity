@@ -50,9 +50,10 @@ h3 {
 }
 
 h4 {
-    display: block;
+    display: inline-block;
     margin: 0;
     padding: 0;
+    width: 100%;
     color: #AF1C0E;
     font-weight: 700;
     font-size: 115%
