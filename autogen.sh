@@ -2,7 +2,7 @@
 
 if autoreconf -V >/dev/null 2>&1 ; then
     set -x
-    autoreconf -i
+    autoreconf -i -f
 else
     set -x
     libtoolize -c
