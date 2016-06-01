@@ -45,9 +45,9 @@ h3 {
 
 h4 {
     padding-top: 10px;
-    color: #AF1C0E;
     font-weight: 600;
-    font-size: 115%
+    font-size: 120%
+    text-decoration: underline;
 }
 
 code, pre {        
