@@ -42,11 +42,11 @@ h3 {
 }
 
 h4 {
-//    color: #AF1C0E;
+    color: #AF1C0E;
     font-weight: 700;
     font-size: 110%
-    margin: 5px;
-    padding: 5px;
+    margin: 0px;
+    padding: 0px;
 }
 
 code, pre {        
