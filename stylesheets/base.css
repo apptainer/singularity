@@ -46,9 +46,14 @@ code, pre {
     overflow-x: auto;        
 }
 
-b {
-    color: #851208;
+.loud {
+    color: #AF1C0E;
     font-weight: 700;
+    font-size: 120%
+}
+
+p {
+    padding-left: 10px;
 }
 
 #container {
