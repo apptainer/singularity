@@ -1,0 +1,33 @@
+&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a>
+<br/>&nbsp;<br/>
+
+<h1>Introduction to Singularity usage and syntax</h1>
+<h2>The Singularity command</h2>
+<p>
+Singularity uses a primary command wrapper called 'singularity'. When you run
+'singularity' without any options or arguments it will dump the high level
+usage syntax.
+</p>
+<p>
+The general usage form is:
+<pre>
+$ singularity (opts1) [subcommand] (opts2) ...
+</pre>
+</p>
+
+<h2>Options and argument processing</h2>
+<p>
+Because of the nature of how Singularity cascades commands and subcommands,
+argument processing is done with a mandatory order. This means that where you
+place arguments is important! In the above usage form example, <strong>opts1</strong>
+are the global Singularity runtime options. These options are always
+applicable no matter what subcommand you select (e.g. --verbose or --debug). But
+subcommand specific options must be passed after the relevent subcommand.
+</p>
+<p>
+To further clarify this example, the 'exec' Singularity subcommand will execute a
+program within the container and pass the arguments passed to the program. So to
+mitigate any argument clashes, Singularity must not intrepret or interfere with
+any of the command arguments or options that are not relevent for that particular
+function.
+</p>
