@@ -20,7 +20,7 @@
 # 
 
 # Things that should always exist in a Singularity container
-DIRS="/home /tmp /etc /root /dev"
+DIRS="/home /tmp /etc /root /dev /run"
 EMPTY_FILES="/etc/mtab /etc/resolv.conf /etc/nsswitch.conf /etc/hosts"
 DEVS="/dev/null /dev/zero /dev/random /dev/urandom"
 TMP_REAL_FILES="/etc/resolv.conf /etc/hosts"
