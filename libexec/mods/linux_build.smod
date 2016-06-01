@@ -176,5 +176,9 @@ Finalize() {
         fi
     done
 
+    if [ -L "$SINGULARITY_BUILD_ROOT/etc/mtab" ]; then
+        # Just incase it exists and is a link
+        rm -f "$SINGULARITY_BUILD_ROOT/etc/mtab"
+    fi
     echo "singularity / rootfs rw 0 0" > "$SINGULARITY_BUILD_ROOT/etc/mtab"
 }
