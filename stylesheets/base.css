@@ -35,6 +35,16 @@ h3 {
     font-size: 26px;
 }
 
+code, pre {        
+    font-family: Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;        
+    color: #DEDEDE;        
+    font-size: 12px;      
+    padding: 8px 15px;       
+    background: #2A2A2A;        
+    border-radius: 5px;        
+    border:1px solid #C9C9C9;     
+    overflow-x: auto;        
+}
 
 #container {
     display: block;
