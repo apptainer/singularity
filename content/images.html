@@ -103,6 +103,17 @@ Similar to the create subcommand, you can overide the default size (which is
 .5GB) by using the --size option.
 </p>
 
+<h2>Copying, sharing, branching, and distributing your image</h2>
+<p>
+Because Singularity images are single files, they are easily copied and managed.
+You can copy the image to create a branch, share the image and distribute the
+image as easily as copying any other file you control!
+</p>
+<p>
+Remeber that the primary motivation of Singularity is mobility, the single file
+image format makes this a simple accomplishment.
+</p>
+
 <h2>Read Only Vs. Read Write</h2>
 <p>
 By default, all Singularity commands that operate within a container (e.g.
@@ -125,15 +136,4 @@ $
 </pre>
 Even though I was root in both cases, I could not touch /foo unless the
 shell subcommand was called with the '--writable' flag.
-</p>
-
-<h2>Copying, sharing, branching, and distributing your image</h2>
-<p>
-Because Singularity images are single files, they are easily copied and managed.
-You can copy the image to create a branch, share the image and distribute the
-image as easily as copying any other file you control!
-</p>
-<p>
-Remeber that the primary motivation of Singularity is mobility, the single file
-image format makes this a simple accomplishment.
 </p>
