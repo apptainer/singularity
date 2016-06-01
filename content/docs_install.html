@@ -1,0 +1,40 @@
+
+&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a>
+<h1>Installation</h1>
+<p>
+<h2>Build From Source</h2>
+Presently, Singularity is only available in source code form and can only
+be compiled and run on Linux systems. To obtain and compile the code, do
+the following:
+<pre>
+$ git clone -b master --single-branch https://github.com/gmkurtzer/singularity.git
+$ cd singularity
+$ sh ./autogen.sh
+$ ./configure --prefix=/usr/local
+$ make
+$ sudo make install
+</pre>
+
+note: The 'make install' is required to be run as root to get a properly installed
+Singularity implementation. If you do not run it as root, you will only be able to
+launch Singularity as root due to permission limitations.
+
+<h2>Build an RPM From Source</h2>
+Like the above, you can build an RPM of Singularity so it can be more easily
+managed, upgraded and removed. To obtain, compile and build the RPM do the
+following:
+<pre>
+$ git clone -b master --single-branch https://github.com/gmkurtzer/singularity.git
+$ cd singularity
+$ sh ./autogen.sh
+$ make dist
+$ rpmbuild -ta singularity-*.tar.gz
+$ sudo yum install ~/rpmbuild/RPMS/*/singularity-[0-9]*.rpm
+</pre>
+
+
+
+
+</p>
+
+    

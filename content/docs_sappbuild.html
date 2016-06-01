@@ -1,0 +1,27 @@
+
+&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a>
+<h1>Building a SAPP container</h1>
+<p>
+The process of building a SAPP container is simply a matter of directing
+Singularity to build a particular specfile. You can increase verbosity and/or
+debugging by using the options <em>--verbose</em> and <em>--debug</em>.
+</p>
+<p>
+Documentation for the specfile can be found
+<a href="javascript:load_content('docs_specfile')">here</a>.
+</p>
+<pre>
+$ singularity build
+USAGE: singularity (options) build [SAPP specfile] (SAPP target)
+
+$ singularity build /path/to/singularity/sapp.sspec
+Building 'example'
+WROTE: example.sapp
+</pre>
+<p>
+The output file <em>example.sapp</em> is marked executable and can be
+executed on any Linux computer where Singularity is installed.
+</p>
+</p>
+
+     

@@ -1,54 +1,5 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link rel="icon" href="/singularity/favicon.ico" sizes="16x16 32x32 48x48 64x64" type="image/vnd.microsoft.icon">
-    <title>Singularity</title>
 
-    <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
-
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('.faq_question').click(function() {
-                if ($(this).parent().is('.open')){
-                    $(this).closest('.faq').find('.faq_answer_container').animate({'height':'0'},500);
-                    $(this).closest('.faq').removeClass('open');
-                }else{
-                    var newHeight = ($(this).closest('.faq').find('.faq_answer').height() + 40) +'px';
-                    $(this).closest('.faq').find('.faq_answer_container').animate({'height':newHeight},500);
-                    $(this).closest('.faq').addClass('open');
-                }
-            });
-        });
-    </script>
-
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-light.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-  </head>
-  <body>
-    <div class="wrapper">
-      <header>
-        <img src="images/singularity_logo1.png" border="0"/>
-        <p></p>
-
-<p>
-<strong>&raquo;&nbsp;<a href="index.html">Home</a></strong><br/>
-<strong>&raquo;&nbsp;<a href="about.html">About</a></strong><br/>
-<strong>&raquo;&nbsp;<a href="use-cases.html">Use Cases</a></strong><br/>
-<strong>&raquo;&nbsp;<a href="docs.html">Documentation</a></strong><br/>
-<strong>&raquo;&nbsp;<a href="help.html">Getting help</a></strong><br/>
-<strong>&raquo;&nbsp;<a href="download.html">Download</a></strong><br/>
-</p>
-
-        <p></p>
-      </header>
-      <section>
-&laquo;&nbsp;<a href="docs.html">Back to Documentation</a>
+&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a>
 <h1>FAQ</h1>
 <p>
 
@@ -341,18 +292,4 @@ Thanks Jason!
 
 </p>
 
-      </section>
-      <footer>
-        <p>
-            <small>
-                Project lead: <a href="https://gmkurtzer.github.io">Gregory M. Kurtzer</a><br/>
-                Sponsored by: <a href="http://scs.lbl.gov/">HPC @ LBNL</a><br/>
-                Hosted on: <a href="https://github.com">GitHub</a>
-            </small>
-        </p>
-      </footer>
-    </div>
-    <script src="javascripts/scale.fix.js"></script>
-    
-  </body>
-</html>
+      
