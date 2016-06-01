@@ -521,6 +521,13 @@ int main(int argc, char ** argv) {
             }
         }
 
+        if ( ( is_dir("/run") == 0 ) && ( is_dir(joinpath(containerpath, "/run")) == 0 ) ) {
+            if ( mount_bind("/run", joinpath(containerpath, "/run"), 0) < 0 ) {
+                fprintf(stderr, "ABORT: Could not bind mount /run\n");
+                return(255);
+            }
+        }
+
         if (is_file(joinpath(containerpath, "/etc/resolv.conf")) == 0 ) {
             if ( is_file(joinpath(tmpdir, "/resolv.conf")) < 0 ) {
                 if ( copy_file("/etc/resolv.conf", joinpath(tmpdir, "/resolv.conf")) < 0 ) {
