@@ -9,7 +9,7 @@ html {
 body {
     display: block;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-weight: 500;
+    font-weight: 400;
     margin: 0;
     padding: 0;
     font-size: 14px;
@@ -44,6 +44,11 @@ code, pre {
     border-radius: 5px;        
     border:1px solid #C9C9C9;     
     overflow-x: auto;        
+}
+
+b {
+    color: #851208;
+    font-weight: 700;
 }
 
 #container {
@@ -91,7 +96,7 @@ code, pre {
 
 .navbar {
     display: inline-block;
-    font-weight: bold;
+    font-weight: 500;
     line-height: 50px;
     background-color: #b28b2c;
     width: 100%;
