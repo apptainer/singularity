@@ -1,0 +1,152 @@
+&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a>
+<br/>&nbsp;<br/>
+
+<h1>Image Bootstrapping</h1>
+<h2>The definition file</h2>
+<p>
+Singularity container images can be bootstrapped with a definition file which
+describes how the container is to be built. The bootstrap definition can be
+very simple to create a working base image, or it can specify the entire
+build chain and every command needed to land at a fully functioning end
+product.
+</p>
+<p>
+Below is an example bootstrap file to create a minimal Debian base image:
+
+<pre>
+DistType "debian"
+MirrorURL "http://ftp.us.debian.org/debian/"
+OSVersion "jessie"
+
+Setup
+Bootstrap
+
+InstallPkgs vim
+
+Cleanup
+</pre>
+</p>
+<p>
+The bootstrap file supports a mixture of shell and Singularity keywords and
+syntax. Here is a list of the supported Singularity keywords:
+<ul>
+<li>
+<b>DistType</b>: This is necessary to tell Singularity which distribution
+module should be used to parse the commands. For example, are we using YUM, or
+Apt, and handle distribution specific configurations. At present two types are
+supported: "redhat" and "debian". Note that "redhat" applies to all Red Hat
+compatible distributions (e.g. Centos), and "debian" applies to all Debian based
+derivitives (e.g. Ubuntu).
+</li>
+<li>
+<b>MirrorURL</b>: When bootstrapping, the packages necessary for the operating
+system build are downloaded on demand via the internet. In some cases (like
+Centos Vs. Scientific Linux) this is the only differentiating factor for what
+distribution gets installed.
+</li>
+<li>
+<b>OSVersion</b>: This is a Debian flavor specific keyword and it is passed
+directly to debootstrap. 
+</li>
+<li>
+<b>Setup</b>: Setup creates the necessary starting point, files, and components
+for an OS to be bootstrapped. While it is not necessary, it is highly
+recommended as it will create some of the base and mandatory files.
+</li>
+<li>
+<b>Bootstrap</b>: The main driver for the bootstrap operation. This will call
+either YUM or Apt (or other distribution tool) to start installing the packages
+onto the image.
+</li>
+<li>
+<b>InstallPkgs</b>: Install any additional packages post bootstrap. Note: if using
+DistType of "debian" it will install via the newly created bootstrap with 'apt'
+but if using "redhat", this will be installed from outside the bootstrapped
+system.
+</li>
+<li>
+<b>InstallFiles</b>: Install a file into the container. Note that relative paths
+work just fine, but care must be taken from the calling directory.
+</li>
+<li>
+<b>Cmd</b>: Run a command within the new container operating system.
+</li>
+<li>
+<b>Cleanup</b>: Cleanup any temporary files like YUM/Apt caches.
+</li>
+</ul>
+</p>
+
+<h2>Bootstrapping</h2>
+<p>
+Once you have the bootstrap defined (or starting with a basic one), you can then
+use the 'bootstrap' Singularity command to install the operating system into the
+container image. The process for doing this can be seen with:
+<pre>
+$ sudo singularity bootstrap container.img debian.def 
+W: Cannot check Release signature; keyring file not available /usr/share/keyrings/debian-archive-keyring.gpg
+I: Retrieving Release 
+I: Retrieving Packages 
+I: Validating Packages 
+I: Resolving dependencies of required packages...
+I: Resolving dependencies of base packages...
+I: Found additional required dependencies: acl adduser dmsetup insserv libaudit-common libaudit1 libbz2-1.0 libcap2 libcap2-bin libcryptsetup4 libdb5.3 libdebconfclient0 libdevmapper1.02.1 libgcrypt20 libgpg-error0 libkmod2 libncursesw5 libprocps3 libsemanage-common libsemanage1 libslang2 libsystemd0 libudev1 libustr-1.0-1 procps systemd systemd-sysv udev 
+I: Found additional base dependencies: libdns-export100 libffi6 libgmp10 libgnutls-deb0-28 libgnutls-openssl27 libhogweed2 libicu52 libidn11 libirs-export91 libisc-export95 libisccfg-export90 libmnl0 libnetfilter-acct1 libnettle4 libnfnetlink0 libp11-kit0 libpsl0 libtasn1-6 
+I: Checking component main on http://ftp.us.debian.org/debian...
+I: Retrieving acl 2.2.52-2
+I: Validating acl 2.2.52-2
+I: Retrieving libacl1 2.2.52-2
+I: Validating libacl1 2.2.52-2
+I: Retrieving adduser 3.113+nmu3
+I: Validating adduser 3.113+nmu3
+I: Retrieving apt 1.0.9.8.3
+I: Validating apt 1.0.9.8.3
+I: Retrieving apt-utils 1.0.9.8.3
+I: Validating apt-utils 1.0.9.8.3
+I: Retrieving libapt-inst1.5 1.0.9.8.3
+I: Validating libapt-inst1.5 1.0.9.8.3
+I: Retrieving libapt-pkg4.12 1.0.9.8.3
+I: Validating libapt-pkg4.12 1.0.9.8.3
+I: Retrieving libattr1 1:2.4.47-2
+I: Validating libattr1 1:2.4.47-2
+I: Retrieving libaudit-common 1:2.4-1
+I: Validating libaudit-common 1:2.4-1
+I: Retrieving libaudit1 1:2.4-1+b1
+I: Validating libaudit1 1:2.4-1+b1
+I: Retrieving base-files 8+deb8u4
+I: Validating base-files 8+deb8u4
+I: Retrieving base-passwd 3.5.37
+I: Validating base-passwd 3.5.37
+I: Retrieving bash 4.3-11+b1
+I: Validating bash 4.3-11+b1
+</pre>
+snip....
+<pre>
+Unpacking vim-runtime (2:7.4.488-7) ...
+Selecting previously unselected package vim.
+Preparing to unpack .../vim_2%3a7.4.488-7_amd64.deb ...
+Unpacking vim (2:7.4.488-7) ...
+Processing triggers for man-db (2.7.0.2-5) ...
+Setting up libgpm2:amd64 (1.20.4-6.1+b2) ...
+Setting up vim-runtime (2:7.4.488-7) ...
+Processing /usr/share/vim/addons/doc
+Setting up vim (2:7.4.488-7) ...
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vim (vim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vimdiff (vimdiff) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rvim (rvim) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/rview (rview) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/vi (vi) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/view (view) in auto mode
+update-alternatives: using /usr/bin/vim.basic to provide /usr/bin/ex (ex) in auto mode
+Processing triggers for libc-bin (2.19-18+deb8u4) ...
+$ du -sh container.img 
+312M    container.img
+$ 
+</pre>
+The image "container.img" has now been bootstrapped with the operating system
+as we specified in our definition file.
+</p>
+
+
+
+
