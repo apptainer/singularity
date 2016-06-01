@@ -23,37 +23,29 @@ a {
     text-decoration: none;
 }
 
-h1 {
-    display: block;
+h1 h2 h3 h4 {
+    display: inline-block;
     margin: 0;
     padding: 0;
+    width: 100%;
+}
+
+h1 {
     font-size: 200%;
     font-weight: 400;
 }
 
 h2 {
-    display: block;
-    margin: 0;
-    padding: 0;
     font-size: 160%;
     font-weight: 500;
-    margin-bottom: 5px;
 }
 
 h3 {
-    display: block;
-    margin: 0;
-    padding: 0;
     font-size: 140%;
     font-weight: 600;
-    margin-bottom: 5px;
 }
 
 h4 {
-    display: inline-block;
-    margin: 0;
-    padding: 0;
-    width: 100%;
     color: #AF1C0E;
     font-weight: 700;
     font-size: 115%
