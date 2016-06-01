@@ -42,6 +42,7 @@ h3 {
 }
 
 h4 {
+    display: inline-block;
     color: #AF1C0E;
     font-weight: 700;
     font-size: 110%
