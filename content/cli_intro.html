@@ -17,18 +17,18 @@ $ singularity (opts1) [subcommand] (opts2) ...
 
 <h2>Options and argument processing</h2>
 <p>
-Because of the nature of how Singularity cascades commands and subcommands,
+Because of the nature of how Singularity cascades commands and sub-commands,
 argument processing is done with a mandatory order. This means that where you
 place arguments is important! In the above usage form example, <strong>opts1</strong>
-are the global Singularity runtime options. These options are always
+are the global Singularity run-time options. These options are always
 applicable no matter what subcommand you select (e.g. --verbose or --debug). But
-subcommand specific options must be passed after the relevent subcommand.
+subcommand specific options must be passed after the relevant subcommand.
 </p>
 <p>
 To further clarify this example, the 'exec' Singularity subcommand will execute a
 program within the container and pass the arguments passed to the program. So to
-mitigate any argument clashes, Singularity must not intrepret or interfere with
-any of the command arguments or options that are not relevent for that particular
+mitigate any argument clashes, Singularity must not interpret or interfere with
+any of the command arguments or options that are not relevant for that particular
 function.
 </p>
 

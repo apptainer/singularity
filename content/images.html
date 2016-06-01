@@ -53,7 +53,7 @@ Singularity is installed on the host system).
 <p>
 You can increase or change the default image size using the --size option to
 create (option ordering is very important with Singularity and it must follow
-the 'create' subcommand).
+the 'create' sub-command).
 </p>
 
 <h2>Mounting an image</h2>
@@ -74,7 +74,7 @@ container.img:/mnt&gt; exit
 $ 
 </pre>
 
-When mounting the image in this manner, Singularity makes use of namespaces such
+When mounting the image in this manner, Singularity makes use of name-spaces such
 that the mount is only visible and accessible from within the current shell that
 Singularity will spawn. When you are finished, you can simply exit the shell and
 the file system will be automatically unmounted.
@@ -83,7 +83,7 @@ the file system will be automatically unmounted.
 <h2>Increasing the size of an existing image</h2>
 <p>
 You can increase the size of an image after it has been instantiated by using the
-'expand' Singularity subcommand as follows:
+'expand' Singularity sub-command as follows:
 </p>
 
 <pre>
@@ -99,7 +99,7 @@ $ ls -l container.img
 </pre>
 
 <p>
-Similar to the create subcommand, you can overide the default size (which is
+Similar to the create sub-command, you can override the default size (which is
 .5GB) by using the --size option.
 </p>
 
@@ -110,8 +110,8 @@ You can copy the image to create a branch, share the image and distribute the
 image as easily as copying any other file you control!
 </p>
 <p>
-Remeber that the primary motivation of Singularity is mobility, the single file
-image format makes this a simple accomplishment.
+The primary motivation of Singularity is mobility, the single file image format
+makes this a simple accomplishment.
 </p>
 
 <h2>Read Only Vs. Read Write</h2>
@@ -135,5 +135,5 @@ Singularity/container.img&gt; exit
 $ 
 </pre>
 Even though I was root in both cases, I could not touch /foo unless the
-shell subcommand was called with the '--writable' flag.
+shell sub-command was called with the '--writable' flag.
 </p>
