@@ -6,6 +6,7 @@ html {
 }
 
 body {
+    display: block;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-weight: 500;
     margin: 0;
@@ -14,7 +15,6 @@ body {
     line-height: 1.42857143;
     color: white;
     background-color: black;
-    display: block;
 }
 
 a {
@@ -36,12 +36,13 @@ h3 {
 
 
 #container {
-    padding-right: 100px;
-    padding-left: 100px;
-    margin-right: auto;
-    margin-left: auto;
+    display: block;
+    margin-right: 100px;
+    margin-left: 100px;
+    padding: 10px;
     display: block;
     max-width: 1000px;
+    min-width: 500px;
     border: 1px;
     clear: both;
 }
@@ -61,7 +62,7 @@ h3 {
     display: block;
     width: 100px;
     font-size: 30px;
-    margin-top: 30px;
+    margin-top: 10px;
     margin-left: 10px;
     margin-bottom: 20px;
 }
@@ -87,8 +88,7 @@ h3 {
     margin-left: 50px;
     margin-right: 50px;
     border: 1px;
-    border-style: none;
-    border-top-style: none;
+    border-style: solid;
     border-color: white;
     min-height: 100px;
     border-bottom-left-radius: 4px;
