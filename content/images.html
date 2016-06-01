@@ -1,0 +1,139 @@
+<br/>&nbsp;<br/>
+&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a>
+
+<h1>Singularity Images</h1>
+<p>
+Singularity images are single files which physically contain the container.
+Singularity images are 'sparse' files in that they start off with a giant hole
+and thus it does not consume disk space until you fill the hole (e.g. a 1GB
+image may start off only taking about 30MB of physical disk space). As you fill
+the image by installing files, data, and programs into it you will find it
+increase in size.
+</p>
+<p>
+The effect of all files existing virtually within a single image greatly
+simplifies sharing, copying, branching, and other management tasks. It also
+means that standard file system ACLs apply to access and permission to the
+container (e.g. I can give read only access to a colleague, or block access
+completely with a simple chmod command).
+</p>
+
+<h2>Creating a new blank Singularity container image</h2>
+<p>
+Singularity will create a default container image of 1GB using the following
+command example:
+</p>
+
+<p>
+<pre>
+$ sudo singularity create container.img
+Creating a sparse image with a maximum size of 1024MB...
+Formatting image (/sbin/mkfs.ext4)
+Done. Image can be found at: container.img
+$ ls -l container.img 
+-rwxr-xr-x. 1 root root 1073741856 Jun  1 08:27 container.img
+$ du -sh container.img 
+33M     container.img
+</pre>
+</p>
+
+<p>
+Here we created a new container image called 'container.img' in the current
+directory. You can see the the 'ls' command reports it is 1GB in size, but when
+checking the actual disk usage, it reports only 33MB. As we add files to the
+image, it's actual disk usage will increase.
+</p>
+
+<p>
+Also, notice the permissions of the container image as it is executable. This
+is important in that Singularity images can be executed directly (as long as
+Singularity is installed on the host system).
+</p>
+
+<p>
+You can increase or change the default image size using the --size option to
+create (option ordering is very important with Singularity and it must follow
+the 'create' subcommand).
+</p>
+
+<h2>Mounting an image</h2>
+<p>
+Once the image has been created, you can mount it with the following command:
+
+<pre>
+$ sudo singularity mount container.img /mnt
+
+Mounting image 'container.img' into '/mnt'
+
+To unmount, simply exit this new shell.
+
+container.img:/mnt&gt; df -h /mnt
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/loop0      976M  2.6M  907M   1% /mnt
+container.img:/mnt&gt; exit
+$ 
+</pre>
+
+When mounting the image in this manner, Singularity makes use of namespaces such
+that the mount is only visible and accessible from within the current shell that
+Singularity will spawn. When you are finished, you can simply exit the shell and
+the file system will be automatically unmounted.
+</p>
+
+<h2>Increasing the size of an existing image</h2>
+<p>
+You can increase the size of an image after it has been instantiated by using the
+'expand' Singularity subcommand as follows:
+</p>
+
+<pre>
+$ sudo singularity expand container.img 
+Expanding sparse image by 512MB...
+Checking image (/sbin/mkfs.ext4)
+e2fsck 1.42.9 (28-Dec-2013)
+Growing file system
+resize2fs 1.42.9 (28-Dec-2013)
+Done. Image can be found at: container.img
+$ ls -l container.img 
+-rwxr-xr-x. 1 root root 1610612769 Jun  1 08:40 container.img
+</pre>
+
+<p>
+Similar to the create subcommand, you can overide the default size (which is
+.5GB) by using the --size option.
+</p>
+
+<h2>Read Only Vs. Read Write</h2>
+<p>
+By default, all Singularity commands that operate within a container (e.g.
+'exec', 'run', and 'shell') all enter the image by default as read only. This
+enables multiple processes to be able to use the image appropriately (as would
+be necessary with MPI). But if you want to make any changes to the image, you
+must have both write permission on the image file itself and use the 
+'--writable' flag. For example:
+<pre>
+$ sudo singularity shell container.img 
+Singularity/container.img&gt; whoami
+root
+Singularity/container.img&gt; touch /foo
+touch: cannot touch '/foo': Read-only file system
+Singularity/container.img&gt; exit
+$ sudo singularity shell --writable container.img 
+Singularity/container.img&gt; touch /foo
+Singularity/container.img&gt; exit
+$ 
+</pre>
+Even though I was root in both cases, I could not touch /foo unless the
+shell subcommand was called with the '--writable' flag.
+</p>
+
+<h2>Copying, sharing, branching, and distributing your image</h2>
+<p>
+Because Singularity images are single files, they are easily copied and managed.
+You can copy the image to create a branch, share the image and distribute the
+image as easily as copying any other file you control!
+</p>
+<p>
+Remeber that the primary motivation of Singularity is mobility, the single file
+image format makes this a simple accomplishment.
+</p>
