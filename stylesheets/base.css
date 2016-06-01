@@ -24,19 +24,22 @@ a {
 }
 
 h1 {
-    font-size: 140%;
+    display: inline;
+    font-size: 200%;
     font-weight: 400;
     margin-bottom: 5px;
 }
 
 h2 {
-    font-size: 130%;
+    display: inline;
+    font-size: 160%;
     font-weight: 500;
     margin-bottom: 5px;
 }
 
 h3 {
-    font-size: 120%;
+    display: inline;
+    font-size: 140%;
     font-weight: 600;
     margin-bottom: 5px;
 }
@@ -45,9 +48,7 @@ h4 {
     display: inline;
     color: #AF1C0E;
     font-weight: 700;
-    font-size: 110%
-    margin: 0px;
-    padding: 0px;
+    font-size: 115%
 }
 
 code, pre {        
