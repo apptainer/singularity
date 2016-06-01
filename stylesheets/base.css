@@ -45,7 +45,8 @@ h4 {
 //    color: #AF1C0E;
     font-weight: 700;
     font-size: 110%
-    margin-bottom: 5px;
+    margin: 5px;
+    padding: 5px;
 }
 
 code, pre {        
