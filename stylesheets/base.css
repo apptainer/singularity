@@ -70,6 +70,12 @@ p {
     margin-bottom: 15px;
 }
 
+#back_link {
+    display: block;
+    float: left;
+    margin-left: 25px;
+}
+
 #container {
     display: block;
     margin-right: auto;
