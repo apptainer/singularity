@@ -27,27 +27,26 @@ h1, h2, h3, h4 {
     display: inline-block;
     margin: 0;
     padding: 0;
+    padding-top: 30px;
     width: 100%;
 }
 
 h1 {
-    font-size: 200%;
-    font-weight: 400;
+    font-size: 300%;
 }
 
 h2 {
-    font-size: 160%;
-    font-weight: 500;
+    font-size: 200%;
 }
 
 h3 {
-    font-size: 140%;
-    font-weight: 600;
+    font-size: 175%;
 }
 
 h4 {
+    padding-top: 10px;
     color: #AF1C0E;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 115%
 }
 
