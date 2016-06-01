@@ -49,11 +49,11 @@ code, pre {
 .loud {
     color: #AF1C0E;
     font-weight: 700;
-    font-size: 120%
+    font-size: 110%
 }
 
 p {
-    padding-left: 10px;
+    margin-left: 10px;
 }
 
 #container {
