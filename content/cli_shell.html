@@ -9,6 +9,13 @@ container. The default shell that it will attempt to call is /bin/bash, but if
 that is not available it will fail over to /bin/sh (which is the POSIX standard).
 </p>
 <p>
+The usage is as follows:
+<pre>
+$ singularity shell
+USAGE: singularity (options) shell [container image] (options)
+</pre>
+</p>
+<p>
 Additionally any arguments passed to the Singularity command (after the container
 name) will be passed to the called shell within the container.
 </p>
