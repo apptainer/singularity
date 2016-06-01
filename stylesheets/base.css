@@ -24,35 +24,38 @@ a {
 }
 
 h1 {
-    display: inline;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
     font-size: 200%;
     font-weight: 400;
-    margin-bottom: 5px;
-    width: 100%;
 }
 
 h2 {
-    display: inline;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
     font-size: 160%;
     font-weight: 500;
     margin-bottom: 5px;
-    width: 100%;
 }
 
 h3 {
-    display: inline;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
     font-size: 140%;
     font-weight: 600;
     margin-bottom: 5px;
-    width: 100%;
 }
 
 h4 {
-    display: inline;
+    display: inline-block;
+    margin: 0;
+    padding: 0;
     color: #AF1C0E;
     font-weight: 700;
     font-size: 115%
-    width: 100%;
 }
 
 code, pre {        
