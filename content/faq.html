@@ -68,8 +68,17 @@ forwarding, and other kinds of work tasks trivial for Singularity.
 
 <h4 class="loud">Do you need administrator privileges to use Singularity?</h4>
 <p>
-No, you do not. You do however need admin/root access to install it, but once
-it is installed, you do not need any additional privileges to run it.
+No, you do not need admin/sudo to use Singularity containers. You do however
+need admin/root access to install Singularity and to build/manage your
+containers and images, but to use the containers you do not need any
+additional privileges to run it.
+</p>
+<p>
+This then defines the workflow to some extent... Singularity container images
+must be built and configured on a host where you have root access (this can
+be a physical system or on a VM or Docker image). Once the container image
+has been configured it can be used on a system where you do not have root
+access as long as Singularity has been installed there.
 </p>
 
 <h4 class="loud">How does Singulairty relate/differ from statically compiled binaries?</h4>
