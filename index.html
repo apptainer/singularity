@@ -15,17 +15,20 @@
 
     <script type="text/javascript">
         function load_content(page) {
+            //Calculate the height of <header>
+            var aboveHeight = $('header').outerHeight();
 
             $(window).scroll(function () {
             //if you hard code, then use console
             //.log to determine when you want the 
             //nav bar to stick.  
             //console.log($(window).scrollTop())
-            if ($(window).scrollTop() > 0) {
-                $('.navbar').addClass('navbar-fixed');
-            }
-            if ($(window).scrollTop() < 2) {
-                $('.navbar').removeClass('navbar-fixed');
+            if ($(window).scrollTop() > aboveHeight) {
+                $('.navbar').addClass('navbar-fixed').css('top','0').next().css('padding-top','60px');
+ ;
+            } else {
+                $('.navbar').removeClass('navbar-fixed').next()
+                .css('padding-top','0');
             }
             });
 
