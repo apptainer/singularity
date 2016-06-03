@@ -4,6 +4,7 @@ Create a new Singularity formatted blank image.
 
 OPTIONS:
     -s/--size   Specify a size for an operation (default 1GB)
+    -f/--fs     File system type to format image with (default ext3)
 
 EXAMPLES:
 

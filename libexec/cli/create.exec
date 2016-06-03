@@ -37,6 +37,7 @@ fi
 
 PATH=/sbin:/usr/sbin:$PATH
 IMAGE_SIZE="1024"
+FILESYSTEM="ext3"
 
 
 while true; do
@@ -44,6 +45,11 @@ while true; do
         -s|--size)
             shift
             IMAGE_SIZE="$1"
+            shift
+        ;;
+        -f|--fs)
+            shift
+            FILESYSTEM="$1"
             shift
         ;;
         -*)
@@ -77,11 +83,9 @@ if [ -f "$IMAGE_FILE" ]; then
     exit 1
 fi
 
-if ! MKFS_PATH=`singularity_which mkfs.ext4`; then
-    if ! MKFS_PATH=`singularity_which mkfs.ext3`; then
-        message ERROR "Could not locate program: mkfs.ext3/4\n"
-        exit 255
-    fi
+if ! MKFS_PATH=`singularity_which "mkfs.$FILESYSTEM"`; then
+    message ERROR "Could not locate program: mkfs.$FILESYSTEM\n"
+    exit 255
 fi
 
 if ! touch "$IMAGE_FILE" 2>/dev/null; then
