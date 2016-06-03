@@ -15,14 +15,7 @@
 
     <script type="text/javascript">
         function load_content(page) {
-            $(window).bind('scroll', function () {
-            if ($(window).scrollTop() > 50) {
-                $('.navbar').addClass('fixed');
-            } else {
-                $('.navbar').removeClass('fixed');
-            }
-            }); 
-            
+
             location.hash = page;
             $("#container").load("content/" + page + ".html", "", 
                 function (responseText, textStatus, req) {
@@ -56,6 +49,7 @@
 
     </head>
     <body>
+    <nav class = "navbar navbar-inverse navbar-fixed-top">
     <div class="navbar">
     <span id="navtext">Singularity: </span>
         <ul>
@@ -67,6 +61,7 @@
             <li><a href="javascript:load_content('download')">Download</a></li>
         </ul>
     </div>
+</nav>
     <img id="logo" src="images/singularity_logo_300x300.png"/>
 
 
