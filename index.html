@@ -34,9 +34,11 @@
             //console.log($(window).scrollTop())
             if ($(window).scrollTop() > aboveHeight) {
                 $('.navbar').addClass('navbar-fixed');
+                $('#stickyalias').css('display', 'block');
  ;
             } else {
                 $('.navbar').removeClass('navbar-fixed');
+                $('#stickyalias').css('display','none');
             }
             });
         }
@@ -65,7 +67,6 @@
 
     </head>
     <body>
-    <nav class = "navbar navbar-inverse navbar-fixed-top">
     <div class="navbar">
     <span id="navtext">Singularity: </span>
         <ul>
@@ -77,7 +78,9 @@
             <li><a href="javascript:load_content('download')">Download</a></li>
         </ul>
     </div>
-</nav>
+
+    <div id="stickyalias"></div>
+
     <img id="logo" src="images/singularity_logo_300x300.png"/>
 
 

@@ -128,6 +128,11 @@ p {
     width: 100%;
 }
 
+#stickyalis {
+    display: none;
+    height: 2px;
+}
+
 .navbar {
     display: inline-block;
     font-weight: 500;
@@ -136,8 +141,8 @@ p {
     width: 100%;
     margin-top: 0px;
     font-size: 14px;
-    position: static;
     /*
+    position: relative;
     margin-bottom: 20px;
     margin-left: 50px;
     margin-right: 50px;
