@@ -15,6 +15,15 @@
 
     <script type="text/javascript">
         function load_content(page) {
+
+            location.hash = page;
+            $("#container").load("content/" + page + ".html", "", 
+                function (responseText, textStatus, req) {
+                    if ( textStatus == "error" ) {
+                        $("#container").html("<h2>ERROR</h2>Unable to load content: " + page);
+                    }
+                });
+
             //Calculate the height of <header>
             var aboveHeight = $('header').outerHeight();
 
@@ -30,14 +39,6 @@
                 $('.navbar').removeClass('navbar-fixed');
             }
             });
-
-            location.hash = page;
-            $("#container").load("content/" + page + ".html", "", 
-                function (responseText, textStatus, req) {
-                    if ( textStatus == "error" ) {
-                        $("#container").html("<h2>ERROR</h2>Unable to load content: " + page);
-                    }
-                });
         }
 
         function load_page() {           
