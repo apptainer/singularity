@@ -4,7 +4,7 @@ Version: @PACKAGE_VERSION@
 Release: 0.1%{?dist}
 License: US Dept. of Energy (BSD-like)
 Group: System Environment/Base
-URL: http://warewulf.lbl.gov/
+URL: http://singularity.lbl.gov/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
