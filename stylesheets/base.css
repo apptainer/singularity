@@ -130,7 +130,7 @@ p {
 }
 */
 
-#stickyalis {
+.stickyalis {
     display: none;
     height: 0px;
 }

@@ -31,11 +31,11 @@
     
             if ($(window).scrollTop() > aboveHeight) {
                 $('.navbar').css({position:'fixed', top: '0px'});
-                $('#stickyalias').css('display', 'block');
+                $('.stickyalias').css('display', 'block');
  ;
             } else {
                 $('.navbar').css({position:'fixed', top: '0px'});
-                $('#stickyalias').css('display','none');
+                $('.stickyalias').css('display','none');
             }
             });
         }
@@ -76,7 +76,7 @@
         </ul>
     </div>
 
-    <div id="stickyalias"></div>
+    <div class="stickyalias"></div>
 
     <img id="logo" src="images/singularity_logo_300x300.png"/>
 
