@@ -132,7 +132,7 @@ p {
 
 #stickyalis {
     display: none;
-    height: 10px;
+    height: 0px;
 }
 
 .navbar {
