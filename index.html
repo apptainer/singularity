@@ -25,19 +25,16 @@
                 });
 
             //Calculate the height of <header>
-            var aboveHeight = $('header').outerHeight();
+             var aboveHeight = $('.navbar').offset().top;
 
             $(window).scroll(function () {
-            //if you hard code, then use console
-            //.log to determine when you want the 
-            //nav bar to stick.  
-            //console.log($(window).scrollTop())
+    
             if ($(window).scrollTop() > aboveHeight) {
-                $('.navbar').addClass('navbar-fixed');
+                $('.navbar').css({position:'fixed', top: '0px'});
                 $('#stickyalias').css('display', 'block');
  ;
             } else {
-                $('.navbar').removeClass('navbar-fixed');
+                $('.navbar').css({position:'fixed', top: '0px'});
                 $('#stickyalias').css('display','none');
             }
             });
