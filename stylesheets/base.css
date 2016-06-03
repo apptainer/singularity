@@ -65,6 +65,8 @@ code, pre {
 }
 
 p {
+    color: LightGray ;
+    text-shadow: 2px 2px 4px #939491;
     padding-left: 20px;
     margin-top: 0px;
     margin-bottom: 15px;

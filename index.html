@@ -15,6 +15,14 @@
 
     <script type="text/javascript">
         function load_content(page) {
+            $(window).bind('scroll', function () {
+            if ($(window).scrollTop() > 50) {
+                $('.navbar').addClass('fixed');
+            } else {
+                $('.navbar').removeClass('fixed');
+            }
+            }); 
+            
             location.hash = page;
             $("#container").load("content/" + page + ".html", "", 
                 function (responseText, textStatus, req) {
@@ -24,7 +32,8 @@
                 });
         }
 
-        function load_page() {
+        function load_page() {           
+
             var page = location.hash.substring(1);
             if ( page == '' ) {
                 load_content("home");
@@ -40,6 +49,9 @@
         $(document).ready(function() {
             load_page();
         });
+
+
+
     </script>
 
     </head>
