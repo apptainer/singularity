@@ -25,17 +25,18 @@
                 });
 
             //Calculate the height of <header>
-             var aboveHeight = $('.navbar').offset().top;
+            var aboveHeight = $('header').outerHeight();
 
             $(window).scroll(function () {
-    
+            //if you hard code, then use console
+            //.log to determine when you want the 
+            //nav bar to stick.  
+            //console.log($(window).scrollTop())
             if ($(window).scrollTop() > aboveHeight) {
-                $('.navbar').css({position:'fixed', top: '0px'});
-                $('.stickyalias').css('display', 'block');
+                $('.navbar').addClass('navbar-fixed');
  ;
             } else {
-                $('.navbar').css({position:'fixed', top: '0px'});
-                $('.stickyalias').css('display','none');
+                $('.navbar').removeClass('navbar-fixed');
             }
             });
         }
@@ -76,8 +77,7 @@
         </ul>
     </div>
 
-    <div class="stickyalias"></div>
-
+    
     <img id="logo" src="images/singularity_logo_300x300.png"/>
 
 

@@ -121,19 +121,13 @@ p {
     clear: both;
 }
 
-/*
 .navbar-fixed {
     top: 0;
     z-index: 100;
     position: fixed;
     width: 100%;
 }
-*/
 
-.stickyalis {
-    display: none;
-    height: 0px;
-}
 
 .navbar {
     display: inline-block;
