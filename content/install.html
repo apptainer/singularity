@@ -35,10 +35,12 @@ $ make dist
 $ rpmbuild -ta singularity-*.tar.gz
 $ sudo yum install ~/rpmbuild/RPMS/*/singularity-[0-9]*.rpm
 </pre>
-
-
-
-
+<p>
+Note: if you want to have the RPM install the files to an alternative location,
+you should define the environment variable 'PREFIX' to suit your needs, and use
+the following command to build:
 </p>
-
-    
+<pre>
+$ PREFIX=/opt/singularity
+$ rpmbuild -ta --define="_prefix $PREFIX" --define "_sysconfdir $PREFIX/etc" --define "_defaultdocdir $PREFIX/share" singularity-*.tar.gz
+</pre>
