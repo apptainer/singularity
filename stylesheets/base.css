@@ -121,6 +121,13 @@ p {
     clear: both;
 }
 
+.navbar-fixed {
+    top: 0;
+    z-index: 100;
+  position: fixed;
+    width: 100%;
+}
+
 .navbar {
     display: inline-block;
     font-weight: 500;
@@ -142,6 +149,7 @@ p {
     border-bottom-right-radius: 4px;
     */
 }
+
 
 .navbar ul {
     display: inline;
