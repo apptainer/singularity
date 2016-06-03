@@ -123,8 +123,8 @@ p {
 
 .navbar-fixed {
     top: 0;
-    z-index: -1;
-    position: fixed;
+    z-index: 100;
+    position: static;
     width: 100%;
 }
 
