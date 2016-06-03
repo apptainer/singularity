@@ -40,6 +40,16 @@
         $(document).ready(function() {
             load_page();
         });
+
+        $(window).bind('scroll', function () {
+    if ($(window).scrollTop() > 50) {
+        $('.navbar').addClass('fixed');
+    } else {
+        $('.navbar').removeClass('fixed');
+    }
+    });
+
+
     </script>
 
     </head>
