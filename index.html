@@ -24,11 +24,10 @@
             //nav bar to stick.  
             //console.log($(window).scrollTop())
             if ($(window).scrollTop() > aboveHeight) {
-                $('.navbar').addClass('navbar-fixed').css('top','0').next().css('padding-top','60px');
+                $('.navbar').addClass('navbar-fixed');
  ;
             } else {
-                $('.navbar').removeClass('navbar-fixed').next()
-                .css('padding-top','0');
+                $('.navbar').removeClass('navbar-fixed');
             }
             });
 
