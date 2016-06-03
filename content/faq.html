@@ -1,10 +1,9 @@
+<div id="back_link">&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a></div>
 
-&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a>
 <h1>FAQ</h1>
-<p>
+<br/>
 
-
-<h3>Which namespaces are virtualized? Is that selectable?</h3>
+<h4 class="loud">Which namespaces are virtualized? Is that selectable?</h4>
 <p>
 The goal of Singularity is to run an application within a contained
 environment such as it was not contained. Thus there is a balance between
@@ -28,7 +27,7 @@ the host system supports as well as through envrionment variables.
 </p>
 
 
-<h3>How does Singularity relate/differ from Shifter?</h3>
+<h4 class="loud">How does Singularity relate/differ from Shifter?</h4>
 <p>
 NERSC (like most HPC centers) are feeling the pressure from users asking
 for support for containers, specifically Docker. Due to the architecture
@@ -48,7 +47,7 @@ mobility (you can share and operate directly on Singularity images).
 </p>
 
 
-<h3>How does Singulairty relate/differ from Docker?</h3>
+<h4 class="loud">How does Singulairty relate/differ from Docker?</h4>
 <p>
 Docker has been used for a variety of purposes, but it is designed as a
 platform to provide replicatable, network service virtualation. Because of
@@ -67,8 +66,22 @@ forwarding, and other kinds of work tasks trivial for Singularity.
 </p>
 
 
+<h4 class="loud">Do you need administrator privileges to use Singularity?</h4>
+<p>
+No, you do not need admin/sudo to use Singularity containers. You do however
+need admin/root access to install Singularity and to build/manage your
+containers and images, but to use the containers you do not need any
+additional privileges to run it.
+</p>
+<p>
+This then defines the workflow to some extent... Singularity container images
+must be built and configured on a host where you have root access (this can
+be a physical system or on a VM or Docker image). Once the container image
+has been configured it can be used on a system where you do not have root
+access as long as Singularity has been installed there.
+</p>
 
-<h3>How does Singulairty relate/differ from statically compiled binaries?</h3>
+<h4 class="loud">How does Singulairty relate/differ from statically compiled binaries?</h4>
 <p>
 Statically compiled binaries are a good comparasion to what Singularity can do
 for a single program because it will package up all of the dynamic libraries
@@ -82,13 +95,13 @@ them into a single portable executable format.
 </p>
 
 
-<h3>Can you edit/modity a Singularity container once it has been instantiated?</h3>
+<h4 class="loud">Can you edit/modity a Singularity container once it has been instantiated?</h4>
 <p>
 Yes, if you call it with the -w/--writable flag. (e.g. 'singularity shell --writable Container.img').
 </p>
 
 
-<h3>Can multiple applications be packaged into one Singularity Container?</h3>
+<h4 class="loud">Can multiple applications be packaged into one Singularity Container?</h4>
 <p>
 Yes! You can even create entire pipe lines and work flows using many
 applications, binaries, scripts, etc.. Look into the RunScript bootstrap
@@ -99,7 +112,7 @@ directly or via the 'run' command, this will get executed).
 </p>
 
 
-<h3>Are Singularity containers kernel dependent?</h3>
+<h4 class="loud">Are Singularity containers kernel dependent?</h4>
 <p>
 No, never. But sometimes yes.
 </p>
@@ -127,7 +140,7 @@ probably not the right solution for you.
 </p>
 
 
-<h3>How are external filesystems and paths handled in a Singularity Container?</h3>
+<h4 class="loud">How are external filesystems and paths handled in a Singularity Container?</h4>
 <p>
 Because Singularity is based on container principals, when an application
 is run from within a Singularity container it's default view of the file
@@ -149,14 +162,14 @@ Singularity will not create it for you! You must do that.
 </p>
 
 
-<h3>What is the difference between full and relative paths?</h3>
+<h4 class="loud">What is the difference between full and relative paths?</h4>
 <p>
 See the above answer to "How are external filesystems and paths handled
 in a Singularity Container?".
 </p>
 
 
-<h3>How does Singularity handle manage networking?</h3>
+<h4 class="loud">How does Singularity handle manage networking?</h4>
 <p>
 Singularity does no network isolation because it is designed to run like any
 other application on the system. It has all of the same networking privledges
@@ -164,27 +177,27 @@ as any program running as that user.
 </p>
 
 
-<h3>Can I run X11 apps through Singularity?</h3>
+<h4 class="loud">Can I run X11 apps through Singularity?</h4>
 <p>
-Yes. This works exactly as you would expect it too.
+Yes. This works exactly as you would expect it to.
 </p>
 
 
-<h3>Can a Singularity container resolve GLIBC version mismatches?</h3>
+<h4 class="loud">Can a Singularity container resolve GLIBC version mismatches?</h4>
 <p>
 Yes. Singularity containers contain their own library stack (including the
 Glibc version that they require to run).
 </p>
 
 
-<h3>Can a Singularity container be multi-threaded?</h3>
+<h4 class="loud">Can a Singularity container be multi-threaded?</h4>
 <p>
 Yes. Singularity imposes no limitations on forks, threads or processes in
 general.
 </p>
 
 
-<h3>Can a Singularity container be suspended or checkpointed?</h3>
+<h4 class="loud">Can a Singularity container be suspended or checkpointed?</h4>
 <p>
 Yes and maybe respectively. Any Singularity application can be suspended using
 standard Linux/Unix signals. Checkpointing requires some preloaded libraries
@@ -196,7 +209,7 @@ container via the specfile.
 </p>
 
 
-<h3>Are there any special requirements to use Singularity through a job scheduler?</h3>
+<h4 class="loud">Are there any special requirements to use Singularity through a job scheduler?</h4>
 <p>
 No, Singularity containers can be run via any job scheduler with no
 modifications to the scheduler configuration or architecture. This is because
@@ -205,31 +218,31 @@ system.
 </p>
 
 
-<h3>Are there any special security concerns that Singularity introduces?</h3>
+<h4 class="loud">Are there any special security concerns that Singularity introduces?</h4>
 <p>
 No and yes.
 </p>
 <p>
 While Singularity containers always run as the user launching them, there are
-some aspects of the container launch which requires escalation of privledges.
-Once the container environment has been instantiated, all escalated privledges
+some aspects of the container launch which requires escalation of privileges.
+Once the container environment has been instantiated, all escalated privileges
 are dropped completely, before running any programs within the container.
 </p>
 <p>
 Additionally, there are precautions within the container context to mitigate
-any esclation of privledges. This limits a user's ability to gain root control
+any esclation of privileges. This limits a user's ability to gain root control
 once inside the container.
 </p>
 
 
-<h3>What Linux distributions are you trying to get onboard?</h3>
+<h4 class="loud">What Linux distributions are you trying to get onboard?</h4>
 <p>
 All of them! Help us out by letting them know you want Singularity to be
 included!
 </p>
 
 
-<h3>What is the performance tradeoff when running an appication native or through Singularity?</h3>
+<h4 class="loud">What is the performance tradeoff when running an appication native or through Singularity?</h4>
 <p>
 So far we have not identified any appreciable regressions of performance (even
 in parallel applications running across nodes with InfiniBand). There is a
@@ -246,7 +259,7 @@ performant then other Linux distributions we have tested.
 </p>
 
 
-<h3>Does Singularity work on multi-tenant HPC cluster environments?</h3>
+<h4 class="loud">Does Singularity work on multi-tenant HPC cluster environments?</h4>
 <p>
 Yes! HPC was one of the primary use cases in mind when Singularity was
 created.
@@ -265,7 +278,7 @@ which seemlessly interfaces with the host system and existing envrionments.
 </p>
 
 
-<h3>Can I containerize my MPI application with Singularity and run it properly on an HPC system?</h3>
+<h4 class="loud">Can I containerize my MPI application with Singularity and run it properly on an HPC system?</h4>
 <p>
 Yes! HPC was one of the primary use cases in mind when Singularity was
 created.
@@ -282,14 +295,10 @@ Singularity container.
 </p>
 
 
-<h3>What is the average air speed velocity of an unladen swallow?</h3>
+<h4 class="loud">What is the average air speed velocity of an unladen swallow?</h4>
 <p>
 Thanks Jason!
 <br/>&nbsp;<br/>
 <a target="_blank" href="http://style.org/unladenswallow/">http://style.org/unladenswallow/</a>
 </p>
 
-
-</p>
-
-      

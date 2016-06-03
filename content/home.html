@@ -1,33 +1,50 @@
 
 <h1>Singularity</h1>
-<h2>Enabling Mobility of Compute</h2>
+<br/>
+Application containers enabling mobility of compute
+<br/>&nbsp;<br/>
+<h4 class="loud">Encapsulation of the environment</h4><br/>
 <p>
-<b>What is Mobility of Compute?</b>
-</p>
-<p>
-Mobility of Compute is the encapsulation of a system environment in such
-a manner to make it portable between systems. The operating system
+Mobility of Compute is the encapsulation of an environment in such a
+manner to make it portable between systems. This operating system
 environment can contain the necessary applications for a particular
 work-flow, development tools, and/or raw data. Once this environment has
 been developed it can be easily copied and run from any other Linux
 system.
 </p>
+<h4 class="loud">The Singularity image</h4><br/>
 <p>
 Singularity implements this by using an image file which contains a
-particular environment. Once you have configured this environment as
-needed, you can copy this file to any other Linux system that has
-Singularity installed, and you can execute programs within this container
-or launch an interactive shell and use that container environment as if
-it was the system you just logged into. Additionally you can do this
-without super user access or any root owned daemon processes which makes
-implementation on shared/multi-tenant resources as simple as installing
-any other package or program.
+particular operating system environment. Once you have configured this
+environment as needed, you can copy this file to any other Linux system
+that has Singularity installed, and you can execute programs within this
+container or launch an interactive shell and use that container
+environment as if you were logged into it.
 </p>
+<h4 class="loud">No user contextual changes</h4><br/>
 <p>
-Using this model, you can always work in your Linux environment of
-choice, and easily integrate contained applications into a given work
-flow (e.g. batch schedulers, scripts, pipelines, etc.).
+Additionally you can do this without super user access or any root owned
+daemon processes, as a non-privileged user. Singularity also limits the
+ability to achieve user escalation from within a container. A user outside
+the container, is the same user inside the container! These features makes
+implementation on shared/multi-tenant resources as simple as installing
+Singularity!
 </p>
+<h4 class="loud">BYOE: Bring Your Own Environment</h4><br/>
+<p>
+From a user's perspective, we can BYOE anywhere that Singularity is
+installed. From a service provider's perspective we can easily allow users
+the flexibility of "cloud"-like environments to enable their requirements.
+</p>
+<h4 class="loud">Support of developmental environments</h4><br/>
+<p>
+There is always a misalignment between development and production
+environments. The service provider can only offer a stable, secure tuned
+production environment which in many times will not keep up with the fast
+paced requirements of developers. With Singularity, you can control your own
+development environment and simply copy them to the production resources.
+</p>
+<h4 class="loud">And others!!</h4><br/>
 <p>
 See the
 <a href="javascript:load_content('use-cases')">use cases</a>
@@ -38,6 +55,8 @@ for more information on how you might leverage Singularity.
 Below is a short introduction and demonstration video:
 </p>
 <p>
-<a href="https://www.youtube.com/watch?v=xuIQoth0r4E"><img src="images/singularity-v2-intro.png" border="1px"></a>
+<center>
+<a target="_blank" href="https://www.youtube.com/watch?v=xuIQoth0r4E"><img src="images/singularity-v2-intro.png" border="1px"></a>
+</center>
 </p>
 

@@ -1,0 +1,60 @@
+<div id="back_link">&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a></div>
+
+<h1>Basic Singularity usage</h1>
+<br/>
+<h2>The Singularity command</h2>
+<p>
+Singularity uses a primary command wrapper called 'singularity'. When you run
+'singularity' without any options or arguments it will dump the high level
+usage syntax.
+</p>
+<p>
+The general usage form is:
+<pre>
+$ singularity (opts1) [subcommand] (opts2) ...
+</pre>
+</p>
+
+<h2>Options and argument processing</h2>
+<p>
+Because of the nature of how Singularity cascades commands and sub-commands,
+argument processing is done with a mandatory order. This means that where you
+place arguments is important! In the above usage form example, <strong>opts1</strong>
+are the global Singularity run-time options. These options are always
+applicable no matter what subcommand you select (e.g. --verbose or --debug). But
+subcommand specific options must be passed after the relevant subcommand.
+</p>
+<p>
+To further clarify this example, the 'exec' Singularity subcommand will execute a
+program within the container and pass the arguments passed to the program. So to
+mitigate any argument clashes, Singularity must not interpret or interfere with
+any of the command arguments or options that are not relevant for that particular
+function.
+</p>
+
+
+<h2>Singularity Help</h2>
+<p>
+Singularity comes with some internal documentation by using the 'help' subcommand
+followed by the subcommand you want more information about. For example:
+<pre>
+$ singularity help create
+USAGE: singularity (options) create [command] (options)
+
+Create a new Singularity formatted blank image.
+
+OPTIONS:
+    -s/--size   Specify a size for an operation (default 1GB)
+
+EXAMPLES:
+
+    $ singularity create /tmp/Debian.img
+    $ singularity create -s 4096 /tmp/Debian.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+
+$
+</pre>

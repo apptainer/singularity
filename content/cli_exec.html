@@ -1,0 +1,54 @@
+<div id="back_link">&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a></div>
+
+<h1>Singularity Exec</h1>
+<br/>
+<h2>Usage</h2>
+<p>
+The 'exec' singularity sub-command allows you to spawn an arbitrary command
+within your container image as if it were running directly on the host system.
+All standard IO, pipes, and file systems are accessible via the command being
+exec'ed within the container.
+</p>
+<p>
+The usage is as follows:
+<pre>
+$ singularity exec
+USAGE: singularity (options) exec [container image] [command] (options)
+</pre>
+The command that you want to exec will follow the container image along with
+any additional arguments will all be passed directly to the program being
+executed within the container.
+</p>
+
+<h2>Examples</h2>
+<p>
+Printing the OS release inside the container:
+<pre>
+$ singularity exec container.img cat /etc/os-release
+PRETTY_NAME="Debian GNU/Linux 8 (jessie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="8"
+VERSION="8 (jessie)"
+ID=debian
+HOME_URL="http://www.debian.org/"
+SUPPORT_URL="http://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+$ 
+</pre>
+And properly passing along special characters to the program within the
+container.
+<pre>
+$ singularity exec container.img echo -ne "hello\nworld\n\n"
+hello
+world
+
+$ 
+</pre>
+And a demonstration using pipes:
+<pre>
+$ cat debian.def | singularity exec container.img grep 'MirrorURL'
+MirrorURL "http://ftp.us.debian.org/debian/"
+$ 
+</pre>
+
+</p>

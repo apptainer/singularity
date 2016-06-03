@@ -9,7 +9,7 @@ html {
 body {
     display: block;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-weight: 500;
+    font-weight: 400;
     margin: 0;
     padding: 0;
     font-size: 14px;
@@ -20,21 +20,61 @@ body {
 
 a {
     color: #b28b2c;
-    text-decoration: none;
+    text-decoration: underline;
+    font-size: 105%;
+}
+
+h1, h2, h3, h4 {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    padding-top: 30px;
 }
 
 h1 {
-    font-size: 36px;
+    font-size: 300%;
 }
 
 h2 {
-    font-size: 30px;
+    font-size: 200%;
 }
 
 h3 {
-    font-size: 26px;
+    font-size: 175%;
 }
 
+h4 {
+    padding-top: 10px;
+    font-weight: 600;
+    font-size: 120%;
+}
+
+.loud {
+    color: #AF1C0E;
+}
+
+code, pre {        
+    font-family: Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;        
+    color: #DEDEDE;        
+    font-size: 12px;      
+    padding: 8px 15px;       
+    background: #2A2A2A;        
+    border-radius: 5px;        
+    border:1px solid #C9C9C9;     
+    overflow-x: auto;        
+}
+
+p {
+    padding-left: 20px;
+    margin-top: 0px;
+    margin-bottom: 15px;
+}
+
+#back_link {
+    display: block;
+    margin: 0;
+    padding: 0;
+}
 
 #container {
     display: block;
@@ -81,7 +121,7 @@ h3 {
 
 .navbar {
     display: inline-block;
-    font-weight: bold;
+    font-weight: 500;
     line-height: 50px;
     background-color: #b28b2c;
     width: 100%;

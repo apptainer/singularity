@@ -1,0 +1,57 @@
+<div id="back_link">&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a></div>
+
+<h1>Singularity Run</h1>
+<br/>
+<h2>Usage</h2>
+<p>
+Singularity 'run' allows you to define a custom action to be taken when a
+container is either 'run' or executed directly by file name. The action is
+defined by a Singularity "runscript" which is an executable file (script or
+binary) located within the container physically at '/singularity'.
+</p>
+<p>
+The usage is as follows:
+<pre>
+$ singularity run
+USAGE: singularity (options) run [container image] (options)
+</pre>
+The command that you want to exec will follow the container image along with
+any additional arguments will all be passed directly to the program being
+executed within the container.
+</p>
+<p>
+You can also execute the container directly, and it will automatically
+pass the execution process to the Singularity runscript along with any
+arguments.
+</p>
+
+<h2>Examples</h2>
+<p>
+Here is a basic runscript
+<pre>
+$ cat singularity
+#!/bin/sh
+echo "$@"
+$ chmod +x singularity
+</pre>
+
+Now to copy it into the container:
+<pre>
+$ sudo singularity copy container.img singularity /
+$ singularity exec container.img ls -l /singularity
+-rwxr-xr-x. 1 root root 20 Jun  1 18:14 /singularity
+</pre>
+
+Now to run the container:
+<pre>
+$ singularity run container.img "hello world"
+hello world
+</pre>
+
+And to execute the container directly:
+<pre>
+$ ./container.img "hello again"
+hello again
+$ 
+</pre>
+</p>
