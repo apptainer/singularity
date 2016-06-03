@@ -24,6 +24,11 @@ a {
     font-size: 105%;
 }
 
+p {
+    color: LightGray ;
+    text-shadow: 2px 2px 4px #939491;
+}
+
 h1, h2, h3, h4 {
     display: inline-block;
     margin: 0;
