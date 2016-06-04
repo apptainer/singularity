@@ -140,6 +140,7 @@ p {
     width: 100%;
     margin-top: 0px;
     font-size: 14px;
+    position:fixed;
     /*
     position: relative;
     margin-bottom: 20px;
