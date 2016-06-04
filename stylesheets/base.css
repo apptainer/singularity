@@ -65,6 +65,8 @@ code, pre {
 }
 
 p {
+    color: LightGray ;
+    text-shadow: 2px 2px 4px #939491;
     padding-left: 20px;
     margin-top: 0px;
     margin-bottom: 15px;
@@ -80,6 +82,7 @@ p {
     display: block;
     margin-right: auto;
     margin-left: auto;
+    margin-top: 50px;
     padding-right: 100px;
     padding-left: 100px;
     display: block;
@@ -119,6 +122,8 @@ p {
     clear: both;
 }
 
+
+
 .navbar {
     display: inline-block;
     font-weight: 500;
@@ -127,6 +132,8 @@ p {
     width: 100%;
     margin-top: 0px;
     font-size: 14px;
+    position:fixed;
+    top: 0;
     /*
     position: relative;
     margin-bottom: 20px;
@@ -140,6 +147,7 @@ p {
     border-bottom-right-radius: 4px;
     */
 }
+
 
 .navbar ul {
     display: inline;
