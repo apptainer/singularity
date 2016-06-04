@@ -141,6 +141,7 @@ p {
     margin-top: 0px;
     font-size: 14px;
     position:fixed;
+    top: 0;
     /*
     position: relative;
     margin-bottom: 20px;
