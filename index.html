@@ -15,6 +15,7 @@
 
     <script type="text/javascript">
         function load_content(page) {
+
             location.hash = page;
             $("#container").load("content/" + page + ".html", "", 
                 function (responseText, textStatus, req) {
@@ -23,8 +24,9 @@
                     }
                 });
         }
+        
+        function load_page() {           
 
-        function load_page() {
             var page = location.hash.substring(1);
             if ( page == '' ) {
                 load_content("home");
@@ -40,6 +42,9 @@
         $(document).ready(function() {
             load_page();
         });
+
+
+
     </script>
 
     </head>
@@ -55,6 +60,8 @@
             <li><a href="javascript:load_content('download')">Download</a></li>
         </ul>
     </div>
+
+
     <img id="logo" src="images/singularity_logo_300x300.png"/>
 
 
