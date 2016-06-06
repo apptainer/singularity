@@ -123,11 +123,11 @@ int main(int argc, char ** argv) {
 
     // Lets start off as the calling UID
     if ( seteuid(uid) < 0 ) {
-        fprintf(stderr, "ABORT: Could not set effective uid to %d!\n", uid);
+        fprintf(stderr, "ABORT: Could not set effective uid to %d: %s\n", uid, strerror(errno));
         return(255);
     }
     if ( setegid(gid) < 0 ) {
-        fprintf(stderr, "ABORT: Could not set effective gid to %d!\n", gid);
+        fprintf(stderr, "ABORT: Could not set effective gid to %d: %s\n", gid, strerror(errno));
         return(255);
     }
 
@@ -146,7 +146,7 @@ int main(int argc, char ** argv) {
         return(1);
     }
     if ( getcwd(cwd, PATH_MAX) == NULL ) {
-        fprintf(stderr, "Could not obtain current directory path\n");
+        fprintf(stderr, "Could not obtain current directory path: %s\n", strerror(errno));
         return(1);
     }
 
@@ -233,11 +233,11 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 
     if ( seteuid(0) < 0 ) {
-        fprintf(stderr, "ABORT: Could not escalate effective user privileges!\n");
+        fprintf(stderr, "ABORT: Could not escalate effective user privileges %s\n", strerror(errno));
         return(255);
     }
     if ( setegid(0) < 0 ) {
-        fprintf(stderr, "ABORT: Could not escalate effective group privileges!\n");
+        fprintf(stderr, "ABORT: Could not escalate effective group privileges: %s\n", strerror(errno));
         return(255);
     }
 
@@ -328,7 +328,7 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 
         if ( unshare(CLONE_NEWNS) < 0 ) {
-            fprintf(stderr, "ABORT: Could not virtualize mount namespace\n");
+            fprintf(stderr, "ABORT: Could not virtualize mount namespace: %s\n", strerror(errno));
             return(255);
         }
 
@@ -344,7 +344,7 @@ int main(int argc, char ** argv) {
         if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_PID");
             if ( unshare(CLONE_NEWPID) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtualize PID namespace\n");
+                fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
                 return(255);
             }
         }
@@ -354,7 +354,7 @@ int main(int argc, char ** argv) {
         if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_PID");
             if ( unshare(CLONE_PID) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtualize PID namespace\n");
+                fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
                 return(255);
             }
         }
@@ -364,7 +364,7 @@ int main(int argc, char ** argv) {
         if ( getenv("SINGULARITY_NO_NAMESPACE_FS") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_FS");
             if ( unshare(CLONE_FS) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtualize file system namespace\n");
+                fprintf(stderr, "ABORT: Could not virtualize file system namespace: %s\n", strerror(errno));
                 return(255);
             }
         }
@@ -373,7 +373,7 @@ int main(int argc, char ** argv) {
         if ( getenv("SINGULARITY_NO_NAMESPACE_FILES") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_FILES");
             if ( unshare(CLONE_FILES) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtualize file descriptor namespace\n");
+                fprintf(stderr, "ABORT: Could not virtualize file descriptor namespace: %s\n", strerror(errno));
                 return(255);
             }
         }
@@ -635,11 +635,11 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 
             if ( setregid(gid, gid) < 0 ) {
-                fprintf(stderr, "ABORT: Could not dump real and effective group privileges!\n");
+                fprintf(stderr, "ABORT: Could not dump real and effective group privileges: %s\n", strerror(errno));
                 return(255);
             }
             if ( setreuid(uid, uid) < 0 ) {
-                fprintf(stderr, "ABORT: Could not dump real and effective user privileges!\n");
+                fprintf(stderr, "ABORT: Could not dump real and effective user privileges: %s\n", strerror(errno));
                 return(255);
             }
 
@@ -657,12 +657,12 @@ int main(int argc, char ** argv) {
 //TODO: Fix logic so that we use cwd_fd for OS dirs
             if ( is_dir(cwd) == 0 ) {
                if ( chdir(cwd) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not chdir to: %s\n", cwd);
+                    fprintf(stderr, "ABORT: Could not chdir to: %s: %s\n", cwd, strerror(errno));
                     return(1);
                 }
             } else {
                 if ( fchdir(cwd_fd) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not fchdir to cwd\n");
+                    fprintf(stderr, "ABORT: Could not fchdir to cwd: %s\n", strerror(errno));
                     return(1);
                 }
             }
@@ -744,14 +744,14 @@ int main(int argc, char ** argv) {
             strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
 
             if ( seteuid(uid) < 0 ) {
-                fprintf(stderr, "ABORT: Could not set effective user privileges to %d!\n", uid);
+                fprintf(stderr, "ABORT: Could not set effective user privileges to %d: %s\n", uid, strerror(errno));
                 return(255);
             }
 
             waitpid(exec_fork_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
         } else {
-            fprintf(stderr, "ABORT: Could not fork namespace process\n");
+            fprintf(stderr, "ABORT: Could not fork namespace process: %s\n", strerror(errno));
             return(255);
         }
         return(retval);
@@ -762,14 +762,14 @@ int main(int argc, char ** argv) {
         strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
 
         if ( seteuid(uid) < 0 ) {
-            fprintf(stderr, "ABORT: Could not set effective user privileges to %d!\n", uid);
+            fprintf(stderr, "ABORT: Could not set effective user privileges to %d: %s\n", uid, strerror(errno));
             return(255);
         }
 
         waitpid(namespace_fork_pid, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
     } else {
-        fprintf(stderr, "ABORT: Could not fork management process\n");
+        fprintf(stderr, "ABORT: Could not fork management process: %s\n", strerror(errno));
         return(255);
     }
 
@@ -780,14 +780,14 @@ int main(int argc, char ** argv) {
 
 
     if ( close(cwd_fd) < 0 ) {
-        fprintf(stderr, "ERROR: Could not close cwd_fd!\n");
+        fprintf(stderr, "ERROR: Could not close cwd_fd: %s\n", strerror(errno));
         retval++;
     }
 
     if ( flock(tmpdirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         close(tmpdirlock_fd);
         if ( seteuid(0) < 0 ) {
-            fprintf(stderr, "ABORT: Could not re-escalate effective user privileges!\n");
+            fprintf(stderr, "ABORT: Could not re-escalate effective user privileges: %s\n", strerror(errno));
             return(255);
         }
 
@@ -799,7 +799,7 @@ int main(int argc, char ** argv) {
         (void)disassociate_loop(loop_fp);
 
         if ( seteuid(uid) < 0 ) {
-            fprintf(stderr, "ABORT: Could not drop effective user privileges!\n");
+            fprintf(stderr, "ABORT: Could not drop effective user privileges: %s\n", strerror(errno));
             return(255);
         }
 
