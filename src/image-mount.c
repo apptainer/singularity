@@ -151,7 +151,7 @@ int main(int argc, char ** argv) {
     if ( namespace_fork_pid == 0 ) {
 
         if ( unshare(CLONE_NEWNS) < 0 ) {
-            fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
+            fprintf(stderr, "ABORT: Could not virtualize mount namespace\n");
             return(255);
         }
 

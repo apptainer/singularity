@@ -1,4 +1,4 @@
-USAGE: singularity (options) bootstrap [container path] [bootstrap defition]
+USAGE: singularity (options) bootstrap [container path] [bootstrap definition]
 
 The bootstrap command is useful for creating a new bootstrap or modifying an
 existing one using a definition file that describes how to build the

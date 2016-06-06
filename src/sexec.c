@@ -229,15 +229,15 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// We are now running with escalated privleges until we exec
+// We are now running with escalated privileges until we exec
 //****************************************************************************//
 
     if ( seteuid(0) < 0 ) {
-        fprintf(stderr, "ABORT: Could not escalate effective user privledges!\n");
+        fprintf(stderr, "ABORT: Could not escalate effective user privileges!\n");
         return(255);
     }
     if ( setegid(0) < 0 ) {
-        fprintf(stderr, "ABORT: Could not escalate effective group privledges!\n");
+        fprintf(stderr, "ABORT: Could not escalate effective group privileges!\n");
         return(255);
     }
 
@@ -328,11 +328,11 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 
         if ( unshare(CLONE_NEWNS) < 0 ) {
-            fprintf(stderr, "ABORT: Could not virtulize mount namespace\n");
+            fprintf(stderr, "ABORT: Could not virtualize mount namespace\n");
             return(255);
         }
 
-        // Privitize the mount namespaces (thank you for the pointer Doug Jacobsen!)
+        // Privatize the mount namespaces (thank you for the pointer Doug Jacobsen!)
         if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
             // I am not sure if this error needs to be caught, maybe it will fail
             // on older kernels? If so, we can fix then.
@@ -344,7 +344,7 @@ int main(int argc, char ** argv) {
         if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_PID");
             if ( unshare(CLONE_NEWPID) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtulize PID namespace\n");
+                fprintf(stderr, "ABORT: Could not virtualize PID namespace\n");
                 return(255);
             }
         }
@@ -354,7 +354,7 @@ int main(int argc, char ** argv) {
         if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_PID");
             if ( unshare(CLONE_PID) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtulize PID namespace\n");
+                fprintf(stderr, "ABORT: Could not virtualize PID namespace\n");
                 return(255);
             }
         }
@@ -364,7 +364,7 @@ int main(int argc, char ** argv) {
         if ( getenv("SINGULARITY_NO_NAMESPACE_FS") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_FS");
             if ( unshare(CLONE_FS) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtulize file system namespace\n");
+                fprintf(stderr, "ABORT: Could not virtualize file system namespace\n");
                 return(255);
             }
         }
@@ -373,7 +373,7 @@ int main(int argc, char ** argv) {
         if ( getenv("SINGULARITY_NO_NAMESPACE_FILES") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_FILES");
             if ( unshare(CLONE_FILES) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtulize file descriptor namespace\n");
+                fprintf(stderr, "ABORT: Could not virtualize file descriptor namespace\n");
                 return(255);
             }
         }
@@ -631,21 +631,21 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Drop all privledges for good
+// Drop all privileges for good
 //****************************************************************************//
 
             if ( setregid(gid, gid) < 0 ) {
-                fprintf(stderr, "ABORT: Could not dump real and effective group privledges!\n");
+                fprintf(stderr, "ABORT: Could not dump real and effective group privileges!\n");
                 return(255);
             }
             if ( setreuid(uid, uid) < 0 ) {
-                fprintf(stderr, "ABORT: Could not dump real and effective user privledges!\n");
+                fprintf(stderr, "ABORT: Could not dump real and effective user privileges!\n");
                 return(255);
             }
 
 
 //****************************************************************************//
-// Setup final envrionment
+// Setup final environment
 //****************************************************************************//
 
             // After this, we exist only within the container... Let's make it known!
@@ -744,7 +744,7 @@ int main(int argc, char ** argv) {
             strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
 
             if ( seteuid(uid) < 0 ) {
-                fprintf(stderr, "ABORT: Could not set effective user privledges to %d!\n", uid);
+                fprintf(stderr, "ABORT: Could not set effective user privileges to %d!\n", uid);
                 return(255);
             }
 
@@ -762,7 +762,7 @@ int main(int argc, char ** argv) {
         strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
 
         if ( seteuid(uid) < 0 ) {
-            fprintf(stderr, "ABORT: Could not set effective user privledges to %d!\n", uid);
+            fprintf(stderr, "ABORT: Could not set effective user privileges to %d!\n", uid);
             return(255);
         }
 
@@ -775,7 +775,7 @@ int main(int argc, char ** argv) {
 
 
 //****************************************************************************//
-// Finall wrap up before exiting
+// Final wrap up before exiting
 //****************************************************************************//
 
 
@@ -787,7 +787,7 @@ int main(int argc, char ** argv) {
     if ( flock(tmpdirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         close(tmpdirlock_fd);
         if ( seteuid(0) < 0 ) {
-            fprintf(stderr, "ABORT: Could not re-escalate effective user privledges!\n");
+            fprintf(stderr, "ABORT: Could not re-escalate effective user privileges!\n");
             return(255);
         }
 
@@ -795,11 +795,11 @@ int main(int argc, char ** argv) {
             fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
         }
     
-        // Dissociate loops from here Just incase autoflush didn't work.
+        // Dissociate loops from here Just in case autoflush didn't work.
         (void)disassociate_loop(loop_fp);
 
         if ( seteuid(uid) < 0 ) {
-            fprintf(stderr, "ABORT: Could not drop effective user privledges!\n");
+            fprintf(stderr, "ABORT: Could not drop effective user privileges!\n");
             return(255);
         }
 
