@@ -74,8 +74,8 @@ p {
 
 #back_link {
     display: block;
-    margin: 0;
-    padding: 0;
+    margin-top: 80px;
+    padding: 0px;
 }
 
 #container {
