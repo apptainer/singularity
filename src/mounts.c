@@ -86,12 +86,12 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
 int mount_bind(char * source, char * dest, int writable) {
 
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {
-        fprintf(stderr, "ERROR: Bind source path is not a file or directory: %s\n", source);
+        fprintf(stderr, "ERROR: Bind source path is not a file or directory: '%s'\n", source);
         return(1);
     }
 
     if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
-        fprintf(stderr, "ERROR: Container bind path is not a file or directory: %s\n", dest);
+        fprintf(stderr, "ERROR: Container bind path is not a file or directory: '%s'\n", dest);
         return(1);
     }
 
