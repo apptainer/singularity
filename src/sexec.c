@@ -491,7 +491,7 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 
             rewind(config_fp);
-            if ( config_get_key_bool(config_fp, "mount proc") > 0 ) {
+            if ( config_get_key_bool(config_fp, "mount proc", 1) > 0 ) {
                 if ( is_dir("/proc") == 0 ) {
                     if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
                         fprintf(stderr, "ABORT: Could not mount /proc: %s\n", strerror(errno));
@@ -501,7 +501,7 @@ int main(int argc, char ** argv) {
             }
 
             rewind(config_fp);
-            if ( config_get_key_bool(config_fp, "mount sys") > 0 ) {
+            if ( config_get_key_bool(config_fp, "mount sys", 1) > 0 ) {
                 if ( is_dir("/sys") == 0 ) {
                     if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
                         fprintf(stderr, "ABORT: Could not mount /sys: %s\n", strerror(errno));
