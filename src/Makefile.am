@@ -17,7 +17,7 @@ install-exec-hook:
 	fi
 
 bindir = $(libexecdir)/singularity
-bin_PROGRAMS = ftrace ftype sexec image-create image-expand image-mount image-bind
+bin_PROGRAMS = ftype sexec image-create image-expand image-mount image-bind
 
 ftrace_SOURCES = ftrace.c file.c file.h util.c util.h
 ftype_SOURCES = ftype.c util.c util.h file.c file.h
