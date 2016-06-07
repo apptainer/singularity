@@ -20,4 +20,5 @@
 
 
 char *config_get_key_value(FILE *fp, char *key);
+int config_get_key_bool(FILE *fp, char *key);
 

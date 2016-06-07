@@ -58,3 +58,24 @@ char *config_get_key_value(FILE *fp, char *key) {
     return(NULL);
 }
 
+
+int config_get_key_bool(FILE *fp, char *key) {
+    char *config_value;
+
+    if ( ( config_value = config_get_key_value(fp, key) ) != NULL ) {
+        if ( strcmp(config_value, "yes") == 0 ||
+                strcmp(config_value, "y") == 0 ||
+                strcmp(config_value, "1") == 0 ) {
+            return(1);
+        } else if ( strcmp(config_value, "no") == 0 ||
+                strcmp(config_value, "n") == 0 ||
+                strcmp(config_value, "0") == 0 ) {
+            return(0);
+        } else {
+            fprintf(stderr, "ERROR: Unsupported value for configuration boolean key '%s' = '%s'\n", key, config_value);
+            return(-1);
+        }
+    }
+
+    return(0);
+}
