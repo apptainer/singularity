@@ -102,7 +102,7 @@ int associate_loop(FILE *image_fp, FILE *loop_fp, int autoclear) {
     lo64.lo_offset = image_offset(image_fp);
 
     if ( ioctl(loop_fd, LOOP_SET_FD, image_fd) < 0 ) {
-        fprintf(stderr, "ERROR: Failed to associate image to loop\n");
+        fprintf(stderr, "ERROR: Failed to associate image to loop: %s\n", strerror(errno));
         return(-1);
     }
 
@@ -120,7 +120,7 @@ int disassociate_loop(FILE *loop_fp) {
     int loop_fd = fileno(loop_fp);
 
     if ( ioctl(loop_fd, LOOP_CLR_FD, 0) != 0 ) {
-        fprintf(stderr, "ERROR: Could not clear loop device\n");
+        fprintf(stderr, "ERROR: Could not clear loop device: %s\n", strerror(errno));
         return(-1);
     }
 
