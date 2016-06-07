@@ -21,7 +21,7 @@ bin_PROGRAMS = ftype sexec image-create image-expand image-mount image-bind
 
 ftrace_SOURCES = ftrace.c file.c file.h util.c util.h
 ftype_SOURCES = ftype.c util.c util.h file.c file.h
-sexec_SOURCES = sexec.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h user.c user.h file.c file.h image.c image.h
+sexec_SOURCES = sexec.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h user.c user.h file.c file.h image.c image.h config_parser.c config_parser.h
 image_create_SOURCES = image-create.c file.c file.h util.c util.h image.c image.h
 image_expand_SOURCES = image-expand.c file.c file.h util.c util.h image.c image.h
 image_mount_SOURCES = image-mount.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h file.c file.h image.c image.h
