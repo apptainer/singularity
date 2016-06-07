@@ -44,6 +44,7 @@
 #include "util.h"
 #include "file.h"
 #include "user.h"
+#include "config_parser.h"
 
 
 #ifndef LIBEXECDIR
@@ -80,6 +81,7 @@ void sighandler(int sig) {
 int main(int argc, char ** argv) {
     FILE *containerimage_fp;
     FILE *loop_fp;
+    FILE *config_fp;
     char *containerimage;
     char *containername;
     char *containerpath;
@@ -92,6 +94,8 @@ int main(int argc, char ** argv) {
     char *loop_dev = 0;
     char *container_homebase;
     char *container_cwdbase;
+    char *config_path;
+    char *tmp_config_string;
     char cwd[PATH_MAX];
     int cwd_fd;
     int tmpdirlock_fd;
@@ -140,6 +144,9 @@ int main(int argc, char ** argv) {
     unsetenv("SINGULARITY_COMMAND");
     unsetenv("SINGULARITY_EXEC");
 
+    config_path = (char *) malloc(strlen(SYSCONFDIR) + 30);
+    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR);
+
     // Figure out where we start
     if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
         fprintf(stderr, "ABORT: Could not open cwd fd (%s)!\n", strerror(errno));
@@ -170,6 +177,16 @@ int main(int argc, char ** argv) {
         return(1);
     }
 
+    if ( is_file(config_path) != 0 ) {
+        fprintf(stderr, "ABORT: Configuration file not found: %s\n", config_path);
+        return(255);
+    }
+
+    if ( is_owner(config_path, 0) != 0 ) {
+        fprintf(stderr, "ABORT: Configuration file is not owned by root: %s\n", config_path);
+        return(255);
+    }
+
     // TODO: Offer option to only run containers owned by root (so root can approve
     // containers)
     if ( uid == 0 && is_owner(containerimage, 0) < 0 ) {
@@ -192,6 +209,12 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 // Setup
 //****************************************************************************//
+
+
+    if ( ( config_fp = fopen(config_path, "r") ) == NULL ) {
+        fprintf(stderr, "ERROR: Could not open config file %s: %s\n", config_path, strerror(errno));
+        return(255);
+    }
 
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) {
@@ -419,130 +442,21 @@ int main(int argc, char ** argv) {
             unsetenv("SINGULARITY_CONTAIN");
 
             bind_mount_writable = 1;
-
-            if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
-                if ( mount_bind("/tmp", joinpath(containerpath, "/tmp"), 1) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind mount /tmp\n");
-                    return(255);
-                }
-            } else {
-                fprintf(stderr, "WARNING: Could not bind non-existent /tmp directory\n");
-            }
-            if ( is_dir(joinpath(containerpath, "/var/tmp")) == 0 ) {
-                if ( mount_bind("/var/tmp", joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind mount /var/tmp\n");
-                    return(255);
-                }
-            } else {
-                fprintf(stderr, "WARNING: Could not bind non-existent /var/tmp directory\n");
-            }
-            if ( container_homebase != NULL ) {
-                if ( is_dir(joinpath(containerpath, container_homebase)) == 0 ){
-                    if ( mount_bind(container_homebase, joinpath(containerpath, container_homebase), 1) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind base home path to container %s: %s\n", container_homebase, strerror(errno));
-                        return(255);
-                    }
-                } else {
-                    fprintf(stderr, "WARNING: Home bind directory not present: %s\n", container_homebase);
-                }
-            } else {
-                fprintf(stderr, "WARNING: Could not obtain the home directory base in container: %s\n", homepath);
-            }
-            if ( container_cwdbase != NULL ) {
-                if ( strcmp(container_cwdbase, container_homebase) != 0 ) { // Currently sitting in homedir so skip
-                    if ( strncmp(container_cwdbase, "/tmp", 4) != 0 &&
-                         strncmp(container_cwdbase, "/bin", 4) != 0 && 
-                         strncmp(container_cwdbase, "/usr", 4) != 0 && 
-                         strncmp(container_cwdbase, "/var", 4) != 0 && 
-                         strncmp(container_cwdbase, "/etc", 4) != 0 && 
-                         strncmp(container_cwdbase, "/dev", 4) != 0 && 
-                         strncmp(container_cwdbase, "/lib", 4) != 0 && 
-                         strncmp(container_cwdbase, "/sys", 4) != 0 && 
-                         strncmp(container_cwdbase, "/opt", 4) != 0 && 
-                         strncmp(container_cwdbase, "/sbin", 5) != 0 && 
-                         strncmp(container_cwdbase, "/boot", 5) != 0 && 
-                         strncmp(container_cwdbase, "/proc", 5) != 0 ) {
-                        if ( is_dir(joinpath(containerpath, container_cwdbase)) == 0 ){
-                            if ( mount_bind(container_cwdbase, joinpath(containerpath, container_cwdbase), 1) < 0 ) {
-                                fprintf(stderr, "ABORT: Could not bind base cwd path to container %s: %s\n", container_cwdbase, strerror(errno));
-                                return(255);
-                            }
-                        } else {
-                            fprintf(stderr, "WARNING: CWD bind directory not present: %s\n", container_cwdbase);
-                        }
-                    }
-                }
-            } else {
-                fprintf(stderr, "WARNING: Could not obtain the current directory base in container: %s\n", homepath);
-                strcpy(cwd, homepath);
-            }
-
-        } else {
-            if ( is_dir(joinpath(containerpath, "/tmp")) == 0 ) {
-                if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/tmp"), 1) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/tmp", strerror(errno));
-                    return(255);
-                }
-            } else {
-                fprintf(stderr, "WARNING: Could not bind non-existent /tmp directory\n");
-            }
-            if ( is_dir(joinpath(containerpath, "/var/tmp")) == 0 ) {
-                if ( mount_bind(joinpath(tmpdir, "/tmp"), joinpath(containerpath, "/var/tmp"), 1) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind tmp path to container %s: %s\n", "/var/tmp", strerror(errno));
-                    return(255);
-                }
-            } else {
-                fprintf(stderr, "WARNING: Could not bind non-existent /var/tmp directory\n");
-            }
-            if ( container_homebase != NULL ) {
-                if ( is_dir(joinpath(containerpath, container_homebase)) == 0 ){
-                    if ( mount_bind(joinpath(tmpdir, container_homebase), joinpath(containerpath, container_homebase), 1) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind base home path to container %s: %s\n", container_homebase, strerror(errno));
-                        return(255);
-                    }
-                }
-            } else {
-                fprintf(stderr, "WARNING: No suitable base directory in container found: %s\n", homepath);
-            }
-            strcpy(cwd, homepath);
         }
 
-        if ( is_dir(joinpath(containerpath, "/dev/")) == 0 ) {
-            if ( mount_bind("/dev", joinpath(containerpath, "/dev"), bind_mount_writable) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind mount /dev\n");
-                return(255);
-            }
-        }
 
-        if ( ( is_dir("/var/lib/dbus") == 0 ) && ( is_dir(joinpath(containerpath, "/var/lib/dbus")) == 0 ) ) {
-            if ( mount_bind("/var/lib/dbus", joinpath(containerpath, "/var/lib/dbus"), 0) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind mount /var/lib/dbus\n");
-                return(255);
+        rewind(config_fp);
+        while ( ( tmp_config_string = config_get_key_value(config_fp, "bind path") ) != NULL ) {
+            if ( ( is_file(tmp_config_string) != 0 ) && ( is_dir(tmp_config_string) != 0 ) ) {
+                fprintf(stderr, "ERROR: Non existant bind source path: '%s'\n", tmp_config_string);
+                continue;
             }
-        }
-
-        if (is_file(joinpath(containerpath, "/etc/resolv.conf")) == 0 ) {
-            if ( is_file(joinpath(tmpdir, "/resolv.conf")) < 0 ) {
-                if ( copy_file("/etc/resolv.conf", joinpath(tmpdir, "/resolv.conf")) < 0 ) {
-                    fprintf(stderr, "ABORT: Failed copying temporary resolv.conf\n");
-                    return(255);
-                }
+            if ( ( is_file(joinpath(containerpath, tmp_config_string)) != 0 ) && ( is_dir(joinpath(containerpath, tmp_config_string)) != 0 ) ) {
+                fprintf(stderr, "WARNING: Non existant bind container destination path: '%s'\n", tmp_config_string);
+                continue;
             }
-            if ( mount_bind(joinpath(tmpdir, "/resolv.conf"), joinpath(containerpath, "/etc/resolv.conf"), bind_mount_writable) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/resolv.conf\n");
-                return(255);
-            }
-        }
-
-        if (is_file(joinpath(containerpath, "/etc/hosts")) == 0 ) {
-            if ( is_file(joinpath(tmpdir, "/hosts")) < 0 ) {
-                if ( copy_file("/etc/hosts", joinpath(tmpdir, "/hosts")) < 0 ) {
-                    fprintf(stderr, "ABORT: Failed copying temporary hosts\n");
-                    return(255);
-                }
-            }
-            if ( mount_bind(joinpath(tmpdir, "hosts"), joinpath(containerpath, "/etc/hosts"), bind_mount_writable) < 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/hosts\n");
+            if ( mount_bind(tmp_config_string, joinpath(containerpath, tmp_config_string), 0) < 0 ) {
+                fprintf(stderr, "ABORTING!\n");
                 return(255);
             }
         }
