@@ -86,7 +86,6 @@ int main(int argc, char ** argv) {
     char *containername;
     char *containerpath;
     char *username;
-    char *homepath;
     char *command;
     char *tmpdir;
     char *lockfile;
@@ -100,7 +99,6 @@ int main(int argc, char ** argv) {
     int containerimage_fd;
     int lockfile_fd;
     int retval = 0;
-    int bind_mount_writable = 0;
     uid_t uid = getuid();
     gid_t gid = getgid();
     pid_t namespace_fork_pid = 0;
@@ -133,8 +131,6 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    //homepath = getenv("HOME");
-    homepath = pw->pw_dir;
     username = pw->pw_name;
     containerimage = getenv("SINGULARITY_IMAGE");
     command = getenv("SINGULARITY_COMMAND");
@@ -162,16 +158,6 @@ int main(int argc, char ** argv) {
 
     if ( is_file(containerimage) != 0 ) {
         fprintf(stderr, "ABORT: Container image path is invalid: %s\n", containerimage);
-        return(1);
-    }
-
-    if ( is_dir(homepath) != 0 ) {
-        fprintf(stderr, "ABORT: Home directory not found: %s\n", homepath);
-        return(1);
-    }
-
-    if ( is_owner(homepath, uid) != 0 ) {
-        fprintf(stderr, "ABORT: You don't own your own home directory!?: %s\n", homepath);
         return(1);
     }
 
@@ -233,18 +219,6 @@ int main(int argc, char ** argv) {
         if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
             fprintf(stderr, "ABORT: Image is locked by another process\n");
             return(5);
-        }
-    }
-
-    // When we contain, we need temporary directories for what should be writable
-    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
-        if ( s_mkpath(joinpath(tmpdir, homepath), 0750) < 0 ) {
-            fprintf(stderr, "ABORT: Failed creating temporary directory %s: %s\n", joinpath(tmpdir, homepath), strerror(errno));
-            return(255);
-        }
-        if ( s_mkpath(joinpath(tmpdir, "/tmp"), 0750) < 0 ) {
-            fprintf(stderr, "ABORT: Failed creating temporary directory %s: %s\n", joinpath(tmpdir, "/tmp"), strerror(errno));
-            return(255);
         }
     }
 
@@ -435,69 +409,60 @@ int main(int argc, char ** argv) {
 
         if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
             unsetenv("SINGULARITY_CONTAIN");
-
-            bind_mount_writable = 1;
-        }
-
-
-        rewind(config_fp);
-        while ( ( tmp_config_string = config_get_key_value(config_fp, "bind path") ) != NULL ) {
-            if ( ( is_file(tmp_config_string) != 0 ) && ( is_dir(tmp_config_string) != 0 ) ) {
-                fprintf(stderr, "ERROR: Non existant bind source path: '%s'\n", tmp_config_string);
-                continue;
+    
+            rewind(config_fp);
+            while ( ( tmp_config_string = config_get_key_value(config_fp, "bind path") ) != NULL ) {
+                if ( ( is_file(tmp_config_string) != 0 ) && ( is_dir(tmp_config_string) != 0 ) ) {
+                    fprintf(stderr, "ERROR: Non existant bind source path: '%s'\n", tmp_config_string);
+                    continue;
+                }
+                if ( ( is_file(joinpath(containerpath, tmp_config_string)) != 0 ) && ( is_dir(joinpath(containerpath, tmp_config_string)) != 0 ) ) {
+                    fprintf(stderr, "WARNING: Non existant bind container destination path: '%s'\n", tmp_config_string);
+                    continue;
+                }
+                if ( mount_bind(tmp_config_string, joinpath(containerpath, tmp_config_string), 0) < 0 ) {
+                    fprintf(stderr, "ABORTING!\n");
+                    return(255);
+                }
             }
-            if ( ( is_file(joinpath(containerpath, tmp_config_string)) != 0 ) && ( is_dir(joinpath(containerpath, tmp_config_string)) != 0 ) ) {
-                fprintf(stderr, "WARNING: Non existant bind container destination path: '%s'\n", tmp_config_string);
-                continue;
-            }
-            if ( mount_bind(tmp_config_string, joinpath(containerpath, tmp_config_string), 0) < 0 ) {
-                fprintf(stderr, "ABORTING!\n");
-                return(255);
-            }
-        }
 
 
-        if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
-            if ( is_file(joinpath(tmpdir, "/nsswitch.conf")) < 0 ) {
+            if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
                 if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf")) == 0 ) {
-                    if ( copy_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(tmpdir, "/nsswitch.conf")) < 0 ) {
-                        fprintf(stderr, "ABORT: Failed copying temporary nsswitch.conf\n");
+                    if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), 0) != 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind /etc/nsswitch.conf\n");
                         return(255);
                     }
                 } else {
                     fprintf(stderr, "WARNING: Template /etc/nsswitch.conf does not exist: %s\n", joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"));
                 }
             }
-            if ( mount_bind(joinpath(tmpdir, "/nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), bind_mount_writable) != 0 ) {
-                fprintf(stderr, "ABORT: Could not bind /etc/nsswitch.conf\n");
-                return(255);
-            }
-        }
 
-        if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
-            if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
-                if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
-                    if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
-                        fprintf(stderr, "ABORT: Failed creating template password file\n");
+            if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
+                if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
+                    if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
+                        if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
+                            fprintf(stderr, "ABORT: Failed creating template password file\n");
+                            return(255);
+                        }
+                    }
+                    if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 0) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
                         return(255);
                     }
                 }
-                if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), bind_mount_writable) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
-                    return(255);
-                }
-            }
-
-            if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
-                if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
-                    if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
-                        fprintf(stderr, "ABORT: Failed creating template group file\n");
+    
+                if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
+                    if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
+                        if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
+                            fprintf(stderr, "ABORT: Failed creating template group file\n");
+                            return(255);
+                        }
+                    }
+                    if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), 0) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not bind /etc/group\n");
                         return(255);
                     }
-                }
-                if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), bind_mount_writable) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not bind /etc/group\n");
-                    return(255);
                 }
             }
         }
