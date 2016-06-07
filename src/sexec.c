@@ -92,8 +92,6 @@ int main(int argc, char ** argv) {
     char *lockfile;
     char *loop_dev_cache;
     char *loop_dev = 0;
-    char *container_homebase;
-    char *container_cwdbase;
     char *config_path;
     char *tmp_config_string;
     char cwd[PATH_MAX];
@@ -434,9 +432,6 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 // Bind mounts
 //****************************************************************************//
-
-        container_homebase = container_dir_walk(containerpath, homepath);
-        container_cwdbase = container_dir_walk(containerpath, cwd);
 
         if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
             unsetenv("SINGULARITY_CONTAIN");
