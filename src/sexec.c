@@ -88,7 +88,7 @@ int main(int argc, char ** argv) {
     char *username;
     char *command;
     char *tmpdir;
-    char *lockfile;
+    char *loop_dev_lock;
     char *loop_dev_cache;
     char *loop_dev = 0;
     char *config_path;
@@ -97,7 +97,7 @@ int main(int argc, char ** argv) {
     int cwd_fd;
     int tmpdirlock_fd;
     int containerimage_fd;
-    int lockfile_fd;
+    int loop_dev_lock_fd;
     int gid_list_count;
     int retval = 0;
     uid_t uid;
@@ -194,7 +194,7 @@ int main(int argc, char ** argv) {
     containername = basename(strdup(containerimage));
 
     tmpdir = strjoin("/tmp/.singularity-", file_id(containerimage));
-    lockfile = joinpath(tmpdir, "lock");
+    loop_dev_lock = joinpath(tmpdir, "loop_dev.lock");
     loop_dev_cache = joinpath(tmpdir, "loop_dev");
 
     containerpath = (char *) malloc(strlen(tmpdir) + 5);
@@ -262,17 +262,17 @@ int main(int argc, char ** argv) {
 
     tmpdirlock_fd = open(tmpdir, O_RDONLY);
     if ( tmpdirlock_fd < 0 ) {
-        fprintf(stderr, "ERROR: Could not obtain lock on %s: %s\n", lockfile, strerror(errno));
+        fprintf(stderr, "ERROR: Could not obtain file descriptor on %s: %s\n", tmpdir, strerror(errno));
         return(255);
     }
 
     if ( flock(tmpdirlock_fd, LOCK_SH | LOCK_NB) < 0 ) {
-        fprintf(stderr, "ERROR: Could not obtain shared lock on %s: %s\n", lockfile, strerror(errno));
+        fprintf(stderr, "ERROR: Could not obtain shared lock on %s: %s\n", tmpdir, strerror(errno));
         return(255);
     }
 
-    if ( ( lockfile_fd = open(lockfile, O_CREAT | O_RDWR, 0644) ) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open lockfile %s: %s\n", lockfile, strerror(errno));
+    if ( ( loop_dev_lock_fd = open(loop_dev_lock, O_CREAT | O_RDWR, 0644) ) < 0 ) {
+        fprintf(stderr, "ERROR: Could not open loop_dev_lock %s: %s\n", loop_dev_lock, strerror(errno));
         return(255);
     }
 
@@ -287,7 +287,7 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    if ( flock(lockfile_fd, LOCK_EX | LOCK_NB) == 0 ) {
+    if ( flock(loop_dev_lock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         loop_dev = obtain_loop_dev();
 
         if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
@@ -307,10 +307,10 @@ int main(int argc, char ** argv) {
             return(255);
         }
 
-        flock(lockfile_fd, LOCK_SH | LOCK_NB);
+        flock(loop_dev_lock_fd, LOCK_SH | LOCK_NB);
 
     } else {
-        flock(lockfile_fd, LOCK_SH);
+        flock(loop_dev_lock_fd, LOCK_SH);
         if ( ( loop_dev = filecat(loop_dev_cache) ) == NULL ) {
             fprintf(stderr, "ERROR: Could not retrieve loop_dev_cache from %s\n", loop_dev_cache);
             return(255);
@@ -711,7 +711,7 @@ int main(int argc, char ** argv) {
     close(containerimage_fd);
     close(tmpdirlock_fd);
 
-    free(lockfile);
+    free(loop_dev_lock);
     free(containerpath);
     free(tmpdir);
     closelog();
