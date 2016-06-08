@@ -497,6 +497,10 @@ int main(int argc, char ** argv) {
                 fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", containerpath);
                 return(255);
             }
+            if ( chdir("/") < 0 ) {
+                fprintf(stderr, "ABORT: Could not chdir after chroot to /: %s\n", strerror(errno));
+                return(1);
+            }
 
 
 //****************************************************************************//
@@ -552,7 +556,6 @@ int main(int argc, char ** argv) {
                 return(1);
             }
 
-//TODO: Fix logic so that we use cwd_fd for OS dirs
             if ( is_dir(cwd) == 0 ) {
                if ( chdir(cwd) < 0 ) {
                     fprintf(stderr, "ABORT: Could not chdir to: %s: %s\n", cwd, strerror(errno));
