@@ -98,11 +98,13 @@ int main(int argc, char ** argv) {
     int tmpdirlock_fd;
     int containerimage_fd;
     int lockfile_fd;
+    int gid_list_count;
     int retval = 0;
-    uid_t uid = getuid();
-    gid_t gid = getgid();
+    uid_t uid;
+    gid_t gid;
+    gid_t *gid_list;
     pid_t namespace_fork_pid = 0;
-    struct passwd *pw = getpwuid(uid);
+    struct passwd *pw;
 
 
 //****************************************************************************//
@@ -114,6 +116,17 @@ int main(int argc, char ** argv) {
     signal(SIGQUIT, sighandler);
 
     openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
+
+    // Get all user/group info
+    uid = getuid();
+    gid = getgid();
+    gid_list_count = getgroups(0, NULL);
+    gid_list = (gid_t *) malloc(sizeof(gid_t) * gid_list_count);
+    if ( getgroups(gid_list_count, gid_list) < 0 ) {
+        fprintf(stderr, "ABORT: Could not obtain current supplementary group list: %s\n", strerror(errno));
+        return(255);
+    }
+    pw = getpwuid(uid);
 
     // Check to make sure we are installed correctly
     if ( seteuid(0) < 0 ) {
@@ -515,6 +528,10 @@ int main(int argc, char ** argv) {
 // Drop all privileges for good
 //****************************************************************************//
 
+            if ( setgroups(gid_list_count, gid_list) < 0 ) {
+                fprintf(stderr, "ABOFT: Could not reset supplementary group list: %s\n", strerror(errno));
+                return(255);
+            }
             if ( setregid(gid, gid) < 0 ) {
                 fprintf(stderr, "ABORT: Could not dump real and effective group privileges: %s\n", strerror(errno));
                 return(255);
