@@ -21,6 +21,7 @@
 
 char *file_id(char *path);
 int is_file(char *path);
+int is_fifo(char *path);
 int is_link(char *path);
 int is_dir(char *path);
 int is_exec(char *path);
