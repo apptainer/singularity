@@ -60,6 +60,10 @@
 #define MS_REC 16384
 #endif
 
+#ifdef NS_CLONE_PID
+#define NS_CLONE_NEWPID NS_CLONE_PID
+#endif
+
 pid_t exec_fork_pid = 0;
 
 void sighandler(int sig) {
@@ -254,7 +258,7 @@ int main(int argc, char ** argv) {
             }
 
         } else {
-            printf("Dead Singularity daemon?\n");
+            fprintf(stderr, "Dead Singularity daemon?\n");
         }
         fclose(test_daemon_fp);
     }
@@ -347,10 +351,7 @@ int main(int argc, char ** argv) {
     }
 
 
-//****************************************************************************//
-// Manage the daemon bits early
-//****************************************************************************//
-
+    // Manage the daemon bits early
     if ( strcmp(command, "start") == 0 ) {
             int daemon_fd;
 
@@ -388,31 +389,329 @@ int main(int argc, char ** argv) {
     }
 
 
-    if ( join_daemon_ns == 1 ) {
-        pid_t exec_pid;
 
-        if ( is_file(joinpath(setns_dir, "mnt")) == 0 ) {
-            int fd = open(joinpath(setns_dir, "mnt"), O_RDONLY);
-            printf("joining existing mount namespace\n");
-            if ( setns(fd, CLONE_NEWNS) < 0 ) {
-                fprintf(stderr, "ABORT: Could not join existing mount namespace: %s\n", strerror(errno));
+//****************************************************************************//
+// Environment creation process flow
+//****************************************************************************//
+
+    if ( join_daemon_ns == 0 ) {
+
+        // Fork off namespace process
+        namespace_fork_pid = fork();
+        if ( namespace_fork_pid == 0 ) {
+
+            // Setup PID namespaces
+            if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
+                unsetenv("SINGULARITY_NO_NAMESPACE_PID");
+                if ( unshare(CLONE_NEWPID) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
+                    return(255);
+                }
+            }
+
+            // Setup FS namespaces
+            if ( unshare(CLONE_FS) < 0 ) {
+                fprintf(stderr, "ABORT: Could not virtualize file system namespace: %s\n", strerror(errno));
                 return(255);
             }
-            close(fd);
+
+            // Setup mount namespaces
+            if ( unshare(CLONE_NEWNS) < 0 ) {
+                fprintf(stderr, "ABORT: Could not virtualize mount namespace: %s\n", strerror(errno));
+                return(255);
+            }
+
+            // Setup FS namespaces
+//           if ( unshare(CLONE_FILES) < 0 ) {
+//               fprintf(stderr, "ABORT: Could not virtualize file descriptor namespace: %s\n", strerror(errno));
+//               return(255);
+//           }
+
+            // Privatize the mount namespaces
+            if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
+                fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
+                return(255);
+            }
+
+
+            // Mount image
+            if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
+                unsetenv("SINGULARITY_WRITABLE");
+                if ( mount_image(loop_dev, containerpath, 0) < 0 ) {
+                    fprintf(stderr, "ABORT: exiting...\n");
+                    return(255);
+                }
+            } else {
+                if ( mount_image(loop_dev, containerpath, 1) < 0 ) {
+                    fprintf(stderr, "ABORT: exiting...\n");
+                    return(255);
+                }
+            }
+
+
+            // /bin/sh MUST exist as the minimum requirements for a container
+            if ( is_exec(joinpath(containerpath, "/bin/sh")) < 0 ) {
+                fprintf(stderr, "ERROR: Container image does not have a valid /bin/sh\n");
+                return(1);
+            }
+
+
+            // Bind mounts
+            if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
+                unsetenv("SINGULARITY_CONTAIN");
+    
+                rewind(config_fp);
+                while ( ( tmp_config_string = config_get_key_value(config_fp, "bind path") ) != NULL ) {
+                    char *source = strtok(tmp_config_string, ",");
+                    char *dest = strtok(NULL, ",");
+                    chomp(source);
+                    if ( dest == NULL ) {
+                        dest = strdup(source);
+                    } else {
+                        if ( dest[0] == ' ' ) {
+                            dest++;
+                        }
+                        chomp(dest);
+                    }
+
+                    if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
+                        fprintf(stderr, "ERROR: Non existant bind source path: '%s'\n", source);
+                        continue;
+                    }
+                    if ( ( is_file(joinpath(containerpath, dest)) != 0 ) && ( is_dir(joinpath(containerpath, dest)) != 0 ) ) {
+                        fprintf(stderr, "WARNING: Non existant bind container destination path: '%s'\n", dest);
+                        continue;
+                    }
+                    if ( mount_bind(source, joinpath(containerpath, dest), 1) < 0 ) {
+                        fprintf(stderr, "ABORTING!\n");
+                        return(255);
+                    }
+                }
+
+                if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
+                    rewind(config_fp);
+                    if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
+                        if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
+                            if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
+                                if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
+                                    fprintf(stderr, "ABORT: Failed creating template password file\n");
+                                    return(255);
+                                }
+                            }
+                            if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 1) < 0 ) {
+                                fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
+                                return(255);
+                            }
+                        }
+                    }
+
+                    rewind(config_fp);
+                    if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
+                        if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
+                            if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
+                                if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
+                                    fprintf(stderr, "ABORT: Failed creating template group file\n");
+                                    return(255);
+                                }
+                            }
+                            if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), 1) < 0 ) {
+                                fprintf(stderr, "ABORT: Could not bind /etc/group\n");
+                                return(255);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Fork off exec process
+            exec_fork_pid = fork();
+            if ( exec_fork_pid == 0 ) {
+
+                if ( chroot(containerpath) < 0 ) {
+                    fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", containerpath);
+                    return(255);
+                }
+                if ( chdir("/") < 0 ) {
+                    fprintf(stderr, "ABORT: Could not chdir after chroot to /: %s\n", strerror(errno));
+                    return(1);
+                }
+
+
+                // Mount /proc if we are configured
+                rewind(config_fp);
+                if ( config_get_key_bool(config_fp, "mount proc", 1) > 0 ) {
+                    if ( is_dir("/proc") == 0 ) {
+                        if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
+                            fprintf(stderr, "ABORT: Could not mount /proc: %s\n", strerror(errno));
+                            return(255);
+                        }
+                    }
+                }
+
+                // Mount /sys if we are configured
+                rewind(config_fp);
+                if ( config_get_key_bool(config_fp, "mount sys", 1) > 0 ) {
+                    if ( is_dir("/sys") == 0 ) {
+                        if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
+                            fprintf(stderr, "ABORT: Could not mount /sys: %s\n", strerror(errno));
+                            return(255);
+                        }
+                    }
+                }
+
+
+                // Drop all privileges for good
+                if ( drop_privs_perm(&uinfo) < 0 ) {
+                    fprintf(stderr, "ABORT...\n");
+                    return(255);
+                }
+
+
+                // Change to the proper directory
+                if ( is_dir(cwd) == 0 ) {
+                   if ( chdir(cwd) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not chdir to: %s: %s\n", cwd, strerror(errno));
+                        return(1);
+                    }
+                } else {
+                    if ( fchdir(cwd_fd) < 0 ) {
+                        fprintf(stderr, "ABORT: Could not fchdir to cwd: %s\n", strerror(errno));
+                        return(1);
+                    }
+                }
+
+                // After this, we exist only within the container... Let's make it known!
+                if ( setenv("SINGULARITY_CONTAINER", "true", 0) != 0 ) {
+                    fprintf(stderr, "ABORT: Could not set SINGULARITY_CONTAINER to 'true'\n");
+                    return(1);
+                }
+
+
+                // Do what we came here to do!
+                if ( command == NULL ) {
+                    fprintf(stderr, "No command specified, launching 'shell'\n");
+                    command = strdup("shell");
+                }
+                if ( strcmp(command, "run") == 0 ) {
+                    if ( container_run(argc, argv) < 0 ) {
+                        fprintf(stderr, "ABORTING...\n");
+                        return(255);
+                    }
+                }
+                if ( strcmp(command, "exec") == 0 ) {
+                    if ( container_exec(argc, argv) < 0 ) {
+                        fprintf(stderr, "ABORTING...\n");
+                        return(255);
+                    }
+                }
+                if ( strcmp(command, "shell") == 0 ) {
+                    if ( container_shell(argc, argv) < 0 ) {
+                        fprintf(stderr, "ABORTING...\n");
+                        return(255);
+                    }
+                }
+                if ( strcmp(command, "start") == 0 ) {
+                    //strncpy(argv[0], "Singularity Init", strlen(argv[0]));
+
+                    if ( container_daemon_start(tmpdir) < 0 ) {
+                        fprintf(stderr, "ABORTING...\n");
+                        return(255);
+                    }
+                }
+
+                fprintf(stderr, "ERROR: Unknown command: %s\n", command);
+                return(255);
+
+
+            // Wait for exec process to finish
+            } else if ( exec_fork_pid > 0 ) {
+                int tmpstatus;
+
+                if ( strcmp(command, "start") == 0 ) {
+                    if ( fprintf(daemon_fp, "%d", exec_fork_pid) < 0 ) {
+                        fprintf(stderr, "ERROR: Could not write to daemon pid file: %s\n", strerror(errno));
+                        return(255);
+                    }
+                    fflush(daemon_fp);
+                }
+
+                strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
+
+                if ( drop_privs(&uinfo) < 0 ) {
+                    fprintf(stderr, "ABORT...\n");
+                    return(255);
+                }
+
+                waitpid(exec_fork_pid, &tmpstatus, 0);
+                retval = WEXITSTATUS(tmpstatus);
+            } else {
+                fprintf(stderr, "ABORT: Could not fork namespace process: %s\n", strerror(errno));
+                return(255);
+            }
+            return(retval);
+
+        // Wait for namespace process to finish
+        } else if ( namespace_fork_pid > 0 ) {
+            int tmpstatus;
+
+            strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
+
+            if ( drop_privs(&uinfo) < 0 ) {
+                fprintf(stderr, "ABORT...\n");
+                return(255);
+            }
+
+            waitpid(namespace_fork_pid, &tmpstatus, 0);
+            retval = WEXITSTATUS(tmpstatus);
+        } else {
+            fprintf(stderr, "ABORT: Could not fork management process: %s\n", strerror(errno));
+            return(255);
+        }
+
+
+        // Final wrap up before exiting
+        if ( close(cwd_fd) < 0 ) {
+            fprintf(stderr, "ERROR: Could not close cwd_fd: %s\n", strerror(errno));
+            retval++;
+        }
+
+        if ( flock(tmpdirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
+            close(tmpdirlock_fd);
+            if ( escalate_privs() < 0 ) {
+                fprintf(stderr, "ABORT...\n");
+                return(255);
+            }
+
+            if ( s_rmdir(tmpdir) < 0 ) {
+                fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
+            }
+    
+            // Dissociate loops from here Just in case autoflush didn't work.
+            (void)disassociate_loop(loop_fp);
+
+            if ( seteuid(uid) < 0 ) {
+                fprintf(stderr, "ABORT: Could not drop effective user privileges: %s\n", strerror(errno));
+                return(255);
+            }
 
         } else {
-            fprintf(stderr, "ABORT: Could not identify mount namespace: %s\n", joinpath(setns_dir, "mnt"));
+//        printf("Not removing tmpdir, lock still\n");
         }
+
+
+
+//****************************************************************************//
+// Attach to daemon process flow
+//****************************************************************************//
+    } else {
+
+        pid_t exec_pid;
+
+
+        // Connect to existing PID namespace
         if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
             int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
-            printf("joining existing PID namespace\n");
-#ifdef NS_CLONE_NEWPID
             if ( setns(fd, CLONE_NEWPID) < 0 ) {
-#else
-#ifdef NS_CLONE_PID
-            if ( setns(fd, CLONE_PID) < 0 ) {
-#endif
-#endif
                 fprintf(stderr, "ABORT: Could not join existing PID namespace: %s\n", strerror(errno));
                 return(255);
             }
@@ -422,37 +721,54 @@ int main(int argc, char ** argv) {
             fprintf(stderr, "ABORT: Could not identify PID namespace: %s\n", joinpath(setns_dir, "pid"));
         }
 
-
-//TODO: Add chroot and chdirs to a container method
-            if ( chroot(containerpath) < 0 ) {
-                fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", containerpath);
+        // Connect to existing mount namespace
+        if ( is_file(joinpath(setns_dir, "mnt")) == 0 ) {
+            int fd = open(joinpath(setns_dir, "mnt"), O_RDONLY);
+            if ( setns(fd, CLONE_NEWNS) < 0 ) {
+                fprintf(stderr, "ABORT: Could not join existing mount namespace: %s\n", strerror(errno));
                 return(255);
             }
-            if ( chdir("/") < 0 ) {
-                fprintf(stderr, "ABORT: Could not chdir after chroot to /: %s\n", strerror(errno));
+            close(fd);
+
+        } else {
+            fprintf(stderr, "ABORT: Could not identify mount namespace: %s\n", joinpath(setns_dir, "mnt"));
+        }
+
+
+//TODO: Add chroot and chdirs to a container method
+        if ( chroot(containerpath) < 0 ) {
+            fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", containerpath);
+            return(255);
+        }
+        if ( chdir("/") < 0 ) {
+            fprintf(stderr, "ABORT: Could not chdir after chroot to /: %s\n", strerror(errno));
+            return(1);
+        }
+
+        // Change to the proper directory
+        if ( is_dir(cwd) == 0 ) {
+           if ( chdir(cwd) < 0 ) {
+                fprintf(stderr, "ABORT: Could not chdir to: %s: %s\n", cwd, strerror(errno));
                 return(1);
             }
-
-            if ( is_dir(cwd) == 0 ) {
-               if ( chdir(cwd) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not chdir to: %s: %s\n", cwd, strerror(errno));
-                    return(1);
-                }
-            } else {
-                if ( fchdir(cwd_fd) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not fchdir to cwd: %s\n", strerror(errno));
-                    return(1);
-                }
+        } else {
+            if ( fchdir(cwd_fd) < 0 ) {
+                fprintf(stderr, "ABORT: Could not fchdir to cwd: %s\n", strerror(errno));
+                return(1);
             }
+        }
 
+        // Drop all privileges for good
         if ( drop_privs_perm(&uinfo) < 0 ) {
             fprintf(stderr, "ABORT...\n");
             return(255);
         }
 
+        // Fork off exec process
         exec_pid = fork();
         if ( exec_pid == 0 ) {
 
+            // Do what we came here to do!
             if ( command == NULL ) {
                 fprintf(stderr, "No command specified, launching 'shell'\n");
                 command = strdup("shell");
@@ -478,9 +794,9 @@ int main(int argc, char ** argv) {
     
             fprintf(stderr, "ERROR: Unknown command: %s\n", command);
             return(255);
+
         } else if ( exec_pid > 0 ) {
             int tmpstatus;
-            int retval;
     
             strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
     
@@ -491,372 +807,11 @@ int main(int argc, char ** argv) {
     
             waitpid(exec_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
-    
-            return(retval);
+
         } else {
             fprintf(stderr, "ABORT: Could not fork exec process: %s\n", strerror(errno));
             return(255);
         }
-    }
-
-//****************************************************************************//
-// Management fork
-//****************************************************************************//
-
-    namespace_fork_pid = fork();
-    if ( namespace_fork_pid == 0 ) {
-
-
-//****************************************************************************//
-// Setup namespaces
-//****************************************************************************//
-
-        if ( unshare(CLONE_NEWNS) < 0 ) {
-            fprintf(stderr, "ABORT: Could not virtualize mount namespace: %s\n", strerror(errno));
-            return(255);
-        }
-
-        // Privatize the mount namespaces (thank you for the pointer Doug Jacobsen!)
-        if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
-            // I am not sure if this error needs to be caught, maybe it will fail
-            // on older kernels? If so, we can fix then.
-            fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
-            return(255);
-        }
-
-#ifdef NS_CLONE_NEWPID
-        if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
-            unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-            if ( unshare(CLONE_NEWPID) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
-                return(255);
-            }
-        }
-#else
-#ifdef NS_CLONE_PID
-        // This is for older legacy CLONE_PID
-        if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
-            unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-            if ( unshare(CLONE_PID) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
-                return(255);
-            }
-        }
-#endif
-#endif
-#ifdef NS_CLONE_FS
-        if ( getenv("SINGULARITY_NO_NAMESPACE_FS") == NULL ) {
-            unsetenv("SINGULARITY_NO_NAMESPACE_FS");
-            if ( unshare(CLONE_FS) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtualize file system namespace: %s\n", strerror(errno));
-                return(255);
-            }
-        }
-#endif
-#ifdef NS_CLONE_FILES
-        if ( getenv("SINGULARITY_NO_NAMESPACE_FILES") == NULL ) {
-            unsetenv("SINGULARITY_NO_NAMESPACE_FILES");
-//            if ( unshare(CLONE_FILES) < 0 ) {
-//                fprintf(stderr, "ABORT: Could not virtualize file descriptor namespace: %s\n", strerror(errno));
-//                return(255);
-//            }
-        }
-#endif
-
-
-//****************************************************************************//
-// Mount image
-//****************************************************************************//
-
-        if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
-            unsetenv("SINGULARITY_WRITABLE");
-            if ( mount_image(loop_dev, containerpath, 0) < 0 ) {
-                fprintf(stderr, "ABORT: exiting...\n");
-                return(255);
-            }
-        } else {
-            if ( mount_image(loop_dev, containerpath, 1) < 0 ) {
-                fprintf(stderr, "ABORT: exiting...\n");
-                return(255);
-            }
-        }
-
-
-//****************************************************************************//
-// Check image
-//****************************************************************************//
-
-        if ( is_exec(joinpath(containerpath, "/bin/sh")) < 0 ) {
-            fprintf(stderr, "ERROR: Container image does not have a valid /bin/sh\n");
-            return(1);
-        }
-
-
-//****************************************************************************//
-// Bind mounts
-//****************************************************************************//
-
-        if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
-            unsetenv("SINGULARITY_CONTAIN");
-    
-            rewind(config_fp);
-            while ( ( tmp_config_string = config_get_key_value(config_fp, "bind path") ) != NULL ) {
-                if ( ( is_file(tmp_config_string) != 0 ) && ( is_dir(tmp_config_string) != 0 ) ) {
-                    fprintf(stderr, "ERROR: Non existant bind source path: '%s'\n", tmp_config_string);
-                    continue;
-                }
-                if ( ( is_file(joinpath(containerpath, tmp_config_string)) != 0 ) && ( is_dir(joinpath(containerpath, tmp_config_string)) != 0 ) ) {
-                    fprintf(stderr, "WARNING: Non existant bind container destination path: '%s'\n", tmp_config_string);
-                    continue;
-                }
-                if ( mount_bind(tmp_config_string, joinpath(containerpath, tmp_config_string), 1) < 0 ) {
-                    fprintf(stderr, "ABORTING!\n");
-                    return(255);
-                }
-            }
-
-
-            if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
-                if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf")) == 0 ) {
-                    if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), 1) != 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind /etc/nsswitch.conf\n");
-                        return(255);
-                    }
-                } else {
-                    fprintf(stderr, "WARNING: Template /etc/nsswitch.conf does not exist: %s\n", joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"));
-                }
-            }
-
-            if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
-                if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
-                    if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
-                        if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
-                            fprintf(stderr, "ABORT: Failed creating template password file\n");
-                            return(255);
-                        }
-                    }
-                    if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 1) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
-                        return(255);
-                    }
-                }
-    
-                if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
-                    if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
-                        if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
-                            fprintf(stderr, "ABORT: Failed creating template group file\n");
-                            return(255);
-                        }
-                    }
-                    if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), 1) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not bind /etc/group\n");
-                        return(255);
-                    }
-                }
-            }
-        }
-
-//****************************************************************************//
-// Fork child in new namespaces
-//****************************************************************************//
-
-
-        exec_fork_pid = fork();
-
-        if ( exec_fork_pid == 0 ) {
-
-
-//****************************************************************************//
-// Enter the file system
-//****************************************************************************//
-
-            if ( chroot(containerpath) < 0 ) {
-                fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", containerpath);
-                return(255);
-            }
-            if ( chdir("/") < 0 ) {
-                fprintf(stderr, "ABORT: Could not chdir after chroot to /: %s\n", strerror(errno));
-                return(1);
-            }
-
-
-//****************************************************************************//
-// Setup real mounts within the container
-//****************************************************************************//
-
-            rewind(config_fp);
-            if ( config_get_key_bool(config_fp, "mount proc", 1) > 0 ) {
-                if ( is_dir("/proc") == 0 ) {
-                    if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not mount /proc: %s\n", strerror(errno));
-                        return(255);
-                    }
-                }
-            }
-
-            rewind(config_fp);
-            if ( config_get_key_bool(config_fp, "mount sys", 1) > 0 ) {
-                if ( is_dir("/sys") == 0 ) {
-                    if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
-                        fprintf(stderr, "ABORT: Could not mount /sys: %s\n", strerror(errno));
-                        return(255);
-                    }
-                }
-            }
-
-
-//****************************************************************************//
-// Drop all privileges for good
-//****************************************************************************//
-
-            if ( drop_privs_perm(&uinfo) < 0 ) {
-                fprintf(stderr, "ABORT...\n");
-                return(255);
-            }
-
-
-//****************************************************************************//
-// Setup final environment
-//****************************************************************************//
-
-            // After this, we exist only within the container... Let's make it known!
-            if ( setenv("SINGULARITY_CONTAINER", "true", 0) != 0 ) {
-                fprintf(stderr, "ABORT: Could not set SINGULARITY_CONTAINER to 'true'\n");
-                return(1);
-            }
-
-            if ( is_dir(cwd) == 0 ) {
-               if ( chdir(cwd) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not chdir to: %s: %s\n", cwd, strerror(errno));
-                    return(1);
-                }
-            } else {
-                if ( fchdir(cwd_fd) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not fchdir to cwd: %s\n", strerror(errno));
-                    return(1);
-                }
-            }
-
-
-//****************************************************************************//
-// Execv to container process
-//****************************************************************************//
-
-            if ( command == NULL ) {
-                fprintf(stderr, "No command specified, launching 'shell'\n");
-                command = strdup("shell");
-            }
-            if ( strcmp(command, "run") == 0 ) {
-                if ( container_run(argc, argv) < 0 ) {
-                    fprintf(stderr, "ABORTING...\n");
-                    return(255);
-                }
-            }
-            if ( strcmp(command, "exec") == 0 ) {
-                if ( container_exec(argc, argv) < 0 ) {
-                    fprintf(stderr, "ABORTING...\n");
-                    return(255);
-                }
-            }
-            if ( strcmp(command, "shell") == 0 ) {
-                if ( container_shell(argc, argv) < 0 ) {
-                    fprintf(stderr, "ABORTING...\n");
-                    return(255);
-                }
-            }
-            if ( strcmp(command, "start") == 0 ) {
-                //strncpy(argv[0], "Singularity Init", strlen(argv[0]));
-
-                if ( container_daemon_start(tmpdir) < 0 ) {
-                    fprintf(stderr, "ABORTING...\n");
-                    return(255);
-                }
-            }
-
-            fprintf(stderr, "ERROR: Unknown command: %s\n", command);
-            return(255);
-
-
-
-//****************************************************************************//
-// Outer child waits for inner child
-//****************************************************************************//
-
-        } else if ( exec_fork_pid > 0 ) {
-            int tmpstatus;
-
-            if ( strcmp(command, "start") == 0 ) {
-                if ( fprintf(daemon_fp, "%d", exec_fork_pid) < 0 ) {
-                    fprintf(stderr, "ERROR: Could not write to daemon pid file: %s\n", strerror(errno));
-                    return(255);
-                }
-                fflush(daemon_fp);
-            }
-
-            strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
-
-            if ( drop_privs(&uinfo) < 0 ) {
-                fprintf(stderr, "ABORT...\n");
-                return(255);
-            }
-
-            waitpid(exec_fork_pid, &tmpstatus, 0);
-            retval = WEXITSTATUS(tmpstatus);
-        } else {
-            fprintf(stderr, "ABORT: Could not fork namespace process: %s\n", strerror(errno));
-            return(255);
-        }
-        return(retval);
-
-    } else if ( namespace_fork_pid > 0 ) {
-        int tmpstatus;
-
-        strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
-
-        if ( drop_privs(&uinfo) < 0 ) {
-            fprintf(stderr, "ABORT...\n");
-            return(255);
-        }
-
-        waitpid(namespace_fork_pid, &tmpstatus, 0);
-        retval = WEXITSTATUS(tmpstatus);
-    } else {
-        fprintf(stderr, "ABORT: Could not fork management process: %s\n", strerror(errno));
-        return(255);
-    }
-
-
-//****************************************************************************//
-// Final wrap up before exiting
-//****************************************************************************//
-
-
-    if ( close(cwd_fd) < 0 ) {
-        fprintf(stderr, "ERROR: Could not close cwd_fd: %s\n", strerror(errno));
-        retval++;
-    }
-
-    if ( flock(tmpdirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
-        close(tmpdirlock_fd);
-        if ( escalate_privs() < 0 ) {
-            fprintf(stderr, "ABORT...\n");
-            return(255);
-        }
-
-        if ( s_rmdir(tmpdir) < 0 ) {
-            fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
-        }
-    
-        // Dissociate loops from here Just in case autoflush didn't work.
-        (void)disassociate_loop(loop_fp);
-
-        if ( seteuid(uid) < 0 ) {
-            fprintf(stderr, "ABORT: Could not drop effective user privileges: %s\n", strerror(errno));
-            return(255);
-        }
-
-    } else {
-//        printf("Not removing tmpdir, lock still\n");
     }
 
     close(containerimage_fd);

@@ -1,0 +1,14 @@
+USAGE: singularity (options) stop [container path]
+
+
+
+EXAMPLES:
+
+    $ singularity stop /tmp/Debian.img
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+
