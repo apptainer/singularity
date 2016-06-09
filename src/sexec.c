@@ -375,7 +375,10 @@ int main(int argc, char ** argv) {
                 return(255);
             }
 
-        daemon(1,1);
+        if ( daemon(1,1) < 0 ) {
+            fprintf(stderr, "ERROR: Could not daemonize: %s\n", strerror(errno));
+            return(255);
+        }
     } else if ( strcmp(command, "stop") == 0 ) {
         return(container_daemon_stop(tmpdir));
     }
