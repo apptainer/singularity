@@ -46,6 +46,7 @@
 #include "user.h"
 #include "config_parser.h"
 #include "container_actions.h"
+#include "privilege.h"
 
 
 #ifndef SYSCONFDIR
@@ -96,13 +97,12 @@ int main(int argc, char ** argv) {
     int tmpdirlock_fd;
     int containerimage_fd;
     int loop_dev_lock_fd;
-    int gid_list_count;
     int retval = 0;
     uid_t uid;
-    gid_t gid;
-    gid_t *gid_list;
     pid_t namespace_fork_pid = 0;
     struct passwd *pw;
+    struct s_privinfo uinfo;
+
 
 
 //****************************************************************************//
@@ -117,28 +117,22 @@ int main(int argc, char ** argv) {
 
     // Get all user/group info
     uid = getuid();
-    gid = getgid();
-    gid_list_count = getgroups(0, NULL);
-    gid_list = (gid_t *) malloc(sizeof(gid_t) * gid_list_count);
-    if ( getgroups(gid_list_count, gid_list) < 0 ) {
-        fprintf(stderr, "ABORT: Could not obtain current supplementary group list: %s\n", strerror(errno));
-        return(255);
-    }
     pw = getpwuid(uid);
 
+    if ( get_user_privs(&uinfo) < 0 ) {
+        fprintf(stderr, "ABORT...\n");
+        return(255);
+    }
+
     // Check to make sure we are installed correctly
-    if ( seteuid(0) < 0 ) {
+    if ( escalate_privs() < 0 ) {
         fprintf(stderr, "ABORT: Check installation, must be performed by root.\n");
         return(255);
     }
 
     // Lets start off as the calling UID
-    if ( seteuid(uid) < 0 ) {
-        fprintf(stderr, "ABORT: Could not set effective uid to %d: %s\n", uid, strerror(errno));
-        return(255);
-    }
-    if ( setegid(gid) < 0 ) {
-        fprintf(stderr, "ABORT: Could not set effective gid to %d: %s\n", gid, strerror(errno));
+    if ( drop_privs(&uinfo) < 0 ) {
+        fprintf(stderr, "ABORT...\n");
         return(255);
     }
 
@@ -253,7 +247,6 @@ int main(int argc, char ** argv) {
 
             if ( fgets(daemon_pid, 128, test_daemon_fp) != NULL ) {
                 snprintf(setns_dir, 128 + 9, "/proc/%s/ns", daemon_pid);
-                printf("Joining NS: %s\n", setns_dir);
             }
 
         } else {
@@ -605,16 +598,8 @@ int main(int argc, char ** argv) {
 // Drop all privileges for good
 //****************************************************************************//
 
-            if ( setgroups(gid_list_count, gid_list) < 0 ) {
-                fprintf(stderr, "ABOFT: Could not reset supplementary group list: %s\n", strerror(errno));
-                return(255);
-            }
-            if ( setregid(gid, gid) < 0 ) {
-                fprintf(stderr, "ABORT: Could not dump real and effective group privileges: %s\n", strerror(errno));
-                return(255);
-            }
-            if ( setreuid(uid, uid) < 0 ) {
-                fprintf(stderr, "ABORT: Could not dump real and effective user privileges: %s\n", strerror(errno));
+            if ( drop_privs_perm(&uinfo) < 0 ) {
+                fprintf(stderr, "ABORT...\n");
                 return(255);
             }
 

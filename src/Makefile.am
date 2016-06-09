@@ -21,10 +21,10 @@ bin_PROGRAMS = ftype sexec image-create image-expand image-mount image-bind
 
 ftrace_SOURCES = ftrace.c file.c util.c
 ftype_SOURCES = ftype.c util.c file.c
-sexec_SOURCES = sexec.c util.c loop-control.c mounts.c user.c file.c image.c config_parser.c container_actions.c
+sexec_SOURCES = sexec.c util.c loop-control.c mounts.c user.c file.c image.c config_parser.c container_actions.c privilege.c
 image_create_SOURCES = image-create.c file.c util.c image.c
 image_expand_SOURCES = image-expand.c file.c util.c image.c
 image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c
 image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c
 
-EXTRA_DIST = config.h config_parser.h container_actions.h file.h image.h loop-control.h mounts.h user.h util.h
+EXTRA_DIST = config.h config_parser.h container_actions.h file.h image.h loop-control.h mounts.h user.h util.h privilege.h
