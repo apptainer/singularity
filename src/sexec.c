@@ -45,16 +45,11 @@
 #include "file.h"
 #include "user.h"
 #include "config_parser.h"
+#include "container_actions.h"
 
 
-#ifndef LIBEXECDIR
-#define LIBEXECDIR "undefined"
-#endif
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"
-#endif
-#ifndef LOCALSTATEDIR
-#define LOCALSTATEDIR "/var/"
 #endif
 
 #ifndef MS_PRIVATE
@@ -63,7 +58,6 @@
 #ifndef MS_REC
 #define MS_REC 16384
 #endif
-
 
 pid_t exec_fork_pid = 0;
 
@@ -78,21 +72,25 @@ void sighandler(int sig) {
 }
 
 
+
 int main(int argc, char ** argv) {
     FILE *containerimage_fp;
     FILE *loop_fp;
     FILE *config_fp;
+    FILE *daemon_fp = NULL;
     char *containerimage;
     char *containername;
     char *containerpath;
     char *username;
     char *command;
     char *tmpdir;
+    char *prompt;
     char *loop_dev_lock;
     char *loop_dev_cache;
     char *loop_dev = 0;
     char *config_path;
     char *tmp_config_string;
+    char setns_dir[128+9];
     char cwd[PATH_MAX];
     int cwd_fd;
     int tmpdirlock_fd;
@@ -208,6 +206,10 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 
 
+    prompt = (char *) malloc(strlen(containername) + 16);
+    snprintf(prompt, strlen(containername) + 16, "Singularity/%s> ", containername);
+    setenv("PS1", prompt, 1);
+
     if ( ( config_fp = fopen(config_path, "r") ) == NULL ) {
         fprintf(stderr, "ERROR: Could not open config file %s: %s\n", config_path, strerror(errno));
         return(255);
@@ -233,6 +235,31 @@ int main(int argc, char ** argv) {
             fprintf(stderr, "ABORT: Image is locked by another process\n");
             return(5);
         }
+    }
+
+
+    if ( is_file(joinpath(tmpdir, "daemon.pid")) == 0 ) {
+        FILE *test_daemon_fp;
+        int daemon_fd;
+
+        if ( ( test_daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "r") ) == NULL ) {
+            fprintf(stderr, "ERROR: Could not open daemon pid file %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
+            return(255);
+        }
+
+        daemon_fd = fileno(test_daemon_fp);
+        if ( flock(daemon_fd, LOCK_SH | LOCK_NB) != 0 ) {
+            char daemon_pid[128];
+
+            if ( fgets(daemon_pid, 128, test_daemon_fp) != NULL ) {
+                snprintf(setns_dir, 128 + 9, "/proc/%s/ns", daemon_pid);
+                printf("Joining NS: %s\n", setns_dir);
+            }
+
+        } else {
+            printf("Dead Singularity daemon?\n");
+        }
+        fclose(test_daemon_fp);
     }
 
 
@@ -323,6 +350,35 @@ int main(int argc, char ** argv) {
     }
 
 
+//****************************************************************************//
+// Manage the daemon bits early
+//****************************************************************************//
+
+    if ( strcmp(command, "start") == 0 ) {
+            int daemon_fd;
+
+            if ( is_file(joinpath(tmpdir, "daemon.pid")) == 0 ) {
+                if ( ( daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "r+") ) == NULL ) {
+                    fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
+                    return(255);
+                }
+            } else {
+                if ( ( daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "w") ) == NULL ) {
+                    fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
+                    return(255);
+                }
+            }
+
+            daemon_fd = fileno(daemon_fp);
+            if ( flock(daemon_fd, LOCK_EX | LOCK_NB) != 0 ) {
+                fprintf(stderr, "ERROR: Could not obtain lock, another daemon process running?\n");
+                return(255);
+            }
+
+        daemon(1,1);
+    } else if ( strcmp(command, "stop") == 0 ) {
+        return(container_daemon_stop(tmpdir));
+    }
 
 //****************************************************************************//
 // Management fork
@@ -330,6 +386,7 @@ int main(int argc, char ** argv) {
 
     namespace_fork_pid = fork();
     if ( namespace_fork_pid == 0 ) {
+
 
 //****************************************************************************//
 // Setup namespaces
@@ -351,9 +408,21 @@ int main(int argc, char ** argv) {
 #ifdef NS_CLONE_NEWPID
         if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-            if ( unshare(CLONE_NEWPID) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
-                return(255);
+            if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
+                int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
+                printf("joining existing PID namespace\n");
+                if ( setns(fd, CLONE_NEWPID) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not join existing PID namespace: %s\n", strerror(errno));
+                    return(255);
+                }
+                close(fd);
+
+            } else {
+
+                if ( unshare(CLONE_NEWPID) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
+                    return(255);
+                }
             }
         }
 #else
@@ -380,10 +449,10 @@ int main(int argc, char ** argv) {
 #ifdef NS_CLONE_FILES
         if ( getenv("SINGULARITY_NO_NAMESPACE_FILES") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_FILES");
-            if ( unshare(CLONE_FILES) < 0 ) {
-                fprintf(stderr, "ABORT: Could not virtualize file descriptor namespace: %s\n", strerror(errno));
-                return(255);
-            }
+//            if ( unshare(CLONE_FILES) < 0 ) {
+//                fprintf(stderr, "ABORT: Could not virtualize file descriptor namespace: %s\n", strerror(errno));
+//                return(255);
+//            }
         }
 #endif
 
@@ -433,7 +502,7 @@ int main(int argc, char ** argv) {
                     fprintf(stderr, "WARNING: Non existant bind container destination path: '%s'\n", tmp_config_string);
                     continue;
                 }
-                if ( mount_bind(tmp_config_string, joinpath(containerpath, tmp_config_string), 0) < 0 ) {
+                if ( mount_bind(tmp_config_string, joinpath(containerpath, tmp_config_string), 1) < 0 ) {
                     fprintf(stderr, "ABORTING!\n");
                     return(255);
                 }
@@ -442,7 +511,7 @@ int main(int argc, char ** argv) {
 
             if (is_file(joinpath(containerpath, "/etc/nsswitch.conf")) == 0 ) {
                 if ( is_file(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf")) == 0 ) {
-                    if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), 0) != 0 ) {
+                    if ( mount_bind(joinpath(SYSCONFDIR, "/singularity/default-nsswitch.conf"), joinpath(containerpath, "/etc/nsswitch.conf"), 1) != 0 ) {
                         fprintf(stderr, "ABORT: Could not bind /etc/nsswitch.conf\n");
                         return(255);
                     }
@@ -459,7 +528,7 @@ int main(int argc, char ** argv) {
                             return(255);
                         }
                     }
-                    if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 0) < 0 ) {
+                    if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 1) < 0 ) {
                         fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
                         return(255);
                     }
@@ -472,7 +541,7 @@ int main(int argc, char ** argv) {
                             return(255);
                         }
                     }
-                    if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), 0) < 0 ) {
+                    if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), 1) < 0 ) {
                         fprintf(stderr, "ABORT: Could not bind /etc/group\n");
                         return(255);
                     }
@@ -483,6 +552,7 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 // Fork child in new namespaces
 //****************************************************************************//
+
 
         exec_fork_pid = fork();
 
@@ -573,66 +643,37 @@ int main(int argc, char ** argv) {
 // Execv to container process
 //****************************************************************************//
 
-            if ( command == NULL ) {
-                fprintf(stderr, "No command specified, launching 'shell'\n");
-                command = strdup("shell");
+        if ( command == NULL ) {
+            fprintf(stderr, "No command specified, launching 'shell'\n");
+            command = strdup("shell");
+        }
+        if ( strcmp(command, "run") == 0 ) {
+            if ( container_run(argc, argv) < 0 ) {
+                fprintf(stderr, "ABORTING...\n");
+                return(255);
             }
-
-            if ( strcmp(command, "run") == 0 ) {
-                if ( is_exec("/singularity") == 0 ) {
-                    argv[0] = strdup("/singularity");
-                    if ( execv("/singularity", argv) != 0 ) {
-                        fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
-                    }
-                } else {
-                    fprintf(stderr, "No Singularity runscript found, launching 'shell'\n");
-                    command = strdup("shell");
-                }
+        }
+        if ( strcmp(command, "exec") == 0 ) {
+            if ( container_exec(argc, argv) < 0 ) {
+                fprintf(stderr, "ABORTING...\n");
+                return(255);
             }
-            
-            if ( strcmp(command, "exec") == 0 ) {
-                if ( argc <= 1 ) {
-                    fprintf(stderr, "ABORT: Exec requires a command to run\n");
-                    return(1);
-                }
-                if ( execvp(argv[1], &argv[1]) != 0 ) {
-                    fprintf(stderr, "ABORT: execvp of '%s' failed: %s\n", argv[1], strerror(errno));
-                    return(1);
-                }
+        }
+        if ( strcmp(command, "shell") == 0 ) {
+            if ( container_shell(argc, argv) < 0 ) {
+                fprintf(stderr, "ABORTING...\n");
+                return(255);
             }
-            
-            if ( strcmp(command, "shell") == 0 ) {
-                char *prompt;
+        }
+        if ( strcmp(command, "start") == 0 ) {
+            strncpy(argv[0], "Singularity Init", strlen(argv[0]));
 
-                prompt = (char *) malloc(strlen(containername) + 16);
-                snprintf(prompt, strlen(containerimage) + 16, "Singularity/%s> ", containername);
-                setenv("PS1", prompt, 1);
-
-                if ( is_exec("/bin/bash") == 0 ) {
-                    char *args[argc+2];
-                    int i;
-
-                    args[0] = strdup("/bin/bash");
-                    args[1] = strdup("--norc");
-                    args[2] = strdup("--noprofile");
-                    for(i=1; i<=argc; i++) {
-                        args[i+2] = argv[i];
-                    }
-
-                    if ( execv("/bin/bash", args) != 0 ) {
-                        fprintf(stderr, "ABORT: exec of /bin/bash failed: %s\n", strerror(errno));
-                    }
-                } else {
-                    argv[0] = strdup("/bin/sh");
-                    if ( execv("/bin/sh", argv) != 0 ) {
-                        fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
-                    }
-                }
+            if ( container_daemon_start(tmpdir) < 0 ) {
+                fprintf(stderr, "ABORTING...\n");
+                return(255);
             }
+        }
 
-            // If we get here... we fail on bad command
-            fprintf(stderr, "ABORT: Unrecognized Singularity command: %s\n", command);
-            return(1);
 
 
 //****************************************************************************//
@@ -641,6 +682,14 @@ int main(int argc, char ** argv) {
 
         } else if ( exec_fork_pid > 0 ) {
             int tmpstatus;
+
+            if ( strcmp(command, "start") == 0 ) {
+                if ( fprintf(daemon_fp, "%d", exec_fork_pid) < 0 ) {
+                    fprintf(stderr, "ERROR: Could not write to daemon pid file: %s\n", strerror(errno));
+                    return(255);
+                }
+                fflush(daemon_fp);
+            }
 
             strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
 
