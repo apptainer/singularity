@@ -74,7 +74,7 @@ int drop_privs(struct s_privinfo *uinfo) {
         return(-1);
     }
 
-    if ( getuid() == 0 ) {
+    if ( geteuid() == 0 ) {
         if ( seteuid(uinfo->uid) < 0 ) {
             fprintf(stderr, "ERROR: Could not drop effective user privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
             return(-1);
@@ -84,8 +84,16 @@ int drop_privs(struct s_privinfo *uinfo) {
             fprintf(stderr, "ERROR: Could not drop effective group privileges to gid %d: %s\n", uinfo->gid, strerror(errno));
             return(-1);
         }
-    } else {
-        fprintf(stderr, "ERROR: Can not drop privileges from non privileged access level\n");
+    }
+
+    if ( getuid() != uinfo->uid ) {
+        fprintf(stderr, "ERROR: Failed to drop effective user privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
+        return(-1);
+    }
+
+    if ( getgid() != uinfo->gid ) {
+        fprintf(stderr, "ERROR: Failed to drop effective group privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
+        return(-1);
     }
 
     return(0);
@@ -98,7 +106,7 @@ int drop_privs_perm(struct s_privinfo *uinfo) {
         return(-1);
     }
 
-    if ( getuid() == 0 ) {
+    if ( geteuid() == 0 ) {
         if ( setgroups(uinfo->gids_count, uinfo->gids) < 0 ) {
             fprintf(stderr, "ABOFT: Could not reset supplementary group list: %s\n", strerror(errno));
             return(-1);
@@ -111,8 +119,16 @@ int drop_privs_perm(struct s_privinfo *uinfo) {
             fprintf(stderr, "ERROR: Could not dump real and effective user privileges: %s\n", strerror(errno));
             return(-1);
         }
-    } else {
-        fprintf(stderr, "ERROR: Can not drop privileges from non privileged access level\n");
+    }
+
+    if ( getuid() != uinfo->uid ) {
+        fprintf(stderr, "ERROR: Failed to drop effective user privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
+        return(-1);
+    }
+
+    if ( getgid() != uinfo->gid ) {
+        fprintf(stderr, "ERROR: Failed to drop effective group privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
+        return(-1);
     }
 
     return(0);

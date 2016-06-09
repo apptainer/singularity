@@ -43,7 +43,7 @@
 #include "loop-control.h"
 #include "util.h"
 #include "file.h"
-#include "user.h"
+#include "container_files.h"
 #include "config_parser.h"
 #include "container_actions.h"
 #include "privilege.h"
@@ -97,6 +97,7 @@ int main(int argc, char ** argv) {
     int tmpdirlock_fd;
     int containerimage_fd;
     int loop_dev_lock_fd;
+    int join_daemon_ns = 0;
     int retval = 0;
     uid_t uid;
     pid_t namespace_fork_pid = 0;
@@ -247,6 +248,9 @@ int main(int argc, char ** argv) {
 
             if ( fgets(daemon_pid, 128, test_daemon_fp) != NULL ) {
                 snprintf(setns_dir, 128 + 9, "/proc/%s/ns", daemon_pid);
+                if ( is_dir(setns_dir) == 0 ) {
+                    join_daemon_ns = 1;
+                }
             }
 
         } else {
@@ -368,12 +372,131 @@ int main(int argc, char ** argv) {
                 return(255);
             }
 
+            if ( is_fifo(joinpath(tmpdir, "daemon.comm")) < 0 ) {
+                if ( mkfifo(joinpath(tmpdir, "daemon.comm"), 0664) < 0 ) {
+                    fprintf(stderr, "ERROR: Could not create communication fifo: %s\n", strerror(errno));
+                    return(255);
+                }
+            }
+
         if ( daemon(1,1) < 0 ) {
             fprintf(stderr, "ERROR: Could not daemonize: %s\n", strerror(errno));
             return(255);
         }
     } else if ( strcmp(command, "stop") == 0 ) {
         return(container_daemon_stop(tmpdir));
+    }
+
+
+    if ( join_daemon_ns == 1 ) {
+        pid_t exec_pid;
+
+        if ( is_file(joinpath(setns_dir, "mnt")) == 0 ) {
+            int fd = open(joinpath(setns_dir, "mnt"), O_RDONLY);
+            printf("joining existing mount namespace\n");
+            if ( setns(fd, CLONE_NEWNS) < 0 ) {
+                fprintf(stderr, "ABORT: Could not join existing mount namespace: %s\n", strerror(errno));
+                return(255);
+            }
+            close(fd);
+
+        } else {
+            fprintf(stderr, "ABORT: Could not identify mount namespace: %s\n", joinpath(setns_dir, "mnt"));
+        }
+        if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
+            int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
+            printf("joining existing PID namespace\n");
+#ifdef NS_CLONE_NEWPID
+            if ( setns(fd, CLONE_NEWPID) < 0 ) {
+#else
+#ifdef NS_CLONE_PID
+            if ( setns(fd, CLONE_PID) < 0 ) {
+#endif
+#endif
+                fprintf(stderr, "ABORT: Could not join existing PID namespace: %s\n", strerror(errno));
+                return(255);
+            }
+            close(fd);
+
+        } else {
+            fprintf(stderr, "ABORT: Could not identify PID namespace: %s\n", joinpath(setns_dir, "pid"));
+        }
+
+
+//TODO: Add chroot and chdirs to a container method
+            if ( chroot(containerpath) < 0 ) {
+                fprintf(stderr, "ABORT: failed enter CONTAINERIMAGE: %s\n", containerpath);
+                return(255);
+            }
+            if ( chdir("/") < 0 ) {
+                fprintf(stderr, "ABORT: Could not chdir after chroot to /: %s\n", strerror(errno));
+                return(1);
+            }
+
+            if ( is_dir(cwd) == 0 ) {
+               if ( chdir(cwd) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not chdir to: %s: %s\n", cwd, strerror(errno));
+                    return(1);
+                }
+            } else {
+                if ( fchdir(cwd_fd) < 0 ) {
+                    fprintf(stderr, "ABORT: Could not fchdir to cwd: %s\n", strerror(errno));
+                    return(1);
+                }
+            }
+
+        if ( drop_privs_perm(&uinfo) < 0 ) {
+            fprintf(stderr, "ABORT...\n");
+            return(255);
+        }
+
+        exec_pid = fork();
+        if ( exec_pid == 0 ) {
+
+            if ( command == NULL ) {
+                fprintf(stderr, "No command specified, launching 'shell'\n");
+                command = strdup("shell");
+            }
+            if ( strcmp(command, "run") == 0 ) {
+                if ( container_run(argc, argv) < 0 ) {
+                    fprintf(stderr, "ABORTING...\n");
+                    return(255);
+                }
+            }
+            if ( strcmp(command, "exec") == 0 ) {
+                if ( container_exec(argc, argv) < 0 ) {
+                    fprintf(stderr, "ABORTING...\n");
+                    return(255);
+                }
+            }
+            if ( strcmp(command, "shell") == 0 ) {
+                if ( container_shell(argc, argv) < 0 ) {
+                    fprintf(stderr, "ABORTING...\n");
+                    return(255);
+                }
+            }
+    
+            fprintf(stderr, "ERROR: Unknown command: %s\n", command);
+            return(255);
+        } else if ( exec_pid > 0 ) {
+            int tmpstatus;
+            int retval;
+    
+            strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
+    
+            if ( drop_privs(&uinfo) < 0 ) {
+                fprintf(stderr, "ABORT...\n");
+                return(255);
+            }
+    
+            waitpid(exec_pid, &tmpstatus, 0);
+            retval = WEXITSTATUS(tmpstatus);
+    
+            return(retval);
+        } else {
+            fprintf(stderr, "ABORT: Could not fork exec process: %s\n", strerror(errno));
+            return(255);
+        }
     }
 
 //****************************************************************************//
@@ -404,21 +527,9 @@ int main(int argc, char ** argv) {
 #ifdef NS_CLONE_NEWPID
         if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
             unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-            if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
-                int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
-                printf("joining existing PID namespace\n");
-                if ( setns(fd, CLONE_NEWPID) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not join existing PID namespace: %s\n", strerror(errno));
-                    return(255);
-                }
-                close(fd);
-
-            } else {
-
-                if ( unshare(CLONE_NEWPID) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
-                    return(255);
-                }
+            if ( unshare(CLONE_NEWPID) < 0 ) {
+                fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
+                return(255);
             }
         }
 #else
@@ -631,36 +742,39 @@ int main(int argc, char ** argv) {
 // Execv to container process
 //****************************************************************************//
 
-        if ( command == NULL ) {
-            fprintf(stderr, "No command specified, launching 'shell'\n");
-            command = strdup("shell");
-        }
-        if ( strcmp(command, "run") == 0 ) {
-            if ( container_run(argc, argv) < 0 ) {
-                fprintf(stderr, "ABORTING...\n");
-                return(255);
+            if ( command == NULL ) {
+                fprintf(stderr, "No command specified, launching 'shell'\n");
+                command = strdup("shell");
             }
-        }
-        if ( strcmp(command, "exec") == 0 ) {
-            if ( container_exec(argc, argv) < 0 ) {
-                fprintf(stderr, "ABORTING...\n");
-                return(255);
+            if ( strcmp(command, "run") == 0 ) {
+                if ( container_run(argc, argv) < 0 ) {
+                    fprintf(stderr, "ABORTING...\n");
+                    return(255);
+                }
             }
-        }
-        if ( strcmp(command, "shell") == 0 ) {
-            if ( container_shell(argc, argv) < 0 ) {
-                fprintf(stderr, "ABORTING...\n");
-                return(255);
+            if ( strcmp(command, "exec") == 0 ) {
+                if ( container_exec(argc, argv) < 0 ) {
+                    fprintf(stderr, "ABORTING...\n");
+                    return(255);
+                }
             }
-        }
-        if ( strcmp(command, "start") == 0 ) {
-            strncpy(argv[0], "Singularity Init", strlen(argv[0]));
+            if ( strcmp(command, "shell") == 0 ) {
+                if ( container_shell(argc, argv) < 0 ) {
+                    fprintf(stderr, "ABORTING...\n");
+                    return(255);
+                }
+            }
+            if ( strcmp(command, "start") == 0 ) {
+                //strncpy(argv[0], "Singularity Init", strlen(argv[0]));
 
-            if ( container_daemon_start(tmpdir) < 0 ) {
-                fprintf(stderr, "ABORTING...\n");
-                return(255);
+                if ( container_daemon_start(tmpdir) < 0 ) {
+                    fprintf(stderr, "ABORTING...\n");
+                    return(255);
+                }
             }
-        }
+
+            fprintf(stderr, "ERROR: Unknown command: %s\n", command);
+            return(255);
 
 
 
@@ -681,8 +795,8 @@ int main(int argc, char ** argv) {
 
             strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
 
-            if ( seteuid(uid) < 0 ) {
-                fprintf(stderr, "ABORT: Could not set effective user privileges to %d: %s\n", uid, strerror(errno));
+            if ( drop_privs(&uinfo) < 0 ) {
+                fprintf(stderr, "ABORT...\n");
                 return(255);
             }
 
@@ -699,8 +813,8 @@ int main(int argc, char ** argv) {
 
         strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
 
-        if ( seteuid(uid) < 0 ) {
-            fprintf(stderr, "ABORT: Could not set effective user privileges to %d: %s\n", uid, strerror(errno));
+        if ( drop_privs(&uinfo) < 0 ) {
+            fprintf(stderr, "ABORT...\n");
             return(255);
         }
 
@@ -724,8 +838,8 @@ int main(int argc, char ** argv) {
 
     if ( flock(tmpdirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         close(tmpdirlock_fd);
-        if ( seteuid(0) < 0 ) {
-            fprintf(stderr, "ABORT: Could not re-escalate effective user privileges: %s\n", strerror(errno));
+        if ( escalate_privs() < 0 ) {
+            fprintf(stderr, "ABORT...\n");
             return(255);
         }
 

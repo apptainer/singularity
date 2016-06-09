@@ -100,11 +100,6 @@ int container_daemon_start(char *tmpdir) {
     FILE *comm;
     char line[256];
 
-    if ( mkfifo(joinpath(tmpdir, "daemon.comm"), 0664) < 0 ) {
-        fprintf(stderr, "ERROR: Could not make communication fifo: %s\n", strerror(errno));
-        return(-1);
-    }
-
     if ( ( comm = fopen(joinpath(tmpdir, "daemon.comm"), "r") ) == NULL ) {
         fprintf(stderr, "Could not open fifo %s: %s\n", joinpath(tmpdir, "daemon.comm"), strerror(errno));
         return(-1);
