@@ -122,6 +122,11 @@ int container_daemon_stop(char *tmpdir) {
     FILE *test_daemon_fp;
     int daemon_fd;
 
+    if ( is_file(joinpath(tmpdir, "daemon.pid")) < 0 ) {
+        fprintf(stderr, "Daemon process is not running\n");
+        return(0);
+    }
+
     if ( ( test_daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "r") ) == NULL ) {
         fprintf(stderr, "ERROR: Could not open daemon pid file %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
         return(-1);
