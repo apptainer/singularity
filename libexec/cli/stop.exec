@@ -52,5 +52,5 @@ export SINGULARITY_COMMAND SINGULARITY_IMAGE
 shift
 
 if "$SINGULARITY_libexecdir/singularity/sexec"; then
-    message 1 "Singularity namespace process daemon has stopped\n"
+    message 1 "Singularity namespace process daemon has been stopped\n"
 fi
