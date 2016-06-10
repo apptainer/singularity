@@ -105,15 +105,6 @@ int container_daemon_start(char *tmpdir) {
         return(-1);
     }
 
-    if ( chdir("/") < 0 ) {
-        fprintf(stderr, "ERROR: Could not chdir to /: %s\n", strerror(errno));
-        return(-1);
-    }
-
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-
     while ( fgets(line, 256, comm) ) {
         if ( strcmp(line, "stop") == 0 ) {
             printf("Stopping daemon\n");

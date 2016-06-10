@@ -315,6 +315,12 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
+    // If we got this far, we have passed basic init
+    if ( fileput(joinpath(tmpdir, "image"), containername) < 0 ) {
+        fprintf(stderr, "ABORT: Could not write container name to %s\n", joinpath(tmpdir, "image"));
+        return(255);
+    }
+
     if ( flock(loop_dev_lock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         loop_dev = obtain_loop_dev();
 
@@ -353,34 +359,34 @@ int main(int argc, char ** argv) {
 
     // Manage the daemon bits early
     if ( strcmp(command, "start") == 0 ) {
-            int daemon_fd;
+        int daemon_fd;
 
-            if ( is_file(joinpath(tmpdir, "daemon.pid")) == 0 ) {
-                if ( ( daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "r+") ) == NULL ) {
-                    fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
-                    return(255);
-                }
-            } else {
-                if ( ( daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "w") ) == NULL ) {
-                    fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
-                    return(255);
-                }
-            }
-
-            daemon_fd = fileno(daemon_fp);
-            if ( flock(daemon_fd, LOCK_EX | LOCK_NB) != 0 ) {
-                fprintf(stderr, "ERROR: Could not obtain lock, another daemon process running?\n");
+        if ( is_file(joinpath(tmpdir, "daemon.pid")) == 0 ) {
+            if ( ( daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "r+") ) == NULL ) {
+                fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
                 return(255);
             }
-
-            if ( is_fifo(joinpath(tmpdir, "daemon.comm")) < 0 ) {
-                if ( mkfifo(joinpath(tmpdir, "daemon.comm"), 0664) < 0 ) {
-                    fprintf(stderr, "ERROR: Could not create communication fifo: %s\n", strerror(errno));
-                    return(255);
-                }
+        } else {
+            if ( ( daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "w") ) == NULL ) {
+                fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
+                return(255);
             }
+        }
 
-        if ( daemon(1,1) < 0 ) {
+        daemon_fd = fileno(daemon_fp);
+        if ( flock(daemon_fd, LOCK_EX | LOCK_NB) != 0 ) {
+            fprintf(stderr, "ERROR: Could not obtain lock, another daemon process running?\n");
+            return(255);
+        }
+
+        if ( is_fifo(joinpath(tmpdir, "daemon.comm")) < 0 ) {
+            if ( mkfifo(joinpath(tmpdir, "daemon.comm"), 0664) < 0 ) {
+                fprintf(stderr, "ERROR: Could not create communication fifo: %s\n", strerror(errno));
+                return(255);
+            }
+        }
+
+        if ( daemon(0,0) < 0 ) {
             fprintf(stderr, "ERROR: Could not daemonize: %s\n", strerror(errno));
             return(255);
         }
@@ -653,7 +659,6 @@ int main(int argc, char ** argv) {
         // Wait for namespace process to finish
         } else if ( namespace_fork_pid > 0 ) {
             int tmpstatus;
-
             strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
 
             if ( drop_privs(&uinfo) < 0 ) {
