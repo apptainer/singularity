@@ -88,7 +88,7 @@ int main(int argc, char ** argv) {
     char *containerpath;
     char *username;
     char *command;
-    char *tmpdir;
+    char *sessiondir;
     char *prompt;
     char *loop_dev_lock;
     char *loop_dev_cache;
@@ -98,7 +98,7 @@ int main(int argc, char ** argv) {
     char setns_dir[128+9];
     char cwd[PATH_MAX];
     int cwd_fd;
-    int tmpdirlock_fd;
+    int sessiondirlock_fd;
     int containerimage_fd;
     int loop_dev_lock_fd;
     int join_daemon_ns = 0;
@@ -190,12 +190,12 @@ int main(int argc, char ** argv) {
 
     containername = basename(strdup(containerimage));
 
-    tmpdir = strjoin("/tmp/.singularity-", file_id(containerimage));
-    loop_dev_lock = joinpath(tmpdir, "loop_dev.lock");
-    loop_dev_cache = joinpath(tmpdir, "loop_dev");
+    sessiondir = strjoin("/tmp/.singularity-session-", file_id(containerimage));
+    loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
+    loop_dev_cache = joinpath(sessiondir, "loop_dev");
 
-    containerpath = (char *) malloc(strlen(tmpdir) + 5);
-    snprintf(containerpath, strlen(tmpdir) + 5, "%s/mnt", tmpdir);
+    containerpath = (char *) malloc(strlen(sessiondir) + 5);
+    snprintf(containerpath, strlen(sessiondir) + 5, "%s/mnt", sessiondir);
 
     syslog(LOG_NOTICE, "User=%s[%d], Command=%s, Container=%s, CWD=%s, Arg1=%s", username, uid, command, containerimage, cwd, argv[1]);
 
@@ -237,12 +237,12 @@ int main(int argc, char ** argv) {
     }
 
 
-    if ( is_file(joinpath(tmpdir, "daemon.pid")) == 0 ) {
+    if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
         FILE *test_daemon_fp;
         int daemon_fd;
 
-        if ( ( test_daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "r") ) == NULL ) {
-            fprintf(stderr, "ERROR: Could not open daemon pid file %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
+        if ( ( test_daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r") ) == NULL ) {
+            fprintf(stderr, "ERROR: Could not open daemon pid file %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
             return(255);
         }
 
@@ -277,25 +277,25 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    if ( s_mkpath(tmpdir, 0755) < 0 ) {
-        fprintf(stderr, "ABORT: Could not create temporary directory %s: %s\n", tmpdir, strerror(errno));
+    if ( s_mkpath(sessiondir, 0755) < 0 ) {
+        fprintf(stderr, "ABORT: Could not create temporary directory %s: %s\n", sessiondir, strerror(errno));
         return(255);
     }
 
-    if ( is_owner(tmpdir, 0) < 0 ) {
-        fprintf(stderr, "ABORT: Container working directory has wrong ownership: %s\n", tmpdir);
-        syslog(LOG_ERR, "Container working directory has wrong ownership: %s", tmpdir);
+    if ( is_owner(sessiondir, 0) < 0 ) {
+        fprintf(stderr, "ABORT: Container working directory has wrong ownership: %s\n", sessiondir);
+        syslog(LOG_ERR, "Container working directory has wrong ownership: %s", sessiondir);
         return(255);
     }
 
-    tmpdirlock_fd = open(tmpdir, O_RDONLY);
-    if ( tmpdirlock_fd < 0 ) {
-        fprintf(stderr, "ERROR: Could not obtain file descriptor on %s: %s\n", tmpdir, strerror(errno));
+    sessiondirlock_fd = open(sessiondir, O_RDONLY);
+    if ( sessiondirlock_fd < 0 ) {
+        fprintf(stderr, "ERROR: Could not obtain file descriptor on %s: %s\n", sessiondir, strerror(errno));
         return(255);
     }
 
-    if ( flock(tmpdirlock_fd, LOCK_SH | LOCK_NB) < 0 ) {
-        fprintf(stderr, "ERROR: Could not obtain shared lock on %s: %s\n", tmpdir, strerror(errno));
+    if ( flock(sessiondirlock_fd, LOCK_SH | LOCK_NB) < 0 ) {
+        fprintf(stderr, "ERROR: Could not obtain shared lock on %s: %s\n", sessiondir, strerror(errno));
         return(255);
     }
 
@@ -311,13 +311,13 @@ int main(int argc, char ** argv) {
 
     if ( is_owner(containerpath, 0) < 0 ) {
         fprintf(stderr, "ABORT: Container directory is not root owned: %s\n", containerpath);
-        syslog(LOG_ERR, "Container directory has wrong ownership: %s", tmpdir);
+        syslog(LOG_ERR, "Container directory has wrong ownership: %s", sessiondir);
         return(255);
     }
 
     // If we got this far, we have passed basic init
-    if ( fileput(joinpath(tmpdir, "image"), containername) < 0 ) {
-        fprintf(stderr, "ABORT: Could not write container name to %s\n", joinpath(tmpdir, "image"));
+    if ( fileput(joinpath(sessiondir, "image"), containername) < 0 ) {
+        fprintf(stderr, "ABORT: Could not write container name to %s\n", joinpath(sessiondir, "image"));
         return(255);
     }
 
@@ -361,14 +361,14 @@ int main(int argc, char ** argv) {
     if ( strcmp(command, "start") == 0 ) {
         int daemon_fd;
 
-        if ( is_file(joinpath(tmpdir, "daemon.pid")) == 0 ) {
-            if ( ( daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "r+") ) == NULL ) {
-                fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
+        if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
+            if ( ( daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r+") ) == NULL ) {
+                fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
                 return(255);
             }
         } else {
-            if ( ( daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "w") ) == NULL ) {
-                fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
+            if ( ( daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "w") ) == NULL ) {
+                fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
                 return(255);
             }
         }
@@ -379,8 +379,8 @@ int main(int argc, char ** argv) {
             return(255);
         }
 
-        if ( is_fifo(joinpath(tmpdir, "daemon.comm")) < 0 ) {
-            if ( mkfifo(joinpath(tmpdir, "daemon.comm"), 0664) < 0 ) {
+        if ( is_fifo(joinpath(sessiondir, "daemon.comm")) < 0 ) {
+            if ( mkfifo(joinpath(sessiondir, "daemon.comm"), 0664) < 0 ) {
                 fprintf(stderr, "ERROR: Could not create communication fifo: %s\n", strerror(errno));
                 return(255);
             }
@@ -391,7 +391,7 @@ int main(int argc, char ** argv) {
             return(255);
         }
     } else if ( strcmp(command, "stop") == 0 ) {
-        return(container_daemon_stop(tmpdir));
+        return(container_daemon_stop(sessiondir));
     }
 
 
@@ -498,13 +498,13 @@ int main(int argc, char ** argv) {
                     rewind(config_fp);
                     if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
                         if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
-                            if ( is_file(joinpath(tmpdir, "/passwd")) < 0 ) {
-                                if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(tmpdir, "/passwd")) < 0 ) {
+                            if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
+                                if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(sessiondir, "/passwd")) < 0 ) {
                                     fprintf(stderr, "ABORT: Failed creating template password file\n");
                                     return(255);
                                 }
                             }
-                            if ( mount_bind(joinpath(tmpdir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 1) < 0 ) {
+                            if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 1) < 0 ) {
                                 fprintf(stderr, "ABORT: Could not bind /etc/passwd\n");
                                 return(255);
                             }
@@ -514,13 +514,13 @@ int main(int argc, char ** argv) {
                     rewind(config_fp);
                     if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
                         if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
-                            if ( is_file(joinpath(tmpdir, "/group")) < 0 ) {
-                                if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(tmpdir, "/group")) < 0 ) {
+                            if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
+                                if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
                                     fprintf(stderr, "ABORT: Failed creating template group file\n");
                                     return(255);
                                 }
                             }
-                            if ( mount_bind(joinpath(tmpdir, "/group"), joinpath(containerpath, "/etc/group"), 1) < 0 ) {
+                            if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerpath, "/etc/group"), 1) < 0 ) {
                                 fprintf(stderr, "ABORT: Could not bind /etc/group\n");
                                 return(255);
                             }
@@ -619,7 +619,7 @@ int main(int argc, char ** argv) {
                 if ( strcmp(command, "start") == 0 ) {
                     //strncpy(argv[0], "Singularity Init", strlen(argv[0]));
 
-                    if ( container_daemon_start(tmpdir) < 0 ) {
+                    if ( container_daemon_start(sessiondir) < 0 ) {
                         fprintf(stderr, "ABORTING...\n");
                         return(255);
                     }
@@ -680,15 +680,15 @@ int main(int argc, char ** argv) {
             retval++;
         }
 
-        if ( flock(tmpdirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
-            close(tmpdirlock_fd);
+        if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
+            close(sessiondirlock_fd);
             if ( escalate_privs() < 0 ) {
                 fprintf(stderr, "ABORT...\n");
                 return(255);
             }
 
-            if ( s_rmdir(tmpdir) < 0 ) {
-                fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", tmpdir, strerror(errno));
+            if ( s_rmdir(sessiondir) < 0 ) {
+                fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
             }
     
             // Dissociate loops from here Just in case autoflush didn't work.
@@ -700,7 +700,7 @@ int main(int argc, char ** argv) {
             }
 
         } else {
-//        printf("Not removing tmpdir, lock still\n");
+//        printf("Not removing sessiondir, lock still\n");
         }
 
 
@@ -820,11 +820,11 @@ int main(int argc, char ** argv) {
     }
 
     close(containerimage_fd);
-    close(tmpdirlock_fd);
+    close(sessiondirlock_fd);
 
     free(loop_dev_lock);
     free(containerpath);
-    free(tmpdir);
+    free(sessiondir);
     closelog();
 
     return(retval);
