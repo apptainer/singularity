@@ -495,10 +495,10 @@ To run Singularity on a GRSecurity enabled kernel, you must disable several
 security features:
 
 <pre>
-sudo sysctl -w kernel.grsecurity.chroot_caps=0
-sudo sysctl -w kernel.grsecurity.chroot_deny_mount=0
-sudo sysctl -w kernel.grsecurity.chroot_deny_chmod=0
-sudo sysctl -w kernel.grsecurity.chroot_deny_fchdir=0
+$ sudo sysctl -w kernel.grsecurity.chroot_caps=0
+$ sudo sysctl -w kernel.grsecurity.chroot_deny_mount=0
+$ sudo sysctl -w kernel.grsecurity.chroot_deny_chmod=0
+$ sudo sysctl -w kernel.grsecurity.chroot_deny_fchdir=0
 </pre>
 
 </p>
