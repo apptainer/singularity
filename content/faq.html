@@ -3,6 +3,7 @@
         $("#" + content).fadeIn(350);
         $('.popup').click(function() {
             $(".popup").fadeOut(350);
+            event.stopPropagation();
         });
     }
     function close_popup(content) {
