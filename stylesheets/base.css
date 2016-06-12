@@ -207,6 +207,7 @@ p {
     max-width:700px;
     width:90%;
     padding:40px;
+    padding-top: 10px;
     position:absolute;
     top:50%;
     left:50%;
