@@ -1,7 +1,7 @@
 <script type="text/javascript">
     function open_popup(content) {
         $("#" + content).fadeIn(350);
-        $('.popup').click(function() {
+        $('.popup').click(function(event) {
             $(".popup").fadeOut(350);
             event.stopPropagation();
         });
