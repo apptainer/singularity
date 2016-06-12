@@ -1,11 +1,9 @@
 <script type="text/javascript">
     function open_popup(content) {
-        $(".popup_background").fadeIn(700);
         $("#" + content).fadeIn(350);
     }
     function close_popup(content) {
         $("#" + content).fadeOut(350);
-        $(".popup_background").fadeOut(700);
     }
 </script>
 
@@ -324,7 +322,8 @@ Thanks Jason!
 
 
 
-<div id="mpi-hpc" class="popup-content">
+<div id="mpi-hpc" class="popup-background">
+<div class="popup-content">
 <h4>Can I containerize my MPI application with Singularity and run it properly on an HPC system?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -345,7 +344,4 @@ Singularity container.
 <p><a href="javascript:close_popup('mpi-hpc')">Close</a></p>
 <a class="popup-close" href="javascript:close_popup('mpi-hpc')">x</a>
 </div>
-
-
-<div class="popup-background">
 </div>
