@@ -5,12 +5,14 @@
     function close_popup(content) {
         $("#" + content).fadeOut(350);
     }
-    $('.popup').click(function(event) {
+    $('.popup').on('click', function() {
         $(".popup").fadeOut(350);
     });
+    /*
     $('.popup_inner').click(function(event) {
         event.stopPropagation();
     });
+    */
     
 $(function() {
     //----- OPEN
