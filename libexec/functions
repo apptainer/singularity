@@ -206,7 +206,7 @@ parse_opts() {
                 continue
             ;;
             -*)
-                for o in `sed 's/^-//' <<< "$1" | sed 's/./-& /g'`; do
+                for o in `echo "$1"| sed 's/^-//' | sed 's/./-& /g'`; do
                     NEWOPTS="$NEWOPTS \"$o\""
                 done
                 shift
