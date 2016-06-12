@@ -223,7 +223,7 @@ p {
 .popup-close {
     width:30px;
     height:30px;
-    padding-top:4px;
+//    padding-top:4px;
     display:inline-block;
     position:absolute;
     top:0px;
@@ -235,7 +235,7 @@ p {
     background:rgba(0,0,0,0.8);
     border:1px solid #C9C9C9;
     font-family:Arial, Sans-Serif;
-    font-size:25px;
+    font-size:26px;
     text-align:center;
     line-height:100%;
     color:#fff;
