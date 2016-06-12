@@ -1,20 +1,16 @@
 <script type="text/javascript">
     function open_popup(content) {
-        $("#" + content).fadeIn(350);
+        $("#popup_background").fadeIn(350);
+        $("#" + content).fadeIn(700);
     }
     function close_popup(content) {
+        $("#popup_background").fadeOut(700);
         $("#" + content).fadeOut(350);
     }
-    /*
-    $('.popup').on('click', function() {
-        $(".popup").fadeOut(350);
-    });
-    $('.popup_inner').off('click');
-    $('.popup_inner').click(function(event) {
-        event.stopPropagation();
-    });
-    */
 </script>
+
+<div id=mpi-hpc class="popup-background">
+</div>
 
 
 <div id="back_link">&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a></div>
@@ -324,9 +320,15 @@ Thanks Jason!
 
 
 <a class="loud" href="javascript:open_popup('mpi-hpc')">Can I containerize my MPI application with Singularity and run it properly on an HPC system?</a>
-<div id=mpi-hpc class="popup">
-<div class="popup-inner">
+
+
+
+
+
+
+<div class="popup-content">
 <h4>Can I containerize my MPI application with Singularity and run it properly on an HPC system?</h4>
+<br/>&nbsp;<br/>
 <p>
 Yes! HPC was one of the primary use cases in mind when Singularity was
 created.
@@ -337,14 +339,13 @@ implementations, we have spent a considerable effort working with Open MPI
 as well as adding a Singularity module into Open MPI (v2) such that running
 at extreme scale will be as effecient as possible.
 </p>
-</p>
+<p>
 note: We have seen no major performance impact from running a job in a
 Singularity container.
 </p>
 <a target="_blank" href="http://style.org/unladenswallow/">http://style.org/unladenswallow/</a>
 <p><a href="javascript:close_popup('mpi-hpc')">Close</a></p>
 <a class="popup-close" href="javascript:close_popup('mpi-hpc')">x</a>
-</div>
 </div>
 
 
