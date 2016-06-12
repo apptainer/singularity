@@ -199,7 +199,7 @@ p {
     left:50%;
     -webkit-transform:translate(-50%, -50%);
     transform:translate(-50%, -50%);
-    box-shadow:2px 2px 6px white;
+    box-shadow:0 0 8px #C9C9C9;
     border-radius:5px;
     border:1px solid #C9C9C9;
     background: #404040;
