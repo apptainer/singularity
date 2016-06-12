@@ -204,6 +204,7 @@ p {
  
 /* Inner */
 .popup-content {
+    display:none;
     max-width:700px;
     width:90%;
     padding:40px;
