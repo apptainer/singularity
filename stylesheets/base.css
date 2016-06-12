@@ -223,7 +223,7 @@ p {
 .popup-close {
     width:30px;
     height:30px;
-    padding-top:4px;
+//    padding-top:4px;
     display:inline-block;
     position:absolute;
     top:0px;
