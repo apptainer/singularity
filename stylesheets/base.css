@@ -241,9 +241,11 @@ p {
     text-decoration: none;
 }
  
-.popup-close_disabled:hover {
+.popup-close:hover {
+/*
     -webkit-transform:translate(50%, -50%) rotate(180deg);
     transform:translate(50%, -50%) rotate(180deg);
-    background:rgba(0,0,0,1);
+*/
+    background:rgba(255,0,0,2);
     text-decoration:none;
 }
