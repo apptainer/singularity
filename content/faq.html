@@ -9,9 +9,25 @@
 <li><a href="javascript:open_popup('namespaces')">Which namespaces are virtualized? Is that selectable?</a></li>
 <li><a href="javascript:open_popup('shifter')">How does Singularity relate/differ from Shifter?</a></li>
 <li><a href="javascript:open_popup('docker')">How does Singulairty relate/differ from Docker?</a></li>
-
-
+<li><a href="javascript:open_popup('admin')">Do you need administrator privileges to use Singularity?</a></li>
+<li><a href="javascript:open_popup('static_bin')">How does Singulairty relate/differ from statically compiled binaries?</a></li>
+<li><a href="javascript:open_popup('writable')">Can you edit/modity a Singularity container once it has been instantiated?</a></li>
+<li><a href="javascript:open_popup('multiple_apps')">Can multiple applications be packaged into one Singularity Container?</a></li>
+<li><a href="javascript:open_popup('kernel_dependant')">Are Singularity containers kernel dependent?</a></li>
+<li><a href="javascript:open_popup('binds')">How are external filesystems and paths handled in a Singularity Container?</a></li>
+<li><a href="javascript:open_popup('paths')">What is the difference between full and relative paths?</a></li>
+<li><a href="javascript:open_popup('networking')">How does Singularity handle manage networking?</a></li>
+<li><a href="javascript:open_popup('x11')">Can I run X11 apps through Singularity?</a></li>
+<li><a href="javascript:open_popup('glibc')">Can a Singularity container resolve GLIBC version mismatches?</a></li>
+<li><a href="javascript:open_popup('threads')">Can a Singularity container be multi-threaded?</a></li>
+<li><a href="javascript:open_popup('suspend')">Can a Singularity container be suspended or checkpointed?</a></li>
+<li><a href="javascript:open_popup('sched')">Are there any special requirements to use Singularity through a job scheduler?</a></li>
+<li><a href="javascript:open_popup('security')">Are there any special security concerns that Singularity introduces?</a></li>
+<li><a href="javascript:open_popup('distros')">What Linux distributions are you trying to get onboard?</a></li>
+<li><a href="javascript:open_popup('perf')">What is the performance tradeoff when running an appication native or through Singularity?</a></li>
+<li><a href="javascript:open_popup('shared_sys')">Does Singularity work on multi-tenant HPC cluster environments?</a></li>
 <li><a href="javascript:open_popup('mpi-hpc')">Can I containerize my MPI application with Singularity and run it properly on an HPC system?</a></li>
+<li><a href="javascript:open_popup('swallow')">What is the average air speed velocity of an unladen swallow?</a></li>
 
 </ul>
 
@@ -98,7 +114,10 @@ forwarding, and other kinds of work tasks trivial for Singularity.
 </div>
 
 
-<h4 class="loud">Do you need administrator privileges to use Singularity?</h4>
+<div id="admin" class="popup-background">
+<div class="popup-content">
+<h4>Do you need administrator privileges to use Singularity?</h4>
+<br/>&nbsp;<br/>
 <p>
 No, you do not need admin/sudo to use Singularity containers. You do however
 need admin/root access to install Singularity and to build/manage your
@@ -112,8 +131,15 @@ be a physical system or on a VM or Docker image). Once the container image
 has been configured it can be used on a system where you do not have root
 access as long as Singularity has been installed there.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
-<h4 class="loud">How does Singulairty relate/differ from statically compiled binaries?</h4>
+
+<div id="static_bin" class="popup-background">
+<div class="popup-content">
+<h4>How does Singulairty relate/differ from statically compiled binaries?</h4>
+<br/>&nbsp;<br/>
 <p>
 Statically compiled binaries are a good comparasion to what Singularity can do
 for a single program because it will package up all of the dynamic libraries
@@ -125,15 +151,27 @@ container, you can do much more with it... Such as include other files,
 scripts, workflows, pipe lines, data, and multi program processes and package
 them into a single portable executable format.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Can you edit/modity a Singularity container once it has been instantiated?</h4>
+<div id="writable" class="popup-background">
+<div class="popup-content">
+<h4>Can you edit/modity a Singularity container once it has been instantiated?</h4>
+<br/>&nbsp;<br/>
 <p>
 Yes, if you call it with the -w/--writable flag. (e.g. 'singularity shell --writable Container.img').
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Can multiple applications be packaged into one Singularity Container?</h4>
+<div id="multiple_apps" class="popup-background">
+<div class="popup-content">
+<h4>Can multiple applications be packaged into one Singularity Container?</h4>
+<br/>&nbsp;<br/>
 <p>
 Yes! You can even create entire pipe lines and work flows using many
 applications, binaries, scripts, etc.. Look into the RunScript bootstrap
@@ -142,9 +180,15 @@ run (note: you can accomplish this by also creating an executable file
 within your container at /singularity and when the container is executed
 directly or via the 'run' command, this will get executed).
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Are Singularity containers kernel dependent?</h4>
+<div id="kernel_dependant" class="popup-background">
+<div class="popup-content">
+<h4>Are Singularity containers kernel dependent?</h4>
+<br/>&nbsp;<br/>
 <p>
 No, never. But sometimes yes.
 </p>
@@ -170,9 +214,15 @@ container and run it on Centos-5.
 note: If you require kernel dependent features, a container platform is
 probably not the right solution for you.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">How are external filesystems and paths handled in a Singularity Container?</h4>
+<div id="binds" class="popup-background">
+<div class="popup-content">
+<h4>How are external filesystems and paths handled in a Singularity Container?</h4>
+<br/>&nbsp;<br/>
 <p>
 Because Singularity is based on container principals, when an application
 is run from within a Singularity container it's default view of the file
@@ -192,44 +242,80 @@ There is a caveat in that a directory *must* already exist within your
 container to serve as a mount point. If that directory does not exist,
 Singularity will not create it for you! You must do that.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">What is the difference between full and relative paths?</h4>
+<div id="paths" class="popup-background">
+<div class="popup-content">
+<h4>What is the difference between full and relative paths?</h4>
+<br/>&nbsp;<br/>
 <p>
 See the above answer to "How are external filesystems and paths handled
 in a Singularity Container?".
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">How does Singularity handle manage networking?</h4>
+<div id="networking" class="popup-background">
+<div class="popup-content">
+<h4>How does Singularity handle manage networking?</h4>
+<br/>&nbsp;<br/>
 <p>
 Singularity does no network isolation because it is designed to run like any
 other application on the system. It has all of the same networking privledges
 as any program running as that user.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Can I run X11 apps through Singularity?</h4>
+<div id="x11" class="popup-background">
+<div class="popup-content">
+<h4>Can I run X11 apps through Singularity?</h4>
+<br/>&nbsp;<br/>
 <p>
 Yes. This works exactly as you would expect it to.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Can a Singularity container resolve GLIBC version mismatches?</h4>
+<div id="glibc" class="popup-background">
+<div class="popup-content">
+<h4>Can a Singularity container resolve GLIBC version mismatches?</h4>
+<br/>&nbsp;<br/>
 <p>
 Yes. Singularity containers contain their own library stack (including the
 Glibc version that they require to run).
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Can a Singularity container be multi-threaded?</h4>
+<div id="threads" class="popup-background">
+<div class="popup-content">
+<h4>Can a Singularity container be multi-threaded?</h4>
+<br/>&nbsp;<br/>
 <p>
 Yes. Singularity imposes no limitations on forks, threads or processes in
 general.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Can a Singularity container be suspended or checkpointed?</h4>
+<div id="suspend" class="popup-background">
+<div class="popup-content">
+<h4>Can a Singularity container be suspended or checkpointed?</h4>
+<br/>&nbsp;<br/>
 <p>
 Yes and maybe respectively. Any Singularity application can be suspended using
 standard Linux/Unix signals. Checkpointing requires some preloaded libraries
@@ -239,18 +325,30 @@ however you wanted to make a Singularity container that can be checkpointed,
 you would need to install the checkpoint libraries into the Singularity
 container via the specfile.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Are there any special requirements to use Singularity through a job scheduler?</h4>
+<div id="sched" class="popup-background">
+<div class="popup-content">
+<h4>Are there any special requirements to use Singularity through a job scheduler?</h4>
+<br/>&nbsp;<br/>
 <p>
 No, Singularity containers can be run via any job scheduler with no
 modifications to the scheduler configuration or architecture. This is because
 Singularity containers are designed to be run like any application on the
 system.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Are there any special security concerns that Singularity introduces?</h4>
+<div id="security" class="popup-background">
+<div class="popup-content">
+<h4>Are there any special security concerns that Singularity introduces?</h4>
+<br/>&nbsp;<br/>
 <p>
 No and yes.
 </p>
@@ -265,16 +363,28 @@ Additionally, there are precautions within the container context to mitigate
 any esclation of privileges. This limits a user's ability to gain root control
 once inside the container.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">What Linux distributions are you trying to get onboard?</h4>
+<div id="distros" class="popup-background">
+<div class="popup-content">
+<h4>What Linux distributions are you trying to get onboard?</h4>
+<br/>&nbsp;<br/>
 <p>
 All of them! Help us out by letting them know you want Singularity to be
 included!
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">What is the performance tradeoff when running an appication native or through Singularity?</h4>
+<div id="perf" class="popup-background">
+<div class="popup-content">
+<h4>What is the performance tradeoff when running an appication native or through Singularity?</h4>
+<br/>&nbsp;<br/>
 <p>
 So far we have not identified any appreciable regressions of performance (even
 in parallel applications running across nodes with InfiniBand). There is a
@@ -289,9 +399,15 @@ Enterprise product line and it is not available to other distributions (or
 rebuilds) and thus their resulting binaries and libraries have been more
 performant then other Linux distributions we have tested.
 </p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
-<h4 class="loud">Does Singularity work on multi-tenant HPC cluster environments?</h4>
+<div id="shared_sys" class="popup-background">
+<div class="popup-content">
+<h4>Does Singularity work on multi-tenant HPC cluster environments?</h4>
+<br/>&nbsp;<br/>
 <p>
 Yes! HPC was one of the primary use cases in mind when Singularity was
 created.
@@ -308,37 +424,9 @@ Singularity on the other hand allows one to keep the high performance in High
 Performance Computing by containerizing applications and supporting a runtime
 which seemlessly interfaces with the host system and existing envrionments.
 </p>
-
-
-<h4 class="loud">Can I containerize my MPI application with Singularity and run it properly on an HPC system?</h4>
-<p>
-Yes! HPC was one of the primary use cases in mind when Singularity was
-created.
-</p>
-<p>
-While we know for a fact that Singularity can support multiple MPI
-implementations, we have spent a considerable effort working with Open MPI
-as well as adding a Singularity module into Open MPI (v2) such that running
-at extreme scale will be as effecient as possible.
-</p>
-</p>
-note: We have seen no major performance impact from running a job in a
-Singularity container.
-</p>
-
-
-<h4 class="loud">What is the average air speed velocity of an unladen swallow?</h4>
-<p>
-Thanks Jason!
-<br/>&nbsp;<br/>
-<a target="_blank" href="http://style.org/unladenswallow/">http://style.org/unladenswallow/</a>
-</p>
-
-
-
-
-
-
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
 <div id="mpi-hpc" class="popup-background">
@@ -362,3 +450,23 @@ Singularity container.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+
+
+<div id="swallow" class="popup-background">
+<div class="popup-content">
+<h4>What is the average air speed velocity of an unladen swallow?</h4>
+<br/>&nbsp;<br/>
+<p>
+Thanks Jason!
+<br/>&nbsp;<br/>
+<a target="_blank" href="http://style.org/unladenswallow/">http://style.org/unladenswallow/</a>
+</p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
+
+
+
+
+
+
