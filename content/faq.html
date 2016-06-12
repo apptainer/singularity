@@ -5,32 +5,47 @@
 <br/>
 
 
+<h4 class="loud">General Singularity info</h4>
 <ul>
+<li><a href="javascript:open_popup('docker')">How does Singulairty relate/differ from Docker?</a></li>
 <li><a href="javascript:open_popup('namespaces')">Which namespaces are virtualized? Is that selectable?</a></li>
 <li><a href="javascript:open_popup('shifter')">How does Singularity relate/differ from Shifter?</a></li>
-<li><a href="javascript:open_popup('docker')">How does Singulairty relate/differ from Docker?</a></li>
-<li><a href="javascript:open_popup('admin')">Do you need administrator privileges to use Singularity?</a></li>
 <li><a href="javascript:open_popup('static_bin')">How does Singulairty relate/differ from statically compiled binaries?</a></li>
+<li><a href="javascript:open_popup('distros')">What Linux distributions are you trying to get onboard?</a></li>
+</ul>
+
+<h4 class="loud">Basic Singularity usage</h4>
+<ul>
+<li><a href="javascript:open_popup('admin')">Do you need administrator privileges to use Singularity?</a></li>
 <li><a href="javascript:open_popup('writable')">Can you edit/modity a Singularity container once it has been instantiated?</a></li>
 <li><a href="javascript:open_popup('multiple_apps')">Can multiple applications be packaged into one Singularity Container?</a></li>
-<li><a href="javascript:open_popup('kernel_dependant')">Are Singularity containers kernel dependent?</a></li>
 <li><a href="javascript:open_popup('binds')">How are external filesystems and paths handled in a Singularity Container?</a></li>
 <li><a href="javascript:open_popup('paths')">What is the difference between full and relative paths?</a></li>
 <li><a href="javascript:open_popup('networking')">How does Singularity handle manage networking?</a></li>
-<li><a href="javascript:open_popup('x11')">Can I run X11 apps through Singularity?</a></li>
-<li><a href="javascript:open_popup('glibc')">Can a Singularity container resolve GLIBC version mismatches?</a></li>
+</ul>
+
+<h4 class="loud">Contained applications and work flows</h4>
+<ul>
 <li><a href="javascript:open_popup('threads')">Can a Singularity container be multi-threaded?</a></li>
 <li><a href="javascript:open_popup('suspend')">Can a Singularity container be suspended or checkpointed?</a></li>
 <li><a href="javascript:open_popup('sched')">Are there any special requirements to use Singularity through a job scheduler?</a></li>
-<li><a href="javascript:open_popup('security')">Are there any special security concerns that Singularity introduces?</a></li>
-<li><a href="javascript:open_popup('distros')">What Linux distributions are you trying to get onboard?</a></li>
-<li><a href="javascript:open_popup('perf')">What is the performance tradeoff when running an appication native or through Singularity?</a></li>
-<li><a href="javascript:open_popup('shared_sys')">Does Singularity work on multi-tenant HPC cluster environments?</a></li>
+<li><a href="javascript:open_popup('shared_sys')">Does Singularity work in multi-tenant HPC cluster environments?</a></li>
+<li><a href="javascript:open_popup('x11')">Can I run X11 apps through Singularity?</a></li>
 <li><a href="javascript:open_popup('mpi-hpc')">Can I containerize my MPI application with Singularity and run it properly on an HPC system?</a></li>
-<li><a href="javascript:open_popup('swallow')">What is the average air speed velocity of an unladen swallow?</a></li>
-
 </ul>
 
+<h4 class="loud">Container portability</h4>
+<ul>
+<li><a href="javascript:open_popup('kernel_dependant')">Are Singularity containers kernel dependent?</a></li>
+<li><a href="javascript:open_popup('glibc')">Can a Singularity container resolve GLIBC version mismatches?</a></li>
+<li><a href="javascript:open_popup('perf')">What is the performance tradeoff when running an appication native or through Singularity?</a></li>
+</ul>
+
+<h4 class="loud">Misc</h4>
+<ul>
+<li><a href="javascript:open_popup('security')">Are there any special security concerns that Singularity introduces?</a></li>
+<li><a href="javascript:open_popup('swallow')">What is the average air speed velocity of an unladen swallow?</a></li>
+</ul>
 
 
 
@@ -406,7 +421,7 @@ performant then other Linux distributions we have tested.
 
 <div id="shared_sys" class="popup-background">
 <div class="popup-content">
-<h4>Does Singularity work on multi-tenant HPC cluster environments?</h4>
+<h4>Does Singularity work in multi-tenant HPC cluster environments?</h4>
 <br/>&nbsp;<br/>
 <p>
 Yes! HPC was one of the primary use cases in mind when Singularity was
