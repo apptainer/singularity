@@ -1,10 +1,10 @@
 <script type="text/javascript">
-$(function() {
     function open_popup(content) {
         var targeted_popup_class = jQuery(content).attr('data-popup-open');
         $(content).fadeIn(350);
     }
     
+$(function() {
     //----- OPEN
     $('[data-popup-open]').on('click', function(e)  {
         var targeted_popup_class = jQuery(this).attr('data-popup-open');
