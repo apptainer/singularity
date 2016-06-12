@@ -1,8 +1,9 @@
 <script type="text/javascript">
     function open_popup(content) {
-        alert("test");
-        var targeted_popup_class = jQuery(content).attr('data-popup-open');
         $("#" + content).fadeIn(350);
+    }
+    function close_popup(content) {
+        $("#" + content).fadeOut(350);
     }
     
 $(function() {
@@ -331,11 +332,9 @@ Thanks Jason!
 
 
 
-<a class="btn" data-popup-open="mpi-hpc" href="#"><h4>Can I containerize my MPI application with Singularity and run it properly on an HPC system?</h4></a>
- 
 <a href="javascript:open_popup('test1')">Test open</a>
 
-<div id=test1 class="popup" data-popup="mpi-hpc">
+<div id=test1 class="popup">
 <div class="popup-inner">
 <h4>Can I containerize my MPI application with Singularity and run it properly on an HPC system?</h4>
 <p>
@@ -353,7 +352,7 @@ note: We have seen no major performance impact from running a job in a
 Singularity container.
 </p>
 
-<p><a data-popup-close="mpi-hpc" href="#">Close</a></p>
-<a class="popup-close" data-popup-close="mpi-hpc" href="#">x</a>
+<p><a href="javascript:close_popup('test1')">Close</a></p>
+<a class="popup-close" href="javascript:close_popup('test1')">x</a>
 </div>
 </div>
