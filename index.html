@@ -14,11 +14,13 @@
 
 
     <script type="text/javascript">
+        var current_popup;
         function open_popup(content) {
             $("#" + content).fadeIn(350);
+            current_popup = content;
         }
         function close_popup(content) {
-            $("#" + content).fadeOut(350);
+            $("#" + current_popup).fadeOut(350);
         }
 
         function load_content(page) {
