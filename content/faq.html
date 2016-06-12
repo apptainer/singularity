@@ -1,6 +1,9 @@
 <script type="text/javascript">
     function open_popup(content) {
         $("#" + content).fadeIn(350);
+        $('.popup').click(function() {
+            $(".popup").fadeOut(350);
+        });
     }
     function close_popup(content) {
         $("#" + content).fadeOut(350);
