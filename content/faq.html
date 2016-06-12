@@ -4,7 +4,24 @@
 <h1>FAQ</h1>
 <br/>
 
-<h4 class="loud">Which namespaces are virtualized? Is that selectable?</h4>
+
+<ul>
+<li><a class="loud" href="javascript:open_popup('namespaces')">Which namespaces are virtualized? Is that selectable?</a></li>
+<li><a class="loud" href="javascript:open_popup('shifter')">How does Singularity relate/differ from Shifter?</a></li>
+<li><a class="loud" href="javascript:open_popup('docker')">How does Singulairty relate/differ from Docker?</a></li>
+
+
+<li><a class="loud" href="javascript:open_popup('mpi-hpc')">Can I containerize my MPI application with Singularity and run it properly on an HPC system?</a></li>
+
+</ul>
+
+
+
+
+<div id="mpi-hpc" class="popup-background">
+<div class="popup-content">
+<h2>Which namespaces are virtualized? Is that selectable?</h2>
+<br/>&nbsp;<br/>
 <p>
 The goal of Singularity is to run an application within a contained
 environment such as it was not contained. Thus there is a balance between
@@ -26,9 +43,14 @@ seperated (PIDS, file systems and descriptors, mounts, and root file
 system). These can be enabled or disabled by the build and what namespaces
 the host system supports as well as through envrionment variables.
 </p>
+</div>
+</div>
 
 
-<h4 class="loud">How does Singularity relate/differ from Shifter?</h4>
+<div id="shifter" class="popup-background">
+<div class="popup-content">
+<h2>How does Singularity relate/differ from Shifter?</h2>
+<br/>&nbsp;<br/>
 <p>
 NERSC (like most HPC centers) are feeling the pressure from users asking
 for support for containers, specifically Docker. Due to the architecture
@@ -46,9 +68,13 @@ integration of Singularity non-HPC specific (even though it works very
 well with HPC) and allows the image to become the primary unit of
 mobility (you can share and operate directly on Singularity images).
 </p>
+</div>
+</div>
 
-
-<h4 class="loud">How does Singulairty relate/differ from Docker?</h4>
+<div id="docker" class="popup-background">
+<div class="popup-content">
+<h2>How does Singulairty relate/differ from Docker?</h2>
+<br/>&nbsp;<br/>
 <p>
 Docker has been used for a variety of purposes, but it is designed as a
 platform to provide replicatable, network service virtualation. Because of
@@ -65,6 +91,8 @@ container and seemlessly redirects all IO in and out of the container
 directly between the enviornments. This makes doing things like MPI, X11
 forwarding, and other kinds of work tasks trivial for Singularity.
 </p>
+</div>
+</div>
 
 
 <h4 class="loud">Do you need administrator privileges to use Singularity?</h4>
@@ -305,8 +333,6 @@ Thanks Jason!
 
 
 
-<a class="loud" href="javascript:open_popup('mpi-hpc')">Can I containerize my MPI application with Singularity and run it properly on an HPC system?</a>
-
 
 
 
@@ -330,8 +356,6 @@ at extreme scale will be as effecient as possible.
 note: We have seen no major performance impact from running a job in a
 Singularity container.
 </p>
-<a target="_blank" href="http://style.org/unladenswallow/">http://style.org/unladenswallow/</a>
-<p><a href="javascript:close_popup('mpi-hpc')">Close</a></p>
 <a class="popup-close" href="javascript:close_popup('mpi-hpc')">x</a>
 </div>
 </div>
