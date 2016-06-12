@@ -223,7 +223,7 @@ p {
 .popup-close {
     width:30px;
     height:30px;
-//    padding-top:4px;
+    padding-top:4px;
     display:inline-block;
     position:absolute;
     top:0px;
@@ -241,7 +241,7 @@ p {
     text-decoration: none;
 }
  
-.popup-close:hover {
+.popup-close_disabled:hover {
     -webkit-transform:translate(50%, -50%) rotate(180deg);
     transform:translate(50%, -50%) rotate(180deg);
     background:rgba(0,0,0,1);
