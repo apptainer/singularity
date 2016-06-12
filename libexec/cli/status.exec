@@ -40,13 +40,14 @@ if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
 fi
 
 
-
 if ! USERID=`id --real --user`; then
     message ERROR "Could not ascertain user ID\n"
     exit 255
 fi
 
-SESSION_GLOB="/tmp/.singularity-session-${USERID}.*/daemon.pid"
+if [ "$USERID" = 0 ]; then
+    USERID="*"
+fi
 
 while true; do
     case $1 in
@@ -59,6 +60,8 @@ while true; do
         ;;
     esac
 done
+
+SESSION_GLOB="/tmp/.singularity-session-${USERID}.*/daemon.pid"
 
 
 # Show status here...
