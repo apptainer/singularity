@@ -3,7 +3,6 @@ html {
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
-    text-shadow: 0 0 10px #B28B2C;
 }
 
 body {
@@ -16,6 +15,7 @@ body {
     line-height: 1.42857143;
     color: white;
     background-color: black;
+    text-shadow: 0 0 5px #B28B2C;
 }
 
 a {
@@ -61,12 +61,13 @@ code, pre {
     background: #2A2A2A;        
     border-radius: 5px;        
     border:1px solid #C9C9C9;     
-    overflow-x: auto;        
+    overflow-x: auto;
+    text-shadow: none;
 }
 
 p {
     color: LightGray ;
-    text-shadow: 2px 2px 4px #939491;
+    text-shadow: 0 0 2px #939491;
     padding-left: 20px;
     margin-top: 0px;
     margin-bottom: 15px;
