@@ -9,7 +9,7 @@ ftrace_CPPFLAGS = -DARCH_$(SINGULARITY_ARCH)
 dist_suidPROGRAM_INSTALL = ${INSTALL} -m 640
 
 install-exec-hook:
-	@if test "$$UID" = "0"; then \
+	@if test `id -ru` = "0"; then \
 		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec"; \
 		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec; \
 		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec"; \
