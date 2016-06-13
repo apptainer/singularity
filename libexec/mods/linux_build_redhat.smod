@@ -28,9 +28,6 @@ if ! YUM_PATH=`singularity_which dnf` &&
 fi
 
 
-RELEASE_PKG=`rpm -qf /etc/redhat-release  --qf '%{NAME}\n'`
-
-
 REPO_NAME="os-base"
 YUM_CONF="/etc/bootstrap-yum.conf"
 
@@ -75,8 +72,9 @@ Setup() {
 
 Bootstrap() {
     # Avoid plugins which might cuase trouble, e.g. etckeeper, Red Hat
-    # subscription-manager.
-    if ! eval "$YUM_PATH --noplugins -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $RELEASE_PKG redhat-release coreutils $@"; then
+    # subscription-manager.  Install the release file, as the name of
+    # the release package varies between RHEL, CentOS, etc.
+    if ! eval "$YUM_PATH --noplugins -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install /etc/redhat-release coreutils $@"; then
         exit 1
     fi
 
