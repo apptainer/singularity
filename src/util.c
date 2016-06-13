@@ -77,6 +77,19 @@ char *strjoin(char *str1, char *str2) {
     return(ret);
 }
 
+void chomp(char *str) {
+    int len = strlen(str);
+    if ( str[len - 1] == ' ') {
+        str[len - 1] = '\0';
+    }
+    if ( str[0] == '\n') {
+        str[0] = '\0';
+    }
+    if ( str[len - 1] == '\n') {
+        str[len - 1] = '\0';
+    }
+}
+
 char *random_string(int length) {
     static const char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     char *ret;

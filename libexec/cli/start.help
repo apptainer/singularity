@@ -1,0 +1,21 @@
+USAGE: singularity (options) start [container path] (options)
+
+
+
+OPTIONS:
+    -w/--writable   By default all Singularity containers are available as
+                    read only. This option makes the file system accessible
+                    as read/write.
+    -C/--contain    This option disables the automatic sharing of writable
+                    filesystems on your host (e.g. $HOME and /tmp).
+
+EXAMPLES:
+
+    $ singularity run /tmp/Debian.img
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://gmkurtzer.github.io/singularity
+

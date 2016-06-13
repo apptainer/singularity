@@ -19,17 +19,19 @@
  */
 
 
-char *file_id(char *path);
-int is_file(char *path);
-int is_fifo(char *path);
-int is_link(char *path);
-int is_dir(char *path);
-int is_exec(char *path);
-int is_owner(char *path, uid_t uid);
-int is_blk(char *path);
-int s_mkpath(char *dir, mode_t mode);
-int s_rmdir(char *dir);
-int copy_file(char * source, char * dest);
-char *filecat(char *path);
-int fileput(char *path, char *string);
-char * container_dir_walk(char *containerdir, char *dir);
+struct s_privinfo {
+    int ready;
+    uid_t uid;
+    gid_t gid;
+    gid_t *gids;
+    size_t gids_count;
+};
+
+
+int drop_privs_perm(struct s_privinfo *uinfo);
+int drop_privs(struct s_privinfo *uinfo);
+int escalate_privs(void);
+int get_user_privs(struct s_privinfo *uinfo);
+
+
+

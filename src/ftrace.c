@@ -25,7 +25,7 @@
 #include <sys/types.h>
 #include <sys/reg.h>
 #include <sys/ptrace.h>
-#include <linux/ptrace.h>
+//#include <linux/ptrace.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
 #include <sys/user.h>

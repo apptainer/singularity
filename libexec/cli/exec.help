@@ -10,6 +10,15 @@ OPTIONS:
     -C/--contain    This option disables the automatic sharing of writable
                     filesystems on your host (e.g. $HOME and /tmp).
 
+
+NOTE:
+    If there is a daemon process running inside the container, then 
+    subsequent container commands will all run within the same namespaces.
+    This means that the --writable and --contain options will not be
+    honored as the namespaces have already been configured by the
+    'singularity start' command.
+
+
 EXAMPLES:
     
     $ singularity exec /tmp/Debian.img cat /etc/debian_version

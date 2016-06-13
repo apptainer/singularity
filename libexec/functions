@@ -70,7 +70,7 @@ get_key_from_conf() {
     KEY="$1"
     FILE="$2"
     if OUT=`egrep -i "^$KEY:\s*" $FILE`; then
-        head -n 1 <<< "$OUT" | sed -e "s@^$KEY:\s*@@i"
+        echo "$OUT" | head -n 1 | sed -e "s@^$KEY:\s*@@i"
         return 0
     fi
     return 1
@@ -89,19 +89,13 @@ get_section_from_conf() {
     fi
     cat "$FILE" | while read line; do
         if [ -n "$TOGGLE" ]; then
-            if grep -q "^%" <<< "$line"; then
+            if /bin/echo "$line" | grep -q "^%"; then
                 # we are done...
                 return 0
             fi
-            if [ -z "$line" ]; then
-                true
-            elif egrep -q "^\s*#" <<< "$line"; then
-                true
-            else
-                /bin/cat <<< "$line"
-            fi
+            /bin/echo "$line"
         else
-            if grep -q "^%$SECTION\$" <<< "$line"; then
+            if /bin/echo "$line" | grep -q "^%$SECTION\$"; then
                 TOGGLE=1
             fi
         fi
@@ -200,8 +194,8 @@ parse_opts() {
     while [ -n "$1" ]; do
         case "$1" in
             -*=*)
-                ARG1=`cut -d = -f 1 <<< "$1"`
-                ARG2=`cut -d = -f 2 <<< "$1"`
+                ARG1=`echo -n "$1" | cut -d = -f 1`
+                ARG2=`echo -n "$1" | cut -d = -f 2`
                 NEWOPTS="$NEWOPTS \"$ARG1\" \"$ARG2\""
                 shift
                 continue
@@ -212,7 +206,7 @@ parse_opts() {
                 continue
             ;;
             -*)
-                for o in `sed 's/^-//' <<< "$1" | sed 's/./-& /g'`; do
+                for o in `echo "$1"| sed 's/^-//' | sed 's/./-& /g'`; do
                     NEWOPTS="$NEWOPTS \"$o\""
                 done
                 shift
@@ -227,7 +221,7 @@ parse_opts() {
     # Eww, this is bad I know... Would be better just to pass the variable
     # around without making ad-hoc modifications... Got a better idea, let
     # me know! (gmk)
-    sed -e 's/\\/\\\\/g' <<< "$NEWOPTS"
+    echo "$NEWOPTS" | sed -e 's/\\/\\\\/g'
 }
 
 

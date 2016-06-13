@@ -9,7 +9,7 @@ ftrace_CPPFLAGS = -DARCH_$(SINGULARITY_ARCH)
 dist_suidPROGRAM_INSTALL = ${INSTALL} -m 640
 
 install-exec-hook:
-	@if test "$$UID" = "0"; then \
+	@if test `id -ru` = "0"; then \
 		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec"; \
 		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec; \
 		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec"; \
@@ -17,14 +17,14 @@ install-exec-hook:
 	fi
 
 bindir = $(libexecdir)/singularity
-bin_PROGRAMS = ftrace ftype sexec image-create image-expand image-mount image-bind
+bin_PROGRAMS = ftype sexec image-create image-expand image-mount image-bind
 
-ftrace_SOURCES = ftrace.c file.c file.h util.c util.h
-ftype_SOURCES = ftype.c util.c util.h file.c file.h
-sexec_SOURCES = sexec.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h user.c user.h file.c file.h image.c image.h
-image_create_SOURCES = image-create.c file.c file.h util.c util.h image.c image.h
-image_expand_SOURCES = image-expand.c file.c file.h util.c util.h image.c image.h
-image_mount_SOURCES = image-mount.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h file.c file.h image.c image.h
-image_bind_SOURCES = image-bind.c util.c util.h loop-control.c loop-control.h mounts.c mounts.h file.c file.h image.c image.h
+ftrace_SOURCES = ftrace.c file.c util.c
+ftype_SOURCES = ftype.c util.c file.c
+sexec_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c
+image_create_SOURCES = image-create.c file.c util.c image.c
+image_expand_SOURCES = image-expand.c file.c util.c image.c
+image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c
+image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c
 
-EXTRA_DIST = config.h 
+EXTRA_DIST = config.h config_parser.h container_actions.h file.h image.h loop-control.h mounts.h container_files.h util.h privilege.h
