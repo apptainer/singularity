@@ -20,9 +20,10 @@
 # 
 
 
-
-if ! YUM_PATH=`singularity_which yum`; then
-    message ERROR "YUM is not in PATH!\n"
+# dnf should probably be preferred if it's present
+if ! YUM_PATH=`singularity_which dnf` && 
+   ! YUM_PATH=`singularity_which yum`; then
+    message ERROR "Neither yum nor dnf in PATH!\n"
     return 255
 fi
 
@@ -73,7 +74,9 @@ Setup() {
 }
 
 Bootstrap() {
-    if ! eval "$YUM_PATH -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $RELEASE_PKG redhat-release coreutils $@"; then
+    # Avoid plugins which might cuase trouble, e.g. etckeeper, Red Hat
+    # subscription-manager.
+    if ! eval "$YUM_PATH --noplugins -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $RELEASE_PKG redhat-release coreutils $@"; then
         exit 1
     fi
 
@@ -81,7 +84,7 @@ Bootstrap() {
 }
 
 InstallPkgs() {
-    if ! eval "$YUM_PATH --nogpgcheck --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then
+    if ! eval "$YUM_PATH --noplugins --nogpgcheck --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then
         exit 1
     fi
 
@@ -89,7 +92,7 @@ InstallPkgs() {
 }
 
 Cleanup() {
-    if ! eval "$YUM_PATH --installroot $SINGULARITY_BUILD_ROOT clean all"; then
+    if ! eval "$YUM_PATH --noplugins --installroot $SINGULARITY_BUILD_ROOT clean all"; then
         exit 1
     fi
 
