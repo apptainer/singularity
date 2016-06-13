@@ -86,18 +86,14 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
 
 AC_SUBST(NAMESPACE_DEFINES)
 
-AC_MSG_CHECKING([for setns])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
-                                     #include <sched.h>
-                                   ]],
-                                   [[setns(0,0);]])],
-                      [
+AC_CHECK_FUNCS(setns, [
                           AC_MSG_RESULT([yes])
                       ], [
-                          NO_SETNS="-DNO_SETNS"
                           AC_MSG_RESULT([no])
+                          NO_SETNS="-DNO_SETNS"
                       ]
                   )
+                 
 
 AC_SUBST(NO_SETNS)
 
