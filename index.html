@@ -6,7 +6,7 @@
     <link rel="icon" href="/singularity/favicon.ico" sizes="16x16 32x32 48x48 64x64" type="image/vnd.microsoft.icon">
     <title>Singularity</title>
 
-    <script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
+    <script type="text/javascript" src="jquery-1.12.4.min.js"></script>
     <link rel="stylesheet" href="stylesheets/base.css">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -14,6 +14,16 @@
 
 
     <script type="text/javascript">
+        //var current_popup;
+        function open_popup(content) {
+            $("#" + content).fadeIn(350);
+            //current_popup = content;
+        }
+        function close_popup() {
+            //$("#" + current_popup).fadeOut(350);
+            $(".popup-background").fadeOut(350);
+        }
+
         function load_content(page) {
 
             location.hash = page;
