@@ -77,4 +77,8 @@ SINGULARITY_libexecdir="$SINGULARITY_libexecdir"
 SINGULARITY_BUILD_ROOT="$SINGULARITY_localstatedir/singularity/mnt"
 export SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
 
+if [ ! -d "$SINGULARITY_BUILD_ROOT" ]; then
+    mkdir -m 0755 -p "$SINGULARITY_BUILD_ROOT"
+fi
+
 exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$SINGULARITY_libexecdir/singularity/bootstrap.sh" "$DEFINITION" "$@"
