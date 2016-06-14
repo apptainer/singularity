@@ -35,13 +35,13 @@ syntax. Here is a list of the supported Singularity keywords:
 module should be used to parse the commands. For example, are we using YUM, or
 Apt, and handle distribution specific configurations. At present two types are
 supported: "redhat" and "debian". Note that "redhat" applies to all Red Hat
-compatible distributions (e.g. Centos), and "debian" applies to all Debian based
+compatible distributions (e.g. CentOS), and "debian" applies to all Debian based
 derivatives (e.g. Ubuntu).
 </li>
 <li>
 <b>MirrorURL</b>: When bootstrapping, the packages necessary for the operating
 system build are downloaded on demand via the internet. In some cases (like
-Centos Vs. Scientific Linux) this is the only differentiating factor for what
+CentOS vs. Scientific Linux) this is the only differentiating factor for what
 distribution gets installed.
 </li>
 <li>
@@ -69,8 +69,12 @@ system.
 work just fine, but care must be taken from the calling directory.
 </li>
 <li>
-<b>Cmd</b>: Run a command within the new container operating system.
+<b>RunCmd</b>: Run a command within the new container operating system
+during the bootstrap.  May be repeated to run multiple commands.
 </li>
+<b>RunScript</b>: Add a command line to the "runscript" invoked by
+'singularity run' or by executing the container directly.
+May be repeated to add multiple command lines.
 <li>
 <b>Cleanup</b>: Cleanup any temporary files like YUM/Apt caches.
 </li>
