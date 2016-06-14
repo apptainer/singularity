@@ -11,8 +11,12 @@ HISTFILE="/dev/null"
 
 export PATH HISTFILE
 
-# Conditionally disable the PID namespace if we are invoked via OMPI
+# Conditionally disable the PID namespace if we are invoked via OMPI or SLURM
 if [ -n "$OMPI_COMM_WORLD_SIZE" ]; then
+    SINGULARITY_NO_NAMESPACE_PID=1
+    export SINGULARITY_NO_NAMESPACE_PID
+fi
+if [ -n "$SLURM_JOB_ID" ]; then
     SINGULARITY_NO_NAMESPACE_PID=1
     export SINGULARITY_NO_NAMESPACE_PID
 fi
