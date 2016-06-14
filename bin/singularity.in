@@ -24,16 +24,19 @@ prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 libexecdir="@libexecdir@"
 sysconfdir="@sysconfdir@"
+localstatedir="@localstatedir@"
+
 
 SINGULARITY_version="@VERSION@"
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
+SINGULARITY_localstatedir="$localstatedir"
 
 RETVAL=0
 MESSAGELEVEL=1
 DEBUG=""
 
-export SINGULARITY_sysconfdir SINGULARITY_libexecdir RETVAL MESSAGELEVEL DEBUG
+export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL DEBUG
 
 # the Modules package always calls 
 unset module

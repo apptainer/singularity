@@ -74,7 +74,7 @@ if [ ! -f "$IMAGE" ]; then
     exit 1
 fi
 
-SINGULARITY_BUILD_ROOT="/mnt"
+SINGULARITY_BUILD_ROOT="$SINGULARITY_localstatedir/singularity/mnt"
 export SINGULARITY_BUILD_ROOT
 
 if [ ! -d "$SINGULARITY_BUILD_ROOT" ]; then

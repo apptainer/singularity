@@ -66,7 +66,7 @@ if [ ! -f "$IMAGE" ]; then
 fi
 
 SINGULARITY_libexecdir="$SINGULARITY_libexecdir"
-SINGULARITY_BUILD_ROOT="/mnt"
+SINGULARITY_BUILD_ROOT="$SINGULARITY_localstatedir/singularity/mnt"
 export SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
 
 if [ ! -d "$SINGULARITY_BUILD_ROOT" ]; then
