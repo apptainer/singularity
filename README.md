@@ -146,4 +146,4 @@ default in CentOS-6.
 We are working on documentation and web pages now, but checkout the work
 in progress here:
 
-http://gmkurtzer.github.io/singularity
+http://singularity.lbl.gov/

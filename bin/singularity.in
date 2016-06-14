@@ -70,7 +70,7 @@ usage() {
 
     echo
     echo "For any additional help or support visit the Singularity"
-    echo "website: http://gmkurtzer.github.io/singularity"
+    echo "website: http://singularity.lbl.gov/"
     echo
 }
 
