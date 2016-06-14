@@ -62,34 +62,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                   )
 
 
-AC_MSG_CHECKING([for namespace: CLONE_FS])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
-                                     #include <sched.h>
-                                   ]],
-                                   [[unshare(CLONE_FS);]])],
-                      [
-                          AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_FS"
-                      ], [
-                          AC_MSG_RESULT([no])
-                      ]
-                  )
-
-
-AC_MSG_CHECKING([for namespace: CLONE_FILES])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
-                                     #include <sched.h>
-                                   ]],
-                                   [[unshare(CLONE_FILES);]])],
-                      [
-                          AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_FILES"
-                      ], [
-                          AC_MSG_RESULT([no])
-                      ]
-                  )
-
-
 AC_MSG_CHECKING([for namespace: CLONE_NEWNS])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                      #include <sched.h>
@@ -105,16 +77,29 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                           echo
                           echo "This host does not support the CLONE_NEWNS (mount) namespace flag! You"
                           echo "really really really don't want to run Singularity containers without a"
-                          echo "Separate mount name namespace! It is possible, but not a great idea."
+                          echo "Separate mount name namespace!"
                           echo
-                          echo "Pausing for 5 second so you can digest the severity of this..."
-                          echo
-                          sleep 5
+                          exit 255
                       ]
                   )
 
 
 AC_SUBST(NAMESPACE_DEFINES)
+
+AC_MSG_CHECKING([for setns])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+                                     #include <sched.h>
+                                   ]],
+                                   [[setns(0,0);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                      ], [
+                          NO_SETNS="-DNO_SETNS"
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
+AC_SUBST(NO_SETNS)
 
 #AC_CHECK_DECLS([MS_PRIVATE,MS_REC], [],
 #               [AC_MSG_ERROR([Required mount(2) flags not available])],

@@ -361,6 +361,11 @@ int main(int argc, char ** argv) {
     if ( strcmp(command, "start") == 0 ) {
         int daemon_fd;
 
+#ifdef NO_SETNS
+        fprintf(stderr, "ERROR: This host does not support joining existing name spaces\n");
+        return(1);
+#endif
+
         if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
             if ( ( daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r+") ) == NULL ) {
                 fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
@@ -712,7 +717,10 @@ int main(int argc, char ** argv) {
 
         pid_t exec_pid;
 
-
+#ifdef NO_SETNS
+        fprintf(stderr, "ERROR: This host does not support joining existing name spaces\n");
+        return(1);
+#else
         // Connect to existing PID namespace
         if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
             int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
@@ -738,6 +746,7 @@ int main(int argc, char ** argv) {
         } else {
             fprintf(stderr, "ABORT: Could not identify mount namespace: %s\n", joinpath(setns_dir, "mnt"));
         }
+#endif
 
 
 //TODO: Add chroot and chdirs to a container method
