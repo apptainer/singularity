@@ -38,11 +38,35 @@ From the above image you can follow the invocation pathway:
 </ol>
 At this point the processes within the container run as they would normally directly
 on the host at full bandwidth! This entire process happens behind the scenes, and
-from the user's perspective running via MPI is as simple as just calling mpirun as
-they would normally:
+from the user's perspective running via MPI is as simple as just calling mpirun on
+the host as they would normally.
+</p>
+<h2>Example</h2>
+<p>
+Below is an example snippet of building and installing OpenMPI into a container
+and then running an example MPI program through Singularity.
 <br/>&nbsp;<br/>
 <pre>
-$ mpirun -np 20 ./ring.sapp 
+$ # Include the appropriate development tools into the container
+$ sudo singularity exec -w /tmp/Centos-7.img yum groupinstall \“Development Tools\”
+$
+$ # Clone the OpenMPI GitHub master branch
+$ git clone https://github.com/open-mpi/ompi.git
+$ cd ompi
+$
+$ # Build OpenMPI in our current working directory, using the tool chain in the container
+$ singularity exec /tmp/Centos-7.img ./configure —prefix=/usr/local
+$ singularity exec /tmp/Centos-7.img make
+$ sudo singularity exec -w /tmp/Centos-7.img make install
+$
+$ # Build the OpenMPI ring example
+$ singularity exec /tmp/Centos-7.img mpicc examples/ring_c.c -o ring
+$
+$ # Install the resultant MPI binary into the container
+$ sudo singularity copy /tmp/Centos-7.img ./ring /usr/bin 
+$
+$ # Run the MPI program (and libraries) within the container by calling the MPIRUN on the host
+$ mpirun -np 20 singularity exec /tmp/Centos-7.img /usr/bin/ring
 Process 0 sending 10 to 1, tag 201 (20 processes in ring)
 Process 0 sent to 1
 Process 0 decremented value: 9
