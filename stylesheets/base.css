@@ -15,7 +15,7 @@ body {
     line-height: 1.42857143;
     color: white;
     background-color: black;
-    text-shadow: 0 0 2px #B28B2C;
+    text-shadow: 0 0 2px #939491;
 }
 
 a {
@@ -51,6 +51,7 @@ h4 {
 
 .loud {
     color: #AF1C0E;
+    text-shadow: 0 0 2px #AF1C0E;
 }
 
 code, pre {        
@@ -67,7 +68,6 @@ code, pre {
 
 p {
     color: LightGray ;
-    text-shadow: 0 0 2px #939491;
     padding-left: 20px;
     margin-top: 0px;
     margin-bottom: 15px;
