@@ -47,25 +47,28 @@ Below is an example snippet of building and installing OpenMPI into a container
 and then running an example MPI program through Singularity.
 <br/>&nbsp;<br/>
 <pre>
-$ # Include the appropriate development tools into the container
+$ # Include the appropriate development tools into the container (notice we are calling
+$ # singularity as root and the container is writable)
 $ sudo singularity exec -w /tmp/Centos-7.img yum groupinstall “Development Tools”
 $
-$ # Clone the OpenMPI GitHub master branch
+$ # Clone the OpenMPI GitHub master branch in current directory (on host)
 $ git clone https://github.com/open-mpi/ompi.git
 $ cd ompi
 $
-$ # Build OpenMPI in our current working directory, using the tool chain in the container
+$ # Build OpenMPI in the working directory, using the tool chain within the container
 $ singularity exec /tmp/Centos-7.img ./configure —prefix=/usr/local
 $ singularity exec /tmp/Centos-7.img make
+$
+$ # Install OpenMPI into the container (notice now running as root and container is writable)
 $ sudo singularity exec -w /tmp/Centos-7.img make install
 $
-$ # Build the OpenMPI ring example
+$ # Build the OpenMPI ring example and place the binary in this directory
 $ singularity exec /tmp/Centos-7.img mpicc examples/ring_c.c -o ring
 $
-$ # Install the resultant MPI binary into the container
-$ sudo singularity copy /tmp/Centos-7.img ./ring /usr/bin 
+$ # Install the MPI binary into the container at /usr/bin/ring
+$ sudo singularity copy /tmp/Centos-7.img ./ring /usr/bin/
 $
-$ # Run the MPI program (and libraries) within the container by calling the MPIRUN on the host
+$ # Run the MPI program within the container by calling the MPIRUN on the host
 $ mpirun -np 20 singularity exec /tmp/Centos-7.img /usr/bin/ring
 Process 0 sending 10 to 1, tag 201 (20 processes in ring)
 Process 0 sent to 1
