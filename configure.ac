@@ -93,7 +93,7 @@ AC_CHECK_FUNCS(setns, [
                           NO_SETNS="-DNO_SETNS"
                       ]
                   )
-                 
+
 
 AC_SUBST(NO_SETNS)
 
