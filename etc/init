@@ -10,3 +10,9 @@ PATH="/bin:/sbin:/usr/bin:/usr/sbin:$PATH"
 HISTFILE="/dev/null"
 
 export PATH HISTFILE
+
+# Conditionally disable the PID namespace if we are invoked via OMPI
+if [ -n "$OMPI_COMM_WORLD_SIZE" ]; then
+    SINGULARITY_NO_NAMESPACE_PID=1
+    export SINGULARITY_NO_NAMESPACE_PID
+fi
