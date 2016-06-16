@@ -169,10 +169,13 @@ RunCmd() {
 Finalize() {
     for i in $EMPTY_FILES; do
         if [ ! -f "$SINGULARITY_BUILD_ROOT/$i" ]; then
+            DIRNAME=`dirname "$i"`
             if [ -e "$SINGULARITY_BUILD_ROOT/$i" ]; then
                 rm -rf "$SINGULARITY_BUILD_ROOT/$i"
             fi
-            mkdir -m 755 -p $(dirname "$i")
+            if [ ! -d "$DIRNAME" ]; then
+                mkdir -m 755 -p "$DIRNAME"
+            fi
             > "$SINGULARITY_BUILD_ROOT/$i"
         fi
     done
