@@ -172,6 +172,7 @@ Finalize() {
             if [ -e "$SINGULARITY_BUILD_ROOT/$i" ]; then
                 rm -rf "$SINGULARITY_BUILD_ROOT/$i"
             fi
+            mkdir -m 755 -p $(dirname "$i")
             > "$SINGULARITY_BUILD_ROOT/$i"
         fi
     done
