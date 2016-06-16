@@ -7,9 +7,12 @@
 
 <h4>General Singularity info</h4>
 <ul>
-<li><a href="javascript:open_popup('docker')">How does Singulairty relate/differ from Docker?</a></li>
+<li><a href="javascript:open_popup('thename')">Why the name "Singularity"?</a></li>
 <li><a href="javascript:open_popup('namespaces')">Which namespaces are virtualized? Is that selectable?</a></li>
+<li><a href="javascript:open_popup('docker')">How does Singulairty relate/differ from Docker?</a></li>
 <li><a href="javascript:open_popup('shifter')">How does Singularity relate/differ from Shifter?</a></li>
+<li><a href="javascript:open_popup('flatpack')">How does Singularty relate/differ from Flatbak</a></li>
+<li><a href="javascript:open_popup('other-containers')">How does Singularty relate/differ from other container systems like OpenVz, LXC/LXD, etc.?</a></li>
 <li><a href="javascript:open_popup('static_bin')">How does Singulairty relate/differ from statically compiled binaries?</a></li>
 <li><a href="javascript:open_popup('distros')">What Linux distributions are you trying to get onboard?</a></li>
 </ul>
@@ -22,6 +25,7 @@
 <li><a href="javascript:open_popup('binds')">How are external filesystems and paths handled in a Singularity Container?</a></li>
 <li><a href="javascript:open_popup('paths')">What is the difference between full and relative paths?</a></li>
 <li><a href="javascript:open_popup('networking')">How does Singularity handle manage networking?</a></li>
+<li><a href="javascript:open_popup('docker-import')">Can I import an image from Docker?</a></li>
 </ul>
 
 <h4>Contained applications and work flows</h4>
@@ -51,6 +55,28 @@
 <ul>
 <li><a href="javascript:open_popup('grsec')">How to use Singularity with GRSecurity enabled kernels.</a></li>
 </ul>
+
+
+
+<div id="thename" class="popup-background">
+<div class="popup-content">
+<h4>Which namespaces are virtualized? Is that selectable?</h4>
+<br/>&nbsp;<br/>
+<p>
+The name "Singularity" for me (Greg) stems back from my past experience
+working at a company called <a href="https://en.wikipedia.org/wiki/Linuxcare">Linuxcare</a>
+where the Linux Bootable Buisness Card (LNX-BBC) was developed. The BBC, was
+a Linux rescue disk which paved the way for all live CD bootable
+distributions using a loop back file system called the "singularity".
+</p>
+<p>
+This nomenclature represented that all files within the environment were
+contained within a single file, and for the same reason Singularity
+emphasizes the same nomenclature. (Thanks LNX-BBC!!!)
+</p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
 
 
 
@@ -129,6 +155,75 @@ container and seemlessly redirects all IO in and out of the container
 directly between the enviornments. This makes doing things like MPI, X11
 forwarding, and other kinds of work tasks trivial for Singularity.
 </p>
+<p>
+If you already have a Docker container you can
+<a href="javascript:open_popup('docker-import')">import it directly into
+Singularity</a>!
+</p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
+
+
+<div id="flatbak" class="popup-background">
+<div class="popup-content">
+<h4>How does Singulairty relate/differ from Flatpak?</h4>
+<br/>&nbsp;<br/>
+<p>
+Flatpak is a packaging subsystem that uses some container technologies to
+create distribution neutral packages and it is more similar to the initial
+proof of concept of Singularity. But the usecases of Singularity dictated
+that we should support full operating system containers that contain the
+entire user's envrionment.
+</p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
+
+
+<div id="other-containers" class="popup-background">
+<div class="popup-content">
+<h4>How does Singularty relate/differ from other container systems like OpenVz, LXC/LXD, etc.?</h4>
+<br/>&nbsp;<br/>
+<p>
+Singularity differs from other container systems in several major ways
+that impact usability on shared systems. For example, most container
+systems emulate standard systems in that there is the ability and
+necessisity to escalate to root, run on separate IP/network address,
+run services, and in some cases even virtually boot the container system.
+</p>
+<p>
+Singularity on the other hand focuses on the ability to virtualize only
+what is necessary to achieve runtime application container and portable
+environments. For instance, you can not obtain root from within a
+Singularity container.
+</p>
+<p>
+There are some additional performance and design enhancements which make
+Singularity also more appropriate in a scheduled HPC environment. The
+backend image type is one such feature that negates the need for temporary
+caching of container images and optimizes metadata IO (especially on
+parallel file systems). Another feature is how Singularity interacts with
+the host operating system to facilitate application workflows like X11
+and MPI.
+</p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
+
+
+<div id="docker-import" class="popup-background">
+<div class="popup-content">
+<h4>Can I import an image from Docker?</h4>
+<br/>&nbsp;<br/>
+<p>
+Yes, Docker has the ability to export the data of a particular container
+and Singularity has the ability to import using the same format that Docker
+exports. In a nutshell, it is as easy as:
+</p>
+<pre>
+$ docker export [container name] | sudo singularity import /path/to/container.img
+</pre>
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
