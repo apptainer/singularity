@@ -82,6 +82,10 @@ Bootstrap() {
         exit 1
     fi
 
+    __mount_proc
+    __mount_dev
+    __mount_sys
+
     return 0
 }
 
