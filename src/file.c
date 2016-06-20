@@ -203,7 +203,7 @@ int s_rmdir(char *dir) {
 }
 
 int copy_file(char * source, char * dest) {
-    char c;
+    int c;
     FILE * fd_s;
     FILE * fd_d;
 
@@ -254,7 +254,7 @@ int fileput(char *path, char *string) {
 char *filecat(char *path) {
     char *ret;
     FILE *fd;
-    char c;
+    int c;
     long length;
     long pos = 0;
     
