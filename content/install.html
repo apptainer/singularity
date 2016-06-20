@@ -1,46 +1,90 @@
 <div id="back_link">&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a></div>
 
-<h1>Installation</h1>
-<br/>
-<h2>Build From Source</h2>
+<h1>Installing from distribution vendor</h1>
 <p>
-Presently, Singularity is only available in source code form and can only
-be compiled and run on Linux systems. To obtain and compile the code, do
+<h4>RHEL, Centos, Scientific Linux, and Fedora</h4>
+<p>
+From Dave Love to the Singularity list:
+<br/>
+Packages for singularity (2.0 plus some patches) have now hit the Fedora
+-testing repositories for EPEL5 through to Fedora 24 beta. Use the
+following command for either <b>yum</b>:
+<pre>
+# yum --enablerepo \*-testing install singularity
+</pre>
+or <b>dnf</b> to install:
+<pre>
+# dnf --enablerepo \*-testing install singularity
+</pre>
+</p>
+</p>
+
+
+<h1>Installation from source</h1>
+<p>
+
+<h2>Obtaining the Source</h2>
+<br/>
+<h4>Download latest stable release</h4>
+<p>
+You can always download the latest tarball release from:
+<a href='https://github.com/gmkurtzer/singularity/releases'>https://github.com/gmkurtzer/singularity/releases</a>
+</p>
+<p>
+Once downloaded do the following:
+<pre>
+$ tar xvf singularity-*.tar.gz
+$ cd singularity
+</pre>
+</p>
+
+<h4>Download the latest development code</h4>
+<p>
+To download the most recent development code, you should use Git and do
 the following:
 <pre>
-$ git clone -b master --single-branch https://github.com/gmkurtzer/singularity.git
+$ git clone https://github.com/gmkurtzer/singularity.git
 $ cd singularity
-$ sh ./autogen.sh
+</pre>
+</p>
+
+
+<h2>Install from source</h2>
+<p>
+From the base Singularity source directory
+do the following:
+<pre>
+$ ./autogen.sh
 $ ./configure --prefix=/usr/local
 $ make
 $ sudo make install
 </pre>
-
 note: The 'make install' is required to be run as root to get a properly installed
 Singularity implementation. If you do not run it as root, you will only be able to
 launch Singularity as root due to permission limitations.
 </p>
-<br/>
 
-<h2>Build an RPM From Source</h2>
+<h2>Build an RPM from source</h2>
 <p>
 Like the above, you can build an RPM of Singularity so it can be more easily
-managed, upgraded and removed. To obtain, compile and build the RPM do the
-following:
+managed, upgraded and removed. From the base Singularity source directory
+do the following:
 <pre>
-$ git clone -b master --single-branch https://github.com/gmkurtzer/singularity.git
-$ cd singularity
-$ sh ./autogen.sh
+$ ./autogen.sh
+$ ./configure
 $ make dist
 $ rpmbuild -ta singularity-*.tar.gz
 $ sudo yum install ~/rpmbuild/RPMS/*/singularity-[0-9]*.rpm
 </pre>
+</p>
 <p>
 Note: if you want to have the RPM install the files to an alternative location,
 you should define the environment variable 'PREFIX' to suit your needs, and use
 the following command to build:
-</p>
 <pre>
 $ PREFIX=/opt/singularity
 $ rpmbuild -ta --define="_prefix $PREFIX" --define "_sysconfdir $PREFIX/etc" --define "_defaultdocdir $PREFIX/share" singularity-*.tar.gz
 </pre>
+</p>
+
+</p>
