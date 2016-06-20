@@ -412,7 +412,8 @@ int main(int argc, char ** argv) {
         if ( namespace_fork_pid == 0 ) {
 
             // Setup PID namespaces
-            if ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) {
+            rewind(config_fp);
+            if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
                 unsetenv("SINGULARITY_NO_NAMESPACE_PID");
 #ifdef NS_CLONE_NEWPID
                 if ( unshare(CLONE_NEWPID) < 0 ) {
