@@ -24,7 +24,7 @@ The Following configuration file keywords are supported:
 </p>
 <p>
 
-<h3>allow pid ns</h3>
+<h4>allow pid ns</h4>
 <p>
 Should Singularity support separation of the NEWPID/PID namespaces? This
 is important because some resource managers that are not utilizing CGroups
@@ -33,19 +33,19 @@ processes are running under a different namespace. (options: yes/no,
 default=yes)
 </p>
 
-<h3>mount proc</h3>
+<h4>mount proc</h4>
 <p>
 Should /proc be mounted within the container environments? (options:
 yes/no, default=yes)
 </p>
 
-<h3>mount sys</h3>
+<h4>mount sys</h4>
 <p>
 Should /sys be mounted within the container environments? (options:
 yes/no, default=yes)
 </p>
 
-<h3>bind path</h3>
+<h4>bind path</h4>
 <p>
 Define a list of files or directories that should be made available within
 a container environment. The file or directory given *must* exist on both
@@ -55,7 +55,7 @@ source and destination paths are the same, or two paths comma delimited
 with the source path being first, and the destination path being second.
 </p>
 
-<h3>config passwd</h3>
+<h4>config passwd</h4>
 <p>
 If the /etc/passwd file exists within the container, this function will
 make a volatile copy of the file and append the appropriate information
@@ -63,7 +63,7 @@ for the calling user (if not root) and then bind it back into the
 container.  (options: yes/no, default=yes)
 </p>
 
-<h3>config group</h3>
+<h4>config group</h4>
 <p>
 If the /etc/group file exists within the container, this function will
 make a volatile copy of the file and append the appropriate information
