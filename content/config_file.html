@@ -21,30 +21,48 @@ Singularity features are to be allowed.
 <h2>Options</h2>
 <p>
 The Following configuration file keywords are supported:
-<ul>
-<li><b>allow pid ns</b>: Should Singularity support separation of the
-NEWPID/PID namespaces? This is important because some resource managers
-that are not utilizing CGroups may not be able to limit resource
-consumption (using ulimits) when processes are running under a different
-namespace. (options: yes/no, default=yes)</li>
-<li><b>mount proc</b>: Should /proc be mounted within the container
-environments? (options: yes/no, default=yes)</li>
-<li><b>mount sys</b>: Should /sys be mounted within the container
-environments? (options: yes/no, default=yes)</li>
-<li><b>bind path</b>: Define a list of files or directories that should
-be made available within a container environment. The file or directory
-given *must* exist on both the host and the container to properly bind.
-The format of this argument can be either a single path which makes the
-assumption that both the source and destination paths are the same, or
-two paths comma delimited with the source path being first, and the
-destination path being second.</li>
-<li><b>config passwd</b>: If the /etc/passwd file exists within the
-container, this function will make a volatile copy of the file and append
-the appropriate files for the calling user (if not root) and then bind
-it back into the container. (options: yes/no, default=yes)</li>
-<li><b>config group</b>: If the /etc/group file exists within the
-container, this function will make a volatile copy of the file and append
-the appropriate files for the calling user (if not root) and then bind
-it back into the container. (options: yes/no, default=yes)</li>
-</ul>
+</p>
+<p>
+
+<h3>allow pid ns</h3>
+<br/>
+Should Singularity support separation of the NEWPID/PID namespaces? This
+is important because some resource managers that are not utilizing CGroups
+may not be able to limit resource consumption (using ulimits) when
+processes are running under a different namespace. (options: yes/no,
+default=yes)
+
+<h3>mount proc</h3>
+<br/>
+Should /proc be mounted within the container environments? (options:
+yes/no, default=yes)
+
+<h3>mount sys</h3>
+<br/>
+Should /sys be mounted within the container environments? (options:
+yes/no, default=yes)
+
+<h3>bind path</h3>
+<br/>
+Define a list of files or directories that should be made available within
+a container environment. The file or directory given *must* exist on both
+the host and the container to properly bind. The format of this argument
+can be either a single path which makes the assumption that both the
+source and destination paths are the same, or two paths comma delimited
+with the source path being first, and the destination path being second.
+
+<h3>config passwd</h3>
+<br/>
+If the /etc/passwd file exists within the container, this function will
+make a volatile copy of the file and append the appropriate information
+for the calling user (if not root) and then bind it back into the
+container.  (options: yes/no, default=yes)
+
+<h3>config group</h3>
+<br/>
+If the /etc/group file exists within the container, this function will
+make a volatile copy of the file and append the appropriate information
+for the calling user (if not root) and then bind it back into the
+container.  (options: yes/no, default=yes)
+
 </p>
