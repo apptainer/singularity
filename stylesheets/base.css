@@ -191,6 +191,8 @@ p {
  
 .popup-content {
     max-width:700px;
+    max-height:400px;
+    overflow-y: scroll;
     width:90%;
     padding:40px;
     padding-top: 10px;
