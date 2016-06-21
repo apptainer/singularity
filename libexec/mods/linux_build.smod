@@ -196,17 +196,17 @@ Finalize() {
 
 __mount_dev() {
     if [ -d "/dev" -a -d "$SINGULARITY_BUILD_ROOT/dev" ]; then
-        mount --bind "/dev" "$SINGULARITY_BUILD_ROOT/dev"
+        mount --rbind "/dev" "$SINGULARITY_BUILD_ROOT/dev"
     fi
 }
 __mount_proc() {
     if [ -d "/proc" -a -d "$SINGULARITY_BUILD_ROOT/proc" ]; then
-        mount --bind "/proc" "$SINGULARITY_BUILD_ROOT/proc"
+        mount --rbind "/proc" "$SINGULARITY_BUILD_ROOT/proc"
     fi
 }
 __mount_sys() {
     if [ -d "/sys" -a -d "$SINGULARITY_BUILD_ROOT/sys" ]; then
-        mount --bind "/sys" "$SINGULARITY_BUILD_ROOT/sys"
+        mount --rbind "/sys" "$SINGULARITY_BUILD_ROOT/sys"
     fi
 }
 
