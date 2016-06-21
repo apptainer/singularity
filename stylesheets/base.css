@@ -189,10 +189,9 @@ p {
     background:rgba(0,0,0,0.75);
 }
  
-.popup-content {
+.popup-container {
     max-width:700px;
     max-height:400px;
-    overflow-y: scroll;
     width:90%;
     padding:40px;
     padding-top: 10px;
@@ -205,6 +204,10 @@ p {
     border-radius:5px;
     border:1px solid #C9C9C9;
     background: #404040;
+}
+
+.popup-content {
+    overflow-y: scroll;
 }
  
 .popup-close {
