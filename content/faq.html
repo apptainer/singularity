@@ -677,6 +677,8 @@ default compiled prefix of /usr/local:
 $ sudo singularity create /tmp/centos.img
 sudo: singularity: command not found
 </pre>
+</p>
+<p>
 The cause of the problem is that `sudo` sanitizes the PATH evnironment
 variable and does not include /usr/local/bin in the default search path.
 Considering this program path is by default owned by root, it is
