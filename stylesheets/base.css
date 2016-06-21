@@ -190,12 +190,10 @@ p {
 }
  
 .popup-container {
-    max-width:700px;
-    max-height:400px;
-    width:90%;
-    padding:40px;
-    padding-top: 10px;
+    display: inline-block;
     position:absolute;
+    width:90%;
+    max-width:700px;
     top:50%;
     left:50%;
     -webkit-transform:translate(-50%, -50%);
@@ -207,7 +205,10 @@ p {
 }
 
 .popup-content {
+    display: inline-block;
+    max-height: 400px;
     overflow-y: scroll;
+    padding: 20px;
 }
  
 .popup-close {
