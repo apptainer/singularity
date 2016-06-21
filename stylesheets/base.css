@@ -189,11 +189,14 @@ p {
     background:rgba(0,0,0,0.75);
 }
  
-.popup-container {
-    display: inline-block;
-    position:absolute;
-    width:90%;
+.popup-content {
     max-width:700px;
+    max-height:400px;
+    overflow-y: scroll;
+    width:90%;
+    padding:40px;
+    padding-top: 10px;
+    position:absolute;
     top:50%;
     left:50%;
     -webkit-transform:translate(-50%, -50%);
@@ -202,13 +205,6 @@ p {
     border-radius:5px;
     border:1px solid #C9C9C9;
     background: #404040;
-}
-
-.popup-content {
-    display: inline-block;
-    max-height: 400px;
-    overflow-y: scroll;
-    padding: 20px;
 }
  
 .popup-close {
