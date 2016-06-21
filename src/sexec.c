@@ -49,6 +49,10 @@
 #include "privilege.h"
 
 
+#ifndef LOCALSTATEDIR
+#define LOCALSTATEDIR "/etc"
+#endif
+
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"
 #endif
@@ -194,8 +198,15 @@ int main(int argc, char ** argv) {
     loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
     loop_dev_cache = joinpath(sessiondir, "loop_dev");
 
-    containerpath = (char *) malloc(strlen(sessiondir) + 5);
-    snprintf(containerpath, strlen(sessiondir) + 5, "%s/mnt", sessiondir);
+// NOTE: We tested putting the containerpath into the sessiondir (in /tmp), but
+//       this was proving unreliable due to people with non-locally mounted /tmp
+//       dirs. /var should always be local.
+//    containerpath = (char *) malloc(strlen(sessiondir) + 5);
+//    snprintf(containerpath, strlen(sessiondir) + 5, "%s/mnt", sessiondir);
+
+    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
+    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
+
 
     syslog(LOG_NOTICE, "User=%s[%d], Command=%s, Container=%s, CWD=%s, Arg1=%s", username, uid, command, containerimage, cwd, argv[1]);
 
@@ -277,8 +288,13 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    if ( s_mkpath(sessiondir, 0755) < 0 ) {
+    if ( s_mkpath(sessiondir, 0755) < -1 ) { // We don't care here if it fails...
         fprintf(stderr, "ABORT: Could not create temporary directory %s: %s\n", sessiondir, strerror(errno));
+        return(255);
+    }
+
+    if ( is_dir(sessiondir) < 0 ) {
+        fprintf(stderr, "ABORT: Temporary directory does not exist %s: %s\n", sessiondir, strerror(errno));
         return(255);
     }
 
@@ -315,7 +331,6 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
-    // If we got this far, we have passed basic init
     if ( fileput(joinpath(sessiondir, "image"), containername) < 0 ) {
         fprintf(stderr, "ABORT: Could not write container name to %s\n", joinpath(sessiondir, "image"));
         return(255);
