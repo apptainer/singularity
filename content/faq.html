@@ -62,7 +62,7 @@
 
 
 <div id="thename" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Which namespaces are virtualized? Is that select-able?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -80,11 +80,12 @@ emphasizes the same nomenclature. (Thanks LNX-BBC!!!)
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 
 <div id="namespaces" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Which namespaces are virtualized? Is that select-able?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -111,10 +112,11 @@ the host system supports as well as through environment variables.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="shifter" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-container"><div class="popup-content">
 <h4>How does Singularity relate/differ from Shifter?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -142,9 +144,10 @@ scale HPC and integration with Cray and the resource manager.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 <div id="docker" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>How does Singularity relate/differ from Docker?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -171,11 +174,11 @@ Singularity</a>!
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="runc" class="popup-background">
-<div class="popup-container">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Why can't you just use RunC or any other container system on a shared system?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -216,7 +219,7 @@ Singularity on the other hand addresses these issues and more:
 
 
 <div id="flatpak" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>How does Singularity relate/differ from Flatpak?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -229,10 +232,11 @@ entire user's environment.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="other-containers" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>How does Singularity relate/differ from other container systems like OpenVz, LXC/LXD, etc.?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -260,10 +264,11 @@ and MPI.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="docker-import" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Can I import an image from Docker?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -277,10 +282,11 @@ $ docker export [container name] | sudo singularity import /path/to/container.im
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="admin" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Do you need administrator privileges to use Singularity?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -299,10 +305,11 @@ access as long as Singularity has been installed there.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="static_bin" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>How does Singularity relate/differ from statically compiled binaries?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -319,10 +326,11 @@ them into a single portable executable format.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="writable" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Can you edit/modify a Singularity container once it has been instantiated?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -331,10 +339,11 @@ Yes, if you call it with the -w/--writable flag. (e.g. 'singularity shell --writ
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="multiple_apps" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Can multiple applications be packaged into one Singularity Container?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -348,10 +357,11 @@ directly or via the 'run' command, this will get executed).
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="kernel_dependant" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Are Singularity containers kernel dependent?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -382,10 +392,11 @@ probably not the right solution for you.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="binds" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>How are external file-systems and paths handled in a Singularity Container?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -410,10 +421,11 @@ Singularity will not create it for you! You must do that.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="paths" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>What is the difference between full and relative paths?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -423,10 +435,11 @@ in a Singularity Container?".
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="networking" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>How does Singularity handle manage networking?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -437,10 +450,11 @@ as any program running as that user.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="x11" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Can I run X11 apps through Singularity?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -449,10 +463,11 @@ Yes. This works exactly as you would expect it to.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="glibc" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Can a Singularity container resolve GLIBC version mismatches?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -462,10 +477,11 @@ Glibc version that they require to run).
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="threads" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Can a Singularity container be multi-threaded?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -475,10 +491,11 @@ general.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="suspend" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Can a Singularity container be suspended or check-pointed?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -493,10 +510,11 @@ container via the specfile.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="sched" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Are there any special requirements to use Singularity through a job scheduler?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -509,10 +527,11 @@ other application!
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="security" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Are there any special security concerns that Singularity introduces?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -532,10 +551,11 @@ once inside the container.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="distros" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>What Linux distributions are you trying to get on-board?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -545,10 +565,11 @@ included!
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="perf" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>What is the performance trade-off when running an application native or through Singularity?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -568,10 +589,11 @@ performant then other Linux distributions we have tested.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="shared_sys" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Does Singularity work in multi-tenant HPC cluster environments?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -593,10 +615,11 @@ which seamlessly interfaces with the host system and existing environments.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="mpi-hpc" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Can I containerize my MPI application with Singularity and run it properly on an HPC system?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -616,10 +639,11 @@ Singularity container.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="gpu" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>Does Singularity support containers that require GPUs?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -631,10 +655,11 @@ compatibilities between kernel and user land which will have to be considered.
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="swallow" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>What is the average air speed velocity of an unladen swallow?</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -645,10 +670,11 @@ Thanks Jason!
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
+</div>
 
 
 <div id="grsec" class="popup-background">
-<div class="popup-content">
+<div class="popup-container"><div class="popup-content">
 <h4>How to use Singularity with GRSecurity enabled kernels.</h4>
 <br/>&nbsp;<br/>
 <p>
@@ -664,6 +690,7 @@ $ sudo sysctl -w kernel.grsecurity.chroot_deny_fchdir=0
 
 </p>
 <a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
 </div>
 </div>
 
