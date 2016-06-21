@@ -56,8 +56,8 @@
 
 <h4>Troubleshooting</h4>
 <ul>
-<li><a href="javascript:open_popup('grsec')">How to use Singularity with GRSecurity enabled kernels.</a></li>
-<li><a href="javascript:open_popup('sudoerror')">Error running singularity as sudo </a></li>
+<li><a href="javascript:open_popup('grsec')">How to use Singularity with GRSecurity enabled kernels</a></li>
+<li><a href="javascript:open_popup('sudoerror')">Error running Singularity with sudo</a></li>
 </ul>
 
 
@@ -648,7 +648,7 @@ Thanks Jason!
 
 <div id="grsec" class="popup-background">
 <div class="popup-content">
-<h4>How to use Singularity with GRSecurity enabled kernels.</h4>
+<h4>How to use Singularity with GRSecurity enabled kernels</h4>
 <br/>&nbsp;<br/>
 <p>
 To run Singularity on a GRSecurity enabled kernel, you must disable several
@@ -668,22 +668,29 @@ $ sudo sysctl -w kernel.grsecurity.chroot_deny_fchdir=0
 
 <div id="sudoerror" class="popup-background">
 <div class ="popup-content">
-<h4> Error running Singularity as sudo </h4>
+<h4>Error running Singularity with sudo</h4>
 <br/>&nbsp;<br/>
-
-The default path when using sudo is:
+<p>
+This fix solves the following error when Singularity is installed into the
+default compiled prefix of /usr/local:
 <pre>
-Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin
+$ sudo singularity create /tmp/centos.img
+sudo: singularity: command not found
 </pre>
-To change the path name you must edit your sudo file by typing:
-<pre>
-sudo visudo
-</pre>
-Edit the default path so that it looks like:
+The cause of the problem is that `sudo` sanitizes the PATH evnironment
+variable and does not include /usr/local/bin in the default search path.
+Considering this program path is by default owned by root, it is
+reasonable to extend the default sudo PATH to include this directory.
+</p>
+<p>
+To add /usr/local/bin to the default sudo search path, run the program
+<b>visudo</b> which will edit the sudoers file, and search for the
+string 'secure_path'. Once found, append <b>:/usr/local/bin</b> to that
+line so it looks like this:
 <pre>
 Defaults    secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 </pre>
-
+</p>
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
 </div>
