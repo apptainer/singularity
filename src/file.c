@@ -292,7 +292,7 @@ char *filecat(char *path) {
     return(ret);
 }
 
-char * container_dir_walk(char *containerdir, char *dir) {
+char * container_basedir(char *containerdir, char *dir) {
     char * testdir = strdup(dir);
     char * prevdir = NULL;
     if ( containerdir == NULL || dir == NULL ) {

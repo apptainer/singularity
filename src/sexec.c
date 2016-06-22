@@ -97,6 +97,8 @@ int main(int argc, char ** argv) {
     char *prompt;
     char *loop_dev_lock;
     char *loop_dev_cache;
+    char *homedir;
+    char *homedir_base;
     char *loop_dev = 0;
     char *config_path;
     char *tmp_config_string;
@@ -147,6 +149,8 @@ int main(int argc, char ** argv) {
     }
 
     username = pw->pw_name;
+    homedir = pw->pw_dir;
+
     containerimage = getenv("SINGULARITY_IMAGE");
     command = getenv("SINGULARITY_COMMAND");
 
@@ -489,7 +493,25 @@ int main(int argc, char ** argv) {
             // Bind mounts
             if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
                 unsetenv("SINGULARITY_CONTAIN");
-    
+
+                rewind(config_fp);
+                if ( config_get_key_bool(config_fp, "mount home", 1) > 0 ) {
+                    if ( ( homedir_base = container_basedir(containerpath, homedir) ) != NULL ) {
+                        if ( is_dir(homedir_base) == 0 ) {
+                            if ( is_dir(joinpath(containerpath, homedir_base)) == 0 ) {
+                                if ( mount_bind(homedir_base, joinpath(containerpath, homedir_base), 1) < 0 ) {
+                                    fprintf(stderr, "ABORTING!\n");
+                                    return(255);
+                                }
+                            } else {
+                                fprintf(stderr, "WARNING: Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
+                            }
+                        } else {
+                            fprintf(stderr, "WARNING: Home directory base source path does not exist: %s\n", homedir_base);
+                        }
+                    }
+                }
+
                 rewind(config_fp);
                 while ( ( tmp_config_string = config_get_key_value(config_fp, "bind path") ) != NULL ) {
                     char *source = strtok(tmp_config_string, ",");
@@ -504,12 +526,17 @@ int main(int argc, char ** argv) {
                         chomp(dest);
                     }
 
+                    if ( ( homedir_base != NULL ) && ( strncmp(source, homedir_base, strlen(homedir_base)) == 0 )) {
+                        // Skipping path as it was already mounted as homedir_base
+                        continue;
+                    }
+
                     if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
-                        fprintf(stderr, "ERROR: Non existant bind source path: '%s'\n", source);
+                        fprintf(stderr, "WARNING: Non existant bind source path: '%s'\n", source);
                         continue;
                     }
                     if ( ( is_file(joinpath(containerpath, dest)) != 0 ) && ( is_dir(joinpath(containerpath, dest)) != 0 ) ) {
-                        fprintf(stderr, "WARNING: Non existant bind container destination path: '%s'\n", dest);
+                        fprintf(stderr, "WARNING: Container bind point does not exist: '%s'\n", dest);
                         continue;
                     }
                     if ( mount_bind(source, joinpath(containerpath, dest), 1) < 0 ) {
@@ -517,6 +544,8 @@ int main(int argc, char ** argv) {
                         return(255);
                     }
                 }
+
+
 
                 if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
                     rewind(config_fp);
