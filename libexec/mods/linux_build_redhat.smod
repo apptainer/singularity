@@ -21,9 +21,7 @@
 
 
 # dnf should probably be preferred if it's present
-# Fixme: doing so makes bootstrap on el6 fail with a complaint about
-# /var/log/dnf.log not being writable.
-if # ! YUM_PATH=`singularity_which dnf` && 
+if ! YUM_PATH=`singularity_which dnf` && 
    ! YUM_PATH=`singularity_which yum`; then
     message ERROR "Neither yum nor dnf in PATH!\n"
     return 255
