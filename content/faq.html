@@ -519,14 +519,19 @@ No and yes.
 </p>
 <p>
 While Singularity containers always run as the user launching them, there are
-some aspects of the container launch which requires escalation of privileges.
-Once the container environment has been instantiated, all escalated privileges
-are dropped completely, before running any programs within the container.
+some aspects of the container execution which requires escalation of privileges.
+This escalation is achieved via a SUID portion of code. Once the container
+environment has been instantiated, all escalated privileges are dropped
+completely, before running any programs within the container.
 </p>
 <p>
 Additionally, there are precautions within the container context to mitigate
 any escalation of privileges. This limits a user's ability to gain root control
 once inside the container.
+</p>
+<p>
+You can read more about the
+<a href="javascript:load_content('security')">Singularity security model here</a>.
 </p>
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
