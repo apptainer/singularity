@@ -36,6 +36,15 @@ fi
 
 while true; do
     case $1 in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
         -f|--file)
             shift
             FILE="$1"
@@ -57,8 +66,12 @@ while true; do
 done
 
 if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) import [Singularity container image]"
-    exit 1
+    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    else
+        echo "ERROR: To see usage summary, try: singularity help $SINGULARITY_COMMAND"
+    fi
+    exit 0
 fi
 
 if [ "$UID" != 0 ]; then

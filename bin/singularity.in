@@ -95,19 +95,20 @@ while true; do
     esac
 done
 
-COMMAND="$1"
+SINGULARITY_COMMAND="$1"
+export SINGULARITY_COMMAND
 
-if [ -z "$COMMAND" ]; then
+if [ -z "$SINGULARITY_COMMAND" ]; then
     cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
     exit 0
 fi
 
 shift
 
-if [ -x "$SINGULARITY_libexecdir/singularity/cli/$COMMAND.exec" ]; then
-    exec $SINGULARITY_libexecdir/singularity/cli/$COMMAND.exec "$@"
+if [ -x "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec" ]; then
+    exec $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec "$@"
 else
-    message ERROR "Unknown command '$COMMAND'\n"
+    message ERROR "Unknown command '$SINGULARITY_COMMAND'\n"
     exit 1
 fi
 
