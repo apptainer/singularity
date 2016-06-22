@@ -2,16 +2,16 @@
 
 <h1>Singularity on HPC</h1>
 <p>
-One of the architecturly defined features in Singularity is that it can execute
+One of the architecturally defined features in Singularity is that it can execute
 containers like they are native programs or scripts on a host computer. As a
 result, integration with schedulers is simple and runs exactly as you would
 expect. All standard input, output, error, pipes, IPC, and other communication
-pathways that locally running progams employ are syncronized with the applications
+pathways that locally running programs employ are synchronized with the applications
 running locally within the container.
 </p>
 <p>
-Additionally because Singularity is not emulating a full hardware level
-virtulization paradigm, there is no need to seperate out any sandboxed networks
+Additionally, because Singularity is not emulating a full hardware level
+virtualization paradigm, there is no need to separate out any sandboxed networks
 or file systems because there is no concept of user-escalation within a container.
 Users can run Singularity containers just as they run any other program on the
 HPC resource.
@@ -48,18 +48,18 @@ and then running an example MPI program through Singularity.
 <br/>&nbsp;<br/>
 <pre>
 $ # Include the appropriate development tools into the container (notice we are calling
-$ # singularity as root and the container is writable)
-$ sudo singularity exec -w /tmp/Centos-7.img yum groupinstall “Development Tools”
+$ # singularity as root and the container is writeable)
+$ sudo singularity exec -w /tmp/Centos-7.img yum groupinstall "Development Tools"
 $
 $ # Clone the OpenMPI GitHub master branch in current directory (on host)
 $ git clone https://github.com/open-mpi/ompi.git
 $ cd ompi
 $
 $ # Build OpenMPI in the working directory, using the tool chain within the container
-$ singularity exec /tmp/Centos-7.img ./configure —prefix=/usr/local
+$ singularity exec /tmp/Centos-7.img ./configure --prefix=/usr/local
 $ singularity exec /tmp/Centos-7.img make
 $
-$ # Install OpenMPI into the container (notice now running as root and container is writable)
+$ # Install OpenMPI into the container (notice now running as root and container is writeable)
 $ sudo singularity exec -w /tmp/Centos-7.img make install
 $
 $ # Build the OpenMPI ring example and place the binary in this directory
