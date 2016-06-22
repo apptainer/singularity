@@ -93,6 +93,7 @@ int main(int argc, char ** argv) {
     char *username;
     char *command;
     char *sessiondir;
+    char *sessiondir_prefix;
     char *prompt;
     char *loop_dev_lock;
     char *loop_dev_cache;
@@ -185,6 +186,11 @@ int main(int argc, char ** argv) {
         return(255);
     }
 
+    if ( ( config_fp = fopen(config_path, "r") ) == NULL ) {
+        fprintf(stderr, "ERROR: Could not open config file %s: %s\n", config_path, strerror(errno));
+        return(255);
+    }
+
     // TODO: Offer option to only run containers owned by root (so root can approve
     // containers)
     if ( uid == 0 && is_owner(containerimage, 0) < 0 ) {
@@ -192,38 +198,26 @@ int main(int argc, char ** argv) {
         return(1);
     }
 
+    rewind(config_fp);
+    if ( ( sessiondir_prefix = config_get_key_value(config_fp, "sessiondir prefix") ) != NULL ) {
+        sessiondir = strjoin(sessiondir_prefix, file_id(containerimage));
+    } else {
+        sessiondir = strjoin("/tmp/.singularity-session-", file_id(containerimage));
+    }
+
     containername = basename(strdup(containerimage));
 
-    sessiondir = strjoin("/tmp/.singularity-session-", file_id(containerimage));
     loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
     loop_dev_cache = joinpath(sessiondir, "loop_dev");
-
-// NOTE: We tested putting the containerpath into the sessiondir (in /tmp), but
-//       this was proving unreliable due to people with non-locally mounted /tmp
-//       dirs. /var should always be local.
-//    containerpath = (char *) malloc(strlen(sessiondir) + 5);
-//    snprintf(containerpath, strlen(sessiondir) + 5, "%s/mnt", sessiondir);
 
     containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
     snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
 
-
     syslog(LOG_NOTICE, "User=%s[%d], Command=%s, Container=%s, CWD=%s, Arg1=%s", username, uid, command, containerimage, cwd, argv[1]);
-
-
-//****************************************************************************//
-// Setup
-//****************************************************************************//
-
 
     prompt = (char *) malloc(strlen(containername) + 16);
     snprintf(prompt, strlen(containername) + 16, "Singularity/%s> ", containername);
     setenv("PS1", prompt, 1);
-
-    if ( ( config_fp = fopen(config_path, "r") ) == NULL ) {
-        fprintf(stderr, "ERROR: Could not open config file %s: %s\n", config_path, strerror(errno));
-        return(255);
-    }
 
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) {
