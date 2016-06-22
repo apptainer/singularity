@@ -48,36 +48,20 @@ else
     exit 1
 fi
 
-usage() {
-    echo "USAGE: $0 (options) [command] (command options)"
-    echo
-    echo "GLOBAL OPTIONS:"
-    echo "    -h --help     Display this usage summary"
-    echo "       --version  Show application version"
-    echo "    -v --verbose  Increase verbosity +1"
-    echo "    -d --debug    Show debugging information"
-    echo "    -q --quiet    Only print errors"
-    echo
-    echo "COMMANDS:"
-
-    ls $SINGULARITY_libexecdir/singularity/cli/*.summary | sed -e 's/.summary//' | sort | while read i; do
-        if [ -f "$i.summary" ]; then
-            NAME=`basename "$i"`
-            SUMMARY=`cat "$i.summary"`
-            printf "    %-10s %s\n" "$NAME" "$SUMMARY"
-        fi
-    done
-
-    echo
-    echo "For any additional help or support visit the Singularity"
-    echo "website: http://singularity.lbl.gov/"
-    echo
-}
-
 while true; do
     case $1 in
-        -h|--help)
-            usage
+        -h|--help|help)
+            if [ -z "$2" ]; then
+                C="singularity"
+            else
+                C="$2"
+            fi
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$C.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$C.help"
+            else
+                message ERROR "No help exists for command: '$C'\n"
+                exit 1
+            fi
             exit
         ;;
         -q|--quiet)
@@ -114,7 +98,7 @@ done
 COMMAND="$1"
 
 if [ -z "$COMMAND" ]; then
-    usage
+    cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
     exit 0
 fi
 

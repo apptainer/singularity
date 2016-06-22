@@ -1,17 +1,17 @@
 cliexecdir = $(libexecdir)/singularity/cli
 
-dist_cliexec_SCRIPTS = help.exec help.help help.summary \
-			bootstrap.exec bootstrap.help bootstrap.summary \
-			copy.exec copy.help copy.summary \
-			create.exec create.help create.summary \
-			exec.exec exec.help exec.summary \
-			expand.exec expand.help expand.summary \
-			export.exec export.help export.summary \
-			import.exec import.help import.summary \
-			mount.exec mount.help mount.summary \
-			run.exec run.help run.summary \
-			shell.exec shell.help shell.summary \
-			start.exec start.help start.summary \
-			stop.exec stop.help stop.summary 
+dist_cliexec_SCRIPTS = singularity.help \
+			bootstrap.exec bootstrap.help \
+			copy.exec copy.help \
+			create.exec create.help \
+			exec.exec exec.help \
+			expand.exec expand.help \
+			export.exec export.help \
+			import.exec import.help \
+			mount.exec mount.help \
+			run.exec run.help \
+			shell.exec shell.help \
+			start.exec start.help \
+			stop.exec stop.help
 
 MAINTAINERCLEANFILES = Makefile.in
