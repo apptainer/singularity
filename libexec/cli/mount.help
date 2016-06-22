@@ -1,9 +1,10 @@
 USAGE: singularity (options) mount [container path]
 
-Use this command to implement a standard loop mount on the container
-image.
+Start a shell with a standard loop mount on the container image.  The
+mount is in the container namespace, i.e. not visible outside that
+shell.
 
-note: This command must be executed as root.
+Note: This command must be executed as root.
 
 EXAMPLES:
 

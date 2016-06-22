@@ -26,6 +26,8 @@ if ! YUM_PATH=`singularity_which dnf` &&
     message ERROR "Neither yum nor dnf in PATH!\n"
     return 255
 fi
+# dnf doesn't have --tolerant
+case $YUM_PATH in *yum) tolerant=--tolerant;; esac
 
 
 REPO_COUNT=0
@@ -78,7 +80,7 @@ Bootstrap() {
     # Avoid plugins which might cuase trouble, e.g. etckeeper, Red Hat
     # subscription-manager.  Install the release file, as the name of
     # the release package varies between RHEL, CentOS, etc.
-    if ! eval "$YUM_PATH --noplugins -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install /etc/redhat-release coreutils $@"; then
+    if ! eval "$YUM_PATH --noplugins -c $SINGULARITY_BUILD_ROOT/$YUM_CONF $tolerant --installroot $SINGULARITY_BUILD_ROOT -y install /etc/redhat-release coreutils $@"; then
         exit 1
     fi
 
@@ -90,7 +92,7 @@ Bootstrap() {
 }
 
 InstallPkgs() {
-    if ! eval "$YUM_PATH --noplugins --nogpgcheck --tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then
+    if ! eval "$YUM_PATH --noplugins --nogpgcheck $tolerant --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then
         exit 1
     fi
 
