@@ -1,0 +1,116 @@
+<div id="back_link">&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a></div>
+
+<h1>Singularity Security Overview</h1>
+<p>
+While all container systems have security concerns, Singularity
+approaches the container paradigm differently to make it even
+suitable for shared multi-tenant large environments.
+</p>
+<h2>General container requirements</h2>
+<p>
+When people speak about containers, they are generally talking about a few
+things, name-spaces and alternate root file systems. These underlying
+features are provided by most current Linux distributions but they require
+root privileges in order to work properly.
+</p>
+<p>
+Generally, if the desired requirement is "containers" featuring user
+provided operating systems, somewhere along the invocation pathway root
+privileges are necessary.
+</p>
+<h2>How do container systems work as users</h2>
+<p>
+Generally speaking a container system will do one of three things:
+<ol>
+<li>
+As mentioned above, the CLONE_NEWUSER name-space allows some container
+functionality, but not enough for what Singularity targets as the base
+use-cases.
+</li>
+<li>
+The container system will run a root owned daemon process. This daemon
+process will have a communication pathway that will allow non-root users
+to control it. Docker by default uses a local Unix domain socket so
+users can control the Docker daemon. In this case, the root owned daemon
+process must be carefully designed to support user ACLs, be privilege
+aware, and limit functionalists that could be used as an attack vector.
+</li>
+<li>
+Singularity accomplishes the privilege necessity by invoking a root SUID
+portion of the work-flow. This allows Singularity to carefully decide when
+to escalate privileges and when to drop them. It also allows Singularity
+to run daemon free which facilitates scheduling and resource management
+complexities as well as keeps the code easily audit-able.
+</li>
+<ol>
+</p>
+<h2>What security mitigations does Singularity employ</h2>
+<p>
+SUID programs are common targets for attackers because they provide a
+direct mechanism to gain privileged command execution. These are some of
+the baseline security mitigations for Singularity:
+<ol>
+<li>Keep the escalated bits within the code as simple and transparent so it can be easily audit-able</li>
+<li>Check the return value of every system call, command, and check and bomb out early if anything looks weird</li>
+<li>Make sure that proper permissions of files and directories are owned by root (e.g. the config must be owned by root to work)</li>
+<li>Don't trust any non-root inputs (like config values) unless they have been checked and/or sanitized</li>
+<li>As much IO as possible is done via the calling user (not root)</li>
+<li>Put as much system administrator control into the configuration file as possible</li>
+<li>Drop permissions before running any non trusted code pathways</li>
+<li>Limit all user actions within the container to that single user (disable escalation of privileges within a container)</li>
+<li>All root owned files are encapsulated within a user owned image</li>
+</ol>
+Additionally Singularity is being evaluated for inclusion into some large
+Linux distributions which will get more eyes on the code.
+</p>
+<h2>The Singularity work-flow</h2>
+<p>
+Because users can not obtain root within the container environment, if they
+want to be root inside the container they must first be root outside the
+container. This drastically limits the exposure of what users can
+potentially do on an physical host. As a result of that, the lines can be
+blurred between container and host. It also defines the work-flow of a
+container. It must be developed and modified on a host where the owner
+has root level access and control or provided to them by a system
+administrator. To run or use the container the user does not need root
+or any other system privileges as they are the same user inside the
+container as they are outside the container. This is what makes Singularity
+very effective at running on shared multi-tenant resources.
+</p>
+<h2>If you think you found a security hole</h2>
+<p>
+While we are not deluded enough to consider Singularity perfect, it does
+have our foremost attention. If you think you have found an escalation
+pathway, please email any of the primary authors directly so we can
+evaluate and determine the best path forward. 
+</p>
+
+<h1>But what about...</h1>
+<p>
+We've heard a bunch of great ideas and some myths about containers,
+security and what is possible... Here are a few.
+</p>
+
+<h2>The 'user' name-space makes rootless containers possible</h2>
+<p>
+There are some initiatives to build "rootless" container systems and while
+they are possible, they are limited to being able to only support
+virtualization of name-spaces and unfortunately create other complexities
+and problems for shared multi-tenant resources. For example, they work by
+leveraging the CLONE_NEWUSER name-space and then map virtualized user and
+groups to alternate physical user and groups. They also don't make it
+possible to properly support a user supplied file system because that still
+requires physical root on the system (non-root users can not write or
+manipulate root owned files which a file system is full of).
+</p>
+
+<h2>SUID is so Linux 2, setcap is the wave of the future</h2>
+<p>
+This is on our radar already, but there are some negatives that require
+consideration for example, SUID binaries are much easier to find and thus
+can be easily audited, and Linux capabilities have limited network file
+system and distribution support. With that said, we are still considering
+this, and open to thoughts and perspectives!
+</p>
+
+
