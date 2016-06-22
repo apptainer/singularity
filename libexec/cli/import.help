@@ -1,4 +1,4 @@
-USAGE: singularity (options) import [container path]
+USAGE: singularity [...] import [import options...] <container path>
 
 Import opens standard input (stdin) and will accept tar streams to import
 into a container. Note that the stream MUST be in uncompressed tar
@@ -9,7 +9,7 @@ wish to add to a container, to an existing docker image.
 
 note: This command must be executed as root.
 
-OPTIONS:
+IMPORT OPTIONS:
     -f/--file       Use an input file instead of a pipe
        --command    Replace the tar command (DEFAULT: 'tar xf -')
 

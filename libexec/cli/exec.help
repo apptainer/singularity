@@ -1,9 +1,9 @@
-USAGE: singularity (options) exec [container path] [command] (options)
+USAGE: singularity [...] exec [exec options...] <container path> <command>
 
 This command will allow you to execute any program within the given
 container image.
 
-OPTIONS:
+EXEC OPTIONS:
     -w/--writable   By default all Singularity containers are available as
                     read only. This option makes the file system accessible
                     as read/write.

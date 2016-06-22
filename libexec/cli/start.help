@@ -1,8 +1,10 @@
-USAGE: singularity (options) start [container path] (options)
+USAGE: singularity [...] start [start options...] <container path>
 
+This command will start a namespace daemon process inside the container so
+all subsequent Singularity commands will automatically join this existing
+namespace. The daemon process is specific for user and container file.
 
-
-OPTIONS:
+START OPTIONS:
     -w/--writable   By default all Singularity containers are available as
                     read only. This option makes the file system accessible
                     as read/write.

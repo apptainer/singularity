@@ -1,11 +1,11 @@
-USAGE: singularity (options) export [container path]
+USAGE: singularity [...] export [export options...] <container path>
 
 Export will dump a tar stream of the container image contents to standard
 out (stdout). 
 
 note: This command must be executed as root.
 
-OPTIONS:
+EXPORT OPTIONS:
     -f/--file       Output to a file instead of a pipe
        --command    Replace the tar command (DEFAULT: 'tar cf - .')
 

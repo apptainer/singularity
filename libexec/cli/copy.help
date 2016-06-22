@@ -1,4 +1,4 @@
-USAGE: singularity (options) copy [container path] [source file(s)] [dest]
+USAGE: singularity [...] copy <container path> [cp options...] <source> <dest>
 
 This command will allow you to easily install files into your container
 from your host. It is a Singularity wrapper for /bin/cp and thus you can

@@ -1,8 +1,8 @@
-USAGE: singularity (options) create [command] (options)
+USAGE: singularity [...] create [create options...] <container path>
 
 Create a new Singularity formatted blank image.
 
-OPTIONS:
+CREATE OPTIONS:
     -s/--size   Specify a size for an operation in MB (default 1024MB)
     -f/--fs     File system type to format image with (default ext3)
 

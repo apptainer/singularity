@@ -1,4 +1,4 @@
-USAGE: singularity (options) shell [container path] (options)
+USAGE: singularity [...] shell [shell options...] <container path>
 
 Obtain a shell (/bin/sh) within the container image.
 
@@ -6,7 +6,7 @@ note: When invoking a shell within a container, the container image is
 by default writable.
 
 
-OPTIONS:
+SHELL OPTIONS:
     -w/--writable   By default all Singularity containers are available as
                     read only. This option makes the file system accessible
                     as read/write.

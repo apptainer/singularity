@@ -1,6 +1,6 @@
-USAGE: singularity (options) stop [container path]
+USAGE: singularity [...] stop <container path>
 
-
+Stop a given container namespace daemon process.
 
 EXAMPLES:
 

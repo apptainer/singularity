@@ -1,4 +1,4 @@
-USAGE: singularity (options) mount [container path]
+USAGE: singularity [...] mount [mount options...] <container path> <mountpoint>
 
 Start a shell with a standard loop mount on the container image.  The
 mount is in the container namespace, i.e. not visible outside that

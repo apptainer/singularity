@@ -1,8 +1,9 @@
-USAGE: singularity (options) expand [command] (options)
+USAGE: singularity [...] expand [expand options...] <container path>
+
 
 Grow the Singularity disk image by the given amount.
 
-OPTIONS:
+EXPAND OPTIONS:
     -s/--size   Specify a size for an operation (default 512MB)
 
 EXAMPLES:

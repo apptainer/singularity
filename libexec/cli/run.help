@@ -1,4 +1,4 @@
-USAGE: singularity (options) run [container path] (options)
+USAGE: singularity [...] run [run options...] <container path> [...]
 
 This command will launch a Singularity container and execute a runscript
 if one is defined for that container. The runscript is a file at
@@ -8,7 +8,7 @@ arguments following the container name will be passed directly to the
 runscript.
 
 
-OPTIONS:
+RUN OPTIONS:
     -w/--writable   By default all Singularity containers are available as
                     read only. This option makes the file system accessible
                     as read/write.
