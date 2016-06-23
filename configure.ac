@@ -87,9 +87,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
 AC_SUBST(NAMESPACE_DEFINES)
 
 AC_CHECK_FUNCS(setns, [
-                          AC_MSG_RESULT([yes])
                       ], [
-                          AC_MSG_RESULT([no])
                           NO_SETNS="-DNO_SETNS"
                       ]
                   )
