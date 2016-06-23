@@ -163,7 +163,7 @@ RunScript() {
 }
 
 RunCmd() {
-    if ! chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c "$@"; then
+    if ! chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c "'$@'"; then
         message ERROR "Failed to run: $*\n"
         return 1
     fi
