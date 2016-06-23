@@ -78,6 +78,11 @@ if [ -z "$1" ]; then
     exit 0
 fi
 
+if [ "$FILESYSTEM" != "ext3" -a "$FILESYSTEM" != "ext4" ]; then
+    message ERROR "File system's supported: ext3/4\n"
+    exit 1
+fi
+
 if [ "$UID" != 0 ]; then
     message ERROR "Calling user must be root!\n"
     exit 1
