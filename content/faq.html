@@ -150,7 +150,7 @@ scale HPC and integration with Cray and the resource manager.
 <br/>&nbsp;<br/>
 <p>
 Docker has been used for a variety of purposes, but it is designed as a
-platform to provide replicatable, network service vitalization. Because of
+platform to provide replicable, network service vitalization. Because of
 this basic assumption and design model, it makes it difficult to implement
 on shared HPC platforms (and thus Singularity was born). Additionally,
 Docker supports the notion of emulating full operating system environments
@@ -190,9 +190,9 @@ multi-tenant environments (your system may vary):
 <li>Requires root to run (there is however a submitted patch to allow non-root, but it has not been accepted at this point)</li>
 <li>Even with the proposed patch, no mitigation of user escalation within the container</li>
 <li>The container files themselves are owned by root, thus a user can not "bring their own environment"</li>
-<li>No facility or optimization's for MPI or parallel job launch</li>
+<li>No facility or optimizations for MPI or parallel job launch</li>
 <li>Requires a very recent host operating system (RHEL7 and compats, and similar vintage Debian derivatives)</li>
-<li>No automatic resolution of which namespaces to use (e.g. automatic disable PID namespace separation for OMPI shared memory optimization's)</li>
+<li>No automatic resolution of which namespaces to use (e.g. automatic disable PID namespace separation for OMPI shared memory optimizations)</li>
 <li>It is not a "mobility of compute" solution (it is an example implementation of the OCI)</li>
 <li>Users can escalate to root and potentially get access to shared file systems, run daemons and escape the standard user and scheduler limitations</li>
 </ul>
@@ -389,7 +389,7 @@ probably not the right solution for you.
 <br/>&nbsp;<br/>
 <p>
 Because Singularity is based on container principals, when an application
-is run from within a Singularity container it's default view of the file
+is run from within a Singularity container its default view of the file
 system is different from how it is on the host system. This is what allows the
 environment to be portable. This means that root ('/') inside the container
 is different from the host!
@@ -564,7 +564,7 @@ measured to be anywhere from 10 - 20 thousandths of a second.
 <p>
 On a related note, what we have found so far is that not all operating systems
 are created equal in terms of their build environment and optimized tool chains.
-RedHat for example has a very optimal tool chain which they use for their
+Red Hat for example has a very optimal tool chain which they use for their
 Enterprise product line and it is not available to other distributions (or
 rebuilds) and thus their resulting binaries and libraries have been more
 performant then other Linux distributions we have tested.
@@ -684,7 +684,7 @@ sudo: singularity: command not found
 </pre>
 </p>
 <p>
-The cause of the problem is that `sudo` sanitizes the PATH evnironment
+The cause of the problem is that `sudo` sanitizes the PATH environment
 variable and does not include /usr/local/bin in the default search path.
 Considering this program path is by default owned by root, it is
 reasonable to extend the default sudo PATH to include this directory.
