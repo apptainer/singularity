@@ -36,7 +36,7 @@ Setup() {
 }
 
 Bootstrap() {
-    if [ ! -f "$TMPDIR/type" ]; then
+    if [ ! -f "$SINGULARITY_TMPDIR/type" ]; then
         echo "Bootstrap: You must first call 'DistType'!" >&2
         exit 5
     fi
@@ -49,7 +49,7 @@ Bootstrap() {
 }
 
 InstallPkgs() {
-    if [ ! -f "$TMPDIR/type" ]; then
+    if [ ! -f "$SINGULARITY_TMPDIR/type" ]; then
         echo "InstallPkgs: You must first call 'DistType'!" >&2
         exit 5
     fi
@@ -57,7 +57,7 @@ InstallPkgs() {
 }
 
 Cleanup() {
-    if [ ! -f "$TMPDIR/type" ]; then
+    if [ ! -f "$SINGULARITY_TMPDIR/type" ]; then
         echo "Cleanup: You must first call 'DistType'!" >&2
         exit 5
     fi
@@ -82,7 +82,7 @@ DistType() {
         exit 255
     fi
 
-    echo "$TYPE" > "$TMPDIR/type"
+    echo "$TYPE" > "$SINGULARITY_TMPDIR/type"
 
     return 0
 }
@@ -163,7 +163,7 @@ RunScript() {
 }
 
 RunCmd() {
-    if ! chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c "'$@'"; then
+    if ! chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c "$@"; then
         message ERROR "Failed to run: $*\n"
         return 1
     fi
