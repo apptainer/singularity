@@ -109,7 +109,7 @@ if ! touch "$IMAGE_FILE" 2>/dev/null; then
     exit 1
 fi
 
-echo "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MB..."
+echo "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MiB..."
 if ! eval "$SINGULARITY_libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMAGE_SIZE"; then
     messsage ERROR "Failed creating image: $IMAGE_FILE\n"
     exit 1

@@ -38,7 +38,7 @@ int main(int argc, char ** argv) {
     long int size;
 
     if ( argv[1] == NULL ) {
-        fprintf(stderr, "USAGE: %s [singularity container image] [size in MB]\n", argv[0]);
+        fprintf(stderr, "USAGE: %s [singularity container image] [size in MiB]\n", argv[0]);
         return(1);
     }
 
