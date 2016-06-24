@@ -102,7 +102,7 @@ if ! E2FSCK_PATH=`singularity_which e2fsck`; then
 fi
 
 
-echo "Expanding sparse image by ${IMAGE_SIZE}MB..."
+echo "Expanding sparse image by ${IMAGE_SIZE}MiB..."
 if ! eval "$SINGULARITY_libexecdir/singularity/image-expand" "$IMAGE_FILE" "$IMAGE_SIZE"; then
     messsage ERROR "Failed creating image: $IMAGE_FILE\n"
     exit 1
