@@ -8,7 +8,6 @@ echo "Setting RELEASE=$RELEASE"
 DistType "redhat"
 MirrorURL "http://ftp.scientificlinux.org/linux/scientific/${RELEASE}x/\$basearch/os/"
 
-
 Setup
 Bootstrap
 
