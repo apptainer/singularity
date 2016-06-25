@@ -77,20 +77,26 @@ int build_group(char *template, char *output) {
 
     if ( gid != 0 ) {
         FILE *fd_output;
+        int groupcount;
+        int i;
+        int maxgroups = sysconf(_SC_NGROUPS_MAX) + 1;
+        uid_t uid = getuid();
+        gid_t gids[maxgroups];
+        struct passwd *pwent = getpwuid(uid);
         struct group *grent = getgrgid(gid);
-        char **member;
-        int c = 0;
 
         fd_output = fopen(output, "a");
-        fprintf(fd_output, "\n%s:x:%d:", grent->gr_name, grent->gr_gid);
-        for ( member = grent->gr_mem; *member != NULL; member++) {
-            fprintf(fd_output, "%s", *member);
-            if ( c > 0 ) {
-                fprintf(fd_output, ",");
+        fprintf(fd_output, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
+
+        groupcount = getgroups(maxgroups, gids);
+
+        for (i=0; i<= groupcount; i++) {
+            if ( gids[i] >= 500 && gids[i] != grent->gr_gid ) {
+                struct group *gr = getgrgid(gids[i]);
+                fprintf(fd_output, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
             }
-            c++;
         }
-        fprintf(fd_output, "\n");
+
         fclose(fd_output);
     }
 
