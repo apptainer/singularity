@@ -428,19 +428,10 @@ int main(int argc, char ** argv) {
             rewind(config_fp);
             if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
                 unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-#ifdef NS_CLONE_NEWPID
                 if ( unshare(CLONE_NEWPID) < 0 ) {
                     fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
                     return(255);
                 }
-#else
-#ifdef NS_CLONE_PID
-                if ( unshare(CLONE_PID) < 0 ) {
-                    fprintf(stderr, "ABORT: Could not virtualize PID namespace: %s\n", strerror(errno));
-                    return(255);
-                }
-#endif
-#endif
             }
 
             // Setup FS namespaces
@@ -772,19 +763,10 @@ int main(int argc, char ** argv) {
         // Connect to existing PID namespace
         if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
             int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
-#ifdef NS_CLONE_NEWPID
             if ( setns(fd, CLONE_NEWPID) < 0 ) {
                 fprintf(stderr, "ABORT: Could not join existing PID namespace: %s\n", strerror(errno));
                 return(255);
             }
-#else
-#ifdef NS_CLONE_PID
-            if ( setns(fd, CLONE_PID) < 0 ) {
-                fprintf(stderr, "ABORT: Could not join existing PID namespace: %s\n", strerror(errno));
-                return(255);
-            }
-#endif
-#endif
             close(fd);
 
         } else {
