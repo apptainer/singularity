@@ -47,39 +47,34 @@ Bootstrap() {
     # debootstrap will create the device entries it needs (or some versions fail)
     /bin/sh -c "rm -rf $SINGULARITY_BUILD_ROOT/dev/*"
 
-    echo "Bootstrapping..."
     if ! eval "$DEBOOTSTRAP_PATH --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
         exit 1
     fi
 
-    echo "Updating keys..."
-    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -l -c 'apt-key update'"; then
+    if ! __runcmd apt-key update; then
         return 1
     fi
 
-    echo "Updating apt cache..."
-    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -l -c 'apt-get update'"; then
+    if ! __runcmd apt-get update; then
         return 1
     fi
 
-    echo "Updating locale..."
-    if [ -n "$LANG" ]; then
-        if eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -l -c 'locale-gen $LANG'" 2>/dev/null; then
+   if [ -n "$LANG" ]; then
+        if __runcmd locale-gen $LANG; then
             mkdir -p "$SINGULARITY_BUILD_ROOT/etc/default/" >/dev/null 2>&1
             echo "LANG=$LANG" > "$SINGULARITY_BUILD_ROOT/etc/default/locale"
         fi
     fi
 
-    __mount_proc
-    __mount_dev
-    __mount_sys
+    __mountproc
+    __mountsys
 
     return 0
 }
 
 
 InstallPkgs() {
-    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -l -c 'apt-get -y --force-yes install $*'"; then
+    if ! __runcmd apt-get -y --force-yes install "$*"; then
         return 1
     fi
 
@@ -87,7 +82,7 @@ InstallPkgs() {
 }
 
 Cleanup() {
-    if ! eval "chroot '$SINGULARITY_BUILD_ROOT' /bin/sh -c 'apt-get clean'"; then
+    if ! __runcmd apt-get clean; then
         return 1
     fi
 

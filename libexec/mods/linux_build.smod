@@ -26,7 +26,6 @@ DEVS="/dev/null /dev/zero /dev/random /dev/urandom"
 TMP_REAL_FILES="/etc/resolv.conf /etc/hosts"
 
 
-# Function templates
 SanityCheck() {
     return 0
 }
@@ -41,11 +40,6 @@ Bootstrap() {
         exit 5
     fi
 
-    __mount_proc
-    __mount_dev
-    __mount_sys
-
-    return 0
 }
 
 InstallPkgs() {
@@ -64,8 +58,6 @@ Cleanup() {
     return 0
 }
 
-
-# General functions
 
 DistType() {
     TYPE="$1"
@@ -163,9 +155,9 @@ RunScript() {
 }
 
 RunCmd() {
-    if ! chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c "$@"; then
-        message ERROR "Failed to run: $*\n"
-        return 1
+    if ! __runcmd "$@"; then
+        message ERROR "Aborting...\n"
+        exit 1
     fi
 
     return 0
@@ -194,20 +186,29 @@ Finalize() {
 }
 
 
-__mount_dev() {
-    if [ -d "/dev" -a -d "$SINGULARITY_BUILD_ROOT/dev" ]; then
-        mount --rbind "/dev" "$SINGULARITY_BUILD_ROOT/dev"
-    fi
+__runcmd() {
+    echo "+ $*"
+
+    chroot "$SINGULARITY_BUILD_ROOT" "$@"
+
+    return $?
 }
-__mount_proc() {
+
+
+__mountproc() {
     if [ -d "/proc" -a -d "$SINGULARITY_BUILD_ROOT/proc" ]; then
-        mount --rbind "/proc" "$SINGULARITY_BUILD_ROOT/proc"
+        mkdir -p -m 0755 "$SINGULARITY_BUILD_ROOT/proc"
     fi
-}
-__mount_sys() {
-    if [ -d "/sys" -a -d "$SINGULARITY_BUILD_ROOT/sys" ]; then
-        mount --rbind "/sys" "$SINGULARITY_BUILD_ROOT/sys"
-    fi
+    mount -t proc proc "$SINGULARITY_BUILD_ROOT/proc"
+
+    return $?
 }
 
+__mountsys() {
+    if [ ! -d "$SINGULARITY_BUILD_ROOT/sys" ]; then
+        mkdir -p -m 0755 "$SINGULARITY_BUILD_ROOT/sys"
+    fi
+    mount -t sysfs sysfs "$SINGULARITY_BUILD_ROOT/sys"
 
+    return $?
+}
