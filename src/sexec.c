@@ -697,7 +697,7 @@ int main(int argc, char ** argv) {
 
 
                 // Change to the proper directory
-                message(VERBOSE2, "Checking to correct working directory: %s\n", cwd);
+                message(VERBOSE2, "Changing to correct working directory: %s\n", cwd);
                 if ( is_dir(cwd) == 0 ) {
                    if ( chdir(cwd) < 0 ) {
                         fprintf(stderr, "ERROR: Could not chdir to: %s: %s\n", cwd, strerror(errno));
@@ -767,6 +767,8 @@ int main(int argc, char ** argv) {
                 }
 
                 strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
+
+                message(DEBUG, "Dropping privs...\n");
 
                 if ( drop_privs(&uinfo) < 0 ) {
                     ABORT(255);
@@ -838,107 +840,129 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
     } else {
 
+        message(VERBOSE, "Attaching to existing namespace daemon environment\n");
         pid_t exec_pid;
 
 #ifdef NO_SETNS
-        fprintf(stderr, "ERROR: This host does not support joining existing name spaces\n");
-        return(1);
-#else
-        // Connect to existing PID namespace
+        message(ERROR, "This host does not support joining existing name spaces\n");
+        ABORT(1);
+#endif
         if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
+            message(DEBUG, "Connecting to existing PID namespace\n");
             int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
             if ( setns(fd, CLONE_NEWPID) < 0 ) {
-                fprintf(stderr, "ERROR: Could not join existing PID namespace: %s\n", strerror(errno));
+                message(ERROR, "Could not join existing PID namespace: %s\n", strerror(errno));
                 ABORT(255);
             }
             close(fd);
 
         } else {
-            fprintf(stderr, "ERROR: Could not identify PID namespace: %s\n", joinpath(setns_dir, "pid"));
+            message(ERROR, "Could not identify PID namespace: %s\n", joinpath(setns_dir, "pid"));
             ABORT(255);
         }
 
         // Connect to existing mount namespace
         if ( is_file(joinpath(setns_dir, "mnt")) == 0 ) {
+            message(DEBUG, "Connecting to existing mount namespace\n");
             int fd = open(joinpath(setns_dir, "mnt"), O_RDONLY);
             if ( setns(fd, CLONE_NEWNS) < 0 ) {
-                fprintf(stderr, "ERROR: Could not join existing mount namespace: %s\n", strerror(errno));
+                message(ERROR, "Could not join existing mount namespace: %s\n", strerror(errno));
                 ABORT(255);
             }
             close(fd);
 
         } else {
-            fprintf(stderr, "ERROR: Could not identify mount namespace: %s\n", joinpath(setns_dir, "mnt"));
+            message(ERROR, "Could not identify mount namespace: %s\n", joinpath(setns_dir, "mnt"));
             ABORT(255);
         }
-#endif
 
-
-//TODO: Add chroot and chdirs to a container method
-        if ( chroot(containerpath) < 0 ) {
-            fprintf(stderr, "ERROR: failed enter CONTAINERIMAGE: %s\n", containerpath);
-            ABORT(255);
-        }
-        if ( chdir("/") < 0 ) {
-            fprintf(stderr, "ERROR: Could not chdir after chroot to /: %s\n", strerror(errno));
-            ABORT(1);
-        }
-
-        // Change to the proper directory
-        if ( is_dir(cwd) == 0 ) {
-           if ( chdir(cwd) < 0 ) {
-                fprintf(stderr, "ERROR: Could not chdir to: %s: %s\n", cwd, strerror(errno));
-                ABORT(1);
-            }
-        } else {
-            if ( fchdir(cwd_fd) < 0 ) {
-                fprintf(stderr, "ERROR: Could not fchdir to cwd: %s\n", strerror(errno));
-                ABORT(1);
-            }
-        }
-
-        // Drop all privileges for good
-        if ( drop_privs_perm(&uinfo) < 0 ) {
+        // Setup FS namespaces
+        message(DEBUG, "Virtualizing FS namespace\n");
+        if ( unshare(CLONE_FS) < 0 ) {
+            fprintf(stderr, "ERROR: Could not virtualize file system namespace: %s\n", strerror(errno));
             ABORT(255);
         }
 
         // Fork off exec process
+        message(VERBOSE, "Forking exec process\n");
         exec_pid = fork();
         if ( exec_pid == 0 ) {
 
+            message(DEBUG, "Hello from exec child process\n");
+
+//TODO: Add chroot and chdirs to a container method
+            message(VERBOSE, "Entering container file system space\n");
+            if ( chroot(containerpath) < 0 ) {
+                fprintf(stderr, "ERROR: failed enter CONTAINERIMAGE: %s\n", containerpath);
+                ABORT(255);
+            }
+
+            message(DEBUG, "Changing dir to '/' within the new root\n");
+            if ( chdir("/") < 0 ) {
+                fprintf(stderr, "ERROR: Could not chdir after chroot to /: %s\n", strerror(errno));
+                ABORT(1);
+            }
+
+            // Change to the proper directory
+            message(VERBOSE2, "Changing to correct working directory: %s\n", cwd);
+            if ( is_dir(cwd) == 0 ) {
+                if ( chdir(cwd) < 0 ) {
+                    fprintf(stderr, "ERROR: Could not chdir to: %s: %s\n", cwd, strerror(errno));
+                    ABORT(1);
+                }
+            } else {
+                if ( fchdir(cwd_fd) < 0 ) {
+                    fprintf(stderr, "ERROR: Could not fchdir to cwd: %s\n", strerror(errno));
+                    ABORT(1);
+                }
+            }
+
+            // Drop all privileges for good
+            message(VERBOSE2, "Dropping all privileges\n");
+            if ( drop_privs_perm(&uinfo) < 0 ) {
+                ABORT(255);
+            }
+
             // Do what we came here to do!
             if ( command == NULL ) {
-                fprintf(stderr, "No command specified, launching 'shell'\n");
+                message(WARNING, "No command specified, launching 'shell'\n");
                 command = strdup("shell");
             }
             if ( strcmp(command, "run") == 0 ) {
+                message(VERBOSE, "COMMAND=run\n");
                 if ( container_run(argc, argv) < 0 ) {
                     ABORT(255);
                 }
             }
             if ( strcmp(command, "exec") == 0 ) {
+                message(VERBOSE, "COMMAND=exec\n");
                 if ( container_exec(argc, argv) < 0 ) {
                     ABORT(255);
                 }
             }
             if ( strcmp(command, "shell") == 0 ) {
+                message(VERBOSE, "COMMAND=shell\n");
                 if ( container_shell(argc, argv) < 0 ) {
                     ABORT(255);
                 }
             }
     
-            fprintf(stderr, "ERROR: Unknown command: %s\n", command);
-            return(255);
+            message(ERROR, "Unknown command: %s\n", command);
+            ABORT(255);
 
         } else if ( exec_pid > 0 ) {
             int tmpstatus;
     
             strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
     
+            message(DEBUG, "Dropping privs...\n");
+
             if ( drop_privs(&uinfo) < 0 ) {
                 ABORT(255);
             }
     
+            message(VERBOSE2, "Waiting for Exec process...\n");
+
             waitpid(exec_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
 
@@ -946,7 +970,11 @@ int main(int argc, char ** argv) {
             fprintf(stderr, "ERROR: Could not fork exec process: %s\n", strerror(errno));
             ABORT(255);
         }
+
+        message(VERBOSE, "Exec parent process returned: %d\n", retval);
     }
+
+    message(VERBOSE2, "Cleaning up...\n");
 
     close(containerimage_fd);
     close(sessiondirlock_fd);
