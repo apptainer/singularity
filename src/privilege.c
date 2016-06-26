@@ -55,7 +55,7 @@ int get_user_privs(struct s_privinfo *uinfo) {
 int escalate_privs(void) {
 
     if ( seteuid(0) < 0 ) {
-        fprintf(stderr, "ERROR: Could not escalate effective user privileges %s\n", strerror(errno));
+        fprintf(stderr, "ERROR: Could not escalate effective user privileges: %s\n", strerror(errno));
         return(-1);
     }
 
