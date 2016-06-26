@@ -25,4 +25,7 @@ char *joinpath(char * path1, char * path2);
 char *strjoin(char *str1, char *str2);
 char *random_string(int length);
 void chomp(char *str);
+void _abort(int value, const char *function, const char *file, int line);
+
+#define ABORT(x) _abort(x, __func__, __FILE__, __LINE__)
 
