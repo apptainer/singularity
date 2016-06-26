@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "config.h"
 #include "util.h"
@@ -37,12 +38,14 @@ void init(void) {
         messagelevel = 0;
     } else {
         messagelevel = atol(messagelevel_string);
-        printf("Setting message level to: %d\n", messagelevel);
+        message(VERBOSE, "Setting messagelevel to: %d\n", messagelevel);
     }
 
 }
 
-void message(int level, char *msg) {
+void message(int level, char *format, ...) {
+    va_list args;
+    va_start (args, format);
 
     if ( messagelevel == -1 ) {
         init();
@@ -50,20 +53,29 @@ void message(int level, char *msg) {
 
     switch (level) {
         case ERROR:
-            fprintf(stderr, "ERROR:   %s\n", msg);
+            fprintf(stderr, "ERROR:   ");
+            vfprintf(stderr, format, args);
             break;
         case WARNING:
-            fprintf(stderr, "WARNING: %s\n", msg);
+            fprintf(stderr, "WARNING: ");
+            vfprintf(stderr, format, args);
             break;
         case INFO:
-            printf("%s\n", msg);
+            vprintf(format, args);
             break;
         default:
-            if ( level <= messagelevel ) {
-                fprintf(stderr, "VERBOSE: %s\n", msg);
+            if ( level <= messagelevel && messagelevel >= 5 ) {
+                char *debug_string = (char *) malloc(intlen(geteuid()) + intlen(getpid()) + 16);
+                snprintf(debug_string, intlen(geteuid()) + intlen(getpid()) + 16, "DEBUG(U=%d,PID=%d):", geteuid(), getpid());
+                fprintf(stderr, "%-28s ", debug_string);
+                vfprintf(stderr, format, args);
+            } else if ( level <= messagelevel ) {
+                fprintf(stderr, "VERBOSE: ");
+                vfprintf(stderr, format, args);
             }
             break;
     }
 
+    va_end (args);
 }
 

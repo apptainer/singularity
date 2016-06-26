@@ -28,4 +28,4 @@
 #define VERBOSE3 4
 #define DEBUG 5
 
-void message(int level, char *msg);
+void message(int level, char *format, ...);
