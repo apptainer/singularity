@@ -109,7 +109,7 @@ char *random_string(int length) {
 }
 
 void _abort(int value, const char *function, const char *file, int line) {
-    fprintf(stderr, "ABORT thrown from %s:%d/%s() with RETVAL=%d\n", file, line, function, value);
+    fprintf(stderr, "ABORT:   Thrown from %s:%d/%s() with RETVAL=%d\n", file, line, function, value);
     exit(value);
 }
 
