@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+ALL_COMMANDS="exec run shell start stop bootstrap copy create expand export import mount"
+
 if [ ! -f "autogen.sh" ]; then
     /bin/echo "ERROR: Run this from the singularity source root"
     exit 1
@@ -12,7 +15,9 @@ fi
 
 
 MESSAGELEVEL=3
+STARTDIR=`pwd`
 TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
+TSTIMG="container.img"
 SINGULARITY_CACHEDIR="$TEMPDIR"
 export SINGULARITY_CACHEDIR MESSAGELEVEL
 
@@ -32,7 +37,7 @@ fi
 make maintainer-clean >/dev/null 2>&1
 stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
 stest 0 make
-stest 0 make install
+stest 0 sudo make install
 
 PATH="$TEMPDIR/bin:$PATH"
 
@@ -46,24 +51,58 @@ stest 0 mkdir -p "$TEMPDIR"
 stest 0 pushd "$TEMPDIR"
 
 /bin/echo
-/bin/echo "${BLUE}Running tests...${NORMAL}"
+/bin/echo "Running base tests..."
 /bin/echo
 
 # Testing singularity internal commands
 stest 0 singularity
-stest 0 singularity help
-stest 0 singularity help shell
-stest 0 singularity -h
 stest 0 singularity --help
 stest 0 singularity --version
+for i in $ALL_COMMANDS; do
+    echo
+    echo "Testing command usage: '$i'"
+    stest 0 singularity --help "$i"
+    stest 0 singularity -h "$i"
+    stest 0 singularity help "$i"
+    stest 0 singularity $i help
+    stest 0 singularity $i -h
+    stest 0 singularity $i --help
+done
+stest 1 singularity help bogus
+stest 1 singularity bogus help
 
+/bin/echo
+/bin/echo "Building test container..."
+/bin/echo
+
+stest 0 sudo singularity create -s 15 "$TSTIMG"
+stest 0 sudo singularity bootstrap "$TSTIMG" "$STARTDIR/examples/busybox.def"
+
+/bin/echo
+/bin/echo "Running container tsts..."
+/bin/echo
+
+stest 0 singularity shell "$TSTIMG" -c "true"
+stest 0 singularity exec "$TSTIMG" true
+stest 1 singularity exec "$TSTIMG" false
+stest 0 sh -c "echo hi | singularity exec $TSTIMG grep hi"
+stest 1 sh -c "echo bye | singularity exec $TSTIMG grep hi"
+stest 0 singularity run "$TSTIMG" -c true
+stest 1 singularity run "$TSTIMG" -c false
+
+echo -ne "#!/bin/sh\n\neval \"\$@\"\n" > singularity
+chmod 0755 singularity
+stest 0 sudo singularity copy "$TSTIMG" singularity /
+
+stest 0 singularity run "$TSTIMG" true
+stest 1 singularity run "$TSTIMG" false
 
 
 
 /bin/echo
 /bin/echo "Cleaning up"
 stest 0 popd
-stest 0 rm -rf "$TEMPDIR"
+stest 0 sudo rm -rf "$TEMPDIR"
 stest 0 make maintainer-clean
 
 /bin/echo
