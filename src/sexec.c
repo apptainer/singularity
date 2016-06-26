@@ -47,6 +47,7 @@
 #include "config_parser.h"
 #include "container_actions.h"
 #include "privilege.h"
+#include "message.h"
 
 
 #ifndef LOCALSTATEDIR
@@ -131,120 +132,148 @@ int main(int argc, char ** argv) {
     uid = getuid();
     pw = getpwuid(uid);
 
+    message(DEBUG, "Gathering and caching user info.\n");
     if ( get_user_privs(&uinfo) < 0 ) {
-        fprintf(stderr, "ERROR: Could not obtain user privs\n");
+        message(ERROR, "Could not obtain user privs\n");
         ABORT(255);
     }
 
     // Check to make sure we are installed correctly
+    message(DEBUG, "Checking if we can escalate privs properly.\n");
     if ( escalate_privs() < 0 ) {
-        fprintf(stderr, "ERROR: Check installation, must be performed by root.\n");
+        message(ERROR, "Check installation, must be performed by root\n");
         ABORT(255);
     }
 
     // Lets start off as the calling UID
+    message(DEBUG, "Setting privs to calling user\n");
     if ( drop_privs(&uinfo) < 0 ) {
         ABORT(255);
     }
 
+    message(DEBUG, "Obtaining username and homedir\n");
     username = pw->pw_name;
     homedir = pw->pw_dir;
 
-    containerimage = getenv("SINGULARITY_IMAGE");
-    command = getenv("SINGULARITY_COMMAND");
-
-    unsetenv("SINGULARITY_COMMAND");
-    unsetenv("SINGULARITY_EXEC");
-
+    message(DEBUG, "Building configuration file location\n");
     config_path = (char *) malloc(strlen(SYSCONFDIR) + 30);
     snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR);
+    message(DEBUG, "Config location: %s\n", config_path);
 
     // Figure out where we start
+    message(DEBUG, "Obtaining file descriptor to current directory\n");
     if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open cwd fd (%s)!\n", strerror(errno));
+        message(ERROR, "Could not open cwd fd (%s)!\n", strerror(errno));
         ABORT(1);
     }
+    message(DEBUG, "Getting current working directory path string\n");
     if ( getcwd(cwd, PATH_MAX) == NULL ) {
-        fprintf(stderr, "ERROR: Could not obtain current directory path: %s\n", strerror(errno));
+        message(ERROR, "Could not obtain current directory path: %s\n", strerror(errno));
         ABORT(1);
     }
 
-    if ( containerimage == NULL ) {
-        fprintf(stderr, "ERROR: SINGULARITY_IMAGE undefined!\n");
+    message(DEBUG, "Obtaining SINGULARITY_COMMAND from environment\n");
+    if ( ( command = getenv("SINGULARITY_COMMAND") ) == NULL ) {
+        message(ERROR, "SINGULARITY_COMMAND undefined!\n");
+        ABORT(1);
+    }
+    unsetenv("SINGULARITY_COMMAND");
+
+    message(DEBUG, "Obtaining SINGULARITY_IMAGE from environment\n");
+    if ( ( containerimage = getenv("SINGULARITY_IMAGE") ) == NULL ) {
+        message(ERROR, "SINGULARITY_IMAGE undefined!\n");
         ABORT(1);
     }
 
+    message(DEBUG, "Checking container image is a file: %s\n", containerimage);
     if ( is_file(containerimage) != 0 ) {
-        fprintf(stderr, "ERROR: Container image path is invalid: %s\n", containerimage);
+        message(ERROR, "Container image path is invalid: %s\n", containerimage);
         ABORT(1);
     }
 
+    message(DEBUG, "Checking Singularity configuration is a file: %s\n", config_path);
     if ( is_file(config_path) != 0 ) {
-        fprintf(stderr, "ERROR: Configuration file not found: %s\n", config_path);
+        message(ERROR, "Configuration file not found: %s\n", config_path);
         ABORT(255);
     }
 
+    message(DEBUG, "Checking Singularity configuration file is owned by root\n");
     if ( is_owner(config_path, 0) != 0 ) {
-        fprintf(stderr, "ERROR: Configuration file is not owned by root: %s\n", config_path);
+        message(ERROR, "Configuration file is not owned by root: %s\n", config_path);
         ABORT(255);
     }
 
+    message(DEBUG, "Opening Singularity configuration file\n");
     if ( ( config_fp = fopen(config_path, "r") ) == NULL ) {
-        fprintf(stderr, "ERROR: Could not open config file %s: %s\n", config_path, strerror(errno));
+        message(ERROR, "Could not open config file %s: %s\n", config_path, strerror(errno));
         ABORT(255);
     }
 
     // TODO: Offer option to only run containers owned by root (so root can approve
     // containers)
-    if ( uid == 0 && is_owner(containerimage, 0) < 0 ) {
-        fprintf(stderr, "ERROR: Root should only run containers that root owns!\n");
-        ABORT(1);
-    }
+//    if ( uid == 0 && is_owner(containerimage, 0) < 0 ) {
+//        fprintf(stderr, "ERROR: Root should only run containers that root owns!\n");
+//        ABORT(1);
+//    }
 
+    message(DEBUG, "Checking Singularity configuration for 'sessiondir prefix'\n");
     rewind(config_fp);
     if ( ( sessiondir_prefix = config_get_key_value(config_fp, "sessiondir prefix") ) != NULL ) {
         sessiondir = strjoin(sessiondir_prefix, file_id(containerimage));
     } else {
         sessiondir = strjoin("/tmp/.singularity-session-", file_id(containerimage));
     }
+    message(DEBUG, "Set sessiondir to: %s\n", sessiondir);
 
+    
     containername = basename(strdup(containerimage));
+    message(DEBUG, "Set containername to: %s\n", containername);
 
+    message(DEBUG, "Setting loop_dev_* paths\n");
     loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
     loop_dev_cache = joinpath(sessiondir, "loop_dev");
 
     containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
     snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
+    message(DEBUG, "Set image mount path to: %s\n", containerpath);
 
     syslog(LOG_NOTICE, "User=%s[%d], Command=%s, Container=%s, CWD=%s, Arg1=%s", username, uid, command, containerimage, cwd, argv[1]);
 
     prompt = (char *) malloc(strlen(containername) + 16);
     snprintf(prompt, strlen(containername) + 16, "Singularity/%s> ", containername);
     setenv("PS1", prompt, 1);
+    message(DEBUG, "Set prompt to: %s\n", prompt);
 
+    message(DEBUG, "Checking if we are opening image as read/write\n");
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
+        message(DEBUG, "Opening image as read only: %s\n", containerimage);
         if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) {
-            fprintf(stderr, "ERROR: Could not open image read only %s: %s\n", containerimage, strerror(errno));
+            message(ERROR, "Could not open image read only %s: %s\n", containerimage, strerror(errno));
             ABORT(255);
         }
+
         containerimage_fd = fileno(containerimage_fp);
+        message(DEBUG, "Setting shared lock on file descriptor: %d\n", containerimage_fd);
         if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
-            fprintf(stderr, "ERROR: Image is locked by another process\n");
+            message(ERROR, "Image is locked by another process\n");
             ABORT(5);
         }
     } else {
+        message(DEBUG, "Opening image as read/write only: %s\n", containerimage);
         if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) {
-            fprintf(stderr, "ERROR: Could not open image read/write %s: %s\n", containerimage, strerror(errno));
+            message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
             ABORT(255);
         }
+
         containerimage_fd = fileno(containerimage_fp);
+        message(DEBUG, "Setting exclusive lock on file descriptor: %d\n", containerimage_fd);
         if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
-            fprintf(stderr, "ERROR: Image is locked by another process\n");
+            message(ERROR, "Image is locked by another process\n");
             ABORT(5);
         }
     }
 
-
+    message(DEBUG, "Checking for namespace daemon pidfile\n");
     if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
         FILE *test_daemon_fp;
         int daemon_fd;
@@ -254,6 +283,7 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
+        message(DEBUG, "Checking if namespace daemon is running\n");
         daemon_fd = fileno(test_daemon_fp);
         if ( flock(daemon_fd, LOCK_SH | LOCK_NB) != 0 ) {
             char daemon_pid[128];
@@ -261,12 +291,13 @@ int main(int argc, char ** argv) {
             if ( fgets(daemon_pid, 128, test_daemon_fp) != NULL ) {
                 snprintf(setns_dir, 128 + 9, "/proc/%s/ns", daemon_pid);
                 if ( is_dir(setns_dir) == 0 ) {
+                    message(VERBOSE, "Found namespace daemon process for this container\n");
                     join_daemon_ns = 1;
                 }
             }
 
         } else {
-            fprintf(stderr, "Dead Singularity daemon?\n");
+            message(WARNING, "Singularity namespace daemon pid exists, but daemon not alive?\n");
         }
         fclose(test_daemon_fp);
     }
@@ -276,59 +307,48 @@ int main(int argc, char ** argv) {
 // We are now running with escalated privileges until we exec
 //****************************************************************************//
 
+    message(DEBUG, "Escalating privledges\n");
     if ( escalate_privs() < 0 ) {
-        fprintf(stderr, "ERROR: Check installation, must be performed by root.\n");
         ABORT(255);
     }
 
+    message(VERBOSE, "Creating session directory: %s\n", sessiondir);
     if ( s_mkpath(sessiondir, 0755) < 0 ) {
-        fprintf(stderr, "ERROR: Could not create temporary directory %s: %s\n", sessiondir, strerror(errno));
+        message(ERROR, "Could not create temporary directory %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }
-
     if ( is_dir(sessiondir) < 0 ) {
-        fprintf(stderr, "ERROR: Temporary directory does not exist %s: %s\n", sessiondir, strerror(errno));
+        message(ERROR, "Temporary directory does not exist %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }
-
     if ( is_owner(sessiondir, 0) < 0 ) {
         fprintf(stderr, "ERROR: Container working directory has wrong ownership: %s\n", sessiondir);
         syslog(LOG_ERR, "Container working directory has wrong ownership: %s", sessiondir);
         ABORT(255);
     }
 
+    message(DEBUG, "Setting shared lock on session directory\n");
     sessiondirlock_fd = open(sessiondir, O_RDONLY);
     if ( sessiondirlock_fd < 0 ) {
-        fprintf(stderr, "ERROR: Could not obtain file descriptor on %s: %s\n", sessiondir, strerror(errno));
+        message(ERROR, "Could not obtain file descriptor on %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }
-
     if ( flock(sessiondirlock_fd, LOCK_SH | LOCK_NB) < 0 ) {
-        fprintf(stderr, "ERROR: Could not obtain shared lock on %s: %s\n", sessiondir, strerror(errno));
+        message(ERROR, "Could not obtain shared lock on %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }
 
-    if ( ( loop_dev_lock_fd = open(loop_dev_lock, O_CREAT | O_RDWR, 0644) ) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open loop_dev_lock %s: %s\n", loop_dev_lock, strerror(errno));
-        ABORT(255);
-    }
-
-    if ( s_mkpath(containerpath, 0755) < 0 ) {
-        fprintf(stderr, "ERROR: Could not create directory %s: %s\n", containerpath, strerror(errno));
-        ABORT(255);
-    }
-
-    if ( is_owner(containerpath, 0) < 0 ) {
-        fprintf(stderr, "ERROR: Container directory is not root owned: %s\n", containerpath);
-        syslog(LOG_ERR, "Container directory has wrong ownership: %s", sessiondir);
-        ABORT(255);
-    }
-
+    message(DEBUG, "Caching info into sessiondir\n");
     if ( fileput(joinpath(sessiondir, "image"), containername) < 0 ) {
         fprintf(stderr, "ERROR: Could not write container name to %s\n", joinpath(sessiondir, "image"));
         ABORT(255);
     }
 
+    message(DEBUG, "Checking for set loop device\n");
+    if ( ( loop_dev_lock_fd = open(loop_dev_lock, O_CREAT | O_RDWR, 0644) ) < 0 ) {
+        message(ERROR, "Could not open loop_dev_lock %s: %s\n", loop_dev_lock, strerror(errno));
+        ABORT(255);
+    }
     if ( flock(loop_dev_lock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         loop_dev = obtain_loop_dev();
 
@@ -364,16 +384,31 @@ int main(int argc, char ** argv) {
         }
     }
 
+    message(DEBUG, "Creating container image mount path: %s\n", containerpath);
+    if ( s_mkpath(containerpath, 0755) < 0 ) {
+        fprintf(stderr, "ERROR: Could not create directory %s: %s\n", containerpath, strerror(errno));
+        ABORT(255);
+    }
+    if ( is_owner(containerpath, 0) < 0 ) {
+        fprintf(stderr, "ERROR: Container directory is not root owned: %s\n", containerpath);
+        syslog(LOG_ERR, "Container directory has wrong ownership: %s", sessiondir);
+        ABORT(255);
+    }
+
+
 
     // Manage the daemon bits early
     if ( strcmp(command, "start") == 0 ) {
         int daemon_fd;
 
+        message(DEBUG, "Namespace daemon function requested\n");
+
 #ifdef NO_SETNS
-        fprintf(stderr, "ERROR: This host does not support joining existing name spaces\n");
+        message(ERROR, "This host does not support joining existing name spaces\n");
         ABORT(1);
 #endif
 
+        message(DEBUG, "Creating namespace daemon pidfile: %s\n", joinpath(sessiondir, "daemon.pid"));
         if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
             if ( ( daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r+") ) == NULL ) {
                 fprintf(stderr, "ERROR: Could not open daemon pid file for writing %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
@@ -399,11 +434,13 @@ int main(int argc, char ** argv) {
             }
         }
 
+        message(DEBUG, "Forking namespace daemon process\n");
         if ( daemon(0,0) < 0 ) {
             fprintf(stderr, "ERROR: Could not daemonize: %s\n", strerror(errno));
             ABORT(255);
         }
     } else if ( strcmp(command, "stop") == 0 ) {
+        message(DEBUG, "Stopping namespace daemon process\n");
         return(container_daemon_stop(sessiondir));
     }
 
@@ -413,29 +450,37 @@ int main(int argc, char ** argv) {
 // Environment creation process flow
 //****************************************************************************//
 
+    message(DEBUG, "Checking to see if we are joining an existing namespace\n");
     if ( join_daemon_ns == 0 ) {
 
+        message(VERBOSE, "Forking namespace process\n");
         // Fork off namespace process
         namespace_fork_pid = fork();
         if ( namespace_fork_pid == 0 ) {
 
+            message(DEBUG, "Hello from namespace child process\n");
             // Setup PID namespaces
             rewind(config_fp);
             if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
                 unsetenv("SINGULARITY_NO_NAMESPACE_PID");
+                message(DEBUG, "Virtualizing PID namespace\n");
                 if ( unshare(CLONE_NEWPID) < 0 ) {
                     fprintf(stderr, "ERROR: Could not virtualize PID namespace: %s\n", strerror(errno));
                     ABORT(255);
                 }
+            } else {
+                message(VERBOSE, "Not virtualizing PID namespace\n");
             }
 
             // Setup FS namespaces
+            message(DEBUG, "Virtualizing FS namespace\n");
             if ( unshare(CLONE_FS) < 0 ) {
                 fprintf(stderr, "ERROR: Could not virtualize file system namespace: %s\n", strerror(errno));
                 ABORT(255);
             }
 
             // Setup mount namespaces
+            message(DEBUG, "Virtualizing mount namespace\n");
             if ( unshare(CLONE_NEWNS) < 0 ) {
                 fprintf(stderr, "ERROR: Could not virtualize mount namespace: %s\n", strerror(errno));
                 ABORT(255);
@@ -448,6 +493,7 @@ int main(int argc, char ** argv) {
 //           }
 
             // Privatize the mount namespaces
+            message(DEBUG, "Making mounts private\n");
             if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
                 fprintf(stderr, "ERROR: Could not make mountspaces private: %s\n", strerror(errno));
                 ABORT(255);
@@ -457,10 +503,12 @@ int main(int argc, char ** argv) {
             // Mount image
             if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
                 unsetenv("SINGULARITY_WRITABLE");
+                message(DEBUG, "Mounting Singularity image file read/write\n");
                 if ( mount_image(loop_dev, containerpath, 0) < 0 ) {
                     ABORT(255);
                 }
             } else {
+                message(DEBUG, "Mounting Singularity image file read only\n");
                 if ( mount_image(loop_dev, containerpath, 1) < 0 ) {
                     ABORT(255);
                 }
@@ -468,6 +516,7 @@ int main(int argc, char ** argv) {
 
 
             // /bin/sh MUST exist as the minimum requirements for a container
+            message(DEBUG, "Checking if container has /bin/sh\n");
             if ( is_exec(joinpath(containerpath, "/bin/sh")) < 0 ) {
                 fprintf(stderr, "ERROR: Container image does not have a valid /bin/sh\n");
                 ABORT(1);
@@ -475,14 +524,17 @@ int main(int argc, char ** argv) {
 
 
             // Bind mounts
+            message(DEBUG, "Checking to see if we should do bind mounts\n");
             if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
                 unsetenv("SINGULARITY_CONTAIN");
 
+                message(DEBUG, "Checking configuration file for 'mount home'\n");
                 rewind(config_fp);
                 if ( config_get_key_bool(config_fp, "mount home", 1) > 0 ) {
                     if ( ( homedir_base = container_basedir(containerpath, homedir) ) != NULL ) {
                         if ( is_dir(homedir_base) == 0 ) {
                             if ( is_dir(joinpath(containerpath, homedir_base)) == 0 ) {
+                                message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
                                 if ( mount_bind(homedir_base, joinpath(containerpath, homedir_base), 1) < 0 ) {
                                     ABORT(255);
                                 }
@@ -493,8 +545,11 @@ int main(int argc, char ** argv) {
                             fprintf(stderr, "WARNING: Home directory base source path does not exist: %s\n", homedir_base);
                         }
                     }
+                } else {
+                    message(VERBOSE2, "Not mounting home directory...\n");
                 }
 
+                message(DEBUG, "Checking configuration file for 'bind path'\n");
                 rewind(config_fp);
                 while ( ( tmp_config_string = config_get_key_value(config_fp, "bind path") ) != NULL ) {
                     char *source = strtok(tmp_config_string, ",");
@@ -509,69 +564,90 @@ int main(int argc, char ** argv) {
                         chomp(dest);
                     }
 
-                    if ( ( homedir_base != NULL ) && ( strncmp(source, homedir_base, strlen(homedir_base)) == 0 )) {
+                    message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
+
+                    if ( ( homedir_base != NULL ) && ( strncmp(dest, homedir_base, strlen(homedir_base)) == 0 )) {
                         // Skipping path as it was already mounted as homedir_base
+                        message(VERBOSE2, "Skipping '%s' as it is part of home path and already mounted\n", dest);
                         continue;
                     }
 
                     if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
-                        fprintf(stderr, "WARNING: Non existant bind source path: '%s'\n", source);
+                        message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
                         continue;
                     }
                     if ( ( is_file(joinpath(containerpath, dest)) != 0 ) && ( is_dir(joinpath(containerpath, dest)) != 0 ) ) {
-                        fprintf(stderr, "WARNING: Container bind point does not exist: '%s'\n", dest);
+                        message(WARNING, "Non existant 'bind point' in container: '%s'\n", dest);
                         continue;
                     }
+
+                    message(VERBOSE, "Binding '%s' to '%s:%s'\n", source, containername, dest);
                     if ( mount_bind(source, joinpath(containerpath, dest), 1) < 0 ) {
                         ABORT(255);
                     }
                 }
 
 
-
                 if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
+                    message(DEBUG, "Checking configuration file for 'config passwd'\n");
                     rewind(config_fp);
                     if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
                         if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
                             if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
+                                message(VERBOSE2, "Staging /etc/passwd with user info\n");
                                 if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(sessiondir, "/passwd")) < 0 ) {
                                     fprintf(stderr, "ERROR: Failed creating template password file\n");
                                     ABORT(255);
                                 }
                             }
+                            message(VERBOSE, "Binding staged /etc/passwd into container\n");
                             if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 1) < 0 ) {
                                 fprintf(stderr, "ERROR: Could not bind /etc/passwd\n");
                                 ABORT(255);
                             }
                         }
+                    } else {
+                        message(VERBOSE, "Skipping /etc/passwd staging\n");
                     }
 
+                    message(DEBUG, "Checking configuration file for 'config group'\n");
                     rewind(config_fp);
-                    if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
+                    if ( config_get_key_bool(config_fp, "config group", 1) > 0 ) {
                         if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
                             if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
+                                message(VERBOSE2, "Staging /etc/group with user info\n");
                                 if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
                                     fprintf(stderr, "ERROR: Failed creating template group file\n");
                                     ABORT(255);
                                 }
                             }
+                            message(VERBOSE, "Binding staged /etc/group into container\n");
                             if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerpath, "/etc/group"), 1) < 0 ) {
                                 fprintf(stderr, "ERROR: Could not bind /etc/group\n");
                                 ABORT(255);
                             }
                         }
+                    } else {
+                        message(VERBOSE, "Skipping /etc/group staging\n");
                     }
+                } else {
+                    message(VERBOSE, "Not staging passwd or group (running as root)\n");
                 }
             }
 
             // Fork off exec process
+            message(VERBOSE, "Forking exec process\n");
+
             exec_fork_pid = fork();
             if ( exec_fork_pid == 0 ) {
+                message(DEBUG, "Hello from exec child process\n");
 
+                message(VERBOSE, "Entering container file system space\n");
                 if ( chroot(containerpath) < 0 ) {
                     fprintf(stderr, "ERROR: failed enter CONTAINERIMAGE: %s\n", containerpath);
                     ABORT(255);
                 }
+                message(DEBUG, "Changing dir to '/' within the new root\n");
                 if ( chdir("/") < 0 ) {
                     fprintf(stderr, "ERROR: Could not chdir after chroot to /: %s\n", strerror(errno));
                     ABORT(1);
@@ -579,35 +655,49 @@ int main(int argc, char ** argv) {
 
 
                 // Mount /proc if we are configured
+                message(DEBUG, "Checking configuration file for 'mount proc'\n");
                 rewind(config_fp);
                 if ( config_get_key_bool(config_fp, "mount proc", 1) > 0 ) {
                     if ( is_dir("/proc") == 0 ) {
+                        message(VERBOSE, "Mounting /proc\n");
                         if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
                             fprintf(stderr, "ERROR: Could not mount /proc: %s\n", strerror(errno));
                             ABORT(255);
                         }
+                    } else {
+                        message(WARNING, "Not mounting /proc, container has no bind directory\n");
                     }
+                } else {
+                    message(VERBOSE, "Skipping /proc mount\n");
                 }
 
                 // Mount /sys if we are configured
+                message(DEBUG, "Checking configuration file for 'mount sys'\n");
                 rewind(config_fp);
                 if ( config_get_key_bool(config_fp, "mount sys", 1) > 0 ) {
                     if ( is_dir("/sys") == 0 ) {
+                        message(VERBOSE, "Mounting /sys\n");
                         if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
                             fprintf(stderr, "ERROR: Could not mount /sys: %s\n", strerror(errno));
                             ABORT(255);
                         }
+                    } else {
+                        message(WARNING, "Not mounting /sys, container has no bind directory\n");
                     }
+                } else {
+                    message(VERBOSE, "Skipping /sys mount\n");
                 }
 
 
                 // Drop all privileges for good
+                message(VERBOSE2, "Dropping all privileges\n");
                 if ( drop_privs_perm(&uinfo) < 0 ) {
                     ABORT(255);
                 }
 
 
                 // Change to the proper directory
+                message(VERBOSE2, "Checking to correct working directory: %s\n", cwd);
                 if ( is_dir(cwd) == 0 ) {
                    if ( chdir(cwd) < 0 ) {
                         fprintf(stderr, "ERROR: Could not chdir to: %s: %s\n", cwd, strerror(errno));
@@ -621,6 +711,7 @@ int main(int argc, char ** argv) {
                 }
 
                 // After this, we exist only within the container... Let's make it known!
+                message(DEBUG, "Setting environment variable 'SINGULARITY_CONTAINER=1'\n");
                 if ( setenv("SINGULARITY_CONTAINER", "true", 0) != 0 ) {
                     fprintf(stderr, "ERROR: Could not set SINGULARITY_CONTAINER to 'true'\n");
                     ABORT(1);
@@ -629,25 +720,29 @@ int main(int argc, char ** argv) {
 
                 // Do what we came here to do!
                 if ( command == NULL ) {
-                    fprintf(stderr, "No command specified, launching 'shell'\n");
+                    message(WARNING, "No command specified, launching 'shell'\n");
                     command = strdup("shell");
                 }
                 if ( strcmp(command, "run") == 0 ) {
+                    message(VERBOSE, "COMMAND=run\n");
                     if ( container_run(argc, argv) < 0 ) {
                         ABORT(255);
                     }
                 }
                 if ( strcmp(command, "exec") == 0 ) {
+                    message(VERBOSE, "COMMAND=exec\n");
                     if ( container_exec(argc, argv) < 0 ) {
                         ABORT(255);
                     }
                 }
                 if ( strcmp(command, "shell") == 0 ) {
+                    message(VERBOSE, "COMMAND=shell\n");
                     if ( container_shell(argc, argv) < 0 ) {
                         ABORT(255);
                     }
                 }
                 if ( strcmp(command, "start") == 0 ) {
+                    message(VERBOSE, "COMMAND=start\n");
                     //strncpy(argv[0], "Singularity Init", strlen(argv[0]));
 
                     if ( container_daemon_start(sessiondir) < 0 ) {
@@ -655,7 +750,7 @@ int main(int argc, char ** argv) {
                     }
                 }
 
-                fprintf(stderr, "ERROR: Unknown command: %s\n", command);
+                message(ERROR, "Unknown command: %s\n", command);
                 ABORT(255);
 
 
@@ -677,12 +772,16 @@ int main(int argc, char ** argv) {
                     ABORT(255);
                 }
 
+                message(VERBOSE2, "Waiting for Exec process...\n");
+
                 waitpid(exec_fork_pid, &tmpstatus, 0);
                 retval = WEXITSTATUS(tmpstatus);
             } else {
-                fprintf(stderr, "ERROR: Could not fork namespace process: %s\n", strerror(errno));
+                message(ERROR, "Could not fork exec process: %s\n", strerror(errno));
                 ABORT(255);
             }
+
+            message(VERBOSE, "Exec parent process returned: %d\n", retval);
             return(retval);
 
         // Wait for namespace process to finish
@@ -701,6 +800,7 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
+        message(VERBOSE2, "Starting cleanup...\n");
 
         // Final wrap up before exiting
         if ( close(cwd_fd) < 0 ) {
@@ -708,12 +808,14 @@ int main(int argc, char ** argv) {
             retval++;
         }
 
+        message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
         if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
             close(sessiondirlock_fd);
             if ( escalate_privs() < 0 ) {
                 ABORT(255);
             }
 
+            message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
             if ( s_rmdir(sessiondir) < 0 ) {
                 fprintf(stderr, "WARNING: Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
             }
