@@ -31,6 +31,7 @@
 
 #include "config.h"
 #include "util.h"
+#include "message.h"
 
 
 
@@ -39,8 +40,9 @@ char *config_get_key_value(FILE *fp, char *key) {
     char *config_value;
     char line[1024];
 
-    while ( fgets(line, sizeof(line), fp) ) {
+    message(DEBUG, "Called config_get_key_value(fp, %s)\n", key);
 
+    while ( fgets(line, sizeof(line), fp) ) {
         if ( ( config_key = strtok(line, "=") ) != NULL ) {
             chomp(config_key);
             if ( strcmp(config_key, key) == 0 ) {
@@ -49,12 +51,14 @@ char *config_get_key_value(FILE *fp, char *key) {
                     if ( config_value[0] == ' ' ) {
                         config_value++;
                     }
+                    message(DEBUG, "Return config_get_key_value(fp, %s) = %s\n", key, config_value);
                     return(config_value);
                 }
             }
         }
     }
 
+    message(DEBUG, "Return config_get_key_value(fp, %s) = NULL\n", key);
     return(NULL);
 }
 
@@ -62,20 +66,26 @@ char *config_get_key_value(FILE *fp, char *key) {
 int config_get_key_bool(FILE *fp, char *key, int def) {
     char *config_value;
 
+    message(DEBUG, "Called config_get_key_bool(fp, %s, %d)\n", key, def);
+
     if ( ( config_value = config_get_key_value(fp, key) ) != NULL ) {
         if ( strcmp(config_value, "yes") == 0 ||
                 strcmp(config_value, "y") == 0 ||
                 strcmp(config_value, "1") == 0 ) {
+            message(DEBUG, "Return config_get_key_bool(fp, %s, %d) = 1\n", key, def);
             return(1);
         } else if ( strcmp(config_value, "no") == 0 ||
                 strcmp(config_value, "n") == 0 ||
                 strcmp(config_value, "0") == 0 ) {
+            message(DEBUG, "Return config_get_key_bool(fp, %s, %d) = 0\n", key, def);
             return(0);
         } else {
-            fprintf(stderr, "ERROR: Unsupported value for configuration boolean key '%s' = '%s'\n", key, config_value);
+            message(ERROR, "Unsupported value for configuration boolean key '%s' = '%s'\n", key, config_value);
+            message(DEBUG, "Return config_get_key_bool(fp, %s, %d) = -1\n", key, def);
             return(-1);
         }
     }
 
+    message(DEBUG, "Return config_get_key_bool(fp, %s, %d) = %d (DEFAULT)\n", key, def, def);
     return(def);
 }
