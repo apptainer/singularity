@@ -35,7 +35,7 @@ void init(void) {
     char *messagelevel_string = getenv("MESSAGELEVEL");
 
     if ( messagelevel_string == NULL ) {
-        messagelevel = 0;
+        messagelevel = 1;
     } else {
         messagelevel = atol(messagelevel_string);
         message(VERBOSE, "Setting messagelevel to: %d\n", messagelevel);
