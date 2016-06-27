@@ -314,7 +314,7 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE, "Creating session directory: %s\n", sessiondir);
     if ( s_mkpath(sessiondir, 0755) < 0 ) {
-        message(ERROR, "Could not create temporary directory %s: %s\n", sessiondir, strerror(errno));
+        message(ERROR, "Failed creating session directory: %s\n", sessiondir);
         ABORT(255);
     }
     if ( is_dir(sessiondir) < 0 ) {
@@ -386,7 +386,7 @@ int main(int argc, char ** argv) {
 
     message(DEBUG, "Creating container image mount path: %s\n", containerpath);
     if ( s_mkpath(containerpath, 0755) < 0 ) {
-        fprintf(stderr, "ERROR: Could not create directory %s: %s\n", containerpath, strerror(errno));
+        fprintf(stderr, "ERROR: Failed creating image directory %s\n", containerpath);
         ABORT(255);
     }
     if ( is_owner(containerpath, 0) < 0 ) {

@@ -53,10 +53,10 @@ void message(int level, char *format, ...) {
 
     switch (level) {
         case ERROR:
-            vfprintf(stderr, strjoin("ERROR:  ", format), args);
+            vfprintf(stderr, strjoin("ERROR:   ", format), args);
             break;
         case WARNING:
-            vfprintf(stderr, strjoin("WARNING ", format), args);
+            vfprintf(stderr, strjoin("WARNING: ", format), args);
             break;
         case INFO:
             vprintf(format, args);
