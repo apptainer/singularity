@@ -453,7 +453,7 @@ int main(int argc, char ** argv) {
     message(DEBUG, "Checking to see if we are joining an existing namespace\n");
     if ( join_daemon_ns == 0 ) {
 
-        message(VERBOSE, "Forking namespace process\n");
+        message(VERBOSE, "Creating namespace process\n");
         // Fork off namespace process
         namespace_fork_pid = fork();
         if ( namespace_fork_pid == 0 ) {
