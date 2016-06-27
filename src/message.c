@@ -53,28 +53,29 @@ void message(int level, char *format, ...) {
 
     switch (level) {
         case ERROR:
-            fprintf(stderr, "ERROR:   ");
-            vfprintf(stderr, format, args);
+            vfprintf(stderr, strjoin("ERROR:  ", format), args);
             break;
         case WARNING:
-            fprintf(stderr, "WARNING: ");
-            vfprintf(stderr, format, args);
+            vfprintf(stderr, strjoin("WARNING ", format), args);
             break;
         case INFO:
             vprintf(format, args);
             break;
         default:
             if ( level <= messagelevel && messagelevel >= 5 ) {
+                char *header_string = (char *) malloc(29);
                 char *debug_string = (char *) malloc(intlen(geteuid()) + intlen(getpid()) + 16);
                 snprintf(debug_string, intlen(geteuid()) + intlen(getpid()) + 16, "DEBUG(U=%d,PID=%d):", geteuid(), getpid());
-                fprintf(stderr, "%-28s ", debug_string);
-                vfprintf(stderr, format, args);
+                snprintf(header_string, 29, "%-28s", debug_string);
+                vfprintf(stderr, strjoin(header_string, format), args);
             } else if ( level <= messagelevel ) {
-                fprintf(stderr, "VERBOSE: ");
-                vfprintf(stderr, format, args);
+                vfprintf(stderr, strjoin("VERBOSE: ", format), args);
             }
             break;
     }
+
+    fflush(stdout);
+    fflush(stderr);
 
     va_end (args);
 }
