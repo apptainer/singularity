@@ -31,49 +31,52 @@
 #include <fcntl.h>  
 
 #include "config.h"
+#include "container_actions.h"
 #include "util.h"
 #include "file.h"
-
-
-int container_daemon_start(char *tmpdir);
-int container_daemon_stop(char *tmpdir);
-int container_shell(int argc, char **argv);
-int container_exec(int argc, char **argv);
-int container_run(int argc, char **argv);
+#include "message.h"
 
 
 int container_run(int argc, char **argv) {
+    message(DEBUG, "Called container_run(%d, **argv)\n", argc);
     if ( is_exec("/singularity") == 0 ) {
         argv[0] = strdup("/singularity");
+        message(VERBOSE, "Found /singularity inside container, exec()'ing...\n");
         if ( execv("/singularity", argv) != 0 ) {
             fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
         }
     } else {
-        fprintf(stderr, "No Singularity runscript found, launching 'shell'\n");
+        message(WARNING, "No Singularity runscript found, launching 'shell'\n");
         container_shell(argc, argv);
     }
 
+    message(ERROR, "We should not have reached here...\n");
     return(-1);
 }
 
 int container_exec(int argc, char **argv) {
+    message(DEBUG, "Called container_exec(%d, **argv)\n", argc);
     if ( argc <= 1 ) {
-        fprintf(stderr, "ABORT: Exec requires a command to run\n");
-        return(-1);
+        message(ERROR, "Exec requires a command to run\n");
+        ABORT(255);
     }
     if ( execvp(argv[1], &argv[1]) != 0 ) {
-        fprintf(stderr, "ABORT: execvp of '%s' failed: %s\n", argv[1], strerror(errno));
-        return(-1);
+        message(ERROR, "execvp of '%s' failed: %s\n", argv[1], strerror(errno));
+        ABORT(255);
     }
 
+    message(ERROR, "We should not have reached here...\n");
     return(-1);
 }
 
 int container_shell(int argc, char **argv) {
+    message(DEBUG, "Called container_shell(%d, **argv)\n", argc);
 
     if ( is_exec("/bin/bash") == 0 ) {
         char *args[argc+2];
         int i;
+
+        message(VERBOSE, "Found /bin/bash, setting arguments --norc and --noprofile\n");
 
         args[0] = strdup("/bin/bash");
         args[1] = strdup("--norc");
@@ -82,16 +85,19 @@ int container_shell(int argc, char **argv) {
             args[i+2] = argv[i];
         }
 
+        message(VERBOSE, "Exec()'ing /bin/bash...\n");
         if ( execv("/bin/bash", args) != 0 ) {
-            fprintf(stderr, "ABORT: exec of /bin/bash failed: %s\n", strerror(errno));
+            message(ERROR, "Exec of /bin/bash failed: %s\n", strerror(errno));
         }
     } else {
         argv[0] = strdup("/bin/sh");
+        message(VERBOSE, "Exec()'ing /bin/sh...\n");
         if ( execv("/bin/sh", argv) != 0 ) {
-            fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
+            message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
         }
     }
 
+    message(ERROR, "We should not have reached here...\n");
     return(-1);
 }
 
