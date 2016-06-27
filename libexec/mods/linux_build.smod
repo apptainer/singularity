@@ -187,9 +187,12 @@ Finalize() {
 
 
 __runcmd() {
-    echo "+ $*"
+    CMD="$1"
+    shift
 
-    chroot "$SINGULARITY_BUILD_ROOT" "$@"
+    echo "+ $CMD $*"
+
+    chroot "$SINGULARITY_BUILD_ROOT" "$CMD" "$@"
 
     return $?
 }
