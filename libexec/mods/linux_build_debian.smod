@@ -47,7 +47,7 @@ Bootstrap() {
     # debootstrap will create the device entries it needs (or some versions fail)
     /bin/sh -c "rm -rf $SINGULARITY_BUILD_ROOT/dev/*"
 
-    if ! eval "$DEBOOTSTRAP_PATH --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
+    if ! eval "$DEBOOTSTRAP_PATH --include=debian-archive-keyring,apt --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
         exit 1
     fi
 
