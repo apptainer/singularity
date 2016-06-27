@@ -28,10 +28,11 @@
 #include <string.h>
 #include <grp.h>
 
+#include "privilege.h"
 #include "config.h"
 #include "file.h"
 #include "util.h"
-#include "privilege.h"
+#include "message.h"
 
 
 int get_user_privs(struct s_privinfo *uinfo) {
@@ -39,98 +40,127 @@ int get_user_privs(struct s_privinfo *uinfo) {
     uinfo->gid = getgid();
     uinfo->gids_count = getgroups(0, NULL);
 
+    message(DEBUG, "Called get_user_privs(struct s_privinfo *uinfo)\n");
+
     uinfo->gids = (gid_t *) malloc(sizeof(gid_t) * uinfo->gids_count);
 
     if ( getgroups(uinfo->gids_count, uinfo->gids) < 0 ) {
-       fprintf(stderr, "ERROR: Could not obtain current supplementary group list: %s\n", strerror(errno));
-       return(-1);
+       message(ERROR, "Could not obtain current supplementary group list: %s\n", strerror(errno));
+       ABORT(255);
     }
 
     uinfo->ready = 1;
 
+    message(DEBUG, "Returning get_user_privs(struct s_privinfo *uinfo) = 0\n");
     return(0);
 }
 
 
 int escalate_privs(void) {
 
+    message(DEBUG, "Called escalate_privs(void)\n");
+
     if ( seteuid(0) < 0 ) {
-        fprintf(stderr, "ERROR: Could not escalate effective user privileges: %s\n", strerror(errno));
-        return(-1);
+        message(ERROR, "Could not escalate effective user privileges: %s\n", strerror(errno));
+        ABORT(255);
     }
 
     if ( setegid(0) < 0 ) {
-        fprintf(stderr, "ERROR: Could not escalate effective group privileges: %s\n", strerror(errno));
-        return(-1);
+        message(ERROR, "Could not escalate effective group privileges: %s\n", strerror(errno));
+        ABORT(255);
     }
 
+    message(DEBUG, "Returning escalate_privs(void) = 0\n");
     return(0);
 }
 
 int drop_privs(struct s_privinfo *uinfo) {
 
+    message(DEBUG, "Called drop_privs(struct s_privinfo *uinfo)\n");
+
     if ( uinfo->ready != 1 ) {
-        fprintf(stderr, "ERROR: User info is not ready\n");
-        return(-1);
+        message(ERROR, "User info is not ready\n");
+        ABORT(255);
     }
 
     if ( geteuid() == 0 ) {
-        if ( seteuid(uinfo->uid) < 0 ) {
-            fprintf(stderr, "ERROR: Could not drop effective user privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
-            return(-1);
-        }
-
+        message(DEBUG, "Dropping privileges to GID = '%d'\n", uinfo->gid);
         if ( setegid(uinfo->gid) < 0 ) {
-            fprintf(stderr, "ERROR: Could not drop effective group privileges to gid %d: %s\n", uinfo->gid, strerror(errno));
-            return(-1);
+            message(ERROR, "Could not drop effective group privileges to gid %d: %s\n", uinfo->gid, strerror(errno));
+            ABORT(255);
         }
+
+        message(DEBUG, "Dropping privileges to UID = '%d'\n", uinfo->uid);
+        if ( seteuid(uinfo->uid) < 0 ) {
+            message(ERROR, "Could not drop effective user privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
+            ABORT(255);
+        }
+
+    } else {
+        message(DEBUG, "Running as root, no privileges to drop\n");
     }
 
-    if ( getuid() != uinfo->uid ) {
-        fprintf(stderr, "ERROR: Failed to drop effective user privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
-        return(-1);
-    }
-
+    message(DEBUG, "Confirming we have correct GID\n");
     if ( getgid() != uinfo->gid ) {
-        fprintf(stderr, "ERROR: Failed to drop effective group privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
-        return(-1);
+        message(ERROR, "Failed to drop effective group privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
+        ABORT(255);
     }
 
+    message(DEBUG, "Confirming we have correct UID\n");
+    if ( getuid() != uinfo->uid ) {
+        message(ERROR, "Failed to drop effective user privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
+        ABORT(255);
+    }
+
+    message(DEBUG, "Returning drop_privs(struct s_privinfo *uinfo) = 0\n");
     return(0);
 }
 
 int drop_privs_perm(struct s_privinfo *uinfo) {
 
+    message(DEBUG, "Called drop_privs_perm(struct s_privinfo *uinfo)\n");
+
     if ( uinfo->ready != 1 ) {
-        fprintf(stderr, "ERROR: User info is not ready\n");
-        return(-1);
+        message(ERROR, "User info is not ready\n");
+        ABORT(255);
     }
 
     if ( geteuid() == 0 ) {
+        message(DEBUG, "Resetting supplementary groups\n");
         if ( setgroups(uinfo->gids_count, uinfo->gids) < 0 ) {
             fprintf(stderr, "ABOFT: Could not reset supplementary group list: %s\n", strerror(errno));
             return(-1);
         }
+
+        message(DEBUG, "Dropping real and effective privileges to GID = '%d'\n", uinfo->gid);
         if ( setregid(uinfo->gid, uinfo->gid) < 0 ) {
-            fprintf(stderr, "ERROR: Could not dump real and effective group privileges: %s\n", strerror(errno));
-            return(-1);
+            message(ERROR, "Could not dump real and effective group privileges: %s\n", strerror(errno));
+            ABORT(255);
         }
+
+        message(DEBUG, "Dropping real and effective privileges to UID = '%d'\n", uinfo->uid);
         if ( setreuid(uinfo->uid, uinfo->uid) < 0 ) {
-            fprintf(stderr, "ERROR: Could not dump real and effective user privileges: %s\n", strerror(errno));
-            return(-1);
+            message(ERROR, "Could not dump real and effective user privileges: %s\n", strerror(errno));
+            ABORT(255);
         }
+
+    } else {
+        message(DEBUG, "Running as root, no privileges to drop\n");
     }
 
-    if ( getuid() != uinfo->uid ) {
-        fprintf(stderr, "ERROR: Failed to drop effective user privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
-        return(-1);
-    }
-
+    message(DEBUG, "Confirming we have correct GID\n");
     if ( getgid() != uinfo->gid ) {
-        fprintf(stderr, "ERROR: Failed to drop effective group privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
-        return(-1);
+        message(ERROR, "Failed to drop effective group privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
+        ABORT(255);
     }
 
+    message(DEBUG, "Confirming we have correct UID\n");
+    if ( getuid() != uinfo->uid ) {
+        message(ERROR, "Failed to drop effective user privileges to uid %d: %s\n", uinfo->uid, strerror(errno));
+        ABORT(255);
+    }
+
+    message(DEBUG, "Returning drop_privs_perm(struct s_privinfo *uinfo) = 0\n");
     return(0);
 }
 
