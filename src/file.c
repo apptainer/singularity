@@ -37,6 +37,7 @@
 
 #include "config.h"
 #include "util.h"
+#include "message.h"
 
 
 char *file_id(char *path) {
@@ -187,6 +188,7 @@ int s_mkpath(char *dir, mode_t mode) {
     }
 
     if ( mkdir(dir, mode) < 0 ) {
+        message(ERROR, "Could not create directory %s: %s\n", dir, strerror(errno));
         return(-1);
     }
 
