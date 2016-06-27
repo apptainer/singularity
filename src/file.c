@@ -107,7 +107,7 @@ int is_dir(char *path) {
     struct stat filestat;
 
     // Stat path
-    if (lstat(path, &filestat) < 0) {
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
@@ -123,7 +123,7 @@ int is_exec(char *path) {
     struct stat filestat;
 
     // Stat path
-    if (lstat(path, &filestat) < 0) {
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
@@ -139,7 +139,7 @@ int is_owner(char *path, uid_t uid) {
     struct stat filestat;
 
     // Stat path
-    if (lstat(path, &filestat) < 0) {
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
@@ -154,7 +154,7 @@ int is_blk(char *path) {
     struct stat filestat;
 
     // Stat path
-    if (lstat(path, &filestat) < 0) {
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
