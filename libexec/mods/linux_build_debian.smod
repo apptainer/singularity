@@ -47,7 +47,13 @@ Bootstrap() {
     # debootstrap will create the device entries it needs (or some versions fail)
     /bin/sh -c "rm -rf $SINGULARITY_BUILD_ROOT/dev/*"
 
-    if ! eval "$DEBOOTSTRAP_PATH --include=debian-archive-keyring,apt --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
+    INCLUDEPKGS=`echo "$*" | sed -e 's/[ ]*/,/g'`
+
+    if [ -z "$INCLUDEPKGS" ]; then
+        INCLUDEPKGS=",$INCLUDEPKGS"
+    fi
+
+    if ! eval "$DEBOOTSTRAP_PATH --include=debian-archive-keyring,apt$INCLUDEPKGS --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
         exit 1
     fi
 
