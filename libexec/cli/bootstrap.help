@@ -19,7 +19,7 @@ note: This command must be executed as root.
 
 EXAMPLES:
 
-    $ singularity create /tmp/Debian.img
+    $ sudo singularity create /tmp/Debian.img
     $ sudo singularity bootstrap /tmp/Debian.img debian.def
 
 The debian.def in the above example refers to a bootstrap definition file as
