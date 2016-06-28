@@ -41,6 +41,7 @@ on the host at full bandwidth! This entire process happens behind the scenes, an
 from the user's perspective running via MPI is as simple as just calling mpirun on
 the host as they would normally.
 </p>
+
 <h2>Example</h2>
 <p>
 Below is an example snippet of building and installing OpenMPI into a container
@@ -105,11 +106,11 @@ Process 19 exiting
 </pre>
 </p>
 
-
-
-
-
+<h3>Notes:</h3>
+<p>
+<h4>Supported Open MPI Version(s):</h4>
+To achieve proper container'ized Open MPI support, you must use Open MPI
+version 2.1 which at the time of this writing has not been released yet.
+The above example builds from the current master development branch of Open
+MPI.
 </p>
-</p>
-
-     
