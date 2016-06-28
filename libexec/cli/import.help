@@ -7,11 +7,15 @@ format or the command will fail.
 The tar archive can be anything from a root file system, to a layer you
 wish to add to a container, to an existing docker image.
 
+The size of the container you need to create to import a complete system
+may be significantly larger than the size of the tar file/stream due to
+overheads of the container filesystem.
+
 note: This command must be executed as root.
 
 IMPORT OPTIONS:
     -f/--file       Use an input file instead of a pipe
-       --command    Replace the tar command (DEFAULT: 'tar xf -')
+       --command    Replace the tar command (DEFAULT: 'tar xvf -')
 
 EXAMPLES:
 
