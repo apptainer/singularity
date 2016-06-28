@@ -38,6 +38,7 @@
 <li><a href="javascript:open_popup('shared_sys')">Does Singularity work in multi-tenant HPC cluster environments?</a></li>
 <li><a href="javascript:open_popup('x11')">Can I run X11 apps through Singularity?</a></li>
 <li><a href="javascript:open_popup('mpi-hpc')">Can I containerize my MPI application with Singularity and run it properly on an HPC system?</a></li>
+<li><a href="javascript:open_popup('mpirun')">Why do we call 'mpirun' from outside the container (rather then inside)?</li>
 <li><a href="javascript:open_popup('gpu')">Does Singularity support containers that require GPUs?</a></li>
 </ul>
 
@@ -69,7 +70,7 @@
 <p>
 The name "Singularity" for me (Greg) stems back from my past experience
 working at a company called <a href="https://en.wikipedia.org/wiki/Linuxcare">Linuxcare</a>
-where the Linux Bootable Business Card (LNX-BBC) was developed. The BBC, was
+where the Linux Boot-able Business Card (LNX-BBC) was developed. The BBC, was
 a Linux rescue disk which paved the way for all live CD bootable
 distributions using a loop back file system called the "singularity".
 </p>
@@ -150,7 +151,7 @@ scale HPC and integration with Cray and the resource manager.
 <br/>&nbsp;<br/>
 <p>
 Docker has been used for a variety of purposes, but it is designed as a
-platform to provide replicable, network service vitalization. Because of
+platform to provide replicatable, network service vitalization. Because of
 this basic assumption and design model, it makes it difficult to implement
 on shared HPC platforms (and thus Singularity was born). Additionally,
 Docker supports the notion of emulating full operating system environments
@@ -190,9 +191,9 @@ multi-tenant environments (your system may vary):
 <li>Requires root to run (there is however a submitted patch to allow non-root, but it has not been accepted at this point)</li>
 <li>Even with the proposed patch, no mitigation of user escalation within the container</li>
 <li>The container files themselves are owned by root, thus a user can not "bring their own environment"</li>
-<li>No facility or optimizations for MPI or parallel job launch</li>
+<li>No facility or optimization's for MPI or parallel job launch</li>
 <li>Requires a very recent host operating system (RHEL7 and compats, and similar vintage Debian derivatives)</li>
-<li>No automatic resolution of which namespaces to use (e.g. automatic disable PID namespace separation for OMPI shared memory optimizations)</li>
+<li>No automatic resolution of which namespaces to use (e.g. automatic disable PID namespace separation for OMPI shared memory optimization's)</li>
 <li>It is not a "mobility of compute" solution (it is an example implementation of the OCI)</li>
 <li>Users can escalate to root and potentially get access to shared file systems, run daemons and escape the standard user and scheduler limitations</li>
 </ul>
@@ -608,6 +609,45 @@ at extreme scale will be as efficient as possible.
 <p>
 note: We have seen no major performance impact from running a job in a
 Singularity container.
+</p>
+<a class="popup-close" href="javascript:close_popup()">x</a>
+</div>
+</div>
+
+
+<div id="mpirun" class="popup-background">
+<div class="popup-content">
+<h4>Why do we call 'mpirun' from outside the container (rather then inside)?</h4>
+<br/>&nbsp;<br/>
+<p>
+With Singularity, the MPI usage model is to call 'mpirun' from outside the
+container, and reference the container from your 'mpirun' command. Usage would
+look like this:
+<pre>
+$ mpirun -np 20 singularity exec container.img /path/to/contained_mpi_prog
+</pre>
+</p>
+<p>
+By calling 'mpirun' outside the container, we solve several very complicated
+work-flow aspects. For example, if 'mpirun' is called from within the container
+it must have a method for spawning processes on remote nodes. Historically ssh
+is used for this which means that there must be an sshd running within the
+container on the remote nodes, and this sshd process must not conflict with the
+sshd running on that host! It is also possible for the resource manager to
+launch the job and (in Open MPI's case) the Orted processes on the remote
+system, but that then requires resource manager modification and container
+awareness.
+</p>
+<p>
+In the end, we do not gain anything by calling 'mpirun' from within the
+container except for increasing the complexity levels and possibly loosing out
+on some added performance benefits (e.g. if a container wasn't built with the
+proper OFED as the host).
+</p>
+<p>
+See the
+<a href="javascript:load_content('hpc')">Singularity on HPC</a>
+page for more details.
 </p>
 <a class="popup-close" href="javascript:close_popup()">x</a>
 </div>
