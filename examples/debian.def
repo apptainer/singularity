@@ -5,8 +5,6 @@ OSVersion "stable"
 Setup
 Bootstrap
 
-RunCmd sed -i 's/$/ universe/' /etc/apt/sources.list
-
 InstallPkgs vim
 
 Cleanup

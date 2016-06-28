@@ -37,6 +37,7 @@
 
 #include "config.h"
 #include "util.h"
+#include "message.h"
 
 
 char *file_id(char *path) {
@@ -107,7 +108,7 @@ int is_dir(char *path) {
     struct stat filestat;
 
     // Stat path
-    if (lstat(path, &filestat) < 0) {
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
@@ -123,7 +124,7 @@ int is_exec(char *path) {
     struct stat filestat;
 
     // Stat path
-    if (lstat(path, &filestat) < 0) {
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
@@ -139,7 +140,7 @@ int is_owner(char *path, uid_t uid) {
     struct stat filestat;
 
     // Stat path
-    if (lstat(path, &filestat) < 0) {
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
@@ -154,7 +155,7 @@ int is_blk(char *path) {
     struct stat filestat;
 
     // Stat path
-    if (lstat(path, &filestat) < 0) {
+    if (stat(path, &filestat) < 0) {
         return(-1);
     }
 
@@ -187,6 +188,7 @@ int s_mkpath(char *dir, mode_t mode) {
     }
 
     if ( mkdir(dir, mode) < 0 ) {
+        message(ERROR, "Could not create directory %s: %s\n", dir, strerror(errno));
         return(-1);
     }
 

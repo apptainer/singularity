@@ -21,7 +21,7 @@ EXAMPLES:
 
     Once you have created the base image template:
 
-    $ singularity create /tmp/Debian.img
+    $ sudo singularity create /tmp/Debian.img
 
     You can then import from a tar pipe
 
