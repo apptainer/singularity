@@ -14,7 +14,7 @@ Requires: strace
 
 %description
 Singularity provides functionality to build the smallest most minimal
-possible containers, and running those containers as singlet application
+possible containers, and running those containers as single application
 environments.
 
 %prep
