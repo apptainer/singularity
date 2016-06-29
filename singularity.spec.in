@@ -1,7 +1,9 @@
+%{!?_rel:%{expand:%%global _rel 0.1}}
+
 Summary: The Singularity of a container
 Name: singularity
 Version: @PACKAGE_VERSION@
-Release: 0.1%{?dist}
+Release: %{_rel}%{?dist}
 License: US Dept. of Energy (BSD-like)
 Group: System Environment/Base
 URL: http://singularity.lbl.gov/
