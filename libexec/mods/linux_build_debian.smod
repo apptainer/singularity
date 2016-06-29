@@ -53,7 +53,7 @@ Bootstrap() {
         INCLUDEPKGS=",$INCLUDEPKGS"
     fi
 
-    if ! eval "$DEBOOTSTRAP_PATH --include=debian-archive-keyring,apt$INCLUDEPKGS --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
+    if ! eval "$DEBOOTSTRAP_PATH --include=apt$INCLUDEPKGS --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
         exit 1
     fi
 
@@ -65,10 +65,12 @@ Bootstrap() {
         return 1
     fi
 
-   if [ -n "$LANG" ]; then
-        if __runcmd locale-gen $LANG; then
-            mkdir -p "$SINGULARITY_BUILD_ROOT/etc/default/" >/dev/null 2>&1
-            echo "LANG=$LANG" > "$SINGULARITY_BUILD_ROOT/etc/default/locale"
+    if [ -n "$LANG" ]; then
+        if LOCALE_GEN=`singularity_which locale-gen`; then
+            if __runcmd $LOCALE_GEN $LANG; then
+                mkdir -p "$SINGULARITY_BUILD_ROOT/etc/default/" >/dev/null 2>&1
+                echo "LANG=$LANG" > "$SINGULARITY_BUILD_ROOT/etc/default/locale"
+            fi
         fi
     fi
 
