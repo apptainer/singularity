@@ -47,11 +47,17 @@ Bootstrap() {
     # debootstrap will create the device entries it needs (or some versions fail)
     /bin/sh -c "rm -rf $SINGULARITY_BUILD_ROOT/dev/*"
 
+    INCLUDEPKGS=`echo "$*" | sed -e 's/[ ]*/,/g'`
+
+    if [ -z "$INCLUDEPKGS" ]; then
+        INCLUDEPKGS=",$INCLUDEPKGS"
+    fi
+
     # The excludes save 25M or so with jessie.  (Excluding udev avoids
     # systemd, for instance.)  There are a few more we could exclude
     # to save a few MB.  I see 182M cleaned with this, v. 241M with
     # the default debootstrap.
-    if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
+    if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=debian-archive-keyring,apt$INCLUDEPKGS --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
         exit 1
     fi
 

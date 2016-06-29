@@ -149,7 +149,11 @@ RunScript() {
         chmod +x "$SINGULARITY_BUILD_ROOT/singularity"
     fi
 
-    echo "$@" >> "$SINGULARITY_BUILD_ROOT/singularity"
+    for arg in "$@"; do
+        local qq="'\''"
+        printf "'%s' " "${arg//\'/$qq}" >> "$SINGULARITY_BUILD_ROOT/singularity"
+    done
+    echo >> "$SINGULARITY_BUILD_ROOT/singularity"
 
     return 0
 }
