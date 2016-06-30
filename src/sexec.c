@@ -65,10 +65,6 @@
 #define MS_REC 16384
 #endif
 
-#ifdef NS_CLONE_PID
-#define NS_CLONE_NEWPID NS_CLONE_PID
-#endif
-
 pid_t exec_fork_pid = 0;
 
 void sighandler(int sig) {
@@ -461,6 +457,7 @@ int main(int argc, char ** argv) {
             message(DEBUG, "Hello from namespace child process\n");
             // Setup PID namespaces
             rewind(config_fp);
+#ifdef NS_CLONE_NEWPID
             if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
                 unsetenv("SINGULARITY_NO_NAMESPACE_PID");
                 message(DEBUG, "Virtualizing PID namespace\n");
@@ -471,13 +468,29 @@ int main(int argc, char ** argv) {
             } else {
                 message(VERBOSE, "Not virtualizing PID namespace\n");
             }
+#else
+#ifdef NS_CLONE_PID
+            if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
+                unsetenv("SINGULARITY_NO_NAMESPACE_PID");
+                message(DEBUG, "Virtualizing PID namespace\n");
+                if ( unshare(CLONE_NEWPID) < 0 ) {
+                    message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+            } else {
+                message(VERBOSE, "Not virtualizing PID namespace\n");
+            }
+#endif
+#endif
 
+#ifdef NS_CLONE_FS
             // Setup FS namespaces
             message(DEBUG, "Virtualizing FS namespace\n");
             if ( unshare(CLONE_FS) < 0 ) {
                 message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
                 ABORT(255);
             }
+#endif
 
             // Setup mount namespaces
             message(DEBUG, "Virtualizing mount namespace\n");
@@ -485,12 +498,6 @@ int main(int argc, char ** argv) {
                 message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
                 ABORT(255);
             }
-
-            // Setup FS namespaces
-//           if ( unshare(CLONE_FILES) < 0 ) {
-//               message(ERROR, "Could not virtualize file descriptor namespace: %s\n", strerror(errno));
-//               ABORT(255);
-//           }
 
             // Privatize the mount namespaces
             message(DEBUG, "Making mounts private\n");
@@ -876,12 +883,14 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
+#ifdef NS_CLONE_FS
         // Setup FS namespaces
         message(DEBUG, "Virtualizing FS namespace\n");
         if ( unshare(CLONE_FS) < 0 ) {
             message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
             ABORT(255);
         }
+#endif
 
         // Fork off exec process
         message(VERBOSE, "Forking exec process\n");
