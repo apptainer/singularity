@@ -44,6 +44,7 @@ void init(void) {
 }
 
 void message(int level, char *format, ...) {
+    char *prefix = "";
     va_list args;
     va_start (args, format);
 
@@ -52,26 +53,38 @@ void message(int level, char *format, ...) {
     }
 
     switch (level) {
-        case ERROR:
-            vfprintf(stderr, strjoin("ERROR:   ", format), args);
+        case ABRT:
+            prefix = strdup("ABORT:   ");
+            break;
+        case DEBUG:
+            prefix = strdup("DEBUG:   ");
             break;
         case WARNING:
-            vfprintf(stderr, strjoin("WARNING: ", format), args);
+            prefix = strdup("WARNING: ");
             break;
-        case INFO:
-            vprintf(format, args);
+        case ERROR:
+            prefix = strdup("ERROR:   ");
             break;
         default:
-            if ( level <= messagelevel && messagelevel >= 5 ) {
-                char *header_string = (char *) malloc(29);
-                char *debug_string = (char *) malloc(intlen(geteuid()) + intlen(getpid()) + 16);
-                snprintf(debug_string, intlen(geteuid()) + intlen(getpid()) + 16, "DEBUG(U=%d,PID=%d):", geteuid(), getpid());
-                snprintf(header_string, 29, "%-28s", debug_string);
-                vfprintf(stderr, strjoin(header_string, format), args);
-            } else if ( level <= messagelevel ) {
-                vfprintf(stderr, strjoin("VERBOSE: ", format), args);
-            }
+            prefix = strdup("VERBOSE: ");
             break;
+    }
+
+    if ( level <= messagelevel ) {
+        if ( level == INFO ) {
+            vprintf(format, args);
+        } else if ( messagelevel >= 5 ) {
+            char *header_string = (char *) malloc(31);
+            char *debug_string = (char *) malloc(intlen(geteuid()) + intlen(getpid()) + 23);
+            snprintf(debug_string, intlen(geteuid()) + intlen(getpid()) + 22, "%s(U=%d,P=%d) ", prefix, geteuid(), getpid());
+            snprintf(header_string, 30, "%-29s", debug_string);
+            vfprintf(stderr, strjoin(header_string, format), args);
+        } else {
+            char *header_string = (char *) malloc(11);
+            snprintf(header_string, 10, "%-10s", prefix);
+            vfprintf(stderr, strjoin(header_string, format), args);
+        }
+
     }
 
     fflush(stdout);

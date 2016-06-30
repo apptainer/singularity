@@ -19,8 +19,9 @@
  */
 
 
-#define ERROR -1
-#define WARNING -2
+#define ABRT -3
+#define ERROR -2
+#define WARNING -1
 #define INFO 1
 #define VERBOSE 2
 #define VERBOSE1 2
