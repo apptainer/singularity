@@ -36,22 +36,22 @@ fi
 
 singularity_import linux_build
 
-BUILD_SPEC="$1"
+SINGULARITY_BUILDDEF="$1"
 shift
 SINGULARITY_TMPDIR=`mktemp -d /tmp/singularity-bootstrap.XXXXXXX`
 PATH=/bin:/sbin:$PATH
 
-export SINGULARITY_TMPDIR
+export SINGULARITY_TMPDIR SINGULARITY_BUILDDEF
 
 # Always run these checks
 SanityCheck
 PreSetup
 
 
-if [ -f "$BUILD_SPEC" ]; then
+if [ -f "$SINGULARITY_BUILDDEF" ]; then
     # sourcing without a leading slash is weird and requires PATH
     PATH=".:$PATH"
-    . $BUILD_SPEC
+    . $SINGULARITY_BUILDDEF
 fi
 
 Finalize

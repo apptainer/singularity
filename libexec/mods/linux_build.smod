@@ -143,20 +143,20 @@ PreSetup() {
 }
 
 RunScript() {
-    if [ ! -f "$SINGULARITY_BUILD_ROOT/singularity" ]; then
+    if [ -z "$RAN_RUNSCRIPT" ]; then
         echo '#!/bin/sh'    > "$SINGULARITY_BUILD_ROOT/singularity"
         echo                >> "$SINGULARITY_BUILD_ROOT/singularity"
-        chmod +x "$SINGULARITY_BUILD_ROOT/singularity"
-    fi
 
-    for arg in "$@"; do
-        local qq="'\''"
-        printf "'%s' " "${arg//\'/$qq}" >> "$SINGULARITY_BUILD_ROOT/singularity"
-    done
-    echo >> "$SINGULARITY_BUILD_ROOT/singularity"
+        grep "^RunScript " "$SINGULARITY_BUILDDEF" | sed -e 's/^RunScript //' >> "$SINGULARITY_BUILD_ROOT/singularity"
+
+        chmod +x "$SINGULARITY_BUILD_ROOT/singularity"
+
+        RAN_RUNSCRIPT=1
+    fi
 
     return 0
 }
+
 
 RunCmd() {
     if ! __runcmd "$@"; then
@@ -194,7 +194,7 @@ __runcmd() {
     CMD="$1"
     shift
 
-    echo "+ $CMD $*"
+    echo "+ $CMD $*" 1>&2
 
     chroot "$SINGULARITY_BUILD_ROOT" "$CMD" "$@"
 
