@@ -52,7 +52,7 @@ fi
 while true; do
     case $1 in
         -*)
-            echo "ERROR: Unknown option: $1"
+            message ERROR "Unknown option: $1\n"
             exit 1
         ;;
         *)
@@ -61,6 +61,13 @@ while true; do
     esac
 done
 
+
+
+####
+# This entire file is a template for functionality that needs to be written
+# still!
+
+# This is a configurable option, needs to be set accordingly!
 SESSION_GLOB="/tmp/.singularity-session-${USERID}.*/daemon.pid"
 
 
