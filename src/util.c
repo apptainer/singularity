@@ -36,6 +36,7 @@
 #include <time.h>
 
 #include "config.h"
+#include "message.h"
 
 
 
@@ -109,7 +110,8 @@ char *random_string(int length) {
 }
 
 void _abort(int value, const char *function, const char *file, int line) {
-    fprintf(stderr, "ABORT:   Thrown from %s:%d/%s() with RETVAL=%d\n", file, line, function, value);
+    message(ABRT, "Thrown from %s:%d/%s() with RETVAL=%d\n", file, line, function, value);
+//    fprintf(stderr, "ABORT:   Thrown from %s:%d/%s() with RETVAL=%d\n", file, line, function, value);
     exit(value);
 }
 
