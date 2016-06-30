@@ -99,7 +99,7 @@ int main(int argc, char ** argv) {
     char *loop_dev_lock;
     char *loop_dev_cache;
     char *homedir;
-    char *homedir_base;
+    char *homedir_base = 0;
     char *loop_dev = 0;
     char *config_path;
     char *tmp_config_string;
@@ -399,14 +399,13 @@ int main(int argc, char ** argv) {
 
     // Manage the daemon bits early
     if ( strcmp(command, "start") == 0 ) {
-        int daemon_fd;
-
-        message(DEBUG, "Namespace daemon function requested\n");
-
-#if !HAVE_SETNS
+#ifdef NO_SETNS
         message(ERROR, "This host does not support joining existing name spaces\n");
         ABORT(1);
 #else
+        int daemon_fd;
+
+        message(DEBUG, "Namespace daemon function requested\n");
 
         message(DEBUG, "Creating namespace daemon pidfile: %s\n", joinpath(sessiondir, "daemon.pid"));
         if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
@@ -840,14 +839,14 @@ int main(int argc, char ** argv) {
 // Attach to daemon process flow
 //****************************************************************************//
     } else {
+#ifdef NO_SETNS
+        message(ERROR, "This host does not support joining existing name spaces\n");
+        ABORT(1);
+#else
 
         message(VERBOSE, "Attaching to existing namespace daemon environment\n");
         pid_t exec_pid;
 
-#if !HAVE_SETNS
-        message(ERROR, "This host does not support joining existing name spaces\n");
-        ABORT(1);
-#else
         if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
             message(DEBUG, "Connecting to existing PID namespace\n");
             int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
