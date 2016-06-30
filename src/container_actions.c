@@ -43,7 +43,8 @@ int container_run(int argc, char **argv) {
         argv[0] = strdup("/singularity");
         message(VERBOSE, "Found /singularity inside container, exec()'ing...\n");
         if ( execv("/singularity", argv) != 0 ) {
-            fprintf(stderr, "ABORT: exec of /bin/sh failed: %s\n", strerror(errno));
+            message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
+            ABORT(255);
         }
     } else {
         message(WARNING, "No Singularity runscript found, launching 'shell'\n");
@@ -107,8 +108,8 @@ int container_daemon_start(char *tmpdir) {
     char line[256];
 
     if ( ( comm = fopen(joinpath(tmpdir, "daemon.comm"), "r") ) == NULL ) {
-        fprintf(stderr, "Could not open fifo %s: %s\n", joinpath(tmpdir, "daemon.comm"), strerror(errno));
-        return(-1);
+        message(ERROR, "Could not open communication fifo %s: %s\n", joinpath(tmpdir, "daemon.comm"), strerror(errno));
+        ABORT(255);
     }
 
     while ( fgets(line, 256, comm) ) {
@@ -129,29 +130,29 @@ int container_daemon_stop(char *tmpdir) {
     int daemon_fd;
 
     if ( is_file(joinpath(tmpdir, "daemon.pid")) < 0 ) {
-        fprintf(stderr, "Daemon process is not running\n");
+        message(ERROR, "Daemon process is not running\n");
         return(0);
     }
 
     if ( ( test_daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "r") ) == NULL ) {
-        fprintf(stderr, "ERROR: Could not open daemon pid file %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
-        return(-1);
+        message(ERROR, "Could not open daemon pid file %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
+        ABORT(255);
     }
 
     daemon_fd = fileno(test_daemon_fp);
     if ( flock(daemon_fd, LOCK_SH | LOCK_NB) == 0 ) {
-        fprintf(stderr, "No active container daemon active\n");
+        message(INFO, "No active container daemon active\n");
         return(0);
     }
 
     if ( is_fifo(joinpath(tmpdir, "daemon.comm")) < 0 ) {
-        fprintf(stderr, "ERROR: Container daemon COMM not available\n");
-        return(-1);
+        message(ERROR, "Container daemon COMM not available\n");
+        ABORT(255);
     }
 
     if ( ( comm = fopen(joinpath(tmpdir, "daemon.comm"), "w") ) == NULL ) {
-        fprintf(stderr, "Could not open fifo for writing %s: %s\n", joinpath(tmpdir, "daemon.comm"), strerror(errno));
-        return(-1);
+        message(ERROR, "Could not open fifo for writing %s: %s\n", joinpath(tmpdir, "daemon.comm"), strerror(errno));
+        ABORT(255);
     }
 
     fputs("stop", comm);

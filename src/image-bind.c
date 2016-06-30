@@ -38,15 +38,17 @@
 #include "config.h"
 #include "mounts.h"
 #include "file.h"
+#include "util.h"
 #include "loop-control.h"
+#include "message.h"
 
 
 int main(int argc, char ** argv) {
     uid_t uid = geteuid();
 
     if ( uid != 0 ) {
-        fprintf(stderr, "ABORT: Calling user must be root\n");
-        return(1);
+        message(ERROR, "Calling user must be root\n");
+        ABORT(1);
     }
 
     if ( argv[1] == NULL || argv[2] == NULL ) {
@@ -63,25 +65,25 @@ int main(int argc, char ** argv) {
         containerimage = strdup(argv[2]);
 
         if ( is_file(containerimage) < 0 ) {
-            fprintf(stderr, "ABORT: Container image not found: %s\n", containerimage);
-            return(1);
+            message(ERROR, "Container image not found: %s\n", containerimage);
+            ABORT(1);
         }
 
         if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
-            fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
-            return(255);
+            message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
+            ABORT(255);
         }
 
         loop_dev = obtain_loop_dev();
 
         if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
-            fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-            return(255);
+            message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
+            ABORT(255);
         }
 
         if ( associate_loop(containerimage_fp, loop_fp, 0) < 0 ) {
-            fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
-            return(255);
+            message(ERROR, "Could not associate %s to loop device %s\n", containerimage, loop_dev);
+            ABORT(255);
         }
 
         printf("%s\n", loop_dev);
@@ -92,18 +94,18 @@ int main(int argc, char ** argv) {
         loop_dev = strdup(argv[2]);
 
         if ( is_blk(loop_dev) < 0 ) {
-            fprintf(stderr, "ERROR: Block device not found: %s\n", loop_dev);
-            return(255);
+            message(ERROR, "Block device not found: %s\n", loop_dev);
+            ABORT(255);
         }
 
         if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
-            fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-            return(255);
+            message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
+            ABORT(255);
         }
 
         if ( disassociate_loop(loop_fp) < 0 ) {
-            fprintf(stderr, "ERROR: Failed to detach loop device: %s\n", loop_dev);
-            return(255);
+            message(ERROR, "Failed to detach loop device: %s\n", loop_dev);
+            ABORT(255);
         }
 
     }

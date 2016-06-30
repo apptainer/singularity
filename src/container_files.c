@@ -32,6 +32,7 @@
 #include "config.h"
 #include "file.h"
 #include "util.h"
+#include "message.h"
 
 
 
@@ -39,12 +40,12 @@ int build_passwd(char *template, char *output) {
     uid_t uid = getuid();
 
     if ( is_file(template) < 0 ) {
-        fprintf(stderr, "ERROR: Template passwd not found: %s\n", template);
+        message(WARNING, "Template passwd not found: %s\n", template);
         return(-1);
     }
 
     if ( copy_file(template, output) < 0 ) {
-        fprintf(stderr, "ERROR: Could not copy %s to %s: %s\n", template, output, strerror(errno));
+        message(WARNING, "Could not copy %s to %s: %s\n", template, output, strerror(errno));
         return(-1);
     }
 
@@ -66,12 +67,12 @@ int build_group(char *template, char *output) {
     gid_t gid = getgid();
 
     if ( is_file(template) < 0 ) {
-        fprintf(stderr, "ERROR: Template group file not found: %s\n", template);
+        message(WARNING, "Template group file not found: %s\n", template);
         return(-1);
     }
 
     if ( copy_file(template, output) < 0 ) {
-        fprintf(stderr, "ERROR: Could not copy %s to %s: %s\n", template, output, strerror(errno));
+        message(WARNING, "Could not copy %s to %s: %s\n", template, output, strerror(errno));
         return(-1);
     }
 
