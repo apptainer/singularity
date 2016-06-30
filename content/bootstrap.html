@@ -65,16 +65,18 @@ but if using "redhat", this will be installed from outside the bootstrapped
 system.
 </li>
 <li>
-<b>InstallFiles</b>: Install a file into the container. Note that relative paths
+<b>InstallFile</b>: Install a file into the container. Note that relative paths
 work just fine, but care must be taken from the calling directory.
 </li>
 <li>
 <b>RunCmd</b>: Run a command within the new container operating system
 during the bootstrap.  May be repeated to run multiple commands.
 </li>
+<li>
 <b>RunScript</b>: Add a command line to the "runscript" invoked by
 'singularity run' or by executing the container directly.
-May be repeated to add multiple command lines.
+May be repeated to add multiple command lines.  
+</li>
 <li>
 <b>Cleanup</b>: Cleanup any temporary files like YUM/Apt caches.
 </li>
