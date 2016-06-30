@@ -151,11 +151,6 @@ int main(int argc, char ** argv) {
     username = pw->pw_name;
     homedir = pw->pw_dir;
 
-    message(DEBUG, "Building configuration file location\n");
-    config_path = (char *) malloc(strlen(SYSCONFDIR) + 30);
-    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR);
-    message(DEBUG, "Config location: %s\n", config_path);
-
     // Figure out where we start
     message(DEBUG, "Obtaining file descriptor to current directory\n");
     if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
@@ -186,6 +181,11 @@ int main(int argc, char ** argv) {
         message(ERROR, "Container image path is invalid: %s\n", containerimage);
         ABORT(1);
     }
+
+    message(DEBUG, "Building configuration file location\n");
+    config_path = (char *) malloc(strlen(SYSCONFDIR) + 30);
+    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR);
+    message(DEBUG, "Config location: %s\n", config_path);
 
     message(DEBUG, "Checking Singularity configuration is a file: %s\n", config_path);
     if ( is_file(config_path) != 0 ) {
