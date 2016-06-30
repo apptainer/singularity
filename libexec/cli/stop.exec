@@ -74,6 +74,11 @@ SINGULARITY_IMAGE="$1"
 export SINGULARITY_IMAGE
 shift
 
-if "$SINGULARITY_libexecdir/singularity/sexec"; then
+eval "$SINGULARITY_libexecdir/singularity/sexec"
+RETVAL=$?
+
+if [ $RETVAL -eq 0 ]; then
     message 1 "Singularity namespace process daemon has been stopped\n"
+else
+    exit $RETVAL
 fi
