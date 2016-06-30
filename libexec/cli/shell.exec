@@ -61,7 +61,7 @@ while true; do
             export SINGULARITY_CONTAIN
         ;;
         -*)
-            echo "ERROR: Unknown option: $1"
+            message ERROR "Unknown option: $1\n"
             exit 1
         ;;
         *)
@@ -74,7 +74,7 @@ if [ -z "$1" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
-        echo "ERROR: To see usage summary, try: singularity help $SINGULARITY_COMMAND"
+        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
     fi
     exit 0
 fi
