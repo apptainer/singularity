@@ -83,9 +83,14 @@ SINGULARITY_IMAGE="$1"
 export SINGULARITY_IMAGE
 shift
 
-if "$SINGULARITY_libexecdir/singularity/sexec"; then
+eval "$SINGULARITY_libexecdir/singularity/sexec"
+RETVAL=$?
+
+if [ $RETVAL -eq 0 ]; then
     message 1 "Singularity namespace process daemon has started. Subsequent\n"
     message 1 "calls to this container will run in this existing namespace.\n\n"
     message 1 "To stop the daemon/namespace use the following command:\n\n"
     message 1 "    $ singularity stop $SINGULARITY_IMAGE\n\n"
+else
+    exit $RETVAL
 fi
