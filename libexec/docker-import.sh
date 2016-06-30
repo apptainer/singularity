@@ -172,9 +172,6 @@ if ! cmd=$(docker inspect --format='{{json .Config.Cmd}}' "$dock"); then
     exit 1
 fi
 
-entry='["/bin/sh","-c"]'
-cmd='["df","-h"]'
-
 if [[ $cmd != null ]]; then
     cmd=$(IFS='[],'; echo $cmd)
     cmd=${cmd:1}            # no leading blank
