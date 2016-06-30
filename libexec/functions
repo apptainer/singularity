@@ -175,12 +175,16 @@ singularity_import() {
 # different arguments)
 singularity_which() {
     i="$1"
-    if [ -x "$i" ]; then
-        echo "$i"
-        return 0
-    fi
+    # Avoid non-pathnames with . not in path, and directories
+    case $i in
+        .* | /*)
+            if [ -f "$i" -a -x "$i" ]; then
+                echo "$i"
+                return 0
+            fi
+    esac
     for p in `echo $PATH | sed -e 's/:/ /g'`; do
-        if [ -x "$p/$i" ]; then
+        if [ -f "$p/$i" -a -x "$p/$i" ]; then
             echo "$p/$i"
             return 0
         fi

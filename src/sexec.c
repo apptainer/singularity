@@ -403,10 +403,10 @@ int main(int argc, char ** argv) {
 
         message(DEBUG, "Namespace daemon function requested\n");
 
-#ifdef NO_SETNS
+#if !HAVE_SETNS
         message(ERROR, "This host does not support joining existing name spaces\n");
         ABORT(1);
-#endif
+#else
 
         message(DEBUG, "Creating namespace daemon pidfile: %s\n", joinpath(sessiondir, "daemon.pid"));
         if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
@@ -439,6 +439,7 @@ int main(int argc, char ** argv) {
             message(ERROR, "Could not daemonize: %s\n", strerror(errno));
             ABORT(255);
         }
+#endif
     } else if ( strcmp(command, "stop") == 0 ) {
         message(DEBUG, "Stopping namespace daemon process\n");
         return(container_daemon_stop(sessiondir));
@@ -843,10 +844,10 @@ int main(int argc, char ** argv) {
         message(VERBOSE, "Attaching to existing namespace daemon environment\n");
         pid_t exec_pid;
 
-#ifdef NO_SETNS
+#if !HAVE_SETNS
         message(ERROR, "This host does not support joining existing name spaces\n");
         ABORT(1);
-#endif
+#else
         if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
             message(DEBUG, "Connecting to existing PID namespace\n");
             int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
@@ -972,6 +973,7 @@ int main(int argc, char ** argv) {
         }
 
         message(VERBOSE, "Exec parent process returned: %d\n", retval);
+#endif
     }
 
     message(VERBOSE2, "Cleaning up...\n");
