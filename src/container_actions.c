@@ -61,6 +61,8 @@ int container_exec(int argc, char **argv) {
         message(ERROR, "Exec requires a command to run\n");
         ABORT(255);
     }
+
+    message(VERBOSE, "Exec'ing program: %s\n", argv[1]);
     if ( execvp(argv[1], &argv[1]) != 0 ) {
         message(ERROR, "execvp of '%s' failed: %s\n", argv[1], strerror(errno));
         ABORT(255);
@@ -114,7 +116,7 @@ int container_daemon_start(char *tmpdir) {
 
     while ( fgets(line, 256, comm) ) {
         if ( strcmp(line, "stop") == 0 ) {
-            printf("Stopping daemon\n");
+            message(INFO, "Stopping daemon\n");
             break;
         }
     }
