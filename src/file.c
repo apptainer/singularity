@@ -216,14 +216,14 @@ int copy_file(char * source, char * dest) {
 
     fd_s = fopen(source, "r");
     if ( fd_s == NULL ) {
-        fprintf(stderr, "ERROR: Could not read %s: %s\n", source, strerror(errno));
+        message(ERROR, "Could not read %s: %s\n", source, strerror(errno));
         return(-1);
     }
 
     fd_d = fopen(dest, "w");
     if ( fd_s == NULL ) {
         fclose(fd_s);
-        fprintf(stderr, "ERROR: Could not write %s: %s\n", dest, strerror(errno));
+        message(ERROR, "Could not write %s: %s\n", dest, strerror(errno));
         return(-1);
     }
 
@@ -243,7 +243,7 @@ int fileput(char *path, char *string) {
 
     fd = fopen(path, "w");
     if ( fd == NULL ) {
-        fprintf(stderr, "ERROR: Could not write to %s: %s\n", path, strerror(errno));
+        message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
         return(-1);
     }
 
@@ -261,19 +261,19 @@ char *filecat(char *path) {
     long pos = 0;
     
     if ( is_file(path) < 0 ) {
-        fprintf(stderr, "ERROR: Could not find %s\n", path);
+        message(ERROR, "Could not find %s\n", path);
         return(NULL);
     }
 
     fd = fopen(path, "r");
     if ( fd == NULL ) {
-        fprintf(stderr, "ERROR: Could not read from %s: %s\n", path, strerror(errno));
+        message(ERROR, "Could not read from %s: %s\n", path, strerror(errno));
         return(NULL);
     }
 
 
     if ( fseek(fd, 0L, SEEK_END) < 0 ) {
-        fprintf(stderr, "ERROR: Could not seek to end of file %s: %s\n", path, strerror(errno));
+        message(ERROR, "Could not seek to end of file %s: %s\n", path, strerror(errno));
         return(NULL);
     }
 
