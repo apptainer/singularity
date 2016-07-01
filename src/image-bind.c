@@ -61,26 +61,35 @@ int main(int argc, char ** argv) {
         FILE *containerimage_fp;
         char *containerimage;
         char *loop_dev;
-    
+
+        message(VERBOSE, "Preparing to attach container to loop\n");
+
         containerimage = strdup(argv[2]);
 
+        message(VERBOSE, "Evaluating image: %s\n", containerimage);
+    
+        message(VERBOSE, "Checking if container image exists\n");
         if ( is_file(containerimage) < 0 ) {
             message(ERROR, "Container image not found: %s\n", containerimage);
             ABORT(1);
         }
 
+        message(VERBOSE, "Checking if container can be opened read/write\n");
         if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
             message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
             ABORT(255);
         }
 
+        message(VERBOSE, "Obtaining free loop device\n");
         loop_dev = obtain_loop_dev();
 
+        message(VERBOSE, "Opening loop device: %s\n", loop_dev);
         if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
             message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
             ABORT(255);
         }
 
+        message(VERBOSE, "Binding container image to loop\n");
         if ( associate_loop(containerimage_fp, loop_fp, 0) < 0 ) {
             message(ERROR, "Could not associate %s to loop device %s\n", containerimage, loop_dev);
             ABORT(255);
@@ -90,19 +99,24 @@ int main(int argc, char ** argv) {
     } else if (strcmp(argv[1], "detach") == 0 ) {
         FILE *loop_fp;
         char *loop_dev;
-        
+
         loop_dev = strdup(argv[2]);
 
+        message(VERBOSE, "Preparing to detach loop: %s\n", loop_dev);
+
+        message(VERBOSE, "Checking loop device\n");
         if ( is_blk(loop_dev) < 0 ) {
             message(ERROR, "Block device not found: %s\n", loop_dev);
             ABORT(255);
         }
 
+        message(VERBOSE, "Opening loop device\n");
         if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
             message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
             ABORT(255);
         }
 
+        message(VERBOSE, "Disassociating container image from loop\n");
         if ( disassociate_loop(loop_fp) < 0 ) {
             message(ERROR, "Failed to detach loop device: %s\n", loop_dev);
             ABORT(255);
