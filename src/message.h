@@ -29,4 +29,10 @@
 #define VERBOSE3 4
 #define DEBUG 5
 
-void message(int level, char *format, ...);
+//void message(int level, char *format, ...);
+
+void _message(int level, const char *function, const char *file, int line, char *format, ...);
+
+
+#define message(a,b...) _message(a, __func__, __FILE__, __LINE__, b)
+

@@ -43,7 +43,8 @@ void init(void) {
 
 }
 
-void message(int level, char *format, ...) {
+
+void _message(int level, const char *function, const char *file, int line, char *format, ...) {
     char *prefix = "";
     va_list args;
     va_start (args, format);
@@ -54,19 +55,19 @@ void message(int level, char *format, ...) {
 
     switch (level) {
         case ABRT:
-            prefix = strdup("ABORT:   ");
+            prefix = strdup("ABORT");
             break;
         case DEBUG:
-            prefix = strdup("DEBUG:   ");
+            prefix = strdup("DEBUG");
             break;
         case WARNING:
-            prefix = strdup("WARNING: ");
+            prefix = strdup("WARNING");
             break;
         case ERROR:
-            prefix = strdup("ERROR:   ");
+            prefix = strdup("ERROR");
             break;
         default:
-            prefix = strdup("VERBOSE: ");
+            prefix = strdup("VERBOSE");
             break;
     }
 
@@ -74,14 +75,16 @@ void message(int level, char *format, ...) {
         if ( level == INFO ) {
             vprintf(format, args);
         } else if ( messagelevel >= 5 ) {
-            char *header_string = (char *) malloc(31);
-            char *debug_string = (char *) malloc(intlen(geteuid()) + intlen(getpid()) + 23);
-            snprintf(debug_string, intlen(geteuid()) + intlen(getpid()) + 22, "%s(U=%d,P=%d) ", prefix, geteuid(), getpid());
-            snprintf(header_string, 30, "%-29s", debug_string);
+            char *file_string = (char *)  malloc(64);
+            char *header_string = (char *) malloc(128);
+            char *debug_string = (char *) malloc(128);
+            snprintf(file_string, 63, "%s:%d", file, line);
+            snprintf(debug_string, 127, "%-7s [U=%d,P=%d %s]: ", prefix, geteuid(), getpid(), file_string);
+            snprintf(header_string, 127, "%-48s ", debug_string);
             vfprintf(stderr, strjoin(header_string, format), args);
         } else {
             char *header_string = (char *) malloc(11);
-            snprintf(header_string, 10, "%-10s", prefix);
+            snprintf(header_string, 10, "%-8s ", strjoin(prefix, ":"));
             vfprintf(stderr, strjoin(header_string, format), args);
         }
 
@@ -91,5 +94,18 @@ void message(int level, char *format, ...) {
     fflush(stderr);
 
     va_end (args);
+
 }
 
+//#define MSG(a,b...) message(a, __func__, __FILE__, __LINE__, b)
+
+/*
+
+int main(void) {
+
+    MSG(DEBUG, "Hello World%s\n", "Yes");
+
+    return(0);
+}
+
+*/
