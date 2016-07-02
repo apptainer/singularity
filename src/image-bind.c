@@ -46,16 +46,18 @@
 int main(int argc, char ** argv) {
     uid_t uid = geteuid();
 
-    if ( uid != 0 ) {
-        message(ERROR, "Calling user must be root\n");
-        ABORT(1);
-    }
-
     if ( argv[1] == NULL || argv[2] == NULL ) {
         fprintf(stderr, "USAGE: %s [attach/detach] [image/loop]\n", argv[0]);
         return(1);
     }
 
+    message(VERBOSE, "Checking calling user\n");
+    if ( uid != 0 ) {
+        message(ERROR, "Calling user must be root\n");
+        ABORT(1);
+    }
+
+    message(VERBOSE, "Checking command: %s\n", argv[1]);
     if ( strcmp(argv[1], "attach") == 0 ) {
         FILE *loop_fp;
         FILE *containerimage_fp;
