@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/param.h>
-#include <syslog.h>
 #include <errno.h> 
 #include <signal.h>
 #include <sched.h>
@@ -121,8 +120,6 @@ int main(int argc, char ** argv) {
     signal(SIGINT, sighandler);
     signal(SIGKILL, sighandler);
     signal(SIGQUIT, sighandler);
-
-    openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
 
     // Get all user/group info
     uid = getuid();
@@ -233,7 +230,7 @@ int main(int argc, char ** argv) {
     snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
     message(DEBUG, "Set image mount path to: %s\n", containerpath);
 
-    syslog(LOG_NOTICE, "User=%s[%d], Command=%s, Container=%s, CWD=%s, Arg1=%s", username, uid, command, containerimage, cwd, argv[1]);
+    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s", command, containerimage, cwd, argv[1]);
 
     prompt = (char *) malloc(strlen(containername) + 16);
     snprintf(prompt, strlen(containername) + 16, "Singularity/%s> ", containername);
@@ -319,7 +316,6 @@ int main(int argc, char ** argv) {
     }
     if ( is_owner(sessiondir, 0) < 0 ) {
         message(ERROR, "Container working directory has wrong ownership: %s\n", sessiondir);
-        syslog(LOG_ERR, "Container working directory has wrong ownership: %s", sessiondir);
         ABORT(255);
     }
 
@@ -350,13 +346,11 @@ int main(int argc, char ** argv) {
 
         if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
             message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-            syslog(LOG_ERR, "Failed to open loop device %s: %s", loop_dev, strerror(errno));
             ABORT(255);
         }
 
         if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
             message(ERROR, "Could not associate %s to loop device %s\n", containerimage, loop_dev);
-            syslog(LOG_ERR, "Failed to associate %s to loop device %s", containerimage, loop_dev);
             ABORT(255);
         }
 
@@ -387,7 +381,6 @@ int main(int argc, char ** argv) {
     }
     if ( is_owner(containerpath, 0) < 0 ) {
         message(ERROR, "Container directory is not root owned: %s\n", containerpath);
-        syslog(LOG_ERR, "Container directory has wrong ownership: %s", sessiondir);
         ABORT(255);
     }
 
@@ -992,7 +985,6 @@ int main(int argc, char ** argv) {
     free(loop_dev_lock);
     free(containerpath);
     free(sessiondir);
-    closelog();
 
     return(retval);
 }
