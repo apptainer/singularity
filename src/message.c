@@ -45,55 +45,64 @@ void init(void) {
 
 
 void _message(int level, const char *function, const char *file, int line, char *format, ...) {
-    char *prefix = "";
-    va_list args;
-    va_start (args, format);
 
     if ( messagelevel == -1 ) {
         init();
     }
 
-    switch (level) {
-        case ABRT:
-            prefix = strdup("ABORT");
-            break;
-        case DEBUG:
-            prefix = strdup("DEBUG");
-            break;
-        case WARNING:
-            prefix = strdup("WARNING");
-            break;
-        case ERROR:
-            prefix = strdup("ERROR");
-            break;
-        default:
-            prefix = strdup("VERBOSE");
-            break;
-    }
-
     if ( level <= messagelevel ) {
-        if ( level == INFO ) {
-            vprintf(format, args);
-        } else if ( messagelevel >= 5 ) {
+        va_list args;
+        char *header_string;
+        char *prefix = "";
+        va_start (args, format);
+
+        switch (level) {
+            case ABRT:
+                prefix = strdup("ABORT");
+                break;
+            case DEBUG:
+                prefix = strdup("DEBUG");
+                break;
+            case  WARNING:
+                prefix = strdup("WARNING");
+                break;
+            case ERROR:
+                prefix = strdup("ERROR");
+                break;
+            case INFO:
+                prefix = strdup("INFO");
+                break;
+            default:
+                prefix = strdup("VERBOSE");
+                break;
+        }
+
+        if ( messagelevel >= DEBUG ) {
             char *file_string = (char *)  malloc(64);
-            char *header_string = (char *) malloc(128);
             char *debug_string = (char *) malloc(128);
+            header_string = (char *) malloc(50);
             snprintf(file_string, 63, "%s:%d", file, line);
-            snprintf(debug_string, 127, "%-7s [U=%d,P=%d %s]: ", prefix, geteuid(), getpid(), file_string);
-            snprintf(header_string, 127, "%-48s ", debug_string);
-            vfprintf(stderr, strjoin(header_string, format), args);
-        } else {
-            char *header_string = (char *) malloc(11);
+            snprintf(debug_string, 127, "%-7s [U=%d,P=%d,L=%s]: ", prefix, geteuid(), getpid(), file_string);
+            snprintf(header_string, 50, "%-48s ", debug_string);
+        } else if ( messagelevel > INFO || level < INFO ) {
+            header_string = (char *) malloc(11);
             snprintf(header_string, 10, "%-8s ", strjoin(prefix, ":"));
+        } else {
+            header_string = "";
+        }
+
+        if ( level == INFO ) {
+            vprintf(strjoin(header_string, format), args);
+        } else {
             vfprintf(stderr, strjoin(header_string, format), args);
         }
 
+
+        fflush(stdout);
+        fflush(stderr);
+
+        va_end (args);
     }
-
-    fflush(stdout);
-    fflush(stderr);
-
-    va_end (args);
 
 }
 
