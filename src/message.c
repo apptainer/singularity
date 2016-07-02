@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
+#include <syslog.h>
 
 #include "config.h"
 #include "util.h"
@@ -31,8 +32,12 @@
 
 int messagelevel = -1;
 
+extern const char *__progname;
+
 void init(void) {
     char *messagelevel_string = getenv("MESSAGELEVEL");
+
+    openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
 
     if ( messagelevel_string == NULL ) {
         messagelevel = 1;
@@ -45,37 +50,56 @@ void init(void) {
 
 
 void _message(int level, const char *function, const char *file, int line, char *format, ...) {
+    int syslog_level = LOG_NOTICE;
+    char message[512];
+    char *prefix = "";
+    va_list args;
+    va_start (args, format);
+
+    vsnprintf(message, 512, format, args);
+
+    va_end (args);
 
     if ( messagelevel == -1 ) {
         init();
     }
 
-    if ( level <= messagelevel ) {
-        va_list args;
-        char *header_string;
-        char *prefix = "";
-        va_start (args, format);
+    switch (level) {
+        case ABRT:
+            prefix = strdup("ABORT");
+            syslog_level = LOG_ALERT;
+            break;
+        case ERROR:
+            prefix = strdup("ERROR");
+            syslog_level = LOG_ERR;
+            break;
+        case  WARNING:
+            prefix = strdup("WARNING");
+            syslog_level = LOG_WARNING;
+            break;
+        case LOG:
+            prefix = strdup("LOG");
+            break;
+        case DEBUG:
+            prefix = strdup("DEBUG");
+            break;
+        case INFO:
+            prefix = strdup("INFO");
+            break;
+        default:
+            prefix = strdup("VERBOSE");
+            break;
+    }
 
-        switch (level) {
-            case ABRT:
-                prefix = strdup("ABORT");
-                break;
-            case DEBUG:
-                prefix = strdup("DEBUG");
-                break;
-            case  WARNING:
-                prefix = strdup("WARNING");
-                break;
-            case ERROR:
-                prefix = strdup("ERROR");
-                break;
-            case INFO:
-                prefix = strdup("INFO");
-                break;
-            default:
-                prefix = strdup("VERBOSE");
-                break;
-        }
+    if ( level <= LOG ) {
+        char syslog_string[540]; // 512 max message length + 28'ish chars for header
+        snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message);
+
+        syslog(syslog_level, syslog_string, strlen(syslog_string));
+    }
+
+    if ( level <= messagelevel ) {
+        char *header_string;
 
         if ( messagelevel >= DEBUG ) {
             char *file_string = (char *)  malloc(64);
@@ -84,37 +108,26 @@ void _message(int level, const char *function, const char *file, int line, char 
             snprintf(file_string, 63, "%s:%d", file, line);
             snprintf(debug_string, 127, "%-7s [U=%d,P=%d,L=%s]: ", prefix, geteuid(), getpid(), file_string);
             snprintf(header_string, 50, "%-48s ", debug_string);
-        } else if ( messagelevel > INFO || level < INFO ) {
+        } else {
             header_string = (char *) malloc(11);
             snprintf(header_string, 10, "%-8s ", strjoin(prefix, ":"));
-        } else {
-            header_string = "";
         }
 
         if ( level == INFO ) {
-            vprintf(strjoin(header_string, format), args);
+            printf(strjoin(header_string, message));
         } else {
-            vfprintf(stderr, strjoin(header_string, format), args);
+            fprintf(stderr, strjoin(header_string, message));
         }
 
 
         fflush(stdout);
         fflush(stderr);
 
-        va_end (args);
     }
 
 }
 
-//#define MSG(a,b...) message(a, __func__, __FILE__, __LINE__, b)
-
-/*
-
-int main(void) {
-
-    MSG(DEBUG, "Hello World%s\n", "Yes");
-
-    return(0);
+void singularity_abort(int retval) {
+    message(ABRT, "Exiting with RETVAL=%d\n", retval);
+    exit(retval);
 }
-
-*/

@@ -19,9 +19,10 @@
  */
 
 
-#define ABRT -3
-#define ERROR -2
-#define WARNING -1
+#define ABRT -4
+#define ERROR -3
+#define WARNING -2
+#define LOG -1
 #define INFO 1
 #define VERBOSE 2
 #define VERBOSE1 2
@@ -29,10 +30,8 @@
 #define VERBOSE3 4
 #define DEBUG 5
 
-//void message(int level, char *format, ...);
-
 void _message(int level, const char *function, const char *file, int line, char *format, ...);
-
+void singularity_abort(int retval);
 
 #define message(a,b...) _message(a, __func__, __FILE__, __LINE__, b)
 
