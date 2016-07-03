@@ -115,7 +115,7 @@ if ! eval "$SINGULARITY_libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMA
     exit 1
 fi
 
-if ! LOOP_DEV=`eval "$SINGULARITY_libexecdir/singularity/image-bind" attach "$IMAGE_FILE" 2>/dev/null`; then
+if ! LOOP_DEV=`eval "$SINGULARITY_libexecdir/singularity/image-bind" attach "$IMAGE_FILE"`; then
     message ERROR "Failed binding image: $IMAGE_FILE\n"
     exit 1
 fi
