@@ -37,69 +37,79 @@
 
 
 int build_passwd(char *template, char *output) {
+    FILE *output_fp;
     uid_t uid = getuid();
+    struct passwd *pwent = getpwuid(uid);
 
+    message(DEBUG, "Called build_passwd(%s, %s)\n", template, output);
+
+    message(VERBOSE, "Checking for template passwd file: %s\n", template);
     if ( is_file(template) < 0 ) {
         message(WARNING, "Template passwd not found: %s\n", template);
         return(-1);
     }
 
+    message(VERBOSE2, "Copying template passwd file to sessiondir\n");
     if ( copy_file(template, output) < 0 ) {
         message(WARNING, "Could not copy %s to %s: %s\n", template, output, strerror(errno));
         return(-1);
     }
 
-    if ( uid != 0 ) {
-        FILE *fd_output;
-        uid_t uid = getuid();
-        struct passwd *pwent = getpwuid(uid);
+    message(VERBOSE2, "Adding user info to template passwd file\n");
+    output_fp = fopen(output, "a");
+    fprintf(output_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
+    fclose(output_fp);
 
-        fd_output = fopen(output, "a");
-        fprintf(fd_output, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
-        fclose(fd_output);
-    }
+    message(DEBUG, "Returning build_passwd(%s, %s) = 0\n", template, output);
 
     return(0);
 }
 
 
 int build_group(char *template, char *output) {
-    gid_t gid = getgid();
+    FILE *output_fp;
+    int groupcount;
+    int i;
+    int maxgroups = sysconf(_SC_NGROUPS_MAX) + 1;
+    uid_t uid = getuid();
+    uid_t gid = getgid();
+    gid_t gids[maxgroups];
+    struct passwd *pwent = getpwuid(uid);
+    struct group *grent = getgrgid(gid);
 
+    message(DEBUG, "Called build_group(%s, %s)\n", template, output);
+
+    message(VERBOSE, "Checking for template group file: %s\n", template);
     if ( is_file(template) < 0 ) {
         message(WARNING, "Template group file not found: %s\n", template);
         return(-1);
     }
 
+    message(VERBOSE2, "Copying template group file to sessiondir\n");
     if ( copy_file(template, output) < 0 ) {
         message(WARNING, "Could not copy %s to %s: %s\n", template, output, strerror(errno));
         return(-1);
     }
 
-    if ( gid != 0 ) {
-        FILE *fd_output;
-        int groupcount;
-        int i;
-        int maxgroups = sysconf(_SC_NGROUPS_MAX) + 1;
-        uid_t uid = getuid();
-        gid_t gids[maxgroups];
-        struct passwd *pwent = getpwuid(uid);
-        struct group *grent = getgrgid(gid);
 
-        fd_output = fopen(output, "a");
-        fprintf(fd_output, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
+    message(VERBOSE2, "Adding user's primary group ('%s') info to template group file\n", grent->gr_name);
+    output_fp = fopen(output, "a");
+    fprintf(output_fp, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
 
-        groupcount = getgroups(maxgroups, gids);
+    message(DEBUG, "Getting supplementary group info\n");
+    groupcount = getgroups(maxgroups, gids);
 
-        for (i=0; i<= groupcount; i++) {
-            if ( gids[i] >= 500 && gids[i] != grent->gr_gid ) {
-                struct group *gr = getgrgid(gids[i]);
-                fprintf(fd_output, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
-            }
+    for (i=0; i<= groupcount; i++) {
+        if ( gids[i] >= 500 && gids[i] != grent->gr_gid ) {
+            struct group *gr = getgrgid(gids[i]);
+            message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
+            fprintf(output_fp, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
         }
-
-        fclose(fd_output);
     }
+
+    fclose(output_fp);
+
+    message(DEBUG, "Returning build_group(%s, %s) = 0\n", template, output);
 
     return(0);
 }
