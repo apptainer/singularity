@@ -102,20 +102,20 @@ void _message(int level, const char *function, const char *file, int line, char 
         char *header_string;
 
         if ( messagelevel >= DEBUG ) {
-            char *debug_string = (char *) malloc(60);
-            char *function_string = (char *) malloc(25);
+            char *debug_string = (char *) malloc(25);
+            char *location_string = (char *) malloc(60);
             char *tmp_header_string = (char *) malloc(80);
             header_string = (char *) malloc(80);
-            snprintf(function_string, 25, "%s()", function);
-            snprintf(debug_string, 40, "[U=%d,P=%d,L=%s:%d]", geteuid(), getpid(), file, line);
-            snprintf(tmp_header_string, 80, "%-38s %s", debug_string, function_string);
-            snprintf(header_string, 80, "%-7s %-62s: ", prefix, tmp_header_string);
+            snprintf(location_string, 60, "%s:%d:%s()", file, line, function);
+            snprintf(debug_string, 25, "[U=%d,P=%d]", geteuid(), getpid());
+            snprintf(tmp_header_string, 80, "%-18s %s", debug_string, location_string);
+            snprintf(header_string, 80, "%-7s %-55s: ", prefix, tmp_header_string);
             free(debug_string);
-            free(function_string);
+            free(location_string);
             free(tmp_header_string);
         } else {
             header_string = (char *) malloc(11);
-            snprintf(header_string, 10, "%-8s ", strjoin(prefix, ":"));
+            snprintf(header_string, 10, "%-7s: ", prefix);
         }
 
         if ( level == INFO ) {
