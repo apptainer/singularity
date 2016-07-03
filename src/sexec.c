@@ -86,7 +86,6 @@ int main(int argc, char ** argv) {
     char *containerimage;
     char *containername;
     char *containerpath;
-    char *username;
     char *command;
     char *sessiondir;
     char *sessiondir_prefix;
@@ -144,8 +143,7 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
-    message(DEBUG, "Obtaining username and homedir\n");
-    username = pw->pw_name;
+    message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
 
     // Figure out where we start
