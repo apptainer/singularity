@@ -55,7 +55,7 @@ int build_passwd(char *template, char *output) {
         return(-1);
     }
 
-    message(VERBOSE2, "Adding user info to template passwd file\n");
+    message(VERBOSE, "Creating template passwd file and appending user data\n");
     output_fp = fopen(output, "a");
     fprintf(output_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
     fclose(output_fp);
@@ -92,7 +92,7 @@ int build_group(char *template, char *output) {
     }
 
 
-    message(VERBOSE2, "Adding user's primary group ('%s') info to template group file\n", grent->gr_name);
+    message(VERBOSE, "Creating template group file and appending user data\n");
     output_fp = fopen(output, "a");
     fprintf(output_fp, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
 
