@@ -109,7 +109,7 @@ void _message(int level, const char *function, const char *file, int line, char 
             snprintf(location_string, 60, "%s:%d:%s()", file, line, function);
             snprintf(debug_string, 25, "[U=%d,P=%d]", geteuid(), getpid());
             snprintf(tmp_header_string, 80, "%-18s %s", debug_string, location_string);
-            snprintf(header_string, 80, "%-7s %-55s: ", prefix, tmp_header_string);
+            snprintf(header_string, 80, "%-7s %-62s: ", prefix, tmp_header_string);
             free(debug_string);
             free(location_string);
             free(tmp_header_string);
