@@ -415,13 +415,6 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
-        if ( is_fifo(joinpath(sessiondir, "daemon.comm")) < 0 ) {
-            if ( mkfifo(joinpath(sessiondir, "daemon.comm"), 0664) < 0 ) {
-                message(ERROR, "Could not create communication fifo: %s\n", strerror(errno));
-                ABORT(255);
-            }
-        }
-
         message(DEBUG, "Forking namespace daemon process\n");
         if ( daemon(0,0) < 0 ) {
             message(ERROR, "Could not daemonize: %s\n", strerror(errno));

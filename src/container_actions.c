@@ -51,7 +51,7 @@ int container_run(int argc, char **argv) {
         container_shell(argc, argv);
     }
 
-    message(ERROR, "We should not have reached here...\n");
+    message(ERROR, "We should not have reached the end of container_run()\n");
     return(-1);
 }
 
@@ -68,7 +68,7 @@ int container_exec(int argc, char **argv) {
         ABORT(255);
     }
 
-    message(ERROR, "We should not have reached here...\n");
+    message(ERROR, "We should not have reached the end of container_exec\n");
     return(-1);
 }
 
@@ -100,7 +100,7 @@ int container_shell(int argc, char **argv) {
         }
     }
 
-    message(ERROR, "We should not have reached here...\n");
+    message(ERROR, "We should not have reached the end of container_shell()\n");
     return(-1);
 }
 
@@ -109,19 +109,35 @@ int container_daemon_start(char *tmpdir) {
     FILE *comm;
     char line[256];
 
+    message(DEBUG, "Called container_daemon_start(%s)\n", tmpdir);
+
+    message(VERBOSE, "Creating daemon.comm fifo\n");
+    if ( is_fifo(joinpath(sessiondir, "daemon.comm")) < 0 ) {
+        if ( mkfifo(joinpath(sessiondir, "daemon.comm"), 0664) < 0 ) {
+            message(ERROR, "Could not create communication fifo: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    }
+
+// TODO: Create a daemon_start_init function
+    message(DEBUG, "Opening daemon.comm for writing\n");
     if ( ( comm = fopen(joinpath(tmpdir, "daemon.comm"), "r") ) == NULL ) {
         message(ERROR, "Could not open communication fifo %s: %s\n", joinpath(tmpdir, "daemon.comm"), strerror(errno));
         ABORT(255);
     }
 
+    message(DEBUG, "Waiting for read on daemon.comm\n");
     while ( fgets(line, 256, comm) ) {
         if ( strcmp(line, "stop") == 0 ) {
             message(INFO, "Stopping daemon\n");
             break;
+        } else {
+            message(WARNING, "Got unsupported daemon.comm command: '%s'\n", line);
         }
     }
     fclose(comm);
 
+    message(DEBUG, "Return container_daemon_start(%s) = 0\n", tmpdir);
     return(0);
 }
 
@@ -131,36 +147,45 @@ int container_daemon_stop(char *tmpdir) {
     FILE *test_daemon_fp;
     int daemon_fd;
 
+    message(DEBUG, "Called container_daemon_stop(%s)\n", tmpdir);
+
+    message(VERBOSE, "Checking if daemon is currently running for this container\n");
     if ( is_file(joinpath(tmpdir, "daemon.pid")) < 0 ) {
         message(ERROR, "Daemon process is not running\n");
         return(0);
     }
 
+    message(DEBUG, "Opening daemon.pid for reading\n");
     if ( ( test_daemon_fp = fopen(joinpath(tmpdir, "daemon.pid"), "r") ) == NULL ) {
         message(ERROR, "Could not open daemon pid file %s: %s\n", joinpath(tmpdir, "daemon.pid"), strerror(errno));
         ABORT(255);
     }
 
+    message(DEBUG, "Testing to see if daemon process is still active\n");
     daemon_fd = fileno(test_daemon_fp);
     if ( flock(daemon_fd, LOCK_SH | LOCK_NB) == 0 ) {
         message(INFO, "No active container daemon active\n");
         return(0);
     }
 
+    message(DEBUG, "Connecting to daemon.comm FIFO\n");
     if ( is_fifo(joinpath(tmpdir, "daemon.comm")) < 0 ) {
         message(ERROR, "Container daemon COMM not available\n");
         ABORT(255);
     }
 
+    message(VERBOSE, "Opening daemon.comm for writing\n");
     if ( ( comm = fopen(joinpath(tmpdir, "daemon.comm"), "w") ) == NULL ) {
         message(ERROR, "Could not open fifo for writing %s: %s\n", joinpath(tmpdir, "daemon.comm"), strerror(errno));
         ABORT(255);
     }
 
+    message(VERBOSE, "Sending stop command to daemon process\n");
     fputs("stop", comm);
 
     fclose(comm);
 
+    message(DEBUG, "Return container_daemon_stop(%s) = 0\n", tmpdir);
     return(0);
 }
 
