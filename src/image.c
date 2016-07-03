@@ -90,6 +90,7 @@ int image_create(char *image, int size) {
 int image_expand(char *image, int size) {
     FILE *image_fp;
     long position;
+    int i;
 
     message(VERBOSE, "Expanding sparse image at: %s\n", image);
 
