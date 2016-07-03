@@ -43,7 +43,7 @@ int build_passwd(char *template, char *output) {
 
     message(DEBUG, "Called build_passwd(%s, %s)\n", template, output);
 
-    message(VERBOSE, "Checking for template passwd file: %s\n", template);
+    message(VERBOSE2, "Checking for template passwd file: %s\n", template);
     if ( is_file(template) < 0 ) {
         message(WARNING, "Template passwd not found: %s\n", template);
         return(-1);
@@ -79,7 +79,7 @@ int build_group(char *template, char *output) {
 
     message(DEBUG, "Called build_group(%s, %s)\n", template, output);
 
-    message(VERBOSE, "Checking for template group file: %s\n", template);
+    message(VERBOSE2, "Checking for template group file: %s\n", template);
     if ( is_file(template) < 0 ) {
         message(WARNING, "Template group file not found: %s\n", template);
         return(-1);
