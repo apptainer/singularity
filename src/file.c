@@ -208,6 +208,8 @@ int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *
 }
 
 int s_rmdir(char *dir) {
+
+    message(DEBUG, "Removing dirctory: %s\n", dir);
     return(nftw(dir, _unlink, 32, FTW_DEPTH));
 }
 
@@ -216,7 +218,7 @@ int copy_file(char * source, char * dest) {
     FILE * fd_s;
     FILE * fd_d;
 
-    message(DEBUG, "Called open_file(%s, %s)\n", source, dest);
+    message(DEBUG, "Called copy_file(%s, %s)\n", source, dest);
 
     if ( is_file(source) < 0 ) {
         message(ERROR, "Could not copy from non-existant source: %s\n", source);
@@ -250,6 +252,7 @@ int copy_file(char * source, char * dest) {
 int fileput(char *path, char *string) {
     FILE *fd;
 
+    message(DEBUG, "Called fileput(%s, %s)\n", path, string);
     fd = fopen(path, "w");
     if ( fd == NULL ) {
         message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
@@ -268,6 +271,8 @@ char *filecat(char *path) {
     int c;
     long length;
     long pos = 0;
+
+    message(DEBUG, "Called filecat(%s)\n", path);
     
     if ( is_file(path) < 0 ) {
         message(ERROR, "Could not find %s\n", path);

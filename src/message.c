@@ -120,7 +120,7 @@ void _message(int level, const char *function, const char *file, int line, char 
 
         if ( level == INFO ) {
             printf(strjoin(header_string, message));
-        } else if ( level == LOG ) {
+        } else if ( level == LOG && messagelevel == INFO ) {
             // Don't print anything...
         } else {
             fprintf(stderr, strjoin(header_string, message));
