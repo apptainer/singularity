@@ -20,8 +20,8 @@
 
 
 
-int container_daemon_start(char *tmpdir);
-int container_daemon_stop(char *tmpdir);
+int container_daemon_start(char *sessiondir);
+int container_daemon_stop(char *sessiondir);
 int container_shell(int argc, char **argv);
 int container_exec(int argc, char **argv);
 int container_run(int argc, char **argv);
