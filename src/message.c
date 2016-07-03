@@ -102,12 +102,17 @@ void _message(int level, const char *function, const char *file, int line, char 
         char *header_string;
 
         if ( messagelevel >= DEBUG ) {
-            char *file_string = (char *)  malloc(64);
-            char *debug_string = (char *) malloc(128);
-            header_string = (char *) malloc(50);
-            snprintf(file_string, 63, "%s:%d", file, line);
-            snprintf(debug_string, 127, "%-7s [U=%d,P=%d,L=%s]: ", prefix, geteuid(), getpid(), file_string);
-            snprintf(header_string, 50, "%-48s ", debug_string);
+            char *debug_string = (char *) malloc(60);
+            char *function_string = (char *) malloc(25);
+            char *tmp_header_string = (char *) malloc(80);
+            header_string = (char *) malloc(80);
+            snprintf(function_string, 25, "%s()", function);
+            snprintf(debug_string, 40, "[U=%d,P=%d,L=%s:%d]", geteuid(), getpid(), file, line);
+            snprintf(tmp_header_string, 80, "%-38s %s", debug_string, function_string);
+            snprintf(header_string, 80, "%-7s %-62s: ", prefix, tmp_header_string);
+            free(debug_string);
+            free(function_string);
+            free(tmp_header_string);
         } else {
             header_string = (char *) malloc(11);
             snprintf(header_string, 10, "%-8s ", strjoin(prefix, ":"));
@@ -115,6 +120,8 @@ void _message(int level, const char *function, const char *file, int line, char 
 
         if ( level == INFO ) {
             printf(strjoin(header_string, message));
+        } else if ( level == LOG ) {
+            // Don't print anything...
         } else {
             fprintf(stderr, strjoin(header_string, message));
         }

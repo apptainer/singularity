@@ -111,14 +111,6 @@ int container_daemon_start(char *sessiondir) {
 
     message(DEBUG, "Called container_daemon_start(%s)\n", sessiondir);
 
-    message(VERBOSE, "Creating daemon.comm fifo\n");
-    if ( is_fifo(joinpath(sessiondir, "daemon.comm")) < 0 ) {
-        if ( mkfifo(joinpath(sessiondir, "daemon.comm"), 0664) < 0 ) {
-            message(ERROR, "Could not create communication fifo: %s\n", strerror(errno));
-            ABORT(255);
-        }
-    }
-
 // TODO: Create a daemon_start_init function
     message(DEBUG, "Opening daemon.comm for writing\n");
     if ( ( comm = fopen(joinpath(sessiondir, "daemon.comm"), "r") ) == NULL ) {

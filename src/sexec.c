@@ -228,7 +228,7 @@ int main(int argc, char ** argv) {
     snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
     message(DEBUG, "Set image mount path to: %s\n", containerpath);
 
-    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s", command, containerimage, cwd, argv[1]);
+    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
 
     prompt = (char *) malloc(strlen(containername) + 16);
     snprintf(prompt, strlen(containername) + 16, "Singularity/%s> ", containername);
@@ -403,6 +403,14 @@ int main(int argc, char ** argv) {
         } else {
             if ( ( daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "w") ) == NULL ) {
                 message(ERROR, "Could not open daemon pid file for writing %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
+                ABORT(255);
+            }
+        }
+
+        message(VERBOSE, "Creating daemon.comm fifo\n");
+        if ( is_fifo(joinpath(sessiondir, "daemon.comm")) < 0 ) {
+            if ( mkfifo(joinpath(sessiondir, "daemon.comm"), 0664) < 0 ) {
+                message(ERROR, "Could not create communication fifo: %s\n", strerror(errno));
                 ABORT(255);
             }
         }
@@ -801,30 +809,6 @@ int main(int argc, char ** argv) {
             retval++;
         }
 
-        message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
-        if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
-            close(sessiondirlock_fd);
-            if ( escalate_privs() < 0 ) {
-                ABORT(255);
-            }
-
-            message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
-            if ( s_rmdir(sessiondir) < 0 ) {
-                message(WARNING, "Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
-            }
-    
-            // Dissociate loops from here Just in case autoflush didn't work.
-            (void)disassociate_loop(loop_fp);
-
-            if ( drop_privs(&uinfo) < 0 ) {
-                ABORT(255);
-            }
-
-        } else {
-//        printf("Not removing sessiondir, lock still\n");
-        }
-
-
 
 //****************************************************************************//
 // Attach to daemon process flow
@@ -967,6 +951,32 @@ int main(int argc, char ** argv) {
         message(VERBOSE, "Exec parent process returned: %d\n", retval);
 #endif
     }
+
+    message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
+    if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
+        close(sessiondirlock_fd);
+
+        message(DEBUG, "Escalating privs to clean session directory\n");
+        if ( escalate_privs() < 0 ) {
+            ABORT(255);
+        }
+
+        message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
+        if ( s_rmdir(sessiondir) < 0 ) {
+            message(WARNING, "Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
+        }
+
+        // Dissociate loops from here Just in case autoflush didn't work.
+        (void)disassociate_loop(loop_fp);
+
+        if ( drop_privs(&uinfo) < 0 ) {
+            ABORT(255);
+        }
+
+    } else {
+//        printf("Not removing sessiondir, lock still\n");
+    }
+
 
     message(VERBOSE2, "Cleaning up...\n");
 

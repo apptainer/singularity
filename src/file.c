@@ -45,6 +45,8 @@ char *file_id(char *path) {
     char *ret;
     uid_t uid = getuid();
 
+    message(DEBUG, "Called file_id(%s)\n", path);
+
     // Stat path
     if (lstat(path, &filestat) < 0) {
         return(NULL);
@@ -52,6 +54,10 @@ char *file_id(char *path) {
 
     ret = (char *) malloc(128);
     snprintf(ret, 128, "%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino);
+
+    message(VERBOSE2, "Generated file_id: %s\n", ret);
+
+    message(DEBUG, "Returning file_id(%s) = %s\n", path, ret);
     return(ret);
 }
 
@@ -187,6 +193,7 @@ int s_mkpath(char *dir, mode_t mode) {
         return(-1);
     }
 
+    message(DEBUG, "Creating directory: %s\n", dir);
     if ( mkdir(dir, mode) < 0 ) {
         message(ERROR, "Could not create directory %s: %s\n", dir, strerror(errno));
         return(-1);
@@ -209,8 +216,10 @@ int copy_file(char * source, char * dest) {
     FILE * fd_s;
     FILE * fd_d;
 
+    message(DEBUG, "Called open_file(%s, %s)\n", source, dest);
+
     if ( is_file(source) < 0 ) {
-        printf("No such file: %s->%s\n", source, dest);
+        message(ERROR, "Could not copy from non-existant source: %s\n", source);
         return(-1);
     }
 
