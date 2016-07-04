@@ -303,7 +303,7 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
-    message(VERBOSE, "Creating session directory: %s\n", sessiondir);
+    message(VERBOSE, "Creating/Verifying session directory: %s\n", sessiondir);
     if ( s_mkpath(sessiondir, 0755) < 0 ) {
         message(ERROR, "Failed creating session directory: %s\n", sessiondir);
         ABORT(255);
