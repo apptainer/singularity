@@ -118,12 +118,14 @@ void _message(int level, const char *function, const char *file, int line, char 
             snprintf(header_string, 10, "%-7s: ", prefix);
         }
 
-        if ( level == INFO ) {
-            printf(strjoin(header_string, message));
+        if ( level == INFO && messagelevel == INFO ) {
+            printf("%s", message);
+        } else if ( level == INFO ) {
+            printf("%s", strjoin(header_string, message));
         } else if ( level == LOG && messagelevel == INFO ) {
             // Don't print anything...
         } else {
-            fprintf(stderr, strjoin(header_string, message));
+            fprintf(stderr, "%s", strjoin(header_string, message));
         }
 
 
