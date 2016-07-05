@@ -28,7 +28,7 @@ elif INSTALL_CMD=`singularity_which yum`; then
     INSTALL_CMD="$INSTALL_CMD --tolerant"
 else
     message ERROR "Neither yum nor dnf in PATH!\n"
-    return 255
+    exit 1
 fi
 
 REPO_COUNT=0

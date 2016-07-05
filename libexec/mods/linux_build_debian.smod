@@ -23,7 +23,7 @@
 
 if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     message ERROR "debootstrap is not in PATH... Perhaps 'apt-get install' it?\n"
-    return 255
+    exit 1
 fi
 
 if uname -m | grep -q x86_64; then
