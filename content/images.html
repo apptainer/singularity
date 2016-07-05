@@ -4,8 +4,8 @@
 <p>
 Singularity images are single files which physically contain the container.
 Singularity images are 'sparse' files in that they start off with a giant hole
-and thus it does not consume disk space until you fill the hole (e.g. a 1GB
-image may start off only taking about 30MB of physical disk space). As you fill
+and thus it does not consume disk space until you fill the hole (e.g. a 1GiB
+image may start off only taking about 30MiB of physical disk space). As you fill
 the image by installing files, data, and programs into it you will find it
 increase in size.
 </p>
@@ -19,7 +19,7 @@ completely with a simple chmod command).
 
 <h2>Creating a new blank Singularity container image</h2>
 <p>
-Singularity will create a default container image of 1GB using the following
+Singularity will create a default container image of 1GiB using the following
 command example:
 </p>
 
@@ -38,8 +38,8 @@ $ du -sh container.img
 
 <p>
 Here we created a new container image called 'container.img' in the current
-directory. You can see the the 'ls' command reports it is 1GB in size, but when
-checking the actual disk usage, it reports only 33MB. As we add files to the
+directory. You can see the the 'ls' command reports it is 1GiB in size, but when
+checking the actual disk usage, it reports only 33MiB. As we add files to the
 image, its actual disk usage will increase.
 </p>
 
