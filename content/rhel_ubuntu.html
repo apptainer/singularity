@@ -5,7 +5,7 @@
 This recipe describes how to build an Ubuntu image using Singularity on a RHEL compatible host. In order to do this, you will need to first install the 'debootstrap' package onto your host. Then, you will create a definition file that will describe how to build your Ubuntu image. Finally, you will build the image using the Singularity commands 'create' and 'bootstrap'.
 </p>
 
-<h4>Preperation</h4>
+<h4>Preparation</h4>
 <p>
   This recipe assumes that you have already installed Singularity on your computer. If you have not, follow the instructions here to <a href="javascript:load_content('install')">install</a>.
   
@@ -22,7 +22,7 @@ $ sudo yum install debootstrap
 
 <h4>Creating the Definition File</h4>
 <p>
-  You will need to create a definition file to describe how to build your Ubuntu image. Definition files are plaintext files that contain Singularity keywords. By using certain Singularity keywords, you can specifiy how you want your image to be built. The extension '.def' is recommended for user clarity. Below is a definition file for a minimal Ubuntu image:
+  You will need to create a definition file to describe how to build your Ubuntu image. Definition files are plaintext files that contain Singularity keywords. By using certain Singularity keywords, you can specify how you want your image to be built. The extension '.def' is recommended for user clarity. Below is a definition file for a minimal Ubuntu image:
 </p>
 
 <pre>
@@ -39,24 +39,24 @@ Cleanup
 <p>
   The following keywords were used in this definition file:
   <ul>
-  <li>
-    <b>DistType</b>: DistType specifies the distribution type of your intended operating system. Because we are trying to build an Ubuntu image, the type "debian" was chosen. 
-  </li>
-  <li>
-    <b>MirrorURL</b>: The MirrorURL specifies the download link for your intended operating system. The Ubuntu archive website is a great mirror link to use if you are building an Ubuntu image. 
-  </li>
-  <li>
-    <b>OSVersion</b>: The OSVersion is used to specify which release of a Debian-based distribution you are using. In this example we chose "trusty" to specifiy that we wanted to build an Ubuntu 14.04 (Trusty Tahr) image. 
-  </li>
-  <li>
-    <b>Setup</b>: Setup creates some of the base files and components for an OS and is highly recommended to be included in your definition file. 
-  </li>
-  <li>
-    <b>Bootstrap</b>: Bootstrap will call apt-get to install the appropriate package to build your OS. 
-  </li>
-  <li>
-    <b>Cleanup</b>: Cleanup remove temporary files from the installation. 
-  </li>
+    <li>
+      <b>DistType</b>: DistType specifies the distribution type of your intended operating system. Because we are trying to build an Ubuntu image, the type "debian" was chosen. 
+    </li>
+    <li>
+      <b>MirrorURL</b>: The MirrorURL specifies the download link for your intended operating system. The Ubuntu archive website is a great mirror link to use if you are building an Ubuntu image. 
+    </li>
+    <li>
+      <b>OSVersion</b>: The OSVersion is used to specify which release of a Debian-based distribution you are using. In this example we chose "trusty" to specify that we wanted to build an Ubuntu 14.04 (Trusty Tahr) image. 
+    </li>
+    <li>
+      <b>Setup</b>: Setup creates some of the base files and components for an OS and is highly recommended to be included in your definition file. 
+    </li>
+    <li>
+      <b>Bootstrap</b>: Bootstrap will call apt-get to install the appropriate package to build your OS. 
+    </li>
+    <li>
+      <b>Cleanup</b>: Cleanup will remove temporary files from the installation. 
+    </li>
   </ul>
 </p>
 
@@ -76,6 +76,7 @@ InstallPkgs python
 InstallPkgs wget
 RunCmd wget https://bootstrap.pypa.io/get-pip.py
 RunCmd python get-pip.py
+RunCmd pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp27-none-linux_x86_64.whl
 
 Cleanup
 </pre>
@@ -83,23 +84,23 @@ Cleanup
 <p>
   Before going over exactly what image this definition file specifies, the remaining Singularity keywords should be introduced.
   <ul>
-  <li>
-    <b>InstallPkgs</b>: InstallPkgs allows you to install any packages that you want on your newly created image.
-  </li>
-  <li>
-    <b>InstallFile</b>: InstallFile allows you to install files from your computer to the image.
-  </li>
-  <li>
-    <b>RunCmd</b>: RunCmd allows you to run a command from within the new image during the installation.
-  </li>
-  <li>
-    <b>RunScript</b>: RunScript adds a new line to the runscript invoked by the Singularity subcommand 'run'. See the <a href="javascript:load_content('cli_run')">run</a> page for more information.
-  </li>
+    <li>
+      <b>InstallPkgs</b>: InstallPkgs allows you to install any packages that you want on your newly created image.
+    </li>
+    <li>
+      <b>InstallFile</b>: InstallFile allows you to install files from your computer to the image.
+    </li>
+    <li>
+      <b>RunCmd</b>: RunCmd allows you to run a command from within the new image during the installation.
+    </li>
+    <li>
+      <b>RunScript</b>: RunScript adds a new line to the runscript invoked by the Singularity subcommand 'run'. See the <a href="javascript:load_content('cli_run')">run</a> page for more information.
+    </li>
   </ul>
 </p>
 
 <p>
-  Now that you are familiar with all of the Singularity keywords, we can take a closer look at the example above. As with the previous example, an Ubuntu image is created with the specified DistType, MirrorURL, and OSVersion. However, after Setup and Bootstrap, we used the InstallPkgs keyword to install 'python' and 'wget'. Then we used the RunCmd keyword to first download the pip installation wheel, and then to install pip. Thus, we have created a definition file that will install 'python' and 'pip' onto the new image. 
+  Now that you are familiar with all of the Singularity keywords, we can take a closer look at the example above. As with the previous example, an Ubuntu image is created with the specified DistType, MirrorURL, and OSVersion. However, after Setup and Bootstrap, we used the InstallPkgs keyword to install 'python' and 'wget'. Then we used the RunCmd keyword to first download the pip installation wheel, and then to install 'pip'. Subsequently, we also used RunCmd to pip install 'TensorFlow'. Thus, we have created a definition file that will install 'python', 'pip', and 'Tensorflow' onto the new image. 
 </p>
 
 <h4>Creating your image</h4>
@@ -142,5 +143,33 @@ Downloading wheel-0.29.0-py2.py3-none-any.whl (66kB)
 Installing collected packages: pip, setuptools, wheel
 Successfully installed pip-8.1.2 setuptools-24.0.2 wheel-0.29.0
 </pre>
-At this point, you have successfully created an Ubuntu image with 'python' and 'pip' on your RHEL computer. 
+At this point, you have successfully created an Ubuntu image with 'python', 'pip', and 'TensorFlow' on your RHEL computer. 
+</p>
+
+<h4>Tips and Tricks</h4>
+<p>
+  Here are some tips and tricks that you can use to create more efficient definition files:
+  <ol>
+    <b><li>Use here documents with RunCmd</li></b>
+    <p>Using here documents with conjunction with RunCmd can be a great way to decrease the number of RunCmd keywords that you need to include in your definition file. For example, we can substitute a here document into the previous example: </p>
+    <pre>
+DistType "debian"
+MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
+OSVersion "trusty"
+  
+Setup 
+Bootstrap
+  
+InstallPkgs python
+InstallPkgs wget
+RunCmd /bin/sh &lt&ltEOF
+wget https://bootstrap.pypa.io/get-pip.py
+python get-pip.py
+pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp27-none-linux_x86_64.whl
+EOF
+
+Cleanup
+    </pre>
+    <p>As you can see, using a here document allowed us to decrease the number of RunCmd keywords from 3 to 1. This can be useful when your definition file has a lot of RunCmd keywords and can also ease copying and pasting command line recipes from other sources. </p>
+  </ol>
 </p>
