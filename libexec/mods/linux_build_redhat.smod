@@ -87,6 +87,7 @@ Bootstrap() {
 
     __mountproc
     __mountsys
+    __mountdev
 
     return 0
 }

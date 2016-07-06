@@ -219,3 +219,14 @@ __mountsys() {
 
     return $?
 }
+
+__mountdev() {
+    if [ -d "/dev" -a -d "$SINGULARITY_BUILD_ROOT/dev" ]; then
+        mkdir -p -m 0755 "$SINGULARITY_BUILD_ROOT/dev"
+    fi
+    mount --rbind "/dev/" "$SINGULARITY_BUILD_ROOT/dev"
+
+    return $?
+}
+
+
