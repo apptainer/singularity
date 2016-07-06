@@ -87,7 +87,7 @@ Bootstrap() {
 
 
 InstallPkgs() {
-    if ! __runcmd apt-get -y --force-yes install "$*"; then
+    if ! __runcmd apt-get -y --force-yes install "$@"; then
         return 1
     fi
 
