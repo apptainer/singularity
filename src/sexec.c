@@ -85,7 +85,7 @@ int main(int argc, char ** argv) {
     FILE *daemon_fp = NULL;
     char *containerimage;
     char *containername;
-    char *containerpath;
+    char *containerdir;
     char *command;
     char *sessiondir;
     char *sessiondir_prefix;
@@ -224,9 +224,12 @@ int main(int argc, char ** argv) {
     loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
     loop_dev_cache = joinpath(sessiondir, "loop_dev");
 
-    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
-    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
-    message(DEBUG, "Set image mount path to: %s\n", containerpath);
+    rewind(config_fp);
+    if ( ( containerdir = config_get_key_value(config_fp, "container dir") ) == NULL ) {
+        //containerdir = (char *) malloc(21);
+        containerdir = strdup("/var/singularity/mnt");
+    }
+    message(DEBUG, "Set image mount path to: %s\n", containerdir);
 
     message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
 
@@ -372,13 +375,13 @@ int main(int argc, char ** argv) {
         }
     }
 
-    message(DEBUG, "Creating container image mount path: %s\n", containerpath);
-    if ( s_mkpath(containerpath, 0755) < 0 ) {
-        message(ERROR, "Failed creating image directory %s\n", containerpath);
+    message(DEBUG, "Creating container image mount path: %s\n", containerdir);
+    if ( s_mkpath(containerdir, 0755) < 0 ) {
+        message(ERROR, "Failed creating image directory %s\n", containerdir);
         ABORT(255);
     }
-    if ( is_owner(containerpath, 0) < 0 ) {
-        message(ERROR, "Container directory is not root owned: %s\n", containerpath);
+    if ( is_owner(containerdir, 0) < 0 ) {
+        message(ERROR, "Container directory is not root owned: %s\n", containerdir);
         ABORT(255);
     }
 
@@ -503,12 +506,12 @@ int main(int argc, char ** argv) {
             if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
                 unsetenv("SINGULARITY_WRITABLE");
                 message(DEBUG, "Mounting Singularity image file read/write\n");
-                if ( mount_image(loop_dev, containerpath, 0) < 0 ) {
+                if ( mount_image(loop_dev, containerdir, 0) < 0 ) {
                     ABORT(255);
                 }
             } else {
                 message(DEBUG, "Mounting Singularity image file read only\n");
-                if ( mount_image(loop_dev, containerpath, 1) < 0 ) {
+                if ( mount_image(loop_dev, containerdir, 1) < 0 ) {
                     ABORT(255);
                 }
             }
@@ -516,7 +519,7 @@ int main(int argc, char ** argv) {
 
             // /bin/sh MUST exist as the minimum requirements for a container
             message(DEBUG, "Checking if container has /bin/sh\n");
-            if ( is_exec(joinpath(containerpath, "/bin/sh")) < 0 ) {
+            if ( is_exec(joinpath(containerdir, "/bin/sh")) < 0 ) {
                 message(ERROR, "Container image does not have a valid /bin/sh\n");
                 ABORT(1);
             }
@@ -530,11 +533,11 @@ int main(int argc, char ** argv) {
                 message(DEBUG, "Checking configuration file for 'mount home'\n");
                 rewind(config_fp);
                 if ( config_get_key_bool(config_fp, "mount home", 1) > 0 ) {
-                    if ( ( homedir_base = container_basedir(containerpath, homedir) ) != NULL ) {
+                    if ( ( homedir_base = container_basedir(containerdir, homedir) ) != NULL ) {
                         if ( is_dir(homedir_base) == 0 ) {
-                            if ( is_dir(joinpath(containerpath, homedir_base)) == 0 ) {
+                            if ( is_dir(joinpath(containerdir, homedir_base)) == 0 ) {
                                 message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
-                                if ( mount_bind(homedir_base, joinpath(containerpath, homedir_base), 1) < 0 ) {
+                                if ( mount_bind(homedir_base, joinpath(containerdir, homedir_base), 1) < 0 ) {
                                     ABORT(255);
                                 }
                             } else {
@@ -575,13 +578,13 @@ int main(int argc, char ** argv) {
                         message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
                         continue;
                     }
-                    if ( ( is_file(joinpath(containerpath, dest)) != 0 ) && ( is_dir(joinpath(containerpath, dest)) != 0 ) ) {
+                    if ( ( is_file(joinpath(containerdir, dest)) != 0 ) && ( is_dir(joinpath(containerdir, dest)) != 0 ) ) {
                         message(WARNING, "Non existant 'bind point' in container: '%s'\n", dest);
                         continue;
                     }
 
                     message(VERBOSE, "Binding '%s' to '%s:%s'\n", source, containername, dest);
-                    if ( mount_bind(source, joinpath(containerpath, dest), 1) < 0 ) {
+                    if ( mount_bind(source, joinpath(containerdir, dest), 1) < 0 ) {
                         ABORT(255);
                     }
                 }
@@ -591,16 +594,16 @@ int main(int argc, char ** argv) {
                     message(DEBUG, "Checking configuration file for 'config passwd'\n");
                     rewind(config_fp);
                     if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
-                        if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
+                        if (is_file(joinpath(containerdir, "/etc/passwd")) == 0 ) {
                             if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
                                 message(VERBOSE2, "Staging /etc/passwd with user info\n");
-                                if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(sessiondir, "/passwd")) < 0 ) {
+                                if ( build_passwd(joinpath(containerdir, "/etc/passwd"), joinpath(sessiondir, "/passwd")) < 0 ) {
                                     message(ERROR, "Failed creating template password file\n");
                                     ABORT(255);
                                 }
                             }
                             message(VERBOSE, "Binding staged /etc/passwd into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 1) < 0 ) {
+                            if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 1) < 0 ) {
                                 message(ERROR, "Could not bind /etc/passwd\n");
                                 ABORT(255);
                             }
@@ -612,16 +615,16 @@ int main(int argc, char ** argv) {
                     message(DEBUG, "Checking configuration file for 'config group'\n");
                     rewind(config_fp);
                     if ( config_get_key_bool(config_fp, "config group", 1) > 0 ) {
-                        if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
+                        if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
                             if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
                                 message(VERBOSE2, "Staging /etc/group with user info\n");
-                                if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
+                                if ( build_group(joinpath(containerdir, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
                                     message(ERROR, "Failed creating template group file\n");
                                     ABORT(255);
                                 }
                             }
                             message(VERBOSE, "Binding staged /etc/group into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerpath, "/etc/group"), 1) < 0 ) {
+                            if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 1) < 0 ) {
                                 message(ERROR, "Could not bind /etc/group\n");
                                 ABORT(255);
                             }
@@ -642,8 +645,8 @@ int main(int argc, char ** argv) {
                 message(DEBUG, "Hello from exec child process\n");
 
                 message(VERBOSE, "Entering container file system space\n");
-                if ( chroot(containerpath) < 0 ) {
-                    message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerpath);
+                if ( chroot(containerdir) < 0 ) {
+                    message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerdir);
                     ABORT(255);
                 }
                 message(DEBUG, "Changing dir to '/' within the new root\n");
@@ -869,8 +872,8 @@ int main(int argc, char ** argv) {
 
 //TODO: Add chroot and chdirs to a container method
             message(VERBOSE, "Entering container file system space\n");
-            if ( chroot(containerpath) < 0 ) {
-                message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerpath);
+            if ( chroot(containerdir) < 0 ) {
+                message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerdir);
                 ABORT(255);
             }
 
@@ -984,7 +987,6 @@ int main(int argc, char ** argv) {
     close(sessiondirlock_fd);
 
     free(loop_dev_lock);
-    free(containerpath);
     free(sessiondir);
 
     return(retval);

@@ -46,7 +46,7 @@ char *config_get_key_value(FILE *fp, char *key) {
         if ( ( config_key = strtok(line, "=") ) != NULL ) {
             chomp(config_key);
             if ( strcmp(config_key, key) == 0 ) {
-                if ( ( config_value = strtok(NULL, "=") ) != NULL ) {
+                if ( ( config_value = strdup(strtok(NULL, "=")) ) != NULL ) {
                     chomp(config_value);
                     if ( config_value[0] == ' ' ) {
                         config_value++;
