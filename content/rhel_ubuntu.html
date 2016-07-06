@@ -1,6 +1,6 @@
 <div id="back_link">&laquo;&nbsp;<a href="javascript:load_content('docs')">Back to Documentation</a></div>
 
-<h1>Building an Ubuntu image on a RHEL compatible host</h1>
+<h1>Building an Ubuntu image on a RHEL host</h1>
 <p>
 This recipe describes how to build an Ubuntu image using Singularity on a RHEL compatible host. In order to do this, you will need to first install the 'debootstrap' package onto your host. Then, you will create a definition file that will describe how to build your Ubuntu image. Finally, you will build the image using the Singularity commands 'create' and 'bootstrap'.
 </p>
@@ -13,11 +13,11 @@ This recipe describes how to build an Ubuntu image using Singularity on a RHEL c
 </p>
 
 <pre>
-  # This installs epel-release
-  $ sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+# This installs epel-release
+$ sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
   
-  # This install debootstrap
-  $ sudo yum install debootstrap
+# This install debootstrap
+$ sudo yum install debootstrap
 </pre>
 
 <h4>Creating the Definition File</h4>
@@ -26,14 +26,14 @@ This recipe describes how to build an Ubuntu image using Singularity on a RHEL c
 </p>
 
 <pre>
-  DistType "debian"
-  MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
-  OSVersion "trusty"
+DistType "debian"
+MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
+OSVersion "trusty"
   
-  Setup
-  Bootstrap
+Setup
+Bootstrap
   
-  Cleanup
+Cleanup
 </pre>
 
 <p>
@@ -65,19 +65,19 @@ This recipe describes how to build an Ubuntu image using Singularity on a RHEL c
 </p>
 
 <pre>
-  DistType "debian"
-  MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
-  OSVersion "trusty"
+DistType "debian"
+MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
+OSVersion "trusty"
   
-  Setup 
-  Bootstrap
+Setup 
+Bootstrap
   
-  InstallPkgs python
-  InstallPkgs wget
-  RunCmd wget https://bootstrap.pypa.io/get-pip.py
-  RunCmd python get-pip.py
+InstallPkgs python
+InstallPkgs wget
+RunCmd wget https://bootstrap.pypa.io/get-pip.py
+RunCmd python get-pip.py
 
-  Cleanup
+Cleanup
 </pre>
 
 <p>
@@ -93,7 +93,7 @@ This recipe describes how to build an Ubuntu image using Singularity on a RHEL c
     <b>RunCmd</b>: RunCmd allows you to run a command from within the new image during the installation.
   </li>
   <li>
-    <b>RunScript</b>: RunScript adds a new line to the runscript invoked by the Singularity subcommand 'run'. See the <a href="javascript:load_content('cli_run')">run script</a> page for more information.
+    <b>RunScript</b>: RunScript adds a new line to the runscript invoked by the Singularity subcommand 'run'. See the <a href="javascript:load_content('cli_run')">run</a> page for more information.
   </li>
   </ul>
 </p>
@@ -107,41 +107,40 @@ This recipe describes how to build an Ubuntu image using Singularity on a RHEL c
   Once you have created your definition file, you will be ready to actually create your image. You will do this by utilizing the Singularity 'create' and 'bootstrap' subcommands. The process for doing this can be seen below (note that we have saved our definition file as "ubuntu.def"):
 
 <pre>
-  # First we will create an empty image container called ubuntu.img
-  $ sudo singularity create ubuntu.img
+# First we will create an empty image container called ubuntu.img
+$ sudo singularity create ubuntu.img
   
-  # Next we will bootstrap the image with the operating system specified in our definition file
-  $ sudo singularity bootstrap ubuntu.img ubuntu.def
-  Creating a sparse image with a maximum size of 1024MiB...
-  INFO   : Using given image size of 1024
-  Formatting image (/sbin/mkfs.ext3)
-  Done. Image can be found at: doc.img
-  W: Cannot check Release signature; keyring file not available /usr/share/keyrings/ubuntu-archive-keyring.gpg
-  I: Retrieving Release 
-  I: Retrieving Packages 
-  I: Validating Packages 
-  I: Resolving dependencies of required packages...
-  I: Resolving dependencies of base packages...
-  I: Found additional base dependencies: gcc-4.8-base gnupg gpgv libapt-pkg4.12 libreadline6 libstdc++6 libusb-0.1-4 readline-common ubuntu-keyring 
-  I: Checking component main on http://us.archive.ubuntu.com/ubuntu...
-  I: Retrieving adduser 3.113+nmu3ubuntu3
-  I: Validating adduser 3.113+nmu3ubuntu3
-  I: Retrieving apt 1.0.1ubuntu2
-  I: Validating apt 1.0.1ubuntu2
+# Next we will bootstrap the image with the operating system specified in our definition file
+$ sudo singularity bootstrap ubuntu.img ubuntu.def
+Creating a sparse image with a maximum size of 1024MiB...
+INFO   : Using given image size of 1024
+Formatting image (/sbin/mkfs.ext3)
+Done. Image can be found at: doc.img
+W: Cannot check Release signature; keyring file not available /usr/share/keyrings/ubuntu-archive-keyring.gpg
+I: Retrieving Release 
+I: Retrieving Packages 
+I: Validating Packages 
+I: Resolving dependencies of required packages...
+I: Resolving dependencies of base packages...
+I: Found additional base dependencies: gcc-4.8-base gnupg gpgv libapt-pkg4.12 libreadline6 libstdc++6 libusb-0.1-4 readline-common ubuntu-keyring 
+I: Checking component main on http://us.archive.ubuntu.com/ubuntu...
+I: Retrieving adduser 3.113+nmu3ubuntu3
+I: Validating adduser 3.113+nmu3ubuntu3
+I: Retrieving apt 1.0.1ubuntu2
+I: Validating apt 1.0.1ubuntu2
 </pre>
 snip...
 <pre>
-  Downloading pip-8.1.2-py2.py3-none-any.whl (1.2MB)
-    100% |################################| 1.2MB 1.1MB/s 
-  Collecting setuptools
-  Downloading setuptools-24.0.2-py2.py3-none-any.whl (441kB)
-    100% |################################| 450kB 2.7MB/s 
-  Collecting wheel
-  Downloading wheel-0.29.0-py2.py3-none-any.whl (66kB)
-    100% |################################| 71kB 9.9MB/s 
-  Installing collected packages: pip, setuptools, wheel
-  Successfully installed pip-8.1.2 setuptools-24.0.2 wheel-0.29.0
-  /tmp/tmpE6HPFo/pip.zip/pip/_vendor/requests/packages/urllib3/util/ssl_.py:122: InsecurePlatformWarning: A true SSLContext object is not available. This prevents urllib3 from configuring SSL appropriately and may cause certain SSL connections to fail. You can upgrade to a newer version of Python to solve this. For more information, see https://urllib3.readthedocs.org/en/latest/security.html#insecureplatformwarning.
+Downloading pip-8.1.2-py2.py3-none-any.whl (1.2MB)
+  100% |################################| 1.2MB 1.1MB/s 
+Collecting setuptools
+Downloading setuptools-24.0.2-py2.py3-none-any.whl (441kB)
+  100% |################################| 450kB 2.7MB/s 
+Collecting wheel
+Downloading wheel-0.29.0-py2.py3-none-any.whl (66kB)
+  100% |################################| 71kB 9.9MB/s 
+Installing collected packages: pip, setuptools, wheel
+Successfully installed pip-8.1.2 setuptools-24.0.2 wheel-0.29.0
 </pre>
 At this point, you have successfully created an Ubuntu image with 'python' and 'pip' on your RHEL computer. 
 </p>
