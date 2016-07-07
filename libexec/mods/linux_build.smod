@@ -196,7 +196,8 @@ __runcmd() {
 
     echo "+ $CMD $*" 1>&2
 
-    chroot "$SINGULARITY_BUILD_ROOT" "$CMD" "$@"
+    # Running command through /usr/bin/env -i to sanitize the environment
+    chroot "$SINGULARITY_BUILD_ROOT" /usr/bin/env -i "$CMD" "$@"
 
     return $?
 }
