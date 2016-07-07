@@ -7,16 +7,17 @@ This recipe describes how to build an Ubuntu image using Singularity on a RHEL c
 
 <h4>Preparation</h4>
 <p>
-  This recipe assumes that you have already installed Singularity on your computer. If you have not, follow the instructions here to <a href="javascript:load_content('install')">install</a>.
-  
-  After Singularity is installed on your computer, you will need to install the 'debootstrap' package. The 'debootstrap' package is a tool that will allow you to create Debian-based distributions such as Ubuntu. In order to install 'debootstrap', you will also need to install 'epel-release'. 
+  This recipe assumes that you have already installed Singularity on your computer. If you have not, follow the instructions here to <a href="javascript:load_content('install')">install</a>. After Singularity is installed on your computer, you will need to install the 'debootstrap' package. The 'debootstrap' package is a tool that will allow you to create Debian-based distributions such as Ubuntu. In order to install 'debootstrap', you will also need to install 'epel-release'. You will need to download the appropriate RPM from the <a href="https://dl.fedoraproject.org/pub/epel/">EPEL website</a>. Make sure you download the correct version of the RPM for your release. 
 </p>
 
 <pre>
-# This installs epel-release
-$ sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+# First wget the appropriate rpm from the EPEL website (https://dl.fedoraproject.org/pub/epel/)
+# In this example we used RHEL 7, so we downloaded epel-release-latest-7.noarch.rpm
+$ wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+# Then yum install your epel-release rpm
+$ sudo yum install epel-release-latest-7.noarch.rpm
   
-# This install debootstrap
+# Finally, install debootstrap
 $ sudo yum install debootstrap
 </pre>
 
@@ -76,6 +77,7 @@ InstallPkgs python
 InstallPkgs wget
 RunCmd wget https://bootstrap.pypa.io/get-pip.py
 RunCmd python get-pip.py
+RunCmd ln -s /usr/local/bin/pip /usr/bin/pip
 RunCmd pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp27-none-linux_x86_64.whl
 
 Cleanup
@@ -165,11 +167,33 @@ InstallPkgs wget
 RunCmd /bin/sh &lt&ltEOF
 wget https://bootstrap.pypa.io/get-pip.py
 python get-pip.py
+ln -s /usr/local/bin/pip /usr/bin/pip
 pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp27-none-linux_x86_64.whl
 EOF
 
 Cleanup
     </pre>
-    <p>As you can see, using a here document allowed us to decrease the number of RunCmd keywords from 3 to 1. This can be useful when your definition file has a lot of RunCmd keywords and can also ease copying and pasting command line recipes from other sources. </p>
+    <p>As you can see, using a here document allowed us to decrease the number of RunCmd keywords from 4 to 1. This can be useful when your definition file has a lot of RunCmd keywords and can also ease copying and pasting command line recipes from other sources. </p>
+    <b><li>Use InstallPkgs with multiple packages</li></b>
+    <p>The InstallPkgs keyword is able to install multiple packages with a single keyword. Thus, another way you can increase the efficiency of your code is to use a single InstallPkgs keyword to install multiple packages, as seen below:</p>
+    <pre>
+DistType "debian"
+MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
+OSVersion "trusty"
+  
+Setup 
+Bootstrap
+  
+InstallPkgs python wget
+RunCmd /bin/sh &lt&ltEOF
+wget https://bootstrap.pypa.io/get-pip.py
+python get-pip.py
+ln -s /usr/local/bin/pip /usr/bin/pip
+pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp27-none-linux_x86_64.whl
+EOF
+
+Cleanup
+    </pre>
+    <p>Using a single InstallPkgs keyword to install both 'python' and 'wget' allowed to decrease the number of InstallPkgs keywords we had to use in our definition file. This slimmed down our definition file and helped reduce clutter.</p>
   </ol>
 </p>
