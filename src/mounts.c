@@ -125,3 +125,57 @@ int mount_bind(char * source, char * dest, int writable) {
 
     return(0);
 }
+
+
+int mount_overlay(char * source, char * scratch, char * dest) {
+    // lowerDir = source
+    // upperDir = scratch/t
+    // workDir = scratch/w
+    // dest = dest
+
+    message(DEBUG, "Called mount_overlay(%s, %s, %s)\n", source, scratch, dest);
+
+    message(DEBUG, "Checking that source exists and is a file or directory\n");
+    if ( is_dir(source) != 0 && is_file(source) != 0 ) {
+        fprintf(stderr, "ERROR: Overlay source path is not a file or directory: '%s'\n", source);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking that scratch exists and is a file or directory\n");
+    if ( is_dir(scratch) != 0 && is_file(scratch) != 0 ) {
+        message(ERROR, "Overlay scratch path is not a file or directory: '%s'\n", scratch);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking that destination exists and is a file or directory\n");
+    if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
+        message(ERROR, "Overlay destination path is not a file or directory: '%s'\n", dest);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Creating upperdir and workdir within scratch directory\n");
+    char * const upperdir = malloc(strlen(scratch)+2);  // should this be 2*8 = 16?
+    char * const workdir = malloc(strlen(scratch)+2);   // ditto
+    snprintf(upperdir, strlen(upperdir), "%s%s", scratch, "/t");
+    snprintf(workdir, strlen(workdir), "%s%s", scratch, "/w");
+
+    if ( mkdir(upperdir, 1023) < 0 ) {
+        message(ERROR, "Could not create upperdir: '%s'\n", upperdir);
+        ABORT(255);
+    }
+
+    if ( mkdir(workdir, 1023) < 0 ) {
+        message(ERROR, "Could not create workdir: '%s'\n", workdir);
+        ABORT(255);
+    }
+   
+   message(DEBUG, "Calling mount(...)");
+   int optionStringLen = strlen(lowerdir) + strlen(upperdir) + strlen(workdir) + 50;
+   char * const optionsString = malloc(opstionStringLen);
+   snprintf(optionsString, optionStringLen, "lowerdir=%s,upperdir=%s,workdir=%s", lowerdir, upperdir, workdir);
+   if ( mount("overlay", dest, "overlay", MS_NOSUID, optionString) < 0 ){
+        message(ERROR, "Could not create overlay.");
+        ABORT(255);
+   }
+
+}
