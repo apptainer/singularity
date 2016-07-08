@@ -8,7 +8,8 @@ compiler:
   - gcc
 
 before_install:
-  - echo "TODO if anything"
+  # so that adjusted PATH propagates into sudo
+  - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
 
 script:
   - ./test.sh
