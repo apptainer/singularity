@@ -11,10 +11,11 @@ This recipe describes how to build an Ubuntu image using Singularity on a RHEL c
 </p>
 
 <pre>
-# First wget the appropriate rpm from the EPEL website (https://dl.fedoraproject.org/pub/epel/)
+# First, wget the appropriate RPM from the EPEL website (https://dl.fedoraproject.org/pub/epel/)
 # In this example we used RHEL 7, so we downloaded epel-release-latest-7.noarch.rpm
 $ wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-# Then yum install your epel-release rpm
+
+# Then, install your epel-release RPM
 $ sudo yum install epel-release-latest-7.noarch.rpm
   
 # Finally, install debootstrap
@@ -112,13 +113,13 @@ Cleanup
 <pre>
 # First we will create an empty image container called ubuntu.img
 $ sudo singularity create ubuntu.img
-  
-# Next we will bootstrap the image with the operating system specified in our definition file
-$ sudo singularity bootstrap ubuntu.img ubuntu.def
 Creating a sparse image with a maximum size of 1024MiB...
 INFO   : Using given image size of 1024
 Formatting image (/sbin/mkfs.ext3)
-Done. Image can be found at: doc.img
+Done. Image can be found at: ubuntu.img
+  
+# Next we will bootstrap the image with the operating system specified in our definition file
+$ sudo singularity bootstrap ubuntu.img ubuntu.def
 W: Cannot check Release signature; keyring file not available /usr/share/keyrings/ubuntu-archive-keyring.gpg
 I: Retrieving Release 
 I: Retrieving Packages 
