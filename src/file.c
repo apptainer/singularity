@@ -214,9 +214,10 @@ int s_rmdir(char *dir) {
 }
 
 int copy_file(char * source, char * dest) {
+    struct stat filestat;
     int c;
-    FILE * fd_s;
-    FILE * fd_d;
+    FILE * fp_s;
+    FILE * fp_d;
 
     message(DEBUG, "Called copy_file(%s, %s)\n", source, dest);
 
@@ -225,25 +226,43 @@ int copy_file(char * source, char * dest) {
         return(-1);
     }
 
-    fd_s = fopen(source, "r");
-    if ( fd_s == NULL ) {
+    message(DEBUG, "Opening source file: %s\n", source);
+    fp_s = fopen(source, "r");
+    if ( fp_s == NULL ) {
         message(ERROR, "Could not read %s: %s\n", source, strerror(errno));
         return(-1);
     }
 
-    fd_d = fopen(dest, "w");
-    if ( fd_s == NULL ) {
-        fclose(fd_s);
+    message(DEBUG, "Opening destination file: %s\n", dest);
+    fp_d = fopen(dest, "w");
+    if ( fp_s == NULL ) {
+        fclose(fp_s);
         message(ERROR, "Could not write %s: %s\n", dest, strerror(errno));
         return(-1);
     }
 
-    while ( ( c = fgetc(fd_s) ) != EOF ) {
-        fputc(c, fd_d);
+    message(DEBUG, "Calling fstat() on source file descriptor: %d\n", fileno(fp_s));
+    if ( fstat(fileno(fp_s), &filestat) < 0 ) {
+        message(ERROR, "Could not fstat() on %s: %s\n", source, strerror(errno));
+        return(-1);
     }
 
-    fclose(fd_s);
-    fclose(fd_d);
+    message(DEBUG, "Cloning permission string of source to dest\n");
+    if ( fchmod(fileno(fp_d), filestat.st_mode) < 0 ) {
+        message(ERROR, "Could not set permission mode on %s: %s\n", dest, strerror(errno));
+        return(-1);
+    }
+
+    message(DEBUG, "Copying file data...\n");
+    while ( ( c = fgetc(fp_s) ) != EOF ) {
+        fputc(c, fp_d);
+    }
+
+    message(DEBUG, "Done copying data, closing file pointers\n");
+    fclose(fp_s);
+    fclose(fp_d);
+
+    message(DEBUG, "Returning copy_file(%s, %s) = 0\n", source, dest);
 
     return(0);
 }
