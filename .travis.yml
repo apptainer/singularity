@@ -1,0 +1,15 @@
+language: cpp
+
+sudo: true
+
+os: linux
+
+compiler:
+  - gcc
+
+before_install:
+  # so that adjusted PATH propagates into sudo
+  - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
+
+script:
+  - ./test.sh

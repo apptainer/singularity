@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# set PS4 explicitly to be POSIX shell compatible for set -x
+export PS4=+
+
 if autoreconf -V >/dev/null 2>&1 ; then
     set -x
     autoreconf -i -f
