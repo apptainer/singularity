@@ -1,0 +1,14 @@
+language: cpp
+
+sudo: true
+
+os: linux
+
+compiler:
+  - gcc
+
+before_install:
+  - echo "TODO if anything"
+
+script:
+  - ./test.sh
