@@ -97,8 +97,8 @@ int mount_bind(char * source, char * dest, int writable) {
 
     message(DEBUG, "Checking that source exists and is a file or directory\n");
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {
-        fprintf(stderr, "ERROR: Bind source path is not a file or directory: '%s'\n", source);
-        return(1);
+        message(ERROR, "Bind source path is not a file or directory: '%s'\n", source);
+        ABORT(255);
     }
 
     message(DEBUG, "Checking that destination exists and is a file or directory\n");
