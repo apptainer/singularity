@@ -19,8 +19,5 @@
  */
 
 
-char *obtain_loop_dev(void);
-int associate_loop(FILE *image_fp, FILE *loop_device_fp, int autoclear);
-int disassociate_loop(FILE *loop_fp);
-
-
+int loop_bind(FILE *image_fp, char **loop_dev);
+int loop_free(char *loop_dev);
