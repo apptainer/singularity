@@ -47,9 +47,9 @@ License: other-BSD
  works, incorporate into other computer software, distribute, and sublicense
  such enhancements or derivative works thereof, in binary and source code form.
  .
- If you have questions about your rights to use or distribute this software,
- please contact Berkeley Lab's Innovation & Partnerships Office at
- IPO@lbl.gov.
+ This software is licensed under a customized 3-clause BSD license.  Please
+ consult LICENSE file distributed with the sources of this project regarding
+ your rights to use or distribute this software.
  .
  NOTICE.  This Software was developed under funding from the U.S. Department of
  Energy and the U.S. Government consequently retains certain rights. As such,
