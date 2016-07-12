@@ -89,6 +89,7 @@ int main(int argc, char ** argv) {
     char *sessiondir;
     char *sessiondir_prefix;
     char *prompt;
+    char *existing_prompt;
     char *loop_dev_lock;
     char *loop_dev_cache;
     char *homedir;
@@ -232,8 +233,16 @@ int main(int argc, char ** argv) {
 
     message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
 
-    prompt = (char *) malloc(strlen(containername) + 16);
-    snprintf(prompt, strlen(containername) + 16, "Singularity/%s> ", containername);
+    if ( ( existing_prompt = getenv("PS1") ) != NULL ) {
+        int prompt_len = strlen(containername) + strlen(existing_prompt) + 16;
+        prompt = (char *) malloc(prompt_len + 1);
+        snprintf(prompt, prompt_len, "(Singularity/%s) %s", containername, existing_prompt);
+    } else {
+        int prompt_len = strlen(containername) + 16;
+        prompt = (char *) malloc(prompt_len + 1);
+        snprintf(prompt, prompt_len, "Singularity.%s> ", containername);
+    }
+
     setenv("PS1", prompt, 1);
     message(DEBUG, "Set prompt to: %s\n", prompt);
 
