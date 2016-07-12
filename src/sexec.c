@@ -80,7 +80,6 @@ void sighandler(int sig) {
 
 int main(int argc, char ** argv) {
     FILE *containerimage_fp;
-    FILE *loop_fp;
     FILE *config_fp;
     FILE *daemon_fp = NULL;
     char *containerimage;
@@ -347,31 +346,17 @@ int main(int argc, char ** argv) {
     if ( flock(loop_dev_lock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         message(DEBUG, "We have exclusive flock() on loop_dev lockfile\n");
 
-        // This is a hack to help identify if we are operating on a /tmp that
-        // does not properly honor flock()
-        (void)fileput(joinpath(sessiondir, "loop_dev.working"), "locked");
-
-        loop_dev = obtain_loop_dev();
-
-        message(DEBUG, "Opening loop_dev: %s\n", loop_dev);
-        if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
-            message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
+        message(DEBUG, "Binding container to loop interface\n");
+        if ( loop_bind(containerimage_fp, &loop_dev) < 0 ) {
+            message(ERROR, "Could not bind image to loop!\n");
             ABORT(255);
         }
 
-        message(VERBOSE, "Associating image to loop device: %s\n", loop_dev);
-        if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
-            message(ERROR, "Could not associate %s to loop device %s\n", containerimage, loop_dev);
-            ABORT(255);
-        }
-
-        message(DEBUG, "Writing loop device name to loop_dev\n");
+        message(DEBUG, "Writing loop device name to loop_dev: %s\n", loop_dev);
         if ( fileput(loop_dev_cache, loop_dev) < 0 ) {
             message(ERROR, "Could not write to loop_dev_cache %s: %s\n", loop_dev_cache, strerror(errno));
             ABORT(255);
         }
-
-        (void)unlink(joinpath(sessiondir, "loop_dev.working"));
 
         message(DEBUG, "Resetting exclusive flock() to shared on loop_dev lockfile\n");
         flock(loop_dev_lock_fd, LOCK_SH | LOCK_NB);
@@ -379,12 +364,8 @@ int main(int argc, char ** argv) {
     } else {
         message(DEBUG, "Unable to get exclusive flock() on loop_dev lockfile\n");
 
-        message(DEBUG, "Waiting for exclusive lock on loop_dev lockfile to release\n");
+        message(DEBUG, "Waiting to obtain shared lock on loop_dev lockfile\n");
         flock(loop_dev_lock_fd, LOCK_SH);
-
-        if ( is_file(joinpath(sessiondir, "loop_dev.working")) == 0 ) {
-            message(WARNING, "Your session directory does not seem to honor locking (move it)!\n");
-        }
 
         message(DEBUG, "Exclusive lock on loop_dev lockfile released, getting loop_dev\n");
         if ( ( loop_dev = filecat(loop_dev_cache) ) == NULL ) {
@@ -392,11 +373,6 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
-        message(DEBUG, "Opening loop_dev: %s\n", loop_dev);
-        if ( ( loop_fp = fopen(loop_dev, "r") ) < 0 ) {
-            message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-            ABORT(255);
-        }
     }
 
     message(DEBUG, "Creating container image mount path: %s\n", containerdir);
@@ -994,7 +970,7 @@ int main(int argc, char ** argv) {
         }
 
         // Dissociate loops from here Just in case autoflush didn't work.
-        (void)disassociate_loop(loop_fp);
+        (void)loop_free(loop_dev);
 
         if ( drop_privs(&uinfo) < 0 ) {
             ABORT(255);
