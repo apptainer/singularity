@@ -122,7 +122,7 @@ void _message(int level, const char *function, const char *file, int line, char 
             printf("%s", message);
         } else if ( level == INFO ) {
             printf("%s", strjoin(header_string, message));
-        } else if ( level == LOG && messagelevel == INFO ) {
+        } else if ( level == LOG && messagelevel <= INFO ) {
             // Don't print anything...
         } else {
             fprintf(stderr, "%s", strjoin(header_string, message));
