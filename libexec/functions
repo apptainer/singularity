@@ -19,7 +19,7 @@
 # 
 # 
 
-
+set -e
 
 if [ -z "$MESSAGELEVEL" ]; then
     /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
@@ -35,6 +35,7 @@ if [ -z "$HOME" ]; then
     export HOME
 fi
 
+set -u
 
 message() {
     LEVEL="$1"
@@ -231,6 +232,6 @@ parse_opts() {
 
 
 
-if [ "$DEBUG" = "1" ]; then
+if [ "${DEBUG:-}" = "1" ]; then
     set -x
 fi

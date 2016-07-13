@@ -44,6 +44,8 @@
 #          properly, in particular "shell" v. "exec"
 #        Consider the locale, e.g. for use of =~
 
+set -e
+
 docker_cleanup() {
     if [[ -n $id ]]; then
         message 1 "Cleaning up Docker container...\n"
@@ -55,10 +57,13 @@ docker_cleanup() {
 # If we've started a container, we want to remove it on exit.
 trap docker_cleanup 0
 
-if [[ -z $FILE ]]; then
+if [[ -z "$FILE" ]]; then
     message ERROR "No Docker image specified (with --file)\n"
     exit 1
 fi
+
+set -u
+
 dock=$FILE
 sing=$1
 
