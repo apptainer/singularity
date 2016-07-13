@@ -19,18 +19,18 @@
 # 
 # 
 
+set -e -u
 
-
-if [ -z "$MESSAGELEVEL" ]; then
+if [ -z "${MESSAGELEVEL:-}" ]; then
     /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     MESSAGELEVEL=5
 fi
 
-if [ -z "$USER" ]; then
+if [ -z "${USER:-}" ]; then
     USER=`id -un`
     export USER
 fi
-if [ -z "$HOME" ]; then
+if [ -z "${HOME:-}" ]; then
     HOME=`getent passwd "$USER" | cut -d : -f 6`
     export HOME
 fi
