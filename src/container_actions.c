@@ -76,7 +76,7 @@ int container_exec(int argc, char **argv) {
             message(ERROR, "Exec of /.exec failed: %s\n", strerror(errno));
             ABORT(255);
         }
-    } else if ( is_exec(argv[1]) ) {
+    } else if ( is_exec(argv[1]) == 0 ) {
         message(VERBOSE, "Exec'ing program: %s\n", argv[1]);
         if ( execv(argv[1], &argv[1]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
             message(ERROR, "execv of '%s' failed: %s\n", argv[1], strerror(errno));
