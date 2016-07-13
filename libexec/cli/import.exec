@@ -95,8 +95,7 @@ fi
 SINGULARITY_BUILD_ROOT="$SINGULARITY_localstatedir/singularity/mnt"
 export SINGULARITY_BUILD_ROOT
 
-case $IN_FORMAT in
-tar)
+if [ "$IN_FORMAT" == "tar" ]; then
     IMAGE="${1:-}"
     shift
     
@@ -112,12 +111,10 @@ tar)
     else
         exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xf -"
     fi
-    ;;
-*)
+else
     if [[ -f $SINGULARITY_libexecdir/singularity/$IN_FORMAT-import.sh ]]; then
-    . "$SINGULARITY_libexecdir/singularity/$IN_FORMAT-import.sh"
+        . "$SINGULARITY_libexecdir/singularity/$IN_FORMAT-import.sh"
     else
         message ERROR "Unknown import type: $IN_FORMAT\n"
     fi
-    ;;
-esac
+fi
