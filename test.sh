@@ -74,16 +74,17 @@ stest 1 singularity bogus help
 
 /bin/echo
 /bin/echo "Building test container..."
-/bin/echo
 
 stest 0 sudo singularity create -s 568 "$TSTIMG"
-stest 0 sudo singularity bootstrap "$TSTIMG" "$STARTDIR/examples/debian.def"
+stest 0 sudo singularity bootstrap "$TSTIMG" "$STARTDIR/examples/centos.def"
 
 /bin/echo
 /bin/echo "Running container tsts..."
-/bin/echo
 
 stest 0 singularity shell "$TSTIMG" -c "true"
+stest 1 singularity shell "$TSTIMG" -c "false"
+stest 0 sh -c "echo true | singularity shell '$TSTIMG'"
+stest 1 sh -c "echo false | singularity shell '$TSTIMG'"
 stest 0 singularity exec "$TSTIMG" true
 stest 1 singularity exec "$TSTIMG" false
 stest 0 sh -c "echo hi | singularity exec $TSTIMG grep hi"
@@ -98,8 +99,13 @@ stest 0 sudo singularity copy "$TSTIMG" singularity /
 stest 0 singularity run "$TSTIMG" true
 stest 1 singularity run "$TSTIMG" false
 
+stest 1 singularity shell -w "$TSTIMG" -c true
+stest 1 singularity exec -w "$TSTIMG" true
+stest 1 singularity run -w "$TSTIMG" true
+
 stest 0 sudo singularity export -f out.tar "$TSTIMG"
-stest 0 sudo tar xvf out.tar
+stest 0 mkdir out
+stest 0 sudo tar -C out -xvf out.tar
 
 stest 0 sudo rm -f "$TSTIMG"
 stest 0 sudo singularity create -s 568 "$TSTIMG"
