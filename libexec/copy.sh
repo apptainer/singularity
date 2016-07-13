@@ -19,12 +19,15 @@
 # 
 # 
 
+set -e
 
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
     exit 1
 fi
+
+set -u
 
 ## Load functions
 if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
