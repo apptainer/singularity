@@ -724,8 +724,8 @@ int main(int argc, char ** argv) {
 
                 // After this, we exist only within the container... Let's make it known!
                 message(DEBUG, "Setting environment variable 'SINGULARITY_CONTAINER=1'\n");
-                if ( setenv("SINGULARITY_CONTAINER", "true", 0) != 0 ) {
-                    message(ERROR, "Could not set SINGULARITY_CONTAINER to 'true'\n");
+                if ( setenv("SINGULARITY_CONTAINER", containername, 1) != 0 ) {
+                    message(ERROR, "Could not set SINGULARITY_CONTAINER to '%s'\n", containername);
                     ABORT(1);
                 }
 
