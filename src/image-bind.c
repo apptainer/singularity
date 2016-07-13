@@ -76,7 +76,7 @@ int main(int argc, char ** argv) {
         }
 
         message(VERBOSE, "Checking if container can be opened read/write\n");
-        if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
+        if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) { // Flawfinder: ignore
             message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
             ABORT(255);
         }

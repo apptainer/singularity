@@ -68,7 +68,7 @@ int loop_bind(FILE *image_fp, char **loop_dev) {
             }
         }
 
-        if ( ( loop_fp = fopen(test_loopdev, "r+") ) == NULL ) {
+        if ( ( loop_fp = fopen(test_loopdev, "r+") ) == NULL ) { // Flawfinder: ignore (not user modifyable)
             message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
             continue;
         }
@@ -121,7 +121,7 @@ int loop_free(char *loop_dev) {
         ABORT(255);
     }
 
-    if ( ( loop_fp = fopen(loop_dev, "r") ) == NULL ) {
+    if ( ( loop_fp = fopen(loop_dev, "r") ) == NULL ) { // Flawfinder: ignore (only opening read only, and must be a block device)
         message(VERBOSE, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
         return(-1);
     }

@@ -56,7 +56,10 @@ int build_passwd(char *template, char *output) {
     }
 
     message(VERBOSE, "Creating template passwd file and appending user data\n");
-    output_fp = fopen(output, "a");
+    if ( ( output_fp = fopen(output, "a") ) == NULL ) { // Flawfinder: ignore
+        message(ERROR, "Could not open template passwd file %s: %s\n", output, strerror(errno));
+        ABORT(255);
+    }
     fprintf(output_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
     fclose(output_fp);
 
@@ -93,7 +96,10 @@ int build_group(char *template, char *output) {
 
 
     message(VERBOSE, "Creating template group file and appending user data\n");
-    output_fp = fopen(output, "a");
+    if ( ( output_fp = fopen(output, "a") ) == NULL ) { // Flawfinder: ignore
+        message(ERROR, "Could not open template group file %s: %s\n", output, strerror(errno));
+        ABORT(255);
+    }
     fprintf(output_fp, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
 
     message(DEBUG, "Getting supplementary group info\n");

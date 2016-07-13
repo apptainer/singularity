@@ -53,7 +53,7 @@ char *file_id(char *path) {
     }
 
     ret = (char *) malloc(128);
-    snprintf(ret, 128, "%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino);
+    snprintf(ret, 128, "%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
 
     message(VERBOSE2, "Generated file_id: %s\n", ret);
 
@@ -179,7 +179,7 @@ int s_mkpath(char *dir, mode_t mode) {
         return(-1);
     }
 
-    if (strlen(dir) == 1 && dir[0] == '/') {
+    if (strlength(dir, 2) == 1 && dir[0] == '/') {
         return(0);
     }
 
@@ -227,15 +227,13 @@ int copy_file(char * source, char * dest) {
     }
 
     message(DEBUG, "Opening source file: %s\n", source);
-    fp_s = fopen(source, "r");
-    if ( fp_s == NULL ) {
+    if ( ( fp_s = fopen(source, "r") ) == NULL ) { // Flawfinder: ignore
         message(ERROR, "Could not read %s: %s\n", source, strerror(errno));
         return(-1);
     }
 
     message(DEBUG, "Opening destination file: %s\n", dest);
-    fp_d = fopen(dest, "w");
-    if ( fp_s == NULL ) {
+    if ( ( fp_d = fopen(dest, "w") ) == NULL ) { // Flawfinder: ignore
         fclose(fp_s);
         message(ERROR, "Could not write %s: %s\n", dest, strerror(errno));
         return(-1);
@@ -254,7 +252,7 @@ int copy_file(char * source, char * dest) {
     }
 
     message(DEBUG, "Copying file data...\n");
-    while ( ( c = fgetc(fp_s) ) != EOF ) {
+    while ( ( c = fgetc(fp_s) ) != EOF ) { // Flawfinder: ignore (checked boundries)
         fputc(c, fp_d);
     }
 
@@ -272,8 +270,7 @@ int fileput(char *path, char *string) {
     FILE *fd;
 
     message(DEBUG, "Called fileput(%s, %s)\n", path, string);
-    fd = fopen(path, "w");
-    if ( fd == NULL ) {
+    if ( ( fd = fopen(path, "w") ) == NULL ) { // Flawfinder: ignore
         message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
         return(-1);
     }
@@ -298,8 +295,7 @@ char *filecat(char *path) {
         return(NULL);
     }
 
-    fd = fopen(path, "r");
-    if ( fd == NULL ) {
+    if ( ( fd = fopen(path, "r") ) == NULL ) { // Flawfinder: ignore
         message(ERROR, "Could not read from %s: %s\n", path, strerror(errno));
         return(NULL);
     }
@@ -316,7 +312,7 @@ char *filecat(char *path) {
 
     ret = (char *) malloc(length+1);
 
-    while ( ( c = fgetc(fd) ) != EOF ) {
+    while ( ( c = fgetc(fd) ) != EOF ) { // Flawfinder: ignore (checked boundries)
         ret[pos] = c;
         pos++;
     }

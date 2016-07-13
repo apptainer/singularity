@@ -37,7 +37,7 @@
 
 #include "config.h"
 #include "message.h"
-
+#include "util.h"
 
 
 int intlen(int input) {
@@ -55,7 +55,7 @@ char *int2str(int num) {
     
     ret = (char *) malloc(intlen(num) + 1);
 
-    snprintf(ret, intlen(num) + 1, "%d", num);
+    snprintf(ret, intlen(num) + 1, "%d", num); // Flawfinder: ignore
 
     return(ret);
 }
@@ -63,23 +63,24 @@ char *int2str(int num) {
 char *joinpath(char * path1, char * path2) {
     char *ret;
 
-    ret = (char *) malloc(strlen(path1) + strlen(path2) + 2);
-    snprintf(ret, strlen(path1) + strlen(path2) + 2, "%s/%s", path1, path2);
+    ret = (char *) malloc(strlength(path1, 2048) + strlength(path2, 2048) + 2);
+    snprintf(ret, strlen(path1) + strlen(path2) + 2, "%s/%s", path1, path2); // Flawfinder: ignore
 
     return(ret);
 }
 
 char *strjoin(char *str1, char *str2) {
     char *ret;
+    int len = strlength(str1, 2048) + strlength(str2, 2048) + 1;
 
-    ret = (char *) malloc(strlen(str1) + strlen(str2) + 1);
-    snprintf(ret, strlen(str1) + strlen(str2) + 1, "%s%s", str1, str2);
+    ret = (char *) malloc(len);
+    snprintf(ret, len, "%s%s", str1, str2); // Flawfinder: ignore
 
     return(ret);
 }
 
 void chomp(char *str) {
-    int len = strlen(str);
+    int len = strlength(str, 4096);
     if ( str[len - 1] == ' ') {
         str[len - 1] = '\0';
     }
@@ -91,6 +92,15 @@ void chomp(char *str) {
     }
 }
 
+int strlength(char *string, int max_len) {
+    int len;
+    for (len=0; string[len] && len < max_len; len++) {
+        // Do nothing in the loop
+    }
+    return(len);
+}
+
+/*
 char *random_string(int length) {
     static const char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     char *ret;
@@ -108,4 +118,4 @@ char *random_string(int length) {
 
     return(ret);
 }
-
+*/

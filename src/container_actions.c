@@ -42,7 +42,7 @@ int container_run(int argc, char **argv) {
     if ( is_exec("/singularity") == 0 ) {
         argv[0] = strdup("/singularity");
         message(VERBOSE, "Found /singularity inside container, exec()'ing...\n");
-        if ( execv("/singularity", argv) != 0 ) {
+        if ( execv("/singularity", argv) != 0 ) { // Flawfinder: ignore (exec* is necessary)
             message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
             ABORT(255);
         }
@@ -63,7 +63,7 @@ int container_exec(int argc, char **argv) {
     }
 
     message(VERBOSE, "Exec'ing program: %s\n", argv[1]);
-    if ( execvp(argv[1], &argv[1]) != 0 ) {
+    if ( execvp(argv[1], &argv[1]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
         message(ERROR, "execvp of '%s' failed: %s\n", argv[1], strerror(errno));
         ABORT(255);
     }
@@ -76,7 +76,7 @@ int container_shell(int argc, char **argv) {
     message(DEBUG, "Called container_shell(%d, **argv)\n", argc);
 
     if ( is_exec("/bin/bash") == 0 ) {
-        char *args[argc+2];
+        char *args[argc+2]; // Flawfinder: ignore
         int i;
 
         message(VERBOSE, "Found /bin/bash, setting arguments --norc and --noprofile\n");
@@ -89,13 +89,13 @@ int container_shell(int argc, char **argv) {
         }
 
         message(VERBOSE, "Exec()'ing /bin/bash...\n");
-        if ( execv("/bin/bash", args) != 0 ) {
+        if ( execv("/bin/bash", args) != 0 ) { // Flawfinder: ignore (exec* is necessary)
             message(ERROR, "Exec of /bin/bash failed: %s\n", strerror(errno));
         }
     } else {
         argv[0] = strdup("/bin/sh");
         message(VERBOSE, "Exec()'ing /bin/sh...\n");
-        if ( execv("/bin/sh", argv) != 0 ) {
+        if ( execv("/bin/sh", argv) != 0 ) { // Flawfinder: ignore (exec* is necessary)
             message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
         }
     }
@@ -107,13 +107,13 @@ int container_shell(int argc, char **argv) {
 
 int container_daemon_start(char *sessiondir) {
     FILE *comm;
-    char line[256];
+    char line[256]; // Flawfinder: ignore (this is hard limit in fgets() below)
 
     message(DEBUG, "Called container_daemon_start(%s)\n", sessiondir);
 
 // TODO: Create a daemon_start_init function
     message(DEBUG, "Opening daemon.comm for writing\n");
-    if ( ( comm = fopen(joinpath(sessiondir, "daemon.comm"), "r") ) == NULL ) {
+    if ( ( comm = fopen(joinpath(sessiondir, "daemon.comm"), "r") ) == NULL ) { // Flawfinder: ignore
         message(ERROR, "Could not open communication fifo %s: %s\n", joinpath(sessiondir, "daemon.comm"), strerror(errno));
         ABORT(255);
     }
@@ -148,7 +148,7 @@ int container_daemon_stop(char *sessiondir) {
     }
 
     message(DEBUG, "Opening daemon.pid for reading\n");
-    if ( ( test_daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r") ) == NULL ) {
+    if ( ( test_daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r") ) == NULL ) { // Flawfinder: ignore
         message(ERROR, "Could not open daemon pid file %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
         ABORT(255);
     }
@@ -167,7 +167,7 @@ int container_daemon_stop(char *sessiondir) {
     }
 
     message(VERBOSE, "Opening daemon.comm for writing\n");
-    if ( ( comm = fopen(joinpath(sessiondir, "daemon.comm"), "w") ) == NULL ) {
+    if ( ( comm = fopen(joinpath(sessiondir, "daemon.comm"), "w") ) == NULL ) { //Flawfinder: ignore
         message(ERROR, "Could not open fifo for writing %s: %s\n", joinpath(sessiondir, "daemon.comm"), strerror(errno));
         ABORT(255);
     }

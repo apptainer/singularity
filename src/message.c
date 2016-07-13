@@ -19,6 +19,7 @@
  */
 
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,15 +36,20 @@ int messagelevel = -1;
 extern const char *__progname;
 
 void init(void) {
-    char *messagelevel_string = getenv("MESSAGELEVEL");
+    char *messagelevel_string = getenv("MESSAGELEVEL"); // Flawfinder: ignore (need to get string, validation in atol())
 
     openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
 
     if ( messagelevel_string == NULL ) {
         messagelevel = 1;
     } else {
-        messagelevel = atol(messagelevel_string);
-        message(VERBOSE, "Setting messagelevel to: %d\n", messagelevel);
+        messagelevel = atoi(messagelevel_string); // Flawfinder: ignore
+        if ( messagelevel < 0 ) {
+            messagelevel = 0;
+        } else if ( messagelevel > 9 ) {
+            messagelevel = 9;
+        }
+        message(VERBOSE, "Set messagelevel to: %d\n", messagelevel);
     }
 
 }
@@ -51,12 +57,12 @@ void init(void) {
 
 void _message(int level, const char *function, const char *file, int line, char *format, ...) {
     int syslog_level = LOG_NOTICE;
-    char message[512];
+    char message[512]; // Flawfinder: ignore (messages are truncated to 512 chars)
     char *prefix = "";
     va_list args;
     va_start (args, format);
 
-    vsnprintf(message, 512, format, args);
+    vsnprintf(message, 512, format, args); // Flawfinder: ignore (format is internally defined)
 
     va_end (args);
 
@@ -92,10 +98,10 @@ void _message(int level, const char *function, const char *file, int line, char 
     }
 
     if ( level <= LOG ) {
-        char syslog_string[540]; // 512 max message length + 28'ish chars for header
-        snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message);
+        char syslog_string[540]; // Flawfinder: ignore (512 max message length + 28'ish chars for header)
+        snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message); // Flawfinder: ignore
 
-        syslog(syslog_level, syslog_string, strlen(syslog_string));
+        syslog(syslog_level, syslog_string, strlen(syslog_string)); // Flawfinder: ignore (format is internally defined)
     }
 
     if ( level <= messagelevel ) {
@@ -106,16 +112,16 @@ void _message(int level, const char *function, const char *file, int line, char 
             char *location_string = (char *) malloc(60);
             char *tmp_header_string = (char *) malloc(80);
             header_string = (char *) malloc(80);
-            snprintf(location_string, 60, "%s:%d:%s()", file, line, function);
-            snprintf(debug_string, 25, "[U=%d,P=%d]", geteuid(), getpid());
-            snprintf(tmp_header_string, 80, "%-18s %s", debug_string, location_string);
-            snprintf(header_string, 80, "%-7s %-62s: ", prefix, tmp_header_string);
+            snprintf(location_string, 60, "%s:%d:%s()", file, line, function); // Flawfinder: ignore
+            snprintf(debug_string, 25, "[U=%d,P=%d]", geteuid(), getpid()); // Flawfinder: ignore
+            snprintf(tmp_header_string, 80, "%-18s %s", debug_string, location_string); // Flawfinder: ignore
+            snprintf(header_string, 80, "%-7s %-62s: ", prefix, tmp_header_string); // Flawfinder: ignore
             free(debug_string);
             free(location_string);
             free(tmp_header_string);
         } else {
             header_string = (char *) malloc(11);
-            snprintf(header_string, 10, "%-7s: ", prefix);
+            snprintf(header_string, 10, "%-7s: ", prefix); // Flawfinder: ignore
         }
 
         if ( level == INFO && messagelevel == INFO ) {

@@ -92,7 +92,6 @@ int main(int argc, char ** argv) {
     char *containerimage;
     char *mountpoint;
     char *loop_dev;
-    char *shell;
     int retval = 0;
     uid_t uid = geteuid();
 
@@ -113,7 +112,6 @@ int main(int argc, char ** argv) {
 
     containerimage = strdup(argv[1]);
     mountpoint = strdup(argv[2]);
-    shell = getenv("SHELL");
 
     if ( is_file(containerimage) < 0 ) {
         message(ERROR, "Container image not found: %s\n", containerimage);
@@ -126,7 +124,7 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Opening container image: %s\n", containerimage);
-    if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
+    if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) { // Flawfinder: ignore
         message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
         ABORT(255);
     }
@@ -135,11 +133,6 @@ int main(int argc, char ** argv) {
     if ( loop_bind(containerimage_fp, &loop_dev) < 0 ) {
         message(ERROR, "Could not bind image to loop!\n");
         ABORT(255);
-    }
-
-    if ( shell == NULL ) {
-        message(VERBOSE, "Setting shell to /bin/sh\n");
-        shell = strdup("/bin/sh");
     }
 
     message(DEBUG, "Forking namespace child\n");
@@ -166,10 +159,10 @@ int main(int argc, char ** argv) {
         exec_fork_pid = fork();
         if ( exec_fork_pid == 0 ) {
 
-            argv[2] = strdup(shell);
+            argv[2] = strdup("/bin/sh");
 
-            if ( execv(shell, &argv[2]) != 0 ) {
-                message(ERROR, "Exec of shell failed: %s\n", strerror(errno));
+            if ( execv("/bin/sh", &argv[2]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
+                message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
             }
             // We should never get here, so if we do, make it an error
             return(-1);
@@ -177,7 +170,7 @@ int main(int argc, char ** argv) {
         } else if ( exec_fork_pid > 0 ) {
             int tmpstatus;
 
-            strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
+            strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
 
             message(DEBUG, "Waiting for exec child to return\n");
             waitpid(exec_fork_pid, &tmpstatus, 0);
@@ -194,7 +187,7 @@ int main(int argc, char ** argv) {
     } else if ( namespace_fork_pid > 0 ) {
         int tmpstatus;
         
-        strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
+        strncpy(argv[0], "Singularity: namespace", strlen(argv[0])); // Flawfinder: ignore
         
         message(DEBUG, "Waiting for namespace child to return\n");
         waitpid(namespace_fork_pid, &tmpstatus, 0);

@@ -97,8 +97,8 @@ int main(int argc, char ** argv) {
     char *loop_dev = 0;
     char *config_path;
     char *tmp_config_string;
-    char setns_dir[128+9];
-    char cwd[PATH_MAX];
+    char setns_dir[128+9]; // Flawfinder: ignore
+    char cwd[PATH_MAX]; // Flawfinder: ignore
     int cwd_fd;
     int sessiondirlock_fd;
     int containerimage_fd;
@@ -148,7 +148,7 @@ int main(int argc, char ** argv) {
 
     // Figure out where we start
     message(DEBUG, "Obtaining file descriptor to current directory\n");
-    if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) {
+    if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) { // Flawfinder: ignore (need current directory FD)
         message(ERROR, "Could not open cwd fd (%s)!\n", strerror(errno));
         ABORT(1);
     }
@@ -159,14 +159,14 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Obtaining SINGULARITY_COMMAND from environment\n");
-    if ( ( command = getenv("SINGULARITY_COMMAND") ) == NULL ) {
+    if ( ( command = getenv("SINGULARITY_COMMAND") ) == NULL ) { // Flawfinder: ignore (we need the command, and check exact match below)
         message(ERROR, "SINGULARITY_COMMAND undefined!\n");
         ABORT(1);
     }
     unsetenv("SINGULARITY_COMMAND");
 
     message(DEBUG, "Obtaining SINGULARITY_IMAGE from environment\n");
-    if ( ( containerimage = getenv("SINGULARITY_IMAGE") ) == NULL ) {
+    if ( ( containerimage = getenv("SINGULARITY_IMAGE") ) == NULL ) { // Flawfinder: ignore (we need the image name, and open it as the calling user)
         message(ERROR, "SINGULARITY_IMAGE undefined!\n");
         ABORT(1);
     }
@@ -178,8 +178,8 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Building configuration file location\n");
-    config_path = (char *) malloc(strlen(SYSCONFDIR) + 30);
-    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR);
+    config_path = (char *) malloc(strlength(SYSCONFDIR, 128) + 30);
+    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR); // Flawfinder: ignore
     message(DEBUG, "Config location: %s\n", config_path);
 
     message(DEBUG, "Checking Singularity configuration is a file: %s\n", config_path);
@@ -195,7 +195,7 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Opening Singularity configuration file\n");
-    if ( ( config_fp = fopen(config_path, "r") ) == NULL ) {
+    if ( ( config_fp = fopen(config_path, "r") ) == NULL ) { // Flawfinder: ignore
         message(ERROR, "Could not open config file %s: %s\n", config_path, strerror(errno));
         ABORT(255);
     }
@@ -233,23 +233,23 @@ int main(int argc, char ** argv) {
 
     message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
 
-    if ( ( existing_prompt = getenv("PS1") ) != NULL ) {
-        int prompt_len = strlen(containername) + strlen(existing_prompt) + 16;
+    if ( ( existing_prompt = getenv("PS1") ) != NULL ) { // Flawfinder: ignore (only used to manipulate shell prompt)
+        int prompt_len = strlength(containername, 256) + strlength(existing_prompt, 512) + 16;
         prompt = (char *) malloc(prompt_len + 1);
-        snprintf(prompt, prompt_len, "(Singularity/%s) %s", containername, existing_prompt);
+        snprintf(prompt, prompt_len, "(Singularity/%s) %s", containername, existing_prompt); // Flawfinder: ignore
     } else {
-        int prompt_len = strlen(containername) + 16;
+        int prompt_len = strlength(containername, 256) + 16;
         prompt = (char *) malloc(prompt_len + 1);
-        snprintf(prompt, prompt_len, "Singularity.%s> ", containername);
+        snprintf(prompt, prompt_len, "Singularity.%s> ", containername); // Flawfinder: ignore
     }
 
     setenv("PS1", prompt, 1);
     message(DEBUG, "Set prompt to: %s\n", prompt);
 
     message(DEBUG, "Checking if we are opening image as read/write\n");
-    if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
+    if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
         message(DEBUG, "Opening image as read only: %s\n", containerimage);
-        if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) {
+        if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) { // Flawfinder: ignore 
             message(ERROR, "Could not open image read only %s: %s\n", containerimage, strerror(errno));
             ABORT(255);
         }
@@ -262,7 +262,7 @@ int main(int argc, char ** argv) {
         }
     } else {
         message(DEBUG, "Opening image as read/write only: %s\n", containerimage);
-        if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) {
+        if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
             message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
             ABORT(255);
         }
@@ -280,7 +280,7 @@ int main(int argc, char ** argv) {
         FILE *test_daemon_fp;
         int daemon_fd;
 
-        if ( ( test_daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r") ) == NULL ) {
+        if ( ( test_daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r") ) == NULL ) { // Flawfinder: ignore
             message(ERROR, "Could not open daemon pid file %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
             ABORT(255);
         }
@@ -288,10 +288,10 @@ int main(int argc, char ** argv) {
         message(DEBUG, "Checking if namespace daemon is running\n");
         daemon_fd = fileno(test_daemon_fp);
         if ( flock(daemon_fd, LOCK_SH | LOCK_NB) != 0 ) {
-            char daemon_pid[128];
+            char daemon_pid[128]; // Flawfinder: ignore
 
             if ( fgets(daemon_pid, 128, test_daemon_fp) != NULL ) {
-                snprintf(setns_dir, 128 + 9, "/proc/%s/ns", daemon_pid);
+                snprintf(setns_dir, 128 + 9, "/proc/%s/ns", daemon_pid); // Flawfinder: ignore
                 if ( is_dir(setns_dir) == 0 ) {
                     message(VERBOSE, "Found namespace daemon process for this container\n");
                     join_daemon_ns = 1;
@@ -329,8 +329,7 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Opening sessiondir file descriptor\n");
-    sessiondirlock_fd = open(sessiondir, O_RDONLY);
-    if ( sessiondirlock_fd < 0 ) {
+    if ( ( sessiondirlock_fd = open(sessiondir, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
         message(ERROR, "Could not obtain file descriptor on %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }
@@ -347,7 +346,7 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Checking for set loop device\n");
-    if ( ( loop_dev_lock_fd = open(loop_dev_lock, O_CREAT | O_RDWR, 0644) ) < 0 ) {
+    if ( ( loop_dev_lock_fd = open(loop_dev_lock, O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
         message(ERROR, "Could not open loop_dev_lock %s: %s\n", loop_dev_lock, strerror(errno));
         ABORT(255);
     }
@@ -408,12 +407,12 @@ int main(int argc, char ** argv) {
 
         message(DEBUG, "Creating namespace daemon pidfile: %s\n", joinpath(sessiondir, "daemon.pid"));
         if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
-            if ( ( daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r+") ) == NULL ) {
+            if ( ( daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r+") ) == NULL ) { // Flawfinder: ignore
                 message(ERROR, "Could not open daemon pid file for writing %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
                 ABORT(255);
             }
         } else {
-            if ( ( daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "w") ) == NULL ) {
+            if ( ( daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "w") ) == NULL ) { // Flawfinder: ignore
                 message(ERROR, "Could not open daemon pid file for writing %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
                 ABORT(255);
             }
@@ -462,7 +461,8 @@ int main(int argc, char ** argv) {
             // Setup PID namespaces
             rewind(config_fp);
 #ifdef NS_CLONE_NEWPID
-            if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
+            if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
+                    ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
                 unsetenv("SINGULARITY_NO_NAMESPACE_PID");
                 message(DEBUG, "Virtualizing PID namespace\n");
                 if ( unshare(CLONE_NEWPID) < 0 ) {
@@ -474,7 +474,8 @@ int main(int argc, char ** argv) {
             }
 #else
 #ifdef NS_CLONE_PID
-            if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
+            if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
+                    ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
                 unsetenv("SINGULARITY_NO_NAMESPACE_PID");
                 message(DEBUG, "Virtualizing PID namespace\n");
                 if ( unshare(CLONE_NEWPID) < 0 ) {
@@ -512,7 +513,7 @@ int main(int argc, char ** argv) {
 
 
             // Mount image
-            if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
+            if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
                 unsetenv("SINGULARITY_WRITABLE");
                 message(DEBUG, "Mounting Singularity image file read/write\n");
                 if ( mount_image(loop_dev, containerdir, 0) < 0 ) {
@@ -536,7 +537,7 @@ int main(int argc, char ** argv) {
 
             // Bind mounts
             message(DEBUG, "Checking to see if we should do bind mounts\n");
-            if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
+            if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
                 unsetenv("SINGULARITY_CONTAIN");
 
                 message(DEBUG, "Checking configuration file for 'mount home'\n");
@@ -577,7 +578,7 @@ int main(int argc, char ** argv) {
 
                     message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
 
-                    if ( ( homedir_base != NULL ) && ( strncmp(dest, homedir_base, strlen(homedir_base)) == 0 )) {
+                    if ( ( homedir_base != NULL ) && ( strncmp(dest, homedir_base, strlength(homedir_base, 256)) == 0 )) {
                         // Skipping path as it was already mounted as homedir_base
                         message(VERBOSE2, "Skipping '%s' as it is part of home path and already mounted\n", dest);
                         continue;
@@ -654,7 +655,7 @@ int main(int argc, char ** argv) {
                 message(DEBUG, "Hello from exec child process\n");
 
                 message(VERBOSE, "Entering container file system space\n");
-                if ( chroot(containerdir) < 0 ) {
+                if ( chroot(containerdir) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
                     message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerdir);
                     ABORT(255);
                 }
@@ -777,7 +778,7 @@ int main(int argc, char ** argv) {
                     fflush(daemon_fp);
                 }
 
-                strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
+                strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
 
                 message(DEBUG, "Dropping privs...\n");
 
@@ -800,7 +801,7 @@ int main(int argc, char ** argv) {
         // Wait for namespace process to finish
         } else if ( namespace_fork_pid > 0 ) {
             int tmpstatus;
-            strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
+            strncpy(argv[0], "Singularity: namespace", strlen(argv[0])); // Flawfinder: ignore
 
             if ( drop_privs(&uinfo) < 0 ) {
                 ABORT(255);
@@ -836,7 +837,7 @@ int main(int argc, char ** argv) {
 
         if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
             message(DEBUG, "Connecting to existing PID namespace\n");
-            int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
+            int fd = open(joinpath(setns_dir, "pid"), O_RDONLY); // Flawfinder: ignore
             if ( setns(fd, CLONE_NEWPID) < 0 ) {
                 message(ERROR, "Could not join existing PID namespace: %s\n", strerror(errno));
                 ABORT(255);
@@ -851,7 +852,7 @@ int main(int argc, char ** argv) {
         // Connect to existing mount namespace
         if ( is_file(joinpath(setns_dir, "mnt")) == 0 ) {
             message(DEBUG, "Connecting to existing mount namespace\n");
-            int fd = open(joinpath(setns_dir, "mnt"), O_RDONLY);
+            int fd = open(joinpath(setns_dir, "mnt"), O_RDONLY); // Flawfinder: ignore
             if ( setns(fd, CLONE_NEWNS) < 0 ) {
                 message(ERROR, "Could not join existing mount namespace: %s\n", strerror(errno));
                 ABORT(255);
@@ -881,7 +882,7 @@ int main(int argc, char ** argv) {
 
 //TODO: Add chroot and chdirs to a container method
             message(VERBOSE, "Entering container file system space\n");
-            if ( chroot(containerdir) < 0 ) {
+            if ( chroot(containerdir) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
                 message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerdir);
                 ABORT(255);
             }
@@ -942,7 +943,7 @@ int main(int argc, char ** argv) {
         } else if ( exec_pid > 0 ) {
             int tmpstatus;
     
-            strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
+            strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
     
             message(DEBUG, "Dropping privs...\n");
 

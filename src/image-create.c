@@ -32,6 +32,7 @@
 #include "file.h"
 #include "image.h"
 #include "message.h"
+#include "util.h"
 
 
 

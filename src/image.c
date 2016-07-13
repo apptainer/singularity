@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "file.h"
 #include "image.h"
@@ -40,7 +41,7 @@ int image_offset(FILE *image_fp) {
     rewind(image_fp);
 
     for (i=0; i < 64; i++) {
-        int c = fgetc(image_fp);
+        int c = fgetc(image_fp); // Flawfinder: ignore
         if ( c == EOF ) {
             break;
         } else if ( c == '\n' ) {
@@ -62,25 +63,30 @@ int image_create(char *image, int size) {
 
     message(VERBOSE, "Creating new sparse image at: %s\n", image);
 
+    if ( is_file(image) == 0 ) {
+        message(ERROR, "Will not overwrite existing file: %s\n", image);
+        ABORT(255);
+    }
+
     message(DEBUG, "Opening image 'w'\n");
-    image_fp = fopen(image, "w");
-    if ( image_fp == NULL ) {
+    if ( ( image_fp = fopen(image, "w") ) == NULL ) { // Flawfinder: ignore
         fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
         return(-1);
     }
 
     message(VERBOSE2, "Writing image header\n");
-    fprintf(image_fp, LAUNCH_STRING);
+    fprintf(image_fp, LAUNCH_STRING); // Flawfinder: ignore (LAUNCH_STRING is a constant)
 
     message(VERBOSE2, "Expanding image to %dMB\n", size);
     for(i = 0; i < size; i++ ) {
         fseek(image_fp, 1024 * 1024, SEEK_CUR);
     }
     fprintf(image_fp, "0");
-    fclose(image_fp);
 
     message(VERBOSE2, "Making image executable\n");
-    chmod(image, 0755);
+    fchmod(fileno(image_fp), 0755);
+
+    fclose(image_fp);
 
     message(DEBUG, "Returning image_create(%s, %d) = 0\n", image, size);
 
@@ -95,8 +101,7 @@ int image_expand(char *image, int size) {
     message(VERBOSE, "Expanding sparse image at: %s\n", image);
 
     message(DEBUG, "Opening image 'r+'\n");
-    image_fp = fopen(image, "r+");
-    if ( image_fp == NULL ) {
+    if ( ( image_fp = fopen(image, "r+") ) == NULL ) { // Flawfinder: ignore
         fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
         return(-1);
     }

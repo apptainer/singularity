@@ -34,15 +34,19 @@
 #include "message.h"
 
 
+#define MAX_LINE_LEN 2048
+
 
 char *config_get_key_value(FILE *fp, char *key) {
     char *config_key;
     char *config_value;
-    char line[1024];
+    char *line;
+
+    line = (char *)malloc(sizeof(MAX_LINE_LEN));
 
     message(DEBUG, "Called config_get_key_value(fp, %s)\n", key);
 
-    while ( fgets(line, sizeof(line), fp) ) {
+    while ( fgets(line, sizeof(MAX_LINE_LEN), fp) ) {
         if ( ( config_key = strtok(line, "=") ) != NULL ) {
             chomp(config_key);
             if ( strcmp(config_key, key) == 0 ) {
@@ -57,6 +61,7 @@ char *config_get_key_value(FILE *fp, char *key) {
             }
         }
     }
+    free(line);
 
     message(DEBUG, "Return config_get_key_value(fp, %s) = NULL\n", key);
     return(NULL);
