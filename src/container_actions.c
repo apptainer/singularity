@@ -39,11 +39,18 @@
 
 int container_run(int argc, char **argv) {
     message(DEBUG, "Called container_run(%d, **argv)\n", argc);
-    if ( is_exec("/singularity") == 0 ) {
+    if ( is_exec("/.run") == 0 ) {
+        argv[0] = strdup("/.run");
+        message(VERBOSE, "Found /.run inside container, exec()'ing...\n");
+        if ( execv("/.run", argv) != 0 ) { // Flawfinder: ignore (exec* is necessary)
+            message(ERROR, "Exec of /.run failed: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    } else if ( is_exec("/singularity") == 0 ) {
         argv[0] = strdup("/singularity");
         message(VERBOSE, "Found /singularity inside container, exec()'ing...\n");
         if ( execv("/singularity", argv) != 0 ) { // Flawfinder: ignore (exec* is necessary)
-            message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
+            message(ERROR, "Exec of /singularity failed: %s\n", strerror(errno));
             ABORT(255);
         }
     } else {
@@ -62,10 +69,25 @@ int container_exec(int argc, char **argv) {
         ABORT(255);
     }
 
-    message(VERBOSE, "Exec'ing program: %s\n", argv[1]);
-    if ( execvp(argv[1], &argv[1]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
-        message(ERROR, "execvp of '%s' failed: %s\n", argv[1], strerror(errno));
-        ABORT(255);
+    if ( is_exec("/.exec") == 0 ) {
+        argv[0] = strdup("/.exec");
+        message(VERBOSE, "Found /.exec inside container, exec()'ing...\n");
+        if ( execv("/.exec", argv) != 0 ) { // Flawfinder: ignore (exec* is necessary)
+            message(ERROR, "Exec of /.exec failed: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    } else if ( is_exec(argv[1]) ) {
+        message(VERBOSE, "Exec'ing program: %s\n", argv[1]);
+        if ( execv(argv[1], &argv[1]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
+            message(ERROR, "execv of '%s' failed: %s\n", argv[1], strerror(errno));
+            ABORT(255);
+        }
+    } else {
+        message(VERBOSE, "Exec'ing program: %s\n", argv[1]);
+        if ( execvp(argv[1], &argv[1]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
+            message(ERROR, "execvp of '%s' failed: %s\n", argv[1], strerror(errno));
+            ABORT(255);
+        }
     }
 
     message(ERROR, "We should not have reached the end of container_exec\n");
@@ -75,7 +97,13 @@ int container_exec(int argc, char **argv) {
 int container_shell(int argc, char **argv) {
     message(DEBUG, "Called container_shell(%d, **argv)\n", argc);
 
-    if ( is_exec("/bin/bash") == 0 ) {
+    if ( is_exec("/.shell") == 0 ) {
+        argv[0] = strdup("/.shell");
+        message(VERBOSE, "Exec()'ing /.shell\n");
+        if ( execv("/.shell", argv) != 0 ) { // Flawfinder: ignore (exec* is necessary)
+            message(ERROR, "Exec of /.shell failed: %s\n", strerror(errno));
+        }
+    } else if ( is_exec("/bin/bash") == 0 ) {
         char *args[argc+2]; // Flawfinder: ignore
         int i;
 
