@@ -40,7 +40,7 @@ if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
 fi
 
 while true; do
-    case $1 in
+    case ${1:-} in
         -h|--help|help)
             if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
                 cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
@@ -51,7 +51,7 @@ while true; do
             exit
         ;;
         -*)
-            message ERROR "Unknown option: $1\n"
+            message ERROR "Unknown option: ${1:-}\n"
             exit 1
         ;;
         *)
@@ -61,7 +61,7 @@ while true; do
 done
 
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -70,7 +70,7 @@ if [ -z "$1" ]; then
     exit 0
 fi
 
-SINGULARITY_IMAGE="$1"
+SINGULARITY_IMAGE="${1:-}"
 export SINGULARITY_IMAGE
 shift
 

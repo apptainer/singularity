@@ -49,12 +49,12 @@ else
 fi
 
 while true; do
-    case $1 in
+    case ${1:-} in
         -h|--help|help)
-            if [ -z "$2" ]; then
+            if [ -z "${2:-}" ]; then
                 C="singularity"
             else
-                C="$2"
+                C="${2:-}"
             fi
             if [ -e "$SINGULARITY_libexecdir/singularity/cli/$C.help" ]; then
                 cat "$SINGULARITY_libexecdir/singularity/cli/$C.help"
@@ -95,7 +95,7 @@ while true; do
     esac
 done
 
-SINGULARITY_COMMAND="$1"
+SINGULARITY_COMMAND="${1:-}"
 export SINGULARITY_COMMAND
 
 if [ -z "$SINGULARITY_COMMAND" ]; then

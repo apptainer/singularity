@@ -43,7 +43,7 @@ fi
 IN_FORMAT=tar
 
 while true; do
-    case $1 in
+    case ${1:-} in
         -h|--help|help)
             if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
                 cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
@@ -55,21 +55,21 @@ while true; do
         ;;
         -f|--file)
             shift
-            FILE="$1"
+            FILE="${1:-}"
             shift
         ;;
         --command)
             shift
-            TAR_COMMAND="$1"
+            TAR_COMMAND="${1:-}"
             shift
         ;;
         -t|--format)
             shift
-            IN_FORMAT=$1
+            IN_FORMAT=${1:-}
             shift
         ;;
         -*)
-            message ERROR "Unknown option: $1\n"
+            message ERROR "Unknown option: ${1:-}\n"
             exit 1
         ;;
         *)
@@ -78,7 +78,7 @@ while true; do
     esac
 done
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -87,7 +87,7 @@ if [ -z "$1" ]; then
     exit 0
 fi
 
-if [ "$UID" != 0 ]; then
+if [ "${UID:-}" != 0 ]; then
     message ERROR "Calling user must be root!\n"
     exit 1
 fi
@@ -97,14 +97,14 @@ export SINGULARITY_BUILD_ROOT
 
 case $IN_FORMAT in
 tar)
-    IMAGE="$1"
+    IMAGE="${1:-}"
     shift
     
     if [ ! -f "$IMAGE" ]; then
         message ERROR "Container image does not exist: $IMAGE\n"
         exit 1
     fi
-    if [ -z "$1" ]; then
+    if [ -z "${1:-}" ]; then
         if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
             head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
         else

@@ -80,22 +80,22 @@ DistType() {
 }
 
 MirrorURL() {
-    MIRROR="$1"
+    MIRROR="${1:-}"
     export MIRROR
 
     return 0
 }
 
 OSVersion() {
-    VERSION="$1"
+    VERSION="${1:-}"
     export VERSION
 
     return 0
 }
 
 InstallFile() {
-    SOURCE="$1"
-    DEST="$2"
+    SOURCE="${1:-}"
+    DEST="${2:-}"
 
     if [ -z "$SOURCE" ]; then
         echo "InstallFile: Must be called with a source file!" >&2
@@ -191,7 +191,7 @@ Finalize() {
 
 
 __runcmd() {
-    CMD="$1"
+    CMD="${1:-}"
     shift
 
     echo "+ $CMD $*" 1>&2

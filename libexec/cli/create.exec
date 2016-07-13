@@ -104,11 +104,6 @@ if ! MKFS_PATH=`singularity_which "mkfs.$FILESYSTEM"`; then
     exit 255
 fi
 
-if ! touch "$IMAGE_FILE" 2>/dev/null; then
-    message ERROR "Could not create image: $IMAGE_FILE\n"
-    exit 1
-fi
-
 message 1 "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MiB...\n"
 if ! eval "$SINGULARITY_libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMAGE_SIZE"; then
     message ERROR "Failed creating image: $IMAGE_FILE\n"

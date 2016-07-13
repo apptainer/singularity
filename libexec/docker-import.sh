@@ -55,12 +55,12 @@ docker_cleanup() {
 # If we've started a container, we want to remove it on exit.
 trap docker_cleanup 0
 
-if [[ -z $FILE ]]; then
+if [[ -z ${FILE:-} ]]; then
     message ERROR "No Docker image specified (with --file)\n"
     exit 1
 fi
 dock=$FILE
-sing=$1
+sing=${1:-}
 
 if [[ -f $sing ]]; then
     message ERROR "$sing exists -- not over-written\n"

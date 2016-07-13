@@ -61,15 +61,15 @@ OSVersion() {
 
 
 MirrorURL() {
-    if [ -n "$2" ]; then
-        REPO_NAME="$2"
+    if [ -n "${2:-}" ]; then
+        REPO_NAME="${2:-}"
     else
         REPO_NAME="repo-${REPO_COUNT}"
         REPO_COUNT=`expr $REPO_COUNT + 1`
     fi
     echo "[$REPO_NAME]" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
     echo 'name=Linux $releasever - $basearch' >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-    echo "baseurl=$1" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
+    echo "baseurl=${1:-}" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
     echo "enabled=1" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
     echo "gpgcheck=0" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
     echo "" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"

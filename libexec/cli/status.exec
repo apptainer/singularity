@@ -50,9 +50,9 @@ if [ "$USERID" = 0 ]; then
 fi
 
 while true; do
-    case $1 in
+    case ${1:-} in
         -*)
-            message ERROR "Unknown option: $1\n"
+            message ERROR "Unknown option: ${1:-}\n"
             exit 1
         ;;
         *)

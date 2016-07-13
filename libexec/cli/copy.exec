@@ -35,7 +35,7 @@ else
 fi
 
 while true; do
-    case $1 in
+    case ${1:-} in
         -h|--help|help)
             if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
                 cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
@@ -55,7 +55,7 @@ while true; do
     esac
 done
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -64,12 +64,12 @@ if [ -z "$1" ]; then
     exit 0
 fi
 
-if [ "$UID" != 0 ]; then
+if [ "${UID:-}" != 0 ]; then
     message ERROR "Calling user must be root!\n"
     exit 1
 fi
 
-IMAGE="$1"
+IMAGE="${1:-}"
 shift
 
 if [ ! -f "$IMAGE" ]; then
