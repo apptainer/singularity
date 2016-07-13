@@ -43,6 +43,8 @@ PATH=/bin:/sbin:$PATH
 
 export SINGULARITY_TMPDIR SINGULARITY_BUILDDEF
 
+set -e
+
 # Always run these checks
 SanityCheck
 PreSetup

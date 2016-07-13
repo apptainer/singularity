@@ -104,20 +104,13 @@ tar)
         message ERROR "Container image does not exist: $IMAGE\n"
         exit 1
     fi
-    if [ -z "${1:-}" ]; then
-        if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-            head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-        else
-            message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
-        fi
-        exit 0
-    fi
-    if [ -n "$TAR_COMMAND" ]; then
+
+    if [ -n "${TAR_COMMAND:-}" ]; then
         exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; $TAR_COMMAND"
-    elif [ -n "$FILE" ]; then
-        exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xvf \"$FILE\""
+    elif [ -n "${FILE:-}" ]; then
+        exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xf \"$FILE\""
     else
-        exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xvf -"
+        exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar xf -"
     fi
     ;;
 *)

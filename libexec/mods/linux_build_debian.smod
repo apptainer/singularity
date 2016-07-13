@@ -69,11 +69,11 @@ Bootstrap() {
         return 1
     fi
 
-    if [ -n "$LANG" ]; then
+    if [ -n "${LANG:-}" ]; then
         if LOCALE_GEN=`singularity_which locale-gen`; then
-            if __runcmd $LOCALE_GEN $LANG; then
+            if __runcmd $LOCALE_GEN ${LANG:-}; then
                 mkdir -p "$SINGULARITY_BUILD_ROOT/etc/default/" >/dev/null 2>&1
-                echo "LANG=$LANG" > "$SINGULARITY_BUILD_ROOT/etc/default/locale"
+                echo "LANG=${LANG:-}" > "$SINGULARITY_BUILD_ROOT/etc/default/locale"
             fi
         fi
     fi

@@ -94,13 +94,13 @@ if [ ! -d "$SINGULARITY_BUILD_ROOT" ]; then
     mkdir -m 0755 -p "$SINGULARITY_BUILD_ROOT"
 fi
 
-if [ -n "$TAR_COMMAND" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; $TAR_COMMAND"
-elif [ -n "$FILE" ]; then
-    if touch "$FILE"; then
-        exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "(cd \"$SINGULARITY_BUILD_ROOT\"; tar cf - . ) > \"$FILE\""
+if [ -n "${TAR_COMMAND:-}" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; ${TAR_COMMAND:-}"
+elif [ -n "${FILE:-}" ]; then
+    if touch "${FILE:-}"; then
+        exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "(cd \"$SINGULARITY_BUILD_ROOT\"; tar cf - . ) > \"${FILE:-}\""
     else
-        message ERROR "Could not create file: $FILE\n"
+        message ERROR "Could not create file: ${FILE:-}\n"
         exit 255
     fi
 else

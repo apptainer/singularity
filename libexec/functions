@@ -19,7 +19,7 @@
 # 
 # 
 
-set -u -e
+set -u
 
 if [ -z "${MESSAGELEVEL:-}" ]; then
     /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
