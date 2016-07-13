@@ -187,6 +187,41 @@ Finalize() {
         rm -f "$SINGULARITY_BUILD_ROOT/etc/mtab"
     fi
     echo "singularity / rootfs rw 0 0" > "$SINGULARITY_BUILD_ROOT/etc/mtab"
+
+    echo '#!/bin/sh' > "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '. /environment' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'if test -n "$SHELL" -a "$SHELL" == "/bin/bash"; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    exec /bin/bash --norc --noprofile' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'elif test -n "$SHELL" -a -x "$SHELL"; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    exec "$SHELL"' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'elif test -x /bin/sh; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    SHELL=/bin/sh' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    export SHELL' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    exec /bin/sh' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    chmod 0755 "$SINGULARITY_BUILD_ROOT/.shell"
+
+    echo '#!/bin/sh' > "$SINGULARITY_BUILD_ROOT/.exec"
+    echo '. /environment' >> "$SINGULARITY_BUILD_ROOT/.exec"
+    echo 'exec "$@"' >> "$SINGULARITY_BUILD_ROOT/.exec"
+    chmod 0755 "$SINGULARITY_BUILD_ROOT/.exec"
+
+    echo '#!/bin/sh' > "$SINGULARITY_BUILD_ROOT/.run"
+    echo '. /environment' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo 'if test -x /singularity; then' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo '    exec /singularity "$@"' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo 'else' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo '    echo "No runscript found, executing /bin/sh"' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo '    exec /bin/sh' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/.run"
+    chmod 0755 "$SINGULARITY_BUILD_ROOT/.run"
+
+    echo '# Define any environment init code here' > "$SINGULARITY_BUILD_ROOT/environment"
+    echo '# ' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo '' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo "PATH=$PATH:/bin:/sbin" >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo 'PS1="Singularity.$SINGULARITY_CONTAINER> $PS1"' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo 'export PATH PS1' >> "$SINGULARITY_BUILD_ROOT/environment"
 }
 
 
