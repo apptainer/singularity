@@ -42,11 +42,11 @@ char *config_get_key_value(FILE *fp, char *key) {
     char *config_value;
     char *line;
 
-    line = (char *)malloc(sizeof(MAX_LINE_LEN));
+    line = (char *)malloc(MAX_LINE_LEN);
 
     message(DEBUG, "Called config_get_key_value(fp, %s)\n", key);
 
-    while ( fgets(line, sizeof(MAX_LINE_LEN), fp) ) {
+    while ( fgets(line, MAX_LINE_LEN, fp) ) {
         if ( ( config_key = strtok(line, "=") ) != NULL ) {
             chomp(config_key);
             if ( strcmp(config_key, key) == 0 ) {
