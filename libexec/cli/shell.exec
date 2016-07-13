@@ -50,6 +50,11 @@ while true; do
             fi
             exit
         ;;
+        -s|--shell)
+            shift
+            SHELL="${1:-}"
+            shift
+        ;;
         -w|--writable)
             shift
             SINGULARITY_WRITABLE=1
