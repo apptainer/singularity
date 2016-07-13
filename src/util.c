@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -36,6 +36,7 @@
 #include <time.h>
 
 #include "config.h"
+#include "message.h"
 
 
 
@@ -106,10 +107,5 @@ char *random_string(int length) {
     ret[length] = '\0';
 
     return(ret);
-}
-
-void _abort(int value, const char *function, const char *file, int line) {
-    fprintf(stderr, "ABORT:   Thrown from %s:%d/%s() with RETVAL=%d\n", file, line, function, value);
-    exit(value);
 }
 

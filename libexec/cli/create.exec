@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -60,7 +60,7 @@ while true; do
             shift
         ;;
         -*)
-            echo "ERROR: Unknown option: $1"
+            message ERROR "Unknown option: $1\n"
             exit 1
         ;;
         *)
@@ -73,7 +73,7 @@ if [ -z "$1" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
-        echo "ERROR: To see usage summary, try: singularity help $SINGULARITY_COMMAND"
+        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
     fi
     exit 0
 fi
@@ -109,18 +109,18 @@ if ! touch "$IMAGE_FILE" 2>/dev/null; then
     exit 1
 fi
 
-echo "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MiB..."
+message 1 "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MiB...\n"
 if ! eval "$SINGULARITY_libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMAGE_SIZE"; then
     messsage ERROR "Failed creating image: $IMAGE_FILE\n"
     exit 1
 fi
 
-if ! LOOP_DEV=`eval "$SINGULARITY_libexecdir/singularity/image-bind" attach "$IMAGE_FILE" 2>/dev/null`; then
+if ! LOOP_DEV=`eval "$SINGULARITY_libexecdir/singularity/image-bind" attach "$IMAGE_FILE"`; then
     message ERROR "Failed binding image: $IMAGE_FILE\n"
     exit 1
 fi
 
-echo "Formatting image ($MKFS_PATH)"
+message 1 "Formatting image ($MKFS_PATH)\n"
 if ! eval $MKFS_PATH -q "$LOOP_DEV" >/dev/null; then
     message ERROR "Failed formatting loop image: $LOOP_DEV\n"
     eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$LOOP_DEV"
@@ -128,7 +128,7 @@ if ! eval $MKFS_PATH -q "$LOOP_DEV" >/dev/null; then
 fi
 
 eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$LOOP_DEV"
-echo "Done. Image can be found at: $IMAGE_FILE"
+message 1 "Done. Image can be found at: $IMAGE_FILE\n"
 
 
 exit 0

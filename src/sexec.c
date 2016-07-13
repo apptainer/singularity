@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/param.h>
-#include <syslog.h>
 #include <errno.h> 
 #include <signal.h>
 #include <sched.h>
@@ -65,10 +64,6 @@
 #define MS_REC 16384
 #endif
 
-#ifdef NS_CLONE_PID
-#define NS_CLONE_NEWPID NS_CLONE_PID
-#endif
-
 pid_t exec_fork_pid = 0;
 
 void sighandler(int sig) {
@@ -85,21 +80,20 @@ void sighandler(int sig) {
 
 int main(int argc, char ** argv) {
     FILE *containerimage_fp;
-    FILE *loop_fp;
     FILE *config_fp;
     FILE *daemon_fp = NULL;
     char *containerimage;
     char *containername;
-    char *containerpath;
-    char *username;
+    char *containerdir;
     char *command;
     char *sessiondir;
     char *sessiondir_prefix;
     char *prompt;
+    char *existing_prompt;
     char *loop_dev_lock;
     char *loop_dev_cache;
     char *homedir;
-    char *homedir_base;
+    char *homedir_base = 0;
     char *loop_dev = 0;
     char *config_path;
     char *tmp_config_string;
@@ -126,8 +120,6 @@ int main(int argc, char ** argv) {
     signal(SIGKILL, sighandler);
     signal(SIGQUIT, sighandler);
 
-    openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
-
     // Get all user/group info
     uid = getuid();
     pw = getpwuid(uid);
@@ -151,14 +143,8 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
-    message(DEBUG, "Obtaining username and homedir\n");
-    username = pw->pw_name;
+    message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
-
-    message(DEBUG, "Building configuration file location\n");
-    config_path = (char *) malloc(strlen(SYSCONFDIR) + 30);
-    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR);
-    message(DEBUG, "Config location: %s\n", config_path);
 
     // Figure out where we start
     message(DEBUG, "Obtaining file descriptor to current directory\n");
@@ -190,6 +176,11 @@ int main(int argc, char ** argv) {
         message(ERROR, "Container image path is invalid: %s\n", containerimage);
         ABORT(1);
     }
+
+    message(DEBUG, "Building configuration file location\n");
+    config_path = (char *) malloc(strlen(SYSCONFDIR) + 30);
+    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR);
+    message(DEBUG, "Config location: %s\n", config_path);
 
     message(DEBUG, "Checking Singularity configuration is a file: %s\n", config_path);
     if ( is_file(config_path) != 0 ) {
@@ -233,14 +224,25 @@ int main(int argc, char ** argv) {
     loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
     loop_dev_cache = joinpath(sessiondir, "loop_dev");
 
-    containerpath = (char *) malloc(strlen(LOCALSTATEDIR) + 18);
-    snprintf(containerpath, strlen(LOCALSTATEDIR) + 18, "%s/singularity/mnt", LOCALSTATEDIR);
-    message(DEBUG, "Set image mount path to: %s\n", containerpath);
+    rewind(config_fp);
+    if ( ( containerdir = config_get_key_value(config_fp, "container dir") ) == NULL ) {
+        //containerdir = (char *) malloc(21);
+        containerdir = strdup("/var/singularity/mnt");
+    }
+    message(DEBUG, "Set image mount path to: %s\n", containerdir);
 
-    syslog(LOG_NOTICE, "User=%s[%d], Command=%s, Container=%s, CWD=%s, Arg1=%s", username, uid, command, containerimage, cwd, argv[1]);
+    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
 
-    prompt = (char *) malloc(strlen(containername) + 16);
-    snprintf(prompt, strlen(containername) + 16, "Singularity/%s> ", containername);
+    if ( ( existing_prompt = getenv("PS1") ) != NULL ) {
+        int prompt_len = strlen(containername) + strlen(existing_prompt) + 16;
+        prompt = (char *) malloc(prompt_len + 1);
+        snprintf(prompt, prompt_len, "(Singularity/%s) %s", containername, existing_prompt);
+    } else {
+        int prompt_len = strlen(containername) + 16;
+        prompt = (char *) malloc(prompt_len + 1);
+        snprintf(prompt, prompt_len, "Singularity.%s> ", containername);
+    }
+
     setenv("PS1", prompt, 1);
     message(DEBUG, "Set prompt to: %s\n", prompt);
 
@@ -312,7 +314,7 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
-    message(VERBOSE, "Creating session directory: %s\n", sessiondir);
+    message(VERBOSE, "Creating/Verifying session directory: %s\n", sessiondir);
     if ( s_mkpath(sessiondir, 0755) < 0 ) {
         message(ERROR, "Failed creating session directory: %s\n", sessiondir);
         ABORT(255);
@@ -323,16 +325,16 @@ int main(int argc, char ** argv) {
     }
     if ( is_owner(sessiondir, 0) < 0 ) {
         message(ERROR, "Container working directory has wrong ownership: %s\n", sessiondir);
-        syslog(LOG_ERR, "Container working directory has wrong ownership: %s", sessiondir);
         ABORT(255);
     }
 
-    message(DEBUG, "Setting shared lock on session directory\n");
+    message(DEBUG, "Opening sessiondir file descriptor\n");
     sessiondirlock_fd = open(sessiondir, O_RDONLY);
     if ( sessiondirlock_fd < 0 ) {
         message(ERROR, "Could not obtain file descriptor on %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }
+    message(DEBUG, "Setting shared flock() on session directory\n");
     if ( flock(sessiondirlock_fd, LOCK_SH | LOCK_NB) < 0 ) {
         message(ERROR, "Could not obtain shared lock on %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
@@ -349,49 +351,46 @@ int main(int argc, char ** argv) {
         message(ERROR, "Could not open loop_dev_lock %s: %s\n", loop_dev_lock, strerror(errno));
         ABORT(255);
     }
+    message(DEBUG, "Requesting exclusive flock() on loop_dev lockfile\n");
     if ( flock(loop_dev_lock_fd, LOCK_EX | LOCK_NB) == 0 ) {
-        loop_dev = obtain_loop_dev();
+        message(DEBUG, "We have exclusive flock() on loop_dev lockfile\n");
 
-        if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
-            message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-            syslog(LOG_ERR, "Failed to open loop device %s: %s", loop_dev, strerror(errno));
+        message(DEBUG, "Binding container to loop interface\n");
+        if ( loop_bind(containerimage_fp, &loop_dev) < 0 ) {
+            message(ERROR, "Could not bind image to loop!\n");
             ABORT(255);
         }
 
-        if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
-            message(ERROR, "Could not associate %s to loop device %s\n", containerimage, loop_dev);
-            syslog(LOG_ERR, "Failed to associate %s to loop device %s", containerimage, loop_dev);
-            ABORT(255);
-        }
-
+        message(DEBUG, "Writing loop device name to loop_dev: %s\n", loop_dev);
         if ( fileput(loop_dev_cache, loop_dev) < 0 ) {
             message(ERROR, "Could not write to loop_dev_cache %s: %s\n", loop_dev_cache, strerror(errno));
             ABORT(255);
         }
 
+        message(DEBUG, "Resetting exclusive flock() to shared on loop_dev lockfile\n");
         flock(loop_dev_lock_fd, LOCK_SH | LOCK_NB);
 
     } else {
+        message(DEBUG, "Unable to get exclusive flock() on loop_dev lockfile\n");
+
+        message(DEBUG, "Waiting to obtain shared lock on loop_dev lockfile\n");
         flock(loop_dev_lock_fd, LOCK_SH);
+
+        message(DEBUG, "Exclusive lock on loop_dev lockfile released, getting loop_dev\n");
         if ( ( loop_dev = filecat(loop_dev_cache) ) == NULL ) {
             message(ERROR, "Could not retrieve loop_dev_cache from %s\n", loop_dev_cache);
             ABORT(255);
         }
 
-        if ( ( loop_fp = fopen(loop_dev, "r") ) < 0 ) {
-            message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-            ABORT(255);
-        }
     }
 
-    message(DEBUG, "Creating container image mount path: %s\n", containerpath);
-    if ( s_mkpath(containerpath, 0755) < 0 ) {
-        message(ERROR, "Failed creating image directory %s\n", containerpath);
+    message(DEBUG, "Creating container image mount path: %s\n", containerdir);
+    if ( s_mkpath(containerdir, 0755) < 0 ) {
+        message(ERROR, "Failed creating image directory %s\n", containerdir);
         ABORT(255);
     }
-    if ( is_owner(containerpath, 0) < 0 ) {
-        message(ERROR, "Container directory is not root owned: %s\n", containerpath);
-        syslog(LOG_ERR, "Container directory has wrong ownership: %s", sessiondir);
+    if ( is_owner(containerdir, 0) < 0 ) {
+        message(ERROR, "Container directory is not root owned: %s\n", containerdir);
         ABORT(255);
     }
 
@@ -399,14 +398,13 @@ int main(int argc, char ** argv) {
 
     // Manage the daemon bits early
     if ( strcmp(command, "start") == 0 ) {
-        int daemon_fd;
-
-        message(DEBUG, "Namespace daemon function requested\n");
-
 #ifdef NO_SETNS
         message(ERROR, "This host does not support joining existing name spaces\n");
         ABORT(1);
-#endif
+#else
+        int daemon_fd;
+
+        message(DEBUG, "Namespace daemon function requested\n");
 
         message(DEBUG, "Creating namespace daemon pidfile: %s\n", joinpath(sessiondir, "daemon.pid"));
         if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
@@ -421,12 +419,7 @@ int main(int argc, char ** argv) {
             }
         }
 
-        daemon_fd = fileno(daemon_fp);
-        if ( flock(daemon_fd, LOCK_EX | LOCK_NB) != 0 ) {
-            message(ERROR, "Could not obtain lock, another daemon process running?\n");
-            ABORT(255);
-        }
-
+        message(VERBOSE, "Creating daemon.comm fifo\n");
         if ( is_fifo(joinpath(sessiondir, "daemon.comm")) < 0 ) {
             if ( mkfifo(joinpath(sessiondir, "daemon.comm"), 0664) < 0 ) {
                 message(ERROR, "Could not create communication fifo: %s\n", strerror(errno));
@@ -434,11 +427,18 @@ int main(int argc, char ** argv) {
             }
         }
 
+        daemon_fd = fileno(daemon_fp);
+        if ( flock(daemon_fd, LOCK_EX | LOCK_NB) != 0 ) {
+            message(ERROR, "Could not obtain lock, another daemon process running?\n");
+            ABORT(255);
+        }
+
         message(DEBUG, "Forking namespace daemon process\n");
         if ( daemon(0,0) < 0 ) {
             message(ERROR, "Could not daemonize: %s\n", strerror(errno));
             ABORT(255);
         }
+#endif
     } else if ( strcmp(command, "stop") == 0 ) {
         message(DEBUG, "Stopping namespace daemon process\n");
         return(container_daemon_stop(sessiondir));
@@ -461,6 +461,7 @@ int main(int argc, char ** argv) {
             message(DEBUG, "Hello from namespace child process\n");
             // Setup PID namespaces
             rewind(config_fp);
+#ifdef NS_CLONE_NEWPID
             if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
                 unsetenv("SINGULARITY_NO_NAMESPACE_PID");
                 message(DEBUG, "Virtualizing PID namespace\n");
@@ -471,13 +472,29 @@ int main(int argc, char ** argv) {
             } else {
                 message(VERBOSE, "Not virtualizing PID namespace\n");
             }
+#else
+#ifdef NS_CLONE_PID
+            if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
+                unsetenv("SINGULARITY_NO_NAMESPACE_PID");
+                message(DEBUG, "Virtualizing PID namespace\n");
+                if ( unshare(CLONE_NEWPID) < 0 ) {
+                    message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+            } else {
+                message(VERBOSE, "Not virtualizing PID namespace\n");
+            }
+#endif
+#endif
 
+#ifdef NS_CLONE_FS
             // Setup FS namespaces
             message(DEBUG, "Virtualizing FS namespace\n");
             if ( unshare(CLONE_FS) < 0 ) {
                 message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
                 ABORT(255);
             }
+#endif
 
             // Setup mount namespaces
             message(DEBUG, "Virtualizing mount namespace\n");
@@ -485,12 +502,6 @@ int main(int argc, char ** argv) {
                 message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
                 ABORT(255);
             }
-
-            // Setup FS namespaces
-//           if ( unshare(CLONE_FILES) < 0 ) {
-//               message(ERROR, "Could not virtualize file descriptor namespace: %s\n", strerror(errno));
-//               ABORT(255);
-//           }
 
             // Privatize the mount namespaces
             message(DEBUG, "Making mounts private\n");
@@ -504,12 +515,12 @@ int main(int argc, char ** argv) {
             if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
                 unsetenv("SINGULARITY_WRITABLE");
                 message(DEBUG, "Mounting Singularity image file read/write\n");
-                if ( mount_image(loop_dev, containerpath, 0) < 0 ) {
+                if ( mount_image(loop_dev, containerdir, 0) < 0 ) {
                     ABORT(255);
                 }
             } else {
                 message(DEBUG, "Mounting Singularity image file read only\n");
-                if ( mount_image(loop_dev, containerpath, 1) < 0 ) {
+                if ( mount_image(loop_dev, containerdir, 1) < 0 ) {
                     ABORT(255);
                 }
             }
@@ -517,7 +528,7 @@ int main(int argc, char ** argv) {
 
             // /bin/sh MUST exist as the minimum requirements for a container
             message(DEBUG, "Checking if container has /bin/sh\n");
-            if ( is_exec(joinpath(containerpath, "/bin/sh")) < 0 ) {
+            if ( is_exec(joinpath(containerdir, "/bin/sh")) < 0 ) {
                 message(ERROR, "Container image does not have a valid /bin/sh\n");
                 ABORT(1);
             }
@@ -531,11 +542,11 @@ int main(int argc, char ** argv) {
                 message(DEBUG, "Checking configuration file for 'mount home'\n");
                 rewind(config_fp);
                 if ( config_get_key_bool(config_fp, "mount home", 1) > 0 ) {
-                    if ( ( homedir_base = container_basedir(containerpath, homedir) ) != NULL ) {
+                    if ( ( homedir_base = container_basedir(containerdir, homedir) ) != NULL ) {
                         if ( is_dir(homedir_base) == 0 ) {
-                            if ( is_dir(joinpath(containerpath, homedir_base)) == 0 ) {
+                            if ( is_dir(joinpath(containerdir, homedir_base)) == 0 ) {
                                 message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
-                                if ( mount_bind(homedir_base, joinpath(containerpath, homedir_base), 1) < 0 ) {
+                                if ( mount_bind(homedir_base, joinpath(containerdir, homedir_base), 1) < 0 ) {
                                     ABORT(255);
                                 }
                             } else {
@@ -576,13 +587,13 @@ int main(int argc, char ** argv) {
                         message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
                         continue;
                     }
-                    if ( ( is_file(joinpath(containerpath, dest)) != 0 ) && ( is_dir(joinpath(containerpath, dest)) != 0 ) ) {
+                    if ( ( is_file(joinpath(containerdir, dest)) != 0 ) && ( is_dir(joinpath(containerdir, dest)) != 0 ) ) {
                         message(WARNING, "Non existant 'bind point' in container: '%s'\n", dest);
                         continue;
                     }
 
                     message(VERBOSE, "Binding '%s' to '%s:%s'\n", source, containername, dest);
-                    if ( mount_bind(source, joinpath(containerpath, dest), 1) < 0 ) {
+                    if ( mount_bind(source, joinpath(containerdir, dest), 1) < 0 ) {
                         ABORT(255);
                     }
                 }
@@ -592,16 +603,16 @@ int main(int argc, char ** argv) {
                     message(DEBUG, "Checking configuration file for 'config passwd'\n");
                     rewind(config_fp);
                     if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
-                        if (is_file(joinpath(containerpath, "/etc/passwd")) == 0 ) {
+                        if (is_file(joinpath(containerdir, "/etc/passwd")) == 0 ) {
                             if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
                                 message(VERBOSE2, "Staging /etc/passwd with user info\n");
-                                if ( build_passwd(joinpath(containerpath, "/etc/passwd"), joinpath(sessiondir, "/passwd")) < 0 ) {
+                                if ( build_passwd(joinpath(containerdir, "/etc/passwd"), joinpath(sessiondir, "/passwd")) < 0 ) {
                                     message(ERROR, "Failed creating template password file\n");
                                     ABORT(255);
                                 }
                             }
                             message(VERBOSE, "Binding staged /etc/passwd into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerpath, "/etc/passwd"), 1) < 0 ) {
+                            if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 1) < 0 ) {
                                 message(ERROR, "Could not bind /etc/passwd\n");
                                 ABORT(255);
                             }
@@ -613,16 +624,16 @@ int main(int argc, char ** argv) {
                     message(DEBUG, "Checking configuration file for 'config group'\n");
                     rewind(config_fp);
                     if ( config_get_key_bool(config_fp, "config group", 1) > 0 ) {
-                        if (is_file(joinpath(containerpath, "/etc/group")) == 0 ) {
+                        if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
                             if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
                                 message(VERBOSE2, "Staging /etc/group with user info\n");
-                                if ( build_group(joinpath(containerpath, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
+                                if ( build_group(joinpath(containerdir, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
                                     message(ERROR, "Failed creating template group file\n");
                                     ABORT(255);
                                 }
                             }
                             message(VERBOSE, "Binding staged /etc/group into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerpath, "/etc/group"), 1) < 0 ) {
+                            if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 1) < 0 ) {
                                 message(ERROR, "Could not bind /etc/group\n");
                                 ABORT(255);
                             }
@@ -643,8 +654,8 @@ int main(int argc, char ** argv) {
                 message(DEBUG, "Hello from exec child process\n");
 
                 message(VERBOSE, "Entering container file system space\n");
-                if ( chroot(containerpath) < 0 ) {
-                    message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerpath);
+                if ( chroot(containerdir) < 0 ) {
+                    message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerdir);
                     ABORT(255);
                 }
                 message(DEBUG, "Changing dir to '/' within the new root\n");
@@ -810,43 +821,19 @@ int main(int argc, char ** argv) {
             retval++;
         }
 
-        message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
-        if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
-            close(sessiondirlock_fd);
-            if ( escalate_privs() < 0 ) {
-                ABORT(255);
-            }
-
-            message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
-            if ( s_rmdir(sessiondir) < 0 ) {
-                message(WARNING, "Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
-            }
-    
-            // Dissociate loops from here Just in case autoflush didn't work.
-            (void)disassociate_loop(loop_fp);
-
-            if ( drop_privs(&uinfo) < 0 ) {
-                ABORT(255);
-            }
-
-        } else {
-//        printf("Not removing sessiondir, lock still\n");
-        }
-
-
 
 //****************************************************************************//
 // Attach to daemon process flow
 //****************************************************************************//
     } else {
+#ifdef NO_SETNS
+        message(ERROR, "This host does not support joining existing name spaces\n");
+        ABORT(1);
+#else
 
         message(VERBOSE, "Attaching to existing namespace daemon environment\n");
         pid_t exec_pid;
 
-#ifdef NO_SETNS
-        message(ERROR, "This host does not support joining existing name spaces\n");
-        ABORT(1);
-#endif
         if ( is_file(joinpath(setns_dir, "pid")) == 0 ) {
             message(DEBUG, "Connecting to existing PID namespace\n");
             int fd = open(joinpath(setns_dir, "pid"), O_RDONLY);
@@ -876,12 +863,14 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
+#ifdef NS_CLONE_FS
         // Setup FS namespaces
         message(DEBUG, "Virtualizing FS namespace\n");
         if ( unshare(CLONE_FS) < 0 ) {
             message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
             ABORT(255);
         }
+#endif
 
         // Fork off exec process
         message(VERBOSE, "Forking exec process\n");
@@ -892,8 +881,8 @@ int main(int argc, char ** argv) {
 
 //TODO: Add chroot and chdirs to a container method
             message(VERBOSE, "Entering container file system space\n");
-            if ( chroot(containerpath) < 0 ) {
-                message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerpath);
+            if ( chroot(containerdir) < 0 ) {
+                message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerdir);
                 ABORT(255);
             }
 
@@ -972,7 +961,34 @@ int main(int argc, char ** argv) {
         }
 
         message(VERBOSE, "Exec parent process returned: %d\n", retval);
+#endif
     }
+
+    message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
+    if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
+        close(sessiondirlock_fd);
+
+        message(DEBUG, "Escalating privs to clean session directory\n");
+        if ( escalate_privs() < 0 ) {
+            ABORT(255);
+        }
+
+        message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
+        if ( s_rmdir(sessiondir) < 0 ) {
+            message(WARNING, "Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
+        }
+
+        // Dissociate loops from here Just in case autoflush didn't work.
+        (void)loop_free(loop_dev);
+
+        if ( drop_privs(&uinfo) < 0 ) {
+            ABORT(255);
+        }
+
+    } else {
+//        printf("Not removing sessiondir, lock still\n");
+    }
+
 
     message(VERBOSE2, "Cleaning up...\n");
 
@@ -980,9 +996,7 @@ int main(int argc, char ** argv) {
     close(sessiondirlock_fd);
 
     free(loop_dev_lock);
-    free(containerpath);
     free(sessiondir);
-    closelog();
 
     return(retval);
 }

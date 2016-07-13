@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -28,7 +28,7 @@ elif INSTALL_CMD=`singularity_which yum`; then
     INSTALL_CMD="$INSTALL_CMD --tolerant"
 else
     message ERROR "Neither yum nor dnf in PATH!\n"
-    return 255
+    exit 1
 fi
 
 REPO_COUNT=0
@@ -87,17 +87,13 @@ Bootstrap() {
 
     __mountproc
     __mountsys
+    __mountdev
 
     return 0
 }
 
 InstallPkgs() {
-    IPCONF=''
-    if [ -f $SINGULARITY_BUILD_ROOT/$YUM_CONF ]; then
-        IPCONF="-c $SINGULARITY_BUILD_ROOT/$YUM_CONF";
-    fi
-
-    if ! eval "$INSTALL_CMD $IPCONF --noplugins --nogpgcheck --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then
+    if ! eval "$INSTALL_CMD --noplugins --nogpgcheck --installroot $SINGULARITY_BUILD_ROOT -y install $@"; then
         exit 1
     fi
 

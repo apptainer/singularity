@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -51,7 +51,7 @@ while true; do
             exit
         ;;
         -*)
-            echo "ERROR: Unknown option: $1"
+            message ERROR "Unknown option: $1\n"
             exit 1
         ;;
         *)
@@ -65,7 +65,7 @@ if [ -z "$1" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
-        echo "ERROR: To see usage summary, try: singularity help $SINGULARITY_COMMAND"
+        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
     fi
     exit 0
 fi
@@ -74,6 +74,11 @@ SINGULARITY_IMAGE="$1"
 export SINGULARITY_IMAGE
 shift
 
-if "$SINGULARITY_libexecdir/singularity/sexec"; then
+eval "$SINGULARITY_libexecdir/singularity/sexec"
+RETVAL=$?
+
+if [ $RETVAL -eq 0 ]; then
     message 1 "Singularity namespace process daemon has been stopped\n"
+else
+    exit $RETVAL
 fi

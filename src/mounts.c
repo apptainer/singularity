@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -34,7 +34,9 @@
 #include "config.h"
 #include "mounts.h"
 #include "file.h"
+#include "util.h"
 #include "loop-control.h"
+#include "message.h"
 
 #ifndef MS_REC
 #define MS_REC 16384
@@ -43,41 +45,47 @@
 
 int mount_image(char * loop_device, char * mount_point, int writable) {
 
+    message(DEBUG, "Called mount_image(%s, %s, %d)\n", loop_device, mount_point, writable);
+
+    message(DEBUG, "Checking mount point is present\n");
     if ( is_dir(mount_point) < 0 ) {
-        fprintf(stderr, "ERROR: Mount point is not available: %s\n", mount_point);
-        return(-1);
+        message(ERROR, "Mount point is not available: %s\n", mount_point);
+        ABORT(255);
     }
 
+    message(DEBUG, "Checking loop is a block device\n");
     if ( is_blk(loop_device) < 0 ) {
-        fprintf(stderr, "ERROR: Loop device is not a block dev: %s\n", loop_device);
-        return(-1);
+        message(ERROR, "Loop device is not a block dev: %s\n", loop_device);
+        ABORT(255);
     }
 
     if ( writable > 0 ) {
-        // First try most preferable option
+        message(DEBUG, "Trying to mount read/write as ext4 with discard option\n");
         if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
-            // If that fails try ext4 without discard as some older distros don't support it
+            message(DEBUG, "Trying to mount read/write as ext4 without discard option\n");
             if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "") < 0 ) {
-                // If that fails, finally try ext3
+                message(DEBUG, "Trying to mount read/write as ext3\n");
                 if ( mount(loop_device, mount_point, "ext3", MS_NOSUID, "") < 0 ) {
-                    fprintf(stderr, "ERROR: Failed to mount (rw) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
-                    return(-1);
+                    message(ERROR, "Failed to mount (rw) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+                    ABORT(255);
                 }
             }
         }
     } else {
-        // First try most preferable option
+        message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
         if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard") < 0 ) {
-            // If that fails try ext4 without discard as some older distros don't support it
+            message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
             if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "") < 0 ) {
-                // If that fails, finally try ext3
+                message(DEBUG, "Trying to mount read only as ext3\n");
                 if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "") < 0 ) {
-                    fprintf(stderr, "ERROR: Failed to mount (ro) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
-                    return(-1);
+                    message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+                    ABORT(255);
                 }
             }
         }
     }
+
+    message(DEBUG, "Returning mount_image(%s, %s, %d) = 0\n", loop_device, mount_point, writable);
 
     return(0);
 }
@@ -85,27 +93,35 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
 
 int mount_bind(char * source, char * dest, int writable) {
 
+    message(DEBUG, "Called mount_bind(%s, %d, %d)\n", source, dest, writable);
+
+    message(DEBUG, "Checking that source exists and is a file or directory\n");
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {
-        fprintf(stderr, "ERROR: Bind source path is not a file or directory: '%s'\n", source);
-        return(1);
+        message(ERROR, "Bind source path is not a file or directory: '%s'\n", source);
+        ABORT(255);
     }
 
+    message(DEBUG, "Checking that destination exists and is a file or directory\n");
     if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
-        fprintf(stderr, "ERROR: Container bind path is not a file or directory: '%s'\n", dest);
-        return(1);
+        message(ERROR, "Container bind path is not a file or directory: '%s'\n", dest);
+        ABORT(255);
     }
 
+    message(DEBUG, "Calling mount(%s, %s, ...)\n", source, dest);
     if ( mount(source, dest, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
-        fprintf(stderr, "ERROR: Could not bind %s: %s\n", dest, strerror(errno));
-        return(-1);
+        message(ERROR, "Could not bind %s: %s\n", dest, strerror(errno));
+        ABORT(255);
     }
 
     if ( writable <= 0 ) {
+        message(VERBOSE2, "Making mount read only: %s\n", dest);
         if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
-            fprintf(stderr, "ERROR: Could not bind read only %s: %s\n", dest, strerror(errno));
-            return(-1);
+            message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
+            ABORT(255);
         }
     }
+
+    message(DEBUG, "Returning mount_bind(%s, %d, %d) = 0\n", source, dest, writable);
 
     return(0);
 }

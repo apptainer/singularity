@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -19,8 +19,10 @@
  */
 
 
-#define ERROR -1
+#define ABRT -4
+#define ERROR -3
 #define WARNING -2
+#define LOG -1
 #define INFO 1
 #define VERBOSE 2
 #define VERBOSE1 2
@@ -28,4 +30,8 @@
 #define VERBOSE3 4
 #define DEBUG 5
 
-void message(int level, char *format, ...);
+void _message(int level, const char *function, const char *file, int line, char *format, ...);
+void singularity_abort(int retval);
+
+#define message(a,b...) _message(a, __func__, __FILE__, __LINE__, b)
+

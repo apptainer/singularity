@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
+#include <syslog.h>
 
 #include "config.h"
 #include "util.h"
@@ -31,8 +32,12 @@
 
 int messagelevel = -1;
 
+extern const char *__progname;
+
 void init(void) {
     char *messagelevel_string = getenv("MESSAGELEVEL");
+
+    openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
 
     if ( messagelevel_string == NULL ) {
         messagelevel = 1;
@@ -43,40 +48,95 @@ void init(void) {
 
 }
 
-void message(int level, char *format, ...) {
+
+void _message(int level, const char *function, const char *file, int line, char *format, ...) {
+    int syslog_level = LOG_NOTICE;
+    char message[512];
+    char *prefix = "";
     va_list args;
     va_start (args, format);
+
+    vsnprintf(message, 512, format, args);
+
+    va_end (args);
 
     if ( messagelevel == -1 ) {
         init();
     }
 
     switch (level) {
-        case ERROR:
-            vfprintf(stderr, strjoin("ERROR:   ", format), args);
+        case ABRT:
+            prefix = strdup("ABORT");
+            syslog_level = LOG_ALERT;
             break;
-        case WARNING:
-            vfprintf(stderr, strjoin("WARNING: ", format), args);
+        case ERROR:
+            prefix = strdup("ERROR");
+            syslog_level = LOG_ERR;
+            break;
+        case  WARNING:
+            prefix = strdup("WARNING");
+            syslog_level = LOG_WARNING;
+            break;
+        case LOG:
+            prefix = strdup("LOG");
+            break;
+        case DEBUG:
+            prefix = strdup("DEBUG");
             break;
         case INFO:
-            vprintf(format, args);
+            prefix = strdup("INFO");
             break;
         default:
-            if ( level <= messagelevel && messagelevel >= 5 ) {
-                char *header_string = (char *) malloc(29);
-                char *debug_string = (char *) malloc(intlen(geteuid()) + intlen(getpid()) + 16);
-                snprintf(debug_string, intlen(geteuid()) + intlen(getpid()) + 16, "DEBUG(U=%d,PID=%d):", geteuid(), getpid());
-                snprintf(header_string, 29, "%-28s", debug_string);
-                vfprintf(stderr, strjoin(header_string, format), args);
-            } else if ( level <= messagelevel ) {
-                vfprintf(stderr, strjoin("VERBOSE: ", format), args);
-            }
+            prefix = strdup("VERBOSE");
             break;
     }
 
-    fflush(stdout);
-    fflush(stderr);
+    if ( level <= LOG ) {
+        char syslog_string[540]; // 512 max message length + 28'ish chars for header
+        snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message);
 
-    va_end (args);
+        syslog(syslog_level, syslog_string, strlen(syslog_string));
+    }
+
+    if ( level <= messagelevel ) {
+        char *header_string;
+
+        if ( messagelevel >= DEBUG ) {
+            char *debug_string = (char *) malloc(25);
+            char *location_string = (char *) malloc(60);
+            char *tmp_header_string = (char *) malloc(80);
+            header_string = (char *) malloc(80);
+            snprintf(location_string, 60, "%s:%d:%s()", file, line, function);
+            snprintf(debug_string, 25, "[U=%d,P=%d]", geteuid(), getpid());
+            snprintf(tmp_header_string, 80, "%-18s %s", debug_string, location_string);
+            snprintf(header_string, 80, "%-7s %-62s: ", prefix, tmp_header_string);
+            free(debug_string);
+            free(location_string);
+            free(tmp_header_string);
+        } else {
+            header_string = (char *) malloc(11);
+            snprintf(header_string, 10, "%-7s: ", prefix);
+        }
+
+        if ( level == INFO && messagelevel == INFO ) {
+            printf("%s", message);
+        } else if ( level == INFO ) {
+            printf("%s", strjoin(header_string, message));
+        } else if ( level == LOG && messagelevel <= INFO ) {
+            // Don't print anything...
+        } else {
+            fprintf(stderr, "%s", strjoin(header_string, message));
+        }
+
+
+        fflush(stdout);
+        fflush(stderr);
+
+    }
+
 }
 
+void singularity_abort(int retval) {
+    message(ABRT, "Exiting with RETVAL=%d\n", retval);
+    exit(retval);
+}

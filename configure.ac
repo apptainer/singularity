@@ -62,6 +62,20 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                   )
 
 
+AC_MSG_CHECKING([for namespace: CLONE_FS])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+                                     #include <sched.h>
+                                   ]],
+                                   [[unshare(CLONE_FS);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_FS"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
+
 AC_MSG_CHECKING([for namespace: CLONE_NEWNS])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                      #include <sched.h>

@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -23,7 +23,7 @@
 
 if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     message ERROR "debootstrap is not in PATH... Perhaps 'apt-get install' it?\n"
-    return 255
+    exit 1
 fi
 
 if uname -m | grep -q x86_64; then
@@ -47,7 +47,17 @@ Bootstrap() {
     # debootstrap will create the device entries it needs (or some versions fail)
     /bin/sh -c "rm -rf $SINGULARITY_BUILD_ROOT/dev/*"
 
-    if ! eval "$DEBOOTSTRAP_PATH --include=debian-archive-keyring,apt --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
+    INCLUDEPKGS=`echo "$*" | sed -e 's/[ ]*/,/g'`
+
+    if [ -z "$INCLUDEPKGS" ]; then
+        INCLUDEPKGS=",$INCLUDEPKGS"
+    fi
+
+    # The excludes save 25M or so with jessie.  (Excluding udev avoids
+    # systemd, for instance.)  There are a few more we could exclude
+    # to save a few MB.  I see 182M cleaned with this, v. 241M with
+    # the default debootstrap.
+    if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt$INCLUDEPKGS --arch=$ARCH '$VERSION' '$SINGULARITY_BUILD_ROOT' '$MIRROR'"; then
         exit 1
     fi
 
@@ -59,22 +69,25 @@ Bootstrap() {
         return 1
     fi
 
-   if [ -n "$LANG" ]; then
-        if __runcmd locale-gen $LANG; then
-            mkdir -p "$SINGULARITY_BUILD_ROOT/etc/default/" >/dev/null 2>&1
-            echo "LANG=$LANG" > "$SINGULARITY_BUILD_ROOT/etc/default/locale"
+    if [ -n "$LANG" ]; then
+        if LOCALE_GEN=`singularity_which locale-gen`; then
+            if __runcmd $LOCALE_GEN $LANG; then
+                mkdir -p "$SINGULARITY_BUILD_ROOT/etc/default/" >/dev/null 2>&1
+                echo "LANG=$LANG" > "$SINGULARITY_BUILD_ROOT/etc/default/locale"
+            fi
         fi
     fi
 
     __mountproc
     __mountsys
+    __mountdev
 
     return 0
 }
 
 
 InstallPkgs() {
-    if ! __runcmd apt-get -y --force-yes install "$*"; then
+    if ! __runcmd apt-get -y --force-yes install "$@"; then
         return 1
     fi
 

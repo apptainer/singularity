@@ -45,12 +45,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli
 %{_libexecdir}/singularity/bootstrap.sh
 %{_libexecdir}/singularity/copy.sh
+%{_libexecdir}/singularity/docker-import.sh
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/image-bind
 %{_libexecdir}/singularity/image-create
 %{_libexecdir}/singularity/image-expand
 %{_libexecdir}/singularity/image-mount
-%{_libexecdir}/singularity/ftype
 %{_bindir}/singularity
 %{_bindir}/run-singularity
 

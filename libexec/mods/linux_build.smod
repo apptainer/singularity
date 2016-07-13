@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -143,16 +143,20 @@ PreSetup() {
 }
 
 RunScript() {
-    if [ ! -f "$SINGULARITY_BUILD_ROOT/singularity" ]; then
+    if [ -z "$RAN_RUNSCRIPT" ]; then
         echo '#!/bin/sh'    > "$SINGULARITY_BUILD_ROOT/singularity"
         echo                >> "$SINGULARITY_BUILD_ROOT/singularity"
-        chmod +x "$SINGULARITY_BUILD_ROOT/singularity"
-    fi
 
-    echo "$@" >> "$SINGULARITY_BUILD_ROOT/singularity"
+        grep "^RunScript " "$SINGULARITY_BUILDDEF" | sed -e 's/^RunScript //' >> "$SINGULARITY_BUILD_ROOT/singularity"
+
+        chmod +x "$SINGULARITY_BUILD_ROOT/singularity"
+
+        RAN_RUNSCRIPT=1
+    fi
 
     return 0
 }
+
 
 RunCmd() {
     if ! __runcmd "$@"; then
@@ -190,9 +194,10 @@ __runcmd() {
     CMD="$1"
     shift
 
-    echo "+ $CMD $*"
+    echo "+ $CMD $*" 1>&2
 
-    chroot "$SINGULARITY_BUILD_ROOT" "$CMD" "$@"
+    # Running command through /usr/bin/env -i to sanitize the environment
+    chroot "$SINGULARITY_BUILD_ROOT" /usr/bin/env -i PATH="$PATH" "$CMD" "$@"
 
     return $?
 }
@@ -215,3 +220,14 @@ __mountsys() {
 
     return $?
 }
+
+__mountdev() {
+    if [ -d "/dev" -a -d "$SINGULARITY_BUILD_ROOT/dev" ]; then
+        mkdir -p -m 0755 "$SINGULARITY_BUILD_ROOT/dev"
+    fi
+    mount --rbind "/dev/" "$SINGULARITY_BUILD_ROOT/dev"
+
+    return $?
+}
+
+

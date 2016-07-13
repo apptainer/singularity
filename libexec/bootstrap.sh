@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -36,22 +36,22 @@ fi
 
 singularity_import linux_build
 
-BUILD_SPEC="$1"
+SINGULARITY_BUILDDEF="$1"
 shift
 SINGULARITY_TMPDIR=`mktemp -d /tmp/singularity-bootstrap.XXXXXXX`
 PATH=/bin:/sbin:$PATH
 
-export SINGULARITY_TMPDIR
+export SINGULARITY_TMPDIR SINGULARITY_BUILDDEF
 
 # Always run these checks
 SanityCheck
 PreSetup
 
 
-if [ -f "$BUILD_SPEC" ]; then
+if [ -f "$SINGULARITY_BUILDDEF" ]; then
     # sourcing without a leading slash is weird and requires PATH
     PATH=".:$PATH"
-    . $BUILD_SPEC
+    . $SINGULARITY_BUILDDEF
 fi
 
 Finalize

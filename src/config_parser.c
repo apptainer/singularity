@@ -5,10 +5,10 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
- * 
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
+ *
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
  * the U.S. Government has been granted for itself and others acting on its
@@ -46,7 +46,7 @@ char *config_get_key_value(FILE *fp, char *key) {
         if ( ( config_key = strtok(line, "=") ) != NULL ) {
             chomp(config_key);
             if ( strcmp(config_key, key) == 0 ) {
-                if ( ( config_value = strtok(NULL, "=") ) != NULL ) {
+                if ( ( config_value = strdup(strtok(NULL, "=")) ) != NULL ) {
                     chomp(config_value);
                     if ( config_value[0] == ' ' ) {
                         config_value++;

@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -28,12 +28,15 @@
 
 #include "file.h"
 #include "image.h"
+#include "util.h"
+#include "message.h"
 
 
 int image_offset(FILE *image_fp) {
     int ret = 0;
     int i = 0;
 
+    message(VERBOSE, "Calculating image offset\n");
     rewind(image_fp);
 
     for (i=0; i < 64; i++) {
@@ -42,9 +45,12 @@ int image_offset(FILE *image_fp) {
             break;
         } else if ( c == '\n' ) {
             ret = i + 1;
+            message(VERBOSE2, "Found image at an offset of %d bytes\n", ret);
             break;
         }
     }
+
+    message(DEBUG, "Returning image_offset(image_fp) = %d\n", ret);
 
     return(ret);
 }
@@ -54,20 +60,29 @@ int image_create(char *image, int size) {
     FILE *image_fp;
     int i;
 
+    message(VERBOSE, "Creating new sparse image at: %s\n", image);
+
+    message(DEBUG, "Opening image 'w'\n");
     image_fp = fopen(image, "w");
     if ( image_fp == NULL ) {
         fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
         return(-1);
     }
 
+    message(VERBOSE2, "Writing image header\n");
     fprintf(image_fp, LAUNCH_STRING);
+
+    message(VERBOSE2, "Expanding image to %dMB\n", size);
     for(i = 0; i < size; i++ ) {
         fseek(image_fp, 1024 * 1024, SEEK_CUR);
     }
     fprintf(image_fp, "0");
     fclose(image_fp);
 
+    message(VERBOSE2, "Making image executable\n");
     chmod(image, 0755);
+
+    message(DEBUG, "Returning image_create(%s, %d) = 0\n", image, size);
 
     return(0);
 }
@@ -75,22 +90,34 @@ int image_create(char *image, int size) {
 int image_expand(char *image, int size) {
     FILE *image_fp;
     long position;
+    int i;
 
+    message(VERBOSE, "Expanding sparse image at: %s\n", image);
+
+    message(DEBUG, "Opening image 'r+'\n");
     image_fp = fopen(image, "r+");
     if ( image_fp == NULL ) {
         fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
         return(-1);
     }
 
+    message(DEBUG, "Jumping to the end of the current image file\n");
     fseek(image_fp, 0L, SEEK_END);
     position = ftell(image_fp);
+
+    message(DEBUG, "Removing the footer from image\n");
     if ( ftruncate(fileno(image_fp), position-1) < 0 ) {
         fprintf(stderr, "ERROR: Failed truncating the marker bit off of image %s: %s\n", image, strerror(errno));
         return(-1);
     }
-    fseek(image_fp, size * 1024 * 1024, SEEK_CUR);
+    message(VERBOSE2, "Expanding image by %dMB\n", size);
+    for(i = 0; i < size; i++ ) {
+        fseek(image_fp, 1024 * 1024, SEEK_CUR);
+    }
     fprintf(image_fp, "0");
     fclose(image_fp);
+
+    message(DEBUG, "Returning image_expand(%s, %d) = 0\n", image, size);
 
     return(0);
 }

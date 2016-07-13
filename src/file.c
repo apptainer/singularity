@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -45,6 +45,8 @@ char *file_id(char *path) {
     char *ret;
     uid_t uid = getuid();
 
+    message(DEBUG, "Called file_id(%s)\n", path);
+
     // Stat path
     if (lstat(path, &filestat) < 0) {
         return(NULL);
@@ -52,6 +54,10 @@ char *file_id(char *path) {
 
     ret = (char *) malloc(128);
     snprintf(ret, 128, "%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino);
+
+    message(VERBOSE2, "Generated file_id: %s\n", ret);
+
+    message(DEBUG, "Returning file_id(%s) = %s\n", path, ret);
     return(ret);
 }
 
@@ -187,6 +193,7 @@ int s_mkpath(char *dir, mode_t mode) {
         return(-1);
     }
 
+    message(DEBUG, "Creating directory: %s\n", dir);
     if ( mkdir(dir, mode) < 0 ) {
         message(ERROR, "Could not create directory %s: %s\n", dir, strerror(errno));
         return(-1);
@@ -201,38 +208,61 @@ int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *
 }
 
 int s_rmdir(char *dir) {
+
+    message(DEBUG, "Removing dirctory: %s\n", dir);
     return(nftw(dir, _unlink, 32, FTW_DEPTH));
 }
 
 int copy_file(char * source, char * dest) {
+    struct stat filestat;
     int c;
-    FILE * fd_s;
-    FILE * fd_d;
+    FILE * fp_s;
+    FILE * fp_d;
+
+    message(DEBUG, "Called copy_file(%s, %s)\n", source, dest);
 
     if ( is_file(source) < 0 ) {
-        printf("No such file: %s->%s\n", source, dest);
+        message(ERROR, "Could not copy from non-existant source: %s\n", source);
         return(-1);
     }
 
-    fd_s = fopen(source, "r");
-    if ( fd_s == NULL ) {
-        fprintf(stderr, "ERROR: Could not read %s: %s\n", source, strerror(errno));
+    message(DEBUG, "Opening source file: %s\n", source);
+    fp_s = fopen(source, "r");
+    if ( fp_s == NULL ) {
+        message(ERROR, "Could not read %s: %s\n", source, strerror(errno));
         return(-1);
     }
 
-    fd_d = fopen(dest, "w");
-    if ( fd_s == NULL ) {
-        fclose(fd_s);
-        fprintf(stderr, "ERROR: Could not write %s: %s\n", dest, strerror(errno));
+    message(DEBUG, "Opening destination file: %s\n", dest);
+    fp_d = fopen(dest, "w");
+    if ( fp_s == NULL ) {
+        fclose(fp_s);
+        message(ERROR, "Could not write %s: %s\n", dest, strerror(errno));
         return(-1);
     }
 
-    while ( ( c = fgetc(fd_s) ) != EOF ) {
-        fputc(c, fd_d);
+    message(DEBUG, "Calling fstat() on source file descriptor: %d\n", fileno(fp_s));
+    if ( fstat(fileno(fp_s), &filestat) < 0 ) {
+        message(ERROR, "Could not fstat() on %s: %s\n", source, strerror(errno));
+        return(-1);
     }
 
-    fclose(fd_s);
-    fclose(fd_d);
+    message(DEBUG, "Cloning permission string of source to dest\n");
+    if ( fchmod(fileno(fp_d), filestat.st_mode) < 0 ) {
+        message(ERROR, "Could not set permission mode on %s: %s\n", dest, strerror(errno));
+        return(-1);
+    }
+
+    message(DEBUG, "Copying file data...\n");
+    while ( ( c = fgetc(fp_s) ) != EOF ) {
+        fputc(c, fp_d);
+    }
+
+    message(DEBUG, "Done copying data, closing file pointers\n");
+    fclose(fp_s);
+    fclose(fp_d);
+
+    message(DEBUG, "Returning copy_file(%s, %s) = 0\n", source, dest);
 
     return(0);
 }
@@ -241,9 +271,10 @@ int copy_file(char * source, char * dest) {
 int fileput(char *path, char *string) {
     FILE *fd;
 
+    message(DEBUG, "Called fileput(%s, %s)\n", path, string);
     fd = fopen(path, "w");
     if ( fd == NULL ) {
-        fprintf(stderr, "ERROR: Could not write to %s: %s\n", path, strerror(errno));
+        message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
         return(-1);
     }
 
@@ -259,21 +290,23 @@ char *filecat(char *path) {
     int c;
     long length;
     long pos = 0;
+
+    message(DEBUG, "Called filecat(%s)\n", path);
     
     if ( is_file(path) < 0 ) {
-        fprintf(stderr, "ERROR: Could not find %s\n", path);
+        message(ERROR, "Could not find %s\n", path);
         return(NULL);
     }
 
     fd = fopen(path, "r");
     if ( fd == NULL ) {
-        fprintf(stderr, "ERROR: Could not read from %s: %s\n", path, strerror(errno));
+        message(ERROR, "Could not read from %s: %s\n", path, strerror(errno));
         return(NULL);
     }
 
 
     if ( fseek(fd, 0L, SEEK_END) < 0 ) {
-        fprintf(stderr, "ERROR: Could not seek to end of file %s: %s\n", path, strerror(errno));
+        message(ERROR, "Could not seek to end of file %s: %s\n", path, strerror(errno));
         return(NULL);
     }
 
