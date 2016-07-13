@@ -59,6 +59,10 @@ while true; do
             FILESYSTEM="${1:-}"
             shift
         ;;
+        -F|--force)
+            shift
+            OVERWRITE=1
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -95,8 +99,13 @@ if [ -z "$IMAGE_FILE" ]; then
     exit 1
 fi
 if [ -f "$IMAGE_FILE" ]; then
-    message ERROR "Image file exists, not overwriting.\n"
-    exit 1
+    if [ -n "${OVERWRITE:-}" ]; then
+        message 2 "Removing existing file\n"
+        /bin/rm -f "$IMAGE_FILE"
+    else
+        message ERROR "Image file exists, not overwriting.\n"
+        exit 1
+    fi
 fi
 
 if ! MKFS_PATH=`singularity_which "mkfs.$FILESYSTEM"`; then
