@@ -92,6 +92,11 @@ Bootstrap() {
 }
 
 InstallPkgs() {
+    IPCONF=''
+    if [ -f $SINGULARITY_BUILD_ROOT/$YUM_CONF ]; then
+        IPCONF="-c $SINGULARITY_BUILD_ROOT/$YUM_CONF";
+    fi
+
     if ! eval "$INSTALL_CMD --noplugins --nogpgcheck --installroot $SINGULARITY_BUILD_ROOT -y install $*"; then
         exit 1
     fi
