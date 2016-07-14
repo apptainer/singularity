@@ -118,7 +118,7 @@ stest 0 sudo rm -rf "$TEMPDIR"
 stest 0 make maintainer-clean
 
 /bin/echo
-if `which flawfinder > /dev/null``; then
+if `which flawfinder > /dev/null`; then
     /bin/echo "Testing source code with flawfinder"
     stest 0 sh -c "flawfinder . | tee /dev/stderr | grep -q -e 'No hits found'"
 else
