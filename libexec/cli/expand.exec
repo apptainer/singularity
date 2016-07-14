@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -34,11 +34,11 @@ else
     exit 1
 fi
 
-PATH=/sbin:/usr/sbin:$PATH
+PATH=/sbin:/usr/sbin:${PATH:-}
 IMAGE_SIZE="512"
 
 while true; do
-    case $1 in
+    case ${1:-} in
         -h|--help|help)
             if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
                 cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
@@ -50,11 +50,11 @@ while true; do
         ;;
         -s|--size)
             shift
-            IMAGE_SIZE="$1"
+            IMAGE_SIZE="${1:-}"
             shift
         ;;
         -*)
-            message ERROR "Unknown option: $1\n"
+            message ERROR "Unknown option: ${1:-}\n"
             exit 1
         ;;
         *)
@@ -63,7 +63,7 @@ while true; do
     esac
 done
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -72,7 +72,7 @@ if [ -z "$1" ]; then
     exit 0
 fi
 
-IMAGE_FILE="$1"
+IMAGE_FILE="${1:-}"
 
 if [ -z "$IMAGE_FILE" ]; then
     message ERROR "You must supply a path to an image to create\n"

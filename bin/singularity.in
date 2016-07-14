@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -49,12 +49,12 @@ else
 fi
 
 while true; do
-    case $1 in
+    case ${1:-} in
         -h|--help|help)
-            if [ -z "$2" ]; then
+            if [ -z "${2:-}" ]; then
                 C="singularity"
             else
-                C="$2"
+                C="${2:-}"
             fi
             if [ -e "$SINGULARITY_libexecdir/singularity/cli/$C.help" ]; then
                 cat "$SINGULARITY_libexecdir/singularity/cli/$C.help"
@@ -95,7 +95,7 @@ while true; do
     esac
 done
 
-SINGULARITY_COMMAND="$1"
+SINGULARITY_COMMAND="${1:-}"
 export SINGULARITY_COMMAND
 
 if [ -z "$SINGULARITY_COMMAND" ]; then
@@ -106,6 +106,7 @@ fi
 shift
 
 if [ -x "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec" ]; then
+    message 2 "Exec'ing: $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec $@\n"
     exec $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec "$@"
 else
     message ERROR "Unknown command '$SINGULARITY_COMMAND'\n"

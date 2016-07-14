@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -56,7 +56,10 @@ int build_passwd(char *template, char *output) {
     }
 
     message(VERBOSE, "Creating template passwd file and appending user data\n");
-    output_fp = fopen(output, "a");
+    if ( ( output_fp = fopen(output, "a") ) == NULL ) { // Flawfinder: ignore
+        message(ERROR, "Could not open template passwd file %s: %s\n", output, strerror(errno));
+        ABORT(255);
+    }
     fprintf(output_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
     fclose(output_fp);
 
@@ -93,7 +96,10 @@ int build_group(char *template, char *output) {
 
 
     message(VERBOSE, "Creating template group file and appending user data\n");
-    output_fp = fopen(output, "a");
+    if ( ( output_fp = fopen(output, "a") ) == NULL ) { // Flawfinder: ignore
+        message(ERROR, "Could not open template group file %s: %s\n", output, strerror(errno));
+        ABORT(255);
+    }
     fprintf(output_fp, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
 
     message(DEBUG, "Getting supplementary group info\n");

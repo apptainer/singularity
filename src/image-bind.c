@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -59,7 +59,6 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE, "Checking command: %s\n", argv[1]);
     if ( strcmp(argv[1], "attach") == 0 ) {
-        FILE *loop_fp;
         FILE *containerimage_fp;
         char *containerimage;
         char *loop_dev;
@@ -77,29 +76,19 @@ int main(int argc, char ** argv) {
         }
 
         message(VERBOSE, "Checking if container can be opened read/write\n");
-        if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
+        if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) { // Flawfinder: ignore
             message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
             ABORT(255);
         }
 
-        message(VERBOSE, "Obtaining free loop device\n");
-        loop_dev = obtain_loop_dev();
-
-        message(VERBOSE, "Opening loop device: %s\n", loop_dev);
-        if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
-            message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-            ABORT(255);
-        }
-
-        message(VERBOSE, "Binding container image to loop\n");
-        if ( associate_loop(containerimage_fp, loop_fp, 0) < 0 ) {
-            message(ERROR, "Could not associate %s to loop device %s\n", containerimage, loop_dev);
+        message(DEBUG, "Binding container to loop interface\n");
+        if ( loop_bind(containerimage_fp, &loop_dev) < 0 ) {
+            message(ERROR, "Could not bind image to loop!\n");
             ABORT(255);
         }
 
         printf("%s\n", loop_dev);
     } else if (strcmp(argv[1], "detach") == 0 ) {
-        FILE *loop_fp;
         char *loop_dev;
 
         loop_dev = strdup(argv[2]);
@@ -112,14 +101,8 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
-        message(VERBOSE, "Opening loop device\n");
-        if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
-            message(ERROR, "Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-            ABORT(255);
-        }
-
-        message(VERBOSE, "Disassociating container image from loop\n");
-        if ( disassociate_loop(loop_fp) < 0 ) {
+        message(VERBOSE, "Unbinding container image from loop\n");
+        if ( loop_free(loop_dev) < 0 ) {
             message(ERROR, "Failed to detach loop device: %s\n", loop_dev);
             ABORT(255);
         }

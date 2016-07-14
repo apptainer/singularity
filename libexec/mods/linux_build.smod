@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -80,22 +80,22 @@ DistType() {
 }
 
 MirrorURL() {
-    MIRROR="$1"
+    MIRROR="${1:-}"
     export MIRROR
 
     return 0
 }
 
 OSVersion() {
-    VERSION="$1"
+    VERSION="${1:-}"
     export VERSION
 
     return 0
 }
 
 InstallFile() {
-    SOURCE="$1"
-    DEST="$2"
+    SOURCE="${1:-}"
+    DEST="${2:-}"
 
     if [ -z "$SOURCE" ]; then
         echo "InstallFile: Must be called with a source file!" >&2
@@ -187,11 +187,55 @@ Finalize() {
         rm -f "$SINGULARITY_BUILD_ROOT/etc/mtab"
     fi
     echo "singularity / rootfs rw 0 0" > "$SINGULARITY_BUILD_ROOT/etc/mtab"
+
+    echo '#!/bin/sh' > "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '. /environment' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'if test -n "$SHELL" -a "$SHELL" == "/bin/bash"; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    exec /bin/bash --norc --noprofile "$@"' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'if test -n "$SHELL" -a -x "$SHELL"; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    exec "$SHELL" "$@"' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'else' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    echo "ERROR: Shell does not exist in container: $SHELL" 1>&2' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    echo "ERROR: Using /bin/sh instead..." 1>&2' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'if test -x /bin/sh; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    SHELL=/bin/sh' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    export SHELL' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    exec /bin/sh "$@"' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'else' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo '    echo "ERROR: /bin/sh does not exist in container" 1>&2' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    echo 'exit 1' >> "$SINGULARITY_BUILD_ROOT/.shell"
+    chmod 0755 "$SINGULARITY_BUILD_ROOT/.shell"
+
+    echo '#!/bin/sh' > "$SINGULARITY_BUILD_ROOT/.exec"
+    echo '. /environment' >> "$SINGULARITY_BUILD_ROOT/.exec"
+    echo 'exec "$@"' >> "$SINGULARITY_BUILD_ROOT/.exec"
+    chmod 0755 "$SINGULARITY_BUILD_ROOT/.exec"
+
+    echo '#!/bin/sh' > "$SINGULARITY_BUILD_ROOT/.run"
+    echo '. /environment' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo 'if test -x /singularity; then' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo '    exec /singularity "$@"' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo 'else' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo '    echo "No runscript found, executing /bin/sh"' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo '    exec /bin/sh "$@"' >> "$SINGULARITY_BUILD_ROOT/.run"
+    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/.run"
+    chmod 0755 "$SINGULARITY_BUILD_ROOT/.run"
+
+    echo '# Define any environment init code here' > "$SINGULARITY_BUILD_ROOT/environment"
+    echo '# ' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo '' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo "PATH=$PATH:/bin:/sbin" >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo 'PS1="Singularity.$SINGULARITY_CONTAINER> $PS1"' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo 'export PATH PS1' >> "$SINGULARITY_BUILD_ROOT/environment"
+    chmod 0644 "$SINGULARITY_BUILD_ROOT/environment"
 }
 
 
 __runcmd() {
-    CMD="$1"
+    CMD="${1:-}"
     shift
 
     echo "+ $CMD $*" 1>&2
