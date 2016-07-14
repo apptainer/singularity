@@ -159,10 +159,10 @@ int main(int argc, char ** argv) {
         exec_fork_pid = fork();
         if ( exec_fork_pid == 0 ) {
 
-            argv[2] = strdup("/bin/sh");
+            argv[2] = strdup("/bin/bash");
 
-            if ( execv("/bin/sh", &argv[2]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
-                message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
+            if ( execv("/bin/bash", &argv[2]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
+                message(ERROR, "Exec of /bin/bash failed: %s\n", strerror(errno));
             }
             // We should never get here, so if we do, make it an error
             return(-1);
