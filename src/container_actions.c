@@ -70,7 +70,7 @@ int container_exec(int argc, char **argv) {
     }
 
     if ( is_exec("/.exec") == 0 ) {
-        argv[0] = strdup("/.exec");
+        argv[0] = strdup("Singularity");
         message(VERBOSE, "Found /.exec inside container, exec()'ing...\n");
         if ( execv("/.exec", argv) != 0 ) { // Flawfinder: ignore (exec* is necessary)
             message(ERROR, "Exec of /.exec failed: %s\n", strerror(errno));
