@@ -230,6 +230,7 @@ Finalize() {
     echo "PATH=$PATH:/bin:/sbin" >> "$SINGULARITY_BUILD_ROOT/environment"
     echo 'PS1="Singularity.$SINGULARITY_CONTAINER> $PS1"' >> "$SINGULARITY_BUILD_ROOT/environment"
     echo 'export PATH PS1' >> "$SINGULARITY_BUILD_ROOT/environment"
+    chmod 0644 "$SINGULARITY_BUILD_ROOT/environment"
 }
 
 
