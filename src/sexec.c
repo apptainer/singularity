@@ -233,18 +233,21 @@ int main(int argc, char ** argv) {
 
     message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
 
+/*
     if ( ( existing_prompt = getenv("PS1") ) != NULL ) { // Flawfinder: ignore (only used to manipulate shell prompt)
+        message(WARNING, "PS1 is null\n");
         int prompt_len = strlength(containername, 256) + strlength(existing_prompt, 512) + 16;
         prompt = (char *) malloc(prompt_len + 1);
         snprintf(prompt, prompt_len, "(Singularity/%s) %s", containername, existing_prompt); // Flawfinder: ignore
     } else {
+        message(WARNING, "PS1 is defined\n");
         int prompt_len = strlength(containername, 256) + 16;
         prompt = (char *) malloc(prompt_len + 1);
         snprintf(prompt, prompt_len, "Singularity.%s> ", containername); // Flawfinder: ignore
     }
-
     setenv("PS1", prompt, 1);
     message(DEBUG, "Set prompt to: %s\n", prompt);
+*/
 
     message(DEBUG, "Checking if we are opening image as read/write\n");
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
@@ -257,7 +260,7 @@ int main(int argc, char ** argv) {
         containerimage_fd = fileno(containerimage_fp);
         message(DEBUG, "Setting shared lock on file descriptor: %d\n", containerimage_fd);
         if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
-            message(ERROR, "Image is locked by another process\n");
+            message(ERROR, "Could not obtained shared lock on image\n");
             ABORT(5);
         }
     } else {
@@ -270,7 +273,7 @@ int main(int argc, char ** argv) {
         containerimage_fd = fileno(containerimage_fp);
         message(DEBUG, "Setting exclusive lock on file descriptor: %d\n", containerimage_fd);
         if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
-            message(ERROR, "Image is locked by another process\n");
+            message(ERROR, "Could not obtained exclusive lock on image\n");
             ABORT(5);
         }
     }
