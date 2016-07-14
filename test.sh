@@ -39,7 +39,7 @@ stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
 stest 0 make
 stest 0 sudo make install
 
-PATH="$TEMPDIR/bin:$PATH"
+PATH="$TEMPDIR/bin:/usr/local/bin:$PATH"
 MESSAGELEVEL=5
 
 /bin/echo
