@@ -88,8 +88,8 @@ int main(int argc, char ** argv) {
     char *command;
     char *sessiondir;
     char *sessiondir_prefix;
-    char *prompt;
-    char *existing_prompt;
+//    char *prompt;
+//    char *existing_prompt;
     char *loop_dev_lock;
     char *loop_dev_cache;
     char *homedir;
