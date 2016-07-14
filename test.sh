@@ -118,6 +118,14 @@ stest 0 sudo rm -rf "$TEMPDIR"
 stest 0 make maintainer-clean
 
 /bin/echo
+if `which flawfinder > /dev/null``; then
+    /bin/echo "Testing source code with flawfinder"
+    stest 0 sh -c "flawfinder . | tee /dev/stderr | grep -q -e 'No hits found'"
+else
+    /bin/echo "WARNING: flawfinder is not found, test skipped"
+fi
+
+/bin/echo
 /bin/echo "Done. All tests completed successfully"
 /bin/echo
 

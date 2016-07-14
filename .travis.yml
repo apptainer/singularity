@@ -10,6 +10,9 @@ compiler:
 before_install:
   # so that adjusted PATH propagates into sudo
   - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
+  - sudo apt-get install flawfinder
+  # necessary ATM. See https://github.com/gmkurtzer/singularity/pull/140
+  - sudo apt-get install yum
 
 script:
   - ./test.sh
