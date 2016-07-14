@@ -19,35 +19,29 @@
  */
 
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/file.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/param.h>
+#include <sys/file.h>
 #include <errno.h> 
-#include <signal.h>
-#include <sched.h>
 #include <string.h>
-#include <fcntl.h>  
-#include <grp.h>
+#include <fcntl.h>
 #include <libgen.h>
-#include <pwd.h>
 
 #include "config.h"
 #include "mounts.h"
-#include "loop-control.h"
-#include "util.h"
 #include "file.h"
-#include "container_files.h"
-#include "config_parser.h"
-#include "container_actions.h"
-#include "privilege.h"
+#include "util.h"
+#include "loop-control.h"
 #include "message.h"
+
+#ifndef MS_REC
+#define MS_REC 16384
+#endif
+
 
 int mount_image(char * loop_device, char * mount_point, int writable) {
 
