@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -40,6 +40,7 @@
 #include "util.h"
 #include "file.h"
 #include "loop-control.h"
+#include "message.h"
 
 
 #ifndef LIBEXECDIR
@@ -87,12 +88,10 @@ void sighandler(int sig) {
 
 
 int main(int argc, char ** argv) {
-    FILE *loop_fp = 0;
     FILE *containerimage_fp;
     char *containerimage;
     char *mountpoint;
     char *loop_dev;
-    char *shell;
     int retval = 0;
     uid_t uid = geteuid();
 
@@ -102,8 +101,8 @@ int main(int argc, char ** argv) {
 
 
     if ( uid != 0 ) {
-        fprintf(stderr, "ABORT: Calling user must be root\n");
-        return(1);
+        message(ERROR, "Calling user must be root\n");
+        ABORT(1);
     }
 
     if ( argv[1] == NULL || argv[2] == NULL ) {
@@ -113,76 +112,71 @@ int main(int argc, char ** argv) {
 
     containerimage = strdup(argv[1]);
     mountpoint = strdup(argv[2]);
-    shell = getenv("SHELL");
 
     if ( is_file(containerimage) < 0 ) {
-        fprintf(stderr, "ABORT: Container image not found: %s\n", containerimage);
-        return(1);
+        message(ERROR, "Container image not found: %s\n", containerimage);
+        ABORT(1);
     }
 
     if ( is_dir(mountpoint) < 0 ) {
-        fprintf(stderr, "ABORT: Mount point must be a directory: %s\n", mountpoint);
-        return(1);
+        message(ERROR, "Mount point must be a directory: %s\n", mountpoint);
+        ABORT(1);
     }
 
-    loop_dev = obtain_loop_dev();
-
-    if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) {
-        fprintf(stderr, "ERROR: Could not open image %s: %s\n", containerimage, strerror(errno));
-        return(255);
+    message(DEBUG, "Opening container image: %s\n", containerimage);
+    if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) { // Flawfinder: ignore
+        message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
+        ABORT(255);
     }
 
-    if ( ( loop_fp = fopen(loop_dev, "r+") ) < 0 ) {
-        fprintf(stderr, "ERROR: Failed to open loop device %s: %s\n", loop_dev, strerror(errno));
-        return(-1);
+    message(DEBUG, "Binding container to loop interface\n");
+    if ( loop_bind(containerimage_fp, &loop_dev) < 0 ) {
+        message(ERROR, "Could not bind image to loop!\n");
+        ABORT(255);
     }
 
-    if ( associate_loop(containerimage_fp, loop_fp, 1) < 0 ) {
-        fprintf(stderr, "ERROR: Could not associate %s to loop device %s\n", containerimage, loop_dev);
-        return(255);
-    }
-
-    if ( shell == NULL ) {
-        shell = strdup("/bin/bash");
-    }
-
+    message(DEBUG, "Forking namespace child\n");
     namespace_fork_pid = fork();
-
     if ( namespace_fork_pid == 0 ) {
 
         if ( unshare(CLONE_NEWNS) < 0 ) {
-            fprintf(stderr, "ABORT: Could not virtualize mount namespace: %s\n", strerror(errno));
-            return(255);
+            message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
+            ABORT(255);
         }
 
         if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
-            fprintf(stderr, "ABORT: Could not make mountspaces private: %s\n", strerror(errno));
-            return(255);
+            message(ERROR, "Could not make mountspaces private: %s\n", strerror(errno));
+            ABORT(255);
         }
 
 
         if ( mount_image(loop_dev, mountpoint, 1) < 0 ) {
-            fprintf(stderr, "ABORT: exiting...\n");
-            return(255);
+            message(ERROR, "Failed mounting image...\n");
+            ABORT(255);
         }
 
+        message(DEBUG, "Forking exec child\n");
         exec_fork_pid = fork();
-
         if ( exec_fork_pid == 0 ) {
 
-            argv[2] = strdup(shell);
+            argv[2] = strdup("/bin/sh");
 
-            if ( execv(shell, &argv[2]) != 0 ) {
-                fprintf(stderr, "ABORT: exec of bash failed: %s\n", strerror(errno));
+            if ( execv("/bin/sh", &argv[2]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
+                message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
             }
+            // We should never get here, so if we do, make it an error
+            return(-1);
 
         } else if ( exec_fork_pid > 0 ) {
             int tmpstatus;
 
-            strncpy(argv[0], "Singularity: exec", strlen(argv[0]));
+            strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
 
+            message(DEBUG, "Waiting for exec child to return\n");
             waitpid(exec_fork_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
+
+            message(DEBUG, "Exec child returned (RETVAL=%d)\n", retval);
 
             return(retval);
         } else {
@@ -193,19 +187,23 @@ int main(int argc, char ** argv) {
     } else if ( namespace_fork_pid > 0 ) {
         int tmpstatus;
         
-        strncpy(argv[0], "Singularity: namespace", strlen(argv[0]));
+        strncpy(argv[0], "Singularity: namespace", strlen(argv[0])); // Flawfinder: ignore
         
+        message(DEBUG, "Waiting for namespace child to return\n");
         waitpid(namespace_fork_pid, &tmpstatus, 0);
+
         retval = WEXITSTATUS(tmpstatus);
+        message(DEBUG, "Namespace child returned (RETVAL=%d)\n", retval);
 
     } else {
         fprintf(stderr, "ABORT: Could not fork management process: %s\n", strerror(errno));
         return(255);
     }
 
-    if ( disassociate_loop(loop_fp) < 0 ) {
-        fprintf(stderr, "ERROR: Failed to detach loop device: %s\n", loop_dev);
-        return(255);
+    message(VERBOSE, "Unbinding container image from loop\n");
+    if ( loop_free(loop_dev) < 0 ) {
+        message(ERROR, "Failed to detach loop device: %s\n", loop_dev);
+        ABORT(255);
     }
 
     return(retval);

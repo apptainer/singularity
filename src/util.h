@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -19,12 +19,15 @@
  */
 
 
+#include <unistd.h>
+
 int intlen(int input);
 char *int2str(int num);
 char *joinpath(char * path1, char * path2);
 char *strjoin(char *str1, char *str2);
-char *random_string(int length);
 void chomp(char *str);
+int strlength(char *string, int max_len);
+//char *random_string(int length);
 
 
 #define ABORT(a) {exit(a);}

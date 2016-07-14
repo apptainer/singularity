@@ -12,6 +12,7 @@ SHELL OPTIONS:
                     as read/write.
     -C/--contain    This option disables the automatic sharing of writable
                     filesystems on your host (e.g. $HOME and /tmp).
+    -s/--shell      Path to program to use for interactive shell
 
 
 NOTE:

@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
         return(1);
     } else if ( child == 0 ) {
         // reassign arguments -1
-        char *newargv[argc];
+        char *newargv[argc]; // Flawfinder: ignore
         int i;
 
         for(i=0; i<argc-1; i++) {
@@ -64,9 +64,9 @@ int main(int argc, char **argv) {
         ptrace(PTRACE_TRACEME, 0, NULL, NULL);
         ptrace(PTRACE_SETOPTIONS, 0, NULL, PTRACE_O_TRACECLONE|PTRACE_O_TRACEFORK|PTRACE_O_TRACEVFORK);
 
-        execv(newargv[0], newargv);
+        execv(newargv[0], newargv); // Flawfinder: ignore (exec* is necessary)
     } else {
-        char str[256*8];
+        char str[256*8]; // Flawfinder: ignore
 
         // loop through running binary until binary is done
         while (1){
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
                 while(len <= 256) {
                     union u { 
                         long val;
-                        char string[sizeof(long)];
+                        char string[sizeof(long)]; // Flawfinder: ignore
                     } data;
 
 #ifdef ARCH_x86_64
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
                         break;
                     }
 
-                    memcpy(str + len, data.string, sizeof(long));
+                    memcpy(str + len, data.string, sizeof(long)); // Flawfinder: ignore
 
                     len += sizeof(long);
 

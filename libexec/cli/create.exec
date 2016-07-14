@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -34,12 +34,12 @@ else
     exit 1
 fi
 
-PATH=/sbin:/usr/sbin:$PATH
+PATH=/sbin:/usr/sbin:${PATH:-}
 IMAGE_SIZE="1024"
 FILESYSTEM="ext3"
 
 while true; do
-    case $1 in
+    case ${1:-} in
         -h|--help|help)
             if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
                 cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
@@ -51,16 +51,20 @@ while true; do
         ;;
         -s|--size)
             shift
-            IMAGE_SIZE="$1"
+            IMAGE_SIZE="${1:-}"
             shift
         ;;
         -f|--fs)
             shift
-            FILESYSTEM="$1"
+            FILESYSTEM="${1:-}"
             shift
         ;;
+        -F|--force)
+            shift
+            OVERWRITE=1
+        ;;
         -*)
-            message ERROR "Unknown option: $1\n"
+            message ERROR "Unknown option: ${1:-}\n"
             exit 1
         ;;
         *)
@@ -69,7 +73,7 @@ while true; do
     esac
 done
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -88,15 +92,20 @@ if [ "$UID" != 0 ]; then
     exit 1
 fi
 
-IMAGE_FILE="$1"
+IMAGE_FILE="${1:-}"
 
 if [ -z "$IMAGE_FILE" ]; then
     message ERROR "You must supply a path to an image to create\n"
     exit 1
 fi
 if [ -f "$IMAGE_FILE" ]; then
-    message ERROR "Image file exists, not overwriting.\n"
-    exit 1
+    if [ -n "${OVERWRITE:-}" ]; then
+        message 2 "Removing existing file\n"
+        /bin/rm -f "$IMAGE_FILE"
+    else
+        message ERROR "Image file exists, not overwriting.\n"
+        exit 1
+    fi
 fi
 
 if ! MKFS_PATH=`singularity_which "mkfs.$FILESYSTEM"`; then
@@ -104,14 +113,9 @@ if ! MKFS_PATH=`singularity_which "mkfs.$FILESYSTEM"`; then
     exit 255
 fi
 
-if ! touch "$IMAGE_FILE" 2>/dev/null; then
-    message ERROR "Could not create image: $IMAGE_FILE\n"
-    exit 1
-fi
-
 message 1 "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MiB...\n"
 if ! eval "$SINGULARITY_libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMAGE_SIZE"; then
-    messsage ERROR "Failed creating image: $IMAGE_FILE\n"
+    message ERROR "Failed creating image: $IMAGE_FILE\n"
     exit 1
 fi
 

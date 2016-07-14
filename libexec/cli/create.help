@@ -6,6 +6,7 @@ CREATE OPTIONS:
     -s/--size   Specify a size for an operation in MiB, i.e. 1024*1024B
                 (default 1024MiB)
     -f/--fs     Supported File systems: ext3/ext4 (ext[2/3]: default ext3)
+    -F/--force  Overwrite an image file if it exists
 
 EXAMPLES:
 

@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -19,26 +19,26 @@
 # 
 # 
 
+set -u
 
-
-if [ -z "$MESSAGELEVEL" ]; then
+if [ -z "${MESSAGELEVEL:-}" ]; then
     /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     MESSAGELEVEL=5
 fi
 
-if [ -z "$USER" ]; then
+if [ -z "${USER:-}" ]; then
     USER=`id -un`
     export USER
 fi
-if [ -z "$HOME" ]; then
+if [ -z "${HOME:-}" ]; then
     HOME=`getent passwd "$USER" | cut -d : -f 6`
     export HOME
 fi
 
 
 message() {
-    LEVEL="$1"
-    MESSAGE="$2"
+    LEVEL="${1:-}"
+    MESSAGE="${2:-}"
     if [ -z "$MESSAGE" ]; then
         return 0
     fi
@@ -67,8 +67,8 @@ message() {
 
 
 get_key_from_conf() {
-    KEY="$1"
-    FILE="$2"
+    KEY="${1:-}"
+    FILE="${2:-}"
     if OUT=`egrep -i "^$KEY:\s*" $FILE`; then
         echo "$OUT" | head -n 1 | sed -e "s@^$KEY:\s*@@i"
         return 0
@@ -77,8 +77,8 @@ get_key_from_conf() {
 }
 
 get_section_from_conf() {
-    SECTION="$1"
-    FILE="$2"
+    SECTION="${1:-}"
+    FILE="${2:-}"
     TOGGLE=""
     if [ ! -f "$FILE" ]; then
         message ERROR "File not found ($FILE)\n"
@@ -105,8 +105,8 @@ get_section_from_conf() {
 }
 
 check_pattern() {
-    STRING="$1"
-    PATTERN="$2"
+    STRING="${1:-}"
+    PATTERN="${2:-}"
     case "$PATTERN" in
         $STRING)
             true
@@ -132,7 +132,7 @@ cmd() {
 
 
 stest() {
-    ERROR="$1"
+    ERROR="${1:-}"
     TMPFILE=`mktemp`
     shift
     message 2 " + %-60.60s " "$*"
@@ -156,7 +156,7 @@ stest() {
 
 
 singularity_import() {
-    MOD="$1"
+    MOD="${1:-}"
     if [ -z "$SINGULARITY_libexecdir" ]; then
         message ERROR "libexecdir not defined, are you running this from within Singularity?\n"
         exit 1
@@ -174,7 +174,7 @@ singularity_import() {
 # Different versions of which respond differently (print aliases, or take
 # different arguments)
 singularity_which() {
-    i="$1"
+    i="${1:-}"
     # Avoid non-pathnames with . not in path, and directories
     case $i in
         .* | /*)
@@ -195,22 +195,22 @@ singularity_which() {
 
 parse_opts() {
     NEWOPTS=""
-    while [ -n "$1" ]; do
-        case "$1" in
+    while [ -n "${1:-}" ]; do
+        case "${1:-}" in
             -*=*)
-                ARG1=`echo -n "$1" | cut -d = -f 1`
-                ARG2=`echo -n "$1" | cut -d = -f 2`
+                ARG1=`echo -n "${1:-}" | cut -d = -f 1`
+                ARG2=`echo -n "${1:-}" | cut -d = -f 2`
                 NEWOPTS="$NEWOPTS \"$ARG1\" \"$ARG2\""
                 shift
                 continue
             ;;
             --*)
-                NEWOPTS="$NEWOPTS \"$1\""
+                NEWOPTS="$NEWOPTS \"${1:-}\""
                 shift
                 continue
             ;;
             -*)
-                for o in `echo "$1"| sed 's/^-//' | sed 's/./-& /g'`; do
+                for o in `echo "${1:-}"| sed 's/^-//' | sed 's/./-& /g'`; do
                     NEWOPTS="$NEWOPTS \"$o\""
                 done
                 shift
@@ -231,6 +231,6 @@ parse_opts() {
 
 
 
-if [ "$DEBUG" = "1" ]; then
+if [ "${DEBUG:-}" = "1" ]; then
     set -x
 fi

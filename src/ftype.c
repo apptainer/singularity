@@ -5,9 +5,9 @@
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at
- * IPO@lbl.gov.
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
  * 
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
@@ -30,7 +30,7 @@
 
 int main(int argc, char **argv) {
     FILE *fd;
-    char data[1024];
+    char data[1024]; // Flawfinder: ignore
     int i;
 
     if ( argv[1] == NULL ) {
@@ -44,15 +44,18 @@ int main(int argc, char **argv) {
         return(255);
     }
 
-    fd = fopen(argv[1], "r");
+    if ( ( fd = fopen(argv[1], "r") ) == NULL ) { // Flawfinder: ignore
+        fprintf(stderr, "ERROR: Could not open file %s: %s\n", argv[1], strerror(errno));
+        return(255);
+    }
 
     if ( is_exec(argv[1]) == 0 ) {
         for(i=0; i<128; i++) {
-            data[i] = fgetc(fd);
+            data[i] = fgetc(fd); // Flawfinder: ignore
         }
 
         if ( strncmp(data, "#!/", 3) == 0 ) {
-            char sub[128];
+            char sub[128]; // Flawfinder: ignore
             int a;
 
             for(a=0;a<128;a++) {
@@ -66,7 +69,7 @@ int main(int argc, char **argv) {
             printf("exe-ascii \"%s\"\n", sub);
         } else {
             for(i=128; i<1024; i++) {
-                data[i] = fgetc(fd);
+                data[i] = fgetc(fd); // Flawfinder: ignore
             }
 
             if ( memchr(data, '\0', 1024) != NULL ) {
@@ -77,7 +80,7 @@ int main(int argc, char **argv) {
         }
     } else {
         for(i=0; i<1024; i++) {
-            data[i] = fgetc(fd);
+            data[i] = fgetc(fd); // Flawfinder: ignore
         }
         if ( memchr(data, '\0', 1024) != NULL ) {
             printf("binary data\n");
