@@ -227,9 +227,12 @@ Finalize() {
     echo '# Define any environment init code here' > "$SINGULARITY_BUILD_ROOT/environment"
     echo '# ' >> "$SINGULARITY_BUILD_ROOT/environment"
     echo '' >> "$SINGULARITY_BUILD_ROOT/environment"
-    echo "PATH=$PATH:/bin:/sbin" >> "$SINGULARITY_BUILD_ROOT/environment"
-    echo 'PS1="Singularity.$SINGULARITY_CONTAINER> $PS1"' >> "$SINGULARITY_BUILD_ROOT/environment"
-    echo 'export PATH PS1' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo 'if test -z "$SINGULARITY_INIT"; then' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo "    PATH=$PATH:/bin:/sbin" >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo '    PS1="Singularity.$SINGULARITY_CONTAINER> $PS1"' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo '    SINGULARITY_INIT=1' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo '    export PATH PS1 SINGULARITY_INIT' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/environment"
     chmod 0644 "$SINGULARITY_BUILD_ROOT/environment"
 }
 
