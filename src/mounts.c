@@ -19,29 +19,35 @@
  */
 
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/file.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/file.h>
+#include <sys/wait.h>
+#include <sys/param.h>
 #include <errno.h> 
+#include <signal.h>
+#include <sched.h>
 #include <string.h>
-#include <fcntl.h>
+#include <fcntl.h>  
+#include <grp.h>
 #include <libgen.h>
+#include <pwd.h>
 
 #include "config.h"
 #include "mounts.h"
-#include "file.h"
-#include "util.h"
 #include "loop-control.h"
+#include "util.h"
+#include "file.h"
+#include "container_files.h"
+#include "config_parser.h"
+#include "container_actions.h"
+#include "privilege.h"
 #include "message.h"
-
-#ifndef MS_REC
-#define MS_REC 16384
-#endif
-
 
 int mount_image(char * loop_device, char * mount_point, int writable) {
 
@@ -137,7 +143,7 @@ int mount_overlay(char * source, char * scratch, char * dest) {
 
     message(DEBUG, "Checking that source exists and is a file or directory\n");
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {
-        fprintf(stderr, "ERROR: Overlay source path is not a file or directory: '%s'\n", source);
+        message(ERROR, "Overlay source path is not a file or directory: '%s'\n", source);
         ABORT(255);
     }
 
@@ -154,28 +160,39 @@ int mount_overlay(char * source, char * scratch, char * dest) {
     }
 
     message(DEBUG, "Creating upperdir and workdir within scratch directory\n");
-    char * const upperdir = malloc(strlen(scratch)+2);  // should this be 2*8 = 16?
-    char * const workdir = malloc(strlen(scratch)+2);   // ditto
-    snprintf(upperdir, strlen(upperdir), "%s%s", scratch, "/t");
-    snprintf(workdir, strlen(workdir), "%s%s", scratch, "/w");
+    int upperdirLen = strlen(scratch) + 4;
+    int workdirLen = upperdirLen;
+    char * const upperdir = malloc(upperdirLen);
+    char * const workdir = malloc(workdirLen);
+    snprintf(upperdir, upperdirLen, "%s%s", scratch, "/t");
+    snprintf(workdir, workdirLen, "%s%s", scratch, "/w");
 
-    if ( mkdir(upperdir, 1023) < 0 ) {
-        message(ERROR, "Could not create upperdir: '%s'\n", upperdir);
-        ABORT(255);
+    if ( is_dir(upperdir) != 0 ){	 
+        if ( mkdir(upperdir, 1023) < 0 ) {
+            message(ERROR, "Could not create upperdir '%s': %s\n", upperdir, strerror(errno));
+            ABORT(255);
+        }
     }
 
-    if ( mkdir(workdir, 1023) < 0 ) {
-        message(ERROR, "Could not create workdir: '%s'\n", workdir);
-        ABORT(255);
+    if ( is_dir(workdir) != 0 ){
+        if ( mkdir(workdir, 1023) < 0 ) {
+            message(ERROR, "Could not create workdir '%s': %s\n", workdir, strerror(errno));
+            ABORT(255);
+	}
     }
    
-   message(DEBUG, "Calling mount(...)");
-   int optionStringLen = strlen(lowerdir) + strlen(upperdir) + strlen(workdir) + 50;
-   char * const optionsString = malloc(opstionStringLen);
-   snprintf(optionsString, optionStringLen, "lowerdir=%s,upperdir=%s,workdir=%s", lowerdir, upperdir, workdir);
+   message(DEBUG, "Calling mount(...)\n");
+   int optionStringLen = strlen(source) + upperdirLen + workdirLen + 50;
+   char * const optionString = malloc(optionStringLen);
+   snprintf(optionString, optionStringLen, "lowerdir=%s,upperdir=%s,workdir=%s", source, upperdir, workdir);
+   
    if ( mount("overlay", dest, "overlay", MS_NOSUID, optionString) < 0 ){
-        message(ERROR, "Could not create overlay.");
+        message(ERROR, "Could not create overlay: %s\n", strerror(errno));
         ABORT(255);
+   }else{
+	message(DEBUG, "Overlay successful.");
    }
+
+   return(0);
 
 }
