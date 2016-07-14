@@ -135,7 +135,7 @@ stest() {
     ERROR="${1:-}"
     TMPFILE=`mktemp`
     shift
-    message 2 " + %-60.60s " "$*"
+    message 2 " + %-80.80s " "$*"
     "$@" >$TMPFILE 2>&1
     CODE="$?"
     if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
