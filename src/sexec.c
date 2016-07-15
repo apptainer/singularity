@@ -66,6 +66,7 @@
 
 pid_t exec_fork_pid = 0;
 
+// TODO: This is broke, and needs some love!
 void sighandler(int sig) {
     signal(sig, sighandler);
 
@@ -88,8 +89,6 @@ int main(int argc, char ** argv) {
     char *command;
     char *sessiondir;
     char *sessiondir_prefix;
-//    char *prompt;
-//    char *existing_prompt;
     char *loop_dev_lock;
     char *loop_dev_cache;
     char *homedir;
@@ -118,8 +117,9 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 
     signal(SIGINT, sighandler);
-    signal(SIGKILL, sighandler);
     signal(SIGQUIT, sighandler);
+    signal(SIGTERM, sighandler);
+    signal(SIGKILL, sighandler);
 
     // Get all user/group info
     uid = getuid();
@@ -233,22 +233,6 @@ int main(int argc, char ** argv) {
     message(DEBUG, "Set image mount path to: %s\n", containerdir);
 
     message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
-
-/*
-    if ( ( existing_prompt = getenv("PS1") ) != NULL ) { // Flawfinder: ignore (only used to manipulate shell prompt)
-        message(WARNING, "PS1 is null\n");
-        int prompt_len = strlength(containername, 256) + strlength(existing_prompt, 512) + 16;
-        prompt = (char *) malloc(prompt_len + 1);
-        snprintf(prompt, prompt_len, "(Singularity/%s) %s", containername, existing_prompt); // Flawfinder: ignore
-    } else {
-        message(WARNING, "PS1 is defined\n");
-        int prompt_len = strlength(containername, 256) + 16;
-        prompt = (char *) malloc(prompt_len + 1);
-        snprintf(prompt, prompt_len, "Singularity.%s> ", containername); // Flawfinder: ignore
-    }
-    setenv("PS1", prompt, 1);
-    message(DEBUG, "Set prompt to: %s\n", prompt);
-*/
 
     message(DEBUG, "Checking if we are opening image as read/write\n");
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
