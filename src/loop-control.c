@@ -44,16 +44,15 @@
 #define MAX_LOOP_DEVS 128
 
 
-int loop_bind(FILE *image_fp, char **loop_dev) {
+int loop_bind(FILE *image_fp, char **loop_dev, int autoclear) {
     struct loop_info64 lo64 = {0};
     int i;
 
     message(DEBUG, "Called loop_bind(image_fp, **{loop_dev)\n");
 
-    // While autoclear is nice to have, it may cause a race condition where
-    // the device is auto-cleared just before another process tries to
-    // access the cached device.
-    //lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
+    if ( autoclear > 0 ) {
+        lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
+    }
     lo64.lo_offset = image_offset(image_fp);
 
     for( i=0; i < MAX_LOOP_DEVS; i++ ) {
@@ -90,8 +89,8 @@ int loop_bind(FILE *image_fp, char **loop_dev) {
 
         message(VERBOSE2, "Setting loop device flags\n");
         if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
-            (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
             fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
+            (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
             (void)loop_free(*loop_dev);
             ABORT(255);
         }
@@ -114,7 +113,7 @@ int loop_bind(FILE *image_fp, char **loop_dev) {
 int loop_free(char *loop_dev) {
     FILE *loop_fp;
 
-    message(DEBUG, "Called loop_unbind(%s)\n", loop_dev);
+    message(DEBUG, "Called loop_free(%s)\n", loop_dev);
 
     if ( is_blk(loop_dev) < 0 ) {
         message(ERROR, "Loop device is not a valid block device: %s\n", loop_dev);

@@ -102,6 +102,7 @@ int main(int argc, char ** argv) {
     int cwd_fd;
     int sessiondirlock_fd;
     int containerimage_fd;
+    int loop_dev_fd;
     int loop_dev_lock_fd;
     int join_daemon_ns = 0;
     int retval = 0;
@@ -353,12 +354,13 @@ int main(int argc, char ** argv) {
         message(ERROR, "Could not open loop_dev_lock %s: %s\n", loop_dev_lock, strerror(errno));
         ABORT(255);
     }
+
     message(DEBUG, "Requesting exclusive flock() on loop_dev lockfile\n");
     if ( flock(loop_dev_lock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         message(DEBUG, "We have exclusive flock() on loop_dev lockfile\n");
 
         message(DEBUG, "Binding container to loop interface\n");
-        if ( loop_bind(containerimage_fp, &loop_dev) < 0 ) {
+        if ( loop_bind(containerimage_fp, &loop_dev, 1) < 0 ) {
             message(ERROR, "Could not bind image to loop!\n");
             ABORT(255);
         }
@@ -384,6 +386,12 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
+    }
+
+    message(VERBOSE3, "Opening loop device so it stays attached\n");
+    if ( ( loop_dev_fd = open(loop_dev, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
+        message(ERROR, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
+        ABORT(255);
     }
 
     message(DEBUG, "Creating container image mount path: %s\n", containerdir);
@@ -982,9 +990,6 @@ int main(int argc, char ** argv) {
             message(WARNING, "Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
         }
 
-        // Dissociate loops from here Just in case autoflush didn't work.
-        (void)loop_free(loop_dev);
-
         if ( drop_privs(&uinfo) < 0 ) {
             ABORT(255);
         }
@@ -992,7 +997,6 @@ int main(int argc, char ** argv) {
     } else {
 //        printf("Not removing sessiondir, lock still\n");
     }
-
 
     message(VERBOSE2, "Cleaning up...\n");
 

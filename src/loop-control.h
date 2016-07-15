@@ -19,5 +19,5 @@
  */
 
 
-int loop_bind(FILE *image_fp, char **loop_dev);
+int loop_bind(FILE *image_fp, char **loop_dev, int autoclear);
 int loop_free(char *loop_dev);
