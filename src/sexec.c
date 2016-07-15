@@ -264,7 +264,7 @@ int main(int argc, char ** argv) {
             ABORT(5);
         }
     } else {
-        message(DEBUG, "Opening image as read/write only: %s\n", containerimage);
+        message(DEBUG, "Opening image as read/write: %s\n", containerimage);
         if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
             message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
             ABORT(255);
@@ -517,13 +517,13 @@ int main(int argc, char ** argv) {
 
             // Mount image
             if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
-                unsetenv("SINGULARITY_WRITABLE");
-                message(DEBUG, "Mounting Singularity image file read/write\n");
+                message(DEBUG, "Mounting Singularity image file read only\n");
                 if ( mount_image(loop_dev, containerdir, 0) < 0 ) {
                     ABORT(255);
                 }
             } else {
-                message(DEBUG, "Mounting Singularity image file read only\n");
+                unsetenv("SINGULARITY_WRITABLE");
+                message(DEBUG, "Mounting Singularity image file read/write\n");
                 if ( mount_image(loop_dev, containerdir, 1) < 0 ) {
                     ABORT(255);
                 }
