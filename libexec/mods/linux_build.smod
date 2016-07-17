@@ -130,7 +130,9 @@ PreSetup() {
     done
 
     for i in $TMP_REAL_FILES; do
-        cp "$i" "$SINGULARITY_BUILD_ROOT/$i"
+        if [ ! -e "$SINGULARITY_BUILD_ROOT/$i" ]; then
+            cp "$i" "$SINGULARITY_BUILD_ROOT/$i"
+        fi
     done
 
     for i in $DEVS; do
