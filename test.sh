@@ -69,6 +69,10 @@ for i in $ALL_COMMANDS; do
     stest 0 singularity $i -h
     stest 0 singularity $i --help
 done
+
+/bin/echo
+/bin/echo "Testing error on bad commands"
+
 stest 1 singularity help bogus
 stest 1 singularity bogus help
 
