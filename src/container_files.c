@@ -105,9 +105,10 @@ int build_group(char *template, char *output) {
     message(DEBUG, "Getting supplementary group info\n");
     groupcount = getgroups(maxgroups, gids);
 
-    for (i=0; i<= groupcount; i++) {
-        if ( gids[i] >= 500 && gids[i] != grent->gr_gid ) {
-            struct group *gr = getgrgid(gids[i]);
+    for (i=0; i < groupcount; i++) {
+        struct group *gr = getgrgid(gids[i]);
+        message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
+        if ( gids[i] != gid ) {
             message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
             fprintf(output_fp, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
         }
