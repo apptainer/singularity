@@ -29,6 +29,49 @@ and the
 for more information.
 </p>
 
+
+<br/>&nbsp;<br/>
+<h2>Command line example snippets</h2>
+<p>
+A shell snippet is worth a thousand words!
+<pre>
+$ # Size of the live container
+$ du -sh /tmp/Centos7.img 
+357M    /tmp/Centos7.img
+
+$ # Shell into container
+$ singularity shell /tmp/Centos7.img 
+Singularity.Centos7.img&gt; ps aux
+USER        PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+gmk           1  0.0  0.3 115372  1768 pts/6    S    12:23   0:00 /bin/bash --norc --noprofile
+gmk           2  0.0  0.3 151024  1800 pts/6    R+   12:23   0:00 ps aux
+Singularity.Centos7.img&gt; exit
+
+$ # Whoami outside and inside container
+$ id
+uid=1000(gmk) gid=1000(gmk) groups=1000(gmk),10(wheel),2222(testgroup) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+$ singularity exec /tmp/Centos7.img id
+uid=1000(gmk) gid=1000(gmk) groups=1000(gmk),10(wheel),2222(testgroup)
+
+$ # Host files visible inside container
+$ echo "Hello World" &gt; /home/gmk/testfile
+$ singularity exec /tmp/Centos7.img cat /home/gmk/testfile 
+Hello World
+
+$ # Switching containers is as easy as referencing a different image
+$ singularity exec /tmp/SL6.img cat /etc/redhat-release 
+Scientific Linux release 6.8 (Carbon)
+$ singularity exec /tmp/Debian-stable.img cat /etc/debian_version
+8.5
+$ singularity exec /tmp/Ubuntu-trusty.img cat /etc/lsb-release 
+DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=14.04
+DISTRIB_CODENAME=trusty
+DISTRIB_DESCRIPTION="Ubuntu 14.04 LTS"
+</pre>
+</p>
+
+
 <br/>&nbsp;<br/>
 <h2>Watch it in action!</h2>
 <p>
@@ -39,9 +82,6 @@ Below is a short introduction and demonstration video:
 <a target="_blank" href="https://www.youtube.com/watch?v=xuIQoth0r4E"><img src="images/singularity-v2-intro.png" border="1px"></a>
 </center>
 </p>
-
-
-
 
 
 
