@@ -34,12 +34,12 @@ fi
 
 
 Bootstrap() {
-    if [ -z "$MIRROR" ]; then
+    if [ -z "${MIRROR:-}" ]; then
         echo "ERROR: MIRROR is not defined, have you configure 'MirrorURL'?"
         exit 1
     fi
 
-    if [ -z "$VERSION" ]; then
+    if [ -z "${VERSION:-}" ]; then
         echo "ERROR: VERSION is not defined, have you set 'OSVersion'?"
         exit 1
     fi
@@ -49,7 +49,7 @@ Bootstrap() {
 
     INCLUDEPKGS=`echo "$*" | sed -e 's/[ ]*/,/g'`
 
-    if [ -z "$INCLUDEPKGS" ]; then
+    if [ -z "${INCLUDEPKGS:-}" ]; then
         INCLUDEPKGS=",$INCLUDEPKGS"
     fi
 

@@ -62,7 +62,7 @@ Cleanup() {
 DistType() {
     TYPE="$1"
 
-    if [ -z "$TYPE" ]; then
+    if [ -z "${TYPE:-}" ]; then
         echo "DistType: Requires an argument!" 2>&2
         exit 1
     fi
@@ -97,7 +97,7 @@ InstallFile() {
     SOURCE="${1:-}"
     DEST="${2:-}"
 
-    if [ -z "$SOURCE" ]; then
+    if [ -z "${SOURCE:-}" ]; then
         echo "InstallFile: Must be called with a source file!" >&2
         return 1
     fi
@@ -107,7 +107,7 @@ InstallFile() {
         return 1
     fi
 
-    if [ -z "$DEST" ]; then
+    if [ -z "${DEST:-}" ]; then
         DEST="$SOURCE"
     fi
 
@@ -145,7 +145,7 @@ PreSetup() {
 }
 
 RunScript() {
-    if [ -z "$RAN_RUNSCRIPT" ]; then
+    if [ -z "${RAN_RUNSCRIPT:-}" ]; then
         echo '#!/bin/sh'    > "$SINGULARITY_BUILD_ROOT/singularity"
         echo                >> "$SINGULARITY_BUILD_ROOT/singularity"
 
