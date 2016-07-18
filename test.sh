@@ -17,7 +17,7 @@ fi
 MESSAGELEVEL=3
 STARTDIR=`pwd`
 TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
-TSTIMG="container.img"
+CONTAINER="container.img"
 SINGULARITY_CACHEDIR="$TEMPDIR"
 export SINGULARITY_CACHEDIR MESSAGELEVEL
 
@@ -79,69 +79,82 @@ stest 1 singularity bogus help
 /bin/echo
 /bin/echo "Building test container..."
 
-stest 0 sudo singularity create -s 568 "$TSTIMG"
-stest 0 sudo singularity bootstrap "$TSTIMG" "$STARTDIR/examples/centos.def"
+stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/centos.def"
 
 /bin/echo
 /bin/echo "Running container shell tests..."
 
-stest 0 singularity shell "$TSTIMG" -c "true"
-stest 1 singularity shell "$TSTIMG" -c "false"
-stest 0 sh -c "echo true | singularity shell '$TSTIMG'"
-stest 1 sh -c "echo false | singularity shell '$TSTIMG'"
+stest 0 singularity shell "$CONTAINER" -c "true"
+stest 1 singularity shell "$CONTAINER" -c "false"
+stest 0 sh -c "echo true | singularity shell '$CONTAINER'"
+stest 1 sh -c "echo false | singularity shell '$CONTAINER'"
 
 /bin/echo
 /bin/echo "Running container exec tests..."
 
-stest 0 singularity exec "$TSTIMG" true
-stest 0 singularity exec "$TSTIMG" /bin/true
-stest 1 singularity exec "$TSTIMG" false
-stest 1 singularity exec "$TSTIMG" /bin/false
-stest 1 singularity exec "$TSTIMG" /blahh
-stest 1 singularity exec "$TSTIMG" blahh
-stest 0 sh -c "echo hi | singularity exec $TSTIMG grep hi"
-stest 1 sh -c "echo bye | singularity exec $TSTIMG grep hi"
+stest 0 singularity exec "$CONTAINER" true
+stest 0 singularity exec "$CONTAINER" /bin/true
+stest 1 singularity exec "$CONTAINER" false
+stest 1 singularity exec "$CONTAINER" /bin/false
+stest 1 singularity exec "$CONTAINER" /blahh
+stest 1 singularity exec "$CONTAINER" blahh
+stest 0 sh -c "echo hi | singularity exec $CONTAINER grep hi"
+stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
 
 /bin/echo
 /bin/echo "Running container run tests..."
 
 # Before we have a runscript, it should invoke a shell
-stest 0 singularity run "$TSTIMG" -c true
-stest 1 singularity run "$TSTIMG" -c false
+stest 0 singularity run "$CONTAINER" -c true
+stest 1 singularity run "$CONTAINER" -c false
 echo -ne "#!/bin/sh\n\neval \"\$@\"\n" > singularity
 stest 0 chmod 0644 singularity
-stest 0 sudo singularity copy "$TSTIMG" -a singularity /
-stest 1 singularity run "$TSTIMG" true
-stest 0 sudo singularity exec -w "$TSTIMG" chmod 0755 /singularity
-stest 0 singularity run "$TSTIMG" true
-stest 1 singularity run "$TSTIMG" false
+stest 0 sudo singularity copy "$CONTAINER" -a singularity /
+stest 1 singularity run "$CONTAINER" true
+stest 0 sudo singularity exec -w "$CONTAINER" chmod 0755 /singularity
+stest 0 singularity run "$CONTAINER" true
+stest 1 singularity run "$CONTAINER" false
 
 /bin/echo
 /bin/echo "Checking writableness..."
 
-stest 0 sudo chmod 0644 "$TSTIMG"
-stest 1 singularity shell -w "$TSTIMG" -c true
-stest 1 singularity exec -w "$TSTIMG" true
-stest 1 singularity run -w "$TSTIMG" true
-stest 0 sudo chmod 0666 "$TSTIMG"
-stest 0 singularity shell -w "$TSTIMG" -c true
-stest 0 singularity exec -w "$TSTIMG" true
-stest 0 singularity run -w "$TSTIMG" true
-stest 1 singularity exec "$TSTIMG" touch /writetest
-stest 1 sudo singularity exec "$TSTIMG" touch /writetest
-stest 0 sudo singularity exec -w "$TSTIMG" touch /writetest
+stest 0 sudo chmod 0644 "$CONTAINER"
+stest 1 singularity shell -w "$CONTAINER" -c true
+stest 1 singularity exec -w "$CONTAINER" true
+stest 1 singularity run -w "$CONTAINER" true
+stest 0 sudo chmod 0666 "$CONTAINER"
+stest 0 singularity shell -w "$CONTAINER" -c true
+stest 0 singularity exec -w "$CONTAINER" true
+stest 0 singularity run -w "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" touch /writetest
+stest 1 sudo singularity exec "$CONTAINER" touch /writetest
+stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest
+
+
+/bin/echo
+/bin/echo "Checking Bootstrap on existing container..."
+stest 0 sudo singularity bootstrap "$CONTAINER"
+stest 0 singularity exec "$CONTAINER" test -f /environment
+stest 0 sudo singularity exec -w "$CONTAINER" rm /environment
+stest 1 singularity exec "$CONTAINER" test -f /environment
+stest 0 sudo singularity bootstrap "$CONTAINER"
+stest 0 singularity exec "$CONTAINER" test -f /environment
+stest 0 singularity exec "$CONTAINER" test -f /.shell
+stest 0 singularity exec "$CONTAINER" test -f /.exec
+stest 0 singularity exec "$CONTAINER" test -f /.run
 
 
 /bin/echo
 /bin/echo "Checking export/import..."
 
-stest 0 sudo singularity export -f out.tar "$TSTIMG"
+stest 0 sudo singularity export -f out.tar "$CONTAINER"
 stest 0 mkdir out
 stest 0 sudo tar -C out -xvf out.tar
 stest 0 sudo chmod 0644 out.tar
-stest 0 sudo rm -f "$TSTIMG"
-stest 0 sudo singularity create -s 568 "$TSTIMG"
-stest 0 sh -c "cat out.tar | sudo singularity import $TSTIMG"
+stest 0 sudo rm -f "$CONTAINER"
+stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 sh -c "cat out.tar | sudo singularity import $CONTAINER"
 
 /bin/echo
 /bin/echo "Cleaning up"
