@@ -1,6 +1,5 @@
 
 <h1>Singularity</h1>
-<br/>
 Application containers enabling mobility of compute
 <br/>&nbsp;<br/>
 
@@ -30,10 +29,11 @@ for more information.
 </p>
 
 
-<br/>&nbsp;<br/>
 <h2>Command line example snippets</h2>
 <p>
-A shell snippet is worth a thousand words!
+Sometimes a snippet is worth a thousand words... Here is a demonstration of how
+simple Singularity is to use! Change your entire operating system environment
+with a single command!
 <pre>
 $ # Size of the live container
 $ du -sh /tmp/Centos7.img 
@@ -47,13 +47,13 @@ gmk           1  0.0  0.3 115372  1768 pts/6    S    12:23   0:00 /bin/bash --no
 gmk           2  0.0  0.3 151024  1800 pts/6    R+   12:23   0:00 ps aux
 Singularity.Centos7.img&gt; exit
 
-$ # I am me both inside and outside the container
+$ # I am the same user inside the container as outside the container
 $ id
-uid=1000(gmk) gid=1000(gmk) groups=1000(gmk),10(wheel),2222(testgroup) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
+uid=1000(gmk) gid=1000(gmk) groups=1000(gmk),10(wheel),2222(testgroup)
 $ singularity exec /tmp/Centos7.img id
 uid=1000(gmk) gid=1000(gmk) groups=1000(gmk),10(wheel),2222(testgroup)
 
-$ # Host files visible inside container
+$ # Files on the host can be reachable from within the container
 $ echo "Hello World" &gt; /home/gmk/testfile
 $ singularity exec /tmp/Centos7.img cat /home/gmk/testfile 
 Hello World
@@ -74,7 +74,6 @@ DISTRIB_DESCRIPTION="Ubuntu 14.04 LTS"
 </p>
 
 
-<br/>&nbsp;<br/>
 <h2>Watch it in action!</h2>
 <p>
 Below is a short introduction and demonstration video:
