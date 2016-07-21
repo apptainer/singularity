@@ -92,8 +92,8 @@ int main(int argc, char ** argv) {
     char *command;
     char *sessiondir;
     char *sessiondir_prefix;
-    char *loop_dev_lock;
-    char *loop_dev_cache;
+    char *loop_dev_lock = NULL;
+    char *loop_dev_cache = NULL;
     char *homedir;
     char *homedir_base = 0;
     char *loop_dev = 0;
@@ -112,7 +112,7 @@ int main(int argc, char ** argv) {
     pid_t namespace_fork_pid = 0;
     struct passwd *pw;
     struct s_privinfo uinfo;
-
+    int use_chroot = 0;
 
 
 //****************************************************************************//
@@ -177,8 +177,17 @@ int main(int argc, char ** argv) {
 
     message(DEBUG, "Checking container image is a file: %s\n", containerimage);
     if ( is_file(containerimage) != 0 ) {
-        message(ERROR, "Container image path is invalid: %s\n", containerimage);
-        ABORT(1);
+#ifdef SINGULARITY_NO_NEW_PRIVS
+	 if ( is_dir(containerimage) == 0 )
+#else
+        if (0)
+#endif
+        {
+            use_chroot = 1;
+        } else {
+            message(ERROR, "Container image path is invalid: %s\n", containerimage);
+            ABORT(1);
+        }
     }
 
     message(DEBUG, "Building configuration file location\n");
@@ -224,9 +233,11 @@ int main(int argc, char ** argv) {
     containername = basename(strdup(containerimage));
     message(DEBUG, "Set containername to: %s\n", containername);
 
-    message(DEBUG, "Setting loop_dev_* paths\n");
-    loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
-    loop_dev_cache = joinpath(sessiondir, "loop_dev");
+    if (!use_chroot) {
+        message(DEBUG, "Setting loop_dev_* paths\n");
+        loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
+        loop_dev_cache = joinpath(sessiondir, "loop_dev");
+    }
 
     rewind(config_fp);
     if ( ( containerdir = config_get_key_value(config_fp, "container dir") ) == NULL ) {
@@ -336,49 +347,51 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
-    message(DEBUG, "Checking for set loop device\n");
-    if ( ( loop_dev_lock_fd = open(loop_dev_lock, O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
-        message(ERROR, "Could not open loop_dev_lock %s: %s\n", loop_dev_lock, strerror(errno));
-        ABORT(255);
-    }
-
-    message(DEBUG, "Requesting exclusive flock() on loop_dev lockfile\n");
-    if ( flock(loop_dev_lock_fd, LOCK_EX | LOCK_NB) == 0 ) {
-        message(DEBUG, "We have exclusive flock() on loop_dev lockfile\n");
-
-        message(DEBUG, "Binding container to loop interface\n");
-        if ( loop_bind(containerimage_fp, &loop_dev, 1) < 0 ) {
-            message(ERROR, "Could not bind image to loop!\n");
+    if (!use_chroot) {
+        message(DEBUG, "Checking for set loop device\n");
+        if ( ( loop_dev_lock_fd = open(loop_dev_lock, O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
+            message(ERROR, "Could not open loop_dev_lock %s: %s\n", loop_dev_lock, strerror(errno));
             ABORT(255);
         }
 
-        message(DEBUG, "Writing loop device name to loop_dev: %s\n", loop_dev);
-        if ( fileput(loop_dev_cache, loop_dev) < 0 ) {
-            message(ERROR, "Could not write to loop_dev_cache %s: %s\n", loop_dev_cache, strerror(errno));
-            ABORT(255);
+        message(DEBUG, "Requesting exclusive flock() on loop_dev lockfile\n");
+        if ( flock(loop_dev_lock_fd, LOCK_EX | LOCK_NB) == 0 ) {
+            message(DEBUG, "We have exclusive flock() on loop_dev lockfile\n");
+
+            message(DEBUG, "Binding container to loop interface\n");
+            if ( loop_bind(containerimage_fp, &loop_dev, 1) < 0 ) {
+                message(ERROR, "Could not bind image to loop!\n");
+                ABORT(255);
+            }
+
+            message(DEBUG, "Writing loop device name to loop_dev: %s\n", loop_dev);
+            if ( fileput(loop_dev_cache, loop_dev) < 0 ) {
+                message(ERROR, "Could not write to loop_dev_cache %s: %s\n", loop_dev_cache, strerror(errno));
+                ABORT(255);
+            }
+
+            message(DEBUG, "Resetting exclusive flock() to shared on loop_dev lockfile\n");
+            flock(loop_dev_lock_fd, LOCK_SH | LOCK_NB);
+
+        } else {
+            message(DEBUG, "Unable to get exclusive flock() on loop_dev lockfile\n");
+
+            message(DEBUG, "Waiting to obtain shared lock on loop_dev lockfile\n");
+            flock(loop_dev_lock_fd, LOCK_SH);
+
+            message(DEBUG, "Exclusive lock on loop_dev lockfile released, getting loop_dev\n");
+            if ( ( loop_dev = filecat(loop_dev_cache) ) == NULL ) {
+                message(ERROR, "Could not retrieve loop_dev_cache from %s\n", loop_dev_cache);
+                ABORT(255);
+            }
+
         }
 
-        message(DEBUG, "Resetting exclusive flock() to shared on loop_dev lockfile\n");
-        flock(loop_dev_lock_fd, LOCK_SH | LOCK_NB);
-
-    } else {
-        message(DEBUG, "Unable to get exclusive flock() on loop_dev lockfile\n");
-
-        message(DEBUG, "Waiting to obtain shared lock on loop_dev lockfile\n");
-        flock(loop_dev_lock_fd, LOCK_SH);
-
-        message(DEBUG, "Exclusive lock on loop_dev lockfile released, getting loop_dev\n");
-        if ( ( loop_dev = filecat(loop_dev_cache) ) == NULL ) {
-            message(ERROR, "Could not retrieve loop_dev_cache from %s\n", loop_dev_cache);
+        message(VERBOSE3, "Opening loop device so it stays attached\n");
+        if ( ( loop_dev_fd = open(loop_dev, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
+            message(ERROR, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
             ABORT(255);
         }
-
-    }
-
-    message(VERBOSE3, "Opening loop device so it stays attached\n");
-    if ( ( loop_dev_fd = open(loop_dev, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
-        message(ERROR, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
-        ABORT(255);
     }
 
     message(DEBUG, "Creating container image mount path: %s\n", containerdir);
@@ -511,17 +524,24 @@ int main(int argc, char ** argv) {
             }
 
 
-            // Mount image
-            if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
-                message(DEBUG, "Mounting Singularity image file read only\n");
-                if ( mount_image(loop_dev, containerdir, 0) < 0 ) {
+            if (use_chroot) {
+                message(DEBUG, "Mounting Singularity chroot read only\n");
+                if ( mount_bind(containerimage, containerdir, 0) < 0 ) {
                     ABORT(255);
                 }
             } else {
-                unsetenv("SINGULARITY_WRITABLE");
-                message(DEBUG, "Mounting Singularity image file read/write\n");
-                if ( mount_image(loop_dev, containerdir, 1) < 0 ) {
-                    ABORT(255);
+                // Mount image
+                if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
+                    message(DEBUG, "Mounting Singularity image file read only\n");
+                    if ( mount_image(loop_dev, containerdir, 0) < 0 ) {
+                        ABORT(255);
+                    }
+                } else {
+                    unsetenv("SINGULARITY_WRITABLE");
+                    message(DEBUG, "Mounting Singularity image file read/write\n");
+                    if ( mount_image(loop_dev, containerdir, 1) < 0 ) {
+                        ABORT(255);
+                    }
                 }
             }
 
