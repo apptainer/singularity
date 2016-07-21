@@ -728,7 +728,7 @@ int main(int argc, char ** argv) {
                     ABORT(1);
                 }
 
-#if defined(SINGULARITY_NO_NEW_PRIVS)
+#ifdef SINGULARITY_NO_NEW_PRIVS
                 // Prevent this container from gaining any future privileges.
                 message(DEBUG, "Setting NO_NEW_PRIVS to prevent future privilege escalations.\n");
                 if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) {
