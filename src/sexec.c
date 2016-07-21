@@ -499,10 +499,11 @@ int main(int argc, char ** argv) {
                 ABORT(255);
             }
 
+            int slave = config_get_key_bool(config_fp, "mount slave", 0);
             // Privatize the mount namespaces
-            message(DEBUG, "Making mounts private\n");
-            if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
-                message(ERROR, "Could not make mountspaces private: %s\n", strerror(errno));
+            message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
+            if ( mount(NULL, "/", NULL, (slave ? MS_SLAVE : MS_PRIVATE)|MS_REC, NULL) < 0 ) {
+                message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
                 ABORT(255);
             }
 
