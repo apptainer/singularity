@@ -108,7 +108,7 @@ int mount_bind(char * source, char * dest, int writable) {
     }
 
     message(DEBUG, "Calling mount(%s, %s, ...)\n", source, dest);
-    if ( mount(source, dest, NULL, MS_BIND|MS_REC, NULL) < 0 ) {
+    if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
         message(ERROR, "Could not bind %s: %s\n", dest, strerror(errno));
         ABORT(255);
     }
