@@ -535,7 +535,7 @@ int main(int argc, char ** argv) {
                         }
                     }
                     message(VERBOSE2, "Staging /etc/group with user info\n");
-                    update_passwd_file(joinpath(sessiondir, "/group"));
+                    update_group_file(joinpath(sessiondir, "/group"));
                     message(VERBOSE, "Binding staged /etc/group into container\n");
                     mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 0);
                 }
