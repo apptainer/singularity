@@ -111,7 +111,6 @@ int main(int argc, char ** argv) {
     uid_t uid;
     pid_t namespace_fork_pid = 0;
     struct passwd *pw;
-    struct s_privinfo uinfo;
 
 
 
@@ -128,24 +127,14 @@ int main(int argc, char ** argv) {
     uid = getuid();
     pw = getpwuid(uid);
 
-    message(DEBUG, "Gathering and caching user info.\n");
-    if ( get_user_privs(&uinfo) < 0 ) {
-        message(ERROR, "Could not obtain user privs\n");
-        ABORT(255);
-    }
+    message(VERBOSE3, "Initalizing privilege cache.\n");
+    priv_init();
 
-    // Check to make sure we are installed correctly
-    message(DEBUG, "Checking if we can escalate privs properly.\n");
-    if ( escalate_privs() < 0 ) {
-        message(ERROR, "Check installation, must be performed by root\n");
-        ABORT(255);
-    }
+    message(VERBOSE3, "Checking if we can escalate privileges properly.\n");
+    priv_escalate();
 
-    // Lets start off as the calling UID
-    message(DEBUG, "Setting privs to calling user\n");
-    if ( drop_privs(&uinfo) < 0 ) {
-        ABORT(255);
-    }
+    message(VERBOSE3, "Setting privileges back to calling user\n");
+    priv_drop();
 
     message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
@@ -300,10 +289,8 @@ int main(int argc, char ** argv) {
 // We are now running with escalated privileges until we exec
 //****************************************************************************//
 
-    message(DEBUG, "Escalating privledges\n");
-    if ( escalate_privs() < 0 ) {
-        ABORT(255);
-    }
+    message(VERBOSE3, "Entering privileged runtime\n");
+    priv_escalate();
 
     message(VERBOSE, "Creating/Verifying session directory: %s\n", sessiondir);
     if ( s_mkpath(sessiondir, 0755) < 0 ) {
@@ -701,11 +688,8 @@ int main(int argc, char ** argv) {
 
 
                 // Drop all privileges for good
-                message(VERBOSE2, "Dropping all privileges\n");
-                if ( drop_privs_perm(&uinfo) < 0 ) {
-                    ABORT(255);
-                }
-
+                message(VERBOSE3, "Dropping all privileges\n");
+                priv_drop_perm();
 
                 // Change to the proper directory
                 message(VERBOSE2, "Changing to correct working directory: %s\n", cwd);
@@ -788,11 +772,8 @@ int main(int argc, char ** argv) {
 
                 strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
 
-                message(DEBUG, "Dropping privs...\n");
-
-                if ( drop_privs(&uinfo) < 0 ) {
-                    ABORT(255);
-                }
+                message(VERBOSE3, "Dropping privilege...\n");
+                priv_drop();
 
                 message(VERBOSE2, "Waiting for Exec process...\n");
 
@@ -811,9 +792,8 @@ int main(int argc, char ** argv) {
             int tmpstatus;
             strncpy(argv[0], "Singularity: namespace", strlen(argv[0])); // Flawfinder: ignore
 
-            if ( drop_privs(&uinfo) < 0 ) {
-                ABORT(255);
-            }
+            message(VERBOSE3, "Dropping privilege...\n");
+            priv_drop();
 
             waitpid(namespace_fork_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
@@ -916,10 +896,8 @@ int main(int argc, char ** argv) {
             }
 
             // Drop all privileges for good
-            message(VERBOSE2, "Dropping all privileges\n");
-            if ( drop_privs_perm(&uinfo) < 0 ) {
-                ABORT(255);
-            }
+            message(VERBOSE3, "Dropping all privileges\n");
+            priv_drop_perm();
 
             // Do what we came here to do!
             if ( command == NULL ) {
@@ -953,11 +931,8 @@ int main(int argc, char ** argv) {
     
             strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
     
-            message(DEBUG, "Dropping privs...\n");
-
-            if ( drop_privs(&uinfo) < 0 ) {
-                ABORT(255);
-            }
+            message(VERBOSE3, "Dropping privileges...\n");
+            priv_drop();
     
             message(VERBOSE2, "Waiting for Exec process...\n");
 
@@ -977,19 +952,15 @@ int main(int argc, char ** argv) {
     if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         close(sessiondirlock_fd);
 
-        message(DEBUG, "Escalating privs to clean session directory\n");
-        if ( escalate_privs() < 0 ) {
-            ABORT(255);
-        }
+        message(VERBOSE3, "Escalating privs to clean session directory\n");
+        priv_escalate();
 
         message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
         if ( s_rmdir(sessiondir) < 0 ) {
             message(WARNING, "Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
         }
 
-        if ( drop_privs(&uinfo) < 0 ) {
-            ABORT(255);
-        }
+        priv_drop_perm();
 
     } else {
 //        printf("Not removing sessiondir, lock still\n");
