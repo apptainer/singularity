@@ -107,7 +107,7 @@ void namespace_join_pid(pid_t daemon_pid) {
 #else
     char *nsjoin= (char *)malloc(64);
 
-    snprintf(nsjoin, 64, "/proc/%d/ns/pid", daemon_pid);
+    snprintf(nsjoin, 64, "/proc/%d/ns/pid", daemon_pid); // Flawfinder: ignore
 
     if ( is_file(nsjoin) == 0 ) {
         message(DEBUG, "Connecting to existing PID namespace\n");
@@ -133,7 +133,7 @@ void namespace_join_mount(pid_t daemon_pid) {
 #else
     char *nsjoin= (char *)malloc(64);
 
-    snprintf(nsjoin, 64, "/proc/%d/ns/mnt", daemon_pid);
+    snprintf(nsjoin, 64, "/proc/%d/ns/mnt", daemon_pid); // Flawfinder: ignore
 
     if ( is_file(nsjoin) == 0 ) {
         message(DEBUG, "Connecting to existing mount namespace\n");

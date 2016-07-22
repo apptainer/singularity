@@ -42,7 +42,7 @@ FILE *config_fp = NULL;
 int config_open(char *config_path) {
     message(VERBOSE, "Opening configuration file: %s\n", config_path);
     if ( is_file(config_path) == 0 ) {
-        if ( ( config_fp = fopen(config_path, "r") ) != NULL ) {
+        if ( ( config_fp = fopen(config_path, "r") ) != NULL ) { // Flawfinder: ignore (we have to open the file...)
             return(0);
         }
     }

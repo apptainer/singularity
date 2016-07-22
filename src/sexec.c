@@ -112,7 +112,7 @@ int main(int argc, char ** argv) {
     pid_t namespace_fork_pid = 0;
     struct passwd *pw;
     int use_chroot = 0;
-    mode_t process_mask = umask(0);
+    mode_t process_mask = umask(0); // Flawfinder: ignore (we must reset umask to ensure appropriate permissions)
 
 
 
@@ -639,7 +639,7 @@ int main(int argc, char ** argv) {
                 }
 
                 // Resetting umask
-                umask(process_mask);
+                umask(process_mask); // Flawfinder: ignore (resetting back to original umask)
 
                 // After this, we exist only within the container... Let's make it known!
                 message(DEBUG, "Setting environment variable 'SINGULARITY_CONTAINER=1'\n");
