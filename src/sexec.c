@@ -94,11 +94,8 @@ int main(int argc, char ** argv) {
     char *sessiondir_prefix;
     char *loop_dev_lock = NULL;
     char *loop_dev_cache = NULL;
-    char *homedir;
-    char *homedir_base = 0;
     char *loop_dev = 0;
     char *config_path;
-    char *tmp_config_string;
     char setns_dir[128+9]; // Flawfinder: ignore
     char cwd[PATH_MAX]; // Flawfinder: ignore
     int cwd_fd;
@@ -110,7 +107,6 @@ int main(int argc, char ** argv) {
     int retval = 0;
     uid_t uid;
     pid_t namespace_fork_pid = 0;
-    struct passwd *pw;
     int use_chroot = 0;
     mode_t process_mask = umask(0); // Flawfinder: ignore (we must reset umask to ensure appropriate permissions)
 
@@ -127,7 +123,6 @@ int main(int argc, char ** argv) {
 
     // Get all user/group info
     uid = getuid();
-    pw = getpwuid(uid);
 
     message(VERBOSE3, "Initalizing privilege cache.\n");
     priv_init();
