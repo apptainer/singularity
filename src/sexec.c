@@ -50,6 +50,7 @@
 #include "container_actions.h"
 #include "privilege.h"
 #include "message.h"
+#include "namespaces.h"
 
 
 #ifndef LOCALSTATEDIR
@@ -134,9 +135,6 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE3, "Setting privileges back to calling user\n");
     priv_drop();
-
-    message(DEBUG, "Obtaining user's homedir\n");
-    homedir = pw->pw_dir;
 
     // Figure out where we start
     message(DEBUG, "Obtaining file descriptor to current directory\n");
@@ -446,7 +444,8 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 
     message(DEBUG, "Checking to see if we are joining an existing namespace\n");
-    if ( join_daemon_ns == 0 ) {
+    //if ( join_daemon_ns == 0 ) {
+    if ( 1 ) {
 
         message(VERBOSE, "Creating namespace process\n");
         // Fork off namespace process
@@ -454,202 +453,110 @@ int main(int argc, char ** argv) {
         if ( namespace_fork_pid == 0 ) {
 
             message(DEBUG, "Hello from namespace child process\n");
-            // Setup PID namespaces
-            config_rewind();
-#ifdef NS_CLONE_NEWPID
-            if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
-                    ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
-                unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-                message(DEBUG, "Virtualizing PID namespace\n");
-                if ( unshare(CLONE_NEWPID) < 0 ) {
-                    message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-            } else {
-                message(VERBOSE, "Not virtualizing PID namespace\n");
-            }
-#else
-#ifdef NS_CLONE_PID
-            if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
-                    ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
-                unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-                message(DEBUG, "Virtualizing PID namespace\n");
-                if ( unshare(CLONE_NEWPID) < 0 ) {
-                    message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-            } else {
-                message(VERBOSE, "Not virtualizing PID namespace\n");
-            }
-#endif
-#endif
+            if ( join_daemon_ns == 0 ) {
+                namespace_unshare();
 
-#ifdef NS_CLONE_FS
-            // Setup FS namespaces
-            message(DEBUG, "Virtualizing FS namespace\n");
-            if ( unshare(CLONE_FS) < 0 ) {
-                message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
-                ABORT(255);
-            }
-#endif
-
-            // Setup mount namespaces
-            message(DEBUG, "Virtualizing mount namespace\n");
-            if ( unshare(CLONE_NEWNS) < 0 ) {
-                message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
-                ABORT(255);
-            }
-
-            config_rewind();
-            int slave = config_get_key_bool("mount slave", 0);
-            // Privatize the mount namespaces
-            message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
-            if ( mount(NULL, "/", NULL, (slave ? MS_SLAVE : MS_PRIVATE)|MS_REC, NULL) < 0 ) {
-                message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
-                ABORT(255);
-            }
-
-
-            if (use_chroot) {
-                message(DEBUG, "Mounting Singularity chroot read only\n");
-                if ( mount_bind(containerimage, containerdir, 0) < 0 ) {
-                    ABORT(255);
-                }
-            } else {
-                // Mount image
-                if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
-                    message(DEBUG, "Mounting Singularity image file read only\n");
-                    if ( mount_image(loop_dev, containerdir, 0) < 0 ) {
-                        ABORT(255);
-                    }
-                } else {
-                    unsetenv("SINGULARITY_WRITABLE");
-                    message(DEBUG, "Mounting Singularity image file read/write\n");
-                    if ( mount_image(loop_dev, containerdir, 1) < 0 ) {
-                        ABORT(255);
-                    }
-                }
-            }
-
-
-            // /bin/sh MUST exist as the minimum requirements for a container
-            message(DEBUG, "Checking if container has /bin/sh\n");
-            if ( is_exec(joinpath(containerdir, "/bin/sh")) < 0 ) {
-                message(ERROR, "Container image does not have a valid /bin/sh\n");
-                ABORT(1);
-            }
-
-
-            // Bind mounts
-            message(DEBUG, "Checking to see if we should do bind mounts\n");
-            if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
-                unsetenv("SINGULARITY_CONTAIN");
-
-                message(DEBUG, "Checking configuration file for 'mount home'\n");
                 config_rewind();
-                if ( config_get_key_bool("mount home", 1) > 0 ) {
-                    if ( ( homedir_base = container_basedir(containerdir, homedir) ) != NULL ) {
-                        if ( is_dir(homedir_base) == 0 ) {
-                            if ( is_dir(joinpath(containerdir, homedir_base)) == 0 ) {
-                                message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
-                                if ( mount_bind(homedir_base, joinpath(containerdir, homedir_base), 1) < 0 ) {
-                                    ABORT(255);
-                                }
-                            } else {
-                                message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
-                            }
-                        } else {
-                            message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
+                int slave = config_get_key_bool("mount slave", 0);
+                // Privatize the mount namespaces
+                message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
+                if ( mount(NULL, "/", NULL, (slave ? MS_SLAVE : MS_PRIVATE)|MS_REC, NULL) < 0 ) {
+                    message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
+                    ABORT(255);
+                }
+
+
+                if (use_chroot) {
+                    message(DEBUG, "Mounting Singularity chroot read only\n");
+                    mount_bind(containerimage, containerdir, 0);
+                } else {
+                    // Mount image
+                    if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
+                        message(DEBUG, "Mounting Singularity image file read only\n");
+                        if ( mount_image(loop_dev, containerdir, 0) < 0 ) {
+                            ABORT(255);
                         }
-                    }
-                } else {
-                    message(VERBOSE2, "Not mounting home directory...\n");
-                }
-
-                message(DEBUG, "Checking configuration file for 'bind path'\n");
-                config_rewind();
-                while ( ( tmp_config_string = config_get_key_value("bind path") ) != NULL ) {
-                    char *source = strtok(tmp_config_string, ",");
-                    char *dest = strtok(NULL, ",");
-                    chomp(source);
-                    if ( dest == NULL ) {
-                        dest = strdup(source);
                     } else {
-                        if ( dest[0] == ' ' ) {
-                            dest++;
+                        unsetenv("SINGULARITY_WRITABLE");
+                        message(DEBUG, "Mounting Singularity image file read/write\n");
+                        if ( mount_image(loop_dev, containerdir, 1) < 0 ) {
+                            ABORT(255);
                         }
-                        chomp(dest);
-                    }
-
-                    message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
-
-                    if ( ( homedir_base != NULL ) && ( strncmp(dest, homedir_base, strlength(homedir_base, 256)) == 0 )) {
-                        // Skipping path as it was already mounted as homedir_base
-                        message(VERBOSE2, "Skipping '%s' as it is part of home path and already mounted\n", dest);
-                        continue;
-                    }
-
-                    if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
-                        message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
-                        continue;
-                    }
-                    if ( ( is_file(joinpath(containerdir, dest)) != 0 ) && ( is_dir(joinpath(containerdir, dest)) != 0 ) ) {
-                        message(WARNING, "Non existant 'bind point' in container: '%s'\n", dest);
-                        continue;
-                    }
-
-                    message(VERBOSE, "Binding '%s' to '%s:%s'\n", source, containername, dest);
-                    if ( mount_bind(source, joinpath(containerdir, dest), 1) < 0 ) {
-                        ABORT(255);
                     }
                 }
 
 
-                if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
-                    message(DEBUG, "Checking configuration file for 'config passwd'\n");
+                // /bin/sh MUST exist as the minimum requirements for a container
+                message(DEBUG, "Checking if container has /bin/sh\n");
+                if ( is_exec(joinpath(containerdir, "/bin/sh")) < 0 ) {
+                    message(ERROR, "Container image does not have a valid /bin/sh\n");
+                    ABORT(1);
+                }
+
+
+                // Bind mounts
+                message(DEBUG, "Checking to see if we are running contained\n");
+                if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
+                    unsetenv("SINGULARITY_CONTAIN");
+
+                    message(DEBUG, "Checking configuration file for 'mount home'\n");
                     config_rewind();
-                    if ( config_get_key_bool("config passwd", 1) > 0 ) {
+                    if ( config_get_key_bool("mount home", 1) > 0 ) {
+                        mount_home(containerdir);
+                    } else {
+                        message(VERBOSE2, "Not mounting home directory per config\n");
+                    }
+
+                    bind_paths(containerdir);
+
+                }
+
+            } else {
+                namespace_join();
+            }
+
+            if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
+                message(DEBUG, "Checking configuration file for 'config passwd'\n");
+                config_rewind();
+                if ( config_get_key_bool("config passwd", 1) > 0 ) {
+                    if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
                         if (is_file(joinpath(containerdir, "/etc/passwd")) == 0 ) {
-                            if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
-                                message(VERBOSE2, "Staging /etc/passwd with user info\n");
-                                if ( build_passwd(joinpath(containerdir, "/etc/passwd"), joinpath(sessiondir, "/passwd")) < 0 ) {
-                                    message(ERROR, "Failed creating template password file\n");
-                                    ABORT(255);
-                                }
-                            }
-                            message(VERBOSE, "Binding staged /etc/passwd into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 1) < 0 ) {
-                                message(ERROR, "Could not bind /etc/passwd\n");
+                            message(VERBOSE2, "Creating template of /etc/passwd for containment\n");
+                            if ( ( copy_file(joinpath(containerdir, "/etc/passwd"), joinpath(sessiondir, "/passwd")) ) < 0 ) {
+                                message(ERROR, "Failed copying template passwd file to sessiondir\n");
                                 ABORT(255);
                             }
                         }
-                    } else {
-                        message(VERBOSE, "Skipping /etc/passwd staging\n");
-                    }
-
-                    message(DEBUG, "Checking configuration file for 'config group'\n");
-                    config_rewind();
-                    if ( config_get_key_bool("config group", 1) > 0 ) {
-                        if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
-                            if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
-                                message(VERBOSE2, "Staging /etc/group with user info\n");
-                                if ( build_group(joinpath(containerdir, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
-                                    message(ERROR, "Failed creating template group file\n");
-                                    ABORT(255);
-                                }
-                            }
-                            message(VERBOSE, "Binding staged /etc/group into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 1) < 0 ) {
-                                message(ERROR, "Could not bind /etc/group\n");
-                                ABORT(255);
-                            }
-                        }
-                    } else {
-                        message(VERBOSE, "Skipping /etc/group staging\n");
+                        message(VERBOSE2, "Staging /etc/passwd with user info\n");
+                        update_passwd_file(joinpath(sessiondir, "/passwd"));
+                        message(VERBOSE, "Binding staged /etc/passwd into container\n");
+                        mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 0);
                     }
                 } else {
-                    message(VERBOSE, "Not staging passwd or group (running as root)\n");
+                    message(VERBOSE, "Not staging /etc/passwd per config\n");
                 }
+
+                message(DEBUG, "Checking configuration file for 'config group'\n");
+                config_rewind();
+                if ( config_get_key_bool("config group", 1) > 0 ) {
+                    if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
+                        if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
+                            message(VERBOSE2, "Creating template of /etc/group for containment\n");
+                            if ( ( copy_file(joinpath(containerdir, "/etc/group"), joinpath(sessiondir, "/group")) ) < 0 ) {
+                                message(ERROR, "Failed copying template group file to sessiondir\n");
+                                ABORT(255);
+                            }
+                        }
+                        message(VERBOSE2, "Staging /etc/group with user info\n");
+                        update_passwd_file(joinpath(sessiondir, "/group"));
+                        message(VERBOSE, "Binding staged /etc/group into container\n");
+                        mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 0);
+                    }
+                } else {
+                    message(VERBOSE, "Not staging /etc/group per config\n");
+                }
+            } else {
+                message(VERBOSE, "Not staging passwd or group (running as root)\n");
             }
 
             // Fork off exec process
@@ -766,8 +673,6 @@ int main(int argc, char ** argv) {
                 }
                 if ( strcmp(command, "start") == 0 ) {
                     message(VERBOSE, "COMMAND=start\n");
-                    //strncpy(argv[0], "Singularity Init", strlen(argv[0]));
-
                     if ( container_daemon_start(sessiondir) < 0 ) {
                         ABORT(255);
                     }
@@ -833,7 +738,7 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 // Attach to daemon process flow
 //****************************************************************************//
-    } else {
+    } else  if ( 0 ) {
 #ifdef NO_SETNS
         message(ERROR, "This host does not support joining existing name spaces\n");
         ABORT(1);

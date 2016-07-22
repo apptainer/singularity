@@ -18,6 +18,7 @@
  * 
 */
 
+#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -26,9 +27,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sched.h>
 
 #include "message.h"
 #include "config_parser.h"
+#include "util.h"
+#include "file.h"
+#include "namespaces.h"
 
 
 void namespace_unshare(void) {
