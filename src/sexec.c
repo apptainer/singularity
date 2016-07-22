@@ -165,6 +165,11 @@ int main(int argc, char ** argv) {
     } else if ( is_dir(containerimage) == 0 ) {
 #ifdef SINGULARITY_NO_NEW_PRIVS
         message(DEBUG, "Container is a directory\n");
+        if ( strcmp(containerimage, "/") == 0 ) {
+            message(ERROR, "Bad user... I have notified the powers that be.\n");
+            message(LOG, "User ID '%d' requested '/' as the container!\n", getuid());
+            ABORT(1);
+        }
         container_is_dir = 1;
 #else
         message(ERROR, "This build of Singularity does not support container directories\n");
