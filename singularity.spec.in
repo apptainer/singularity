@@ -38,7 +38,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-, root, root)
 %doc AUTHORS COPYING ChangeLog INSTALL NEWS README.md
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
-%attr(0644, root, root) %config %{_sysconfdir}/singularity/*
+%attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_libexecdir}/singularity
 %attr(4755, root, root) %{_libexecdir}/singularity/sexec
 %{_libexecdir}/singularity/mods
