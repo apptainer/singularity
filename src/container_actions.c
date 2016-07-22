@@ -140,9 +140,10 @@ int container_daemon_start(char *sessiondir) {
     message(DEBUG, "Called container_daemon_start(%s)\n", sessiondir);
 
 // TODO: Create a daemon_start_init function
-    message(DEBUG, "Opening daemon.comm for writing\n");
+    message(DEBUG, "Opening daemon.comm for reading\n");
     if ( ( comm = fopen(joinpath(sessiondir, "daemon.comm"), "r") ) == NULL ) { // Flawfinder: ignore
         message(ERROR, "Could not open communication fifo %s: %s\n", joinpath(sessiondir, "daemon.comm"), strerror(errno));
+        sleep(20);
         ABORT(255);
     }
 

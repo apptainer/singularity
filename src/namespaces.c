@@ -42,9 +42,9 @@ void namespace_unshare(void) {
     namespace_unshare_mount();
 }
 
-void namespace_join(void) {
-    namespace_join_pid();
-    namespace_join_mount();
+void namespace_join(pid_t daemon_pid) {
+    namespace_join_pid(daemon_pid);
+    namespace_join_mount(daemon_pid);
     namespace_unshare_fs();
 }
 
@@ -100,14 +100,14 @@ void namespace_unshare_mount(void) {
 }
 
 
-void namespace_join_pid(void) {
+void namespace_join_pid(pid_t daemon_pid) {
 #ifdef NO_SETNS
     message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);
 #else
     char *nsjoin= (char *)malloc(64);
 
-    snprintf(nsjoin, 64, "/proc/%d/pid", getpid());
+    snprintf(nsjoin, 64, "/proc/%d/ns/pid", daemon_pid);
 
     if ( is_file(nsjoin) == 0 ) {
         message(DEBUG, "Connecting to existing PID namespace\n");
@@ -126,14 +126,14 @@ void namespace_join_pid(void) {
 }
 
 
-void namespace_join_mount(void) {
+void namespace_join_mount(pid_t daemon_pid) {
 #ifdef NO_SETNS
     message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);
 #else
     char *nsjoin= (char *)malloc(64);
 
-    snprintf(nsjoin, 64, "/proc/%d/mnt", getpid());
+    snprintf(nsjoin, 64, "/proc/%d/ns/mnt", daemon_pid);
 
     if ( is_file(nsjoin) == 0 ) {
         message(DEBUG, "Connecting to existing mount namespace\n");

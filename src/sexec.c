@@ -106,12 +106,14 @@ int main(int argc, char ** argv) {
     int containerimage_fd;
     int loop_dev_fd;
     int loop_dev_lock_fd;
-    int join_daemon_ns = 0;
+    int daemon_pid = -1;
     int retval = 0;
     uid_t uid;
     pid_t namespace_fork_pid = 0;
     struct passwd *pw;
     int use_chroot = 0;
+    mode_t process_mask = umask(0);
+
 
 
 //****************************************************************************//
@@ -265,7 +267,6 @@ int main(int argc, char ** argv) {
     message(DEBUG, "Checking for namespace daemon pidfile\n");
     if ( is_file(joinpath(sessiondir, "daemon.pid")) == 0 ) {
         FILE *test_daemon_fp;
-        int daemon_fd;
 
         if ( ( test_daemon_fp = fopen(joinpath(sessiondir, "daemon.pid"), "r") ) == NULL ) { // Flawfinder: ignore
             message(ERROR, "Could not open daemon pid file %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
@@ -273,17 +274,21 @@ int main(int argc, char ** argv) {
         }
 
         message(DEBUG, "Checking if namespace daemon is running\n");
-        daemon_fd = fileno(test_daemon_fp);
-        if ( flock(daemon_fd, LOCK_SH | LOCK_NB) != 0 ) {
-            char daemon_pid[128]; // Flawfinder: ignore
-
-            if ( fgets(daemon_pid, 128, test_daemon_fp) != NULL ) {
-                snprintf(setns_dir, 128 + 9, "/proc/%s/ns", daemon_pid); // Flawfinder: ignore
-                if ( is_dir(setns_dir) == 0 ) {
-                    message(VERBOSE, "Found namespace daemon process for this container\n");
-                    join_daemon_ns = 1;
-                }
+        if ( flock(fileno(test_daemon_fp), LOCK_SH | LOCK_NB) != 0 ) {
+            if ( fscanf(test_daemon_fp, "%d", &daemon_pid) <= 0 ) {
+                message(ERROR, "Could not read daemon process ID\n");
+                ABORT(255);
             }
+//            char *daemon_pid = filecat(joinpath(sessiondir, "daemon.pid");
+//            char daemon_pid[128]; // Flawfinder: ignore
+//
+//            if ( fgets(daemon_pid, 128, test_daemon_fp) != NULL ) {
+//                snprintf(setns_dir, 128 + 9, "/proc/%s/ns", daemon_pid); // Flawfinder: ignore
+//                if ( is_dir(setns_dir) == 0 ) {
+//                    message(VERBOSE, "Found namespace daemon process for this container\n");
+//                    join_daemon_ns = 1;
+//                }
+//            }
 
         } else {
             message(WARNING, "Singularity namespace daemon pid exists, but daemon not alive?\n");
@@ -426,8 +431,8 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
-        message(DEBUG, "Forking namespace daemon process\n");
-        if ( daemon(0,0) < 0 ) {
+        message(DEBUG, "Forking background daemon process\n");
+        if ( daemon(1, 1) < 0 ) {
             message(ERROR, "Could not daemonize: %s\n", strerror(errno));
             ABORT(255);
         }
@@ -453,7 +458,7 @@ int main(int argc, char ** argv) {
         if ( namespace_fork_pid == 0 ) {
 
             message(DEBUG, "Hello from namespace child process\n");
-            if ( join_daemon_ns == 0 ) {
+            if ( daemon_pid == -1 ) {
                 namespace_unshare();
 
                 config_rewind();
@@ -512,7 +517,7 @@ int main(int argc, char ** argv) {
                 }
 
             } else {
-                namespace_join();
+                namespace_join(daemon_pid);
             }
 
             if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
@@ -578,38 +583,40 @@ int main(int argc, char ** argv) {
                 }
 
 
-                // Mount /proc if we are configured
-                message(DEBUG, "Checking configuration file for 'mount proc'\n");
-                config_rewind();
-                if ( config_get_key_bool("mount proc", 1) > 0 ) {
-                    if ( is_dir("/proc") == 0 ) {
-                        message(VERBOSE, "Mounting /proc\n");
-                        if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
-                            message(ERROR, "Could not mount /proc: %s\n", strerror(errno));
-                            ABORT(255);
+                if ( daemon_pid < 0 ) {
+                    // Mount /proc if we are configured
+                    message(DEBUG, "Checking configuration file for 'mount proc'\n");
+                    config_rewind();
+                    if ( config_get_key_bool("mount proc", 1) > 0 ) {
+                        if ( is_dir("/proc") == 0 ) {
+                            message(VERBOSE, "Mounting /proc\n");
+                            if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
+                                message(ERROR, "Could not mount /proc: %s\n", strerror(errno));
+                                ABORT(255);
+                            }
+                        } else {
+                            message(WARNING, "Not mounting /proc, container has no bind directory\n");
                         }
                     } else {
-                        message(WARNING, "Not mounting /proc, container has no bind directory\n");
+                        message(VERBOSE, "Skipping /proc mount\n");
                     }
-                } else {
-                    message(VERBOSE, "Skipping /proc mount\n");
-                }
 
-                // Mount /sys if we are configured
-                message(DEBUG, "Checking configuration file for 'mount sys'\n");
-                config_rewind();
-                if ( config_get_key_bool("mount sys", 1) > 0 ) {
-                    if ( is_dir("/sys") == 0 ) {
-                        message(VERBOSE, "Mounting /sys\n");
-                        if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
-                            message(ERROR, "Could not mount /sys: %s\n", strerror(errno));
-                            ABORT(255);
+                    // Mount /sys if we are configured
+                    message(DEBUG, "Checking configuration file for 'mount sys'\n");
+                    config_rewind();
+                    if ( config_get_key_bool("mount sys", 1) > 0 ) {
+                        if ( is_dir("/sys") == 0 ) {
+                            message(VERBOSE, "Mounting /sys\n");
+                            if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
+                                message(ERROR, "Could not mount /sys: %s\n", strerror(errno));
+                                ABORT(255);
+                            }
+                        } else {
+                            message(WARNING, "Not mounting /sys, container has no bind directory\n");
                         }
                     } else {
-                        message(WARNING, "Not mounting /sys, container has no bind directory\n");
+                        message(VERBOSE, "Skipping /sys mount\n");
                     }
-                } else {
-                    message(VERBOSE, "Skipping /sys mount\n");
                 }
 
 
@@ -630,6 +637,9 @@ int main(int argc, char ** argv) {
                         ABORT(1);
                     }
                 }
+
+                // Resetting umask
+                umask(process_mask);
 
                 // After this, we exist only within the container... Let's make it known!
                 message(DEBUG, "Setting environment variable 'SINGULARITY_CONTAINER=1'\n");
@@ -676,6 +686,7 @@ int main(int argc, char ** argv) {
                     if ( container_daemon_start(sessiondir) < 0 ) {
                         ABORT(255);
                     }
+                    return(0);
                 }
 
                 message(ERROR, "Unknown command: %s\n", command);
