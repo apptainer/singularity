@@ -50,6 +50,7 @@
 #include "container_actions.h"
 #include "privilege.h"
 #include "message.h"
+#include "clean_dir.h"
 
 
 #ifndef LOCALSTATEDIR
@@ -1063,7 +1064,9 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE2, "Cleaning up...\n");
 
-    //  TODO(bbockelm): Clean out the scratch directory.
+    if (scratch_dir) {
+        clean_dir(scratch_dir);
+    }
 
     close(containerimage_fd);
     close(sessiondirlock_fd);
