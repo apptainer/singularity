@@ -84,7 +84,7 @@ void sighandler(int sig) {
 
 
 int main(int argc, char ** argv) {
-    FILE *containerimage_fp;
+    FILE *containerimage_fp = NULL;
     FILE *daemon_fp = NULL;
     char *containerimage;
     char *containername;
@@ -97,16 +97,17 @@ int main(int argc, char ** argv) {
     char *loop_dev = 0;
     char *config_path;
     char cwd[PATH_MAX]; // Flawfinder: ignore
-    int cwd_fd;
-    int sessiondirlock_fd;
-    int containerimage_fd;
-    int loop_dev_fd;
-    int loop_dev_lock_fd;
+    int cwd_fd = 0;
+    int sessiondirlock_fd = 0;
+    int containerimage_fd = 0;
+    int loop_dev_fd = 0;
+    int loop_dev_lock_fd = 0;
     int daemon_pid = -1;
     int retval = 0;
     uid_t uid;
     pid_t namespace_fork_pid = 0;
-    int use_chroot = 0;
+    int container_is_image = -1;
+    int container_is_dir = -1;
     mode_t process_mask = umask(0); // Flawfinder: ignore (we must reset umask to ensure appropriate permissions)
 
 
@@ -158,18 +159,20 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Checking container image is a file: %s\n", containerimage);
-    if ( is_file(containerimage) != 0 ) {
+    if ( is_file(containerimage) == 0 ) {
+        message(DEBUG, "Container is a file\n");
+        container_is_image = 1;
+    } else if ( is_dir(containerimage) == 0 ) {
 #ifdef SINGULARITY_NO_NEW_PRIVS
-	 if ( is_dir(containerimage) == 0 )
+        message(DEBUG, "Container is a directory\n");
+        container_is_dir = 1;
 #else
-        if (0)
+        message(ERROR, "This build of Singularity does not support container directories\n");
+        ABORT(1);
 #endif
-        {
-            use_chroot = 1;
-        } else {
-            message(ERROR, "Container image path is invalid: %s\n", containerimage);
-            ABORT(1);
-        }
+    } else {
+        message(ERROR, "Container image path is invalid: %s\n", containerimage);
+        ABORT(1);
     }
 
     message(DEBUG, "Building configuration file location\n");
@@ -214,12 +217,6 @@ int main(int argc, char ** argv) {
     containername = basename(strdup(containerimage));
     message(DEBUG, "Set containername to: %s\n", containername);
 
-    if (!use_chroot) {
-        message(DEBUG, "Setting loop_dev_* paths\n");
-        loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
-        loop_dev_cache = joinpath(sessiondir, "loop_dev");
-    }
-
     config_rewind();
     if ( ( containerdir = config_get_key_value("container dir") ) == NULL ) {
         //containerdir = (char *) malloc(21);
@@ -229,32 +226,34 @@ int main(int argc, char ** argv) {
 
     message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
 
-    message(DEBUG, "Checking if we are opening image as read/write\n");
-    if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
-        message(DEBUG, "Opening image as read only: %s\n", containerimage);
-        if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) { // Flawfinder: ignore 
-            message(ERROR, "Could not open image read only %s: %s\n", containerimage, strerror(errno));
-            ABORT(255);
-        }
+    if (container_is_image > 0 ) {
+        message(DEBUG, "Checking if we are opening image as read/write\n");
+        if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
+            message(DEBUG, "Opening image as read only: %s\n", containerimage);
+            if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) { // Flawfinder: ignore 
+                message(ERROR, "Could not open image read only %s: %s\n", containerimage, strerror(errno));
+                ABORT(255);
+            }
 
-        containerimage_fd = fileno(containerimage_fp);
-        message(DEBUG, "Setting shared lock on file descriptor: %d\n", containerimage_fd);
-        if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
-            message(ERROR, "Could not obtained shared lock on image\n");
-            ABORT(5);
-        }
-    } else {
-        message(DEBUG, "Opening image as read/write: %s\n", containerimage);
-        if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
-            message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
-            ABORT(255);
-        }
+            containerimage_fd = fileno(containerimage_fp);
+            message(DEBUG, "Setting shared lock on file descriptor: %d\n", containerimage_fd);
+            if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
+                message(ERROR, "Could not obtained shared lock on image\n");
+                ABORT(5);
+            }
+        } else {
+            message(DEBUG, "Opening image as read/write: %s\n", containerimage);
+            if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
+                message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
+                ABORT(255);
+            }
 
-        containerimage_fd = fileno(containerimage_fp);
-        message(DEBUG, "Setting exclusive lock on file descriptor: %d\n", containerimage_fd);
-        if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
-            message(ERROR, "Could not obtained exclusive lock on image\n");
-            ABORT(5);
+            containerimage_fd = fileno(containerimage_fp);
+            message(DEBUG, "Setting exclusive lock on file descriptor: %d\n", containerimage_fd);
+            if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
+                message(ERROR, "Could not obtained exclusive lock on image\n");
+                ABORT(5);
+            }
         }
     }
 
@@ -319,8 +318,10 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
-    if (!use_chroot) {
+    if ( container_is_image > 0 ) {
         message(DEBUG, "Checking for set loop device\n");
+        loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
+        loop_dev_cache = joinpath(sessiondir, "loop_dev");
         if ( ( loop_dev_lock_fd = open(loop_dev_lock, O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
             message(ERROR, "Could not open loop_dev_lock %s: %s\n", loop_dev_lock, strerror(errno));
             ABORT(255);
@@ -416,7 +417,7 @@ int main(int argc, char ** argv) {
         }
 
         message(DEBUG, "Forking background daemon process\n");
-        if ( daemon(1, 1) < 0 ) {
+        if ( daemon(0, 0) < 0 ) {
             message(ERROR, "Could not daemonize: %s\n", strerror(errno));
             ABORT(255);
         }
@@ -452,11 +453,7 @@ int main(int argc, char ** argv) {
             }
 
 
-            if (use_chroot) {
-                message(DEBUG, "Mounting Singularity chroot read only\n");
-                mount_bind(containerimage, containerdir, 0);
-            } else {
-                // Mount image
+            if ( container_is_image > 0 ) {
                 if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
                     message(DEBUG, "Mounting Singularity image file read only\n");
                     if ( mount_image(loop_dev, containerdir, 0) < 0 ) {
@@ -469,6 +466,10 @@ int main(int argc, char ** argv) {
                         ABORT(255);
                     }
                 }
+            } else if ( container_is_dir > 0 ) {
+            // TODO: container directories should also be mountable readwrite?
+                message(DEBUG, "Mounting Singularity chroot read only\n");
+                mount_bind(containerimage, containerdir, 0);
             }
 
 
