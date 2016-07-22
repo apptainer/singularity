@@ -84,7 +84,6 @@ void sighandler(int sig) {
 
 int main(int argc, char ** argv) {
     FILE *containerimage_fp;
-    FILE *config_fp;
     FILE *daemon_fp = NULL;
     char *containerimage;
     char *containername;
@@ -188,8 +187,7 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Opening Singularity configuration file\n");
-    if ( ( config_fp = fopen(config_path, "r") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not open config file %s: %s\n", config_path, strerror(errno));
+    if ( config_open(config_path) < 0 ) {
         ABORT(255);
     }
 
@@ -201,8 +199,8 @@ int main(int argc, char ** argv) {
 //    }
 
     message(DEBUG, "Checking Singularity configuration for 'sessiondir prefix'\n");
-    rewind(config_fp);
-    if ( ( sessiondir_prefix = config_get_key_value(config_fp, "sessiondir prefix") ) != NULL ) {
+    config_rewind();
+    if ( ( sessiondir_prefix = config_get_key_value("sessiondir prefix") ) != NULL ) {
         sessiondir = strjoin(sessiondir_prefix, file_id(containerimage));
     } else {
         sessiondir = strjoin("/tmp/.singularity-session-", file_id(containerimage));
@@ -217,8 +215,8 @@ int main(int argc, char ** argv) {
     loop_dev_lock = joinpath(sessiondir, "loop_dev.lock");
     loop_dev_cache = joinpath(sessiondir, "loop_dev");
 
-    rewind(config_fp);
-    if ( ( containerdir = config_get_key_value(config_fp, "container dir") ) == NULL ) {
+    config_rewind();
+    if ( ( containerdir = config_get_key_value("container dir") ) == NULL ) {
         //containerdir = (char *) malloc(21);
         containerdir = strdup("/var/singularity/mnt");
     }
@@ -444,10 +442,10 @@ int main(int argc, char ** argv) {
 
             message(DEBUG, "Hello from namespace child process\n");
             // Setup PID namespaces
-            rewind(config_fp);
+            config_rewind();
 #ifdef NS_CLONE_NEWPID
             if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
-                    ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
+                    ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
                 unsetenv("SINGULARITY_NO_NAMESPACE_PID");
                 message(DEBUG, "Virtualizing PID namespace\n");
                 if ( unshare(CLONE_NEWPID) < 0 ) {
@@ -460,7 +458,7 @@ int main(int argc, char ** argv) {
 #else
 #ifdef NS_CLONE_PID
             if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
-                    ( config_get_key_bool(config_fp, "allow pid ns", 1) > 0 ) ) {
+                    ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
                 unsetenv("SINGULARITY_NO_NAMESPACE_PID");
                 message(DEBUG, "Virtualizing PID namespace\n");
                 if ( unshare(CLONE_NEWPID) < 0 ) {
@@ -489,7 +487,8 @@ int main(int argc, char ** argv) {
                 ABORT(255);
             }
 
-            int slave = config_get_key_bool(config_fp, "mount slave", 0);
+            config_rewind();
+            int slave = config_get_key_bool("mount slave", 0);
             // Privatize the mount namespaces
             message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
             if ( mount(NULL, "/", NULL, (slave ? MS_SLAVE : MS_PRIVATE)|MS_REC, NULL) < 0 ) {
@@ -527,8 +526,8 @@ int main(int argc, char ** argv) {
                 unsetenv("SINGULARITY_CONTAIN");
 
                 message(DEBUG, "Checking configuration file for 'mount home'\n");
-                rewind(config_fp);
-                if ( config_get_key_bool(config_fp, "mount home", 1) > 0 ) {
+                config_rewind();
+                if ( config_get_key_bool("mount home", 1) > 0 ) {
                     if ( ( homedir_base = container_basedir(containerdir, homedir) ) != NULL ) {
                         if ( is_dir(homedir_base) == 0 ) {
                             if ( is_dir(joinpath(containerdir, homedir_base)) == 0 ) {
@@ -548,8 +547,8 @@ int main(int argc, char ** argv) {
                 }
 
                 message(DEBUG, "Checking configuration file for 'bind path'\n");
-                rewind(config_fp);
-                while ( ( tmp_config_string = config_get_key_value(config_fp, "bind path") ) != NULL ) {
+                config_rewind();
+                while ( ( tmp_config_string = config_get_key_value("bind path") ) != NULL ) {
                     char *source = strtok(tmp_config_string, ",");
                     char *dest = strtok(NULL, ",");
                     chomp(source);
@@ -588,8 +587,8 @@ int main(int argc, char ** argv) {
 
                 if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
                     message(DEBUG, "Checking configuration file for 'config passwd'\n");
-                    rewind(config_fp);
-                    if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
+                    config_rewind();
+                    if ( config_get_key_bool("config passwd", 1) > 0 ) {
                         if (is_file(joinpath(containerdir, "/etc/passwd")) == 0 ) {
                             if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
                                 message(VERBOSE2, "Staging /etc/passwd with user info\n");
@@ -609,8 +608,8 @@ int main(int argc, char ** argv) {
                     }
 
                     message(DEBUG, "Checking configuration file for 'config group'\n");
-                    rewind(config_fp);
-                    if ( config_get_key_bool(config_fp, "config group", 1) > 0 ) {
+                    config_rewind();
+                    if ( config_get_key_bool("config group", 1) > 0 ) {
                         if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
                             if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
                                 message(VERBOSE2, "Staging /etc/group with user info\n");
@@ -654,8 +653,8 @@ int main(int argc, char ** argv) {
 
                 // Mount /proc if we are configured
                 message(DEBUG, "Checking configuration file for 'mount proc'\n");
-                rewind(config_fp);
-                if ( config_get_key_bool(config_fp, "mount proc", 1) > 0 ) {
+                config_rewind();
+                if ( config_get_key_bool("mount proc", 1) > 0 ) {
                     if ( is_dir("/proc") == 0 ) {
                         message(VERBOSE, "Mounting /proc\n");
                         if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
@@ -671,8 +670,8 @@ int main(int argc, char ** argv) {
 
                 // Mount /sys if we are configured
                 message(DEBUG, "Checking configuration file for 'mount sys'\n");
-                rewind(config_fp);
-                if ( config_get_key_bool(config_fp, "mount sys", 1) > 0 ) {
+                config_rewind();
+                if ( config_get_key_bool("mount sys", 1) > 0 ) {
                     if ( is_dir("/sys") == 0 ) {
                         message(VERBOSE, "Mounting /sys\n");
                         if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {

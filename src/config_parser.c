@@ -32,21 +32,49 @@
 #include "config.h"
 #include "util.h"
 #include "message.h"
+#include "file.h"
 
 
 #define MAX_LINE_LEN 2048
 
+FILE *config_fp = NULL;
 
-char *config_get_key_value(FILE *fp, char *key) {
+int config_open(char *config_path) {
+    message(VERBOSE, "Opening configuration file: %s\n", config_path);
+    if ( is_file(config_path) == 0 ) {
+        if ( ( config_fp = fopen(config_path, "r") ) != NULL ) {
+            return(0);
+        }
+    }
+    message(ERROR, "Could not open configuration file %s: %s\n", config_path, strerror(errno));
+    return(-1);
+}
+
+void config_close(void) {
+    message(VERBOSE, "Closing configuration file\n");
+    if ( config_fp != NULL ) {
+        fclose(config_fp);
+        config_fp = NULL;
+    }
+}
+
+void config_rewind(void) {
+    message(DEBUG, "Rewinding configuration file\n");
+    if ( config_fp != NULL ) {
+        rewind(config_fp);
+    }
+}
+
+char *config_get_key_value(char *key) {
     char *config_key;
     char *config_value;
     char *line;
 
     line = (char *)malloc(MAX_LINE_LEN);
 
-    message(DEBUG, "Called config_get_key_value(fp, %s)\n", key);
+    message(DEBUG, "Called config_get_key_value(%s)\n", key);
 
-    while ( fgets(line, MAX_LINE_LEN, fp) ) {
+    while ( fgets(line, MAX_LINE_LEN, config_fp) ) {
         if ( ( config_key = strtok(line, "=") ) != NULL ) {
             chomp(config_key);
             if ( strcmp(config_key, key) == 0 ) {
@@ -55,7 +83,7 @@ char *config_get_key_value(FILE *fp, char *key) {
                     if ( config_value[0] == ' ' ) {
                         config_value++;
                     }
-                    message(DEBUG, "Return config_get_key_value(fp, %s) = %s\n", key, config_value);
+                    message(DEBUG, "Return config_get_key_value(%s) = %s\n", key, config_value);
                     return(config_value);
                 }
             }
@@ -63,34 +91,34 @@ char *config_get_key_value(FILE *fp, char *key) {
     }
     free(line);
 
-    message(DEBUG, "Return config_get_key_value(fp, %s) = NULL\n", key);
+    message(DEBUG, "Return config_get_key_value(%s) = NULL\n", key);
     return(NULL);
 }
 
 
-int config_get_key_bool(FILE *fp, char *key, int def) {
+int config_get_key_bool(char *key, int def) {
     char *config_value;
 
-    message(DEBUG, "Called config_get_key_bool(fp, %s, %d)\n", key, def);
+    message(DEBUG, "Called config_get_key_bool(%s, %d)\n", key, def);
 
-    if ( ( config_value = config_get_key_value(fp, key) ) != NULL ) {
+    if ( ( config_value = config_get_key_value(key) ) != NULL ) {
         if ( strcmp(config_value, "yes") == 0 ||
                 strcmp(config_value, "y") == 0 ||
                 strcmp(config_value, "1") == 0 ) {
-            message(DEBUG, "Return config_get_key_bool(fp, %s, %d) = 1\n", key, def);
+            message(DEBUG, "Return config_get_key_bool(%s, %d) = 1\n", key, def);
             return(1);
         } else if ( strcmp(config_value, "no") == 0 ||
                 strcmp(config_value, "n") == 0 ||
                 strcmp(config_value, "0") == 0 ) {
-            message(DEBUG, "Return config_get_key_bool(fp, %s, %d) = 0\n", key, def);
+            message(DEBUG, "Return config_get_key_bool(%s, %d) = 0\n", key, def);
             return(0);
         } else {
             message(ERROR, "Unsupported value for configuration boolean key '%s' = '%s'\n", key, config_value);
-            message(DEBUG, "Return config_get_key_bool(fp, %s, %d) = -1\n", key, def);
+            message(DEBUG, "Return config_get_key_bool(%s, %d) = -1\n", key, def);
             return(-1);
         }
     }
 
-    message(DEBUG, "Return config_get_key_bool(fp, %s, %d) = %d (DEFAULT)\n", key, def, def);
+    message(DEBUG, "Return config_get_key_bool(%s, %d) = %d (DEFAULT)\n", key, def, def);
     return(def);
 }
