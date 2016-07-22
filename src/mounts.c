@@ -107,18 +107,13 @@ int mount_bind(char * source, char * dest, int writable) {
         ABORT(255);
     }
 
+    //  NOTE: This used to be separated into two distinct mount calls (one to mount, a second to remount
+    //  as read-only).  I changed this to a single mount() call as user-namespaces aren't allowed to
+    //  remount.
     message(DEBUG, "Calling mount(%s, %s, ...)\n", source, dest);
-    if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+    if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC|(writable <= 0 ? MS_RDONLY : 0), NULL) < 0 ) {
         message(ERROR, "Could not bind %s: %s\n", dest, strerror(errno));
         ABORT(255);
-    }
-
-    if ( writable <= 0 ) {
-        message(VERBOSE2, "Making mount read only: %s\n", dest);
-        if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
-            message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
-            ABORT(255);
-        }
     }
 
     message(DEBUG, "Returning mount_bind(%s, %d, %d) = 0\n", source, dest, writable);

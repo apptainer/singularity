@@ -3,6 +3,7 @@ DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
 AM_CFLAGS = -Wall
 sexec_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(NAMESPACE_DEFINES) $(NO_SETNS)
+sexec_nosuid_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(NAMESPACE_DEFINES) $(NO_SETNS)
 bootstrap_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"
 ftrace_CPPFLAGS = -DARCH_$(SINGULARITY_ARCH)
 
@@ -17,11 +18,12 @@ install-exec-hook:
 	fi
 
 bindir = $(libexecdir)/singularity
-bin_PROGRAMS = sexec image-create image-expand image-mount image-bind
+bin_PROGRAMS = sexec image-create image-expand image-mount image-bind sexec_nosuid
 
 ftrace_SOURCES = ftrace.c file.c util.c message.c
 ftype_SOURCES = ftype.c util.c file.c message.c
 sexec_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c
+sexec_nosuid_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c
 image_create_SOURCES = image-create.c file.c util.c image.c message.c
 image_expand_SOURCES = image-expand.c file.c util.c image.c message.c
 image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c

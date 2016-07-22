@@ -109,10 +109,14 @@ int main(int argc, char ** argv) {
     int join_daemon_ns = 0;
     int retval = 0;
     uid_t uid;
-    pid_t namespace_fork_pid = 0;
+    uid_t uid_tmp;
+    uid_t orig_uid;
+    gid_t orig_gid;
+    pid_t namespace_fork_pid = 0, pid_tmp;
     struct passwd *pw;
     struct s_privinfo uinfo;
     int use_chroot = 0;
+    int use_userns = 0;
 
 
 //****************************************************************************//
@@ -125,13 +129,77 @@ int main(int argc, char ** argv) {
     signal(SIGKILL, sighandler);
 
     // Get all user/group info
-    uid = getuid();
+    uid = getuid(); orig_uid = uid;
     pw = getpwuid(uid);
+    pid_tmp = getpid();
 
     message(DEBUG, "Gathering and caching user info.\n");
     if ( get_user_privs(&uinfo) < 0 ) {
         message(ERROR, "Could not obtain user privs\n");
         ABORT(255);
+    }
+    orig_gid = uinfo.gid;
+
+    // Do config file and mountpoint validation prior to any setup of
+    // user namespaces.
+    message(DEBUG, "Building configuration file location\n");
+    config_path = (char *) malloc(strlength(SYSCONFDIR, 128) + 30);
+    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR); // Flawfinder: ignore
+    message(DEBUG, "Config location: %s\n", config_path);
+
+    message(DEBUG, "Checking Singularity configuration is a file: %s\n", config_path);
+    if ( is_file(config_path) != 0 ) {
+        message(ERROR, "Configuration file not found: %s\n", config_path);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking Singularity configuration file is owned by root\n");
+    if ( ( uid_tmp = is_owner(config_path, 0) ) != 0 ) {
+        message(ERROR, "Configuration file is not owned by root: %s (owner %u)\n", config_path, uid_tmp);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Opening Singularity configuration file\n");
+    if ( ( config_fp = fopen(config_path, "r") ) == NULL ) { // Flawfinder: ignore
+        message(ERROR, "Could not open config file %s: %s\n", config_path, strerror(errno));
+        ABORT(255);
+    }
+
+    // Check to see if we should invoke user namespaces (unprivileged mode).
+    use_userns = getenv("SINGULARITY_USERNS") != NULL;
+    if (use_userns) {
+        unsetenv("SINGULARITY_USERNS");
+#ifdef SINGULARITY_USERNS
+        message(DEBUG, "Enabling user namespace / unprivileged mode\n");
+
+        int ret = unshare(CLONE_NEWUSER);
+        if (ret == -1) {
+            message(ERROR, "Failed to unshare namespace: %s.\n", strerror(errno));
+            ABORT(255);
+        }
+
+        update_gid_map(pid_tmp, orig_gid, 0);
+        update_uid_map(pid_tmp, orig_uid, 0);
+        uinfo.gid = 0;
+        uinfo.uid = 0;
+#else
+    if (pid_tmp) {}  // Quiets set-but-not-used warnings.
+    message(VERBOSE, "No user namespace support available: re-execing setuid version\n");
+    char sexec_path[] = LIBEXECDIR "/singularity/sexec";
+    char *sexec = "sexec";
+    argv[0] = sexec;
+
+    char **new_argv = calloc(argc+1, sizeof(char*));
+    int idx;
+    //  Note new_argv is one-larger than argv; the last element must be NULL.
+    for (idx=0; idx<argc; idx++) {
+        new_argv[idx] = argv[idx];
+    }
+
+    execv(sexec_path, new_argv);
+    message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_path, strerror(errno));
+    ABORT(255);
+#endif
     }
 
     // Check to make sure we are installed correctly
@@ -188,29 +256,6 @@ int main(int argc, char ** argv) {
             message(ERROR, "Container image path is invalid: %s\n", containerimage);
             ABORT(1);
         }
-    }
-
-    message(DEBUG, "Building configuration file location\n");
-    config_path = (char *) malloc(strlength(SYSCONFDIR, 128) + 30);
-    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR); // Flawfinder: ignore
-    message(DEBUG, "Config location: %s\n", config_path);
-
-    message(DEBUG, "Checking Singularity configuration is a file: %s\n", config_path);
-    if ( is_file(config_path) != 0 ) {
-        message(ERROR, "Configuration file not found: %s\n", config_path);
-        ABORT(255);
-    }
-
-    message(DEBUG, "Checking Singularity configuration file is owned by root\n");
-    if ( is_owner(config_path, 0) != 0 ) {
-        message(ERROR, "Configuration file is not owned by root: %s\n", config_path);
-        ABORT(255);
-    }
-
-    message(DEBUG, "Opening Singularity configuration file\n");
-    if ( ( config_fp = fopen(config_path, "r") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not open config file %s: %s\n", config_path, strerror(errno));
-        ABORT(255);
     }
 
     // TODO: Offer option to only run containers owned by root (so root can approve
@@ -399,12 +444,11 @@ int main(int argc, char ** argv) {
         message(ERROR, "Failed creating image directory %s\n", containerdir);
         ABORT(255);
     }
-    if ( is_owner(containerdir, 0) < 0 ) {
+
+    if ( !use_userns && is_owner(containerdir, 0) < 0 ) {
         message(ERROR, "Container directory is not root owned: %s\n", containerdir);
         ABORT(255);
     }
-
-
 
     // Manage the daemon bits early
     if ( strcmp(command, "start") == 0 ) {
@@ -469,6 +513,25 @@ int main(int argc, char ** argv) {
         if ( namespace_fork_pid == 0 ) {
 
             message(DEBUG, "Hello from namespace child process\n");
+
+#ifdef SINGULARITY_USERNS
+            // Setup final UID namespaces
+            if ( use_userns ) {
+                int ret = unshare(CLONE_NEWUSER);
+                if (ret == -1) {
+                    message(ERROR, "Failed to unshare namespace: %s.\n", strerror(errno));
+                    ABORT(255);
+                }
+                update_uid_map(getpid(), orig_uid, 1);
+                update_gid_map(getpid(), orig_gid, 1);
+                uid = orig_uid;
+                uinfo.uid = orig_uid;
+                uinfo.gid = orig_gid;
+            }
+#else  // SINGULARITY_USERNS
+            if (orig_uid || orig_gid) {}  // Quiets set-but-not-used warning.
+#endif  // SINGULARITY_USERNS
+
             // Setup PID namespaces
             rewind(config_fp);
 #ifdef NS_CLONE_NEWPID
@@ -644,7 +707,9 @@ int main(int argc, char ** argv) {
                     message(DEBUG, "Checking configuration file for 'config group'\n");
                     rewind(config_fp);
                     if ( config_get_key_bool(config_fp, "config group", 1) > 0 ) {
-                        if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
+                        if ( use_userns ) {
+                            message(VERBOSE, "Skipping /etc/group creation as we are using user namespaces.\n");
+                        } else if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
                             if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
                                 message(VERBOSE2, "Staging /etc/group with user info\n");
                                 if ( build_group(joinpath(containerdir, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
@@ -703,10 +768,15 @@ int main(int argc, char ** argv) {
                 }
 
                 // Mount /sys if we are configured
+
                 message(DEBUG, "Checking configuration file for 'mount sys'\n");
                 rewind(config_fp);
                 if ( config_get_key_bool(config_fp, "mount sys", 1) > 0 ) {
-                    if ( is_dir("/sys") == 0 ) {
+                    // According to the man page, we should be able to remount /sys in user namespaces
+                    // as of 3.8.  However, testing on a 4.5 kernel returns an EPERM.
+                    if ( use_userns ) {
+                        message(VERBOSE, "Not mounting /sys as we are using user namespaces.\n");
+                    } else if ( is_dir("/sys") == 0 ) {
                         message(VERBOSE, "Mounting /sys\n");
                         if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
                             message(ERROR, "Could not mount /sys: %s\n", strerror(errno));
@@ -718,7 +788,6 @@ int main(int argc, char ** argv) {
                 } else {
                     message(VERBOSE, "Skipping /sys mount\n");
                 }
-
 
                 // Drop all privileges for good
                 message(VERBOSE2, "Dropping all privileges\n");

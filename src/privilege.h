@@ -33,5 +33,6 @@ int drop_privs(struct s_privinfo *uinfo);
 int escalate_privs(void);
 int get_user_privs(struct s_privinfo *uinfo);
 
-
+void update_uid_map(pid_t child, uid_t outside, int);
+void update_gid_map(pid_t child, gid_t outside, int);
 

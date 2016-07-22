@@ -113,6 +113,11 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                   )
 
 
+AC_ARG_WITH([userns],
+            AS_HELP_STRING([--with-userns], [Enable use of user namespaces]),
+            [NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DSINGULARITY_USERNS"]
+           )
+
 AC_SUBST(NAMESPACE_DEFINES)
 
 AC_CHECK_FUNCS(setns, [

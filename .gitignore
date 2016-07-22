@@ -37,5 +37,6 @@ src/image-create
 src/image-expand
 src/image-mount
 src/sexec
+src/sexec_nosuid
 src/stamp-h1
 
