@@ -90,6 +90,7 @@ int main(int argc, char ** argv) {
     char *containername;
     char *containerdir;
     char *command;
+    char *scratch_dir = NULL;
     char *sessiondir;
     char *sessiondir_prefix;
     char *loop_dev_lock = NULL;
@@ -306,6 +307,29 @@ int main(int argc, char ** argv) {
         fclose(test_daemon_fp);
     }
 
+    // Create temporary scratch directories for use inside the chroot.
+    // We do this as the user, but will later bind-mount as root.
+    rewind(config_fp);
+    if ( config_get_key_value(config_fp, "bind scratch") != NULL ) {
+        rewind(config_fp);
+        tmp_config_string = config_get_key_value(config_fp, "scratch dir");
+        tmp_config_string = tmp_config_string ? tmp_config_string : getenv("_CONDOR_SCRATCH_DIR");
+        tmp_config_string = tmp_config_string ? tmp_config_string : getenv("TMPDIR");
+        tmp_config_string = tmp_config_string ? tmp_config_string : "/tmp";
+        char tmp_path[PATH_MAX];
+        if ( snprintf(tmp_path, PATH_MAX, "%s/.singularity-scratchdir.XXXXXX", tmp_config_string) >= PATH_MAX ) {
+            message(ERROR, "Overly-long pathname for scratch directory: %s\n", tmp_config_string);
+            ABORT(255);
+        }
+        if ( ( scratch_dir = strdup(tmp_path) ) == NULL ) {
+            message(ERROR, "Memory allocation failure when creating scratch directory: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        if ( ( scratch_dir = mkdtemp(scratch_dir) ) == NULL ) {
+            message(ERROR, "Creation of temproary scratch directory %s failed: %s\n", scratch_dir, strerror(errno));
+            ABORT(255);
+        }
+    }
 
 //****************************************************************************//
 // We are now running with escalated privileges until we exec
@@ -515,6 +539,7 @@ int main(int argc, char ** argv) {
                 ABORT(255);
             }
 
+            rewind(config_fp);
             int slave = config_get_key_bool(config_fp, "mount slave", 0);
             // Privatize the mount namespaces
             message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
@@ -618,7 +643,6 @@ int main(int argc, char ** argv) {
                     }
                 }
 
-
                 if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
                     message(DEBUG, "Checking configuration file for 'config passwd'\n");
                     rewind(config_fp);
@@ -665,6 +689,28 @@ int main(int argc, char ** argv) {
                     message(VERBOSE, "Not staging passwd or group (running as root)\n");
                 }
             }
+
+
+            //  Handle scratch directories
+            rewind(config_fp);
+            while ( ( tmp_config_string = config_get_key_value(config_fp, "bind scratch") ) != NULL ) {
+                char *dest = tmp_config_string;
+                if ( dest[0] == ' ' ) {
+                    dest++;
+                }
+                chomp(dest);
+                message(VERBOSE2, "Found 'bind scratch' = %s\n", dest);
+                if ( ( is_file(joinpath(containerdir, dest)) != 0 ) && ( is_dir(joinpath(containerdir, dest)) != 0 ) ) {
+                    message(WARNING, "Non existant 'bind scratch' in container: '%s'\n", dest);
+                    continue;
+                }
+
+                message(VERBOSE, "Binding '%s' to '%s:%s'\n", scratch_dir, containername, dest);
+                if ( mount_bind(scratch_dir, joinpath(containerdir, dest), 1) < 0 ) {
+                    ABORT(255);
+                }
+            }
+
 
             // Fork off exec process
             message(VERBOSE, "Forking exec process\n");
@@ -1017,11 +1063,14 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE2, "Cleaning up...\n");
 
+    //  TODO(bbockelm): Clean out the scratch directory.
+
     close(containerimage_fd);
     close(sessiondirlock_fd);
 
     free(loop_dev_lock);
     free(sessiondir);
+    free(scratch_dir);
 
     return(retval);
 }
