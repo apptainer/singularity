@@ -26,11 +26,11 @@ typedef struct {
     size_t gids_count;
 } s_privinfo;
 
+
+// These all return void because on failure they ABORT()
 void priv_drop_perm(void);
 void priv_drop(void);
 void priv_escalate(void);
 void priv_init(void);
-
-
 
 
