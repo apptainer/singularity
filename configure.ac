@@ -136,6 +136,7 @@ AC_CONFIG_FILES([
    etc/Makefile
    bin/Makefile
    bin/singularity
+   man/Makefile
    libexec/Makefile
    libexec/mods/Makefile
    libexec/cli/Makefile
