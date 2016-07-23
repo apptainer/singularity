@@ -41,7 +41,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                    [[unshare(CLONE_NEWPID);]])],
                       [
                           AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_NEWPID"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWPID"
                       ], [
                           AC_MSG_RESULT([no])
                       ]
@@ -55,7 +55,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                    [[unshare(CLONE_PID);]])],
                       [
                           AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_PID"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_PID"
                       ], [
                           AC_MSG_RESULT([no])
                       ]
@@ -69,7 +69,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                    [[unshare(CLONE_FS);]])],
                       [
                           AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_FS"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_FS"
                       ], [
                           AC_MSG_RESULT([no])
                       ]
@@ -84,7 +84,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                                      prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0);]])],
                       [
                           AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DSINGULARITY_NO_NEW_PRIVS"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_NO_NEW_PRIVS"
                       ], [
                           AC_MSG_RESULT([no])
                       ]
@@ -98,7 +98,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                    [[unshare(CLONE_NEWNS);]])],
                       [
                           AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_NEWNS"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWNS"
                       ], [
                           AC_MSG_RESULT([no])
                           echo
@@ -113,7 +113,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                   )
 
 
-AC_SUBST(NAMESPACE_DEFINES)
+AC_SUBST(SINGULARITY_DEFINES)
 
 AC_CHECK_FUNCS(setns, [
                       ], [
