@@ -103,23 +103,6 @@ int container_shell(int argc, char **argv) {
         if ( execv("/.shell", argv) != 0 ) { // Flawfinder: ignore (exec* is necessary)
             message(ERROR, "Exec of /.shell failed: %s\n", strerror(errno));
         }
-    } else if ( is_exec("/bin/bash") == 0 ) {
-        char *args[argc+2]; // Flawfinder: ignore
-        int i;
-
-        message(VERBOSE, "Found /bin/bash, setting arguments --norc and --noprofile\n");
-
-        args[0] = strdup("/bin/bash");
-        args[1] = strdup("--norc");
-        args[2] = strdup("--noprofile");
-        for(i=1; i<=argc; i++) {
-            args[i+2] = argv[i];
-        }
-
-        message(VERBOSE, "Exec()'ing /bin/bash...\n");
-        if ( execv("/bin/bash", args) != 0 ) { // Flawfinder: ignore (exec* is necessary)
-            message(ERROR, "Exec of /bin/bash failed: %s\n", strerror(errno));
-        }
     } else {
         argv[0] = strdup("/bin/sh");
         message(VERBOSE, "Exec()'ing /bin/sh...\n");
