@@ -4,8 +4,8 @@ Summary: The Singularity of a container
 Name: singularity
 Version: @PACKAGE_VERSION@
 Release: %{_rel}%{?dist}
-# https://fedoraproject.org/wiki/Licensing:LBNLBSD
-License: LBNL BSD
+# https://spdx.org/licenses/BSD-3-Clause-LBNL.html
+License: BSD-3-Clause-LBNL
 Group: System Environment/Base
 URL: http://singularity.lbl.gov/
 Source: %{name}-%{version}.tar.gz
