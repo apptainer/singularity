@@ -92,6 +92,7 @@ int main(int argc, char ** argv) {
     char *command;
     char *sessiondir;
     char *sessiondir_prefix;
+    char *tmp_dir = "/tmp";
     char *loop_dev_lock = NULL;
     char *loop_dev_cache = NULL;
     char *homedir;
@@ -246,7 +247,7 @@ int main(int argc, char ** argv) {
     }
     message(DEBUG, "Set image mount path to: %s\n", containerdir);
 
-    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
+    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, (argc > 1 ? argv[1] : "(null)"));
 
     message(DEBUG, "Checking if we are opening image as read/write\n");
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
@@ -526,7 +527,7 @@ int main(int argc, char ** argv) {
 
             if (use_chroot) {
                 message(DEBUG, "Mounting Singularity chroot read only\n");
-                if ( mount_bind(containerimage, containerdir, 0) < 0 ) {
+                if ( mount_bind(containerimage, containerdir, 0, tmp_dir) < 0 ) {
                     ABORT(255);
                 }
             } else {
@@ -555,7 +556,58 @@ int main(int argc, char ** argv) {
 
 
             // Bind mounts
-            message(DEBUG, "Checking to see if we should do bind mounts\n");
+
+            // Start with user-specified bind mounts: only honor them when we know we
+            // can invoke NO_NEW_PRIVS (dismantling setuid binaries).
+            if ( ( tmp_config_string = getenv("SINGULARITY_USER_BIND") ) != NULL ) {
+#ifdef SINGULARITY_NO_NEW_PRIVS
+                message(DEBUG, "Parsing SINGULARITY_USER_BIND for user-specified bind mounts.\n");
+                char *bind = strdup(tmp_config_string);
+                if (bind == NULL) {
+                    message(ERROR, "Failed to allocate memory for configuration string");
+                    ABORT(1);
+                }
+                char *cur = bind, *next = strchr(cur, ';');
+                for ( ; 1; next = strchr(cur, ';') ) {
+                    if (next) *next = '\0';
+                    char *source = strtok(cur, ",");
+                    char *dest = strtok(NULL, ",");
+                    chomp(source);
+                    if ( dest == NULL ) {
+                        dest = strdup(source);
+                    } else {
+                        if ( dest[0] == ' ' ) {
+                            dest++;
+                        }
+                        chomp(dest);
+                    }
+                    message(VERBOSE2, "Found user-specified 'bind path' = %s, %s\n", source, dest);
+
+                    if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
+                        message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+                        if (next == NULL) {break;}
+                        continue;
+                    }
+
+                    message(VERBOSE, "Binding '%s' to '%s:%s'\n", source, containername, dest);
+                    if ( mount_bind(source, joinpath(containerdir, dest), 1, tmp_dir) < 0 ) {
+                        ABORT(255);
+                    }
+
+                    cur = next + 1;
+                    if (next == NULL) {break;}
+                }
+                free(bind);
+                unsetenv("SINGULARITY_USER_BIND");
+#else  // SINGULARITY_NO_NEW_PRIVS
+                message(ERROR, "Requested user-specified bind-mounts, but they are not supported on this platform.");
+                ABORT(255);
+#endif  // SINGULARITY_NO_NEW_PRIVS
+            } else {
+                message(DEBUG, "No user bind mounts specified.\n");
+            }
+
+            message(DEBUG, "Checking to see if we should do system bind mounts\n");
             if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
                 unsetenv("SINGULARITY_CONTAIN");
 
@@ -566,7 +618,7 @@ int main(int argc, char ** argv) {
                         if ( is_dir(homedir_base) == 0 ) {
                             if ( is_dir(joinpath(containerdir, homedir_base)) == 0 ) {
                                 message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
-                                if ( mount_bind(homedir_base, joinpath(containerdir, homedir_base), 1) < 0 ) {
+                                if ( mount_bind(homedir_base, joinpath(containerdir, homedir_base), 1, tmp_dir) < 0 ) {
                                     ABORT(255);
                                 }
                             } else {
@@ -613,7 +665,7 @@ int main(int argc, char ** argv) {
                     }
 
                     message(VERBOSE, "Binding '%s' to '%s:%s'\n", source, containername, dest);
-                    if ( mount_bind(source, joinpath(containerdir, dest), 1) < 0 ) {
+                    if ( mount_bind(source, joinpath(containerdir, dest), 1, tmp_dir) < 0 ) {
                         ABORT(255);
                     }
                 }
@@ -632,7 +684,7 @@ int main(int argc, char ** argv) {
                                 }
                             }
                             message(VERBOSE, "Binding staged /etc/passwd into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 1) < 0 ) {
+                            if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 1, tmp_dir) < 0 ) {
                                 message(ERROR, "Could not bind /etc/passwd\n");
                                 ABORT(255);
                             }
@@ -653,7 +705,7 @@ int main(int argc, char ** argv) {
                                 }
                             }
                             message(VERBOSE, "Binding staged /etc/group into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 1) < 0 ) {
+                            if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 1, tmp_dir) < 0 ) {
                                 message(ERROR, "Could not bind /etc/group\n");
                                 ABORT(255);
                             }

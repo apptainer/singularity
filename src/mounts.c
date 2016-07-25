@@ -30,6 +30,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <limits.h>
 
 #include "config.h"
 #include "mounts.h"
@@ -90,10 +91,80 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
     return(0);
 }
 
+static int create_bind_dir(const char *dest, const char *tmp_dir, int isfile) {
+    message(DEBUG, "Calling create_bin_dir(%s, %s, %d)\n", dest, tmp_dir, isfile);
 
-int mount_bind(char * source, char * dest, int writable) {
+    char *dest_copy = strdup(dest);
+    char * last_slash = strrchr(dest_copy, '/');
+    if (last_slash == NULL) {
+        message(ERROR, "Ran out of '/' prefixes\n");
+        ABORT(255);
+    }
+    *last_slash = '\0';
+    if ( !is_dir(dest_copy) ) {
+        // Parent directory exists; create a temporary directory inside tmp_dir,
+        // bind mount the temporary directory on top of the existing parent dir.  Note
+        // this has the unfortunate side-effect of squashing any othe files inside this
+        // parent directory.
+        char new_tmp_dir[PATH_MAX];
+        if ( snprintf(new_tmp_dir, PATH_MAX, "%s/bind_bootstrap_XXXXXX", tmp_dir) >= PATH_MAX) {
+            message(ERROR, "Overly long temporary pathname: %s\n", tmp_dir);
+            return 1;
+        }
+        if (mkdtemp(new_tmp_dir) == NULL) {
+            message(ERROR, "Failed to create new temporary directory %s: %s\n", new_tmp_dir, strerror(errno));
+            return 1; 
+        }
+        if ( chmod(new_tmp_dir, 0755) ) {
+            message(ERROR, "Failed to chmod temporary directory %s: %s\n", new_tmp_dir, strerror(errno));
+            return 1;
+        }
+        int new_len = PATH_MAX - strlen(new_tmp_dir) - 1;
+        if (snprintf(new_tmp_dir + strlen(new_tmp_dir), new_len, "/%s", last_slash + 1) >= new_len) {
+            message(ERROR, "Overly long path name in temp dir: %s/%s\n", new_tmp_dir, last_slash + 1);
+            return 1;
+        }
+        if ( mkdir(new_tmp_dir, 0755) == -1 ) {
+            message(ERROR, "Failed to create new directory %s inside temp: %s", new_tmp_dir, strerror(errno));
+            return 1;
+        }
+        *strrchr(new_tmp_dir, '/') = '\0';
+        if ( mount(new_tmp_dir, dest_copy, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+            message(ERROR, "When creating temp directory, Could not bind %s: %s\n", dest, strerror(errno));
+            return 1;
+        }
+    } else {
+        struct stat filestat;
+        if ( stat(dest_copy, &filestat) == 0 ) {
+            // Not a directory, but path exists (file or other)
+            message(ERROR, "Cannot create bind directory as %s in path already exists.\n", dest_copy);
+            return 1;
+        }
+        if ( create_bind_dir(dest, tmp_dir, 0) ) {
+            return 1;
+        }
+        // Now we know the parent path exists.
+        if (isfile) {
+            int fd;
+            if ( -1 == ( fd = open(dest, O_CREAT|O_RDWR|O_CLOEXEC|O_EXCL, 0600)  ) ) {
+                message(ERROR, "Failed to create stub file %s: %s\n", dest, strerror(errno));
+                return 1;
+            }
+            close(fd);
+        } else {
+            if ( -1 == ( mkdir(dest, 0755) ) ) {
+                message(ERROR, "Failed to make top-level stub directory %s: %s\n", dest, strerror(errno));
+                return 1;
+            }
+        }
+    }
+    free(dest_copy);
+    return 0;
+}
 
-    message(DEBUG, "Called mount_bind(%s, %d, %d)\n", source, dest, writable);
+int mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
+
+    message(DEBUG, "Called mount_bind(%s, %d, %d, %s)\n", source, dest, writable, tmp_dir);
 
     message(DEBUG, "Checking that source exists and is a file or directory\n");
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {
@@ -103,8 +174,10 @@ int mount_bind(char * source, char * dest, int writable) {
 
     message(DEBUG, "Checking that destination exists and is a file or directory\n");
     if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
-        message(ERROR, "Container bind path is not a file or directory: '%s'\n", dest);
-        ABORT(255);
+        if ( create_bind_dir(dest, tmp_dir, is_dir(source)) != 0 ) {
+            message(ERROR, "Container bind path is not a file or directory: '%s'\n", dest);
+            ABORT(255);
+        }
     }
 
     message(DEBUG, "Calling mount(%s, %s, ...)\n", source, dest);
