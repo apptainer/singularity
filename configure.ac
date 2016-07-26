@@ -115,12 +115,11 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 
 AC_MSG_CHECKING([for feature: MS_SLAVE])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-                                     #include <linux/fs.h>
+                                     #include <sys/mount.h>
                                    ]],
                                    [[#ifndef MS_SLAVE
                                      #error failed
                                      #endif
-                                     return(0);
                                    ]])],
                       [
                           AC_MSG_RESULT([yes])
