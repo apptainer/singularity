@@ -314,8 +314,13 @@ int main(int argc, char ** argv) {
     rewind(config_fp);
     int user_scratch = 0;
 #ifdef SINGULARITY_NO_NEW_PRIVS
-    // USER_SCRATCH is only allowed in the case of NO_NEW_PRIVS.
     user_scratch = getenv("SINGULARITY_USER_SCRATCH") != NULL;
+    // USER_SCRATCH is only allowed in the case of NO_NEW_PRIVS.
+    if ( user_scratch && !config_get_key_bool(config_fp, "allow user scratch", 1) ) {
+        message(ERROR, "The sysadmin has disabled support for user-specified scratch directories.\n");
+        ABORT(255);
+    }
+    rewind(config_fp);
 #endif
     if ( ( config_get_key_value(config_fp, "bind scratch") != NULL ) || user_scratch ) {
         message(DEBUG, "Creating a scratch directory for this container.\n");
