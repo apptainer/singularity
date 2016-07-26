@@ -131,7 +131,22 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                   )
 
 
+AC_MSG_CHECKING([for overlayfs])
+KVERS=`uname -r`
+if test -f "/lib/modules/$KVERS/modules.dep"; then
+    if grep -q 'overlay.ko' "/lib/modules/$KVERS/modules.dep"; then
+        AC_MSG_RESULT([yes])
+        SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
+    else
+        AC_MSG_RESULT([no])
+    fi
+else
+    AC_MSG_RESULT([no])
+fi
+
 AC_SUBST(SINGULARITY_DEFINES)
+
+
 
 AC_CHECK_FUNCS(setns, [
                       ], [
