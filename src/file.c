@@ -195,8 +195,10 @@ int s_mkpath(char *dir, mode_t mode) {
 
     message(DEBUG, "Creating directory: %s\n", dir);
     if ( mkdir(dir, mode) < 0 ) {
-        message(ERROR, "Could not create directory %s: %s\n", dir, strerror(errno));
-        return(-1);
+        if ( is_dir(dir) < 0 ) { // It is possible that the directory was created between above check and mkdir()
+            message(ERROR, "Could not create directory %s: (%d)%s\n", dir, errno, strerror(errno));
+            return(-1);
+        }
     }
 
     return(0);

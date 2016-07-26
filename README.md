@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/gmkurtzer/singularity.svg?branch=master)](https://travis-ci.org/gmkurtzer/singularity)
+
 # Singularity - Enabling Mobility of Compute
 
 Singularity is a container platform focused on supporting "Mobility of

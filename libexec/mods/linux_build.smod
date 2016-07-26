@@ -62,7 +62,7 @@ Cleanup() {
 DistType() {
     TYPE="$1"
 
-    if [ -z "$TYPE" ]; then
+    if [ -z "${TYPE:-}" ]; then
         echo "DistType: Requires an argument!" 2>&2
         exit 1
     fi
@@ -97,7 +97,7 @@ InstallFile() {
     SOURCE="${1:-}"
     DEST="${2:-}"
 
-    if [ -z "$SOURCE" ]; then
+    if [ -z "${SOURCE:-}" ]; then
         echo "InstallFile: Must be called with a source file!" >&2
         return 1
     fi
@@ -107,7 +107,7 @@ InstallFile() {
         return 1
     fi
 
-    if [ -z "$DEST" ]; then
+    if [ -z "${DEST:-}" ]; then
         DEST="$SOURCE"
     fi
 
@@ -130,7 +130,9 @@ PreSetup() {
     done
 
     for i in $TMP_REAL_FILES; do
-        cp "$i" "$SINGULARITY_BUILD_ROOT/$i"
+        if [ ! -e "$SINGULARITY_BUILD_ROOT/$i" ]; then
+            cp "$i" "$SINGULARITY_BUILD_ROOT/$i"
+        fi
     done
 
     for i in $DEVS; do
@@ -143,7 +145,7 @@ PreSetup() {
 }
 
 RunScript() {
-    if [ -z "$RAN_RUNSCRIPT" ]; then
+    if [ -z "${RAN_RUNSCRIPT:-}" ]; then
         echo '#!/bin/sh'    > "$SINGULARITY_BUILD_ROOT/singularity"
         echo                >> "$SINGULARITY_BUILD_ROOT/singularity"
 
@@ -190,9 +192,6 @@ Finalize() {
 
     echo '#!/bin/sh' > "$SINGULARITY_BUILD_ROOT/.shell"
     echo '. /environment' >> "$SINGULARITY_BUILD_ROOT/.shell"
-    echo 'if test -n "$SHELL" -a "$SHELL" == "/bin/bash"; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
-    echo '    exec /bin/bash --norc --noprofile "$@"' >> "$SINGULARITY_BUILD_ROOT/.shell"
-    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/.shell"
     echo 'if test -n "$SHELL" -a -x "$SHELL"; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
     echo '    exec "$SHELL" "$@"' >> "$SINGULARITY_BUILD_ROOT/.shell"
     echo 'else' >> "$SINGULARITY_BUILD_ROOT/.shell"
@@ -227,9 +226,12 @@ Finalize() {
     echo '# Define any environment init code here' > "$SINGULARITY_BUILD_ROOT/environment"
     echo '# ' >> "$SINGULARITY_BUILD_ROOT/environment"
     echo '' >> "$SINGULARITY_BUILD_ROOT/environment"
-    echo "PATH=$PATH:/bin:/sbin" >> "$SINGULARITY_BUILD_ROOT/environment"
-    echo 'PS1="Singularity.$SINGULARITY_CONTAINER> $PS1"' >> "$SINGULARITY_BUILD_ROOT/environment"
-    echo 'export PATH PS1' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo 'if test -z "$SINGULARITY_INIT"; then' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo "    PATH=$PATH:/bin:/sbin" >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo '    PS1="Singularity.$SINGULARITY_CONTAINER> $PS1"' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo '    SINGULARITY_INIT=1' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo '    export PATH PS1 SINGULARITY_INIT' >> "$SINGULARITY_BUILD_ROOT/environment"
+    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/environment"
     chmod 0644 "$SINGULARITY_BUILD_ROOT/environment"
 }
 

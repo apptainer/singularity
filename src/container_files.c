@@ -36,41 +36,32 @@
 
 
 
-int build_passwd(char *template, char *output) {
-    FILE *output_fp;
+void update_passwd_file(char *file) {
+    FILE *file_fp;
     uid_t uid = getuid();
     struct passwd *pwent = getpwuid(uid);
 
-    message(DEBUG, "Called build_passwd(%s, %s)\n", template, output);
+    message(DEBUG, "Called update_passwd_file(%s)\n", file);
 
-    message(VERBOSE2, "Checking for template passwd file: %s\n", template);
-    if ( is_file(template) < 0 ) {
-        message(WARNING, "Template passwd not found: %s\n", template);
-        return(-1);
+    message(VERBOSE2, "Checking for passwd file: %s\n", file);
+    if ( is_file(file) < 0 ) {
+        message(WARNING, "Template passwd not found: %s\n", file);
+        return;
     }
 
-    message(VERBOSE2, "Copying template passwd file to sessiondir\n");
-    if ( copy_file(template, output) < 0 ) {
-        message(WARNING, "Could not copy %s to %s: %s\n", template, output, strerror(errno));
-        return(-1);
-    }
-
-    message(VERBOSE, "Creating template passwd file and appending user data\n");
-    if ( ( output_fp = fopen(output, "a") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not open template passwd file %s: %s\n", output, strerror(errno));
+    message(VERBOSE, "Updating passwd file with user info\n");
+    if ( ( file_fp = fopen(file, "a") ) == NULL ) { // Flawfinder: ignore
+        message(ERROR, "Could not open template passwd file %s: %s\n", file, strerror(errno));
         ABORT(255);
     }
-    fprintf(output_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
-    fclose(output_fp);
+    fprintf(file_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
+    fclose(file_fp);
 
-    message(DEBUG, "Returning build_passwd(%s, %s) = 0\n", template, output);
-
-    return(0);
 }
 
 
-int build_group(char *template, char *output) {
-    FILE *output_fp;
+void update_group_file(char *file) {
+    FILE *file_fp;
     int groupcount;
     int i;
     int maxgroups = sysconf(_SC_NGROUPS_MAX) + 1;
@@ -80,42 +71,33 @@ int build_group(char *template, char *output) {
     struct passwd *pwent = getpwuid(uid);
     struct group *grent = getgrgid(gid);
 
-    message(DEBUG, "Called build_group(%s, %s)\n", template, output);
+    message(DEBUG, "Called update_group_file(%s)\n", file);
 
-    message(VERBOSE2, "Checking for template group file: %s\n", template);
-    if ( is_file(template) < 0 ) {
-        message(WARNING, "Template group file not found: %s\n", template);
-        return(-1);
+    message(VERBOSE2, "Checking for group file: %s\n", file);
+    if ( is_file(file) < 0 ) {
+        message(WARNING, "Template group file not found: %s\n", file);
+        return;
     }
 
-    message(VERBOSE2, "Copying template group file to sessiondir\n");
-    if ( copy_file(template, output) < 0 ) {
-        message(WARNING, "Could not copy %s to %s: %s\n", template, output, strerror(errno));
-        return(-1);
-    }
-
-
-    message(VERBOSE, "Creating template group file and appending user data\n");
-    if ( ( output_fp = fopen(output, "a") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not open template group file %s: %s\n", output, strerror(errno));
+    message(VERBOSE, "Updating group file with user info\n");
+    if ( ( file_fp = fopen(file, "a") ) == NULL ) { // Flawfinder: ignore
+        message(ERROR, "Could not open template group file %s: %s\n", file, strerror(errno));
         ABORT(255);
     }
-    fprintf(output_fp, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
+    fprintf(file_fp, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
 
     message(DEBUG, "Getting supplementary group info\n");
     groupcount = getgroups(maxgroups, gids);
 
-    for (i=0; i<= groupcount; i++) {
-        if ( gids[i] >= 500 && gids[i] != grent->gr_gid ) {
-            struct group *gr = getgrgid(gids[i]);
+    for (i=0; i < groupcount; i++) {
+        struct group *gr = getgrgid(gids[i]);
+        message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
+        if ( gids[i] != gid ) {
             message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
-            fprintf(output_fp, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
+            fprintf(file_fp, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
         }
     }
 
-    fclose(output_fp);
+    fclose(file_fp);
 
-    message(DEBUG, "Returning build_group(%s, %s) = 0\n", template, output);
-
-    return(0);
 }

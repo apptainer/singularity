@@ -82,7 +82,7 @@ int main(int argc, char ** argv) {
         }
 
         message(DEBUG, "Binding container to loop interface\n");
-        if ( loop_bind(containerimage_fp, &loop_dev) < 0 ) {
+        if ( loop_bind(containerimage_fp, &loop_dev, 0) < 0 ) {
             message(ERROR, "Could not bind image to loop!\n");
             ABORT(255);
         }

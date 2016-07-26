@@ -135,21 +135,21 @@ stest() {
     ERROR="${1:-}"
     TMPFILE=`mktemp`
     shift
-    message 2 " + %-60.60s " "$*"
+    message 2 " + %-80.80s " "$*"
     "$@" >$TMPFILE 2>&1
     CODE="$?"
     if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
-        message 2 "%10s ERROR\n" "(retval=$CODE)"
+        message 2 "%13s ERROR\n" "(retval=$CODE)"
         tail "$TMPFILE"
         echo "Full output in: $TMPFILE"
         exit 1
     elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
-        message 2 "%10s ERROR\n" "(retval=$CODE)"
+        message 2 "%13s ERROR\n" "(retval=$CODE)"
         tail "$TMPFILE"
         echo "Full output in: $TMPFILE"
         exit 1
     else
-        message 2 "%10s OK\n" "(retval=$CODE)"
+        message 2 "%13s OK\n" "(retval=$CODE)"
     fi
     rm -f "$TMPFILE"
 }

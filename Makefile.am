@@ -1,4 +1,4 @@
-SUBDIRS = bin etc libexec src
+SUBDIRS = bin etc libexec src man
 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure ltmain.sh depcomp install-sh missing config.* *.m4 singularity-*.tar.gz singularity-*.rpm
 DISTCLEANFILES = 
