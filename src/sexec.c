@@ -80,6 +80,7 @@ void sighandler(int sig) {
 
 
 int main(int argc, char ** argv) {
+    FILE *loop_fp = NULL;
     FILE *containerimage_fp;
     FILE *config_fp;
     FILE *daemon_fp = NULL;
@@ -100,7 +101,6 @@ int main(int argc, char ** argv) {
     char cwd[PATH_MAX]; // Flawfinder: ignore
     int cwd_fd;
     int sessiondirlock_fd;
-    int loop_dev_fd;
     int loop_dev_lock_fd;
     int join_daemon_ns = 0;
     int retval = 0;
@@ -347,7 +347,7 @@ int main(int argc, char ** argv) {
         message(DEBUG, "We have exclusive flock() on loop_dev lockfile\n");
 
         message(DEBUG, "Binding container to loop interface\n");
-        if ( loop_bind(containerimage_fp, &loop_dev, 1) < 0 ) {
+        if ( ( loop_fp = loop_bind(containerimage_fp, &loop_dev, 1)) == NULL ) {
             message(ERROR, "Could not bind image to loop!\n");
             ABORT(255);
         }
@@ -373,12 +373,6 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
-    }
-
-    message(VERBOSE3, "Opening loop device so it stays attached\n");
-    if ( ( loop_dev_fd = open(loop_dev, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
-        message(ERROR, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
-        ABORT(255);
     }
 
     message(DEBUG, "Creating container image mount path: %s\n", containerdir);
@@ -966,8 +960,9 @@ int main(int argc, char ** argv) {
     message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
 
 
-    message(DEBUG, "Closing the loop device file descriptor\n");
-    close(loop_dev_fd);
+    message(DEBUG, "Closing the loop device file descriptor: %s\n", loop_fp);
+    fclose(loop_fp);
+    message(DEBUG, "Closing the container image file descriptor\n");
     fclose(containerimage_fp);
 
     if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {

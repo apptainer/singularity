@@ -88,6 +88,7 @@ void sighandler(int sig) {
 
 
 int main(int argc, char ** argv) {
+    FILE *loop_fp;
     FILE *containerimage_fp;
     char *containerimage;
     char *mountpoint;
@@ -130,7 +131,7 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Binding container to loop interface\n");
-    if ( loop_bind(containerimage_fp, &loop_dev, 1) < 0 ) {
+    if ( ( loop_fp = loop_bind(containerimage_fp, &loop_dev, 1)) == NULL ) {
         message(ERROR, "Could not bind image to loop!\n");
         ABORT(255);
     }
