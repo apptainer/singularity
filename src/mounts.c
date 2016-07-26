@@ -18,6 +18,10 @@
  * 
  */
 
+ /*
+  * Copyright (c) 2016 Lenovo
+  */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -205,7 +209,7 @@ void bind_paths(char *rootpath) {
 }
 
 
-int mount_overlay(char * source, char * scratch, char * dest) {
+void mount_overlay(char * source, char * scratch, char * dest) {
     // lowerDir = source
     // upperDir = scratch/t
     // workDir = scratch/w
