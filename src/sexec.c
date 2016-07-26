@@ -100,7 +100,6 @@ int main(int argc, char ** argv) {
     char cwd[PATH_MAX]; // Flawfinder: ignore
     int cwd_fd;
     int sessiondirlock_fd;
-    int containerimage_fd;
     int loop_dev_fd;
     int loop_dev_lock_fd;
     int join_daemon_ns = 0;
@@ -236,6 +235,8 @@ int main(int argc, char ** argv) {
 
     message(DEBUG, "Checking if we are opening image as read/write\n");
     if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
+    	int containerimage_fd;
+
         message(DEBUG, "Opening image as read only: %s\n", containerimage);
         if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) { // Flawfinder: ignore 
             message(ERROR, "Could not open image read only %s: %s\n", containerimage, strerror(errno));
@@ -249,6 +250,8 @@ int main(int argc, char ** argv) {
             ABORT(5);
         }
     } else {
+    	int containerimage_fd;
+
         message(DEBUG, "Opening image as read/write: %s\n", containerimage);
         if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
             message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
@@ -961,6 +964,12 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
+
+
+    message(DEBUG, "Closing the loop device file descriptor\n");
+    close(loop_dev_fd);
+    fclose(containerimage_fp);
+
     if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         close(sessiondirlock_fd);
 
@@ -974,6 +983,9 @@ int main(int argc, char ** argv) {
             message(WARNING, "Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
         }
 
+        message(DEBUG, "Calling loop_free(%s)\n", loop_dev);
+        loop_free(loop_dev);
+
         if ( drop_privs(&uinfo) < 0 ) {
             ABORT(255);
         }
@@ -984,7 +996,6 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE2, "Cleaning up...\n");
 
-    close(containerimage_fd);
     close(sessiondirlock_fd);
 
     free(loop_dev_lock);

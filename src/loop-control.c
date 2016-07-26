@@ -96,6 +96,8 @@ int loop_bind(FILE *image_fp, char **loop_dev, int autoclear) {
         }
         *loop_dev = strdup(test_loopdev);
 
+        fclose(loop_fp);
+
         message(VERBOSE, "Using loop device: %s\n", *loop_dev);
 
         message(DEBUG, "Returning loop_bind(image_fp) = 0\n");
