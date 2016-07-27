@@ -46,8 +46,8 @@
 
 FILE *loop_attach(char *loop_dev) {
     FILE *loop_fp;
-    if ( ( loop_fp = fopen(test_loopdev, "r+") ) == NULL ) { // Flawfinder: ignore (not user modifyable)
-        message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
+    if ( ( loop_fp = fopen(loop_dev, "r+") ) == NULL ) { // Flawfinder: ignore (not user modifyable)
+        message(VERBOSE, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
         ABORT(255);
         return(NULL);
     }
