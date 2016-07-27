@@ -288,21 +288,21 @@ int main(int argc, char ** argv) {
 
     // Create temporary scratch directories for use inside the chroot.
     // We do this as the user, but will later bind-mount as root.
-    rewind(config_fp);
+    config_rewind();
     int user_scratch = 0;
 #ifdef SINGULARITY_NO_NEW_PRIVS
     user_scratch = getenv("SINGULARITY_USER_SCRATCH") != NULL;
     // USER_SCRATCH is only allowed in the case of NO_NEW_PRIVS.
-    if ( user_scratch && !config_get_key_bool(config_fp, "allow user scratch", 1) ) {
+    if ( user_scratch && !config_get_key_bool("allow user scratch", 1) ) {
         message(ERROR, "The sysadmin has disabled support for user-specified scratch directories.\n");
         ABORT(255);
     }
-    rewind(config_fp);
+    config_rewind();
 #endif
-    if ( ( config_get_key_value(config_fp, "bind scratch") != NULL ) || user_scratch ) {
+    if ( ( config_get_key_value("bind scratch") != NULL ) || user_scratch ) {
         message(DEBUG, "Creating a scratch directory for this container.\n");
-        rewind(config_fp);
-        tmp_config_string = config_get_key_value(config_fp, "scratch dir");
+        config_rewind();
+        char *tmp_config_string = config_get_key_value("scratch dir");
         tmp_config_string = tmp_config_string ? tmp_config_string : getenv("_CONDOR_SCRATCH_DIR");
         tmp_config_string = tmp_config_string ? tmp_config_string : getenv("TMPDIR");
         tmp_config_string = tmp_config_string ? tmp_config_string : "/tmp";
@@ -599,8 +599,9 @@ int main(int argc, char ** argv) {
         }
 
             //  Handle scratch directories
-            rewind(config_fp);
-            while ( ( tmp_config_string = config_get_key_value(config_fp, "bind scratch") ) != NULL ) {
+            config_rewind();
+            char *tmp_config_string;
+            while ( ( tmp_config_string = config_get_key_value("bind scratch") ) != NULL ) {
                 char *dest = tmp_config_string;
                 if ( dest[0] == ' ' ) {
                     dest++;
@@ -613,9 +614,7 @@ int main(int argc, char ** argv) {
                 }
 
                 message(VERBOSE, "Binding '%s' to '%s:%s'\n", scratch_dir, containername, dest);
-                if ( mount_bind(scratch_dir, joinpath(containerdir, dest), 1) < 0 ) {
-                    ABORT(255);
-                }
+                mount_bind(scratch_dir, joinpath(containerdir, dest), 1);
             }
 
             // Handle user-specified scratch directories
@@ -641,9 +640,7 @@ int main(int argc, char ** argv) {
                     }
 
                     message(VERBOSE, "Binding '%s' to '%s:%s'\n", scratch_dir, containername, dest);
-                    if ( mount_bind(scratch_dir, joinpath(containerdir, dest), 1) < 0 ) {
-                        ABORT(255);
-                    }
+                    mount_bind(scratch_dir, joinpath(containerdir, dest), 1);
                 }
                free(scratch);
 #else  // SINGULARITY_NO_NEW_PRIVS
