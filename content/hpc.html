@@ -57,6 +57,7 @@ $ git clone https://github.com/open-mpi/ompi.git
 $ cd ompi
 $
 $ # Build OpenMPI in the working directory, using the tool chain within the container
+$ singularity exec /tmp/Centos-7.img ./autogen.pl
 $ singularity exec /tmp/Centos-7.img ./configure --prefix=/usr/local
 $ singularity exec /tmp/Centos-7.img make
 $
