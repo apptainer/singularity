@@ -857,7 +857,7 @@ int main(int argc, char ** argv) {
     message(VERBOSE2, "Cleaning up...\n");
 
     if (scratch_dir) {
-        clean_dir(scratch_dir);
+        s_rmdir(scratch_dir);
     }
 
     close(containerimage_fd);
