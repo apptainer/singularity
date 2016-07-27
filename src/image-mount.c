@@ -130,7 +130,7 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Binding container to loop interface\n");
-    if ( loop_bind(containerimage_fp, &loop_dev) < 0 ) {
+    if ( loop_bind(containerimage_fp, &loop_dev, 1) < 0 ) {
         message(ERROR, "Could not bind image to loop!\n");
         ABORT(255);
     }
@@ -159,10 +159,10 @@ int main(int argc, char ** argv) {
         exec_fork_pid = fork();
         if ( exec_fork_pid == 0 ) {
 
-            argv[2] = strdup("/bin/sh");
+            argv[2] = strdup("/bin/bash");
 
-            if ( execv("/bin/sh", &argv[2]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
-                message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
+            if ( execv("/bin/bash", &argv[2]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
+                message(ERROR, "Exec of /bin/bash failed: %s\n", strerror(errno));
             }
             // We should never get here, so if we do, make it an error
             return(-1);
@@ -198,12 +198,6 @@ int main(int argc, char ** argv) {
     } else {
         fprintf(stderr, "ABORT: Could not fork management process: %s\n", strerror(errno));
         return(255);
-    }
-
-    message(VERBOSE, "Unbinding container image from loop\n");
-    if ( loop_free(loop_dev) < 0 ) {
-        message(ERROR, "Failed to detach loop device: %s\n", loop_dev);
-        ABORT(255);
     }
 
     return(retval);

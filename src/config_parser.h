@@ -19,6 +19,10 @@
  */
 
 
-char *config_get_key_value(FILE *fp, char *key);
-int config_get_key_bool(FILE *fp, char *key, int def);
+int config_open(char *config_path);
+void config_close(void);
+void config_rewind(void);
+
+char *config_get_key_value(char *key);
+int config_get_key_bool(char *key, int def);
 

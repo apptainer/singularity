@@ -50,7 +50,7 @@ SanityCheck
 PreSetup
 
 
-if [ -f "$SINGULARITY_BUILDDEF" ]; then
+if [ -n "${SINGULARITY_BUILDDEF:-}" -a -f "$SINGULARITY_BUILDDEF" ]; then
     # sourcing without a leading slash is weird and requires PATH
     PATH=".:$PATH"
     . $SINGULARITY_BUILDDEF

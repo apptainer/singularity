@@ -18,20 +18,19 @@
  * 
  */
 
-
-struct s_privinfo {
+typedef struct {
     int ready;
     uid_t uid;
     gid_t gid;
     gid_t *gids;
     size_t gids_count;
-};
+} s_privinfo;
 
 
-int drop_privs_perm(struct s_privinfo *uinfo);
-int drop_privs(struct s_privinfo *uinfo);
-int escalate_privs(void);
-int get_user_privs(struct s_privinfo *uinfo);
-
+// These all return void because on failure they ABORT()
+void priv_drop_perm(void);
+void priv_drop(void);
+void priv_escalate(void);
+void priv_init(void);
 
 

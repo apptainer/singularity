@@ -80,11 +80,6 @@ if [ ! -f "$IMAGE" ]; then
     exit 1
 fi
 
-if [ ! -f "$DEFINITION" ]; then
-    message ERROR "Container bootstrap definition file does not exist: $DEFINITION\n"
-    exit 1
-fi
-
 SINGULARITY_libexecdir="$SINGULARITY_libexecdir"
 SINGULARITY_BUILD_ROOT="$SINGULARITY_localstatedir/singularity/mnt"
 export SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
