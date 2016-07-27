@@ -226,7 +226,6 @@ int main(int argc, char ** argv) {
 
     config_rewind();
     if ( ( containerdir = config_get_key_value("container dir") ) == NULL ) {
-        //containerdir = (char *) malloc(21);
         containerdir = strdup("/var/singularity/mnt");
     }
     message(DEBUG, "Set image mount path to: %s\n", containerdir);
