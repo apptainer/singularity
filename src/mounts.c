@@ -30,6 +30,8 @@
 #include <string.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <pwd.h>
+
 
 #include "config.h"
 #include "mounts.h"
@@ -37,6 +39,8 @@
 #include "util.h"
 #include "loop-control.h"
 #include "message.h"
+#include "config_parser.h"
+#include "privilege.h"
 
 #ifndef MS_REC
 #define MS_REC 16384
@@ -91,7 +95,7 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
 }
 
 
-int mount_bind(char * source, char * dest, int writable) {
+void mount_bind(char * source, char * dest, int writable) {
 
     message(DEBUG, "Called mount_bind(%s, %d, %d)\n", source, dest, writable);
 
@@ -117,6 +121,93 @@ int mount_bind(char * source, char * dest, int writable) {
     }
 
     message(DEBUG, "Returning mount_bind(%s, %d, %d) = 0\n", source, dest, writable);
+    // Note that we can't remount as read-only if we are in unprivileged mode.
+    if ( !priv_userns_enabled() && (writable <= 0) ) {
+        message(VERBOSE2, "Making mount read only: %s\n", dest);
+        if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
+            message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
+            ABORT(255);
+        }
+    }
 
-    return(0);
 }
+
+
+void mount_home(char *rootpath) {
+    char *homedir;
+    char *homedir_base;
+    struct passwd *pw;
+
+    // TODO: Functionize this
+    pw = getpwuid(getuid());
+
+    message(DEBUG, "Obtaining user's homedir\n");
+    homedir = pw->pw_dir;
+
+    if ( ( homedir_base = container_basedir(rootpath, homedir) ) != NULL ) {
+        if ( is_dir(homedir_base) == 0 ) {
+            if ( is_dir(joinpath(rootpath, homedir_base)) == 0 ) {
+                message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
+                if ( mount(homedir_base, joinpath(rootpath, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+                    ABORT(255);
+                }
+            } else {
+                message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
+            }
+        } else {
+            message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
+        }
+    }
+
+}
+
+
+void bind_paths(char *rootpath) {
+    char *tmp_config_string;
+    message(DEBUG, "Checking configuration file for 'bind path'\n");
+    config_rewind();
+    while ( ( tmp_config_string = config_get_key_value("bind path") ) != NULL ) {
+        char *source = strtok(tmp_config_string, ",");
+        char *dest = strtok(NULL, ",");
+        chomp(source);
+        if ( dest == NULL ) {
+            dest = strdup(source);
+        } else {
+            if ( dest[0] == ' ' ) {
+                dest++;
+            }
+            chomp(dest);
+        }
+
+        message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
+
+// TODO: Make sure this isn't already mounted
+//        if ( ( homedir_base != NULL ) && ( strncmp(dest, homedir_base, strlength(homedir_base, 256)) == 0 )) {
+//            // Skipping path as it was already mounted as homedir_base
+//            message(VERBOSE2, "Skipping '%s' as it is part of home path and already mounted\n", dest);
+//            continue;
+//        }
+
+        if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
+            message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+            continue;
+        }
+        if ( ( is_file(joinpath(rootpath, dest)) != 0 ) && ( is_dir(joinpath(rootpath, dest)) != 0 ) ) {
+            message(WARNING, "Non existant 'bind point' in container: '%s'\n", dest);
+            continue;
+        }
+
+        message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, rootpath, dest);
+        if ( mount(source, joinpath(rootpath, dest), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+            ABORT(255);
+        }
+//        message(VERBOSE2, "Making mount read only: %s\n", dest);
+//        if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
+//            message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
+//            ABORT(255);
+//        }
+    }
+
+}
+
+

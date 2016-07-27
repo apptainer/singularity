@@ -20,6 +20,6 @@
 
 
 
-int build_passwd(char *template, char *output);
-int build_group(char *template, char *output);
+void update_group_file(char * file);
+void update_passwd_file(char *file);
 

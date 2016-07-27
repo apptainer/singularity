@@ -16,10 +16,13 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
- */
+*/
 
 
-int mount_image(char * image_path, char * mount_point, int writable);
-void mount_bind(char * source, char * dest, int writable);
-void mount_home(char *rootpath);
-void bind_paths(char *rootpath);
+void namespace_unshare(void);
+void namespace_unshare_pid(void);
+void namespace_unshare_fs(void);
+void namespace_unshare_mount(void);
+void namespace_join(pid_t daemon_pid);
+void namespace_join_pid(pid_t daemon_pid);
+void namespace_join_mount(pid_t daemon_pid);

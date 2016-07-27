@@ -34,6 +34,8 @@ else
     exit 1
 fi
 
+SHELL=/bin/sh
+
 ## Init Singularity environment
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"

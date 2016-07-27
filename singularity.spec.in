@@ -4,7 +4,8 @@ Summary: The Singularity of a container
 Name: singularity
 Version: @PACKAGE_VERSION@
 Release: %{_rel}%{?dist}
-License: US Dept. of Energy (BSD-like)
+# https://spdx.org/licenses/BSD-3-Clause-LBNL.html
+License: BSD-3-Clause-LBNL
 Group: System Environment/Base
 URL: http://singularity.lbl.gov/
 Source: %{name}-%{version}.tar.gz
@@ -53,6 +54,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/image-mount
 %{_bindir}/singularity
 %{_bindir}/run-singularity
+%{_mandir}/man1/*
 
 
 

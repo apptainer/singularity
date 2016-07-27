@@ -18,21 +18,30 @@
  * 
  */
 
-
-struct s_privinfo {
+typedef struct {
     int ready;
     uid_t uid;
     gid_t gid;
     gid_t *gids;
     size_t gids_count;
-};
+    int userns_ready;
+    int disable_setgroups;
+    int orig_pid;
+    uid_t orig_uid;
+    uid_t orig_gid;
+} s_privinfo;
 
+int priv_userns_enabled();
 
-int drop_privs_perm(struct s_privinfo *uinfo);
-int drop_privs(struct s_privinfo *uinfo);
-int escalate_privs(void);
-int get_user_privs(struct s_privinfo *uinfo);
-
+// These all return void because on failure they ABORT()
 void update_uid_map(pid_t child, uid_t outside, int);
 void update_gid_map(pid_t child, gid_t outside, int);
-
+void priv_drop_perm(void);
+void priv_drop(void);
+void priv_escalate(void);
+void priv_init(void);
+// Initialize the user namespace from outside the container.
+void priv_init_userns_outside();
+// Finish initialization of user namespace; must be called inside
+// the container but *before* PID namespaces are setup.
+void priv_init_userns_inside();
