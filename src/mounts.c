@@ -215,6 +215,7 @@ void mount_overlay(char * source, char * scratch, char * dest) {
     // workDir = scratch/w
     // dest = dest
 
+#ifdef SINGULARITY_OVERLAYFS 
     message(DEBUG, "Called mount_overlay(%s, %s, %s)\n", source, scratch, dest);
 
     message(DEBUG, "Checking that source exists and is a file or directory\n");
@@ -269,6 +270,9 @@ void mount_overlay(char * source, char * scratch, char * dest) {
 	message(DEBUG, "Overlay successful.");
    }
 
-   return(0);
+#else
+   message(ERROR, "Overlay not supported on this system.\n");
+   ABORT(255);
+#endif
 
 }
