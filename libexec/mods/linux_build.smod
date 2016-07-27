@@ -192,9 +192,6 @@ Finalize() {
 
     echo '#!/bin/sh' > "$SINGULARITY_BUILD_ROOT/.shell"
     echo '. /environment' >> "$SINGULARITY_BUILD_ROOT/.shell"
-    echo 'if test -n "$SHELL" -a "$SHELL" = "/bin/bash"; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
-    echo '    exec /bin/bash --norc --noprofile "$@"' >> "$SINGULARITY_BUILD_ROOT/.shell"
-    echo 'fi' >> "$SINGULARITY_BUILD_ROOT/.shell"
     echo 'if test -n "$SHELL" -a -x "$SHELL"; then' >> "$SINGULARITY_BUILD_ROOT/.shell"
     echo '    exec "$SHELL" "$@"' >> "$SINGULARITY_BUILD_ROOT/.shell"
     echo 'else' >> "$SINGULARITY_BUILD_ROOT/.shell"

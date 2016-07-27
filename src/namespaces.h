@@ -16,21 +16,13 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
- */
-
-typedef struct {
-    int ready;
-    uid_t uid;
-    gid_t gid;
-    gid_t *gids;
-    size_t gids_count;
-} s_privinfo;
+*/
 
 
-// These all return void because on failure they ABORT()
-void priv_drop_perm(void);
-void priv_drop(void);
-void priv_escalate(void);
-void priv_init(void);
-
-
+void namespace_unshare(void);
+void namespace_unshare_pid(void);
+void namespace_unshare_fs(void);
+void namespace_unshare_mount(void);
+void namespace_join(pid_t daemon_pid);
+void namespace_join_pid(pid_t daemon_pid);
+void namespace_join_mount(pid_t daemon_pid);

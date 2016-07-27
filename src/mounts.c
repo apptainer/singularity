@@ -31,6 +31,8 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <limits.h>
+#include <pwd.h>
+
 
 #include "config.h"
 #include "mounts.h"
@@ -38,6 +40,7 @@
 #include "util.h"
 #include "loop-control.h"
 #include "message.h"
+#include "config_parser.h"
 
 #ifndef MS_REC
 #define MS_REC 16384
@@ -91,11 +94,26 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
     return(0);
 }
 
-static int create_bind_dir(const char *dest, const char *tmp_dir, int isfile) {
-    message(DEBUG, "Calling create_bin_dir(%s, %s, %d)\n", dest, tmp_dir, isfile);
-
+static int create_bind_dir(const char *dest_orig, const char *tmp_dir, int isfile) {
+    char *dest = strdup(dest_orig);
+    if ( !dest ) {
+        message(ERROR, "Failed to allocate memory for destination strings.\n");
+        ABORT(255)
+    }
+    char *last_slash = dest + strlen(dest) - 1;
+    while ( last_slash > dest ) {
+        if ( *last_slash != '/' ) {break;}
+        *last_slash = '\0';
+        last_slash--;
+    }
+    message(DEBUG, "Calling create_bind_dir(%s, %s, %d)\n", dest, tmp_dir, isfile);
+    
     char *dest_copy = strdup(dest);
-    char * last_slash = strrchr(dest_copy, '/');
+    if ( !dest_copy ) {
+        message(ERROR, "Failed to allocate memory for destination strings.\n");
+        ABORT(255)
+    }
+    last_slash = strrchr(dest_copy, '/');
     if (last_slash == NULL) {
         message(ERROR, "Ran out of '/' prefixes\n");
         ABORT(255);
@@ -133,6 +151,7 @@ static int create_bind_dir(const char *dest, const char *tmp_dir, int isfile) {
             message(ERROR, "When creating temp directory, Could not bind %s: %s\n", dest, strerror(errno));
             return 1;
         }
+        message(DEBUG, "Created top-level graft directory: %s\n", new_tmp_dir);
     } else {
         struct stat filestat;
         if ( stat(dest_copy, &filestat) == 0 ) {
@@ -140,7 +159,7 @@ static int create_bind_dir(const char *dest, const char *tmp_dir, int isfile) {
             message(ERROR, "Cannot create bind directory as %s in path already exists.\n", dest_copy);
             return 1;
         }
-        if ( create_bind_dir(dest, tmp_dir, 0) ) {
+        if ( create_bind_dir(dest_copy, tmp_dir, 0) ) {
             return 1;
         }
         // Now we know the parent path exists.
@@ -158,11 +177,12 @@ static int create_bind_dir(const char *dest, const char *tmp_dir, int isfile) {
             }
         }
     }
+    free(dest);
     free(dest_copy);
     return 0;
 }
 
-int mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
+void mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
 
     message(DEBUG, "Called mount_bind(%s, %d, %d, %s)\n", source, dest, writable, tmp_dir);
 
@@ -194,7 +214,84 @@ int mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
         }
     }
 
-    message(DEBUG, "Returning mount_bind(%s, %d, %d) = 0\n", source, dest, writable);
-
-    return(0);
 }
+
+
+void mount_home(char *rootpath) {
+    char *homedir;
+    char *homedir_base;
+    struct passwd *pw;
+
+    // TODO: Functionize this
+    pw = getpwuid(getuid());
+
+    message(DEBUG, "Obtaining user's homedir\n");
+    homedir = pw->pw_dir;
+
+    if ( ( homedir_base = container_basedir(rootpath, homedir) ) != NULL ) {
+        if ( is_dir(homedir_base) == 0 ) {
+            if ( is_dir(joinpath(rootpath, homedir_base)) == 0 ) {
+                message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
+                if ( mount(homedir_base, joinpath(rootpath, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+                    ABORT(255);
+                }
+            } else {
+                message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
+            }
+        } else {
+            message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
+        }
+    }
+
+}
+
+
+void bind_paths(char *rootpath) {
+    char *tmp_config_string;
+    message(DEBUG, "Checking configuration file for 'bind path'\n");
+    config_rewind();
+    while ( ( tmp_config_string = config_get_key_value("bind path") ) != NULL ) {
+        char *source = strtok(tmp_config_string, ",");
+        char *dest = strtok(NULL, ",");
+        chomp(source);
+        if ( dest == NULL ) {
+            dest = strdup(source);
+        } else {
+            if ( dest[0] == ' ' ) {
+                dest++;
+            }
+            chomp(dest);
+        }
+
+        message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
+
+// TODO: Make sure this isn't already mounted
+//        if ( ( homedir_base != NULL ) && ( strncmp(dest, homedir_base, strlength(homedir_base, 256)) == 0 )) {
+//            // Skipping path as it was already mounted as homedir_base
+//            message(VERBOSE2, "Skipping '%s' as it is part of home path and already mounted\n", dest);
+//            continue;
+//        }
+
+        if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
+            message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+            continue;
+        }
+        if ( ( is_file(joinpath(rootpath, dest)) != 0 ) && ( is_dir(joinpath(rootpath, dest)) != 0 ) ) {
+            message(WARNING, "Non existant 'bind point' in container: '%s'\n", dest);
+            continue;
+        }
+
+        message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, rootpath, dest);
+        if ( mount(source, joinpath(rootpath, dest), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+            ABORT(255);
+        }
+//        message(VERBOSE2, "Making mount read only: %s\n", dest);
+//        if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
+//            message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
+//            ABORT(255);
+//        }
+    }
+
+}
+
+
