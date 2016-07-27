@@ -30,6 +30,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <grp.h>
+#ifdef SINGULARITY_USERNS
+#include <sched.h>
+#endif  // SINGULARITY_USERNS
 
 #include "privilege.h"
 #include "config.h"
@@ -60,6 +63,7 @@ void update_uid_map(pid_t child, uid_t outside, int is_child) {
         ABORT(255);
     }
 
+    message(DEBUG, "Updating UID map with policy %s.\n", map);
     fd = open(map_file, O_RDWR);
     free(map_file);
     if (fd == -1) {
@@ -83,7 +87,6 @@ void update_gid_map(pid_t child, gid_t outside, int is_child) {
     ssize_t map_len;
     int fd;
 
-    message(DEBUG, "Updating GID map.\n");
     if (asprintf(&map_file, "/proc/%i/gid_map", child) < 0) {
         message(ERROR, "Can't allocate uid map filename\n");
         ABORT(255);
@@ -102,14 +105,16 @@ void update_gid_map(pid_t child, gid_t outside, int is_child) {
         message(ERROR, "Can't allocate setgroups filename\n");
         ABORT(255);
     }
+    message(DEBUG, "Updating GID map with policy %s.\n", map);
     fd = open(setgroups_file, O_RDWR);
-    free(setgroups_file);
     if (fd == -1) {
-        perror("Open /proc/$$/setgroups file");
+        message(ERROR, "Failure when opening %s: %s\n", setgroups_file, strerror(errno));
         free(map_file);
+        free(setgroups_file);
         free(map);
         ABORT(255);
     }
+    free(setgroups_file);
     if (write(fd, "deny", 4) != 4) {
         perror("Writing setgroups deny");
         free(map_file);
@@ -173,15 +178,14 @@ void priv_init_userns_outside() {
 
     uinfo.orig_uid = uinfo.uid;
     uinfo.orig_gid = uinfo.gid;
-    uinfo.orig_pid = getpid();
 
     int ret = unshare(CLONE_NEWUSER);
     if (ret == -1) {
         message(ERROR, "Failed to unshare namespace: %s.\n", strerror(errno));
         ABORT(255);
     }
-    update_gid_map(uinfo.orig_pid, uinfo.orig_gid, 0);
-    update_uid_map(uinfo.orig_pid, uinfo.orig_pid, 0);
+    update_gid_map(getpid(), uinfo.orig_gid, 0);
+    update_uid_map(getpid(), uinfo.orig_uid, 0);
     uinfo.uid = 0;
     uinfo.gid = 0;
     uinfo.userns_ready = 1;
@@ -202,8 +206,8 @@ void priv_init_userns_inside() {
         message(ERROR, "Failed to unshare namespace: %s.\n", strerror(errno));
         ABORT(255);
     }
-    update_gid_map(uinfo.orig_pid, uinfo.orig_gid, 1);
-    update_uid_map(uinfo.orig_pid, uinfo.orig_pid, 1);
+    update_gid_map(getpid(), uinfo.orig_gid, 1);
+    update_uid_map(getpid(), uinfo.orig_uid, 1);
     uinfo.uid = uinfo.orig_uid;
     uinfo.gid = uinfo.orig_gid;
 #else  // SINGULARITY_USERNS

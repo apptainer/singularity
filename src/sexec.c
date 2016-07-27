@@ -30,10 +30,9 @@
 #include <sys/param.h>
 #ifdef SINGULARITY_NO_NEW_PRIVS
 #include <sys/prctl.h>
-#endif
+#endif  // SINGULARITY_NO_NEW_PRIVS
 #include <errno.h> 
 #include <signal.h>
-#include <sched.h>
 #include <string.h>
 #include <fcntl.h>  
 #include <grp.h>
@@ -160,13 +159,7 @@ int main(int argc, char ** argv) {
 #ifdef SINGULARITY_USERNS
         message(DEBUG, "Enabling user namespace / unprivileged mode\n");
 
-        int ret = unshare(CLONE_NEWUSER);
-        if (ret == -1) {
-            message(ERROR, "Failed to unshare namespace: %s.\n", strerror(errno));
-            ABORT(255);
-        }
-
-        priv_init_userns(0);
+        priv_init_userns_outside();
 #else
     message(VERBOSE, "No user namespace support available: re-execing setuid version\n");
     char sexec_path[] = LIBEXECDIR "/singularity/sexec";
@@ -185,9 +178,6 @@ int main(int argc, char ** argv) {
     ABORT(255);
 #endif
     }
-
-    message(VERBOSE3, "Initalizing privilege cache.\n");
-    priv_init();
 
     message(VERBOSE3, "Checking if we can escalate privileges properly.\n");
     priv_escalate();
@@ -584,9 +574,7 @@ int main(int argc, char ** argv) {
             message(DEBUG, "Checking configuration file for 'config group'\n");
             config_rewind();
             if ( config_get_key_bool("config group", 1) > 0 ) {
-                if ( use_userns ) {
-                    message(VERBOSE, "Skipping /etc/group creation as we are using user namespaces.\n");
-                } else if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
+                if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
                     if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
                         message(VERBOSE2, "Creating template of /etc/group for containment\n");
                         if ( ( copy_file(joinpath(containerdir, "/etc/group"), joinpath(sessiondir, "/group")) ) < 0 ) {

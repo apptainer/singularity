@@ -26,7 +26,6 @@ typedef struct {
     size_t gids_count;
     int userns_ready;
     int disable_setgroups;
-    int orig_pid;
     uid_t orig_uid;
     uid_t orig_gid;
 } s_privinfo;

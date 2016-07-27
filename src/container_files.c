@@ -33,7 +33,7 @@
 #include "file.h"
 #include "util.h"
 #include "message.h"
-
+#include "privilege.h"
 
 
 void update_passwd_file(char *file) {
@@ -86,18 +86,20 @@ void update_group_file(char *file) {
     }
     fprintf(file_fp, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
 
-    message(DEBUG, "Getting supplementary group info\n");
-    groupcount = getgroups(maxgroups, gids);
 
-    for (i=0; i < groupcount; i++) {
-        struct group *gr = getgrgid(gids[i]);
-        message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
-        if ( gids[i] != gid ) {
-            message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
-            fprintf(file_fp, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
+    if ( !priv_userns_enabled() ) {
+        message(DEBUG, "Getting supplementary group info\n");
+        groupcount = getgroups(maxgroups, gids);
+
+        for (i=0; i < groupcount; i++) {
+            struct group *gr = getgrgid(gids[i]);
+            message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
+            if ( gids[i] != gid ) {
+                message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
+                fprintf(file_fp, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
+            }
         }
     }
-
     fclose(file_fp);
 
 }
