@@ -373,6 +373,11 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
+        message(DEBUG, "Attaching loop file pointer to loop_dev\n");
+        if ( ( loop_fp = loop_attach(loop_dev) ) == NULL ) {
+            message(ERROR, "Could not obtain file pointer to loop device!\n");
+            ABORT(255);
+        }
     }
 
     message(DEBUG, "Creating container image mount path: %s\n", containerdir);

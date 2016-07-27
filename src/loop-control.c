@@ -44,6 +44,18 @@
 #define MAX_LOOP_DEVS 128
 
 
+FILE *loop_attach(char *loop_dev) {
+    FILE *loop_fp;
+    if ( ( loop_fp = fopen(loop_dev, "r+") ) == NULL ) { // Flawfinder: ignore (not user modifyable)
+        message(VERBOSE, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
+        ABORT(255);
+        return(NULL);
+    }
+
+    return(loop_fp);
+}
+
+
 FILE *loop_bind(FILE *image_fp, char **loop_dev, int autoclear) {
     struct loop_info64 lo64 = {0};
     FILE *loop_fp;
