@@ -4,11 +4,14 @@ This command will allow you to execute any program within the given
 container image.
 
 EXEC OPTIONS:
-    -w/--writable   By default all Singularity containers are available as
-                    read only. This option makes the file system accessible
-                    as read/write.
-    -C/--contain    This option disables the automatic sharing of writable
-                    filesystems on your host (e.g. $HOME and /tmp).
+    -w/--writable     By default all Singularity containers are available as
+                      read only. This option makes the file system accessible
+                      as read/write.
+    -C/--contain      This option disables the automatic sharing of writable
+                      filesystems on your host (e.g. $HOME and /tmp).
+    -S/--scratch $dir A directory that should be made into a private scratch
+                      directory for each container.  May be specified multiple
+                      times.
 
 
 NOTE:

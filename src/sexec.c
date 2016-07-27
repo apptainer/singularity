@@ -30,6 +30,7 @@
 #include <sys/param.h>
 #ifdef SINGULARITY_NO_NEW_PRIVS
 #include <sys/prctl.h>
+#include <ctype.h>
 #endif
 #include <errno.h> 
 #include <signal.h>
@@ -91,6 +92,7 @@ int main(int argc, char ** argv) {
     char *containername;
     char *containerdir;
     char *command;
+    char *scratch_dir = NULL;
     char *sessiondir;
     char *sessiondir_prefix;
     char *loop_dev_lock = NULL;
@@ -284,6 +286,47 @@ int main(int argc, char ** argv) {
         fclose(test_daemon_fp);
     }
 
+    // Create temporary scratch directories for use inside the chroot.
+    // We do this as the user, but will later bind-mount as root.
+    config_rewind();
+    int user_scratch = 0;
+    user_scratch = getenv("SINGULARITY_USER_SCRATCH") != NULL;
+    // USER_SCRATCH is only allowed in the case of NO_NEW_PRIVS.
+    if ( user_scratch && !config_get_key_bool("allow user scratch", 1) ) {
+        message(ERROR, "The sysadmin has disabled support for user-specified scratch directories.\n");
+        ABORT(255);
+    }
+    config_rewind();
+#ifndef SINGULARITY_NO_NEW_PRIVS
+    // NOTE: we allow 'bind scratch' without NO_NEW_PRIVS as that is setup by
+    // the sysadmin; however, we don't allow user-specified scratch!
+    if ( user_scratch ) {
+        message(ERROR, "User-specified scratch directories requested, but support was not compiled in!\n");
+        ABORT(255);
+    }
+#endif
+    if ( ( config_get_key_value("bind scratch") != NULL ) || user_scratch ) {
+        message(DEBUG, "Creating a scratch directory for this container.\n");
+        config_rewind();
+        char *tmp_config_string = config_get_key_value("scratch dir");
+        tmp_config_string = tmp_config_string ? tmp_config_string : getenv("_CONDOR_SCRATCH_DIR");
+        tmp_config_string = tmp_config_string ? tmp_config_string : getenv("TMPDIR");
+        tmp_config_string = tmp_config_string ? tmp_config_string : "/tmp";
+        char tmp_path[PATH_MAX];
+        if ( snprintf(tmp_path, PATH_MAX, "%s/.singularity-scratchdir.XXXXXX", tmp_config_string) >= PATH_MAX ) {
+            message(ERROR, "Overly-long pathname for scratch directory: %s\n", tmp_config_string);
+            ABORT(255);
+        }
+        if ( ( scratch_dir = strdup(tmp_path) ) == NULL ) {
+            message(ERROR, "Memory allocation failure when creating scratch directory: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        if ( ( scratch_dir = mkdtemp(scratch_dir) ) == NULL ) {
+            message(ERROR, "Creation of temproary scratch directory %s failed: %s\n", scratch_dir, strerror(errno));
+            ABORT(255);
+        }
+        message(DEBUG, "Using scratch directory '%s'\n", scratch_dir);
+    }
 
 //****************************************************************************//
 // We are now running with escalated privileges until we exec
@@ -562,6 +605,59 @@ int main(int argc, char ** argv) {
             message(VERBOSE, "Not staging passwd or group (running as root)\n");
         }
 
+        //  Handle scratch directories
+        config_rewind();
+        char *tmp_config_string;
+        while ( ( tmp_config_string = config_get_key_value("bind scratch") ) != NULL ) {
+            char *dest = tmp_config_string;
+            if ( dest[0] == ' ' ) {
+                dest++;
+            }
+            chomp(dest);
+            message(VERBOSE2, "Found 'bind scratch' = %s\n", dest);
+            if ( ( is_file(joinpath(containerdir, dest)) != 0 ) && ( is_dir(joinpath(containerdir, dest)) != 0 ) ) {
+                message(WARNING, "Non existant 'bind scratch' in container: '%s'\n", dest);
+                continue;
+            }
+
+            message(VERBOSE, "Binding '%s' to '%s:%s'\n", scratch_dir, containername, dest);
+            mount_bind(scratch_dir, joinpath(containerdir, dest), 1);
+        }
+
+        // Handle user-specified scratch directories
+        if ( ( tmp_config_string = getenv("SINGULARITY_USER_SCRATCH") ) != NULL ) {
+#ifdef SINGULARITY_NO_NEW_PRIVS
+            char *scratch = strdup(tmp_config_string);
+            if ( scratch == NULL ) {
+                message(ERROR, "Failed to allocate memory for configuration string.\n");
+            }
+            char *cur = scratch, *next = strchr(cur, ':');
+            while ( cur != NULL ) {
+                if (next) *next = '\0';
+                chomp(cur);
+                while (isspace(cur[0])) {cur++;}
+                char *dest = cur;
+                cur = next ? next + 1 : NULL;
+                if (cur) {next = strchr(cur, ':');}
+                if ( strlen(dest) == 0 ) {continue;}
+                message(VERBOSE2, "Found user-specified scratch directory: '%s'\n", dest);
+                if ( ( is_file(joinpath(containerdir, dest)) != 0 ) && ( is_dir(joinpath(containerdir, dest)) != 0 ) ) {
+                    message(WARNING, "Non existant user-specified scratch directory in container: '%s'\n", dest);
+                    continue;
+                }
+
+                message(VERBOSE, "Binding '%s' to '%s:%s'\n", scratch_dir, containername, dest);
+                mount_bind(scratch_dir, joinpath(containerdir, dest), 1);
+            }
+            free(scratch);
+#else  // SINGULARITY_NO_NEW_PRIVS
+            // Without the NO_NEW_PRIVS flag, this would be a security hole: users might
+            // wipe out directories that system setuid binaries depend on!
+            message(ERROR, "Requested user-specified scratch directories, but they are not supported on this platform.\n");
+            ABORT(255);
+#endif  // SINGULARITY_NO_NEW_PRIVS
+        }
+
         // Fork off exec process
         message(VERBOSE, "Forking exec process\n");
 
@@ -772,10 +868,15 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE2, "Cleaning up...\n");
 
+    if (scratch_dir) {
+        s_rmdir(scratch_dir);
+    }
+
     close(sessiondirlock_fd);
 
     free(loop_dev_lock);
     free(sessiondir);
+    free(scratch_dir);
 
     return(retval);
 }

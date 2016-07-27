@@ -212,7 +212,7 @@ int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *
 int s_rmdir(char *dir) {
 
     message(DEBUG, "Removing dirctory: %s\n", dir);
-    return(nftw(dir, _unlink, 32, FTW_DEPTH));
+    return(nftw(dir, _unlink, 32, FTW_DEPTH|FTW_MOUNT|FTW_PHYS));
 }
 
 int copy_file(char * source, char * dest) {
