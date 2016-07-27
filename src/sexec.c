@@ -85,7 +85,7 @@ void sighandler(int sig) {
 
 
 int main(int argc, char ** argv) {
-    FILE *loop_fp;
+    FILE *loop_fp = NULL;
     FILE *containerimage_fp = NULL;
     FILE *daemon_fp = NULL;
     char *containerimage;
