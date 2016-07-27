@@ -84,6 +84,7 @@ void sighandler(int sig) {
 
 
 int main(int argc, char ** argv) {
+    FILE *loop_fp;
     FILE *containerimage_fp = NULL;
     FILE *daemon_fp = NULL;
     char *containerimage;
@@ -100,7 +101,6 @@ int main(int argc, char ** argv) {
     int cwd_fd = 0;
     int sessiondirlock_fd = 0;
     int containerimage_fd = 0;
-    int loop_dev_fd = 0;
     int loop_dev_lock_fd = 0;
     int daemon_pid = -1;
     int retval = 0;
@@ -337,7 +337,7 @@ int main(int argc, char ** argv) {
             message(DEBUG, "We have exclusive flock() on loop_dev lockfile\n");
 
             message(DEBUG, "Binding container to loop interface\n");
-            if ( loop_bind(containerimage_fp, &loop_dev, 1) < 0 ) {
+            if ( ( loop_fp = loop_bind(containerimage_fp, &loop_dev, 1) ) == NULL ) {
                 message(ERROR, "Could not bind image to loop!\n");
                 ABORT(255);
             }
@@ -363,13 +363,13 @@ int main(int argc, char ** argv) {
                 ABORT(255);
             }
 
+            message(DEBUG, "Attaching loop file pointer to loop_dev\n");
+            if ( ( loop_fp = loop_attach(loop_dev) ) == NULL ) {
+                message(ERROR, "Could not obtain file pointer to loop device!\n");
+                ABORT(255);
+            }
         }
 
-        message(VERBOSE3, "Opening loop device so it stays attached\n");
-        if ( ( loop_dev_fd = open(loop_dev, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
-            message(ERROR, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
-            ABORT(255);
-        }
     }
 
     message(DEBUG, "Creating container image mount path: %s\n", containerdir);
@@ -743,6 +743,12 @@ int main(int argc, char ** argv) {
         retval++;
     }
 
+
+    message(DEBUG, "Closing the loop device file descriptor: %s\n", loop_fp);
+    fclose(loop_fp);
+    message(DEBUG, "Closing the container image file descriptor\n");
+    fclose(containerimage_fp);
+
     message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
     if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         close(sessiondirlock_fd);
@@ -755,6 +761,9 @@ int main(int argc, char ** argv) {
             message(WARNING, "Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
         }
 
+        message(DEBUG, "Calling loop_free(%s)\n", loop_dev);
+        loop_free(loop_dev);
+
         priv_drop_perm();
 
     } else {
@@ -763,7 +772,6 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE2, "Cleaning up...\n");
 
-    close(containerimage_fd);
     close(sessiondirlock_fd);
 
     free(loop_dev_lock);
