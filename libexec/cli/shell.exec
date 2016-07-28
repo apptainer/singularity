@@ -67,6 +67,11 @@ while true; do
             export SINGULARITY_USER_SCRATCH="${1:-}:${SINGULARITY_USER_SCRATCH-}"
             shift
         ;;
+        -B|--bind)
+            shift
+            export SINGULARITY_USER_BIND="${1:-}:${SINGULARITY_USER_BIND-}"
+            shift
+        ;;
         -C|--contain)
             shift
             SINGULARITY_CONTAIN=1

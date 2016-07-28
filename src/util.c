@@ -60,7 +60,7 @@ char *int2str(int num) {
     return(ret);
 }
 
-char *joinpath(char * path1, char * path2) {
+char *joinpath(const char * path1, const char * path2) {
     char *ret;
 
     ret = (char *) malloc(strlength(path1, 2048) + strlength(path2, 2048) + 2);
@@ -92,7 +92,7 @@ void chomp(char *str) {
     }
 }
 
-int strlength(char *string, int max_len) {
+int strlength(const char *string, int max_len) {
     int len;
     for (len=0; string[len] && len < max_len; len++) {
         // Do nothing in the loop

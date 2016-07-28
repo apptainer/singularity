@@ -23,3 +23,4 @@ int mount_image(char * image_path, char * mount_point, int writable);
 void mount_bind(char * source, char * dest, int writable, const char *tmp_dir);
 void mount_home(char *rootpath);
 void bind_paths(char *rootpath);
+void user_bind_paths(const char *containerdir, const char *tmpdir);
