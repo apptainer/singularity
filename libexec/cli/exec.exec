@@ -60,6 +60,11 @@ while true; do
             SINGULARITY_CONTAIN=1
             export SINGULARITY_CONTAIN
         ;;
+        -B|--bind)
+            shift
+            export SINGULARITY_USER_BIND="${1:-}:${SINGULARITY_USER_BIND-}"
+            shift
+        ;;
         -S|--scratch)
             shift
             export SINGULARITY_USER_SCRATCH="${1:-}:${SINGULARITY_USER_SCRATCH-}"

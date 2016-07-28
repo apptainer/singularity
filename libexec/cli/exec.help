@@ -12,6 +12,8 @@ EXEC OPTIONS:
     -S/--scratch $dir A directory that should be made into a private scratch
                       directory for each container.  May be specified multiple
                       times.
+    -B/--bind spec    A user-bind path specification.  spec can either be a path
+                      or a src,dest pair, specifying the bind mount to perform
 
 
 NOTE:

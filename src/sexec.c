@@ -593,53 +593,7 @@ int main(int argc, char ** argv) {
             // Bind mounts
 
             // Start with user-specified bind mounts: only honor them when we know we
-            // can invoke NO_NEW_PRIVS (dismantling setuid binaries).
-            char * tmp_config_string;
-            if ( ( tmp_config_string = getenv("SINGULARITY_USER_BIND") ) != NULL ) {
-#ifdef SINGULARITY_NO_NEW_PRIVS
-                message(DEBUG, "Parsing SINGULARITY_USER_BIND for user-specified bind mounts.\n");
-                char *bind = strdup(tmp_config_string);
-                if (bind == NULL) {
-                    message(ERROR, "Failed to allocate memory for configuration string");
-                    ABORT(1);
-                }
-                char *cur = bind, *next = strchr(cur, ':');
-                for ( ; 1; next = strchr(cur, ':') ) {
-                    if (next) *next = '\0';
-                    char *source = strtok(cur, ",");
-                    char *dest = strtok(NULL, ",");
-                    chomp(source);
-                    if ( dest == NULL ) {
-                        dest = strdup(source);
-                    } else {
-                        if ( dest[0] == ' ' ) {
-                            dest++;
-                        }
-                        chomp(dest);
-                    }
-                    message(VERBOSE2, "Found user-specified 'bind path' = %s, %s\n", source, dest);
-
-                    if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
-                        message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
-                        if (next == NULL) {break;}
-                        continue;
-                    }
-
-                    message(VERBOSE, "Binding '%s' to '%s:%s'\n", source, containername, dest);
-                    mount_bind(source, joinpath(containerdir, dest), 1, tmp_dir);
-
-                    cur = next + 1;
-                    if (next == NULL) {break;}
-                }
-                free(bind);
-                unsetenv("SINGULARITY_USER_BIND");
-#else  // SINGULARITY_NO_NEW_PRIVS
-                message(ERROR, "Requested user-specified bind-mounts, but they are not supported on this platform.");
-                ABORT(255);
-#endif  // SINGULARITY_NO_NEW_PRIVS
-            } else {
-                message(DEBUG, "No user bind mounts specified.\n");
-            }
+            user_bind_paths(containerdir, tmp_dir);
 
             message(DEBUG, "Checking to see if we are running contained\n");
             if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
