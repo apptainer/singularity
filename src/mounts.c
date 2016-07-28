@@ -44,6 +44,7 @@
 #include "loop-control.h"
 #include "message.h"
 #include "config_parser.h"
+#include "privilege.h"
 
 #ifndef MS_REC
 #define MS_REC 16384
@@ -114,13 +115,20 @@ void mount_bind(char * source, char * dest, int writable) {
         ABORT(255);
     }
 
+    //  NOTE: The kernel history is a bit ... murky ... as to whether MS_RDONLY can be set in the
+    //  same syscall as the bind.  It seems to no longer work on modern kernels - hence, we also
+    //  do it below.  *However*, if we are using user namespaces, we get an EPERM error on the
+    //  separate mount command below.  Hence, we keep the flag in the first call until the kernel
+    //  picture cleras up.
     message(DEBUG, "Calling mount(%s, %s, ...)\n", source, dest);
-    if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+    if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC|(writable <= 0 ? MS_RDONLY : 0), NULL) < 0 ) {
         message(ERROR, "Could not bind %s: %s\n", dest, strerror(errno));
         ABORT(255);
     }
 
-    if ( writable <= 0 ) {
+    message(DEBUG, "Returning mount_bind(%s, %d, %d) = 0\n", source, dest, writable);
+    // Note that we can't remount as read-only if we are in unprivileged mode.
+    if ( !priv_userns_enabled() && (writable <= 0) ) {
         message(VERBOSE2, "Making mount read only: %s\n", dest);
         if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
             message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));

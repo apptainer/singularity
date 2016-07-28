@@ -130,6 +130,11 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                   )
 
 
+AC_ARG_WITH([userns],
+            AS_HELP_STRING([--with-userns], [Enable use of user namespaces]),
+            [SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_USERNS"]
+           )
+
 AC_MSG_CHECKING([for overlayfs])
 KVERS=`uname -r`
 if test -f "/lib/modules/$KVERS/modules.dep"; then
