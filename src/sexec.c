@@ -156,6 +156,23 @@ int main(int argc, char ** argv) {
 
     // Check to see if we should invoke user namespaces (unprivileged mode).
     use_userns = getenv("SINGULARITY_USERNS") != NULL;
+
+    // In case we are running in setuid mode, verify this is allowed.  We let the
+    // sysadmin to disable it via config file (in case the unprivileged mode should
+    // be forced)!
+    if ( ( orig_uid != geteuid() ) && ( geteuid() == 0 ) ) {
+        // If user namespaces were requested and the setuid binary was used, immediately error.
+        if ( use_userns ) {
+            message(ERROR, "Unprivileged mode was requested, but setuid binary was used.\n");
+            ABORT(255);
+        }
+        config_rewind();
+        if ( !config_get_key_bool("allow setuid", 1) ) {
+            message(ERROR, "Setuid mode was used, but this has been disabled by the sysadmin.\n");
+            ABORT(255);
+        }
+    }
+
     if (use_userns) {
         unsetenv("SINGULARITY_USERNS");
 #ifdef SINGULARITY_USERNS
