@@ -23,8 +23,8 @@ bin_PROGRAMS = sexec image-create image-expand image-mount image-bind sexec_nosu
 
 ftrace_SOURCES = ftrace.c file.c util.c message.c
 ftype_SOURCES = ftype.c util.c file.c message.c
-sexec_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c
-sexec_nosuid_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c
+sexec_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c signal_handlers.c
+sexec_nosuid_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c signal_handlers.c
 image_create_SOURCES = image-create.c file.c util.c image.c message.c
 image_expand_SOURCES = image-expand.c file.c util.c image.c message.c
 image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
