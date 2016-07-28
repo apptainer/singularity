@@ -18,6 +18,10 @@
  * 
  */
 
+ /*
+  * Copyright (c) 2016 Lenovo
+  */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -205,3 +209,70 @@ void bind_paths(char *rootpath) {
 }
 
 
+void mount_overlay(char * source, char * scratch, char * dest) {
+    // lowerDir = source
+    // upperDir = scratch/t
+    // workDir = scratch/w
+    // dest = dest
+
+#ifdef SINGULARITY_OVERLAYFS 
+    message(DEBUG, "Called mount_overlay(%s, %s, %s)\n", source, scratch, dest);
+
+    message(DEBUG, "Checking that source exists and is a file or directory\n");
+    if ( is_dir(source) != 0 && is_file(source) != 0 ) {
+        message(ERROR, "Overlay source path is not a file or directory: '%s'\n", source);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking that scratch exists and is a file or directory\n");
+    if ( is_dir(scratch) != 0 && is_file(scratch) != 0 ) {
+        message(ERROR, "Overlay scratch path is not a file or directory: '%s'\n", scratch);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking that destination exists and is a file or directory\n");
+    if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
+        message(ERROR, "Overlay destination path is not a file or directory: '%s'\n", dest);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Creating upperdir and workdir within scratch directory\n");
+    int upperdirLen = strlen(scratch) + 4;
+    int workdirLen = upperdirLen;
+    char * const upperdir = malloc(upperdirLen);
+    char * const workdir = malloc(workdirLen);
+    snprintf(upperdir, upperdirLen, "%s%s", scratch, "/t");
+    snprintf(workdir, workdirLen, "%s%s", scratch, "/w");
+
+    if ( is_dir(upperdir) != 0 ){	 
+        if ( mkdir(upperdir, 1023) < 0 ) {
+            message(ERROR, "Could not create upperdir '%s': %s\n", upperdir, strerror(errno));
+            ABORT(255);
+        }
+    }
+
+    if ( is_dir(workdir) != 0 ){
+        if ( mkdir(workdir, 1023) < 0 ) {
+            message(ERROR, "Could not create workdir '%s': %s\n", workdir, strerror(errno));
+            ABORT(255);
+	}
+    }
+   
+   message(DEBUG, "Calling mount(...)\n");
+   int optionStringLen = strlen(source) + upperdirLen + workdirLen + 50;
+   char * const optionString = malloc(optionStringLen);
+   snprintf(optionString, optionStringLen, "lowerdir=%s,upperdir=%s,workdir=%s", source, upperdir, workdir);
+   
+   if ( mount("overlay", dest, "overlay", MS_NOSUID, optionString) < 0 ){
+        message(ERROR, "Could not create overlay: %s\n", strerror(errno));
+        ABORT(255);
+   }else{
+	message(DEBUG, "Overlay successful.");
+   }
+
+#else
+   message(ERROR, "Overlay not supported on this system.\n");
+   ABORT(255);
+#endif
+
+}
