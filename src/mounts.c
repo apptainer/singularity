@@ -18,6 +18,10 @@
  * 
  */
 
+ /*
+  * Copyright (c) 2016 Lenovo
+  */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,6 +34,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <limits.h>
 #include <pwd.h>
 
 
@@ -40,6 +45,7 @@
 #include "loop-control.h"
 #include "message.h"
 #include "config_parser.h"
+#include "privilege.h"
 
 #ifndef MS_REC
 #define MS_REC 16384
@@ -93,10 +99,97 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
     return(0);
 }
 
+static int create_bind_dir(const char *dest_orig, const char *tmp_dir, int isfile) {
+    char *dest = strdup(dest_orig);
+    if ( !dest ) {
+        message(ERROR, "Failed to allocate memory for destination strings.\n");
+        ABORT(255)
+    }
+    char *last_slash = dest + strlen(dest) - 1;
+    while ( last_slash > dest ) {
+        if ( *last_slash != '/' ) {break;}
+        *last_slash = '\0';
+        last_slash--;
+    }
+    message(DEBUG, "Calling create_bind_dir(%s, %s, %d)\n", dest, tmp_dir, isfile);
+    
+    char *dest_copy = strdup(dest);
+    if ( !dest_copy ) {
+        message(ERROR, "Failed to allocate memory for destination strings.\n");
+        ABORT(255)
+    }
+    last_slash = strrchr(dest_copy, '/');
+    if (last_slash == NULL) {
+        message(ERROR, "Ran out of '/' prefixes\n");
+        ABORT(255);
+    }
+    *last_slash = '\0';
+    if ( !is_dir(dest_copy) ) {
+        // Parent directory exists; create a temporary directory inside tmp_dir,
+        // bind mount the temporary directory on top of the existing parent dir.  Note
+        // this has the unfortunate side-effect of squashing any othe files inside this
+        // parent directory.
+        char new_tmp_dir[PATH_MAX];
+        if ( snprintf(new_tmp_dir, PATH_MAX, "%s/bind_bootstrap_XXXXXX", tmp_dir) >= PATH_MAX) {
+            message(ERROR, "Overly long temporary pathname: %s\n", tmp_dir);
+            return 1;
+        }
+        if (mkdtemp(new_tmp_dir) == NULL) {
+            message(ERROR, "Failed to create new temporary directory %s: %s\n", new_tmp_dir, strerror(errno));
+            return 1; 
+        }
+        if ( chmod(new_tmp_dir, 0755) ) {
+            message(ERROR, "Failed to chmod temporary directory %s: %s\n", new_tmp_dir, strerror(errno));
+            return 1;
+        }
+        int new_len = PATH_MAX - strlen(new_tmp_dir) - 1;
+        if (snprintf(new_tmp_dir + strlen(new_tmp_dir), new_len, "/%s", last_slash + 1) >= new_len) {
+            message(ERROR, "Overly long path name in temp dir: %s/%s\n", new_tmp_dir, last_slash + 1);
+            return 1;
+        }
+        if ( mkdir(new_tmp_dir, 0755) == -1 ) {
+            message(ERROR, "Failed to create new directory %s inside temp: %s", new_tmp_dir, strerror(errno));
+            return 1;
+        }
+        *strrchr(new_tmp_dir, '/') = '\0';
+        if ( mount(new_tmp_dir, dest_copy, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+            message(ERROR, "When creating temp directory, Could not bind %s: %s\n", dest, strerror(errno));
+            return 1;
+        }
+        message(DEBUG, "Created top-level graft directory: %s\n", new_tmp_dir);
+    } else {
+        struct stat filestat;
+        if ( stat(dest_copy, &filestat) == 0 ) {
+            // Not a directory, but path exists (file or other)
+            message(ERROR, "Cannot create bind directory as %s in path already exists.\n", dest_copy);
+            return 1;
+        }
+        if ( create_bind_dir(dest_copy, tmp_dir, 0) ) {
+            return 1;
+        }
+        // Now we know the parent path exists.
+        if (isfile) {
+            int fd;
+            if ( -1 == ( fd = open(dest, O_CREAT|O_RDWR|O_CLOEXEC|O_EXCL, 0600)  ) ) {
+                message(ERROR, "Failed to create stub file %s: %s\n", dest, strerror(errno));
+                return 1;
+            }
+            close(fd);
+        } else {
+            if ( -1 == ( mkdir(dest, 0755) ) ) {
+                message(ERROR, "Failed to make top-level stub directory %s: %s\n", dest, strerror(errno));
+                return 1;
+            }
+        }
+    }
+    free(dest);
+    free(dest_copy);
+    return 0;
+}
 
-void mount_bind(char * source, char * dest, int writable) {
+void mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
 
-    message(DEBUG, "Called mount_bind(%s, %d, %d)\n", source, dest, writable);
+    message(DEBUG, "Called mount_bind(%s, %d, %d, %s)\n", source, dest, writable, tmp_dir);
 
     message(DEBUG, "Checking that source exists and is a file or directory\n");
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {
@@ -106,17 +199,26 @@ void mount_bind(char * source, char * dest, int writable) {
 
     message(DEBUG, "Checking that destination exists and is a file or directory\n");
     if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
-        message(ERROR, "Container bind path is not a file or directory: '%s'\n", dest);
-        ABORT(255);
+        if ( create_bind_dir(dest, tmp_dir, is_dir(source)) != 0 ) {
+            message(ERROR, "Container bind path is not a file or directory: '%s'\n", dest);
+            ABORT(255);
+        }
     }
 
+    //  NOTE: The kernel history is a bit ... murky ... as to whether MS_RDONLY can be set in the
+    //  same syscall as the bind.  It seems to no longer work on modern kernels - hence, we also
+    //  do it below.  *However*, if we are using user namespaces, we get an EPERM error on the
+    //  separate mount command below.  Hence, we keep the flag in the first call until the kernel
+    //  picture cleras up.
     message(DEBUG, "Calling mount(%s, %s, ...)\n", source, dest);
-    if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+    if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC|(writable <= 0 ? MS_RDONLY : 0), NULL) < 0 ) {
         message(ERROR, "Could not bind %s: %s\n", dest, strerror(errno));
         ABORT(255);
     }
 
-    if ( writable <= 0 ) {
+    message(DEBUG, "Returning mount_bind(%s, %d, %d) = 0\n", source, dest, writable);
+    // Note that we can't remount as read-only if we are in unprivileged mode.
+    if ( !priv_userns_enabled() && (writable <= 0) ) {
         message(VERBOSE2, "Making mount read only: %s\n", dest);
         if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
             message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
@@ -205,3 +307,70 @@ void bind_paths(char *rootpath) {
 }
 
 
+void mount_overlay(char * source, char * scratch, char * dest) {
+    // lowerDir = source
+    // upperDir = scratch/t
+    // workDir = scratch/w
+    // dest = dest
+
+#ifdef SINGULARITY_OVERLAYFS 
+    message(DEBUG, "Called mount_overlay(%s, %s, %s)\n", source, scratch, dest);
+
+    message(DEBUG, "Checking that source exists and is a file or directory\n");
+    if ( is_dir(source) != 0 && is_file(source) != 0 ) {
+        message(ERROR, "Overlay source path is not a file or directory: '%s'\n", source);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking that scratch exists and is a file or directory\n");
+    if ( is_dir(scratch) != 0 && is_file(scratch) != 0 ) {
+        message(ERROR, "Overlay scratch path is not a file or directory: '%s'\n", scratch);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking that destination exists and is a file or directory\n");
+    if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
+        message(ERROR, "Overlay destination path is not a file or directory: '%s'\n", dest);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Creating upperdir and workdir within scratch directory\n");
+    int upperdirLen = strlen(scratch) + 4;
+    int workdirLen = upperdirLen;
+    char * const upperdir = malloc(upperdirLen);
+    char * const workdir = malloc(workdirLen);
+    snprintf(upperdir, upperdirLen, "%s%s", scratch, "/t");
+    snprintf(workdir, workdirLen, "%s%s", scratch, "/w");
+
+    if ( is_dir(upperdir) != 0 ){	 
+        if ( mkdir(upperdir, 1023) < 0 ) {
+            message(ERROR, "Could not create upperdir '%s': %s\n", upperdir, strerror(errno));
+            ABORT(255);
+        }
+    }
+
+    if ( is_dir(workdir) != 0 ){
+        if ( mkdir(workdir, 1023) < 0 ) {
+            message(ERROR, "Could not create workdir '%s': %s\n", workdir, strerror(errno));
+            ABORT(255);
+	}
+    }
+   
+   message(DEBUG, "Calling mount(...)\n");
+   int optionStringLen = strlen(source) + upperdirLen + workdirLen + 50;
+   char * const optionString = malloc(optionStringLen);
+   snprintf(optionString, optionStringLen, "lowerdir=%s,upperdir=%s,workdir=%s", source, upperdir, workdir);
+   
+   if ( mount("overlay", dest, "overlay", MS_NOSUID, optionString) < 0 ){
+        message(ERROR, "Could not create overlay: %s\n", strerror(errno));
+        ABORT(255);
+   }else{
+	message(DEBUG, "Overlay successful.");
+   }
+
+#else
+   message(ERROR, "Overlay not supported on this system.\n");
+   ABORT(255);
+#endif
+
+}

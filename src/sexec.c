@@ -31,10 +31,9 @@
 #ifdef SINGULARITY_NO_NEW_PRIVS
 #include <sys/prctl.h>
 #include <ctype.h>
-#endif
+#endif  // SINGULARITY_NO_NEW_PRIVS
 #include <errno.h> 
 #include <signal.h>
-#include <sched.h>
 #include <string.h>
 #include <fcntl.h>  
 #include <grp.h>
@@ -95,6 +94,7 @@ int main(int argc, char ** argv) {
     char *scratch_dir = NULL;
     char *sessiondir;
     char *sessiondir_prefix;
+    char *tmp_dir = "/tmp";
     char *loop_dev_lock = NULL;
     char *loop_dev_cache = NULL;
     char *loop_dev = 0;
@@ -106,10 +106,11 @@ int main(int argc, char ** argv) {
     int loop_dev_lock_fd = 0;
     int daemon_pid = -1;
     int retval = 0;
-    uid_t uid;
+    uid_t orig_uid;
     pid_t namespace_fork_pid = 0;
     int container_is_image = -1;
     int container_is_dir = -1;
+    int use_userns = 0;
     mode_t process_mask = umask(0); // Flawfinder: ignore (we must reset umask to ensure appropriate permissions)
 
 
@@ -123,11 +124,80 @@ int main(int argc, char ** argv) {
     signal(SIGTERM, sighandler);
     signal(SIGKILL, sighandler);
 
-    // Get all user/group info
-    uid = getuid();
+    // Record the original UID, before user namespace code might change it.
+    orig_uid = getuid();
 
     message(VERBOSE3, "Initalizing privilege cache.\n");
     priv_init();
+
+    // Do config file and mountpoint validation prior to any setup of
+    // user namespaces.
+    message(DEBUG, "Building configuration file location\n");
+    config_path = (char *) malloc(strlength(SYSCONFDIR, 128) + 30);
+    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR); // Flawfinder: ignore
+    message(DEBUG, "Config location: %s\n", config_path);
+
+    message(DEBUG, "Checking Singularity configuration is a file: %s\n", config_path);
+    if ( is_file(config_path) != 0 ) {
+        message(ERROR, "Configuration file not found: %s\n", config_path);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking Singularity configuration file is owned by root\n");
+    uid_t uid_tmp;
+    if ( ( uid_tmp = is_owner(config_path, 0) ) != 0 ) {
+        message(ERROR, "Configuration file is not owned by root: %s (owner UID %u)\n", config_path, uid_tmp);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Opening Singularity configuration file\n");
+    if ( config_open(config_path) < 0 ) {
+        ABORT(255);
+    }
+
+    // Check to see if we should invoke user namespaces (unprivileged mode).
+    use_userns = getenv("SINGULARITY_USERNS") != NULL;
+
+    // In case we are running in setuid mode, verify this is allowed.  We let the
+    // sysadmin to disable it via config file (in case the unprivileged mode should
+    // be forced)!
+    if ( ( orig_uid != geteuid() ) && ( geteuid() == 0 ) ) {
+        // If user namespaces were requested and the setuid binary was used, immediately error.
+        if ( use_userns ) {
+            message(ERROR, "Unprivileged mode was requested, but setuid binary was used.\n");
+            ABORT(255);
+        }
+        config_rewind();
+        if ( !config_get_key_bool("allow setuid", 1) ) {
+            message(ERROR, "Setuid mode was used, but this has been disabled by the sysadmin.\n");
+            ABORT(255);
+        }
+    }
+
+    if (use_userns) {
+        unsetenv("SINGULARITY_USERNS");
+#ifdef SINGULARITY_USERNS
+        message(DEBUG, "Enabling user namespace / unprivileged mode\n");
+
+        priv_init_userns_outside();
+#else
+    message(VERBOSE, "No user namespace support available: re-execing setuid version\n");
+    char sexec_path[] = LIBEXECDIR "/singularity/sexec";
+    char *sexec = "sexec";
+    argv[0] = sexec;
+
+    char **new_argv = calloc(argc+1, sizeof(char*));
+    int idx;
+    //  Note new_argv is one-larger than argv; the last element must be NULL.
+    for (idx=0; idx<argc; idx++) {
+        new_argv[idx] = argv[idx];
+    }
+
+    execv(sexec_path, new_argv);
+    message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_path, strerror(errno));
+    ABORT(255);
+#endif
+    }
 
     message(VERBOSE3, "Checking if we can escalate privileges properly.\n");
     priv_escalate();
@@ -169,7 +239,7 @@ int main(int argc, char ** argv) {
         message(DEBUG, "Container is a directory\n");
         if ( strcmp(containerimage, "/") == 0 ) {
             message(ERROR, "Bad user... I have notified the powers that be.\n");
-            message(LOG, "User ID '%d' requested '/' as the container!\n", getuid());
+            message(LOG, "User ID '%d' requested '/' as the container!\n", orig_uid);
             ABORT(1);
         }
         container_is_dir = 1;
@@ -180,28 +250,6 @@ int main(int argc, char ** argv) {
     } else {
         message(ERROR, "Container image path is invalid: %s\n", containerimage);
         ABORT(1);
-    }
-
-    message(DEBUG, "Building configuration file location\n");
-    config_path = (char *) malloc(strlength(SYSCONFDIR, 128) + 30);
-    snprintf(config_path, strlen(SYSCONFDIR) + 30, "%s/singularity/singularity.conf", SYSCONFDIR); // Flawfinder: ignore
-    message(DEBUG, "Config location: %s\n", config_path);
-
-    message(DEBUG, "Checking Singularity configuration is a file: %s\n", config_path);
-    if ( is_file(config_path) != 0 ) {
-        message(ERROR, "Configuration file not found: %s\n", config_path);
-        ABORT(255);
-    }
-
-    message(DEBUG, "Checking Singularity configuration file is owned by root\n");
-    if ( is_owner(config_path, 0) != 0 ) {
-        message(ERROR, "Configuration file is not owned by root: %s\n", config_path);
-        ABORT(255);
-    }
-
-    message(DEBUG, "Opening Singularity configuration file\n");
-    if ( config_open(config_path) < 0 ) {
-        ABORT(255);
     }
 
     // TODO: Offer option to only run containers owned by root (so root can approve
@@ -218,6 +266,7 @@ int main(int argc, char ** argv) {
     } else {
         sessiondir = strjoin("/tmp/.singularity-session-", file_id(containerimage));
     }
+    tmp_dir = sessiondir;
     message(DEBUG, "Set sessiondir to: %s\n", sessiondir);
 
     
@@ -230,7 +279,7 @@ int main(int argc, char ** argv) {
     }
     message(DEBUG, "Set image mount path to: %s\n", containerdir);
 
-    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
+    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, (argc > 1 ? argv[1] : "(null)"));
 
     if (container_is_image > 0 ) {
         message(DEBUG, "Checking if we are opening image as read/write\n");
@@ -419,12 +468,11 @@ int main(int argc, char ** argv) {
         message(ERROR, "Failed creating image directory %s\n", containerdir);
         ABORT(255);
     }
-    if ( is_owner(containerdir, 0) < 0 ) {
+
+    if ( !use_userns && is_owner(containerdir, 0) < 0 ) {
         message(ERROR, "Container directory is not root owned: %s\n", containerdir);
         ABORT(255);
     }
-
-
 
     // Manage the daemon bits early
     if ( strcmp(command, "start") == 0 ) {
@@ -488,6 +536,9 @@ int main(int argc, char ** argv) {
 
         message(DEBUG, "Hello from namespace child process\n");
         if ( daemon_pid == -1 ) {
+            if ( use_userns ) {
+                priv_init_userns_inside();
+            }
             namespace_unshare();
 
             config_rewind();
@@ -527,7 +578,7 @@ int main(int argc, char ** argv) {
             } else if ( container_is_dir > 0 ) {
             // TODO: container directories should also be mountable readwrite?
                 message(DEBUG, "Mounting Singularity chroot read only\n");
-                mount_bind(containerimage, containerdir, 0);
+                mount_bind(containerimage, containerdir, 0, tmp_dir);
             }
 
 
@@ -540,6 +591,56 @@ int main(int argc, char ** argv) {
 
 
             // Bind mounts
+
+            // Start with user-specified bind mounts: only honor them when we know we
+            // can invoke NO_NEW_PRIVS (dismantling setuid binaries).
+            char * tmp_config_string;
+            if ( ( tmp_config_string = getenv("SINGULARITY_USER_BIND") ) != NULL ) {
+#ifdef SINGULARITY_NO_NEW_PRIVS
+                message(DEBUG, "Parsing SINGULARITY_USER_BIND for user-specified bind mounts.\n");
+                char *bind = strdup(tmp_config_string);
+                if (bind == NULL) {
+                    message(ERROR, "Failed to allocate memory for configuration string");
+                    ABORT(1);
+                }
+                char *cur = bind, *next = strchr(cur, ':');
+                for ( ; 1; next = strchr(cur, ':') ) {
+                    if (next) *next = '\0';
+                    char *source = strtok(cur, ",");
+                    char *dest = strtok(NULL, ",");
+                    chomp(source);
+                    if ( dest == NULL ) {
+                        dest = strdup(source);
+                    } else {
+                        if ( dest[0] == ' ' ) {
+                            dest++;
+                        }
+                        chomp(dest);
+                    }
+                    message(VERBOSE2, "Found user-specified 'bind path' = %s, %s\n", source, dest);
+
+                    if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
+                        message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+                        if (next == NULL) {break;}
+                        continue;
+                    }
+
+                    message(VERBOSE, "Binding '%s' to '%s:%s'\n", source, containername, dest);
+                    mount_bind(source, joinpath(containerdir, dest), 1, tmp_dir);
+
+                    cur = next + 1;
+                    if (next == NULL) {break;}
+                }
+                free(bind);
+                unsetenv("SINGULARITY_USER_BIND");
+#else  // SINGULARITY_NO_NEW_PRIVS
+                message(ERROR, "Requested user-specified bind-mounts, but they are not supported on this platform.");
+                ABORT(255);
+#endif  // SINGULARITY_NO_NEW_PRIVS
+            } else {
+                message(DEBUG, "No user bind mounts specified.\n");
+            }
+
             message(DEBUG, "Checking to see if we are running contained\n");
             if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
                 unsetenv("SINGULARITY_CONTAIN");
@@ -560,7 +661,7 @@ int main(int argc, char ** argv) {
             namespace_join(daemon_pid);
         }
 
-        if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
+        if ( orig_uid != 0 ) { // If we are root, no need to mess with passwd or group
             message(DEBUG, "Checking configuration file for 'config passwd'\n");
             config_rewind();
             if ( config_get_key_bool("config passwd", 1) > 0 ) {
@@ -575,7 +676,7 @@ int main(int argc, char ** argv) {
                     message(VERBOSE2, "Staging /etc/passwd with user info\n");
                     update_passwd_file(joinpath(sessiondir, "/passwd"));
                     message(VERBOSE, "Binding staged /etc/passwd into container\n");
-                    mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 0);
+                    mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 0, tmp_dir);
                 }
             } else {
                 message(VERBOSE, "Not staging /etc/passwd per config\n");
@@ -595,7 +696,7 @@ int main(int argc, char ** argv) {
                     message(VERBOSE2, "Staging /etc/group with user info\n");
                     update_group_file(joinpath(sessiondir, "/group"));
                     message(VERBOSE, "Binding staged /etc/group into container\n");
-                    mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 0);
+                    mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 0, tmp_dir);
                 }
             } else {
                 message(VERBOSE, "Not staging /etc/group per config\n");
@@ -695,10 +796,15 @@ int main(int argc, char ** argv) {
                 }
 
                 // Mount /sys if we are configured
+
                 message(DEBUG, "Checking configuration file for 'mount sys'\n");
                 config_rewind();
                 if ( config_get_key_bool("mount sys", 1) > 0 ) {
-                    if ( is_dir("/sys") == 0 ) {
+                    // According to the man page, we should be able to remount /sys in user namespaces
+                    // as of 3.8.  However, testing on a 4.5 kernel returns an EPERM.
+                    if ( use_userns ) {
+                        message(VERBOSE, "Not mounting /sys as we are using user namespaces.\n");
+                    } else if ( is_dir("/sys") == 0 ) {
                         message(VERBOSE, "Mounting /sys\n");
                         if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
                             message(ERROR, "Could not mount /sys: %s\n", strerror(errno));
@@ -839,10 +945,14 @@ int main(int argc, char ** argv) {
     }
 
 
-    message(DEBUG, "Closing the loop device file descriptor: %s\n", loop_fp);
-    fclose(loop_fp);
-    message(DEBUG, "Closing the container image file descriptor\n");
-    fclose(containerimage_fp);
+    if (loop_fp) {
+        message(DEBUG, "Closing the loop device file descriptor: %s\n", loop_fp);
+        fclose(loop_fp);
+    }
+    if (containerimage_fp) {
+        message(DEBUG, "Closing the container image file descriptor\n");
+        fclose(containerimage_fp);
+    }
 
     message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
     if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
@@ -856,9 +966,10 @@ int main(int argc, char ** argv) {
             message(WARNING, "Could not remove all files in %s: %s\n", sessiondir, strerror(errno));
         }
 
-        message(DEBUG, "Calling loop_free(%s)\n", loop_dev);
-        loop_free(loop_dev);
-
+        if ( loop_dev ) {
+            message(DEBUG, "Calling loop_free(%s)\n", loop_dev);
+            loop_free(loop_dev);
+        }
         priv_drop_perm();
 
     } else {
