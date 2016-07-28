@@ -111,9 +111,11 @@ void mount_bind(char * source, char * dest, int writable) {
         ABORT(255);
     }
 
-    //  NOTE: This used to be separated into two distinct mount calls (one to mount, a second to remount
-    //  as read-only).  I changed this to a single mount() call as user-namespaces aren't allowed to
-    //  remount.
+    //  NOTE: The kernel history is a bit ... murky ... as to whether MS_RDONLY can be set in the
+    //  same syscall as the bind.  It seems to no longer work on modern kernels - hence, we also
+    //  do it below.  *However*, if we are using user namespaces, we get an EPERM error on the
+    //  separate mount command below.  Hence, we keep the flag in the first call until the kernel
+    //  picture cleras up.
     message(DEBUG, "Calling mount(%s, %s, ...)\n", source, dest);
     if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC|(writable <= 0 ? MS_RDONLY : 0), NULL) < 0 ) {
         message(ERROR, "Could not bind %s: %s\n", dest, strerror(errno));
