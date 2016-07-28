@@ -95,9 +95,11 @@ SINGULARITY_IMAGE="${1:-}"
 export SINGULARITY_IMAGE
 shift
 
-if [ -d "$SINGULARITY_IMAGE" ]; then
+if [[ -e "$SINGULARITY_libexecdir/singularity/sexec" && "x${SINGULARITY_FORCE_NOSUID-}" == "x" ]]; then
+  exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
+else
+  unset SINGULARITY_FORCE_NOSUID
   export SINGULARITY_USERNS=1
   exec "$SINGULARITY_libexecdir/singularity/sexec_nosuid" "$@" <&0
-else
-  exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
 fi
+
