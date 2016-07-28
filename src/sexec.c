@@ -94,6 +94,7 @@ int main(int argc, char ** argv) {
     char *scratch_dir = NULL;
     char *sessiondir;
     char *sessiondir_prefix;
+    char *tmp_dir = "/tmp";
     char *loop_dev_lock = NULL;
     char *loop_dev_cache = NULL;
     char *loop_dev = 0;
@@ -265,6 +266,7 @@ int main(int argc, char ** argv) {
     } else {
         sessiondir = strjoin("/tmp/.singularity-session-", file_id(containerimage));
     }
+    tmp_dir = sessiondir;
     message(DEBUG, "Set sessiondir to: %s\n", sessiondir);
 
     
@@ -278,7 +280,7 @@ int main(int argc, char ** argv) {
     }
     message(DEBUG, "Set image mount path to: %s\n", containerdir);
 
-    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
+    message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, (argc > 1 ? argv[1] : "(null)"));
 
     if (container_is_image > 0 ) {
         message(DEBUG, "Checking if we are opening image as read/write\n");
@@ -577,7 +579,7 @@ int main(int argc, char ** argv) {
             } else if ( container_is_dir > 0 ) {
             // TODO: container directories should also be mountable readwrite?
                 message(DEBUG, "Mounting Singularity chroot read only\n");
-                mount_bind(containerimage, containerdir, 0);
+                mount_bind(containerimage, containerdir, 0, tmp_dir);
             }
 
 
@@ -590,6 +592,56 @@ int main(int argc, char ** argv) {
 
 
             // Bind mounts
+
+            // Start with user-specified bind mounts: only honor them when we know we
+            // can invoke NO_NEW_PRIVS (dismantling setuid binaries).
+            char * tmp_config_string;
+            if ( ( tmp_config_string = getenv("SINGULARITY_USER_BIND") ) != NULL ) {
+#ifdef SINGULARITY_NO_NEW_PRIVS
+                message(DEBUG, "Parsing SINGULARITY_USER_BIND for user-specified bind mounts.\n");
+                char *bind = strdup(tmp_config_string);
+                if (bind == NULL) {
+                    message(ERROR, "Failed to allocate memory for configuration string");
+                    ABORT(1);
+                }
+                char *cur = bind, *next = strchr(cur, ':');
+                for ( ; 1; next = strchr(cur, ':') ) {
+                    if (next) *next = '\0';
+                    char *source = strtok(cur, ",");
+                    char *dest = strtok(NULL, ",");
+                    chomp(source);
+                    if ( dest == NULL ) {
+                        dest = strdup(source);
+                    } else {
+                        if ( dest[0] == ' ' ) {
+                            dest++;
+                        }
+                        chomp(dest);
+                    }
+                    message(VERBOSE2, "Found user-specified 'bind path' = %s, %s\n", source, dest);
+
+                    if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
+                        message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+                        if (next == NULL) {break;}
+                        continue;
+                    }
+
+                    message(VERBOSE, "Binding '%s' to '%s:%s'\n", source, containername, dest);
+                    mount_bind(source, joinpath(containerdir, dest), 1, tmp_dir);
+
+                    cur = next + 1;
+                    if (next == NULL) {break;}
+                }
+                free(bind);
+                unsetenv("SINGULARITY_USER_BIND");
+#else  // SINGULARITY_NO_NEW_PRIVS
+                message(ERROR, "Requested user-specified bind-mounts, but they are not supported on this platform.");
+                ABORT(255);
+#endif  // SINGULARITY_NO_NEW_PRIVS
+            } else {
+                message(DEBUG, "No user bind mounts specified.\n");
+            }
+
             message(DEBUG, "Checking to see if we are running contained\n");
             if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
                 unsetenv("SINGULARITY_CONTAIN");
@@ -625,7 +677,7 @@ int main(int argc, char ** argv) {
                     message(VERBOSE2, "Staging /etc/passwd with user info\n");
                     update_passwd_file(joinpath(sessiondir, "/passwd"));
                     message(VERBOSE, "Binding staged /etc/passwd into container\n");
-                    mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 0);
+                    mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 0, tmp_dir);
                 }
             } else {
                 message(VERBOSE, "Not staging /etc/passwd per config\n");
@@ -645,7 +697,7 @@ int main(int argc, char ** argv) {
                     message(VERBOSE2, "Staging /etc/group with user info\n");
                     update_group_file(joinpath(sessiondir, "/group"));
                     message(VERBOSE, "Binding staged /etc/group into container\n");
-                    mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 0);
+                    mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 0, tmp_dir);
                 }
             } else {
                 message(VERBOSE, "Not staging /etc/group per config\n");
