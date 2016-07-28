@@ -44,8 +44,21 @@
 #define MAX_LOOP_DEVS 128
 
 
-int loop_bind(FILE *image_fp, char **loop_dev, int autoclear) {
+FILE *loop_attach(char *loop_dev) {
+    FILE *loop_fp;
+    if ( ( loop_fp = fopen(loop_dev, "r+") ) == NULL ) { // Flawfinder: ignore (not user modifyable)
+        message(VERBOSE, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
+        ABORT(255);
+        return(NULL);
+    }
+
+    return(loop_fp);
+}
+
+
+FILE *loop_bind(FILE *image_fp, char **loop_dev, int autoclear) {
     struct loop_info64 lo64 = {0};
+    FILE *loop_fp;
     int i;
 
     message(DEBUG, "Called loop_bind(image_fp, **{loop_dev)\n");
@@ -57,7 +70,6 @@ int loop_bind(FILE *image_fp, char **loop_dev, int autoclear) {
 
     for( i=0; i < MAX_LOOP_DEVS; i++ ) {
         char *test_loopdev = strjoin("/dev/loop", int2str(i));
-        FILE *loop_fp;
 
         if ( is_blk(test_loopdev) < 0 ) {
             message(VERBOSE, "Creating loop device: %s\n", test_loopdev);
@@ -98,15 +110,15 @@ int loop_bind(FILE *image_fp, char **loop_dev, int autoclear) {
 
         message(VERBOSE, "Using loop device: %s\n", *loop_dev);
 
-        message(DEBUG, "Returning loop_bind(image_fp) = 0\n");
+        message(DEBUG, "Returning loop_bind(image_fp) = loop_fp\n");
 
-        return(0);
+        return(loop_fp);
     }
 
     message(ERROR, "No valid loop devices available\n");
     ABORT(255);
 
-    return(-1);
+    return(NULL);
 }
 
 
@@ -129,8 +141,10 @@ int loop_free(char *loop_dev) {
 
     message(VERBOSE2, "Disassociating image from loop device\n");
     if ( ioctl(fileno(loop_fp), LOOP_CLR_FD, 0) < 0 ) {
-        message(ERROR, "Could not clear loop device %s: (%d) %s\n", loop_dev, errno, strerror(errno));
-        return(-1);
+        if ( errno != 6 ) { // Ignore loop not binded
+            message(ERROR, "Could not clear loop device %s: (%d) %s\n", loop_dev, errno, strerror(errno));
+            return(-1);
+        }
     }
 
     message(DEBUG, "Returning disassociate_loop(loop_fp) = 0\n");

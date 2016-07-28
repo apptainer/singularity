@@ -62,6 +62,11 @@ while true; do
             SINGULARITY_WRITABLE=1
             export SINGULARITY_WRITABLE
         ;;
+        -S|--scratch)
+            shift
+            export SINGULARITY_USER_SCRATCH="${1:-}:${SINGULARITY_USER_SCRATCH-}"
+            shift
+        ;;
         -C|--contain)
             shift
             SINGULARITY_CONTAIN=1

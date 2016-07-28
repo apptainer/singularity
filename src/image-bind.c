@@ -59,6 +59,7 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE, "Checking command: %s\n", argv[1]);
     if ( strcmp(argv[1], "attach") == 0 ) {
+        FILE *loop_fp;
         FILE *containerimage_fp;
         char *containerimage;
         char *loop_dev;
@@ -82,7 +83,7 @@ int main(int argc, char ** argv) {
         }
 
         message(DEBUG, "Binding container to loop interface\n");
-        if ( loop_bind(containerimage_fp, &loop_dev, 0) < 0 ) {
+        if ( ( loop_fp = loop_bind(containerimage_fp, &loop_dev, 0)) == NULL ) {
             message(ERROR, "Could not bind image to loop!\n");
             ABORT(255);
         }
