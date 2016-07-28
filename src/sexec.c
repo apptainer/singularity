@@ -722,7 +722,7 @@ int main(int argc, char ** argv) {
             }
 
             message(VERBOSE, "Binding '%s' to '%s:%s'\n", scratch_dir, containername, dest);
-            mount_bind(scratch_dir, joinpath(containerdir, dest), 1);
+            mount_bind(scratch_dir, joinpath(containerdir, dest), 1, tmp_dir);
         }
 
         // Handle user-specified scratch directories
@@ -748,7 +748,7 @@ int main(int argc, char ** argv) {
                 }
 
                 message(VERBOSE, "Binding '%s' to '%s:%s'\n", scratch_dir, containername, dest);
-                mount_bind(scratch_dir, joinpath(containerdir, dest), 1);
+                mount_bind(scratch_dir, joinpath(containerdir, dest), 1, tmp_dir);
             }
             free(scratch);
 #else  // SINGULARITY_NO_NEW_PRIVS
