@@ -892,7 +892,7 @@ int main(int argc, char ** argv) {
             strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
 
             message(VERBOSE3, "Dropping privilege...\n");
-            priv_drop();
+            priv_drop_perm();
 
             message(VERBOSE2, "Waiting for Exec process...\n");
 
