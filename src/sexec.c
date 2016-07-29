@@ -234,7 +234,27 @@ int main(int argc, char ** argv) {
     message(LOG, "Command=%s, Container=%s, CWD=%s, Arg1=%s\n", command, containerimage, cwd, argv[1]);
 
     message(DEBUG, "Checking if we are opening image as read/write\n");
-    if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
+    if ( getenv("SINGULARITY_WRITABLE") != NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
+    	int containerimage_fd;
+
+        if ( getuid() == 0 ) {
+            message(DEBUG, "Opening image as read/write: %s\n", containerimage);
+            if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
+                message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
+                ABORT(255);
+            }
+
+            containerimage_fd = fileno(containerimage_fp);
+            message(DEBUG, "Setting exclusive lock on file descriptor: %d\n", containerimage_fd);
+            if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
+                message(WARNING, "Could not obtain exclusive lock on image\n");
+            }
+        } else {
+            message(ERROR, "Only root can mount images as writable\n");
+            ABORT(1);
+        }
+
+    } else {
     	int containerimage_fd;
 
         message(DEBUG, "Opening image as read only: %s\n", containerimage);
@@ -243,27 +263,6 @@ int main(int argc, char ** argv) {
             ABORT(255);
         }
 
-        containerimage_fd = fileno(containerimage_fp);
-        message(DEBUG, "Setting shared lock on file descriptor: %d\n", containerimage_fd);
-        if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
-            message(ERROR, "Could not obtained shared lock on image\n");
-            ABORT(5);
-        }
-    } else {
-    	int containerimage_fd;
-
-        message(DEBUG, "Opening image as read/write: %s\n", containerimage);
-        if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
-            message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
-            ABORT(255);
-        }
-
-        containerimage_fd = fileno(containerimage_fp);
-        message(DEBUG, "Setting exclusive lock on file descriptor: %d\n", containerimage_fd);
-        if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
-            message(ERROR, "Could not obtained exclusive lock on image\n");
-            ABORT(5);
-        }
     }
 
     message(DEBUG, "Checking for namespace daemon pidfile\n");
@@ -595,53 +594,53 @@ int main(int argc, char ** argv) {
                         ABORT(255);
                     }
                 }
+            }
 
 
-                if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
-                    message(DEBUG, "Checking configuration file for 'config passwd'\n");
-                    rewind(config_fp);
-                    if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
-                        if (is_file(joinpath(containerdir, "/etc/passwd")) == 0 ) {
-                            if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
-                                message(VERBOSE2, "Staging /etc/passwd with user info\n");
-                                if ( build_passwd(joinpath(containerdir, "/etc/passwd"), joinpath(sessiondir, "/passwd")) < 0 ) {
-                                    message(ERROR, "Failed creating template password file\n");
-                                    ABORT(255);
-                                }
-                            }
-                            message(VERBOSE, "Binding staged /etc/passwd into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 1) < 0 ) {
-                                message(ERROR, "Could not bind /etc/passwd\n");
+            if ( uid != 0 ) { // If we are root, no need to mess with passwd or group
+                message(DEBUG, "Checking configuration file for 'config passwd'\n");
+                rewind(config_fp);
+                if ( config_get_key_bool(config_fp, "config passwd", 1) > 0 ) {
+                    if (is_file(joinpath(containerdir, "/etc/passwd")) == 0 ) {
+                        if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
+                            message(VERBOSE2, "Staging /etc/passwd with user info\n");
+                            if ( build_passwd(joinpath(containerdir, "/etc/passwd"), joinpath(sessiondir, "/passwd")) < 0 ) {
+                                message(ERROR, "Failed creating template password file\n");
                                 ABORT(255);
                             }
                         }
-                    } else {
-                        message(VERBOSE, "Skipping /etc/passwd staging\n");
-                    }
-
-                    message(DEBUG, "Checking configuration file for 'config group'\n");
-                    rewind(config_fp);
-                    if ( config_get_key_bool(config_fp, "config group", 1) > 0 ) {
-                        if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
-                            if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
-                                message(VERBOSE2, "Staging /etc/group with user info\n");
-                                if ( build_group(joinpath(containerdir, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
-                                    message(ERROR, "Failed creating template group file\n");
-                                    ABORT(255);
-                                }
-                            }
-                            message(VERBOSE, "Binding staged /etc/group into container\n");
-                            if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 1) < 0 ) {
-                                message(ERROR, "Could not bind /etc/group\n");
-                                ABORT(255);
-                            }
+                        message(VERBOSE, "Binding staged /etc/passwd into container\n");
+                        if ( mount_bind(joinpath(sessiondir, "/passwd"), joinpath(containerdir, "/etc/passwd"), 1) < 0 ) {
+                            message(ERROR, "Could not bind /etc/passwd\n");
+                            ABORT(255);
                         }
-                    } else {
-                        message(VERBOSE, "Skipping /etc/group staging\n");
                     }
                 } else {
-                    message(VERBOSE, "Not staging passwd or group (running as root)\n");
+                    message(VERBOSE, "Skipping /etc/passwd staging\n");
                 }
+
+                message(DEBUG, "Checking configuration file for 'config group'\n");
+                rewind(config_fp);
+                if ( config_get_key_bool(config_fp, "config group", 1) > 0 ) {
+                    if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
+                        if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
+                            message(VERBOSE2, "Staging /etc/group with user info\n");
+                            if ( build_group(joinpath(containerdir, "/etc/group"), joinpath(sessiondir, "/group")) < 0 ) {
+                                message(ERROR, "Failed creating template group file\n");
+                                ABORT(255);
+                            }
+                        }
+                        message(VERBOSE, "Binding staged /etc/group into container\n");
+                        if ( mount_bind(joinpath(sessiondir, "/group"), joinpath(containerdir, "/etc/group"), 1) < 0 ) {
+                            message(ERROR, "Could not bind /etc/group\n");
+                            ABORT(255);
+                        }
+                    }
+                } else {
+                    message(VERBOSE, "Skipping /etc/group staging\n");
+                }
+            } else {
+                message(VERBOSE, "Not staging passwd or group (running as root)\n");
             }
 
             // Fork off exec process
@@ -705,18 +704,22 @@ int main(int argc, char ** argv) {
                 }
 
 
-                // Change to the proper directory
-                message(VERBOSE2, "Changing to correct working directory: %s\n", cwd);
-                if ( is_dir(cwd) == 0 ) {
-                   if ( chdir(cwd) < 0 ) {
-                        message(ERROR, "Could not chdir to: %s: %s\n", cwd, strerror(errno));
-                        ABORT(1);
+                if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
+                    // Change to the proper directory
+                    message(VERBOSE2, "Changing to correct working directory: %s\n", cwd);
+                    if ( is_dir(cwd) == 0 ) {
+                       if ( chdir(cwd) < 0 ) {
+                            message(ERROR, "Could not chdir to: %s: %s\n", cwd, strerror(errno));
+                            ABORT(1);
+                        }
+                    } else {
+                        if ( fchdir(cwd_fd) < 0 ) {
+                            message(ERROR, "Could not fchdir to cwd: %s\n", strerror(errno));
+                            ABORT(1);
+                        }
                     }
                 } else {
-                    if ( fchdir(cwd_fd) < 0 ) {
-                        message(ERROR, "Could not fchdir to cwd: %s\n", strerror(errno));
-                        ABORT(1);
-                    }
+                    message(VERBOSE3, "Not chdir'ing to CWD, called with --contain\n");
                 }
 
                 // After this, we exist only within the container... Let's make it known!
