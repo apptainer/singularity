@@ -513,6 +513,7 @@ int main(int argc, char ** argv) {
 
     message(VERBOSE, "Creating namespace process\n");
     signal_pre_fork();
+    namespace_unshare_pid();
     // Fork off namespace process
     namespace_fork_pid = fork();
     if ( namespace_fork_pid == 0 ) {
