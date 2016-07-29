@@ -28,9 +28,15 @@ typedef struct {
     int disable_setgroups;
     uid_t orig_uid;
     uid_t orig_gid;
+    int target_mode;  // Set to 1 if we are running in "target mode" (admin specifies UID/GID)
 } s_privinfo;
 
 int priv_userns_enabled();
+int priv_target_mode();
+uid_t priv_getuid();
+gid_t priv_getgid();
+const gid_t *priv_getgids();
+int priv_getgidcount();
 
 // These all return void because on failure they ABORT()
 void update_uid_map(pid_t child, uid_t outside, int);

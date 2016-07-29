@@ -38,12 +38,12 @@
 #include "config.h"
 #include "util.h"
 #include "message.h"
-
+#include "privilege.h"
 
 char *file_id(char *path) {
     struct stat filestat;
     char *ret;
-    uid_t uid = getuid();
+    uid_t uid = priv_getuid();
 
     message(DEBUG, "Called file_id(%s)\n", path);
 
