@@ -234,8 +234,19 @@ void mount_home(char *rootpath) {
     char *homedir_base;
     struct passwd *pw;
 
-    // TODO: Functionize this
-    pw = getpwuid(getuid());
+    errno = 0;
+    uid_t uid = priv_getuid();
+    pw = getpwuid(uid);
+    if ( !pw ) {
+        // List of potential error codes for unknown name taken from man page.
+        if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
+            message(VERBOSE3, "Not mounting home directory as passwd entry for %d not found.\n", uid);
+            return;
+        } else {
+            message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
+            ABORT(255);
+        }
+    }
 
     message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;

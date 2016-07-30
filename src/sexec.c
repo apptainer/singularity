@@ -181,21 +181,21 @@ int main(int argc, char ** argv) {
 
         priv_init_userns_outside();
 #else
-    message(VERBOSE, "No user namespace support available: re-execing setuid version\n");
-    char sexec_path[] = LIBEXECDIR "/singularity/sexec";
-    char *sexec = "sexec";
-    argv[0] = sexec;
+        message(VERBOSE, "No user namespace support available: re-execing setuid version\n");
+        char sexec_path[] = LIBEXECDIR "/singularity/sexec";
+        char *sexec = "sexec";
+        argv[0] = sexec;
 
-    char **new_argv = calloc(argc+1, sizeof(char*));
-    int idx;
-    //  Note new_argv is one-larger than argv; the last element must be NULL.
-    for (idx=0; idx<argc; idx++) {
-        new_argv[idx] = argv[idx];
-    }
+        char **new_argv = calloc(argc+1, sizeof(char*));
+        int idx;
+        //  Note new_argv is one-larger than argv; the last element must be NULL.
+        for (idx=0; idx<argc; idx++) {
+            new_argv[idx] = argv[idx];
+        }
 
-    execv(sexec_path, new_argv);
-    message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_path, strerror(errno));
-    ABORT(255);
+        execv(sexec_path, new_argv);
+        message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_path, strerror(errno));
+        ABORT(255);
 #endif
     }
 
@@ -615,7 +615,7 @@ int main(int argc, char ** argv) {
             namespace_join(daemon_pid);
         }
 
-        if ( orig_uid != 0 ) { // If we are root, no need to mess with passwd or group
+        if ( orig_uid != 0 || priv_target_mode() ) { // If we are root, no need to mess with passwd or group
             message(DEBUG, "Checking configuration file for 'config passwd'\n");
             config_rewind();
             if ( config_get_key_bool("config passwd", 1) > 0 ) {

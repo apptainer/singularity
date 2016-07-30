@@ -38,8 +38,20 @@
 
 void update_passwd_file(char *file) {
     FILE *file_fp;
-    uid_t uid = getuid();
+    uid_t uid = priv_getuid();
+    errno = 0;
     struct passwd *pwent = getpwuid(uid);
+
+    if ( !pwent ) {
+        // List of potential error codes for unknown name taken from man page.
+        if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
+            message(VERBOSE3, "Not updating passwd file as entry for %d not found.\n", uid);
+            return;
+        } else {
+            message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
+            ABORT(255);
+        }
+    }
 
     message(DEBUG, "Called update_passwd_file(%s)\n", file);
 
@@ -62,14 +74,24 @@ void update_passwd_file(char *file) {
 
 void update_group_file(char *file) {
     FILE *file_fp;
-    int groupcount;
     int i;
-    int maxgroups = sysconf(_SC_NGROUPS_MAX) + 1;
-    uid_t uid = getuid();
-    uid_t gid = getgid();
-    gid_t gids[maxgroups];
+    uid_t uid = priv_getuid();
+    uid_t gid = priv_getgid();
+    const gid_t *gids = priv_getgids();
+    int gid_count = priv_getgidcount();
+
+    errno = 0;
     struct passwd *pwent = getpwuid(uid);
-    struct group *grent = getgrgid(gid);
+    if ( !pwent ) {
+        // List of potential error codes for unknown name taken from man page.
+        if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
+            message(VERBOSE3, "Not updating group file as passwd entry for UID %d not found.\n", uid);
+            return;
+        } else {
+            message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
+            ABORT(255);
+        }
+    }
 
     message(DEBUG, "Called update_group_file(%s)\n", file);
 
@@ -78,25 +100,43 @@ void update_group_file(char *file) {
         message(WARNING, "Template group file not found: %s\n", file);
         return;
     }
-
-    message(VERBOSE, "Updating group file with user info\n");
     if ( ( file_fp = fopen(file, "a") ) == NULL ) { // Flawfinder: ignore
         message(ERROR, "Could not open template group file %s: %s\n", file, strerror(errno));
         ABORT(255);
     }
-    fprintf(file_fp, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
+
+    errno = 0;
+    struct group *grent = getgrgid(gid);
+    if ( grent ) {
+        message(VERBOSE, "Updating group file with user info\n");
+        fprintf(file_fp, "\n%s:x:%d:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
+    } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
+        // It's rare, but certainly possible to have a GID that's not a group entry in this system.
+        // According to the man page, all of the above errno's can indicate this situation.
+        message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gid);
+    } else {
+        message(ERROR, "Failed to lookup GID %d group entry: %s\n", gid, strerror(errno));
+        ABORT(255);
+    }
 
 
     if ( !priv_userns_enabled() ) {
         message(DEBUG, "Getting supplementary group info\n");
-        groupcount = getgroups(maxgroups, gids);
 
-        for (i=0; i < groupcount; i++) {
+        for (i=0; i < gid_count; i++) {
+            errno = 0;
             struct group *gr = getgrgid(gids[i]);
-            message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
-            if ( gids[i] != gid ) {
-                message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
-                fprintf(file_fp, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
+            if ( gr ) {
+                message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
+                if ( gids[i] != gid ) {
+                    message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
+                    fprintf(file_fp, "%s:x:%d:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
+                }
+            } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
+                message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gids[i]);
+            } else {
+                message(ERROR, "Failed to lookup GID %d group entry: %s\n", gids[i], strerror(errno));
+                ABORT(255);
             }
         }
     }
