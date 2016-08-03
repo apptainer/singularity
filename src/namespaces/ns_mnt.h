@@ -22,10 +22,13 @@
 #ifndef __NS_MOUNT_H_
 #define __NS_MOUNT_H_
 
+    /* Do initialization and sanity */
+    int ns_mnt_init(void);
+
     /* Unshare mount namespace */
-    void namespace_unshare_mount(void);
+    void ns_mnt_unshare(void);
 
     /* Join existing mount namespace (requires of namespace to join */
-    void namespace_join_mount(pid_t daemon_pid);
+    void ns_mnt_join(pid_t daemon_pid);
 
 #endif /* __NS_MOUNT_H_ */

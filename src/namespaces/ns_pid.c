@@ -36,7 +36,15 @@
 #include "namespaces/ns_pid.h"
 
 
-void namespace_unshare_pid(void) {
+int ns_pid_init(void) {
+    // Function to initalize and check sanity
+
+    // Return zero on success
+    return(0);
+}
+
+
+void ns_pid_unshare(void) {
     config_rewind();
 #ifdef NS_CLONE_NEWPID
     if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
@@ -68,7 +76,7 @@ void namespace_unshare_pid(void) {
 }
 
 
-void namespace_join_pid(pid_t daemon_pid) {
+void ns_pid_join(pid_t daemon_pid) {
 #ifdef NO_SETNS
     message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);

@@ -22,10 +22,13 @@
 #ifndef __NS_PID_H_
 #define __NS_PID_H_
 
+    /* Do initialization and sanity */
+    int ns_pid_init(void);
+
     /* Unshare pid namespace */
-    void namespace_unshare_pid(void);
+    void ns_pid_unshare(void);
 
     /* Join existing pid namespace (requires of namespace to join */
-    void namespace_join_pid(pid_t daemon_pid);
+    void ns_pid_join(pid_t daemon_pid);
 
 #endif /* __NS_PID_H */

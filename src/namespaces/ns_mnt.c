@@ -35,7 +35,14 @@
 #include "namespaces/ns_mnt.h"
 
 
-void namespace_unshare_mount(void) {
+int ns_mnt_init(void) {
+    // Function to initalize and check sanity
+
+    // Return zero on success
+    return(0);
+}
+
+void ns_mnt_unshare(void) {
 #ifdef NS_CLONE_FS
     // Setup FS namespaces
     message(DEBUG, "Virtualizing FS namespace\n");
@@ -54,7 +61,7 @@ void namespace_unshare_mount(void) {
 }
 
 
-void namespace_join_mount(pid_t daemon_pid) {
+void ns_mnt_join(pid_t daemon_pid) {
 #ifdef NO_SETNS
     message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);
