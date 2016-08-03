@@ -60,7 +60,7 @@ char *int2str(int num) {
     return(ret);
 }
 
-char *joinpath(char * path1, char * path2) {
+char *joinpath(const char * path1, const char * path2) {
     char *ret;
 
     ret = (char *) malloc(strlength(path1, 2048) + strlength(path2, 2048) + 2);
@@ -92,7 +92,7 @@ void chomp(char *str) {
     }
 }
 
-int strlength(char *string, int max_len) {
+int strlength(const char *string, int max_len) {
     int len;
     for (len=0; string[len] && len < max_len; len++) {
         // Do nothing in the loop
@@ -119,3 +119,26 @@ char *random_string(int length) {
     return(ret);
 }
 */
+
+int str2int(const char *input_str, long int *output_num) {
+    long int result;
+    char *endptr;
+    errno = 0;
+    // Empty string is an error:
+    if ( *input_str == '\0' ) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    result = strtol(input_str, &endptr, 10);
+    // In the case of overflow / underflow or (possibly)
+    // no digits consumed.
+    if (errno) {return -1;}
+
+    if ( *endptr == '\0' ) { // All data was consumed.
+        if (output_num) {*output_num = result;}
+        return 0;
+    }
+    errno = EINVAL;
+    return -1;
+}

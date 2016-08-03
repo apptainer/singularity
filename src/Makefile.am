@@ -4,7 +4,7 @@ CLEANFILES = core.* *~
 AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
 sexec_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
-sexec_nosuid_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
+sexec_nosuid_CPPFLAGS = -DSINGULARITY_NOSUID=1 -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 bootstrap_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"
 ftrace_CPPFLAGS = -DARCH_$(SINGULARITY_ARCH)
 
@@ -25,8 +25,8 @@ ftrace_SOURCES = ftrace.c file.c util.c message.c
 ftype_SOURCES = ftype.c util.c file.c message.c
 sexec_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c signal_handlers.c
 sexec_nosuid_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c signal_handlers.c
-image_create_SOURCES = image-create.c file.c util.c image.c message.c
-image_expand_SOURCES = image-expand.c file.c util.c image.c message.c
+image_create_SOURCES = image-create.c file.c util.c image.c message.c privilege.c
+image_expand_SOURCES = image-expand.c file.c util.c image.c message.c privilege.c
 image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 

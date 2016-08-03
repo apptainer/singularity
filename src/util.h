@@ -24,12 +24,22 @@
 
 int intlen(int input);
 char *int2str(int num);
-char *joinpath(char * path1, char * path2);
+char *joinpath(const char * path1, const char * path2);
 char *strjoin(char *str1, char *str2);
 void chomp(char *str);
-int strlength(char *string, int max_len);
+int strlength(const char *string, int max_len);
 //char *random_string(int length);
 
+// Given a const char * string containing a base-10 integer,
+// try to convert to an C integer.
+// This is a bit less error prone (and stricter!) than strtoll:
+// - Returns -1 on error and sets errno appropriately.
+// - On failure, output_num is not touched.
+// - On success, sets output_num to the parsed value (if output_num
+//   is not null).
+// - If the whole string isn't consumed, then -1 is returned and
+//   errno is set to EINVAL
+int str2int(const char *input_str, long int *output_num);
 
 #define ABORT(a) {exit(a);}
 

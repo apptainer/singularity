@@ -147,27 +147,129 @@ static s_privinfo uinfo;
 void priv_init(void) {
     memset(&uinfo, '\0', sizeof(uinfo));
 
-    uinfo.uid = getuid();
-    uinfo.gid = getgid();
-    uinfo.gids_count = getgroups(0, NULL);
-
-    message(DEBUG, "Called priv_init(void)\n");
-
-    uinfo.gids = (gid_t *) malloc(sizeof(gid_t) * uinfo.gids_count);
-
-    if ( getgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
-       message(ERROR, "Could not obtain current supplementary group list: %s\n", strerror(errno));
-       ABORT(255);
+    // If we are *not* the setuid binary and started as root, then
+    //
+    long int target_uid = -1;
+    long int target_gid = -1;
+#ifdef SINGULARITY_NOSUID
+    char *target_uid_str = NULL;
+    char *target_gid_str = NULL;
+    if ( getuid() == 0 ) {
+        target_uid_str = getenv("SINGULARITY_TARGET_UID");
+        target_gid_str = getenv("SINGULARITY_TARGET_GID");
+        if ( target_uid_str && !target_gid_str ) {
+            message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
+            ABORT(255);
+        }
+        if (target_uid_str) {
+            if ( -1 == str2int(target_uid_str, &target_uid) ) {
+                message(ERROR, "Unable to convert target UID (%s) to integer: %s\n", target_uid_str, strerror(errno));
+                ABORT(255);
+            }
+            if (target_uid < 500) {
+                message(ERROR, "Target UID (%ld) must be 500 or greater to avoid system users.\n", target_uid);
+                ABORT(255);
+            }
+            if (target_uid > 65534) { // Avoid anything greater than the traditional overflow UID.
+                message(ERROR, "Target UID (%ld) cannot be greater than 65534.\n", target_uid);
+                ABORT(255);
+            }
+        }
+        if ( !target_uid_str && target_gid_str ) {
+            message(ERROR, "A target GID is set (%s) but a target UID is not set (SINGULARITY_TARGET_UID).  Both must be specified.\n", target_gid_str);
+            ABORT(255);
+        }
+        if (target_gid_str) {
+            if ( -1 == str2int(target_gid_str, &target_gid) ) {
+                message(ERROR, "Unable to convert target GID (%s) to integer: %s\n", target_gid_str, strerror(errno));
+                ABORT(255);
+            }
+            if (target_gid < 500) {
+                message(ERROR, "Target GID (%ld) must be 500 or greater to avoid system groups.\n", target_gid);
+                ABORT(255);
+            }
+            if (target_gid > 65534) { // Avoid anything greater than the traditional overflow GID.
+                message(ERROR, "Target GID (%ld) cannot be greater than 65534.\n", target_gid);
+                ABORT(255);
+            }
+        }
     }
+#endif
+    if ( (target_uid >= 500) && (target_gid >= 500) ) {
+        uinfo.target_mode = 1;
+        uinfo.uid = target_uid;
+        uinfo.gid = target_gid;
+        uinfo.gids_count = 0;
+        uinfo.gids = NULL;
+    } else {
+        uinfo.uid = getuid();
+        uinfo.gid = getgid();
+        uinfo.gids_count = getgroups(0, NULL);
 
+        message(DEBUG, "Called priv_init(void)\n");
+
+        uinfo.gids = (gid_t *) malloc(sizeof(gid_t) * uinfo.gids_count);
+
+        if ( getgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
+            message(ERROR, "Could not obtain current supplementary group list: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    }
     uinfo.ready = 1;
 
     message(DEBUG, "Returning priv_init(void)\n");
 }
 
+
 int priv_userns_enabled() {
     return uinfo.userns_ready;
 }
+
+
+int priv_target_mode() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.target_mode;
+}
+
+
+uid_t priv_getuid() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.uid;
+}
+
+
+gid_t priv_getgid() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.gid;
+}
+
+
+const gid_t *priv_getgids() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.gids;
+}
+
+
+int priv_getgidcount() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.gids_count;
+}
+
 
 void priv_init_userns_outside() {
 #ifdef SINGULARITY_USERNS
@@ -260,14 +362,30 @@ void priv_drop(void) {
 
     message(DEBUG, "Confirming we have correct GID\n");
     if ( getgid() != uinfo.gid ) {
-        message(ERROR, "Failed to drop effective group privileges to uid %d: %s\n", uinfo.uid, strerror(errno));
-        ABORT(255);
+#ifdef SINGULARITY_NOSUID
+        if ( uinfo.target_mode && getgid() != 0 ) {
+            message(ERROR, "Non-zero real GID for target mode: %d\n", getgid());
+            ABORT(255);
+        } else if ( !uinfo.target_mode )
+#endif  // SINGULARITY_NOSUID
+        {
+            message(ERROR, "Failed to drop effective group privileges to gid %d (currently %d)\n", uinfo.gid, getgid());
+            ABORT(255);
+        }
     }
 
     message(DEBUG, "Confirming we have correct UID\n");
     if ( getuid() != uinfo.uid ) {
-        message(ERROR, "Failed to drop effective user privileges to uid %d: %s\n", uinfo.uid, strerror(errno));
-        ABORT(255);
+#ifdef SINGULARITY_NOSUID
+        if ( uinfo.target_mode && getuid() != 0 ) {
+            message(ERROR, "Non-zero real UID for target mode: %d\n", getuid());
+            ABORT(255);
+        } else if ( !uinfo.target_mode )
+#endif  // SINGULARITY_NOSUID
+        {
+            message(ERROR, "Failed to drop effective user privileges to uid %d (currently %d)\n", uinfo.uid, getuid());
+            ABORT(255);
+        }
     }
 
     message(DEBUG, "Returning priv_drop(void)\n");

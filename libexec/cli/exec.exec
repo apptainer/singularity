@@ -60,6 +60,11 @@ while true; do
             SINGULARITY_CONTAIN=1
             export SINGULARITY_CONTAIN
         ;;
+        -B|--bind)
+            shift
+            export SINGULARITY_USER_BIND="${1:-}:${SINGULARITY_USER_BIND-}"
+            shift
+        ;;
         -S|--scratch)
             shift
             export SINGULARITY_USER_SCRATCH="${1:-}:${SINGULARITY_USER_SCRATCH-}"
@@ -92,7 +97,10 @@ if [[ -e "$SINGULARITY_libexecdir/singularity/sexec" && "x${SINGULARITY_FORCE_NO
   exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
 else
   unset SINGULARITY_FORCE_NOSUID
-  export SINGULARITY_USERNS=1
+  if [ "x${SINGULARITY_FORCE_NOUSERNS-}" == "x" ]; then
+    unset SINGULARITY_FORCE_NOUSERNS
+    export SINGULARITY_USERNS=1
+  fi
   exec "$SINGULARITY_libexecdir/singularity/sexec_nosuid" "$@" <&0
 fi
 
