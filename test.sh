@@ -187,8 +187,8 @@ popd
 /bin/echo "Checking scratch directory creation"
 mkdir -p /tmp/foo
 touch /tmp/foo/bar
-stest 0 sh -c "singularity exec $CONTAINER find /tmp/foo -type f | grep -q"
-stest 1 sh -c "singularity exec -S /tmp $CONTAINER find /tmp/foo -type f | grep -q"
+stest 0 sh -c "singularity exec $CONTAINER find /tmp/foo -type f | grep -q /tmp"
+stest 1 sh -c "singularity exec -S /tmp $CONTAINER find /tmp/foo -type f | grep -q /tmp"
 
 /bin/echo
 /bin/echo "Checking unprivileged mode"
