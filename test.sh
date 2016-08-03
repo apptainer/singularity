@@ -80,6 +80,8 @@ stest 1 singularity bogus help
 /bin/echo "Building test container..."
 
 stest 0 sudo singularity create -s 568 "$CONTAINER"
+# We will need a setuid binary (ping) for the NO_NEW_PRIVS test below.
+stest 0 sed -i "$STARTDIR/examples/centos.def" -e 's|#InstallPkgs yum vim-minimal|InstallPkgs iputils|'
 stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/centos.def"
 
 /bin/echo
@@ -176,8 +178,8 @@ stest 2 singularity exec out ping localhost -c 1
 /bin/echo "Checking target UID mode"
 # NOTE: in target mode, we cannot start from a non-root-readable directory.
 pushd /
-stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` sudo singularity exec $CONTAINER whoami | grep -q nobody"
-stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` singularity exec $CONTAINER whoami | grep -q nobody"
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` sudo singularity exec $TEMPDIR/$CONTAINER whoami | grep -q nobody"
+stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` singularity exec $TEMPDIR/$CONTAINER whoami | grep -q nobody"
 popd
 
 /bin/echo
