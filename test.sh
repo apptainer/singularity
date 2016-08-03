@@ -177,9 +177,10 @@ stest 2 singularity exec out ping localhost -c 1
 /bin/echo
 /bin/echo "Checking target UID mode"
 # NOTE: in target mode, we cannot start from a non-root-readable directory.
+cp $CONTAINER /tmp
 pushd /
-stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` sudo singularity exec $TEMPDIR/$CONTAINER whoami | grep -q nobody"
-stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` singularity exec $TEMPDIR/$CONTAINER whoami | grep -q nobody"
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` sudo singularity exec /tmp/$CONTAINER whoami | grep -q nobody"
+stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` singularity exec /tmp/$CONTAINER whoami | grep -q nobody"
 popd
 
 /bin/echo
