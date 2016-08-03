@@ -15,7 +15,4 @@ else
     automake -ca -Wno-portability
 fi
 
-if [ -z "$NO_CONFIGURE" ]; then
-   ./configure "$@" 
-fi
 

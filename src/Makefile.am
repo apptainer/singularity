@@ -1,3 +1,5 @@
+SUBDIRS = namespaces
+
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
@@ -31,3 +33,6 @@ image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.
 image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 
 EXTRA_DIST = config.h config_parser.h container_actions.h file.h image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h
+
+ACLOCAL_AMFLAGS = -I $(top_srcdir)/src
+

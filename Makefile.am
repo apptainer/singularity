@@ -5,7 +5,6 @@ DISTCLEANFILES =
 CLEANFILES =
 EXTRA_DIST = LICENSE README.md NEWS ChangeLog singularity.spec examples
 
-
 install-perms:
 	@echo
 	@echo "install-perms is no longer required"
