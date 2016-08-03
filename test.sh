@@ -164,6 +164,14 @@ stest 0 sudo singularity create -s 568 "$CONTAINER"
 stest 0 sh -c "cat out.tar | sudo singularity import $CONTAINER"
 
 /bin/echo
+/bin/echo "Checking directory mode"
+stest 0 singularity exec out test -f /environment
+
+/bin/echo
+/bin/echo "Checking target UID mode"
+SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` stest 0 /opt/singularity/bin/singularity exec "$CONTAINER" whoami | grep -q nobody
+
+/bin/echo
 /bin/echo "Cleaning up"
 
 stest 0 popd
