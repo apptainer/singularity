@@ -35,7 +35,7 @@ fi
 . ./libexec/functions
 
 make maintainer-clean >/dev/null 2>&1
-stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
+stest 0 sh ./autogen.sh --prefix="$TEMPDIR" --with-userns
 stest 0 make
 stest 0 sudo make install
 
@@ -80,6 +80,8 @@ stest 1 singularity bogus help
 /bin/echo "Building test container..."
 
 stest 0 sudo singularity create -s 568 "$CONTAINER"
+# We will need a setuid binary (ping) for the NO_NEW_PRIVS test below.
+stest 0 sed -i "$STARTDIR/examples/centos.def" -e 's|#InstallPkgs yum vim-minimal|InstallPkgs iputils|'
 stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/centos.def"
 
 /bin/echo
@@ -162,6 +164,46 @@ stest 0 sudo chmod 0644 out.tar
 stest 0 sudo rm -f "$CONTAINER"
 stest 0 sudo singularity create -s 568 "$CONTAINER"
 stest 0 sh -c "cat out.tar | sudo singularity import $CONTAINER"
+
+/bin/echo
+/bin/echo "Checking directory mode"
+stest 0 singularity exec out test -f /environment
+stest 1 singularity exec /tmp test -f /environment
+
+/bin/echo
+/bin/echo "Checking NO_NEW_PRIVS"
+stest 2 singularity exec out ping localhost -c 1
+
+/bin/echo
+/bin/echo "Checking target UID mode"
+# NOTE: in target mode, we cannot start from a non-root-readable directory.
+cp $CONTAINER /tmp
+pushd /
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` sudo singularity exec /tmp/$CONTAINER whoami | grep -q nobody"
+stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` singularity exec /tmp/$CONTAINER whoami | grep -q nobody"
+popd
+
+/bin/echo
+/bin/echo "Checking scratch directory creation"
+mkdir -p /tmp/foo
+touch /tmp/foo/bar
+stest 0 sh -c "singularity exec $CONTAINER find /tmp/foo -type f | grep -q /tmp"
+stest 1 sh -c "singularity exec -S /tmp $CONTAINER find /tmp/foo -type f | grep -q /tmp"
+
+/bin/echo
+/bin/echo "Checking disable setuid config flag"
+stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
+stest 1 singularity exec "$CONTAINER" test -f /environment
+stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
+stest 0 singularity exec "$CONTAINER" test -f /environment
+
+/bin/echo
+/bin/echo "Checking unprivileged mode"
+myself=`whoami`
+stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec out whoami | grep -q $myself"
+stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec $CONTAINER whoami"
+stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
 
 /bin/echo
 /bin/echo "Cleaning up"
