@@ -174,8 +174,11 @@ stest 2 singularity exec out ping localhost -c 1
 
 /bin/echo
 /bin/echo "Checking target UID mode"
+# NOTE: in target mode, we cannot start from a non-root-readable directory.
+pushd /
 stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` sudo singularity exec $CONTAINER whoami | grep -q nobody"
 stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` singularity exec $CONTAINER whoami | grep -q nobody"
+popd
 
 /bin/echo
 /bin/echo "Checking scratch directory creation"
@@ -188,6 +191,13 @@ stest 1 sh -c "singularity exec -S /tmp $CONTAINER find /tmp -type f | grep -q"
 myself=`whoami`
 stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec out whoami | grep -q $myself"
 stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec $CONTAINER whoami"
+
+/bin/echo
+/bin/echo "Checking disable setuid config flag"
+stest 0 sed -i $TEMPDIR/etc/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
+stest 1 singularity exec "$CONTAINER" test -f /environment
+stest 0 sed -i $TEMPDIR/etc/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
+stest 0 singularity exec "$CONTAINER" test -f /environment
 
 /bin/echo
 /bin/echo "Cleaning up"
