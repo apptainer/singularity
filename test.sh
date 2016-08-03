@@ -166,10 +166,28 @@ stest 0 sh -c "cat out.tar | sudo singularity import $CONTAINER"
 /bin/echo
 /bin/echo "Checking directory mode"
 stest 0 singularity exec out test -f /environment
+stest 1 singularity exec /tmp test -f /environment
+
+/bin/echo
+/bin/echo "Checking NO_NEW_PRIVS"
+stest 2 singularity exec out ping localhost -c 1
 
 /bin/echo
 /bin/echo "Checking target UID mode"
-SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` stest 0 /opt/singularity/bin/singularity exec "$CONTAINER" whoami | grep -q nobody
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` sudo singularity exec $CONTAINER whoami | grep -q nobody"
+stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` singularity exec $CONTAINER whoami | grep -q nobody"
+
+/bin/echo
+/bin/echo "Checking scratch directory creation"
+touch /tmp/foo
+stest 0 sh -c "singularity exec $CONTAINER find /tmp -type f | grep -q"
+stest 1 sh -c "singularity exec -S /tmp $CONTAINER find /tmp -type f | grep -q"
+
+/bin/echo
+/bin/echo "Checking unprivileged mode"
+myself=`whoami`
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec out whoami | grep -q $myself"
+stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec $CONTAINER whoami"
 
 /bin/echo
 /bin/echo "Cleaning up"
