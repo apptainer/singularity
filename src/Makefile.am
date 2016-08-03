@@ -1,4 +1,4 @@
-SUBDIRS = namespaces
+SUBDIRS = namespaces image
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
