@@ -63,7 +63,7 @@ void update_uid_map(pid_t child, uid_t outside, int is_child) {
         ABORT(255);
     }
 
-    message(DEBUG, "Updating UID map with policy %s.\n", map);
+    message(DEBUG, "Updating UID map with policy: %s", map);
     fd = open(map_file, O_RDWR);
     free(map_file);
     if (fd == -1) {
@@ -105,24 +105,27 @@ void update_gid_map(pid_t child, gid_t outside, int is_child) {
         message(ERROR, "Can't allocate setgroups filename\n");
         ABORT(255);
     }
-    message(DEBUG, "Updating GID map with policy %s.\n", map);
-    fd = open(setgroups_file, O_RDWR);
-    if (fd == -1) {
-        message(ERROR, "Failure when opening %s: %s\n", setgroups_file, strerror(errno));
-        free(map_file);
+    if (!is_child) {
+        message(DEBUG, "Disabling setgroups file.\n");
+        fd = open(setgroups_file, O_RDWR);
+        if (fd == -1) {
+            message(ERROR, "Failure when opening %s: %s\n", setgroups_file, strerror(errno));
+            free(map_file);
+            free(setgroups_file);
+            free(map);
+            ABORT(255);
+        }
         free(setgroups_file);
-        free(map);
-        ABORT(255);
-    }
-    free(setgroups_file);
-    if (write(fd, "deny", 4) != 4) {
-        perror("Writing setgroups deny");
-        free(map_file);
-        free(map);
+        if (write(fd, "deny", 4) != 4) {
+            perror("Writing setgroups deny");
+            free(map_file);
+            free(map);
+            close(fd);
+        }
         close(fd);
     }
-    close(fd);
 
+    message(DEBUG, "Updating GID map with policy: %s", map);
     fd = open(map_file, O_RDWR);
     free(map_file);
     if (fd == -1) {
