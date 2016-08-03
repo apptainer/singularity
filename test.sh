@@ -192,18 +192,18 @@ stest 1 sh -c "singularity exec -S /tmp $CONTAINER find /tmp/foo -type f | grep 
 
 /bin/echo
 /bin/echo "Checking disable setuid config flag"
-stest 0 sed -i $TEMPDIR/etc/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
+stest 0 sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
 stest 1 singularity exec "$CONTAINER" test -f /environment
-stest 0 sed -i $TEMPDIR/etc/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
+stest 0 sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
 stest 0 singularity exec "$CONTAINER" test -f /environment
 
 /bin/echo
 /bin/echo "Checking unprivileged mode"
 myself=`whoami`
-stest 0 sed -i $TEMPDIR/etc/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
+stest 0 sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
 stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec out whoami | grep -q $myself"
 stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec $CONTAINER whoami"
-stest 0 sed -i $TEMPDIR/etc/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
+stest 0 sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
 
 /bin/echo
 /bin/echo "Cleaning up"
