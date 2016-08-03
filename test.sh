@@ -35,7 +35,7 @@ fi
 . ./libexec/functions
 
 make maintainer-clean >/dev/null 2>&1
-stest 0 sh ./autogen.sh --prefix="$TEMPDIR"
+stest 0 sh ./autogen.sh --prefix="$TEMPDIR" --with-userns
 stest 0 make
 stest 0 sudo make install
 
