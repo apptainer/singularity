@@ -138,11 +138,11 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
 
     if ( writable > 0 ) {
         message(DEBUG, "Trying to mount read/write as ext4 with discard option\n");
-        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
+        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard,errors=remount-ro") < 0 ) {
             message(DEBUG, "Trying to mount read/write as ext4 without discard option\n");
-            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "") < 0 ) {
+            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "errors=remount-ro") < 0 ) {
                 message(DEBUG, "Trying to mount read/write as ext3\n");
-                if ( mount(loop_device, mount_point, "ext3", MS_NOSUID, "") < 0 ) {
+                if ( mount(loop_device, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
                     message(ERROR, "Failed to mount (rw) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
                     ABORT(255);
                 }
@@ -153,11 +153,11 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
         config_rewind();
         if ( ( overlaydir = config_get_key_value("overlay dir") ) == NULL ){
             message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
-            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard") < 0 ) {
+            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard,errors=remount-ro") < 0 ) {
                 message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
-                if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "") < 0 ) {
+                if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
                     message(DEBUG, "Trying to mount read only as ext3\n");
-                    if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "") < 0 ) {
+                    if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
                         message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
                         ABORT(255);
                     }
