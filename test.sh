@@ -35,9 +35,15 @@ fi
 . ./libexec/functions
 
 make maintainer-clean >/dev/null 2>&1
-stest 0 sh ./autogen.sh --prefix="$TEMPDIR" --with-userns
+stest 0 ./autogen.sh
+stest 0 ./configure --prefix="$TEMPDIR" --with-userns
 stest 0 make
 stest 0 sudo make install
+
+
+# At the moment, we are just testing build.
+stest 0 sudo rm -rf "$TEMPDIR"
+exit 0
 
 PATH="$TEMPDIR/bin:/usr/local/bin:$PATH"
 MESSAGELEVEL=5
