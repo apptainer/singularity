@@ -34,8 +34,8 @@ int main(void) {
     
     printf("Calling singularity_init()\n");
 
-    singularity_init();
-//    ns_init();
+//    singularity_init();
+    ns_init();
 
 
     return(0);

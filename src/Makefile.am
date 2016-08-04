@@ -10,7 +10,7 @@ bindir = $(libexecdir)/singularity
 
 noinst_LTLIBRARIES = libsingularity.la
 
-libsingularity_la_LIBADD = ns/libns.la
+libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la
 libsingularity_la_SOURCES = singularity.c
 libsingularity_la_LDFLAGS = -static
 

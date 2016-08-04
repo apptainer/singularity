@@ -26,7 +26,7 @@
 #include "ns/ns.h"
 #include "rootfs/rootfs.h"
 
-int singularity_init(void) {
+int singularity_ns_init(void) {
     int retval = 0;
 
     retval += ns_init();
