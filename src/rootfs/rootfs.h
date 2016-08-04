@@ -19,12 +19,15 @@
 */
 
 
-#ifndef __IMAGE_MOUNT_H_
-#define __IMAGE_MOUNT_H_
+#ifndef __ROOTFS_H_
+#define __ROOTFS_H_
 
-    int image_mount_init(void);
-    int image_mount_open(char *image_path, int writable);
-    int image_mount_mount(int writable);
-    int image_mount_umount(void);
+/* What are the types of rootfs sources we support */
+#define ROOTFS_IMAGE    1
+#define ROOTFS_DIR      2
 
-#endif /* __IMAGE_MOUNT_H */
+int rootfs_init(char *source, char *mount_point, int writable);
+int rootfs_mount(void);
+int rootfs_umount(void);
+
+#endif /* __ROOTFS_H */

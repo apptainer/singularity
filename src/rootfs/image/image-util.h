@@ -22,6 +22,8 @@
 #ifndef __IMAGE_UTIL_H_
 #define __IMAGE_UTIL_H_
 
+    #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
+
     int image_util_init(void);
     int image_util_offset(FILE *image_fp);
     int image_util_create(char *image, int size);

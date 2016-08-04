@@ -34,8 +34,8 @@
 #include "util.h"
 #include "message.h"
 #include "config_parser.h"
-#include "image/image-util.h"
-#include "image/loop-control.h"
+#include "rootfs/image/image-util.h"
+#include "rootfs/image/loop-control.h"
 
 #ifndef LOCALSTATEDIR
 #define LOCALSTATEDIR "/var"
@@ -45,20 +45,16 @@
 FILE *image_fp = NULL;
 char *mount_point = NULL;
 char *loop_dev = NULL;
+int read_write = 0;
 
 
-int image_mount_init(void) {
+int rootfs_image_init(char *source, char *mount_point, int writable) {
     // Initialization code here....
-
-    config_rewind();
-    if ( ( mount_point = config_get_key_value("container dir") ) == NULL ) {
-        mount_point = joinpath(LOCALSTATEDIR, "/singularity/mnt");
-    }
-    message(DEBUG, "Set image mount path to: %s\n", mount_point);
 
     return(0);
 }
 
+// TODO: Do all of this in init
 int image_mount_open(char *image_path, int writable) {
     if ( image_fp != NULL ) {
         message(WARNING, "Called image_open, but image already open!\n");
@@ -87,7 +83,7 @@ int image_mount_open(char *image_path, int writable) {
 }
 
 
-int image_mount_mount(int writable) {
+int rootfs_image_mount(void) {
     int offset;
 
     if ( mount_point == NULL ) {
@@ -100,6 +96,7 @@ int image_mount_mount(int writable) {
         ABORT(255);
     }
 
+// TODO: Move offset to loop functions
     if ( ( offset = image_util_offset(image_fp) ) < 0 ) {
         message(ERROR, "Could not obtain message offset of image\n");
         ABORT(255);
@@ -110,7 +107,7 @@ int image_mount_mount(int writable) {
         ABORT(255);
     }
 
-    if ( writable > 0 ) {
+    if ( read_write > 0 ) {
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
             message(ERROR, "Failed to mount image!\n");
             ABORT(255);
@@ -126,7 +123,7 @@ int image_mount_mount(int writable) {
 }
 
 
-int image_mount_umount(void) {
+int rootfs_image_umount(void) {
 
     if ( mount_point == NULL ) {
         message(ERROR, "Called image_umount but image_init() hasn't been called\n");
