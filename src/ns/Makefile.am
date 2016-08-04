@@ -3,7 +3,8 @@ AM_LDFLAGS = -pie
 libns_pid_a_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-noinst_LIBRARIES = libns.a
-libns_a_SOURCES = ns.c ../file.c ../util.c ../message.c ../config_parser.c ../privilege.c
+noinst_LTLIBRARIES = libns.la
+libns_la_SOURCES = ns.c ../file.c ../util.c ../message.c ../config_parser.c ../privilege.c
+libns_la_LDFLAGS = -static
 
 EXTRA_DIST = ns.h

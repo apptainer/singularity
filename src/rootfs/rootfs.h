@@ -22,12 +22,12 @@
 #ifndef __ROOTFS_H_
 #define __ROOTFS_H_
 
-/* What are the types of rootfs sources we support */
-#define ROOTFS_IMAGE    1
-#define ROOTFS_DIR      2
+    /* What are the types of rootfs sources we support */
+    #define ROOTFS_IMAGE    1
+    #define ROOTFS_DIR      2
 
-int rootfs_init(char *source, char *mount_point, int writable);
-int rootfs_mount(void);
-int rootfs_umount(void);
+    extern int rootfs_init(char *source, char *mount_point, int writable);
+    extern int rootfs_mount(void);
+    extern int rootfs_umount(void);
 
 #endif /* __ROOTFS_H */

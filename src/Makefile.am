@@ -8,15 +8,16 @@ AM_LDFLAGS = -pie
 
 bindir = $(libexecdir)/singularity
 
-noinst_LIBRARIES = libsingularity.a
+noinst_LTLIBRARIES = libsingularity.la
 
-libsingularity_a_LIBADD = ns/libns.a
-libsingularity_a_SOURCES = singularity.c
+libsingularity_la_LIBADD = ns/libns.la
+libsingularity_la_SOURCES = singularity.c
+libsingularity_la_LDFLAGS = -static
 
 bin_PROGRAMS = sexec-devel
 
 sexec_devel_SOURCES = sexec-devel.c
-sexec_devel_LDADD = libsingularity.a
+sexec_devel_LDADD = libsingularity.la
 
 
 

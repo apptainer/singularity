@@ -34,7 +34,6 @@ int singularity_init(void) {
     return(retval);
 }
 
-/*
 int singularity_ns_pid_unshare(void) {
     return(ns_pid_unshare());
 }
@@ -44,4 +43,3 @@ int singularity_ns_mnt_unshare(void) {
 int singularity_ns_join(pid_t attach_pid) {
     return(ns_join(attach_pid));
 }
-*/

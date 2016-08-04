@@ -4,9 +4,9 @@ AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-noinst_LIBRARIES = librootfs.a
+noinst_LTLIBRARIES = librootfs.la
 
-librootfs_a_LIBADD = image/librootfsimage.a dir/librootfsdir.a
-librootfs_a_SOURCES = rootfs.c ../util.c ../message.c ../config_parser.c
+librootfs_la_LIBADD = image/librootfsimage.la dir/librootfsdir.la
+librootfs_la_SOURCES = rootfs.c ../util.c ../message.c ../config_parser.c
 
 EXTRA_DIST = rootfs.h
