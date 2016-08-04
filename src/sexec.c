@@ -33,7 +33,7 @@
 #include <ctype.h>
 #endif  // SINGULARITY_NO_NEW_PRIVS
 #include <errno.h> 
-#include <signal.h>
+#include <sched.h>
 #include <string.h>
 #include <fcntl.h>  
 #include <grp.h>
@@ -51,7 +51,7 @@
 #include "privilege.h"
 #include "message.h"
 #include "namespaces.h"
-
+#include "signal_handlers.h"
 
 #ifndef LOCALSTATEDIR
 #define LOCALSTATEDIR "/etc"
@@ -67,20 +67,6 @@
 #ifndef MS_REC
 #define MS_REC 16384
 #endif
-
-pid_t exec_fork_pid = 0;
-
-// TODO: This is broke, and needs some love!
-void sighandler(int sig) {
-    signal(sig, sighandler);
-
-    if ( exec_fork_pid > 0 ) {
-        fprintf(stderr, "Singularity is sending SIGKILL to child pid: %d\n", exec_fork_pid);
-
-        kill(exec_fork_pid, SIGKILL);
-    }
-}
-
 
 
 int main(int argc, char ** argv) {
@@ -118,11 +104,6 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 // Init
 //****************************************************************************//
-
-    signal(SIGINT, sighandler);
-    signal(SIGQUIT, sighandler);
-    signal(SIGTERM, sighandler);
-    signal(SIGKILL, sighandler);
 
     // Record the original UID, before user namespace code might change it.
     orig_uid = getuid();
@@ -530,11 +511,14 @@ int main(int argc, char ** argv) {
 
 
     message(VERBOSE, "Creating namespace process\n");
+    signal_pre_fork();
+    namespace_unshare_pid();
     // Fork off namespace process
     namespace_fork_pid = fork();
     if ( namespace_fork_pid == 0 ) {
 
         message(DEBUG, "Hello from namespace child process\n");
+        signal_post_child();
         if ( daemon_pid == -1 ) {
             if ( use_userns ) {
                 priv_init_userns_inside();
@@ -715,10 +699,9 @@ int main(int argc, char ** argv) {
         // Fork off exec process
         message(VERBOSE, "Forking exec process\n");
 
-        exec_fork_pid = fork();
+        pid_t exec_fork_pid = fork();
         if ( exec_fork_pid == 0 ) {
             message(DEBUG, "Hello from exec child process\n");
-
             message(VERBOSE, "Entering container file system space\n");
             if ( chroot(containerdir) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
                 message(ERROR, "failed enter CONTAINERIMAGE: %s\n", containerdir);
@@ -848,6 +831,7 @@ int main(int argc, char ** argv) {
 
         // Wait for exec process to finish
         } else if ( exec_fork_pid > 0 ) {
+            setup_signal_handler(exec_fork_pid);
             int tmpstatus;
 
             if ( strcmp(command, "start") == 0 ) {
@@ -861,10 +845,11 @@ int main(int argc, char ** argv) {
             strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
 
             message(VERBOSE3, "Dropping privilege...\n");
-            priv_drop();
+            priv_drop_perm();
 
             message(VERBOSE2, "Waiting for Exec process...\n");
 
+            blockpid_or_signal();
             waitpid(exec_fork_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
         } else {
@@ -877,12 +862,15 @@ int main(int argc, char ** argv) {
 
     // Wait for namespace process to finish
     } else if ( namespace_fork_pid > 0 ) {
+        signal_post_parent();
+        setup_signal_handler(namespace_fork_pid);
         int tmpstatus;
         strncpy(argv[0], "Singularity: namespace", strlen(argv[0])); // Flawfinder: ignore
 
         message(VERBOSE3, "Dropping privilege...\n");
         priv_drop();
 
+        blockpid_or_signal();
         waitpid(namespace_fork_pid, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
     } else {
