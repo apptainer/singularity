@@ -31,7 +31,7 @@
 #include "util.h"
 #include "message.h"
 #include "config_parser.h"
-#include "rootfs/dir/dir.h"
+#include "dir.h"
 
 
 int rootfs_dir_init(char *source, char *mount_point, int writable) {

@@ -31,9 +31,9 @@
 #include "util.h"
 #include "message.h"
 #include "config_parser.h"
-#include "rootfs/rootfs.h"
-#include "rootfs/image/image.h"
-#include "rootfs/dir/dir.h"
+#include "rootfs.h"
+#include "image/image.h"
+#include "dir/dir.h"
 
 int module = 0;
 

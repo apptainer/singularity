@@ -31,7 +31,7 @@
 #include "image.h"
 #include "util.h"
 #include "message.h"
-#include "rootfs/image/image-util.h"
+#include "image-util.h"
 
 
 int image_util_init(void) {

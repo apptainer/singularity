@@ -33,9 +33,9 @@
 #include "util.h"
 #include "message.h"
 #include "config_parser.h"
-#include "rootfs/image/image.h"
-#include "rootfs/image/image-util.h"
-#include "rootfs/image/loop-control.h"
+#include "image.h"
+#include "image-util.h"
+#include "loop-control.h"
 
 #ifndef LOCALSTATEDIR
 #define LOCALSTATEDIR "/var"

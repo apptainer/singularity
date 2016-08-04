@@ -51,5 +51,5 @@ sexec_devel_LDADD = libsingularity.la
 EXTRA_DIST = config.h config_parser.h container_actions.h file.h singularity.h
 #image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h
 
-ACLOCAL_AMFLAGS = -I $(top_srcdir)/src
+ACLOCAL_AMFLAGS = -I $(top_srcdir)/src/include -I .
 
