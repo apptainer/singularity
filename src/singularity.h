@@ -16,15 +16,20 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
- */
+*/
 
 
 #ifndef __SINGULARITY_H_
 #define __SINGULARITY_H_
 
-    extern int singularity_init(void);
+
+    extern int singularity_ns_init(void);
     extern int singularity_ns_pid_unshare(void);
     extern int singularity_ns_mnt_unshare(void);
     extern int singularity_ns_join(pid_t attach_pid);
 
-#endif /* __SINGULARITY_H_ */
+    extern int singularity_rootfs_init(char *source, char *mount_point, int writable);
+    extern int singularity_rootfs_mount(void);
+    extern int singularity_rootfs_umount(void);
+
+#endif /* __SINGULARITY_H */

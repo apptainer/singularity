@@ -37,7 +37,7 @@
 
 int module = 0;
 
-int rootfs_init(char *source, char *mount_point, int writable) {
+int singularity_rootfs_init(char *source, char *mount_point, int writable) {
 
     if ( is_file(source) == 0 ) {
         module = ROOTFS_IMAGE;
@@ -51,7 +51,7 @@ int rootfs_init(char *source, char *mount_point, int writable) {
     return(-1);
 }
 
-int rootfs_mount(void) {
+int singularity_rootfs_mount(void) {
 
     if ( module == ROOTFS_IMAGE ) {
         return(rootfs_image_mount());
@@ -63,7 +63,7 @@ int rootfs_mount(void) {
     return(-1);
 }
 
-int rootfs_umount(void) {
+int singularity_rootfs_umount(void) {
 
     if ( module == ROOTFS_IMAGE ) {
         return(rootfs_image_umount());

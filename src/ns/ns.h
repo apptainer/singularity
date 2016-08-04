@@ -22,9 +22,9 @@
 #ifndef __NS_H
 #define __NS_H
 
-    extern int ns_init(void);
-    extern int ns_pid_unshare(void);
-    extern int ns_mnt_unshare(void);
-    extern int ns_join(pid_t attach_pid);
+    extern int singularity_ns_init(void);
+    extern int singularity_ns_pid_unshare(void);
+    extern int singularity_ns_mnt_unshare(void);
+    extern int singularity_ns_join(pid_t attach_pid);
 
 #endif /* __NS_H */

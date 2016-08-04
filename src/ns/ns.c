@@ -36,7 +36,7 @@
 
 
 
-int ns_init(void) {
+int singularity_ns_init(void) {
 
     printf("Hello from ns_init()\n");
 
@@ -44,7 +44,7 @@ int ns_init(void) {
 }
 
 
-int ns_pid_unshare(void) {
+int singularity_ns_pid_unshare(void) {
     config_rewind();
 #ifdef NS_CLONE_NEWPID
     message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
@@ -80,7 +80,7 @@ int ns_pid_unshare(void) {
 }
 
 
-int ns_mnt_unshare(void) {
+int singularity_ns_mnt_unshare(void) {
 #ifdef NS_CLONE_FS
     message(DEBUG, "Virtualizing FS namespace\n");
     if ( unshare(CLONE_FS) < 0 ) {
@@ -99,7 +99,7 @@ int ns_mnt_unshare(void) {
 
 
 
-int ns_join(pid_t attach_pid) {
+int singularity_ns_join(pid_t attach_pid) {
 #ifdef NO_SETNS
     message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);

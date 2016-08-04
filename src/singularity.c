@@ -23,23 +23,9 @@
 #include <unistd.h>
 
 #include "config.h"
-#include "ns/ns.h"
-#include "rootfs/rootfs.h"
 
-int singularity_ns_init(void) {
-    int retval = 0;
 
-    retval += ns_init();
 
-    return(retval);
-}
 
-int singularity_ns_pid_unshare(void) {
-    return(ns_pid_unshare());
-}
-int singularity_ns_mnt_unshare(void) {
-    return(ns_mnt_unshare());
-}
-int singularity_ns_join(pid_t attach_pid) {
-    return(ns_join(attach_pid));
-}
+
+

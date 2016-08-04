@@ -25,18 +25,13 @@
 
 #include "config.h"
 #include "singularity.h"
-#include "ns/ns.h"
-#include "rootfs/rootfs.h"
-
 
 
 int main(void) {
     
     printf("Calling singularity_init()\n");
 
-//    singularity_init();
-    ns_init();
-
+    singularity_ns_init();
 
     return(0);
 
