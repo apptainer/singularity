@@ -150,6 +150,7 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
         }
     } else {
         char * overlaydir;
+        config_rewind();
         if ( ( overlaydir = config_get_key_value("overlay dir") ) == NULL ){
             message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
             if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard") < 0 ) {
@@ -165,9 +166,9 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
         } else { // overlay mount
 
             // Mount tempFS
-            message(DEBUG, "Mounting tempFS");
-            if ( mount("scratch", overlaydir, "tempFS", MS_NOSUID, "") < 0 ){
-                message(ERROR, "Failed to mount tempFS.");
+            message(DEBUG, "Mounting tmpfs");
+            if ( mount("scratch", overlaydir, "tmpfs", MS_NOSUID, "") < 0 ){
+                message(ERROR, "Failed to mount tmpfs: %s\n", strerror(errno));
                 ABORT(255);
             }
 
