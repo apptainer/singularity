@@ -38,6 +38,7 @@
 int module = 0;
 
 int singularity_rootfs_init(char *source, char *mount_point, int writable) {
+    message(DEBUG, "Checking on container source type\n");
 
     if ( is_file(source) == 0 ) {
         module = ROOTFS_IMAGE;

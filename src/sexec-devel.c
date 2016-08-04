@@ -18,10 +18,12 @@
  * 
  */
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 
 #include "config.h"
 #include "config_parser.h"
@@ -33,8 +35,10 @@
 
 
 int main(int argc, char **argv) {
+    int retval = 0;
     char *sessiondir;
     char *image = getenv("SINGULARITY_IMAGE");
+    pid_t child_ns_pid;
 
     if ( image == NULL ) {
         message(ERROR, "SINGULARITY_IMAGE not defined!\n");
@@ -53,7 +57,28 @@ int main(int argc, char **argv) {
     printf("Calling singularity_init()\n");
 
     singularity_ns_init();
+    singularity_rootfs_init(image, "/var/singularity/mnt", 0);
 
-    return(0);
+
+    child_ns_pid = fork();
+
+    if ( child_ns_pid == 0 ) {
+        singularity_ns_mnt_unshare();
+
+    } else if ( child_ns_pid > 0 ) {
+        int tmpstatus;
+
+        waitpid(child_ns_pid, &tmpstatus, 0);
+        retval = WEXITSTATUS(tmpstatus);
+    } else {
+
+    }
+
+
+    if ( singularity_sessiondir_rm() < 0 ) {
+        message(WARNING, "Could not remove sessiondir\n");
+    }
+
+    return(retval);
 
 }

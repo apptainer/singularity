@@ -36,6 +36,7 @@
 
 int rootfs_dir_init(char *source, char *mount_point, int writable) {
     // Initialization code here....
+    message(DEBUG, "Inializing container rootfs dir subsystem\n");
 
     return(0);
 }

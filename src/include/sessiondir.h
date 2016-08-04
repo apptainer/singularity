@@ -23,5 +23,6 @@
 #define __SESSIONDIR_H_
 
     char *singularity_sessiondir(char *file);
+    int singularity_sessiondir_rm(void);
 
 #endif /* __SESSIONDIR_H_ */

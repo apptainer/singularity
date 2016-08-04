@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/file.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -36,6 +37,7 @@
 
 
 char *sessiondir = NULL;
+int sessiondir_fd = 0;
 
 char *singularity_sessiondir(char *file) {
     if ( file == NULL ) {
@@ -63,6 +65,43 @@ char *singularity_sessiondir(char *file) {
         message(DEBUG, "Set sessiondir to: %s\n", sessiondir);
     }
 
+    if ( is_dir(sessiondir) < 0 ) {
+        if ( s_mkpath(sessiondir, 0755) < 0 ) {
+            message(ERROR, "Failed creating session directory\n");
+            ABORT(255);
+        }
+    }
+
+    message(DEBUG, "Opening sessiondir file descriptor\n");
+    if ( ( sessiondir_fd = open(sessiondir, O_RDONLY) ) < 0 ) {
+        message(ERROR, "Could not obtain file descriptor for session directory %s: %s\n", sessiondir, strerror(errno));
+        ABORT(255);
+    }
+
+    message(DEBUG, "Setting shared flock() on session directory\n");
+    if ( flock(sessiondir_fd, LOCK_SH | LOCK_NB) < 0 ) {
+        message(ERROR, "Could not obtain shared lock on %s: %s\n", sessiondir, strerror(errno));
+        ABORT(255);
+    }
+
+
     return(sessiondir);
 }
 
+int singularity_sessiondir_rm(void) {
+    if ( sessiondir == NULL ) {
+        message(ERROR, "Session directory is NULL, can not remove nullness!\n");
+        return(-1);
+    }
+
+    message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
+    if ( flock(sessiondir_fd, LOCK_EX | LOCK_NB) == 0 ) {
+        message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
+        if ( s_rmdir(sessiondir) < 0 ) {
+            message(ERROR, "Could not remove session directory\n");
+            ABORT(255);
+        }
+    }
+    
+    return(0);
+}

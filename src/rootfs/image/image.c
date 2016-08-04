@@ -50,6 +50,7 @@ int read_write = 0;
 
 int rootfs_image_init(char *source, char *mount_point, int writable) {
     // Initialization code here....
+    message(DEBUG, "Inializing container rootfs image subsystem\n");
 
     return(0);
 }
