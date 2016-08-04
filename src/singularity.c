@@ -29,7 +29,7 @@
 int singularity_init(void) {
     int retval = 0;
 
-//    retval += ns_init();
+    retval += ns_init();
 
     return(retval);
 }
