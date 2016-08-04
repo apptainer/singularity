@@ -165,7 +165,7 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
             }
         } else { // overlay mount
 
-            // Mount tempFS
+            // Mount tmpfs
             message(DEBUG, "Mounting tmpfs");
             if ( mount("scratch", overlaydir, "tmpfs", MS_NOSUID, "") < 0 ){
                 message(ERROR, "Failed to mount tmpfs: %s\n", strerror(errno));
@@ -185,13 +185,13 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
                 }
             }
 
-            // Not sure what this does
+            // Mount image readonly to reside underneath the overlay
             message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
-            if ( mount(loop_device, overlaydirImage, "ext4", MS_NOSUID|MS_RDONLY, "discard") < 0 ) {
+            if ( mount(loop_device, overlaydirImage, "ext4", MS_NOSUID|MS_RDONLY, "discard,errors=remount-ro") < 0 ) {
                 message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
-                if ( mount(loop_device, overlaydirImage, "ext4", MS_NOSUID|MS_RDONLY, "") < 0 ) {
+                if ( mount(loop_device, overlaydirImage, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
                     message(DEBUG, "Trying to mount read only as ext3\n");
-                    if ( mount(loop_device, overlaydirImage, "ext3", MS_NOSUID|MS_RDONLY, "") < 0 ) {
+                    if ( mount(loop_device, overlaydirImage, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
                         message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, overlaydirImage, strerror(errno));
                         ABORT(255);
                     }
