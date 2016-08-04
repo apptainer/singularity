@@ -29,6 +29,7 @@ singularity.spec
 
 src/sexec-devel
 src/stamp-h1
+src/include/stamp-h1
 
 src/.deps/
 src/.libs/
