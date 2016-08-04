@@ -1,4 +1,4 @@
-SUBDIRS = namespaces rootfs
+SUBDIRS = ns rootfs
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile

@@ -19,16 +19,11 @@
 */
 
 
-#ifndef __NS_MOUNT_H_
-#define __NS_MOUNT_H_
+#ifndef __ROOTFS_DIR_H_
+#define __ROOTFS_DIR_H_
 
-    /* Do initialization and sanity */
-    int ns_mnt_init(void);
+int rootfs_dir_init(char *source, char *mount_point, int writable);
+int rootfs_dir_mount(void);
+int rootfs_dir_umount(void);
 
-    /* Unshare mount namespace */
-    void ns_mnt_unshare(void);
-
-    /* Join existing mount namespace (requires of namespace to join */
-    void ns_mnt_join(pid_t daemon_pid);
-
-#endif /* __NS_MOUNT_H_ */
+#endif /* __ROOTFS_DIR_H */

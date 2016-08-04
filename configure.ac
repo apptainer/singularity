@@ -170,9 +170,10 @@ AC_CONFIG_FILES([
    Makefile
    singularity.spec
    src/Makefile
-   src/namespaces/Makefile
+   src/ns/Makefile
    src/rootfs/Makefile
    src/rootfs/image/Makefile
+   src/rootfs/dir/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity

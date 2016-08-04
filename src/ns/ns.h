@@ -19,16 +19,12 @@
 */
 
 
-#ifndef __NS_PID_H_
-#define __NS_PID_H_
+#ifndef __NS_H
+#define __NS_H
 
-    /* Do initialization and sanity */
-    int ns_pid_init(void);
+int ns_init(void);
+int ns_pid_unshare(void);
+int ns_mnt_unshare(void);
+int ns_join(pid_t attach_pid);
 
-    /* Unshare pid namespace */
-    void ns_pid_unshare(void);
-
-    /* Join existing pid namespace (requires of namespace to join */
-    void ns_pid_join(pid_t daemon_pid);
-
-#endif /* __NS_PID_H */
+#endif /* __NS_H */
