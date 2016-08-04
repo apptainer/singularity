@@ -70,6 +70,10 @@ void _message(int level, const char *function, const char *file, int line, char 
         init();
     }
 
+    while( ( ! isalpha(file[0]) ) && ( file[0] != '\0') ) {
+        file++;
+    }
+
     switch (level) {
         case ABRT:
             prefix = strdup("ABORT");
