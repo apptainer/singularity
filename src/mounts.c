@@ -163,6 +163,14 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
                 }
             }
         } else { // overlay mount
+
+            // Mount tempFS
+            message(DEBUG, "Mounting tempFS");
+            if ( mount("scratch", overlaydir, "tempFS", MS_NOSUID, "") < 0 ){
+                message(ERROR, "Failed to mount tempFS.");
+                ABORT(255);
+            }
+
             // Create overlaydirImage: overlaydir/i
             message(DEBUG, "Creating image within overlaydir\n");
             int overlaydirImageLen = strlen(overlaydir) + 4;
