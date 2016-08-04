@@ -28,9 +28,9 @@
 #include <stdlib.h>
 
 #include "file.h"
-#include "image.h"
 #include "util.h"
 #include "message.h"
+#include "config_parser.h"
 #include "rootfs/rootfs.h"
 #include "rootfs/image/image.h"
 #include "rootfs/dir/dir.h"

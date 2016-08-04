@@ -7,6 +7,6 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 noinst_LIBRARIES = librootfs.a
 
 librootfs_a_LIBADD = image/librootfsimage.a dir/librootfsdir.a
-librootfs_a_SOURCES = rootfs.c ../message.c ../config_parser.c
+librootfs_a_SOURCES = rootfs.c ../util.c ../message.c ../config_parser.c
 
 EXTRA_DIST = rootfs.h

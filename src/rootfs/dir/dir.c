@@ -28,10 +28,10 @@
 #include <stdlib.h>
 
 #include "file.h"
-#include "image.h"
 #include "util.h"
 #include "message.h"
-#include "rootfs/image/image-util.h"
+#include "config_parser.h"
+#include "rootfs/dir/dir.h"
 
 
 int rootfs_dir_init(char *source, char *mount_point, int writable) {

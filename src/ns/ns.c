@@ -29,16 +29,16 @@
 #include <stdlib.h>
 #include <sched.h>
 
+#include "file.h"
+#include "util.h"
 #include "message.h"
 #include "config_parser.h"
-#include "util.h"
-#include "file.h"
-#include "ns/ns.h"
 
 
 
 int ns_init(void) {
 
+    printf("Hello from ns_init()\n");
 
     return(0);
 }

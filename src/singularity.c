@@ -16,15 +16,32 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "config.h"
+#include "ns/ns.h"
+#include "rootfs/rootfs.h"
+
+int singularity_init(void) {
+    int retval = 0;
+
+//    retval += ns_init();
+
+    return(retval);
+}
+
+/*
+int singularity_ns_pid_unshare(void) {
+    return(ns_pid_unshare());
+}
+int singularity_ns_mnt_unshare(void) {
+    return(ns_mnt_unshare());
+}
+int singularity_ns_join(pid_t attach_pid) {
+    return(ns_join(attach_pid));
+}
 */
-
-
-#ifndef __NS_H
-#define __NS_H
-
-    extern int ns_init(void);
-    extern int ns_pid_unshare(void);
-    extern int ns_mnt_unshare(void);
-    extern int ns_join(pid_t attach_pid);
-
-#endif /* __NS_H */

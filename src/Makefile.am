@@ -3,8 +3,24 @@ SUBDIRS = ns rootfs
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
-AM_CFLAGS = -Wall -fpie
+AM_CFLAGS = -Wall -fpie -shared
 AM_LDFLAGS = -pie
+
+bindir = $(libexecdir)/singularity
+
+noinst_LIBRARIES = libsingularity.a
+
+libsingularity_a_LIBADD = ns/libns.a
+libsingularity_a_SOURCES = singularity.c
+
+bin_PROGRAMS = sexec-devel
+
+sexec_devel_SOURCES = sexec-devel.c
+sexec_devel_LDADD = libsingularity.a
+
+
+
+
 #sexec_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 #sexec_nosuid_CPPFLAGS = -DSINGULARITY_NOSUID=1 -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 #bootstrap_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"
@@ -20,7 +36,6 @@ AM_LDFLAGS = -pie
 #		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec; \
 #	fi
 
-bindir = $(libexecdir)/singularity
 #bin_PROGRAMS = sexec image-create image-expand image-mount image-bind sexec_nosuid
 #
 #ftrace_SOURCES = ftrace.c file.c util.c message.c
@@ -32,7 +47,8 @@ bindir = $(libexecdir)/singularity
 #image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 #image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 
-EXTRA_DIST = config.h config_parser.h container_actions.h file.h image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h
+EXTRA_DIST = config.h config_parser.h container_actions.h file.h singularity.h
+#image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h
 
 ACLOCAL_AMFLAGS = -I $(top_srcdir)/src
 

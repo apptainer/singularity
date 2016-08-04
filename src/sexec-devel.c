@@ -16,15 +16,28 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
+
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "config.h"
+#include "singularity.h"
+#include "ns/ns.h"
+#include "rootfs/rootfs.h"
 
 
-#ifndef __NS_H
-#define __NS_H
 
-    extern int ns_init(void);
-    extern int ns_pid_unshare(void);
-    extern int ns_mnt_unshare(void);
-    extern int ns_join(pid_t attach_pid);
+int main(void) {
+    
+    printf("Calling singularity_init()\n");
 
-#endif /* __NS_H */
+    singularity_init();
+//    ns_init();
+
+
+    return(0);
+
+}
