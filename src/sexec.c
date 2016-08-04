@@ -255,7 +255,6 @@ int main(int argc, char ** argv) {
         }
 
     } else {
-    	int containerimage_fd;
 
         message(DEBUG, "Opening image as read only: %s\n", containerimage);
         if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) { // Flawfinder: ignore 
