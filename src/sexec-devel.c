@@ -24,10 +24,31 @@
 #include <unistd.h>
 
 #include "config.h"
+#include "config_parser.h"
+#include "message.h"
+#include "util.h"
+#include "privilege.h"
+#include "sessiondir.h"
 #include "singularity.h"
 
 
-int main(void) {
+int main(int argc, char **argv) {
+    char *sessiondir;
+    char *image = getenv("SINGULARITY_IMAGE");
+
+    if ( image == NULL ) {
+        message(ERROR, "SINGULARITY_IMAGE not defined!\n");
+        ABORT(1);
+    }
+
+    priv_init();
+    config_open("/etc/singularity/singularity.conf");
+
+    message(INFO, "SINGULARITY_IMAGE = '%s'\n", image);
+
+    sessiondir = singularity_sessiondir(image);
+
+    message(INFO, "Sessiondir = '%s'\n", sessiondir);
     
     printf("Calling singularity_init()\n");
 

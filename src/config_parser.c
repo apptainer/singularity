@@ -70,6 +70,11 @@ char *config_get_key_value(char *key) {
     char *config_value;
     char *line;
 
+    if ( config_fp == NULL ) {
+        message(ERROR, "Called config_get_key_value() before opening a config!\n");
+        ABORT(255);
+    }
+
     line = (char *)malloc(MAX_LINE_LEN);
 
     message(DEBUG, "Called config_get_key_value(%s)\n", key);

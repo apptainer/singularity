@@ -39,6 +39,8 @@ char *sessiondir = NULL;
 
 char *singularity_sessiondir(char *file) {
     if ( file == NULL ) {
+        message(DEBUG, "Got null for file, returning prior sessiondir\n");
+    } else {
         char *sessiondir_prefix;
         struct stat filestat;
         uid_t uid = priv_getuid();
@@ -47,7 +49,7 @@ char *singularity_sessiondir(char *file) {
 
         message(DEBUG, "Checking Singularity configuration for 'sessiondir prefix'\n");
 
-        if (stat(path, &filestat) < 0) {
+        if (stat(file, &filestat) < 0) {
             message(ERROR, "Failed calling stat() on %s: %s\n", file, strerror(errno));
             return(NULL);
         }

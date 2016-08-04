@@ -16,7 +16,7 @@ libsingularity_la_LDFLAGS = -static
 
 bin_PROGRAMS = sexec-devel
 
-sexec_devel_SOURCES = sexec-devel.c
+sexec_devel_SOURCES = sexec-devel.c message.c util.c sessiondir.c
 sexec_devel_LDADD = libsingularity.la
 
 
