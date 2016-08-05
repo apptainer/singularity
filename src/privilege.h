@@ -28,6 +28,7 @@ typedef struct {
     int disable_setgroups;
     uid_t orig_uid;
     uid_t orig_gid;
+    pid_t orig_pid;
     int target_mode;  // Set to 1 if we are running in "target mode" (admin specifies UID/GID)
 } s_privinfo;
 

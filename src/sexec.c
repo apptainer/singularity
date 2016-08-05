@@ -520,9 +520,6 @@ int main(int argc, char ** argv) {
         message(DEBUG, "Hello from namespace child process\n");
         signal_post_child();
         if ( daemon_pid == -1 ) {
-            if ( use_userns ) {
-                priv_init_userns_inside();
-            }
             namespace_unshare();
 
             config_rewind();
@@ -545,6 +542,17 @@ int main(int argc, char ** argv) {
             }
 #endif
 
+            // priv_init_userns_inside works by writing files to /proc; since we changed
+            // to a new PID namespace before forking, we must remount this early.
+            if ( use_userns ) {
+                // Mount /proc if we are configured 
+                message(VERBOSE, "Mounting /proc for use inside user namespace\n");
+                if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
+                    message(ERROR, "Could not mount /proc: %s\n", strerror(errno));
+                    ABORT(255);
+                }   
+                priv_init_userns_inside();
+            }
 
             if ( container_is_image > 0 ) {
                 if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
