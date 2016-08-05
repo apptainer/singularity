@@ -201,7 +201,7 @@ stest 0 singularity exec "$CONTAINER" test -f /environment
 /bin/echo "Checking unprivileged mode"
 myself=`whoami`
 stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
-stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec out whoami | grep -q $myself"
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity -d exec out whoami | grep -q $myself"
 stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec $CONTAINER whoami"
 stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
 
