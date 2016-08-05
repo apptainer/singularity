@@ -50,4 +50,5 @@ void priv_init(void);
 void priv_init_userns_outside();
 // Finish initialization of user namespace; must be called inside
 // the container but *before* PID namespaces are setup.
-void priv_init_userns_inside();
+void priv_init_userns_inside_init();
+void priv_init_userns_inside_final();

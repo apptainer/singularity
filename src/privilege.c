@@ -305,7 +305,22 @@ void priv_init_userns_outside() {
 #endif  // SINGULARITY_USERNS
 }
 
-void priv_init_userns_inside() {
+void priv_init_userns_inside_init() {
+#ifdef SINGULARITY_USERNS
+    if (!uinfo.userns_ready) {
+        message(ERROR, "Internal error: User NS privilege data structure not initialized.\n");
+        ABORT(255);
+    }
+    uinfo.uid = uinfo.orig_uid;
+    uinfo.gid = uinfo.orig_gid;
+#else  // SINGULARITY_USERNS
+    message(ERROR, "Internal error: User NS function invoked without compiled-in support.\n");
+    ABORT(255);
+#endif  // SINGULARITY_USERNS
+}
+
+
+void priv_init_userns_inside_final() {
 #ifdef SINGULARITY_USERNS
     if (!uinfo.userns_ready) {
         message(ERROR, "Internal error: User NS privilege data structure not initialized.\n");
@@ -318,8 +333,6 @@ void priv_init_userns_inside() {
     }
     update_gid_map(1, uinfo.orig_gid, 1);
     update_uid_map(1, uinfo.orig_uid, 1);
-    uinfo.uid = uinfo.orig_uid;
-    uinfo.gid = uinfo.orig_gid;
 #else  // SINGULARITY_USERNS
     message(ERROR, "Internal error: User NS function invoked without compiled-in support.\n");
     ABORT(255);
