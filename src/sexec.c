@@ -520,10 +520,10 @@ int main(int argc, char ** argv) {
         message(DEBUG, "Hello from namespace child process\n");
         signal_post_child();
         if ( daemon_pid == -1 ) {
-            if ( use_userns ) {
-                priv_init_userns_inside();
-            }
             namespace_unshare();
+            if (use_userns) {
+                priv_init_userns_inside_init();
+            }
 
             config_rewind();
             int slave = config_get_key_bool("mount slave", 0);
@@ -544,7 +544,6 @@ int main(int argc, char ** argv) {
                 ABORT(255);
             }
 #endif
-
 
             if ( container_is_image > 0 ) {
                 if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
@@ -696,6 +695,16 @@ int main(int argc, char ** argv) {
 #endif  // SINGULARITY_NO_NEW_PRIVS
         }
 
+        // Reset UIDs so user appears to be "normal" non-root UID.
+        if ( use_userns ) {
+                message(VERBOSE, "Mounting /proc for use inside user namespace\n");
+                if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
+                    message(ERROR, "Could not mount /proc: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                priv_init_userns_inside_final();
+        }
+
         // Fork off exec process
         message(VERBOSE, "Forking exec process\n");
 
@@ -718,7 +727,7 @@ int main(int argc, char ** argv) {
                 // Mount /proc if we are configured
                 message(DEBUG, "Checking configuration file for 'mount proc'\n");
                 config_rewind();
-                if ( config_get_key_bool("mount proc", 1) > 0 ) {
+                if ( !use_userns && config_get_key_bool("mount proc", 1) > 0 ) {
                     if ( is_dir("/proc") == 0 ) {
                         message(VERBOSE, "Mounting /proc\n");
                         if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
