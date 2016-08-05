@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/mount.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -34,18 +35,61 @@
 #include "dir.h"
 
 
-int rootfs_dir_init(char *source, char *mount_point, int writable) {
-    // Initialization code here....
+static char *source_dir = NULL;
+static char *mount_point = NULL;
+static int read_write = 0;
+
+
+int rootfs_dir_init(char *source, char *mount_dir, int writable) {
     message(DEBUG, "Inializing container rootfs dir subsystem\n");
+
+    if ( is_dir(source) == 0 ) {
+        source_dir = strdup(source);
+    } else {
+        message(ERROR, "Container source directory is not available: %s\n", source);
+        ABORT(255);
+    }
+
+    if ( is_dir(mount_dir) == 0 ) {
+        mount_point = strdup(mount_dir);
+    } else {
+        message(ERROR, "Mount point for container image is not a directory: %s\n", mount_dir);
+        ABORT(255);
+    }
+
+    if ( writable > 0 ) {
+        read_write =1;
+    }
 
     return(0);
 }
 
 
 int rootfs_dir_mount(void) {
+
+    if ( ( mount_point == NULL ) || ( source_dir == NULL ) ) {
+        message(ERROR, "Called image_mount but image_init() hasn't been called\n");
+        ABORT(255);
+    }
+
+    if ( mount(source_dir, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+        message(ERROR, "Could not mount container directory %s->%s: %s\n", source_dir, mount_point, strerror(errno));
+        return 1;
+    }
+
     return(0);
 }
 
 int rootfs_dir_umount(void) {
+    if ( mount_point == NULL ) {
+        message(ERROR, "Called image_umount but image_init() hasn't been called\n");
+        ABORT(255);
+    }
+
+    if ( umount(mount_point) < 0 ) {
+        message(ERROR, "Failed umounting file system\n");
+        ABORT(255);
+    }
+
     return(0);
 }

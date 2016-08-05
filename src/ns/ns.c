@@ -25,6 +25,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/mount.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sched.h>
@@ -94,6 +95,29 @@ int singularity_ns_mnt_unshare(void) {
         message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
         ABORT(255);
     }
+
+
+    config_rewind();
+    int slave = config_get_key_bool("mount slave", 0);
+    // Privatize the mount namespaces
+    //
+#ifdef SINGULARITY_MS_SLAVE
+    message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
+    if ( mount(NULL, "/", NULL, (slave ? MS_SLAVE : MS_PRIVATE)|MS_REC, NULL) < 0 ) {
+        message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
+        ABORT(255);
+    }
+#else
+    if ( slave > 0 ) {
+        message(WARNING, "Requested option 'mount slave' is not available on this host, using private\n");
+    }
+    message(DEBUG, "Making mounts private\n");
+    if ( mount(NULL, "/", NULL, MS_PRIVATE | MS_REC, NULL) < 0 ) {
+        message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
+        ABORT(255);
+    }
+#endif
+
     return(0);
 }
 

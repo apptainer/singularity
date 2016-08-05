@@ -59,21 +59,33 @@ int main(int argc, char **argv) {
     singularity_ns_init();
     singularity_rootfs_init(image, "/var/singularity/mnt", 0);
 
-
     child_ns_pid = fork();
 
     if ( child_ns_pid == 0 ) {
+        message(DEBUG, "Hello from NS child\n");
+
         singularity_ns_mnt_unshare();
+
+        if ( singularity_rootfs_mount() < 0 ) {
+            message(ERROR, "Failed moutning the image\n");
+            ABORT(255);
+        }
+
+        system("ls -l /var/singularity/mnt");
+
+        return(0);
 
     } else if ( child_ns_pid > 0 ) {
         int tmpstatus;
 
+        message(DEBUG, "Waiting on NS child process\n");
+
         waitpid(child_ns_pid, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
     } else {
-
+        message(ERROR, "Failed forking child process\n");
+        ABORT(255);
     }
-
 
     if ( singularity_sessiondir_rm() < 0 ) {
         message(WARNING, "Could not remove sessiondir\n");

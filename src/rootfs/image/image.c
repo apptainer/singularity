@@ -42,40 +42,50 @@
 #endif
 
 
-FILE *image_fp = NULL;
-char *mount_point = NULL;
-char *loop_dev = NULL;
-int read_write = 0;
+static FILE *image_fp = NULL;
+static char *mount_point = NULL;
+static char *loop_dev = NULL;
+static int read_write = 0;
 
 
-int rootfs_image_init(char *source, char *mount_point, int writable) {
+int rootfs_image_init(char *source, char *mount_dir, int writable) {
     // Initialization code here....
     message(DEBUG, "Inializing container rootfs image subsystem\n");
 
-    return(0);
-}
-
-// TODO: Do all of this in init
-int image_mount_open(char *image_path, int writable) {
     if ( image_fp != NULL ) {
         message(WARNING, "Called image_open, but image already open!\n");
         return(1);
     }
 
+    if ( is_file(source) == 0 ) {
+        mount_point = strdup(mount_dir);
+    } else {
+        message(ERROR, "Container image is not available: %s\n", mount_dir);
+        ABORT(255);
+    }
+
+    if ( is_dir(mount_dir) == 0 ) {
+        mount_point = strdup(mount_dir);
+    } else {
+        message(ERROR, "Mount point for container image is not a directory: %s\n", mount_dir);
+        ABORT(255);
+    }
+
     if ( writable > 0 ) {
-        if ( ( image_fp = fopen(image_path, "r") ) == NULL ) {
-            message(ERROR, "Could not open image (read only) %s: %s\n", image_path, strerror(errno));
+        if ( ( image_fp = fopen(source, "r") ) == NULL ) {
+            message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
 
         message(DEBUG, "Obtaining exclusive write lock on image\n");
         if ( flock(fileno(image_fp), LOCK_EX | LOCK_NB) < 0 ) {
-            message(ERROR, "Could not obtain a shared lock on image: %s\n", image_path);
+            message(ERROR, "Could not obtain a shared lock on image: %s\n", source);
             ABORT(255);
         }
+        read_write = 1;
     } else {
-        if ( ( image_fp = fopen(image_path, "r+") ) == NULL ) {
-            message(ERROR, "Could not open image (read/write) %s: %s\n", image_path, strerror(errno));
+        if ( ( image_fp = fopen(source, "r+") ) == NULL ) {
+            message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
     }
@@ -97,23 +107,28 @@ int rootfs_image_mount(void) {
         ABORT(255);
     }
 
+    message(DEBUG, "Calculating image offset\n");
 // TODO: Move offset to loop functions
     if ( ( offset = image_util_offset(image_fp) ) < 0 ) {
         message(ERROR, "Could not obtain message offset of image\n");
         ABORT(255);
     }
 
+    message(DEBUG, "Binding image to loop device\n");
     if ( ( loop_dev = loop_bind(image_fp, offset) ) == NULL ) {
         message(ERROR, "There was a problem bind mounting the image\n");
         ABORT(255);
     }
 
+
     if ( read_write > 0 ) {
+        message(VERBOSE, "Mounting image in read/write\n");
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
             message(ERROR, "Failed to mount image!\n");
             ABORT(255);
         }
     } else {
+        message(VERBOSE, "Mounting image in read/only\n");
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
             message(ERROR, "Failed to mount image!\n");
             ABORT(255);
@@ -141,6 +156,7 @@ int rootfs_image_umount(void) {
         ABORT(255);
     }
 
+    fclose(image_fp);
     (void) loop_free();
 
     return(0);
