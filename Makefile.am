@@ -10,3 +10,4 @@ install-perms:
 	@echo "install-perms is no longer required"
 	@echo
 
+ACLOCAL_AMFLAGS = -I m4
