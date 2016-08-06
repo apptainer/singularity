@@ -87,6 +87,11 @@ int singularity_rootfs_umount(void) {
 int singularity_rootfs_chroot(void) {
     message(VERBOSE, "Entering container file system space\n");
 
+    if ( is_exec(joinpath(chroot_dir, "/bin/sh")) < 0 ) {
+        message(ERROR, "Container does not have a valid /bin/sh\n");
+        ABORT(255);
+    }
+
     priv_escalate();
     if ( chroot(chroot_dir) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
         message(ERROR, "failed enter container at: %s\n", chroot_dir);
