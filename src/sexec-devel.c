@@ -50,11 +50,11 @@ int main(int argc, char **argv) {
     config_open("/etc/singularity/singularity.conf");
     singularity_rootfs_init(image, "/var/singularity/mnt", 0);
 
-    message(INFO, "SINGULARITY_IMAGE = '%s'\n", image);
+    message(VERBOSE, "SINGULARITY_IMAGE = '%s'\n", image);
 
     sessiondir = singularity_sessiondir(image);
 
-    message(INFO, "Sessiondir = '%s'\n", sessiondir);
+    message(VERBOSE, "Sessiondir = '%s'\n", sessiondir);
     
 
     child_ns_pid = fork();

@@ -328,19 +328,14 @@ void priv_escalate(void) {
     if ( getuid() != 0 ) {
         message(DEBUG, "Temporarily escalating privileges\n");
 
-        if ( seteuid(0) < 0 ) {
-            message(ERROR, "Could not escalate effective user privileges: %s\n", strerror(errno));
+        if ( ( seteuid(0) < 0 ) || ( setegid(0) < 0 ) ) {
+            message(ERROR, "The feature you are requesting requires privilege you do not have\n");
             ABORT(255);
         }
 
-        if ( setegid(0) < 0 ) {
-            message(ERROR, "Could not escalate effective group privileges: %s\n", strerror(errno));
-            ABORT(255);
-        }
     } else {
         message(DEBUG, "Running as root, not changing privileges\n");
     }
-
 }
 
 void priv_drop(void) {

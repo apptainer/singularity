@@ -31,13 +31,15 @@ sexec_devel_LDADD = libsingularity.la
 
 #dist_suidPROGRAM_INSTALL = ${INSTALL} -m 640
 
-#install-data-hook:
-#	@if test `id -ru` = "0"; then \
-#		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec"; \
-#		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec; \
-#		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec"; \
-#		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec; \
-#	fi
+install-data-hook: make_suid
+
+make_suid:
+	@if test `id -ru` = "0"; then \
+		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-devel"; \
+		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-devel; \
+		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-devel"; \
+		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-devel; \
+	fi
 
 #bin_PROGRAMS = sexec image-create image-expand image-mount image-bind sexec_nosuid
 #
