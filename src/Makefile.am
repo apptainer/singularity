@@ -17,10 +17,10 @@ libsingularity_la_LDFLAGS = -version-info 1:0:0
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = sexec-devel
+bin_PROGRAMS = sexec
 
-sexec_devel_SOURCES = sexec-devel.c sessiondir.c config_parser.c
-sexec_devel_LDADD = libsingularity.la
+sexec_SOURCES = sexec-devel.c sessiondir.c config_parser.c
+sexec_LDADD = libsingularity.la
 
 
 

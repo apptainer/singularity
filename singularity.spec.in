@@ -49,7 +49,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_libexecdir}/singularity
-%attr(4755, root, root) %{_libexecdir}/singularity/sexec-devel
+%attr(4755, root, root) %{_libexecdir}/singularity/sexec
 %{_libexecdir}/singularity/mods
 %{_libexecdir}/singularity/cli
 %{_libexecdir}/singularity/bootstrap.sh
