@@ -11,7 +11,7 @@ include_HEADERS = singularity.h
 lib_LTLIBRARIES = libsingularity.la
 
 libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la
-libsingularity_la_SOURCES = singularity.c message.c util.c file.c privilege.c
+libsingularity_la_SOURCES = singularity.c privilege.c
 libsingularity_la_LDFLAGS = -version-info 1:0:0
 
 
@@ -19,7 +19,7 @@ bindir = $(libexecdir)/singularity
 
 bin_PROGRAMS = sexec
 
-sexec_SOURCES = sexec-devel.c sessiondir.c config_parser.c
+sexec_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
 sexec_LDADD = libsingularity.la
 
 
@@ -36,10 +36,10 @@ install-data-hook: make_suid
 
 make_suid:
 	@if test `id -ru` = "0"; then \
-		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-devel"; \
-		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-devel; \
-		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-devel"; \
-		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-devel; \
+		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec"; \
+		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec; \
+		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec"; \
+		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec; \
 	fi
 
 #bin_PROGRAMS = sexec image-create image-expand image-mount image-bind sexec_nosuid
