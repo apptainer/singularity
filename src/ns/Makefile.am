@@ -6,7 +6,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libns.la
 
-
 libns_la_LIBADD = mnt/libnsmnt.la pid/libnspid.la
-libns_la_SOURCES = ns.c ../file.c ../util.c ../message.c ../config_parser.c ../privilege.c
-libns_la_LDFLAGS = -static
+libns_la_SOURCES = ns.c
+#libns_la_SOURCES = ns.c ../file.c ../util.c ../message.c ../config_parser.c ../privilege.c
+#libns_la_LDFLAGS = -static

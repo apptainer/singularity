@@ -3,20 +3,21 @@ SUBDIRS = ns rootfs
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
-AM_CFLAGS = -Wall -fpie -shared
+AM_CFLAGS = -Wall -fpie -shared -fPIC
 AM_LDFLAGS = -pie
 
 bindir = $(libexecdir)/singularity
 
-noinst_LTLIBRARIES = libsingularity.la
+lib_LTLIBRARIES = libsingularity.la
 
 libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la
-libsingularity_la_SOURCES = singularity.c
-libsingularity_la_LDFLAGS = -static
+libsingularity_la_SOURCES = singularity.c message.c util.c file.c privilege.c
+libsingularity_la_LDFLAGS = -version-info 1:0:0
 
 bin_PROGRAMS = sexec-devel
 
-sexec_devel_SOURCES = sexec-devel.c message.c util.c sessiondir.c
+sexec_devel_SOURCES = sexec-devel.c sessiondir.c
+#sexec_devel_SOURCES = sexec-devel.c message.c util.c sessiondir.c
 sexec_devel_LDADD = libsingularity.la
 
 

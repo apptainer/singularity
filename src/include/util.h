@@ -21,6 +21,10 @@
 
 #include <unistd.h>
 
+
+#ifndef __UTIL_H_
+#define __UTIL_H_
+
 int intlen(int input);
 char *int2str(int num);
 char *joinpath(const char * path1, const char * path2);
@@ -42,3 +46,5 @@ int str2int(const char *input_str, long int *output_num);
 
 #define ABORT(a) {exit(a);}
 
+
+#endif
