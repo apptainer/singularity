@@ -6,7 +6,6 @@ CLEANFILES = core.* *~
 AM_CFLAGS = -Wall -fpie -shared -fPIC
 AM_LDFLAGS = -pie
 
-bindir = $(libexecdir)/singularity
 
 lib_LTLIBRARIES = libsingularity.la
 
@@ -14,10 +13,12 @@ libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la
 libsingularity_la_SOURCES = singularity.c message.c util.c file.c privilege.c
 libsingularity_la_LDFLAGS = -version-info 1:0:0
 
+
+bindir = $(libexecdir)/singularity
+
 bin_PROGRAMS = sexec-devel
 
 sexec_devel_SOURCES = sexec-devel.c sessiondir.c
-#sexec_devel_SOURCES = sexec-devel.c message.c util.c sessiondir.c
 sexec_devel_LDADD = libsingularity.la
 
 
@@ -52,5 +53,5 @@ sexec_devel_LDADD = libsingularity.la
 EXTRA_DIST = config.h config_parser.h container_actions.h file.h singularity.h
 #image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h
 
-ACLOCAL_AMFLAGS = -I $(top_srcdir)/src/include -I .
+ACLOCAL_AMFLAGS = -I $(top_srcdir)/src/ -I .
 
