@@ -26,8 +26,4 @@
     #define ROOTFS_IMAGE    1
     #define ROOTFS_DIR      2
 
-    extern int singularity_rootfs_init(char *source, char *mount_point, int writable);
-    extern int singularity_rootfs_mount(void);
-    extern int singularity_rootfs_umount(void);
-
 #endif /* __ROOTFS_H */

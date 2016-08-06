@@ -31,8 +31,8 @@
 #include "file.h"
 #include "util.h"
 #include "message.h"
-#include "config_parser.h"
 #include "dir.h"
+#include "privilege.h"
 
 
 static char *source_dir = NULL;
@@ -72,10 +72,12 @@ int rootfs_dir_mount(void) {
         ABORT(255);
     }
 
+    priv_escalate();
     if ( mount(source_dir, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
         message(ERROR, "Could not mount container directory %s->%s: %s\n", source_dir, mount_point, strerror(errno));
         return 1;
     }
+    priv_drop();
 
     return(0);
 }
@@ -86,10 +88,12 @@ int rootfs_dir_umount(void) {
         ABORT(255);
     }
 
+    priv_escalate();
     if ( umount(mount_point) < 0 ) {
         message(ERROR, "Failed umounting file system\n");
         ABORT(255);
     }
+    priv_drop();
 
     return(0);
 }

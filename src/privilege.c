@@ -220,6 +220,8 @@ void priv_init(void) {
     }
     uinfo.ready = 1;
 
+    priv_drop();
+
     message(DEBUG, "Returning priv_init(void)\n");
 }
 
@@ -323,30 +325,32 @@ void priv_init_userns_inside() {
 
 
 void priv_escalate(void) {
-    message(DEBUG, "Called priv_escalate(void)\n");
+    if ( getuid() != 0 ) {
+        message(DEBUG, "Temporarily escalating privileges\n");
 
-    if ( seteuid(0) < 0 ) {
-        message(ERROR, "Could not escalate effective user privileges: %s\n", strerror(errno));
-        ABORT(255);
+        if ( seteuid(0) < 0 ) {
+            message(ERROR, "Could not escalate effective user privileges: %s\n", strerror(errno));
+            ABORT(255);
+        }
+
+        if ( setegid(0) < 0 ) {
+            message(ERROR, "Could not escalate effective group privileges: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    } else {
+        message(DEBUG, "Running as root, not changing privileges\n");
     }
 
-    if ( setegid(0) < 0 ) {
-        message(ERROR, "Could not escalate effective group privileges: %s\n", strerror(errno));
-        ABORT(255);
-    }
-
-    message(DEBUG, "Returning priv_escalate(void)\n");
 }
 
 void priv_drop(void) {
-    message(DEBUG, "Called priv_drop(void)\n");
 
     if ( uinfo.ready != 1 ) {
         message(ERROR, "User info is not available\n");
         ABORT(255);
     }
 
-    if ( geteuid() == 0 ) {
+    if ( getuid() != 0 ) {
         message(DEBUG, "Dropping privileges to GID = '%d'\n", uinfo.gid);
         if ( setegid(uinfo.gid) < 0 ) {
             message(ERROR, "Could not drop effective group privileges to gid %d: %s\n", uinfo.gid, strerror(errno));
@@ -359,39 +363,37 @@ void priv_drop(void) {
             ABORT(255);
         }
 
+
+        message(DEBUG, "Confirming we have correct GID\n");
+        if ( getgid() != uinfo.gid ) {
+#ifdef SINGULARITY_NOSUID
+            if ( uinfo.target_mode && getgid() != 0 ) {
+                message(ERROR, "Non-zero real GID for target mode: %d\n", getgid());
+                    ABORT(255);
+                } else if ( !uinfo.target_mode )
+#endif  // SINGULARITY_NOSUID
+                {
+                    message(ERROR, "Failed to drop effective group privileges to gid %d (currently %d)\n", uinfo.gid, getgid());
+                    ABORT(255);
+                }
+            }
+
+            message(DEBUG, "Confirming we have correct UID\n");
+            if ( getuid() != uinfo.uid ) {
+#ifdef SINGULARITY_NOSUID
+            if ( uinfo.target_mode && getuid() != 0 ) {
+                message(ERROR, "Non-zero real UID for target mode: %d\n", getuid());
+                ABORT(255);
+            } else if ( !uinfo.target_mode )
+#endif  // SINGULARITY_NOSUID
+            {
+                message(ERROR, "Failed to drop effective user privileges to uid %d (currently %d)\n", uinfo.uid, getuid());
+                ABORT(255);
+            }
+        }
     } else {
-        message(DEBUG, "Running as root, no privileges to drop\n");
+        message(DEBUG, "Running as root, not changing privileges\n");
     }
-
-    message(DEBUG, "Confirming we have correct GID\n");
-    if ( getgid() != uinfo.gid ) {
-#ifdef SINGULARITY_NOSUID
-        if ( uinfo.target_mode && getgid() != 0 ) {
-            message(ERROR, "Non-zero real GID for target mode: %d\n", getgid());
-            ABORT(255);
-        } else if ( !uinfo.target_mode )
-#endif  // SINGULARITY_NOSUID
-        {
-            message(ERROR, "Failed to drop effective group privileges to gid %d (currently %d)\n", uinfo.gid, getgid());
-            ABORT(255);
-        }
-    }
-
-    message(DEBUG, "Confirming we have correct UID\n");
-    if ( getuid() != uinfo.uid ) {
-#ifdef SINGULARITY_NOSUID
-        if ( uinfo.target_mode && getuid() != 0 ) {
-            message(ERROR, "Non-zero real UID for target mode: %d\n", getuid());
-            ABORT(255);
-        } else if ( !uinfo.target_mode )
-#endif  // SINGULARITY_NOSUID
-        {
-            message(ERROR, "Failed to drop effective user privileges to uid %d (currently %d)\n", uinfo.uid, getuid());
-            ABORT(255);
-        }
-    }
-
-    message(DEBUG, "Returning priv_drop(void)\n");
 }
 
 void priv_drop_perm(void) {

@@ -49,9 +49,7 @@ static char *loop_dev = NULL;
 static int read_write = 0;
 
 
-//TODO: Move this into the root_fs_image_mount...
 int rootfs_image_init(char *source, char *mount_dir, int writable) {
-    // Initialization code here....
     message(DEBUG, "Inializing container rootfs image subsystem\n");
 
     if ( image_fp != NULL ) {
