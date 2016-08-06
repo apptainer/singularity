@@ -7,6 +7,7 @@ AM_CFLAGS = -Wall -fpie -shared -fPIC
 AM_LDFLAGS = -pie
 
 
+include_HEADERS = singularity.h
 lib_LTLIBRARIES = libsingularity.la
 
 libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la
@@ -18,7 +19,7 @@ bindir = $(libexecdir)/singularity
 
 bin_PROGRAMS = sexec-devel
 
-sexec_devel_SOURCES = sexec-devel.c sessiondir.c
+sexec_devel_SOURCES = sexec-devel.c sessiondir.c config_parser.c
 sexec_devel_LDADD = libsingularity.la
 
 
@@ -52,7 +53,5 @@ make_suid:
 #image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 #image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 
-EXTRA_DIST = config.h config_parser.h container_actions.h file.h singularity.h
-#image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h
+EXTRA_DIST = config.h config_parser.h container_actions.h file.h singularity.h image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h sessiondir.h
 
-ACLOCAL_AMFLAGS = -I $(top_srcdir)/src/ -I .

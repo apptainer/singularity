@@ -27,13 +27,15 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <limits.h>
+
 
 #include "file.h"
 #include "image.h"
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
-#include "config_parser.c"
+#include "config_parser.h"
 
 
 char *sessiondir = NULL;

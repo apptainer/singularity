@@ -18,6 +18,13 @@ Singularity provides functionality to build the smallest most minimal
 possible containers, and running those containers as single application
 environments.
 
+%package devel
+Summary: Development libraries for Singularity
+Group: System Environment/Development
+
+%description devel
+Development files for Singularity
+
 %prep
 %setup
 
@@ -29,6 +36,7 @@ environments.
 
 %install
 %{__make} install DESTDIR=$RPM_BUILD_ROOT %{?mflags_install}
+rm -f $RPM_BUILD_ROOT/%{_libdir}/lib*.la
 
 
 %clean
@@ -41,21 +49,23 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_libexecdir}/singularity
-%attr(4755, root, root) %{_libexecdir}/singularity/sexec
-%{_libexecdir}/singularity/sexec_nosuid
+%attr(4755, root, root) %{_libexecdir}/singularity/sexec-devel
 %{_libexecdir}/singularity/mods
 %{_libexecdir}/singularity/cli
 %{_libexecdir}/singularity/bootstrap.sh
 %{_libexecdir}/singularity/copy.sh
 %{_libexecdir}/singularity/docker-import.sh
 %{_libexecdir}/singularity/functions
-%{_libexecdir}/singularity/image-bind
-%{_libexecdir}/singularity/image-create
-%{_libexecdir}/singularity/image-expand
-%{_libexecdir}/singularity/image-mount
 %{_bindir}/singularity
 %{_bindir}/run-singularity
 %{_mandir}/man1/*
+%{_libdir}/lib*.so.*
+
+
+%files devel
+%defattr(-, root, root)
+%{_libdir}/lib*.so
+%{_includedir}/*.h
 
 
 
