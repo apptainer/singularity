@@ -4,4 +4,3 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libnsmnt.la
 libnsmnt_la_SOURCES = mnt.c
-#libnsmnt_la_SOURCES = mnt.c ../../file.c ../../util.c ../../message.c ../../privilege.c

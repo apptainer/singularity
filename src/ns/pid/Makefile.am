@@ -4,5 +4,3 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libnspid.la
 libnspid_la_SOURCES = pid.c
-#libnspid_la_SOURCES = pid.c ../../file.c ../../util.c ../../message.c ../../privilege.c
-

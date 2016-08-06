@@ -4,6 +4,5 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = librootfsimage.la
 librootfsimage_la_SOURCES = image.c image-util.c loop-control.c
-#librootfsimage_la_SOURCES = image.c image-util.c loop-control.c ../../file.c ../../util.c ../../message.c ../../config_parser.c
 
 EXTRA_DIST = loop-control.h image.h image-util.h
