@@ -34,48 +34,47 @@
 #include "util.h"
 #include "message.h"
 #include "config_parser.h"
+#include "privilege.h"
 
 
-
-int singularity_ns_join(pid_t attach_pid) {
-#ifdef NO_SETNS
-    message(ERROR, "This host does not support joining existing name spaces\n");
-    ABORT(1);
-#else
-    char *nsjoin_pid = (char *)malloc(64);
-    char *nsjoin_mnt = (char *)malloc(64);
-
-    snprintf(nsjoin_pid, 64, "/proc/%d/ns/pid", attach_pid); // Flawfinder: ignore
-    snprintf(nsjoin_mnt, 64, "/proc/%d/ns/mnt", attach_pid); // Flawfinder: ignore
-
-    if ( is_file(nsjoin_pid) == 0 ) {
-        message(DEBUG, "Connecting to existing PID namespace\n");
-        int fd = open(nsjoin_pid, O_RDONLY); // Flawfinder: ignore
-        if ( setns(fd, CLONE_NEWPID) < 0 ) {
-            message(ERROR, "Could not join existing PID namespace: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        close(fd);
-
-    } else {
-        message(ERROR, "Could not identify PID namespace: %s\n", nsjoin_pid);
-        ABORT(255);
-    }
-
-    if ( is_file(nsjoin_mnt) == 0 ) {
-        message(DEBUG, "Connecting to existing mount namespace\n");
-        int fd = open(nsjoin_mnt, O_RDONLY); // Flawfinder: ignore
-        if ( setns(fd, CLONE_NEWNS) < 0 ) {
-            message(ERROR, "Could not join existing mount namespace: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        close(fd);
-
-    } else {
-        message(ERROR, "Could not identify mount namespace: %s\n", nsjoin_mnt);
+int singularity_ns_mnt_unshare(void) {
+    priv_escalate();
+#ifdef NS_CLONE_FS
+    message(DEBUG, "Virtualizing FS namespace\n");
+    if ( unshare(CLONE_FS) < 0 ) {
+        message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
         ABORT(255);
     }
 #endif
+
+    message(DEBUG, "Virtualizing mount namespace\n");
+    if ( unshare(CLONE_NEWNS) < 0 ) {
+        message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    config_rewind();
+    int slave = config_get_key_bool("mount slave", 0);
+    // Privatize the mount namespaces
+    //
+#ifdef SINGULARITY_MS_SLAVE
+    message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
+    if ( mount(NULL, "/", NULL, (slave ? MS_SLAVE : MS_PRIVATE)|MS_REC, NULL) < 0 ) {
+        message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
+        ABORT(255);
+    }
+#else
+    if ( slave > 0 ) {
+        message(WARNING, "Requested option 'mount slave' is not available on this host, using private\n");
+    }
+    message(DEBUG, "Making mounts private\n");
+    if ( mount(NULL, "/", NULL, MS_PRIVATE | MS_REC, NULL) < 0 ) {
+        message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
+        ABORT(255);
+    }
+#endif
+
+    priv_drop();
     return(0);
 }
 

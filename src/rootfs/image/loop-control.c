@@ -36,6 +36,7 @@
 #include "file.h"
 #include "image.h"
 #include "message.h"
+#include "privilege.h"
 
 #ifndef LO_FLAGS_AUTOCLEAR
 #define LO_FLAGS_AUTOCLEAR 4
@@ -51,6 +52,8 @@ char *loop_bind(FILE *image_fp, int offset) {
     int i;
 
     message(DEBUG, "Called loop_bind(image_fp, **{loop_dev)\n");
+
+    priv_escalate();
 
 #ifdef LO_FLAGS_AUTOCLEAR
     lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
@@ -95,6 +98,9 @@ char *loop_bind(FILE *image_fp, int offset) {
             (void)loop_free(loop_dev);
             ABORT(255);
         }
+
+        priv_drop();
+
         loop_dev = strdup(test_loopdev);
 
         message(VERBOSE, "Using loop device: %s\n", loop_dev);
@@ -125,7 +131,7 @@ int loop_free(void) {
         return(-1);
     }
 
-    message(DEBUG, "Called disassociate_loop(loop_fp)\n");
+    priv_escalate();
 
     message(VERBOSE2, "Disassociating image from loop device\n");
     if ( ioctl(fileno(loop_fp), LOOP_CLR_FD, 0) < 0 ) {
@@ -134,6 +140,8 @@ int loop_free(void) {
             return(-1);
         }
     }
+
+    priv_drop();
 
     fclose(loop_fp);
 

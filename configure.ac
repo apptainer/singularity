@@ -171,6 +171,8 @@ AC_CONFIG_FILES([
    singularity.spec
    src/Makefile
    src/ns/Makefile
+   src/ns/mnt/Makefile
+   src/ns/pid/Makefile
    src/rootfs/Makefile
    src/rootfs/image/Makefile
    src/rootfs/dir/Makefile

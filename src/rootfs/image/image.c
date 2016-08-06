@@ -36,6 +36,7 @@
 #include "image.h"
 #include "image-util.h"
 #include "loop-control.h"
+#include "privilege.h"
 
 #ifndef LOCALSTATEDIR
 #define LOCALSTATEDIR "/var"
@@ -48,6 +49,7 @@ static char *loop_dev = NULL;
 static int read_write = 0;
 
 
+//TODO: Move this into the root_fs_image_mount...
 int rootfs_image_init(char *source, char *mount_dir, int writable) {
     // Initialization code here....
     message(DEBUG, "Inializing container rootfs image subsystem\n");
@@ -72,8 +74,8 @@ int rootfs_image_init(char *source, char *mount_dir, int writable) {
     }
 
     if ( writable > 0 ) {
-        if ( ( image_fp = fopen(source, "r") ) == NULL ) {
-            message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
+        if ( ( image_fp = fopen(source, "r+") ) == NULL ) {
+            message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
 
@@ -84,8 +86,8 @@ int rootfs_image_init(char *source, char *mount_dir, int writable) {
         }
         read_write = 1;
     } else {
-        if ( ( image_fp = fopen(source, "r+") ) == NULL ) {
-            message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
+        if ( ( image_fp = fopen(source, "r") ) == NULL ) {
+            message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
     }
@@ -123,17 +125,22 @@ int rootfs_image_mount(void) {
 
     if ( read_write > 0 ) {
         message(VERBOSE, "Mounting image in read/write\n");
+        priv_escalate();
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
             message(ERROR, "Failed to mount image!\n");
             ABORT(255);
         }
+        priv_drop();
     } else {
+        priv_escalate();
         message(VERBOSE, "Mounting image in read/only\n");
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
             message(ERROR, "Failed to mount image!\n");
             ABORT(255);
         }
+        priv_drop();
     }
+
 
     return(0);
 }
@@ -151,10 +158,12 @@ int rootfs_image_umount(void) {
         ABORT(255);
     }
 
+    priv_escalate();
     if ( umount(mount_point) < 0 ) {
         message(ERROR, "Failed umounting file system\n");
         ABORT(255);
     }
+    priv_drop();
 
     fclose(image_fp);
     (void) loop_free();

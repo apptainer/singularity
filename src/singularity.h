@@ -23,7 +23,6 @@
 #define __SINGULARITY_H_
 
 
-    extern int singularity_ns_init(void);
     extern int singularity_ns_pid_unshare(void);
     extern int singularity_ns_mnt_unshare(void);
     extern int singularity_ns_join(pid_t attach_pid);

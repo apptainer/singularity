@@ -126,6 +126,22 @@ int is_dir(char *path) {
     return(-1);
 }
 
+int is_suid(char *path) {
+    struct stat filestat;
+
+    // Stat path
+    if (stat(path, &filestat) < 0) {
+        return(-1);
+    }
+
+    // Test path
+    if ( (S_ISUID & filestat.st_mode) ) {
+        return(0);
+    }
+
+    return(-1);
+}
+
 int is_exec(char *path) {
     struct stat filestat;
 

@@ -32,6 +32,7 @@
 #include "privilege.h"
 #include "sessiondir.h"
 #include "singularity.h"
+#include "file.h"
 
 
 int main(int argc, char **argv) {
@@ -47,6 +48,7 @@ int main(int argc, char **argv) {
 
     priv_init();
     config_open("/etc/singularity/singularity.conf");
+    singularity_rootfs_init(image, "/var/singularity/mnt", 0);
 
     message(INFO, "SINGULARITY_IMAGE = '%s'\n", image);
 
@@ -54,10 +56,6 @@ int main(int argc, char **argv) {
 
     message(INFO, "Sessiondir = '%s'\n", sessiondir);
     
-    printf("Calling singularity_init()\n");
-
-    singularity_ns_init();
-    singularity_rootfs_init(image, "/var/singularity/mnt", 0);
 
     child_ns_pid = fork();
 
