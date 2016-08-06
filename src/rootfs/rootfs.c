@@ -32,13 +32,17 @@
 #include "message.h"
 #include "config_parser.h"
 #include "rootfs.h"
+#include "privilege.h"
 #include "image/image.h"
 #include "dir/dir.h"
 
-int module = 0;
+static int module = 0;
+static char *chroot_dir = NULL;
 
 int singularity_rootfs_init(char *source, char *mount_point, int writable) {
     message(DEBUG, "Checking on container source type\n");
+
+    chroot_dir = strdup(mount_point);
 
     if ( is_file(source) == 0 ) {
         module = ROOTFS_IMAGE;
@@ -53,6 +57,7 @@ int singularity_rootfs_init(char *source, char *mount_point, int writable) {
 }
 
 int singularity_rootfs_mount(void) {
+    message(DEBUG, "Mounting image\n");
 
     if ( module == ROOTFS_IMAGE ) {
         return(rootfs_image_mount());
@@ -65,6 +70,7 @@ int singularity_rootfs_mount(void) {
 }
 
 int singularity_rootfs_umount(void) {
+    message(DEBUG, "Unmounting image\n");
 
     if ( module == ROOTFS_IMAGE ) {
         return(rootfs_image_umount());
@@ -74,4 +80,25 @@ int singularity_rootfs_umount(void) {
 
     message(ERROR, "Called rootfs_umount() without rootfs_init()\n");
     return(-1);
+}
+
+
+
+int singularity_rootfs_chroot(void) {
+    message(VERBOSE, "Entering container file system space\n");
+
+    priv_escalate();
+    if ( chroot(chroot_dir) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
+        message(ERROR, "failed enter container at: %s\n", chroot_dir);
+        ABORT(255);
+    }
+    priv_drop();
+
+    message(DEBUG, "Changing dir to '/' within the new root\n");
+    if ( chdir("/") < 0 ) {
+        message(ERROR, "Could not chdir after chroot to /: %s\n", strerror(errno));
+        ABORT(1);
+    }
+
+    return(0);
 }

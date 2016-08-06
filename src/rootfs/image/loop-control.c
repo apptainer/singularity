@@ -60,11 +60,11 @@ char *loop_bind(FILE *image_fp, int offset) {
 #endif
     lo64.lo_offset = offset;
 
+    message(DEBUG, "Finding next available loop device...\n");
     for( i=0; i < MAX_LOOP_DEVS; i++ ) {
         char *test_loopdev = strjoin("/dev/loop", int2str(i));
 
         if ( is_blk(test_loopdev) < 0 ) {
-            message(VERBOSE, "Creating loop device: %s\n", test_loopdev);
             if ( mknod(test_loopdev, S_IFBLK | 0644, makedev(7, i)) < 0 ) {
                 message(ERROR, "Could not create %s: %s\n", test_loopdev, strerror(errno));
                 ABORT(255);
@@ -76,10 +76,11 @@ char *loop_bind(FILE *image_fp, int offset) {
             continue;
         }
 
-        message(VERBOSE2, "Attempting to associate image pointer to loop device\n");
-        if ( ioctl(fileno(loop_fp), LOOP_SET_FD, fileno(image_fp)) < 0 ) {
+        if ( ioctl(fileno(loop_fp), LOOP_SET_FD, fileno(image_fp))== 0 ) {
+            loop_dev = strdup(test_loopdev);
+            break;
+        } else {
             if ( errno == 16 ) {
-                message(VERBOSE3, "Loop device is in use: %s\n", test_loopdev);
                 fclose(loop_fp);
                 continue;
             } else {
@@ -89,26 +90,25 @@ char *loop_bind(FILE *image_fp, int offset) {
             }
         }
 
-        message(VERBOSE, "Found valid loop device: %s\n", test_loopdev);
-
-        message(VERBOSE2, "Setting loop device flags\n");
-        if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
-            fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
-            (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
-            (void)loop_free(loop_dev);
-            ABORT(255);
-        }
-
-        priv_drop();
-
-        loop_dev = strdup(test_loopdev);
-
-        message(VERBOSE, "Using loop device: %s\n", loop_dev);
-
-        message(DEBUG, "Returning loop_bind(image_fp) = loop_fp\n");
-
-        return(loop_dev);
     }
+
+    message(VERBOSE, "Found avaialble loop device: %s\n", loop_dev);
+
+    message(DEBUG, "Setting loop device flags\n");
+    if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
+        fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
+        (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
+        (void)loop_free(loop_dev);
+        ABORT(255);
+    }
+
+    priv_drop();
+
+    message(VERBOSE, "Using loop device: %s\n", loop_dev);
+
+    message(DEBUG, "Returning loop_bind(image_fp) = loop_fp\n");
+
+    return(loop_dev);
 
     message(ERROR, "No valid loop devices available\n");
     ABORT(255);

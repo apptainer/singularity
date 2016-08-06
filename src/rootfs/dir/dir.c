@@ -58,7 +58,7 @@ int rootfs_dir_init(char *source, char *mount_dir, int writable) {
     }
 
     if ( writable > 0 ) {
-        read_write =1;
+        read_write = 1;
     }
 
     return(0);
@@ -73,6 +73,7 @@ int rootfs_dir_mount(void) {
     }
 
     priv_escalate();
+    message(DEBUG, "Mounting container directory %s->%s\n", source_dir, mount_point);
     if ( mount(source_dir, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
         message(ERROR, "Could not mount container directory %s->%s: %s\n", source_dir, mount_point, strerror(errno));
         return 1;

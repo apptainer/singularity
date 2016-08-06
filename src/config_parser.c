@@ -88,7 +88,7 @@ char *config_get_key_value(char *key) {
                     if ( config_value[0] == ' ' ) {
                         config_value++;
                     }
-                    message(DEBUG, "Return config_get_key_value(%s) = %s\n", key, config_value);
+                    message(VERBOSE2, "Got config key %s (= '%s')\n", key, config_value);
                     return(config_value);
                 }
             }
@@ -96,7 +96,7 @@ char *config_get_key_value(char *key) {
     }
     free(line);
 
-    message(DEBUG, "Return config_get_key_value(%s) = NULL\n", key);
+    message(DEBUG, "No configuration file entry found for '%s'\n", key);
     return(NULL);
 }
 

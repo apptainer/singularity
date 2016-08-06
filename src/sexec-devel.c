@@ -69,7 +69,8 @@ int main(int argc, char **argv) {
             ABORT(255);
         }
 
-        system("ls -l /var/singularity/mnt");
+        singularity_rootfs_chroot();
+        system("/bin/ls -l /");
 
         return(0);
 
