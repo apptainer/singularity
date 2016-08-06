@@ -70,11 +70,11 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
 
     if ( writable > 0 ) {
         message(DEBUG, "Trying to mount read/write as ext4 with discard option\n");
-        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard") < 0 ) {
+        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard,errors=remount-ro") < 0 ) {
             message(DEBUG, "Trying to mount read/write as ext4 without discard option\n");
-            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "") < 0 ) {
+            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "errors=remount-ro") < 0 ) {
                 message(DEBUG, "Trying to mount read/write as ext3\n");
-                if ( mount(loop_device, mount_point, "ext3", MS_NOSUID, "") < 0 ) {
+                if ( mount(loop_device, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
                     message(ERROR, "Failed to mount (rw) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
                     ABORT(255);
                 }
@@ -82,11 +82,11 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
         }
     } else {
         message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
-        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard") < 0 ) {
+        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard,errors=remount-ro") < 0 ) {
             message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
-            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "") < 0 ) {
+            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
                 message(DEBUG, "Trying to mount read only as ext3\n");
-                if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "") < 0 ) {
+                if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
                     message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
                     ABORT(255);
                 }
@@ -189,7 +189,7 @@ static int create_bind_dir(const char *dest_orig, const char *tmp_dir, int isfil
 
 void mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
 
-    message(DEBUG, "Called mount_bind(%s, %d, %d, %s)\n", source, dest, writable, tmp_dir);
+    message(DEBUG, "Called mount_bind(%s, %s, %d, %s)\n", source, dest, writable, tmp_dir);
 
     message(DEBUG, "Checking that source exists and is a file or directory\n");
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {

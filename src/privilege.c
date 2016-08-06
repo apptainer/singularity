@@ -67,12 +67,12 @@ void update_uid_map(pid_t child, uid_t outside, int is_child) {
     fd = open(map_file, O_RDWR);
     free(map_file);
     if (fd == -1) {
-        perror("Open Mapfile");
+        message(ERROR, "Failure when opening UID mapfile: %s\n", strerror(errno));
         free(map);
         ABORT(255);
     }
     if (write(fd, map, map_len) != map_len) {
-        perror("Writing Map");
+        message(ERROR, "Failure when writing policy to mapfile: %s", strerror(errno));
         free(map);
         ABORT(255);
     }
@@ -105,41 +105,45 @@ void update_gid_map(pid_t child, gid_t outside, int is_child) {
         message(ERROR, "Can't allocate setgroups filename\n");
         ABORT(255);
     }
-    if (!is_child) {
-        message(DEBUG, "Disabling setgroups file.\n");
-        fd = open(setgroups_file, O_RDWR);
-        if (fd == -1) {
+    message(DEBUG, "Disabling setgroups file.\n");
+    fd = open(setgroups_file, O_RDWR);
+    if (fd == -1) {
+        free(setgroups_file);
+        if (!is_child || (errno != EACCES)) {
             message(ERROR, "Failure when opening %s: %s\n", setgroups_file, strerror(errno));
             free(map_file);
-            free(setgroups_file);
             free(map);
             ABORT(255);
         }
+    } else {
         free(setgroups_file);
         if (write(fd, "deny", 4) != 4) {
-            perror("Writing setgroups deny");
+            message(ERROR, "Failure when writing setgroups deny: %s", strerror(errno));
             free(map_file);
             free(map);
             close(fd);
         }
+        message(DEBUG, "Setgroups file successfully disabled.\n");
         close(fd);
     }
 
-    message(DEBUG, "Updating GID map with policy: %s", map);
+    message(DEBUG, "Updating GID map %s with policy: %s", map_file, map);
     fd = open(map_file, O_RDWR);
-    free(map_file);
     if (fd == -1) {
-        perror("Open GID mapfile");
+        message(ERROR, "Failure when opening GID mapfile (%s): %s\n", map_file, strerror(errno));
+        free(map_file);
         free(map);
         exit(-1);
     }
     if (write(fd, map, map_len) != map_len) {
-        perror("Writing GID map");
+        message(ERROR, "Failure when writing GID map (%s): %s", map_file, map);
         free(map);
+        free(map_file);
         close(fd);
         exit(-1);
     }
     free(map);
+    free(map_file);
     close(fd);
 }
 
@@ -285,14 +289,15 @@ void priv_init_userns_outside() {
 
     uinfo.orig_uid = uinfo.uid;
     uinfo.orig_gid = uinfo.gid;
+    uinfo.orig_pid = getpid();
 
     int ret = unshare(CLONE_NEWUSER);
     if (ret == -1) {
         message(ERROR, "Failed to unshare namespace: %s.\n", strerror(errno));
         ABORT(255);
     }
-    update_gid_map(getpid(), uinfo.orig_gid, 0);
-    update_uid_map(getpid(), uinfo.orig_uid, 0);
+    update_gid_map(uinfo.orig_pid, uinfo.orig_gid, 0);
+    update_uid_map(uinfo.orig_pid, uinfo.orig_uid, 0);
     uinfo.uid = 0;
     uinfo.gid = 0;
     uinfo.userns_ready = 1;
@@ -302,7 +307,22 @@ void priv_init_userns_outside() {
 #endif  // SINGULARITY_USERNS
 }
 
-void priv_init_userns_inside() {
+void priv_init_userns_inside_init() {
+#ifdef SINGULARITY_USERNS
+    if (!uinfo.userns_ready) {
+        message(ERROR, "Internal error: User NS privilege data structure not initialized.\n");
+        ABORT(255);
+    }
+    uinfo.uid = uinfo.orig_uid;
+    uinfo.gid = uinfo.orig_gid;
+#else  // SINGULARITY_USERNS
+    message(ERROR, "Internal error: User NS function invoked without compiled-in support.\n");
+    ABORT(255);
+#endif  // SINGULARITY_USERNS
+}
+
+
+void priv_init_userns_inside_final() {
 #ifdef SINGULARITY_USERNS
     if (!uinfo.userns_ready) {
         message(ERROR, "Internal error: User NS privilege data structure not initialized.\n");
@@ -313,10 +333,8 @@ void priv_init_userns_inside() {
         message(ERROR, "Failed to unshare namespace: %s.\n", strerror(errno));
         ABORT(255);
     }
-    update_gid_map(getpid(), uinfo.orig_gid, 1);
-    update_uid_map(getpid(), uinfo.orig_uid, 1);
-    uinfo.uid = uinfo.orig_uid;
-    uinfo.gid = uinfo.orig_gid;
+    update_gid_map(1, uinfo.orig_gid, 1);
+    update_uid_map(1, uinfo.orig_uid, 1);
 #else  // SINGULARITY_USERNS
     message(ERROR, "Internal error: User NS function invoked without compiled-in support.\n");
     ABORT(255);
