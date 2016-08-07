@@ -34,9 +34,9 @@
 
 //TODO: Add backwards compatibility
 void action_run_do(int argc, char **argv) {
-    message(VERBOSE, "Exec'ing /singularity: %s\n");
+    message(VERBOSE, "Exec'ing /singularity\n");
 
-    if ( execvp("/.run", argv) < 0 ) {
+    if ( execv("/.run", argv) < 0 ) {
         message(ERROR, "Failed to execv() /.run\n");
         ABORT(255);
     }
