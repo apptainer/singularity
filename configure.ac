@@ -189,7 +189,7 @@ AC_CONFIG_FILES([
    src/mount/group/Makefile
    src/mount/home/Makefile
    src/mount/passwd/Makefile
-   src/mount/kernel/Makefile
+   src/mount/kernelfs/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity

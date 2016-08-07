@@ -35,4 +35,6 @@
     extern int singularity_action_init(void);
     extern int singularity_action_do(int agc, char **argv);
 
+    extern int singularity_mount_kernelfs(void);
+
 #endif /* __SINGULARITY_H */

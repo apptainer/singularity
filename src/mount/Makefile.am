@@ -1,4 +1,4 @@
-SUBDIRS = kernel binds passwd group home
+SUBDIRS = kernelfs binds passwd group home
 
 MAINTAINERCLEANFILES = Makefile.in
 DISTCLEANFILES = Makefile
@@ -11,5 +11,5 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libmount.la
 
-libmount_la_LIBADD = kernel/libmountkernel.la binds/libmountbinds.la passwd/libmountpasswd.la group/libmountgroup.la home/libmounthome.la
+libmount_la_LIBADD = kernelfs/libmountkernelfs.la binds/libmountbinds.la passwd/libmountpasswd.la group/libmountgroup.la home/libmounthome.la
 libmount_la_SOURCES = mount.c

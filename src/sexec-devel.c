@@ -73,6 +73,7 @@ int main(int argc, char **argv) {
         singularity_rootfs_chroot();
 //        system("/bin/ls -l /");
 
+        singularity_mount_kernelfs();
         singularity_action_do(argc, argv);
 
         return(0);
