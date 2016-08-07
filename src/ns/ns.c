@@ -34,7 +34,17 @@
 #include "util.h"
 #include "message.h"
 #include "config_parser.h"
+#include "../singularity.h"
 
+
+int singularity_ns_unshare(void) {
+    int retval = 0;
+
+    retval += singularity_ns_pid_unshare();
+    retval += singularity_ns_mnt_unshare();
+
+    return(retval);
+}
 
 
 int singularity_ns_join(pid_t attach_pid) {

@@ -40,7 +40,7 @@
 static int module = 0;
 static char *chroot_dir = NULL;
 
-int singularity_rootfs_init(char *source, char *mount_point, int writable) {
+int singularity_rootfs_init(char *source, char *mount_point) {
     char *containername = basename(strdup(source));
     message(DEBUG, "Checking on container source type\n");
 
@@ -54,10 +54,10 @@ int singularity_rootfs_init(char *source, char *mount_point, int writable) {
 
     if ( is_file(source) == 0 ) {
         module = ROOTFS_IMAGE;
-        return(rootfs_image_init(source, mount_point, writable));
+        return(rootfs_image_init(source, mount_point));
     } else if ( is_dir(source) == 0 ) {
         module = ROOTFS_DIR;
-        return(rootfs_dir_init(source, mount_point, writable));
+        return(rootfs_dir_init(source, mount_point));
     }
 
     message(ERROR, "Unknown rootfs source type\n");

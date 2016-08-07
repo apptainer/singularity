@@ -40,7 +40,7 @@ static char *mount_point = NULL;
 static int read_write = 0;
 
 
-int rootfs_dir_init(char *source, char *mount_dir, int writable) {
+int rootfs_dir_init(char *source, char *mount_dir) {
     message(DEBUG, "Inializing container rootfs dir subsystem\n");
 
     if ( is_dir(source) == 0 ) {
@@ -57,7 +57,7 @@ int rootfs_dir_init(char *source, char *mount_dir, int writable) {
         ABORT(255);
     }
 
-    if ( writable > 0 ) {
+    if ( getenv("SINGULARITY_WRITABLE") != NULL ) {
         read_write = 1;
     }
 

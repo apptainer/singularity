@@ -49,29 +49,24 @@ int main(int argc, char **argv) {
     priv_init();
     singularity_action_init();
     config_open("/etc/singularity/singularity.conf");
-    singularity_rootfs_init(image, "/var/singularity/mnt", 0);
-
-    message(VERBOSE, "SINGULARITY_IMAGE = '%s'\n", image);
+    singularity_rootfs_init(image, "/var/singularity/mnt");
 
     sessiondir = singularity_sessiondir(image);
 
-    message(VERBOSE, "Sessiondir = '%s'\n", sessiondir);
-    
+    singularity_ns_unshare();
+
+    if ( singularity_rootfs_mount() < 0 ) {
+        message(ERROR, "Failed moutning the image\n");
+        ABORT(255);
+    }
 
     child_ns_pid = fork();
 
     if ( child_ns_pid == 0 ) {
         message(DEBUG, "Hello from NS child\n");
 
-        singularity_ns_mnt_unshare();
-
-        if ( singularity_rootfs_mount() < 0 ) {
-            message(ERROR, "Failed moutning the image\n");
-            ABORT(255);
-        }
 
         singularity_rootfs_chroot();
-//        system("/bin/ls -l /");
 
         singularity_mount_kernelfs();
         singularity_action_do(argc, argv);

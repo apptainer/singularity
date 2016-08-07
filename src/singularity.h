@@ -23,11 +23,12 @@
 #define __SINGULARITY_H_
 
 
+    extern int singularity_ns_unshare(void);
     extern int singularity_ns_pid_unshare(void);
     extern int singularity_ns_mnt_unshare(void);
     extern int singularity_ns_join(pid_t attach_pid);
 
-    extern int singularity_rootfs_init(char *source, char *mount_point, int writable);
+    extern int singularity_rootfs_init(char *source, char *mount_point);
     extern int singularity_rootfs_mount(void);
     extern int singularity_rootfs_umount(void);
     extern int singularity_rootfs_chroot(void);

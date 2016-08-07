@@ -49,7 +49,7 @@ static char *loop_dev = NULL;
 static int read_write = 0;
 
 
-int rootfs_image_init(char *source, char *mount_dir, int writable) {
+int rootfs_image_init(char *source, char *mount_dir) {
     message(DEBUG, "Inializing container rootfs image subsystem\n");
 
     if ( image_fp != NULL ) {
@@ -71,7 +71,7 @@ int rootfs_image_init(char *source, char *mount_dir, int writable) {
         ABORT(255);
     }
 
-    if ( writable > 0 ) {
+    if ( getenv("SINGULARITY_WRITABLE") != NULL ) {
         if ( ( image_fp = fopen(source, "r+") ) == NULL ) {
             message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
             ABORT(255);

@@ -22,7 +22,7 @@
 #ifndef __IMAGE_MOUNT_H_
 #define __IMAGE_MOUNT_H_
 
-int rootfs_image_init(char *source, char *mount_point, int writable);
+int rootfs_image_init(char *source, char *mount_point);
 int rootfs_image_mount(void);
 int rootfs_image_umount(void);
 
