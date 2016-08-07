@@ -1,4 +1,4 @@
-SUBDIRS = kernelfs binds home
+SUBDIRS = passwd group
 
 MAINTAINERCLEANFILES = Makefile.in
 DISTCLEANFILES = Makefile
@@ -9,7 +9,7 @@ AM_LDFLAGS = -pie
 libns_pid_a_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-noinst_LTLIBRARIES = libmount.la
+noinst_LTLIBRARIES = libfile.la
 
-libmount_la_LIBADD = kernelfs/libmountkernelfs.la binds/libmountbinds.la home/libmounthome.la
-libmount_la_SOURCES = mount.c
+libfile_la_LIBADD = passwd/libfilepasswd.la group/libfilegroup.la
+libfile_la_SOURCES = file.c

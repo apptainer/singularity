@@ -53,6 +53,8 @@ int main(int argc, char **argv) {
 
     sessiondir = singularity_sessiondir(image);
 
+    message(VERBOSE, "Using sessiondir: %s\n", sessiondir);
+
     singularity_ns_unshare();
 
     if ( singularity_rootfs_mount() < 0 ) {
