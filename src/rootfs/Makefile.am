@@ -13,4 +13,4 @@ noinst_LTLIBRARIES = librootfs.la
 librootfs_la_LIBADD = image/librootfsimage.la dir/librootfsdir.la
 librootfs_la_SOURCES = rootfs.c
 
-EXTRA_DIST = rootfs.h
+EXTRA_DIST =

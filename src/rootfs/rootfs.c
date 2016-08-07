@@ -32,10 +32,14 @@
 #include "util.h"
 #include "message.h"
 #include "config_parser.h"
-#include "rootfs.h"
 #include "privilege.h"
 #include "image/image.h"
 #include "dir/dir.h"
+
+#define ROOTFS_IMAGE    1
+#define ROOTFS_DIR      2
+#define ROOTFS_TGZ      3
+
 
 static int module = 0;
 static char *chroot_dir = NULL;
