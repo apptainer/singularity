@@ -51,10 +51,13 @@ int singularity_action_init(void) {
         message(ERROR, "SINGULARITY_COMMAND is undefined\n");
         ABORT(1);
     } else if ( strcmp(command, "shell") == 0 ) {
+        message(DEBUG, "Setting action to: shell\n");
         action = ACTION_SHELL;
     } else if ( strcmp(command, "exec") == 0 ) {
+        message(DEBUG, "Setting action to: exec\n");
         action = ACTION_EXEC;
     } else if ( strcmp(command, "run") == 0 ) {
+        message(DEBUG, "Setting action to: run\n");
         action = ACTION_RUN;
     } else {
         message(ERROR, "Unknown container action: %s\n", command);
@@ -66,11 +69,16 @@ int singularity_action_init(void) {
 
 int singularity_action_do(int argc, char **argv) {
 
+    priv_drop_perm();
+
     if ( action == ACTION_SHELL ) {
+        message(DEBUG, "Running action: shell\n");
         action_shell_do(argc, argv);
     } else if ( action == ACTION_EXEC ) {
+        message(DEBUG, "Running action: exec\n");
         action_exec_do(argc, argv);
     } else if ( action == ACTION_RUN ) {
+        message(DEBUG, "Running action: run\n");
         action_run_do(argc, argv);
     }
     message(ERROR, "Called singularity_action_do() without singularity_action_init()\n");
