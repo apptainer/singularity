@@ -184,6 +184,12 @@ AC_CONFIG_FILES([
    src/action/exec/Makefile
    src/action/shell/Makefile
    src/action/run/Makefile
+   src/mount/Makefile
+   src/mount/binds/Makefile
+   src/mount/group/Makefile
+   src/mount/home/Makefile
+   src/mount/passwd/Makefile
+   src/mount/kernel/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity
