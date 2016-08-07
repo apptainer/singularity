@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <libgen.h>
 
 #include "file.h"
 #include "util.h"
@@ -40,7 +41,14 @@ static int module = 0;
 static char *chroot_dir = NULL;
 
 int singularity_rootfs_init(char *source, char *mount_point, int writable) {
+    char *containername = basename(strdup(source));
     message(DEBUG, "Checking on container source type\n");
+
+    if ( containername != NULL ) {
+        setenv("SINGULARITY_CONTAINER", containername, 1);
+    } else {
+        setenv("SINGULARITY_CONTAINER", "unknown", 1);
+    }
 
     chroot_dir = strdup(mount_point);
 

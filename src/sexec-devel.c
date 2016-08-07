@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
     }
 
     priv_init();
+    singularity_action_init();
     config_open("/etc/singularity/singularity.conf");
     singularity_rootfs_init(image, "/var/singularity/mnt", 0);
 
@@ -70,7 +71,9 @@ int main(int argc, char **argv) {
         }
 
         singularity_rootfs_chroot();
-        system("/bin/ls -l /");
+//        system("/bin/ls -l /");
+
+        singularity_action_do(argc, argv);
 
         return(0);
 

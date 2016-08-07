@@ -180,6 +180,10 @@ AC_CONFIG_FILES([
    src/rootfs/Makefile
    src/rootfs/image/Makefile
    src/rootfs/dir/Makefile
+   src/action/Makefile
+   src/action/exec/Makefile
+   src/action/shell/Makefile
+   src/action/run/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity

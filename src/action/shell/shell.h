@@ -19,20 +19,9 @@
 */
 
 
-#ifndef __SINGULARITY_H_
-#define __SINGULARITY_H_
+#ifndef __ACTION_SHELL_H_
+#define __ACTION_SHELL_H_
 
+void action_shell_do(int argc, char **argv);
 
-    extern int singularity_ns_pid_unshare(void);
-    extern int singularity_ns_mnt_unshare(void);
-    extern int singularity_ns_join(pid_t attach_pid);
-
-    extern int singularity_rootfs_init(char *source, char *mount_point, int writable);
-    extern int singularity_rootfs_mount(void);
-    extern int singularity_rootfs_umount(void);
-    extern int singularity_rootfs_chroot(void);
-
-    extern int singularity_action_init(void);
-    extern int singularity_action_do(int agc, char **argv);
-
-#endif /* __SINGULARITY_H */
+#endif /* __ACTION_SHELL_H_ */

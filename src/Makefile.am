@@ -1,4 +1,4 @@
-SUBDIRS = ns rootfs
+SUBDIRS = ns rootfs action
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -10,7 +10,7 @@ AM_LDFLAGS = -pie
 include_HEADERS = singularity.h
 lib_LTLIBRARIES = libsingularity.la
 
-libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la
+libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la action/libaction.la
 libsingularity_la_SOURCES = singularity.c privilege.c util.c message.c file.c
 libsingularity_la_LDFLAGS = -version-info 1:0:0
 libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs

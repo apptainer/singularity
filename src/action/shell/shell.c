@@ -18,21 +18,29 @@
  * 
 */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
 
-#ifndef __SINGULARITY_H_
-#define __SINGULARITY_H_
+#include "file.h"
+#include "util.h"
+#include "message.h"
+#include "privilege.h"
 
 
-    extern int singularity_ns_pid_unshare(void);
-    extern int singularity_ns_mnt_unshare(void);
-    extern int singularity_ns_join(pid_t attach_pid);
+//TODO: Put in backwards compatibility for previous
+void action_shell_do(int argc, char **argv) {
+    message(VERBOSE, "Starting shell...\n");
 
-    extern int singularity_rootfs_init(char *source, char *mount_point, int writable);
-    extern int singularity_rootfs_mount(void);
-    extern int singularity_rootfs_umount(void);
-    extern int singularity_rootfs_chroot(void);
+    if ( execv("/.shell", argv) < 0 ) {
+        message(ERROR, "Failed to execv() /.shell\n");
+        ABORT(255);
+    }
 
-    extern int singularity_action_init(void);
-    extern int singularity_action_do(int agc, char **argv);
-
-#endif /* __SINGULARITY_H */
+    message(ERROR, "We should never get here... Grrrrrr!\n");
+    ABORT(255);
+}
