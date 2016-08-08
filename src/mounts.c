@@ -165,6 +165,13 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
             }
         } else { // overlay mount
 
+            message(DEBUG, "Creating overlay mount path: %s\n", overlaydir); 
+            if ( s_mkpath(overlaydir, 0755) < 0 ) { 
+                message(ERROR, "Failed creating overlay directory %s\n", overlaydir); 
+                ABORT(255); 
+            }
+
+
             // Mount tmpfs
             message(DEBUG, "Mounting tmpfs");
             if ( mount("scratch", overlaydir, "tmpfs", MS_NOSUID, "") < 0 ){
