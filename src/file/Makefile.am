@@ -12,4 +12,4 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 noinst_LTLIBRARIES = libfile.la
 
 libfile_la_LIBADD = passwd/libfilepasswd.la group/libfilegroup.la
-libfile_la_SOURCES = file.c
+libfile_la_SOURCES = file.c bind-file.c
