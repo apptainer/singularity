@@ -50,12 +50,7 @@ int rootfs_dir_init(char *source, char *mount_dir) {
         ABORT(255);
     }
 
-    if ( is_dir(mount_dir) == 0 ) {
-        mount_point = strdup(mount_dir);
-    } else {
-        message(ERROR, "Mount point for container image is not a directory: %s\n", mount_dir);
-        ABORT(255);
-    }
+    mount_point = strdup(mount_dir);
 
     if ( getenv("SINGULARITY_WRITABLE") != NULL ) {
         read_write = 1;
@@ -69,6 +64,11 @@ int rootfs_dir_mount(void) {
 
     if ( ( mount_point == NULL ) || ( source_dir == NULL ) ) {
         message(ERROR, "Called image_mount but image_init() hasn't been called\n");
+        ABORT(255);
+    }
+
+    if ( is_dir(mount_point) < 0 ) {
+        message(ERROR, "Container directory not available: %s\n", mount_point);
         ABORT(255);
     }
 

@@ -80,6 +80,13 @@ int singularity_rootfs_init(char *source) {
 int singularity_rootfs_mount(void) {
     message(DEBUG, "Mounting image\n");
 
+    if ( is_dir(mount_point) < 0 ) {
+        priv_escalate();
+        message(VERBOSE, "Creating container dir: %s\n", mount_point);
+        s_mkpath(mount_point, 0755);
+        priv_drop();
+    }
+
     if ( module == ROOTFS_IMAGE ) {
         if ( rootfs_image_mount() < 0 ) {
             message(ERROR, "Failed mounting image, aborting...\n");
@@ -120,4 +127,9 @@ int singularity_rootfs_chroot(void) {
     }
 
     return(0);
+}
+
+char *singularity_rootfs_dir(void) {
+    message(DEBUG, "Returning singularity_rootfs_dir: %s\n", mount_point);
+    return(strdup(mount_point));
 }

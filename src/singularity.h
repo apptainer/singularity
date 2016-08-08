@@ -31,10 +31,12 @@
     extern int singularity_rootfs_init(char *source, char *mount_point);
     extern int singularity_rootfs_mount(void);
     extern int singularity_rootfs_chroot(void);
+    extern char *singularity_rootfs_dir(void);
 
     extern int singularity_action_init(void);
     extern int singularity_action_do(int agc, char **argv);
 
     extern int singularity_mount_kernelfs(void);
+    extern int singularity_mount_binds(void);
 
 #endif /* __SINGULARITY_H */

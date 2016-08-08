@@ -62,6 +62,11 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+    if ( singularity_mount_binds() < 0 ) {
+        message(ERROR, "Failed mounting bind directories\n");
+        ABORT(255);
+    }
+
     child_ns_pid = fork();
 
     if ( child_ns_pid == 0 ) {

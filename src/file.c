@@ -216,6 +216,7 @@ int s_mkpath(char *dir, mode_t mode) {
             return(-1);
         }
     }
+    chmod(dir, mode);
 
     return(0);
 }
