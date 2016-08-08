@@ -210,7 +210,7 @@ stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid
 mkdir -p $TEMPDIR/foo/bar/baz/
 touch $TEMPDIR/foo/bar/baz/qux
 stest 0 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -f /var/lib/test/foo/bar/baz/qux
-stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -f /var/lib/test/foo/bar/baz/qux"
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo out test -f /var/lib/test/foo/bar/baz/qux"
 stest 0 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -d /var/lib/test/
 # This is a quirk of the bind mount code that can only be fixed with overlayfs-based binds.
 stest 1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -d /var/lib/alternatives/
