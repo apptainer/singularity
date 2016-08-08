@@ -83,18 +83,3 @@ int rootfs_dir_mount(void) {
     return(0);
 }
 
-int rootfs_dir_umount(void) {
-    if ( mount_point == NULL ) {
-        message(ERROR, "Called image_umount but image_init() hasn't been called\n");
-        ABORT(255);
-    }
-
-    priv_escalate();
-    if ( umount(mount_point) < 0 ) {
-        message(ERROR, "Failed umounting file system\n");
-        ABORT(255);
-    }
-    priv_drop();
-
-    return(0);
-}

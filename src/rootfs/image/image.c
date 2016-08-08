@@ -144,28 +144,3 @@ int rootfs_image_mount(void) {
 }
 
 
-int rootfs_image_umount(void) {
-
-    if ( mount_point == NULL ) {
-        message(ERROR, "Called image_umount but image_init() hasn't been called\n");
-        ABORT(255);
-    }
-
-    if ( image_fp == NULL ) {
-        message(ERROR, "Called image_umount, but image has not been opened!\n");
-        ABORT(255);
-    }
-
-    priv_escalate();
-    if ( umount(mount_point) < 0 ) {
-        message(ERROR, "Failed umounting file system\n");
-        ABORT(255);
-    }
-    priv_drop();
-
-    fclose(image_fp);
-    (void) loop_free();
-
-    return(0);
-}
-

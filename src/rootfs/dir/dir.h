@@ -24,6 +24,5 @@
 
 int rootfs_dir_init(char *source, char *mount_point);
 int rootfs_dir_mount(void);
-int rootfs_dir_umount(void);
 
 #endif /* __ROOTFS_DIR_H */

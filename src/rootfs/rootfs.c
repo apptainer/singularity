@@ -72,28 +72,21 @@ int singularity_rootfs_mount(void) {
     message(DEBUG, "Mounting image\n");
 
     if ( module == ROOTFS_IMAGE ) {
-        return(rootfs_image_mount());
+        if ( rootfs_image_mount() < 0 ) {
+            message(ERROR, "Failed mounting image, aborting...\n");
+            ABORT(255);
+        }
     } else if ( module == ROOTFS_DIR ) {
-        return(rootfs_dir_mount());
+        if ( rootfs_dir_mount() < 0 ) {
+            message(ERROR, "Failed directory, aborting...\n");
+            ABORT(255);
+        }
     }
 
-    message(ERROR, "Called rootfs_mount() without rootfs_init()\n");
-    return(-1);
+    //TODO: Setup overlay file system here...
+
+    return(0);
 }
-
-int singularity_rootfs_umount(void) {
-    message(DEBUG, "Unmounting image\n");
-
-    if ( module == ROOTFS_IMAGE ) {
-        return(rootfs_image_umount());
-    } else if ( module == ROOTFS_DIR ) {
-        return(rootfs_dir_umount());
-    }
-
-    message(ERROR, "Called rootfs_umount() without rootfs_init()\n");
-    return(-1);
-}
-
 
 
 int singularity_rootfs_chroot(void) {

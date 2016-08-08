@@ -24,6 +24,5 @@
 
 int rootfs_image_init(char *source, char *mount_point);
 int rootfs_image_mount(void);
-int rootfs_image_umount(void);
 
 #endif /* __IMAGE_MOUNT_H */

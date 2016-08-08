@@ -30,7 +30,6 @@
 
     extern int singularity_rootfs_init(char *source, char *mount_point);
     extern int singularity_rootfs_mount(void);
-    extern int singularity_rootfs_umount(void);
     extern int singularity_rootfs_chroot(void);
 
     extern int singularity_action_init(void);

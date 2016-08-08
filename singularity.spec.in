@@ -65,6 +65,7 @@ rm -rf $RPM_BUILD_ROOT
 %files devel
 %defattr(-, root, root)
 %{_libdir}/lib*.so
+%{_libdir}/lib*.a
 %{_includedir}/*.h
 
 
