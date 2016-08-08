@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2016, Brian Bockelman. All rights reserved.
  * 
  * “Singularity” Copyright (c) 2016, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -18,28 +18,24 @@
  * 
  */
 
+#ifndef __SINGULARITY_SIGNAL_HANDLERS_H_
+#define __SINGULARITY_SIGNAL_HANDLERS_H_
 
-#include <unistd.h>
-#include <stdlib.h>
+#include <sys/types.h>
 
-int intlen(int input);
-char *int2str(int num);
-char *joinpath(const char * path1, const char * path2);
-char *strjoin(char *str1, char *str2);
-void chomp(char *str);
-int strlength(const char *string, int max_len);
-//char *random_string(int length);
+// Setup all the necessary signal handlers.
+void setup_signal_handler(pid_t pid);
+// Block until the given PID exits (but _don't_ call wait() on it),
+// but also process signal handler activity in the meantime.
+// On return, waitpid should be invoked on pid.
+//
+// If an "interesting" signal is caught while we're in this function,
+// then we'll forward it to `pid` via kill(), then return.
+void blockpid_or_signal();
 
-// Given a const char * string containing a base-10 integer,
-// try to convert to an C integer.
-// This is a bit less error prone (and stricter!) than strtoll:
-// - Returns -1 on error and sets errno appropriately.
-// - On failure, output_num is not touched.
-// - On success, sets output_num to the parsed value (if output_num
-//   is not null).
-// - If the whole string isn't consumed, then -1 is returned and
-//   errno is set to EINVAL
-int str2int(const char *input_str, long int *output_num);
+// Setup the communication pipes for monitoring the status of the parent.
+void signal_pre_fork();
+void signal_post_child();
+void signal_post_parent();
 
-#define ABORT(a) {exit(a);}
-
+#endif // __SINGULARITY_SIGNAL_HANDLERS_H_

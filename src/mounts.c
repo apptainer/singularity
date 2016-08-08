@@ -298,7 +298,7 @@ static int create_bind_dir(const char *dest_orig, const char *tmp_dir, int isfil
 
 void mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
 
-    message(DEBUG, "Called mount_bind(%s, %d, %d, %s)\n", source, dest, writable, tmp_dir);
+    message(DEBUG, "Called mount_bind(%s, %s, %d, %s)\n", source, dest, writable, tmp_dir);
 
     message(DEBUG, "Checking that source exists and is a file or directory\n");
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {

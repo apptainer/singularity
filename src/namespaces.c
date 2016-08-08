@@ -37,7 +37,9 @@
 
 
 void namespace_unshare(void) {
-    namespace_unshare_pid();
+    // NOTE: we don't call namespace_unshare_pid() here!  This is
+    // because we must call *first* in the namespace daemon, as it only goes
+    // into effect for the first child.
     namespace_unshare_fs();
     namespace_unshare_mount();
 }
