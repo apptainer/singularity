@@ -37,7 +37,7 @@
 extern char *singularity_rootfs_dir(void);
 
 
-void singularity_mount_binds(void) {
+int singularity_mount_binds(void) {
     char *tmp_config_string;
     char *container_dir = singularity_rootfs_dir();
 
@@ -67,6 +67,8 @@ void singularity_mount_binds(void) {
             continue;
         }
 
+        //TODO: Decide if we can create the bind points if they don't exists (tmpfs overlay check)
+
         message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
         priv_escalate();
         if ( mount(source, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
@@ -74,12 +76,6 @@ void singularity_mount_binds(void) {
             ABORT(255);
         }
         priv_drop();
-//        message(VERBOSE2, "Making mount read only: %s\n", dest);
-//        if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
-//            message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
-//            ABORT(255);
-//        }
     }
-
+    return(0);
 }
-

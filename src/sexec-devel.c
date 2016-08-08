@@ -67,6 +67,8 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+    singularity_mount_home();
+
     child_ns_pid = fork();
 
     if ( child_ns_pid == 0 ) {

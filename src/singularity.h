@@ -38,5 +38,6 @@
 
     extern int singularity_mount_kernelfs(void);
     extern int singularity_mount_binds(void);
+    extern int singularity_mount_home(void);
 
 #endif /* __SINGULARITY_H */
