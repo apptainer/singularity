@@ -15,7 +15,7 @@ env:
 
 before_install:
   # install desired shell and make it the shell of the user
-  - if [ ! -z "$SHELL_" ]; then sudo apt-get install $SHELL_; export SHELL=/bin/$SHELL_; chsh --shell=$SHELL; fi
+  - if [ ! -z "$SHELL_" ]; then sudo apt-get install $SHELL_; export SHELL=/bin/$SHELL_; sudo chsh --shell=$SHELL $USER; fi
   # so that adjusted PATH propagates into sudo
   - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
   - sudo apt-get install flawfinder
