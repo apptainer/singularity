@@ -3,7 +3,7 @@ SUBDIRS = ns rootfs action mount file
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
-AM_CFLAGS = -Wall -fpie -shared -fPIC
+AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
 
 
