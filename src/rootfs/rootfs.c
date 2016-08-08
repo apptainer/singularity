@@ -42,9 +42,9 @@
 
 
 static int module = 0;
-static char *chroot_dir = NULL;
+static char *mount_point = NULL;
 
-int singularity_rootfs_init(char *source, char *mount_point) {
+int singularity_rootfs_init(char *source) {
     char *containername = basename(strdup(source));
     message(DEBUG, "Checking on container source type\n");
 
@@ -54,7 +54,15 @@ int singularity_rootfs_init(char *source, char *mount_point) {
         setenv("SINGULARITY_CONTAINER", "unknown", 1);
     }
 
-    chroot_dir = strdup(mount_point);
+    config_rewind();
+    message(DEBUG, "Figuring out where to mount Singularity container\n");
+    if ( ( mount_point = config_get_key_value("container dir") ) == NULL ) {
+        message(DEBUG, "Using default container path of: /var/singularity/mnt\n");
+        mount_point = strdup("/var/singularity/mnt");
+    }
+    message(DEBUG, "Set image mount path to: %s\n", mount_point);
+
+    mount_point = strdup(mount_point);
 
     if ( is_file(source) == 0 ) {
         module = ROOTFS_IMAGE;
@@ -65,6 +73,7 @@ int singularity_rootfs_init(char *source, char *mount_point) {
     }
 
     message(ERROR, "Unknown rootfs source type\n");
+    ABORT(255);
     return(-1);
 }
 
@@ -92,14 +101,14 @@ int singularity_rootfs_mount(void) {
 int singularity_rootfs_chroot(void) {
     message(VERBOSE, "Entering container file system space\n");
 
-    if ( is_exec(joinpath(chroot_dir, "/bin/sh")) < 0 ) {
+    if ( is_exec(joinpath(mount_point, "/bin/sh")) < 0 ) {
         message(ERROR, "Container does not have a valid /bin/sh\n");
         ABORT(255);
     }
 
     priv_escalate();
-    if ( chroot(chroot_dir) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
-        message(ERROR, "failed enter container at: %s\n", chroot_dir);
+    if ( chroot(mount_point) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
+        message(ERROR, "failed enter container at: %s\n", mount_point);
         ABORT(255);
     }
     priv_drop();

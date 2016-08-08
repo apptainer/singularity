@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <linux/limits.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -40,6 +41,7 @@
 #define ACTION_RUN      3
 
 static int action = 0;
+static char *cwd_path;
 
 int singularity_action_init(void) {
     char *command = getenv("SINGULARITY_COMMAND");
@@ -64,12 +66,29 @@ int singularity_action_init(void) {
         ABORT(1);
     }
 
+    cwd_path = (char *) malloc(sizeof(char) * PATH_MAX);
+
+//    message(DEBUG, "Obtaining file descriptor to current directory\n");
+//    if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) { // Flawfinder: ignore (need current directory FD)
+//        message(ERROR, "Could not open cwd fd (%s)!\n", strerror(errno));
+//        ABORT(1);
+//    }
+    message(DEBUG, "Getting current working directory path string\n");
+    if ( getcwd(cwd_path, PATH_MAX) == NULL ) {
+        message(ERROR, "Could not obtain current directory path: %s\n", strerror(errno));
+        ABORT(1);
+    }
+
     return(0);
 }
 
 int singularity_action_do(int argc, char **argv) {
 
     priv_drop_perm();
+
+    if ( chdir(cwd_path) < 0 ) {
+        message(WARNING, "Could not chdir to: %s\n", cwd_path);
+    }
 
     if ( action == ACTION_SHELL ) {
         message(DEBUG, "Running action: shell\n");
