@@ -38,6 +38,11 @@
 
 
 int singularity_ns_mnt_unshare(void) {
+    config_rewind();
+    int slave;
+
+    slave = config_get_key_bool("mount slave", 0);
+
     priv_escalate();
 #ifdef NS_CLONE_FS
     message(DEBUG, "Virtualizing FS namespace\n");
@@ -53,8 +58,6 @@ int singularity_ns_mnt_unshare(void) {
         ABORT(255);
     }
 
-    config_rewind();
-    int slave = config_get_key_bool("mount slave", 0);
     // Privatize the mount namespaces
     //
 #ifdef SINGULARITY_MS_SLAVE

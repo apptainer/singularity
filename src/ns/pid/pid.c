@@ -38,18 +38,19 @@
 
 
 int singularity_ns_pid_unshare(void) {
-    priv_escalate();
     config_rewind();
 #ifdef NS_CLONE_NEWPID
     message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
     if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
             ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
         unsetenv("SINGULARITY_NO_NAMESPACE_PID");
+        priv_escalate();
         message(DEBUG, "Virtualizing PID namespace\n");
         if ( unshare(CLONE_NEWPID) < 0 ) {
             message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
             ABORT(255);
         }
+        priv_drop();
     } else {
         message(VERBOSE, "Not virtualizing PID namespace\n");
     }
@@ -59,18 +60,19 @@ int singularity_ns_pid_unshare(void) {
     if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
             ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
         unsetenv("SINGULARITY_NO_NAMESPACE_PID");
+        priv_escalate();
         message(DEBUG, "Virtualizing PID namespace\n");
         if ( unshare(CLONE_NEWPID) < 0 ) {
             message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
             ABORT(255);
         }
+        priv_drop();
     } else {
         message(VERBOSE, "Not virtualizing PID namespace\n");
     }
 #endif
     message(VERBOSE, "Skipping PID namespace creation, support not available\n");
 #endif
-    priv_drop();
     return(0);
 }
 

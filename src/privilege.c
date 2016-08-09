@@ -364,20 +364,18 @@ void priv_drop(void) {
     }
 
     if ( getuid() != 0 ) {
-        message(DEBUG, "Dropping privileges to GID = '%d'\n", uinfo.gid);
+        message(DEBUG, "Dropping privileges to UID=%d, GID=%d\n", uinfo.uid, uinfo.gid);
+
         if ( setegid(uinfo.gid) < 0 ) {
             message(ERROR, "Could not drop effective group privileges to gid %d: %s\n", uinfo.gid, strerror(errno));
             ABORT(255);
         }
 
-        message(DEBUG, "Dropping privileges to UID = '%d'\n", uinfo.uid);
         if ( seteuid(uinfo.uid) < 0 ) {
             message(ERROR, "Could not drop effective user privileges to uid %d: %s\n", uinfo.uid, strerror(errno));
             ABORT(255);
         }
 
-
-        message(DEBUG, "Confirming we have correct GID\n");
         if ( getgid() != uinfo.gid ) {
 #ifdef SINGULARITY_NOSUID
             if ( uinfo.target_mode && getgid() != 0 ) {
