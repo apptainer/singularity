@@ -376,6 +376,7 @@ void priv_drop(void) {
             ABORT(255);
         }
 
+        message(DEBUG, "Confirming we have correct UID/GID\n");
         if ( getgid() != uinfo.gid ) {
 #ifdef SINGULARITY_NOSUID
             if ( uinfo.target_mode && getgid() != 0 ) {
@@ -389,7 +390,6 @@ void priv_drop(void) {
                 }
             }
 
-            message(DEBUG, "Confirming we have correct UID\n");
             if ( getuid() != uinfo.uid ) {
 #ifdef SINGULARITY_NOSUID
             if ( uinfo.target_mode && getuid() != 0 ) {

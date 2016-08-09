@@ -55,29 +55,25 @@ int main(int argc, char **argv) {
 
     message(VERBOSE, "Using sessiondir: %s\n", sessiondir);
 
-    singularity_ns_unshare();
-
-    if ( singularity_rootfs_mount() < 0 ) {
-        message(ERROR, "Failed moutning the image\n");
-        ABORT(255);
-    }
-
-    if ( singularity_mount_binds() < 0 ) {
-        message(ERROR, "Failed mounting bind directories\n");
-        ABORT(255);
-    }
-
-    singularity_mount_home();
+    singularity_ns_pid_unshare();
 
     child_ns_pid = fork();
 
     if ( child_ns_pid == 0 ) {
         message(DEBUG, "Hello from NS child\n");
 
+        singularity_ns_mnt_unshare();
+
+        singularity_rootfs_mount();
+
+        singularity_mount_binds();
+
+        singularity_mount_home();
 
         singularity_rootfs_chroot();
 
         singularity_mount_kernelfs();
+
         singularity_action_do(argc, argv);
 
         return(0);
