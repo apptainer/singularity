@@ -46,6 +46,11 @@ int singularity_mount_home(void) {
     struct passwd *pw;
     uid_t uid = getuid();
 
+    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
+        message(DEBUG, "Skipping bind mounts as contain was requested\n");
+        return(0);
+    }
+
     errno = 0;
     if ( ( pw = getpwuid(uid) ) == NULL ) {
         // List of potential error codes for unknown name taken from man page.

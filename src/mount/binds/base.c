@@ -41,6 +41,11 @@ int singularity_mount_binds(void) {
     char *tmp_config_string;
     char *container_dir = singularity_rootfs_dir();
 
+    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
+        message(DEBUG, "Skipping bind mounts as contain was requested\n");
+        return(0);
+    }
+
     message(DEBUG, "Checking configuration file for 'bind path'\n");
     config_rewind();
     while ( ( tmp_config_string = config_get_key_value("bind path") ) != NULL ) {
