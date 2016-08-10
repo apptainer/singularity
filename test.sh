@@ -206,6 +206,18 @@ stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec $CONTAINER whoami"
 stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
 
 /bin/echo
+/bin/echo "Testing user bind mounts"
+mkdir -p $TEMPDIR/foo/bar/baz/
+touch $TEMPDIR/foo/bar/baz/qux
+stest 0 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -f /var/lib/test/foo/bar/baz/qux
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo out test -f /var/lib/test/foo/bar/baz/qux"
+stest 0 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -d /var/lib/test/
+# This is a quirk of the bind mount code that can only be fixed with overlayfs-based binds.
+stest 1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -d /var/lib/alternatives/
+stest 0 singularity exec "$CONTAINER" test -d /var/lib/alternatives/
+
+
+/bin/echo
 /bin/echo "Cleaning up"
 
 stest 0 popd
