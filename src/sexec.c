@@ -591,7 +591,6 @@ int main(int argc, char ** argv) {
                 }
 
                 bind_paths(containerdir);
-
             }
 
         } else {
@@ -906,6 +905,13 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
+
+
+    message(DEBUG, "Closing the loop device file descriptor: %s\n", loop_fp);
+    fclose(loop_fp);
+    message(DEBUG, "Closing the container image file descriptor\n");
+    fclose(containerimage_fp);
+
     if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         close(sessiondirlock_fd);
 
