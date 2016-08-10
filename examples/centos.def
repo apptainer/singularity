@@ -11,7 +11,7 @@ MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
 Setup
 Bootstrap
 
-#InstallPkgs yum vim-minimal
+InstallPkgs iputils
 
 Cleanup
 

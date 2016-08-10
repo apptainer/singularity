@@ -90,6 +90,14 @@ char *singularity_sessiondir(char *file) {
     return(sessiondir);
 }
 
+char *singularity_sessiondir_get(void) {
+    if ( sessiondir == NULL ) {
+        message(ERROR, "Doh, session directory has not been setup!\n");
+        ABORT(255);
+    }
+    return(sessiondir);
+}
+
 int singularity_sessiondir_rm(void) {
     if ( sessiondir == NULL ) {
         message(ERROR, "Session directory is NULL, can not remove nullness!\n");

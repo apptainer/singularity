@@ -139,9 +139,9 @@ stest 0 sudo chmod 0666 "$CONTAINER"
 stest 0 sudo singularity shell -w "$CONTAINER" -c true
 stest 0 sudo singularity exec -w "$CONTAINER" true
 stest 0 sudo singularity run -w "$CONTAINER" true
-stest 0 singularity shell -w "$CONTAINER" -c true
-stest 0 singularity exec -w "$CONTAINER" true
-stest 0 singularity run -w "$CONTAINER" true
+stest 1 singularity shell -w "$CONTAINER" -c true
+stest 1 singularity exec -w "$CONTAINER" true
+stest 1 singularity run -w "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" touch /writetest.fail
 stest 1 sudo singularity exec "$CONTAINER" touch /writetest.fail
 stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
@@ -185,8 +185,8 @@ stest 2 singularity exec out ping localhost -c 1
 # NOTE: in target mode, we cannot start from a non-root-readable directory.
 cp $CONTAINER /tmp
 pushd /
-stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` sudo singularity exec /tmp/$CONTAINER whoami | grep -q nobody"
-stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g nobody` SINGULARITY_TARGET_UID=`id -u nobody` singularity exec /tmp/$CONTAINER whoami | grep -q nobody"
+stest 0 sh -c "sudo SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec /tmp/$CONTAINER whoami | grep -q `id -un`"
+stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec /tmp/$CONTAINER whoami | grep -q `id -un`"
 popd
 
 /bin/echo
@@ -199,9 +199,9 @@ stest 1 sh -c "singularity exec -S /tmp $CONTAINER find /tmp/foo -type f | grep 
 /bin/echo
 /bin/echo "Checking disable setuid config flag"
 stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
-stest 1 singularity exec "$CONTAINER" test -f /environment
+stest 1 singularity exec "$CONTAINER" true
 stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
-stest 0 singularity exec "$CONTAINER" test -f /environment
+stest 0 singularity exec "$CONTAINER" true
 
 /bin/echo
 /bin/echo "Checking unprivileged mode"
@@ -210,6 +210,18 @@ stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid
 stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec out whoami | grep -q $myself"
 stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec $CONTAINER whoami"
 stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
+
+/bin/echo
+/bin/echo "Testing user bind mounts"
+mkdir -p $TEMPDIR/foo/bar/baz/
+touch $TEMPDIR/foo/bar/baz/qux
+stest 0 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -f /var/lib/test/foo/bar/baz/qux
+stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo out test -f /var/lib/test/foo/bar/baz/qux"
+stest 0 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -d /var/lib/test/
+# This is a quirk of the bind mount code that can only be fixed with overlayfs-based binds.
+stest 1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -d /var/lib/alternatives/
+stest 0 singularity exec "$CONTAINER" test -d /var/lib/alternatives/
+
 
 /bin/echo
 /bin/echo "Cleaning up"

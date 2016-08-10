@@ -30,5 +30,13 @@
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
+#include "singularity.h"
 
 
+int bind_file(char *source, char *dest) {
+//    char *sessiondir = singularity_sessiondir_get();
+//    char *containerdir = singularity_rootfs_dir();
+    
+
+
+}

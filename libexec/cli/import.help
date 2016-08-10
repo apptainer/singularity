@@ -22,7 +22,6 @@ note: This command must be executed as root.
 IMPORT OPTIONS:
     -f/--file       Use an input file instead of a pipe for tar, or
                     name an image of the specified format to import
-    -t/--type       Source type ('tar' or 'docker', default: tar)
        --command    Replace the tar command (DEFAULT: 'tar xvf -')
 
 EXAMPLES:
@@ -38,11 +37,6 @@ EXAMPLES:
     $ sudo singularity import /tmp/Debian.img < debian.tar
     $ sudo singularity import -f Debian.tar /tmp/Debian.img
     $ docker export [container] | sudo singularity import [container].img
-
-    Converting a Docker Fedora image:
-
-    $ sudo singularity import -t docker fedora /tmp/fedora.img
-
 
 For additional help, please visit our public documentation pages which are
 found at:

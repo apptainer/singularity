@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <limits.h>
 #include <pwd.h>
 #include <errno.h> 
 #include <string.h>
