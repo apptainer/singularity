@@ -88,7 +88,6 @@ int main(int argc, char ** argv) {
     char cwd[PATH_MAX]; // Flawfinder: ignore
     int cwd_fd = 0;
     int sessiondirlock_fd = 0;
-    int containerimage_fd = 0;
     int loop_dev_lock_fd = 0;
     int daemon_pid = -1;
     int retval = 0;
@@ -264,32 +263,33 @@ int main(int argc, char ** argv) {
 
     if (container_is_image > 0 ) {
         message(DEBUG, "Checking if we are opening image as read/write\n");
-        if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
+
+        if ( getenv("SINGULARITY_WRITABLE") != NULL ) { // Flawfinder: ignore (only checking for existance of getenv)
+
+            if ( getuid() == 0 ) {
+                message(DEBUG, "Opening image as read/write: %s\n", containerimage);
+                if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
+                    message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
+                    ABORT(255);
+                }
+
+                message(DEBUG, "Setting exclusive lock on file descriptor: %d\n", fileno(containerimage_fp));
+                if ( flock(fileno(containerimage_fp), LOCK_EX | LOCK_NB) < 0 ) {
+                    message(WARNING, "Could not obtain exclusive lock on image\n");
+                }
+            } else {
+                message(ERROR, "Only root can mount images as writable\n");
+                ABORT(1);
+            }
+
+        } else {
+
             message(DEBUG, "Opening image as read only: %s\n", containerimage);
             if ( ( containerimage_fp = fopen(containerimage, "r") ) == NULL ) { // Flawfinder: ignore 
                 message(ERROR, "Could not open image read only %s: %s\n", containerimage, strerror(errno));
                 ABORT(255);
             }
 
-            containerimage_fd = fileno(containerimage_fp);
-            message(DEBUG, "Setting shared lock on file descriptor: %d\n", containerimage_fd);
-            if ( flock(containerimage_fd, LOCK_SH | LOCK_NB) < 0 ) {
-                message(ERROR, "Could not obtained shared lock on image\n");
-                ABORT(5);
-            }
-        } else {
-            message(DEBUG, "Opening image as read/write: %s\n", containerimage);
-            if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
-                message(ERROR, "Could not open image read/write %s: %s\n", containerimage, strerror(errno));
-                ABORT(255);
-            }
-
-            containerimage_fd = fileno(containerimage_fp);
-            message(DEBUG, "Setting exclusive lock on file descriptor: %d\n", containerimage_fd);
-            if ( flock(containerimage_fd, LOCK_EX | LOCK_NB) < 0 ) {
-                message(ERROR, "Could not obtained exclusive lock on image\n");
-                ABORT(5);
-            }
         }
     }
 
@@ -905,12 +905,6 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
-
-
-    message(DEBUG, "Closing the loop device file descriptor: %s\n", loop_fp);
-    fclose(loop_fp);
-    message(DEBUG, "Closing the container image file descriptor\n");
-    fclose(containerimage_fp);
 
     if ( flock(sessiondirlock_fd, LOCK_EX | LOCK_NB) == 0 ) {
         close(sessiondirlock_fd);
