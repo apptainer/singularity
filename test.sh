@@ -41,10 +41,6 @@ stest 0 make
 stest 0 sudo make install
 
 
-# At the moment, we are just testing build.
-stest 0 sudo rm -rf "$TEMPDIR"
-exit 0
-
 PATH="$TEMPDIR/bin:/usr/local/bin:$PATH"
 MESSAGELEVEL=5
 
@@ -123,6 +119,14 @@ stest 1 singularity run "$CONTAINER" true
 stest 0 sudo singularity exec -w "$CONTAINER" chmod 0755 /singularity
 stest 0 singularity run "$CONTAINER" true
 stest 1 singularity run "$CONTAINER" false
+
+
+
+
+
+# At the moment, we are not ready for all tests
+stest 0 sudo rm -rf "$TEMPDIR"
+exit 0
 
 /bin/echo
 /bin/echo "Checking writableness..."

@@ -18,12 +18,16 @@ libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in librar
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = sexec
+bin_PROGRAMS = sexec image-create image-expand image-mount image-bind
 
 sexec_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
 sexec_LDADD = libsingularity.la
 
 
+image_create_SOURCES = image-create.c file.c util.c image.c message.c privilege.c
+image_expand_SOURCES = image-expand.c file.c util.c image.c message.c privilege.c
+image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
+image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 
 
 #sexec_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
@@ -49,9 +53,5 @@ make_suid:
 #ftype_SOURCES = ftype.c util.c file.c message.c
 #sexec_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c
 #sexec_nosuid_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c
-#image_create_SOURCES = image-create.c file.c util.c image.c message.c privilege.c
-#image_expand_SOURCES = image-expand.c file.c util.c image.c message.c privilege.c
-#image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
-#image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 
 EXTRA_DIST = config.h config_parser.h container_actions.h file.h singularity.h image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h sessiondir.h
