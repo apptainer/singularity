@@ -40,4 +40,7 @@
     extern int singularity_mount_binds(void);
     extern int singularity_mount_home(void);
 
+    extern int singularity_file_create(void);
+    extern int singularity_file_bind(void);
+
 #endif /* __SINGULARITY_H */

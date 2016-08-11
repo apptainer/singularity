@@ -19,10 +19,11 @@
 */
 
 
-#ifndef __ACTION_EXEC_H_
-#define __ACTION_EXEC_H_
+#ifndef __SINGULARITY_FILE_H_
+#define __SINGULARITY_FILE_H_
 
-    extern void singularity_file_group_create(void);
-    extern void singularity_file_group_bind(void);
+    extern int singularity_file_create(void);
+    extern int singularity_file_bind(void);
+    extern int container_file_bind(char *file, char *dest_path);
 
-#endif /* __ACTION_EXEC_H_ */
+#endif /* __SINGULARITY_FILE_H */

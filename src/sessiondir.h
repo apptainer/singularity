@@ -22,8 +22,8 @@
 #ifndef __SESSIONDIR_H_
 #define __SESSIONDIR_H_
 
-    char *singularity_sessiondir(char *file);
     int singularity_sessiondir_rm(void);
+    char *singularity_sessiondir(char *file);
     char *singularity_sessiondir_get(void);
 
 #endif /* __SESSIONDIR_H_ */

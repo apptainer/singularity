@@ -30,5 +30,16 @@
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
+#include "group/base.h"
 
 
+
+int singularity_file_create(void) {
+    singularity_file_group_create();
+    return(0);
+}
+
+int singularity_file_bind(void) {
+    singularity_file_group_bind();
+    return(0);
+}

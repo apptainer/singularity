@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/mount.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -30,13 +31,39 @@
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
+#include "sessiondir.h"
 #include "singularity.h"
 
 
-int bind_file(char *source, char *dest) {
-//    char *sessiondir = singularity_sessiondir_get();
-//    char *containerdir = singularity_rootfs_dir();
-    
+int container_file_bind(char *file, char *dest_path) {
+    char *source;
+    char *dest;
+    char *containerdir = singularity_rootfs_dir();
+    char *sessiondir = singularity_sessiondir_get();
 
+    message(DEBUG, "Called file_bind(%s, %s()\n", file, dest_path);
 
+    if ( containerdir == NULL ) {
+        message(ERROR, "Failed to obtain container directory\n");
+        ABORT(255);
+    }
+
+    if ( sessiondir == NULL ) {
+        message(ERROR, "Failed to obtain session directory\n");
+        ABORT(255);
+    }
+
+    source = joinpath(sessiondir, file);
+    dest = joinpath(containerdir, dest_path);
+
+    priv_escalate();
+    message(VERBOSE, "Binding file '%s' to '%s'\n", source, dest);
+    if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+        priv_drop();
+        message(ERROR, "There was an error binding %s to %s: %s\n", source, dest, strerror(errno));
+        ABORT(255);
+    }
+    priv_drop();
+
+    return(0);
 }
