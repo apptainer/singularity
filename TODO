@@ -1,1 +1,2 @@
 * Move tmp bind mounts to separate module, so when -C is passed it can use sessiondir
+* Add option to bind cwd if not already bound
