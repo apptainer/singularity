@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES = Makefile.in 
 DISTCLEANFILES = Makefile
-CLEANFILES = core.* *~
+CLEANFILES = core.* *~ *.la
 
 AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
