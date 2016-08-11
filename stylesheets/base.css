@@ -81,11 +81,13 @@ p {
 
 #container {
     display: inline-block;
-    margin-right: auto;
-    margin-left: auto;
+//    margin-right: auto;
+//    margin-left: auto;
+    margin-right: 280px;
+    margin-left: 280px;
     margin-top: 50px;
-    padding-right: 100px;
-    padding-left: 100px;
+//    padding-right: 100px;
+//    padding-left: 100px;
     max-width: 1200px;
     border: 1px;
     min-height: 600px;
