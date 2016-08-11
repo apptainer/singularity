@@ -94,7 +94,7 @@ p {
 
 #follow {
     display: inline-block;
-    margin-top: 60px;
+    margin-top: 10px;
     float: left;
     position-left: absolute;
     border: 0px;
@@ -103,7 +103,7 @@ p {
 
 #logo {
     display: inline-block;
-    margin-top: 60px;
+    margin-top: 10px;
     float: right;
     position-right: absolute;
     border: 0px;
