@@ -29,14 +29,11 @@
 #include <stdlib.h>
 #include <pwd.h>
 
-
 #include "file.h"
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
-
-
-extern char*singularity_rootfs_dir(void);
+#include "rootfs/rootfs.h"
 
 
 int singularity_mount_home(void) {

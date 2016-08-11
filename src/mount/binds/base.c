@@ -32,9 +32,7 @@
 #include "message.h"
 #include "privilege.h"
 #include "config_parser.h"
-
-
-extern char *singularity_rootfs_dir(void);
+#include "rootfs/rootfs.h"
 
 
 int singularity_mount_binds(void) {

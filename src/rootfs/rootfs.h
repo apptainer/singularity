@@ -18,28 +18,13 @@
  * 
 */
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
 
-#include "file.h"
-#include "util.h"
-#include "message.h"
-#include "privilege.h"
-#include "group/group.h"
+#ifndef __SINGULARITY_ROOTFS_H_
+#define __SINGULARITY_ROOTFS_H_
 
+    extern int singularity_rootfs_init(char *source);
+    extern int singularity_rootfs_mount(void);
+    extern int singularity_rootfs_chroot(void);
+    extern char *singularity_rootfs_dir(void);
 
-
-int singularity_file_create(void) {
-    singularity_file_group_create();
-    return(0);
-}
-
-int singularity_file_bind(void) {
-    singularity_file_group_bind();
-    return(0);
-}
+#endif /* __SINGULARITY_ROOTFS_H_ */
