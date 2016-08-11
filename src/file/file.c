@@ -30,7 +30,7 @@
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
-#include "passwd/base.h"
+#include "passwd/passwd.h"
 #include "group/group.h"
 
 
