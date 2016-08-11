@@ -1,1 +1,1 @@
-* Update test.sh for new model
+* Move tmp bind mounts to separate module, so when -C is passed it can use sessiondir
