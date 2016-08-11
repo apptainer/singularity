@@ -40,10 +40,8 @@
 
 
 int main(int argc, char **argv) {
-    int retval = 0;
     char *sessiondir;
     char *image = getenv("SINGULARITY_IMAGE");
-    pid_t child_ns_pid;
 
     if ( image == NULL ) {
         message(ERROR, "SINGULARITY_IMAGE not defined!\n");
@@ -66,47 +64,24 @@ int main(int argc, char **argv) {
 
     singularity_ns_pid_unshare();
 
-    child_ns_pid = fork();
+    singularity_ns_mnt_unshare();
 
-    if ( child_ns_pid == 0 ) {
-        message(DEBUG, "Hello from NS child\n");
+    singularity_rootfs_mount();
 
-        singularity_ns_mnt_unshare();
+    singularity_file_create();
 
-        singularity_rootfs_mount();
+    singularity_mount_binds();
 
-        singularity_file_create();
+    singularity_mount_home();
 
-        singularity_mount_binds();
+    singularity_file_bind();
 
-        singularity_mount_home();
+    singularity_rootfs_chroot();
 
-        singularity_file_bind();
+    singularity_mount_kernelfs();
 
-        singularity_rootfs_chroot();
+    singularity_action_do(argc, argv);
 
-        singularity_mount_kernelfs();
-
-        singularity_action_do(argc, argv);
-
-        return(0);
-
-    } else if ( child_ns_pid > 0 ) {
-        int tmpstatus;
-
-        message(DEBUG, "Waiting on NS child process\n");
-
-        waitpid(child_ns_pid, &tmpstatus, 0);
-        retval = WEXITSTATUS(tmpstatus);
-    } else {
-        message(ERROR, "Failed forking child process\n");
-        ABORT(255);
-    }
-
-    if ( singularity_sessiondir_rm() < 0 ) {
-        message(WARNING, "Could not remove sessiondir\n");
-    }
-
-    return(retval);
+    return(0);
 
 }

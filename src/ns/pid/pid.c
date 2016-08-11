@@ -26,9 +26,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mount.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sched.h>
+
 
 #include "file.h"
 #include "util.h"
@@ -38,6 +40,9 @@
 
 
 int singularity_ns_pid_unshare(void) {
+    pid_t child_ns_pid = 0;
+    int retval;
+
     config_rewind();
 #ifdef NS_CLONE_NEWPID
     message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
@@ -51,6 +56,9 @@ int singularity_ns_pid_unshare(void) {
             ABORT(255);
         }
         priv_drop();
+
+        // PID namespace requires a fork to activate!
+        child_ns_pid = fork();
     } else {
         message(VERBOSE, "Not virtualizing PID namespace\n");
     }
@@ -67,12 +75,32 @@ int singularity_ns_pid_unshare(void) {
             ABORT(255);
         }
         priv_drop();
+
+        // PID namespace requires a fork to activate!
+        child_ns_pid = fork();
     } else {
         message(VERBOSE, "Not virtualizing PID namespace\n");
     }
 #endif
     message(VERBOSE, "Skipping PID namespace creation, support not available\n");
+    return(0);
 #endif
+
+    if ( child_ns_pid == 0 ) {
+        // Allow the child to continue on, while we catch the parent...
+    } else if ( child_ns_pid > 0 ) {
+        int tmpstatus;
+
+        message(DEBUG, "Waiting on NS child process\n");
+
+        waitpid(child_ns_pid, &tmpstatus, 0);
+        retval = WEXITSTATUS(tmpstatus);
+        exit(retval);
+    } else {
+        message(ERROR, "Failed forking child process\n");
+        ABORT(255);
+    }
+
     return(0);
 }
 
