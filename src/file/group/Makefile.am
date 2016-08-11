@@ -1,12 +1,12 @@
 MAINTAINERCLEANFILES = Makefile.in 
 DISTCLEANFILES = Makefile
-CLEANFILES = core.* *~
+CLEANFILES = core.* *~ *.la
 
 AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 noinst_LTLIBRARIES = libfilegroup.la
-libfilegroup_la_SOURCES = base.c
+libfilegroup_la_SOURCES = group.c
 
-EXTRA_DIST = base.h
+EXTRA_DIST = group.h

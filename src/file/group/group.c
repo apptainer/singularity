@@ -36,9 +36,8 @@
 #include "message.h"
 #include "privilege.h"
 #include "sessiondir.h"
+#include "rootfs/rootfs.h"
 #include "file/file.h"
-
-extern char *singularity_rootfs_dir(void);
 
 
 void singularity_file_group_create(void) {
