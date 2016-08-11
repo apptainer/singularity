@@ -80,7 +80,7 @@ p {
 }
 
 #container {
-    display: block;
+    display: inline-block;
     margin-right: auto;
     margin-left: auto;
     margin-top: 50px;
@@ -97,6 +97,16 @@ p {
     margin-top: 10px;
     margin-left: 10px;
     float: left;
+    position-left: absolute;
+    border: 0px;
+    margin-right: 50px;
+}
+
+#twitter {
+    display: inline-block;
+    width: 250px;
+    margin-top: 10px;
+    margin-left: 10px;
     position-left: absolute;
     border: 0px;
     margin-right: 50px;
