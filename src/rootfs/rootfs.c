@@ -72,7 +72,7 @@ int singularity_rootfs_init(char *source) {
         return(rootfs_dir_init(source, mount_point));
     }
 
-    message(ERROR, "Unknown rootfs source type\n");
+    message(ERROR, "Unknown container type: %s\n", source);
     ABORT(255);
     return(-1);
 }
