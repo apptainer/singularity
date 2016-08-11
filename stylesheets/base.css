@@ -95,6 +95,7 @@ p {
 #follow {
     display: inline-block;
     margin-top: 10px;
+    margin-left: 10px;
     float: left;
     position-left: absolute;
     border: 0px;
@@ -104,6 +105,7 @@ p {
 #logo {
     display: inline-block;
     margin-top: 10px;
+    margin-right: 10px;
     float: right;
     position-right: absolute;
     border: 0px;
