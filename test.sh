@@ -146,6 +146,7 @@ stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
 
 /bin/echo
 /bin/echo "Checking Bootstrap on existing container..."
+
 stest 0 sudo singularity bootstrap "$CONTAINER"
 stest 0 singularity exec "$CONTAINER" test -f /environment
 stest 0 sudo singularity exec -w "$CONTAINER" rm /environment
@@ -155,6 +156,16 @@ stest 0 singularity exec "$CONTAINER" test -f /environment
 stest 0 singularity exec "$CONTAINER" test -f /.shell
 stest 0 singularity exec "$CONTAINER" test -f /.exec
 stest 0 singularity exec "$CONTAINER" test -f /.run
+
+
+/bin/echo
+/bin/echo "Checking configuration file ownership..."
+
+stest 0 singularity exec "$CONTAINER" true
+stest 0 sudo chown nobody.nobody "$TEMPDIR/etc/singularity/singularity.conf"
+stest 1 singularity exec "$CONTAINER" true
+stest 0 sudo chown root.root "$TEMPDIR/etc/singularity/singularity.conf"
+stest 0 singularity exec "$CONTAINER" true
 
 
 /bin/echo
