@@ -5,7 +5,7 @@ DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ 
 AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
-
+AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 include_HEADERS = singularity.h
 lib_LTLIBRARIES = libsingularity.la
@@ -30,7 +30,6 @@ image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.
 image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 
 
-#sexec_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 #sexec_nosuid_CPPFLAGS = -DSINGULARITY_NOSUID=1 -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 #bootstrap_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"
 #ftrace_CPPFLAGS = -DARCH_$(SINGULARITY_ARCH)

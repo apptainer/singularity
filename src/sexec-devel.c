@@ -34,6 +34,10 @@
 #include "singularity.h"
 #include "file.h"
 
+#ifndef SYSCONFDIR
+#define SYSCONFDIR "/etc"
+#endif
+
 
 int main(int argc, char **argv) {
     int retval = 0;
@@ -48,7 +52,7 @@ int main(int argc, char **argv) {
 
     priv_init();
     singularity_action_init();
-    config_open("/etc/singularity/singularity.conf");
+    config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_rootfs_init(image, "/var/singularity/mnt");
 
     sessiondir = singularity_sessiondir(image);
