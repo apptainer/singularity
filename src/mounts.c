@@ -51,6 +51,74 @@
 #define MS_REC 16384
 #endif
 
+void mount_overlay(char * source, char * scratch, char * dest) {
+    // lowerDir = source
+    // upperDir = scratch/t
+    // workDir = scratch/w
+    // dest = dest
+
+#ifdef SINGULARITY_OVERLAYFS 
+    message(DEBUG, "Called mount_overlay(%s, %s, %s)\n", source, scratch, dest);
+
+    message(DEBUG, "Checking that source exists and is a file or directory\n");
+    if ( is_dir(source) != 0 && is_file(source) != 0 ) {
+        message(ERROR, "Overlay source path is not a file or directory: '%s'\n", source);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking that scratch exists and is a file or directory\n");
+    if ( is_dir(scratch) != 0 && is_file(scratch) != 0 ) {
+        message(ERROR, "Overlay scratch path is not a file or directory: '%s'\n", scratch);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking that destination exists and is a file or directory\n");
+    if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
+        message(ERROR, "Overlay destination path is not a file or directory: '%s'\n", dest);
+        ABORT(255);
+    }
+
+    message(DEBUG, "Creating upperdir and workdir within scratch directory\n");
+    int upperdirLen = strlen(scratch) + 4;
+    int workdirLen = upperdirLen;
+    char * const upperdir = malloc(upperdirLen);
+    char * const workdir = malloc(workdirLen);
+    snprintf(upperdir, upperdirLen, "%s%s", scratch, "/t");
+    snprintf(workdir, workdirLen, "%s%s", scratch, "/w");
+
+    if ( is_dir(upperdir) != 0 ){    
+        if ( mkdir(upperdir, 1023) < 0 ) {
+            message(ERROR, "Could not create upperdir '%s': %s\n", upperdir, strerror(errno));
+            ABORT(255);
+        }
+    }
+
+    if ( is_dir(workdir) != 0 ){
+        if ( mkdir(workdir, 1023) < 0 ) {
+            message(ERROR, "Could not create workdir '%s': %s\n", workdir, strerror(errno));
+            ABORT(255);
+       }
+    }
+   
+   message(DEBUG, "Calling mount(...)\n");
+   int optionStringLen = strlen(source) + upperdirLen + workdirLen + 50;
+   char * const optionString = malloc(optionStringLen);
+   snprintf(optionString, optionStringLen, "lowerdir=%s,upperdir=%s,workdir=%s", source, upperdir, workdir);
+   
+   if ( mount("overlay", dest, "overlay", MS_NOSUID, optionString) < 0 ){
+        message(ERROR, "Could not create overlay: %s\n", strerror(errno));
+        ABORT(255);
+   }else{
+    message(DEBUG, "Overlay successful.");
+   }
+
+#else
+   message(ERROR, "Overlay not supported on this system.\n");
+   ABORT(255);
+#endif
+
+}
+
 
 int mount_image(char * loop_device, char * mount_point, int writable) {
 
@@ -81,16 +149,64 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
             }
         }
     } else {
-        message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
-        if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard,errors=remount-ro") < 0 ) {
-            message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
-            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-                message(DEBUG, "Trying to mount read only as ext3\n");
-                if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-                    message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+        char * overlaydir;
+        config_rewind();
+        if ( ( overlaydir = config_get_key_value("overlay dir") ) == NULL ){
+            message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
+            if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard,errors=remount-ro") < 0 ) {
+                message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
+                if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+                    message(DEBUG, "Trying to mount read only as ext3\n");
+                    if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+                        message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+                        ABORT(255);
+                    }
+                }
+            }
+        } else { // overlay mount
+
+            message(DEBUG, "Creating overlay mount path: %s\n", overlaydir); 
+            if ( s_mkpath(overlaydir, 0755) < 0 ) { 
+                message(ERROR, "Failed creating overlay directory %s\n", overlaydir); 
+                ABORT(255); 
+            }
+
+
+            // Mount tmpfs
+            message(DEBUG, "Mounting tmpfs");
+            if ( mount("scratch", overlaydir, "tmpfs", MS_NOSUID, "") < 0 ){
+                message(ERROR, "Failed to mount tmpfs: %s\n", strerror(errno));
+                ABORT(255);
+            }
+
+            // Create overlaydirImage: overlaydir/i
+            message(DEBUG, "Creating image within overlaydir\n");
+            int overlaydirImageLen = strlen(overlaydir) + 4;
+            char * const overlaydirImage = malloc(overlaydirImageLen);
+            snprintf(overlaydirImage, overlaydirImageLen, "%s%s", overlaydir, "/i");
+
+            if ( is_dir(overlaydirImage) != 0 ){    
+                if ( mkdir(overlaydirImage, 1023) < 0 ) {
+                    message(ERROR, "Could not create image within overlaydir '%s': %s\n", overlaydirImage, strerror(errno));
                     ABORT(255);
                 }
             }
+
+            // Mount image readonly to reside underneath the overlay
+            message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
+            if ( mount(loop_device, overlaydirImage, "ext4", MS_NOSUID|MS_RDONLY, "discard,errors=remount-ro") < 0 ) {
+                message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
+                if ( mount(loop_device, overlaydirImage, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+                    message(DEBUG, "Trying to mount read only as ext3\n");
+                    if ( mount(loop_device, overlaydirImage, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+                        message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, overlaydirImage, strerror(errno));
+                        ABORT(255);
+                    }
+                }
+            }
+
+            // Call mount_overlay
+            mount_overlay(overlaydirImage, overlaydir, mount_point);
         }
     }
 
@@ -374,70 +490,4 @@ void bind_paths(char *rootpath) {
 }
 
 
-void mount_overlay(char * source, char * scratch, char * dest) {
-    // lowerDir = source
-    // upperDir = scratch/t
-    // workDir = scratch/w
-    // dest = dest
 
-#ifdef SINGULARITY_OVERLAYFS 
-    message(DEBUG, "Called mount_overlay(%s, %s, %s)\n", source, scratch, dest);
-
-    message(DEBUG, "Checking that source exists and is a file or directory\n");
-    if ( is_dir(source) != 0 && is_file(source) != 0 ) {
-        message(ERROR, "Overlay source path is not a file or directory: '%s'\n", source);
-        ABORT(255);
-    }
-
-    message(DEBUG, "Checking that scratch exists and is a file or directory\n");
-    if ( is_dir(scratch) != 0 && is_file(scratch) != 0 ) {
-        message(ERROR, "Overlay scratch path is not a file or directory: '%s'\n", scratch);
-        ABORT(255);
-    }
-
-    message(DEBUG, "Checking that destination exists and is a file or directory\n");
-    if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
-        message(ERROR, "Overlay destination path is not a file or directory: '%s'\n", dest);
-        ABORT(255);
-    }
-
-    message(DEBUG, "Creating upperdir and workdir within scratch directory\n");
-    int upperdirLen = strlen(scratch) + 4;
-    int workdirLen = upperdirLen;
-    char * const upperdir = malloc(upperdirLen);
-    char * const workdir = malloc(workdirLen);
-    snprintf(upperdir, upperdirLen, "%s%s", scratch, "/t");
-    snprintf(workdir, workdirLen, "%s%s", scratch, "/w");
-
-    if ( is_dir(upperdir) != 0 ){	 
-        if ( mkdir(upperdir, 1023) < 0 ) {
-            message(ERROR, "Could not create upperdir '%s': %s\n", upperdir, strerror(errno));
-            ABORT(255);
-        }
-    }
-
-    if ( is_dir(workdir) != 0 ){
-        if ( mkdir(workdir, 1023) < 0 ) {
-            message(ERROR, "Could not create workdir '%s': %s\n", workdir, strerror(errno));
-            ABORT(255);
-	}
-    }
-   
-   message(DEBUG, "Calling mount(...)\n");
-   int optionStringLen = strlen(source) + upperdirLen + workdirLen + 50;
-   char * const optionString = malloc(optionStringLen);
-   snprintf(optionString, optionStringLen, "lowerdir=%s,upperdir=%s,workdir=%s", source, upperdir, workdir);
-   
-   if ( mount("overlay", dest, "overlay", MS_NOSUID, optionString) < 0 ){
-        message(ERROR, "Could not create overlay: %s\n", strerror(errno));
-        ABORT(255);
-   }else{
-	message(DEBUG, "Overlay successful.");
-   }
-
-#else
-   message(ERROR, "Overlay not supported on this system.\n");
-   ABORT(255);
-#endif
-
-}

@@ -207,6 +207,7 @@ stest 1 singularity exec "$CONTAINER" true
 stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
 stest 0 singularity exec "$CONTAINER" true
 
+#TODO: The following tests must be conditional based on host capabilities
 /bin/echo
 /bin/echo "Checking unprivileged mode"
 myself=`whoami`
