@@ -86,15 +86,15 @@ p {
 
 #container {
     display: inline-block;
-//    margin-right: auto;
-//    margin-left: auto;
+    margin-right: auto;
+    margin-left: auto;
     white-space: normal;
     margin-right: 300px;
     margin-left: 300px;
     margin-top: 50px;
-//    padding-right: 100px;
-//    padding-left: 100px;
-    width: 100%;
+    padding-right: 100px;
+    padding-left: 100px;
+    max-width: 1200px;
     border: 1px;
     min-height: 600px;
 }
@@ -106,7 +106,7 @@ p {
     margin-left: 10px;
     position-left: absolute;
     position: absolute;
-    top: 100px;
+    top: 80px;
     border: 0px;
 }
 
