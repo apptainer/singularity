@@ -121,13 +121,6 @@ stest 0 singularity run "$CONTAINER" true
 stest 1 singularity run "$CONTAINER" false
 
 
-
-
-
-# At the moment, we are not ready for all tests
-stest 0 sudo rm -rf "$TEMPDIR"
-exit 0
-
 /bin/echo
 /bin/echo "Checking writableness..."
 
@@ -143,9 +136,9 @@ stest 0 sudo chmod 0666 "$CONTAINER"
 stest 0 sudo singularity shell -w "$CONTAINER" -c true
 stest 0 sudo singularity exec -w "$CONTAINER" true
 stest 0 sudo singularity run -w "$CONTAINER" true
-stest 1 singularity shell -w "$CONTAINER" -c true
-stest 1 singularity exec -w "$CONTAINER" true
-stest 1 singularity run -w "$CONTAINER" true
+stest 0 singularity shell -w "$CONTAINER" -c true
+stest 0 singularity exec -w "$CONTAINER" true
+stest 0 singularity run -w "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" touch /writetest.fail
 stest 1 sudo singularity exec "$CONTAINER" touch /writetest.fail
 stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
@@ -174,6 +167,13 @@ stest 0 sudo chmod 0644 out.tar
 stest 0 sudo rm -f "$CONTAINER"
 stest 0 sudo singularity create -s 568 "$CONTAINER"
 stest 0 sh -c "cat out.tar | sudo singularity import $CONTAINER"
+
+
+
+# At the moment, we are not ready for all tests
+stest 0 sudo rm -rf "$TEMPDIR"
+exit 0
+
 
 /bin/echo
 /bin/echo "Checking directory mode"
