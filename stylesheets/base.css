@@ -85,15 +85,15 @@ p {
 }
 
 #container {
-    display: inline-block;
-    margin-right: auto;
-    margin-left: auto;
-    white-space: normal;
 //    margin-right: 300px;
 //    margin-left: 300px;
+    display: block;
+    margin-right: auto;
+    margin-left: auto;
     margin-top: 50px;
     padding-right: 100px;
     padding-left: 100px;
+    display: block;
     max-width: 1200px;
     border: 1px;
     min-height: 600px;
