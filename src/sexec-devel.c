@@ -50,6 +50,11 @@ int main(int argc, char **argv) {
         ABORT(1);
     }
 
+    if ( ( is_suid("/proc/self/exe") == 0 ) && ( is_owner(joinpath(SYSCONFDIR, "/singularity/singularity.conf"), 0 ) < 0 ) ) {
+        message(ERROR, "Running in privileged mode, root must own the Singularity configuration file\n");
+        ABORT(255);
+    }
+
     priv_init();
     singularity_action_init();
     config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
