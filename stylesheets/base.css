@@ -92,12 +92,18 @@ p {
     min-height: 600px;
 }
 
+#follow {
+    float: left;
+    position-left: absolute;
+    border: 0px;
+    margin-right: 50px;
+}
+
 #logo {
     float: right;
     position-right: absolute;
     border: 0px;
     margin-right: 50px;
-
 }
 
 #navtext {
