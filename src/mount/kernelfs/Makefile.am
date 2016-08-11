@@ -7,6 +7,6 @@ AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 noinst_LTLIBRARIES = libmountkernelfs.la
-libmountkernelfs_la_SOURCES = base.c
+libmountkernelfs_la_SOURCES = kernelfs.c
 
-EXTRA_DIST = base.h
+EXTRA_DIST = kernelfs.h
