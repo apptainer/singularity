@@ -93,6 +93,7 @@ p {
 }
 
 #follow {
+    margin-top: 60px;
     float: left;
     position-left: absolute;
     border: 0px;
@@ -100,6 +101,7 @@ p {
 }
 
 #logo {
+    margin-top: 60px;
     float: right;
     position-right: absolute;
     border: 0px;
