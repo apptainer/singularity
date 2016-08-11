@@ -95,18 +95,8 @@ p {
 //    padding-right: 100px;
 //    padding-left: 100px;
     width: 100%;
-    max-width: 1200px;
     border: 1px;
     min-height: 600px;
-}
-
-#follow {
-    display: inline-block;
-    margin-top: 10px;
-    margin-left: 10px;
-    float: left;
-    border: 0px;
-    margin-right: 50px;
 }
 
 #twitter {
@@ -116,7 +106,7 @@ p {
     margin-left: 10px;
     position-left: absolute;
     position: absolute;
-    top: 60px;
+    top: 100px;
     border: 0px;
 }
 
