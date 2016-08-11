@@ -30,16 +30,19 @@
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
+#include "passwd/base.h"
 #include "group/group.h"
 
 
 
 int singularity_file_create(void) {
+    singularity_file_passwd_create();
     singularity_file_group_create();
     return(0);
 }
 
 int singularity_file_bind(void) {
+    singularity_file_passwd_bind();
     singularity_file_group_bind();
     return(0);
 }

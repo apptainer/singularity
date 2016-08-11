@@ -23,12 +23,97 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <grp.h>
+#include <pwd.h>
+
 
 #include "file.h"
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
+#include "sessiondir.h"
+#include "rootfs/rootfs.h"
+#include "file/file.h"
 
 
+void singularity_file_passwd_create(void) {
+    FILE *file_fp;
+    char *source_file;
+    char *tmp_file;
+    uid_t uid = getuid();
+    struct passwd *pwent = getpwuid(uid);
+    char *containerdir = singularity_rootfs_dir();
+    char *sessiondir = singularity_sessiondir_get();
+
+    message(DEBUG, "Called singularity_file_passwd_create()\n");
+
+    if ( uid == 0 ) {
+        message(VERBOSE, "Not updating passwd file, running as root!\n");
+        return;
+    }
+
+    if ( containerdir == NULL ) {
+        message(ERROR, "Failed to obtain container directory\n");
+        ABORT(255);
+    }
+
+    if ( sessiondir == NULL ) {
+        message(ERROR, "Failed to obtain session directory\n");
+        ABORT(255);
+    }
+
+    source_file = joinpath(containerdir, "/etc/passwd");
+    tmp_file = joinpath(sessiondir, "/passwd");
+
+    message(VERBOSE2, "Checking for template passwd file: %s\n", source_file);
+    if ( is_file(source_file) < 0 ) {
+        message(VERBOSE, "Passwd file does not exist in container, not updating\n");
+        return;
+    }
+
+    message(VERBOSE2, "Creating template of /etc/passwd\n");
+    if ( ( copy_file(source_file, tmp_file) ) < 0 ) {
+        message(ERROR, "Failed copying template passwd file to sessiondir: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    message(DEBUG, "Opening the template passwd file: %s\n", tmp_file);
+    if ( ( file_fp = fopen(tmp_file, "a") ) == NULL ) { // Flawfinder: ignore
+        message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
+        ABORT(255);
+    }
+
+    message(VERBOSE, "Creating template passwd file and appending user data\n");
+    if ( ( file_fp = fopen(tmp_file, "a") ) == NULL ) { // Flawfinder: ignore
+        message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
+        ABORT(255);
+    }
+    fprintf(file_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
+    fclose(file_fp);
+
+    message(DEBUG, "Returning singularity_file_passwd_create()\n");
+
+    return;
+}
+
+
+void singularity_file_passwd_bind(void) {
+    uid_t uid = priv_getuid();
+
+    message(DEBUG, "Called singularity_file_passwd_bind()\n");
+
+    if ( uid == 0 ) {
+        message(VERBOSE, "Not updating passwd file, running as root!\n");
+        return;
+    }
+
+    container_file_bind("passwd", "/etc/passwd");
+
+    message(DEBUG, "Returning singularity_file_passwd_bind()\n");
+
+    return;
+}

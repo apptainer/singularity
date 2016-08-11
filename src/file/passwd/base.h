@@ -19,9 +19,10 @@
 */
 
 
-#ifndef __ACTION_EXEC_H_
-#define __ACTION_EXEC_H_
+#ifndef __SINGULARITY_FILE_PASSWD_H_
+#define __SINGULARITY_FILE_PASSWD_H_
 
+    extern void singularity_file_passwd_create(void);
+    extern void singularity_file_passwd_bind(void);
 
-
-#endif /* __ACTION_EXEC_H_ */
+#endif /* __SINGULARITY_FILE_PASSWD_H_ */

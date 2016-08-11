@@ -54,7 +54,7 @@ void singularity_file_group_create(void) {
     char *containerdir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
 
-    message(DEBUG, "Called update_group_file()\n");
+    message(DEBUG, "Called singularity_file_group_create()\n");
 
     if ( uid == 0 ) {
         message(VERBOSE, "Not updating group file, running as root!\n");
