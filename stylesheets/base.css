@@ -104,7 +104,6 @@ p {
     margin-top: 10px;
     margin-left: 10px;
     float: left;
-    position-left: absolute;
     border: 0px;
     margin-right: 50px;
 }
@@ -115,6 +114,8 @@ p {
     margin-top: 10px;
     margin-left: 10px;
     position-left: absolute;
+    position: absolute;
+    top: 10px;
     border: 0px;
     margin-right: 50px;
 }
