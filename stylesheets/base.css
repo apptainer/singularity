@@ -89,11 +89,12 @@ p {
 //    margin-right: auto;
 //    margin-left: auto;
     white-space: normal;
-    margin-right: 280px;
-    margin-left: 280px;
+    margin-right: 300px;
+    margin-left: 300px;
     margin-top: 50px;
 //    padding-right: 100px;
 //    padding-left: 100px;
+    width: 100%;
     max-width: 1200px;
     border: 1px;
     min-height: 600px;
@@ -115,19 +116,15 @@ p {
     margin-left: 10px;
     position-left: absolute;
     position: absolute;
-    top: 10px;
+    top: 60px;
     border: 0px;
-    margin-right: 50px;
 }
 
 #logo {
     display: inline-block;
-    margin-top: 10px;
-    margin-right: 10px;
     float: right;
     position-right: absolute;
     border: 0px;
-    margin-right: 50px;
 }
 
 #navtext {
