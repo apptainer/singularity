@@ -85,6 +85,11 @@ int rootfs_image_init(char *source, char *mount_dir) {
         }
     }
 
+    if ( image_util_check(image_fp) < 0 ) {
+        message(ERROR, "File is not a valid Singularity image, aborting...\n");
+        ABORT(255);
+    }
+
     return(0);
 }
 

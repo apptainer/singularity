@@ -34,8 +34,29 @@
 #include "image-util.h"
 
 
-int image_util_init(void) {
-    // Initialization code here....
+#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
+#define MAX_LINE_LEN 2048
+
+
+int image_util_check(FILE *image_fp) {
+    char *line;
+
+    message(VERBOSE3, "Checking file is a Singularity image\n");
+    rewind(image_fp);
+
+    line = (char *)malloc(MAX_LINE_LEN);
+
+    // Get the first line from the config
+    fgets(line, MAX_LINE_LEN, image_fp);
+
+    if ( strcmp(line, LAUNCH_STRING) == 0 ) {
+        free(line);
+        message(VERBOSE2, "File is a valid Singularity image\n");
+    } else {
+        free(line);
+        message(VERBOSE, "Fila is not a valid Singularity image\n");
+        return(-1);
+    }
 
     return(0);
 }
