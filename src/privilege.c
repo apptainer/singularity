@@ -344,7 +344,7 @@ void priv_init_userns_inside_final() {
 
 void priv_escalate(void) {
     if ( getuid() != 0 ) {
-        message(DEBUG, "Temporarily escalating privileges\n");
+        message(DEBUG, "Temporarily escalating privileges (U=%d)\n", getuid());
 
         if ( ( seteuid(0) < 0 ) || ( setegid(0) < 0 ) ) {
             message(ERROR, "The feature you are requesting requires privilege you do not have\n");
