@@ -26,9 +26,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mount.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sched.h>
+#include <linux/limits.h>
+
 
 #include "file.h"
 #include "util.h"
@@ -40,19 +43,54 @@ static int userns_enabled = 0;
 
 
 int singularity_ns_user_unshare(void) {
-    config_rewind();
+    uid_t uid = getuid();
 
+    if ( ( is_suid("/proc/self/exe") == 0 ) || ( getuid() == 0 ) ) {
+        message(VERBOSE3, "Not virtualizing USER namespace: running privliged mode\n");
+        return(0);
+    }
 #ifdef NS_CLONE_NEWUSER
     message(DEBUG, "Attempting to virtualize the USER namespace\n");
     if ( unshare(CLONE_NEWUSER) == 0 ) {
         message(DEBUG, "Enabling user namespaces\n");
-        userns_enabled = 1;
+        int child_pid = fork();
+
+        if ( child_pid == 0 ) {
+
+        } else if ( child_pid > 0 ) {
+            int tmpstatus;
+            int retval;
+
+            message(DEBUG, "Waiting on USER NS child process\n");
+
+            char *map_file = (char *) malloc(PATH_MAX);
+            snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
+            FILE *uid_map = fopen(map_file, "w+");
+            if ( uid_map != NULL ) {
+                message(DEBUG, "Updating the uid_map: %s\n", map_file);
+                fprintf(uid_map, "0 %i 1\n", uid);
+                fclose(uid_map);
+                userns_enabled = 1;
+            } else {
+                message(ERROR, "Could not write to uid_map: %s\n", strerror(errno));
+                ABORT(255);
+            }
+
+            waitpid(child_pid, &tmpstatus, 0);
+
+            retval = WEXITSTATUS(tmpstatus);
+            exit(retval);
+        } else {
+            message(ERROR, "Failed to fork child for user namespace\n");
+        }
     } else {
-        message(VERBOSE3, "User namespaces not supported\n");
+        message(VERBOSE3, "Not virtualizing USER namespace: runtime support failed\n");
     }
 #else
-    message(VERBOSE3, "Not virtualizing USER namespace (no host support)\n");
+    message(VERBOSE3, "Not virtualizing USER namespace: support not compiled in\n");
 #endif
+
+    execl("/bin/sh", "/bin/sh", NULL);
 
     return(0);
 }
