@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "file.h"
+#include "../file.h" //TODO: Horrible workaround
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
@@ -55,6 +55,16 @@ int container_file_bind(char *file, char *dest_path) {
 
     source = joinpath(sessiondir, file);
     dest = joinpath(containerdir, dest_path);
+
+    if ( is_file(source) < 0 ) {
+        message(ERROR, "Bind file source does not exist: %s\n", source);
+        ABORT(255);
+    }
+
+    if ( is_file(dest) < 0 ) {
+        message(ERROR, "Bind file source does not exist: %s\n", dest);
+        ABORT(255);
+    }
 
     priv_escalate();
     message(VERBOSE, "Binding file '%s' to '%s'\n", source, dest);

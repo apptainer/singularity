@@ -57,6 +57,18 @@ int singularity_ns_user_unshare(void) {
 
         if ( child_pid == 0 ) {
 
+            char *map_file = (char *) malloc(PATH_MAX);
+            snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
+            FILE *uid_map = fopen(map_file, "w+");
+            if ( uid_map != NULL ) {
+                message(DEBUG, "Updating the child uid_map: %s\n", map_file);
+                fprintf(uid_map, "%i 0 1\n", uid);
+                fclose(uid_map);
+                userns_enabled = 1;
+            } else {
+                message(ERROR, "Could not write child info to uid_map: %s\n", strerror(errno));
+                ABORT(255);
+            }
         } else if ( child_pid > 0 ) {
             int tmpstatus;
             int retval;
@@ -67,12 +79,12 @@ int singularity_ns_user_unshare(void) {
             snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
             FILE *uid_map = fopen(map_file, "w+");
             if ( uid_map != NULL ) {
-                message(DEBUG, "Updating the uid_map: %s\n", map_file);
+                message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
                 fprintf(uid_map, "0 %i 1\n", uid);
                 fclose(uid_map);
                 userns_enabled = 1;
             } else {
-                message(ERROR, "Could not write to uid_map: %s\n", strerror(errno));
+                message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
                 ABORT(255);
             }
 
@@ -89,8 +101,6 @@ int singularity_ns_user_unshare(void) {
 #else
     message(VERBOSE3, "Not virtualizing USER namespace: support not compiled in\n");
 #endif
-
-    execl("/bin/sh", "/bin/sh", NULL);
 
     return(0);
 }

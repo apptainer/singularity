@@ -102,7 +102,7 @@ void singularity_file_passwd_create(void) {
 
 
 void singularity_file_passwd_bind(void) {
-    uid_t uid = priv_getuid();
+    uid_t uid = getuid();
 
     message(DEBUG, "Called singularity_file_passwd_bind()\n");
 
