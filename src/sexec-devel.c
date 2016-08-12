@@ -62,9 +62,7 @@ int main(int argc, char **argv) {
 
     message(VERBOSE, "Using sessiondir: %s\n", sessiondir);
 
-    singularity_ns_pid_unshare();
-
-    singularity_ns_mnt_unshare();
+    singularity_ns_unshare();
 
     singularity_rootfs_mount();
 

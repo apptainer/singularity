@@ -40,6 +40,8 @@
 int singularity_ns_unshare(void) {
     int retval = 0;
 
+    message(DEBUG, "Unsharing all namespaces\n");
+    retval += singularity_ns_user_unshare();
     retval += singularity_ns_pid_unshare();
     retval += singularity_ns_mnt_unshare();
 

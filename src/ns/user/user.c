@@ -18,31 +18,46 @@
  * 
 */
 
+#define _GNU_SOURCE
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/mount.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sched.h>
 
-#ifndef __SINGULARITY_H_
-#define __SINGULARITY_H_
+#include "file.h"
+#include "util.h"
+#include "message.h"
+#include "config_parser.h"
+#include "privilege.h"
+
+static int userns_enabled = 0;
 
 
-    extern int singularity_ns_unshare(void);
-    extern int singularity_ns_pid_unshare(void);
-    extern int singularity_ns_mnt_unshare(void);
-    extern int singularity_ns_user_unshare(void);
-    extern int singularity_ns_user_enabled(void);
-    extern int singularity_ns_join(pid_t attach_pid);
+int singularity_ns_user_unshare(void) {
+    config_rewind();
 
-    extern int singularity_rootfs_init(char *source, char *mount_point);
-    extern int singularity_rootfs_mount(void);
-    extern int singularity_rootfs_chroot(void);
-    extern char *singularity_rootfs_dir(void);
+#ifdef NS_CLONE_NEWUSER
+    message(DEBUG, "Attempting to virtualize the USER namespace\n");
+    if ( unshare(CLONE_NEWUSER) == 0 ) {
+        message(DEBUG, "Enabling user namespaces\n");
+        userns_enabled = 1;
+    } else {
+        message(VERBOSE3, "User namespaces not supported\n");
+    }
+#else
+    message(VERBOSE3, "Not virtualizing USER namespace (no host support)\n");
+#endif
 
-    extern int singularity_action_init(void);
-    extern int singularity_action_do(int agc, char **argv);
+    return(0);
+}
 
-    extern int singularity_mount_kernelfs(void);
-    extern int singularity_mount_binds(void);
-    extern int singularity_mount_home(void);
 
-    extern int singularity_file_create(void);
-    extern int singularity_file_bind(void);
-
-#endif /* __SINGULARITY_H */
+int singularity_ns_user_enabled(void) {
+    return(userns_enabled);
+}

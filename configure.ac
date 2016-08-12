@@ -102,6 +102,20 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                   )
 
 
+AC_MSG_CHECKING([for namespace: CLONE_NEWUSER])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+                                     #include <sched.h>
+                                   ]],
+                                   [[unshare(CLONE_NEWUSER);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWUSER"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
+
 AC_MSG_CHECKING([for feature: NO_NEW_PRIVS])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                                      #include <sys/prctl.h>
@@ -177,6 +191,7 @@ AC_CONFIG_FILES([
    src/ns/Makefile
    src/ns/mnt/Makefile
    src/ns/pid/Makefile
+   src/ns/user/Makefile
    src/rootfs/Makefile
    src/rootfs/image/Makefile
    src/rootfs/dir/Makefile
