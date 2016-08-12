@@ -27,7 +27,11 @@ ltmain.sh
 missing
 singularity.spec
 
-src/sexec-devel
+src/image-bind
+src/image-create
+src/image-expand
+src/image-mount
+src/sexec
 src/stamp-h1
 src/include/stamp-h1
 
