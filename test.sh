@@ -162,7 +162,7 @@ stest 0 singularity exec "$CONTAINER" test -f /.run
 /bin/echo "Checking configuration file ownership..."
 
 stest 0 singularity exec "$CONTAINER" true
-stest 0 sudo chown nobody.nobody "$TEMPDIR/etc/singularity/singularity.conf"
+stest 0 sudo chown `id -un` "$TEMPDIR/etc/singularity/singularity.conf"
 stest 1 singularity exec "$CONTAINER" true
 stest 0 sudo chown root.root "$TEMPDIR/etc/singularity/singularity.conf"
 stest 0 singularity exec "$CONTAINER" true
