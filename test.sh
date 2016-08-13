@@ -84,7 +84,7 @@ stest 1 singularity bogus help
 stest 0 sudo singularity create -s 568 "$CONTAINER"
 # We will need a setuid binary (ping) for the NO_NEW_PRIVS test below.
 stest 0 sed -i "$STARTDIR/examples/centos.def" -e 's|#InstallPkgs yum vim-minimal|InstallPkgs iputils|'
-stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/centos.def"
+stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/busybox.def"
 
 /bin/echo
 /bin/echo "Running container shell tests..."
@@ -180,29 +180,27 @@ stest 0 sudo singularity create -s 568 "$CONTAINER"
 stest 0 sh -c "cat out.tar | sudo singularity import $CONTAINER"
 
 
+/bin/echo
+/bin/echo "Checking directory mode"
+stest 0 singularity exec out true
+stest 1 singularity exec /tmp true
+stest 1 singularity exec / true
+
+/bin/echo
+/bin/echo "Checking NO_NEW_PRIVS"
+stest 1 singularity exec "$CONTAINER" ping localhost -c 1
+stest 1 singularity exec out ping localhost -c 1
+
+/bin/echo
+/bin/echo "Checking target UID mode"
+stest 0 sh -c "SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep -q `id -un`"
+stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep -q `id -un`"
+
 
 # At the moment, we are not ready for all tests
 stest 0 sudo rm -rf "$TEMPDIR"
 exit 0
 
-
-/bin/echo
-/bin/echo "Checking directory mode"
-stest 0 singularity exec out test -f /environment
-stest 1 singularity exec /tmp test -f /environment
-
-/bin/echo
-/bin/echo "Checking NO_NEW_PRIVS"
-stest 2 singularity exec out ping localhost -c 1
-
-/bin/echo
-/bin/echo "Checking target UID mode"
-# NOTE: in target mode, we cannot start from a non-root-readable directory.
-cp $CONTAINER /tmp
-pushd /
-stest 0 sh -c "sudo SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec /tmp/$CONTAINER whoami | grep -q `id -un`"
-stest 1 sh -c "SINGULARITY_FORCE_NOSUID=1 SINGULARITY_FORCE_NOUSERNS=1 SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec /tmp/$CONTAINER whoami | grep -q `id -un`"
-popd
 
 /bin/echo
 /bin/echo "Checking scratch directory creation"

@@ -10,11 +10,12 @@ Fixes:
         chroot)
     * For older distros that do not support loop autoclear, conditionally
         create a child process and move mount namespace to a child process,
-            and have parent umount when done
-    * Support legacy containers
+        and have parent umount when done
 
 New API porting:
     * signal handlers
     * helper programs
     * tmpfs overlay
-    * Clean old sources
+    * scratch directory creation
+    * support legacy containers
+    * clean old sources
