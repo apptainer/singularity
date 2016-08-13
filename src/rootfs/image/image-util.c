@@ -47,7 +47,10 @@ int image_util_check(FILE *image_fp) {
     line = (char *)malloc(MAX_LINE_LEN);
 
     // Get the first line from the config
-    fgets(line, MAX_LINE_LEN, image_fp);
+    if ( fgets(line, MAX_LINE_LEN, image_fp) == NULL ) {
+        message(ERROR, "Unable to read the first line of image: %s\n", strerror(errno));
+        ABORT(255);
+    }
 
     if ( strcmp(line, LAUNCH_STRING) == 0 ) {
         free(line);
