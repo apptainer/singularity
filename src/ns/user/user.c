@@ -46,6 +46,7 @@ int singularity_ns_user_unshare(void) {
         message(VERBOSE3, "Not virtualizing USER namespace: running privliged mode\n");
         return(0);
     }
+
 #ifdef NS_CLONE_NEWUSER
     message(DEBUG, "Attempting to virtualize the USER namespace\n");
     if ( unshare(CLONE_NEWUSER) == 0 ) {
