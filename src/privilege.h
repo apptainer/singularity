@@ -33,7 +33,7 @@ typedef struct {
 } s_privinfo;
 
 
-void priv_userns_init(void);
+void priv_userns_ready(void);
 
 
 

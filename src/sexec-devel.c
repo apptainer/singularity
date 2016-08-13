@@ -78,8 +78,6 @@ int main(int argc, char **argv) {
 
     singularity_mount_kernelfs();
 
-    singularity_ns_user_drop();
-
     singularity_action_do(argc, argv);
 
     return(0);

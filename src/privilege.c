@@ -135,68 +135,12 @@ void priv_init(void) {
     message(DEBUG, "Returning priv_init(void)\n");
 }
 
-void priv_userns_init(void) {
-    uid_t uid = priv_getuid();
-    gid_t gid = priv_getgid();
-
-    {   
-        message(DEBUG, "Setting setgroups to: 'deny'\n");
-        char *map_file = (char *) malloc(PATH_MAX);
-        snprintf(map_file, PATH_MAX-1, "/proc/%d/setgroups", getpid());
-        FILE *map_fp = fopen(map_file, "w+");
-        if ( map_fp != NULL ) {
-            message(DEBUG, "Updating setgroups: %s\n", map_file);
-            fprintf(map_fp, "deny\n");
-            if ( fclose(map_fp) < 0 ) {
-                message(ERROR, "Failed to write deny to setgroup file %s: %s\n", map_file, strerror(errno));
-                ABORT(255);
-            }
-        } else {
-            message(ERROR, "Could not write info to setgroups: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        free(map_file);
-    }
-    {   
-        message(DEBUG, "Setting GID map to: '0 %i 1'\n", gid);
-        char *map_file = (char *) malloc(PATH_MAX);
-        snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid());
-        FILE *map_fp = fopen(map_file, "w+");
-        if ( map_fp != NULL ) {
-            message(DEBUG, "Updating the parent gid_map: %s\n", map_file);
-            fprintf(map_fp, "0 %i 1\n", gid);
-            if ( fclose(map_fp) < 0 ) {
-                message(ERROR, "Failed to write to GID map %s: %s\n", map_file, strerror(errno));
-                ABORT(255);
-            }
-        } else {
-            message(ERROR, "Could not write parent info to gid_map: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        free(map_file);
-    }
-    {   
-        message(DEBUG, "Setting UID map to: '0 %i 1'\n", uid);
-        char *map_file = (char *) malloc(PATH_MAX);
-        snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
-        FILE *map_fp = fopen(map_file, "w+");
-        if ( map_fp != NULL ) {
-            message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
-            fprintf(map_fp, "0 %i 1\n", uid);
-            if ( fclose(map_fp) < 0 ) {
-                message(ERROR, "Failed to write to UID map %s: %s\n", map_file, strerror(errno));
-                ABORT(255);
-            }
-        } else {
-            message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        free(map_file);
-    }
-}
-
-
 void priv_escalate(void) {
+
+    if ( uinfo.userns_ready == 1 ) {
+        message(DEBUG, "Not escalating privileges, user namespace enabled\n");
+        return;
+    }
 
     if ( getuid() != 0 ) {
         message(DEBUG, "Temporarily escalating privileges (U=%d)\n", getuid());
@@ -379,6 +323,10 @@ return;
     message(DEBUG, "Returning priv_drop_perm(void)\n");
 }
 
+
+void priv_userns_ready(void) {
+    uinfo.userns_ready = 1;
+}
 
 
 uid_t priv_getuid() {

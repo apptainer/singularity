@@ -41,6 +41,7 @@
 
 static int userns_enabled = -1;
 
+int singularity_ns_user_drop(void);
 
 int singularity_ns_user_unshare(void) {
 
@@ -59,12 +60,17 @@ int singularity_ns_user_unshare(void) {
         if ( child_pid == 0 ) {
             // Allow the child to continue on, and catch the parent below
 
+singularity_ns_user_drop();
+priv_userns_ready();
+
+
         } else if ( child_pid > 0 ) {
             int tmpstatus;
             int retval;
 
             uid_t uid = priv_getuid();
             gid_t gid = priv_getgid();
+
 
             {
                 message(DEBUG, "Setting setgroups to: 'deny'\n");
