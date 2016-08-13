@@ -1,4 +1,20 @@
-* Move tmp bind mounts to separate module, so when -C is passed it can use sessiondir
-* Add option to bind cwd if not already bound
-* Only mount proc if PID namespace unshared (otherwise bind)
-    * Do we bind proc and sys?
+Features:
+    * Add option to bind cwd if not already bound
+    * Move tmp bind mounts to separate module, so when -C is passed it can
+        use sessiondir
+    * Change default behavior for PID namespace sharing
+    * Support tgz image format
+
+Fixes:
+    * Fix the conditional /proc mounting (move kernelfs to happen before
+        chroot)
+    * For older distros that do not support loop autoclear, conditionally
+        create a child process and move mount namespace to a child process,
+            and have parent umount when done
+    * Support legacy containers
+
+New API porting:
+    * signal handlers
+    * helper programs
+    * tmpfs overlay
+    * Clean old sources
