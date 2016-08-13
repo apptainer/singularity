@@ -40,7 +40,6 @@
 #define SYSCONFDIR "/etc"
 #endif
 
-
 int main(int argc, char **argv) {
     char *sessiondir;
     char *image = getenv("SINGULARITY_IMAGE");
@@ -63,22 +62,14 @@ int main(int argc, char **argv) {
             message(ERROR, "Setuid mode was used, but this has been disabled by the sysadmin.\n");
             ABORT(255);
         }
-    } else {
+    } else if ( getenv("SINGULARITY_SUID") == NULL ) {
         config_rewind();
 
         if ( config_get_key_bool("allow setuid", 1) == 1 ) {
             message(VERBOSE, "Setuid mode is allowed by the sysadmin, re-exec'ing\n");
 
             char sexec_path[] = LIBEXECDIR "/singularity/sexec-suid";
-//            char *sexec = "sexec";
-//            argv[0] = sexec;
-//
-//            char **new_argv = calloc(argc+1, sizeof(char*));
-//            int idx;
-//            //  Note new_argv is one-larger than argv; the last element must be NULL.
-//            for (idx=0; idx<argc; idx++) {
-//                new_argv[idx] = argv[idx];
-//            }
+            setenv("SINGULARITY_SUID", "1", 1);
 
             execv(sexec_path, argv);
             message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_path, strerror(errno));
