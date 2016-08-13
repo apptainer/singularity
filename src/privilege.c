@@ -215,66 +215,8 @@ void priv_drop_perm(void) {
     }
 
 
-    if ( singularity_ns_user_enabled() == 0 ) {
-        uid_t uid = priv_getuid();
-        gid_t gid = priv_getgid();
+    if ( uinfo.userns_ready == 1 ) {
 
-        {   
-            message(DEBUG, "Setting setgroups to: 'deny'\n");
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/setgroups", getpid());
-            FILE *map_fp = fopen(map_file, "w+");
-            if ( map_fp != NULL ) {
-                message(DEBUG, "Updating setgroups: %s\n", map_file);
-                fprintf(map_fp, "deny\n");
-                if ( fclose(map_fp) < 0 ) {
-                    message(ERROR, "Failed to write deny to setgroup file %s: %s\n", map_file, strerror(errno));
-//                    ABORT(255);
-                }
-            } else {
-                message(ERROR, "Could not write info to setgroups: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            free(map_file);
-        }
-        {   
-            message(DEBUG, "Setting GID map to: '%i 0 1'\n", gid);
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid());
-            FILE *map_fp = fopen(map_file, "w+");
-            if ( map_fp != NULL ) {
-                message(DEBUG, "Updating the parent gid_map: %s\n", map_file);
-                fprintf(map_fp, "%i 0 1\n", gid);
-                if ( fclose(map_fp) < 0 ) {
-                    message(ERROR, "Failed to write to GID map %s: %s\n", map_file, strerror(errno));
-//                    ABORT(255);
-                }
-            } else {
-                message(ERROR, "Could not write parent info to gid_map: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            free(map_file);
-        }
-        {   
-            message(DEBUG, "Setting UID map to: '%i 0 1'\n", uid);
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
-            FILE *map_fp = fopen(map_file, "w+");
-            if ( map_fp != NULL ) {
-                message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
-                fprintf(map_fp, "%i 0 1\n", uid);
-                if ( fclose(map_fp) < 0 ) {
-                    message(ERROR, "Failed to write to UID map %s: %s\n", map_file, strerror(errno));
-//                    ABORT(255);
-                }
-            } else {
-                message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            free(map_file);
-        }
-
-return;
     } else if ( priv_getuid() != 0 ) {
         if ( !uinfo.userns_ready ) {
             message(DEBUG, "Resetting supplementary groups\n");
@@ -321,6 +263,11 @@ return;
     }
 
     message(DEBUG, "Returning priv_drop_perm(void)\n");
+}
+
+
+int priv_userns_enabled() {
+    return uinfo.userns_ready;
 }
 
 

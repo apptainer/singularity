@@ -46,8 +46,8 @@ int singularity_ns_pid_unshare(void) {
     config_rewind();
 #ifdef NS_CLONE_NEWPID
     message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
-    if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
-            ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
+    // Flawfinder: ignore (only checking for existance of envar)
+    if ( priv_userns_enabled() == 1 || ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool("allow pid ns", 1) > 0 ) ) ) {
         unsetenv("SINGULARITY_NO_NAMESPACE_PID");
         priv_escalate();
         message(DEBUG, "Virtualizing PID namespace\n");
@@ -59,14 +59,15 @@ int singularity_ns_pid_unshare(void) {
 
         // PID namespace requires a fork to activate!
         child_ns_pid = fork();
+
     } else {
         message(VERBOSE, "Not virtualizing PID namespace\n");
     }
 #else
 #ifdef NS_CLONE_PID
     message(DEBUG, "Using PID namespace: CLONE_PID\n");
-    if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
-            ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
+    // Flawfinder: ignore (only checking for existance of envar)
+    if ( priv_userns_enabled() == 1 || ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool("allow pid ns", 1) > 0 ) ) ) {
         unsetenv("SINGULARITY_NO_NAMESPACE_PID");
         priv_escalate();
         message(DEBUG, "Virtualizing PID namespace\n");
@@ -78,6 +79,7 @@ int singularity_ns_pid_unshare(void) {
 
         // PID namespace requires a fork to activate!
         child_ns_pid = fork();
+
     } else {
         message(VERBOSE, "Not virtualizing PID namespace\n");
     }

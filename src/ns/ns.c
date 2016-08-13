@@ -26,9 +26,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mount.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sched.h>
+
 
 #include "file.h"
 #include "util.h"
