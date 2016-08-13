@@ -4,6 +4,8 @@ Features:
         use sessiondir
     * Change default behavior for PID namespace sharing
     * Support tgz image format
+    * --with-userns configure flag needs to be changed to enable/disable
+        suid compoents
 
 Fixes:
     * Fix the conditional /proc mounting (move kernelfs to happen before
