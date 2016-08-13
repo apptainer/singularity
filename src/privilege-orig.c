@@ -30,8 +30,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <grp.h>
-#include <linux/limits.h>
+#ifdef SINGULARITY_USERNS
 #include <sched.h>
+#endif  // SINGULARITY_USERNS
 
 #include "privilege.h"
 #include "config.h"
@@ -41,20 +42,114 @@
 #include "singularity.h"
 
 
+void update_uid_map(pid_t child, uid_t outside, int is_child) {
+    char * map_file;
+    char * map;
+    ssize_t map_len;
+    int fd;
 
-static struct PRIV_INFO {
-    int ready;
-    uid_t uid;
-    gid_t gid;
-    gid_t *gids;
-    size_t gids_count;
-    int userns_ready;
-    int disable_setgroups;
-    uid_t orig_uid;
-    uid_t orig_gid;
-    pid_t orig_pid;
-    int target_mode;  // Set to 1 if we are running in "target mode" (admin specifies UID/GID)
-} uinfo;
+    message(DEBUG, "Updating UID map.\n");
+    if (asprintf(&map_file, "/proc/%i/uid_map", child) < 0) {
+        message(ERROR, "Can't allocate uid map filename\n");
+        ABORT(255);
+    }
+    if (is_child) {
+        map_len = asprintf(&map, "%i 0 1\n", outside);
+    } else {
+        map_len = asprintf(&map, "0 %i 1\n", outside);
+    }
+    if (map_len < 0) {
+        free(map_file);
+        message(ERROR, "Can't allocate uid map\n");
+        ABORT(255);
+    }
+
+    message(DEBUG, "Updating UID map with policy: %s", map);
+    fd = open(map_file, O_RDWR);
+    free(map_file);
+    if (fd == -1) {
+        message(ERROR, "Failure when opening UID mapfile: %s\n", strerror(errno));
+        free(map);
+        ABORT(255);
+    }
+    if (write(fd, map, map_len) != map_len) {
+        message(ERROR, "Failure when writing policy to mapfile: %s", strerror(errno));
+        free(map);
+        ABORT(255);
+    }
+    free(map);
+    close(fd);
+}
+
+
+void update_gid_map(pid_t child, gid_t outside, int is_child) {
+    char * setgroups_file, * map_file;
+    char * map;
+    ssize_t map_len;
+    int fd;
+
+    if (asprintf(&map_file, "/proc/%i/gid_map", child) < 0) {
+        message(ERROR, "Can't allocate uid map filename\n");
+        ABORT(255);
+    }
+    if (is_child) {
+        map_len = asprintf(&map, "%i 0 1\n", outside);
+    } else {
+        map_len = asprintf(&map, "0 %i 1\n", outside);
+    }
+    if (map_len < 0) {
+        free(map_file);
+        message(ERROR, "Can't allocate gid map\n");
+        ABORT(255);
+    }
+    if (asprintf(&setgroups_file, "/proc/%i/setgroups", child) < 0) {
+        message(ERROR, "Can't allocate setgroups filename\n");
+        ABORT(255);
+    }
+    message(DEBUG, "Disabling setgroups file.\n");
+    fd = open(setgroups_file, O_RDWR);
+    if (fd == -1) {
+        free(setgroups_file);
+        if (!is_child || (errno != EACCES)) {
+            message(ERROR, "Failure when opening %s: %s\n", setgroups_file, strerror(errno));
+            free(map_file);
+            free(map);
+            ABORT(255);
+        }
+    } else {
+        free(setgroups_file);
+        if (write(fd, "deny", 4) != 4) {
+            message(ERROR, "Failure when writing setgroups deny: %s", strerror(errno));
+            free(map_file);
+            free(map);
+            close(fd);
+        }
+        message(DEBUG, "Setgroups file successfully disabled.\n");
+        close(fd);
+    }
+
+    message(DEBUG, "Updating GID map %s with policy: %s", map_file, map);
+    fd = open(map_file, O_RDWR);
+    if (fd == -1) {
+        message(ERROR, "Failure when opening GID mapfile (%s): %s\n", map_file, strerror(errno));
+        free(map_file);
+        free(map);
+        exit(-1);
+    }
+    if (write(fd, map, map_len) != map_len) {
+        message(ERROR, "Failure when writing GID map (%s): %s", map_file, map);
+        free(map);
+        free(map_file);
+        close(fd);
+        exit(-1);
+    }
+    free(map);
+    free(map_file);
+    close(fd);
+}
+
+
+static s_privinfo uinfo;
 
 
 void priv_init(void) {
@@ -135,64 +230,116 @@ void priv_init(void) {
     message(DEBUG, "Returning priv_init(void)\n");
 }
 
-void priv_userns_init(void) {
-    uid_t uid = priv_getuid();
-    gid_t gid = priv_getgid();
 
-    {   
-        message(DEBUG, "Setting setgroups to: 'deny'\n");
-        char *map_file = (char *) malloc(PATH_MAX);
-        snprintf(map_file, PATH_MAX-1, "/proc/%d/setgroups", getpid());
-        FILE *map_fp = fopen(map_file, "w+");
-        if ( map_fp != NULL ) {
-            message(DEBUG, "Updating setgroups: %s\n", map_file);
-            fprintf(map_fp, "deny\n");
-            if ( fclose(map_fp) < 0 ) {
-                message(ERROR, "Failed to write deny to setgroup file %s: %s\n", map_file, strerror(errno));
-                ABORT(255);
-            }
-        } else {
-            message(ERROR, "Could not write info to setgroups: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        free(map_file);
+int priv_userns_enabled() {
+    return uinfo.userns_ready;
+}
+
+
+int priv_target_mode() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
     }
-    {   
-        message(DEBUG, "Setting GID map to: '0 %i 1'\n", gid);
-        char *map_file = (char *) malloc(PATH_MAX);
-        snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid());
-        FILE *map_fp = fopen(map_file, "w+");
-        if ( map_fp != NULL ) {
-            message(DEBUG, "Updating the parent gid_map: %s\n", map_file);
-            fprintf(map_fp, "0 %i 1\n", gid);
-            if ( fclose(map_fp) < 0 ) {
-                message(ERROR, "Failed to write to GID map %s: %s\n", map_file, strerror(errno));
-                ABORT(255);
-            }
-        } else {
-            message(ERROR, "Could not write parent info to gid_map: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        free(map_file);
+    return uinfo.target_mode;
+}
+
+
+uid_t priv_getuid() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
     }
-    {   
-        message(DEBUG, "Setting UID map to: '0 %i 1'\n", uid);
-        char *map_file = (char *) malloc(PATH_MAX);
-        snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
-        FILE *map_fp = fopen(map_file, "w+");
-        if ( map_fp != NULL ) {
-            message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
-            fprintf(map_fp, "0 %i 1\n", uid);
-            if ( fclose(map_fp) < 0 ) {
-                message(ERROR, "Failed to write to UID map %s: %s\n", map_file, strerror(errno));
-                ABORT(255);
-            }
-        } else {
-            message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        free(map_file);
+    return uinfo.uid;
+}
+
+
+gid_t priv_getgid() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
     }
+    return uinfo.gid;
+}
+
+
+const gid_t *priv_getgids() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.gids;
+}
+
+
+int priv_getgidcount() {
+    if ( !uinfo.ready ) {
+        message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.gids_count;
+}
+
+
+void priv_init_userns_outside() {
+#ifdef SINGULARITY_USERNS
+    if (!uinfo.ready) {
+        message(ERROR, "Internal error: User NS initialization before general privilege initiation.\n");
+        ABORT(255);
+    }
+
+    uinfo.orig_uid = uinfo.uid;
+    uinfo.orig_gid = uinfo.gid;
+    uinfo.orig_pid = getpid();
+
+    int ret = unshare(CLONE_NEWUSER);
+    if (ret == -1) {
+        message(ERROR, "Failed to unshare namespace: %s.\n", strerror(errno));
+        ABORT(255);
+    }
+    update_gid_map(uinfo.orig_pid, uinfo.orig_gid, 0);
+    update_uid_map(uinfo.orig_pid, uinfo.orig_uid, 0);
+    uinfo.uid = 0;
+    uinfo.gid = 0;
+    uinfo.userns_ready = 1;
+#else  // SINGULARITY_USERNS
+    message(ERROR, "Internal error: User NS function invoked without compiled-in support.\n");
+    ABORT(255);
+#endif  // SINGULARITY_USERNS
+}
+
+void priv_init_userns_inside_init() {
+#ifdef SINGULARITY_USERNS
+    if (!uinfo.userns_ready) {
+        message(ERROR, "Internal error: User NS privilege data structure not initialized.\n");
+        ABORT(255);
+    }
+    uinfo.uid = uinfo.orig_uid;
+    uinfo.gid = uinfo.orig_gid;
+#else  // SINGULARITY_USERNS
+    message(ERROR, "Internal error: User NS function invoked without compiled-in support.\n");
+    ABORT(255);
+#endif  // SINGULARITY_USERNS
+}
+
+
+void priv_init_userns_inside_final() {
+#ifdef SINGULARITY_USERNS
+    if (!uinfo.userns_ready) {
+        message(ERROR, "Internal error: User NS privilege data structure not initialized.\n");
+        ABORT(255);
+    }
+    int ret = unshare(CLONE_NEWUSER);
+    if (ret == -1) {
+        message(ERROR, "Failed to unshare namespace: %s.\n", strerror(errno));
+        ABORT(255);
+    }
+    update_gid_map(1, uinfo.orig_gid, 1);
+    update_uid_map(1, uinfo.orig_uid, 1);
+#else  // SINGULARITY_USERNS
+    message(ERROR, "Internal error: User NS function invoked without compiled-in support.\n");
+    ABORT(255);
+#endif  // SINGULARITY_USERNS
 }
 
 
@@ -270,82 +417,17 @@ void priv_drop_perm(void) {
         ABORT(255);
     }
 
+    return;
 
-    if ( singularity_ns_user_enabled() == 0 ) {
-        uid_t uid = priv_getuid();
-        gid_t gid = priv_getgid();
-
-        {   
-            message(DEBUG, "Setting setgroups to: 'deny'\n");
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/setgroups", getpid());
-            FILE *map_fp = fopen(map_file, "w+");
-            if ( map_fp != NULL ) {
-                message(DEBUG, "Updating setgroups: %s\n", map_file);
-                fprintf(map_fp, "deny\n");
-                if ( fclose(map_fp) < 0 ) {
-                    message(ERROR, "Failed to write deny to setgroup file %s: %s\n", map_file, strerror(errno));
-//                    ABORT(255);
-                }
-            } else {
-                message(ERROR, "Could not write info to setgroups: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            free(map_file);
-        }
-        {   
-            message(DEBUG, "Setting GID map to: '%i 0 1'\n", gid);
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid());
-            FILE *map_fp = fopen(map_file, "w+");
-            if ( map_fp != NULL ) {
-                message(DEBUG, "Updating the parent gid_map: %s\n", map_file);
-                fprintf(map_fp, "%i 0 1\n", gid);
-                if ( fclose(map_fp) < 0 ) {
-                    message(ERROR, "Failed to write to GID map %s: %s\n", map_file, strerror(errno));
-//                    ABORT(255);
-                }
-            } else {
-                message(ERROR, "Could not write parent info to gid_map: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            free(map_file);
-        }
-        {   
-            message(DEBUG, "Setting UID map to: '%i 0 1'\n", uid);
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
-            FILE *map_fp = fopen(map_file, "w+");
-            if ( map_fp != NULL ) {
-                message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
-                fprintf(map_fp, "%i 0 1\n", uid);
-                if ( fclose(map_fp) < 0 ) {
-                    message(ERROR, "Failed to write to UID map %s: %s\n", map_file, strerror(errno));
-//                    ABORT(255);
-                }
-            } else {
-                message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            free(map_file);
-        }
-
-return;
-    } else if ( priv_getuid() != 0 ) {
+    if ( geteuid() == 0 ) {
         if ( !uinfo.userns_ready ) {
             message(DEBUG, "Resetting supplementary groups\n");
             if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
                 message(ERROR, "Could not reset supplementary group list: %s\n", strerror(errno));
-//                ABORT(255);
+                ABORT(255);
             }
         } else {
             message(DEBUG, "Not resetting supplementary groups as we are running in a user namespace.\n");
-        }
-
-        message(DEBUG, "Dropping to group ID '%d'\n", uinfo.gid);
-        if ( setgid(uinfo.gid) < 0 ) {
-            message(ERROR, "Could not dump group privileges: %s\n", strerror(errno));
-            ABORT(255);
         }
 
         message(DEBUG, "Dropping real and effective privileges to GID = '%d'\n", uinfo.gid);
@@ -366,7 +448,7 @@ return;
 
     message(DEBUG, "Confirming we have correct GID\n");
     if ( getgid() != uinfo.gid ) {
-        message(ERROR, "Failed to drop effective group privileges to gid %d: %s\n", uinfo.gid, strerror(errno));
+        message(ERROR, "Failed to drop effective group privileges to uid %d: %s\n", uinfo.uid, strerror(errno));
         ABORT(255);
     }
 
@@ -377,42 +459,5 @@ return;
     }
 
     message(DEBUG, "Returning priv_drop_perm(void)\n");
-}
-
-
-
-uid_t priv_getuid() {
-    if ( !uinfo.ready ) {
-        message(ERROR, "Invoked before privilege info initialized!\n");
-        ABORT(255);
-    }
-    return uinfo.uid;
-}
-
-
-gid_t priv_getgid() {
-    if ( !uinfo.ready ) {
-        message(ERROR, "Invoked before privilege info initialized!\n");
-        ABORT(255);
-    }
-    return uinfo.gid;
-}
-
-
-const gid_t *priv_getgids() {
-    if ( !uinfo.ready ) {
-        message(ERROR, "Invoked before privilege info initialized!\n");
-        ABORT(255);
-    }
-    return uinfo.gids;
-}
-
-
-int priv_getgidcount() {
-    if ( !uinfo.ready ) {
-        message(ERROR, "Invoked before privilege info initialized!\n");
-        ABORT(255);
-    }
-    return uinfo.gids_count;
 }
 

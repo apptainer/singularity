@@ -116,7 +116,7 @@ void singularity_file_group_create(void) {
     }
 
 
-    if ( ! priv_userns_enabled() ) {
+//    if ( ! priv_userns_enabled() ) {
         message(DEBUG, "Getting supplementary group info\n");
 
         for (i=0; i < gid_count; i++) {
@@ -142,13 +142,13 @@ void singularity_file_group_create(void) {
                 message(VERBOSE, "Group id '%d' is out of bounds\n", gids[i]);
             }
         }
-    }
+//    }
     fclose(file_fp);
 }
 
 
 void singularity_file_group_bind(void) {
-    uid_t uid = getuid();
+    uid_t uid = priv_getuid();
 
     message(DEBUG, "Called singularity_file_group_bind()\n");
 

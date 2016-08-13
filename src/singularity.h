@@ -27,6 +27,7 @@
     extern int singularity_ns_pid_unshare(void);
     extern int singularity_ns_mnt_unshare(void);
     extern int singularity_ns_user_unshare(void);
+    extern int singularity_ns_user_drop(void);
     extern int singularity_ns_user_enabled(void);
     extern int singularity_ns_join(pid_t attach_pid);
 

@@ -32,6 +32,11 @@ typedef struct {
     int target_mode;  // Set to 1 if we are running in "target mode" (admin specifies UID/GID)
 } s_privinfo;
 
+
+void priv_userns_init(void);
+
+
+
 int priv_userns_enabled();
 int priv_target_mode();
 uid_t priv_getuid();

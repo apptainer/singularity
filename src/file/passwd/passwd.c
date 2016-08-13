@@ -44,7 +44,7 @@ void singularity_file_passwd_create(void) {
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
-    uid_t uid = getuid();
+    uid_t uid = priv_getuid();
     struct passwd *pwent = getpwuid(uid);
     char *containerdir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
@@ -102,7 +102,7 @@ void singularity_file_passwd_create(void) {
 
 
 void singularity_file_passwd_bind(void) {
-    uid_t uid = getuid();
+    uid_t uid = priv_getuid();
 
     message(DEBUG, "Called singularity_file_passwd_bind()\n");
 

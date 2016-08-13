@@ -11,7 +11,7 @@ include_HEADERS = singularity.h
 lib_LTLIBRARIES = libsingularity.la
 
 libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la action/libaction.la mount/libmount.la file/libfile.la
-libsingularity_la_SOURCES = singularity.c privilege.c util.c message.c file.c
+libsingularity_la_SOURCES = singularity.c privilege.c util.c message.c file.c sessiondir.c config_parser.c
 libsingularity_la_LDFLAGS = -version-info 1:0:0
 libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
@@ -25,9 +25,17 @@ sexec_LDADD = libsingularity.la
 sexec_LDFLAGS = -static
 
 image_create_SOURCES = image-create.c file.c util.c image.c message.c privilege.c
+image_create_LDADD = libsingularity.la
+
 image_expand_SOURCES = image-expand.c file.c util.c image.c message.c privilege.c
+image_expand_LDADD = libsingularity.la
+
 image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
+image_mount_LDADD = libsingularity.la
+
 image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
+image_bind_LDADD = libsingularity.la
+
 
 
 #sexec_nosuid_CPPFLAGS = -DSINGULARITY_NOSUID=1 -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)

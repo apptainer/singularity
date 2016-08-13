@@ -35,6 +35,7 @@
 
 
 int singularity_mount_kernelfs() {
+
     // Mount /proc if we are configured
     message(DEBUG, "Checking configuration file for 'mount proc'\n");
     config_rewind();
@@ -61,10 +62,10 @@ int singularity_mount_kernelfs() {
         if ( is_dir("/sys") == 0 ) {
             priv_escalate();
             message(VERBOSE, "Mounting /sys\n");
-            if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
-                message(ERROR, "Could not mount /sys: %s\n", strerror(errno));
-                ABORT(255);
-            }
+//            if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
+//                message(ERROR, "Could not mount /sys: %s\n", strerror(errno));
+//                ABORT(255);
+//            }
             priv_drop();
         } else {
             message(WARNING, "Not mounting /sys, container has no bind directory\n");

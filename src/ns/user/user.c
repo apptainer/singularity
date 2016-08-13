@@ -39,11 +39,10 @@
 #include "config_parser.h"
 #include "privilege.h"
 
-static int userns_enabled = 0;
+static int userns_enabled = -1;
 
 
 int singularity_ns_user_unshare(void) {
-    uid_t uid = getuid();
 
     if ( ( is_suid("/proc/self/exe") == 0 ) || ( getuid() == 0 ) ) {
         message(VERBOSE3, "Not virtualizing USER namespace: running privliged mode\n");
@@ -52,49 +51,86 @@ int singularity_ns_user_unshare(void) {
 #ifdef NS_CLONE_NEWUSER
     message(DEBUG, "Attempting to virtualize the USER namespace\n");
     if ( unshare(CLONE_NEWUSER) == 0 ) {
-        message(DEBUG, "Enabling user namespaces\n");
+        message(DEBUG, "Enabled user namespaces\n");
+        userns_enabled = 0;
+
         int child_pid = fork();
 
         if ( child_pid == 0 ) {
+            // Allow the child to continue on, and catch the parent below
 
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
-            FILE *uid_map = fopen(map_file, "w+");
-            if ( uid_map != NULL ) {
-                message(DEBUG, "Updating the child uid_map: %s\n", map_file);
-                fprintf(uid_map, "%i 0 1\n", uid);
-                fclose(uid_map);
-                userns_enabled = 1;
-            } else {
-                message(ERROR, "Could not write child info to uid_map: %s\n", strerror(errno));
-                ABORT(255);
-            }
         } else if ( child_pid > 0 ) {
             int tmpstatus;
             int retval;
 
-            message(DEBUG, "Waiting on USER NS child process\n");
+            uid_t uid = priv_getuid();
+            gid_t gid = priv_getgid();
 
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
-            FILE *uid_map = fopen(map_file, "w+");
-            if ( uid_map != NULL ) {
-                message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
-                fprintf(uid_map, "0 %i 1\n", uid);
-                fclose(uid_map);
-                userns_enabled = 1;
-            } else {
-                message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
-                ABORT(255);
+            {
+                message(DEBUG, "Setting setgroups to: 'deny'\n");
+                char *map_file = (char *) malloc(PATH_MAX);
+                snprintf(map_file, PATH_MAX-1, "/proc/%d/setgroups", getpid());
+                FILE *map_fp = fopen(map_file, "w+");
+                if ( map_fp != NULL ) {
+                    message(DEBUG, "Updating setgroups: %s\n", map_file);
+                    fprintf(map_fp, "deny\n");
+                    if ( fclose(map_fp) < 0 ) {
+                        message(ERROR, "Failed to write deny to setgroup file %s: %s\n", map_file, strerror(errno));
+                        ABORT(255);
+                    }
+                } else {
+                    message(ERROR, "Could not write info to setgroups: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                free(map_file);
+            }
+            {   
+                message(DEBUG, "Setting GID map to: '0 %i 1'\n", gid);
+                char *map_file = (char *) malloc(PATH_MAX);
+                snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid());
+                FILE *map_fp = fopen(map_file, "w+");
+                if ( map_fp != NULL ) {
+                    message(DEBUG, "Updating the parent gid_map: %s\n", map_file);
+                    fprintf(map_fp, "0 %i 1\n", gid);
+                    if ( fclose(map_fp) < 0 ) {
+                        message(ERROR, "Failed to write to GID map %s: %s\n", map_file, strerror(errno));
+                        ABORT(255);
+                    }
+                } else {
+                    message(ERROR, "Could not write parent info to gid_map: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                free(map_file);
+            }
+            {   
+                message(DEBUG, "Setting UID map to: '0 %i 1'\n", uid);
+                char *map_file = (char *) malloc(PATH_MAX);
+                snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
+                FILE *map_fp = fopen(map_file, "w+");
+                if ( map_fp != NULL ) {
+                    message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
+                    fprintf(map_fp, "0 %i 1\n", uid);
+                    if ( fclose(map_fp) < 0 ) {
+                        message(ERROR, "Failed to write to UID map %s: %s\n", map_file, strerror(errno));
+                        ABORT(255);
+                    }
+                } else {
+                    message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                free(map_file);
             }
 
-            waitpid(child_pid, &tmpstatus, 0);
+            message(DEBUG, "Waiting on NS child process\n");
 
+            waitpid(child_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
             exit(retval);
         } else {
-            message(ERROR, "Failed to fork child for user namespace\n");
+            message(ERROR, "Failed forking child process\n");
+            ABORT(255);
         }
+
     } else {
         message(VERBOSE3, "Not virtualizing USER namespace: runtime support failed\n");
     }
@@ -106,6 +142,83 @@ int singularity_ns_user_unshare(void) {
 }
 
 
+int singularity_ns_user_drop(void) {
+    uid_t uid = priv_getuid();
+    gid_t gid = priv_getgid();
+
+    if ( userns_enabled < 0 ) {
+        return(0);
+    }
+
+#ifdef NS_CLONE_NEWUSER
+
+    if ( unshare(CLONE_NEWUSER) < 0 ) {
+        message(ERROR, "Failed to unshare the user namespace within child: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    {
+        message(DEBUG, "Setting setgroups to: 'deny'\n");
+        char *map_file = (char *) malloc(PATH_MAX);
+        snprintf(map_file, PATH_MAX-1, "/proc/%d/setgroups", getpid());
+        FILE *map_fp = fopen(map_file, "w+");
+        if ( map_fp != NULL ) {
+            message(DEBUG, "Updating setgroups: %s\n", map_file);
+            fprintf(map_fp, "deny\n");
+            if ( fclose(map_fp) < 0 ) {
+                message(ERROR, "Failed to write deny to setgroup file %s: %s\n", map_file, strerror(errno));
+                ABORT(255);
+            }
+        } else {
+            message(ERROR, "Could not write info to setgroups: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        free(map_file);
+    }
+    {   
+        message(DEBUG, "Setting GID map to: '%i 0 1'\n", gid);
+        char *map_file = (char *) malloc(PATH_MAX);
+        snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid());
+        FILE *map_fp = fopen(map_file, "w+");
+        if ( map_fp != NULL ) {
+            message(DEBUG, "Updating the parent gid_map: %s\n", map_file);
+            fprintf(map_fp, "%i 0 1\n", gid);
+            if ( fclose(map_fp) < 0 ) {
+                message(ERROR, "Failed to write to GID map %s: %s\n", map_file, strerror(errno));
+                ABORT(255);
+            }
+        } else {
+            message(ERROR, "Could not write parent info to gid_map: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        free(map_file);
+    }
+    {   
+        message(DEBUG, "Setting UID map to: '%i 0 1'\n", uid);
+        char *map_file = (char *) malloc(PATH_MAX);
+        snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid());
+        FILE *map_fp = fopen(map_file, "w+");
+        if ( map_fp != NULL ) {
+            message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
+            fprintf(map_fp, "%i 0 1\n", uid);
+            if ( fclose(map_fp) < 0 ) {
+                message(ERROR, "Failed to write to UID map %s: %s\n", map_file, strerror(errno));
+                ABORT(255);
+            }
+        } else {
+            message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        free(map_file);
+    }
+
+#else
+    message(VERBOSE3, "Not virtualizing USER namespace: support not compiled in\n");
+#endif
+    return(0);
+}
+
 int singularity_ns_user_enabled(void) {
+    message(DEBUG, "Singularity user namespace enabled: %d\n", userns_enabled);
     return(userns_enabled);
 }
