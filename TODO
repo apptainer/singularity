@@ -16,7 +16,6 @@ Fixes:
 
 New API porting:
     * signal handlers
-    * helper programs
     * tmpfs overlay
     * scratch directory creation
     * support legacy containers

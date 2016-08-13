@@ -36,10 +36,17 @@
 void action_exec_do(int argc, char **argv) {
     message(VERBOSE, "Exec'ing /.exec\n");
 
-    if ( execvp("/.exec", argv) < 0 ) {
+    if ( is_exec("/.exec") == 0 ) {
+        if ( execv("/.exec", argv) < 0 ) {
+            message(ERROR, "Failed to execv() /.exec\n");
+        }
+    }
+
+    if ( execvp(argv[1], &argv[1]) < 0 ) {
         message(ERROR, "Failed to execvp() /.exec\n");
         ABORT(255);
     }
+
 
     message(ERROR, "We should never get here... Grrrrrr!\n");
     ABORT(255);

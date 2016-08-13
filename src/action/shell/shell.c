@@ -36,9 +36,19 @@
 void action_shell_do(int argc, char **argv) {
     message(VERBOSE, "Starting shell...\n");
 
-    if ( execv("/.shell", argv) < 0 ) {
-        message(ERROR, "Failed to execv() /.shell\n");
-        ABORT(255);
+    if ( is_exec("/.shell") == 0 ) {
+        message(DEBUG, "Found container's /.shell, executing that\n");
+        if ( execv("/.shell", argv) < 0 ) {
+            message(ERROR, "Failed to execv() /.shell, continuing to /bin/sh\n");
+        }
+    }
+    if ( is_exec("/bin/sh") == 0 ) {
+        message(DEBUG, "Exec'ing /bin/sh\n");
+        argv[0] = strdup("/bin/sh");
+        if ( execv("/bin/sh", argv) < 0 ) {
+            message(ERROR, "Failed to execv() /bin/sh\n");
+            ABORT(255);
+        }
     }
 
     message(ERROR, "We should never get here... Grrrrrr!\n");

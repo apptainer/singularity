@@ -36,10 +36,20 @@
 void action_run_do(int argc, char **argv) {
     message(VERBOSE, "Exec'ing /singularity\n");
 
-    if ( execv("/.run", argv) < 0 ) {
-        message(ERROR, "Failed to execv() /.run\n");
-        ABORT(255);
+    if ( is_exec("/.run") == 0 ) {
+        if ( execv("/.run", argv) < 0 ) {
+            message(ERROR, "Failed to execv() /.run, continuing to /bin/sh\n");
+        }
     }
+
+    if ( is_exec("/singularity") == 0 ) {
+        message(DEBUG, "Exec'ing /singularity\n");
+        if ( execv("/singularity", argv) < 0 ) {
+            message(ERROR, "Failed to execv() /singularity\n");
+            ABORT(255);
+        }
+    }
+
 
     message(ERROR, "We should never get here... Grrrrrr!\n");
     ABORT(255);
