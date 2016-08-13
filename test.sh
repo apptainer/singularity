@@ -18,6 +18,7 @@ MESSAGELEVEL=3
 STARTDIR=`pwd`
 TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
 CONTAINER="container.img"
+CONTAINERDIR="container_dir"
 SINGULARITY_CACHEDIR="$TEMPDIR"
 export SINGULARITY_CACHEDIR MESSAGELEVEL
 
@@ -171,18 +172,18 @@ stest 0 singularity exec "$CONTAINER" true
 /bin/echo
 /bin/echo "Checking export/import..."
 
-stest 0 sudo singularity export -f out.tar "$CONTAINER"
-stest 0 mkdir out
-stest 0 sudo tar -C out -xvf out.tar
-stest 0 sudo chmod 0644 out.tar
+stest 0 sudo singularity export -f ${CONTAINERDIR}.tar "$CONTAINER"
+stest 0 mkdir $CONTAINERDIR
+stest 0 sudo tar -C $CONTAINERDIR -xvf ${CONTAINERDIR}.tar
+stest 0 sudo chmod 0644 ${CONTAINERDIR}.tar
 stest 0 sudo rm -f "$CONTAINER"
 stest 0 sudo singularity create -s 568 "$CONTAINER"
-stest 0 sh -c "cat out.tar | sudo singularity import $CONTAINER"
+stest 0 sh -c "cat ${CONTAINERDIR}.tar | sudo singularity import $CONTAINER"
 
 
 /bin/echo
 /bin/echo "Checking directory mode"
-stest 0 singularity exec out true
+stest 0 singularity exec $CONTAINERDIR true
 stest 1 singularity exec /tmp true
 stest 1 singularity exec / true
 
@@ -190,7 +191,7 @@ stest 1 singularity exec / true
 /bin/echo
 /bin/echo "Checking NO_NEW_PRIVS"
 stest 1 singularity exec "$CONTAINER" ping localhost -c 1
-stest 1 singularity exec out ping localhost -c 1
+stest 1 singularity exec $CONTAINERDIR ping localhost -c 1
 
 
 /bin/echo
@@ -206,7 +207,7 @@ stest 1 singularity exec "$CONTAINER" true
 #TODO: The following tests must be conditional based on host capabilities
 /bin/echo
 /bin/echo "Checking unprivileged mode"
-stest 0 sh -c "singularity exec out whoami | grep -q `id -un`"
+stest 0 sh -c "singularity exec $CONTAINERDIR whoami | grep -q `id -un`"
 # Can't work with images...
 stest 1 sh -c "singularity exec $CONTAINER whoami"
 
@@ -232,7 +233,7 @@ stest 0 singularity exec "$CONTAINER" true
 #mkdir -p $TEMPDIR/foo/bar/baz/
 #touch $TEMPDIR/foo/bar/baz/qux
 #stest 0 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -f /var/lib/test/foo/bar/baz/qux
-#stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo out test -f /var/lib/test/foo/bar/baz/qux"
+#stest 0 sh -c "SINGULARITY_FORCE_NOSUID=1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo $CONTAINERDIR test -f /var/lib/test/foo/bar/baz/qux"
 #stest 0 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -d /var/lib/test/
 ## This is a quirk of the bind mount code that can only be fixed with overlayfs-based binds.
 #stest 1 singularity exec -B $TEMPDIR/foo,/var/lib/test/foo "$CONTAINER" test -d /var/lib/alternatives/
