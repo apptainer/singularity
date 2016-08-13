@@ -27,7 +27,7 @@
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>  
-#include <linux/limits.h>
+#include <limits.h>
 
 #include "config.h"
 #include "util.h"

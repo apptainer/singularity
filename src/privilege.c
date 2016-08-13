@@ -30,7 +30,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <grp.h>
-#include <linux/limits.h>
+#include <limits.h>
 #include <sched.h>
 
 #include "privilege.h"
@@ -64,7 +64,6 @@ void priv_init(void) {
     //
     long int target_uid = -1;
     long int target_gid = -1;
-#ifdef SINGULARITY_NOSUID
     char *target_uid_str = NULL;
     char *target_gid_str = NULL;
     if ( getuid() == 0 ) {
@@ -83,8 +82,8 @@ void priv_init(void) {
                 message(ERROR, "Target UID (%ld) must be 500 or greater to avoid system users.\n", target_uid);
                 ABORT(255);
             }
-            if (target_uid > 65534) { // Avoid anything greater than the traditional overflow UID.
-                message(ERROR, "Target UID (%ld) cannot be greater than 65534.\n", target_uid);
+            if (target_uid > UINT_MAX) { // Avoid anything greater than the traditional overflow UID.
+                message(ERROR, "Target UID (%ld) cannot be greater than UINT_MAX.\n", target_uid);
                 ABORT(255);
             }
         }
@@ -101,13 +100,12 @@ void priv_init(void) {
                 message(ERROR, "Target GID (%ld) must be 500 or greater to avoid system groups.\n", target_gid);
                 ABORT(255);
             }
-            if (target_gid > 65534) { // Avoid anything greater than the traditional overflow GID.
-                message(ERROR, "Target GID (%ld) cannot be greater than 65534.\n", target_gid);
+            if (target_gid > UINT_MAX) { // Avoid anything greater than the traditional overflow GID.
+                message(ERROR, "Target GID (%ld) cannot be greater than UINT_MAX.\n", target_gid);
                 ABORT(255);
             }
         }
     }
-#endif
     if ( (target_uid >= 500) && (target_gid >= 500) ) {
         uinfo.target_mode = 1;
         uinfo.uid = target_uid;
@@ -174,7 +172,7 @@ void priv_drop(void) {
         return;
     }
 
-    if ( getuid() != 0 ) {
+    if ( getuid() == 0 ) {
         message(DEBUG, "Running as root, not changing privileges\n");
         return;
     }
@@ -194,12 +192,10 @@ void priv_drop(void) {
 
     message(DEBUG, "Confirming we have correct UID/GID\n");
     if ( getgid() != uinfo.gid ) {
-#ifdef SINGULARITY_NOSUID
         if ( uinfo.target_mode && getgid() != 0 ) {
             message(ERROR, "Non-zero real GID for target mode: %d\n", getgid());
                 ABORT(255);
             } else if ( !uinfo.target_mode )
-#endif  // SINGULARITY_NOSUID
             {
                 message(ERROR, "Failed to drop effective group privileges to gid %d (currently %d)\n", uinfo.gid, getgid());
                 ABORT(255);
@@ -207,13 +203,10 @@ void priv_drop(void) {
         }
 
         if ( getuid() != uinfo.uid ) {
-#ifdef SINGULARITY_NOSUID
         if ( uinfo.target_mode && getuid() != 0 ) {
             message(ERROR, "Non-zero real UID for target mode: %d\n", getuid());
             ABORT(255);
-        } else if ( !uinfo.target_mode )
-#endif  // SINGULARITY_NOSUID
-        {
+        } else if ( !uinfo.target_mode ) {
             message(ERROR, "Failed to drop effective user privileges to uid %d (currently %d)\n", uinfo.uid, getuid());
             ABORT(255);
         }
@@ -238,6 +231,7 @@ void priv_drop_perm(void) {
         message(VERBOSE2, "Calling user is root, no privileges to drop\n");
         return;
     }
+
     if ( !uinfo.userns_ready ) {
         message(DEBUG, "Resetting supplementary groups\n");
         if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
