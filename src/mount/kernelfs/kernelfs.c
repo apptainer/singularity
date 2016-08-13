@@ -32,9 +32,16 @@
 #include "message.h"
 #include "privilege.h"
 #include "config_parser.h"
+#include "ns/ns.h"
 
 
 int singularity_mount_kernelfs() {
+
+    //if ( ( singularity_ns_pid_enabled() < 0 ) && ( singularity_ns_user_enabled() < 0 ) ) {
+    if ( singularity_ns_pid_enabled() < 0 ) {
+        message(VERBOSE, "Not mounting kernel file systems, pid namespaces not enabled\n");
+        return(0);
+    }
 
     // Mount /proc if we are configured
     message(DEBUG, "Checking configuration file for 'mount proc'\n");
@@ -55,6 +62,11 @@ int singularity_mount_kernelfs() {
         message(VERBOSE, "Skipping /proc mount\n");
     }
 
+    if ( singularity_ns_user_enabled() >= 0 ) {
+        message(VERBOSE, "Not mounting /sys, user namespace in use\n");
+        return(0);
+    }
+
     // Mount /sys if we are configured
     message(DEBUG, "Checking configuration file for 'mount sys'\n");
     config_rewind();
@@ -62,10 +74,10 @@ int singularity_mount_kernelfs() {
         if ( is_dir("/sys") == 0 ) {
             priv_escalate();
             message(VERBOSE, "Mounting /sys\n");
-//            if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
-//                message(ERROR, "Could not mount /sys: %s\n", strerror(errno));
-//                ABORT(255);
-//            }
+            if ( mount("sysfs", "/sys", "sysfs", 0, NULL) < 0 ) {
+                message(ERROR, "Could not mount /sys: %s\n", strerror(errno));
+                ABORT(255);
+            }
             priv_drop();
         } else {
             message(WARNING, "Not mounting /sys, container has no bind directory\n");

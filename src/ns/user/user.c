@@ -131,6 +131,7 @@ int singularity_ns_user_unshare(void) {
     }
 
     priv_userns_ready();
+    enabled = 0;
 
     return(0);
 }

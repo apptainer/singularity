@@ -84,6 +84,7 @@ int singularity_ns_mnt_unshare(void) {
 #endif
 
     priv_drop();
+    enabled = 0;
     return(0);
 }
 

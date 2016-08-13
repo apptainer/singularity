@@ -54,7 +54,7 @@ int singularity_ns_pid_unshare(void) {
 #ifdef NS_CLONE_NEWPID
     message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
     // Flawfinder: ignore (only checking for existance of envar)
-    if ( priv_userns_enabled() == 1 || ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool("allow pid ns", 1) > 0 ) ) ) {
+    if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
         unsetenv("SINGULARITY_NO_NAMESPACE_PID");
         priv_escalate();
         message(DEBUG, "Virtualizing PID namespace\n");
@@ -63,6 +63,7 @@ int singularity_ns_pid_unshare(void) {
             ABORT(255);
         }
         priv_drop();
+        enabled = 0;
 
         // PID namespace requires a fork to activate!
         child_ns_pid = fork();
@@ -83,6 +84,7 @@ int singularity_ns_pid_unshare(void) {
             ABORT(255);
         }
         priv_drop();
+        enabled = 0;
 
         // PID namespace requires a fork to activate!
         child_ns_pid = fork();
@@ -97,7 +99,6 @@ int singularity_ns_pid_unshare(void) {
 
     if ( child_ns_pid == 0 ) {
         // Allow the child to continue on, while we catch the parent...
-        enabled = 1;
     } else if ( child_ns_pid > 0 ) {
         int tmpstatus;
 
