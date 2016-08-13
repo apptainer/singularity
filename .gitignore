@@ -32,6 +32,7 @@ src/image-create
 src/image-expand
 src/image-mount
 src/sexec
+src/sexec-suid
 src/stamp-h1
 src/include/stamp-h1
 
