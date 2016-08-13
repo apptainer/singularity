@@ -39,6 +39,13 @@
 #include "config_parser.h"
 #include "privilege.h"
 
+static int enabled = -1;
+
+int singularity_ns_user_enabled(void) {
+    message(DEBUG, "Checking user namespace enabled: %d\n", enabled);
+    return(enabled);
+}
+
 
 int singularity_ns_user_unshare(void) {
 

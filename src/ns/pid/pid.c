@@ -39,6 +39,13 @@
 #include "privilege.h"
 
 
+static int enabled = -1;
+
+int singularity_ns_pid_enabled(void) {
+    message(DEBUG, "Checking PID namespace enabled: %d\n", enabled);
+    return(enabled);
+}
+
 int singularity_ns_pid_unshare(void) {
     pid_t child_ns_pid = 0;
     int retval;
@@ -90,6 +97,7 @@ int singularity_ns_pid_unshare(void) {
 
     if ( child_ns_pid == 0 ) {
         // Allow the child to continue on, while we catch the parent...
+        enabled = 1;
     } else if ( child_ns_pid > 0 ) {
         int tmpstatus;
 
