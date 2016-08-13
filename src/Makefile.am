@@ -18,11 +18,14 @@ libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in librar
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = sexec image-create image-expand image-mount image-bind
+bin_PROGRAMS = sexec sexec-nosuid image-create image-expand image-mount image-bind
 
 sexec_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
 sexec_LDADD = libsingularity.la
 sexec_LDFLAGS = -static
+
+sexec_nosuid_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
+sexec_nosuid_LDADD = libsingularity.la
 
 image_create_SOURCES = image-create.c file.c util.c image.c message.c privilege.c
 image_create_LDADD = libsingularity.la

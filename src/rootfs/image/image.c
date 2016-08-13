@@ -90,6 +90,11 @@ int rootfs_image_init(char *source, char *mount_dir) {
         ABORT(255);
     }
 
+    if ( ( getuid() != 0 ) && ( is_suid("/proc/self/exe") < 0 ) ) {
+        message(ERROR, "Singularity must be executed in privileged mode to use images (U=%i)\n", geteuid());
+        ABORT(255);
+    }
+
     return(0);
 }
 
