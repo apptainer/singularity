@@ -23,6 +23,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <errno.h>
+#include <string.h>
 
 
 #include "config.h"
@@ -48,14 +50,45 @@ int main(int argc, char **argv) {
         ABORT(1);
     }
 
-    if ( ( is_suid("/proc/self/exe") == 0 ) && ( is_owner(joinpath(SYSCONFDIR, "/singularity/singularity.conf"), 0 ) < 0 ) ) {
-        message(ERROR, "Running in privileged mode, root must own the Singularity configuration file\n");
-        ABORT(255);
+    config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
+    if ( is_suid("/proc/self/exe") == 0 ) {
+        if ( is_owner(joinpath(SYSCONFDIR, "/singularity/singularity.conf"), 0 ) < 0 ) {
+            message(ERROR, "Running in privileged mode, root must own the Singularity configuration file\n");
+            ABORT(255);
+        }
+
+        config_rewind();
+        if ( config_get_key_bool("allow setuid", 1) == 0 ) {
+            message(ERROR, "Setuid mode was used, but this has been disabled by the sysadmin.\n");
+            ABORT(255);
+        }
+    } else {
+        config_rewind();
+
+        if ( config_get_key_bool("allow setuid", 1) == 1 ) {
+            message(VERBOSE, "Setuid mode is allowed by the sysadmin, re-exec'ing\n");
+
+            char sexec_path[] = LIBEXECDIR "/singularity/sexec-suid";
+//            char *sexec = "sexec";
+//            argv[0] = sexec;
+//
+//            char **new_argv = calloc(argc+1, sizeof(char*));
+//            int idx;
+//            //  Note new_argv is one-larger than argv; the last element must be NULL.
+//            for (idx=0; idx<argc; idx++) {
+//                new_argv[idx] = argv[idx];
+//            }
+
+            execv(sexec_path, argv);
+            message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_path, strerror(errno));
+            ABORT(255);
+        }
+
     }
 
     priv_init();
     singularity_action_init();
-    config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_rootfs_init(image, "/var/singularity/mnt");
 
     sessiondir = singularity_sessiondir(image);

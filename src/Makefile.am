@@ -18,14 +18,14 @@ libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in librar
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = sexec sexec-nosuid image-create image-expand image-mount image-bind
+bin_PROGRAMS = sexec sexec-suid image-create image-expand image-mount image-bind
 
 sexec_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
 sexec_LDADD = libsingularity.la
-sexec_LDFLAGS = -static
 
-sexec_nosuid_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
-sexec_nosuid_LDADD = libsingularity.la
+sexec_suid_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
+sexec_suid_LDADD = libsingularity.la
+sexec_suid_LDFLAGS = -static
 
 image_create_SOURCES = image-create.c file.c util.c image.c message.c privilege.c
 image_create_LDADD = libsingularity.la
@@ -51,10 +51,10 @@ install-data-hook: make_suid
 
 make_suid:
 	@if test `id -ru` = "0"; then \
-		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec"; \
-		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec; \
-		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec"; \
-		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec; \
+		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-suid"; \
+		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
+		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-suid"; \
+		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
 	fi
 
 #bin_PROGRAMS = sexec image-create image-expand image-mount image-bind sexec_nosuid

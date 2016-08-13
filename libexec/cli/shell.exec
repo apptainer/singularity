@@ -101,14 +101,8 @@ export SINGULARITY_IMAGE
 shift
 
 
-if [ -n "${SINGULARITY_FORCE_NOSUID:-}" -a "${SINGULARITY_FORCE_NOSUID:-}" != "0" ]; then
-    SEXEC="$SINGULARITY_libexecdir/singularity/sexec-nosuid"
-else
-    SEXEC="$SINGULARITY_libexecdir/singularity/sexec"
-fi
-
-if [ -x "$SEXEC" ]; then
-    exec "$SEXEC" "$@" <&0
+if [ -x "$SINGULARITY_libexecdir/singularity/sexec" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
 else
     message ERROR "Could not locate the Singularity Exec module: $SEXEC\n"
     exit 1
