@@ -422,7 +422,7 @@ void priv_drop_perm(void) {
     if ( geteuid() == 0 ) {
         if ( !uinfo.userns_ready ) {
             message(DEBUG, "Resetting supplementary groups\n");
-            if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
+            if ( setgroups(uinfo->gids_count, uinfo->gids) < 0 ) {
                 message(ERROR, "Could not reset supplementary group list: %s\n", strerror(errno));
                 ABORT(255);
             }

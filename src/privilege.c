@@ -58,14 +58,14 @@ static struct PRIV_INFO {
 
 
 void priv_init(void) {
-    memset(&uinfo, '\0', sizeof(uinfo));
-
-    // If we are *not* the setuid binary and started as root, then
-    //
     long int target_uid = -1;
     long int target_gid = -1;
     char *target_uid_str = NULL;
     char *target_gid_str = NULL;
+    memset(&uinfo, '\0', sizeof(uinfo));
+
+    message(DEBUG, "Called priv_init(void)\n");
+
     if ( getuid() == 0 ) {
         target_uid_str = getenv("SINGULARITY_TARGET_UID");
         target_gid_str = getenv("SINGULARITY_TARGET_GID");
@@ -113,11 +113,10 @@ void priv_init(void) {
         uinfo.gids_count = 0;
         uinfo.gids = NULL;
     } else {
+
         uinfo.uid = getuid();
         uinfo.gid = getgid();
         uinfo.gids_count = getgroups(0, NULL);
-
-        message(DEBUG, "Called priv_init(void)\n");
 
         uinfo.gids = (gid_t *) malloc(sizeof(gid_t) * uinfo.gids_count);
 
@@ -232,14 +231,13 @@ void priv_drop_perm(void) {
         return;
     }
 
-    if ( !uinfo.userns_ready ) {
-        message(DEBUG, "Resetting supplementary groups\n");
-        if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
-            message(ERROR, "Could not reset supplementary group list: %s\n", strerror(errno));
-            ABORT(255);
-        }
-    } else {
-        message(DEBUG, "Not resetting supplementary groups as we are running in a user namespace.\n");
+    message(DEBUG, "Escalating permissison so we can properly drop permission\n");
+    priv_escalate();
+
+    message(DEBUG, "Resetting supplementary groups\n");
+    if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
+        message(ERROR, "Could not reset supplementary group list: %s\n", strerror(errno));
+        ABORT(255);
     }
 
     message(DEBUG, "Dropping to group ID '%d'\n", uinfo.gid);

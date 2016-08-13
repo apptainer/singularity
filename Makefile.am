@@ -15,4 +15,4 @@ install-perms:
 	@echo "install-perms is no longer required"
 	@echo
 
-ACLOCAL_AMFLAGS = -I m4 -I $(top_srcdir)/src
+ACLOCAL_AMFLAGS = -I m4
