@@ -13,3 +13,5 @@ noinst_LTLIBRARIES = libns.la
 
 libns_la_LIBADD = mnt/libnsmnt.la pid/libnspid.la user/libnsuser.la
 libns_la_SOURCES = ns.c
+
+EXTRA_DIST = ns.h
