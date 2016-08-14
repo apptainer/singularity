@@ -35,14 +35,12 @@
 
 
 
-int singularity_file_create(void) {
-    singularity_file_passwd_create();
-    singularity_file_group_create();
+int singularity_file_update(void) {
+    int retval = 0;
+
+    retval += singularity_file_passwd();
+    retval += singularity_file_group();
+
     return(0);
 }
 
-int singularity_file_bind(void) {
-    singularity_file_passwd_bind();
-    singularity_file_group_bind();
-    return(0);
-}

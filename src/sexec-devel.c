@@ -94,15 +94,9 @@ int main(int argc, char **argv) {
 
     singularity_rootfs_mount();
 
-    singularity_file_create();
+    singularity_file_update();
 
-    singularity_mount_binds();
-
-    singularity_mount_home();
-
-    singularity_file_bind();
-
-    singularity_mount_kernelfs();
+    singularity_mount();
 
     singularity_rootfs_chroot();
 

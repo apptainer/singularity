@@ -19,9 +19,9 @@
 */
 
 
-#ifndef __ACTION_EXEC_H_
-#define __ACTION_EXEC_H_
+#ifndef __MOUNT_KERNELFS_H_
+#define __MOUNT_KERNELFS_H_
 
+    int singularity_mount_kernelfs(void);
 
-
-#endif /* __ACTION_EXEC_H_ */
+#endif /* __MOUNT_KERNELFS_H_ */

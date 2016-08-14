@@ -36,7 +36,7 @@
 #include "rootfs/rootfs.h"
 
 
-int singularity_mount_kernelfs() {
+int singularity_mount_kernelfs(void) {
     char *container_dir = singularity_rootfs_dir();
 
     // Mount /proc if we are configured

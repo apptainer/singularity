@@ -22,7 +22,6 @@
 #ifndef __SINGULARITY_FILE_PASSWD_H_
 #define __SINGULARITY_FILE_PASSWD_H_
 
-    extern void singularity_file_passwd_create(void);
-    extern void singularity_file_passwd_bind(void);
+    extern int singularity_file_passwd(void);
 
 #endif /* __SINGULARITY_FILE_PASSWD_H_ */

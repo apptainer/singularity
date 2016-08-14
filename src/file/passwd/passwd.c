@@ -40,7 +40,7 @@
 #include "file/file.h"
 
 
-void singularity_file_passwd_create(void) {
+int singularity_file_passwd(void) {
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
@@ -53,7 +53,7 @@ void singularity_file_passwd_create(void) {
 
     if ( uid == 0 ) {
         message(VERBOSE, "Not updating passwd file, running as root!\n");
-        return;
+        return(0);
     }
 
     if ( containerdir == NULL ) {
@@ -72,7 +72,7 @@ void singularity_file_passwd_create(void) {
     message(VERBOSE2, "Checking for template passwd file: %s\n", source_file);
     if ( is_file(source_file) < 0 ) {
         message(VERBOSE, "Passwd file does not exist in container, not updating\n");
-        return;
+        return(0);
     }
 
     message(VERBOSE2, "Creating template of /etc/passwd\n");
@@ -95,25 +95,8 @@ void singularity_file_passwd_create(void) {
     fprintf(file_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
     fclose(file_fp);
 
-    message(DEBUG, "Returning singularity_file_passwd_create()\n");
-
-    return;
-}
-
-
-void singularity_file_passwd_bind(void) {
-    uid_t uid = priv_getuid();
-
-    message(DEBUG, "Called singularity_file_passwd_bind()\n");
-
-    if ( uid == 0 ) {
-        message(VERBOSE, "Not updating passwd file, running as root!\n");
-        return;
-    }
 
     container_file_bind("passwd", "/etc/passwd");
 
-    message(DEBUG, "Returning singularity_file_passwd_bind()\n");
-
-    return;
+    return(0);
 }

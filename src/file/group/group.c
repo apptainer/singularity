@@ -40,7 +40,7 @@
 #include "file/file.h"
 
 
-void singularity_file_group_create(void) {
+int singularity_file_group(void) {
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
@@ -58,7 +58,7 @@ void singularity_file_group_create(void) {
 
     if ( uid == 0 ) {
         message(VERBOSE, "Not updating group file, running as root!\n");
-        return;
+        return(0);
     }
 
     if ( containerdir == NULL ) {
@@ -76,7 +76,7 @@ void singularity_file_group_create(void) {
 
     if ( is_file(source_file) < 0 ) {
         message(VERBOSE, "Group file does not exist in container, not updating\n");
-        return;
+        return(0);
     }
 
     errno = 0;
@@ -84,7 +84,7 @@ void singularity_file_group_create(void) {
         // List of potential error codes for unknown name taken from man page.
         if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
             message(VERBOSE3, "Not updating group file as passwd entry for UID %d not found.\n", uid);
-            return;
+            return(0);
         } else {
             message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
             ABORT(255);
@@ -116,47 +116,36 @@ void singularity_file_group_create(void) {
     }
 
 
-//    if ( ! priv_userns_enabled() ) {
-        message(DEBUG, "Getting supplementary group info\n");
+    message(DEBUG, "Getting supplementary group info\n");
 
-        for (i=0; i < gid_count; i++) {
-            if ( gids[i] == gid ) {
-                message(DEBUG, "Skipping duplicate supplementary group\n");
-                continue;
-            }
-
-            if ( gids[i] < UINT_MAX && gids[i] >= 500 ) {
-                errno = 0;
-                struct group *gr = getgrgid(gids[i]);
-                if ( gr ) {
-                    message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
-                    message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
-                    fprintf(file_fp, "%s:x:%u:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
-                } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
-                    message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gids[i]);
-                } else {
-                    message(ERROR, "Failed to lookup GID %d group entry: %s\n", gids[i], strerror(errno));
-                    ABORT(255);
-                }
-            } else {
-                message(VERBOSE, "Group id '%d' is out of bounds\n", gids[i]);
-            }
+    for (i=0; i < gid_count; i++) {
+        if ( gids[i] == gid ) {
+            message(DEBUG, "Skipping duplicate supplementary group\n");
+            continue;
         }
-//    }
-    fclose(file_fp);
-}
 
-
-void singularity_file_group_bind(void) {
-    uid_t uid = priv_getuid();
-
-    message(DEBUG, "Called singularity_file_group_bind()\n");
-
-    if ( uid == 0 ) {
-        message(VERBOSE, "Not updating group file, running as root!\n");
-        return;
+        if ( gids[i] < UINT_MAX && gids[i] >= 500 ) {
+            errno = 0;
+            struct group *gr = getgrgid(gids[i]);
+            if ( gr ) {
+                message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
+                message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
+                fprintf(file_fp, "%s:x:%u:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
+            } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
+                message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gids[i]);
+            } else {
+                message(ERROR, "Failed to lookup GID %d group entry: %s\n", gids[i], strerror(errno));
+                ABORT(255);
+            }
+        } else {
+            message(VERBOSE, "Group id '%d' is out of bounds\n", gids[i]);
+        }
     }
+
+    fclose(file_fp);
+
 
     container_file_bind("group", "/etc/group");
 
+    return(0);
 }

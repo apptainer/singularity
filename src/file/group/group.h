@@ -22,7 +22,6 @@
 #ifndef __SINGULARITY_FILE_GROUP_H_
 #define __SINGULARITY_FILE_GROUP_H_
 
-    extern void singularity_file_group_create(void);
-    extern void singularity_file_group_bind(void);
+    extern int singularity_file_group(void);
 
 #endif /* __SINGULARITY_FILE_GROUP_H_ */

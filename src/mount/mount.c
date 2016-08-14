@@ -30,5 +30,17 @@
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
+#include "binds/binds.h"
+#include "home/home.h"
+#include "kernelfs/kernelfs.h"
 
 
+int singularity_mount(void) {
+    int retval = 0;
+
+    retval += singularity_mount_binds();
+    retval += singularity_mount_home();
+    retval += singularity_mount_kernelfs();
+
+    return(retval);
+}

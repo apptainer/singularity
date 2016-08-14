@@ -22,8 +22,7 @@
 #ifndef __SINGULARITY_FILE_H_
 #define __SINGULARITY_FILE_H_
 
-    extern int singularity_file_create(void);
-    extern int singularity_file_bind(void);
+    extern int singularity_file_update(void);
     extern int container_file_bind(char *file, char *dest_path);
 
 #endif /* __SINGULARITY_FILE_H */

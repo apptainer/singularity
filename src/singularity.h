@@ -45,11 +45,11 @@
     extern int singularity_action_init(void);
     extern int singularity_action_do(int agc, char **argv);
 
+    extern int singularity_mount(void);
     extern int singularity_mount_kernelfs(void);
     extern int singularity_mount_binds(void);
     extern int singularity_mount_home(void);
 
-    extern int singularity_file_create(void);
-    extern int singularity_file_bind(void);
+    extern int singularity_file_update(void);
 
 #endif /* __SINGULARITY_H */
