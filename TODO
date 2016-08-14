@@ -16,5 +16,4 @@ New API porting:
     * signal handlers
     * tmpfs overlay
     * scratch directory creation
-    * support legacy containers
     * clean old sources
