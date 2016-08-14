@@ -199,16 +199,15 @@ stest 1 singularity exec $CONTAINERDIR ping localhost -c 1
 stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep -q `id -un`"
 
  
+#TODO: The following tests must be conditional based on host capabilities
 /bin/echo
 /bin/echo "Disabling setuid config flag"
 stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
 stest 1 singularity exec "$CONTAINER" true
 
-#TODO: The following tests must be conditional based on host capabilities
 /bin/echo
 /bin/echo "Checking unprivileged mode"
 stest 0 sh -c "singularity exec $CONTAINERDIR whoami | grep -q `id -un`"
-# Can't work with images...
 stest 1 sh -c "singularity exec $CONTAINER whoami"
 
 
@@ -216,6 +215,12 @@ stest 1 sh -c "singularity exec $CONTAINER whoami"
 /bin/echo "Re-enabling setuid config flag"
 stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
 stest 0 singularity exec "$CONTAINER" true
+
+
+/bin/echo
+/bin/echo "Checking unprivileged mode from environment"
+stest 0 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINERDIR whoami | grep -q `id -un`"
+stest 1 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINER whoami"
 
 
 
