@@ -102,9 +102,9 @@ int main(int argc, char **argv) {
 
     singularity_file_bind();
 
-    singularity_rootfs_chroot();
-
     singularity_mount_kernelfs();
+
+    singularity_rootfs_chroot();
 
     singularity_action_do(argc, argv);
 

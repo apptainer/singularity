@@ -81,32 +81,6 @@ int singularity_mount_binds(void) {
         priv_drop();
     }
 
-
-    // This is here because mounting proc fails in unprivileged mode unless PID namespace is unshared
-    message(DEBUG, "Checking to see if we should bind mount /proc too\n");
-    //if ( ( singularity_ns_pid_enabled() < 0 ) && ( singularity_ns_user_enabled() >= 0 ) ) {
-    if ( singularity_ns_pid_enabled() < 0 ) {
-        message(DEBUG, "Checking configuration file for 'mount proc'\n");
-        config_rewind();
-        if ( config_get_key_bool("mount proc", 1) > 0 ) {
-            if ( is_dir(joinpath(container_dir, "/proc")) == 0 ) {
-                priv_escalate();
-                message(VERBOSE, "Mounting /proc\n");
-                if ( mount("/proc", joinpath(container_dir, "proc"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-                    message(ERROR, "Could not bind mount container's /proc: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-                priv_drop();
-            } else {
-                message(WARNING, "Not mounting /proc, container has no bind directory\n");
-            }
-        } else {
-            message(VERBOSE, "Skipping /proc mount\n");
-        }
-    }
-
-
-
     return(0);
 }
 
