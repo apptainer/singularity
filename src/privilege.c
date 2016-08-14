@@ -167,7 +167,7 @@ void priv_drop(void) {
     }
 
     if ( uinfo.userns_ready == 1 ) {
-        message(DEBUG, "Not escalating privileges, user namespace enabled\n");
+        message(DEBUG, "Not dropping privileges, user namespace enabled\n");
         return;
     }
 
