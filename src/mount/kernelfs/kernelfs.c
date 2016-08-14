@@ -68,21 +68,17 @@ int singularity_mount_kernelfs() {
         message(VERBOSE, "Skipping /proc mount\n");
     }
 
-    if ( singularity_ns_user_enabled() >= 0 ) {
-        message(VERBOSE, "Not mounting /sys, user namespace in use\n");
-        return(0);
-    }
 
     // Mount /sys if we are configured
     message(DEBUG, "Checking configuration file for 'mount sys'\n");
     config_rewind();
     if ( config_get_key_bool("mount sys", 1) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/sys")) == 0 ) {
-            if ( singularity_ns_pid_enabled() >= 0 ) {
+            if ( singularity_ns_user_enabled() < 0 ) {
                 priv_escalate();
                 message(VERBOSE, "Mounting /sys\n");
                 if ( mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", 0, NULL) < 0 ) {
-                    message(ERROR, "Could not mount /sysi into container: %s\n", strerror(errno));
+                    message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
                     ABORT(255);
                 }
                 priv_drop();
