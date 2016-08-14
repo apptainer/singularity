@@ -17,5 +17,4 @@ New API porting:
     * tmpfs overlay
     * scratch directory creation
     * support legacy containers
-    * consolidate module code (e.g. mounts) and reshare via libmount.la
     * clean old sources
