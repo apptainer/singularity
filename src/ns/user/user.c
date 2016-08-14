@@ -62,7 +62,7 @@ int singularity_ns_user_unshare(void) {
 #ifdef NS_CLONE_NEWUSER
     message(DEBUG, "Attempting to virtualize the USER namespace\n");
     if ( unshare(CLONE_NEWUSER) != 0 ) {
-        message(VERBOSE3, "Not virtualizing USER namespace: runtime support failed\n");
+        message(VERBOSE3, "Not virtualizing USER namespace: runtime support failed (%d:%s)\n", errno, strerror(errno));
         return(0); // Don't fail when host support doesn't exist
     }
 #else

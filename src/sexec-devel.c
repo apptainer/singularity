@@ -62,7 +62,12 @@ int main(int argc, char **argv) {
             message(ERROR, "Setuid mode was used, but this has been disabled by the sysadmin.\n");
             ABORT(255);
         }
-    } else if ( getenv("SINGULARITY_SUID") == NULL ) {
+
+        if ( getenv("SINGULARITY_NOSUID") != NULL ) {
+            message(ERROR, "Requested NOSUID mode, but running as SUID.. Aborting.\n");
+            ABORT(1);
+        }
+    } else if ( ( getenv("SINGULARITY_SUID") == NULL ) && getenv("SINGULARITY_NOSUID") == NULL ) {
         config_rewind();
 
         if ( config_get_key_bool("allow setuid", 1) == 1 ) {
@@ -75,7 +80,6 @@ int main(int argc, char **argv) {
             message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_path, strerror(errno));
             ABORT(255);
         }
-
     }
 
     priv_init();
