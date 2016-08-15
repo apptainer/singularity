@@ -49,6 +49,7 @@
     extern int singularity_mount_kernelfs(void);
     extern int singularity_mount_binds(void);
     extern int singularity_mount_home(void);
+    extern int singularity_mount_tmp(void);
 
     extern int singularity_file_update(void);
 

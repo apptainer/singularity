@@ -206,6 +206,7 @@ AC_CONFIG_FILES([
    src/mount/binds/Makefile
    src/mount/home/Makefile
    src/mount/kernelfs/Makefile
+   src/mount/tmp/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity

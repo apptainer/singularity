@@ -18,31 +18,10 @@
  * 
 */
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
 
-#include "file.h"
-#include "util.h"
-#include "message.h"
-#include "privilege.h"
-#include "binds/binds.h"
-#include "home/home.h"
-#include "kernelfs/kernelfs.h"
-#include "tmp/tmp.h"
+#ifndef __MOUNT_TMP_H_
+#define __MOUNT_TMP_H_
 
+    int singularity_mount_tmp(void);
 
-int singularity_mount(void) {
-    int retval = 0;
-
-    retval += singularity_mount_home();
-    retval += singularity_mount_kernelfs();
-    retval += singularity_mount_tmp();
-    retval += singularity_mount_binds();
-
-    return(retval);
-}
+#endif /* __MOUNT_TMP_H_ */
