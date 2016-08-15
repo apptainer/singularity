@@ -26,7 +26,7 @@ sexec_LDADD = libsingularity.la
 sexec_suid_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
 sexec_suid_LDADD = libsingularity.la
 sexec_suid_LDFLAGS = -static
-sexec_suid_CPPFLAGS = -DSUID_BUILD $(AM_CPPFLAGS)
+sexec_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 image_create_SOURCES = image-create.c file.c util.c image.c message.c privilege.c
 image_create_LDADD = libsingularity.la

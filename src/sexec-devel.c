@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     priv_init();
     priv_drop();
 
-#ifdef SUID_BUILD
+#ifdef SINGULARITY_SUID
 
     message(VERBOSE2, "Running SUID program workflow\n");
 
@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
         message(VERBOSE, "Not invoking SUID mode: disallowed by the system administrator\n");
     }
 
-#endif
+#endif /* SINGULARITY_SUID */
 
     if ( ( image = getenv("SINGULARITY_IMAGE") ) == NULL ) {
         message(ERROR, "SINGULARITY_IMAGE not defined!\n");
