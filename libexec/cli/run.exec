@@ -50,6 +50,10 @@ while true; do
             fi
             exit
         ;;
+        -u|--user)
+            export SINGULARITY_NOSUID=1
+            shift
+        ;;
         -w|--writable)
             shift
             SINGULARITY_WRITABLE=1

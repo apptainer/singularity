@@ -57,6 +57,10 @@ while true; do
             SHELL="${1:-}"
             shift
         ;;
+        -u|--user)
+            export SINGULARITY_NOSUID=1
+            shift
+        ;;
         -w|--writable)
             shift
             SINGULARITY_WRITABLE=1
