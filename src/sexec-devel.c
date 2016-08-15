@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     config_rewind();
     
     message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
-    if ( config_get_key_bool("allow setuid", 1) == 0 ) {
+    if ( config_get_key_bool("allow setuid", 0) == 0 ) {
         message(ERROR, "SUID mode has been disabled by the sysadmin... Aborting\n");
         ABORT(255);
     }
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
     config_rewind();
 
     message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
-    if ( config_get_key_bool("allow setuid", 1) == 1 ) {
+    if ( config_get_key_bool("allow setuid", 0) == 1 ) {
         message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
         if ( getenv("SINGULARITY_NOSUID") == NULL ) {
             char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";
