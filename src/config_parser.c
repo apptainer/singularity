@@ -119,6 +119,7 @@ int config_get_key_bool(char *key, int def) {
             return(0);
         } else {
             message(ERROR, "Unsupported value for configuration boolean key '%s' = '%s'\n", key, config_value);
+            message(ERROR, "Returning default value: %s\n", ( def == 1 ? "yes" : "no" ));
             message(DEBUG, "Return config_get_key_bool(%s, %d) = -1\n", key, def);
             return(-1);
         }
