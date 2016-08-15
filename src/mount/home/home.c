@@ -33,6 +33,7 @@
 #include "util.h"
 #include "message.h"
 #include "privilege.h"
+#include "config_parser.h"
 #include "rootfs/rootfs.h"
 
 
@@ -45,6 +46,12 @@ int singularity_mount_home(void) {
 
     if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
         message(DEBUG, "Skipping bind mounts as contain was requested\n");
+        return(0);
+    }
+
+    config_rewind();
+    if ( config_get_key_bool("mount home", 1) <= 0 ) {
+        message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
         return(0);
     }
 
