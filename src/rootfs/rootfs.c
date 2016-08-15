@@ -62,8 +62,6 @@ int singularity_rootfs_init(char *source) {
     }
     message(DEBUG, "Set image mount path to: %s\n", mount_point);
 
-    mount_point = strdup(mount_point);
-
     if ( is_file(source) == 0 ) {
         module = ROOTFS_IMAGE;
         return(rootfs_image_init(source, mount_point));

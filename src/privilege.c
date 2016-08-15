@@ -127,8 +127,6 @@ void priv_init(void) {
     }
     uinfo.ready = 1;
 
-    priv_drop();
-
     message(DEBUG, "Returning priv_init(void)\n");
 }
 
