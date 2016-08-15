@@ -11,6 +11,7 @@ Fixes:
     * For older distros that do not support loop autoclear, conditionally
         create a child process and move mount namespace to a child process,
         and have parent umount when done
+    * Go over singularity.conf and finish adding features back in
 
 New API porting:
     * signal handlers
