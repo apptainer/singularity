@@ -6,6 +6,7 @@ Features:
     * Support tgz image format
     * --with-userns configure flag needs to be changed to enable/disable
         suid compoents
+    * Maybe change the default PID sharing behavior to not share?
 
 Fixes:
     * For older distros that do not support loop autoclear, conditionally
