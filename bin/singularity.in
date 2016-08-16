@@ -84,6 +84,10 @@ while true; do
             message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
             shift
         ;;
+	-p|--change-home)
+		CHANGE_HOME=1
+		NEW_HOME=$2
+		shift
         -*)
             message ERROR "Unknown argument: $1\n"
             exit 1
