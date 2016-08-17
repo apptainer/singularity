@@ -25,9 +25,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/file.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
+
 
 
 #include "file.h"
@@ -42,6 +44,10 @@ char *sessiondir = NULL;
 int sessiondir_fd = 0;
 
 char *singularity_sessiondir(char *file) {
+    int child_pid;
+    int retval;
+
+
     if ( file == NULL ) {
         message(DEBUG, "Got null for file, returning prior sessiondir\n");
     } else {
@@ -86,6 +92,32 @@ char *singularity_sessiondir(char *file) {
         ABORT(255);
     }
 
+    child_pid = fork();
+
+    if ( child_pid == 0 ) {
+        // Allow the child to continue on, while we catch the parent...
+    } else if ( child_pid > 0 ) {
+        int tmpstatus;
+
+        message(DEBUG, "Waiting on NS child process\n");
+
+        waitpid(child_pid, &tmpstatus, 0);
+        retval = WEXITSTATUS(tmpstatus);
+
+        message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
+        if ( flock(sessiondir_fd, LOCK_EX | LOCK_NB) == 0 ) {
+            message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
+            if ( s_rmdir(sessiondir) < 0 ) {
+                message(ERROR, "Could not remove session directory\n");
+                ABORT(255);
+            }
+        }
+    
+        exit(retval);
+    } else {
+        message(ERROR, "Failed forking child process\n");
+        ABORT(255);
+    }
 
     return(sessiondir);
 }
