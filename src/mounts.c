@@ -366,19 +366,37 @@ void mount_home(char *rootpath) {
 
     message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
-
-    if ( ( homedir_base = container_basedir(rootpath, homedir) ) != NULL ) {
-        if ( is_dir(homedir_base) == 0 ) {
-            if ( is_dir(joinpath(rootpath, homedir_base)) == 0 ) {
-                message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
-                if ( mount(homedir_base, joinpath(rootpath, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-                    ABORT(255);
+    
+    if (getenv("CHANGE_HOME") != NULL) {
+        char* newhome = getenv("NEW_HOME");
+        if ((homedir_base = container_basedir(rootpath, newhome)) != NULL) {
+            if (is_dir(homedir_base) == 0) {
+                if (is_dir(joinpath(rootpath, homedir_base)) == 0) {
+                    message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
+                    if (mount(homedir_base, joinpath(rootpath, homedir_base), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0) {
+                        ABORT(255);
+                    }
+                } else {
+                    message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
                 }
             } else {
-                message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
+                message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
             }
-        } else {
-            message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
+        }
+    }else {
+        if ((homedir_base = container_basedir(rootpath, homedir)) != NULL) {
+            if (is_dir(homedir_base) == 0) {
+                if (is_dir(joinpath(rootpath, homedir_base)) == 0) {
+                    message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
+                    if (mount(homedir_base, joinpath(rootpath, homedir_base), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0) {
+                        ABORT(255);
+                    }
+                } else {
+                    message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
+                }
+            } else {
+                message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
+            }
         }
     }
 

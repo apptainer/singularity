@@ -584,7 +584,7 @@ int main(int argc, char ** argv) {
 
                 message(DEBUG, "Checking configuration file for 'mount home'\n");
                 config_rewind();
-                if ( config_get_key_bool("mount home", 1) > 0 ) {
+                if ( config_get_key_bool("mount home", 1) > 0) {
                     mount_home(containerdir);
                 } else {
                     message(VERBOSE2, "Not mounting home directory per config\n");
