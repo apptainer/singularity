@@ -43,7 +43,7 @@ int singularity_mount_home(void) {
     char *homedir_base;
     char *container_dir = singularity_rootfs_dir();
     struct passwd *pw;
-    uid_t uid = getuid();
+    uid_t uid = priv_getuid();
 
     config_rewind();
     if ( config_get_key_bool("mount home", 1) <= 0 ) {
