@@ -367,7 +367,7 @@ void mount_home(char *rootpath) {
     message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
     
-    if (getenv("CHANGE_HOME") != NULL) {
+    if (strstr(getenv("CHANGE_HOME"),"yes")!= NULL) {
         char* newhome = getenv("NEW_HOME");
         message(VERBOSE, "Changing home path to user based input: %s\n", newhome);
         if ((homedir_base = container_basedir(rootpath, newhome)) != NULL) {
