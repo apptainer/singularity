@@ -143,16 +143,13 @@ int singularity_mount_hostfs(void) {
         }
 
         priv_escalate();
-        message(VERBOSE, "Binding '%s' to '%s/%s'\n", mountpoint, container_dir, mountpoint);
+        message(VERBOSE, "Binding '%s'(%s) to '%s/%s'\n", mountpoint, filesystem, container_dir, mountpoint);
         if ( mount(mountpoint, joinpath(container_dir, mountpoint), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             message(ERROR, "There was an error binding the path %s: %s\n", mountpoint, strerror(errno));
             ABORT(255);
         }
         priv_drop();
 
-        free(source);
-        free(mountpoint);
-        free(filesystem);
     }
 
     free(line);
