@@ -34,6 +34,7 @@
 #include "message.h"
 #include "privilege.h"
 #include "config_parser.h"
+#include "sessiondir.h"
 #include "rootfs/rootfs.h"
 
 
@@ -43,11 +44,6 @@ int singularity_mount_home(void) {
     char *container_dir = singularity_rootfs_dir();
     struct passwd *pw;
     uid_t uid = getuid();
-
-    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
-        message(DEBUG, "Skipping bind mounts as contain was requested\n");
-        return(0);
-    }
 
     config_rewind();
     if ( config_get_key_bool("mount home", 1) <= 0 ) {
@@ -73,11 +69,23 @@ int singularity_mount_home(void) {
     //TODO: Find out if we can create mount points here...
 
     if ( ( homedir_base = container_basedir(container_dir, homedir) ) != NULL ) {
-        if ( is_dir(homedir_base) == 0 ) {
+        char *homedir_base_source;
+
+        if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
+            char *sessiondir = singularity_sessiondir_get();
+
+            homedir_base_source = joinpath(sessiondir, homedir_base);
+
+            s_mkpath(joinpath(sessiondir, homedir), 0750);
+        } else {
+            homedir_base_source = strdup(homedir_base);
+        }
+
+        if ( is_dir(homedir_base_source) == 0 ) {
             if ( is_dir(joinpath(container_dir, homedir_base)) == 0 ) {
                 priv_escalate();
                 message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
-                if ( mount(homedir_base, joinpath(container_dir, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+                if ( mount(homedir_base_source, joinpath(container_dir, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
                     message(ERROR, "Failed to mount home directory: %s\n", strerror(errno));
                     ABORT(255);
                 }
