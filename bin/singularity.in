@@ -85,9 +85,10 @@ while true; do
             shift
         ;;
 	-p|--change-home)
-		CHANGE_HOME=1
+		CHANGE_HOME="yes"
 		NEW_HOME=$2
 		shift
+        ;;
         -*)
             message ERROR "Unknown argument: $1\n"
             exit 1
