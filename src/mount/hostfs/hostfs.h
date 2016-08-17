@@ -18,33 +18,10 @@
  * 
 */
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
 
-#include "file.h"
-#include "util.h"
-#include "message.h"
-#include "privilege.h"
-#include "binds/binds.h"
-#include "home/home.h"
-#include "hostfs/hostfs.h"
-#include "kernelfs/kernelfs.h"
-#include "tmp/tmp.h"
+#ifndef __MOUNT_HOSTFS_H_
+#define __MOUNT_HOSTFS_H_
 
+    int singularity_mount_hostfs(void);
 
-int singularity_mount(void) {
-    int retval = 0;
-
-    retval += singularity_mount_hostfs();
-    retval += singularity_mount_home();
-    retval += singularity_mount_kernelfs();
-    retval += singularity_mount_tmp();
-    retval += singularity_mount_binds();
-
-    return(retval);
-}
+#endif /* __MOUNT_HOSTFS_H_ */

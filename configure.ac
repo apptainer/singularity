@@ -205,6 +205,7 @@ AC_CONFIG_FILES([
    src/mount/Makefile
    src/mount/binds/Makefile
    src/mount/home/Makefile
+   src/mount/hostfs/Makefile
    src/mount/kernelfs/Makefile
    src/mount/tmp/Makefile
    etc/Makefile
