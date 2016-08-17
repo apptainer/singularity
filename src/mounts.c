@@ -369,6 +369,7 @@ void mount_home(char *rootpath) {
     
     if (getenv("CHANGE_HOME") != NULL) {
         char* newhome = getenv("NEW_HOME");
+        message(VERBOSE, "Changing home path to user based input: %s\n", newhome);
         if ((homedir_base = container_basedir(rootpath, newhome)) != NULL) {
             if (is_dir(homedir_base) == 0) {
                 if (is_dir(joinpath(rootpath, homedir_base)) == 0) {
@@ -384,6 +385,7 @@ void mount_home(char *rootpath) {
             }
         }
     }else {
+        message(VERBOSE, "Not changing home directory path\n");
         if ((homedir_base = container_basedir(rootpath, homedir)) != NULL) {
             if (is_dir(homedir_base) == 0) {
                 if (is_dir(joinpath(rootpath, homedir_base)) == 0) {
