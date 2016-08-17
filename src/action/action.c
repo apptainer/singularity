@@ -27,6 +27,7 @@
 #include <linux/limits.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <pwd.h>
 
 #include "file.h"
 #include "util.h"
@@ -87,7 +88,24 @@ int singularity_action_do(int argc, char **argv) {
     priv_drop_perm();
 
     if ( chdir(cwd_path) < 0 ) {
+        struct passwd *pw;
+        char *homedir;
+        uid_t uid = priv_getuid();
+
         message(WARNING, "Could not chdir to: %s\n", cwd_path);
+
+        errno = 0;
+        if ( ( pw = getpwuid(uid) ) != NULL ) {
+            message(DEBUG, "Obtaining user's homedir\n");
+
+            homedir = pw->pw_dir;
+
+            if ( chdir(homedir) < 0 ) {
+                message(WARNING, "Could not chdir to home directory: %s\n", homedir);
+            }
+        } else {
+            message(WARNING, "Could not obtain pwinfo for uid: %i\n", uid);
+        }
     }
 
     if ( action == ACTION_SHELL ) {
