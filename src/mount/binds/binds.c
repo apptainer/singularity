@@ -72,8 +72,8 @@ int singularity_mount_binds(void) {
 
         //TODO: Decide if we can create the bind points if they don't exists (tmpfs overlay check)
 
-        message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
         priv_escalate();
+        message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
         if ( mount(source, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             message(ERROR, "There was an error binding the path %s: %s\n", source, strerror(errno));
             ABORT(255);

@@ -49,7 +49,6 @@ int main(int argc, char **argv) {
     priv_drop();
 
 #ifdef SINGULARITY_SUID
-
     message(VERBOSE2, "Running SUID program workflow\n");
 
     message(VERBOSE2, "Checking program has appropriate permissions\n");
@@ -81,7 +80,6 @@ int main(int argc, char **argv) {
     }
 
 #else
-
     message(VERBOSE, "Running NON-SUID program workflow\n");
 
     message(DEBUG, "Checking program has appropriate permissions\n");
@@ -94,27 +92,30 @@ int main(int argc, char **argv) {
 
     config_rewind();
 
-    message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
-    if ( config_get_key_bool("allow setuid", 0) == 1 ) {
-        message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
-        if ( getenv("SINGULARITY_NOSUID") == NULL ) {
-            char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";
-        
-            if ( ( is_owner(sexec_suid_path, 0 ) == 0 ) && ( is_suid(sexec_suid_path) == 0 ) ) {
+    if ( priv_getuid() != 0 ) {
+        message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
+        if ( config_get_key_bool("allow setuid", 0) == 1 ) {
+            message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
+            if ( getenv("SINGULARITY_NOSUID") == NULL ) {
+                char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";
 
-                message(VERBOSE, "Invoking SUID sexec: %s\n", sexec_suid_path);
+                if ( ( is_owner(sexec_suid_path, 0 ) == 0 ) && ( is_suid(sexec_suid_path) == 0 ) ) {
+                    message(VERBOSE, "Invoking SUID sexec: %s\n", sexec_suid_path);
 
-                execv(sexec_suid_path, argv);
-                message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_suid_path, strerror(errno));
-                ABORT(255);
+                    execv(sexec_suid_path, argv);
+                    message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_suid_path, strerror(errno));
+                    ABORT(255);
+                } else {
+                    message(VERBOSE, "Not invoking SUID mode: SUID sexec not installed\n");
+                }
             } else {
-                message(VERBOSE, "Not invoking SUID mode: SUID sexec not installed\n");
+                message(VERBOSE, "Not invoking SUID mode: NOSUID mode requested\n");
             }
         } else {
-            message(VERBOSE, "Not invoking SUID mode: NOSUID mode requested\n");
+            message(VERBOSE, "Not invoking SUID mode: disallowed by the system administrator\n");
         }
     } else {
-        message(VERBOSE, "Not invoking SUID mode: disallowed by the system administrator\n");
+        message(VERBOSE, "Not invoking SUID mode: running as root\n");
     }
 
 #endif /* SINGULARITY_SUID */
