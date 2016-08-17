@@ -85,8 +85,8 @@ while true; do
             shift
         ;;
 	-p|--change-home)
-		CHANGE_HOME="yes"
-		NEW_HOME=$2
+		setenv CHANGE_HOME "yes"
+		setenv NEW_HOME $2
 		shift
                 shift  #shift twice to get rid of the new home argument
         ;;
