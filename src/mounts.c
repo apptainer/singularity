@@ -385,7 +385,7 @@ void mount_home(char *rootpath) {
             }
         }
     }else {
-        message(VERBOSE, "Not changing home directory path\n");
+        message(VERBOSE, "Not changing home directory path, value of CHANGE_HOME: \n",getenv("CHANGE_HOME"));
         if ((homedir_base = container_basedir(rootpath, homedir)) != NULL) {
             if (is_dir(homedir_base) == 0) {
                 if (is_dir(joinpath(rootpath, homedir_base)) == 0) {
