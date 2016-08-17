@@ -11,7 +11,7 @@ binary) located within the container physically at '/singularity'.
 </p>
 <p>
 The usage is as follows:
-<pre>
+<pre class="padPre text-justify">
 $ singularity run
 USAGE: singularity (options) run [container image] (options)
 </pre>
@@ -28,7 +28,7 @@ arguments.
 <h2>Examples</h2>
 <p>
 Here is a basic runscript
-<pre>
+<pre class="padPre text-justify">
 $ cat singularity
 #!/bin/sh
 echo "$@"
@@ -36,20 +36,20 @@ $ chmod +x singularity
 </pre>
 
 Now to copy it into the container:
-<pre>
+<pre class="padPre text-justify">
 $ sudo singularity copy container.img singularity /
 $ singularity exec container.img ls -l /singularity
 -rwxr-xr-x. 1 root root 20 Jun  1 18:14 /singularity
 </pre>
 
 Now to run the container:
-<pre>
+<pre class="padPre text-justify">
 $ singularity run container.img "hello world"
 hello world
 </pre>
 
 And to execute the container directly:
-<pre>
+<pre class="padPre text-justify">
 $ ./container.img "hello again"
 hello again
 $ 

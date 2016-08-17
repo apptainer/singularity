@@ -24,7 +24,7 @@ command example:
 </p>
 
 <p>
-<pre>
+<pre class="padPre text-justify">
 $ sudo singularity create container.img
 Creating a sparse image with a maximum size of 1024MiB...
 Formatting image (/sbin/mkfs.ext4)
@@ -59,7 +59,7 @@ the 'create' sub-command).
 <p>
 Once the image has been created, you can mount it with the following command:
 
-<pre>
+<pre class="padPre text-justify">
 $ sudo singularity mount container.img /mnt
 
 Mounting image 'container.img' into '/mnt'
@@ -85,7 +85,7 @@ You can increase the size of an image after it has been instantiated by using th
 'expand' Singularity sub-command as follows:
 </p>
 
-<pre>
+<pre class="padPre text-justify">
 $ sudo singularity expand container.img 
 Expanding sparse image by 512MiB...
 Checking image (/sbin/mkfs.ext4)
@@ -121,7 +121,7 @@ enables multiple processes to be able to use the image appropriately (as would
 be necessary with MPI). But if you want to make any changes to the image, you
 must have both write permission on the image file itself and use the 
 '--writable' flag. For example:
-<pre>
+<pre class="padPre text-justify">
 $ sudo singularity shell container.img 
 Singularity/container.img&gt; whoami
 root

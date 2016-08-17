@@ -1,13 +1,15 @@
 <!doctype html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <link rel="icon" href="http://gmkurtzer.github.io/singularity/favicon.ico" sizes="16x16 32x32 48x48 64x64" type="image/vnd.microsoft.icon">
     <title>Singularity</title>
 
+    <link rel="stylesheet" href="font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="css/bootstrap.css">
     <script type="text/javascript" src="jquery-1.12.4.min.js"></script>
-    <link rel="stylesheet" href="stylesheets/base.css">
+    <script src="js/bootstrap.js"></script>
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
@@ -27,10 +29,10 @@
         function load_content(page) {
 
             location.hash = page;
-            $("#container").load("content/" + page + ".html", "", 
+            $("#something").load("content/" + page + ".html", "", 
                 function (responseText, textStatus, req) {
                     if ( textStatus == "error" ) {
-                        $("#container").html("<h2>ERROR</h2>Unable to load content: " + page);
+                        $("#something").html("<h2>ERROR</h2>Unable to load content: " + page);
                     }
                 });
         }
@@ -48,62 +50,78 @@
         window.onpopstate = function(event) {
             load_page();
         }
-
+        
+        var elem = document.getElementById("homeThing");
+        
+    
         $(document).ready(function() {
             load_page();
         });
 
-
-
     </script>
 
-    </head>
-    <body>
-    <div class="navbar">
-        <span id="navtext">Singularity: </span>
-        <ul>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle Navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+<!--
+        <img id="paw" src="paw-black.png">
+-->
+        <a class="navbar-brand" href="#">
+        Singularity
+        </a>
+    </div> <!--navbar-->
+        <div id="navbar" class="collapse navbar-collapse">
+        <ul class="nav navbar-nav nav pull-right">
             <li><a href="javascript:load_content('home')">Home</a></li>
+<!--
             <li><a href="javascript:load_content('about')">About</a></li>
+-->
             <li><a href="javascript:load_content('use-cases')">Use Cases</a></li>
             <li><a href="javascript:load_content('docs')">Documentation</a></li>
             <li><a href="javascript:load_content('help')">Getting Help</a></li>
+<!--
             <li><a href="javascript:load_content('download')">Download</a></li>
+-->
         </ul>
-    </div>
+        </div><!--navbar collapse navbar-collapse-->
+        </div><!--container-fluid-->
+    </header>
 
+    <div class="text-center" id="something">
+      Loading ...
 
-<!--
-    <span id="follow">
-        <a href="https://twitter.com/SingularityApp" class="twitter-follow-button" data-show-count="false">Follow @SingularityApp</a><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-        <a class="twitter-timeline" data-width="250" data-height="1200" data-theme="dark" href="https://twitter.com/SingularityApp">Tweets by SingularityApp</a> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-    </span>
--->
+    </div><!--content-->
+  <div class="footer text-center">
+    <ul class="list-unstyled list-inline">
 
-    <span id="logo">
-        <a href="https://twitter.com/SingularityApp" class="twitter-follow-button" data-show-count="false">Follow @SingularityApp</a><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-        <br/>
-        <img src="images/singularity_logo_300x300.png"/>
-    </span>
+    <li>
+    <a href="http://scs.lbl.gov/"><span class="icon"><i class="fa fa-university fa-1"></i></span>
+    LBNL-HPCS
+    </a></li>
+    <li>
+    <a href="https://github.com/gmkurtzer/singularity/"><span class="icon"><i class="fa fa-github-alt fa-1x"></i></span>
+    Github
+    </a></li>
+    <li>
+    <a href="https://twitter.com/SingularityApp"><span class="icon"><i class="fa fa-twitter fa-1"></i></span>
+    Twitter
+    </a></li>
+    <li>
+    <a href="https://gmkurtzer.github.io"><span class="icon"><i class="fa fa-user fa-1"></i></span>
+    Gregory Kurtzer
+    </a></li>
+    </ul>
 
+    </div>   
 
-<!--
-    <div id="twitter">
-        <a href="https://twitter.com/SingularityApp" class="twitter-follow-button" data-show-count="false">Follow @SingularityApp</a><script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-    </div>
--->
-    <div id="container">
-  
-          Loading ...
-
-    </div>
-
-
-    <div class="footer">
-        Project lead: <a target="_blank" href="https://gmkurtzer.github.io">Gregory M. Kurtzer</a><br/>
-        Sponsored by: <a target="_blank" href="http://scs.lbl.gov/">HPC @ LBNL</a><br/>
-        Hosted on: <a target="_blank" href="https://github.com/gmkurtzer/singularity">GitHub</a><br/>
-        Follow at: <a target="_blank" href="https://twitter.com/SingularityApp">@SingularityApp</a> (Twitter)
-    </div>
-
-    </body>
+</body>
 </html>

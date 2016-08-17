@@ -9,12 +9,12 @@ From Dave Love to the Singularity list:
 Packages for singularity (2.0 plus some patches) have now hit the Fedora
 -testing repositories for EPEL5 through to Fedora 24 beta. Use the
 following command for either <b>yum</b>:
-<pre>
+<pre class="padPre text-justify">
 $ sudo yum install epel-release
 $ sudo yum --enablerepo epel-testing install singularity
 </pre>
 or <b>dnf</b> to install:
-<pre>
+<pre class="padPre text-justify">
 $ sudo dnf --enablerepo \*-testing install singularity
 </pre>
 </p>
@@ -22,11 +22,10 @@ $ sudo dnf --enablerepo \*-testing install singularity
 
 
 <h1>Installation from source</h1>
-<p>
 
-<h2>Obtaining the Source</h2>
-<br/>
-<p> You can try the following two options: </p>
+<h4>Obtaining the Source</h4>
+You can try the following two options: 
+
 <h4>Option 1: Download latest stable release</h4>
 <p>
 You can always download the latest tarball release from:
@@ -34,7 +33,7 @@ You can always download the latest tarball release from:
 </p>
 <p>
 Once downloaded do the following:
-<pre>
+<pre class="padPre text-justify">
 $ tar xvf singularity-*.tar.gz
 $ cd singularity
 </pre>
@@ -44,7 +43,7 @@ $ cd singularity
 <p>
 To download the most recent development code, you should use Git and do
 the following:
-<pre>
+<pre class="padPre text-justify">
 $ git clone https://github.com/gmkurtzer/singularity.git
 $ cd singularity
 </pre>
@@ -55,13 +54,14 @@ $ cd singularity
 <p>
 From the base Singularity source directory
 do the following:
-<pre>
+</p>
+<pre class="padPre text-justify">
 $ ./autogen.sh
 $ ./configure --prefix=/usr/local
 $ make
 $ sudo make install
 </pre>
-note: The 'make install' is required to be run as root to get a properly installed
+<p>Note: The 'make install' is required to be run as root to get a properly installed
 Singularity implementation. If you do not run it as root, you will only be able to
 launch Singularity as root due to permission limitations.
 </p>
@@ -71,7 +71,7 @@ launch Singularity as root due to permission limitations.
 Like the above, you can build an RPM of Singularity so it can be more easily
 managed, upgraded and removed. From the base Singularity source directory
 do the following:
-<pre>
+<pre class="padPre text-justify">
 $ ./autogen.sh
 $ ./configure
 $ make dist
@@ -83,7 +83,7 @@ $ sudo yum install ~/rpmbuild/RPMS/*/singularity-[0-9]*.rpm
 Note: if you want to have the RPM install the files to an alternative location,
 you should define the environment variable 'PREFIX' to suit your needs, and use
 the following command to build:
-<pre>
+<pre class="padPre text-justify">
 $ PREFIX=/opt/singularity
 $ rpmbuild -ta --define="_prefix $PREFIX" --define "_sysconfdir $PREFIX/etc" --define "_defaultdocdir $PREFIX/share" singularity-*.tar.gz
 </pre>

@@ -60,7 +60,7 @@ privilege escalation").
 <p>
 There are numerous benefits for using a single file to represent the entire
 container:
-<ol>
+<ul class="text-justify">
 <li>Copying an entire container is a single file</li>
 <li>Permission/access to the container is managed via standard file system permissions</li>
 <li>Large scale performance (especially over parallel file systems) is very efficient</li>
@@ -68,7 +68,7 @@ container:
 <li>Container is a sparse file so it only consumes the disk space actually used</li>
 <li>Changes are implemented in real time (image grows and shrinks as needed)</li>
 <li>Images can serve as stand-alone programs</li>
-</ol>
+</ul>
 </p>
 
 <h2>Name-spaces and isolation</h2>
@@ -98,7 +98,7 @@ program (e.g. an HPC system's resource manager) naively.
 </p>
 <p>
 Some usage examples of Singularity can be seen as follows:
-<pre>
+<pre class="padPre text-justify">
 $ sudo singularity create /tmp/Demo.img
 $ sudo singularity bootstrap /tmp/Demo.img centos.def
 $ sudo singularity exec --writable /tmp/Demo.img yum install xterm
@@ -119,11 +119,11 @@ works through a Singularity container:
 <img src="../images/singularity_mpi.png" border="0"/>
 <p>
 ... and considering the following command:
-<pre>
+<pre class="padPre text-justify">
 $ mpirun -np X singularity exec /path/to/container.img /usr/bin/mpi_program_inside_container
 </pre>
 The work-flow is defined as follows:
-<ol>
+<ul class="text-justify">
 <li>MPIRUN is executed on the host system, so it has access and knowledge of all other nodes and has access to any host specific hardware and interfaces</li>
 <li>MPIRUN forks and execs Orted (which is the MPI process manager) for each node involved with this MPI job</li>
 <li>Orted forks the number of processes necessary to run per node and then each process execs to the command passed to MPIRUN (in this case singularity...)</li>
@@ -132,7 +132,7 @@ The work-flow is defined as follows:
 <li>The program /usr/bin/mpi_program_inside_container will dynamically load the necessary libraries necessary within the container</li>
 <li>The MPI libraries within the container will contact the Orted process running on the host using the Process Management Interface (PMI)</li>
 <li>All MPI processes on all hosts are under the control of their respective Orted and thus can communicate with each other and local resources</li>
-</ol>
+</ul>
 </p>
 
 
