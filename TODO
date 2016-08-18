@@ -1,12 +1,8 @@
 Features:
     * Add option to bind cwd if not already bound
-    * Move tmp bind mounts to separate module, so when -C is passed it can
-        use sessiondir
-    * Change default behavior for PID namespace sharing
     * Support tgz image format
     * --with-userns configure flag needs to be changed to enable/disable
         suid compoents
-    * Maybe change the default PID sharing behavior to not share?
 
 Fixes:
     * For older distros that do not support loop autoclear, conditionally
@@ -18,4 +14,5 @@ New API porting:
     * signal handlers
     * tmpfs overlay
     * scratch directory creation
+    * make loop device multi-process compatible
     * clean old sources
