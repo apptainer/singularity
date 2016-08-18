@@ -188,11 +188,13 @@ int singularity_rootfs_mount(void) {
 #endif /* SINGULARITY_OVERLAYFS */
 
     if ( overlay_enabled != 1 ) {
+        priv_escalate();
         message(DEBUG, "Binding the ROOTFS_SOURCE to OVERLAY_FINAL (%s->%s)\n", joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL));
         if ( mount(joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             message(ERROR, "There was an error binding the path %s: %s\n", joinpath(mount_point, ROOTFS_SOURCE), strerror(errno));
             ABORT(255);
         }
+        priv_drop();
     }
 
 
