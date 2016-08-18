@@ -136,58 +136,65 @@ int singularity_rootfs_mount(void) {
     }
 
 #ifdef SINGULARITY_OVERLAYFS
-    snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work);
+    if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
+        snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work);
 
-    message(DEBUG, "Checking for overlay_mount directory: %s\n", overlay_mount);
-    if ( is_dir(overlay_mount) < 0 ) {
+        message(DEBUG, "Checking for overlay_mount directory: %s\n", overlay_mount);
+        if ( is_dir(overlay_mount) < 0 ) {
+            priv_escalate();
+            message(VERBOSE, "Creating container mount dir: %s\n", overlay_mount);
+            s_mkpath(overlay_mount, 0755);
+            priv_drop();
+        }
+        message(DEBUG, "Checking for overlay_final directory: %s\n", overlay_final);
+        if ( is_dir(overlay_mount) < 0 ) {
+            priv_escalate();
+            message(VERBOSE, "Creating container mount dir: %s\n", overlay_final);
+            s_mkpath(overlay_final, 0755);
+            priv_drop();
+        }
+
         priv_escalate();
-        message(VERBOSE, "Creating container mount dir: %s\n", overlay_mount);
-        s_mkpath(overlay_mount, 0755);
+        message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
+        if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID, "size=1m") < 0 ){
+            message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
+            ABORT(255);
+        }
+
+        message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
+        if ( s_mkpath(overlay_upper, 0755) < 0 ) {
+            message(ERROR, "Failed creating upper overlay directory %s: %s\n", overlay_upper, strerror(errno));
+            ABORT(255);
+        }
+
+        message(DEBUG, "Creating overlay work directory: %s\n", overlay_work);
+        if ( s_mkpath(overlay_work, 0755) < 0 ) {
+            message(ERROR, "Failed creating overlay work directory %s: %s\n", overlay_work, strerror(errno));
+            ABORT(255);
+        }
+
+        message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
+        if ( mount("overlay", overlay_final, "overlay", MS_NOSUID, overlay_options) < 0 ){
+            message(ERROR, "Could not create overlay: %s\n", strerror(errno));
+            ABORT(255); 
+        }
         priv_drop();
-    }
-    message(DEBUG, "Checking for overlay_final directory: %s\n", overlay_final);
-    if ( is_dir(overlay_mount) < 0 ) {
-        priv_escalate();
-        message(VERBOSE, "Creating container mount dir: %s\n", overlay_final);
-        s_mkpath(overlay_final, 0755);
-        priv_drop();
-    }
 
-    priv_escalate();
-    message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
-    if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID, "size=1m") < 0 ){
-        message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
-        ABORT(255);
-    }
-
-    message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
-    if ( s_mkpath(overlay_upper, 0755) < 0 ) {
-        message(ERROR, "Failed creating upper overlay directory %s: %s\n", overlay_upper, strerror(errno));
-        ABORT(255);
-    }
-
-    message(DEBUG, "Creating overlay work directory: %s\n", overlay_work);
-    if ( s_mkpath(overlay_work, 0755) < 0 ) {
-        message(ERROR, "Failed creating overlay work directory %s: %s\n", overlay_work, strerror(errno));
-        ABORT(255);
-    }
-
-    message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
-    if ( mount("overlay", overlay_final, "overlay", MS_NOSUID, overlay_options) < 0 ){
-        message(ERROR, "Could not create overlay: %s\n", strerror(errno));
-        ABORT(255); 
-    }
-    priv_drop();
-
-    overlay_enabled = 1;
-
-#else
-    if ( mount(joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-        message(ERROR, "There was an error binding the path %s: %s\n", source, strerror(errno));
-        ABORT(255);
+        overlay_enabled = 1;
+    } else {
+        message(DEBUG, "Not creating overlayfs, image is mounted writablable\n");
     }
 
 #endif /* SINGULARITY_OVERLAYFS */
+
+    if ( overlay_enabled != 1 ) {
+        message(DEBUG, "Binding the ROOTFS_SOURCE to OVERLAY_FINAL (%s->%s)\n", joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL));
+        if ( mount(joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+            message(ERROR, "There was an error binding the path %s: %s\n", joinpath(mount_point, ROOTFS_SOURCE), strerror(errno));
+            ABORT(255);
+        }
+    }
+
 
     return(0);
 }
