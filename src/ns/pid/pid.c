@@ -51,51 +51,46 @@ int singularity_ns_pid_unshare(void) {
     int retval;
 
     config_rewind();
+    if ( config_get_key_bool("allow pid ns", 1) <= 0 ) {
+        message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
+        return(0);
+    }
+
+    if ( getenv("SINGULARITY_UNSHARE_PID") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
+        message(VERBOSE2, "Not virtualizing PID namespace on user request\n");
+        return(0);
+    }
+
 #ifdef NS_CLONE_NEWPID
     message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
-    // Flawfinder: ignore (only checking for existance of envar)
-    if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
-        unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-        priv_escalate();
-        message(DEBUG, "Virtualizing PID namespace\n");
-        if ( unshare(CLONE_NEWPID) < 0 ) {
-            message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        priv_drop();
-        enabled = 0;
-
-        // PID namespace requires a fork to activate!
-        child_ns_pid = fork();
-
-    } else {
-        message(VERBOSE, "Not virtualizing PID namespace\n");
+    priv_escalate();
+    message(DEBUG, "Virtualizing PID namespace\n");
+    if ( unshare(CLONE_NEWPID) < 0 ) {
+        message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+        ABORT(255);
     }
+    priv_drop();
+    enabled = 0;
+
 #else
 #ifdef NS_CLONE_PID
     message(DEBUG, "Using PID namespace: CLONE_PID\n");
-    // Flawfinder: ignore (only checking for existance of envar)
-    if ( priv_userns_enabled() == 1 || ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && ( config_get_key_bool("allow pid ns", 1) > 0 ) ) ) {
-        unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-        priv_escalate();
-        message(DEBUG, "Virtualizing PID namespace\n");
-        if ( unshare(CLONE_NEWPID) < 0 ) {
-            message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        priv_drop();
-        enabled = 0;
-
-        // PID namespace requires a fork to activate!
-        child_ns_pid = fork();
-
-    } else {
-        message(VERBOSE, "Not virtualizing PID namespace\n");
+    priv_escalate();
+    message(DEBUG, "Virtualizing PID namespace\n");
+    if ( unshare(CLONE_NEWPID) < 0 ) {
+        message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+        ABORT(255);
     }
+    priv_drop();
+    enabled = 0;
+
 #endif
     message(VERBOSE, "Skipping PID namespace creation, support not available\n");
     return(0);
 #endif
+
+    // PID namespace requires a fork to activate!
+    child_ns_pid = fork();
 
     if ( child_ns_pid == 0 ) {
         // Allow the child to continue on, while we catch the parent...

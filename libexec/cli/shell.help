@@ -12,6 +12,7 @@ SHELL OPTIONS:
                         perform
     -C/--contain        This option disables the automatic sharing of writable
                         filesystems on your host (e.g. $HOME and /tmp).
+    -p/--pid            Run container in a new PID namespace
     -S/--scratch $dir   A directory that should be made into a private scratch
                         directory for each container. May be specified multiple
                         times.

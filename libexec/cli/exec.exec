@@ -74,6 +74,11 @@ while true; do
             export SINGULARITY_USER_SCRATCH="${1:-}:${SINGULARITY_USER_SCRATCH-}"
             shift
         ;;
+        -p|--pid)
+            shift
+            SINGULARITY_UNSHARE_PID=1
+            export SINGULARITY_UNSHARE_PID
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
