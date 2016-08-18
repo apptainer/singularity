@@ -46,6 +46,14 @@ int singularity_ns_user_enabled(void) {
     return(enabled);
 }
 
+// Check to make sure we are SUID or error
+void check_for_suid(void) {
+    if ( ( is_owner("/proc/self/exe", 0) != 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
+        message(ABRT, "User namespace not supported, and program not running privileged.\n");
+        ABORT(255);
+    }
+}
+
 
 int singularity_ns_user_unshare(void) {
 
@@ -63,10 +71,12 @@ int singularity_ns_user_unshare(void) {
     message(DEBUG, "Attempting to virtualize the USER namespace\n");
     if ( unshare(CLONE_NEWUSER) != 0 ) {
         message(VERBOSE3, "Not virtualizing USER namespace: runtime support failed (%d:%s)\n", errno, strerror(errno));
+        check_for_suid();
         return(0); // Don't fail when host support doesn't exist
     }
 #else
     message(VERBOSE3, "Not virtualizing USER namespace: support not compiled in\n");
+    check_for_suid();
     return(0);
 #endif
 
