@@ -43,13 +43,17 @@ static int read_write = 0;
 int rootfs_dir_init(char *source, char *mount_dir) {
     message(DEBUG, "Inializing container rootfs dir subsystem\n");
 
-    if ( is_dir(source) == 0 ) {
-        source_dir = strdup(source);
-    } else {
+    if ( is_dir(source) < 0 ) {
         message(ERROR, "Container source directory is not available: %s\n", source);
         ABORT(255);
     }
 
+    if ( strcmp(source, "/") == 0 ) {
+        message(ERROR, "Naughty, naughty, naughty...!\n");
+        ABORT(255);
+    }
+
+    source_dir = strdup(source);
     mount_point = strdup(mount_dir);
 
     if ( getenv("SINGULARITY_WRITABLE") != NULL ) {
