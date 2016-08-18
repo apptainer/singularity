@@ -141,7 +141,7 @@ stest 0 singularity shell -w "$CONTAINER" -c true
 stest 0 singularity exec -w "$CONTAINER" true
 stest 0 singularity run -w "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" touch /writetest.fail
-stest 0 sudo singularity exec "$CONTAINER" touch /writetest.fail #### This works thanks to the overlayfs now, maybe it should be conditional here?
+#stest 0 sudo singularity exec "$CONTAINER" touch /writetest.fail #### This works thanks to the overlayfs now, maybe it should be conditional here?
 stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
 
 
