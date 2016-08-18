@@ -25,6 +25,8 @@
     extern int singularity_rootfs_init(char *source);
     extern int singularity_rootfs_mount(void);
     extern int singularity_rootfs_chroot(void);
+
+    extern int singularity_rootfs_overlay(void);
     extern char *singularity_rootfs_dir(void);
 
 #endif /* __SINGULARITY_ROOTFS_H_ */

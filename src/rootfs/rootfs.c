@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/mount.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <libgen.h>
@@ -40,12 +41,31 @@
 #define ROOTFS_DIR      2
 #define ROOTFS_TGZ      3
 
+#define ROOTFS_SOURCE   "/source"
+#define OVERLAY_MOUNT   "/overlay"
+#define OVERLAY_UPPER   "/overlay/upper"
+#define OVERLAY_WORK    "/overlay/work"
+#define OVERLAY_FINAL   "/final"
+
 
 static int module = 0;
+static int overlay_enabled = 0;
 static char *mount_point = NULL;
+
+
+int singularity_rootfs_overlay(void) {
+    message(DEBUG, "Returning singularity_rootfs_overlay: %d\n", overlay_enabled);
+    return(overlay_enabled);
+}
+
+char *singularity_rootfs_dir(void) {
+    message(DEBUG, "Returning singularity_rootfs_dir: %s\n", joinpath(mount_point, OVERLAY_FINAL));
+    return(joinpath(mount_point, OVERLAY_FINAL));
+}
 
 int singularity_rootfs_init(char *source) {
     char *containername = basename(strdup(source));
+
     message(DEBUG, "Checking on container source type\n");
 
     if ( containername != NULL ) {
@@ -56,6 +76,7 @@ int singularity_rootfs_init(char *source) {
 
     config_rewind();
     message(DEBUG, "Figuring out where to mount Singularity container\n");
+
     if ( ( mount_point = config_get_key_value("container dir") ) == NULL ) {
         message(DEBUG, "Using default container path of: /var/singularity/mnt\n");
         mount_point = strdup("/var/singularity/mnt");
@@ -64,10 +85,10 @@ int singularity_rootfs_init(char *source) {
 
     if ( is_file(source) == 0 ) {
         module = ROOTFS_IMAGE;
-        return(rootfs_image_init(source, mount_point));
+        return(rootfs_image_init(source, joinpath(mount_point, ROOTFS_SOURCE)));
     } else if ( is_dir(source) == 0 ) {
         module = ROOTFS_DIR;
-        return(rootfs_dir_init(source, mount_point));
+        return(rootfs_dir_init(source, joinpath(mount_point, ROOTFS_SOURCE)));
     }
 
     message(ERROR, "Unknown container type: %s\n", source);
@@ -76,12 +97,29 @@ int singularity_rootfs_init(char *source) {
 }
 
 int singularity_rootfs_mount(void) {
+    char *rootfs_source = joinpath(mount_point, ROOTFS_SOURCE);
+    char *overlay_mount = joinpath(mount_point, OVERLAY_MOUNT);
+    char *overlay_upper = joinpath(mount_point, OVERLAY_UPPER);
+    char *overlay_work  = joinpath(mount_point, OVERLAY_WORK);
+    char *overlay_final = joinpath(mount_point, OVERLAY_FINAL);
+    int overlay_options_len = strlen(rootfs_source) + strlen(overlay_upper) + strlen(overlay_work) + 50;
+    char *overlay_options = (char *) malloc(overlay_options_len);
+
     message(DEBUG, "Mounting image\n");
 
-    if ( is_dir(mount_point) < 0 ) {
+    message(DEBUG, "Checking for rootfs_source directory: %s\n", rootfs_source);
+    if ( is_dir(rootfs_source) < 0 ) {
         priv_escalate();
-        message(VERBOSE, "Creating container dir: %s\n", mount_point);
-        s_mkpath(mount_point, 0755);
+        message(VERBOSE, "Creating container destination dir: %s\n", rootfs_source);
+        s_mkpath(rootfs_source, 0755);
+        priv_drop();
+    }
+
+    message(DEBUG, "Checking for overlay_final directory: %s\n", overlay_final);
+    if ( is_dir(overlay_final) < 0 ) {
+        priv_escalate();
+        message(VERBOSE, "Creating overlay final dir: %s\n", overlay_final);
+        s_mkpath(overlay_final, 0755);
         priv_drop();
     }
 
@@ -97,7 +135,59 @@ int singularity_rootfs_mount(void) {
         }
     }
 
-    //TODO: Setup overlay file system here...
+#ifdef SINGULARITY_OVERLAYFS
+    snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work);
+
+    message(DEBUG, "Checking for overlay_mount directory: %s\n", overlay_mount);
+    if ( is_dir(overlay_mount) < 0 ) {
+        priv_escalate();
+        message(VERBOSE, "Creating container mount dir: %s\n", overlay_mount);
+        s_mkpath(overlay_mount, 0755);
+        priv_drop();
+    }
+    message(DEBUG, "Checking for overlay_final directory: %s\n", overlay_final);
+    if ( is_dir(overlay_mount) < 0 ) {
+        priv_escalate();
+        message(VERBOSE, "Creating container mount dir: %s\n", overlay_final);
+        s_mkpath(overlay_final, 0755);
+        priv_drop();
+    }
+
+    priv_escalate();
+    message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
+    if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID, "size=1m") < 0 ){
+        message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
+        ABORT(255);
+    }
+
+    message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
+    if ( s_mkpath(overlay_upper, 0755) < 0 ) {
+        message(ERROR, "Failed creating upper overlay directory %s: %s\n", overlay_upper, strerror(errno));
+        ABORT(255);
+    }
+
+    message(DEBUG, "Creating overlay work directory: %s\n", overlay_work);
+    if ( s_mkpath(overlay_work, 0755) < 0 ) {
+        message(ERROR, "Failed creating overlay work directory %s: %s\n", overlay_work, strerror(errno));
+        ABORT(255);
+    }
+
+    message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
+    if ( mount("overlay", overlay_final, "overlay", MS_NOSUID, overlay_options) < 0 ){
+        message(ERROR, "Could not create overlay: %s\n", strerror(errno));
+        ABORT(255); 
+    }
+    priv_drop();
+
+    overlay_enabled = 1;
+
+#else
+    if ( mount(joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+        message(ERROR, "There was an error binding the path %s: %s\n", source, strerror(errno));
+        ABORT(255);
+    }
+
+#endif /* SINGULARITY_OVERLAYFS */
 
     return(0);
 }
@@ -105,15 +195,15 @@ int singularity_rootfs_mount(void) {
 
 int singularity_rootfs_chroot(void) {
 
-    if ( is_exec(joinpath(mount_point, "/bin/sh")) < 0 ) {
+    if ( is_exec(joinpath(joinpath(mount_point, OVERLAY_FINAL), "/bin/sh")) < 0 ) {
         message(ERROR, "Container does not have a valid /bin/sh\n");
         ABORT(255);
     }
 
     priv_escalate();
-    message(VERBOSE, "Entering container file system root\n");
-    if ( chroot(mount_point) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
-        message(ERROR, "failed enter container at: %s\n", mount_point);
+    message(VERBOSE, "Entering container file system root: %s\n", joinpath(mount_point, OVERLAY_FINAL));
+    if ( chroot(joinpath(mount_point, OVERLAY_FINAL)) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
+        message(ERROR, "failed enter container at: %s\n", joinpath(mount_point, OVERLAY_FINAL));
         ABORT(255);
     }
     priv_drop();
@@ -127,7 +217,5 @@ int singularity_rootfs_chroot(void) {
     return(0);
 }
 
-char *singularity_rootfs_dir(void) {
-    message(DEBUG, "Returning singularity_rootfs_dir: %s\n", mount_point);
-    return(strdup(mount_point));
-}
+
+
