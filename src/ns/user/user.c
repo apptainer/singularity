@@ -49,7 +49,7 @@ int singularity_ns_user_enabled(void) {
 // Check to make sure we are SUID or error
 void check_for_suid(void) {
     if ( ( is_owner("/proc/self/exe", 0) != 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
-        message(ABRT, "User namespace not supported, and program not running privileged.\n");
+        message(ERROR, "User namespace not supported, and program not running privileged.\n");
         ABORT(255);
     }
 }
