@@ -66,7 +66,13 @@ int singularity_mount_home(void) {
     message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
 
-    //TODO: Find out if we can create mount points here...
+    if ( is_dir(joinpath(container_dir, homedir)) < 0 ) {
+        if ( singularity_rootfs_overlay_enabled() > 0 ) {
+            priv_escalate();
+            (void) s_mkpath(joinpath(container_dir, "/usr/foo/hello/test"), 0755);
+            priv_drop();
+        }
+    }
 
     if ( ( homedir_base = container_basedir(container_dir, homedir) ) != NULL ) {
         char *homedir_base_source;

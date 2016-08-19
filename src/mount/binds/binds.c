@@ -65,12 +65,34 @@ int singularity_mount_binds(void) {
             message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
             continue;
         }
-        if ( ( is_file(joinpath(container_dir, dest)) != 0 ) && ( is_dir(joinpath(container_dir, dest)) != 0 ) ) {
-            message(WARNING, "Non existant 'bind point' in container: '%s'\n", dest);
-            continue;
-        }
 
-        //TODO: Decide if we can create the bind points if they don't exists (tmpfs overlay check)
+        if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
+            if ( singularity_rootfs_overlay_enabled() > 0 ) {
+                priv_escalate();
+                FILE *tmp = fopen(joinpath(container_dir, dest), "w+");
+                priv_drop();
+                if ( fclose(tmp) != 0 ) {
+                    message(WARNING, "Could not create bind point file in container %s: %s\n", dest, strerror(errno));
+                    continue;
+                }
+            } else {
+                message(WARNING, "Non existant bind point (file) in container: '%s'\n", dest);
+                continue;
+            }
+        } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
+            if ( singularity_rootfs_overlay_enabled() > 0 ) {
+                priv_escalate();
+                if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
+                    priv_drop();
+                    message(WARNING, "Could not create bind point directory in container %s: %s\n", dest, strerror(errno));
+                    continue;
+                }
+                priv_drop();
+            } else {
+                message(WARNING, "Non existant bind point (directory) in container: '%s'\n", dest);
+                continue;
+            }
+        }
 
         priv_escalate();
         message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
