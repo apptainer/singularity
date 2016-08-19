@@ -136,7 +136,10 @@ int singularity_rootfs_mount(void) {
     }
 
 #ifdef SINGULARITY_OVERLAYFS
-    if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
+    config_rewind();
+    if ( config_get_key_bool("enable overlay", 0) <= 0 ) {
+        message(VERBOSE3, "Not enabling writable overlay via configuration\n");
+    } else if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work);
 
         message(DEBUG, "Checking for overlay_mount directory: %s\n", overlay_mount);
