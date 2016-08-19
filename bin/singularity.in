@@ -35,8 +35,10 @@ SINGULARITY_localstatedir="$localstatedir"
 RETVAL=0
 MESSAGELEVEL=1
 DEBUG=""
+NEW_HOME=""
+CHANGE_HOME="NO"
 
-export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL DEBUG
+export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL DEBUG NEW_HOME CHANGE_HOME
 
 # the Modules package always calls 
 unset module
@@ -83,6 +85,12 @@ while true; do
             MESSAGELEVEL=`expr $MESSAGELEVEL + 1`
             message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
             shift
+        ;;
+	-p|--change-home)
+		CHANGE_HOME="yes"
+		NEW_HOME=$2
+		shift
+                shift  #shift twice to get rid of the new home argument
         ;;
         -*)
             message ERROR "Unknown argument: $1\n"
