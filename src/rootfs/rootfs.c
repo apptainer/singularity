@@ -53,7 +53,7 @@ static int overlay_enabled = 0;
 static char *mount_point = NULL;
 
 
-int singularity_rootfs_overlay(void) {
+int singularity_rootfs_overlay_enabled(void) {
     message(DEBUG, "Returning singularity_rootfs_overlay: %d\n", overlay_enabled);
     return(overlay_enabled);
 }
