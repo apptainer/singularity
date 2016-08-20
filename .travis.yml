@@ -14,5 +14,11 @@ before_install:
   # necessary ATM. See https://github.com/gmkurtzer/singularity/pull/140
   - sudo apt-get install yum
 
+install:
+  - ./autogen.sh
+  - ./configure --prefix=/usr/local
+  - make
+  - sudo make install
+
 script:
-  - ./test.sh
+  - make test

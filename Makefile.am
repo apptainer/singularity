@@ -10,6 +10,9 @@ maintainer-clean-local:
 
 distclean-local: maintainer-clean-local
 
+test: test.sh
+	sh ./test.sh
+
 install-perms:
 	@echo
 	@echo "install-perms is no longer required"

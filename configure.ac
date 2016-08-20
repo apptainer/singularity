@@ -187,6 +187,7 @@ AC_SUBST(NO_SETNS)
 AC_CONFIG_FILES([
    Makefile
    singularity.spec
+   test.sh
    src/Makefile
    src/ns/Makefile
    src/ns/mnt/Makefile

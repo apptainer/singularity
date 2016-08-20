@@ -1,6 +1,19 @@
 #!/bin/bash
 
 
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+libexecdir="@libexecdir@"
+sysconfdir="@sysconfdir@"
+localstatedir="@localstatedir@"
+bindir="@bindir@"
+
+SINGULARITY_libexecdir="$libexecdir"
+SINGULARITY_sysconfdir="$sysconfdir"
+SINGULARITY_localstatedir="$localstatedir"
+SINGULARITY_PATH="$bindir"
+
+
 ALL_COMMANDS="exec run shell start stop bootstrap copy create expand export import mount"
 
 if [ ! -f "autogen.sh" ]; then
@@ -13,41 +26,39 @@ if [ ! -f "libexec/functions" ]; then
     exit 1
 fi
 
+if [ ! -x "$SINGULARITY_PATH/singularity" ]; then
+    /bin/echo "ERROR: Could not locate singularity program at: $SINGULARITY_PATH/singularity"
+    exit 1
+fi
 
-MESSAGELEVEL=3
-STARTDIR=`pwd`
-TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
-CONTAINER="container.img"
-CONTAINERDIR="container_dir"
-SINGULARITY_CACHEDIR="$TEMPDIR"
-export SINGULARITY_CACHEDIR MESSAGELEVEL
-
-
-/bin/echo "Gaining/checking sudo access..."
-sudo true
+if [ ! -f "$SINGULARITY_sysconfdir/singularity/singularity.conf" ]; then
+    /bin/echo "ERROR: Could not locate singularity configuration at: $SINGULARITY_sysconfdir/singularity/singularity.conf"
+    exit 1
+fi
 
 if [ -z "$CLEAN_SHELL" ]; then
     /bin/echo "Building/Installing Singularity to temporary directory"
     /bin/echo "Reinvoking in a clean shell"
     sleep 1
-    exec env -i CLEAN_SHELL=1 PATH="/bin:/usr/bin:/sbin:/usr/sbin" bash "$0" "$*"
+    exec env -i CLEAN_SHELL=1 PATH="$SINGULARITY_PATH:/bin:/usr/bin:/sbin:/usr/sbin" bash "$0" "$@"
 fi
+
+alias singularity="$SINGULARITY_PATH/singularity"
+
+MESSAGELEVEL=5
+STARTDIR=`pwd`
+TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
+CONTAINER="container.img"
+CONTAINERDIR="container_dir"
+export MESSAGELEVEL
+
+/bin/echo "Gaining/checking sudo access..."
+sudo true
 
 . ./libexec/functions
 
-make maintainer-clean >/dev/null 2>&1
-stest 0 ./autogen.sh
-stest 0 ./configure --prefix="$TEMPDIR" --with-userns
-stest 0 make
-stest 0 sudo make install
-
-
-PATH="$TEMPDIR/bin:/usr/local/bin:$PATH"
-MESSAGELEVEL=5
-
 /bin/echo
-/bin/echo "SINGULARITY_TMPDIR=$SINGULARITY_CACHEDIR"
-/bin/echo "PATH=$PATH"
+/bin/echo "SINGULARITY_TMPDIR=$TEMPDIR"
 /bin/echo
 
 /bin/echo "Creating temp working space at: $TEMPDIR"
@@ -163,9 +174,9 @@ stest 0 singularity exec "$CONTAINER" test -f /.run
 /bin/echo "Checking configuration file ownership..."
 
 stest 0 singularity exec "$CONTAINER" true
-stest 0 sudo chown `id -un` "$TEMPDIR/etc/singularity/singularity.conf"
+stest 0 sudo chown `id -un` "$SINGULARITY_sysconfdir/singularity/singularity.conf"
 stest 1 singularity exec "$CONTAINER" true
-stest 0 sudo chown root.root "$TEMPDIR/etc/singularity/singularity.conf"
+stest 0 sudo chown root.root "$SINGULARITY_sysconfdir/singularity/singularity.conf"
 stest 0 singularity exec "$CONTAINER" true
 
 
@@ -202,7 +213,7 @@ stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u
 #TODO: The following tests must be conditional based on host capabilities
 /bin/echo
 /bin/echo "Disabling setuid config flag"
-stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = yes|allow setuid = no|'
+stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow setuid = yes|allow setuid = no|'
 stest 1 singularity exec "$CONTAINER" true
 
 /bin/echo
@@ -213,7 +224,7 @@ stest 1 sh -c "singularity exec $CONTAINER whoami"
 
 /bin/echo
 /bin/echo "Re-enabling setuid config flag"
-stest 0 sudo sed -i $TEMPDIR/etc/singularity/singularity.conf -e 's|allow setuid = no|allow setuid = yes|'
+stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow setuid = no|allow setuid = yes|'
 stest 0 singularity exec "$CONTAINER" true
 
 
@@ -250,7 +261,6 @@ stest 1 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINER whoami"
 
 stest 0 popd
 stest 0 sudo rm -rf "$TEMPDIR"
-stest 0 make maintainer-clean
 
 # Need to refix for flawfinder happiness
 #/bin/echo
