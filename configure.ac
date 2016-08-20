@@ -19,7 +19,7 @@ case $target_cpu in
         SINGULARITY_ARCH=i386
     ;;
     *)
-        AC_MSG_ERROR([Architecture $target_cpu not supported])
+        SINGULARITY_ARCH="$target_cpu"
     ;;
 esac
 AC_SUBST(SINGULARITY_ARCH)
