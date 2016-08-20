@@ -3,6 +3,7 @@ Features:
     * Support tgz image format
     * --with-userns configure flag needs to be changed to enable/disable
         suid compoents
+    * Add support for scratch directory
 
 Fixes:
     * For older distros that do not support loop autoclear, conditionally
