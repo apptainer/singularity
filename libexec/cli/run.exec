@@ -59,6 +59,12 @@ while true; do
             SINGULARITY_WRITABLE=1
             export SINGULARITY_WRITABLE
         ;;
+        -H|--home)
+            shift
+            SINGULARITY_HOME="$1"
+            export SINGULARITY_HOME
+            shift
+        ;;  
         -S|--scratch)
             shift
             export SINGULARITY_USER_SCRATCH="${1:-}:${SINGULARITY_USER_SCRATCH-}"
@@ -69,10 +75,11 @@ while true; do
             export SINGULARITY_USER_BIND="${1:-}:${SINGULARITY_USER_BIND-}"
             shift
         ;;
-        -C|--contain)
+        -c|-C|--contain)
             shift
             SINGULARITY_CONTAIN=1
-            export SINGULARITY_CONTAIN
+            SINGULARITY_UNSHARE_PID=1
+            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID
         ;;
         -p|--pid)
             shift

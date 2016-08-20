@@ -40,8 +40,10 @@
 
 int singularity_mount_home(void) {
     char *homedir;
+    char *homedir_source;
     char *homedir_base;
     char *container_dir = singularity_rootfs_dir();
+    char *sessiondir = singularity_sessiondir_get();
     struct passwd *pw;
     uid_t uid = priv_getuid();
 
@@ -66,42 +68,64 @@ int singularity_mount_home(void) {
     message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
 
-    if ( is_dir(joinpath(container_dir, homedir)) < 0 ) {
-        if ( singularity_rootfs_overlay_enabled() > 0 ) {
-            priv_escalate();
-            (void) s_mkpath(joinpath(container_dir, "/usr/foo/hello/test"), 0755);
-            priv_drop();
+    // Figure out home directory source
+    if ( ( homedir_source = getenv("SINGULARITY_HOME") ) != NULL ) {
+        message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
+    } else if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
+        // TODO: Randomize tmp_home, so multiple calls to the same container don't overlap
+        homedir_source = joinpath(sessiondir, "/tmp_home");
+
+        if ( s_mkpath(homedir_source, 0755) < 0 ) {
+            message(ABRT, "Could not create temporary home directory %s: %s\n", homedir_source, strerror(errno));
+            ABORT(255);
+        } else {
+            message(VERBOSE2, "Set the contained home directory source to: %s\n", homedir_source);
         }
+    } else if ( is_dir(homedir) == 0 ) {
+        homedir_source = strdup(homedir);
+        message(VERBOSE2, "Set base the home directory source to: %s\n", homedir_source);
+    } else {
+        message(ABRT, "Could not identify home directory path: %s\n", homedir_source);
+        ABORT(255);
     }
 
-    if ( ( homedir_base = container_basedir(container_dir, homedir) ) != NULL ) {
-        char *homedir_base_source;
-
-        if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
-            char *sessiondir = singularity_sessiondir_get();
-
-            homedir_base_source = joinpath(sessiondir, homedir_base);
-
-            s_mkpath(joinpath(sessiondir, homedir), 0750);
-        } else {
-            homedir_base_source = strdup(homedir_base);
-        }
-
-        if ( is_dir(homedir_base_source) == 0 ) {
-            if ( is_dir(joinpath(container_dir, homedir_base)) == 0 ) {
-                priv_escalate();
-                message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
-                if ( mount(homedir_base_source, joinpath(container_dir, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-                    message(ERROR, "Failed to mount home directory: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-                priv_drop();
-            } else {
-                message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
-            }
-        } else {
-            message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
-        }
+    // Check to make sure whatever we were given as the home directory is really ours
+    if ( is_owner(homedir_source, uid) < 0 ) {
+        message(ABRT, "Home directory permissions incorrect: %s\n", homedir_source);
+        ABORT(255);
     }
+
+    // Figure out where we should mount the home directory in the container
+    if ( s_mkpath(joinpath(container_dir, homedir), 0750) == 0 ) {
+        message(DEBUG, "Created home directory within the container: %s\n", homedir);
+        homedir_base = strdup(homedir);
+    } else if ( ( homedir_base = container_basedir(container_dir, homedir) ) != NULL ) {
+        message(DEBUG, "Could not create directory within container, set base bind point to: %s\n", homedir_base);
+    } else {
+        message(ABRT, "No bind point available for home directory: %s\n", homedir);
+        ABORT(255);
+    }
+
+    // Create a location to stage the directories
+    if ( s_mkpath(joinpath(sessiondir, homedir), 0755) < 0 ) {
+        message(ABRT, "Failed creating home directory bind path\n");
+    }
+
+
+    priv_escalate();
+    // First mount the real home directory to the stage
+    message(VERBOSE, "Mounting home directory to stage: %s->%s\n", homedir_source, joinpath(sessiondir, homedir));
+    if ( mount(homedir_source, joinpath(sessiondir, homedir), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+        message(ERROR, "Failed to mount home directory to stage: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    // Then mount the stage to the container
+    message(VERBOSE, "Mounting staged home directory into container: %s->%s\n", joinpath(sessiondir, homedir_base), joinpath(container_dir, homedir_base));
+    if ( mount(joinpath(sessiondir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+        message(ERROR, "Failed to mount staged home directory into container: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    priv_drop();
+
     return(0);
 }
