@@ -42,7 +42,7 @@ int singularity_mount_tmp(void) {
     char *container_dir = singularity_rootfs_dir();
     char *tmp_source;
     char *vartmp_source;
-    char *scratchpath;
+    char *tmpdirpath;
 
     config_rewind();
     if ( config_get_key_bool("mount tmp", 1) <= 0 ) {
@@ -51,9 +51,9 @@ int singularity_mount_tmp(void) {
     }
 
     config_rewind();
-    if ( ( config_get_key_bool("user bind control", 1) > 0 ) && ( ( scratchpath = getenv("SINGULARITY_SCRATCH") ) != NULL ) ) {
-        tmp_source = joinpath(scratchpath, "/tmp");
-        vartmp_source = joinpath(scratchpath, "/var_tmp");
+    if ( ( config_get_key_bool("user bind control", 1) > 0 ) && ( ( tmpdirpath = getenv("SINGULARITY_TMP") ) != NULL ) ) {
+        tmp_source = joinpath(tmpdirpath, "/tmp");
+        vartmp_source = joinpath(tmpdirpath, "/var_tmp");
     } else if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
         char *sessiondir = singularity_sessiondir_get();
         tmp_source = joinpath(sessiondir, "/tmp");

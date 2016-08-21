@@ -64,7 +64,13 @@ while true; do
             SINGULARITY_HOME="$1"
             export SINGULARITY_HOME
             shift
-        ;;  
+        ;; 
+        -t|--tmpdir)
+            shift
+            SINGULARITY_TMP="$1"
+            export SINGULARITY_TMP
+            shift
+        ;;
         -S|--scratch)
             shift
             export SINGULARITY_USER_SCRATCH="${1:-}:${SINGULARITY_USER_SCRATCH-}"

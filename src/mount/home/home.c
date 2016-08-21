@@ -40,7 +40,7 @@
 
 int singularity_mount_home(void) {
     int user_bind_control;
-    char *scratchpath;
+    char *tmpdirpath;
     char *homedir;
     char *homedir_source;
     char *homedir_base;
@@ -77,8 +77,8 @@ int singularity_mount_home(void) {
     if ( ( user_bind_control > 0 ) && ( ( homedir_source = getenv("SINGULARITY_HOME") ) != NULL ) ) {
         message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
     } else if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
-        if ( ( user_bind_control > 0 ) && ( ( scratchpath = getenv("SINGULARITY_SCRATCH") ) != NULL ) ) {
-            homedir_source = joinpath(scratchpath, "/home");
+        if ( ( user_bind_control > 0 ) && ( ( tmpdirpath = getenv("SINGULARITY_TMP") ) != NULL ) ) {
+            homedir_source = joinpath(tmpdirpath, "/home");
         } else {
             // TODO: Randomize tmp_home, so multiple calls to the same container don't overlap
             homedir_source = joinpath(sessiondir, "/home");
