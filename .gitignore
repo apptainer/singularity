@@ -26,6 +26,7 @@ libtool
 ltmain.sh
 missing
 singularity.spec
+test.sh
 
 src/image-bind
 src/image-create
