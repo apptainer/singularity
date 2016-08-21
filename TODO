@@ -1,7 +1,6 @@
 Features:
     * Add option to bind cwd if not already bound
     * Support tgz image format
-    * change --with-userns configure flag to be --disable-suid
     * Add support for user defined bind points (config option already present)
 
 Fixes:
