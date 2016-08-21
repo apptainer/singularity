@@ -33,6 +33,7 @@
 #include "message.h"
 #include "dir.h"
 #include "privilege.h"
+#include "ns/ns.h"
 
 
 static char *source_dir = NULL;
@@ -83,6 +84,18 @@ int rootfs_dir_mount(void) {
         return 1;
     }
     priv_drop();
+
+    if ( read_write <= 0 ) {
+        if ( singularity_ns_user_enabled() <= 0 ) {
+            priv_escalate();
+            message(VERBOSE2, "Making mount read only: %s\n", mount_point);
+            if ( mount(NULL, mount_point, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
+                message(ERROR, "Could not bind read only %s: %s\n", mount_point, strerror(errno));
+                ABORT(255);
+            }
+            priv_drop();
+        }
+    }
 
     return(0);
 }
