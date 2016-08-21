@@ -42,7 +42,7 @@ int singularity_mount_home(void) {
     char *tmpdirpath;
     char *homedir;
     char *homedir_source;
-    char *homedir_base;
+    char *homedir_base = NULL;
     char *container_dir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
     struct passwd *pw;
@@ -124,16 +124,26 @@ int singularity_mount_home(void) {
     }
 
     // Figure out where we should mount the home directory in the container
-    if ( s_mkpath(joinpath(container_dir, homedir), 0750) == 0 ) {
-        message(DEBUG, "Created home directory within the container: %s\n", homedir);
-        homedir_base = strdup(homedir);
-    } else if ( ( homedir_base = container_basedir(container_dir, homedir) ) != NULL ) {
-        message(DEBUG, "Could not create directory within container, set base bind point to: %s\n", homedir_base);
-    } else {
-        message(ABRT, "No bind point available for home directory: %s\n", homedir);
-        ABORT(255);
+    message(DEBUG, "Trying to create home dir within container\n");
+    if ( singularity_rootfs_overlay_enabled > 0 ) {
+        priv_escalate();
+        if ( s_mkpath(joinpath(container_dir, homedir), 0750) == 0 ) {
+            priv_drop();
+            message(DEBUG, "Created home directory within the container: %s\n", homedir);
+            homedir_base = strdup(homedir);
+        } else {
+            priv_drop();
+        }
     }
 
+    if ( homedir_base == NULL ) {
+        if ( ( homedir_base = container_basedir(container_dir, homedir) ) != NULL ) {
+            message(DEBUG, "Could not create directory within container, set base bind point to: %s\n", homedir_base);
+        } else {
+            message(ABRT, "No bind point available for home directory: %s\n", homedir);
+            ABORT(255);
+        }
+    }
 
     priv_escalate();
     // First mount the real home directory to the stage
