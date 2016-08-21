@@ -18,7 +18,8 @@ libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in librar
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = sexec sexec-suid image-create image-expand image-mount image-bind
+bin_PROGRAMS = $(BUILD_SUID) sexec image-create image-expand image-mount image-bind
+EXTRA_PROGRAMS = sexec-suid
 
 sexec_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
 sexec_LDADD = libsingularity.la
@@ -51,7 +52,7 @@ image_bind_LDADD = libsingularity.la
 install-data-hook: make_suid
 
 make_suid:
-	@if test `id -ru` = "0"; then \
+	@if test `id -ru` = "0" -a "x$(BUILD_SUID)" = "xsexec-suid"; then \
 		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-suid"; \
 		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
 		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-suid"; \

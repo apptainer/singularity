@@ -184,6 +184,23 @@ AC_SUBST(NO_SETNS)
 #               [[#include <sys/mount.h>]])
 
 
+
+AC_MSG_CHECKING([for --disable-suid])
+AC_ARG_ENABLE([suid],
+    AS_HELP_STRING([--disable-suid], [Disable build for SUID (only works for new kernels)]))
+
+AS_IF([test "x$enable_suid" != "xno"], [
+    AC_MSG_RESULT([yes])
+    BUILD_SUID="sexec-suid"
+], [
+    AC_MSG_RESULT([no])
+    BUILD_SUID=""
+])
+
+AC_SUBST(BUILD_SUID)
+
+
+
 AC_CONFIG_FILES([
    Makefile
    singularity.spec
