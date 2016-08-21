@@ -185,7 +185,7 @@ AC_SUBST(NO_SETNS)
 
 
 
-AC_MSG_CHECKING([for --disable-suid])
+AC_MSG_CHECKING([for --enable-suid])
 AC_ARG_ENABLE([suid],
     AS_HELP_STRING([--disable-suid], [Disable build for SUID (only works for new kernels)]))
 
