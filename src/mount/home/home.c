@@ -125,7 +125,7 @@ int singularity_mount_home(void) {
 
     // Figure out where we should mount the home directory in the container
     message(DEBUG, "Trying to create home dir within container\n");
-    if ( singularity_rootfs_overlay_enabled > 0 ) {
+    if ( singularity_rootfs_overlay_enabled() > 0 ) {
         priv_escalate();
         if ( s_mkpath(joinpath(container_dir, homedir), 0750) == 0 ) {
             priv_drop();
