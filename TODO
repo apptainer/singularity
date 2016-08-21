@@ -1,19 +1,14 @@
 Features:
     * Add option to bind cwd if not already bound
     * Support tgz image format
-    * --with-userns configure flag needs to be changed to enable/disable
-        suid compoents
-    * Add support for scratch directory
+    * change --with-userns configure flag to be --disable-suid
+    * Add support for user defined bind points (config option already present)
 
 Fixes:
-    * For older distros that do not support loop autoclear, conditionally
-        create a child process and move mount namespace to a child process,
-        and have parent umount when done
     * Go over singularity.conf and finish adding features back in
 
 New API porting:
     * signal handlers
-    * tmpfs overlay
-    * scratch directory creation
     * make loop device multi-process compatible
     * clean old sources
+    * port the rest of the binaries to API and link them shared
