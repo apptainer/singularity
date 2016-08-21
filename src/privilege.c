@@ -268,6 +268,18 @@ void priv_drop_perm(void) {
         ABORT(255);
     }
 
+#ifdef SINGULARITY_NO_NEW_PRIVS
+    // Prevent the following processes to increase privileges
+    message(DEBUG, "Setting NO_NEW_PRIVS to prevent future privilege escalations.\n");
+    if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) {
+        message(ERROR, "Could not set NO_NEW_PRIVS safeguard: %s\n", strerror(errno));
+        ABORT(255);
+    }
+#else  // SINGULARITY_NO_NEW_PRIVS
+    message(VERBOSE2, "Not enabling NO_NEW_PRIVS flag due to lack of compile-time support.\n");
+#endif
+
+
     message(DEBUG, "Finished dropping privileges\n");
 }
 
