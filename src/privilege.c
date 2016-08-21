@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include <sys/prctl.h>
 #include <pwd.h>
 #include <errno.h> 
 #include <string.h>
