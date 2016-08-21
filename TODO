@@ -2,6 +2,7 @@ Features:
     * Add option to bind cwd if not already bound
     * Support tgz image format
     * Add support for user defined bind points (config option already present)
+    * Refactor create and bootstrap
 
 Fixes:
     * Go over singularity.conf and finish adding features back in
