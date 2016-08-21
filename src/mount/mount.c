@@ -41,10 +41,10 @@ int singularity_mount(void) {
     int retval = 0;
 
     retval += singularity_mount_hostfs();
-    retval += singularity_mount_home();
+    retval += singularity_mount_binds();
     retval += singularity_mount_kernelfs();
     retval += singularity_mount_tmp();
-    retval += singularity_mount_binds();
+    retval += singularity_mount_home();
 
     return(retval);
 }
