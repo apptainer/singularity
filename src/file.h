@@ -25,6 +25,7 @@ int is_fifo(char *path);
 int is_link(char *path);
 int is_dir(char *path);
 int is_exec(char *path);
+int is_write(char *path);
 int is_suid(char *path);
 int is_owner(char *path, uid_t uid);
 int is_blk(char *path);

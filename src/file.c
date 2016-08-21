@@ -158,6 +158,22 @@ int is_exec(char *path) {
     return(-1);
 }
 
+int is_write(char *path) {
+    struct stat filestat;
+
+    // Stat path
+    if (stat(path, &filestat) < 0) {
+        return(-1);
+    }
+
+    // Test path
+    if ( (S_IWUSR & filestat.st_mode) ) {
+        return(0);
+    }
+
+    return(-1);
+}
+
 int is_owner(char *path, uid_t uid) {
     struct stat filestat;
 
