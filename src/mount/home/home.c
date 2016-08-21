@@ -79,14 +79,14 @@ int singularity_mount_home(void) {
 
         message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
     } else if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
-        if ( ( tmpdirpath = getenv("SINGULARITY_TMP") ) != NULL ) {
+        if ( ( tmpdirpath = getenv("SINGULARITY_WORKDIR") ) != NULL ) {
             config_rewind();
             if ( config_get_key_bool("user bind control", 1) <= 0 ) {
                 message(ABRT, "User bind control is disabled by system administrator\n");
                 ABORT(5);
             }
 
-            homedir_source = joinpath(tmpdirpath, "/home.tmp");
+            homedir_source = joinpath(tmpdirpath, "/home");
         } else {
             // TODO: Randomize tmp_home, so multiple calls to the same container don't overlap
             homedir_source = joinpath(sessiondir, "/home.tmp");

@@ -76,10 +76,10 @@ while true; do
             export SINGULARITY_USER_BIND="${1:-}:${SINGULARITY_USER_BIND-}"
             shift
         ;;
-        -t|--tmpdir)
+        -W|--wdir|--workingdir)
             shift
-            SINGULARITY_TMP="$1"
-            export SINGULARITY_TMP
+            SINGULARITY_WORKDIR="$1"
+            export SINGULARITY_WORKDIR
             shift
         ;;
         -S|--scratch)

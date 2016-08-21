@@ -50,7 +50,7 @@ int singularity_mount_tmp(void) {
         return(0);
     }
 
-    if ( ( tmpdirpath = getenv("SINGULARITY_TMP") ) != NULL ) {
+    if ( ( tmpdirpath = getenv("SINGULARITY_WORKDIR") ) != NULL ) {
         config_rewind();
         if ( config_get_key_bool("user bind control", 1) <= 0 ) {
             message(ABRT, "User bind control is disabled by system administrator\n");

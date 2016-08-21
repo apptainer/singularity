@@ -15,10 +15,10 @@ EXEC OPTIONS:
     -S/--scratch <dir>  A directory that should be made into a private scratch
                         directory for each container. May be specified multiple
                         times.
-    -t/--tmpdir         Location to be used for /tmp, /var/tmp and $HOME (if
-                        -c/--contain was also used)
     -u/--user           Try to run completely unprivileged (only works on very
                         new kernels/distros)
+    -W/--workingdir     Working directory to be used for /tmp, /var/tmp and
+                        $HOME (if -c/--contain was also used)
     -w/--writable       By default all Singularity containers are available as
                         read only. This option makes the file system accessible
                         as read/write.
