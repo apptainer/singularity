@@ -39,9 +39,10 @@
 
 
 int singularity_mount_tmp(void) {
+    char *container_dir = singularity_rootfs_dir();
     char *tmp_source;
     char *vartmp_source;
-    char *container_dir = singularity_rootfs_dir();
+    char *scratchpath;
 
     config_rewind();
     if ( config_get_key_bool("mount tmp", 1) <= 0 ) {
@@ -49,16 +50,26 @@ int singularity_mount_tmp(void) {
         return(0);
     }
 
-    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
+    config_rewind();
+    if ( ( config_get_key_bool("user bind control", 1) > 0 ) && ( ( scratchpath = getenv("SINGULARITY_SCRATCH") ) != NULL ) ) {
+        tmp_source = joinpath(scratchpath, "/tmp");
+        vartmp_source = joinpath(scratchpath, "/var_tmp");
+    } else if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
         char *sessiondir = singularity_sessiondir_get();
         tmp_source = joinpath(sessiondir, "/tmp");
         vartmp_source = joinpath(sessiondir, "/var_tmp");
-
-        s_mkpath(tmp_source, 0755);
-        s_mkpath(vartmp_source, 0755);
     } else {
         tmp_source = strdup("/tmp");
         vartmp_source = strdup("/var/tmp");
+    }
+
+    if ( s_mkpath(tmp_source, 0755) < 0 ) {
+        message(ABRT, "Could not create tmp directory %s: %s\n", tmp_source, strerror(errno));
+        ABORT(255);
+    }
+    if ( s_mkpath(vartmp_source, 0755) < 0 ) {
+        message(ABRT, "Could not create vartmp directory %s: %s\n", vartmp_source, strerror(errno));
+        ABORT(255);
     }
 
     if ( is_dir(tmp_source) == 0 ) {
