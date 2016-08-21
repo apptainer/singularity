@@ -50,8 +50,12 @@ int singularity_mount_tmp(void) {
         return(0);
     }
 
-    config_rewind();
-    if ( ( config_get_key_bool("user bind control", 1) > 0 ) && ( ( tmpdirpath = getenv("SINGULARITY_TMP") ) != NULL ) ) {
+    if ( ( tmpdirpath = getenv("SINGULARITY_TMP") ) != NULL ) {
+        config_rewind();
+        if ( config_get_key_bool("user bind control", 1) <= 0 ) {
+            message(ABRT, "User bind control is disabled by system administrator\n");
+            ABORT(5);
+        }
         tmp_source = joinpath(tmpdirpath, "/tmp");
         vartmp_source = joinpath(tmpdirpath, "/var_tmp");
     } else if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
