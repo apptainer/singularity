@@ -9,6 +9,7 @@ Fixes:
     * Go over singularity.conf and finish adding features back in
 
 New API porting:
+    * move image and loop-control down as they are not specific to rootfs
     * port the rest of the binaries to API and link them shared
     * clean old sources
 
