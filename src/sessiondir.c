@@ -38,13 +38,14 @@
 #include "message.h"
 #include "privilege.h"
 #include "config_parser.h"
+#include "fork.h"
 
 
 char *sessiondir = NULL;
 int sessiondir_fd = 0;
 
 char *singularity_sessiondir(char *file) {
-    int child_pid;
+    pid_t child_pid;
     int retval;
 
 
@@ -92,11 +93,7 @@ char *singularity_sessiondir(char *file) {
         ABORT(255);
     }
 
-    child_pid = fork();
-
-    if ( child_pid == 0 ) {
-        // Allow the child to continue on, while we catch the parent...
-    } else if ( child_pid > 0 ) {
+    if ( ( child_pid = singularity_fork() ) > 0 ) {
         int tmpstatus;
 
         message(DEBUG, "Waiting on NS child process\n");
@@ -114,9 +111,6 @@ char *singularity_sessiondir(char *file) {
         }
     
         exit(retval);
-    } else {
-        message(ERROR, "Failed forking child process\n");
-        ABORT(255);
     }
 
     return(sessiondir);

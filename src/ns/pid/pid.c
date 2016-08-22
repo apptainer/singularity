@@ -37,6 +37,7 @@
 #include "message.h"
 #include "config_parser.h"
 #include "privilege.h"
+#include "fork.h"
 
 
 static int enabled = -1;
@@ -47,8 +48,6 @@ int singularity_ns_pid_enabled(void) {
 }
 
 int singularity_ns_pid_unshare(void) {
-    pid_t child_ns_pid = 0;
-    int retval;
 
     config_rewind();
     if ( config_get_key_bool("allow pid ns", 1) <= 0 ) {
@@ -90,22 +89,7 @@ int singularity_ns_pid_unshare(void) {
 #endif
 
     // PID namespace requires a fork to activate!
-    child_ns_pid = fork();
-
-    if ( child_ns_pid == 0 ) {
-        // Allow the child to continue on, while we catch the parent...
-    } else if ( child_ns_pid > 0 ) {
-        int tmpstatus;
-
-        message(DEBUG, "Waiting on NS child process\n");
-
-        waitpid(child_ns_pid, &tmpstatus, 0);
-        retval = WEXITSTATUS(tmpstatus);
-        exit(retval);
-    } else {
-        message(ERROR, "Failed forking child process\n");
-        ABORT(255);
-    }
+    singularity_fork_run();
 
     return(0);
 }
