@@ -8,7 +8,6 @@ Fixes:
     * Go over singularity.conf and finish adding features back in
 
 New API porting:
-    * make loop device multi-process compatible
     * port the rest of the binaries to API and link them shared
     * clean old sources
 

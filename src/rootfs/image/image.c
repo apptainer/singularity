@@ -100,7 +100,6 @@ int rootfs_image_init(char *source, char *mount_dir) {
 
 
 int rootfs_image_mount(void) {
-    int offset;
 
     if ( mount_point == NULL ) {
         message(ERROR, "Called image_mount but image_init() hasn't been called\n");
@@ -117,15 +116,8 @@ int rootfs_image_mount(void) {
         ABORT(255);
     }
 
-    message(DEBUG, "Calculating image offset\n");
-// TODO: Move offset to loop functions
-    if ( ( offset = image_util_offset(image_fp) ) < 0 ) {
-        message(ERROR, "Could not obtain message offset of image\n");
-        ABORT(255);
-    }
-
     message(DEBUG, "Binding image to loop device\n");
-    if ( ( loop_dev = loop_bind(image_fp, offset) ) == NULL ) {
+    if ( ( loop_dev = loop_bind(image_fp) ) == NULL ) {
         message(ERROR, "There was a problem bind mounting the image\n");
         ABORT(255);
     }

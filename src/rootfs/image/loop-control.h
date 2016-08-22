@@ -19,5 +19,5 @@
  */
 
 
-char *loop_bind(FILE *image_fp, int autoclear);
+char *loop_bind(FILE *image_fp);
 int loop_free();
