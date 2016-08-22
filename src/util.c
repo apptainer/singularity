@@ -61,10 +61,19 @@ char *int2str(int num) {
 }
 
 char *joinpath(const char * path1, const char * path2) {
+    char *tmp_path1 = strdup(path1);
+    int path1_len = strlength(tmp_path1, 4096);
     char *ret;
 
-    ret = (char *) malloc(strlength(path1, 2048) + strlength(path2, 2048) + 2);
-    snprintf(ret, strlen(path1) + strlen(path2) + 2, "%s/%s", path1, path2); // Flawfinder: ignore
+    if ( tmp_path1[path1_len - 1] == '/' ) {
+        tmp_path1[path1_len - 1] = '\0';
+    }
+    if ( path2[0] == '/' ) {
+        path2++;
+    }
+
+    ret = (char *) malloc(strlength(tmp_path1, 2048) + strlength(path2, 2048) + 2);
+    snprintf(ret, strlen(tmp_path1) + strlen(path2) + 2, "%s/%s", tmp_path1, path2); // Flawfinder: ignore
 
     return(ret);
 }
