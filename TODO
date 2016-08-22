@@ -6,6 +6,7 @@ Features:
 
 Fixes:
     * Go over singularity.conf and finish adding features back in
+    * Fix joinpath() to not create redundant slashes ('..//..')
 
 New API porting:
     * port the rest of the binaries to API and link them shared
