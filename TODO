@@ -8,20 +8,7 @@ Fixes:
     * Go over singularity.conf and finish adding features back in
 
 New API porting:
-    * signal handlers
     * make loop device multi-process compatible
-    * clean old sources
     * port the rest of the binaries to API and link them shared
-
-
---------------------------------------------------------------------------------
-Notes:
-
-Signal handler API update to be more OO like and support ad-hoc forking:
-    * struct singularity_signal singularity_signal_handler_init(); //presently now pre_fork()?
-    * singularity_signal_handler_child(struct singularity_signal)
-    * singularity_signal_handler_parent(struct singularity_signal)
-    * singularity_signal_handler_wait(struct singularity_signal) // Maybe this can be merged with *_parent()?
-    * singularity_signal_handler_child_destroy(struct singularity_signal) // Is this necessary?
-    * singularity_signal_handler_parent_destroy(struct singularity_signal) // Is this necessary?
+    * clean old sources
 
