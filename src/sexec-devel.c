@@ -53,14 +53,12 @@ int main(int argc, char **argv) {
 
     message(VERBOSE2, "Checking program has appropriate permissions\n");
     if ( ( is_owner("/proc/self/exe", 0 ) < 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
-        message(ERROR, "This program must be SUID root\n");
-        ABORT(255);
+        singularity_abort(255, "This program must be SUID root\n");
     }
 
     message(VERBOSE2, "Checking configuration file is properly owned by root\n");
     if ( is_owner(joinpath(SYSCONFDIR, "/singularity/singularity.conf"), 0 ) < 0 ) {
-        message(ERROR, "Running in privileged mode, root must own the Singularity configuration file\n");
-        ABORT(255);
+        singularity_abort(255, "Running in privileged mode, root must own the Singularity configuration file\n");
     }
 
     config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
@@ -69,14 +67,12 @@ int main(int argc, char **argv) {
     
     message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
     if ( config_get_key_bool("allow setuid", 0) == 0 ) {
-        message(ERROR, "SUID mode has been disabled by the sysadmin... Aborting\n");
-        ABORT(255);
+        singularity_abort(255, "SUID mode has been disabled by the sysadmin... Aborting\n");
     }
 
     message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
     if ( getenv("SINGULARITY_NOSUID") != NULL ) {
-        message(ERROR, "NOSUID mode has been requested... Aborting\n");
-        ABORT(1);
+        singularity_abort(1, "NOSUID mode has been requested... Aborting\n");
     }
 
 #else
@@ -84,8 +80,7 @@ int main(int argc, char **argv) {
 
     message(DEBUG, "Checking program has appropriate permissions\n");
     if ( is_suid("/proc/self/exe") >= 0 ) {
-        message(ERROR, "This program must **NOT** be SUID\n");
-        ABORT(255);
+        singularity_abort(255, "This program must **NOT** be SUID\n");
     }
 
     config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
@@ -103,8 +98,7 @@ int main(int argc, char **argv) {
                     message(VERBOSE, "Invoking SUID sexec: %s\n", sexec_suid_path);
 
                     execv(sexec_suid_path, argv);
-                    message(ERROR, "Failed to execute sexec binary (%s): %s\n", sexec_suid_path, strerror(errno));
-                    ABORT(255);
+                    singularity_abort(255, "Failed to execute sexec binary (%s): %s\n", sexec_suid_path, strerror(errno));
                 } else {
                     message(VERBOSE, "Not invoking SUID mode: SUID sexec not installed\n");
                 }
@@ -121,8 +115,7 @@ int main(int argc, char **argv) {
 #endif /* SINGULARITY_SUID */
 
     if ( ( image = getenv("SINGULARITY_IMAGE") ) == NULL ) {
-        message(ERROR, "SINGULARITY_IMAGE not defined!\n");
-        ABORT(255);
+        singularity_abort(255, "SINGULARITY_IMAGE not defined!\n");
     }
 
     singularity_action_init();

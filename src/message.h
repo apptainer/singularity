@@ -31,7 +31,8 @@
 #define DEBUG 5
 
 void _message(int level, const char *function, const char *file, int line, char *format, ...);
-void singularity_abort(int retval);
 
 #define message(a,b...) _message(a, __func__, __FILE__, __LINE__, b)
+
+#define singularity_abort(a,b...) {_message(ABRT,  __func__, __FILE__, __LINE__, b); _message(ABRT,  __func__, __FILE__, __LINE__, "Retval = %d\n", a); exit(a);}
 

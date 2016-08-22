@@ -145,8 +145,3 @@ void _message(int level, const char *function, const char *file, int line, char 
     }
 
 }
-
-void singularity_abort(int retval) {
-    message(ABRT, "Exiting with RETVAL=%d\n", retval);
-    exit(retval);
-}
