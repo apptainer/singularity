@@ -73,7 +73,7 @@ int singularity_mount_home(void) {
     if ( ( homedir_source = getenv("SINGULARITY_HOME") ) != NULL ) {
         config_rewind();
         if ( config_get_key_bool("user bind control", 1) <= 0 ) {
-            message(ABRT, "User bind control is disabled by system administrator\n");
+            message(ERROR, "User bind control is disabled by system administrator\n");
             ABORT(5);
         }
 
@@ -82,7 +82,7 @@ int singularity_mount_home(void) {
         if ( ( tmpdirpath = getenv("SINGULARITY_WORKDIR") ) != NULL ) {
             config_rewind();
             if ( config_get_key_bool("user bind control", 1) <= 0 ) {
-                message(ABRT, "User bind control is disabled by system administrator\n");
+                message(ERROR, "User bind control is disabled by system administrator\n");
                 ABORT(5);
             }
 
@@ -92,7 +92,7 @@ int singularity_mount_home(void) {
             homedir_source = joinpath(sessiondir, "/home.tmp");
         }
         if ( s_mkpath(homedir_source, 0755) < 0 ) {
-            message(ABRT, "Could not create temporary home directory %s: %s\n", homedir_source, strerror(errno));
+            message(ERROR, "Could not create temporary home directory %s: %s\n", homedir_source, strerror(errno));
             ABORT(255);
         } else {
             message(VERBOSE2, "Set the contained home directory source to: %s\n", homedir_source);
@@ -102,24 +102,24 @@ int singularity_mount_home(void) {
         homedir_source = strdup(homedir);
         message(VERBOSE2, "Set base the home directory source to: %s\n", homedir_source);
     } else {
-        message(ABRT, "Could not identify home directory path: %s\n", homedir_source);
+        message(ERROR, "Could not identify home directory path: %s\n", homedir_source);
         ABORT(255);
     }
 
     // Create a location to stage the directories
     if ( s_mkpath(homedir_source, 0755) < 0 ) {
-        message(ABRT, "Failed creating home directory bind path\n");
+        message(ERROR, "Failed creating home directory bind path\n");
     }
 
     // Create a location to stage the directories
     if ( s_mkpath(joinpath(sessiondir, homedir), 0755) < 0 ) {
-        message(ABRT, "Failed creating home directory bind path\n");
+        message(ERROR, "Failed creating home directory bind path\n");
     }
 
     // Check to make sure whatever we were given as the home directory is really ours
     message(DEBUG, "Checking permissions on home directory: %s\n", homedir_source);
     if ( is_owner(homedir_source, uid) < 0 ) {
-        message(ABRT, "Home directory permissions incorrect: %s\n", homedir_source);
+        message(ERROR, "Home directory permissions incorrect: %s\n", homedir_source);
         ABORT(255);
     }
 
@@ -140,7 +140,7 @@ int singularity_mount_home(void) {
         if ( ( homedir_base = container_basedir(container_dir, homedir) ) != NULL ) {
             message(DEBUG, "Could not create directory within container, set base bind point to: %s\n", homedir_base);
         } else {
-            message(ABRT, "No bind point available for home directory: %s\n", homedir);
+            message(ERROR, "No bind point available for home directory: %s\n", homedir);
             ABORT(255);
         }
     }

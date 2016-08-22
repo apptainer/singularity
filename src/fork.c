@@ -109,38 +109,38 @@ pid_t singularity_fork(void) {
 
         message(DEBUG, "Assigning sigaction()s\n");
         if ( -1 == sigaction(SIGINT, &action, NULL) ) {
-            message(ABRT, "Failed to install SIGINT signal handler: %s\n", strerror(errno));
+            message(ERROR, "Failed to install SIGINT signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGQUIT, &action, NULL) ) {
-            message(ABRT, "Failed to install SIGQUIT signal handler: %s\n", strerror(errno));
+            message(ERROR, "Failed to install SIGQUIT signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGTERM, &action, NULL) ) {
-            message(ABRT, "Failed to install SIGTERM signal handler: %s\n", strerror(errno));
+            message(ERROR, "Failed to install SIGTERM signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGHUP, &action, NULL) ) {
-            message(ABRT, "Failed to install SIGHUP signal handler: %s\n", strerror(errno));
+            message(ERROR, "Failed to install SIGHUP signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGUSR1, &action, NULL) ) {
-            message(ABRT, "Failed to install SIGUSR1 signal handler: %s\n", strerror(errno));
+            message(ERROR, "Failed to install SIGUSR1 signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGUSR2, &action, NULL) ) {
-            message(ABRT, "Failed to install SIGUSR2 signal handler: %s\n", strerror(errno));
+            message(ERROR, "Failed to install SIGUSR2 signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         action.sa_sigaction = handle_sigchld;
         if ( -1 == sigaction(SIGCHLD, &action, NULL) ) {
-            message(ABRT, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
+            message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
 
         message(DEBUG, "Creating generic signal pipes\n");
         if ( -1 == pipe2(pipes, O_CLOEXEC) ) {
-            message(ABRT, "Failed to create communication pipes: %s\n", strerror(errno));
+            message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
             ABORT(255);
         }
         generic_signal_rpipe = pipes[0];
@@ -148,7 +148,7 @@ pid_t singularity_fork(void) {
 
         message(DEBUG, "Creating sigcld signal pipes\n");
         if ( -1 == pipe2(pipes, O_CLOEXEC) ) {
-            message(ABRT, "Failed to create communication pipes: %s\n", strerror(errno));
+            message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
             ABORT(255);
         }
         sigchld_signal_rpipe = pipes[0];
@@ -199,7 +199,7 @@ pid_t singularity_fork(void) {
         return(child_pid);
 
     } else {
-        message(ABRT, "Failed to fork child process\n");
+        message(ERROR, "Failed to fork child process\n");
         ABORT(255);
     }
 }

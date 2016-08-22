@@ -91,7 +91,7 @@ int singularity_rootfs_init(char *source) {
         return(rootfs_dir_init(source, joinpath(mount_point, ROOTFS_SOURCE)));
     }
 
-    message(ABRT, "Unknown container type: %s\n", source);
+    message(ERROR, "Unknown container type: %s\n", source);
     ABORT(255);
     return(-1);
 }
@@ -148,18 +148,18 @@ int singularity_rootfs_mount(void) {
 
     if ( module == ROOTFS_IMAGE ) {
         if ( rootfs_image_mount() < 0 ) {
-            message(ABRT, "Failed mounting image, aborting...\n");
+            message(ERROR, "Failed mounting image, aborting...\n");
             ABORT(255);
         }
     } else if ( module == ROOTFS_DIR ) {
         if ( rootfs_dir_mount() < 0 ) {
-            message(ABRT, "Failed directory, aborting...\n");
+            message(ERROR, "Failed directory, aborting...\n");
             ABORT(255);
         }
     }
 
     if ( is_exec(joinpath(rootfs_source, "/bin/sh")) < 0 ) {
-        message(ABRT, "Container does not have a valid /bin/sh\n");
+        message(ERROR, "Container does not have a valid /bin/sh\n");
         ABORT(255);
     }
 
@@ -174,25 +174,25 @@ int singularity_rootfs_mount(void) {
         priv_escalate();
         message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
         if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID, "size=1m") < 0 ){
-            message(ABRT, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
+            message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
             ABORT(255);
         }
 
         message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
         if ( s_mkpath(overlay_upper, 0755) < 0 ) {
-            message(ABRT, "Failed creating upper overlay directory %s: %s\n", overlay_upper, strerror(errno));
+            message(ERROR, "Failed creating upper overlay directory %s: %s\n", overlay_upper, strerror(errno));
             ABORT(255);
         }
 
         message(DEBUG, "Creating overlay work directory: %s\n", overlay_work);
         if ( s_mkpath(overlay_work, 0755) < 0 ) {
-            message(ABRT, "Failed creating overlay work directory %s: %s\n", overlay_work, strerror(errno));
+            message(ERROR, "Failed creating overlay work directory %s: %s\n", overlay_work, strerror(errno));
             ABORT(255);
         }
 
         message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
         if ( mount("overlay", overlay_final, "overlay", MS_NOSUID, overlay_options) < 0 ){
-            message(ABRT, "Could not create overlay: %s\n", strerror(errno));
+            message(ERROR, "Could not create overlay: %s\n", strerror(errno));
             ABORT(255); 
         }
         priv_drop();
@@ -208,7 +208,7 @@ int singularity_rootfs_mount(void) {
         priv_escalate();
         message(DEBUG, "Binding the ROOTFS_SOURCE to OVERLAY_FINAL (%s->%s)\n", joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL));
         if ( mount(joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-            message(ABRT, "There was an error binding the path %s: %s\n", joinpath(mount_point, ROOTFS_SOURCE), strerror(errno));
+            message(ERROR, "There was an error binding the path %s: %s\n", joinpath(mount_point, ROOTFS_SOURCE), strerror(errno));
             ABORT(255);
         }
         priv_drop();
@@ -224,14 +224,14 @@ int singularity_rootfs_chroot(void) {
     priv_escalate();
     message(VERBOSE, "Entering container file system root: %s\n", joinpath(mount_point, OVERLAY_FINAL));
     if ( chroot(joinpath(mount_point, OVERLAY_FINAL)) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
-        message(ABRT, "failed enter container at: %s\n", joinpath(mount_point, OVERLAY_FINAL));
+        message(ERROR, "failed enter container at: %s\n", joinpath(mount_point, OVERLAY_FINAL));
         ABORT(255);
     }
     priv_drop();
 
     message(DEBUG, "Changing dir to '/' within the new root\n");
     if ( chdir("/") < 0 ) {
-        message(ABRT, "Could not chdir after chroot to /: %s\n", strerror(errno));
+        message(ERROR, "Could not chdir after chroot to /: %s\n", strerror(errno));
         ABORT(1);
     }
 

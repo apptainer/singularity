@@ -53,7 +53,7 @@ int singularity_mount_tmp(void) {
     if ( ( tmpdirpath = getenv("SINGULARITY_WORKDIR") ) != NULL ) {
         config_rewind();
         if ( config_get_key_bool("user bind control", 1) <= 0 ) {
-            message(ABRT, "User bind control is disabled by system administrator\n");
+            message(ERROR, "User bind control is disabled by system administrator\n");
             ABORT(5);
         }
         tmp_source = joinpath(tmpdirpath, "/tmp");
@@ -68,11 +68,11 @@ int singularity_mount_tmp(void) {
     }
 
     if ( s_mkpath(tmp_source, 0755) < 0 ) {
-        message(ABRT, "Could not create tmp directory %s: %s\n", tmp_source, strerror(errno));
+        message(ERROR, "Could not create tmp directory %s: %s\n", tmp_source, strerror(errno));
         ABORT(255);
     }
     if ( s_mkpath(vartmp_source, 0755) < 0 ) {
-        message(ABRT, "Could not create vartmp directory %s: %s\n", vartmp_source, strerror(errno));
+        message(ERROR, "Could not create vartmp directory %s: %s\n", vartmp_source, strerror(errno));
         ABORT(255);
     }
 
