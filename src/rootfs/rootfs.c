@@ -104,6 +104,7 @@ int singularity_rootfs_mount(void) {
     char *overlay_final = joinpath(mount_point, OVERLAY_FINAL);
     int overlay_options_len = strlen(rootfs_source) + strlen(overlay_upper) + strlen(overlay_work) + 50;
     char *overlay_options = (char *) malloc(overlay_options_len);
+    int abort_error = 0;
 
     message(DEBUG, "Mounting image\n");
 
@@ -111,7 +112,21 @@ int singularity_rootfs_mount(void) {
     if ( is_dir(rootfs_source) < 0 ) {
         priv_escalate();
         message(VERBOSE, "Creating container destination dir: %s\n", rootfs_source);
-        s_mkpath(rootfs_source, 0755);
+        if ( s_mkpath(rootfs_source, 0755) < 0 ) {
+            message(ERROR, "Could not create directory: %s\n", rootfs_source);
+            abort_error++;
+        }
+        priv_drop();
+    }
+
+    message(DEBUG, "Checking for overlay_mount directory: %s\n", overlay_mount);
+    if ( is_dir(overlay_mount) < 0 ) {
+        priv_escalate();
+        message(VERBOSE, "Creating container mount dir: %s\n", overlay_mount);
+        if ( s_mkpath(overlay_mount, 0755) < 0 ) {
+            message(ERROR, "Could not create directory: %s\n", overlay_mount);
+            abort_error++;
+        }
         priv_drop();
     }
 
@@ -119,8 +134,16 @@ int singularity_rootfs_mount(void) {
     if ( is_dir(overlay_final) < 0 ) {
         priv_escalate();
         message(VERBOSE, "Creating overlay final dir: %s\n", overlay_final);
-        s_mkpath(overlay_final, 0755);
+        if ( s_mkpath(overlay_final, 0755) < 0 ) {
+            message(ERROR, "Could not create directory: %s\n", overlay_final);
+            abort_error++;
+        }
         priv_drop();
+    }
+
+    if ( abort_error > 0 ) {
+        message(ERROR, "Required directories could not be created.\n");
+        ABORT(3);
     }
 
     if ( module == ROOTFS_IMAGE ) {
@@ -147,21 +170,6 @@ int singularity_rootfs_mount(void) {
         message(VERBOSE3, "Not enabling writable overlay via configuration\n");
     } else if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work);
-
-        message(DEBUG, "Checking for overlay_mount directory: %s\n", overlay_mount);
-        if ( is_dir(overlay_mount) < 0 ) {
-            priv_escalate();
-            message(VERBOSE, "Creating container mount dir: %s\n", overlay_mount);
-            s_mkpath(overlay_mount, 0755);
-            priv_drop();
-        }
-        message(DEBUG, "Checking for overlay_final directory: %s\n", overlay_final);
-        if ( is_dir(overlay_mount) < 0 ) {
-            priv_escalate();
-            message(VERBOSE, "Creating container mount dir: %s\n", overlay_final);
-            s_mkpath(overlay_final, 0755);
-            priv_drop();
-        }
 
         priv_escalate();
         message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
