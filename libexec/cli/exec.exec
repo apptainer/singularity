@@ -38,6 +38,9 @@ fi
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
 fi
+if [ -f "${HOME:-}/.singularity-init" ]; then
+    . "${HOME:-}/.singularity-init"
+fi
 
 while true; do
     case ${1:-} in
@@ -102,7 +105,13 @@ while true; do
     esac
 done
 
-if [ -z "${1:-}" ]; then
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+    SINGULARITY_IMAGE="${1:-}"
+    export SINGULARITY_IMAGE
+    shift
+fi
+
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -110,11 +119,6 @@ if [ -z "${1:-}" ]; then
     fi
     exit 0
 fi
-
-SINGULARITY_IMAGE="${1:-}"
-export SINGULARITY_IMAGE
-shift
-
 
 if [ -x "$SINGULARITY_libexecdir/singularity/sexec" ]; then
     exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
