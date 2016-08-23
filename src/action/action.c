@@ -87,12 +87,20 @@ int singularity_action_do(int argc, char **argv) {
 
     priv_drop_perm();
 
-    if ( chdir(cwd_path) < 0 ) {
+    message(DEBUG, "Checking for envar SINGULARITY_CONTAIN\n");
+    if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
+        message(DEBUG, "Changing directory to starting directory\n");
+
+        if ( chdir(cwd_path) < 0 ) {
+            message(WARNING, "Could not chdir to: %s\n", cwd_path);
+        }
+
+    } else {
         struct passwd *pw;
         char *homedir;
         uid_t uid = priv_getuid();
 
-        message(WARNING, "Could not chdir to: %s\n", cwd_path);
+        message(VERBOSE2, "Changing to home directory\n");
 
         errno = 0;
         if ( ( pw = getpwuid(uid) ) != NULL ) {
