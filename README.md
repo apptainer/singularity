@@ -144,6 +144,13 @@ above. Doing so reveals this:
 And as expected, the Python version we now see is what comes from by 
 default in CentOS-6.
 
+# Cite as:
+Kurtzer, Gregory M.. (2016). Singularity 2.1.2 - Linux application and environment
+containers for science. 10.5281/zenodo.60736
+
+http://dx.doi.org/10.5281/zenodo.60736
+
+
 # Webpage
 We are working on documentation and web pages now, but checkout the work
 in progress here:
