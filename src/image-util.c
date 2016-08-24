@@ -38,7 +38,7 @@
 #define MAX_LINE_LEN 2048
 
 
-int image_util_check(FILE *image_fp) {
+int singularity_image_check(FILE *image_fp) {
     char *line;
 
     message(VERBOSE3, "Checking file is a Singularity image\n");
@@ -65,7 +65,7 @@ int image_util_check(FILE *image_fp) {
 }
 
 
-int image_util_offset(FILE *image_fp) {
+int singularity_image_offset(FILE *image_fp) {
     int ret = 0;
     int i = 0;
 
@@ -89,7 +89,7 @@ int image_util_offset(FILE *image_fp) {
 }
 
 
-int image_util_create(char *image, int size) {
+int singularity_image_create(char *image, int size) {
     FILE *image_fp;
     int i;
 
@@ -125,7 +125,7 @@ int image_util_create(char *image, int size) {
     return(0);
 }
 
-int image_util_expand(char *image, int size) {
+int singularity_image_expand(char *image, int size) {
     FILE *image_fp;
     long position;
     int i;

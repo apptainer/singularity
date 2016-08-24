@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <linux/loop.h>
 #include <unistd.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h> 
@@ -32,10 +33,13 @@
 
 #include "config.h"
 #include "loop-control.h"
+#include "image-util.h"
 #include "util.h"
 #include "file.h"
-#include "image.h"
+//#include "image.h"
 #include "message.h"
+#include "privilege.h"
+#include "sessiondir.h"
 
 #ifndef LO_FLAGS_AUTOCLEAR
 #define LO_FLAGS_AUTOCLEAR 4
@@ -43,51 +47,73 @@
 
 #define MAX_LOOP_DEVS 128
 
+char *loop_dev;
+FILE *loop_fp;
+int image_loop_file_fd; // This has to be global for the flock to be held
 
-FILE *loop_attach(char *loop_dev) {
-    FILE *loop_fp;
-    if ( ( loop_fp = fopen(loop_dev, "r+") ) == NULL ) { // Flawfinder: ignore (not user modifyable)
-        message(VERBOSE, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
-        ABORT(255);
-        return(NULL);
-    }
-
-    return(loop_fp);
-}
-
-
-FILE *loop_bind(FILE *image_fp, char **loop_dev, int autoclear) {
+char *loop_bind(FILE *image_fp) {
+    char *sessiondir = singularity_sessiondir_get();
+    char *image_loop_file = joinpath(sessiondir, "image_loop_dev");
     struct loop_info64 lo64 = {0};
-    FILE *loop_fp;
     int i;
 
-    message(DEBUG, "Called loop_bind(image_fp, **{loop_dev)\n");
-
-    if ( autoclear > 0 ) {
-        lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
+    message(DEBUG, "Opening image loop device file: %s\n", image_loop_file);
+    if ( ( image_loop_file_fd = open(image_loop_file, O_CREAT | O_RDWR, 0644) ) < 0 ) {
+        message(ERROR, "Could not open image loop device cache file %s: %s\n", image_loop_file, strerror(errno));
+        ABORT(255);
     }
-    lo64.lo_offset = image_offset(image_fp);
 
+    message(DEBUG, "Requesting exclusive flock() on loop_dev lockfile\n");
+    if ( flock(image_loop_file_fd, LOCK_EX | LOCK_NB) < 0 ) {
+        char *active_loop_dev;
+        message(VERBOSE2, "Did not get exclusive lock on image loop device cache, assuming it is active\n");
+
+        message(DEBUG, "Waiting to obtain shared lock on loop_dev lockfile\n");
+        flock(image_loop_file_fd, LOCK_SH);
+
+        message(DEBUG, "Obtaining cached loop device name\n");
+        if ( ( active_loop_dev = filecat(image_loop_file) ) == NULL ) {
+            message(ERROR, "Could not retrieve active loop device from %s\n", image_loop_file);
+            ABORT(255);
+        }
+
+        message(DEBUG, "Returning with active loop device name: %s\n", active_loop_dev);
+        return(active_loop_dev);
+    }
+
+
+#ifdef LO_FLAGS_AUTOCLEAR
+    lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
+#endif
+
+    message(DEBUG, "Calculating image offset\n");
+    if ( ( lo64.lo_offset = singularity_image_offset(image_fp) ) < 0 ) {
+        message(ERROR, "Could not obtain message offset of image\n");
+        ABORT(255);
+    }
+
+    priv_escalate();
+    message(DEBUG, "Finding next available loop device...\n");
     for( i=0; i < MAX_LOOP_DEVS; i++ ) {
         char *test_loopdev = strjoin("/dev/loop", int2str(i));
 
         if ( is_blk(test_loopdev) < 0 ) {
-            message(VERBOSE, "Creating loop device: %s\n", test_loopdev);
             if ( mknod(test_loopdev, S_IFBLK | 0644, makedev(7, i)) < 0 ) {
                 message(ERROR, "Could not create %s: %s\n", test_loopdev, strerror(errno));
                 ABORT(255);
             }
         }
 
-        if ( ( loop_fp = fopen(test_loopdev, "r+") ) == NULL ) { // Flawfinder: ignore (not user modifyable)
+        if ( ( loop_fp = fopen(test_loopdev, "r+") ) == NULL ) {
             message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
             continue;
         }
 
-        message(VERBOSE2, "Attempting to associate image pointer to loop device\n");
-        if ( ioctl(fileno(loop_fp), LOOP_SET_FD, fileno(image_fp)) < 0 ) {
+        if ( ioctl(fileno(loop_fp), LOOP_SET_FD, fileno(image_fp))== 0 ) {
+            loop_dev = strdup(test_loopdev);
+            break;
+        } else {
             if ( errno == 16 ) {
-                message(VERBOSE3, "Loop device is in use: %s\n", test_loopdev);
                 fclose(loop_fp);
                 continue;
             } else {
@@ -97,33 +123,38 @@ FILE *loop_bind(FILE *image_fp, char **loop_dev, int autoclear) {
             }
         }
 
-        message(VERBOSE, "Found valid loop device: %s\n", test_loopdev);
-
-        message(VERBOSE2, "Setting loop device flags\n");
-        if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
-            fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
-            (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
-            (void)loop_free(*loop_dev);
-            ABORT(255);
-        }
-        *loop_dev = strdup(test_loopdev);
-
-        message(VERBOSE, "Using loop device: %s\n", *loop_dev);
-
-        message(DEBUG, "Returning loop_bind(image_fp) = loop_fp\n");
-
-        return(loop_fp);
     }
 
-    message(ERROR, "No valid loop devices available\n");
-    ABORT(255);
+    message(VERBOSE, "Found avaialble loop device: %s\n", loop_dev);
 
-    return(NULL);
+    message(DEBUG, "Setting loop device flags\n");
+    if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
+        fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
+        (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
+        (void)loop_free(loop_dev);
+        ABORT(255);
+    }
+
+    priv_drop();
+
+    message(VERBOSE, "Using loop device: %s\n", loop_dev);
+
+    message(DEBUG, "Writing active loop device name (%s) to loop file cache: %s\n", loop_dev, image_loop_file);
+    if ( fileput(image_loop_file, loop_dev) < 0 ) {
+        message(ERROR, "Could not write to image_loop_file %s: %s\n", image_loop_file, strerror(errno));
+        ABORT(255);
+    }
+
+    message(DEBUG, "Resetting exclusive flock() to shared on image_loop_file\n");
+    flock(image_loop_file_fd, LOCK_SH | LOCK_NB);
+
+    message(DEBUG, "Returning loop_bind(image_fp) = loop_fp\n");
+
+    return(loop_dev);
 }
 
 
-int loop_free(char *loop_dev) {
-    FILE *loop_fp;
+int loop_free(void) {
 
     message(DEBUG, "Called loop_free(%s)\n", loop_dev);
 
@@ -132,12 +163,12 @@ int loop_free(char *loop_dev) {
         ABORT(255);
     }
 
-    if ( ( loop_fp = fopen(loop_dev, "r") ) == NULL ) { // Flawfinder: ignore (only opening read only, and must be a block device)
+    if ( ( loop_fp = fopen(loop_dev, "r") ) == NULL ) {
         message(VERBOSE, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
         return(-1);
     }
 
-    message(DEBUG, "Called disassociate_loop(loop_fp)\n");
+    priv_escalate();
 
     message(VERBOSE2, "Disassociating image from loop device\n");
     if ( ioctl(fileno(loop_fp), LOOP_CLR_FD, 0) < 0 ) {
@@ -147,113 +178,12 @@ int loop_free(char *loop_dev) {
         }
     }
 
-    message(DEBUG, "Returning disassociate_loop(loop_fp) = 0\n");
-    return(0);
-}
+    priv_drop();
 
-
-// Leaving the below code intact for comparasion and reference
-/*
-char * obtain_loop_dev(void) {
-    char * loop_device;
-    int devnum = -1;
-    int i;
-
-    message(DEBUG, "Called obtain_loop_dev(void)\n");
-
-    // We brute force this to be compatible with older loop implementations
-    // that don't provide /dev/loop-control
-    for( i=0; i < MAX_LOOP_DEVS; i++ ) {
-        char *test_loopdev = strjoin("/dev/loop", int2str(i));
-        struct loop_info loop_status = {0};
-        int loop_fd;
-
-        if ( ( loop_fd = open(test_loopdev, O_RDONLY) ) >= 0 ) {
-            int ret = ioctl(loop_fd, LOOP_GET_STATUS, &loop_status);
-            close(loop_fd);
-            if ( ret != 0 ) {
-                devnum = i;
-                message(DEBUG, "Found available existing loop device number: %d\n", devnum);
-                break;
-            }
-
-        } else {
-            devnum = i;
-            message(DEBUG, "Found new loop device number: %d\n", devnum);
-            break;
-        }
-    }
-
-    if ( devnum >= 0 ) {
-        loop_device = (char*) malloc(intlen(devnum) + 12);
-        snprintf(loop_device, intlen(devnum) + 11, "/dev/loop%d", devnum);
-
-        message(VERBOSE, "Using loop device: %s\n", loop_device);
-
-        if ( is_blk(loop_device) < 0 ) {
-            message(VERBOSE, "Creating loop device: %s\n", loop_device);
-            if ( mknod(loop_device, S_IFBLK | 0644, makedev(7, devnum)) < 0 ) {
-                message(ERROR, "Could not create %s: %s\n", loop_device, strerror(errno));
-                ABORT(255);
-            }
-        }
-    } else {
-        message(ERROR, "Could not obtain a loop device number\n");
-        ABORT(255);
-    }
-
-    message(DEBUG, "Returning obtain_loop_dev(void) = %s\n", loop_device);
-    return(loop_device);
-}
-
-
-
-int associate_loop(FILE *image_fp, FILE *loop_fp, int autoclear) {
-    struct loop_info64 lo64 = {0};
-    int image_fd = fileno(image_fp);
-    int loop_fd = fileno(loop_fp);
-
-    message(DEBUG, "Called associate_loop(image_fp, loop_fp, %d)\n", autoclear);
-
-    if ( autoclear > 0 ) {
-        message(DEBUG, "Setting loop flags to LO_FLAGS_AUTOCLEAR\n");
-        lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
-    }
-    lo64.lo_offset = image_offset(image_fp);
-
-    message(DEBUG, "Setting image offset to: %d\n", lo64.lo_offset);
-
-    message(VERBOSE2, "Associating image to loop device\n");
-    if ( ioctl(loop_fd, LOOP_SET_FD, image_fd) < 0 ) {
-        fprintf(stderr, "ERROR: Failed to associate image to loop (%d): %s\n", errno, strerror(errno));
-        ABORT(255);
-    }
-
-    message(VERBOSE2, "Setting loop device flags\n");
-    if ( ioctl(loop_fd, LOOP_SET_STATUS64, &lo64) < 0 ) {
-        (void)ioctl(loop_fd, LOOP_CLR_FD, 0);
-        fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
-        (void)disassociate_loop(loop_fp);
-        ABORT(255);
-    }
-
-    message(DEBUG, "Returning associate_loop(image_fp, loop_fp, %d) = 0\n", autoclear);
-    return(0);
-}
-
-
-int disassociate_loop(FILE *loop_fp) {
-    int loop_fd = fileno(loop_fp);
-
-    message(DEBUG, "Called disassociate_loop(loop_fp)\n");
-
-    message(VERBOSE2, "Disassociating image from loop device\n");
-    if ( ioctl(loop_fd, LOOP_CLR_FD, 0) != 0 ) {
-        message(ERROR, "Could not clear loop device: %s\n", strerror(errno));
-        ABORT(255);
-    }
+    fclose(loop_fp);
 
     message(DEBUG, "Returning disassociate_loop(loop_fp) = 0\n");
     return(0);
 }
-*/
+
+

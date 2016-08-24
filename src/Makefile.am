@@ -11,7 +11,7 @@ include_HEADERS = singularity.h
 lib_LTLIBRARIES = libsingularity.la
 
 libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la action/libaction.la mount/libmount.la file/libfile.la
-libsingularity_la_SOURCES = singularity.c privilege.c util.c message.c file.c sessiondir.c config_parser.c fork.c
+libsingularity_la_SOURCES = singularity.c privilege.c util.c message.c file.c sessiondir.c config_parser.c fork.c loop-control.c image-util.c
 libsingularity_la_LDFLAGS = -version-info 1:0:0
 libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
@@ -66,4 +66,4 @@ make_suid:
 #sexec_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c
 #sexec_nosuid_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c
 
-EXTRA_DIST = config.h config_parser.h container_actions.h file.h singularity.h image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h sessiondir.h
+EXTRA_DIST = config.h config_parser.h container_actions.h file.h singularity.h image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h sessiondir.h loop-control.h image-util.h

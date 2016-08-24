@@ -36,20 +36,27 @@
 
     extern int singularity_ns_join(pid_t attach_pid);
 
+    extern int singularity_image_check(FILE *image_fp);
+    extern int singularity_image_offset(FILE *image_fp);
+    extern int singularity_image_create(char *image, int size);
+    extern int singularity_image_expand(char *image, int size);
 
     extern int singularity_rootfs_init(char *source, char *mount_point);
     extern int singularity_rootfs_mount(void);
     extern int singularity_rootfs_chroot(void);
     extern char *singularity_rootfs_dir(void);
 
+
     extern int singularity_action_init(void);
     extern int singularity_action_do(int agc, char **argv);
+
 
     extern int singularity_mount(void);
     extern int singularity_mount_kernelfs(void);
     extern int singularity_mount_binds(void);
     extern int singularity_mount_home(void);
     extern int singularity_mount_tmp(void);
+
 
     extern int singularity_file_update(void);
 

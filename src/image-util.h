@@ -16,8 +16,15 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
- */
+*/
 
 
-char *loop_bind(FILE *image_fp);
-int loop_free();
+#ifndef __IMAGE_UTIL_H_
+#define __IMAGE_UTIL_H_
+
+    int singularity_image_check(FILE *image_fp);
+    int singularity_image_offset(FILE *image_fp);
+    int singularity_image_create(char *image, int size);
+    int singularity_image_expand(char *image, int size);
+
+#endif /* __IMAGE_UTIL_H */
