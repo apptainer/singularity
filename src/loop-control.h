@@ -19,5 +19,10 @@
  */
 
 
-char *loop_bind(FILE *image_fp);
-int loop_free();
+#ifndef __SINGULARITY_LOOP_CONTROL_
+#define __SINGULARITY_LOOP_CONTROL_
+
+    char *singularity_loop_bind(FILE *image_fp);
+    int singularity_loop_free(char *loop_dev);
+
+#endif /* __SINGULARITY_LOOP_CONTROL_ */

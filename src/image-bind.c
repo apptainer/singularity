@@ -83,7 +83,7 @@ int main(int argc, char ** argv) {
         }
 
         message(DEBUG, "Binding container to loop interface\n");
-        if ( ( loop_fp = loop_bind(containerimage_fp, &loop_dev, 0)) == NULL ) {
+        if ( ( loop_dev = singularity_loop_bind(containerimage_fp)) == NULL ) {
             message(ERROR, "Could not bind image to loop!\n");
             ABORT(255);
         }
@@ -103,7 +103,7 @@ int main(int argc, char ** argv) {
         }
 
         message(VERBOSE, "Unbinding container image from loop\n");
-        if ( loop_free(loop_dev) < 0 ) {
+        if ( singularity_loop_free(loop_dev) < 0 ) {
             message(ERROR, "Failed to detach loop device: %s\n", loop_dev);
             ABORT(255);
         }

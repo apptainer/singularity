@@ -131,7 +131,7 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Binding container to loop interface\n");
-    if ( ( loop_fp = loop_bind(containerimage_fp, &loop_dev, 1)) == NULL ) {
+    if ( ( loop_dev = singularity_loop_bind(containerimage_fp)) == NULL ) {
         message(ERROR, "Could not bind image to loop!\n");
         ABORT(255);
     }

@@ -51,7 +51,7 @@ char *loop_dev;
 FILE *loop_fp;
 int image_loop_file_fd; // This has to be global for the flock to be held
 
-char *loop_bind(FILE *image_fp) {
+char *singularity_loop_bind(FILE *image_fp) {
     char *sessiondir = singularity_sessiondir_get();
     char *image_loop_file = joinpath(sessiondir, "image_loop_dev");
     struct loop_info64 lo64 = {0};
@@ -131,7 +131,7 @@ char *loop_bind(FILE *image_fp) {
     if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
         fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
         (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
-        (void)loop_free(loop_dev);
+        (void)singularity_loop_free(loop_dev);
         ABORT(255);
     }
 
@@ -148,23 +148,23 @@ char *loop_bind(FILE *image_fp) {
     message(DEBUG, "Resetting exclusive flock() to shared on image_loop_file\n");
     flock(image_loop_file_fd, LOCK_SH | LOCK_NB);
 
-    message(DEBUG, "Returning loop_bind(image_fp) = loop_fp\n");
+    message(DEBUG, "Returning singularity_loop_bind(image_fp) = loop_fp\n");
 
     return(loop_dev);
 }
 
 
-int loop_free(void) {
+int singularity_loop_free(char *loop_name) {
 
-    message(DEBUG, "Called loop_free(%s)\n", loop_dev);
+    message(DEBUG, "Called singularity_loop_free(%s)\n", loop_name);
 
-    if ( is_blk(loop_dev) < 0 ) {
-        message(ERROR, "Loop device is not a valid block device: %s\n", loop_dev);
+    if ( is_blk(loop_name) < 0 ) {
+        message(ERROR, "Loop device is not a valid block device: %s\n", loop_name);
         ABORT(255);
     }
 
-    if ( ( loop_fp = fopen(loop_dev, "r") ) == NULL ) {
-        message(VERBOSE, "Could not open loop device %s: %s\n", loop_dev, strerror(errno));
+    if ( ( loop_fp = fopen(loop_name, "r") ) == NULL ) {
+        message(VERBOSE, "Could not open loop device %s: %s\n", loop_name, strerror(errno));
         return(-1);
     }
 
@@ -173,7 +173,7 @@ int loop_free(void) {
     message(VERBOSE2, "Disassociating image from loop device\n");
     if ( ioctl(fileno(loop_fp), LOOP_CLR_FD, 0) < 0 ) {
         if ( errno != 6 ) { // Ignore loop not binded
-            message(ERROR, "Could not clear loop device %s: (%d) %s\n", loop_dev, errno, strerror(errno));
+            message(ERROR, "Could not clear loop device %s: (%d) %s\n", loop_name, errno, strerror(errno));
             return(-1);
         }
     }

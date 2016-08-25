@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
 
     singularity_rootfs_mount();
 
-    singularity_file_update();
+    singularity_file();
 
     singularity_mount();
 

@@ -35,7 +35,7 @@
 
 
 
-int singularity_file_update(void) {
+int singularity_file(void) {
     int retval = 0;
 
     retval += singularity_file_passwd();

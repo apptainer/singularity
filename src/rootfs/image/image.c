@@ -117,7 +117,7 @@ int rootfs_image_mount(void) {
     }
 
     message(DEBUG, "Binding image to loop device\n");
-    if ( ( loop_dev = loop_bind(image_fp) ) == NULL ) {
+    if ( ( loop_dev = singularity_loop_bind(image_fp) ) == NULL ) {
         message(ERROR, "There was a problem bind mounting the image\n");
         ABORT(255);
     }
