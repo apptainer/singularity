@@ -62,25 +62,25 @@ int singularity_ns_pid_unshare(void) {
 
 #ifdef NS_CLONE_NEWPID
     message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
-    priv_escalate();
+    singularity_priv_escalate();
     message(DEBUG, "Virtualizing PID namespace\n");
     if ( unshare(CLONE_NEWPID) < 0 ) {
         message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
         ABORT(255);
     }
-    priv_drop();
+    singularity_priv_drop();
     enabled = 0;
 
 #else
 #ifdef NS_CLONE_PID
     message(DEBUG, "Using PID namespace: CLONE_PID\n");
-    priv_escalate();
+    singularity_priv_escalate();
     message(DEBUG, "Virtualizing PID namespace\n");
     if ( unshare(CLONE_NEWPID) < 0 ) {
         message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
         ABORT(255);
     }
-    priv_drop();
+    singularity_priv_drop();
     enabled = 0;
 
 #endif

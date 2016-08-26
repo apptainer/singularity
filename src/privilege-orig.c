@@ -225,13 +225,13 @@ void priv_init(void) {
     }
     uinfo.ready = 1;
 
-    priv_drop();
+    singularity_priv_drop();
 
     message(DEBUG, "Returning priv_init(void)\n");
 }
 
 
-int priv_userns_enabled() {
+int singularity_priv_userns_enabled() {
     return uinfo.userns_ready;
 }
 
@@ -245,7 +245,7 @@ int priv_target_mode() {
 }
 
 
-uid_t priv_getuid() {
+uid_t singularity_priv_getuid() {
     if ( !uinfo.ready ) {
         message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
@@ -254,7 +254,7 @@ uid_t priv_getuid() {
 }
 
 
-gid_t priv_getgid() {
+gid_t singularity_priv_getgid() {
     if ( !uinfo.ready ) {
         message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
@@ -263,7 +263,7 @@ gid_t priv_getgid() {
 }
 
 
-const gid_t *priv_getgids() {
+const gid_t *singularity_priv_getgids() {
     if ( !uinfo.ready ) {
         message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
@@ -272,7 +272,7 @@ const gid_t *priv_getgids() {
 }
 
 
-int priv_getgidcount() {
+int singularity_priv_getgidcount() {
     if ( !uinfo.ready ) {
         message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
@@ -343,7 +343,7 @@ void priv_init_userns_inside_final() {
 }
 
 
-void priv_escalate(void) {
+void singularity_priv_escalate(void) {
 
     if ( getuid() != 0 ) {
         message(DEBUG, "Temporarily escalating privileges (U=%d)\n", getuid());
@@ -358,7 +358,7 @@ void priv_escalate(void) {
     }
 }
 
-void priv_drop(void) {
+void singularity_priv_drop(void) {
 
     if ( uinfo.ready != 1 ) {
         message(ERROR, "User info is not available\n");
@@ -409,8 +409,8 @@ void priv_drop(void) {
     }
 }
 
-void priv_drop_perm(void) {
-    message(DEBUG, "Called priv_drop_perm(void)\n");
+void singularity_priv_drop_perm(void) {
+    message(DEBUG, "Called singularity_priv_drop_perm(void)\n");
 
     if ( uinfo.ready != 1 ) {
         message(ERROR, "User info is not available\n");
@@ -458,6 +458,6 @@ void priv_drop_perm(void) {
         ABORT(255);
     }
 
-    message(DEBUG, "Returning priv_drop_perm(void)\n");
+    message(DEBUG, "Returning singularity_priv_drop_perm(void)\n");
 }
 

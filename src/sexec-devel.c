@@ -29,10 +29,9 @@
 
 #include "config.h"
 #include "config_parser.h"
+//#include "privilege.h"
 #include "message.h"
 #include "util.h"
-#include "privilege.h"
-#include "sessiondir.h"
 #include "singularity.h"
 #include "file.h"
 
@@ -41,12 +40,11 @@
 #endif
 
 int main(int argc, char **argv) {
-    char *sessiondir;
     char *image;
 
     // Before we do anything, check privileges and drop permission
-    priv_init();
-    priv_drop();
+    singularity_priv_init();
+    singularity_priv_drop();
 
 #ifdef SINGULARITY_SUID
     message(VERBOSE2, "Running SUID program workflow\n");
@@ -87,7 +85,7 @@ int main(int argc, char **argv) {
 
     config_rewind();
 
-    if ( priv_getuid() != 0 ) {
+    if ( singularity_priv_getuid() != 0 ) {
         message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
         if ( config_get_key_bool("allow setuid", 0) == 1 ) {
             message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
@@ -121,9 +119,7 @@ int main(int argc, char **argv) {
     singularity_action_init();
     singularity_rootfs_init(image, "/var/singularity/mnt");
 
-    sessiondir = singularity_sessiondir(image);
-
-    message(VERBOSE, "Using sessiondir: %s\n", sessiondir);
+    singularity_sessiondir_init(image);
 
     singularity_ns_unshare();
 

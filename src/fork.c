@@ -220,3 +220,30 @@ void singularity_fork_run(void) {
 
     return;
 }
+
+int singularity_fork_exec(char **argv) {
+    int tmpstatus;
+    int retval = 0;
+    pid_t child;
+
+    child = singularity_fork();
+
+    if ( child == 0 ) {
+
+        if ( execvp(argv[0], argv) < 0 ) { 
+            message(ERROR, "Failed to execv(%s, ...)\n", argv[0]);
+            ABORT(255);
+        }
+
+    } else if ( child > 0 ) {
+        message(DEBUG, "Waiting on child process\n");
+                                
+        waitpid(child, &tmpstatus, 0);
+        retval = WEXITSTATUS(tmpstatus);
+    }
+
+    return(retval);
+}
+
+
+

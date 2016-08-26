@@ -45,10 +45,10 @@ int singularity_file_group(void) {
     char *source_file;
     char *tmp_file;
     int i;
-    uid_t uid = priv_getuid();
-    uid_t gid = priv_getgid();
-    const gid_t *gids = priv_getgids();
-    int gid_count = priv_getgidcount();
+    uid_t uid = singularity_priv_getuid();
+    uid_t gid = singularity_priv_getgid();
+    const gid_t *gids = singularity_priv_getgids();
+    int gid_count = singularity_priv_getgidcount();
     struct passwd *pwent = getpwuid(uid);
     struct group *grent = getgrgid(gid);
     char *containerdir = singularity_rootfs_dir();

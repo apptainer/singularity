@@ -68,9 +68,9 @@ int singularity_mount_binds(void) {
 
         if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
             if ( singularity_rootfs_overlay_enabled() > 0 ) {
-                priv_escalate();
+                singularity_priv_escalate();
                 FILE *tmp = fopen(joinpath(container_dir, dest), "w+");
-                priv_drop();
+                singularity_priv_drop();
                 if ( fclose(tmp) != 0 ) {
                     message(WARNING, "Could not create bind point file in container %s: %s\n", dest, strerror(errno));
                     continue;
@@ -81,26 +81,26 @@ int singularity_mount_binds(void) {
             }
         } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
             if ( singularity_rootfs_overlay_enabled() > 0 ) {
-                priv_escalate();
+                singularity_priv_escalate();
                 if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
-                    priv_drop();
+                    singularity_priv_drop();
                     message(WARNING, "Could not create bind point directory in container %s: %s\n", dest, strerror(errno));
                     continue;
                 }
-                priv_drop();
+                singularity_priv_drop();
             } else {
                 message(WARNING, "Non existant bind point (directory) in container: '%s'\n", dest);
                 continue;
             }
         }
 
-        priv_escalate();
+        singularity_priv_escalate();
         message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
         if ( mount(source, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             message(ERROR, "There was an error binding the path %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
-        priv_drop();
+        singularity_priv_drop();
     }
 
     return(0);

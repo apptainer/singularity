@@ -85,7 +85,7 @@ int singularity_action_init(void) {
 
 int singularity_action_do(int argc, char **argv) {
 
-    priv_drop_perm();
+    singularity_priv_drop_perm();
 
     message(DEBUG, "Checking for envar SINGULARITY_CONTAIN\n");
     if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
@@ -98,7 +98,7 @@ int singularity_action_do(int argc, char **argv) {
     } else {
         struct passwd *pw;
         char *homedir;
-        uid_t uid = priv_getuid();
+        uid_t uid = singularity_priv_getuid();
 
         message(VERBOSE2, "Changing to home directory\n");
 

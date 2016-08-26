@@ -44,7 +44,7 @@ int singularity_file_passwd(void) {
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
-    uid_t uid = priv_getuid();
+    uid_t uid = singularity_priv_getuid();
     struct passwd *pwent = getpwuid(uid);
     char *containerdir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();

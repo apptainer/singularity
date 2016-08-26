@@ -80,8 +80,8 @@ int singularity_ns_user_unshare(void) {
     return(0);
 #endif
 
-    uid_t uid = priv_getuid();
-    gid_t gid = priv_getgid();
+    uid_t uid = singularity_priv_getuid();
+    gid_t gid = singularity_priv_getgid();
 
     message(DEBUG, "Enabled user namespaces\n");
 
@@ -140,7 +140,7 @@ int singularity_ns_user_unshare(void) {
         free(map_file);
     }
 
-    priv_userns_ready();
+    singularity_priv_userns_ready();
     enabled = 0;
 
     return(0);

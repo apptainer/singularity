@@ -180,10 +180,10 @@ int main(int argc, char ** argv) {
     }
 
     message(VERBOSE3, "Checking if we can escalate privileges properly.\n");
-    priv_escalate();
+    singularity_priv_escalate();
 
     message(VERBOSE3, "Setting privileges back to calling user\n");
-    priv_drop();
+    singularity_priv_drop();
 
     // Figure out where we start
     message(DEBUG, "Obtaining file descriptor to current directory\n");
@@ -362,7 +362,7 @@ int main(int argc, char ** argv) {
 //****************************************************************************//
 
     message(VERBOSE3, "Entering privileged runtime\n");
-    priv_escalate();
+    singularity_priv_escalate();
 
     message(VERBOSE, "Creating/Verifying session directory: %s\n", sessiondir);
     if ( s_mkpath(sessiondir, 0755) < 0 ) {
@@ -766,7 +766,7 @@ int main(int argc, char ** argv) {
 
             // Drop all privileges for good
             message(VERBOSE3, "Dropping all privileges\n");
-            priv_drop_perm();
+            singularity_priv_drop_perm();
 
             // Change to the proper directory
             message(VERBOSE2, "Changing to correct working directory: %s\n", cwd);
@@ -853,7 +853,7 @@ int main(int argc, char ** argv) {
             strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
 
             message(VERBOSE3, "Dropping privilege...\n");
-            priv_drop_perm();
+            singularity_priv_drop_perm();
 
             message(VERBOSE2, "Waiting for Exec process...\n");
 
@@ -876,7 +876,7 @@ int main(int argc, char ** argv) {
         strncpy(argv[0], "Singularity: namespace", strlen(argv[0])); // Flawfinder: ignore
 
         message(VERBOSE3, "Dropping privilege...\n");
-        priv_drop();
+        singularity_priv_drop();
 
         blockpid_or_signal();
         waitpid(namespace_fork_pid, &tmpstatus, 0);
@@ -910,7 +910,7 @@ int main(int argc, char ** argv) {
         close(sessiondirlock_fd);
 
         message(VERBOSE3, "Escalating privs to clean session directory\n");
-        priv_escalate();
+        singularity_priv_escalate();
 
         message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
         if ( s_rmdir(sessiondir) < 0 ) {
@@ -921,7 +921,7 @@ int main(int argc, char ** argv) {
             message(DEBUG, "Calling loop_free(%s)\n", loop_dev);
             loop_free(loop_dev);
         }
-        priv_drop_perm();
+        singularity_priv_drop_perm();
 
     } else {
 //        printf("Not removing sessiondir, lock still\n");

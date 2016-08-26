@@ -104,4 +104,42 @@
     extern int singularity_file_passwd(void);
     extern int singularity_file_group(void);
 
+
+    extern void singularity_sessiondir_init(char *file);
+    extern char *singularity_sessiondir_get(void);
+    extern int singularity_sessiondir_rm(void);
+
+
+    extern void singularity_priv_init(void);
+    extern void singularity_priv_escalate(void);
+    extern void singularity_priv_drop(void);
+    extern void singularity_priv_drop_perm(void);
+    extern uid_t singularity_priv_getuid(void);
+    extern gid_t singularity_priv_getgid(void);
+
+
+
+    // SINGULARITY_FORK()
+    // Wrap the fork() system call and create the necessary communication
+    // pipes and signal handlers so that signals are correctly passed around
+    // between children and parents.
+    extern pid_t singularity_fork(void);
+
+
+    // SINGLARITY_FORK_RUN()
+    // Fork() and automatically have the parent wait on the child while
+    // allowing the child to continue on through the code path. The parent
+    // will automatically wait in the background until the child exits, and
+    // then the parent will also exit with the same exit code as the parent.
+    // Similar to singularity_fork() above, this will maintain the proper
+    // communication channels for signal handling.
+    extern void singularity_fork_run(void);
+
+
+    // SINGULARITY_FORK_EXEC
+    // Fork and exec a child system command, wait for it to return, and then
+    // return with the appropriate exit value.
+    extern int singularity_fork_exec(char **argv);
+
+
 #endif /* __SINGULARITY_H */

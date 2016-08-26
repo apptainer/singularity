@@ -39,7 +39,7 @@
 #include "file.h"
 #include "util.h"
 #include "message.h"
-#include "singularity.h"
+//#include "singularity.h"
 
 
 
@@ -58,14 +58,14 @@ static struct PRIV_INFO {
 } uinfo;
 
 
-void priv_init(void) {
+void singularity_priv_init(void) {
     long int target_uid = -1;
     long int target_gid = -1;
     char *target_uid_str = NULL;
     char *target_gid_str = NULL;
     memset(&uinfo, '\0', sizeof(uinfo));
 
-    message(DEBUG, "Called priv_init(void)\n");
+    message(DEBUG, "Called singularity_priv_init(void)\n");
 
     if ( getuid() == 0 ) {
         target_uid_str = getenv("SINGULARITY_TARGET_UID");
@@ -128,10 +128,10 @@ void priv_init(void) {
     }
     uinfo.ready = 1;
 
-    message(DEBUG, "Returning priv_init(void)\n");
+    message(DEBUG, "Returning singularity_priv_init(void)\n");
 }
 
-void priv_escalate(void) {
+void singularity_priv_escalate(void) {
 
     if ( uinfo.ready != 1 ) {
         message(ERROR, "User info is not available\n");
@@ -158,7 +158,7 @@ void priv_escalate(void) {
 
 }
 
-void priv_drop(void) {
+void singularity_priv_drop(void) {
 
     if ( uinfo.ready != 1 ) {
         message(ERROR, "User info is not available\n");
@@ -212,8 +212,8 @@ void priv_drop(void) {
 
 }
 
-void priv_drop_perm(void) {
-    message(DEBUG, "Called priv_drop_perm(void)\n");
+void singularity_priv_drop_perm(void) {
+    message(DEBUG, "Called singularity_priv_drop_perm(void)\n");
 
     if ( uinfo.ready != 1 ) {
         message(ERROR, "User info is not available\n");
@@ -225,13 +225,13 @@ void priv_drop_perm(void) {
         return;
     }
 
-    if ( priv_getuid() == 0 ) {
+    if ( singularity_priv_getuid() == 0 ) {
         message(VERBOSE2, "Calling user is root, no privileges to drop\n");
         return;
     }
 
     message(DEBUG, "Escalating permissison so we can properly drop permission\n");
-    priv_escalate();
+    singularity_priv_escalate();
 
     message(DEBUG, "Resetting supplementary groups\n");
     if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
@@ -285,15 +285,15 @@ void priv_drop_perm(void) {
 }
 
 
-int priv_userns_enabled() {
+int singularity_priv_userns_enabled(void) {
     return uinfo.userns_ready;
 }
 
-void priv_userns_ready(void) {
+void singularity_priv_userns_ready(void) {
     uinfo.userns_ready = 1;
 }
 
-uid_t priv_getuid() {
+uid_t singularity_priv_getuid(void) {
     if ( !uinfo.ready ) {
         message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
@@ -301,7 +301,7 @@ uid_t priv_getuid() {
     return uinfo.uid;
 }
 
-gid_t priv_getgid() {
+gid_t singularity_priv_getgid(void) {
     if ( !uinfo.ready ) {
         message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
@@ -309,7 +309,7 @@ gid_t priv_getgid() {
     return uinfo.gid;
 }
 
-const gid_t *priv_getgids() {
+const gid_t *singularity_priv_getgids(void) {
     if ( !uinfo.ready ) {
         message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
@@ -317,7 +317,7 @@ const gid_t *priv_getgids() {
     return uinfo.gids;
 }
 
-int priv_getgidcount() {
+int singularity_priv_getgidcount(void) {
     if ( !uinfo.ready ) {
         message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);

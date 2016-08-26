@@ -39,4 +39,10 @@
     void singularity_fork_run(void);
 
 
+    // SINGULARITY_FORK_EXEC
+    // Fork and exec a child system command, wait for it to return, and then
+    // return with the appropriate exit value.
+    int singularity_fork_exec(char **argv);
+
+
 #endif /* __SINGULARITY_FORK_H_ */

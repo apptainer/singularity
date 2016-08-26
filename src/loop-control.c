@@ -57,9 +57,20 @@ char *singularity_loop_bind(FILE *image_fp) {
     struct loop_info64 lo64 = {0};
     int i;
 
+    if ( image_fp == NULL ) {
+        message(ERROR, "Called singularity_loop_bind() with NULL image pointer\n");
+        ABORT(255);
+    }
+
     message(DEBUG, "Opening image loop device file: %s\n", image_loop_file);
     if ( ( image_loop_file_fd = open(image_loop_file, O_CREAT | O_RDWR, 0644) ) < 0 ) {
         message(ERROR, "Could not open image loop device cache file %s: %s\n", image_loop_file, strerror(errno));
+        ABORT(255);
+    }
+
+    message(DEBUG, "Checking image is a Singularity\n");
+    if ( singularity_image_check(image_fp) < 0 ) {
+        message(ERROR, "File is not a Singularity image!\n");
         ABORT(255);
     }
 
@@ -92,7 +103,7 @@ char *singularity_loop_bind(FILE *image_fp) {
         ABORT(255);
     }
 
-    priv_escalate();
+    singularity_priv_escalate();
     message(DEBUG, "Finding next available loop device...\n");
     for( i=0; i < MAX_LOOP_DEVS; i++ ) {
         char *test_loopdev = strjoin("/dev/loop", int2str(i));
@@ -135,7 +146,7 @@ char *singularity_loop_bind(FILE *image_fp) {
         ABORT(255);
     }
 
-    priv_drop();
+    singularity_priv_drop();
 
     message(VERBOSE, "Using loop device: %s\n", loop_dev);
 
@@ -168,7 +179,7 @@ int singularity_loop_free(char *loop_name) {
         return(-1);
     }
 
-    priv_escalate();
+    singularity_priv_escalate();
 
     message(VERBOSE2, "Disassociating image from loop device\n");
     if ( ioctl(fileno(loop_fp), LOOP_CLR_FD, 0) < 0 ) {
@@ -178,7 +189,7 @@ int singularity_loop_free(char *loop_name) {
         }
     }
 
-    priv_drop();
+    singularity_priv_drop();
 
     fclose(loop_fp);
 

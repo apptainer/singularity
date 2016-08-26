@@ -125,20 +125,20 @@ int rootfs_image_mount(void) {
 
     if ( read_write > 0 ) {
         message(VERBOSE, "Mounting image in read/write\n");
-        priv_escalate();
+        singularity_priv_escalate();
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
             message(ERROR, "Failed to mount image!\n");
             ABORT(255);
         }
-        priv_drop();
+        singularity_priv_drop();
     } else {
-        priv_escalate();
+        singularity_priv_escalate();
         message(VERBOSE, "Mounting image in read/only\n");
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
             message(ERROR, "Failed to mount image!\n");
             ABORT(255);
         }
-        priv_drop();
+        singularity_priv_drop();
     }
 
 

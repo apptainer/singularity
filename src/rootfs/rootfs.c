@@ -110,35 +110,35 @@ int singularity_rootfs_mount(void) {
 
     message(DEBUG, "Checking for rootfs_source directory: %s\n", rootfs_source);
     if ( is_dir(rootfs_source) < 0 ) {
-        priv_escalate();
+        singularity_priv_escalate();
         message(VERBOSE, "Creating container destination dir: %s\n", rootfs_source);
         if ( s_mkpath(rootfs_source, 0755) < 0 ) {
             message(ERROR, "Could not create directory: %s\n", rootfs_source);
             abort_error++;
         }
-        priv_drop();
+        singularity_priv_drop();
     }
 
     message(DEBUG, "Checking for overlay_mount directory: %s\n", overlay_mount);
     if ( is_dir(overlay_mount) < 0 ) {
-        priv_escalate();
+        singularity_priv_escalate();
         message(VERBOSE, "Creating container mount dir: %s\n", overlay_mount);
         if ( s_mkpath(overlay_mount, 0755) < 0 ) {
             message(ERROR, "Could not create directory: %s\n", overlay_mount);
             abort_error++;
         }
-        priv_drop();
+        singularity_priv_drop();
     }
 
     message(DEBUG, "Checking for overlay_final directory: %s\n", overlay_final);
     if ( is_dir(overlay_final) < 0 ) {
-        priv_escalate();
+        singularity_priv_escalate();
         message(VERBOSE, "Creating overlay final dir: %s\n", overlay_final);
         if ( s_mkpath(overlay_final, 0755) < 0 ) {
             message(ERROR, "Could not create directory: %s\n", overlay_final);
             abort_error++;
         }
-        priv_drop();
+        singularity_priv_drop();
     }
 
     if ( abort_error > 0 ) {
@@ -171,7 +171,7 @@ int singularity_rootfs_mount(void) {
     } else if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work);
 
-        priv_escalate();
+        singularity_priv_escalate();
         message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
         if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID, "size=1m") < 0 ){
             message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
@@ -195,7 +195,7 @@ int singularity_rootfs_mount(void) {
             message(ERROR, "Could not create overlay: %s\n", strerror(errno));
             ABORT(255); 
         }
-        priv_drop();
+        singularity_priv_drop();
 
         overlay_enabled = 1;
     } else {
@@ -205,13 +205,13 @@ int singularity_rootfs_mount(void) {
 #endif /* SINGULARITY_OVERLAYFS */
 
     if ( overlay_enabled != 1 ) {
-        priv_escalate();
+        singularity_priv_escalate();
         message(DEBUG, "Binding the ROOTFS_SOURCE to OVERLAY_FINAL (%s->%s)\n", joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL));
         if ( mount(joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             message(ERROR, "There was an error binding the path %s: %s\n", joinpath(mount_point, ROOTFS_SOURCE), strerror(errno));
             ABORT(255);
         }
-        priv_drop();
+        singularity_priv_drop();
     }
 
 
@@ -221,13 +221,13 @@ int singularity_rootfs_mount(void) {
 
 int singularity_rootfs_chroot(void) {
 
-    priv_escalate();
+    singularity_priv_escalate();
     message(VERBOSE, "Entering container file system root: %s\n", joinpath(mount_point, OVERLAY_FINAL));
     if ( chroot(joinpath(mount_point, OVERLAY_FINAL)) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
         message(ERROR, "failed enter container at: %s\n", joinpath(mount_point, OVERLAY_FINAL));
         ABORT(255);
     }
-    priv_drop();
+    singularity_priv_drop();
 
     message(DEBUG, "Changing dir to '/' within the new root\n");
     if ( chdir("/") < 0 ) {

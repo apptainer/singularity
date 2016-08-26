@@ -46,7 +46,7 @@ int singularity_mount_home(void) {
     char *container_dir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
     struct passwd *pw;
-    uid_t uid = priv_getuid();
+    uid_t uid = singularity_priv_getuid();
 
     config_rewind();
     if ( config_get_key_bool("mount home", 1) <= 0 ) {
@@ -126,13 +126,13 @@ int singularity_mount_home(void) {
     // Figure out where we should mount the home directory in the container
     message(DEBUG, "Trying to create home dir within container\n");
     if ( singularity_rootfs_overlay_enabled() > 0 ) {
-        priv_escalate();
+        singularity_priv_escalate();
         if ( s_mkpath(joinpath(container_dir, homedir), 0750) == 0 ) {
-            priv_drop();
+            singularity_priv_drop();
             message(DEBUG, "Created home directory within the container: %s\n", homedir);
             homedir_base = strdup(homedir);
         } else {
-            priv_drop();
+            singularity_priv_drop();
         }
     }
 
@@ -145,7 +145,7 @@ int singularity_mount_home(void) {
         }
     }
 
-    priv_escalate();
+    singularity_priv_escalate();
     // First mount the real home directory to the stage
     message(VERBOSE, "Mounting home directory to stage: %s->%s\n", homedir_source, joinpath(sessiondir, homedir));
     if ( mount(homedir_source, joinpath(sessiondir, homedir), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
@@ -158,7 +158,7 @@ int singularity_mount_home(void) {
         message(ERROR, "Failed to mount staged home directory into container: %s\n", strerror(errno));
         ABORT(255);
     }
-    priv_drop();
+    singularity_priv_drop();
 
     return(0);
 }

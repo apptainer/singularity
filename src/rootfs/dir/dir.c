@@ -77,23 +77,23 @@ int rootfs_dir_mount(void) {
         ABORT(255);
     }
 
-    priv_escalate();
+    singularity_priv_escalate();
     message(DEBUG, "Mounting container directory %s->%s\n", source_dir, mount_point);
     if ( mount(source_dir, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
         message(ERROR, "Could not mount container directory %s->%s: %s\n", source_dir, mount_point, strerror(errno));
         return 1;
     }
-    priv_drop();
+    singularity_priv_drop();
 
     if ( read_write <= 0 ) {
         if ( singularity_ns_user_enabled() <= 0 ) {
-            priv_escalate();
+            singularity_priv_escalate();
             message(VERBOSE2, "Making mount read only: %s\n", mount_point);
             if ( mount(NULL, mount_point, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
                 message(ERROR, "Could not bind read only %s: %s\n", mount_point, strerror(errno));
                 ABORT(255);
             }
-            priv_drop();
+            singularity_priv_drop();
         }
     }
 

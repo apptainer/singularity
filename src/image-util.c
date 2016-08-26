@@ -41,6 +41,11 @@
 int singularity_image_check(FILE *image_fp) {
     char *line;
 
+    if ( image_fp == NULL ) {
+        message(ERROR, "Called singularity_image_check() with NULL image pointer\n");
+        ABORT(255);
+    }
+
     message(VERBOSE3, "Checking file is a Singularity image\n");
     rewind(image_fp);
 
@@ -52,12 +57,13 @@ int singularity_image_check(FILE *image_fp) {
         ABORT(255);
     }
 
+    message(DEBUG, "Checking if first line matches key\n");
     if ( strcmp(line, LAUNCH_STRING) == 0 ) {
         free(line);
         message(VERBOSE2, "File is a valid Singularity image\n");
     } else {
         free(line);
-        message(VERBOSE, "Fila is not a valid Singularity image\n");
+        message(VERBOSE, "File is not a valid Singularity image\n");
         return(-1);
     }
 

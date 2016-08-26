@@ -334,7 +334,7 @@ void mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
 
     message(DEBUG, "Returning mount_bind(%s, %d, %d) = 0\n", source, dest, writable);
     // Note that we can't remount as read-only if we are in unprivileged mode.
-//    if ( !priv_userns_enabled() && (writable <= 0) ) {
+//    if ( !singularity_priv_userns_enabled() && (writable <= 0) ) {
         message(VERBOSE2, "Making mount read only: %s\n", dest);
         if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
             message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
@@ -351,7 +351,7 @@ void mount_home(char *rootpath) {
     struct passwd *pw;
 
     errno = 0;
-    uid_t uid = priv_getuid();
+    uid_t uid = singularity_priv_getuid();
     pw = getpwuid(uid);
     if ( !pw ) {
         // List of potential error codes for unknown name taken from man page.

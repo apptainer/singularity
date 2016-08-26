@@ -137,13 +137,13 @@ int singularity_mount_hostfs(void) {
 
         if ( ( is_dir(mountpoint) == 0 ) && ( is_dir(joinpath(container_dir, mountpoint)) < 0 ) ) {
             if ( singularity_rootfs_overlay_enabled() > 0 ) {
-                priv_escalate();
+                singularity_priv_escalate();
                 if ( s_mkpath(joinpath(container_dir, mountpoint), 0755) < 0 ) {
-                    priv_drop();
+                    singularity_priv_drop();
                     message(WARNING, "Could not create bind point directory in container %s: %s\n", mountpoint, strerror(errno));
                     continue;
                 }
-                priv_drop();
+                singularity_priv_drop();
             } else {
                 message(WARNING, "Non existant 'bind point' directory in container: '%s'\n", mountpoint);
                 continue;
@@ -151,13 +151,13 @@ int singularity_mount_hostfs(void) {
         }
 
 
-        priv_escalate();
+        singularity_priv_escalate();
         message(VERBOSE, "Binding '%s'(%s) to '%s/%s'\n", mountpoint, filesystem, container_dir, mountpoint);
         if ( mount(mountpoint, joinpath(container_dir, mountpoint), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             message(ERROR, "There was an error binding the path %s: %s\n", mountpoint, strerror(errno));
             ABORT(255);
         }
-        priv_drop();
+        singularity_priv_drop();
 
     }
 

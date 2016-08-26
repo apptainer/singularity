@@ -66,14 +66,14 @@ int container_file_bind(char *file, char *dest_path) {
         ABORT(255);
     }
 
-    priv_escalate();
+    singularity_priv_escalate();
     message(VERBOSE, "Binding file '%s' to '%s'\n", source, dest);
     if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-        priv_drop();
+        singularity_priv_drop();
         message(ERROR, "There was an error binding %s to %s: %s\n", source, dest, strerror(errno));
         ABORT(255);
     }
-    priv_drop();
+    singularity_priv_drop();
 
     return(0);
 }

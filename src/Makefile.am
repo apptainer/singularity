@@ -12,7 +12,7 @@ lib_LTLIBRARIES = libsingularity.la
 
 libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la action/libaction.la mount/libmount.la file/libfile.la
 libsingularity_la_SOURCES = singularity.c privilege.c util.c message.c file.c sessiondir.c config_parser.c fork.c loop-control.c image-util.c
-libsingularity_la_LDFLAGS = -version-info 1:0:0
+libsingularity_la_LDFLAGS = -version-info 1:0:0 
 libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
 
@@ -21,10 +21,10 @@ bindir = $(libexecdir)/singularity
 bin_PROGRAMS = $(BUILD_SUID) sexec image-create image-expand image-mount image-bind
 EXTRA_PROGRAMS = sexec-suid
 
-sexec_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
+sexec_SOURCES = sexec-devel.c config_parser.c message.c util.c file.c
 sexec_LDADD = libsingularity.la
 
-sexec_suid_SOURCES = sexec-devel.c sessiondir.c config_parser.c message.c util.c file.c
+sexec_suid_SOURCES = sexec-devel.c config_parser.c message.c util.c file.c
 sexec_suid_LDADD = libsingularity.la
 sexec_suid_LDFLAGS = -static
 sexec_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
@@ -38,7 +38,7 @@ image_expand_LDADD = libsingularity.la
 image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 image_mount_LDADD = libsingularity.la
 
-image_bind_SOURCES = image-bind.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
+image_bind_SOURCES = image-bind.c util.c file.c message.c config_parser.c
 image_bind_LDADD = libsingularity.la
 
 

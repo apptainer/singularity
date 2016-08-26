@@ -22,15 +22,15 @@
 #ifndef __PRIVILEGE_H_
 #define __PRIVILEGE_H_
 
-    void priv_init(void);
-    void priv_escalate(void);
-    void priv_drop(void);
-    void priv_drop_perm(void);
-    int priv_userns_enabled();
-    void priv_userns_ready(void);
-    uid_t priv_getuid();
-    gid_t priv_getgid();
-    const gid_t *priv_getgids();
-    int priv_getgidcount();
+    void singularity_priv_init(void);
+    void singularity_priv_escalate(void);
+    void singularity_priv_drop(void);
+    void singularity_priv_drop_perm(void);
+    uid_t singularity_priv_getuid(void);
+    gid_t singularity_priv_getgid(void);
+    const gid_t *singularity_priv_getgids();
+    int singularity_priv_getgidcount(void);
+    void singularity_priv_userns_ready(void);
+    int singularity_priv_userns_enabled(void);
 
 #endif /* __PRIVILEGE_H_ */

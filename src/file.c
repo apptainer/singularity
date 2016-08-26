@@ -43,7 +43,7 @@
 char *file_id(char *path) {
     struct stat filestat;
     char *ret;
-    uid_t uid = priv_getuid();
+    uid_t uid = singularity_priv_getuid();
 
     message(DEBUG, "Called file_id(%s)\n", path);
 

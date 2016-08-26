@@ -44,7 +44,7 @@
 char *sessiondir = NULL;
 int sessiondir_fd = 0;
 
-char *singularity_sessiondir(char *file) {
+char *singularity_sessiondir_init(char *file) {
     pid_t child_pid;
     int retval;
 
@@ -54,7 +54,7 @@ char *singularity_sessiondir(char *file) {
     } else {
         char *sessiondir_prefix;
         struct stat filestat;
-        uid_t uid = priv_getuid();
+        uid_t uid = singularity_priv_getuid();
 
         sessiondir = (char *) malloc(sizeof(char) * PATH_MAX);
 
@@ -121,6 +121,7 @@ char *singularity_sessiondir_get(void) {
         message(ERROR, "Doh, session directory has not been setup!\n");
         ABORT(255);
     }
+    message(DEBUG, "Returning: %s\n", sessiondir);
     return(sessiondir);
 }
 

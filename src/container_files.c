@@ -39,7 +39,7 @@
 
 void update_passwd_file(char *file) {
     FILE *file_fp;
-    uid_t uid = priv_getuid();
+    uid_t uid = singularity_priv_getuid();
     errno = 0;
     struct passwd *pwent = getpwuid(uid);
 
@@ -76,10 +76,10 @@ void update_passwd_file(char *file) {
 void update_group_file(char *file) {
     FILE *file_fp;
     int i;
-    uid_t uid = priv_getuid();
-    uid_t gid = priv_getgid();
-    const gid_t *gids = priv_getgids();
-    int gid_count = priv_getgidcount();
+    uid_t uid = singularity_priv_getuid();
+    uid_t gid = singularity_priv_getgid();
+    const gid_t *gids = singularity_priv_getgids();
+    int gid_count = singularity_priv_getgidcount();
 
     errno = 0;
     struct passwd *pwent = getpwuid(uid);
@@ -121,7 +121,7 @@ void update_group_file(char *file) {
     }
 
 
-    if ( !priv_userns_enabled() ) {
+    if ( !singularity_priv_userns_enabled() ) {
         message(DEBUG, "Getting supplementary group info\n");
 
         for (i=0; i < gid_count; i++) {
