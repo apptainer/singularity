@@ -40,10 +40,10 @@
 
 #include "config.h"
 #include "mounts.h"
-#include "file.h"
-#include "util.h"
-#include "lib/loop-control.h"
 #include "message.h"
+#include "util/file.h"
+#include "util/util.h"
+#include "lib/loop-control.h"
 #include "lib/config_parser.h"
 #include "lib/privilege.h"
 

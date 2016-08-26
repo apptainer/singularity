@@ -36,10 +36,10 @@
 #include <libgen.h>
 
 #include "config.h"
-#include "file.h"
-#include "util.h"
 #include "message.h"
-#include "singularity.h"
+#include "lib/singularity.h"
+#include "util/file.h"
+#include "util/util.h"
 
 
 int main(int argc, char ** argv) {

@@ -30,8 +30,8 @@
 #include <stdlib.h>
 #include <sched.h>
 
-#include "file.h"
-#include "util.h"
+#include "util/file.h"
+#include "util/util.h"
 #include "message.h"
 #include "lib/config_parser.h"
 #include "lib/privilege.h"

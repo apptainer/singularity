@@ -37,10 +37,10 @@
 
 #include "config.h"
 #include "mounts.h"
-#include "util.h"
-#include "file.h"
-#include "lib/loop-control.h"
 #include "message.h"
+#include "util/util.h"
+#include "util/file.h"
+#include "lib/loop-control.h"
 
 
 #ifndef LIBEXECDIR

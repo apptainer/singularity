@@ -29,10 +29,10 @@
 #include <fcntl.h>  
 
 #include "config.h"
-#include "file.h"
 #include "image.h"
 #include "message.h"
-#include "util.h"
+#include "util/util.h"
+#include "util/file.h"
 
 
 

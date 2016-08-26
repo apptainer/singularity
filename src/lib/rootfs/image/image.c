@@ -29,8 +29,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "file.h"
-#include "util.h"
+#include "util/file.h"
+#include "util/util.h"
 #include "message.h"
 #include "lib/config_parser.h"
 #include "image.h"

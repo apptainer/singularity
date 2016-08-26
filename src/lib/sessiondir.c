@@ -32,9 +32,9 @@
 
 
 
-#include "file.h"
+#include "util/file.h"
 #include "image.h"
-#include "util.h"
+#include "util/util.h"
 #include "message.h"
 #include "lib/privilege.h"
 #include "lib/config_parser.h"

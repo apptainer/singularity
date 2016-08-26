@@ -27,9 +27,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "file.h"
+#include "util/file.h"
 #include "image.h"
-#include "util.h"
+#include "util/util.h"
 #include "message.h"
 #include "lib/image-util.h"
 

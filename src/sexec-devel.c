@@ -31,8 +31,8 @@
 //#include "config_parser.h"
 //#include "privilege.h"
 #include "message.h"
-#include "util.h"
-#include "file.h"
+#include "util/util.h"
+#include "util/file.h"
 #include "lib/singularity.h"
 
 #ifndef SYSCONFDIR

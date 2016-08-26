@@ -11,7 +11,7 @@ include_HEADERS = singularity.h
 lib_LTLIBRARIES = libsingularity.la
 
 libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la action/libaction.la mount/libmount.la file/libfile.la
-libsingularity_la_SOURCES = singularity.c privilege.c ../util.c ../message.c ../file.c sessiondir.c config_parser.c fork.c loop-control.c image-util.c
+libsingularity_la_SOURCES = singularity.c privilege.c ../util/util.c ../message.c ../util/file.c sessiondir.c config_parser.c fork.c loop-control.c image-util.c
 libsingularity_la_LDFLAGS = -version-info 1:0:0 
 libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 

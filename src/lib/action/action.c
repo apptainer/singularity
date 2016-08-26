@@ -29,8 +29,8 @@
 #include <stdlib.h>
 #include <pwd.h>
 
-#include "file.h"
-#include "util.h"
+#include "util/file.h"
+#include "util/util.h"
 #include "message.h"
 #include "lib/privilege.h"
 #include "exec/exec.h"
