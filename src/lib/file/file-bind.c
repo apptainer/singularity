@@ -41,15 +41,15 @@ int container_file_bind(char *file, char *dest_path) {
     char *containerdir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
 
-    message(DEBUG, "Called file_bind(%s, %s()\n", file, dest_path);
+    singularity_message(DEBUG, "Called file_bind(%s, %s()\n", file, dest_path);
 
     if ( containerdir == NULL ) {
-        message(ERROR, "Failed to obtain container directory\n");
+        singularity_message(ERROR, "Failed to obtain container directory\n");
         ABORT(255);
     }
 
     if ( sessiondir == NULL ) {
-        message(ERROR, "Failed to obtain session directory\n");
+        singularity_message(ERROR, "Failed to obtain session directory\n");
         ABORT(255);
     }
 
@@ -57,20 +57,20 @@ int container_file_bind(char *file, char *dest_path) {
     dest = joinpath(containerdir, dest_path);
 
     if ( is_file(source) < 0 ) {
-        message(ERROR, "Bind file source does not exist: %s\n", source);
+        singularity_message(ERROR, "Bind file source does not exist: %s\n", source);
         ABORT(255);
     }
 
     if ( is_file(dest) < 0 ) {
-        message(ERROR, "Bind file source does not exist: %s\n", dest);
+        singularity_message(ERROR, "Bind file source does not exist: %s\n", dest);
         ABORT(255);
     }
 
     singularity_priv_escalate();
-    message(VERBOSE, "Binding file '%s' to '%s'\n", source, dest);
+    singularity_message(VERBOSE, "Binding file '%s' to '%s'\n", source, dest);
     if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
         singularity_priv_drop();
-        message(ERROR, "There was an error binding %s to %s: %s\n", source, dest, strerror(errno));
+        singularity_message(ERROR, "There was an error binding %s to %s: %s\n", source, dest, strerror(errno));
         ABORT(255);
     }
     singularity_priv_drop();

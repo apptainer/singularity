@@ -42,15 +42,15 @@ static int read_write = 0;
 
 
 int rootfs_dir_init(char *source, char *mount_dir) {
-    message(DEBUG, "Inializing container rootfs dir subsystem\n");
+    singularity_message(DEBUG, "Inializing container rootfs dir subsystem\n");
 
     if ( is_dir(source) < 0 ) {
-        message(ERROR, "Container source directory is not available: %s\n", source);
+        singularity_message(ERROR, "Container source directory is not available: %s\n", source);
         ABORT(255);
     }
 
     if ( strcmp(source, "/") == 0 ) {
-        message(ERROR, "Naughty, naughty, naughty...!\n");
+        singularity_message(ERROR, "Naughty, naughty, naughty...!\n");
         ABORT(255);
     }
 
@@ -68,19 +68,19 @@ int rootfs_dir_init(char *source, char *mount_dir) {
 int rootfs_dir_mount(void) {
 
     if ( ( mount_point == NULL ) || ( source_dir == NULL ) ) {
-        message(ERROR, "Called image_mount but image_init() hasn't been called\n");
+        singularity_message(ERROR, "Called image_mount but image_init() hasn't been called\n");
         ABORT(255);
     }
 
     if ( is_dir(mount_point) < 0 ) {
-        message(ERROR, "Container directory not available: %s\n", mount_point);
+        singularity_message(ERROR, "Container directory not available: %s\n", mount_point);
         ABORT(255);
     }
 
     singularity_priv_escalate();
-    message(DEBUG, "Mounting container directory %s->%s\n", source_dir, mount_point);
+    singularity_message(DEBUG, "Mounting container directory %s->%s\n", source_dir, mount_point);
     if ( mount(source_dir, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-        message(ERROR, "Could not mount container directory %s->%s: %s\n", source_dir, mount_point, strerror(errno));
+        singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", source_dir, mount_point, strerror(errno));
         return 1;
     }
     singularity_priv_drop();
@@ -88,9 +88,9 @@ int rootfs_dir_mount(void) {
     if ( read_write <= 0 ) {
         if ( singularity_ns_user_enabled() <= 0 ) {
             singularity_priv_escalate();
-            message(VERBOSE2, "Making mount read only: %s\n", mount_point);
+            singularity_message(VERBOSE2, "Making mount read only: %s\n", mount_point);
             if ( mount(NULL, mount_point, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
-                message(ERROR, "Could not bind read only %s: %s\n", mount_point, strerror(errno));
+                singularity_message(ERROR, "Could not bind read only %s: %s\n", mount_point, strerror(errno));
                 ABORT(255);
             }
             singularity_priv_drop();

@@ -50,7 +50,7 @@ int singularity_mount_home(void) {
 
     singularity_config_rewind();
     if ( singularity_config_get_bool("mount home", 1) <= 0 ) {
-        message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
+        singularity_message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
         return(0);
     }
 
@@ -58,31 +58,31 @@ int singularity_mount_home(void) {
     if ( ( pw = getpwuid(uid) ) == NULL ) {
         // List of potential error codes for unknown name taken from man page.
         if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
-            message(VERBOSE3, "Not mounting home directory as passwd entry for %d not found.\n", uid);
+            singularity_message(VERBOSE3, "Not mounting home directory as passwd entry for %d not found.\n", uid);
             return(1);
         } else {
-            message(ERROR, "Failed to lookup username for UID %d: %s\n", getuid, strerror(errno));
+            singularity_message(ERROR, "Failed to lookup username for UID %d: %s\n", getuid, strerror(errno));
             ABORT(255);
         }
     }
 
-    message(DEBUG, "Obtaining user's homedir\n");
+    singularity_message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
 
     // Figure out home directory source
     if ( ( homedir_source = getenv("SINGULARITY_HOME") ) != NULL ) {
         singularity_config_rewind();
         if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
-            message(ERROR, "User bind control is disabled by system administrator\n");
+            singularity_message(ERROR, "User bind control is disabled by system administrator\n");
             ABORT(5);
         }
 
-        message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
+        singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
     } else if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
         if ( ( tmpdirpath = getenv("SINGULARITY_WORKDIR") ) != NULL ) {
             singularity_config_rewind();
             if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
-                message(ERROR, "User bind control is disabled by system administrator\n");
+                singularity_message(ERROR, "User bind control is disabled by system administrator\n");
                 ABORT(5);
             }
 
@@ -92,44 +92,44 @@ int singularity_mount_home(void) {
             homedir_source = joinpath(sessiondir, "/home.tmp");
         }
         if ( s_mkpath(homedir_source, 0755) < 0 ) {
-            message(ERROR, "Could not create temporary home directory %s: %s\n", homedir_source, strerror(errno));
+            singularity_message(ERROR, "Could not create temporary home directory %s: %s\n", homedir_source, strerror(errno));
             ABORT(255);
         } else {
-            message(VERBOSE2, "Set the contained home directory source to: %s\n", homedir_source);
+            singularity_message(VERBOSE2, "Set the contained home directory source to: %s\n", homedir_source);
         }
 
     } else if ( is_dir(homedir) == 0 ) {
         homedir_source = strdup(homedir);
-        message(VERBOSE2, "Set base the home directory source to: %s\n", homedir_source);
+        singularity_message(VERBOSE2, "Set base the home directory source to: %s\n", homedir_source);
     } else {
-        message(ERROR, "Could not identify home directory path: %s\n", homedir_source);
+        singularity_message(ERROR, "Could not identify home directory path: %s\n", homedir_source);
         ABORT(255);
     }
 
     // Create a location to stage the directories
     if ( s_mkpath(homedir_source, 0755) < 0 ) {
-        message(ERROR, "Failed creating home directory bind path\n");
+        singularity_message(ERROR, "Failed creating home directory bind path\n");
     }
 
     // Create a location to stage the directories
     if ( s_mkpath(joinpath(sessiondir, homedir), 0755) < 0 ) {
-        message(ERROR, "Failed creating home directory bind path\n");
+        singularity_message(ERROR, "Failed creating home directory bind path\n");
     }
 
     // Check to make sure whatever we were given as the home directory is really ours
-    message(DEBUG, "Checking permissions on home directory: %s\n", homedir_source);
+    singularity_message(DEBUG, "Checking permissions on home directory: %s\n", homedir_source);
     if ( is_owner(homedir_source, uid) < 0 ) {
-        message(ERROR, "Home directory permissions incorrect: %s\n", homedir_source);
+        singularity_message(ERROR, "Home directory permissions incorrect: %s\n", homedir_source);
         ABORT(255);
     }
 
     // Figure out where we should mount the home directory in the container
-    message(DEBUG, "Trying to create home dir within container\n");
+    singularity_message(DEBUG, "Trying to create home dir within container\n");
     if ( singularity_rootfs_overlay_enabled() > 0 ) {
         singularity_priv_escalate();
         if ( s_mkpath(joinpath(container_dir, homedir), 0750) == 0 ) {
             singularity_priv_drop();
-            message(DEBUG, "Created home directory within the container: %s\n", homedir);
+            singularity_message(DEBUG, "Created home directory within the container: %s\n", homedir);
             homedir_base = strdup(homedir);
         } else {
             singularity_priv_drop();
@@ -138,24 +138,24 @@ int singularity_mount_home(void) {
 
     if ( homedir_base == NULL ) {
         if ( ( homedir_base = container_basedir(container_dir, homedir) ) != NULL ) {
-            message(DEBUG, "Could not create directory within container, set base bind point to: %s\n", homedir_base);
+            singularity_message(DEBUG, "Could not create directory within container, set base bind point to: %s\n", homedir_base);
         } else {
-            message(ERROR, "No bind point available for home directory: %s\n", homedir);
+            singularity_message(ERROR, "No bind point available for home directory: %s\n", homedir);
             ABORT(255);
         }
     }
 
     singularity_priv_escalate();
     // First mount the real home directory to the stage
-    message(VERBOSE, "Mounting home directory to stage: %s->%s\n", homedir_source, joinpath(sessiondir, homedir));
+    singularity_message(VERBOSE, "Mounting home directory to stage: %s->%s\n", homedir_source, joinpath(sessiondir, homedir));
     if ( mount(homedir_source, joinpath(sessiondir, homedir), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-        message(ERROR, "Failed to mount home directory to stage: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to mount home directory to stage: %s\n", strerror(errno));
         ABORT(255);
     }
     // Then mount the stage to the container
-    message(VERBOSE, "Mounting staged home directory into container: %s->%s\n", joinpath(sessiondir, homedir_base), joinpath(container_dir, homedir_base));
+    singularity_message(VERBOSE, "Mounting staged home directory into container: %s->%s\n", joinpath(sessiondir, homedir_base), joinpath(container_dir, homedir_base));
     if ( mount(joinpath(sessiondir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-        message(ERROR, "Failed to mount staged home directory into container: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to mount staged home directory into container: %s\n", strerror(errno));
         ABORT(255);
     }
     singularity_priv_drop();

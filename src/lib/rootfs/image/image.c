@@ -50,17 +50,17 @@ static int read_write = 0;
 
 
 int rootfs_image_init(char *source, char *mount_dir) {
-    message(DEBUG, "Inializing container rootfs image subsystem\n");
+    singularity_message(DEBUG, "Inializing container rootfs image subsystem\n");
 
     if ( image_fp != NULL ) {
-        message(WARNING, "Called image_open, but image already open!\n");
+        singularity_message(WARNING, "Called image_open, but image already open!\n");
         return(1);
     }
 
     if ( is_file(source) == 0 ) {
         mount_point = strdup(mount_dir);
     } else {
-        message(ERROR, "Container image is not available: %s\n", mount_dir);
+        singularity_message(ERROR, "Container image is not available: %s\n", mount_dir);
         ABORT(255);
     }
 
@@ -68,30 +68,30 @@ int rootfs_image_init(char *source, char *mount_dir) {
 
     if ( getenv("SINGULARITY_WRITABLE") != NULL ) {
         if ( ( image_fp = fopen(source, "r+") ) == NULL ) {
-            message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
+            singularity_message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
 
-        message(DEBUG, "Obtaining exclusive write lock on image\n");
+        singularity_message(DEBUG, "Obtaining exclusive write lock on image\n");
         if ( flock(fileno(image_fp), LOCK_EX | LOCK_NB) < 0 ) {
-            message(ERROR, "Could not obtain a shared lock on image: %s\n", source);
+            singularity_message(ERROR, "Could not obtain a shared lock on image: %s\n", source);
             ABORT(255);
         }
         read_write = 1;
     } else {
         if ( ( image_fp = fopen(source, "r") ) == NULL ) {
-            message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
+            singularity_message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
     }
 
     if ( singularity_image_check(image_fp) < 0 ) {
-        message(ERROR, "File is not a valid Singularity image, aborting...\n");
+        singularity_message(ERROR, "File is not a valid Singularity image, aborting...\n");
         ABORT(255);
     }
 
     if ( ( getuid() != 0 ) && ( is_suid("/proc/self/exe") < 0 ) ) {
-        message(ERROR, "Singularity must be executed in privileged mode to use images\n");
+        singularity_message(ERROR, "Singularity must be executed in privileged mode to use images\n");
         ABORT(255);
     }
 
@@ -102,40 +102,40 @@ int rootfs_image_init(char *source, char *mount_dir) {
 int rootfs_image_mount(void) {
 
     if ( mount_point == NULL ) {
-        message(ERROR, "Called image_mount but image_init() hasn't been called\n");
+        singularity_message(ERROR, "Called image_mount but image_init() hasn't been called\n");
         ABORT(255);
     }
 
     if ( image_fp == NULL ) {
-        message(ERROR, "Called image_mount, but image has not been opened!\n");
+        singularity_message(ERROR, "Called image_mount, but image has not been opened!\n");
         ABORT(255);
     }
 
     if ( is_dir(mount_point) < 0 ) {
-        message(ERROR, "Container directory not available: %s\n", mount_point);
+        singularity_message(ERROR, "Container directory not available: %s\n", mount_point);
         ABORT(255);
     }
 
-    message(DEBUG, "Binding image to loop device\n");
+    singularity_message(DEBUG, "Binding image to loop device\n");
     if ( ( loop_dev = singularity_loop_bind(image_fp) ) == NULL ) {
-        message(ERROR, "There was a problem bind mounting the image\n");
+        singularity_message(ERROR, "There was a problem bind mounting the image\n");
         ABORT(255);
     }
 
 
     if ( read_write > 0 ) {
-        message(VERBOSE, "Mounting image in read/write\n");
+        singularity_message(VERBOSE, "Mounting image in read/write\n");
         singularity_priv_escalate();
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
-            message(ERROR, "Failed to mount image!\n");
+            singularity_message(ERROR, "Failed to mount image!\n");
             ABORT(255);
         }
         singularity_priv_drop();
     } else {
         singularity_priv_escalate();
-        message(VERBOSE, "Mounting image in read/only\n");
+        singularity_message(VERBOSE, "Mounting image in read/only\n");
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-            message(ERROR, "Failed to mount image!\n");
+            singularity_message(ERROR, "Failed to mount image!\n");
             ABORT(255);
         }
         singularity_priv_drop();

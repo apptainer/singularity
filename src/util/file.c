@@ -45,7 +45,7 @@ char *file_id(char *path) {
     char *ret;
     uid_t uid = singularity_priv_getuid();
 
-    message(DEBUG, "Called file_id(%s)\n", path);
+    singularity_message(DEBUG, "Called file_id(%s)\n", path);
 
     // Stat path
     if (lstat(path, &filestat) < 0) {
@@ -55,9 +55,9 @@ char *file_id(char *path) {
     ret = (char *) malloc(128);
     snprintf(ret, 128, "%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
 
-    message(VERBOSE2, "Generated file_id: %s\n", ret);
+    singularity_message(VERBOSE2, "Generated file_id: %s\n", ret);
 
-    message(DEBUG, "Returning file_id(%s) = %s\n", path, ret);
+    singularity_message(DEBUG, "Returning file_id(%s) = %s\n", path, ret);
     return(ret);
 }
 
@@ -225,10 +225,10 @@ int s_mkpath(char *dir, mode_t mode) {
         return(-1);
     }
 
-    message(DEBUG, "Creating directory: %s\n", dir);
+    singularity_message(DEBUG, "Creating directory: %s\n", dir);
     if ( mkdir(dir, mode) < 0 ) {
         if ( is_dir(dir) < 0 ) { // It is possible that the directory was created between above check and mkdir()
-            message(DEBUG, "Opps, could not create directory %s: (%d) %s\n", dir, errno, strerror(errno));
+            singularity_message(DEBUG, "Opps, could not create directory %s: (%d) %s\n", dir, errno, strerror(errno));
             return(-1);
         }
     }
@@ -244,7 +244,7 @@ int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *
 
 int s_rmdir(char *dir) {
 
-    message(DEBUG, "Removing dirctory: %s\n", dir);
+    singularity_message(DEBUG, "Removing dirctory: %s\n", dir);
     return(nftw(dir, _unlink, 32, FTW_DEPTH|FTW_MOUNT|FTW_PHYS));
 }
 
@@ -254,48 +254,48 @@ int copy_file(char * source, char * dest) {
     FILE * fp_s;
     FILE * fp_d;
 
-    message(DEBUG, "Called copy_file(%s, %s)\n", source, dest);
+    singularity_message(DEBUG, "Called copy_file(%s, %s)\n", source, dest);
 
     if ( is_file(source) < 0 ) {
-        message(ERROR, "Could not copy from non-existant source: %s\n", source);
+        singularity_message(ERROR, "Could not copy from non-existant source: %s\n", source);
         return(-1);
     }
 
-    message(DEBUG, "Opening source file: %s\n", source);
+    singularity_message(DEBUG, "Opening source file: %s\n", source);
     if ( ( fp_s = fopen(source, "r") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not read %s: %s\n", source, strerror(errno));
+        singularity_message(ERROR, "Could not read %s: %s\n", source, strerror(errno));
         return(-1);
     }
 
-    message(DEBUG, "Opening destination file: %s\n", dest);
+    singularity_message(DEBUG, "Opening destination file: %s\n", dest);
     if ( ( fp_d = fopen(dest, "w") ) == NULL ) { // Flawfinder: ignore
         fclose(fp_s);
-        message(ERROR, "Could not write %s: %s\n", dest, strerror(errno));
+        singularity_message(ERROR, "Could not write %s: %s\n", dest, strerror(errno));
         return(-1);
     }
 
-    message(DEBUG, "Calling fstat() on source file descriptor: %d\n", fileno(fp_s));
+    singularity_message(DEBUG, "Calling fstat() on source file descriptor: %d\n", fileno(fp_s));
     if ( fstat(fileno(fp_s), &filestat) < 0 ) {
-        message(ERROR, "Could not fstat() on %s: %s\n", source, strerror(errno));
+        singularity_message(ERROR, "Could not fstat() on %s: %s\n", source, strerror(errno));
         return(-1);
     }
 
-    message(DEBUG, "Cloning permission string of source to dest\n");
+    singularity_message(DEBUG, "Cloning permission string of source to dest\n");
     if ( fchmod(fileno(fp_d), filestat.st_mode) < 0 ) {
-        message(ERROR, "Could not set permission mode on %s: %s\n", dest, strerror(errno));
+        singularity_message(ERROR, "Could not set permission mode on %s: %s\n", dest, strerror(errno));
         return(-1);
     }
 
-    message(DEBUG, "Copying file data...\n");
+    singularity_message(DEBUG, "Copying file data...\n");
     while ( ( c = fgetc(fp_s) ) != EOF ) { // Flawfinder: ignore (checked boundries)
         fputc(c, fp_d);
     }
 
-    message(DEBUG, "Done copying data, closing file pointers\n");
+    singularity_message(DEBUG, "Done copying data, closing file pointers\n");
     fclose(fp_s);
     fclose(fp_d);
 
-    message(DEBUG, "Returning copy_file(%s, %s) = 0\n", source, dest);
+    singularity_message(DEBUG, "Returning copy_file(%s, %s) = 0\n", source, dest);
 
     return(0);
 }
@@ -304,9 +304,9 @@ int copy_file(char * source, char * dest) {
 int fileput(char *path, char *string) {
     FILE *fd;
 
-    message(DEBUG, "Called fileput(%s, %s)\n", path, string);
+    singularity_message(DEBUG, "Called fileput(%s, %s)\n", path, string);
     if ( ( fd = fopen(path, "w") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
+        singularity_message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
         return(-1);
     }
 
@@ -323,21 +323,21 @@ char *filecat(char *path) {
     long length;
     long pos = 0;
 
-    message(DEBUG, "Called filecat(%s)\n", path);
+    singularity_message(DEBUG, "Called filecat(%s)\n", path);
     
     if ( is_file(path) < 0 ) {
-        message(ERROR, "Could not find %s\n", path);
+        singularity_message(ERROR, "Could not find %s\n", path);
         return(NULL);
     }
 
     if ( ( fd = fopen(path, "r") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not read from %s: %s\n", path, strerror(errno));
+        singularity_message(ERROR, "Could not read from %s: %s\n", path, strerror(errno));
         return(NULL);
     }
 
 
     if ( fseek(fd, 0L, SEEK_END) < 0 ) {
-        message(ERROR, "Could not seek to end of file %s: %s\n", path, strerror(errno));
+        singularity_message(ERROR, "Could not seek to end of file %s: %s\n", path, strerror(errno));
         return(NULL);
     }
 

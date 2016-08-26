@@ -54,20 +54,20 @@ int singularity_file_group(void) {
     char *containerdir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
 
-    message(DEBUG, "Called singularity_file_group_create()\n");
+    singularity_message(DEBUG, "Called singularity_file_group_create()\n");
 
     if ( uid == 0 ) {
-        message(VERBOSE, "Not updating group file, running as root!\n");
+        singularity_message(VERBOSE, "Not updating group file, running as root!\n");
         return(0);
     }
 
     if ( containerdir == NULL ) {
-        message(ERROR, "Failed to obtain container directory\n");
+        singularity_message(ERROR, "Failed to obtain container directory\n");
         ABORT(255);
     }
 
     if ( sessiondir == NULL ) {
-        message(ERROR, "Failed to obtain session directory\n");
+        singularity_message(ERROR, "Failed to obtain session directory\n");
         ABORT(255);
     }
 
@@ -75,7 +75,7 @@ int singularity_file_group(void) {
     tmp_file = joinpath(sessiondir, "/group");
 
     if ( is_file(source_file) < 0 ) {
-        message(VERBOSE, "Group file does not exist in container, not updating\n");
+        singularity_message(VERBOSE, "Group file does not exist in container, not updating\n");
         return(0);
     }
 
@@ -83,44 +83,44 @@ int singularity_file_group(void) {
     if ( ! pwent ) {
         // List of potential error codes for unknown name taken from man page.
         if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
-            message(VERBOSE3, "Not updating group file as passwd entry for UID %d not found.\n", uid);
+            singularity_message(VERBOSE3, "Not updating group file as passwd entry for UID %d not found.\n", uid);
             return(0);
         } else {
-            message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
+            singularity_message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
             ABORT(255);
         }
     }
 
-    message(VERBOSE2, "Creating template of /etc/group for containment\n");
+    singularity_message(VERBOSE2, "Creating template of /etc/group for containment\n");
     if ( ( copy_file(source_file, tmp_file) ) < 0 ) {
-        message(ERROR, "Failed copying template group file to sessiondir: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed copying template group file to sessiondir: %s\n", strerror(errno));
         ABORT(255);
     }
 
     if ( ( file_fp = fopen(tmp_file, "a") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not open template group file %s: %s\n", tmp_file, strerror(errno));
+        singularity_message(ERROR, "Could not open template group file %s: %s\n", tmp_file, strerror(errno));
         ABORT(255);
     }
 
     errno = 0;
     if ( grent ) {
-        message(VERBOSE, "Updating group file with user info\n");
+        singularity_message(VERBOSE, "Updating group file with user info\n");
         fprintf(file_fp, "\n%s:x:%u:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
     } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
         // It's rare, but certainly possible to have a GID that's not a group entry in this system.
         // According to the man page, all of the above errno's can indicate this situation.
-        message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gid);
+        singularity_message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gid);
     } else {
-        message(ERROR, "Failed to lookup GID %d group entry: %s\n", gid, strerror(errno));
+        singularity_message(ERROR, "Failed to lookup GID %d group entry: %s\n", gid, strerror(errno));
         ABORT(255);
     }
 
 
-    message(DEBUG, "Getting supplementary group info\n");
+    singularity_message(DEBUG, "Getting supplementary group info\n");
 
     for (i=0; i < gid_count; i++) {
         if ( gids[i] == gid ) {
-            message(DEBUG, "Skipping duplicate supplementary group\n");
+            singularity_message(DEBUG, "Skipping duplicate supplementary group\n");
             continue;
         }
 
@@ -128,17 +128,17 @@ int singularity_file_group(void) {
             errno = 0;
             struct group *gr = getgrgid(gids[i]);
             if ( gr ) {
-                message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
-                message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
+                singularity_message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
+                singularity_message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", grent->gr_name);
                 fprintf(file_fp, "%s:x:%u:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
             } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
-                message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gids[i]);
+                singularity_message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gids[i]);
             } else {
-                message(ERROR, "Failed to lookup GID %d group entry: %s\n", gids[i], strerror(errno));
+                singularity_message(ERROR, "Failed to lookup GID %d group entry: %s\n", gids[i], strerror(errno));
                 ABORT(255);
             }
         } else {
-            message(VERBOSE, "Group id '%d' is out of bounds\n", gids[i]);
+            singularity_message(VERBOSE, "Group id '%d' is out of bounds\n", gids[i]);
         }
     }
 

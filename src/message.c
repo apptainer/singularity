@@ -49,13 +49,13 @@ void init(void) {
         } else if ( messagelevel > 9 ) {
             messagelevel = 9;
         }
-        message(VERBOSE, "Set messagelevel to: %d\n", messagelevel);
+        singularity_message(VERBOSE, "Set messagelevel to: %d\n", messagelevel);
     }
 
 }
 
 
-void _message(int level, const char *function, const char *file, int line, char *format, ...) {
+void _singularity_message(int level, const char *function, const char *file, int line, char *format, ...) {
     int syslog_level = LOG_NOTICE;
     char message[512]; // Flawfinder: ignore (messages are truncated to 512 chars)
     char *prefix = "";

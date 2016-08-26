@@ -102,7 +102,7 @@ int main(int argc, char ** argv) {
 
 
     if ( uid != 0 ) {
-        message(ERROR, "Calling user must be root\n");
+        singularity_message(ERROR, "Calling user must be root\n");
         ABORT(1);
     }
 
@@ -115,55 +115,55 @@ int main(int argc, char ** argv) {
     mountpoint = strdup(argv[2]);
 
     if ( is_file(containerimage) < 0 ) {
-        message(ERROR, "Container image not found: %s\n", containerimage);
+        singularity_message(ERROR, "Container image not found: %s\n", containerimage);
         ABORT(1);
     }
 
     if ( is_dir(mountpoint) < 0 ) {
-        message(ERROR, "Mount point must be a directory: %s\n", mountpoint);
+        singularity_message(ERROR, "Mount point must be a directory: %s\n", mountpoint);
         ABORT(1);
     }
 
-    message(DEBUG, "Opening container image: %s\n", containerimage);
+    singularity_message(DEBUG, "Opening container image: %s\n", containerimage);
     if ( ( containerimage_fp = fopen(containerimage, "r+") ) < 0 ) { // Flawfinder: ignore
-        message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
+        singularity_message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Binding container to loop interface\n");
+    singularity_message(DEBUG, "Binding container to loop interface\n");
     if ( ( loop_dev = singularity_loop_bind(containerimage_fp)) == NULL ) {
-        message(ERROR, "Could not bind image to loop!\n");
+        singularity_message(ERROR, "Could not bind image to loop!\n");
         ABORT(255);
     }
 
-    message(DEBUG, "Forking namespace child\n");
+    singularity_message(DEBUG, "Forking namespace child\n");
     namespace_fork_pid = fork();
     if ( namespace_fork_pid == 0 ) {
 
         if ( unshare(CLONE_NEWNS) < 0 ) {
-            message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
+            singularity_message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
             ABORT(255);
         }
 
         if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
-            message(ERROR, "Could not make mountspaces private: %s\n", strerror(errno));
+            singularity_message(ERROR, "Could not make mountspaces private: %s\n", strerror(errno));
             ABORT(255);
         }
 
 
         if ( mount_image(loop_dev, mountpoint, 1) < 0 ) {
-            message(ERROR, "Failed mounting image...\n");
+            singularity_message(ERROR, "Failed mounting image...\n");
             ABORT(255);
         }
 
-        message(DEBUG, "Forking exec child\n");
+        singularity_message(DEBUG, "Forking exec child\n");
         exec_fork_pid = fork();
         if ( exec_fork_pid == 0 ) {
 
             argv[2] = strdup("/bin/bash");
 
             if ( execv("/bin/bash", &argv[2]) != 0 ) { // Flawfinder: ignore (exec* is necessary)
-                message(ERROR, "Exec of /bin/bash failed: %s\n", strerror(errno));
+                singularity_message(ERROR, "Exec of /bin/bash failed: %s\n", strerror(errno));
             }
             // We should never get here, so if we do, make it an error
             return(-1);
@@ -173,11 +173,11 @@ int main(int argc, char ** argv) {
 
             strncpy(argv[0], "Singularity: exec", strlen(argv[0])); // Flawfinder: ignore
 
-            message(DEBUG, "Waiting for exec child to return\n");
+            singularity_message(DEBUG, "Waiting for exec child to return\n");
             waitpid(exec_fork_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
 
-            message(DEBUG, "Exec child returned (RETVAL=%d)\n", retval);
+            singularity_message(DEBUG, "Exec child returned (RETVAL=%d)\n", retval);
 
             return(retval);
         } else {
@@ -190,11 +190,11 @@ int main(int argc, char ** argv) {
         
         strncpy(argv[0], "Singularity: namespace", strlen(argv[0])); // Flawfinder: ignore
         
-        message(DEBUG, "Waiting for namespace child to return\n");
+        singularity_message(DEBUG, "Waiting for namespace child to return\n");
         waitpid(namespace_fork_pid, &tmpstatus, 0);
 
         retval = WEXITSTATUS(tmpstatus);
-        message(DEBUG, "Namespace child returned (RETVAL=%d)\n", retval);
+        singularity_message(DEBUG, "Namespace child returned (RETVAL=%d)\n", retval);
 
     } else {
         fprintf(stderr, "ABORT: Could not fork management process: %s\n", strerror(errno));

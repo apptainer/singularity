@@ -58,37 +58,37 @@ char *singularity_loop_bind(FILE *image_fp) {
     int i;
 
     if ( image_fp == NULL ) {
-        message(ERROR, "Called singularity_loop_bind() with NULL image pointer\n");
+        singularity_message(ERROR, "Called singularity_loop_bind() with NULL image pointer\n");
         ABORT(255);
     }
 
-    message(DEBUG, "Opening image loop device file: %s\n", image_loop_file);
+    singularity_message(DEBUG, "Opening image loop device file: %s\n", image_loop_file);
     if ( ( image_loop_file_fd = open(image_loop_file, O_CREAT | O_RDWR, 0644) ) < 0 ) {
-        message(ERROR, "Could not open image loop device cache file %s: %s\n", image_loop_file, strerror(errno));
+        singularity_message(ERROR, "Could not open image loop device cache file %s: %s\n", image_loop_file, strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Checking image is a Singularity\n");
+    singularity_message(DEBUG, "Checking image is a Singularity\n");
     if ( singularity_image_check(image_fp) < 0 ) {
-        message(ERROR, "File is not a Singularity image!\n");
+        singularity_message(ERROR, "File is not a Singularity image!\n");
         ABORT(255);
     }
 
-    message(DEBUG, "Requesting exclusive flock() on loop_dev lockfile\n");
+    singularity_message(DEBUG, "Requesting exclusive flock() on loop_dev lockfile\n");
     if ( flock(image_loop_file_fd, LOCK_EX | LOCK_NB) < 0 ) {
         char *active_loop_dev;
-        message(VERBOSE2, "Did not get exclusive lock on image loop device cache, assuming it is active\n");
+        singularity_message(VERBOSE2, "Did not get exclusive lock on image loop device cache, assuming it is active\n");
 
-        message(DEBUG, "Waiting to obtain shared lock on loop_dev lockfile\n");
+        singularity_message(DEBUG, "Waiting to obtain shared lock on loop_dev lockfile\n");
         flock(image_loop_file_fd, LOCK_SH);
 
-        message(DEBUG, "Obtaining cached loop device name\n");
+        singularity_message(DEBUG, "Obtaining cached loop device name\n");
         if ( ( active_loop_dev = filecat(image_loop_file) ) == NULL ) {
-            message(ERROR, "Could not retrieve active loop device from %s\n", image_loop_file);
+            singularity_message(ERROR, "Could not retrieve active loop device from %s\n", image_loop_file);
             ABORT(255);
         }
 
-        message(DEBUG, "Returning with active loop device name: %s\n", active_loop_dev);
+        singularity_message(DEBUG, "Returning with active loop device name: %s\n", active_loop_dev);
         return(active_loop_dev);
     }
 
@@ -97,26 +97,26 @@ char *singularity_loop_bind(FILE *image_fp) {
     lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
 #endif
 
-    message(DEBUG, "Calculating image offset\n");
+    singularity_message(DEBUG, "Calculating image offset\n");
     if ( ( lo64.lo_offset = singularity_image_offset(image_fp) ) < 0 ) {
-        message(ERROR, "Could not obtain message offset of image\n");
+        singularity_message(ERROR, "Could not obtain message offset of image\n");
         ABORT(255);
     }
 
     singularity_priv_escalate();
-    message(DEBUG, "Finding next available loop device...\n");
+    singularity_message(DEBUG, "Finding next available loop device...\n");
     for( i=0; i < MAX_LOOP_DEVS; i++ ) {
         char *test_loopdev = strjoin("/dev/loop", int2str(i));
 
         if ( is_blk(test_loopdev) < 0 ) {
             if ( mknod(test_loopdev, S_IFBLK | 0644, makedev(7, i)) < 0 ) {
-                message(ERROR, "Could not create %s: %s\n", test_loopdev, strerror(errno));
+                singularity_message(ERROR, "Could not create %s: %s\n", test_loopdev, strerror(errno));
                 ABORT(255);
             }
         }
 
         if ( ( loop_fp = fopen(test_loopdev, "r+") ) == NULL ) {
-            message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
+            singularity_message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
             continue;
         }
 
@@ -128,7 +128,7 @@ char *singularity_loop_bind(FILE *image_fp) {
                 fclose(loop_fp);
                 continue;
             } else {
-                message(WARNING, "Could not associate image to loop %s: %s\n", test_loopdev, strerror(errno));
+                singularity_message(WARNING, "Could not associate image to loop %s: %s\n", test_loopdev, strerror(errno));
                 fclose(loop_fp);
                 continue;
             }
@@ -136,9 +136,9 @@ char *singularity_loop_bind(FILE *image_fp) {
 
     }
 
-    message(VERBOSE, "Found avaialble loop device: %s\n", loop_dev);
+    singularity_message(VERBOSE, "Found avaialble loop device: %s\n", loop_dev);
 
-    message(DEBUG, "Setting loop device flags\n");
+    singularity_message(DEBUG, "Setting loop device flags\n");
     if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
         fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
         (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
@@ -148,18 +148,18 @@ char *singularity_loop_bind(FILE *image_fp) {
 
     singularity_priv_drop();
 
-    message(VERBOSE, "Using loop device: %s\n", loop_dev);
+    singularity_message(VERBOSE, "Using loop device: %s\n", loop_dev);
 
-    message(DEBUG, "Writing active loop device name (%s) to loop file cache: %s\n", loop_dev, image_loop_file);
+    singularity_message(DEBUG, "Writing active loop device name (%s) to loop file cache: %s\n", loop_dev, image_loop_file);
     if ( fileput(image_loop_file, loop_dev) < 0 ) {
-        message(ERROR, "Could not write to image_loop_file %s: %s\n", image_loop_file, strerror(errno));
+        singularity_message(ERROR, "Could not write to image_loop_file %s: %s\n", image_loop_file, strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Resetting exclusive flock() to shared on image_loop_file\n");
+    singularity_message(DEBUG, "Resetting exclusive flock() to shared on image_loop_file\n");
     flock(image_loop_file_fd, LOCK_SH | LOCK_NB);
 
-    message(DEBUG, "Returning singularity_loop_bind(image_fp) = loop_fp\n");
+    singularity_message(DEBUG, "Returning singularity_loop_bind(image_fp) = loop_fp\n");
 
     return(loop_dev);
 }
@@ -167,24 +167,24 @@ char *singularity_loop_bind(FILE *image_fp) {
 
 int singularity_loop_free(char *loop_name) {
 
-    message(DEBUG, "Called singularity_loop_free(%s)\n", loop_name);
+    singularity_message(DEBUG, "Called singularity_loop_free(%s)\n", loop_name);
 
     if ( is_blk(loop_name) < 0 ) {
-        message(ERROR, "Loop device is not a valid block device: %s\n", loop_name);
+        singularity_message(ERROR, "Loop device is not a valid block device: %s\n", loop_name);
         ABORT(255);
     }
 
     if ( ( loop_fp = fopen(loop_name, "r") ) == NULL ) {
-        message(VERBOSE, "Could not open loop device %s: %s\n", loop_name, strerror(errno));
+        singularity_message(VERBOSE, "Could not open loop device %s: %s\n", loop_name, strerror(errno));
         return(-1);
     }
 
     singularity_priv_escalate();
 
-    message(VERBOSE2, "Disassociating image from loop device\n");
+    singularity_message(VERBOSE2, "Disassociating image from loop device\n");
     if ( ioctl(fileno(loop_fp), LOOP_CLR_FD, 0) < 0 ) {
         if ( errno != 6 ) { // Ignore loop not binded
-            message(ERROR, "Could not clear loop device %s: (%d) %s\n", loop_name, errno, strerror(errno));
+            singularity_message(ERROR, "Could not clear loop device %s: (%d) %s\n", loop_name, errno, strerror(errno));
             return(-1);
         }
     }
@@ -193,7 +193,7 @@ int singularity_loop_free(char *loop_name) {
 
     fclose(loop_fp);
 
-    message(DEBUG, "Returning disassociate_loop(loop_fp) = 0\n");
+    singularity_message(DEBUG, "Returning disassociate_loop(loop_fp) = 0\n");
     return(0);
 }
 

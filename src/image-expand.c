@@ -46,10 +46,10 @@ int main(int argc, char ** argv) {
 
     if ( argv[2] == NULL ) {
         size = 1024;
-        message(1, "Using Default image size of %ld\n", size);
+        singularity_message(1, "Using Default image size of %ld\n", size);
     } else {
         size = ( strtol(argv[2], (char **)NULL, 10) );
-        message(1, "Using given image size of %ld\n", size);
+        singularity_message(1, "Using given image size of %ld\n", size);
     }
 
     return(image_expand(argv[1], size));

@@ -39,7 +39,7 @@
 static int enabled = -1;
 
 int singularity_ns_mnt_enabled(void) {
-    message(DEBUG, "Checking MNT namespace enabled: %d\n", enabled);
+    singularity_message(DEBUG, "Checking MNT namespace enabled: %d\n", enabled);
     return(enabled);
 }
 
@@ -51,34 +51,34 @@ int singularity_ns_mnt_unshare(void) {
 
     singularity_priv_escalate();
 #ifdef NS_CLONE_FS
-    message(DEBUG, "Virtualizing FS namespace\n");
+    singularity_message(DEBUG, "Virtualizing FS namespace\n");
     if ( unshare(CLONE_FS) < 0 ) {
-        message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
         ABORT(255);
     }
 #endif
 
-    message(DEBUG, "Virtualizing mount namespace\n");
+    singularity_message(DEBUG, "Virtualizing mount namespace\n");
     if ( unshare(CLONE_NEWNS) < 0 ) {
-        message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
         ABORT(255);
     }
 
     // Privatize the mount namespaces
     //
 #ifdef SINGULARITY_MS_SLAVE
-    message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
+    singularity_message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
     if ( mount(NULL, "/", NULL, (slave ? MS_SLAVE : MS_PRIVATE)|MS_REC, NULL) < 0 ) {
-        message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
+        singularity_message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
         ABORT(255);
     }
 #else
     if ( slave > 0 ) {
-        message(WARNING, "Requested option 'mount slave' is not available on this host, using private\n");
+        singularity_message(WARNING, "Requested option 'mount slave' is not available on this host, using private\n");
     }
-    message(DEBUG, "Making mounts private\n");
+    singularity_message(DEBUG, "Making mounts private\n");
     if ( mount(NULL, "/", NULL, MS_PRIVATE | MS_REC, NULL) < 0 ) {
-        message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
+        singularity_message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
         ABORT(255);
     }
 #endif

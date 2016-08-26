@@ -49,47 +49,47 @@ int singularity_file_passwd(void) {
     char *containerdir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
 
-    message(DEBUG, "Called singularity_file_passwd_create()\n");
+    singularity_message(DEBUG, "Called singularity_file_passwd_create()\n");
 
     if ( uid == 0 ) {
-        message(VERBOSE, "Not updating passwd file, running as root!\n");
+        singularity_message(VERBOSE, "Not updating passwd file, running as root!\n");
         return(0);
     }
 
     if ( containerdir == NULL ) {
-        message(ERROR, "Failed to obtain container directory\n");
+        singularity_message(ERROR, "Failed to obtain container directory\n");
         ABORT(255);
     }
 
     if ( sessiondir == NULL ) {
-        message(ERROR, "Failed to obtain session directory\n");
+        singularity_message(ERROR, "Failed to obtain session directory\n");
         ABORT(255);
     }
 
     source_file = joinpath(containerdir, "/etc/passwd");
     tmp_file = joinpath(sessiondir, "/passwd");
 
-    message(VERBOSE2, "Checking for template passwd file: %s\n", source_file);
+    singularity_message(VERBOSE2, "Checking for template passwd file: %s\n", source_file);
     if ( is_file(source_file) < 0 ) {
-        message(VERBOSE, "Passwd file does not exist in container, not updating\n");
+        singularity_message(VERBOSE, "Passwd file does not exist in container, not updating\n");
         return(0);
     }
 
-    message(VERBOSE2, "Creating template of /etc/passwd\n");
+    singularity_message(VERBOSE2, "Creating template of /etc/passwd\n");
     if ( ( copy_file(source_file, tmp_file) ) < 0 ) {
-        message(ERROR, "Failed copying template passwd file to sessiondir: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed copying template passwd file to sessiondir: %s\n", strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Opening the template passwd file: %s\n", tmp_file);
+    singularity_message(DEBUG, "Opening the template passwd file: %s\n", tmp_file);
     if ( ( file_fp = fopen(tmp_file, "a") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
+        singularity_message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
         ABORT(255);
     }
 
-    message(VERBOSE, "Creating template passwd file and appending user data\n");
+    singularity_message(VERBOSE, "Creating template passwd file and appending user data\n");
     if ( ( file_fp = fopen(tmp_file, "a") ) == NULL ) { // Flawfinder: ignore
-        message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
+        singularity_message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
         ABORT(255);
     }
     fprintf(file_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);

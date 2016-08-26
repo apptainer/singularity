@@ -47,14 +47,14 @@ int main(int argc, char **argv) {
     singularity_priv_drop();
 
 #ifdef SINGULARITY_SUID
-    message(VERBOSE2, "Running SUID program workflow\n");
+    singularity_message(VERBOSE2, "Running SUID program workflow\n");
 
-    message(VERBOSE2, "Checking program has appropriate permissions\n");
+    singularity_message(VERBOSE2, "Checking program has appropriate permissions\n");
     if ( ( is_owner("/proc/self/exe", 0 ) < 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
         singularity_abort(255, "This program must be SUID root\n");
     }
 
-    message(VERBOSE2, "Checking configuration file is properly owned by root\n");
+    singularity_message(VERBOSE2, "Checking configuration file is properly owned by root\n");
     if ( is_owner(joinpath(SYSCONFDIR, "/singularity/singularity.conf"), 0 ) < 0 ) {
         singularity_abort(255, "Running in privileged mode, root must own the Singularity configuration file\n");
     }
@@ -63,20 +63,20 @@ int main(int argc, char **argv) {
 
     singularity_config_rewind();
     
-    message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
+    singularity_message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
     if ( singularity_config_get_bool("allow setuid", 0) == 0 ) {
         singularity_abort(255, "SUID mode has been disabled by the sysadmin... Aborting\n");
     }
 
-    message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
+    singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
     if ( getenv("SINGULARITY_NOSUID") != NULL ) {
         singularity_abort(1, "NOSUID mode has been requested... Aborting\n");
     }
 
 #else
-    message(VERBOSE, "Running NON-SUID program workflow\n");
+    singularity_message(VERBOSE, "Running NON-SUID program workflow\n");
 
-    message(DEBUG, "Checking program has appropriate permissions\n");
+    singularity_message(DEBUG, "Checking program has appropriate permissions\n");
     if ( is_suid("/proc/self/exe") >= 0 ) {
         singularity_abort(255, "This program must **NOT** be SUID\n");
     }
@@ -86,28 +86,28 @@ int main(int argc, char **argv) {
     singularity_config_rewind();
 
     if ( singularity_priv_getuid() != 0 ) {
-        message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
+        singularity_message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
         if ( singularity_config_get_bool("allow setuid", 0) == 1 ) {
-            message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
+            singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
             if ( getenv("SINGULARITY_NOSUID") == NULL ) {
                 char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";
 
                 if ( ( is_owner(sexec_suid_path, 0 ) == 0 ) && ( is_suid(sexec_suid_path) == 0 ) ) {
-                    message(VERBOSE, "Invoking SUID sexec: %s\n", sexec_suid_path);
+                    singularity_message(VERBOSE, "Invoking SUID sexec: %s\n", sexec_suid_path);
 
                     execv(sexec_suid_path, argv);
                     singularity_abort(255, "Failed to execute sexec binary (%s): %s\n", sexec_suid_path, strerror(errno));
                 } else {
-                    message(VERBOSE, "Not invoking SUID mode: SUID sexec not installed\n");
+                    singularity_message(VERBOSE, "Not invoking SUID mode: SUID sexec not installed\n");
                 }
             } else {
-                message(VERBOSE, "Not invoking SUID mode: NOSUID mode requested\n");
+                singularity_message(VERBOSE, "Not invoking SUID mode: NOSUID mode requested\n");
             }
         } else {
-            message(VERBOSE, "Not invoking SUID mode: disallowed by the system administrator\n");
+            singularity_message(VERBOSE, "Not invoking SUID mode: disallowed by the system administrator\n");
         }
     } else {
-        message(VERBOSE, "Not invoking SUID mode: running as root\n");
+        singularity_message(VERBOSE, "Not invoking SUID mode: running as root\n");
     }
 
 #endif /* SINGULARITY_SUID */

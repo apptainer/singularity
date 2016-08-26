@@ -40,18 +40,18 @@
 FILE *config_fp = NULL;
 
 int singularity_config_open(char *config_path) {
-    message(VERBOSE, "Opening configuration file: %s\n", config_path);
+    singularity_message(VERBOSE, "Opening configuration file: %s\n", config_path);
     if ( is_file(config_path) == 0 ) {
         if ( ( config_fp = fopen(config_path, "r") ) != NULL ) { // Flawfinder: ignore (we have to open the file...)
             return(0);
         }
     }
-    message(ERROR, "Could not open configuration file %s: %s\n", config_path, strerror(errno));
+    singularity_message(ERROR, "Could not open configuration file %s: %s\n", config_path, strerror(errno));
     return(-1);
 }
 
 void singularity_config_close(void) {
-    message(VERBOSE, "Closing configuration file\n");
+    singularity_message(VERBOSE, "Closing configuration file\n");
     if ( config_fp != NULL ) {
         fclose(config_fp);
         config_fp = NULL;
@@ -59,7 +59,7 @@ void singularity_config_close(void) {
 }
 
 void singularity_config_rewind(void) {
-    message(DEBUG, "Rewinding configuration file\n");
+    singularity_message(DEBUG, "Rewinding configuration file\n");
     if ( config_fp != NULL ) {
         rewind(config_fp);
     }
@@ -71,13 +71,13 @@ char *singularity_config_get_value(char *key) {
     char *line;
 
     if ( config_fp == NULL ) {
-        message(ERROR, "Called singularity_config_get_value() before opening a config!\n");
+        singularity_message(ERROR, "Called singularity_config_get_value() before opening a config!\n");
         ABORT(255);
     }
 
     line = (char *)malloc(MAX_LINE_LEN);
 
-    message(DEBUG, "Called singularity_config_get_value(%s)\n", key);
+    singularity_message(DEBUG, "Called singularity_config_get_value(%s)\n", key);
 
     while ( fgets(line, MAX_LINE_LEN, config_fp) ) {
         if ( ( config_key = strtok(line, "=") ) != NULL ) {
@@ -88,7 +88,7 @@ char *singularity_config_get_value(char *key) {
                     if ( config_value[0] == ' ' ) {
                         config_value++;
                     }
-                    message(VERBOSE2, "Got config key %s (= '%s')\n", key, config_value);
+                    singularity_message(VERBOSE2, "Got config key %s (= '%s')\n", key, config_value);
                     return(config_value);
                 }
             }
@@ -96,7 +96,7 @@ char *singularity_config_get_value(char *key) {
     }
     free(line);
 
-    message(DEBUG, "No configuration file entry found for '%s'\n", key);
+    singularity_message(DEBUG, "No configuration file entry found for '%s'\n", key);
     return(NULL);
 }
 
@@ -104,27 +104,27 @@ char *singularity_config_get_value(char *key) {
 int singularity_config_get_bool(char *key, int def) {
     char *config_value;
 
-    message(DEBUG, "Called singularity_config_get_bool(%s, %d)\n", key, def);
+    singularity_message(DEBUG, "Called singularity_config_get_bool(%s, %d)\n", key, def);
 
     if ( ( config_value = singularity_config_get_value(key) ) != NULL ) {
         if ( strcmp(config_value, "yes") == 0 ||
                 strcmp(config_value, "y") == 0 ||
                 strcmp(config_value, "1") == 0 ) {
-            message(DEBUG, "Return singularity_config_get_bool(%s, %d) = 1\n", key, def);
+            singularity_message(DEBUG, "Return singularity_config_get_bool(%s, %d) = 1\n", key, def);
             return(1);
         } else if ( strcmp(config_value, "no") == 0 ||
                 strcmp(config_value, "n") == 0 ||
                 strcmp(config_value, "0") == 0 ) {
-            message(DEBUG, "Return singularity_config_get_bool(%s, %d) = 0\n", key, def);
+            singularity_message(DEBUG, "Return singularity_config_get_bool(%s, %d) = 0\n", key, def);
             return(0);
         } else {
-            message(ERROR, "Unsupported value for configuration boolean key '%s' = '%s'\n", key, config_value);
-            message(ERROR, "Returning default value: %s\n", ( def == 1 ? "yes" : "no" ));
-            message(DEBUG, "Return singularity_config_get_bool(%s, %d) = -1\n", key, def);
+            singularity_message(ERROR, "Unsupported value for configuration boolean key '%s' = '%s'\n", key, config_value);
+            singularity_message(ERROR, "Returning default value: %s\n", ( def == 1 ? "yes" : "no" ));
+            singularity_message(DEBUG, "Return singularity_config_get_bool(%s, %d) = -1\n", key, def);
             return(-1);
         }
     }
 
-    message(DEBUG, "Return singularity_config_get_bool(%s, %d) = %d (DEFAULT)\n", key, def, def);
+    singularity_message(DEBUG, "Return singularity_config_get_bool(%s, %d) = %d (DEFAULT)\n", key, def, def);
     return(def);
 }

@@ -19,20 +19,25 @@
  */
 
 
-#define ABRT -4
-#define ERROR -3
-#define WARNING -2
-#define LOG -1
-#define INFO 1
-#define VERBOSE 2
-#define VERBOSE1 2
-#define VERBOSE2 3
-#define VERBOSE3 4
-#define DEBUG 5
+#ifndef __SINGULARITY_MESSAGE_H_
+#define __SINGULARITY_MESSAGE_H_
 
-void _message(int level, const char *function, const char *file, int line, char *format, ...);
+    #define ABRT -4
+    #define ERROR -3
+    #define WARNING -2
+    #define LOG -1
+    #define INFO 1
+    #define VERBOSE 2
+    #define VERBOSE1 2
+    #define VERBOSE2 3
+    #define VERBOSE3 4
+    #define DEBUG 5
 
-#define message(a,b...) _message(a, __func__, __FILE__, __LINE__, b)
+    void _singularity_message(int level, const char *function, const char *file, int line, char *format, ...);
 
-#define singularity_abort(a,b...) {_message(ABRT,  __func__, __FILE__, __LINE__, b); _message(ABRT,  __func__, __FILE__, __LINE__, "Retval = %d\n", a); exit(a);}
+    #define singularity_message(a,b...) _singularity_message(a, __func__, __FILE__, __LINE__, b)
+
+    #define singularity_abort(a,b...) {_singularity_message(ABRT,  __func__, __FILE__, __LINE__, b); _singularity_message(ABRT,  __func__, __FILE__, __LINE__, "Retval = %d\n", a); exit(a);}
+
+#endif /*__SINGULARITY_MESSAGE_H_ */
 

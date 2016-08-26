@@ -46,37 +46,37 @@ static char *cwd_path;
 
 int singularity_action_init(void) {
     char *command = getenv("SINGULARITY_COMMAND");
-    message(DEBUG, "Checking on action to run\n");
+    singularity_message(DEBUG, "Checking on action to run\n");
 
     unsetenv("SINGULARITY_COMMAND");
 
     if ( command == NULL ) {
-        message(ERROR, "SINGULARITY_COMMAND is undefined\n");
+        singularity_message(ERROR, "SINGULARITY_COMMAND is undefined\n");
         ABORT(1);
     } else if ( strcmp(command, "shell") == 0 ) {
-        message(DEBUG, "Setting action to: shell\n");
+        singularity_message(DEBUG, "Setting action to: shell\n");
         action = ACTION_SHELL;
     } else if ( strcmp(command, "exec") == 0 ) {
-        message(DEBUG, "Setting action to: exec\n");
+        singularity_message(DEBUG, "Setting action to: exec\n");
         action = ACTION_EXEC;
     } else if ( strcmp(command, "run") == 0 ) {
-        message(DEBUG, "Setting action to: run\n");
+        singularity_message(DEBUG, "Setting action to: run\n");
         action = ACTION_RUN;
     } else {
-        message(ERROR, "Unknown container action: %s\n", command);
+        singularity_message(ERROR, "Unknown container action: %s\n", command);
         ABORT(1);
     }
 
     cwd_path = (char *) malloc(sizeof(char) * PATH_MAX);
 
-//    message(DEBUG, "Obtaining file descriptor to current directory\n");
+//    singularity_message(DEBUG, "Obtaining file descriptor to current directory\n");
 //    if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) { // Flawfinder: ignore (need current directory FD)
-//        message(ERROR, "Could not open cwd fd (%s)!\n", strerror(errno));
+//        singularity_message(ERROR, "Could not open cwd fd (%s)!\n", strerror(errno));
 //        ABORT(1);
 //    }
-    message(DEBUG, "Getting current working directory path string\n");
+    singularity_message(DEBUG, "Getting current working directory path string\n");
     if ( getcwd(cwd_path, PATH_MAX) == NULL ) {
-        message(ERROR, "Could not obtain current directory path: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not obtain current directory path: %s\n", strerror(errno));
         ABORT(1);
     }
 
@@ -87,12 +87,12 @@ int singularity_action_do(int argc, char **argv) {
 
     singularity_priv_drop_perm();
 
-    message(DEBUG, "Checking for envar SINGULARITY_CONTAIN\n");
+    singularity_message(DEBUG, "Checking for envar SINGULARITY_CONTAIN\n");
     if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
-        message(DEBUG, "Changing directory to starting directory\n");
+        singularity_message(DEBUG, "Changing directory to starting directory\n");
 
         if ( chdir(cwd_path) < 0 ) {
-            message(WARNING, "Could not chdir to: %s\n", cwd_path);
+            singularity_message(WARNING, "Could not chdir to: %s\n", cwd_path);
         }
 
     } else {
@@ -100,32 +100,32 @@ int singularity_action_do(int argc, char **argv) {
         char *homedir;
         uid_t uid = singularity_priv_getuid();
 
-        message(VERBOSE2, "Changing to home directory\n");
+        singularity_message(VERBOSE2, "Changing to home directory\n");
 
         errno = 0;
         if ( ( pw = getpwuid(uid) ) != NULL ) {
-            message(DEBUG, "Obtaining user's homedir\n");
+            singularity_message(DEBUG, "Obtaining user's homedir\n");
 
             homedir = pw->pw_dir;
 
             if ( chdir(homedir) < 0 ) {
-                message(WARNING, "Could not chdir to home directory: %s\n", homedir);
+                singularity_message(WARNING, "Could not chdir to home directory: %s\n", homedir);
             }
         } else {
-            message(WARNING, "Could not obtain pwinfo for uid: %i\n", uid);
+            singularity_message(WARNING, "Could not obtain pwinfo for uid: %i\n", uid);
         }
     }
 
     if ( action == ACTION_SHELL ) {
-        message(DEBUG, "Running action: shell\n");
+        singularity_message(DEBUG, "Running action: shell\n");
         action_shell_do(argc, argv);
     } else if ( action == ACTION_EXEC ) {
-        message(DEBUG, "Running action: exec\n");
+        singularity_message(DEBUG, "Running action: exec\n");
         action_exec_do(argc, argv);
     } else if ( action == ACTION_RUN ) {
-        message(DEBUG, "Running action: run\n");
+        singularity_message(DEBUG, "Running action: run\n");
         action_run_do(argc, argv);
     }
-    message(ERROR, "Called singularity_action_do() without singularity_action_init()\n");
+    singularity_message(ERROR, "Called singularity_action_do() without singularity_action_init()\n");
     return(-1);
 }

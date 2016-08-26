@@ -58,27 +58,27 @@ void mount_overlay(char * source, char * scratch, char * dest) {
     // dest = dest
 
 #ifdef SINGULARITY_OVERLAYFS 
-    message(DEBUG, "Called mount_overlay(%s, %s, %s)\n", source, scratch, dest);
+    singularity_message(DEBUG, "Called mount_overlay(%s, %s, %s)\n", source, scratch, dest);
 
-    message(DEBUG, "Checking that source exists and is a file or directory\n");
+    singularity_message(DEBUG, "Checking that source exists and is a file or directory\n");
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {
-        message(ERROR, "Overlay source path is not a file or directory: '%s'\n", source);
+        singularity_message(ERROR, "Overlay source path is not a file or directory: '%s'\n", source);
         ABORT(255);
     }
 
-    message(DEBUG, "Checking that scratch exists and is a file or directory\n");
+    singularity_message(DEBUG, "Checking that scratch exists and is a file or directory\n");
     if ( is_dir(scratch) != 0 && is_file(scratch) != 0 ) {
-        message(ERROR, "Overlay scratch path is not a file or directory: '%s'\n", scratch);
+        singularity_message(ERROR, "Overlay scratch path is not a file or directory: '%s'\n", scratch);
         ABORT(255);
     }
 
-    message(DEBUG, "Checking that destination exists and is a file or directory\n");
+    singularity_message(DEBUG, "Checking that destination exists and is a file or directory\n");
     if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
-        message(ERROR, "Overlay destination path is not a file or directory: '%s'\n", dest);
+        singularity_message(ERROR, "Overlay destination path is not a file or directory: '%s'\n", dest);
         ABORT(255);
     }
 
-    message(DEBUG, "Creating upperdir and workdir within scratch directory\n");
+    singularity_message(DEBUG, "Creating upperdir and workdir within scratch directory\n");
     int upperdirLen = strlen(scratch) + 4;
     int workdirLen = upperdirLen;
     char * const upperdir = malloc(upperdirLen);
@@ -88,32 +88,32 @@ void mount_overlay(char * source, char * scratch, char * dest) {
 
     if ( is_dir(upperdir) != 0 ){    
         if ( mkdir(upperdir, 1023) < 0 ) {
-            message(ERROR, "Could not create upperdir '%s': %s\n", upperdir, strerror(errno));
+            singularity_message(ERROR, "Could not create upperdir '%s': %s\n", upperdir, strerror(errno));
             ABORT(255);
         }
     }
 
     if ( is_dir(workdir) != 0 ){
         if ( mkdir(workdir, 1023) < 0 ) {
-            message(ERROR, "Could not create workdir '%s': %s\n", workdir, strerror(errno));
+            singularity_message(ERROR, "Could not create workdir '%s': %s\n", workdir, strerror(errno));
             ABORT(255);
        }
     }
    
-   message(DEBUG, "Calling mount(...)\n");
+   singularity_message(DEBUG, "Calling mount(...)\n");
    int optionStringLen = strlen(source) + upperdirLen + workdirLen + 50;
    char * const optionString = malloc(optionStringLen);
    snprintf(optionString, optionStringLen, "lowerdir=%s,upperdir=%s,workdir=%s", source, upperdir, workdir);
    
    if ( mount("overlay", dest, "overlay", MS_NOSUID, optionString) < 0 ){
-        message(ERROR, "Could not create overlay: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not create overlay: %s\n", strerror(errno));
         ABORT(255);
    }else{
-    message(DEBUG, "Overlay successful.");
+    singularity_message(DEBUG, "Overlay successful.");
    }
 
 #else
-   message(ERROR, "Overlay not supported on this system.\n");
+   singularity_message(ERROR, "Overlay not supported on this system.\n");
    ABORT(255);
 #endif
 
@@ -122,28 +122,28 @@ void mount_overlay(char * source, char * scratch, char * dest) {
 
 int mount_image(char * loop_device, char * mount_point, int writable) {
 
-    message(DEBUG, "Called mount_image(%s, %s, %d)\n", loop_device, mount_point, writable);
+    singularity_message(DEBUG, "Called mount_image(%s, %s, %d)\n", loop_device, mount_point, writable);
 
-    message(DEBUG, "Checking mount point is present\n");
+    singularity_message(DEBUG, "Checking mount point is present\n");
     if ( is_dir(mount_point) < 0 ) {
-        message(ERROR, "Mount point is not available: %s\n", mount_point);
+        singularity_message(ERROR, "Mount point is not available: %s\n", mount_point);
         ABORT(255);
     }
 
-    message(DEBUG, "Checking loop is a block device\n");
+    singularity_message(DEBUG, "Checking loop is a block device\n");
     if ( is_blk(loop_device) < 0 ) {
-        message(ERROR, "Loop device is not a block dev: %s\n", loop_device);
+        singularity_message(ERROR, "Loop device is not a block dev: %s\n", loop_device);
         ABORT(255);
     }
 
     if ( writable > 0 ) {
-        message(DEBUG, "Trying to mount read/write as ext4 with discard option\n");
+        singularity_message(DEBUG, "Trying to mount read/write as ext4 with discard option\n");
         if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "discard,errors=remount-ro") < 0 ) {
-            message(DEBUG, "Trying to mount read/write as ext4 without discard option\n");
+            singularity_message(DEBUG, "Trying to mount read/write as ext4 without discard option\n");
             if ( mount(loop_device, mount_point, "ext4", MS_NOSUID, "errors=remount-ro") < 0 ) {
-                message(DEBUG, "Trying to mount read/write as ext3\n");
+                singularity_message(DEBUG, "Trying to mount read/write as ext3\n");
                 if ( mount(loop_device, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
-                    message(ERROR, "Failed to mount (rw) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+                    singularity_message(ERROR, "Failed to mount (rw) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
                     ABORT(255);
                 }
             }
@@ -152,54 +152,54 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
         char * overlaydir;
         singularity_config_rewind();
         if ( ( overlaydir = singularity_config_get_value("overlay dir") ) == NULL ){
-            message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
+            singularity_message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
             if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard,errors=remount-ro") < 0 ) {
-                message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
+                singularity_message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
                 if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-                    message(DEBUG, "Trying to mount read only as ext3\n");
+                    singularity_message(DEBUG, "Trying to mount read only as ext3\n");
                     if ( mount(loop_device, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-                        message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
+                        singularity_message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, mount_point, strerror(errno));
                         ABORT(255);
                     }
                 }
             }
         } else { // overlay mount
 
-            message(DEBUG, "Creating overlay mount path: %s\n", overlaydir); 
+            singularity_message(DEBUG, "Creating overlay mount path: %s\n", overlaydir); 
             if ( s_mkpath(overlaydir, 0755) < 0 ) { 
-                message(ERROR, "Failed creating overlay directory %s\n", overlaydir); 
+                singularity_message(ERROR, "Failed creating overlay directory %s\n", overlaydir); 
                 ABORT(255); 
             }
 
 
             // Mount tmpfs
-            message(DEBUG, "Mounting tmpfs");
+            singularity_message(DEBUG, "Mounting tmpfs");
             if ( mount("scratch", overlaydir, "tmpfs", MS_NOSUID, "") < 0 ){
-                message(ERROR, "Failed to mount tmpfs: %s\n", strerror(errno));
+                singularity_message(ERROR, "Failed to mount tmpfs: %s\n", strerror(errno));
                 ABORT(255);
             }
 
             // Create overlaydirImage: overlaydir/i
-            message(DEBUG, "Creating image within overlaydir\n");
+            singularity_message(DEBUG, "Creating image within overlaydir\n");
             int overlaydirImageLen = strlen(overlaydir) + 4;
             char * const overlaydirImage = malloc(overlaydirImageLen);
             snprintf(overlaydirImage, overlaydirImageLen, "%s%s", overlaydir, "/i");
 
             if ( is_dir(overlaydirImage) != 0 ){    
                 if ( mkdir(overlaydirImage, 1023) < 0 ) {
-                    message(ERROR, "Could not create image within overlaydir '%s': %s\n", overlaydirImage, strerror(errno));
+                    singularity_message(ERROR, "Could not create image within overlaydir '%s': %s\n", overlaydirImage, strerror(errno));
                     ABORT(255);
                 }
             }
 
             // Mount image readonly to reside underneath the overlay
-            message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
+            singularity_message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
             if ( mount(loop_device, overlaydirImage, "ext4", MS_NOSUID|MS_RDONLY, "discard,errors=remount-ro") < 0 ) {
-                message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
+                singularity_message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
                 if ( mount(loop_device, overlaydirImage, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-                    message(DEBUG, "Trying to mount read only as ext3\n");
+                    singularity_message(DEBUG, "Trying to mount read only as ext3\n");
                     if ( mount(loop_device, overlaydirImage, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-                        message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, overlaydirImage, strerror(errno));
+                        singularity_message(ERROR, "Failed to mount (ro) '%s' at '%s': %s\n", loop_device, overlaydirImage, strerror(errno));
                         ABORT(255);
                     }
                 }
@@ -210,7 +210,7 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
         }
     }
 
-    message(DEBUG, "Returning mount_image(%s, %s, %d) = 0\n", loop_device, mount_point, writable);
+    singularity_message(DEBUG, "Returning mount_image(%s, %s, %d) = 0\n", loop_device, mount_point, writable);
 
     return(0);
 }
@@ -218,7 +218,7 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
 static int create_bind_dir(const char *dest_orig, const char *tmp_dir, int isfile) {
     char *dest = strdup(dest_orig);
     if ( !dest ) {
-        message(ERROR, "Failed to allocate memory for destination strings.\n");
+        singularity_message(ERROR, "Failed to allocate memory for destination strings.\n");
         ABORT(255)
     }
     char *last_slash = dest + strlen(dest) - 1;
@@ -227,16 +227,16 @@ static int create_bind_dir(const char *dest_orig, const char *tmp_dir, int isfil
         *last_slash = '\0';
         last_slash--;
     }
-    message(DEBUG, "Calling create_bind_dir(%s, %s, %d)\n", dest, tmp_dir, isfile);
+    singularity_message(DEBUG, "Calling create_bind_dir(%s, %s, %d)\n", dest, tmp_dir, isfile);
     
     char *dest_copy = strdup(dest);
     if ( !dest_copy ) {
-        message(ERROR, "Failed to allocate memory for destination strings.\n");
+        singularity_message(ERROR, "Failed to allocate memory for destination strings.\n");
         ABORT(255)
     }
     last_slash = strrchr(dest_copy, '/');
     if (last_slash == NULL) {
-        message(ERROR, "Ran out of '/' prefixes\n");
+        singularity_message(ERROR, "Ran out of '/' prefixes\n");
         ABORT(255);
     }
     *last_slash = '\0';
@@ -247,37 +247,37 @@ static int create_bind_dir(const char *dest_orig, const char *tmp_dir, int isfil
         // parent directory.
         char new_tmp_dir[PATH_MAX];
         if ( snprintf(new_tmp_dir, PATH_MAX, "%s/bind_bootstrap_XXXXXX", tmp_dir) >= PATH_MAX) {
-            message(ERROR, "Overly long temporary pathname: %s\n", tmp_dir);
+            singularity_message(ERROR, "Overly long temporary pathname: %s\n", tmp_dir);
             return 1;
         }
         if (mkdtemp(new_tmp_dir) == NULL) {
-            message(ERROR, "Failed to create new temporary directory %s: %s\n", new_tmp_dir, strerror(errno));
+            singularity_message(ERROR, "Failed to create new temporary directory %s: %s\n", new_tmp_dir, strerror(errno));
             return 1; 
         }
         if ( chmod(new_tmp_dir, 0755) ) {
-            message(ERROR, "Failed to chmod temporary directory %s: %s\n", new_tmp_dir, strerror(errno));
+            singularity_message(ERROR, "Failed to chmod temporary directory %s: %s\n", new_tmp_dir, strerror(errno));
             return 1;
         }
         int new_len = PATH_MAX - strlen(new_tmp_dir) - 1;
         if (snprintf(new_tmp_dir + strlen(new_tmp_dir), new_len, "/%s", last_slash + 1) >= new_len) {
-            message(ERROR, "Overly long path name in temp dir: %s/%s\n", new_tmp_dir, last_slash + 1);
+            singularity_message(ERROR, "Overly long path name in temp dir: %s/%s\n", new_tmp_dir, last_slash + 1);
             return 1;
         }
         if ( mkdir(new_tmp_dir, 0755) == -1 ) {
-            message(ERROR, "Failed to create new directory %s inside temp: %s", new_tmp_dir, strerror(errno));
+            singularity_message(ERROR, "Failed to create new directory %s inside temp: %s", new_tmp_dir, strerror(errno));
             return 1;
         }
         *strrchr(new_tmp_dir, '/') = '\0';
         if ( mount(new_tmp_dir, dest_copy, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-            message(ERROR, "When creating temp directory, Could not bind %s: %s\n", dest, strerror(errno));
+            singularity_message(ERROR, "When creating temp directory, Could not bind %s: %s\n", dest, strerror(errno));
             return 1;
         }
-        message(DEBUG, "Created top-level graft directory: %s\n", new_tmp_dir);
+        singularity_message(DEBUG, "Created top-level graft directory: %s\n", new_tmp_dir);
     } else {
         struct stat filestat;
         if ( stat(dest_copy, &filestat) == 0 ) {
             // Not a directory, but path exists (file or other)
-            message(ERROR, "Cannot create bind directory as %s in path already exists.\n", dest_copy);
+            singularity_message(ERROR, "Cannot create bind directory as %s in path already exists.\n", dest_copy);
             return 1;
         }
         if ( create_bind_dir(dest_copy, tmp_dir, 0) ) {
@@ -287,13 +287,13 @@ static int create_bind_dir(const char *dest_orig, const char *tmp_dir, int isfil
         if (isfile) {
             int fd;
             if ( -1 == ( fd = open(dest, O_CREAT|O_RDWR|O_CLOEXEC|O_EXCL, 0600)  ) ) {
-                message(ERROR, "Failed to create stub file %s: %s\n", dest, strerror(errno));
+                singularity_message(ERROR, "Failed to create stub file %s: %s\n", dest, strerror(errno));
                 return 1;
             }
             close(fd);
         } else {
             if ( -1 == ( mkdir(dest, 0755) ) ) {
-                message(ERROR, "Failed to make top-level stub directory %s: %s\n", dest, strerror(errno));
+                singularity_message(ERROR, "Failed to make top-level stub directory %s: %s\n", dest, strerror(errno));
                 return 1;
             }
         }
@@ -305,18 +305,18 @@ static int create_bind_dir(const char *dest_orig, const char *tmp_dir, int isfil
 
 void mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
 
-    message(DEBUG, "Called mount_bind(%s, %s, %d, %s)\n", source, dest, writable, tmp_dir);
+    singularity_message(DEBUG, "Called mount_bind(%s, %s, %d, %s)\n", source, dest, writable, tmp_dir);
 
-    message(DEBUG, "Checking that source exists and is a file or directory\n");
+    singularity_message(DEBUG, "Checking that source exists and is a file or directory\n");
     if ( is_dir(source) != 0 && is_file(source) != 0 ) {
-        message(ERROR, "Bind source path is not a file or directory: '%s'\n", source);
+        singularity_message(ERROR, "Bind source path is not a file or directory: '%s'\n", source);
         ABORT(255);
     }
 
-    message(DEBUG, "Checking that destination exists and is a file or directory\n");
+    singularity_message(DEBUG, "Checking that destination exists and is a file or directory\n");
     if ( is_dir(dest) != 0 && is_file(dest) != 0 ) {
         if ( create_bind_dir(dest, tmp_dir, is_dir(source)) != 0 ) {
-            message(ERROR, "Container bind path is not a file or directory: '%s'\n", dest);
+            singularity_message(ERROR, "Container bind path is not a file or directory: '%s'\n", dest);
             ABORT(255);
         }
     }
@@ -326,18 +326,18 @@ void mount_bind(char * source, char * dest, int writable, const char *tmp_dir) {
     //  do it below.  *However*, if we are using user namespaces, we get an EPERM error on the
     //  separate mount command below.  Hence, we keep the flag in the first call until the kernel
     //  picture cleras up.
-    message(DEBUG, "Calling mount(%s, %s, ...)\n", source, dest);
+    singularity_message(DEBUG, "Calling mount(%s, %s, ...)\n", source, dest);
     if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC|(writable <= 0 ? MS_RDONLY : 0), NULL) < 0 ) {
-        message(ERROR, "Could not bind %s: %s\n", dest, strerror(errno));
+        singularity_message(ERROR, "Could not bind %s: %s\n", dest, strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Returning mount_bind(%s, %d, %d) = 0\n", source, dest, writable);
+    singularity_message(DEBUG, "Returning mount_bind(%s, %d, %d) = 0\n", source, dest, writable);
     // Note that we can't remount as read-only if we are in unprivileged mode.
 //    if ( !singularity_priv_userns_enabled() && (writable <= 0) ) {
-        message(VERBOSE2, "Making mount read only: %s\n", dest);
+        singularity_message(VERBOSE2, "Making mount read only: %s\n", dest);
         if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
-            message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
+            singularity_message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
             ABORT(255);
  //       }
     }
@@ -356,48 +356,48 @@ void mount_home(char *rootpath) {
     if ( !pw ) {
         // List of potential error codes for unknown name taken from man page.
         if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
-            message(VERBOSE3, "Not mounting home directory as passwd entry for %d not found.\n", uid);
+            singularity_message(VERBOSE3, "Not mounting home directory as passwd entry for %d not found.\n", uid);
             return;
         } else {
-            message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
+            singularity_message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
             ABORT(255);
         }
     }
 
-    message(DEBUG, "Obtaining user's homedir\n");
+    singularity_message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
     
     if (strstr(getenv("CHANGE_HOME"),"yes")!= NULL) {
         char* newhome = getenv("NEW_HOME");
-        message(VERBOSE, "Changing home path to user based input: %s\n", newhome);
+        singularity_message(VERBOSE, "Changing home path to user based input: %s\n", newhome);
         if ((homedir_base = container_basedir(rootpath, newhome)) != NULL) {
             if (is_dir(homedir_base) == 0) {
                 if (is_dir(joinpath(rootpath, homedir_base)) == 0) {
-                    message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
+                    singularity_message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
                     if (mount(homedir_base, joinpath(rootpath, homedir_base), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0) {
                         ABORT(255);
                     }
                 } else {
-                    message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
+                    singularity_message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
                 }
             } else {
-                message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
+                singularity_message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
             }
         }
     }else {
-        message(VERBOSE, "Not changing home directory path, value of CHANGE_HOME: \n",getenv("CHANGE_HOME"));
+        singularity_message(VERBOSE, "Not changing home directory path, value of CHANGE_HOME: \n",getenv("CHANGE_HOME"));
         if ((homedir_base = container_basedir(rootpath, homedir)) != NULL) {
             if (is_dir(homedir_base) == 0) {
                 if (is_dir(joinpath(rootpath, homedir_base)) == 0) {
-                    message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
+                    singularity_message(VERBOSE, "Mounting home directory base path: %s\n", homedir_base);
                     if (mount(homedir_base, joinpath(rootpath, homedir_base), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0) {
                         ABORT(255);
                     }
                 } else {
-                    message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
+                    singularity_message(WARNING, "Container bind point does not exist: '%s' (homedir_base)\n", homedir_base);
                 }
             } else {
-                message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
+                singularity_message(WARNING, "Home directory base source path does not exist: %s\n", homedir_base);
             }
         }
     }
@@ -411,10 +411,10 @@ void user_bind_paths(const char *containerdir, const char *tmp_dir) {
     char * tmp_config_string;
     if ( ( tmp_config_string = getenv("SINGULARITY_USER_BIND") ) != NULL ) {
 #ifdef SINGULARITY_NO_NEW_PRIVS
-        message(DEBUG, "Parsing SINGULARITY_USER_BIND for user-specified bind mounts.\n");
+        singularity_message(DEBUG, "Parsing SINGULARITY_USER_BIND for user-specified bind mounts.\n");
         char *bind = strdup(tmp_config_string);
         if (bind == NULL) {
-            message(ERROR, "Failed to allocate memory for configuration string");
+            singularity_message(ERROR, "Failed to allocate memory for configuration string");
             ABORT(1);
         }
         char *cur = bind, *next = strchr(cur, ':');
@@ -435,15 +435,15 @@ void user_bind_paths(const char *containerdir, const char *tmp_dir) {
             if ( (strlen(cur) == 0) && (next == NULL) ) {
                 break;
             }
-            message(VERBOSE2, "Found user-specified 'bind path' = %s, %s\n", source, dest);
+            singularity_message(VERBOSE2, "Found user-specified 'bind path' = %s, %s\n", source, dest);
 
             if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
-                message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+                singularity_message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
                 if (next == NULL) {break;}
                 continue;
             }
 
-            message(VERBOSE, "Binding '%s' to '%s'\n", source, dest);
+            singularity_message(VERBOSE, "Binding '%s' to '%s'\n", source, dest);
             mount_bind(source, joinpath(containerdir, dest), 1, tmp_dir);
 
             cur = next + 1;
@@ -452,18 +452,18 @@ void user_bind_paths(const char *containerdir, const char *tmp_dir) {
         free(bind);
         unsetenv("SINGULARITY_USER_BIND");
 #else  // SINGULARITY_NO_NEW_PRIVS
-        message(ERROR, "Requested user-specified bind-mounts, but they are not supported on this platform.");
+        singularity_message(ERROR, "Requested user-specified bind-mounts, but they are not supported on this platform.");
         ABORT(255);
 #endif  // SINGULARITY_NO_NEW_PRIVS
     } else {
-        message(DEBUG, "No user bind mounts specified.\n");
+        singularity_message(DEBUG, "No user bind mounts specified.\n");
     }
 }
 
 
 void bind_paths(char *rootpath) {
     char *tmp_config_string;
-    message(DEBUG, "Checking configuration file for 'bind path'\n");
+    singularity_message(DEBUG, "Checking configuration file for 'bind path'\n");
     singularity_config_rewind();
     while ( ( tmp_config_string = singularity_config_get_value("bind path") ) != NULL ) {
         char *source = strtok(tmp_config_string, ",");
@@ -478,31 +478,31 @@ void bind_paths(char *rootpath) {
             chomp(dest);
         }
 
-        message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
+        singularity_message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
 
 // TODO: Make sure this isn't already mounted
 //        if ( ( homedir_base != NULL ) && ( strncmp(dest, homedir_base, strlength(homedir_base, 256)) == 0 )) {
 //            // Skipping path as it was already mounted as homedir_base
-//            message(VERBOSE2, "Skipping '%s' as it is part of home path and already mounted\n", dest);
+//            singularity_message(VERBOSE2, "Skipping '%s' as it is part of home path and already mounted\n", dest);
 //            continue;
 //        }
 
         if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
-            message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+            singularity_message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
             continue;
         }
         if ( ( is_file(joinpath(rootpath, dest)) != 0 ) && ( is_dir(joinpath(rootpath, dest)) != 0 ) ) {
-            message(WARNING, "Non existant 'bind point' in container: '%s'\n", dest);
+            singularity_message(WARNING, "Non existant 'bind point' in container: '%s'\n", dest);
             continue;
         }
 
-        message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, rootpath, dest);
+        singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, rootpath, dest);
         if ( mount(source, joinpath(rootpath, dest), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             ABORT(255);
         }
-//        message(VERBOSE2, "Making mount read only: %s\n", dest);
+//        singularity_message(VERBOSE2, "Making mount read only: %s\n", dest);
 //        if ( mount(NULL, dest, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
-//            message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
+//            singularity_message(ERROR, "Could not bind read only %s: %s\n", dest, strerror(errno));
 //            ABORT(255);
 //        }
     }

@@ -45,14 +45,14 @@ pid_t child_pid;
 
 void handle_signal(int sig, siginfo_t * _, void * __) {
     char info = (char)sig;
-    message(DEBUG, "Forwarding signal through generic_signal_wpipe\n");
+    singularity_message(DEBUG, "Forwarding signal through generic_signal_wpipe\n");
     while (-1 == write(generic_signal_wpipe, &info, 1) && errno == EINTR) {}
 }
 
 void handle_sigchld(int sig, siginfo_t *siginfo, void * _) {
-    message(DEBUG, "Checking child pids: %i %i\n", siginfo->si_pid, child_pid);
+    singularity_message(DEBUG, "Checking child pids: %i %i\n", siginfo->si_pid, child_pid);
     if ( siginfo->si_pid == child_pid ) {
-        message(DEBUG, "Forwarding signal through sigchld_signal_wpipe\n");
+        singularity_message(DEBUG, "Forwarding signal through sigchld_signal_wpipe\n");
         char one = '1';
         while (-1 == write(sigchld_signal_wpipe, &one, 1) && errno == EINTR) {}
     }
@@ -64,7 +64,7 @@ pid_t singularity_fork(void) {
 
     // From: signal_pre_fork()
     if ( pipe2(pipes, O_CLOEXEC) < 0 ) {
-        message(ERROR, "Failed to create watchdog communication pipes: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to create watchdog communication pipes: %s\n", strerror(errno));
         ABORT(255);
     }
     watchdog_rpipe = pipes[0];
@@ -72,23 +72,23 @@ pid_t singularity_fork(void) {
 
 
     // Fork child
-    message(VERBOSE2, "Forking child process\n");
+    singularity_message(VERBOSE2, "Forking child process\n");
     child_pid = fork();
 
     if ( child_pid == 0 ) {
-        message(VERBOSE2, "Hello from child process\n");
+        singularity_message(VERBOSE2, "Hello from child process\n");
 
         if (watchdog_wpipe != -1) {
-            message(DEBUG, "Closing watchdog write pipe\n");
+            singularity_message(DEBUG, "Closing watchdog write pipe\n");
             close(watchdog_wpipe);
         }
         watchdog_wpipe = -1;
 
-        message(DEBUG, "Child process is returning control to process thread\n");
+        singularity_message(DEBUG, "Child process is returning control to process thread\n");
         return(0);
 
     } else if ( child_pid > 0 ) {
-        message(VERBOSE2, "Hello from parent process\n");
+        singularity_message(VERBOSE2, "Hello from parent process\n");
 
         // From: setup_signal_handler()
         sigset_t blocked_mask, old_mask, empty_mask;
@@ -107,48 +107,48 @@ pid_t singularity_fork(void) {
         int child_ok = 1;
 
 
-        message(DEBUG, "Assigning sigaction()s\n");
+        singularity_message(DEBUG, "Assigning sigaction()s\n");
         if ( -1 == sigaction(SIGINT, &action, NULL) ) {
-            message(ERROR, "Failed to install SIGINT signal handler: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to install SIGINT signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGQUIT, &action, NULL) ) {
-            message(ERROR, "Failed to install SIGQUIT signal handler: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to install SIGQUIT signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGTERM, &action, NULL) ) {
-            message(ERROR, "Failed to install SIGTERM signal handler: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to install SIGTERM signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGHUP, &action, NULL) ) {
-            message(ERROR, "Failed to install SIGHUP signal handler: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to install SIGHUP signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGUSR1, &action, NULL) ) {
-            message(ERROR, "Failed to install SIGUSR1 signal handler: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to install SIGUSR1 signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         if ( -1 == sigaction(SIGUSR2, &action, NULL) ) {
-            message(ERROR, "Failed to install SIGUSR2 signal handler: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to install SIGUSR2 signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
         action.sa_sigaction = handle_sigchld;
         if ( -1 == sigaction(SIGCHLD, &action, NULL) ) {
-            message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
 
-        message(DEBUG, "Creating generic signal pipes\n");
+        singularity_message(DEBUG, "Creating generic signal pipes\n");
         if ( -1 == pipe2(pipes, O_CLOEXEC) ) {
-            message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
             ABORT(255);
         }
         generic_signal_rpipe = pipes[0];
         generic_signal_wpipe = pipes[1];
 
-        message(DEBUG, "Creating sigcld signal pipes\n");
+        singularity_message(DEBUG, "Creating sigcld signal pipes\n");
         if ( -1 == pipe2(pipes, O_CLOEXEC) ) {
-            message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
             ABORT(255);
         }
         sigchld_signal_rpipe = pipes[0];
@@ -168,10 +168,10 @@ pid_t singularity_fork(void) {
 
 
         do {
-            message(DEBUG, "Waiting on signal from watchdog\n");
+            singularity_message(DEBUG, "Waiting on signal from watchdog\n");
             while ( -1 == (retval = poll(fds, watchdog_rpipe == -1 ? 2 : 3, -1)) && errno == EINTR ) {}
             if ( -1 == retval ) {
-                message(ERROR, "Failed to wait for file descriptors: %s\n", strerror(errno));
+                singularity_message(ERROR, "Failed to wait for file descriptors: %s\n", strerror(errno));
                 ABORT(255);
             }
             if (fds[0].revents) {
@@ -181,7 +181,7 @@ pid_t singularity_fork(void) {
                 char signum = SIGKILL;
                 while (-1 == (retval = read(generic_signal_rpipe, &signum, 1)) && errno == EINTR) {}
                 if (-1 == retval) {
-                    message(ERROR, "Failed to read from signal handler pipe: %s\n", strerror(errno));
+                    singularity_message(ERROR, "Failed to read from signal handler pipe: %s\n", strerror(errno));
                     ABORT(255);
                 }
                 kill(child_pid, signum);
@@ -194,12 +194,12 @@ pid_t singularity_fork(void) {
             }
         } while ( child_ok );
 
-        message(DEBUG, "Parent process is exiting\n");
+        singularity_message(DEBUG, "Parent process is exiting\n");
 
         return(child_pid);
 
     } else {
-        message(ERROR, "Failed to fork child process\n");
+        singularity_message(ERROR, "Failed to fork child process\n");
         ABORT(255);
     }
 }
@@ -211,7 +211,7 @@ void singularity_fork_run(void) {
     pid_t child;
 
     if ( ( child = singularity_fork() ) > 0 ) {
-        message(DEBUG, "Waiting on child process\n");
+        singularity_message(DEBUG, "Waiting on child process\n");
                                 
         waitpid(child, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);
@@ -231,12 +231,12 @@ int singularity_fork_exec(char **argv) {
     if ( child == 0 ) {
 
         if ( execvp(argv[0], argv) < 0 ) { 
-            message(ERROR, "Failed to execv(%s, ...)\n", argv[0]);
+            singularity_message(ERROR, "Failed to execv(%s, ...)\n", argv[0]);
             ABORT(255);
         }
 
     } else if ( child > 0 ) {
-        message(DEBUG, "Waiting on child process\n");
+        singularity_message(DEBUG, "Waiting on child process\n");
                                 
         waitpid(child, &tmpstatus, 0);
         retval = WEXITSTATUS(tmpstatus);

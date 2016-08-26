@@ -43,7 +43,7 @@
 static int enabled = -1;
 
 int singularity_ns_pid_enabled(void) {
-    message(DEBUG, "Checking PID namespace enabled: %d\n", enabled);
+    singularity_message(DEBUG, "Checking PID namespace enabled: %d\n", enabled);
     return(enabled);
 }
 
@@ -51,21 +51,21 @@ int singularity_ns_pid_unshare(void) {
 
     singularity_config_rewind();
     if ( singularity_config_get_bool("allow pid ns", 1) <= 0 ) {
-        message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
+        singularity_message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
         return(0);
     }
 
     if ( getenv("SINGULARITY_UNSHARE_PID") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
-        message(VERBOSE2, "Not virtualizing PID namespace on user request\n");
+        singularity_message(VERBOSE2, "Not virtualizing PID namespace on user request\n");
         return(0);
     }
 
 #ifdef NS_CLONE_NEWPID
-    message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
+    singularity_message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
     singularity_priv_escalate();
-    message(DEBUG, "Virtualizing PID namespace\n");
+    singularity_message(DEBUG, "Virtualizing PID namespace\n");
     if ( unshare(CLONE_NEWPID) < 0 ) {
-        message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
         ABORT(255);
     }
     singularity_priv_drop();
@@ -73,18 +73,18 @@ int singularity_ns_pid_unshare(void) {
 
 #else
 #ifdef NS_CLONE_PID
-    message(DEBUG, "Using PID namespace: CLONE_PID\n");
+    singularity_message(DEBUG, "Using PID namespace: CLONE_PID\n");
     singularity_priv_escalate();
-    message(DEBUG, "Virtualizing PID namespace\n");
+    singularity_message(DEBUG, "Virtualizing PID namespace\n");
     if ( unshare(CLONE_NEWPID) < 0 ) {
-        message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
         ABORT(255);
     }
     singularity_priv_drop();
     enabled = 0;
 
 #endif
-    message(VERBOSE, "Skipping PID namespace creation, support not available\n");
+    singularity_message(VERBOSE, "Skipping PID namespace creation, support not available\n");
     return(0);
 #endif
 

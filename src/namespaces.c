@@ -53,43 +53,43 @@ void namespace_join(pid_t daemon_pid) {
 void namespace_unshare_pid(void) {
     singularity_config_rewind();
 #ifdef NS_CLONE_NEWPID
-    message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
+    singularity_message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
     if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
             ( singularity_config_get_bool("allow pid ns", 1) > 0 ) ) {
         unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-        message(DEBUG, "Virtualizing PID namespace\n");
+        singularity_message(DEBUG, "Virtualizing PID namespace\n");
         if ( unshare(CLONE_NEWPID) < 0 ) {
-            message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+            singularity_message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
             ABORT(255);
         }
     } else {
-        message(VERBOSE, "Not virtualizing PID namespace\n");
+        singularity_message(VERBOSE, "Not virtualizing PID namespace\n");
     }
 #else
 #ifdef NS_CLONE_PID
-    message(DEBUG, "Using PID namespace: CLONE_PID\n");
+    singularity_message(DEBUG, "Using PID namespace: CLONE_PID\n");
     if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
             ( singularity_config_get_bool("allow pid ns", 1) > 0 ) ) {
         unsetenv("SINGULARITY_NO_NAMESPACE_PID");
-        message(DEBUG, "Virtualizing PID namespace\n");
+        singularity_message(DEBUG, "Virtualizing PID namespace\n");
         if ( unshare(CLONE_NEWPID) < 0 ) {
-            message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+            singularity_message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
             ABORT(255);
         }
     } else {
-        message(VERBOSE, "Not virtualizing PID namespace\n");
+        singularity_message(VERBOSE, "Not virtualizing PID namespace\n");
     }
 #endif
-    message(DEBUG, "No PID namespace support found\n");
+    singularity_message(DEBUG, "No PID namespace support found\n");
 #endif
 }
 
 void namespace_unshare_fs(void) {
 #ifdef NS_CLONE_FS
     // Setup FS namespaces
-    message(DEBUG, "Virtualizing FS namespace\n");
+    singularity_message(DEBUG, "Virtualizing FS namespace\n");
     if ( unshare(CLONE_FS) < 0 ) {
-        message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not virtualize file system namespace: %s\n", strerror(errno));
         ABORT(255);
     }
 #endif
@@ -97,9 +97,9 @@ void namespace_unshare_fs(void) {
 
 void namespace_unshare_mount(void) {
     // Setup mount namespaces
-    message(DEBUG, "Virtualizing mount namespace\n");
+    singularity_message(DEBUG, "Virtualizing mount namespace\n");
     if ( unshare(CLONE_NEWNS) < 0 ) {
-        message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
         ABORT(255);
     }
 }
@@ -107,7 +107,7 @@ void namespace_unshare_mount(void) {
 
 void namespace_join_pid(pid_t daemon_pid) {
 #ifdef NO_SETNS
-    message(ERROR, "This host does not support joining existing name spaces\n");
+    singularity_message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);
 #else
     char *nsjoin= (char *)malloc(64);
@@ -115,16 +115,16 @@ void namespace_join_pid(pid_t daemon_pid) {
     snprintf(nsjoin, 64, "/proc/%d/ns/pid", daemon_pid); // Flawfinder: ignore
 
     if ( is_file(nsjoin) == 0 ) {
-        message(DEBUG, "Connecting to existing PID namespace\n");
+        singularity_message(DEBUG, "Connecting to existing PID namespace\n");
         int fd = open(nsjoin, O_RDONLY); // Flawfinder: ignore
         if ( setns(fd, CLONE_NEWPID) < 0 ) {
-            message(ERROR, "Could not join existing PID namespace: %s\n", strerror(errno));
+            singularity_message(ERROR, "Could not join existing PID namespace: %s\n", strerror(errno));
             ABORT(255);
         }
         close(fd);
 
     } else {
-        message(ERROR, "Could not identify PID namespace: %s\n", nsjoin);
+        singularity_message(ERROR, "Could not identify PID namespace: %s\n", nsjoin);
         ABORT(255);
     }
 #endif
@@ -133,7 +133,7 @@ void namespace_join_pid(pid_t daemon_pid) {
 
 void namespace_join_mount(pid_t daemon_pid) {
 #ifdef NO_SETNS
-    message(ERROR, "This host does not support joining existing name spaces\n");
+    singularity_message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);
 #else
     char *nsjoin= (char *)malloc(64);
@@ -141,16 +141,16 @@ void namespace_join_mount(pid_t daemon_pid) {
     snprintf(nsjoin, 64, "/proc/%d/ns/mnt", daemon_pid); // Flawfinder: ignore
 
     if ( is_file(nsjoin) == 0 ) {
-        message(DEBUG, "Connecting to existing mount namespace\n");
+        singularity_message(DEBUG, "Connecting to existing mount namespace\n");
         int fd = open(nsjoin, O_RDONLY); // Flawfinder: ignore
         if ( setns(fd, CLONE_NEWNS) < 0 ) {
-            message(ERROR, "Could not join existing mount namespace: %s\n", strerror(errno));
+            singularity_message(ERROR, "Could not join existing mount namespace: %s\n", strerror(errno));
             ABORT(255);
         }
         close(fd);
 
     } else {
-        message(ERROR, "Could not identify mount namespace: %s\n", nsjoin);
+        singularity_message(ERROR, "Could not identify mount namespace: %s\n", nsjoin);
         ABORT(255);
     }
 #endif

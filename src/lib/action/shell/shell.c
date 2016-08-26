@@ -35,26 +35,26 @@
 //TODO: Put in backwards compatibility for previous
 void action_shell_do(int argc, char **argv) {
 
-    message(INFO, "Singularity: Invoking an interactive shell within container...\n\n");
+    singularity_message(INFO, "Singularity: Invoking an interactive shell within container...\n\n");
 
-    message(VERBOSE, "Invoking the container's /.shell\n");
+    singularity_message(VERBOSE, "Invoking the container's /.shell\n");
     if ( is_exec("/.shell") == 0 ) {
-        message(DEBUG, "Found container's /.shell, executing that\n");
+        singularity_message(DEBUG, "Found container's /.shell, executing that\n");
         if ( execv("/.shell", argv) < 0 ) {
-            message(ERROR, "Failed to execv() /.shell, continuing to /bin/sh\n");
+            singularity_message(ERROR, "Failed to execv() /.shell, continuing to /bin/sh\n");
         }
     }
 
-    message(VERBOSE, "Invoking the container's /bin/sh\n");
+    singularity_message(VERBOSE, "Invoking the container's /bin/sh\n");
     if ( is_exec("/bin/sh") == 0 ) {
-        message(DEBUG, "Exec'ing /bin/sh\n");
+        singularity_message(DEBUG, "Exec'ing /bin/sh\n");
         argv[0] = strdup("/bin/sh");
         if ( execv("/bin/sh", argv) < 0 ) {
-            message(ERROR, "Failed to execv() /bin/sh\n");
+            singularity_message(ERROR, "Failed to execv() /bin/sh\n");
             ABORT(255);
         }
     }
 
-    message(ERROR, "We should never get here... Grrrrrr!\n");
+    singularity_message(ERROR, "We should never get here... Grrrrrr!\n");
     ABORT(255);
 }

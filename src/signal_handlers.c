@@ -65,45 +65,45 @@ void setup_signal_handler(pid_t pid) {
     action.sa_mask = empty_mask;
 
     if ( -1 == sigaction(SIGINT, &action, NULL) ) {
-        message(ERROR, "Failed to install SIGINT signal handler: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to install SIGINT signal handler: %s\n", strerror(errno));
         ABORT(255);
     }
     if ( -1 == sigaction(SIGQUIT, &action, NULL) ) {
-        message(ERROR, "Failed to install SIGQUIT signal handler: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to install SIGQUIT signal handler: %s\n", strerror(errno));
         ABORT(255);
     }
     if ( -1 == sigaction(SIGTERM, &action, NULL) ) {
-        message(ERROR, "Failed to install SIGTERM signal handler: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to install SIGTERM signal handler: %s\n", strerror(errno));
         ABORT(255);
     }
     if ( -1 == sigaction(SIGHUP, &action, NULL) ) {
-        message(ERROR, "Failed to install SIGHUP signal handler: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to install SIGHUP signal handler: %s\n", strerror(errno));
         ABORT(255);
     }
     if ( -1 == sigaction(SIGUSR1, &action, NULL) ) {
-        message(ERROR, "Failed to install SIGUSR1 signal handler: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to install SIGUSR1 signal handler: %s\n", strerror(errno));
         ABORT(255);
     }
     if ( -1 == sigaction(SIGUSR2, &action, NULL) ) {
-        message(ERROR, "Failed to install SIGUSR2 signal handler: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to install SIGUSR2 signal handler: %s\n", strerror(errno));
         ABORT(255);
     }
     action.sa_sigaction = handle_sigchld;
     if ( -1 == sigaction(SIGCHLD, &action, NULL) ) {
-        message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
         ABORT(255);
     }
 
     int pipes[2];
     if ( -1 == pipe2(pipes, O_CLOEXEC) ) {
-        message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
         ABORT(255);
     }
     generic_signal_rpipe = pipes[0];
     generic_signal_wpipe = pipes[1];
 
     if ( -1 == pipe2(pipes, O_CLOEXEC) ) {
-        message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
         ABORT(255);
     }
     sigchld_signal_rpipe = pipes[0];
@@ -116,7 +116,7 @@ void setup_signal_handler(pid_t pid) {
 void signal_pre_fork() {
     int pipes[2];
     if ( -1 == pipe2(pipes, O_CLOEXEC) ) {
-        message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
         ABORT(255);
     }
     watchdog_rpipe = pipes[0];
@@ -125,7 +125,7 @@ void signal_pre_fork() {
 
 
 void signal_post_parent() {
-    message(DEBUG, "Closing watchdog read pipe, FD: %d\n", watchdog_rpipe);
+    singularity_message(DEBUG, "Closing watchdog read pipe, FD: %d\n", watchdog_rpipe);
     if (watchdog_rpipe != -1) {
         close(watchdog_rpipe);
     }
@@ -134,7 +134,7 @@ void signal_post_parent() {
 
 
 void signal_post_child() {
-    message(DEBUG, "Closing watchdog write pipe, FD: %d\n", watchdog_wpipe);
+    singularity_message(DEBUG, "Closing watchdog write pipe, FD: %d\n", watchdog_wpipe);
     if (watchdog_wpipe != -1) {
         close(watchdog_wpipe);
     }
@@ -158,7 +158,7 @@ void blockpid_or_signal() {
     do {
         while ( -1 == (retval = poll(fds, watchdog_rpipe == -1 ? 2 : 3, -1)) && errno == EINTR ) {}
         if ( -1 == retval ) {
-            message(ERROR, "Failed to wait for file descriptors: %s\n", strerror(errno));
+            singularity_message(ERROR, "Failed to wait for file descriptors: %s\n", strerror(errno));
             ABORT(255);
         }
         if (fds[0].revents) {
@@ -168,7 +168,7 @@ void blockpid_or_signal() {
             char signum = SIGKILL;
             while (-1 == (retval = read(generic_signal_rpipe, &signum, 1)) && errno == EINTR) {}
             if (-1 == retval) {
-                message(ERROR, "Failed to read from signal handler pipe: %s\n", strerror(errno));
+                singularity_message(ERROR, "Failed to read from signal handler pipe: %s\n", strerror(errno));
                 ABORT(255);
             }
             kill(child_pid, signum);

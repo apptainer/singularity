@@ -42,7 +42,7 @@
 int singularity_ns_unshare(void) {
     int retval = 0;
 
-    message(DEBUG, "Unsharing all namespaces\n");
+    singularity_message(DEBUG, "Unsharing all namespaces\n");
     retval += singularity_ns_user_unshare();
     retval += singularity_ns_pid_unshare();
     retval += singularity_ns_mnt_unshare();
@@ -53,7 +53,7 @@ int singularity_ns_unshare(void) {
 
 int singularity_ns_join(pid_t attach_pid) {
 #ifdef NO_SETNS
-    message(ERROR, "This host does not support joining existing name spaces\n");
+    singularity_message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);
 #else
     char *nsjoin_pid = (char *)malloc(64);
@@ -63,30 +63,30 @@ int singularity_ns_join(pid_t attach_pid) {
     snprintf(nsjoin_mnt, 64, "/proc/%d/ns/mnt", attach_pid); // Flawfinder: ignore
 
     if ( is_file(nsjoin_pid) == 0 ) {
-        message(DEBUG, "Connecting to existing PID namespace\n");
+        singularity_message(DEBUG, "Connecting to existing PID namespace\n");
         int fd = open(nsjoin_pid, O_RDONLY); // Flawfinder: ignore
         if ( setns(fd, CLONE_NEWPID) < 0 ) {
-            message(ERROR, "Could not join existing PID namespace: %s\n", strerror(errno));
+            singularity_message(ERROR, "Could not join existing PID namespace: %s\n", strerror(errno));
             ABORT(255);
         }
         close(fd);
 
     } else {
-        message(ERROR, "Could not identify PID namespace: %s\n", nsjoin_pid);
+        singularity_message(ERROR, "Could not identify PID namespace: %s\n", nsjoin_pid);
         ABORT(255);
     }
 
     if ( is_file(nsjoin_mnt) == 0 ) {
-        message(DEBUG, "Connecting to existing mount namespace\n");
+        singularity_message(DEBUG, "Connecting to existing mount namespace\n");
         int fd = open(nsjoin_mnt, O_RDONLY); // Flawfinder: ignore
         if ( setns(fd, CLONE_NEWNS) < 0 ) {
-            message(ERROR, "Could not join existing mount namespace: %s\n", strerror(errno));
+            singularity_message(ERROR, "Could not join existing mount namespace: %s\n", strerror(errno));
             ABORT(255);
         }
         close(fd);
 
     } else {
-        message(ERROR, "Could not identify mount namespace: %s\n", nsjoin_mnt);
+        singularity_message(ERROR, "Could not identify mount namespace: %s\n", nsjoin_mnt);
         ABORT(255);
     }
 #endif

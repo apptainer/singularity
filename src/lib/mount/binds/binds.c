@@ -40,11 +40,11 @@ int singularity_mount_binds(void) {
     char *container_dir = singularity_rootfs_dir();
 
     if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
-        message(DEBUG, "Skipping bind mounts as contain was requested\n");
+        singularity_message(DEBUG, "Skipping bind mounts as contain was requested\n");
         return(0);
     }
 
-    message(DEBUG, "Checking configuration file for 'bind path'\n");
+    singularity_message(DEBUG, "Checking configuration file for 'bind path'\n");
     singularity_config_rewind();
     while ( ( tmp_config_string = singularity_config_get_value("bind path") ) != NULL ) {
         char *source = strtok(tmp_config_string, ",");
@@ -59,10 +59,10 @@ int singularity_mount_binds(void) {
             chomp(dest);
         }
 
-        message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
+        singularity_message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
 
         if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
-            message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+            singularity_message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
             continue;
         }
 
@@ -72,11 +72,11 @@ int singularity_mount_binds(void) {
                 FILE *tmp = fopen(joinpath(container_dir, dest), "w+");
                 singularity_priv_drop();
                 if ( fclose(tmp) != 0 ) {
-                    message(WARNING, "Could not create bind point file in container %s: %s\n", dest, strerror(errno));
+                    singularity_message(WARNING, "Could not create bind point file in container %s: %s\n", dest, strerror(errno));
                     continue;
                 }
             } else {
-                message(WARNING, "Non existant bind point (file) in container: '%s'\n", dest);
+                singularity_message(WARNING, "Non existant bind point (file) in container: '%s'\n", dest);
                 continue;
             }
         } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
@@ -84,20 +84,20 @@ int singularity_mount_binds(void) {
                 singularity_priv_escalate();
                 if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
                     singularity_priv_drop();
-                    message(WARNING, "Could not create bind point directory in container %s: %s\n", dest, strerror(errno));
+                    singularity_message(WARNING, "Could not create bind point directory in container %s: %s\n", dest, strerror(errno));
                     continue;
                 }
                 singularity_priv_drop();
             } else {
-                message(WARNING, "Non existant bind point (directory) in container: '%s'\n", dest);
+                singularity_message(WARNING, "Non existant bind point (directory) in container: '%s'\n", dest);
                 continue;
             }
         }
 
         singularity_priv_escalate();
-        message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
+        singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
         if ( mount(source, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-            message(ERROR, "There was an error binding the path %s: %s\n", source, strerror(errno));
+            singularity_message(ERROR, "There was an error binding the path %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
         singularity_priv_drop();

@@ -65,44 +65,44 @@ void singularity_priv_init(void) {
     char *target_gid_str = NULL;
     memset(&uinfo, '\0', sizeof(uinfo));
 
-    message(DEBUG, "Called singularity_priv_init(void)\n");
+    singularity_message(DEBUG, "Called singularity_priv_init(void)\n");
 
     if ( getuid() == 0 ) {
         target_uid_str = getenv("SINGULARITY_TARGET_UID");
         target_gid_str = getenv("SINGULARITY_TARGET_GID");
         if ( target_uid_str && !target_gid_str ) {
-            message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
+            singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
             ABORT(255);
         }
         if (target_uid_str) {
             if ( -1 == str2int(target_uid_str, &target_uid) ) {
-                message(ERROR, "Unable to convert target UID (%s) to integer: %s\n", target_uid_str, strerror(errno));
+                singularity_message(ERROR, "Unable to convert target UID (%s) to integer: %s\n", target_uid_str, strerror(errno));
                 ABORT(255);
             }
             if (target_uid < 500) {
-                message(ERROR, "Target UID (%ld) must be 500 or greater to avoid system users.\n", target_uid);
+                singularity_message(ERROR, "Target UID (%ld) must be 500 or greater to avoid system users.\n", target_uid);
                 ABORT(255);
             }
             if (target_uid > UINT_MAX) { // Avoid anything greater than the traditional overflow UID.
-                message(ERROR, "Target UID (%ld) cannot be greater than UINT_MAX.\n", target_uid);
+                singularity_message(ERROR, "Target UID (%ld) cannot be greater than UINT_MAX.\n", target_uid);
                 ABORT(255);
             }
         }
         if ( !target_uid_str && target_gid_str ) {
-            message(ERROR, "A target GID is set (%s) but a target UID is not set (SINGULARITY_TARGET_UID).  Both must be specified.\n", target_gid_str);
+            singularity_message(ERROR, "A target GID is set (%s) but a target UID is not set (SINGULARITY_TARGET_UID).  Both must be specified.\n", target_gid_str);
             ABORT(255);
         }
         if (target_gid_str) {
             if ( -1 == str2int(target_gid_str, &target_gid) ) {
-                message(ERROR, "Unable to convert target GID (%s) to integer: %s\n", target_gid_str, strerror(errno));
+                singularity_message(ERROR, "Unable to convert target GID (%s) to integer: %s\n", target_gid_str, strerror(errno));
                 ABORT(255);
             }
             if (target_gid < 500) {
-                message(ERROR, "Target GID (%ld) must be 500 or greater to avoid system groups.\n", target_gid);
+                singularity_message(ERROR, "Target GID (%ld) must be 500 or greater to avoid system groups.\n", target_gid);
                 ABORT(255);
             }
             if (target_gid > UINT_MAX) { // Avoid anything greater than the traditional overflow GID.
-                message(ERROR, "Target GID (%ld) cannot be greater than UINT_MAX.\n", target_gid);
+                singularity_message(ERROR, "Target GID (%ld) cannot be greater than UINT_MAX.\n", target_gid);
                 ABORT(255);
             }
         }
@@ -122,37 +122,37 @@ void singularity_priv_init(void) {
         uinfo.gids = (gid_t *) malloc(sizeof(gid_t) * uinfo.gids_count);
 
         if ( getgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
-            message(ERROR, "Could not obtain current supplementary group list: %s\n", strerror(errno));
+            singularity_message(ERROR, "Could not obtain current supplementary group list: %s\n", strerror(errno));
             ABORT(255);
         }
     }
     uinfo.ready = 1;
 
-    message(DEBUG, "Returning singularity_priv_init(void)\n");
+    singularity_message(DEBUG, "Returning singularity_priv_init(void)\n");
 }
 
 void singularity_priv_escalate(void) {
 
     if ( uinfo.ready != 1 ) {
-        message(ERROR, "User info is not available\n");
+        singularity_message(ERROR, "User info is not available\n");
         ABORT(255);
     }
 
     if ( uinfo.userns_ready == 1 ) {
-        message(DEBUG, "Not escalating privileges, user namespace enabled\n");
+        singularity_message(DEBUG, "Not escalating privileges, user namespace enabled\n");
         return;
     }
 
     if ( getuid() == 0 ) {
-        message(DEBUG, "Running as root, not changing privileges\n");
+        singularity_message(DEBUG, "Running as root, not changing privileges\n");
         return;
     }
 
 
-    message(DEBUG, "Temporarily escalating privileges (U=%d)\n", getuid());
+    singularity_message(DEBUG, "Temporarily escalating privileges (U=%d)\n", getuid());
 
     if ( ( seteuid(0) < 0 ) || ( setegid(0) < 0 ) ) {
-        message(ERROR, "The feature you are requesting requires privilege you do not have\n");
+        singularity_message(ERROR, "The feature you are requesting requires privilege you do not have\n");
         ABORT(255);
     }
 
@@ -161,51 +161,51 @@ void singularity_priv_escalate(void) {
 void singularity_priv_drop(void) {
 
     if ( uinfo.ready != 1 ) {
-        message(ERROR, "User info is not available\n");
+        singularity_message(ERROR, "User info is not available\n");
         ABORT(255);
     }
 
     if ( uinfo.userns_ready == 1 ) {
-        message(DEBUG, "Not dropping privileges, user namespace enabled\n");
+        singularity_message(DEBUG, "Not dropping privileges, user namespace enabled\n");
         return;
     }
 
     if ( getuid() == 0 ) {
-        message(DEBUG, "Running as root, not changing privileges\n");
+        singularity_message(DEBUG, "Running as root, not changing privileges\n");
         return;
     }
 
 
-    message(DEBUG, "Dropping privileges to UID=%d, GID=%d\n", uinfo.uid, uinfo.gid);
+    singularity_message(DEBUG, "Dropping privileges to UID=%d, GID=%d\n", uinfo.uid, uinfo.gid);
 
     if ( setegid(uinfo.gid) < 0 ) {
-        message(ERROR, "Could not drop effective group privileges to gid %d: %s\n", uinfo.gid, strerror(errno));
+        singularity_message(ERROR, "Could not drop effective group privileges to gid %d: %s\n", uinfo.gid, strerror(errno));
         ABORT(255);
     }
 
     if ( seteuid(uinfo.uid) < 0 ) {
-        message(ERROR, "Could not drop effective user privileges to uid %d: %s\n", uinfo.uid, strerror(errno));
+        singularity_message(ERROR, "Could not drop effective user privileges to uid %d: %s\n", uinfo.uid, strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Confirming we have correct UID/GID\n");
+    singularity_message(DEBUG, "Confirming we have correct UID/GID\n");
     if ( getgid() != uinfo.gid ) {
         if ( uinfo.target_mode && getgid() != 0 ) {
-            message(ERROR, "Non-zero real GID for target mode: %d\n", getgid());
+            singularity_message(ERROR, "Non-zero real GID for target mode: %d\n", getgid());
                 ABORT(255);
             } else if ( !uinfo.target_mode )
             {
-                message(ERROR, "Failed to drop effective group privileges to gid %d (currently %d)\n", uinfo.gid, getgid());
+                singularity_message(ERROR, "Failed to drop effective group privileges to gid %d (currently %d)\n", uinfo.gid, getgid());
                 ABORT(255);
             }
         }
 
         if ( getuid() != uinfo.uid ) {
         if ( uinfo.target_mode && getuid() != 0 ) {
-            message(ERROR, "Non-zero real UID for target mode: %d\n", getuid());
+            singularity_message(ERROR, "Non-zero real UID for target mode: %d\n", getuid());
             ABORT(255);
         } else if ( !uinfo.target_mode ) {
-            message(ERROR, "Failed to drop effective user privileges to uid %d (currently %d)\n", uinfo.uid, getuid());
+            singularity_message(ERROR, "Failed to drop effective user privileges to uid %d (currently %d)\n", uinfo.uid, getuid());
             ABORT(255);
         }
     }
@@ -213,75 +213,75 @@ void singularity_priv_drop(void) {
 }
 
 void singularity_priv_drop_perm(void) {
-    message(DEBUG, "Called singularity_priv_drop_perm(void)\n");
+    singularity_message(DEBUG, "Called singularity_priv_drop_perm(void)\n");
 
     if ( uinfo.ready != 1 ) {
-        message(ERROR, "User info is not available\n");
+        singularity_message(ERROR, "User info is not available\n");
         ABORT(255);
     }
 
     if ( uinfo.userns_ready == 1 ) {
-        message(VERBOSE2, "User namespace called, no privilges to drop\n");
+        singularity_message(VERBOSE2, "User namespace called, no privilges to drop\n");
         return;
     }
 
     if ( singularity_priv_getuid() == 0 ) {
-        message(VERBOSE2, "Calling user is root, no privileges to drop\n");
+        singularity_message(VERBOSE2, "Calling user is root, no privileges to drop\n");
         return;
     }
 
-    message(DEBUG, "Escalating permissison so we can properly drop permission\n");
+    singularity_message(DEBUG, "Escalating permissison so we can properly drop permission\n");
     singularity_priv_escalate();
 
-    message(DEBUG, "Resetting supplementary groups\n");
+    singularity_message(DEBUG, "Resetting supplementary groups\n");
     if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
-        message(ERROR, "Could not reset supplementary group list: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not reset supplementary group list: %s\n", strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Dropping to group ID '%d'\n", uinfo.gid);
+    singularity_message(DEBUG, "Dropping to group ID '%d'\n", uinfo.gid);
     if ( setgid(uinfo.gid) < 0 ) {
-        message(ERROR, "Could not dump group privileges: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not dump group privileges: %s\n", strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Dropping real and effective privileges to GID = '%d'\n", uinfo.gid);
+    singularity_message(DEBUG, "Dropping real and effective privileges to GID = '%d'\n", uinfo.gid);
     if ( setregid(uinfo.gid, uinfo.gid) < 0 ) {
-        message(ERROR, "Could not dump real and effective group privileges: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not dump real and effective group privileges: %s\n", strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Dropping real and effective privileges to UID = '%d'\n", uinfo.uid);
+    singularity_message(DEBUG, "Dropping real and effective privileges to UID = '%d'\n", uinfo.uid);
     if ( setreuid(uinfo.uid, uinfo.uid) < 0 ) {
-        message(ERROR, "Could not dump real and effective user privileges: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not dump real and effective user privileges: %s\n", strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Confirming we have correct GID\n");
+    singularity_message(DEBUG, "Confirming we have correct GID\n");
     if ( getgid() != uinfo.gid ) {
-        message(ERROR, "Failed to drop effective group privileges to gid %d: %s\n", uinfo.gid, strerror(errno));
+        singularity_message(ERROR, "Failed to drop effective group privileges to gid %d: %s\n", uinfo.gid, strerror(errno));
         ABORT(255);
     }
 
-    message(DEBUG, "Confirming we have correct UID\n");
+    singularity_message(DEBUG, "Confirming we have correct UID\n");
     if ( getuid() != uinfo.uid ) {
-        message(ERROR, "Failed to drop effective user privileges to uid %d: %s\n", uinfo.uid, strerror(errno));
+        singularity_message(ERROR, "Failed to drop effective user privileges to uid %d: %s\n", uinfo.uid, strerror(errno));
         ABORT(255);
     }
 
 #ifdef SINGULARITY_NO_NEW_PRIVS
     // Prevent the following processes to increase privileges
-    message(DEBUG, "Setting NO_NEW_PRIVS to prevent future privilege escalations.\n");
+    singularity_message(DEBUG, "Setting NO_NEW_PRIVS to prevent future privilege escalations.\n");
     if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) {
-        message(ERROR, "Could not set NO_NEW_PRIVS safeguard: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not set NO_NEW_PRIVS safeguard: %s\n", strerror(errno));
         ABORT(255);
     }
 #else  // SINGULARITY_NO_NEW_PRIVS
-    message(VERBOSE2, "Not enabling NO_NEW_PRIVS flag due to lack of compile-time support.\n");
+    singularity_message(VERBOSE2, "Not enabling NO_NEW_PRIVS flag due to lack of compile-time support.\n");
 #endif
 
 
-    message(DEBUG, "Finished dropping privileges\n");
+    singularity_message(DEBUG, "Finished dropping privileges\n");
 }
 
 
@@ -295,7 +295,7 @@ void singularity_priv_userns_ready(void) {
 
 uid_t singularity_priv_getuid(void) {
     if ( !uinfo.ready ) {
-        message(ERROR, "Invoked before privilege info initialized!\n");
+        singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
     return uinfo.uid;
@@ -303,7 +303,7 @@ uid_t singularity_priv_getuid(void) {
 
 gid_t singularity_priv_getgid(void) {
     if ( !uinfo.ready ) {
-        message(ERROR, "Invoked before privilege info initialized!\n");
+        singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
     return uinfo.gid;
@@ -311,7 +311,7 @@ gid_t singularity_priv_getgid(void) {
 
 const gid_t *singularity_priv_getgids(void) {
     if ( !uinfo.ready ) {
-        message(ERROR, "Invoked before privilege info initialized!\n");
+        singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
     return uinfo.gids;
@@ -319,7 +319,7 @@ const gid_t *singularity_priv_getgids(void) {
 
 int singularity_priv_getgidcount(void) {
     if ( !uinfo.ready ) {
-        message(ERROR, "Invoked before privilege info initialized!\n");
+        singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
     return uinfo.gids_count;

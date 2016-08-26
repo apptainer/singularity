@@ -53,28 +53,28 @@ int main(int argc, char ** argv) {
         return(1);
     }
 
-    message(VERBOSE, "Checking calling user\n");
+    singularity_message(VERBOSE, "Checking calling user\n");
     if ( uid != 0 ) {
-        message(ERROR, "Calling user must be root\n");
+        singularity_message(ERROR, "Calling user must be root\n");
         ABORT(1);
     }
 
     if ( ( containerimage = getenv("SINGULARITY_IMAGE") ) == NULL ) {
-        message(ERROR, "SINGULARITY_IMAGE not defined!\n");
+        singularity_message(ERROR, "SINGULARITY_IMAGE not defined!\n");
         ABORT(255);
     }
 
-    message(VERBOSE, "Evaluating image: %s\n", containerimage);
+    singularity_message(VERBOSE, "Evaluating image: %s\n", containerimage);
 
-    message(VERBOSE, "Checking if container image exists\n");
+    singularity_message(VERBOSE, "Checking if container image exists\n");
     if ( is_file(containerimage) < 0 ) {
-        message(ERROR, "Container image not found: %s\n", containerimage);
+        singularity_message(ERROR, "Container image not found: %s\n", containerimage);
         ABORT(1);
     }
 
-    message(VERBOSE, "Checking if container can be opened read/write\n");
+    singularity_message(VERBOSE, "Checking if container can be opened read/write\n");
     if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) {
-        message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
+        singularity_message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
         ABORT(255);
     }
 
@@ -82,13 +82,13 @@ int main(int argc, char ** argv) {
     singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_sessiondir_init(containerimage);
 
-    message(DEBUG, "Binding container to loop interface\n");
+    singularity_message(DEBUG, "Binding container to loop interface\n");
     if ( ( loop_dev = singularity_loop_bind(containerimage_fp)) == NULL ) {
-        message(ERROR, "Could not bind image to loop!\n");
+        singularity_message(ERROR, "Could not bind image to loop!\n");
         ABORT(255);
     }
 
-    message(VERBOSE, "Setting SINGULARITY_LOOPDEV to '%s'\n", loop_dev);
+    singularity_message(VERBOSE, "Setting SINGULARITY_LOOPDEV to '%s'\n", loop_dev);
     setenv("SINGULARITY_LOOPDEV", loop_dev, 1);
 
     return(singularity_fork_exec(&argv[1]));
