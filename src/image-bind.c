@@ -36,10 +36,8 @@
 #include <libgen.h>
 
 #include "config.h"
-//#include "mounts.h"
 #include "file.h"
 #include "util.h"
-//#include "loop-control.h"
 #include "message.h"
 #include "singularity.h"
 #include "config_parser.h"
@@ -91,6 +89,7 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
+    message(VERBOSE, "Setting SINGULARITY_LOOPDEV to '%s'\n", loop_dev);
     setenv("SINGULARITY_LOOPDEV", loop_dev, 1);
 
     return(singularity_fork_exec(&argv[1]));
