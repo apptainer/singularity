@@ -49,16 +49,19 @@ src/*/.libs/
 src/*/lib*.la
 src/*/*.o
 src/*/*.lo
+src/*/.dirstamp
 
 src/*/*/.deps/
 src/*/*/.libs/
 src/*/*/lib*.la
 src/*/*/*.o
 src/*/*/*.lo
+src/*/*/.dirstamp
 
 src/*/*/*/.deps/
 src/*/*/*/.libs/
 src/*/*/*/lib*.la
 src/*/*/*/*.o
 src/*/*/*/*.lo
+src/*/*/*/.dirstamp
 
