@@ -38,7 +38,7 @@
 #include "config.h"
 #include "util.h"
 #include "message.h"
-#include "privilege.h"
+#include "lib/privilege.h"
 
 char *file_id(char *path) {
     struct stat filestat;

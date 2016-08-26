@@ -42,10 +42,10 @@
 #include "mounts.h"
 #include "file.h"
 #include "util.h"
-#include "loop-control.h"
+#include "lib/loop-control.h"
 #include "message.h"
-#include "config_parser.h"
-#include "privilege.h"
+#include "lib/config_parser.h"
+#include "lib/privilege.h"
 
 #ifndef MS_REC
 #define MS_REC 16384

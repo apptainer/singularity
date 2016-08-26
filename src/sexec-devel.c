@@ -28,12 +28,12 @@
 
 
 #include "config.h"
-#include "config_parser.h"
+//#include "config_parser.h"
 //#include "privilege.h"
 #include "message.h"
 #include "util.h"
-#include "singularity.h"
 #include "file.h"
+#include "lib/singularity.h"
 
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"

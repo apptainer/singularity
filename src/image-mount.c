@@ -39,7 +39,7 @@
 #include "mounts.h"
 #include "util.h"
 #include "file.h"
-#include "loop-control.h"
+#include "lib/loop-control.h"
 #include "message.h"
 
 
