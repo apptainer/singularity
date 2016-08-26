@@ -36,7 +36,6 @@
 #include <libgen.h>
 
 #include "config.h"
-#include "message.h"
 #include "lib/singularity.h"
 #include "util/file.h"
 #include "util/util.h"

@@ -40,12 +40,12 @@
 
 #include "config.h"
 #include "mounts.h"
-#include "message.h"
-#include "util/file.h"
-#include "util/util.h"
+#include "lib/message.h"
 #include "lib/loop-control.h"
 #include "lib/config_parser.h"
 #include "lib/privilege.h"
+#include "util/file.h"
+#include "util/util.h"
 
 #ifndef MS_REC
 #define MS_REC 16384

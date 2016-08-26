@@ -36,8 +36,8 @@
 #include <time.h>
 
 #include "config.h"
-#include "message.h"
 #include "util.h"
+#include "lib/message.h"
 
 
 int intlen(int input) {

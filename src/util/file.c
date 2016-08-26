@@ -36,8 +36,8 @@
 #include <time.h>
 
 #include "config.h"
-#include "util.h"
-#include "message.h"
+#include "util/util.h"
+#include "lib/message.h"
 #include "lib/privilege.h"
 
 char *file_id(char *path) {

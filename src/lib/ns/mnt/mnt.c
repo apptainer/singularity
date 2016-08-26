@@ -32,7 +32,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
-#include "message.h"
+#include "lib/message.h"
 #include "lib/config_parser.h"
 #include "lib/privilege.h"
 

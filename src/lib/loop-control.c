@@ -37,7 +37,7 @@
 #include "util/util.h"
 #include "util/file.h"
 //#include "image.h"
-#include "message.h"
+#include "lib/message.h"
 #include "lib/privilege.h"
 #include "sessiondir.h"
 

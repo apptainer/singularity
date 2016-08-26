@@ -30,7 +30,7 @@
 
 #include "config.h"
 #include "image.h"
-#include "message.h"
+#include "lib/message.h"
 #include "util/file.h"
 #include "util/util.h"
 

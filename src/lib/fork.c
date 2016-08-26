@@ -31,7 +31,7 @@
 #include <sys/wait.h>
 
 
-#include "message.h"
+#include "lib/message.h"
 #include "util/util.h"
 
 int generic_signal_rpipe = -1;

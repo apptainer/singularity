@@ -29,7 +29,7 @@
 
 #include "config.h"
 #include "util/util.h"
-#include "message.h"
+#include "lib/message.h"
 
 int messagelevel = -1;
 
