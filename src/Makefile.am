@@ -1,4 +1,4 @@
-SUBDIRS = ns rootfs action mount file
+SUBDIRS = lib
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -7,39 +7,30 @@ AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie -Wl,-rpath -Wl,$(libdir)
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-include_HEADERS = singularity.h
-lib_LTLIBRARIES = libsingularity.la
-
-libsingularity_la_LIBADD = ns/libns.la rootfs/librootfs.la action/libaction.la mount/libmount.la file/libfile.la
-libsingularity_la_SOURCES = singularity.c privilege.c util.c message.c file.c sessiondir.c config_parser.c fork.c loop-control.c image-util.c
-libsingularity_la_LDFLAGS = -version-info 1:0:0 
-libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
-
-
 bindir = $(libexecdir)/singularity
 
 bin_PROGRAMS = $(BUILD_SUID) sexec image-create image-expand image-mount image-bind
 EXTRA_PROGRAMS = sexec-suid
 
 sexec_SOURCES = sexec-devel.c config_parser.c message.c util.c file.c
-sexec_LDADD = libsingularity.la
+sexec_LDADD = lib/libsingularity.la
 
 sexec_suid_SOURCES = sexec-devel.c config_parser.c message.c util.c file.c
-sexec_suid_LDADD = libsingularity.la
+sexec_suid_LDADD = lib/libsingularity.la
 sexec_suid_LDFLAGS = -static
 sexec_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 image_create_SOURCES = image-create.c file.c util.c image.c message.c privilege.c
-image_create_LDADD = libsingularity.la
+image_create_LDADD = lib/libsingularity.la
 
 image_expand_SOURCES = image-expand.c file.c util.c image.c message.c privilege.c
-image_expand_LDADD = libsingularity.la
+image_expand_LDADD = lib/libsingularity.la
 
 image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
-image_mount_LDADD = libsingularity.la
+image_mount_LDADD = lib/libsingularity.la
 
 image_bind_SOURCES = image-bind.c util.c file.c message.c
-image_bind_LDADD = libsingularity.la
+image_bind_LDADD = lib/libsingularity.la
 
 
 
@@ -59,11 +50,4 @@ make_suid:
 		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
 	fi
 
-#bin_PROGRAMS = sexec image-create image-expand image-mount image-bind sexec_nosuid
-#
-#ftrace_SOURCES = ftrace.c file.c util.c message.c
-#ftype_SOURCES = ftype.c util.c file.c message.c
-#sexec_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c
-#sexec_nosuid_SOURCES = sexec.c util.c loop-control.c mounts.c container_files.c file.c image.c config_parser.c container_actions.c privilege.c message.c namespaces.c
-
-EXTRA_DIST = config.h config_parser.h container_actions.h file.h singularity.h image.h loop-control.h mounts.h container_files.h util.h privilege.h message.h namespaces.h sessiondir.h loop-control.h image-util.h
+EXTRA_DIST = config.h file.h util.h

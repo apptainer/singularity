@@ -36,6 +36,7 @@ src/sexec
 src/sexec-suid
 src/stamp-h1
 src/include/stamp-h1
+src/.dirstamp
 
 src/.deps/
 src/.libs/
@@ -54,4 +55,10 @@ src/*/*/.libs/
 src/*/*/lib*.la
 src/*/*/*.o
 src/*/*/*.lo
+
+src/*/*/*/.deps/
+src/*/*/*/.libs/
+src/*/*/*/lib*.la
+src/*/*/*/*.o
+src/*/*/*/*.lo
 

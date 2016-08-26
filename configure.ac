@@ -24,7 +24,7 @@ case $target_cpu in
 esac
 AC_SUBST(SINGULARITY_ARCH)
 
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 AC_CONFIG_SRCDIR([.])
 AC_CONFIG_HEADERS([src/config.h])
 #AC_CONFIG_MACRO_DIR([.])
@@ -206,26 +206,27 @@ AC_CONFIG_FILES([
    singularity.spec
    test.sh
    src/Makefile
-   src/ns/Makefile
-   src/ns/mnt/Makefile
-   src/ns/pid/Makefile
-   src/ns/user/Makefile
-   src/rootfs/Makefile
-   src/rootfs/image/Makefile
-   src/rootfs/dir/Makefile
-   src/action/Makefile
-   src/action/exec/Makefile
-   src/action/shell/Makefile
-   src/action/run/Makefile
-   src/file/Makefile
-   src/file/group/Makefile
-   src/file/passwd/Makefile
-   src/mount/Makefile
-   src/mount/binds/Makefile
-   src/mount/home/Makefile
-   src/mount/hostfs/Makefile
-   src/mount/kernelfs/Makefile
-   src/mount/tmp/Makefile
+   src/lib/Makefile
+   src/lib/ns/Makefile
+   src/lib/ns/mnt/Makefile
+   src/lib/ns/pid/Makefile
+   src/lib/ns/user/Makefile
+   src/lib/rootfs/Makefile
+   src/lib/rootfs/image/Makefile
+   src/lib/rootfs/dir/Makefile
+   src/lib/action/Makefile
+   src/lib/action/exec/Makefile
+   src/lib/action/shell/Makefile
+   src/lib/action/run/Makefile
+   src/lib/file/Makefile
+   src/lib/file/group/Makefile
+   src/lib/file/passwd/Makefile
+   src/lib/mount/Makefile
+   src/lib/mount/binds/Makefile
+   src/lib/mount/home/Makefile
+   src/lib/mount/hostfs/Makefile
+   src/lib/mount/kernelfs/Makefile
+   src/lib/mount/tmp/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity
