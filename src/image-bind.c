@@ -40,7 +40,6 @@
 #include "util.h"
 #include "message.h"
 #include "singularity.h"
-#include "config_parser.h"
 
 
 int main(int argc, char ** argv) {
@@ -80,7 +79,7 @@ int main(int argc, char ** argv) {
     }
 
     singularity_priv_init();
-    config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_sessiondir_init(containerimage);
 
     message(DEBUG, "Binding container to loop interface\n");

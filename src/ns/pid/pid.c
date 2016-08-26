@@ -49,8 +49,8 @@ int singularity_ns_pid_enabled(void) {
 
 int singularity_ns_pid_unshare(void) {
 
-    config_rewind();
-    if ( config_get_key_bool("allow pid ns", 1) <= 0 ) {
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("allow pid ns", 1) <= 0 ) {
         message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
         return(0);
     }

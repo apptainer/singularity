@@ -51,11 +51,11 @@ void namespace_join(pid_t daemon_pid) {
 }
 
 void namespace_unshare_pid(void) {
-    config_rewind();
+    singularity_config_rewind();
 #ifdef NS_CLONE_NEWPID
     message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
     if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
-            ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
+            ( singularity_config_get_bool("allow pid ns", 1) > 0 ) ) {
         unsetenv("SINGULARITY_NO_NAMESPACE_PID");
         message(DEBUG, "Virtualizing PID namespace\n");
         if ( unshare(CLONE_NEWPID) < 0 ) {
@@ -69,7 +69,7 @@ void namespace_unshare_pid(void) {
 #ifdef NS_CLONE_PID
     message(DEBUG, "Using PID namespace: CLONE_PID\n");
     if ( ( getenv("SINGULARITY_NO_NAMESPACE_PID") == NULL ) && // Flawfinder: ignore (only checking for existance of envar)
-            ( config_get_key_bool("allow pid ns", 1) > 0 ) ) {
+            ( singularity_config_get_bool("allow pid ns", 1) > 0 ) ) {
         unsetenv("SINGULARITY_NO_NAMESPACE_PID");
         message(DEBUG, "Virtualizing PID namespace\n");
         if ( unshare(CLONE_NEWPID) < 0 ) {

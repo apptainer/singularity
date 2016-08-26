@@ -131,7 +131,7 @@ int main(int argc, char ** argv) {
     }
 
     message(DEBUG, "Opening Singularity configuration file\n");
-    if ( config_open(config_path) < 0 ) {
+    if ( singularity_config_open(config_path) < 0 ) {
         ABORT(255);
     }
 
@@ -147,7 +147,7 @@ int main(int argc, char ** argv) {
             message(ERROR, "Unprivileged mode was requested, but setuid binary was used.\n");
             ABORT(255);
         }
-        config_rewind();
+        singularity_config_rewind();
         if ( !config_get_key_bool("allow setuid", 1) ) {
             message(ERROR, "Setuid mode was used, but this has been disabled by the sysadmin.\n");
             ABORT(255);
@@ -240,8 +240,8 @@ int main(int argc, char ** argv) {
 //    }
 
     message(DEBUG, "Checking Singularity configuration for 'sessiondir prefix'\n");
-    config_rewind();
-    if ( ( sessiondir_prefix = config_get_key_value("sessiondir prefix") ) != NULL ) {
+    singularity_config_rewind();
+    if ( ( sessiondir_prefix = singularity_config_get_value("sessiondir prefix") ) != NULL ) {
         sessiondir = strjoin(sessiondir_prefix, file_id(containerimage));
     } else {
         sessiondir = strjoin("/tmp/.singularity-session-", file_id(containerimage));
@@ -253,8 +253,8 @@ int main(int argc, char ** argv) {
     containername = basename(strdup(containerimage));
     message(DEBUG, "Set containername to: %s\n", containername);
 
-    config_rewind();
-    if ( ( containerdir = config_get_key_value("container dir") ) == NULL ) {
+    singularity_config_rewind();
+    if ( ( containerdir = singularity_config_get_value("container dir") ) == NULL ) {
         containerdir = strdup("/var/singularity/mnt");
     }
     message(DEBUG, "Set image mount path to: %s\n", containerdir);
@@ -317,7 +317,7 @@ int main(int argc, char ** argv) {
 
     // Create temporary scratch directories for use inside the chroot.
     // We do this as the user, but will later bind-mount as root.
-    config_rewind();
+    singularity_config_rewind();
     int user_scratch = 0;
     user_scratch = getenv("SINGULARITY_USER_SCRATCH") != NULL;
     // USER_SCRATCH is only allowed in the case of NO_NEW_PRIVS.
@@ -325,7 +325,7 @@ int main(int argc, char ** argv) {
         message(ERROR, "The sysadmin has disabled support for user-specified scratch directories.\n");
         ABORT(255);
     }
-    config_rewind();
+    singularity_config_rewind();
 #ifndef SINGULARITY_NO_NEW_PRIVS
     // NOTE: we allow 'bind scratch' without NO_NEW_PRIVS as that is setup by
     // the sysadmin; however, we don't allow user-specified scratch!
@@ -334,10 +334,10 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 #endif
-    if ( ( config_get_key_value("bind scratch") != NULL ) || user_scratch ) {
+    if ( ( singularity_config_get_value("bind scratch") != NULL ) || user_scratch ) {
         message(DEBUG, "Creating a scratch directory for this container.\n");
-        config_rewind();
-        char *tmp_config_string = config_get_key_value("scratch dir");
+        singularity_config_rewind();
+        char *tmp_config_string = singularity_config_get_value("scratch dir");
         tmp_config_string = tmp_config_string ? tmp_config_string : getenv("_CONDOR_SCRATCH_DIR");
         tmp_config_string = tmp_config_string ? tmp_config_string : getenv("TMPDIR");
         tmp_config_string = tmp_config_string ? tmp_config_string : "/tmp";
@@ -525,8 +525,8 @@ int main(int argc, char ** argv) {
                 priv_init_userns_inside_init();
             }
 
-            config_rewind();
-            int slave = config_get_key_bool("mount slave", 0);
+            singularity_config_rewind();
+            int slave = singularity_config_get_bool("mount slave", 0);
             // Privatize the mount namespaces
 #ifdef SINGULARITY_MS_SLAVE
             message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
@@ -583,8 +583,8 @@ int main(int argc, char ** argv) {
                 unsetenv("SINGULARITY_CONTAIN");
 
                 message(DEBUG, "Checking configuration file for 'mount home'\n");
-                config_rewind();
-                if ( config_get_key_bool("mount home", 1) > 0) {
+                singularity_config_rewind();
+                if ( singularity_config_get_bool("mount home", 1) > 0) {
                     mount_home(containerdir);
                 } else {
                     message(VERBOSE2, "Not mounting home directory per config\n");
@@ -599,8 +599,8 @@ int main(int argc, char ** argv) {
 
         if ( orig_uid != 0 || priv_target_mode() ) { // If we are root, no need to mess with passwd or group
             message(DEBUG, "Checking configuration file for 'config passwd'\n");
-            config_rewind();
-            if ( config_get_key_bool("config passwd", 1) > 0 ) {
+            singularity_config_rewind();
+            if ( singularity_config_get_bool("config passwd", 1) > 0 ) {
                 if ( is_file(joinpath(sessiondir, "/passwd")) < 0 ) {
                     if (is_file(joinpath(containerdir, "/etc/passwd")) == 0 ) {
                         message(VERBOSE2, "Creating template of /etc/passwd for containment\n");
@@ -619,8 +619,8 @@ int main(int argc, char ** argv) {
             }
 
             message(DEBUG, "Checking configuration file for 'config group'\n");
-            config_rewind();
-            if ( config_get_key_bool("config group", 1) > 0 ) {
+            singularity_config_rewind();
+            if ( singularity_config_get_bool("config group", 1) > 0 ) {
                 if ( is_file(joinpath(sessiondir, "/group")) < 0 ) {
                     if (is_file(joinpath(containerdir, "/etc/group")) == 0 ) {
                         message(VERBOSE2, "Creating template of /etc/group for containment\n");
@@ -642,9 +642,9 @@ int main(int argc, char ** argv) {
         }
 
         //  Handle scratch directories
-        config_rewind();
+        singularity_config_rewind();
         char *tmp_config_string;
-        while ( ( tmp_config_string = config_get_key_value("bind scratch") ) != NULL ) {
+        while ( ( tmp_config_string = singularity_config_get_value("bind scratch") ) != NULL ) {
             char *dest = tmp_config_string;
             if ( dest[0] == ' ' ) {
                 dest++;
@@ -725,8 +725,8 @@ int main(int argc, char ** argv) {
             if ( daemon_pid < 0 ) {
                 // Mount /proc if we are configured
                 message(DEBUG, "Checking configuration file for 'mount proc'\n");
-                config_rewind();
-                if ( !use_userns && config_get_key_bool("mount proc", 1) > 0 ) {
+                singularity_config_rewind();
+                if ( !use_userns && singularity_config_get_bool("mount proc", 1) > 0 ) {
                     if ( is_dir("/proc") == 0 ) {
                         message(VERBOSE, "Mounting /proc\n");
                         if ( mount("proc", "/proc", "proc", 0, NULL) < 0 ) {
@@ -743,8 +743,8 @@ int main(int argc, char ** argv) {
                 // Mount /sys if we are configured
 
                 message(DEBUG, "Checking configuration file for 'mount sys'\n");
-                config_rewind();
-                if ( config_get_key_bool("mount sys", 1) > 0 ) {
+                singularity_config_rewind();
+                if ( singularity_config_get_bool("mount sys", 1) > 0 ) {
                     // According to the man page, we should be able to remount /sys in user namespaces
                     // as of 3.8.  However, testing on a 4.5 kernel returns an EPERM.
                     if ( use_userns ) {

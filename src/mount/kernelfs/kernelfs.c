@@ -41,8 +41,8 @@ int singularity_mount_kernelfs(void) {
 
     // Mount /proc if we are configured
     message(DEBUG, "Checking configuration file for 'mount proc'\n");
-    config_rewind();
-    if ( config_get_key_bool("mount proc", 1) > 0 ) {
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("mount proc", 1) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/proc")) == 0 ) {
             if ( singularity_ns_pid_enabled() >= 0 ) {
                 singularity_priv_escalate();
@@ -71,8 +71,8 @@ int singularity_mount_kernelfs(void) {
 
     // Mount /sys if we are configured
     message(DEBUG, "Checking configuration file for 'mount sys'\n");
-    config_rewind();
-    if ( config_get_key_bool("mount sys", 1) > 0 ) {
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("mount sys", 1) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/sys")) == 0 ) {
             if ( singularity_ns_user_enabled() < 0 ) {
                 singularity_priv_escalate();

@@ -59,12 +59,12 @@ int main(int argc, char **argv) {
         singularity_abort(255, "Running in privileged mode, root must own the Singularity configuration file\n");
     }
 
-    config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
-    config_rewind();
+    singularity_config_rewind();
     
     message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
-    if ( config_get_key_bool("allow setuid", 0) == 0 ) {
+    if ( singularity_config_get_bool("allow setuid", 0) == 0 ) {
         singularity_abort(255, "SUID mode has been disabled by the sysadmin... Aborting\n");
     }
 
@@ -81,13 +81,13 @@ int main(int argc, char **argv) {
         singularity_abort(255, "This program must **NOT** be SUID\n");
     }
 
-    config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
-    config_rewind();
+    singularity_config_rewind();
 
     if ( singularity_priv_getuid() != 0 ) {
         message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
-        if ( config_get_key_bool("allow setuid", 0) == 1 ) {
+        if ( singularity_config_get_bool("allow setuid", 0) == 1 ) {
             message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
             if ( getenv("SINGULARITY_NOSUID") == NULL ) {
                 char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";

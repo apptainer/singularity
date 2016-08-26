@@ -48,8 +48,8 @@ int singularity_mount_home(void) {
     struct passwd *pw;
     uid_t uid = singularity_priv_getuid();
 
-    config_rewind();
-    if ( config_get_key_bool("mount home", 1) <= 0 ) {
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("mount home", 1) <= 0 ) {
         message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
         return(0);
     }
@@ -71,8 +71,8 @@ int singularity_mount_home(void) {
 
     // Figure out home directory source
     if ( ( homedir_source = getenv("SINGULARITY_HOME") ) != NULL ) {
-        config_rewind();
-        if ( config_get_key_bool("user bind control", 1) <= 0 ) {
+        singularity_config_rewind();
+        if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
             message(ERROR, "User bind control is disabled by system administrator\n");
             ABORT(5);
         }
@@ -80,8 +80,8 @@ int singularity_mount_home(void) {
         message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
     } else if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
         if ( ( tmpdirpath = getenv("SINGULARITY_WORKDIR") ) != NULL ) {
-            config_rewind();
-            if ( config_get_key_bool("user bind control", 1) <= 0 ) {
+            singularity_config_rewind();
+            if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
                 message(ERROR, "User bind control is disabled by system administrator\n");
                 ABORT(5);
             }

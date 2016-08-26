@@ -44,15 +44,15 @@ int singularity_mount_tmp(void) {
     char *vartmp_source;
     char *tmpdirpath;
 
-    config_rewind();
-    if ( config_get_key_bool("mount tmp", 1) <= 0 ) {
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("mount tmp", 1) <= 0 ) {
         message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
         return(0);
     }
 
     if ( ( tmpdirpath = getenv("SINGULARITY_WORKDIR") ) != NULL ) {
-        config_rewind();
-        if ( config_get_key_bool("user bind control", 1) <= 0 ) {
+        singularity_config_rewind();
+        if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
             message(ERROR, "User bind control is disabled by system administrator\n");
             ABORT(5);
         }

@@ -74,10 +74,10 @@ int singularity_rootfs_init(char *source) {
         setenv("SINGULARITY_CONTAINER", "unknown", 1);
     }
 
-    config_rewind();
+    singularity_config_rewind();
     message(DEBUG, "Figuring out where to mount Singularity container\n");
 
-    if ( ( mount_point = config_get_key_value("container dir") ) == NULL ) {
+    if ( ( mount_point = singularity_config_get_value("container dir") ) == NULL ) {
         message(DEBUG, "Using default container path of: /var/singularity/mnt\n");
         mount_point = strdup("/var/singularity/mnt");
     }
@@ -165,8 +165,8 @@ int singularity_rootfs_mount(void) {
 
 #ifdef SINGULARITY_OVERLAYFS
     message(DEBUG, "OverlayFS enabled by host build\n");
-    config_rewind();
-    if ( config_get_key_bool("enable overlay", 1) <= 0 ) {
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("enable overlay", 1) <= 0 ) {
         message(VERBOSE3, "Not enabling writable overlay via configuration\n");
     } else if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work);

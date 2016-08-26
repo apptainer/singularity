@@ -150,8 +150,8 @@ int mount_image(char * loop_device, char * mount_point, int writable) {
         }
     } else {
         char * overlaydir;
-        config_rewind();
-        if ( ( overlaydir = config_get_key_value("overlay dir") ) == NULL ){
+        singularity_config_rewind();
+        if ( ( overlaydir = singularity_config_get_value("overlay dir") ) == NULL ){
             message(DEBUG, "Trying to mount read only as ext4 with discard option\n");
             if ( mount(loop_device, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "discard,errors=remount-ro") < 0 ) {
                 message(DEBUG, "Trying to mount read only as ext4 without discard option\n");
@@ -464,8 +464,8 @@ void user_bind_paths(const char *containerdir, const char *tmp_dir) {
 void bind_paths(char *rootpath) {
     char *tmp_config_string;
     message(DEBUG, "Checking configuration file for 'bind path'\n");
-    config_rewind();
-    while ( ( tmp_config_string = config_get_key_value("bind path") ) != NULL ) {
+    singularity_config_rewind();
+    while ( ( tmp_config_string = singularity_config_get_value("bind path") ) != NULL ) {
         char *source = strtok(tmp_config_string, ",");
         char *dest = strtok(NULL, ",");
         chomp(source);

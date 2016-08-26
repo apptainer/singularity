@@ -19,10 +19,14 @@
  */
 
 
-int config_open(char *config_path);
-void config_close(void);
-void config_rewind(void);
+#ifndef __SINGULARITY_CONFIG_H_
+#define __SINGULARITY_CONFIG_H_
 
-char *config_get_key_value(char *key);
-int config_get_key_bool(char *key, int def);
+    int singularity_config_open(char *config_path);
+    void singularity_config_close(void);
+    void singularity_config_rewind(void);
 
+    char *singularity_config_get_value(char *key);
+    int singularity_config_get_bool(char *key, int def);
+
+#endif /* __SINGULARITY_CONFIG_H_ */

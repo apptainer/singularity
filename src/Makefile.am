@@ -38,7 +38,7 @@ image_expand_LDADD = libsingularity.la
 image_mount_SOURCES = image-mount.c util.c loop-control.c mounts.c file.c image.c message.c config_parser.c privilege.c
 image_mount_LDADD = libsingularity.la
 
-image_bind_SOURCES = image-bind.c util.c file.c message.c config_parser.c
+image_bind_SOURCES = image-bind.c util.c file.c message.c
 image_bind_LDADD = libsingularity.la
 
 

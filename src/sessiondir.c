@@ -65,8 +65,8 @@ char *singularity_sessiondir_init(char *file) {
             return(NULL);
         }
 
-        config_rewind();
-        if ( ( sessiondir_prefix = config_get_key_value("sessiondir prefix") ) != NULL ) {
+        singularity_config_rewind();
+        if ( ( sessiondir_prefix = singularity_config_get_value("sessiondir prefix") ) != NULL ) {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino);
         } else {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "/tmp/.singularity-session-%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino);
