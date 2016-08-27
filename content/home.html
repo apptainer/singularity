@@ -1,17 +1,26 @@
-
 <h1>Singularity</h1>
-<p>
-Application containers enabling mobility of compute
-</p>
+<br/>
 
-<h2>HPC centers, users, and admins need to support portable workflows!</h2>
+<h2>Controlling your operating system as a user!!</h2>
 <p>
-Containers are proving to be an extremely valuable technology for science;
-Singularity focuses container approaches, workflows, and methods to create
-portable environments enabling computational science!
+As a user, Singularity containers can "swap" out the host operating
+system environment for one you control. Additionally Singularity
+makes the features and resources of the host system available within
+the container. This includes shared file systems, high performance
+interconnects and network components, GPUs and accelerators.
 </p>
 <p>
-Singularity does this by enabling several key facets:
+For example:
+<em>
+If Ubuntu is installed on your workstation or server, but an application
+is required which only runs on Red Hat Enterprise Linux 6.3. With
+Singularity, you can virtually change the host's operating system for
+a single process or process group. The application can then run within
+it's supported Red Hat environment.
+</em>
+</p>
+<h2>Singularity does this by enabling several key facets:</h2>
+<p>
 <h4 class="loud">
 <ul>
 <li><a href="javascript:open_popup('env_encapsulation')">Encapsulation of the environment</a></li>
@@ -26,12 +35,14 @@ Additionally, you can check out the
 <a href="javascript:load_content('use-cases')">use cases</a>
 and the 
 <a href="javascript:load_content('faq')">frequently asked questions</a>
-for more information. But, sometimes a snippet is worth a thousand words...
-Here is a demonstration of how simple Singularity is to use! Change your
-entire operating system environment with a single command!
+for more information.
+</p>
+<h2>Sometimes a snippet is worth a thousand words...</h2>
+<p>
+Here is a demonstration of some of Singularity's features:
 <pre>
 $ # Shell into container
-$ singularity shell /tmp/Centos7.img 
+$ singularity shell --contain /tmp/Centos7.img 
 Singularity.Centos7.img&gt; ps aux
 USER        PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
 gmk           1  0.0  0.3 115372  1768 pts/6    S    12:23   0:00 /bin/bash --norc --noprofile
