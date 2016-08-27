@@ -37,4 +37,4 @@ fi
 argc=$(($#))
 argc_1=$(($#-1))
 
-exec /bin/cp "${@:1:$argc_1}" "$SINGULARITY_BUILD_ROOT/${@:$argc}"
+exec /bin/cp "${@:1:$argc_1}" "$SINGULARITY_ROOTFS/${@:$argc}"

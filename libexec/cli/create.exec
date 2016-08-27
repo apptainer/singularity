@@ -35,7 +35,7 @@ else
 fi
 
 PATH=/sbin:/usr/sbin:${PATH:-}
-IMAGE_SIZE="1024"
+IMAGE_SIZE="512"
 
 while true; do
     case ${1:-} in

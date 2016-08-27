@@ -4,7 +4,7 @@ USAGE: singularity [...] expand [expand options...] <container path>
 Grow the Singularity disk image by the given amount.
 
 EXPAND OPTIONS:
-    -s/--size   Specify a size for an operation in MiB (default 1024MiB)
+    -s/--size   Specify a size for an operation in MiB (default 512MiB)
 
 EXAMPLES:
 

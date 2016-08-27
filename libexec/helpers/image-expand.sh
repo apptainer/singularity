@@ -34,47 +34,47 @@ else
     exit 1
 fi
 
-while true; do
-    case ${1:-} in
-        -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
-        ;;
-        -*)
-            message ERROR "Unknown option: $1\n"
-            exit 1
-        ;;
-        *)
-            break;
-        ;;
-    esac
-done
-
-if [ -z "${1:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-    else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
-    fi
-    exit 0
+if [ -z "${SINGULARITY_LOOPDEV}" ]; then
+    message ERROR "SINGULARITY_LOOPDEV not defined....\n"
+    exit 255
 fi
 
-#if [ "${UID:-}" != 0 ]; then
-#    message ERROR "Calling user must be root!\n"
-#    exit 1
-#fi
+if [ ! -b "$SINGULARITY_LOOPDEV" ]; then
+    message ERROR "SINGULARITY_LOOPDEV is defined but not a block device: $SINGULARITY_LOOPDEV\n"
+    exit 255
+fi
 
-SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-SINGULARITY_libexecdir="$SINGULARITY_libexecdir"
-SINGULARITY_BUILD_ROOT="$SINGULARITY_localstatedir/singularity/mnt"
-export SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT SINGULARITY_IMAGE SINGULARITY_WRITABLE
-shift
+if ! MKFS_PATH=`singularity_which "mkfs.ext3"`; then
+    message ERROR "Could not locate program: mkfs.ext3\n"
+    exit 255
+fi
+
+if ! RESIZE2FS_PATH=`singularity_which resize2fs`; then
+    message ERROR "Could not locate program: resize2fs\n"
+    exit 255
+fi
+
+if ! E2FSCK_PATH=`singularity_which e2fsck`; then
+    message ERROR "Could not locate program: resize2fs\n"
+    exit 255
+fi
+
+message 1 "Checking image ($MKFS_PATH)\n"
+if ! eval $E2FSCK_PATH -fy "$SINGULARITY_LOOPDEV" >/dev/null; then
+    message ERROR "Failed checking loop image: $SINGULARITY_LOOPDEV\n"
+    eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$SINGULARITY_LOOPDEV"
+    exit 1
+fi
+
+message 1 "Growing file system\n"
+if ! eval $RESIZE2FS_PATH "$SINGULARITY_LOOPDEV" >/dev/null; then
+    message ERROR "Failed resizing loop image: $SINGULARITY_LOOPDEV\n"
+    eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$SINGULARITY_LOOPDEV"
+    exit 1
+fi
+
+message 1 "Done.\n"
 
 
-exec "$SINGULARITY_libexecdir/singularity/image-mount" "$SINGULARITY_libexecdir/singularity/helpers/copy.sh" "$@"
+exit 0
+
