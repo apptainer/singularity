@@ -15,4 +15,5 @@ libsingularity_la_SOURCES = singularity.c privilege.c message.c util.c file.c se
 libsingularity_la_LDFLAGS = -version-info 1:0:0 
 libsingularity_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
-EXTRA_DIST = config_parser.h singularity.h loop-control.h privilege.h sessiondir.h loop-control.h image-util.h
+EXTRA_DIST = config_parser.h fork.h image-util.h loop-control.h message.h privilege.h sessiondir.h singularity.h
+
