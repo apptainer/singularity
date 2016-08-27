@@ -84,6 +84,24 @@ if [ ! -f "$IMAGE_FILE" ]; then
     exit 1
 fi
 
+
+message 1 "Expanding image by ${IMAGE_SIZE}MiB...\n"
+if ! eval "$SINGULARITY_libexecdir/singularity/image-expand" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
+    message ERROR "Failed expanding image: $SINGULARITY_IMAGE\n"
+    exit 1
+fi
+
+message 1 "Executing image expand helper\n"
+exec "$SINGULARITY_libexecdir/singularity/image-bind" "$SINGULARITY_libexecdir/singularity/helpers/image-expand.sh"
+
+
+message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+exit 255
+
+
+
+
+
 if ! MKFS_PATH=`singularity_which mkfs.ext4`; then
     if ! MKFS_PATH=`singularity_which mkfs.ext3`; then
         message ERROR "Could not locate program: mkfs.ext3/4\n"

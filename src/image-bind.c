@@ -80,6 +80,7 @@ int main(int argc, char ** argv) {
     singularity_priv_init();
     singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_sessiondir_init(containerimage);
+    singularity_ns_mnt_unshare();
 
     singularity_message(DEBUG, "Binding container to loop interface\n");
     if ( ( loop_dev = singularity_loop_bind(containerimage_fp)) == NULL ) {

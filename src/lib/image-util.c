@@ -98,6 +98,7 @@ int singularity_image_offset(FILE *image_fp) {
 int singularity_image_create(char *image, int size) {
     FILE *image_fp;
     int i;
+    char buff[1024*1024];
 
     singularity_message(VERBOSE, "Creating new sparse image at: %s\n", image);
 
@@ -117,9 +118,11 @@ int singularity_image_create(char *image, int size) {
 
     singularity_message(VERBOSE2, "Expanding image to %dMB\n", size);
     for(i = 0; i < size; i++ ) {
-        fseek(image_fp, 1024 * 1024, SEEK_CUR);
+        if ( fwrite(buff, 1, 1024*1024, image_fp) < 1024 * 1024 ) {
+            singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
+            ABORT(255);
+        }
     }
-    fprintf(image_fp, "0");
 
     singularity_message(VERBOSE2, "Making image executable\n");
     fchmod(fileno(image_fp), 0755);
@@ -133,6 +136,7 @@ int singularity_image_create(char *image, int size) {
 
 int singularity_image_expand(char *image, int size) {
     FILE *image_fp;
+    char buff[1024*1024];
     long position;
     int i;
 
@@ -155,7 +159,10 @@ int singularity_image_expand(char *image, int size) {
     }
     singularity_message(VERBOSE2, "Expanding image by %dMB\n", size);
     for(i = 0; i < size; i++ ) {
-        fseek(image_fp, 1024 * 1024, SEEK_CUR);
+        if ( fwrite(buff, 1, 1024*1024, image_fp) < 1024 * 1024 ) {
+            singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
+            ABORT(255);
+        }
     }
     fprintf(image_fp, "0");
     fclose(image_fp);

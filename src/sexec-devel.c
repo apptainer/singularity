@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
     }
 
     singularity_action_init();
-    singularity_rootfs_init(image, "/var/singularity/mnt");
+    singularity_rootfs_init(image);
 
     singularity_sessiondir_init(image);
 

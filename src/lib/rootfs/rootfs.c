@@ -158,11 +158,6 @@ int singularity_rootfs_mount(void) {
         }
     }
 
-    if ( is_exec(joinpath(rootfs_source, "/bin/sh")) < 0 ) {
-        singularity_message(ERROR, "Container does not have a valid /bin/sh\n");
-        ABORT(255);
-    }
-
 #ifdef SINGULARITY_OVERLAYFS
     singularity_message(DEBUG, "OverlayFS enabled by host build\n");
     singularity_config_rewind();
@@ -220,6 +215,11 @@ int singularity_rootfs_mount(void) {
 
 
 int singularity_rootfs_chroot(void) {
+
+    if ( is_exec(joinpath(joinpath(mount_point, OVERLAY_FINAL), "/bin/sh")) < 0 ) {
+        singularity_message(ERROR, "Container does not have a valid /bin/sh\n");
+        ABORT(255);
+    }
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Entering container file system root: %s\n", joinpath(mount_point, OVERLAY_FINAL));

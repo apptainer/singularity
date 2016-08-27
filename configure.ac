@@ -234,5 +234,6 @@ AC_CONFIG_FILES([
    libexec/Makefile
    libexec/mods/Makefile
    libexec/cli/Makefile
+   libexec/helpers/Makefile
 ])
 AC_OUTPUT

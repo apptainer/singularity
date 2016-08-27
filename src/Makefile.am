@@ -20,13 +20,13 @@ sexec_suid_LDADD = lib/libsingularity.la
 sexec_suid_LDFLAGS = -static
 sexec_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
-image_create_SOURCES = image-create.c util/file.c util/util.c image.c
+image_create_SOURCES = image-create.c util/file.c util/util.c
 image_create_LDADD = lib/libsingularity.la
 
-image_expand_SOURCES = image-expand.c util/file.c util/util.c image.c
+image_expand_SOURCES = image-expand.c util/file.c util/util.c
 image_expand_LDADD = lib/libsingularity.la
 
-image_mount_SOURCES = image-mount.c util/util.c mounts.c util/file.c image.c
+image_mount_SOURCES = image-mount.c util/util.c util/file.c
 image_mount_LDADD = lib/libsingularity.la
 
 image_bind_SOURCES = image-bind.c util/util.c util/file.c

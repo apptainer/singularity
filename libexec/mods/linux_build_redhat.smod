@@ -36,23 +36,23 @@ YUM_CONF="/etc/bootstrap-yum.conf"
 export YUM_CONF
 
 # Create the main portion of yum config
-mkdir -p "$SINGULARITY_BUILD_ROOT"
+mkdir -p "$SINGULARITY_ROOTFS"
 
 YUM_CONF_DIRNAME=`dirname $YUM_CONF`
-mkdir -m 0755 -p "$SINGULARITY_BUILD_ROOT/$YUM_CONF_DIRNAME"
+mkdir -m 0755 -p "$SINGULARITY_ROOTFS/$YUM_CONF_DIRNAME"
 
-> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "[main]" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo 'cachedir=/var/cache/yum/$basearch/$releasever' >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "keepcache=0" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "debuglevel=2" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "logfile=/var/log/yum.log" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "exactarch=1" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "obsoletes=1" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "gpgcheck=0" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "plugins=1" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "reposdir=0" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-echo "" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
+> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "[main]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo 'cachedir=/var/cache/yum/$basearch/$releasever' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "keepcache=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "debuglevel=2" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "logfile=/var/log/yum.log" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "exactarch=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "obsoletes=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "plugins=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "reposdir=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 
 
 OSVersion() {
@@ -67,12 +67,12 @@ MirrorURL() {
         REPO_NAME="repo-${REPO_COUNT}"
         REPO_COUNT=`expr $REPO_COUNT + 1`
     fi
-    echo "[$REPO_NAME]" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-    echo 'name=Linux $releasever - $basearch' >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-    echo "baseurl=${1:-}" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-    echo "enabled=1" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-    echo "gpgcheck=0" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
-    echo "" >> "$SINGULARITY_BUILD_ROOT/$YUM_CONF"
+    echo "[$REPO_NAME]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+    echo 'name=Linux $releasever - $basearch' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+    echo "baseurl=${1:-}" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+    echo "enabled=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+    echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+    echo "" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 
     return 0
 }
@@ -81,7 +81,7 @@ Bootstrap() {
     # Avoid plugins which might cuase trouble, e.g. etckeeper, Red Hat
     # subscription-manager.  Install the release file, as the name of
     # the release package varies between RHEL, CentOS, etc.
-    if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_BUILD_ROOT/$YUM_CONF --installroot $SINGULARITY_BUILD_ROOT -y install /etc/redhat-release coreutils $@"; then
+    if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS -y install /etc/redhat-release coreutils $@"; then
         exit 1
     fi
 
@@ -94,11 +94,11 @@ Bootstrap() {
 
 InstallPkgs() {
     IPCONF=''
-    if [ -f $SINGULARITY_BUILD_ROOT/$YUM_CONF ]; then
-        IPCONF="-c $SINGULARITY_BUILD_ROOT/$YUM_CONF"
+    if [ -f $SINGULARITY_ROOTFS/$YUM_CONF ]; then
+        IPCONF="-c $SINGULARITY_ROOTFS/$YUM_CONF"
     fi
 
-    if ! eval "$INSTALL_CMD $IPCONF --noplugins --nogpgcheck --installroot $SINGULARITY_BUILD_ROOT -y install $@"; then
+    if ! eval "$INSTALL_CMD $IPCONF --noplugins --nogpgcheck --installroot $SINGULARITY_ROOTFS -y install $@"; then
         exit 1
     fi
 
@@ -106,12 +106,12 @@ InstallPkgs() {
 }
 
 Cleanup() {
-    if ! eval "$INSTALL_CMD --noplugins --installroot $SINGULARITY_BUILD_ROOT clean all"; then
+    if ! eval "$INSTALL_CMD --noplugins --installroot $SINGULARITY_ROOTFS clean all"; then
         exit 1
     fi
 
     # Remove RPM locks
-    rm -f "$SINGULARITY_BUILD_ROOT/var/lib/rpm/__*"
+    rm -f "$SINGULARITY_ROOTFS/var/lib/rpm/__*"
 
     return 0
 }

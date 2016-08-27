@@ -33,18 +33,18 @@ fi
 
 
 Bootstrap() {
-    mkdir -p -m 0755 "$SINGULARITY_BUILD_ROOT/bin"
-    mkdir -p -m 0755 "$SINGULARITY_BUILD_ROOT/etc"
+    mkdir -p -m 0755 "$SINGULARITY_ROOTFS/bin"
+    mkdir -p -m 0755 "$SINGULARITY_ROOTFS/etc"
 
-    echo "root:!:0:0:root:/root:/bin/sh" > "$SINGULARITY_BUILD_ROOT/etc/passwd"
-    echo " root:x:0:" > "$SINGULARITY_BUILD_ROOT/etc/group"
-    echo "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4" > "$SINGULARITY_BUILD_ROOT/etc/hosts"
+    echo "root:!:0:0:root:/root:/bin/sh" > "$SINGULARITY_ROOTFS/etc/passwd"
+    echo " root:x:0:" > "$SINGULARITY_ROOTFS/etc/group"
+    echo "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4" > "$SINGULARITY_ROOTFS/etc/hosts"
 
-    curl "$MIRROR" > "$SINGULARITY_BUILD_ROOT/bin/busybox"
+    curl "$MIRROR" > "$SINGULARITY_ROOTFS/bin/busybox"
 
-    chmod 0755 "$SINGULARITY_BUILD_ROOT/bin/busybox"
+    chmod 0755 "$SINGULARITY_ROOTFS/bin/busybox"
 
-    eval "$SINGULARITY_BUILD_ROOT/bin/busybox" --install "$SINGULARITY_BUILD_ROOT/bin/"
+    eval "$SINGULARITY_ROOTFS/bin/busybox" --install "$SINGULARITY_ROOTFS/bin/"
 
     return 0
 }

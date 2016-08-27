@@ -63,7 +63,7 @@
 
     // ROOTFS
     // Initialize the rootfs interface and do sanity checks early
-    extern int singularity_rootfs_init(char *source, char *mount_point);
+    extern int singularity_rootfs_init(char *source);
     // Mount the rootfs as defined above (source and mount_point are cached)
     extern int singularity_rootfs_mount(void);
     // Do the chroot into the new rootfs
