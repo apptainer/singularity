@@ -39,8 +39,8 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 255
 fi
 
-if ! cd "$SINGULARITY_ROOTFS"; then
-    message ERROR "Something bad happened!\n"
+if [ ! -d  "$SINGULARITY_ROOTFS" ]; then
+    message ERROR "SINGULARITY_ROOTFS is not a valid directory!\n"
     exit 255
 fi
 
@@ -49,8 +49,8 @@ if [ -n "${SINGULARITY_EXPORT_COMMAND:-}" ]; then
     exec $SINGULARITY_EXPORT_COMMAND
 else
     if [ -n "${SINGULARITY_EXPORT_FILE:-}" ]; then
-        exec tar -cf $SINGULARITY_EXPORT_FILE .
+        eval "(cd $SINGULARITY_ROOTFS; tar -c .) > $SINGULARITY_EXPORT_FILE"
     else
-        exec tar -c .
+        eval "(cd $SINGULARITY_ROOTFS; tar -c .)"
     fi
 fi
