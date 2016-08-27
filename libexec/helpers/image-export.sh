@@ -34,41 +34,23 @@ else
     exit 1
 fi
 
-while true; do
-    case ${1:-} in
-        -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
-        ;;
-        -*)
-            message ERROR "Unknown option: $1\n"
-            exit 1
-        ;;
-        *)
-            break;
-        ;;
-    esac
-done
+if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
+    message ERROR "SINGULARITY_ROOTFS is undefined!\n"
+    exit 255
+fi
 
-if [ -z "${1:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-    else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
-    fi
-    exit 0
+if ! cd "$SINGULARITY_ROOTFS"; then
+    message ERROR "Something bad happened!\n"
+    exit 255
 fi
 
 
-SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE
-shift
-
-
-exec "$SINGULARITY_libexecdir/singularity/image-mount" "$SINGULARITY_libexecdir/singularity/helpers/copy.sh" "$@"
+if [ -n "${SINGULARITY_EXPORT_COMMAND:-}" ]; then
+    exec $SINGULARITY_EXPORT_COMMAND
+else
+    if [ -n "${SINGULARITY_EXPORT_FILE:-}" ]; then
+        exec tar -cf $SINGULARITY_EXPORT_FILE .
+    else
+        exec tar -c .
+    fi
+fi
