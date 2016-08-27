@@ -22,11 +22,12 @@
 #ifndef __SINGULARITY_ROOTFS_H_
 #define __SINGULARITY_ROOTFS_H_
 
-    extern int singularity_rootfs_init(char *source);
-    extern int singularity_rootfs_mount(void);
-    extern int singularity_rootfs_chroot(void);
+    int singularity_rootfs_init(char *source);
+    int singularity_rootfs_mount(void);
+    int singularity_rootfs_chroot(void);
+    int singularity_rootfs_check(void);
 
-    extern int singularity_rootfs_overlay_enabled(void);
-    extern char *singularity_rootfs_dir(void);
+    int singularity_rootfs_overlay_enabled(void);
+    char *singularity_rootfs_dir(void);
 
 #endif /* __SINGULARITY_ROOTFS_H_ */

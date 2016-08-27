@@ -45,12 +45,12 @@ if [ ! -d  "$SINGULARITY_ROOTFS" ]; then
 fi
 
 
-if [ -n "${SINGULARITY_EXPORT_COMMAND:-}" ]; then
-    eval "(cd $SINGULARITY_ROOTFS; $SINGULARITY_EXPORT_COMMAND)"
+if [ -n "${SINGULARITY_IMPORT_COMMAND:-}" ]; then
+    eval "(cd $SINGULARITY_ROOTFS; $SINGULARITY_IMPORT_COMMAND)"
 else
-    if [ -n "${SINGULARITY_EXPORT_FILE:-}" ]; then
-        eval "(cd $SINGULARITY_ROOTFS; tar -c .) > $SINGULARITY_EXPORT_FILE"
+    if [ -n "${SINGULARITY_IMPORT_FILE:-}" ]; then
+        eval "(cd $SINGULARITY_ROOTFS; tar -x .) < $SINGULARITY_IMPORT_FILE"
     else
-        eval "(cd $SINGULARITY_ROOTFS; tar -c .)"
+        eval "(cd $SINGULARITY_ROOTFS; tar -x .)"
     fi
 fi

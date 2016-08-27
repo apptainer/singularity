@@ -213,13 +213,21 @@ int singularity_rootfs_mount(void) {
     return(0);
 }
 
+int singularity_rootfs_check(void) {
 
-int singularity_rootfs_chroot(void) {
-
+    singularity_message(DEBUG, "Checking if container has /bin/sh...\n");
     if ( is_exec(joinpath(joinpath(mount_point, OVERLAY_FINAL), "/bin/sh")) < 0 ) {
         singularity_message(ERROR, "Container does not have a valid /bin/sh\n");
         ABORT(255);
     }
+
+    return(0);
+}
+
+
+int singularity_rootfs_chroot(void) {
+    
+    singularity_rootfs_check();
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Entering container file system root: %s\n", joinpath(mount_point, OVERLAY_FINAL));
