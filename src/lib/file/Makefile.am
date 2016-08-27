@@ -14,4 +14,4 @@ noinst_LTLIBRARIES = libfile.la
 libfile_la_LIBADD = passwd/libfilepasswd.la group/libfilegroup.la
 libfile_la_SOURCES = file.c file-bind.c
 
-EXTRA_DIST = file.h
+EXTRA_DIST = file-bind.h

@@ -31,13 +31,13 @@
 #include <pwd.h>
 
 
-#include "util/file.h"
-#include "util/util.h"
+#include "file.h"
+#include "util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
-#include "lib/file/file.h"
+#include "lib/file/file-bind.h"
 
 
 int singularity_file_passwd(void) {

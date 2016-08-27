@@ -24,10 +24,13 @@ case $target_cpu in
 esac
 AC_SUBST(SINGULARITY_ARCH)
 
-AM_INIT_AUTOMAKE([foreign subdir-objects])
-AC_CONFIG_SRCDIR([.])
+# This should be used per autogen.sh output, but we hit this automake bug:
+# https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1232579.html
+#AM_INIT_AUTOMAKE([foreign subdir-objects])
+
+AM_INIT_AUTOMAKE([foreign]) ## SEE ABOVE BEFORE CHANGING
+AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([src/config.h])
-#AC_CONFIG_MACRO_DIR([.])
 AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL

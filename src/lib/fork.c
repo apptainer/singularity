@@ -19,7 +19,6 @@
  */
 
 #define _GNU_SOURCE
-#include "signal_handlers.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -32,7 +31,7 @@
 
 
 #include "lib/message.h"
-#include "util/util.h"
+#include "util.h"
 
 int generic_signal_rpipe = -1;
 int generic_signal_wpipe = -1;

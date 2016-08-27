@@ -36,7 +36,7 @@
 #include <time.h>
 
 #include "config.h"
-#include "util/util.h"
+#include "util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
 

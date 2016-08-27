@@ -30,9 +30,9 @@
 #include <limits.h>
 
 #include "config.h"
-#include "util/util.h"
+#include "util.h"
 #include "lib/message.h"
-#include "util/file.h"
+#include "file.h"
 
 
 #define MAX_LINE_LEN 2048

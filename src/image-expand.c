@@ -30,8 +30,8 @@
 
 #include "config.h"
 #include "lib/singularity.h"
-#include "util/file.h"
-#include "util/util.h"
+#include "file.h"
+#include "util.h"
 
 
 

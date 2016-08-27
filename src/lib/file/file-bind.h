@@ -18,39 +18,10 @@
  * 
 */
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
 
-#include "file.h"
-#include "util.h"
-#include "lib/message.h"
-#include "lib/privilege.h"
+#ifndef __SINGULARITY_FILE_BIND_H_
+#define __SINGULARITY_FILE_BIND_H_
 
+    int container_file_bind(char *file, char *dest_path);
 
-//TODO: Add backwards compatibility
-void action_run_do(int argc, char **argv) {
-    singularity_message(VERBOSE, "Exec'ing /singularity\n");
-
-    if ( is_exec("/.run") == 0 ) {
-        if ( execv("/.run", argv) < 0 ) {
-            singularity_message(ERROR, "Failed to execv() /.run, continuing to /bin/sh\n");
-        }
-    }
-
-    if ( is_exec("/singularity") == 0 ) {
-        singularity_message(DEBUG, "Exec'ing /singularity\n");
-        if ( execv("/singularity", argv) < 0 ) {
-            singularity_message(ERROR, "Failed to execv() /singularity\n");
-            ABORT(255);
-        }
-    }
-
-
-    singularity_message(ERROR, "We should never get here... Grrrrrr!\n");
-    ABORT(255);
-}
+#endif /* __SINGULARITY_FILE_BIND_H */

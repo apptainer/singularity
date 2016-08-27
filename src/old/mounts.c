@@ -44,8 +44,8 @@
 #include "lib/loop-control.h"
 #include "lib/config_parser.h"
 #include "lib/privilege.h"
-#include "util/file.h"
-#include "util/util.h"
+#include "file.h"
+#include "util.h"
 
 #ifndef MS_REC
 #define MS_REC 16384

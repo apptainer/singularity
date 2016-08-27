@@ -16,41 +16,12 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
-
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
-
-#include "file.h"
-#include "util.h"
-#include "lib/message.h"
-#include "lib/privilege.h"
+ */
 
 
-//TODO: Add backwards compatibility
-void action_run_do(int argc, char **argv) {
-    singularity_message(VERBOSE, "Exec'ing /singularity\n");
+// This is a horrid workaround for an autotools subdirs bug:
+// https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1232579.html
+//
+// This virtually puts the file in the subdir here...
 
-    if ( is_exec("/.run") == 0 ) {
-        if ( execv("/.run", argv) < 0 ) {
-            singularity_message(ERROR, "Failed to execv() /.run, continuing to /bin/sh\n");
-        }
-    }
-
-    if ( is_exec("/singularity") == 0 ) {
-        singularity_message(DEBUG, "Exec'ing /singularity\n");
-        if ( execv("/singularity", argv) < 0 ) {
-            singularity_message(ERROR, "Failed to execv() /singularity\n");
-            ABORT(255);
-        }
-    }
-
-
-    singularity_message(ERROR, "We should never get here... Grrrrrr!\n");
-    ABORT(255);
-}
+#include "../file.c"

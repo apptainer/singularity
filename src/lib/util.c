@@ -16,13 +16,12 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
 
-#ifndef __SINGULARITY_FILE_H_
-#define __SINGULARITY_FILE_H_
+// This is a horrid workaround for an autotools subdirs bug:
+// https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1232579.html
+//
+// This virtually puts the file in the subdir here...
 
-    extern int singularity_file(void);
-    extern int container_file_bind(char *file, char *dest_path);
-
-#endif /* __SINGULARITY_FILE_H */
+#include "../util.c"
