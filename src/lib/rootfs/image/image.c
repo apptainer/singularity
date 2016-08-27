@@ -74,8 +74,8 @@ int rootfs_image_init(char *source, char *mount_dir) {
 
         singularity_message(DEBUG, "Obtaining exclusive write lock on image\n");
         if ( flock(fileno(image_fp), LOCK_EX | LOCK_NB) < 0 ) {
-            singularity_message(ERROR, "Could not obtain a shared lock on image: %s\n", source);
-            ABORT(255);
+            singularity_message(WARNING, "Could not obtain an exclusive lock on image: %s\n", source);
+            //ABORT(255);
         }
         read_write = 1;
     } else {
