@@ -99,8 +99,8 @@ p {
     display: inline-block;
     width: 250px;
     margin-top: 10px;
-    margin-left: 10px;
-    position-left: absolute;
+    margin-right: 10px;
+    position-right: absolute;
     position: absolute;
     top: 50px;
     border: 0px;
