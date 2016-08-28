@@ -13,7 +13,7 @@ START OPTIONS:
 
 EXAMPLES:
 
-    $ singularity run /tmp/Debian.img
+    $ singularity start /tmp/Debian.img
 
 
 For additional help, please visit our public documentation pages which are
