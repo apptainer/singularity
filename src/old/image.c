@@ -29,8 +29,8 @@
 
 #include "image.h"
 #include "lib/message.h"
-#include "file.h"
-#include "util.h"
+#include "util/file.h"
+#include "util/util.h"
 
 
 int image_offset(FILE *image_fp) {

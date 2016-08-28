@@ -31,8 +31,8 @@
 #include <pwd.h>
 
 
-#include "file.h"
-#include "util.h"
+#include "util/file.h"
+#include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"

@@ -22,6 +22,7 @@
 #ifndef __ACTION_RUN_H_
 #define __ACTION_RUN_H_
 
-void action_run_do(int argc, char **argv);
+    void action_run_init(void);
+    void action_run_do(int argc, char **argv);
 
 #endif /* __ACTION_RUN_H_ */

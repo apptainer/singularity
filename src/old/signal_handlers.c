@@ -29,7 +29,7 @@
 #include <poll.h>
 
 #include "message.h"
-#include "util.h"
+#include "util/util.h"
 
 pid_t child_pid = 0;
 int generic_signal_rpipe = -1;

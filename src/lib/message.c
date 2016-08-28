@@ -28,7 +28,7 @@
 #include <syslog.h>
 
 #include "config.h"
-#include "util.h"
+#include "util/util.h"
 #include "lib/message.h"
 
 int messagelevel = -1;

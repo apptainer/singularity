@@ -32,8 +32,8 @@
 
 #include "config.h"
 #include "container_actions.h"
-#include "util.h"
-#include "file.h"
+#include "util/util.h"
+#include "util/file.h"
 #include "message.h"
 
 

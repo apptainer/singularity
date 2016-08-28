@@ -22,6 +22,7 @@
 #ifndef __ACTION_SHELL_H_
 #define __ACTION_SHELL_H_
 
-void action_shell_do(int argc, char **argv);
+    void action_shell_init(void);
+    void action_shell_do(int argc, char **argv);
 
 #endif /* __ACTION_SHELL_H_ */

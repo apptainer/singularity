@@ -26,13 +26,16 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "file.h"
-#include "util.h"
+#include "util/file.h"
+#include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
 
 
-//TODO: Add backwards compatibility
+void action_exec_init(void) {
+    return;
+}
+
 void action_exec_do(int argc, char **argv) {
     singularity_message(VERBOSE, "Exec'ing /.exec\n");
 

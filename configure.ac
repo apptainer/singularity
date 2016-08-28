@@ -27,7 +27,7 @@ AC_SUBST(SINGULARITY_ARCH)
 # https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1232579.html
 #AM_INIT_AUTOMAKE([foreign subdir-objects])
 
-AM_INIT_AUTOMAKE([foreign]) ## SEE ABOVE BEFORE CHANGING
+AM_INIT_AUTOMAKE([foreign subdir-objects]) ## SEE ABOVE BEFORE CHANGING
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -219,6 +219,8 @@ AC_CONFIG_FILES([
    src/lib/action/Makefile
    src/lib/action/exec/Makefile
    src/lib/action/shell/Makefile
+   src/lib/action/start/Makefile
+   src/lib/action/stop/Makefile
    src/lib/action/run/Makefile
    src/lib/file/Makefile
    src/lib/file/group/Makefile

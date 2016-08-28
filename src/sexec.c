@@ -28,12 +28,9 @@
 
 
 #include "config.h"
-//#include "config_parser.h"
-//#include "privilege.h"
-//#include "message.h"
-#include "util.h"
-#include "file.h"
 #include "lib/singularity.h"
+#include "util/util.h"
+#include "util/file.h"
 
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"
@@ -118,7 +115,6 @@ int main(int argc, char **argv) {
 
     singularity_action_init();
     singularity_rootfs_init(image);
-
     singularity_sessiondir_init(image);
 
     singularity_ns_unshare();

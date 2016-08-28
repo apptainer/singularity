@@ -31,7 +31,7 @@
 
 
 #include "lib/message.h"
-#include "util.h"
+#include "util/util.h"
 
 int generic_signal_rpipe = -1;
 int generic_signal_wpipe = -1;

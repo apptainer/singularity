@@ -29,17 +29,21 @@
 #include <stdlib.h>
 #include <pwd.h>
 
-#include "file.h"
-#include "util.h"
+#include "util/file.h"
+#include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "exec/exec.h"
 #include "shell/shell.h"
 #include "run/run.h"
+#include "start/start.h"
+#include "stop/stop.h"
 
 #define ACTION_SHELL    1
 #define ACTION_EXEC     2
 #define ACTION_RUN      3
+#define ACTION_START    4
+#define ACTION_STOP     5
 
 static int action = 0;
 static char *cwd_path;
@@ -56,12 +60,23 @@ int singularity_action_init(void) {
     } else if ( strcmp(command, "shell") == 0 ) {
         singularity_message(DEBUG, "Setting action to: shell\n");
         action = ACTION_SHELL;
+        action_shell_init();
     } else if ( strcmp(command, "exec") == 0 ) {
         singularity_message(DEBUG, "Setting action to: exec\n");
         action = ACTION_EXEC;
+        action_exec_init();
     } else if ( strcmp(command, "run") == 0 ) {
         singularity_message(DEBUG, "Setting action to: run\n");
         action = ACTION_RUN;
+        action_run_init();
+    } else if ( strcmp(command, "start") == 0 ) {
+        singularity_message(DEBUG, "Setting action to: start\n");
+        action = ACTION_START;
+        action_start_init();
+    } else if ( strcmp(command, "stop") == 0 ) {
+        singularity_message(DEBUG, "Setting action to: stop\n");
+        action = ACTION_STOP;
+        action_stop_init();
     } else {
         singularity_message(ERROR, "Unknown container action: %s\n", command);
         ABORT(1);
@@ -69,11 +84,6 @@ int singularity_action_init(void) {
 
     cwd_path = (char *) malloc(sizeof(char) * PATH_MAX);
 
-//    singularity_message(DEBUG, "Obtaining file descriptor to current directory\n");
-//    if ( (cwd_fd = open(".", O_RDONLY)) < 0 ) { // Flawfinder: ignore (need current directory FD)
-//        singularity_message(ERROR, "Could not open cwd fd (%s)!\n", strerror(errno));
-//        ABORT(1);
-//    }
     singularity_message(DEBUG, "Getting current working directory path string\n");
     if ( getcwd(cwd_path, PATH_MAX) == NULL ) {
         singularity_message(ERROR, "Could not obtain current directory path: %s\n", strerror(errno));
@@ -125,6 +135,12 @@ int singularity_action_do(int argc, char **argv) {
     } else if ( action == ACTION_RUN ) {
         singularity_message(DEBUG, "Running action: run\n");
         action_run_do(argc, argv);
+    } else if ( action == ACTION_START ) {
+        singularity_message(DEBUG, "Running action: start\n");
+        action_start_do(argc, argv);
+    } else if ( action == ACTION_STOP ) {
+        singularity_message(DEBUG, "Running action: stop\n");
+        action_stop_do(argc, argv);
     }
     singularity_message(ERROR, "Called singularity_action_do() without singularity_action_init()\n");
     return(-1);

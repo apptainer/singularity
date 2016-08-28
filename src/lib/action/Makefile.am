@@ -1,4 +1,4 @@
-SUBDIRS = shell exec run
+SUBDIRS = shell exec run start stop
 
 MAINTAINERCLEANFILES = Makefile.in
 DISTCLEANFILES = Makefile
@@ -11,5 +11,5 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libaction.la
 
-libaction_la_LIBADD = shell/libactionshell.la exec/libactionexec.la run/libactionrun.la
+libaction_la_LIBADD = shell/libactionshell.la exec/libactionexec.la run/libactionrun.la start/libactionstart.la stop/libactionstop.la
 libaction_la_SOURCES = action.c

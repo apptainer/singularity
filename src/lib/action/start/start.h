@@ -16,12 +16,13 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
- */
+*/
 
 
-// This is a horrid workaround for an autotools subdirs bug:
-// https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1232579.html
-//
-// This virtually puts the file in the subdir here...
+#ifndef __ACTION_START_H_
+#define __ACTION_START_H_
 
-#include "../util/util.c"
+    void action_start_init(void);
+    void action_start_do(int argc, char **argv);
+
+#endif /* __ACTION_START_H_ */

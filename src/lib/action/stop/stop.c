@@ -16,12 +16,33 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
- */
+*/
+
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+#include "util/file.h"
+#include "util/util.h"
+#include "lib/message.h"
+#include "lib/privilege.h"
+
+void action_stop_init(void) {
+#ifdef NO_SETNS
+    singularity_message(ERROR, "This host does not support joining existing name spaces\n");
+    ABORT(1);
+#endif
+
+    return;
+}
+
+void action_stop_do(int argc, char **argv) {
 
 
-// This is a horrid workaround for an autotools subdirs bug:
-// https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1232579.html
-//
-// This virtually puts the file in the subdir here...
-
-#include "../util/util.c"
+    singularity_message(ERROR, "We should never get here... Grrrrrr!\n");
+    ABORT(255);
+}
