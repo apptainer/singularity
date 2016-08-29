@@ -20,7 +20,6 @@ if [ -n "${OMPI_COMM_WORLD_SIZE:-}" ] ||    # ORTE (Open MPI)
    [ -n "${PBS_JOBID:-}" ] ||               # PBS/Torque
    [ -n "${LSB_JOBID:-}" ] ||               # LSF (and Open Lava?)
    [ -n "${COBALT_JOBID:-}" ] ||            # Cobalt
-   [ -n "${_CONDOR_JOB_AD:-}" ] ||          # Condor (is there a better one?)
    [ -n "${LOAD_STEP_ID:-}" ]               # LoadLeveler
 then
     SINGULARITY_NO_NAMESPACE_PID=1
