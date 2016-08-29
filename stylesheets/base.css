@@ -111,6 +111,7 @@ p {
     float: right;
     position-right: absolute;
     border: 0px;
+    text-align: right;
 }
 
 #navtext {
