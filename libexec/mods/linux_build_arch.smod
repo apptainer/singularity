@@ -1,0 +1,86 @@
+#!/bin/bash
+# 
+# Copyright (c) 2016, Maciej Sieczka. All rights reserved.
+# 
+# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+# 
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
+# 
+# NOTICE.  This Software was developed under funding from the U.S. Department of
+# Energy and the U.S. Government consequently retains certain rights. As such,
+# the U.S. Government has been granted for itself and others acting on its
+# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+# to reproduce, distribute copies to the public, prepare derivative works, and
+# perform publicly and display publicly, and to permit other to do so. 
+
+if ! PACSTRAP=`singularity_which pacstrap`; then
+  message ERROR "\`pacstrap' is not in PATH. You can install it with \`pacman -S arch-install-scripts'.\n"
+  exit 1
+fi
+
+if ! WGET=`singularity_which wget`; then
+  message ERROR "\`wget' is not in PATH. You can install it with \`pacman -S wget'.\n"
+  exit 1
+fi
+
+ARCHITECTURE="`uname -m`"
+if [ "$ARCHITECTURE" != 'x86_64' -a "$ARCHITECTURE" != 'i686' ]; then
+  message ERROR "Architecture \`$ARCHITECTURE' is not supported."
+  exit 1
+fi
+
+PACMAN_CONF_URL="https://git.archlinux.org/svntogit/packages.git/plain/trunk/pacman.conf.${ARCHITECTURE}?h=packages/pacman"
+ARCH_KEYRING='archlinux'
+PKGS_TO_SKIP='cryptsetup\|device-mapper\|dhcpcd\|iproute2\|jfsutils\|linux\|lvm2\|man-db\|man-pages\|mdadm\|nano\|netctl\|openresolv\|pciutils\|pcmciautils\|reiserfsprogs\|s-nail\|systemd-sysvcompat\|usbutils\|vi\|xfsprogs'
+PKGS_TO_INST=`pacman -Sgq base | grep -xv $PKGS_TO_SKIP | tr '\n' ' '`
+
+# TODO:
+# - Consider copying hots's /etc/localtime?
+# - Try choosing fastest mirrors with rankmirrors? https://wiki.archlinux.org/index.php/Mirrors#List_by_speed
+
+Bootstrap() {
+  if [ -z "${MIRROR:-}" ]; then
+    message ERROR "MIRROR is not defined. Have you set \`MirrorURL' in the definition file?\n"
+    exit 1
+  fi
+
+  PACMAN_CONF="/tmp/pacman.conf.$$"
+  # Use mktemp instead?
+  if ! eval "$WGET" --no-verbose -O "$PACMAN_CONF" "$PACMAN_CONF_URL"; then
+    message ERROR "Failed to download \`$PACMAN_CONF_URL' to \`$PACMAN_CONF'.\n"
+  fi
+
+  if ! eval "$PACSTRAP" -C "$PACMAN_CONF" -c -d -G "$SINGULARITY_BUILD_ROOT" $PKGS_TO_INST haveged; then
+    rm "$PACMAN_CONF"
+    message ERROR "\`$PACSTRAP' failed.\n"
+    exit 1
+  fi
+
+  # Wrap these with `if ! eval ...'?:
+  arch-chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c "haveged -w 1024; pacman-key --init; pkill haveged; pacman -Rs --noconfirm haveged; pacman-key --populate $ARCH_KEYRING; pkill gpg-agent"
+  arch-chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c "ln -s /usr/share/zoneinfo/UTC /etc/localtime"
+  echo 'en_US.UTF-8 UTF-8' > "$SINGULARITY_BUILD_ROOT"/etc/locale.gen
+  arch-chroot "$SINGULARITY_BUILD_ROOT" locale-gen
+  echo 'LANG=en_US.UTF-8' > "$SINGULARITY_BUILD_ROOT"/etc/locale.conf
+  arch-chroot "$SINGULARITY_BUILD_ROOT" /bin/sh -c 'echo "Server = $MIRROR" > /etc/pacman.d/mirrorlist'
+
+  __mountproc
+  __mountsys
+  __mountdev
+
+  return 0
+}
+ 
+Cleanup() {
+#     if ! __runcmd apt-get clean; then
+#         return 1
+#     fi
+#
+#  return 0
+  rm "$PACMAN_CONF"
+}
+

@@ -1,0 +1,14 @@
+DistType "arch"
+
+# ODO:
+# You can set your preferred Arch mirror here. If it's not set, bootstrap
+# process will try to pick the fastest one using `rankmirrors'.
+MirrorURL 'https://mirrors.kernel.org/archlinux/$repo/os/$arch'
+
+Setup
+Bootstrap
+
+#InstallPkgs vim
+
+Cleanup
+
