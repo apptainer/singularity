@@ -3,7 +3,7 @@
 # Minimal installation process is defined in mods/linux_build_arch.smod. A
 # couple extra actions are called from here using RunCmd and InstallPkgs
 # Singularity bootstrap keywords [1]. Adjust them to your liking as needed.
-# Arch Linux installation guide [3] may come in handy.
+# Arch Linux installation guide [2] may come in handy.
 #
 # [1] http://singularity.lbl.gov/#bootstrap
 # [2] https://wiki.archlinux.org/index.php/Installation_Guide
