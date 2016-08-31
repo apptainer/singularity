@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     singularity_config_rewind();
     
     singularity_message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
-    if ( singularity_config_get_bool("allow setuid", 0) == 0 ) {
+    if ( singularity_config_get_bool("allow setuid", 1) == 0 ) {
         singularity_abort(255, "SUID mode has been disabled by the sysadmin... Aborting\n");
     }
 
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 
     if ( singularity_priv_getuid() != 0 ) {
         singularity_message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
-        if ( singularity_config_get_bool("allow setuid", 0) == 1 ) {
+        if ( singularity_config_get_bool("allow setuid", 1) == 1 ) {
             singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
             if ( getenv("SINGULARITY_NOSUID") == NULL ) { // Flawfinder: ignore
                 char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";
