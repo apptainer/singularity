@@ -170,6 +170,7 @@ if test -f "/lib/modules/$KVERS/modules.dep"; then
     if grep -q 'overlay.ko' "/lib/modules/$KVERS/modules.dep"; then
         AC_MSG_RESULT([yes])
         SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
+        OVERLAY_FS=1
     else
         AC_MSG_RESULT([no])
     fi
@@ -178,6 +179,7 @@ else
     SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
 fi
 
+AC_SUBST(OVERLAY_FS)
 AC_SUBST(SINGULARITY_DEFINES)
 
 

@@ -260,19 +260,23 @@ stest 0 singularity exec $CONTAINER test -d /tmp/foo
 stest 1 singularity exec --workdir /tmp/foo $CONTAINER test -d /tmp/foo
 
 
-/bin/echo
-/bin/echo "Testing user bind mounts"
-stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
-stest 0 singularity exec -B /tmp/foo:/etc/foo "$CONTAINER" test -d /etc/foo
-stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" touch /foo/hello
-stest 1 singularity exec "$CONTAINER" test -d /foo
-stest 0 singularity exec -B /tmp/foo:/foo,/tmp/foo:/foo1 "$CONTAINER" test -d /foo1
-stest 0 singularity exec -B /tmp/foo:/foo -B /tmp/foo:/foo1 "$CONTAINER" test -d /foo1
-stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|user bind control = yes|user bind control = no|'
-stest 1 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
-stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|user bind control = no|user bind control = yes|'
-stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
-
+if [ -n "@OVERLAY_FS@" ]; then
+    /bin/echo
+    /bin/echo "Testing user bind mounts"
+    stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
+    stest 0 singularity exec -B /tmp/foo:/etc/foo "$CONTAINER" test -d /etc/foo
+    stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" touch /foo/hello
+    stest 1 singularity exec "$CONTAINER" test -d /foo
+    stest 0 singularity exec -B /tmp/foo:/foo,/tmp/foo:/foo1 "$CONTAINER" test -d /foo1
+    stest 0 singularity exec -B /tmp/foo:/foo -B /tmp/foo:/foo1 "$CONTAINER" test -d /foo1
+    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|user bind control = yes|user bind control = no|'
+    stest 1 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
+    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|user bind control = no|user bind control = yes|'
+    stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
+else
+    /bin/echo
+    /bin/echo "Skipping user bind mount tests, overlay FS support is not enabled"
+fi
 
 /bin/echo
 /bin/echo "Testing non-privileged user bind mounts"
