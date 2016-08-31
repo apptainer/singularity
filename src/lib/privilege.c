@@ -68,8 +68,8 @@ void singularity_priv_init(void) {
     singularity_message(DEBUG, "Called singularity_priv_init(void)\n");
 
     if ( getuid() == 0 ) {
-        target_uid_str = getenv("SINGULARITY_TARGET_UID");
-        target_gid_str = getenv("SINGULARITY_TARGET_GID");
+        target_uid_str = getenv("SINGULARITY_TARGET_UID"); // Flawfinder: ignore
+        target_gid_str = getenv("SINGULARITY_TARGET_GID"); // Flawfinder: ignore
         if ( target_uid_str && !target_gid_str ) {
             singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
             ABORT(255);

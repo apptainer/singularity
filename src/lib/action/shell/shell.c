@@ -43,7 +43,7 @@ void action_shell_do(int argc, char **argv) {
     singularity_message(VERBOSE, "Invoking the container's /.shell\n");
     if ( is_exec("/.shell") == 0 ) {
         singularity_message(DEBUG, "Found container's /.shell, executing that\n");
-        if ( execv("/.shell", argv) < 0 ) {
+        if ( execv("/.shell", argv) < 0 ) { // Flawfinder: ignore
             singularity_message(ERROR, "Failed to execv() /.shell, continuing to /bin/sh\n");
         }
     }
@@ -52,7 +52,7 @@ void action_shell_do(int argc, char **argv) {
     if ( is_exec("/bin/sh") == 0 ) {
         singularity_message(DEBUG, "Exec'ing /bin/sh\n");
         argv[0] = strdup("/bin/sh");
-        if ( execv("/bin/sh", argv) < 0 ) {
+        if ( execv("/bin/sh", argv) < 0 ) { // Flawfinder: ignore
             singularity_message(ERROR, "Failed to execv() /bin/sh\n");
             ABORT(255);
         }

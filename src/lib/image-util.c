@@ -96,8 +96,8 @@ int singularity_image_offset(FILE *image_fp) {
 
 int singularity_image_create(char *image, int size) {
     FILE *image_fp;
+    char *buff = (char *) malloc(1024*1024);
     int i;
-    char buff[1024*1024];
 
     singularity_message(VERBOSE, "Creating new sparse image at: %s\n", image);
 
@@ -135,7 +135,7 @@ int singularity_image_create(char *image, int size) {
 
 int singularity_image_expand(char *image, int size) {
     FILE *image_fp;
-    char buff[1024*1024];
+    char *buff = (char *) malloc(1024*1024);
     long position;
     int i;
 

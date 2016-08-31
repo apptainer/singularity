@@ -58,7 +58,7 @@ int main(int argc, char ** argv) {
         ABORT(1);
     }
 
-    if ( ( containerimage = getenv("SINGULARITY_IMAGE") ) == NULL ) {
+    if ( ( containerimage = getenv("SINGULARITY_IMAGE") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "SINGULARITY_IMAGE not defined!\n");
         ABORT(255);
     }
@@ -72,7 +72,7 @@ int main(int argc, char ** argv) {
     }
 
     singularity_message(VERBOSE, "Checking if container can be opened read/write\n");
-    if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) {
+    if ( ( containerimage_fp = fopen(containerimage, "r+") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open image %s: %s\n", containerimage, strerror(errno));
         ABORT(255);
     }

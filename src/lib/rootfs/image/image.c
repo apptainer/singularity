@@ -66,20 +66,20 @@ int rootfs_image_init(char *source, char *mount_dir) {
 
     mount_point = strdup(mount_dir);
 
-    if ( getenv("SINGULARITY_WRITABLE") != NULL ) {
-        if ( ( image_fp = fopen(source, "r+") ) == NULL ) {
+    if ( getenv("SINGULARITY_WRITABLE") != NULL ) { // Flawfinder: ignore
+        if ( ( image_fp = fopen(source, "r+") ) == NULL ) { // Flawfinder: ignore
             singularity_message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
 
         singularity_message(DEBUG, "Obtaining exclusive write lock on image\n");
         if ( flock(fileno(image_fp), LOCK_EX | LOCK_NB) < 0 ) {
-            singularity_message(WARNING, "Could not obtain an exclusive lock on image: %s\n", source);
-            //ABORT(255);
+            singularity_message(WARNING, "Could not obtain an exclusive lock on image %s: %s\n", source, strerror(errno));
+            ABORT(255);
         }
         read_write = 1;
     } else {
-        if ( ( image_fp = fopen(source, "r") ) == NULL ) {
+        if ( ( image_fp = fopen(source, "r") ) == NULL ) { // Flawfinder: ignore
             singularity_message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }

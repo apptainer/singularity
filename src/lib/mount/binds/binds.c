@@ -39,7 +39,7 @@ int singularity_mount_binds(void) {
     char *tmp_config_string;
     char *container_dir = singularity_rootfs_dir();
 
-    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
+    if ( getenv("SINGULARITY_CONTAIN") != NULL ) { // Flawfinder: ignore
         singularity_message(DEBUG, "Skipping bind mounts as contain was requested\n");
         return(0);
     }
@@ -47,8 +47,8 @@ int singularity_mount_binds(void) {
     singularity_message(DEBUG, "Checking configuration file for 'bind path'\n");
     singularity_config_rewind();
     while ( ( tmp_config_string = singularity_config_get_value("bind path") ) != NULL ) {
-        char *source = strtok(tmp_config_string, ",");
-        char *dest = strtok(NULL, ",");
+        char *source = strtok(tmp_config_string, ":");
+        char *dest = strtok(NULL, ":");
         chomp(source);
         if ( dest == NULL ) {
             dest = strdup(source);
@@ -70,7 +70,7 @@ int singularity_mount_binds(void) {
             if ( singularity_rootfs_overlay_enabled() > 0 ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE3, "Creating bind file on overlay file system: %s\n", dest);
-                FILE *tmp = fopen(joinpath(container_dir, dest), "w+");
+                FILE *tmp = fopen(joinpath(container_dir, dest), "w+"); // Flawfinder: ignore
                 singularity_priv_drop();
                 if ( tmp == NULL ) {
                     singularity_message(WARNING, "Could not create bind point file in container %s: %s\n", dest, strerror(errno));

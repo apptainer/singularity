@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <ftw.h>
 #include <time.h>
+#include <linux/limits.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -72,8 +73,8 @@ char *joinpath(const char * path1, const char * path2) {
         path2++;
     }
 
-    ret = (char *) malloc(strlength(tmp_path1, 2048) + strlength(path2, 2048) + 2);
-    snprintf(ret, strlen(tmp_path1) + strlen(path2) + 2, "%s/%s", tmp_path1, path2); // Flawfinder: ignore
+    ret = (char *) malloc(strlength(tmp_path1, PATH_MAX) + strlength(path2, PATH_MAX) + 2);
+    snprintf(ret, strlength(tmp_path1, PATH_MAX) + strlen(path2) + 2, "%s/%s", tmp_path1, path2); // Flawfinder: ignore
 
     return(ret);
 }

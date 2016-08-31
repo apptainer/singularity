@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <pwd.h>
+#include <linux/limits.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -60,7 +61,7 @@ int singularity_mount_hostfs(void) {
     }
 
     singularity_message(DEBUG, "Opening /proc/mounts\n");
-    if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) {
+    if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open /proc/mounts for reading: %s\n", strerror(errno));
         return(1);
     }
@@ -80,7 +81,7 @@ int singularity_mount_hostfs(void) {
 
         chomp(line);
 
-        if ( line[0] == '#' || strlen(line) <= 1 ) {
+        if ( line[0] == '#' || strlength(line, 2) <= 1 ) { // Flawfinder: ignore
             singularity_message(VERBOSE3, "Skipping blank or comment line in /proc/mounts\n");
             continue;
         }
@@ -121,7 +122,7 @@ int singularity_mount_hostfs(void) {
             singularity_message(DEBUG, "Skipping /var based file system: %s,%s,%s\n", source, mountpoint, filesystem);
             continue;
         }
-        if ( strncmp(mountpoint, container_dir, strlen(container_dir)) == 0 ) {
+        if ( strncmp(mountpoint, container_dir, strlength(container_dir, PATH_MAX)) == 0 ) {
             singularity_message(DEBUG, "Skipping container_dir (%s) based file system: %s,%s,%s\n", container_dir, source, mountpoint, filesystem);
             continue;
         }

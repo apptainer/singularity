@@ -66,9 +66,9 @@ char *singularity_sessiondir_init(char *file) {
 
         singularity_config_rewind();
         if ( ( sessiondir_prefix = singularity_config_get_value("sessiondir prefix") ) != NULL ) {
-            snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino);
+            snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
         } else {
-            snprintf(sessiondir, sizeof(char) * PATH_MAX, "/tmp/.singularity-session-%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino);
+            snprintf(sessiondir, sizeof(char) * PATH_MAX, "/tmp/.singularity-session-%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
         }
         singularity_message(DEBUG, "Set sessiondir to: %s\n", sessiondir);
     }
@@ -81,7 +81,7 @@ char *singularity_sessiondir_init(char *file) {
     }
 
     singularity_message(DEBUG, "Opening sessiondir file descriptor\n");
-    if ( ( sessiondir_fd = open(sessiondir, O_RDONLY) ) < 0 ) {
+    if ( ( sessiondir_fd = open(sessiondir, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not obtain file descriptor for session directory %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }

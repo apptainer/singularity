@@ -40,12 +40,12 @@ void action_exec_do(int argc, char **argv) {
     singularity_message(VERBOSE, "Exec'ing /.exec\n");
 
     if ( is_exec("/.exec") == 0 ) {
-        if ( execv("/.exec", argv) < 0 ) {
+        if ( execv("/.exec", argv) < 0 ) { // Flawfinder: ignore
             singularity_message(ERROR, "Failed to execv() /.exec\n");
         }
     }
 
-    if ( execvp(argv[1], &argv[1]) < 0 ) {
+    if ( execvp(argv[1], &argv[1]) < 0 ) { // Flawfinder: ignore
         singularity_message(ERROR, "Failed to execvp() /.exec\n");
         ABORT(255);
     }

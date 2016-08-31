@@ -59,7 +59,7 @@ void action_start_do(int argc, char **argv) {
     char *line = (char *) malloc(256);
     char *sessiondir = singularity_sessiondir_get();
 
-    if ( ( daemon_fd = open(joinpath(sessiondir, "daemon.pid"), O_CREAT | O_RDWR, 0755) ) < 0 ) {
+    if ( ( daemon_fd = open(joinpath(sessiondir, "daemon.pid"), O_CREAT | O_RDWR, 0755) ) < 0 ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open daemon pid file for writing %s: %s\n", joinpath(sessiondir, "daemon.pid"), strerror(errno));
         ABORT(255);
     }

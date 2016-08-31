@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <libgen.h>
+#include <linux/limits.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -102,7 +103,7 @@ int singularity_rootfs_mount(void) {
     char *overlay_upper = joinpath(mount_point, OVERLAY_UPPER);
     char *overlay_work  = joinpath(mount_point, OVERLAY_WORK);
     char *overlay_final = joinpath(mount_point, OVERLAY_FINAL);
-    int overlay_options_len = strlen(rootfs_source) + strlen(overlay_upper) + strlen(overlay_work) + 50;
+    int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
     char *overlay_options = (char *) malloc(overlay_options_len);
     int abort_error = 0;
 
@@ -163,8 +164,8 @@ int singularity_rootfs_mount(void) {
     singularity_config_rewind();
     if ( singularity_config_get_bool("enable overlay", 1) <= 0 ) {
         singularity_message(VERBOSE3, "Not enabling writable overlay via configuration\n");
-    } else if ( getenv("SINGULARITY_WRITABLE") == NULL ) {
-        snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work);
+    } else if ( getenv("SINGULARITY_WRITABLE") == NULL ) { // Flawfinder: ignore
+        snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work); // Flawfinder: ignore
 
         singularity_priv_escalate();
         singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);

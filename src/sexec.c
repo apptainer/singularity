@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     }
 
     singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
-    if ( getenv("SINGULARITY_NOSUID") != NULL ) {
+    if ( getenv("SINGULARITY_NOSUID") != NULL ) { // Flawfinder: ignore
         singularity_abort(1, "NOSUID mode has been requested... Aborting\n");
     }
 
@@ -86,13 +86,13 @@ int main(int argc, char **argv) {
         singularity_message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
         if ( singularity_config_get_bool("allow setuid", 0) == 1 ) {
             singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
-            if ( getenv("SINGULARITY_NOSUID") == NULL ) {
+            if ( getenv("SINGULARITY_NOSUID") == NULL ) { // Flawfinder: ignore
                 char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";
 
                 if ( ( is_owner(sexec_suid_path, 0 ) == 0 ) && ( is_suid(sexec_suid_path) == 0 ) ) {
                     singularity_message(VERBOSE, "Invoking SUID sexec: %s\n", sexec_suid_path);
 
-                    execv(sexec_suid_path, argv);
+                    execv(sexec_suid_path, argv); // Flawfinder: ignore
                     singularity_abort(255, "Failed to execute sexec binary (%s): %s\n", sexec_suid_path, strerror(errno));
                 } else {
                     singularity_message(VERBOSE, "Not invoking SUID mode: SUID sexec not installed\n");
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
 
 #endif /* SINGULARITY_SUID */
 
-    if ( ( image = getenv("SINGULARITY_IMAGE") ) == NULL ) {
+    if ( ( image = getenv("SINGULARITY_IMAGE") ) == NULL ) { // Flawfinder: ignore
         singularity_abort(255, "SINGULARITY_IMAGE not defined!\n");
     }
 

@@ -49,7 +49,7 @@ static int action = 0;
 static char *cwd_path;
 
 int singularity_action_init(void) {
-    char *command = getenv("SINGULARITY_COMMAND");
+    char *command = getenv("SINGULARITY_COMMAND"); // Flawfinder: ignore
     singularity_message(DEBUG, "Checking on action to run\n");
 
     unsetenv("SINGULARITY_COMMAND");
@@ -98,7 +98,7 @@ int singularity_action_do(int argc, char **argv) {
     singularity_priv_drop_perm();
 
     singularity_message(DEBUG, "Checking for envar SINGULARITY_CONTAIN\n");
-    if ( getenv("SINGULARITY_CONTAIN") == NULL ) {
+    if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore
         singularity_message(DEBUG, "Changing directory to starting directory\n");
 
         if ( chdir(cwd_path) < 0 ) {

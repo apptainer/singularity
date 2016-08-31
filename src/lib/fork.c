@@ -178,7 +178,7 @@ pid_t singularity_fork(void) {
             }
             if (fds[1].revents) {
                 char signum = SIGKILL;
-                while (-1 == (retval = read(generic_signal_rpipe, &signum, 1)) && errno == EINTR) {}
+                while (-1 == (retval = read(generic_signal_rpipe, &signum, 1)) && errno == EINTR) {} // Flawfinder: ignore
                 if (-1 == retval) {
                     singularity_message(ERROR, "Failed to read from signal handler pipe: %s\n", strerror(errno));
                     ABORT(255);
@@ -229,7 +229,7 @@ int singularity_fork_exec(char **argv) {
 
     if ( child == 0 ) {
 
-        if ( execvp(argv[0], argv) < 0 ) { 
+        if ( execvp(argv[0], argv) < 0 ) { //Flawfinder: ignore
             singularity_message(ERROR, "Failed to execv(%s, ...)\n", argv[0]);
             ABORT(255);
         }

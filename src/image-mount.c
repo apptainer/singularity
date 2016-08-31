@@ -50,7 +50,7 @@ int main(int argc, char ** argv) {
     }
 
     singularity_message(VERBOSE, "Obtaining container name from environment variable\n");
-    if ( ( containerimage = getenv("SINGULARITY_IMAGE") ) == NULL ) {
+    if ( ( containerimage = getenv("SINGULARITY_IMAGE") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "SINGULARITY_IMAGE not defined!\n");
         ABORT(255);
     }
