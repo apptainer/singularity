@@ -120,11 +120,12 @@ int singularity_config_get_bool(char *key, int def) {
         } else {
             singularity_message(ERROR, "Unsupported value for configuration boolean key '%s' = '%s'\n", key, config_value);
             singularity_message(ERROR, "Returning default value: %s\n", ( def == 1 ? "yes" : "no" ));
-            singularity_message(DEBUG, "Return singularity_config_get_bool(%s, %d) = -1\n", key, def);
-            return(-1);
+            ABORT(255);
         }
+    } else {
+        singularity_message(DEBUG, "Undefined configuration for '%s', returning default: %s\n", key, ( def == 1 ? "yes" : "no" ));
+        return(def);
     }
 
-    singularity_message(DEBUG, "Return singularity_config_get_bool(%s, %d) = %d (DEFAULT)\n", key, def, def);
-    return(def);
+    return(-1);
 }
