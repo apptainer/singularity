@@ -41,14 +41,15 @@ void singularity_mount_userbinds(void) {
     char *bind_path_string;
     char *container_dir = singularity_rootfs_dir();
 
-    singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
-    if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
-        singularity_message(WARNING, "User bind control is disabled by system administrator\n");
-        return;
-    }
-
     singularity_message(DEBUG, "Checking for environment variable 'SINGULARITY_BINDPATH'\n");
     if ( ( bind_path_string = getenv("SINGULARITY_BINDPATH") ) != NULL ) { // Flawfinder: ignore
+
+        singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
+        if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
+            singularity_message(WARNING, "User bind control is disabled by system administrator\n");
+            return;
+        }
+
         singularity_message(DEBUG, "Parsing SINGULARITY_BINDPATH for user-specified bind mounts.\n");
         char *outside_token = NULL;
         char *inside_token = NULL;
