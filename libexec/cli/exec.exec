@@ -76,18 +76,13 @@ while true; do
         ;;
         -B|--bind)
             shift
-            export SINGULARITY_USER_BIND="${1:-}:${SINGULARITY_USER_BIND-}"
+            export SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
             shift
         ;;
-        -W|--wdir|--workingdir)
+        -W|--wdir|--workdir|--workingdir)
             shift
             SINGULARITY_WORKDIR="$1"
             export SINGULARITY_WORKDIR
-            shift
-        ;;
-        -S|--scratch)
-            shift
-            export SINGULARITY_USER_SCRATCH="${1:-}:${SINGULARITY_USER_SCRATCH-}"
             shift
         ;;
         -p|--pid)
