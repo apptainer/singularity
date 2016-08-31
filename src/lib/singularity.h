@@ -97,6 +97,7 @@
     extern int singularity_mount_binds(void);
     extern int singularity_mount_home(void);
     extern int singularity_mount_tmp(void);
+    extern int singularity_mount_userbinds(void);
 
 
     // FILE
