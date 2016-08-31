@@ -226,11 +226,13 @@ AC_CONFIG_FILES([
    src/lib/file/group/Makefile
    src/lib/file/passwd/Makefile
    src/lib/mount/Makefile
+   src/lib/mount/dev/Makefile
    src/lib/mount/binds/Makefile
    src/lib/mount/home/Makefile
    src/lib/mount/hostfs/Makefile
    src/lib/mount/kernelfs/Makefile
    src/lib/mount/tmp/Makefile
+   src/lib/mount/userbinds/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity
