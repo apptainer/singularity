@@ -1,4 +1,4 @@
-SUBDIRS = lib
+SUBDIRS = lib util
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -50,4 +50,4 @@ make_suid:
 		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
 	fi
 
-EXTRA_DIST = config.h file.h util.h
+EXTRA_DIST = config.h
