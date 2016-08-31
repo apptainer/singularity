@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <libgen.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -69,6 +70,15 @@ void singularity_mount_userbinds(void) {
 
             if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
                 if ( singularity_rootfs_overlay_enabled() > 0 ) {
+                    char *dir = dirname(strdup(dest));
+                    if ( is_dir(joinpath(container_dir, dir)) < 0 ) {
+                        singularity_priv_escalate();
+                        if ( s_mkpath(joinpath(container_dir, dir), 0755) < 0 ) {
+                            singularity_message(ERROR, "Could not create basedir for file bind %s: %s\n", dest, strerror(errno));
+                            ABORT(255);
+                        }
+                        singularity_priv_drop();
+                    }
                     singularity_priv_escalate();
                     singularity_message(VERBOSE3, "Creating bind file on overlay file system: %s\n", dest);
                     FILE *tmp = fopen(joinpath(container_dir, dest), "w+"); // Flawfinder: ignore
