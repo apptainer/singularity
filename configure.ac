@@ -155,6 +155,15 @@ AC_ARG_WITH([userns],
             [SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_USERNS"]
            )
 
+
+AC_CHECK_FUNCS(setns, [
+                      ], [
+                          NO_SETNS="-DNO_SETNS"
+                      ]
+                  )
+
+
+AC_SUBST(NO_SETNS)
 AC_MSG_CHECKING([for overlayfs])
 KVERS=`uname -r`
 if test -f "/lib/modules/$KVERS/modules.dep"; then
@@ -165,29 +174,15 @@ if test -f "/lib/modules/$KVERS/modules.dep"; then
         AC_MSG_RESULT([no])
     fi
 else
-    AC_MSG_RESULT([no])
+    AC_MSG_RESULT([maybe])
+    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
 fi
 
 AC_SUBST(SINGULARITY_DEFINES)
 
 
 
-AC_CHECK_FUNCS(setns, [
-                      ], [
-                          NO_SETNS="-DNO_SETNS"
-                      ]
-                  )
-
-
-AC_SUBST(NO_SETNS)
-
-#AC_CHECK_DECLS([MS_PRIVATE,MS_REC], [],
-#               [AC_MSG_ERROR([Required mount(2) flags not available])],
-#               [[#include <sys/mount.h>]])
-
-
-
-AC_MSG_CHECKING([for --enable-suid])
+AC_MSG_CHECKING([if suid should be enabled])
 AC_ARG_ENABLE([suid],
     AS_HELP_STRING([--disable-suid], [Disable build for SUID (only works for new kernels)]))
 
@@ -200,6 +195,12 @@ AS_IF([test "x$enable_suid" != "xno"], [
 ])
 
 AC_SUBST(BUILD_SUID)
+
+
+#AC_CHECK_DECLS([MS_PRIVATE,MS_REC], [],
+#               [AC_MSG_ERROR([Required mount(2) flags not available])],
+#               [[#include <sys/mount.h>]])
+
 
 
 
