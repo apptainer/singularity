@@ -22,6 +22,6 @@
 #ifndef __MOUNT_USERBINDS_H_
 #define __MOUNT_USERBINDS_H_
 
-    int void singularity_mount_userbinds(void)(void);
+    int singularity_mount_userbinds(void);
 
 #endif /* __MOUNT_USERBINDS_H_ */

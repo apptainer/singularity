@@ -38,7 +38,7 @@
 
 
 void singularity_mount_userbinds(void) {
-    char * tmp_config_string;
+    char *bind_path_string;
     char *container_dir = singularity_rootfs_dir();
 
     singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
@@ -47,42 +47,58 @@ void singularity_mount_userbinds(void) {
         return;
     }
 
-    if ( ( tmp_config_string = getenv("SINGULARITY_BINDPATH") ) != NULL ) {
+    singularity_message(DEBUG, "Checking for environment variable 'SINGULARITY_BINDPATH'\n");
+    if ( ( bind_path_string = getenv("SINGULARITY_BINDPATH") ) != NULL ) { // Flawfinder: ignore
         singularity_message(DEBUG, "Parsing SINGULARITY_BINDPATH for user-specified bind mounts.\n");
-        char *bind = strdup(tmp_config_string);
-        if (bind == NULL) {
-            singularity_message(ERROR, "Failed to allocate memory for configuration string");
-            ABORT(1);
-        }
-        char *cur = bind;
-        char *next = strchr(cur, ':');
-        for ( ; 1; next = strchr(cur, ':') ) {
-            if (next) {
-                *next = '\0'; // What does this do?
-            }
-            char *source = strtok(cur, ",");
-            char *dest = strtok(NULL, ",");
-            if ( source == NULL ) {
-                break;
-            }
-            chomp(source);
-            if ( dest == NULL ) {
-                dest = strdup(source);
-            } else {
-                if ( dest[0] == ' ' ) {
-                    dest++;
-                }
-                chomp(dest);
-            }
-            if ( (strlen(cur) == 0) && (next == NULL) ) {
-                break;
-            }
-            singularity_message(VERBOSE2, "Found user-specified 'bind path' = %s, %s\n", source, dest);
+        char *outside_token = NULL;
+        char *inside_token = NULL;
+        char *current = strtok_r(strdup(bind_path_string), ",", &outside_token);
 
-            if ( ( is_file(source) != 0 ) && ( is_dir(source) != 0 ) ) {
-                singularity_message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
-                if (next == NULL) {break;}
-                continue;
+        while ( current != NULL ) {
+            char *source = strtok_r(current, ":", &inside_token);
+            char *dest = strtok_r(NULL, ":", &inside_token);
+
+            current = strtok_r(NULL, ",", &outside_token);
+
+            if ( dest == NULL ) {
+                dest = source;
+            }
+
+            singularity_message(DEBUG, "Found bind: %s -> container:%s\n", source, dest);
+
+            if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
+                if ( singularity_rootfs_overlay_enabled() > 0 ) {
+                    singularity_priv_escalate();
+                    singularity_message(VERBOSE3, "Creating bind file on overlay file system: %s\n", dest);
+                    FILE *tmp = fopen(joinpath(container_dir, dest), "w+"); // Flawfinder: ignore
+                    singularity_priv_drop();
+                    if ( tmp == NULL ) {
+                        singularity_message(WARNING, "Skipping user bind, could not create bind point %s: %s\n", dest, strerror(errno));
+                        continue;
+                    }
+                    if ( fclose(tmp) != 0 ) {
+                        singularity_message(WARNING, "Skipping user bind, could not close bind point file descriptor %s: %s\n", dest, strerror(errno));
+                        continue;
+                    }
+                    singularity_message(DEBUG, "Created bind file: %s\n", dest);
+                } else {
+                    singularity_message(WARNING, "Skipping user bind, non existant bind point (file) in container: '%s'\n", dest);
+                    continue;
+                }
+            } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
+                if ( singularity_rootfs_overlay_enabled() > 0 ) {
+                    singularity_priv_escalate();
+                    singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
+                    if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
+                        singularity_priv_drop();
+                        singularity_message(WARNING, "Skipping user bind, could not create bind point %s: %s\n", dest, strerror(errno));
+                        continue;
+                    }
+                    singularity_priv_drop();
+                } else {
+                    singularity_message(WARNING, "Skipping user bind, non existant bind point (directory) in container: '%s'\n", dest);
+                    continue;
+                }
             }
 
             singularity_priv_escalate();
@@ -93,10 +109,9 @@ void singularity_mount_userbinds(void) {
             }
             singularity_priv_drop();
 
-            cur = next + 1;
-            if (next == NULL) {break;}
         }
-        free(bind);
+
+        singularity_message(DEBUG, "Unsetting environment variable 'SINGULARITY_BINDPATH'\n");
         unsetenv("SINGULARITY_BINDPATH");
     } else {
         singularity_message(DEBUG, "No user bind mounts specified.\n");
