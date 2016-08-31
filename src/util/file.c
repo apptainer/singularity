@@ -206,6 +206,23 @@ int is_blk(char *path) {
 }
 
 
+int is_chr(char *path) {
+    struct stat filestat;
+
+    // Stat path
+    if (stat(path, &filestat) < 0) {
+        return(-1);
+    }
+
+    // Test path
+    if ( S_ISCHR(filestat.st_mode) ) {
+        return(0);
+    }
+
+    return(-1);
+}
+
+
 int s_mkpath(char *dir, mode_t mode) {
     if (!dir) {
         return(-1);
@@ -226,13 +243,16 @@ int s_mkpath(char *dir, mode_t mode) {
     }
 
     singularity_message(DEBUG, "Creating directory: %s\n", dir);
-    if ( mkdir(dir, mode) < 0 ) {
+    mode_t mask = umask(0); // Flawfinder: ignore
+    int ret = mkdir(dir, mode);
+    umask(mask); // Flawfinder: ignore
+
+    if ( ret < 0 ) {
         if ( is_dir(dir) < 0 ) { // It is possible that the directory was created between above check and mkdir()
             singularity_message(DEBUG, "Opps, could not create directory %s: (%d) %s\n", dir, errno, strerror(errno));
             return(-1);
         }
     }
-    chmod(dir, mode);
 
     return(0);
 }
