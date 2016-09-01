@@ -143,7 +143,7 @@ void singularity_priv_escalate(void) {
         return;
     }
 
-    if ( getuid() == 0 ) {
+    if ( uinfo.uid == 0 ) {
         singularity_message(DEBUG, "Running as root, not changing privileges\n");
         return;
     }
@@ -170,7 +170,7 @@ void singularity_priv_drop(void) {
         return;
     }
 
-    if ( getuid() == 0 ) {
+    if ( uinfo.uid == 0 ) {
         singularity_message(DEBUG, "Running as root, not changing privileges\n");
         return;
     }
@@ -225,7 +225,7 @@ void singularity_priv_drop_perm(void) {
         return;
     }
 
-    if ( singularity_priv_getuid() == 0 ) {
+    if ( uinfo.uid == 0 ) {
         singularity_message(VERBOSE2, "Calling user is root, no privileges to drop\n");
         return;
     }
