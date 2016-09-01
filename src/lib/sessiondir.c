@@ -65,7 +65,9 @@ char *singularity_sessiondir_init(char *file) {
         }
 
         singularity_config_rewind();
-        if ( ( sessiondir_prefix = singularity_config_get_value("sessiondir prefix") ) != NULL ) {
+        if ( ( sessiondir_prefix = getenv("SINGULARITY_SESSIONDIR") ) != NULL ) { // Flawfinder: ignore
+            snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s/singularity-session-%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
+        } else if ( ( sessiondir_prefix = singularity_config_get_value("sessiondir prefix") ) != NULL ) {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
         } else {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "/tmp/.singularity-session-%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
@@ -75,9 +77,14 @@ char *singularity_sessiondir_init(char *file) {
 
     if ( is_dir(sessiondir) < 0 ) {
         if ( s_mkpath(sessiondir, 0755) < 0 ) {
-            singularity_message(ERROR, "Failed creating session directory\n");
+            singularity_message(ERROR, "Failed creating session directory %s: %s\n", sessiondir, strerror(errno));
             ABORT(255);
         }
+    }
+
+    if ( is_owner(sessiondir, singularity_priv_getuid()) < 0 ) {
+        singularity_message(ERROR, "Session directory has wrong ownership: %s\n", sessiondir);
+        ABORT(255);
     }
 
     singularity_message(DEBUG, "Opening sessiondir file descriptor\n");
@@ -92,24 +99,29 @@ char *singularity_sessiondir_init(char *file) {
         ABORT(255);
     }
 
-    if ( ( child_pid = singularity_fork() ) > 0 ) {
-        int tmpstatus;
+    if ( getenv("SINGULARITY_NOSESSIONCLEANUP") != NULL ) { // Flawfinder: ignore
+        singularity_message(VERBOSE2, "Not forking a sessiondir cleanup process\n");
 
-        singularity_message(DEBUG, "Waiting on NS child process\n");
+    } else {
+        if ( ( child_pid = singularity_fork() ) > 0 ) {
+            int tmpstatus;
 
-        waitpid(child_pid, &tmpstatus, 0);
-        retval = WEXITSTATUS(tmpstatus);
+            singularity_message(DEBUG, "Waiting on NS child process\n");
 
-        singularity_message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
-        if ( flock(sessiondir_fd, LOCK_EX | LOCK_NB) == 0 ) {
-            singularity_message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
-            if ( s_rmdir(sessiondir) < 0 ) {
-                singularity_message(ERROR, "Could not remove session directory\n");
-                ABORT(255);
+            waitpid(child_pid, &tmpstatus, 0);
+            retval = WEXITSTATUS(tmpstatus);
+
+            singularity_message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
+            if ( flock(sessiondir_fd, LOCK_EX | LOCK_NB) == 0 ) {
+                singularity_message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
+                if ( s_rmdir(sessiondir) < 0 ) {
+                    singularity_message(ERROR, "Could not remove session directory\n");
+                    ABORT(255);
+                }
             }
-        }
     
-        exit(retval);
+            exit(retval);
+        }
     }
 
     return(sessiondir);
