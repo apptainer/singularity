@@ -97,19 +97,13 @@ int singularity_action_do(int argc, char **argv) {
 
     singularity_priv_drop_perm();
 
-    singularity_message(DEBUG, "Checking for envar SINGULARITY_CONTAIN\n");
-    if ( getenv("SINGULARITY_CONTAIN") == NULL ) { // Flawfinder: ignore
-        singularity_message(DEBUG, "Changing directory to starting directory\n");
-
-        if ( chdir(cwd_path) < 0 ) {
-            singularity_message(WARNING, "Could not chdir to: %s\n", cwd_path);
-        }
-
-    } else {
+    singularity_message(DEBUG, "Trying to change directory to where we started\n");
+    if ( chdir(cwd_path) < 0 ) {
         struct passwd *pw;
         char *homedir;
         uid_t uid = singularity_priv_getuid();
 
+        singularity_message(DEBUG, "Failed changing directory to: %s\n", cwd_path);
         singularity_message(VERBOSE2, "Changing to home directory\n");
 
         errno = 0;
