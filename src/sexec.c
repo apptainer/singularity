@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     singularity_message(VERBOSE2, "Running SUID program workflow\n");
 
     singularity_message(VERBOSE2, "Checking program has appropriate permissions\n");
-    if ( ( is_owner("/proc/self/exe", 0 ) < 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
+    if ( ( is_owner("/proc/self/exe", 0) < 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
         singularity_abort(255, "This program must be SUID root\n");
     }
 
