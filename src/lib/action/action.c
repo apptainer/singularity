@@ -82,7 +82,7 @@ int singularity_action_init(void) {
         ABORT(1);
     }
 
-    cwd_path = (char *) malloc(sizeof(char) * PATH_MAX);
+    cwd_path = (char *) malloc(PATH_MAX);
 
     singularity_message(DEBUG, "Getting current working directory path string\n");
     if ( getcwd(cwd_path, PATH_MAX) == NULL ) {
