@@ -264,7 +264,7 @@ int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *
 
 int s_rmdir(char *dir) {
 
-    singularity_message(DEBUG, "Removing dirctory: %s\n", dir);
+    singularity_message(DEBUG, "Removing directory: %s\n", dir);
     return(nftw(dir, _unlink, 32, FTW_DEPTH|FTW_MOUNT|FTW_PHYS));
 }
 
