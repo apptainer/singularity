@@ -8,6 +8,7 @@ Features:
 
 Fixes:
     * Go over singularity.conf and finish adding features back in
+    * User binds (and maybe -H) make session binds unprivileged
 
 New API porting:
     * move image and loop-control down as they are not specific to rootfs
