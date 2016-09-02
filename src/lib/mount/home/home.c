@@ -69,6 +69,12 @@ int singularity_mount_home(void) {
     singularity_message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
 
+    // If home directory is present, assume it is already mounted!
+    if ( is_dir(joinpath(container_dir, homedir)) == 0 ) {
+        singularity_message(VERBOSE, "Not mounting home directory, it is already present in container.\n");
+        return(0);
+    }
+
     // Figure out home directory source
     if ( ( homedir_source = getenv("SINGULARITY_HOME") ) != NULL ) { // Flawfinder: ignore
         singularity_config_rewind();
