@@ -113,12 +113,10 @@ char *singularity_sessiondir_init(char *file) {
 
             singularity_message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
             if ( flock(sessiondir_fd, LOCK_EX | LOCK_NB) == 0 ) {
-                singularity_priv_escalate();
                 singularity_message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
                 if ( s_rmdir(sessiondir) < 0 ) {
                     singularity_message(ERROR, "Could not remove session directory %s: %s\n", sessiondir, strerror(errno));
                 }
-                singularity_priv_drop();
             }
     
             exit(retval);
