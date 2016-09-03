@@ -42,26 +42,26 @@
 #include "lib/message.h"
 
 
-char *envar(char *envar, char *allowed, int len) {
+char *envar(char *name, char *allowed, int len) {
     char *ret = (char *) malloc(len);
-    char *env = getenv(envar); // Flawfinder: ignore
+    char *env = getenv(name); // Flawfinder: ignore
     int count;
 
-    singularity_message(VERBOSE2, "Checking input from environment '%s' = '%s'\n", envar, ret);
+    singularity_message(VERBOSE2, "Checking input from environment '%s' = '%s'\n", name, ret);
 
-    singularity_message(DEBUG, "Checking environment variable is defined: %s\n", envar);
+    singularity_message(DEBUG, "Checking environment variable is defined: %s\n", name);
     if ( env == NULL ) {
-        singularity_message(VERBOSE2, "Environment variable is NULL: %s\n", envar);
+        singularity_message(VERBOSE2, "Environment variable is NULL: %s\n", name);
         return(NULL);
     }
 
-    singularity_message(DEBUG, "Checking environment variable length (<= %d): %s\n", len, envar);
+    singularity_message(DEBUG, "Checking environment variable length (<= %d): %s\n", len, name);
     if ( strlength(env, len+1) > len) {
-        singularity_message(ERROR, "Input length of '%s' is larger then allowed: %d\n", envar, len);
+        singularity_message(ERROR, "Input length of '%s' is larger then allowed: %d\n", name, len);
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Checking environment variable has allowed characters: %s\n", envar);
+    singularity_message(DEBUG, "Checking environment variable has allowed characters: %s\n", name);
     for(count=0; count <= len && env[count] != '\0'; count++) {
         int test_char = env[count];
         int c, success = 0;
@@ -76,15 +76,27 @@ char *envar(char *envar, char *allowed, int len) {
             }
         }
         if ( success == 0 ) {
-            singularity_message(ERROR, "Illegal input character '%c' in: '%s=%s'\n", test_char, envar, env);
+            singularity_message(ERROR, "Illegal input character '%c' in: '%s=%s'\n", test_char, name, env);
             ABORT(255);
         }
         ret[count] = test_char;
     }
 
-    singularity_message(VERBOSE2, "Obtained input from environment '%s' = '%s'\n", envar, ret);
+    singularity_message(VERBOSE2, "Obtained input from environment '%s' = '%s'\n", name, ret);
     return(ret);
 }
+
+int envar_defined(char *name) {
+    if ( getenv(name) == NULL ) { // Flawfinder: ignore
+        return(FALSE);
+    }
+    return(TRUE);
+}
+
+char *envar_path(char *name) {
+    return(envar(name, "/._-=,:", PATH_MAX));
+}
+
 
 int intlen(int input) {
     unsigned int len = 1;

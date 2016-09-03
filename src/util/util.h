@@ -26,7 +26,12 @@
 #ifndef __UTIL_H_
 #define __UTIL_H_
 
-char *envar(char *envar, char *allowed, int len);
+#define TRUE 1
+#define FALSE 0
+
+char *envar(char *name, char *allowed, int len);
+char *envar_path(char *name);
+int envar_defined(char *name);
 int intlen(int input);
 char *int2str(int num);
 char *joinpath(const char * path1, const char * path2);
