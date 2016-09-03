@@ -55,7 +55,7 @@ int singularity_ns_pid_unshare(void) {
         return(0);
     }
 
-    if ( getenv("SINGULARITY_UNSHARE_PID") == NULL ) { // Flawfinder: ignore (only checking for existance of envar)
+    if ( envar_defined("SINGULARITY_UNSHARE_PID") == FALSE ) {
         singularity_message(VERBOSE2, "Not virtualizing PID namespace on user request\n");
         return(0);
     }

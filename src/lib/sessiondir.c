@@ -65,7 +65,7 @@ char *singularity_sessiondir_init(char *file) {
         }
 
         singularity_config_rewind();
-        if ( ( sessiondir_prefix = getenv("SINGULARITY_SESSIONDIR") ) != NULL ) { // Flawfinder: ignore
+        if ( ( sessiondir_prefix = envar_path("SINGULARITY_SESSIONDIR") ) != NULL ) {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s/singularity-session-%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
         } else if ( ( sessiondir_prefix = singularity_config_get_value("sessiondir prefix") ) != NULL ) {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
@@ -99,7 +99,7 @@ char *singularity_sessiondir_init(char *file) {
         ABORT(255);
     }
 
-    if ( getenv("SINGULARITY_NOSESSIONCLEANUP") != NULL ) { // Flawfinder: ignore
+    if ( envar_defined("SINGULARITY_NOSESSIONCLEANUP") == TRUE ) {
         singularity_message(VERBOSE2, "Not forking a sessiondir cleanup process\n");
 
     } else {

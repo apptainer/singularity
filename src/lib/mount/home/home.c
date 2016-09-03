@@ -76,7 +76,7 @@ int singularity_mount_home(void) {
     }
 
     // Figure out home directory source
-    if ( ( homedir_source = getenv("SINGULARITY_HOME") ) != NULL ) { // Flawfinder: ignore
+    if ( ( homedir_source = envar_path("SINGULARITY_HOME") ) != NULL ) {
         singularity_config_rewind();
         if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
             singularity_message(ERROR, "User bind control is disabled by system administrator\n");
@@ -84,8 +84,8 @@ int singularity_mount_home(void) {
         }
 
         singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
-    } else if ( getenv("SINGULARITY_CONTAIN") != NULL ) { // Flawfinder: ignore
-        if ( ( tmpdirpath = getenv("SINGULARITY_WORKDIR") ) != NULL ) { // Flawfinder: ignore
+    } else if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
+        if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR")) != NULL ) {
             singularity_config_rewind();
             if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
                 singularity_message(ERROR, "User bind control is disabled by system administrator\n");

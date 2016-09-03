@@ -57,7 +57,7 @@ int rootfs_dir_init(char *source, char *mount_dir) {
     source_dir = strdup(source);
     mount_point = strdup(mount_dir);
 
-    if ( getenv("SINGULARITY_WRITABLE") != NULL ) { // Flawfinder: ignore
+    if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
         read_write = 1;
     }
 

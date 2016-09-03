@@ -43,7 +43,7 @@ void singularity_mount_userbinds(void) {
     char *container_dir = singularity_rootfs_dir();
 
     singularity_message(DEBUG, "Checking for environment variable 'SINGULARITY_BINDPATH'\n");
-    if ( ( bind_path_string = getenv("SINGULARITY_BINDPATH") ) != NULL ) { // Flawfinder: ignore
+    if ( ( bind_path_string = envar_path("SINGULARITY_BINDPATH") ) != NULL ) {
 
         singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
         if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {

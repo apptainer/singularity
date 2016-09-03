@@ -34,6 +34,7 @@
 #include <fcntl.h>  
 #include <grp.h>
 #include <libgen.h>
+#include <linux/limits.h>
 
 #include "config.h"
 #include "lib/singularity.h"
@@ -58,7 +59,7 @@ int main(int argc, char ** argv) {
         ABORT(1);
     }
 
-    if ( ( containerimage = getenv("SINGULARITY_IMAGE") ) == NULL ) { // Flawfinder: ignore
+    if ( ( containerimage = envar_path("SINGULARITY_IMAGE") ) == NULL ) {
         singularity_message(ERROR, "SINGULARITY_IMAGE not defined!\n");
         ABORT(255);
     }

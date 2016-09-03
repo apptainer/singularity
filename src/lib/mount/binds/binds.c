@@ -39,7 +39,7 @@ int singularity_mount_binds(void) {
     char *tmp_config_string;
     char *container_dir = singularity_rootfs_dir();
 
-    if ( getenv("SINGULARITY_CONTAIN") != NULL ) { // Flawfinder: ignore
+    if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         singularity_message(DEBUG, "Skipping bind mounts as contain was requested\n");
         return(0);
     }

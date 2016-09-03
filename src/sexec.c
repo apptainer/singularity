@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <string.h>
 
-
 #include "config.h"
 #include "lib/singularity.h"
 #include "util/util.h"
@@ -66,7 +65,7 @@ int main(int argc, char **argv) {
     }
 
     singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
-    if ( getenv("SINGULARITY_NOSUID") != NULL ) { // Flawfinder: ignore
+    if ( envar_defined("SINGULARITY_NOSUID") == TRUE ) {
         singularity_abort(1, "NOSUID mode has been requested... Aborting\n");
     }
 
@@ -86,7 +85,7 @@ int main(int argc, char **argv) {
         singularity_message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
         if ( singularity_config_get_bool("allow setuid", 1) == 1 ) {
             singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
-            if ( getenv("SINGULARITY_NOSUID") == NULL ) { // Flawfinder: ignore
+            if ( envar_defined("SINGULARITY_NOSUID") == FALSE ) {
                 char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";
 
                 if ( ( is_owner(sexec_suid_path, 0 ) == 0 ) && ( is_suid(sexec_suid_path) == 0 ) ) {
@@ -109,7 +108,7 @@ int main(int argc, char **argv) {
 
 #endif /* SINGULARITY_SUID */
 
-    if ( ( image = getenv("SINGULARITY_IMAGE") ) == NULL ) { // Flawfinder: ignore
+    if ( ( image = envar_path("SINGULARITY_IMAGE") ) == NULL ) {
         singularity_abort(255, "SINGULARITY_IMAGE not defined!\n");
     }
 

@@ -66,7 +66,7 @@ void singularity_mount_cwd(void) {
     }
 
     singularity_message(DEBUG, "Checking for contain option\n");
-    if ( getenv("SINGULARITY_CONTAIN") != NULL ) {
+    if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         singularity_message(VERBOSE, "Not mounting current direcotry: contain was requested\n");
         return;
     }

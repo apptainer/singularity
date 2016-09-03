@@ -38,10 +38,9 @@
 
 int singularity_mount_dev(void) {
     char *container_dir = singularity_rootfs_dir();
-    char *contain = getenv("SINGULARITY_CONTAIN"); // Flawfinder: ignore
 
     singularity_config_rewind();
-    if ( ( strcmp("minimal", singularity_config_get_value("mount dev")) == 0 ) || ( contain != NULL ) ) {
+    if ( ( strcmp("minimal", singularity_config_get_value("mount dev")) == 0 ) || ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) ) {
         if ( singularity_rootfs_overlay_enabled() > 0 ) {
             if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
                 if ( s_mkpath(joinpath(container_dir, "/dev"), 0755) < 0 ) {
@@ -86,11 +85,6 @@ int singularity_mount_dev(void) {
         } else {
             singularity_message(VERBOSE2, "Not enabling 'mount dev = minimal', overlayfs not enabled\n");
         }
-    }
-
-    if ( contain != NULL ) {
-        singularity_message(VERBOSE, "Not mounting /dev with SINGULARITY_CONTAIN enabled\n");
-        return(0);
     }
 
     singularity_message(DEBUG, "Checking configuration file for 'mount dev'\n");

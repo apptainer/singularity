@@ -66,7 +66,7 @@ int rootfs_image_init(char *source, char *mount_dir) {
 
     mount_point = strdup(mount_dir);
 
-    if ( getenv("SINGULARITY_WRITABLE") != NULL ) { // Flawfinder: ignore
+    if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
         if ( ( image_fp = fopen(source, "r+") ) == NULL ) { // Flawfinder: ignore
             singularity_message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
             ABORT(255);

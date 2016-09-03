@@ -49,7 +49,7 @@ static int action = 0;
 static char *cwd_path;
 
 int singularity_action_init(void) {
-    char *command = getenv("SINGULARITY_COMMAND"); // Flawfinder: ignore
+    char *command = envar("SINGULARITY_COMMAND", "", 10);
     singularity_message(DEBUG, "Checking on action to run\n");
 
     unsetenv("SINGULARITY_COMMAND");
