@@ -35,11 +35,56 @@
 #include <ftw.h>
 #include <time.h>
 #include <linux/limits.h>
+#include <ctype.h>
 
 #include "config.h"
 #include "util/util.h"
 #include "lib/message.h"
 
+
+char *envar(char *envar, char *allowed, int len) {
+    char *ret = (char *) malloc(len);
+    char *env = getenv(envar); // Flawfinder: ignore
+    int count;
+
+    singularity_message(VERBOSE2, "Checking input from environment '%s' = '%s'\n", envar, ret);
+
+    singularity_message(DEBUG, "Checking environment variable is defined: %s\n", envar);
+    if ( env == NULL ) {
+        singularity_message(VERBOSE2, "Environment variable is NULL: %s\n", envar);
+        return(NULL);
+    }
+
+    singularity_message(DEBUG, "Checking environment variable length (<= %d): %s\n", len, envar);
+    if ( strlength(env, len+1) > len) {
+        singularity_message(ERROR, "Input length of '%s' is larger then allowed: %d\n", envar, len);
+        ABORT(255);
+    }
+
+    singularity_message(DEBUG, "Checking environment variable has allowed characters: %s\n", envar);
+    for(count=0; count <= len && env[count] != '\0'; count++) {
+        int test_char = env[count];
+        int c, success = 0;
+        if ( isalnum(test_char) > 0 ) {
+            success = 1;
+        } else {
+            for (c=0; allowed[c] != '\0'; c++) {
+                if ( test_char == allowed[c] ) {
+                    success = 1;
+                    continue;
+                }
+            }
+        }
+        if ( success == 0 ) {
+            singularity_message(ERROR, "Illegal input character '%c' in: '%s=%s'\n", test_char, envar, env);
+            ABORT(255);
+        }
+        ret[count] = test_char;
+    }
+
+    singularity_message(VERBOSE2, "Obtained input from environment '%s' = '%s'\n", envar, ret);
+    return(ret);
+}
 
 int intlen(int input) {
     unsigned int len = 1;
