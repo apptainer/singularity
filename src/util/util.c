@@ -47,7 +47,7 @@ char *envar(char *name, char *allowed, int len) {
     char *env = getenv(name); // Flawfinder: ignore
     int count;
 
-    singularity_message(VERBOSE2, "Checking input from environment '%s' = '%s'\n", name, ret);
+    singularity_message(VERBOSE2, "Checking input from environment: '%s'\n", name);
 
     singularity_message(DEBUG, "Checking environment variable is defined: %s\n", name);
     if ( env == NULL ) {
@@ -87,13 +87,17 @@ char *envar(char *name, char *allowed, int len) {
 }
 
 int envar_defined(char *name) {
+    singularity_message(DEBUG, "Checking if environment variable is defined: %s\n", name);
     if ( getenv(name) == NULL ) { // Flawfinder: ignore
+        singularity_message(VERBOSE2, "Environment variable is undefined: %s\n", name);
         return(FALSE);
     }
+    singularity_message(VERBOSE2, "Environment variable is defined: %s\n", name);
     return(TRUE);
 }
 
 char *envar_path(char *name) {
+    singularity_message(DEBUG, "Checking environment variable is valid path: '%s'\n", name);
     return(envar(name, "/._-=,:", PATH_MAX));
 }
 
