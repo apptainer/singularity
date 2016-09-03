@@ -228,7 +228,6 @@ int singularity_fork_exec(char **argv) {
     child = singularity_fork();
 
     if ( child == 0 ) {
-
         if ( execvp(argv[0], argv) < 0 ) { //Flawfinder: ignore
             singularity_message(ERROR, "Failed to execv(%s, ...)\n", argv[0]);
             ABORT(255);
