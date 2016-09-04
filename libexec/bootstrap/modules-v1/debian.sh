@@ -19,7 +19,19 @@
 # 
 # 
 
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
 
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
 
 if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     message ERROR "debootstrap is not in PATH... Perhaps 'apt-get install' it?\n"

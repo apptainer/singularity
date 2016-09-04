@@ -19,6 +19,19 @@
 # 
 # 
 
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
 
 # dnf should probably be preferred if it's present
 

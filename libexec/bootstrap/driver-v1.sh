@@ -19,6 +19,20 @@
 # 
 # 
 
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
+
 # Things that should always exist in a Singularity container
 DIRS="/home /tmp /etc /root /dev /proc /sys /var/tmp"
 EMPTY_FILES="/etc/mtab /etc/resolv.conf /etc/nsswitch.conf /etc/hosts"
@@ -67,8 +81,8 @@ DistType() {
         exit 1
     fi
 
-    if [ -f "$SINGULARITY_libexecdir/singularity/mods/linux_build_$TYPE.smod" ]; then
-        . "$SINGULARITY_libexecdir/singularity/mods/linux_build_$TYPE.smod"
+    if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v1/$TYPE.sh" ]; then
+        . "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v1/$TYPE.sh"
     else
         echo "DistType: Unrecognized Distribution type: $TYPE" >&2
         exit 255
@@ -282,4 +296,18 @@ __mountdev() {
     return $?
 }
 
+
+set -e
+
+# Always run these checks
+SanityCheck
+PreSetup
+
+if [ -n "${SINGULARITY_BUILDDEF:-}" -a -f "$SINGULARITY_BUILDDEF" ]; then
+    # sourcing without a leading slash is weird and requires PATH
+    PATH=".:$PATH"
+    . $SINGULARITY_BUILDDEF
+fi
+
+Finalize
 

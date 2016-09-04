@@ -34,9 +34,32 @@ else
     exit 1
 fi
 
-if [ -x "$SINGULARITY_libexecdir/singularity/bootstrap/main.sh" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bootstrap/main.sh" "$@"
-else
-    message ERROR "Could not locate bootstrap main\n"
-    exit 255
+SINGULARITY_BUILDDEF="${1:-}"
+shift
+SINGULARITY_TMPDIR=`mktemp -d /tmp/singularity-bootstrap.XXXXXXX`
+PATH=/bin:/sbin:$PATH
+
+export SINGULARITY_TMPDIR SINGULARITY_BUILDDEF
+
+if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
+    BOOTSTRAP_VERSION="1"
+elif [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
+    message ERROR "Bootstrap defintion not found: ${SINGULARITY_BUILDDEF:-}\n"
+elif grep -q "Distype: " "${SINGULARITY_BUILDDEF:-}"; then
+    BOOTSTRAP_VERSION="2"
+elif grep -q "DistType " "${SINGULARITY_BUILDDEF:-}"; then
+    BOOTSTRAP_VERSION="1"
 fi
+
+if [ -n "${BOOTSTRAP_VERSION:-}" ]; then
+    if [ -x "$SINGULARITY_libexecdir/singularity/bootstrap/driver-v$BOOTSTRAP_VERSION.sh" ]; then
+        eval "$SINGULARITY_libexecdir/singularity/bootstrap/driver-v$BOOTSTRAP_VERSION.sh" "$@"
+    else
+        echo "Could not locate version $BOOTSTRAP_VERSION bootstrap driver\n";
+        exit 255
+    fi
+else
+    message ERROR "Unrecognized bootstrap format of bootstrap definition\n"
+fi
+
+rm -rf "$SINGULARITY_TMPDIR"

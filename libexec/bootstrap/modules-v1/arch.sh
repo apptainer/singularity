@@ -20,6 +20,20 @@
 # This script defines a minimal installation process. Extra actions can be
 # called from an image definition file (see eg. examples/arch.def).
 
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
+
 if ! PACSTRAP=`singularity_which pacstrap`; then
     message ERROR "\`pacstrap' is not in PATH. You can install it with \`pacman -S arch-install-scripts'.\n"
     exit 1

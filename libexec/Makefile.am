@@ -1,4 +1,4 @@
-SUBDIRS = mods cli helpers
+SUBDIRS = bootstrap cli helpers
 
 scriptlibexecdir = $(libexecdir)/singularity
 

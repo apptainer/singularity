@@ -243,7 +243,8 @@ AC_CONFIG_FILES([
    bin/singularity
    man/Makefile
    libexec/Makefile
-   libexec/mods/Makefile
+   libexec/bootstrap/Makefile
+   libexec/bootstrap/modules-v1/Makefile
    libexec/cli/Makefile
    libexec/helpers/Makefile
 ])
