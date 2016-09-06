@@ -19,7 +19,6 @@
 # 
 # 
 
-
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -34,36 +33,19 @@ else
     exit 1
 fi
 
-SINGULARITY_BUILDDEF="${1:-}"
-shift
-SINGULARITY_TMPDIR=`mktemp -d /tmp/singularity-bootstrap.XXXXXXX`
-PATH=/bin:/sbin:$PATH
-RETVAL=0
-
-export SINGULARITY_TMPDIR SINGULARITY_BUILDDEF
+if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
+    messge ERROR "Singularity root file system not defined\n"
+    exit 1
+fi
 
 if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    BOOTSTRAP_VERSION="1"
-elif [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
-    message ERROR "Bootstrap defintion not found: ${SINGULARITY_BUILDDEF:-}\n"
-elif grep -q "DistType: " "${SINGULARITY_BUILDDEF:-}"; then
-    BOOTSTRAP_VERSION="2"
-elif grep -q "DistType " "${SINGULARITY_BUILDDEF:-}"; then
-    BOOTSTRAP_VERSION="1"
+    messge ERROR "Singularity build definition file not defined\n"
+    exit 1
 fi
 
-if [ -n "${BOOTSTRAP_VERSION:-}" ]; then
-    if [ -x "$SINGULARITY_libexecdir/singularity/bootstrap/driver-v$BOOTSTRAP_VERSION.sh" ]; then
-        eval "$SINGULARITY_libexecdir/singularity/bootstrap/driver-v$BOOTSTRAP_VERSION.sh" "$@"
-        RETVAL=$?
-    else
-        echo "Could not locate version $BOOTSTRAP_VERSION bootstrap driver\n";
-        exit 255
-    fi
-else
-    message ERROR "Unrecognized bootstrap format of bootstrap definition\n"
-fi
 
-rm -rf "$SINGULARITY_TMPDIR"
+singularity_section_get "pre" "$SINGULARITY_BUILDDEF" | /usr/bin/env -i PATH="$PATH" /bin/sh -e -x || ABORT 255
 
-exit $RETVAL
+
+
+exit 0

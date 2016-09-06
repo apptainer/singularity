@@ -245,6 +245,7 @@ AC_CONFIG_FILES([
    libexec/Makefile
    libexec/bootstrap/Makefile
    libexec/bootstrap/modules-v1/Makefile
+   libexec/bootstrap/modules-v2/Makefile
    libexec/cli/Makefile
    libexec/helpers/Makefile
 ])

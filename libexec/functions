@@ -66,7 +66,7 @@ message() {
 }
 
 
-get_key_from_conf() {
+singularity_key_get() {
     KEY="${1:-}"
     FILE="${2:-}"
     if OUT=`egrep -i "^$KEY:\s*" $FILE`; then
@@ -76,7 +76,34 @@ get_key_from_conf() {
     return 1
 }
 
-get_section_from_conf() {
+
+singularity_keys_get() {
+    KEY="${1:-}"
+    FILE="${2:-}"
+    egrep -i "^$KEY:\s*" "$FILE" | while read i; do
+        echo "$i" | sed -e "s@^$KEY:\s*@@i"
+    done | tr '\n' ' '
+    echo
+
+    return 0
+}
+
+singularity_section_exists() {
+    SECTION="${1:-}"
+    FILE="${2:-}"
+    TOGGLE=""
+    if [ ! -f "$FILE" ]; then
+        message ERROR "File not found ($FILE)\n"
+        exit 1
+    fi
+    if ! grep -q "^%$SECTION\$" "$FILE"; then
+        return 1
+    fi
+
+    return 0
+}
+
+singularity_section_get() {
     SECTION="${1:-}"
     FILE="${2:-}"
     TOGGLE=""
@@ -102,6 +129,16 @@ get_section_from_conf() {
     done
 
     return 0
+}
+
+
+ABORT() {
+    RETVAL="${1:-}"
+    if [ -z "$RETVAL" ]; then
+        RETVAL=1
+    fi
+    message ERROR "Aborting with RETVAL=$RETVAL\n"
+    exit $RETVAL
 }
 
 check_pattern() {
