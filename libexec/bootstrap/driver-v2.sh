@@ -38,6 +38,20 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+
+if [ -z "${LC_ALL:-}" ]; then
+    LC_ALL=C
+fi
+if [ -z "${LANG:-}" ]; then
+    LANG=C
+fi
+if [ -z "${TERM:-}" ]; then
+    TERM=xterm
+fi
+DEBIAN_FRONTEND=noninteractive
+export LC_ALL LANG TERM DEBIAN_FRONTEND
+
+
 if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
     if [ -f "$SINGULARITY_BUILDDEF" ]; then
         ### Obtain the DistType from the SPEC
@@ -67,7 +81,6 @@ fi
 if [ -n "${SINGULARITY_DISTTYPE:-}" ]; then
     if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/dist-$SINGULARITY_DISTTYPE.sh" ]; then
         if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/dist-$SINGULARITY_DISTTYPE.sh" "$@"; then
-            message ERROR "DistType module returned error: $SINGULARITY_DISTTYPE\n"
             exit 255
         fi
     else

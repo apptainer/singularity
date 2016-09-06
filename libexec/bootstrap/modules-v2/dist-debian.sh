@@ -44,9 +44,54 @@ if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 
-
-singularity_section_get "pre" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x || ABORT 255
-
+########## BEGIN BOOTSTRAP SCRIPT ##########
 
 
-exit 0
+if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
+    message ERROR "debootstrap is not in PATH... Perhaps 'apt-get install' it?\n"
+    exit 1
+fi
+
+if uname -m | grep -q x86_64; then
+    ARCH=amd64
+else
+    ARCH=i386
+fi
+
+
+MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF"`
+if [ -z "${MIRROR:-}" ]; then
+    message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
+    ABORT 1
+fi
+
+OSVERSION=`singularity_key_get "OSVersion" "$SINGULARITY_BUILDDEF"`
+if [ -z "${OSVERSION:-}" ]; then
+    message ERROR "No 'OSVersion' defined in bootstrap definition\n"
+    ABORT 1
+fi
+
+INSTALLPKGS=`singularity_keys_get "Bootstrap" "$SINGULARITY_BUILDDEF"`
+
+
+# debootstrap will create the device entries it needs (or some versions fail)
+eval "rm -rf $SINGULARITY_ROOTFS/dev/*"
+
+INCLUDEPKGS=`echo "$INSTALLPKGS" | sed -e 's/\s/,/g'`
+
+# The excludes save 25M or so with jessie.  (Excluding udev avoids
+# systemd, for instance.)  There are a few more we could exclude
+# to save a few MB.  I see 182M cleaned with this, v. 241M with
+# the default debootstrap.
+if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$INCLUDEPKGS --arch=$ARCH '$OSVERSION' '$SINGULARITY_ROOTFS' '$MIRROR'"; then
+    ABORT 255
+fi
+
+#if ! eval chroot "$SINGULARITY_ROOTFS" apt-key update; then
+#    ABORT 255
+#fi
+
+if ! eval chroot "$SINGULARITY_ROOTFS" apt-get update; then
+    ABORT 255
+fi
+

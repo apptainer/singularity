@@ -44,7 +44,7 @@ if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 
-singularity_section_get "setup" "$SINGULARITY_BUILDDEF" | /usr/bin/env -i PATH="$PATH" /bin/sh -e -x || ABORT 255
+singularity_section_get "setup" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x || ABORT 255
 
 
 
