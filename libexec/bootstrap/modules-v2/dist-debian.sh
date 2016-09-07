@@ -71,7 +71,7 @@ if [ -z "${OSVERSION:-}" ]; then
     ABORT 1
 fi
 
-REQUIRES=`singularity_keys_get "Requires" "$SINGULARITY_BUILDDEF" | sed -e 's/\s/,/g'`
+REQUIRES=`singularity_keys_get "Install" "$SINGULARITY_BUILDDEF" | sed -e 's/\s/,/g'`
 
 # debootstrap will create the device entries it needs (or some versions fail)
 eval "rm -rf $SINGULARITY_ROOTFS/dev/*"

@@ -73,7 +73,7 @@ if [ -z "${MIRROR:-}" ]; then
     ABORT 1
 fi
 
-INSTALLPKGS=`singularity_keys_get "Requires" "$SINGULARITY_BUILDDEF"`
+INSTALLPKGS=`singularity_keys_get "Install" "$SINGULARITY_BUILDDEF"`
 
 REPO_COUNT=0
 YUM_CONF="/etc/bootstrap-yum.conf"
