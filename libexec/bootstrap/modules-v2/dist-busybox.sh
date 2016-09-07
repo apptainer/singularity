@@ -47,40 +47,25 @@ fi
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
 
-if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
-    message ERROR "debootstrap is not in PATH... Perhaps 'apt-get install' it?\n"
-    exit 1
-fi
-
-if uname -m | grep -q x86_64; then
-    ARCH=amd64
-else
-    ARCH=i386
-fi
-
-
 MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF"`
 if [ -z "${MIRROR:-}" ]; then
-    message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
-    ABORT 1
+    MIRROR="https://www.busybox.net/downloads/binaries/busybox-x86_64"
 fi
 
-OSVERSION=`singularity_key_get "OSVersion" "$SINGULARITY_BUILDDEF"`
-if [ -z "${OSVERSION:-}" ]; then
-    message ERROR "No 'OSVersion' defined in bootstrap definition\n"
-    ABORT 1
-fi
 
-REQUIRES=`singularity_keys_get "Requires" "$SINGULARITY_BUILDDEF" | sed -e 's/\s/,/g'`
+mkdir -p -m 0755 "$SINGULARITY_ROOTFS/bin"
+mkdir -p -m 0755 "$SINGULARITY_ROOTFS/etc"
 
-# debootstrap will create the device entries it needs (or some versions fail)
-eval "rm -rf $SINGULARITY_ROOTFS/dev/*"
+echo "root:!:0:0:root:/root:/bin/sh" > "$SINGULARITY_ROOTFS/etc/passwd"
+echo " root:x:0:" > "$SINGULARITY_ROOTFS/etc/group"
+echo "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4" > "$SINGULARITY_ROOTFS/etc/hosts"
 
-# The excludes save 25M or so with jessie.  (Excluding udev avoids
-# systemd, for instance.)  There are a few more we could exclude
-# to save a few MB.  I see 182M cleaned with this, v. 241M with
-# the default debootstrap.
-if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH '$OSVERSION' '$SINGULARITY_ROOTFS' '$MIRROR'"; then
-    ABORT 255
-fi
+curl "$MIRROR" > "$SINGULARITY_ROOTFS/bin/busybox"
 
+chmod 0755 "$SINGULARITY_ROOTFS/bin/busybox"
+
+eval "$SINGULARITY_ROOTFS/bin/busybox" --install "$SINGULARITY_ROOTFS/bin/"
+
+
+# If we got here, exit...
+exit 0

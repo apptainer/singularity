@@ -58,13 +58,22 @@ else
     ABORT 1
 fi
 
-MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF"`
+OSVERSION=`singularity_key_get "OSVersion" "$SINGULARITY_BUILDDEF"`
+if [ -z "${OSVERSION:-}" ]; then
+    if [ -f "/etc/redhat-release" ]; then
+        OSVERSION=`rpm -qf --qf '%{VERSION}' /etc/redhat-release`
+    else
+        OSVERSION=7
+    fi
+fi
+
+MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF" | sed -e "s/\\\$releasever/$OSVERSION/g"`
 if [ -z "${MIRROR:-}" ]; then
     message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
     ABORT 1
 fi
 
-INSTALLPKGS=`singularity_keys_get "Bootstrap" "$SINGULARITY_BUILDDEF"`
+INSTALLPKGS=`singularity_keys_get "Requires" "$SINGULARITY_BUILDDEF"`
 
 REPO_COUNT=0
 YUM_CONF="/etc/bootstrap-yum.conf"

@@ -54,13 +54,13 @@ export LC_ALL LANG TERM DEBIAN_FRONTEND
 
 if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
     if [ -f "$SINGULARITY_BUILDDEF" ]; then
-        ### Obtain the DistType from the SPEC
-        SINGULARITY_DISTTYPE=`singularity_key_get "DistType" "$SINGULARITY_BUILDDEF"`
-        if [ -z "${SINGULARITY_DISTTYPE:-}" ]; then
-            echo "DistType: Requires an argument!" 2>&2
+        ### Obtain the OSType from the SPEC
+        SINGULARITY_OSTYPE=`singularity_key_get "OSType" "$SINGULARITY_BUILDDEF"`
+        if [ -z "${SINGULARITY_OSTYPE:-}" ]; then
+            echo "OSType: Requires an argument!" 2>&2
             exit 1
         fi
-        export SINGULARITY_BUILDDEF SINGULARITY_DISTTYPE
+        export SINGULARITY_BUILDDEF SINGULARITY_OSTYPE
     else
         message ERROR "Build Definition file not found: $SINGULARITY_BUILDDEF\n"
         exit 1
@@ -78,13 +78,13 @@ else
 fi
 
 
-if [ -n "${SINGULARITY_DISTTYPE:-}" ]; then
-    if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/dist-$SINGULARITY_DISTTYPE.sh" ]; then
-        if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/dist-$SINGULARITY_DISTTYPE.sh" "$@"; then
+if [ -n "${SINGULARITY_OSTYPE:-}" ]; then
+    if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/dist-$SINGULARITY_OSTYPE.sh" ]; then
+        if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/dist-$SINGULARITY_OSTYPE.sh" "$@"; then
             exit 255
         fi
     else
-        message ERROR "Unrecognized Distribution type: $SINGULARITY_DISTTYPE\n"
+        message ERROR "Unrecognized Distribution type: $SINGULARITY_OSTYPE\n"
         exit 255
     fi
 fi

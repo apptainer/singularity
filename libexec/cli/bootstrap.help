@@ -4,13 +4,9 @@ The bootstrap command is useful for creating a new bootstrap or modifying an
 existing one using a definition file that describes how to build the
 container. A simple bootstrap definition file may be as simple as:
 
-    DistType "debian"
-    MirrorURL "http://ftp.us.debian.org/debian/"
-    OSVersion "stable"
-    Setup
-    Bootstrap
-    InstallPkgs vim
-    Cleanup
+    DistType: debian
+    OSVersion: stable
+    MirrorURL: http://ftp.us.debian.org/debian/
 
 This simple bootstrap has within it all of the necessary bits of information
 to bootstrap a minimal container image.

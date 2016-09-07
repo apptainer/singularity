@@ -46,10 +46,10 @@ if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
     BOOTSTRAP_VERSION="1"
 elif [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
     message ERROR "Bootstrap defintion not found: ${SINGULARITY_BUILDDEF:-}\n"
-elif grep -q "DistType: " "${SINGULARITY_BUILDDEF:-}"; then
-    BOOTSTRAP_VERSION="2"
 elif grep -q "DistType " "${SINGULARITY_BUILDDEF:-}"; then
     BOOTSTRAP_VERSION="1"
+else
+    BOOTSTRAP_VERSION="2"
 fi
 
 if [ -n "${BOOTSTRAP_VERSION:-}" ]; then

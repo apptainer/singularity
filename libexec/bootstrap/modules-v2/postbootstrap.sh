@@ -52,28 +52,23 @@ if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
     exit 1
 fi
 
-# Make sure permissions on / are correct
-chmod 0755 "$SINGULARITY_ROOTFS"
-
-# Create these system directories if they don't already exist
 install -d -m 0755 "$SINGULARITY_ROOTFS/bin"
 install -d -m 0755 "$SINGULARITY_ROOTFS/home"
 install -d -m 0755 "$SINGULARITY_ROOTFS/etc"
 install -d -m 0750 "$SINGULARITY_ROOTFS/root"
-install -d -m 0755 "$SINGULARITY_ROOTFS/dev"
 install -d -m 0755 "$SINGULARITY_ROOTFS/proc"
 install -d -m 0755 "$SINGULARITY_ROOTFS/sys"
 install -d -m 1777 "$SINGULARITY_ROOTFS/tmp"
 install -d -m 1777 "$SINGULARITY_ROOTFS/var/tmp"
 
-cp -a /dev/null         "$SINGULARITY_ROOTFS/dev/null"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/null"
-cp -a /dev/zero         "$SINGULARITY_ROOTFS/dev/zero"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/zero"
-cp -a /dev/random       "$SINGULARITY_ROOTFS/dev/random"    2>/dev/null || > "$SINGULARITY_ROOTFS/dev/random"
-cp -a /dev/urandom      "$SINGULARITY_ROOTFS/dev/urandom"   2>/dev/null || > "$SINGULARITY_ROOTFS/dev/urandom"
-
 cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
 cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
+test -L "$SINGULARITY_ROOTFS/etc/mtab"  && rm -f "$SINGULARITY_ROOTFS/etc/mtab"
+
+cat > "$SINGULARITY_ROOTFS/etc/mtab" << EOF
+singularity / rootfs rw 0 0
+EOF
 
 if [ ! -f "$SINGULARITY_ROOTFS/environment" ]; then
 cat > "$SINGULARITY_ROOTFS/environment" << EOF
@@ -105,7 +100,7 @@ if test -x /bin/sh; then
     export SHELL
     exec /bin/sh "\$@"
 else
-    echo "ERROR: /bin/sh does not exist in container" 1>&2'
+    echo "ERROR: /bin/sh does not exist in container" 1>&2
 fi
 exit 1
 EOF
@@ -157,7 +152,9 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
     if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
         if [ "$UID" == "0" ]; then
             if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
-                singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x || ABORT 255
+                ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
+                singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
+
             else
                 message ERROR "Could not run post scriptlet, /bin/sh not found in container\n"
                 exit 255
@@ -168,14 +165,8 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
     fi
 fi
 
-test -L "$SINGULARITY_ROOTFS/etc/mtab"  && rm -f "$SINGULARITY_ROOTFS/etc/mtab"
 
 > "$SINGULARITY_ROOTFS/etc/hosts"
 > "$SINGULARITY_ROOTFS/etc/resolv.conf"
-
-cat > "$SINGULARITY_ROOTFS/etc/mtab" << EOF
-singularity / rootfs rw 0 0
-EOF
-
 
 

@@ -44,8 +44,10 @@ if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 
-singularity_section_get "setup" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x || ABORT 255
 
-
+if [ -f "$SINGULARITY_BUILDDEF" ]; then
+    ARGS=`singularity_section_args "setup" "$SINGULARITY_BUILDDEF"`
+    singularity_section_get "setup" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x $ARGS || ABORT 255
+fi
 
 exit 0
