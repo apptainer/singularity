@@ -91,6 +91,7 @@ echo 'cachedir=/var/cache/yum/$basearch/$releasever' >> "$SINGULARITY_ROOTFS/$YU
 echo "keepcache=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "debuglevel=2" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "logfile=/var/log/yum.log" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "syslog_device=/dev/null" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "exactarch=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "obsoletes=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
