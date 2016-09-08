@@ -1,6 +1,6 @@
 %{!?_rel:%{expand:%%global _rel 0.1}}
 
-Summary: The Singularity of a container
+Summary: Application and environment virtualization
 Name: singularity
 Version: @PACKAGE_VERSION@
 Release: %{_rel}%{?dist}
@@ -11,7 +11,6 @@ URL: http://singularity.lbl.gov/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
-Requires: strace
 
 %description
 Singularity provides functionality to build the smallest most minimal
@@ -45,7 +44,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-, root, root)
-%doc AUTHORS COPYING ChangeLog INSTALL NEWS README.md
+%doc examples AUTHORS COPYING ChangeLog INSTALL NEWS README.md
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_libexecdir}/singularity
