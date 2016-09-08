@@ -154,8 +154,6 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
         cp -r "$source" "$SINGULARITY_ROOTFS/$dest"
     done
 
-    exit 1
-
     mount -t proc proc "$SINGULARITY_ROOTFS/proc"
     mount -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
 
@@ -189,4 +187,4 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
 fi
 
 
-
+echo 0
