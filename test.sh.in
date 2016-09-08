@@ -26,12 +26,15 @@ libexecdir="@libexecdir@"
 sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 bindir="@bindir@"
+libdir="@libdir@"
 
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
 SINGULARITY_PATH="$bindir"
 
+LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$libdir"
+export LD_LIBRARY_PATH
 
 ALL_COMMANDS="exec run shell start stop bootstrap copy create expand export import mount"
 
