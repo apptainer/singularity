@@ -61,9 +61,6 @@ install -d -m 0755 "$SINGULARITY_ROOTFS/sys"
 install -d -m 1777 "$SINGULARITY_ROOTFS/tmp"
 install -d -m 1777 "$SINGULARITY_ROOTFS/var/tmp"
 
-cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
-cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
-
 test -L "$SINGULARITY_ROOTFS/etc/mtab"  && rm -f "$SINGULARITY_ROOTFS/etc/mtab"
 
 cat > "$SINGULARITY_ROOTFS/etc/mtab" << EOF
@@ -139,6 +136,26 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
         rm -f "$SINGULARITY_ROOTFS/runscript"
     fi
 
+    #TODO: This needs lots of love...
+    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | while read source dest; do
+        if [ -z "$source" ]; then
+            continue
+        fi
+        if [ -z "$dest" ]; then
+            dest="$source"
+        fi
+        dirname=`dirname $dest`
+
+        if [ ! -d "$SINGULARITY_ROOTFS/$dirname" ]; then
+            mkdir -p "$SINGULARITY_ROOTFS/$dirname"
+        fi
+
+        message 1 "Installing file: $source -> $dest\n"
+        cp -r "$source" "$SINGULARITY_ROOTFS/$dest"
+    done
+
+    exit 1
+
     mount -t proc proc "$SINGULARITY_ROOTFS/proc"
     mount -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
 
@@ -147,6 +164,8 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
     fi
     mount --rbind "/dev/" "$SINGULARITY_ROOTFS/dev"
 
+    cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
+    cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
     ### RUN POST
     if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
@@ -163,10 +182,11 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
             message 1 "Not running post scriptlet, not root user\n"
         fi
     fi
+
+    > "$SINGULARITY_ROOTFS/etc/hosts"
+    > "$SINGULARITY_ROOTFS/etc/resolv.conf"
+
 fi
 
-
-> "$SINGULARITY_ROOTFS/etc/hosts"
-> "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 

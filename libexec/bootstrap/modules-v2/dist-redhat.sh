@@ -67,13 +67,13 @@ if [ -z "${OSVERSION:-}" ]; then
     fi
 fi
 
-MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF" | sed -e "s/\\\$releasever/$OSVERSION/g"`
+MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 if [ -z "${MIRROR:-}" ]; then
     message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
     ABORT 1
 fi
 
-INSTALLPKGS=`singularity_keys_get "Install" "$SINGULARITY_BUILDDEF"`
+INSTALLPKGS=`singularity_keys_get "Include" "$SINGULARITY_BUILDDEF"`
 
 REPO_COUNT=0
 YUM_CONF="/etc/bootstrap-yum.conf"
@@ -87,7 +87,7 @@ mkdir -m 0755 -p "$SINGULARITY_ROOTFS/$YUM_CONF_DIRNAME"
 
 > "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "[main]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
-echo 'cachedir=/var/cache/yum/$basearch/$releasever' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo 'cachedir=/var/cache/yum-bootstrap' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "keepcache=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "debuglevel=2" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "logfile=/var/log/yum.log" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
@@ -110,6 +110,10 @@ if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installro
     ABORT 255
 fi
 
+
+if ! eval "rm -rf $SINGULARITY_ROOTFS/var/cache/yum-bootstrap"; then
+    message WARNING "Failed cleaning Bootstrap packages\n"
+fi
 
 # If we got here, exit...
 exit 0
