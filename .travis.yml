@@ -17,9 +17,7 @@ install:
   - ./configure --prefix=/usr/local
   - make
   - sudo make install
-#  - sudo /bin/sh -c "echo /usr/local/lib > /etc/ld.so.conf.d/usrlocal.conf"
-  - sudo ldconfig -v
-  - ldd /usr/local/libexec/singularity/sexec
+  - sudo ldconfig
 
 script:
   - make test
