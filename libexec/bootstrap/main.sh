@@ -38,6 +38,7 @@ SINGULARITY_BUILDDEF="${1:-}"
 shift
 SINGULARITY_TMPDIR=`mktemp -d /tmp/singularity-bootstrap.XXXXXXX`
 PATH=/bin:/sbin:$PATH
+HOME=/root
 RETVAL=0
 
 export SINGULARITY_TMPDIR SINGULARITY_BUILDDEF
