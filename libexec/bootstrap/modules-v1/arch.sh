@@ -68,7 +68,7 @@ BASE_TO_INST=`pacman -Sgq base | grep -xv $BASE_TO_SKIP | tr '\n' ' '`
 Bootstrap() {
     PACMAN_CONF="/tmp/pacman.conf.$$"
     # TODO: Use mktemp instead?
-    if ! eval "$WGET" --no-verbose -O "$PACMAN_CONF" "$PACMAN_CONF_URL"; then
+    if ! eval "'$WGET' --no-verbose -O '$PACMAN_CONF' '$PACMAN_CONF_URL'"; then
         message ERROR "Failed to download \`$PACMAN_CONF_URL' to \`$PACMAN_CONF'.\n"
         exit 1
     fi

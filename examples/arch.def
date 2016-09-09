@@ -15,7 +15,7 @@
 OSType: arch
 
 %runscript
-    echo "This is what happens when you run the container..."
+echo "This is what happens when you run the container..."
 
 %post
 echo "Hello from inside the container"
@@ -39,10 +39,7 @@ echo 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch' > /etc/pacma
 echo 'Server = https://archlinux.honkgong.info/$repo/os/$arch' >> /etc/pacman.d/mirrorlist
 
 # I need VIM and Bash completion. Specify your extra packages as needed.
-echo "Hello from inside the container #2"
-pacman -Sy vim bash-completion
-echo "Hello from inside the container #3"
+pacman -Sy --noconfirm vim bash-completion
+
 # Remove the packages downloaded to image's Pacman cache dir.
-echo "Hello from inside the container #4"
 paccache -r -k0
-echo "Hello from inside the container #5"
