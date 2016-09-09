@@ -11,13 +11,15 @@ before_install:
   # so that adjusted PATH propagates into sudo
   - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
   - sudo apt-get install flawfinder
-  - sudo ldconfig /usr/local/lib
+  - sudo /bin/sh -c "echo /usr/local/lib > /etc/ld.so.conf.d/usrlocal.conf"
+  - sudo ldconfig -v
 
 install:
   - ./autogen.sh
   - ./configure --prefix=/usr/local
   - make
   - sudo make install
+  - ldd /usr/local/libexec/singularity/sexec
 
 script:
   - make test
