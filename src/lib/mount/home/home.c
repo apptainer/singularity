@@ -143,10 +143,11 @@ int singularity_mount_home(void) {
     }
 
     if ( homedir_base == NULL ) {
-        if ( ( homedir_base = container_basedir(container_dir, homedir) ) != NULL ) {
-            singularity_message(DEBUG, "Could not create directory within container, set base bind point to: %s\n", homedir_base);
-        } else {
-            singularity_message(ERROR, "No bind point available for home directory: %s\n", homedir);
+        if ( ( homedir_base = basedir(homedir) ) == NULL ) {
+            singularity_message(ERROR, "Could not identify basedir for home directory path: %s\n", homedir);
+        }
+        if ( is_dir(joinpath(container_dir, homedir_base)) < 0 ) {
+            singularity_message(ERROR, "Home directory bind path not present inside container: %s\n", homedir_base);
             ABORT(255);
         }
     }
