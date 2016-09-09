@@ -38,12 +38,14 @@
 #include "run/run.h"
 #include "start/start.h"
 #include "stop/stop.h"
+#include "test/test.h"
 
 #define ACTION_SHELL    1
 #define ACTION_EXEC     2
 #define ACTION_RUN      3
-#define ACTION_START    4
-#define ACTION_STOP     5
+#define ACTION_TEST     4
+#define ACTION_START    5
+#define ACTION_STOP     6
 
 static int action = 0;
 static char *cwd_path;
@@ -69,6 +71,10 @@ int singularity_action_init(void) {
         singularity_message(DEBUG, "Setting action to: run\n");
         action = ACTION_RUN;
         action_run_init();
+    } else if ( strcmp(command, "test") == 0 ) {
+        singularity_message(DEBUG, "Setting action to: test\n");
+        action = ACTION_TEST;
+        action_test_init();
     } else if ( strcmp(command, "start") == 0 ) {
         singularity_message(DEBUG, "Setting action to: start\n");
         action = ACTION_START;
@@ -129,6 +135,9 @@ int singularity_action_do(int argc, char **argv) {
     } else if ( action == ACTION_RUN ) {
         singularity_message(DEBUG, "Running action: run\n");
         action_run_do(argc, argv);
+    } else if ( action == ACTION_TEST ) {
+        singularity_message(DEBUG, "Running action: test\n");
+        action_test_do(argc, argv);
     } else if ( action == ACTION_START ) {
         singularity_message(DEBUG, "Running action: start\n");
         action_start_do(argc, argv);
