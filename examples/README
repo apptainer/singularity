@@ -1,0 +1,18 @@
+The example bootstrap definition files listed in this directory can be used
+to create new container images on a variety of Linux distributions or become
+the basis for customization to build reproducible containers for a specific
+purpose.
+
+If you wish to contribute a definition file, please send a pull request and
+contribute it to the examples/contribs/ directory with the format being
+hyphen ('-') delimited of the following format:
+
+    1. Base distribution name and version if applicable (e.g. centos7 or
+        ubuntu_trusty)
+    2. Target nomenclature that describes the container (e.g. tensorflow)
+    3. Any relevant version strings to the application or work-flow
+    4. Always end in .def
+
+An example of this:
+
+    examples/contrib/debian84-tensorflow-0.10.def
