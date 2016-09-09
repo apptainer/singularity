@@ -16,6 +16,7 @@ CONTAINER USAGE COMMANDS:
     shell         Run a Bourne shell within container
     start         Start a namespace daemon process in a container
     stop          Stop the namespace daemon process for a container
+    test          Execute any test code defined within container
 
 CONTAINER MANAGEMENT COMMANDS (requires root):
     bootstrap     Bootstrap a new Singularity image from scratch

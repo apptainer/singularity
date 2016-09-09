@@ -378,20 +378,23 @@ char *filecat(char *path) {
     return(ret);
 }
 
-char * container_basedir(char *containerdir, char *dir) {
-    char * testdir = strdup(dir);
-    char * prevdir = NULL;
-    if ( containerdir == NULL || dir == NULL ) {
-        return(NULL);
-    }
 
-    while ( testdir != NULL && ( strcmp(testdir, "/") != 0 ) ) {
-        if ( is_dir(joinpath(containerdir, testdir)) == 0 ) {
-            return(testdir);
-        }
-        prevdir = strdup(testdir);
+char *basedir(char *dir) {
+    char *testdir = strdup(dir);
+    char *ret = NULL;
+
+    singularity_message(DEBUG, "Obtaining basedir for: %s\n", dir);
+
+    while ( strcmp(testdir, "/") != 0 ) {
+        singularity_message(DEBUG, "Iterating basedir: %s\n", testdir);
+
+        ret = strdup(testdir);
         testdir = dirname(strdup(testdir));
     }
-    return(prevdir);
+
+    return(ret);
 }
+
+
+
 

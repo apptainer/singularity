@@ -40,14 +40,14 @@ void action_run_do(int argc, char **argv) {
 
     if ( is_exec("/.run") == 0 ) {
         if ( execv("/.run", argv) < 0 ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv() /.run, continuing to /bin/sh\n");
+            singularity_message(ERROR, "Failed to execv() /.run, continuing to /bin/sh: %s\n", strerror(errno));
         }
     }
 
     if ( is_exec("/singularity") == 0 ) {
         singularity_message(DEBUG, "Exec'ing /singularity\n");
         if ( execv("/singularity", argv) < 0 ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv() /singularity\n");
+            singularity_message(ERROR, "Failed to execv() /singularity: %s\n", strerror(errno));
             ABORT(255);
         }
     }

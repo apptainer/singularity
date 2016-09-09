@@ -32,24 +32,21 @@
 #include "lib/privilege.h"
 
 
-void action_exec_init(void) {
+void action_test_init(void) {
     return;
 }
 
-void action_exec_do(int argc, char **argv) {
-    singularity_message(VERBOSE, "Exec'ing /.exec\n");
+void action_test_do(int argc, char **argv) {
+    singularity_message(VERBOSE, "Exec'ing /.test\n");
 
-    if ( is_exec("/.exec") == 0 ) {
-        if ( execv("/.exec", argv) < 0 ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv() /.exec: %s\n", strerror(errno));
+    if ( is_exec("/.test") == 0 ) {
+        if ( execl("/bin/sh", "test:", "-e", "-x", "/.test", NULL) < 0 ) { // Flawfinder: ignore
+            singularity_message(ERROR, "Failed to execv() /.test: %s\n", strerror(errno));
         }
+    } else {
+        singularity_message(INFO, "No test code provided in this container\n");
+        exit(0);
     }
-
-    if ( execvp(argv[1], &argv[1]) < 0 ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Failed to execvp() /.exec: %s\n", strerror(errno));
-        ABORT(255);
-    }
-
 
     singularity_message(ERROR, "We should never get here... Grrrrrr!\n");
     ABORT(255);

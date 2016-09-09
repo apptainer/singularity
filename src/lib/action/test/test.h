@@ -18,39 +18,11 @@
  * 
 */
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
 
-#include "util/file.h"
-#include "util/util.h"
-#include "lib/message.h"
-#include "lib/privilege.h"
+#ifndef __ACTION_TEST_H_
+#define __ACTION_TEST_H_
 
+    void action_test_init(void);
+    void action_test_do(int argc, char **argv);
 
-void action_exec_init(void) {
-    return;
-}
-
-void action_exec_do(int argc, char **argv) {
-    singularity_message(VERBOSE, "Exec'ing /.exec\n");
-
-    if ( is_exec("/.exec") == 0 ) {
-        if ( execv("/.exec", argv) < 0 ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv() /.exec: %s\n", strerror(errno));
-        }
-    }
-
-    if ( execvp(argv[1], &argv[1]) < 0 ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Failed to execvp() /.exec: %s\n", strerror(errno));
-        ABORT(255);
-    }
-
-
-    singularity_message(ERROR, "We should never get here... Grrrrrr!\n");
-    ABORT(255);
-}
+#endif /* __ACTION_TEST_H_ */

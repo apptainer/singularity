@@ -224,6 +224,7 @@ AC_CONFIG_FILES([
    src/lib/action/shell/Makefile
    src/lib/action/start/Makefile
    src/lib/action/stop/Makefile
+   src/lib/action/test/Makefile
    src/lib/action/run/Makefile
    src/lib/file/Makefile
    src/lib/file/group/Makefile

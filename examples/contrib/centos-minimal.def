@@ -1,5 +1,3 @@
-#!/bin/bash
-# 
 # Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
 # 
 # "Singularity" Copyright (c) 2016, The Regents of the University of California,
@@ -13,3 +11,7 @@ MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearc
 %post
 echo "Hello from inside the container"
 
+%test
+echo "This is the test code running" | sed -e 's/code //'
+false
+true
