@@ -33,7 +33,7 @@ SINGULARITY_localstatedir="$localstatedir"
 SINGULARITY_PATH="$bindir"
 
 
-ALL_COMMANDS="exec run shell start stop bootstrap copy create expand export import mount"
+ALL_COMMANDS="exec run shell start stop test bootstrap copy create expand export import mount"
 
 if [ ! -f "autogen.sh" ]; then
     /bin/echo "ERROR: Run this from the singularity source root"
