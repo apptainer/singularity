@@ -26,7 +26,6 @@ libexecdir="@libexecdir@"
 sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 bindir="@bindir@"
-libdir="@libdir@"
 
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
@@ -70,8 +69,7 @@ STARTDIR=`pwd`
 TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
 CONTAINER="container.img"
 CONTAINERDIR="container_dir"
-LD_LIBRARY_PATH="$libdir:$LD_LIBRARY_PATH"
-export MESSAGELEVEL LD_LIBRARY_PATH
+export MESSAGELEVEL
 
 /bin/echo "Gaining/checking sudo access..."
 sudo true
@@ -80,7 +78,6 @@ sudo true
 
 /bin/echo
 /bin/echo "SINGULARITY_TMPDIR=$TEMPDIR"
-/bin/echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 /bin/echo
 
 /bin/echo "Creating temp working space at: $TEMPDIR"

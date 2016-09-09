@@ -13,6 +13,8 @@ before_install:
   - sudo apt-get install flawfinder
   # necessary ATM. See https://github.com/gmkurtzer/singularity/pull/140
   - sudo apt-get install yum
+  # echo "/usr/local/lib" >> /etc/ld.so.conf.d/usrlocal.conf
+  - ldconfig /usr/local/lib
 
 install:
   - ./autogen.sh
