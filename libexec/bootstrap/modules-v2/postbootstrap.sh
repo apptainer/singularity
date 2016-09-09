@@ -181,6 +181,22 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
         fi
     fi
 
+    ### RUN TEST
+    if singularity_section_exists "test" "$SINGULARITY_BUILDDEF"; then
+        if [ "$UID" == "0" ]; then
+            if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+                ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
+                singularity_section_get "test" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
+
+            else
+                message ERROR "Could not run test scriptlet, /bin/sh not found in container\n"
+                exit 255
+            fi
+        else
+            message 1 "Not running test scriptlet, not root user\n"
+        fi
+    fi
+
     > "$SINGULARITY_ROOTFS/etc/hosts"
     > "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
