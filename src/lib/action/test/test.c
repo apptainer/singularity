@@ -45,7 +45,7 @@ void action_test_do(int argc, char **argv) {
         }
     } else {
         singularity_message(INFO, "No test code provided in this container\n");
-        return;
+        exit(0);
     }
 
     singularity_message(ERROR, "We should never get here... Grrrrrr!\n");
