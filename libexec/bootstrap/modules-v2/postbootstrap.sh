@@ -186,8 +186,13 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
         if [ "$UID" == "0" ]; then
             if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
                 ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
-                singularity_section_get "test" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
+                echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
+                echo "" >> "$SINGULARITY_ROOTFS/.test"
+                singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
 
+                chmod 0755 "$SINGULARITY_ROOTFS/.test"
+
+                chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
             else
                 message ERROR "Could not run test scriptlet, /bin/sh not found in container\n"
                 exit 255
