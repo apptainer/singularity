@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+# Copyright (c) 2015-2016, Maciej Sieczka, Gregory M. Kurtzer. All rights
+# reserved.
+#
+# "Singularity" Copyright (c) 2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+
+# Minimal installation process is defined in
+# libexec/bootstrap/modules-v2/dist-arch.sh. A couple extra actions are called
+# from here in `%post' section. Adjust them as needed.
+# https://wiki.archlinux.org/index.php/Installation_Guide may come in handy.
+
+OSType: arch
+
+%runscript
+    echo "This is what happens when you run the container..."
+
+%post
+echo "Hello from inside the container"
+
+# Set time zone. Use whatever you prefer instead of UTC.
+ln -s /usr/share/zoneinfo/UTC /etc/localtime
+
+# Set locale. Use whatever you prefer instead of en_US.
+echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
+# Add more locales as needed, eg:
+# echo 'pl_PL.UTF-8 UTF-8' >> /etc/locale.gen
+locale-gen
+echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+# Mind that Singularity's shell will use host's locale no matter what
+# anyway, as of version 2.1.2. This may change in a future release.
+
+# Set the package mirror server(s). This is only for the output image's
+# mirrorlist. `pacstrap' can only use your hosts's package mirrors.
+echo 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch' > /etc/pacman.d/mirrorlist
+# Add any number of fail-over servers, eg:
+echo 'Server = https://archlinux.honkgong.info/$repo/os/$arch' >> /etc/pacman.d/mirrorlist
+
+# I need VIM and Bash completion. Specify your extra packages as needed.
+echo "Hello from inside the container #2"
+pacman -Sy vim bash-completion
+echo "Hello from inside the container #3"
+# Remove the packages downloaded to image's Pacman cache dir.
+echo "Hello from inside the container #4"
+paccache -r -k0
+echo "Hello from inside the container #5"

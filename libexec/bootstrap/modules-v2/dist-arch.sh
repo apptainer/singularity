@@ -35,20 +35,32 @@ else
     exit 1
 fi
 
+if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
+    message ERROR "Singularity root file system not defined.\n"
+    ABORT 255
+fi
+
+if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
+    message ERROR "Singularity build definition file not defined.\n"
+    ABORT 1
+fi
+
+########## BEGIN BOOTSTRAP SCRIPT ##########
+
 if ! PACSTRAP=`singularity_which pacstrap`; then
     message ERROR "\`pacstrap' is not in PATH. You can install it with \`pacman -S arch-install-scripts'.\n"
-    exit 1
+    ABORT 1
 fi
 
 if ! WGET=`singularity_which wget`; then
     message ERROR "\`wget' is not in PATH. You can install it with \`pacman -S wget'.\n"
-    exit 1
+    ABORT 1
 fi
 
 ARCHITECTURE="`uname -m`"
 if [ "$ARCHITECTURE" != 'x86_64' -a "$ARCHITECTURE" != 'i686' ]; then
     message ERROR "Architecture \`$ARCHITECTURE' is not supported."
-    exit 1
+    ABORT 1
 fi
 
 PACMAN_CONF_URL="https://git.archlinux.org/svntogit/packages.git/plain/trunk/pacman.conf.${ARCHITECTURE}?h=packages/pacman"
@@ -65,53 +77,34 @@ BASE_TO_INST=`pacman -Sgq base | grep -xv $BASE_TO_SKIP | tr '\n' ' '`
 # TODO: Try choosing fastest mirror(s) with rankmirrors?
 # https://wiki.archlinux.org/index.php/Mirrors#List_by_speed
 
-Bootstrap() {
-    PACMAN_CONF="/tmp/pacman.conf.$$"
-    # TODO: Use mktemp instead?
-    if ! eval "$WGET" --no-verbose -O "$PACMAN_CONF" "$PACMAN_CONF_URL"; then
-        message ERROR "Failed to download \`$PACMAN_CONF_URL' to \`$PACMAN_CONF'.\n"
-        exit 1
-    fi
+PACMAN_CONF="/tmp/pacman.conf.$$"
+# TODO: Use mktemp instead?
+if ! eval "'$WGET' --no-verbose -O '$PACMAN_CONF' '$PACMAN_CONF_URL'"; then
+    message ERROR "Failed to download \`$PACMAN_CONF_URL' to \`$PACMAN_CONF'.\n"
+    ABORT 255
+fi
 
-    # In addition to selected `base' packages `haveged' has to be installed.
-    # It's required to generate enough entropy for Pacman package signing
-    # setup without having to wait for ages until entropy accumulates. See
-    # https://wiki.archlinux.org/index.php/Install_from_Existing_Linux,
-    # https://wiki.archlinux.org/index.php/Pacman/Package_signing.
-    if ! eval "'$PACSTRAP' -C '$PACMAN_CONF' -c -d -G -M '$SINGULARITY_ROOTFS' haveged $BASE_TO_INST"; then
-        rm -f "$PACMAN_CONF"
-        message ERROR "\`$PACSTRAP' failed.\n"
-        exit 1
-    fi
-
-    # Pacman package signing setup.
-    if ! eval "arch-chroot '$SINGULARITY_ROOTFS' /bin/sh -c 'haveged -w 1024; pacman-key --init; pacman-key --populate archlinux'"; then
-        rm -f "$PACMAN_CONF"
-        message ERROR "Pacman package signing setup failed.\n"
-        return 1
-    fi
-
-    __mountproc
-    __mountsys
-    __mountdev
-
-    return 0
-}
-
-InstallPkgs() {
-    if ! __runcmd pacman -S --noconfirm "$@"; then
-        return 1
-    fi
-
-    return 0
-}
-
-Cleanup() {
-    if ! __runcmd pacman -Rs --noconfirm haveged; then
-        return 1
-    fi
-
+# In addition to selected `base' packages `haveged' has to be installed. It's
+# required to generate enough entropy for Pacman package signing setup without
+# having to wait for ages until entropy accumulates. See
+# https://wiki.archlinux.org/index.php/Install_from_Existing_Linux,
+# https://wiki.archlinux.org/index.php/Pacman/Package_signing.
+if ! eval "'$PACSTRAP' -C '$PACMAN_CONF' -c -d -G -M '$SINGULARITY_ROOTFS' haveged $BASE_TO_INST"; then
     rm -f "$PACMAN_CONF"
+    message ERROR "\`$PACSTRAP' failed.\n"
+    ABORT 255
+fi
 
-    return 0
-}
+rm -f "$PACMAN_CONF"
+
+# Pacman package signing setup.
+if ! eval "arch-chroot '$SINGULARITY_ROOTFS' /bin/sh -c 'haveged -w 1024; pacman-key --init; pacman-key --populate archlinux'"; then
+    message ERROR "Pacman package signing setup failed.\n"
+    ABORT 255
+fi
+
+# Cleanup.
+if ! eval "arch-chroot '$SINGULARITY_ROOTFS' pacman -Rs --noconfirm haveged"; then
+    message ERROR "Bootstrap packages cleanup failed.\n"
+    ABORT 255
+fi
