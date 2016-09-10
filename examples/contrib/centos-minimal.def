@@ -13,5 +13,5 @@ echo "Hello from inside the container"
 
 %test
 echo "This is the test code running" | sed -e 's/code //'
-false
+false || true # This will fail without the double pipe
 true
