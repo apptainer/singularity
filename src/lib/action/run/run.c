@@ -49,7 +49,7 @@ void action_run_do(int argc, char **argv) {
             ABORT(255);
         }
     } else {
-        singularity_message(ERROR, "No run driver found inside container\n";
+        singularity_message(ERROR, "No run driver found inside container\n");
         ABORT(255);
     }
 
