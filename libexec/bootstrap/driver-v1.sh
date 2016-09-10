@@ -136,25 +136,14 @@ InstallFile() {
 }
 
 PreSetup() {
-    for i in $DIRS; do
-        if [ ! -d "$SINGULARITY_ROOTFS/$i" ]; then
-            mkdir -p "$SINGULARITY_ROOTFS/$i"
-        fi
-    done
 
-    for i in $TMP_REAL_FILES; do
-        if [ ! -e "$SINGULARITY_ROOTFS/$i" ]; then
-            cp "$i" "$SINGULARITY_ROOTFS/$i"
-        fi
-    done
+    install -d -m 0755 "$SINGULARITY_ROOTFS"
+    install -d -m 0755 "$SINGULARITY_ROOTFS/dev"
 
-    for i in $DEVS; do
-        if [ ! -e "$SINGULARITY_ROOTFS/$i" ]; then
-            if ! cp -a "$i" "$SINGULARITY_ROOTFS/$i" >/dev/null 2>&1; then
-                message WARNING "Could not create: $i\n"
-            fi
-        fi
-    done
+    cp -a /dev/null         "$SINGULARITY_ROOTFS/dev/null"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/null"
+    cp -a /dev/zero         "$SINGULARITY_ROOTFS/dev/zero"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/zero"
+    cp -a /dev/random       "$SINGULARITY_ROOTFS/dev/random"    2>/dev/null || > "$SINGULARITY_ROOTFS/dev/random"
+    cp -a /dev/urandom      "$SINGULARITY_ROOTFS/dev/urandom"   2>/dev/null || > "$SINGULARITY_ROOTFS/dev/urandom"
 
     if [ ! -f "$SINGULARITY_ROOTFS/environment" ]; then
         echo '# Define any environment init code here' > "$SINGULARITY_ROOTFS/environment"
@@ -199,6 +188,17 @@ RunCmd() {
 
 
 Finalize() {
+
+    # Make sure directories have sane permissions and create if necessary
+    install -d -m 0755 "$SINGULARITY_ROOTFS/bin"
+    install -d -m 0755 "$SINGULARITY_ROOTFS/home"
+    install -d -m 0755 "$SINGULARITY_ROOTFS/etc"
+    install -d -m 0750 "$SINGULARITY_ROOTFS/root"
+    install -d -m 0755 "$SINGULARITY_ROOTFS/proc"
+    install -d -m 0755 "$SINGULARITY_ROOTFS/sys"
+    install -d -m 1777 "$SINGULARITY_ROOTFS/tmp"
+    install -d -m 1777 "$SINGULARITY_ROOTFS/var/tmp"
+
     for i in $EMPTY_FILES; do
         if [ ! -f "$SINGULARITY_ROOTFS/$i" ]; then
             DIRNAME=`dirname "$i"`
