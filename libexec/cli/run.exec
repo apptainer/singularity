@@ -115,8 +115,8 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     exit 0
 fi
 
-if [ -x "$SINGULARITY_libexecdir/singularity/sexec" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
+if [ -x "$SINGULARITY_libexecdir/singularity/sexec-driver.sh" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/sexec-driver.sh" "$@" <&0
 else
     message ERROR "Could not locate the Singularity Exec module: $SEXEC\n"
     exit 1

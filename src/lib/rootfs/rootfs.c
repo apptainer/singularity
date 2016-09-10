@@ -41,8 +41,7 @@
 
 #define ROOTFS_IMAGE    1
 #define ROOTFS_DIR      2
-#define ROOTFS_TGZ      3
-#define ROOTFS_SQUASHFS 4
+#define ROOTFS_SQUASHFS 3
 
 #define ROOTFS_SOURCE   "/source"
 #define OVERLAY_MOUNT   "/overlay"
@@ -88,16 +87,12 @@ int singularity_rootfs_init(char *source) {
 
     if ( is_file(source) == 0 ) {
         int len = strlength(source, PATH_MAX);
-        if ( strcmp(&source[len - 4], ".img") == 0 ) {
-            module = ROOTFS_IMAGE;
-            return(rootfs_image_init(source, joinpath(mount_point, ROOTFS_SOURCE)));
-        } else if ( strcmp(&source[len - 4], ".tgz") == 0 ) {
-            singularity_message(ERROR, "TarGZip support is still in progress\n");
-            module = ROOTFS_TGZ;
-//            return(rootfs_tgz_init(source, joinpath(mount_point, ROOTFS_SOURCE)));
-        } else if ( strcmp(&source[len - 5], ".sqsh") == 0 ) {
+        if ( strcmp(&source[len - 5], ".sqsh") == 0 ) {
             module = ROOTFS_SQUASHFS;
             return(rootfs_squashfs_init(source, joinpath(mount_point, ROOTFS_SOURCE)));
+        } else { // Assume it is a standard Singularity image
+            module = ROOTFS_IMAGE;
+            return(rootfs_image_init(source, joinpath(mount_point, ROOTFS_SOURCE)));
         }
     } else if ( is_dir(source) == 0 ) {
         module = ROOTFS_DIR;
@@ -169,11 +164,6 @@ int singularity_rootfs_mount(void) {
             singularity_message(ERROR, "Failed mounting directory, aborting...\n");
             ABORT(255);
         }
-    } else if ( module == ROOTFS_TGZ ) {
-//        if ( rootfs_tgz_mount() < 0 ) {
-            singularity_message(ERROR, "Failed mounting TarGZip/directory, aborting...\n");
-            ABORT(255);
-//        }
     } else if ( module == ROOTFS_SQUASHFS ) {
         if ( rootfs_squashfs_mount() < 0 ) {
             singularity_message(ERROR, "Failed mounting SquashFS, aborting...\n");
