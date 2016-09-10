@@ -3,4 +3,5 @@ Features:
 
 Fixes:
     * Go over singularity.conf and finish adding features back in
-
+    * Root's home directory is always present in container, so home.c doesn't mount it
+        * Perhaps solve with a method to check /proc/mounts for things mounted?
