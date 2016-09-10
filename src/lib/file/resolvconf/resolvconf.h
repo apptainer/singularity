@@ -18,31 +18,10 @@
  * 
 */
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
 
-#include "util/file.h"
-#include "util/util.h"
-#include "lib/message.h"
-#include "lib/privilege.h"
-#include "passwd/passwd.h"
-#include "group/group.h"
-#include "resolvconf/resolvconf.h"
+#ifndef __SINGULARITY_FILE_RESOLVCONF_H_
+#define __SINGULARITY_FILE_RESOLVCONF_H_
 
+    extern int singularity_file_resolvconf(void);
 
-
-int singularity_file(void) {
-    int retval = 0;
-
-    retval += singularity_file_passwd();
-    retval += singularity_file_group();
-    retval += singularity_file_resolvconf();
-
-    return(0);
-}
-
+#endif /* __SINGULARITY_FILE_RESOLVCONF_H_ */

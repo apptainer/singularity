@@ -23,26 +23,35 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <grp.h>
+#include <pwd.h>
+
 
 #include "util/file.h"
 #include "util/util.h"
+#include "lib/config_parser.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
-#include "passwd/passwd.h"
-#include "group/group.h"
-#include "resolvconf/resolvconf.h"
+#include "lib/sessiondir.h"
+#include "lib/rootfs/rootfs.h"
+#include "lib/file/file-bind.h"
 
 
+int singularity_file_resolvconf(void) {
+    char *file = "/etc/resolv.conf";
 
-int singularity_file(void) {
-    int retval = 0;
+    singularity_message(DEBUG, "Checking configuration option\n");
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("config resolv_conf", 1) <= 0 ) {
+        singularity_message(VERBOSE, "Skipping bind of the host's %s\n", file);
+        return(0);
+    }
 
-    retval += singularity_file_passwd();
-    retval += singularity_file_group();
-    retval += singularity_file_resolvconf();
+    container_file_bind(file, file);
 
     return(0);
 }
-

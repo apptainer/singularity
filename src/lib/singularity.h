@@ -106,6 +106,7 @@
     extern int singularity_file(void);
     extern int singularity_file_passwd(void);
     extern int singularity_file_group(void);
+    extern int singularity_file_resolvconf(void);
 
 
     extern void singularity_sessiondir_init(char *file);

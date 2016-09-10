@@ -71,7 +71,7 @@ int singularity_mount_home(void) {
 
     // If home directory is present, assume it is already mounted!
     if ( is_dir(joinpath(container_dir, homedir)) == 0 ) {
-        singularity_message(VERBOSE, "Not mounting home directory, it is already present in container.\n");
+        singularity_message(INFO, "Not mounting home directory, it is already present in container.\n");
         return(0);
     }
 
