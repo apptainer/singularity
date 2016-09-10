@@ -120,7 +120,7 @@ cat > "$SINGULARITY_ROOTFS/.run" << EOF
 if test -x /singularity; then
     exec /singularity "\$@"
 else
-    echo "No runscript found, executing /bin/sh"
+    echo "No Singularity runscript found, executing /bin/sh"
     exec /bin/sh "\$@"
 fi
 EOF
@@ -129,11 +129,11 @@ chmod 0755 "$SINGULARITY_ROOTFS/.run"
 
 if [ -f "$SINGULARITY_BUILDDEF" ]; then
     ### CREATE RUNSCRIPT
-    singularity_section_get "runscript" "$SINGULARITY_BUILDDEF" > "$SINGULARITY_ROOTFS/runscript"
-    if [ -s "$SINGULARITY_ROOTFS/runscript" ]; then
-        chmod 0755 "$SINGULARITY_ROOTFS/runscript"
+    singularity_section_get "runscript" "$SINGULARITY_BUILDDEF" > "$SINGULARITY_ROOTFS/singularity"
+    if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
+        chmod 0755 "$SINGULARITY_ROOTFS/singularity"
     else
-        rm -f "$SINGULARITY_ROOTFS/runscript"
+        rm -f "$SINGULARITY_ROOTFS/singularity"
     fi
 
     #TODO: This needs lots of love...
