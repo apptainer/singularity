@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Copyright (c) 2015-2016, Maciej Sieczka, Gregory M. Kurtzer. All rights
-# reserved.
+# Copyright (c) 2016, Maciej Sieczka. All rights reserved
+#
+# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
 #
 # “Singularity” Copyright (c) 2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any

@@ -1,4 +1,4 @@
-# By Maciej Sieczka, 2016.
+# Copyright (c) 2016, Maciej Sieczka. All rights reserved
 #
 # Minimal installation process is defined in mods/linux_build_arch.smod. A
 # couple extra actions are called from here using RunCmd and InstallPkgs

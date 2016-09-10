@@ -1,15 +1,15 @@
-#!/bin/bash
+# Copyright (c) 2016, Maciej Sieczka. All rights reserved
 #
-# Copyright (c) 2015-2016, Maciej Sieczka, Gregory M. Kurtzer. All rights
-# reserved.
+# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
 #
 # "Singularity" Copyright (c) 2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
+#
 
 # Minimal installation process is defined in
 # libexec/bootstrap/modules-v2/dist-arch.sh. A couple extra actions are called
-# from here in `%post' section. Adjust them as needed.
+# from here in '%post' section. Adjust them as needed.
 # https://wiki.archlinux.org/index.php/Installation_Guide may come in handy.
 
 OSType: arch
