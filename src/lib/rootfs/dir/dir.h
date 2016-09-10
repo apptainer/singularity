@@ -22,7 +22,7 @@
 #ifndef __ROOTFS_DIR_H_
 #define __ROOTFS_DIR_H_
 
-int rootfs_dir_init(char *source, char *mount_point);
-int rootfs_dir_mount(void);
+    int rootfs_dir_init(char *source, char *mount_point);
+    int rootfs_dir_mount(void);
 
 #endif /* __ROOTFS_DIR_H */

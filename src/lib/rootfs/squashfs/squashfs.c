@@ -45,15 +45,19 @@
 static FILE *image_fp = NULL;
 static char *mount_point = NULL;
 static char *loop_dev = NULL;
-static int read_write = 0;
 
 
-int rootfs_image_init(char *source, char *mount_dir) {
+int rootfs_squashfs_init(char *source, char *mount_dir) {
     singularity_message(DEBUG, "Inializing container rootfs image subsystem\n");
 
     if ( image_fp != NULL ) {
         singularity_message(WARNING, "Called image_open, but image already open!\n");
         return(1);
+    }
+
+    if ( ( getuid() != 0 ) && ( is_suid("/proc/self/exe") < 0 ) ) {
+        singularity_message(ERROR, "Singularity must be executed in privileged mode to use squashfs\n");
+        ABORT(255);
     }
 
     if ( is_file(source) == 0 ) {
@@ -65,33 +69,8 @@ int rootfs_image_init(char *source, char *mount_dir) {
 
     mount_point = strdup(mount_dir);
 
-    if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
-        if ( ( image_fp = fopen(source, "r+") ) == NULL ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
-            ABORT(255);
-        }
-
-        if ( envar_defined("SINGULARITY_NOIMAGELOCK") == TRUE ) {
-            singularity_message(DEBUG, "Obtaining exclusive write lock on image\n");
-            if ( flock(fileno(image_fp), LOCK_EX | LOCK_NB) < 0 ) {
-                singularity_message(WARNING, "Could not obtain an exclusive lock on image %s: %s\n", source, strerror(errno));
-            }
-        }
-        read_write = 1;
-    } else {
-        if ( ( image_fp = fopen(source, "r") ) == NULL ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
-            ABORT(255);
-        }
-    }
-
-    if ( singularity_image_check(image_fp) < 0 ) {
-        singularity_message(ERROR, "File is not a valid Singularity image, aborting...\n");
-        ABORT(255);
-    }
-
-    if ( ( getuid() != 0 ) && ( is_suid("/proc/self/exe") < 0 ) ) {
-        singularity_message(ERROR, "Singularity must be executed in privileged mode to use images\n");
+    if ( ( image_fp = fopen(source, "r") ) == NULL ) { // Flawfinder: ignore
+        singularity_message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
         ABORT(255);
     }
 
@@ -99,7 +78,7 @@ int rootfs_image_init(char *source, char *mount_dir) {
 }
 
 
-int rootfs_image_mount(void) {
+int rootfs_squashfs_mount(void) {
 
     if ( mount_point == NULL ) {
         singularity_message(ERROR, "Called image_mount but image_init() hasn't been called\n");
@@ -123,23 +102,13 @@ int rootfs_image_mount(void) {
     }
 
 
-    if ( read_write > 0 ) {
-        singularity_message(VERBOSE, "Mounting image in read/write\n");
-        singularity_priv_escalate();
-        if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
-            singularity_message(ERROR, "Failed to mount image in (read/write): %s\n", strerror(errno));
-            ABORT(255);
-        }
-        singularity_priv_drop();
-    } else {
-        singularity_priv_escalate();
-        singularity_message(VERBOSE, "Mounting image in read/only\n");
-        if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-            singularity_message(ERROR, "Failed to mount image in (read only): %s\n", strerror(errno));
-            ABORT(255);
-        }
-        singularity_priv_drop();
+    singularity_priv_escalate();
+    singularity_message(VERBOSE, "Mounting squashfs image\n");
+    if ( mount(loop_dev, mount_point, "squashfs", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+        singularity_message(ERROR, "Failed to mount squashfs image in (read only): %s\n", strerror(errno));
+        ABORT(255);
     }
+    singularity_priv_drop();
 
 
     return(0);

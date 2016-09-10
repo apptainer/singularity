@@ -219,6 +219,7 @@ AC_CONFIG_FILES([
    src/lib/rootfs/Makefile
    src/lib/rootfs/image/Makefile
    src/lib/rootfs/dir/Makefile
+   src/lib/rootfs/squashfs/Makefile
    src/lib/action/Makefile
    src/lib/action/exec/Makefile
    src/lib/action/shell/Makefile

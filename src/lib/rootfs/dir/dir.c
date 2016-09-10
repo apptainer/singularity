@@ -31,7 +31,6 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-#include "dir.h"
 #include "lib/privilege.h"
 #include "lib/ns/ns.h"
 

@@ -19,10 +19,10 @@
 */
 
 
-#ifndef __ROOTFS_IMAGE_H_
-#define __ROOTFS_IMAGE_H_
+#ifndef __ROOTFS_SQUASHFS_H_
+#define __ROOTFS_SQUASHFS_H_
 
-    int rootfs_image_init(char *source, char *mount_point);
-    int rootfs_image_mount(void);
+    int rootfs_squashfs_init(char *source, char *mount_point);
+    int rootfs_squashfs_mount(void);
 
-#endif /* __ROOTFS_IMAGE_H */
+#endif /* __ROOTFS_SQUASHFS_H_ */
