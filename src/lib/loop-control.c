@@ -68,12 +68,6 @@ char *singularity_loop_bind(FILE *image_fp) {
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Checking image is a Singularity\n");
-    if ( singularity_image_check(image_fp) < 0 ) {
-        singularity_message(ERROR, "File is not a Singularity image!\n");
-        ABORT(255);
-    }
-
     singularity_message(DEBUG, "Requesting exclusive flock() on loop_dev lockfile\n");
     if ( flock(image_loop_file_fd, LOCK_EX | LOCK_NB) < 0 ) {
         char *active_loop_dev;
