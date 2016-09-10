@@ -31,29 +31,20 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
-#include "lib/sessiondir.h"
 #include "lib/singularity.h"
 
 
-int container_file_bind(char *file, char *dest_path) {
-    char *source;
+int container_file_bind(char *source, char *dest_path) {
     char *dest;
     char *containerdir = singularity_rootfs_dir();
-    char *sessiondir = singularity_sessiondir_get();
 
-    singularity_message(DEBUG, "Called file_bind(%s, %s()\n", file, dest_path);
+    singularity_message(DEBUG, "Called file_bind(%s, %s()\n", source, dest_path);
 
     if ( containerdir == NULL ) {
         singularity_message(ERROR, "Failed to obtain container directory\n");
         ABORT(255);
     }
 
-    if ( sessiondir == NULL ) {
-        singularity_message(ERROR, "Failed to obtain session directory\n");
-        ABORT(255);
-    }
-
-    source = joinpath(sessiondir, file);
     dest = joinpath(containerdir, dest_path);
 
     if ( is_file(source) < 0 ) {
