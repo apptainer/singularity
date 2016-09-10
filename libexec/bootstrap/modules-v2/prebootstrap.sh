@@ -34,12 +34,12 @@ else
 fi
 
 if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
-    messge ERROR "Singularity root file system not defined\n"
+    message ERROR "Singularity root file system not defined\n"
     exit 1
 fi
 
 if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    messge ERROR "Singularity build definition file not defined\n"
+    message ERROR "Singularity build definition file not defined\n"
     exit 1
 fi
 

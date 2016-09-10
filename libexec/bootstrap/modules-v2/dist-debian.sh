@@ -34,12 +34,12 @@ else
 fi
 
 if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
-    messge ERROR "Singularity root file system not defined\n"
+    message ERROR "Singularity root file system not defined\n"
     exit 1
 fi
 
 if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    messge ERROR "Singularity build definition file not defined\n"
+    message ERROR "Singularity build definition file not defined\n"
     exit 1
 fi
 
@@ -83,4 +83,3 @@ eval "rm -rf $SINGULARITY_ROOTFS/dev/*"
 if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH '$OSVERSION' '$SINGULARITY_ROOTFS' '$MIRROR'"; then
     ABORT 255
 fi
-
