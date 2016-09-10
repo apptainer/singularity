@@ -33,6 +33,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
+#include "lib/config_parser.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"
@@ -66,6 +67,13 @@ int singularity_file_passwd(void) {
         ABORT(255);
     }
 
+    singularity_message(DEBUG, "Checking configuration option: 'config passwd'\n");
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("config passwd", 1) <= 0 ) {
+        singularity_message(VERBOSE, "Skipping bind of the host's /etc/passwd\n");
+        return(0);
+    }
+
     source_file = joinpath(containerdir, "/etc/passwd");
     tmp_file = joinpath(sessiondir, "/passwd");
 
@@ -96,7 +104,7 @@ int singularity_file_passwd(void) {
     fclose(file_fp);
 
 
-    container_file_bind("passwd", "/etc/passwd");
+    container_file_bind(tmp_file, "/etc/passwd");
 
     return(0);
 }

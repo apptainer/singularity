@@ -33,6 +33,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
+#include "lib/config_parser.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"
@@ -69,6 +70,13 @@ int singularity_file_group(void) {
     if ( sessiondir == NULL ) {
         singularity_message(ERROR, "Failed to obtain session directory\n");
         ABORT(255);
+    }
+
+    singularity_message(DEBUG, "Checking configuration option: 'config group'\n");
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("config group", 1) <= 0 ) {
+        singularity_message(VERBOSE, "Skipping bind of the host's /etc/group\n");
+        return(0);
     }
 
     source_file = joinpath(containerdir, "/etc/group");
@@ -145,7 +153,7 @@ int singularity_file_group(void) {
     fclose(file_fp);
 
 
-    container_file_bind("group", "/etc/group");
+    container_file_bind(tmp_file, "/etc/group");
 
     return(0);
 }
