@@ -81,7 +81,7 @@ int singularity_ns_user_unshare(void) {
         return(0); // Don't fail when host support doesn't exist
     }
 #else
-    singularity_message(VERBOSE3, "Not virtualizing USER namespace: support not compiled in\n");
+    singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
     check_for_suid();
     return(0);
 #endif

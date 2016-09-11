@@ -9,8 +9,10 @@ EXEC OPTIONS:
                         perform (can be called multiple times)
     -c/--contain        This option disables the automatic sharing of writable
                         filesystems on your host (e.g. $HOME and /tmp).
+    -C/--containall     Contain not only fle systems, but also PID and IPC 
     -H/--home <path>    Path to a different home directory to virtualize within
                         the container
+    -i/--ipc            Run container in a new IPC namespace
     -p/--pid            Run container in a new PID namespace
     -u/--user           Try to run completely unprivileged (only works on very
                         new kernels/distros)

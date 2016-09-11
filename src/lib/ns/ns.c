@@ -46,6 +46,7 @@ int singularity_ns_unshare(void) {
     retval += singularity_ns_user_unshare();
     retval += singularity_ns_pid_unshare();
     retval += singularity_ns_mnt_unshare();
+    retval += singularity_ns_ipc_unshare();
 
     return(retval);
 }
@@ -58,9 +59,11 @@ int singularity_ns_join(pid_t attach_pid) {
 #else
     char *nsjoin_pid = (char *)malloc(64);
     char *nsjoin_mnt = (char *)malloc(64);
+    char *nsjoin_ipc = (char *)malloc(64);
 
     snprintf(nsjoin_pid, 64, "/proc/%d/ns/pid", attach_pid); // Flawfinder: ignore
     snprintf(nsjoin_mnt, 64, "/proc/%d/ns/mnt", attach_pid); // Flawfinder: ignore
+    snprintf(nsjoin_ipc, 64, "/proc/%d/ns/ipc", attach_pid); // Flawfinder: ignore
 
     if ( is_file(nsjoin_pid) == 0 ) {
         singularity_message(DEBUG, "Connecting to existing PID namespace\n");
@@ -87,6 +90,20 @@ int singularity_ns_join(pid_t attach_pid) {
 
     } else {
         singularity_message(ERROR, "Could not identify mount namespace: %s\n", nsjoin_mnt);
+        ABORT(255);
+    }
+
+    if ( is_file(nsjoin_ipc) == 0 ) {
+        singularity_message(DEBUG, "Connecting to existing IPC namespace\n");
+        int fd = open(nsjoin_ipc, O_RDONLY); // Flawfinder: ignore
+        if ( setns(fd, CLONE_NEWIPC) < 0 ) {
+            singularity_message(ERROR, "Could not join existing IPC namespace: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        close(fd);
+
+    } else {
+        singularity_message(ERROR, "Could not identify IPC namespace: %s\n", nsjoin_ipc);
         ABORT(255);
     }
 #endif

@@ -42,56 +42,39 @@
 
 static int enabled = -1;
 
-int singularity_ns_pid_enabled(void) {
-    singularity_message(DEBUG, "Checking PID namespace enabled: %d\n", enabled);
+int singularity_ns_ipc_enabled(void) {
+    singularity_message(DEBUG, "Checking IPC namespace enabled: %d\n", enabled);
     return(enabled);
 }
 
-int singularity_ns_pid_unshare(void) {
+int singularity_ns_ipc_unshare(void) {
 
     singularity_config_rewind();
-    if ( singularity_config_get_bool("allow pid ns", 1) <= 0 ) {
-        singularity_message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
+    if ( singularity_config_get_bool("allow ipc ns", 1) <= 0 ) {
+        singularity_message(VERBOSE2, "Not virtualizing IPC namespace by configuration\n");
         return(0);
     }
 
-    if ( envar_defined("SINGULARITY_UNSHARE_PID") == FALSE ) {
-        singularity_message(VERBOSE2, "Not virtualizing PID namespace on user request\n");
+    if ( envar_defined("SINGULARITY_UNSHARE_IPC") == FALSE ) {
+        singularity_message(VERBOSE2, "Not virtualizing IPC namespace on user request\n");
         return(0);
     }
 
-#ifdef NS_CLONE_NEWPID
-    singularity_message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
+#ifdef NS_CLONE_NEWIPC
+    singularity_message(DEBUG, "Using IPC namespace: CLONE_NEWIPC\n");
     singularity_priv_escalate();
-    singularity_message(DEBUG, "Virtualizing PID namespace\n");
-    if ( unshare(CLONE_NEWPID) < 0 ) {
-        singularity_message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+    singularity_message(DEBUG, "Virtualizing IPC namespace\n");
+    if ( unshare(CLONE_NEWIPC) < 0 ) {
+        singularity_message(ERROR, "Could not virtualize IPC namespace: %s\n", strerror(errno));
         ABORT(255);
     }
     singularity_priv_drop();
     enabled = 0;
 
 #else
-#ifdef NS_CLONE_PID
-    singularity_message(DEBUG, "Using PID namespace: CLONE_PID\n");
-    singularity_priv_escalate();
-    singularity_message(DEBUG, "Virtualizing PID namespace\n");
-    if ( unshare(CLONE_NEWPID) < 0 ) {
-        singularity_message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
-        ABORT(255);
-    }
-    singularity_priv_drop();
-    enabled = 0;
-
-#else
-    singularity_message(WARNING, "Skipping PID namespace creation, support not available on host\n");
+    singularity_message(WARNING, "Skipping IPC namespace creation, support not available on host\n");
     return(0);
-
 #endif
-#endif
-
-    // PID namespace requires a fork to activate!
-    singularity_fork_run();
 
     return(0);
 }

@@ -90,16 +90,27 @@ while true; do
             export SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
             shift
         ;;
-        -c|-C|--contain)
+        -c|--contain)
+            shift
+            SINGULARITY_CONTAIN=1
+            export SINGULARITY_CONTAIN
+        ;;
+        -C|--containall|--CONTAIN)
             shift
             SINGULARITY_CONTAIN=1
             SINGULARITY_UNSHARE_PID=1
-            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID
+            SINGULARITY_UNSHARE_IPC=1
+            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC
         ;;
         -p|--pid)
             shift
             SINGULARITY_UNSHARE_PID=1
             export SINGULARITY_UNSHARE_PID
+        ;;
+        -i|--ipc)
+            shift
+            SINGULARITY_UNSHARE_IPC=1
+            export SINGULARITY_UNSHARE_IPC
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"

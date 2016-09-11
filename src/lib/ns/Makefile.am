@@ -1,4 +1,4 @@
-SUBDIRS = mnt pid user
+SUBDIRS = mnt pid user ipc
 
 MAINTAINERCLEANFILES = Makefile.in 
 DISTCLEANFILES = Makefile
@@ -11,7 +11,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libns.la
 
-libns_la_LIBADD = mnt/libnsmnt.la pid/libnspid.la user/libnsuser.la
+libns_la_LIBADD = mnt/libnsmnt.la pid/libnspid.la user/libnsuser.la ipc/libnsipc.la
 libns_la_SOURCES = ns.c
 
 EXTRA_DIST = ns.h

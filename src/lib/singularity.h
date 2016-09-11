@@ -36,6 +36,12 @@
     // Return 0/1 if the namespace has been unshared
     extern int singularity_ns_pid_enabled(void);
 
+    // IPC NAMESPACE
+    // Unshare the IPC namespace (if enabled via configuration file)
+    extern int singularity_ns_ipc_unshare(void);
+    // Return 0/1 if the namespace has been unshared
+    extern int singularity_ns_ipc_enabled(void);
+
     // FS/FILES NAMESPACE
     // Unshare the various mount/files based namespaces
     extern int singularity_ns_mnt_unshare(void);
