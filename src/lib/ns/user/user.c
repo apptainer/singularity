@@ -67,6 +67,12 @@ int singularity_ns_user_unshare(void) {
         return(0);
     }
 
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("allow user ns", 1) <= 0 ) {
+        singularity_message(VERBOSE2, "Not virtualizing USER namespace by configuration\n");
+        return(0);
+    }
+
 #ifdef NS_CLONE_NEWUSER
     singularity_message(DEBUG, "Attempting to virtualize the USER namespace\n");
     if ( unshare(CLONE_NEWUSER) != 0 ) {
