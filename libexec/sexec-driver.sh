@@ -51,6 +51,23 @@ USERID=`id -u`
 HOMEDIR=`getent passwd $USERID | cut -d: -f6`
 
 case "$SINGULARITY_IMAGE" in
+    http://*|https://*)
+        NAME=`basename "$SINGULARITY_IMAGE"`
+        if [ -f "$NAME" ]; then
+            message 2 "Using cached container in current working directory: $NAME\n"
+            SINGULARITY_IMAGE="$NAME"
+        else
+            message 1 "Caching container to current working directory: $NAME\n"
+            if curl -L -k "$SINGULARITY_IMAGE" > "$NAME"; then
+                SINGULARITY_IMAGE="$NAME"
+            else
+                ABORT 255
+            fi
+        fi
+    ;;
+esac
+
+case "$SINGULARITY_IMAGE" in
     *.tgz|*.tar.gz)
         NAME=`basename "$SINGULARITY_IMAGE"`
         TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
@@ -58,6 +75,16 @@ case "$SINGULARITY_IMAGE" in
         if [ ! -d "$CONTAINER_DIR" ]; then
             mkdir -p "$CONTAINER_DIR"
             tar -C "$CONTAINER_DIR" -xzf "$SINGULARITY_IMAGE" 2>/dev/null # this almost always gives permission errors
+        fi
+        SINGULARITY_IMAGE="$CONTAINER_DIR"
+    ;;
+    *.tbz|*.tar.bz)
+        NAME=`basename "$SINGULARITY_IMAGE"`
+        TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
+        CONTAINER_DIR="$HOMEDIR/.singularity/cache/$NAME/$TIMESTAMP/$NAME"
+        if [ ! -d "$CONTAINER_DIR" ]; then
+            mkdir -p "$CONTAINER_DIR"
+            tar -C "$CONTAINER_DIR" -xjf "$SINGULARITY_IMAGE" 2>/dev/null # this almost always gives permission errors
         fi
         SINGULARITY_IMAGE="$CONTAINER_DIR"
     ;;
