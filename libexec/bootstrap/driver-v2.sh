@@ -110,4 +110,5 @@ else
     exit 255
 fi
 
+echo "Done."
 exit 0
