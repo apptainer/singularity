@@ -21,6 +21,11 @@
 
 set -u
 
+if [ -z "${SINGULARITY_libexecdir:-}" ]; then
+    /bin/echo "ERROR: SINGULARITY_libexecdir not defined in environment"
+    exit 2
+fi
+
 if [ -z "${MESSAGELEVEL:-}" ]; then
     /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     MESSAGELEVEL=5
@@ -120,27 +125,17 @@ singularity_section_args() {
 singularity_section_get() {
     SECTION="${1:-}"
     FILE="${2:-}"
-    TOGGLE=""
+    if [ ! -x "$SINGULARITY_libexecdir/singularity/get-section" ]; then
+        message ERROR "Could not locate get-section program\n"
+        exit 255
+    fi
+
     if [ ! -f "$FILE" ]; then
         message ERROR "File not found ($FILE)\n"
         exit 1
     fi
-    if ! grep -q "^%$SECTION\W*" "$FILE"; then
-        return 1
-    fi
-    cat "$FILE" | while read line; do
-        if [ -n "$TOGGLE" ]; then
-            if /bin/echo "$line" | grep -q "^%"; then
-                # we are done...
-                return 0
-            fi
-            /bin/echo "$line"
-        else
-            if /bin/echo "$line" | egrep -i -q -- "^%$SECTION\W*"; then
-                TOGGLE=1
-            fi
-        fi
-    done
+
+    eval "$SINGULARITY_libexecdir/singularity/get-section" "$SECTION" "$FILE"
 
     return 0
 }
