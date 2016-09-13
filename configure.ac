@@ -39,6 +39,10 @@ AM_PROG_CC_C_O
 AC_ENABLE_SHARED
 AC_PROG_LIBTOOL(libtool)
 
+# Setting rpath if necessary
+if test "$libdir" = "\${exec_prefix}/lib"; then
+    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir)"
+fi
 
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE

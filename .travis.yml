@@ -17,7 +17,7 @@ install:
   - ./configure --prefix=/usr/local
   - make
   - sudo make install
-  - sudo ldconfig
+#  - sudo ldconfig
 
 script:
   - make test
