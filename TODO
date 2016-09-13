@@ -1,7 +1,6 @@
-Features:
+2.2:
     * Support additional archive formats
-    * Support image URI's
 
-Fixes:
-    * Root's home directory is always present in container, so home.c doesn't mount it
-        * Perhaps solve with a method to check /proc/mounts for things mounted?
+
+2.3:
+    * Start a process daemon
