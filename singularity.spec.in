@@ -52,6 +52,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bootstrap
 %{_libexecdir}/singularity/cli
 %{_libexecdir}/singularity/helpers
+%{_libexecdir}/singularity/get-section
 %{_libexecdir}/singularity/sexec-driver.sh
 %{_libexecdir}/singularity/sexec
 %{_libexecdir}/singularity/functions
