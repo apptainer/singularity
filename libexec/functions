@@ -277,6 +277,6 @@ parse_opts() {
 
 
 
-if [ "${DEBUG:-}" = "1" ]; then
+if [ "$MESSAGELEVEL" -ge 5 ]; then
     set -x
 fi

@@ -34,11 +34,10 @@ SINGULARITY_localstatedir="$localstatedir"
 
 RETVAL=0
 MESSAGELEVEL=1
-DEBUG=""
 NEW_HOME=""
 CHANGE_HOME="NO"
 
-export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL DEBUG NEW_HOME CHANGE_HOME
+export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL NEW_HOME CHANGE_HOME
 
 # the Modules package always calls 
 unset module
@@ -76,7 +75,6 @@ while true; do
         ;;
         -d|--debug)
             MESSAGELEVEL=5
-            DEBUG=1
             message 4 "enabling debugging\n"
             #set -x
             shift
