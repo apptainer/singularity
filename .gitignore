@@ -28,6 +28,7 @@ missing
 singularity.spec
 test.sh
 
+src/get-section
 src/image-bind
 src/image-create
 src/image-expand
