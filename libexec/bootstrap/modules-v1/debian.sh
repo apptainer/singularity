@@ -73,10 +73,6 @@ Bootstrap() {
         exit 1
     fi
 
-    if ! __runcmd apt-key update; then
-        return 1
-    fi
-
     if ! __runcmd apt-get update; then
         return 1
     fi
