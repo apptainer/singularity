@@ -36,6 +36,7 @@
 #include "lib/config_parser.h"
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
+#include "../mount-util.h"
 
 
 int singularity_mount_home(void) {
@@ -69,9 +70,9 @@ int singularity_mount_home(void) {
     singularity_message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
 
-    // If home directory is present, assume it is already mounted!
-    if ( is_dir(joinpath(container_dir, homedir)) == 0 ) {
-        singularity_message(INFO, "Not mounting home directory, it is already present in container.\n");
+    singularity_message(DEBUG, "Checking if home directory is already mounted: %s\n", homedir);
+    if ( check_mounted(homedir) >= 0 ) {
+        singularity_message(VERBOSE, "Not mounting home directory (already mounted in container): %s\n", homedir);
         return(0);
     }
 

@@ -35,7 +35,7 @@
 #include "lib/config_parser.h"
 #include "lib/rootfs/rootfs.h"
 #include "lib/ns/ns.h"
-
+#include "../mount-util.h"
 
 
 void singularity_mount_userbinds(void) {
@@ -67,6 +67,12 @@ void singularity_mount_userbinds(void) {
             }
 
             singularity_message(DEBUG, "Found bind: %s -> container:%s\n", source, dest);
+
+            singularity_message(DEBUG, "Checking if bind point is already mounted: %s\n", dest);
+            if ( check_mounted(dest) >= 0 ) {
+                singularity_message(WARNING, "Not mounting requested bind point (already mounted in container): %s\n", dest);
+                continue;
+            }
 
             if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
                 if ( singularity_rootfs_overlay_enabled() > 0 ) {

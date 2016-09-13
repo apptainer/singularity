@@ -37,10 +37,10 @@
 #include "lib/config_parser.h"
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
+#include "../mount-util.h"
 
 
 #define MAX_LINE_LEN 4096
-
 
 
 int singularity_mount_hostfs(void) {
@@ -135,6 +135,11 @@ int singularity_mount_hostfs(void) {
             continue;
         }
 
+        singularity_message(DEBUG, "Checking if host file system is already mounted: %s\n", mountpoint);
+        if ( check_mounted(mountpoint) >= 0 ) {
+            singularity_message(VERBOSE, "Not mounting host FS (already mounted in container): %s\n", mountpoint);
+            continue;
+        }
 
         if ( ( is_dir(mountpoint) == 0 ) && ( is_dir(joinpath(container_dir, mountpoint)) < 0 ) ) {
             if ( singularity_rootfs_overlay_enabled() > 0 ) {

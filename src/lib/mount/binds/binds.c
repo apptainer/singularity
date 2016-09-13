@@ -34,6 +34,7 @@
 #include "lib/config_parser.h"
 #include "lib/rootfs/rootfs.h"
 #include "lib/ns/ns.h"
+#include "../mount-util.h"
 
 int singularity_mount_binds(void) {
     char *tmp_config_string;
@@ -63,6 +64,12 @@ int singularity_mount_binds(void) {
 
         if ( ( is_file(source) < 0 ) && ( is_dir(source) < 0 ) ) {
             singularity_message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+            continue;
+        }
+
+        singularity_message(DEBUG, "Checking if bind point is already mounted: %s\n", dest);
+        if ( check_mounted(dest) >= 0 ) {
+            singularity_message(VERBOSE, "Not mounting bind point (already mounted): %s\n", dest);
             continue;
         }
 

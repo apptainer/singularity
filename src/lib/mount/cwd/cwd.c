@@ -36,7 +36,7 @@
 #include "lib/config_parser.h"
 #include "lib/rootfs/rootfs.h"
 #include "lib/ns/ns.h"
-
+#include "../mount-util.h"
 
 
 void singularity_mount_cwd(void) {
@@ -59,15 +59,15 @@ void singularity_mount_cwd(void) {
         return;
     }
 
-    singularity_message(DEBUG, "Checking if current directory already exists in container\n");
-    if ( is_dir(joinpath(container_dir, cwd_path)) == 0 ) {
-        singularity_message(VERBOSE, "Not mounting current directory: alredy exists in container\n");
-        return;
-    }
-
     singularity_message(DEBUG, "Checking for contain option\n");
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         singularity_message(VERBOSE, "Not mounting current direcotry: contain was requested\n");
+        return;
+    }
+
+    singularity_message(DEBUG, "Checking if CWD is already mounted: %s\n", cwd_path);
+    if ( check_mounted(cwd_path) >= 0 ) {
+        singularity_message(VERBOSE, "Not mounting CWD (already mounted in container): %s\n", cwd_path);
         return;
     }
 
