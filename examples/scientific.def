@@ -11,11 +11,11 @@ Include: yum
 
 
 %runscript
-echo "This is what happens when you run the container..."
+    echo "This is what happens when you run the container..."
 
 
 %post
-echo "Hello from inside the container"
-yum -y install vim-minimal
+    echo "Hello from inside the container"
+    yum -y install vim-minimal
 
 

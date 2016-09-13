@@ -9,9 +9,9 @@ OSVersion: 7
 MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
 
 %post
-echo "Hello from inside the container"
+    echo "Hello from inside the container"
 
 %test
-echo "This is the test code running" | sed -e 's/code //'
-false || true # This will fail without the double pipe
-true
+    echo "This is the test code running" | sed -e 's/code //'
+    false || true # This will fail without the double pipe
+    true

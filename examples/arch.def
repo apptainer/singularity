@@ -15,31 +15,31 @@
 OSType: arch
 
 %runscript
-echo "This is what happens when you run the container..."
+    echo "This is what happens when you run the container..."
 
 %post
-echo "Hello from inside the container"
+    echo "Hello from inside the container"
 
-# Set time zone. Use whatever you prefer instead of UTC.
-ln -s /usr/share/zoneinfo/UTC /etc/localtime
+    # Set time zone. Use whatever you prefer instead of UTC.
+    ln -s /usr/share/zoneinfo/UTC /etc/localtime
 
-# Set locale. Use whatever you prefer instead of en_US.
-echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
-# Add more locales as needed, eg:
-# echo 'pl_PL.UTF-8 UTF-8' >> /etc/locale.gen
-locale-gen
-echo 'LANG=en_US.UTF-8' > /etc/locale.conf
-# Mind that Singularity's shell will use host's locale no matter what
-# anyway, as of version 2.1.2. This may change in a future release.
+    # Set locale. Use whatever you prefer instead of en_US.
+    echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
+    # Add more locales as needed, eg:
+    # echo 'pl_PL.UTF-8 UTF-8' >> /etc/locale.gen
+    locale-gen
+    echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+    # Mind that Singularity's shell will use host's locale no matter what
+    # anyway, as of version 2.1.2. This may change in a future release.
 
-# Set the package mirror server(s). This is only for the output image's
-# mirrorlist. `pacstrap' can only use your hosts's package mirrors.
-echo 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch' > /etc/pacman.d/mirrorlist
-# Add any number of fail-over servers, eg:
-echo 'Server = https://archlinux.honkgong.info/$repo/os/$arch' >> /etc/pacman.d/mirrorlist
+    # Set the package mirror server(s). This is only for the output image's
+    # mirrorlist. `pacstrap' can only use your hosts's package mirrors.
+    echo 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch' > /etc/pacman.d/mirrorlist
+    # Add any number of fail-over servers, eg:
+    echo 'Server = https://archlinux.honkgong.info/$repo/os/$arch' >> /etc/pacman.d/mirrorlist
 
-# I need VIM and Bash completion. Specify your extra packages as needed.
-pacman -Sy --noconfirm vim bash-completion
+    # I need VIM and Bash completion. Specify your extra packages as needed.
+    pacman -Sy --noconfirm vim bash-completion
 
-# Remove the packages downloaded to image's Pacman cache dir.
-paccache -r -k0
+    # Remove the packages downloaded to image's Pacman cache dir.
+    paccache -r -k0

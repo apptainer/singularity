@@ -9,5 +9,5 @@ MirrorURL: https://www.busybox.net/downloads/binaries/busybox-x86_64
 
 
 %post
-echo "Hello from inside the container"
+    echo "Hello from inside the container"
 
