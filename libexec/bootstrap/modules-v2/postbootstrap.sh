@@ -82,9 +82,14 @@ fi
 chmod 0644 "$SINGULARITY_ROOTFS/environment"
 
 
+if [ -x "$SINGULARITY_ROOTFS/bin/bash" ]; then
+    HELPER_SHELL="/bin/bash"
+else
+    HELPER_SHELL="/bin/sh"
+fi
 
 cat > "$SINGULARITY_ROOTFS/.shell" << EOF
-#!/bin/sh
+#!$HELPER_SHELL
 . /environment
 if test -n "$\SHELL" -a -x "\$SHELL"; then
     exec "\$SHELL" "\$@"
@@ -106,7 +111,7 @@ chmod 0755 "$SINGULARITY_ROOTFS/.shell"
 
 
 cat > "$SINGULARITY_ROOTFS/.exec" << EOF
-#!/bin/sh
+#!$HELPER_SHELL
 . /environment
 exec "\$@"
 EOF
@@ -115,7 +120,7 @@ chmod 0755 "$SINGULARITY_ROOTFS/.exec"
 
 
 cat > "$SINGULARITY_ROOTFS/.run" << EOF
-#!/bin/sh
+#!$HELPER_SHELL
 . /environment
 if test -x /singularity; then
     exec /singularity "\$@"
@@ -207,5 +212,3 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
 
 fi
 
-
-echo 0
