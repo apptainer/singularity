@@ -90,14 +90,3 @@ case "$SINGULARITY_IMAGE" in
     ;;
 esac
 
-
-
-if [ -x "$SINGULARITY_libexecdir/singularity/sexec" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
-else
-    message ERROR "Could not locate the Singularity Exec module: $SEXEC\n"
-    exit 1
-fi
-
-
-

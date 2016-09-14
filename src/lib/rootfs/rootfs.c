@@ -178,8 +178,12 @@ int singularity_rootfs_mount(void) {
     singularity_message(DEBUG, "OverlayFS enabled by host build\n");
     singularity_config_rewind();
     if ( singularity_config_get_bool("enable overlay", 1) <= 0 ) {
-        singularity_message(VERBOSE3, "Not enabling writable overlay via configuration\n");
-    } else if ( envar_defined("SINGULARITY_WRITABLE") == FALSE ) {
+        singularity_message(VERBOSE3, "Not enabling overlayFS via configuration\n");
+    } else if ( envar_defined("SINGULARITY_DISABLE_OVERLAYFS") == TRUE ) {
+        singularity_message(VERBOSE3, "Not enabling overlayFS via environment\n");
+    } else if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
+        singularity_message(VERBOSE3, "Not enabling overlayFS, image mounted writablable\n");
+    } else {
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work); // Flawfinder: ignore
 
         singularity_priv_escalate();
@@ -209,15 +213,13 @@ int singularity_rootfs_mount(void) {
         singularity_priv_drop();
 
         overlay_enabled = 1;
-    } else {
-        singularity_message(DEBUG, "Not creating overlayfs, image is mounted writablable\n");
     }
 
 #endif /* SINGULARITY_OVERLAYFS */
 
     if ( overlay_enabled != 1 ) {
         singularity_priv_escalate();
-        singularity_message(DEBUG, "Binding the ROOTFS_SOURCE to OVERLAY_FINAL (%s->%s)\n", joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL));
+        singularity_message(VERBOSE3, "Binding the ROOTFS_SOURCE to OVERLAY_FINAL (%s->%s)\n", joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL));
         if ( mount(joinpath(mount_point, ROOTFS_SOURCE), joinpath(mount_point, OVERLAY_FINAL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "There was an error binding the path %s: %s\n", joinpath(mount_point, ROOTFS_SOURCE), strerror(errno));
             ABORT(255);
