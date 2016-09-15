@@ -50,18 +50,20 @@ int singularity_mount_tmp(void) {
         return(0);
     }
 
-    if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR") ) != NULL ) {
-        singularity_config_rewind();
-        if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
-            singularity_message(ERROR, "User bind control is disabled by system administrator\n");
-            ABORT(5);
+    if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
+        if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR") ) != NULL ) {
+            singularity_config_rewind();
+            if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
+                singularity_message(ERROR, "User bind control is disabled by system administrator\n");
+                ABORT(5);
+            }
+            tmp_source = joinpath(tmpdirpath, "/tmp");
+            vartmp_source = joinpath(tmpdirpath, "/var_tmp");
+        } else {
+            char *sessiondir = singularity_sessiondir_get();
+            tmp_source = joinpath(sessiondir, "/tmp");
+            vartmp_source = joinpath(sessiondir, "/var_tmp");
         }
-        tmp_source = joinpath(tmpdirpath, "/tmp");
-        vartmp_source = joinpath(tmpdirpath, "/var_tmp");
-    } else if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
-        char *sessiondir = singularity_sessiondir_get();
-        tmp_source = joinpath(sessiondir, "/tmp");
-        vartmp_source = joinpath(sessiondir, "/var_tmp");
     } else {
         tmp_source = strdup("/tmp");
         vartmp_source = strdup("/var/tmp");
