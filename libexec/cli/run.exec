@@ -74,9 +74,16 @@ while true; do
             export SINGULARITY_WORKDIR
             shift
         ;;
+        -S|--scratchdir|--scratch-dir)
+            shift
+            SINGULARITY_SCRATCHDIR="$1"
+            export SINGULARITY_SCRATCHDIR
+            shift
+        ;;
         -B|--bind)
             shift
-            export SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
+            SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
+            export SINGULARITY_BINDPATH
             shift
         ;;
         -c|--contain)

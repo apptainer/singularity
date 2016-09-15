@@ -1,4 +1,4 @@
-SUBDIRS = kernelfs binds home tmp hostfs userbinds dev cwd
+SUBDIRS = kernelfs binds home tmp hostfs userbinds dev cwd scratch
 
 MAINTAINERCLEANFILES = Makefile.in
 DISTCLEANFILES = Makefile
@@ -11,7 +11,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libmount.la
 
-libmount_la_LIBADD = kernelfs/libmountkernelfs.la binds/libmountbinds.la home/libmounthome.la tmp/libmounttmp.la hostfs/libmounthostfs.la userbinds/libmountuserbinds.la dev/libmountdev.la cwd/libmountcwd.la
+libmount_la_LIBADD = kernelfs/libmountkernelfs.la binds/libmountbinds.la home/libmounthome.la tmp/libmounttmp.la hostfs/libmounthostfs.la userbinds/libmountuserbinds.la dev/libmountdev.la cwd/libmountcwd.la scratch/libmountscratch.la
 libmount_la_SOURCES = mount.c mount-util.c
 
 EXTRA_DIST = mount-util.c mount-util.h

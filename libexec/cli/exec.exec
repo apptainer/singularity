@@ -80,9 +80,16 @@ while true; do
             SINGULARITY_UNSHARE_IPC=1
             export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC
         ;;
+        -S|--scratchdir|--scratch-dir)
+            shift
+            SINGULARITY_SCRATCHDIR="$1"
+            export SINGULARITY_SCRATCHDIR
+            shift
+        ;;
         -B|--bind)
             shift
-            export SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
+            SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
+            export SINGULARITY_BINDPATH
             shift
         ;;
         -W|--wdir|--workdir|--workingdir)

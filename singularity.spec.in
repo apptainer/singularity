@@ -64,6 +64,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/run-singularity
 %{_mandir}/man1/*
 %{_libdir}/lib*.so.*
+%{_sysconfdir}/bash_completion.d/singularity
 
 
 %files devel

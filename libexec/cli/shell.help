@@ -16,7 +16,9 @@ SHELL OPTIONS:
     -H/--home <path>    Path to a different home directory to virtualize within
                         the container
     -i/--ipc            Run container in a new IPC namespace
-    -p/--pid            Run container in a new PID namespace
+    -p/--pid            Run container in a new PID namespace (creates child)
+    -S/--scratch <path> Include a scratch directory within the container that
+                        is linked to a temporary dir (use -W to force location)
     -s/--shell <shell>  Path to program to use for interactive shell
     -u/--user           Try to run completely unprivileged (only works on very
                         new kernels/distros)
