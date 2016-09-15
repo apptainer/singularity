@@ -257,7 +257,8 @@ stest 1 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINER whoami"
 /bin/echo "Checking workdir functionality"
 stest 0 mkdir -p /tmp/foo
 stest 0 singularity exec $CONTAINER test -d /tmp/foo
-stest 1 singularity exec --workdir /tmp/foo $CONTAINER test -d /tmp/foo
+stest 0 singularity exec --workdir /tmp/foo $CONTAINER test -d /tmp/foo
+stest 1 singularity exec --workdir /tmp/foo --contain $CONTAINER test -d /tmp/foo
 
 
 if [ -n "@OVERLAY_FS@" ]; then
