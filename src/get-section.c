@@ -67,7 +67,7 @@ int main(int argc, char ** argv) {
     while ( fgets(line, MAX_LINE_LEN, input) != NULL ) {
         if ( strncmp(line, strjoin("%", section), strlength(section, 128) + 1) == 0 ) {
             toggle_retval = 0;
-        } else if ( strncmp(line, "%", 1) == 0 ) {
+        } else if ( ( toggle_retval == 0 ) && ( strncmp(line, "%", 1) == 0 ) ) {
             break;
         } else if ( toggle_retval == 0 ) {
             printf("%s", line);
