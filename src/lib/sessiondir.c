@@ -106,7 +106,7 @@ char *singularity_sessiondir_init(char *file) {
         if ( ( child_pid = singularity_fork() ) > 0 ) {
             int tmpstatus;
 
-            singularity_message(DEBUG, "Waiting on NS child process\n");
+            singularity_message(DEBUG, "Cleanup thread waiting on child...\n");
 
             waitpid(child_pid, &tmpstatus, 0);
             retval = WEXITSTATUS(tmpstatus);
