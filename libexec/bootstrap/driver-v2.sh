@@ -56,6 +56,7 @@ export LC_ALL LANG TERM DEBIAN_FRONTEND
 if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
     message 1 "Checking bootstrap definition\n";
     if [ -f "$SINGULARITY_BUILDDEF" ]; then
+
         ### Obtain the OSBuild from the SPEC
         SINGULARITY_OSBUILD=`singularity_key_get "OSBuild" "$SINGULARITY_BUILDDEF"`
         if [ -z "$SINGULARITY_OSBUILD" ]; then
@@ -68,7 +69,14 @@ if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
         else
             message 1 "OSBuild: $SINGULARITY_OSBUILD\n"
         fi
-        export SINGULARITY_BUILDDEF SINGULARITY_OSBUILD
+
+        ### Obtain the From from the spec (needed for docker bootstrap)
+        SINGULARITY_DOCKER_IMAGE=`singularity_key_get "From" "$SINGULARITY_BUILDDEF"`
+        if [ -z "$SINGULARITY_DOCKER_IMAGE" ]; then
+            message 1 "From: $SINGULARITY_DOCKER_IMAGE\n"
+        fi
+
+        export SINGULARITY_BUILDDEF SINGULARITY_OSBUILD SINGULARITY_DOCKER_IMAGE
     else
         message ERROR "Build Definition file not found: $SINGULARITY_BUILDDEF\n"
         exit 1
