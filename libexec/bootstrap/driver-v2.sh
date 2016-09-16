@@ -38,6 +38,7 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+message 1 "Bootstrap initialization\n"
 
 if [ -z "${LC_ALL:-}" ]; then
     LC_ALL=C
@@ -53,62 +54,78 @@ export LC_ALL LANG TERM DEBIAN_FRONTEND
 
 
 if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
+    message 1 "Checking bootstrap definition\n";
     if [ -f "$SINGULARITY_BUILDDEF" ]; then
-        ### Obtain the OSType from the SPEC
-        SINGULARITY_OSTYPE=`singularity_key_get "OSType" "$SINGULARITY_BUILDDEF"`
-        if [ -z "${SINGULARITY_OSTYPE:-}" ]; then
-            echo "OSType: Requires an argument!" 2>&2
-            exit 1
+        ### Obtain the OSBuild from the SPEC
+        SINGULARITY_OSBUILD=`singularity_key_get "OSBuild" "$SINGULARITY_BUILDDEF"`
+        if [ -z "$SINGULARITY_OSBUILD" ]; then
+            SINGULARITY_OSBUILD=`singularity_key_get "OSType" "$SINGULARITY_BUILDDEF"`
+            if [ -n "$SINGULARITY_OSBUILD" ]; then
+                message WARNING "The key 'OSType' has been updated to 'OSBuild'\n"
+            else
+                message 1 "No OSBuild given, assuming overlay\n"
+            fi
+        else
+            message 1 "OSBuild: $SINGULARITY_OSBUILD\n"
         fi
-        export SINGULARITY_BUILDDEF SINGULARITY_OSTYPE
+        export SINGULARITY_BUILDDEF SINGULARITY_OSBUILD
     else
         message ERROR "Build Definition file not found: $SINGULARITY_BUILDDEF\n"
         exit 1
     fi
+else
+    message 1 "No bootstrap definition passed, updating container\n"
 fi
 
 
 if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/prebootstrap.sh" ]; then
+    message 1 "Executing Prebootstrap module\n"
     if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/prebootstrap.sh" "$@"; then
         exit 255
     fi
 else
-    message ERROR "Could not locate pre Bootstrap module"
+    message ERROR "Could not locate Prebootstrap module\n"
     exit 255
-fi
-
-
-if [ -n "${SINGULARITY_OSTYPE:-}" ]; then
-    if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/dist-$SINGULARITY_OSTYPE.sh" ]; then
-        if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/dist-$SINGULARITY_OSTYPE.sh" "$@"; then
-            exit 255
-        fi
-    else
-        message ERROR "Unrecognized Distribution type: $SINGULARITY_OSTYPE\n"
-        exit 255
-    fi
 fi
 
 
 if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/setup.sh" ]; then
+    message 1 "Executing Setup module\n"
     if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/setup.sh" "$@"; then
         exit 255
     fi
 else
-    message ERROR "Could not locate setup Bootstrap module"
+    message ERROR "Could not locate Setup Bootstrap module"
     exit 255
 fi
 
 
+if [ -n "${SINGULARITY_OSBUILD:-}" ]; then
+    if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/build-$SINGULARITY_OSBUILD.sh" ]; then
+        if [ -x "$SINGULARITY_ROOTFS/bin/sh" -a -z "${SINGULARITY_REBOOTSTRAP:-}" ]; then
+            message 1 "Not bootstrapping core container\n"
+        else
+            message 1 "Executing OSBuild '$SINGULARITY_OSBUILD' module\n"
+            if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/build-$SINGULARITY_OSBUILD.sh" "$@"; then
+                exit 255
+            fi
+        fi
+    else
+        message ERROR "Unrecognized OSBuild type: $SINGULARITY_OSBUILD\n"
+        exit 255
+    fi
+fi
+
 
 if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/postbootstrap.sh" ]; then
+    message 1 "Executing Postbootstrap module\n"
     if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/postbootstrap.sh" "$@"; then
         exit 255
     fi
 else
-    message ERROR "Could not locate post Bootstrap module"
+    message ERROR "Could not locate Postbootstrap module"
     exit 255
 fi
 
-echo "Done."
+message 1 "Done.\n"
 exit 0

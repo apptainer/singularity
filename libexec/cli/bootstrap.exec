@@ -45,6 +45,11 @@ while true; do
             fi
             exit
         ;;
+        -f|--force)
+            shift
+            SINGULARITY_REBOOTSTRAP=1
+            export SINGULARITY_REBOOTSTRAP
+        ;;
         -*)
             message ERROR "Unknown option: $1\n"
             exit 1

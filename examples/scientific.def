@@ -4,7 +4,7 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 
-OSType: redhat
+OSBuild: redhat
 OSVersion: 7
 MirrorURL: http://ftp.scientificlinux.org/linux/scientific/%{OSVERSION}x/$basearch/os/
 Include: yum

@@ -9,7 +9,7 @@
 # https://www.tensorflow.org/versions/r0.10/get_started/os_setup.html#pip-installation
 
 
-OSType: debian
+OSBuild: debian
 OSVersion: stable
 MirrorURL: http://ftp.us.debian.org/debian/
 

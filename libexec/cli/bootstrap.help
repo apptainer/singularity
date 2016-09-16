@@ -4,14 +4,19 @@ The bootstrap command is useful for creating a new bootstrap or modifying an
 existing one using a definition file that describes how to build the
 container. A simple bootstrap definition file may be as simple as:
 
-    DistType: debian
+    OSType: debian
     OSVersion: stable
-    MirrorURL: http://ftp.us.debian.org/debian/
+    MirrorURL: http://us.archive.ubuntu.com/ubuntu/
 
 This simple bootstrap has within it all of the necessary bits of information
-to bootstrap a minimal container image.
+to bootstrap a minimal Ubuntu container image.
 
 note: This command must be executed as root.
+
+CREATE OPTIONS:
+    -f/--force      Force a rebootstrap of an OS (note: this does not delete
+                    what is currently in the image, just causes the core to
+                    be reinstalled)
 
 EXAMPLES:
 
