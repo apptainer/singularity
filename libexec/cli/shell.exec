@@ -65,7 +65,8 @@ while true; do
             shift
         ;;
         -u|--user)
-            export SINGULARITY_NOSUID=1
+            SINGULARITY_NOSUID=1
+            export SINGULARITY_NOSUID
             shift
         ;;
         -w|--writable)
