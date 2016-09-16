@@ -78,9 +78,20 @@ _singularity() {
             return 0
         ;;
 
-        test|bootstrap|mount)
-            if [[ $COMP_CWORD -gt $(( $cmd_idx + 2 )) ]]; then
-                return 0
+        bootstrap)
+            if [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W "--force --help" -- ${cur}) )
+            else
+                _filedir
+            fi
+            return 0
+        ;; 
+
+        test|mount)
+            if [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W "--force --help" -- ${cur}) )
+            else
+                _filedir
             fi
             _filedir
             return 0
@@ -92,7 +103,6 @@ _singularity() {
         ;;
 
         create)
-
             if [[ ${cur} == -s || ${cur} == --size ]]; then
                 # Specify a number; no completion. 
                 return 0
