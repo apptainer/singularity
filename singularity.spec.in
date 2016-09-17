@@ -53,7 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli
 %{_libexecdir}/singularity/helpers
 %{_libexecdir}/singularity/get-section
-%{_libexecdir}/singularity/image-prep.sh
+%{_libexecdir}/singularity/image-handler.sh
 %{_libexecdir}/singularity/sexec
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/image-bind

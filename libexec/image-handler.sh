@@ -49,9 +49,57 @@ case "$SINGULARITY_IMAGE" in
             fi
         fi
     ;;
+    docker://*)
+        echo
+        echo "A hint of things to come..."
+        echo
+        exit 1
+    ;;
 esac
 
 case "$SINGULARITY_IMAGE" in
+    *.cpioz|*.vnfs)
+        NAME=`basename "$SINGULARITY_IMAGE"`
+        TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
+        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
+            USERID=`id -u`
+            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
+            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+        fi
+        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
+        if [ ! -d "$CONTAINER_DIR" ]; then
+            if ! mkdir -p "$CONTAINER_DIR"; then
+                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+                ABORT 255
+            fi
+            message 1 "Opening cpio archive, stand by...\n"
+            # this almost always gives permission errors, so ignore them when
+            # running as a user.
+            zcat "$SINGULARITY_IMAGE" | ( cd "$CONTAINER_DIR"; cpio -id >/dev/null 2>&1 )
+        fi
+        SINGULARITY_IMAGE="$CONTAINER_DIR"
+    ;;
+    *.cpio)
+        NAME=`basename "$SINGULARITY_IMAGE"`
+        TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
+        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
+            USERID=`id -u`
+            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
+            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+        fi
+        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
+        if [ ! -d "$CONTAINER_DIR" ]; then
+            if ! mkdir -p "$CONTAINER_DIR"; then
+                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+                ABORT 255
+            fi
+            message 1 "Opening cpio archive, stand by...\n"
+            # this almost always gives permission errors, so ignore them when
+            # running as a user.
+            cat "$SINGULARITY_IMAGE" | ( cd "$CONTAINER_DIR"; cpio -id >/dev/null 2>&1 )
+        fi
+        SINGULARITY_IMAGE="$CONTAINER_DIR"
+    ;;
     *.tar)
         NAME=`basename "$SINGULARITY_IMAGE"`
         TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
@@ -66,7 +114,7 @@ case "$SINGULARITY_IMAGE" in
                 message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
                 ABORT 255
             fi
-            message 1 "Opening archive, stand by...\n"
+            message 1 "Opening tar archive, stand by...\n"
             # this almost always gives permission errors, so ignore them when
             # running as a user.
             tar -C "$CONTAINER_DIR" -xf "$SINGULARITY_IMAGE" 2>/dev/null
