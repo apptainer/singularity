@@ -87,15 +87,16 @@ fi
  To get the image layers, we need a valid token to read the repo
 '
 
-# THIS DOESN'T WORK
-#'token=$(curl -si https://registry.hub.docker.com/v1/repositories/$namespace/$repo_name/images -H 'X-Docker-Token: true' | grep X-Docker-#Token)
-#token=`echo ${token/X-Docker-Token:/}`
-#token=`echo 'Authorization: Token' $token`'
+# This is a version 1.0 registry auth token, version (2.0), which isn't currently working/finished, is below
+token=$(curl -si https://registry.hub.docker.com/v1/repositories/$namespace/$repo_name/images -H 'X-Docker-Token: true' | grep X-Docker-Token)
+token=`echo ${token/X-Docker-Token:/}`
+token=`echo 'Authorization: Token' $token`
 
-token=$(curl -si https://auth.docker.io/token?service=registry.docker.io&scope=repository:$repo_name/$repo_tag:read)
-token=`echo ${token/{\"token\":\"/}` # leaves a space at beginning
-token=`echo ${token/\"\}/}`
-token=`echo 'Authorization: Bearer' $token`
+#token=$(curl -si https://auth.docker.io/token?service=registry.docker.io&scope=repository:$repo_name/$repo_tag:read)
+#token=`echo ${token/{\"token\":\"/}` # leaves a space at beginning
+#token=`echo ${token/\"\}/}`
+#token=`echo ${token/ \}/}`
+#token=`echo 'Authorization: Token signature=' $token`
 
 
 : ' IMAGE METADATA -------------------------------------------
@@ -109,15 +110,25 @@ if [ "$manifest" = "Tag not found" ]; then
     exit 1
 fi
 
-# STILL WORKING ON BELOW - not clear which docker registry url is correct to use, docker.io needs authentication
+# Find images
+repo_images=$(curl -si https://registry.hub.docker.com/v1/repositories/$namespace/$repo_name/$repo_tag/images)
 
-# For each image id, obtain it, download it...
+
+### CODE NOT WRITTEN/FINISHED BELOW! going running be back later :)
+
+# THIS IS THE CALL THAT WORKS TO GET JSON - for complete image id that matches one in manifest above!
+https://cdn-registry-1.docker.io/v1/images/a343823119db57543086463ae7da8aaadbcef25781c0c4d121397a2550a419a6/json -H 'Authorization: Token signature=f2488c0a82c984ea2ac04b86863af100e32cd025,repository="library/ubuntu",access=read'
+
+# change to /layer to get image layer!
+
+# For each image id, if it matches, then get the layer (call above)
 echo $manifest | grep -Po '"id": "(.*?)"' | while read a; do 
-
     # remove "id": and extra "'s
     image_id=`echo ${a/\"id\":/}`
     image_id=`echo ${image_id//\"/}`
     echo $image_tag
+url=$(echo https://cdn-registry-1.docker.io/v1/images/a343823119db57543086463ae7da8aaadbcef25781c0c4d121397a2550a419a6/json -H \'$token\')
+
     url=$(echo https://registry-1.docker.io/v1/images/$image_id/json -H \'$token\')
     curl -k $url
     #curl -k https://registry.hub.docker.com/v1/images/$image_id/layer
@@ -126,9 +137,17 @@ done
 
 
 
+# Find image manifest
+manifest=$(curl -k https://registry-1.docker.io/v2/$namespace/$repo_name)
+
+/tags/$repo_tag
+
+
 curl -k https://registry.hub.docker.com/v1/repositories/$repo_name/auth
 
-><> curl https://cdn-registry-1.docker.io/v1/images/511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/json -H 
+><> 
+
+511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/json -H 
 
 # NOT USING BELOW THIS LINE... yet :)
 # First obtain the list of image tags
