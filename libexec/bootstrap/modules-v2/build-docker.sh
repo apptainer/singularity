@@ -176,14 +176,15 @@ echo $manifest | grep -Po '"id": "(.*?)"' | while read a; do
 done
 
 
+# Question - do something here (or in above loop) for permissions of extractions?
 
-# NOT DONE BELOW HERE YET
-curl "$MIRROR" > "$SINGULARITY_ROOTFS/bin/busybox"
+chmod 0755 -R "$SINGULARITY_ROOTFS/"
 
-chmod 0755 "$SINGULARITY_ROOTFS/bin/busybox"
+#TODO: save/do something with meta data from image? eg:
+# {"container": "e6e4c4801f676bad4f31b86279b0766d00ed1030db6bdf4e92230c77e32e8cba", "parent": "51a9c7c1f8bb2fa19bcd09789a34e63f35abb80044bc10196e304f6634cc582c", "created": "2015-01-28T18:37:18.255519085Z", "config": {"Env": ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"], "Hostname": "f4f502dce15c", "Entrypoint": null, "PortSpecs": null, "OnBuild": [], "OpenStdin": false, "MacAddress": "", "User": "", "VolumeDriver": "", "AttachStderr": false, "AttachStdout": false, "NetworkDisabled": false, "WorkingDir": "", "Cmd": ["/bin/bash"], "StdinOnce": false, "AttachStdin": false, "Volumes": null, "Tty": false, "Domainname": "", "Image": "51a9c7c1f8bb2fa19bcd09789a34e63f35abb80044bc10196e304f6634cc582c", "Labels": null, "ExposedPorts": null}, "container_config": {"Env": ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"], "Hostname": "f4f502dce15c", "Entrypoint": null, "PortSpecs": null, "OnBuild": [], "OpenStdin": false, "MacAddress": "", "User": "", "VolumeDriver": "", "AttachStderr": false, "AttachStdout": false, "NetworkDisabled": false, "WorkingDir": "", "Cmd": ["/bin/sh", "-c", "#(nop) CMD [/bin/bash]"], "StdinOnce": false, "AttachStdin": false, "Volumes": null, "Tty": false, "Domainname": "", "Image": "51a9c7c1f8bb2fa19bcd09789a34e63f35abb80044bc10196e304f6634cc582c", "Labels": null, "ExposedPorts": null}, "architecture": "amd64", "docker_version": "1.4.1", "os": "linux", "id": "5ba9dab47459d81c0037ca3836a368a4f8ce5050505ce89720e1fb8839ea048a", "Size": 0}
 
-eval "$SINGULARITY_ROOTFS/bin/busybox" --install "$SINGULARITY_ROOTFS/bin/"
-
+# Likely we would want to use Cmd for runscript UNLESS the user has defined one. If I were bootstrapping a Docker image I would want (and
+# expect) this to carry through.
 
 # If we got here, exit...
 exit 0
