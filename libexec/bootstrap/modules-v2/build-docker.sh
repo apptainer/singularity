@@ -87,10 +87,15 @@ fi
  To get the image layers, we need a valid token to read the repo
 '
 
-token=$(curl -si https://registry.hub.docker.com/v1/repositories/$namespace/$repo_name/images -H 'X-Docker-Token: true' | grep X-Docker-Token)
-token=`echo ${token/X-Docker-Token:/}`
-token=`echo 'Authorization: Token' $token`
+# THIS DOESN'T WORK
+#'token=$(curl -si https://registry.hub.docker.com/v1/repositories/$namespace/$repo_name/images -H 'X-Docker-Token: true' | grep X-Docker-#Token)
+#token=`echo ${token/X-Docker-Token:/}`
+#token=`echo 'Authorization: Token' $token`'
 
+token=$(curl -si https://auth.docker.io/token?service=registry.docker.io&scope=repository:$repo_name/$repo_tag:read)
+token=`echo ${token/{\"token\":\"/}` # leaves a space at beginning
+token=`echo ${token/\"\}/}`
+token=`echo 'Authorization: Bearer' $token`
 
 
 : ' IMAGE METADATA -------------------------------------------
@@ -119,6 +124,9 @@ echo $manifest | grep -Po '"id": "(.*?)"' | while read a; do
 
 done
 
+
+
+curl -k https://registry.hub.docker.com/v1/repositories/$repo_name/auth
 
 ><> curl https://cdn-registry-1.docker.io/v1/images/511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/json -H 
 
