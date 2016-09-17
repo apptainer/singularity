@@ -1,11 +1,12 @@
 USAGE: singularity [global options...] <command> [command options...] ...
 
 GLOBAL OPTIONS:
+    -d --debug    Print debugging information
     -h --help     Display usage summary
+    -q --quiet    Only print errors
        --version  Show application version
     -v --verbose  Increase verbosity +1
-    -d --debug    Show debugging information
-    -q --quiet    Only print errors
+    -x --sh-debug Print shell wrapper debugging information
 
 GENERAL COMMANDS:
     help          Show additional help for a command
