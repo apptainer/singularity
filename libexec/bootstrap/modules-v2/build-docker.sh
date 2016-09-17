@@ -116,21 +116,26 @@ repo_images=$(curl -si https://registry.hub.docker.com/v1/repositories/$namespac
 
 ### CODE NOT WRITTEN/FINISHED BELOW! going running be back later :)
 
-# THIS IS THE CALL THAT WORKS TO GET JSON - for complete image id that matches one in manifest above!
-https://cdn-registry-1.docker.io/v1/images/a343823119db57543086463ae7da8aaadbcef25781c0c4d121397a2550a419a6/json -H 'Authorization: Token signature=f2488c0a82c984ea2ac04b86863af100e32cd025,repository="library/ubuntu",access=read'
-
-# change to /layer to get image layer!
-
 # For each image id, if it matches, then get the layer (call above)
 echo $manifest | grep -Po '"id": "(.*?)"' | while read a; do 
     # remove "id": and extra "'s
     image_id=`echo ${a/\"id\":/}`
     image_id=`echo ${image_id//\"/}`
-    echo $image_tag
-url=$(echo https://cdn-registry-1.docker.io/v1/images/a343823119db57543086463ae7da8aaadbcef25781c0c4d121397a2550a419a6/json -H \'$token\')
+    # Find the full image id for each tag, meaning everything up to the quote
+    image_id=$(echo $repo_images | grep -o -P $image_id'.+?(?=\")')
+    # If the image_id isn't empty, get the layer
+    if [ -z "$image_id" ]; then
 
-    url=$(echo https://registry-1.docker.io/v1/images/$image_id/json -H \'$token\')
-    curl -k $url
+# THIS IS THE CALL THAT WORKS TO GET JSON - for complete image id that matches one in manifest above!
+https://cdn-registry-1.docker.io/v1/images/a343823119db57543086463ae7da8aaadbcef25781c0c4d121397a2550a419a6/json -H 'Authorization: Token signature=f2488c0a82c984ea2ac04b86863af100e32cd025,repository="library/ubuntu",access=read'
+
+# change to /layer to get image layer!
+
+    fi
+#url=$(echo https://cdn-registry-1.docker.io/v1/images/a343823119db57543086463ae7da8aaadbcef25781c0c4d121397a2550a419a6/json -H \'$token\')
+
+#    url=$(echo https://registry-1.docker.io/v1/images/$image_id/json -H \'$token\')
+#    curl -k $url
     #curl -k https://registry.hub.docker.com/v1/images/$image_id/layer
 
 done
