@@ -52,10 +52,27 @@ fi
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
-# Split the docker image name by :
+
+: ' INPUT PARSING -------------------------------------------
+ Parse image name, repo name, and namespace
+'
+
+# First split the docker image name by /
+IFS='/' read -ra DOCKER_ADDR <<< "$SINGULARITY_DOCKER_IMAGE"
+
+# If there are two parts, we have namespace with repo (and maybe tab)
+if [ ${#DOCKER_ADDR[@]} -eq 2 ]; then
+    namespace=${DOCKER_ADDR[0]}
+    SINGULARITY_DOCKER_IMAGE=${DOCKER_ADDR[1]}
+
+# Otherwise, we must be using library namespace
+else
+    namespace="library"
+fi
+
+# Now split the docker image name by :
 IFS=':' read -ra DOCKER_ADDR <<< "$SINGULARITY_DOCKER_IMAGE"
 
-# If there are two parts, we have image and tag
 if [ ${#DOCKER_ADDR[@]} -eq 2 ]; then
     repo_name=${DOCKER_ADDR[0]}
     repo_tag=${DOCKER_ADDR[1]}
@@ -63,17 +80,51 @@ if [ ${#DOCKER_ADDR[@]} -eq 2 ]; then
 # Otherwise, assume latest of an image
 else
     repo_name=${DOCKER_ADDR[0]}
-    #TODO: we need to get latest tag with API
     repo_tag="latest"
 fi
 
-# Obtain the image manifest
-/v2/<name>/manifests/<reference>
-manifest=$(curl -k https://registry.hub.docker.com/v1/library/ubuntu:latest/manifests)
+: ' AUTHORIZATION -------------------------------------------
+ To get the image layers, we need a valid token to read the repo
+'
 
+token=$(curl -si https://registry.hub.docker.com/v1/repositories/$namespace/$repo_name/images -H 'X-Docker-Token: true' | grep X-Docker-Token)
+token=`echo ${token/X-Docker-Token:/}`
+token=`echo 'Authorization: Token' $token`
+
+
+
+: ' IMAGE METADATA -------------------------------------------
+ Use Docker Registry API (version 1.0) to get manifest
+'
+
+# Was the image manifest found?
+manifest=$(curl -k https://registry.hub.docker.com/v1/repositories/$namespace/$repo_name/tags/$repo_tag)
+if [ "$manifest" = "Tag not found" ]; then
+    message ERROR "Image manifest for $namespace/$repo_name:$repo_tag not found using Docker Registry.\n"
+    exit 1
+fi
+
+# STILL WORKING ON BELOW - not clear which docker registry url is correct to use, docker.io needs authentication
+
+# For each image id, obtain it, download it...
+echo $manifest | grep -Po '"id": "(.*?)"' | while read a; do 
+
+    # remove "id": and extra "'s
+    image_id=`echo ${a/\"id\":/}`
+    image_id=`echo ${image_id//\"/}`
+    echo $image_tag
+    url=$(echo https://registry-1.docker.io/v1/images/$image_id/json -H \'$token\')
+    curl -k $url
+    #curl -k https://registry.hub.docker.com/v1/images/$image_id/layer
+
+done
+
+
+><> curl https://cdn-registry-1.docker.io/v1/images/511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/json -H 
+
+# NOT USING BELOW THIS LINE... yet :)
 # First obtain the list of image tags
-image_tags=$(curl -k https://registry.hub.docker.com/v1/repositories/$repo_name/tags)
-image_tags=$(echo $image_tags | grep -Po '"name": "(.*?)"')
+#image_tags=$(curl -k https://registry.hub.docker.com/v1/repositories/$repo_name/tags)
 
 
 # This will only match a tag directly, eg, 14.04.1 must be given and not 14.04
@@ -95,9 +146,14 @@ if [ -z "$found_tag" ]; then
     exit 1
 fi
 
+
+
 # STOPPED HERE... work in progress
-# If we have a repo name and a tag, continue!
-token=$(curl -si https://registry.hub.docker.com/v1/repositories/library/ubuntu/images -H 'X-Docker-Token: true' | grep X-Docker-Token)
+
+
+# Obtain the image manifest
+/v2/<name>/manifests/<reference>
+manifest=$(curl -k https://registry.hub.docker.com/v1/library/ubuntu:latest/manifests)
 
 curl https://cdn-registry-1.docker.io/v1/images/511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/json -H $token
 
