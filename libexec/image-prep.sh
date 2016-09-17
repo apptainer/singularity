@@ -20,19 +20,8 @@
 # 
 
 
-## Basic sanity
-if [ -z "$SINGULARITY_libexecdir" ]; then
-    echo "Could not identify the Singularity libexecdir."
-    exit 1
-fi
-
-## Load functions
-if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
-    . "$SINGULARITY_libexecdir/singularity/functions"
-else
-    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
-    exit 1
-fi
+# This script is designed to be sourced rather then executed, as a result we do
+# not load functions or basic sanity.
 
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
@@ -44,11 +33,6 @@ if [ -z "${SINGULARITY_COMMAND:-}" ]; then
     message ERROR "SINGULARITY_COMMAND is undefined...\n"
     ABORT 255
 fi
-
-
-# Don't trust environment
-USERID=`id -u`
-HOMEDIR=`getent passwd $USERID | cut -d: -f6`
 
 case "$SINGULARITY_IMAGE" in
     http://*|https://*)
@@ -68,23 +52,67 @@ case "$SINGULARITY_IMAGE" in
 esac
 
 case "$SINGULARITY_IMAGE" in
+    *.tar)
+        NAME=`basename "$SINGULARITY_IMAGE"`
+        TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
+        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
+            USERID=`id -u`
+            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
+            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+        fi
+        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
+        if [ ! -d "$CONTAINER_DIR" ]; then
+            if ! mkdir -p "$CONTAINER_DIR"; then
+                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+                ABORT 255
+            fi
+            message 1 "Opening archive, stand by...\n"
+            # this almost always gives permission errors, so ignore them when
+            # running as a user.
+            tar -C "$CONTAINER_DIR" -xf "$SINGULARITY_IMAGE" 2>/dev/null
+        fi
+        SINGULARITY_IMAGE="$CONTAINER_DIR"
+    ;;
     *.tgz|*.tar.gz)
         NAME=`basename "$SINGULARITY_IMAGE"`
         TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
-        CONTAINER_DIR="$HOMEDIR/.singularity/cache/$NAME/$TIMESTAMP/$NAME"
+        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
+            USERID=`id -u`
+            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
+            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+        fi
+        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
         if [ ! -d "$CONTAINER_DIR" ]; then
-            mkdir -p "$CONTAINER_DIR"
-            tar -C "$CONTAINER_DIR" -xzf "$SINGULARITY_IMAGE" 2>/dev/null # this almost always gives permission errors
+            if ! mkdir -p "$CONTAINER_DIR"; then
+                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+                ABORT 255
+            fi
+            message 1 "Opening gzip compressed archive, stand by...\n"
+            # this almost always gives permission errors, so ignore them when
+            # this almost always gives permission errors, so ignore them when
+            # running as a user.
+            tar -C "$CONTAINER_DIR" -xzf "$SINGULARITY_IMAGE"
         fi
         SINGULARITY_IMAGE="$CONTAINER_DIR"
     ;;
     *.tbz|*.tar.bz)
         NAME=`basename "$SINGULARITY_IMAGE"`
         TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
-        CONTAINER_DIR="$HOMEDIR/.singularity/cache/$NAME/$TIMESTAMP/$NAME"
+        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
+            USERID=`id -u`
+            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
+            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+        fi
+        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
         if [ ! -d "$CONTAINER_DIR" ]; then
-            mkdir -p "$CONTAINER_DIR"
-            tar -C "$CONTAINER_DIR" -xjf "$SINGULARITY_IMAGE" 2>/dev/null # this almost always gives permission errors
+            if ! mkdir -p "$CONTAINER_DIR"; then
+                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+                ABORT 255
+            fi
+            message 1 "Opening bzip compressed archive, stand by...\n"
+            # this almost always gives permission errors, so ignore them when
+            # running as a user.
+            tar -C "$CONTAINER_DIR" -xjf "$SINGULARITY_IMAGE" 2>/dev/null
         fi
         SINGULARITY_IMAGE="$CONTAINER_DIR"
     ;;
