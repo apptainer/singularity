@@ -144,7 +144,6 @@ echo $manifest | grep -Po '"id": "(.*?)"' | while read a; do
     # If the image_id isn't empty, get the layer
     if [ ! -z $image_id ]; then
 
-        echo $image_id
         # Obtain json (detailed manifest) about image
         url=$(echo https://cdn-registry-1.docker.io/v1/images/$image_id/json -H \'$token\')
         url=$(echo "$url"| tr -d '\r')  # get rid of ^M, eww
