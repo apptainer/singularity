@@ -56,17 +56,15 @@ export LC_ALL LANG TERM DEBIAN_FRONTEND
 if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
     message 1 "Checking bootstrap definition\n";
     if [ -f "$SINGULARITY_BUILDDEF" ]; then
-        ### Obtain the OSBuild from the SPEC
-        SINGULARITY_OSBUILD=`singularity_key_get "OSBuild" "$SINGULARITY_BUILDDEF"`
-        if [ -z "$SINGULARITY_OSBUILD" ]; then
-            SINGULARITY_OSBUILD=`singularity_key_get "OSType" "$SINGULARITY_BUILDDEF"`
-            if [ -n "$SINGULARITY_OSBUILD" ]; then
-                message WARNING "The key 'OSType' has been updated to 'OSBuild'\n"
-            else
-                message 1 "No OSBuild given, assuming overlay\n"
-            fi
+        ### Obtain the BootStrap build type from the SPEC
+        if SINGULARITY_OSBUILD=`singularity_key_get "BootStrap" "$SINGULARITY_BUILDDEF"`; then
+            true
+        elif SINGULARITY_OSBUILD=`singularity_key_get "OSBuild" "$SINGULARITY_BUILDDEF"`; then
+            message WARNING "the key 'OSBuild' has been superseded by 'BootStrap'\n"
+        elif SINGULARITY_OSBUILD=`singularity_key_get "OSType" "$SINGULARITY_BUILDDEF"`; then
+            message WARNING "the key 'OSType' has been superseded by 'BootStrap'\n"
         else
-            message 1 "OSBuild: $SINGULARITY_OSBUILD\n"
+            message 1 "No 'BootStrap' build module given, assuming overlay\n"
         fi
         export SINGULARITY_BUILDDEF SINGULARITY_OSBUILD
     else

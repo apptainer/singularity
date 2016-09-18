@@ -4,7 +4,7 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 
-OSBuild: busybox
+BootStrap: busybox
 MirrorURL: https://www.busybox.net/downloads/binaries/busybox-x86_64
 
 
