@@ -82,8 +82,8 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
 fi
 
 
-if [ -x "$SINGULARITY_libexecdir/singularity/image-prep.sh" ]; then
-    . "$SINGULARITY_libexecdir/singularity/image-prep.sh"
+if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
+    . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
 fi
 
 if [ -x "$SINGULARITY_libexecdir/singularity/sexec" ]; then

@@ -5,7 +5,7 @@
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 
 
-OSBuild: redhat
+BootStrap: redhat
 OSVersion: 7
 MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
 Include: yum

@@ -25,7 +25,7 @@ _singularity() {
     # In this case, no command is present.
     if [ $cmd_idx -eq $COMP_CWORD ]; then
         if [[ ${cur} == -* ]] ; then
-            opts="--help --verbose --debug --quiet"
+            opts="--help --verbose --debug --quiet --shdebug"
             COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
             return 0
         else
@@ -41,11 +41,14 @@ _singularity() {
         if [[ ${container} != -* ]] ; then
             break;
         fi
-        # Skip arguments to home / bind commands
+        # Skip arguments to options
         if [[ ${container} == -H || ${container} == --home ]]; then
             container_idx=$(( $container_idx + 1 ))
         fi
         if [[ ${container} == -B || ${container} == --bind ]]; then
+            container_idx=$(( $container_idx + 1 ))
+        fi
+        if [[ ${container} == -W || ${container} == --workdir ]]; then
             container_idx=$(( $container_idx + 1 ))
         fi
         container_idx=$(( $container_idx + 1 ))
@@ -61,14 +64,16 @@ _singularity() {
             if [ $container_idx -lt $COMP_CWORD ]; then
                 if [[ ${cmd} == run || ${cmd} == exec ]]; then
                     _command_offset $(( $container_idx + 1 ))
+                    return 0
                 fi
-                return 0
             fi
 
             if [[ ${cur} == -B || ${cur} == --bind ]]; then
                 #TODO: Not really a path, but this should be a bind spec...
                 _filedir
             elif [[ ${cur} == -H || ${cur} == --home ]]; then
+                COMPREPLY=( $(compgen -f -- ${cur}) )
+            elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then
                 COMPREPLY=( $(compgen -W "--help --bind --home --contain --containall --ipc --pid --user --workdir --writable" -- ${cur}) )

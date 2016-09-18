@@ -76,7 +76,12 @@ while true; do
         -d|--debug)
             MESSAGELEVEL=5
             message 4 "enabling debugging\n"
-            #set -x
+            shift
+        ;;
+        -x|--shdebug)
+            SHELL_DEBUG=1
+            export SHELL_DEBUG
+            message 4 "enabling shell debugging\n"
             shift
         ;;
         -v|--verbose)
