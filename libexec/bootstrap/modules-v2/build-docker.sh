@@ -125,16 +125,15 @@ if [ "$manifest" = "Tag not found" ]; then
 fi
 
 # Find images
-repo_images=$(curl -si https://registry.hub.docker.com/v1/repositories/$namespace/$repo_name/$repo_tag/images)
-
-
+repo_images=$(curl -si https://registry.hub.docker.com/v1/repositories/$namespace/$repo_name/images)
 
 : ' DOWNLOAD LAYERS -------------------------------------------
  Each is a .tar.gz file, obtained from registry with curl
 '
 
 # For each image id, if it matches, then get the layer (call above)
-echo $manifest | grep -Po '"id": "(.*?)"' | while read a; do 
+echo $manifest | grep -Po '"id": "(.*?)"' | while read a; do
+
     # remove "id": and extra "'s
     image_id=`echo ${a/\"id\":/}`
     image_id=`echo ${image_id//\"/}`
