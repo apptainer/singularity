@@ -5,7 +5,8 @@ bootstrap.py: python helper for singularity command line tool
 
 '''
 
-from docker import list_images, get_token, get_tags, get_layer, create_runscript
+from docker import list_images, get_token, get_tags, get_layer, \
+    create_runscript, get_manifest 
 from utils import extract_tar, change_permissions
 import argparse
 import os
@@ -151,6 +152,8 @@ def main():
         if cmd != None:
             runscript = create_runscript(cmd=cmd,
                                          base_dir=singularity_rootfs)
+        else:
+            print("No command found, skipping runscript.")
 
     # When we finish, change permissions for the entire thing
     change_permissions("%s/" %(singularity_rootfs))

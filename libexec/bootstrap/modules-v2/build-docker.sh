@@ -33,7 +33,7 @@ fi
 
 # Does the user want to include the docker CMD? Default, no.
 if [ -z "$SINGULARITY_DOCKER_INCLUDE_CMD:-}" ]; then
-    $SINGULARITY_DOCKER_INCLUDE_CMD=""
+    SINGULARITY_DOCKER_INCLUDE_CMD=""
 fi
 
 ## Load functions

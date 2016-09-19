@@ -70,18 +70,18 @@ if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
 
         ### Obtain the From from the spec (needed for docker bootstrap)
         SINGULARITY_DOCKER_IMAGE=`singularity_key_get "From" "$SINGULARITY_BUILDDEF"`
-        if [ -z "$SINGULARITY_DOCKER_IMAGE" ]; then
+        if [ ! -z "$SINGULARITY_DOCKER_IMAGE" ]; then
             message 1 "From: $SINGULARITY_DOCKER_IMAGE\n"
         fi
 
         ### Obtain the IncludeCmd from the spec (also needed for docker bootstrap)
         SINGULARITY_DOCKER_CMD=`singularity_key_get "IncludeCmd" "$SINGULARITY_BUILDDEF"`
-        if [ -z "$SINGULARITY_DOCKER_CMD" ]; then
+        if [ ! -z "$SINGULARITY_DOCKER_CMD" ]; then
             message 1 "IncludeCmd: $SINGULARITY_DOCKER_CMD\n"
            
             # A command of "yes" means that we will include the docker CMD as runscript
             if [ "$SINGULARITY_DOCKER_CMD" == "yes" ]; then
-                $SINGULARITY_DOCKER_INCLUDE_CMD="--cmd"
+                SINGULARITY_DOCKER_INCLUDE_CMD="--cmd"
 
             # Anything else, we will not include it
             else
