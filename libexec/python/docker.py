@@ -1,7 +1,17 @@
 
-from utils import api_get
+from utils import api_get, write_file
 
 # Authentication not required ---------------------------------------------------------------------------------
+
+def create_runscript(cmd,base_dir):
+    '''create_runscript will write a bash script with command "cmd" into the base_dir
+    :param cmd: the command to write into the bash script
+    :param base_dir: the base directory to write the runscript to
+    '''
+    runscript = "%s/singularity" %(base_dir)
+    content = "!#/bin/sh\n\n%s" %(cmd)
+    output_file = write_file(runscript,content)
+    return output_file
 
 def list_images(repo_name,namespace="library",scope="repositories",content="images",return_response=False):
     '''get_images will use version 1.0 of Docker's service to return a list of images (no auth required)

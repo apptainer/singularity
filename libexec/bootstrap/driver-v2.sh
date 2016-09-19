@@ -74,7 +74,26 @@ if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
             message 1 "From: $SINGULARITY_DOCKER_IMAGE\n"
         fi
 
-        export SINGULARITY_BUILDDEF SINGULARITY_OSBUILD SINGULARITY_DOCKER_IMAGE
+        ### Obtain the IncludeCmd from the spec (also needed for docker bootstrap)
+        SINGULARITY_DOCKER_CMD=`singularity_key_get "IncludeCmd" "$SINGULARITY_BUILDDEF"`
+        if [ -z "$SINGULARITY_DOCKER_CMD" ]; then
+            message 1 "IncludeCmd: $SINGULARITY_DOCKER_CMD\n"
+           
+            # A command of "yes" means that we will include the docker CMD as runscript
+            if [ "$SINGULARITY_DOCKER_CMD" == "yes" ]; then
+                $SINGULARITY_DOCKER_INCLUDE_CMD="--cmd"
+
+            # Anything else, we will not include it
+            else
+                SINGULARITY_DOCKER_INCLUDE_CMD=""
+            fi
+
+        # Default (not finding the IncludeCmd) is to not include
+        else
+            SINGULARITY_DOCKER_INCLUDE_CMD=""
+        fi
+
+        export SINGULARITY_BUILDDEF SINGULARITY_OSBUILD SINGULARITY_DOCKER_IMAGE SINGULARITY_DOCKER_INCLUDE_CMD
     else
         message ERROR "Build Definition file not found: $SINGULARITY_BUILDDEF\n"
         exit 1

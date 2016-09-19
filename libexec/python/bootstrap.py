@@ -5,7 +5,7 @@ bootstrap.py: python helper for singularity command line tool
 
 '''
 
-from docker import list_images, get_token, get_tags, get_layer
+from docker import list_images, get_token, get_tags, get_layer, create_runscript
 from utils import extract_tar, change_permissions
 import argparse
 import os
@@ -30,6 +30,13 @@ def main():
                         type=str, 
                         default=None)
 
+    # Flag to add the Docker CMD as a runscript
+    parser.add_argument("--cmd", 
+                        dest='includecmd', 
+                        action="store_true",
+                        help="boolean to specify that the CMD should be included as a runscript (default is not included)", 
+                        default=False)
+
     
     try:
         args = parser.parse_args()
@@ -45,6 +52,9 @@ def main():
        if singularity_rootfs == None:
            print("ERROR: root file system not specified or defined as environmental variable, exiting!")
            sys.exit(1)
+
+    # Does the user want to include the CMD as runscript?
+    includecmd = args.includecmd
 
     # Do we have a docker image specified?
     if args.docker != None:
@@ -133,6 +143,14 @@ def main():
             # Extract image
             extract_tar(targz,singularity_rootfs)
                     
+    # If the user wants to include the CMD as runscript, generate it here
+    if includecmd == True:
+        print("Adding Docker CMD as Singularity runscript...")
+        manifest = get_manifest(image_id,token)
+        cmd = manifest['container_config']['Cmd']
+        if cmd != None:
+            runscript = create_runscript(cmd=cmd,
+                                         base_dir=singularity_rootfs)
 
     # When we finish, change permissions for the entire thing
     change_permissions("%s/" %(singularity_rootfs))
