@@ -66,7 +66,7 @@ echo "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdom
 
 # TODO: if made into official module, export to pythonpath here
 #TODO: at install, python dependencies need to be installed, and check for python
-python $SINGULARITY_libexecdir/singularity/helpers/bootstrap.py --docker $SINGULARITY_DOCKER_IMAGE --rootfs $SINGULARITY_ROOTFS
+python $SINGULARITY_libexecdir/singularity/python/bootstrap.py --docker $SINGULARITY_DOCKER_IMAGE --rootfs $SINGULARITY_ROOTFS
 
 # If we got here, exit...
 exit 0
