@@ -130,7 +130,7 @@ if [ -n "${SINGULARITY_OSBUILD:-}" ]; then
         if [ -x "$SINGULARITY_ROOTFS/bin/sh" -a -z "${SINGULARITY_REBOOTSTRAP:-}" ]; then
             message 1 "Not bootstrapping core container\n"
         else
-            message 1 "Executing OSBuild '$SINGULARITY_OSBUILD' module\n"
+            message 1 "Executing Bootstrap '$SINGULARITY_OSBUILD' module\n"
             if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/build-$SINGULARITY_OSBUILD.sh" "$@"; then
                 exit 255
             fi

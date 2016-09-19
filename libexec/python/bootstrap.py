@@ -1,7 +1,26 @@
 #!/usr/bin/env python
 
 '''
-bootstrap.py: python helper for singularity command line tool
+
+bootstrap.py: python helper for Singularity command line tool
+
+Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+
+"Singularity" Copyright (c) 2016, The Regents of the University of California,
+through Lawrence Berkeley National Laboratory (subject to receipt of any
+required approvals from the U.S. Dept. of Energy).  All rights reserved.
+ 
+This software is licensed under a customized 3-clause BSD license.  Please
+consult LICENSE file distributed with the sources of this project regarding
+your rights to use or distribute this software.
+ 
+NOTICE.  This Software was developed under funding from the U.S. Department of
+Energy and the U.S. Government consequently retains certain rights. As such,
+the U.S. Government has been granted for itself and others acting on its
+behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+to reproduce, distribute copies to the public, prepare derivative works, and
+perform publicly and display publicly, and to permit other to do so. 
+
 
 '''
 
@@ -146,14 +165,17 @@ def main():
                     
     # If the user wants to include the CMD as runscript, generate it here
     if includecmd == True:
+
         print("Adding Docker CMD as Singularity runscript...")
         manifest = get_manifest(image_id,token)
         cmd = manifest['container_config']['Cmd']
+
+        # Only add runscript if command is defined
         if cmd != None:
             runscript = create_runscript(cmd=cmd,
                                          base_dir=singularity_rootfs)
         else:
-            print("No command found, skipping runscript.")
+            print("No Docker CMD found, skipping runscript.")
 
     # When we finish, change permissions for the entire thing
     change_permissions("%s/" %(singularity_rootfs))
