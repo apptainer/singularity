@@ -154,7 +154,7 @@ def get_token(repo_name,namespace="library",scope="repositories",content="images
 # -----------------------------------------------------------------------------------
 
 
-def _get_token(repo_name,repo_tag="latest",scope="repository",permission="read"):
+def _get_token(repo_name,namespace="library",scope="repository",permission="push,pull"):
     '''get_token will use version 2.0 of Docker's service to return a token with given permission and scope - this
     function does work, but the token doesn't seem to work when used with other functions below for authentication
     :param repo_name: the name of the repo, eg "ubuntu"
@@ -162,38 +162,34 @@ def _get_token(repo_name,repo_tag="latest",scope="repository",permission="read")
     :param scope: scope of the request, default is "repository"
     :param permission: permission for the request, default is "read"
     '''
+
     base = "https://auth.docker.io/token?service=registry.docker.io&scope=%s:%s/%s:%s" %(scope,
-                                                                                         repo_name,
-                                                                                         repo_tag,
-                                                                                         permission)
-    response = api_get(base,headers=headers)
-    if response.status_code == 200:
-        try:
-            token = response.json()["token"]
-            return token
-        except:
-            return None
-    return None
+                                                                                          namespace,
+                                                                                          repo_name,
+                                                                                          permission)
+    response = api_get(base,default_header=False)
+    try:
+        token = json.loads(response)["token"]
+    except:
+        print("Error retrieving token from Docker registry.")
+        token = None
+    return token
 
 
-def _get_manifest(repo_name,repo_tag="latest"):
+def _get_manifest(repo_name,namespace,repo_tag="latest"):
     '''get_manifest should return an image manifest for a particular repo and tag. The token is expected to
     be from version 2.0 (function above) but I never got it to work.
     :param repo_name: the name of the repo, eg "ubuntu"
-    :param token: the token returned from v 2.0 of the docker registry API
     :param repo_tag: the repo tag, default is "latest"
     '''
-    base = "https://registry-1.docker.io/v2/%s/manifests/%s" %(repo_name,repo_tag)
-
+    base = "https://registry.docker.io/v2/%s/manifests/%s" %(repo_name,repo_tag)
+    
     # To get the image layers, we need a valid token to read the repo
-    token = _get_token(repo_name=repo_name,
-                       repo_tag=repo_tag,
-                       scope="repository",
-                       permission="pull")
+    token = _get_token(repo_name=repo_name,permission="pull")
 
     # If the token function returns None, there was an error
     if token == None:
-        print("Error getting read token for repository %s/%s:%s, exiting." %(namespace,repo_name,repo_tag))
+        print("Error getting read token for repository %s/%s, exiting." %(namespace,repo_name))
         sys.exit(1)
 
     # default headers docs say are required, doesn't seem to matter
@@ -203,9 +199,6 @@ def _get_manifest(repo_name,repo_tag="latest"):
     # https://docs.docker.com/registry/spec/auth/token/
     headers.update({"Authorization": "Bearer %s" %(token) })
     response = api_get(base,headers=headers)
-
+    return response
     # u'{"errors":[{"code":"UNAUTHORIZED","message":"authentication required","detail":[{"Type":"repository","Name":"ubuntu","Action":"pull"}]}]}\n'
     
-    if response.status_code == 200:
-        return response.json()
-    return None

@@ -44,7 +44,7 @@ if sys.version_info[0] < 3:
 header = {'Accept': 'application/json','Content-Type':'application/json; charset=utf-8'}
 
 
-def api_get(url,data=None,headers=None,stream=None,return_response=False):
+def api_get(url,data=None,default_header=True,headers=None,stream=None,return_response=False):
     '''api_get gets a url to the api with appropriate headers, and any optional data
     :param data: a dictionary of key:value items to add to the data args variable
     :param url: the url to get
@@ -52,9 +52,16 @@ def api_get(url,data=None,headers=None,stream=None,return_response=False):
     default is None (will not stream)
     :returns response: the requests response object
     '''
-    if headers != None:
-        header.update(headers)
+    if default_header == True:
+        if headers != None:
+            headers.update(header)
+        else:
+            headers = header
 
+    else:
+        if headers == None:
+            headers = dict() 
+        
     # Does the user want to stream a response?
     do_stream = False
     if stream != None:
@@ -64,11 +71,11 @@ def api_get(url,data=None,headers=None,stream=None,return_response=False):
         args = urllib.urlencode(data)
         request = urllib2.Request(url=url, 
                                   data=args, 
-                                  headers=header) 
+                                  headers=headers) 
 
     else:
         request = urllib2.Request(url=url, 
-                                  headers=header) 
+                                  headers=headers) 
 
     try:
         response = urllib2.urlopen(request)
