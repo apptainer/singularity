@@ -174,6 +174,9 @@ def main():
         if cmd != None:
             runscript = create_runscript(cmd=cmd,
                                          base_dir=singularity_rootfs)
+
+            # change permission of runscript to 0755 (default)
+            change_permissions("%s/runscript" %(singularity_rootfs))
         else:
             print("No Docker CMD found, skipping runscript.")
 
