@@ -40,8 +40,54 @@ if sys.version_info[0] < 3:
 ############################################################################
 
 
-# default header for all calls
-header = {'Accept': 'application/json','Content-Type':'application/json; charset=utf-8'}
+def api_get_pagination(url):
+   '''api_pagination is a wrapper for "api_get" that will also handle pagination
+   :param url: the url to retrieve:
+   :param default_header: include default_header (above)
+   :param headers: headers to add (default is None)
+   '''
+   done = False
+   results = []
+   while not done:
+       response = api_get(url=url)
+       try:
+           response = json.loads(response)
+       except:
+           print("Error parsing response for url %s, exiting." %(url))
+           sys.exit(1)
+
+       # If we have a next url
+       if "next" in response:
+           url = response["next"]
+       else:
+           done = True
+ 
+       # Add new call to the results
+       results = results + response['results']
+   return results
+    
+
+def parse_headers(default_header,headers):
+    '''parse_headers will return a completed header object, adding additional headers to some
+    default header
+    :param default_header: include default_header (above)
+    :param headers: headers to add (default is None)
+    '''
+    
+    # default header for all calls
+    header = {'Accept': 'application/json','Content-Type':'application/json; charset=utf-8'}
+
+    if default_header == True:
+        if headers != None:
+            headers.update(header)
+        else:
+            headers = header
+
+    else:
+        if headers == None:
+            headers = dict() 
+
+    return headers
 
 
 def api_get(url,data=None,default_header=True,headers=None,stream=None,return_response=False):
@@ -52,15 +98,8 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
     default is None (will not stream)
     :returns response: the requests response object
     '''
-    if default_header == True:
-        if headers != None:
-            headers.update(header)
-        else:
-            headers = header
-
-    else:
-        if headers == None:
-            headers = dict() 
+    headers = parse_headers(default_header=default_header,
+                            headers=headers)
         
     # Does the user want to stream a response?
     do_stream = False
@@ -72,7 +111,6 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
         request = urllib2.Request(url=url, 
                                   data=args, 
                                   headers=headers) 
-
     else:
         request = urllib2.Request(url=url, 
                                   headers=headers) 

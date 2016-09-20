@@ -99,22 +99,45 @@ def get_layer(image_id,token,download_folder=None,content="layer"):
 
 
 
-def get_tags(repo_name,repo_tag="latest",namespace="library",content="tags",scope="repositories"):
+def get_tags(repo_name,repo_tag=None,namespace="library",content="tags",scope="repositories"):
     '''get_tags will use version 1.0 of the api (registry.hub.docker.com) to return image ids (layers) associated with a tag
     :param repo_name: the name of the repo, required
-    :param repo_tag: the repo tag, default tag is latest. Note that the hub doesn't seem to return a tag for latest
+    :param repo_tag: the repo tag, default tag None will return all tags.
     :param namespace: the namespace to use, (collection/owner of repos), default is "library"
     :param scope: the scope of the request, default is repositories
     :param content: the api call to make, default is "tags" to get tags
+    # note that if you change v1 to v2 below, you get a different result, but doesn't include image ids
     '''
-    base = "https://registry.hub.docker.com/v1/%s/%s/%s/%s/%s" %(scope,namespace,repo_name,content,repo_tag)
+
+    # If the user wants all tags
+    if repo_tag == None:
+        base = "https://registry.hub.docker.com/v1/%s/%s/%s/%s" %(scope,namespace,repo_name,content)
+    else:
+        base = "https://registry.hub.docker.com/v1/%s/%s/%s/%s/%s" %(scope,namespace,repo_name,content,repo_tag)
+
+    # The response is a string with json that needs to be read
     response = api_get(base)
+
+    # Try to load the json, if it fails, then tell the user valid tags (given that a specific tag is wanted)
     try:
         tags = json.loads(response)
-        print("Found %s tags for image %s/%s:%s!" %(len(tags),namespace,repo_name,repo_tag))
+        print("Found %s tags for image %s/%s!" %(len(tags),namespace,repo_name))
         return tags
+
     except:
-        print("Cannot find tag %s for repo %s/%s, exiting." %(repo_tag,namespace,repo_name))
+
+        # Have function call itself only if error is due to missing tag (otherwise loop)
+        if repo_tag != None:
+            tags = get_tags(repo_name=repo_name,
+                           namespace=namespace,
+                           repo_tag=None)        
+            print("\n".join([x['name'] for x in tags]))
+            print('Cannot find tag "%s" for repo %s/%s, valid tags are listed above.' %(repo_tag,namespace,repo_name))
+
+        else:
+            print("Error retrieving tags for repo %s/%s" %(namespace,repo_name))
+        
+        # Always exit with error    
         sys.exit(1)
 
 
