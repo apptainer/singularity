@@ -24,6 +24,8 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 from utils import api_get, write_file
+import sys
+import json
 
 # Authentication not required ---------------------------------------------------------------------------------
 
@@ -37,6 +39,7 @@ def create_runscript(cmd,base_dir):
     output_file = write_file(runscript,content)
     return output_file
 
+
 def list_images(repo_name,namespace="library",scope="repositories",content="images",return_response=False):
     '''get_images will use version 1.0 of Docker's service to return a list of images (no auth required)
     :param repo_name: the name of the repo, eg "ubuntu"
@@ -47,13 +50,10 @@ def list_images(repo_name,namespace="library",scope="repositories",content="imag
 
     response = api_get(base)
     images = None
-    if response.status_code == 200:
-        if return_response == True:
-            return response
-        try:
-            images = response.json()
-        except:
-            print("Error retrieving images.")
+    try:
+        images = json.loads(response)
+    except:
+        print("Error retrieving images.")
     return images     
 
 
@@ -69,9 +69,12 @@ def get_manifest(image_id,token,content="json"):
         token = {"Authentication":"Token %s" %(token)}
 
     response = api_get(base,headers=token)
-    if response.status_code == 200:
-        return response.json()
-    return None
+    manifest = None
+    try:
+        manifest = json.loads(response)
+    except:
+        print("Error retrieving manifest.")
+    return manifest
 
 
 def get_layer(image_id,token,download_folder=None,content="layer"):
@@ -106,11 +109,11 @@ def get_tags(repo_name,repo_tag="latest",namespace="library",content="tags",scop
     '''
     base = "https://registry.hub.docker.com/v1/%s/%s/%s/%s/%s" %(scope,namespace,repo_name,content,repo_tag)
     response = api_get(base)
-    if response.status_code == 200:
-        tags = response.json()
+    try:
+        tags = json.loads(response)
         print("Found %s tags for image %s/%s:%s!" %(len(tags),namespace,repo_name,repo_tag))
         return tags
-    elif response.text == 'Tag not found':
+    except:
         print("Cannot find tag %s for repo %s/%s, exiting." %(repo_tag,namespace,repo_name))
         sys.exit(1)
 
@@ -127,17 +130,15 @@ def get_token(repo_name,namespace="library",scope="repositories",content="images
     base = "https://registry.hub.docker.com/v1/%s/%s/%s/%s" %(scope,namespace,repo_name,content)
 
     headers = {"X-Docker-Token":True}
-    response = api_get(base,headers=headers)
-    if response.status_code == 200:
-    
-        # Did we get a token?
-        if "x-docker-token" in response.headers:
-            token = response.headers["x-docker-token"]
-            if header == True:
-                return {"Authorization":"Token %s" %(token)}
-            return token
-
-    return None
+    response = api_get(base,
+                       headers=headers,
+                       return_response=True)
+   
+    token = response.info().getheader('x-docker-token',None)
+    if token != None:
+        if header == True:
+            return {"Authorization":"Token %s" %(token)}
+    return token
 
 
 # Authentication required ---------------------------------------------------------------------------------
@@ -147,6 +148,8 @@ def get_token(repo_name,namespace="library",scope="repositories",content="images
 #####################################################################################
 # NOT IN USE ------------------------------------------------------------------------
 # Functions that should work, but don't, mostly for version 2.0 of the Docker API
+# NOTE that these functions were written to use requests module, and need to be 
+# updated to use urllib and urllib2 (@vsoch)
 # https://docs.docker.com/registry/spec/api/#/detail
 # -----------------------------------------------------------------------------------
 

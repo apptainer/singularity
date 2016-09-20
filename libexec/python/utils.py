@@ -23,11 +23,12 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import os
-import requests
 import shutil
 import subprocess
 import sys
 import tarfile
+import urllib
+import urllib2
 
 # Python less than version 3 must import OSError
 if sys.version_info[0] < 3:
@@ -43,20 +44,7 @@ if sys.version_info[0] < 3:
 header = {'Accept': 'application/json','Content-Type':'application/json; charset=utf-8'}
 
 
-def api_post(url,data=None):
-    '''api_post posts a url to the api with appropriate headers, and any optional data
-    :param data: a dictionary of key:value items to add to the data args variable
-    :param url: the url to post to
-    :returns response: the requests response object
-    '''
-
-    if data != None:
-        args = {"args":data}
-        return requests.post(url, headers=headers, data=json.dumps(args))
-    return requests.post(url, headers=headers)
-
-
-def api_get(url,data=None,headers=None,stream=None):
+def api_get(url,data=None,headers=None,stream=None,return_response=False):
     '''api_get gets a url to the api with appropriate headers, and any optional data
     :param data: a dictionary of key:value items to add to the data args variable
     :param url: the url to get
@@ -73,24 +61,35 @@ def api_get(url,data=None,headers=None,stream=None):
         do_stream = True
 
     if data != None:
-        args = {"args":data}
-        response = requests.get(url, 
-                                headers=headers, 
-                                data=json.dumps(args),
-                                stream=do_stream)
-    else:
-        response = requests.get(url, 
-                                headers=headers, 
-                                stream=do_stream)
+        args = urllib.urlencode(data)
+        request = urllib2.Request(url=url, 
+                                  data=args, 
+                                  headers=header) 
 
-    if do_stream == False:
+    else:
+        request = urllib2.Request(url=url, 
+                                  headers=header) 
+
+    try:
+        response = urllib2.urlopen(request)
+    except:
+        return "Not Found"
+
+    # Does the call just want to return the response?
+    if return_response == True:
         return response
 
-    # If do_stream is True, stream the response into a file
+    if do_stream == False:
+        return response.read()
+       
+    chunk_size = 1 << 20
     with open(stream, 'wb') as filey:
-        for chunk in response.iter_content(chunk_size=1024): 
-            if chunk: # filter out keep-alive new chunks
-                filey.write(chunk)
+        while True:
+            chunk = response.read(chunk_size)
+            if not chunk: 
+                break
+            filey.write(chunk)
+
     return stream
 
 
