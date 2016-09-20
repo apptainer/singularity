@@ -178,7 +178,7 @@ def main():
             print("No Docker CMD found, skipping runscript.")
 
     # When we finish, change permissions for the entire thing
-    change_permissions("%s/" %(singularity_rootfs))
+    #change_permissions("%s/" %(singularity_rootfs))
 
 
 if __name__ == '__main__':
