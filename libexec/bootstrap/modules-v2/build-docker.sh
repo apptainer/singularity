@@ -57,17 +57,35 @@ fi
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
+### Obtain the From from the spec (needed for docker bootstrap)
+SINGULARITY_DOCKER_IMAGE=`singularity_key_get "From" "$SINGULARITY_BUILDDEF"`
+if [ -z "${SINGULARITY_DOCKER_IMAGE:-}" ]; then
+    message ERROR "Bootstrap type 'docker' given, but no 'From' defined!\n"
+    ABORT 1
+else
+    message 1 "From: $SINGULARITY_DOCKER_IMAGE\n"
+fi
 
-: ' ADMIN IMAGE STUFFS -------------------------------------------
- Here we create the admin account, and define hosts
-'
+### Obtain the IncludeCmd from the spec (also needed for docker bootstrap)
+SINGULARITY_DOCKER_CMD=`singularity_key_get "IncludeCmd" "$SINGULARITY_BUILDDEF"`
+if [ -n "${SINGULARITY_DOCKER_CMD:-}" ]; then
+    message 1 "IncludeCmd: $SINGULARITY_DOCKER_CMD\n"
 
-mkdir -p -m 0755 "$SINGULARITY_ROOTFS/bin"
-mkdir -p -m 0755 "$SINGULARITY_ROOTFS/etc"
+    # A command of "yes" means that we will include the docker CMD as runscript
+    if [ "$SINGULARITY_DOCKER_CMD" == "yes" ]; then
+        SINGULARITY_DOCKER_INCLUDE_CMD="--cmd"
 
-echo "root:!:0:0:root:/root:/bin/sh" > "$SINGULARITY_ROOTFS/etc/passwd"
-echo " root:x:0:" > "$SINGULARITY_ROOTFS/etc/group"
-echo "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4" > "$SINGULARITY_ROOTFS/etc/hosts"
+    # Anything else, we will not include it
+    else
+        SINGULARITY_DOCKER_INCLUDE_CMD=""
+    fi
+
+# Default (not finding the IncludeCmd) is to not include
+else
+    SINGULARITY_DOCKER_INCLUDE_CMD=""
+fi
+
+### Run it!
 
 # TODO: if made into official module, export to pythonpath here
 #TODO: at install, python dependencies need to be installed, and check for python
