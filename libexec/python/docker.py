@@ -138,7 +138,7 @@ def get_manifest(repo_name,namespace,repo_tag="latest"):
         # If the call fails, give the user a list of acceptable tags
         tags = get_tags(namespace=namespace,
                         repo_name=repo_name)
-        print("\n".join([x['name'] for x in tags]))
+        print("\n".join(tags))
         print("Error getting manifest using url %s" %(base))
         sys.exit(1)
 
