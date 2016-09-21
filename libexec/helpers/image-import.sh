@@ -44,13 +44,59 @@ if [ ! -d  "$SINGULARITY_ROOTFS" ]; then
     exit 255
 fi
 
+IMPORT_URI="${1:-}"
 
-if [ -n "${SINGULARITY_IMPORT_COMMAND:-}" ]; then
-    eval "(cd $SINGULARITY_ROOTFS; $SINGULARITY_IMPORT_COMMAND)"
-else
-    if [ -n "${SINGULARITY_IMPORT_FILE:-}" ]; then
-        eval "(cd $SINGULARITY_ROOTFS; tar -x .) < $SINGULARITY_IMPORT_FILE"
-    else
-        eval "(cd $SINGULARITY_ROOTFS; tar -x .)"
-    fi
+if [ -z "$IMPORT_URI" ]; then
+    message 1 "Assuming import from incoming pipe\n"
+    IMPORT_URI="-"
 fi
+
+case "$IMPORT_URI" in
+    docker://*)
+        CONTAINER_NAME=`echo "$IMPORT_URI" | sed -e 's@^docker://@@'`
+        if ! SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/bootstrap.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' --cmd"; then
+            ABORT $?
+        fi
+    ;;
+    http://*|https://*)
+        SINGULARITY_IMPORT_GET="curl -L -k '$IMPORT_URI'"
+    ;;
+    file://*)
+        LOCAL_FILE=`echo "$IMPORT_URI" | sed -e 's@^file://@@'`
+        if [ ! -f "$LOCAL_FILE" ]; then
+            message ERROR "URI file not found: $LOCAL_FILE\n"
+            ABORT 1
+        fi
+        SINGULARITY_IMPORT_GET="cat '$LOCAL_FILE'"
+    ;;
+    *://*)
+        message ERROR "Unsupported URI: $IMPORT_URI\n"
+        ABORT 1
+    ;;
+    -)
+        SINGULARITY_IMPORT_GET="cat"
+    ;;
+    *)
+        if [ ! -f "$IMPORT_URI" ]; then
+            message ERROR "File not found: $LOCAL_FILE\n"
+            ABORT 1
+        fi
+        SINGULARITY_IMPORT_GET="cat $IMPORT_URI"
+    ;;
+esac
+
+case "$IMPORT_URI" in
+    *.tar|-)
+        SINGULARITY_IMPORT_SPLAT="| ( cd '$SINGULARITY_ROOTFS' ; tar -xf - )"
+    ;;
+    *.tar.gz|*.tgz)
+        SINGULARITY_IMPORT_SPLAT="| ( cd '$SINGULARITY_ROOTFS' ; tar -xzf - )"
+    ;;
+    *.tar.bz2)
+        SINGULARITY_IMPORT_SPLAT="| ( cd '$SINGULARITY_ROOTFS' ; tar -xjf - )"
+    ;;
+esac
+
+eval "$SINGULARITY_IMPORT_GET ${SINGULARITY_IMPORT_SPLAT:-}"
+
+exit $?
