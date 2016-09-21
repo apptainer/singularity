@@ -62,13 +62,12 @@ case "$SINGULARITY_IMAGE" in
                 message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
                 ABORT 255
             fi
-            eval "$SINGULARITY_libexecdir/singularity/python/bootstrap.py --rootfs '$CONTAINER_DIR' --docker '$IMPORT_URI' --cmd"
-            CONTAINER_NAME=`echo "$IMPORT_URI" | sed -e 's@^docker://@@'`
-            if ! eval "$SINGULARITY_libexecdir/singularity/python/bootstrap.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' --cmd"; then
-                ABORT $?
-            fi
-
         fi
+        CONTAINER_NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/bootstrap.py --rootfs '$CONTAINER_DIR' --docker '$CONTAINER_NAME' --cmd"; then
+            ABORT $?
+        fi
+        SINGULARITY_IMAGE="$CONTAINER_DIR"
     ;;
 esac
 
