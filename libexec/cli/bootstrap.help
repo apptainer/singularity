@@ -4,7 +4,7 @@ The bootstrap command is useful for creating a new bootstrap or modifying an
 existing one using a definition file that describes how to build the
 container. A simple bootstrap definition file may be as simple as:
 
-    OSBuild: debian
+    BootStrap: debian
     OSVersion: stable
     MirrorURL: http://us.archive.ubuntu.com/ubuntu/
 
