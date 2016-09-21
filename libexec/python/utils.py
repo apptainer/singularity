@@ -190,7 +190,7 @@ def extract_tar(targz,output_folder):
     :param output_folder: the output folder to extract to
     '''
     # Just use command line, more succinct.
-    return run_command(["tar","-xzf",targz,"-C",output_folder]) 
+    return run_command(["tar","-xzf",targz,"-C",output_folder,"--exclude=dev/*"]) 
 
 
 def write_file(filename,content,mode="wb"):
