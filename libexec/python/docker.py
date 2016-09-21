@@ -139,7 +139,7 @@ def get_manifest(repo_name,namespace,repo_tag="latest"):
         tags = get_tags(namespace=namespace,
                         repo_name=repo_name)
         print("\n".join(tags))
-        print("Error getting manifest using url %s" %(base))
+        print("Error getting manifest for %s/%s:%s. Acceptable tags are listed above." %(namespace,repo_name,repo_tag))
         sys.exit(1)
 
     return response
