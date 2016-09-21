@@ -25,17 +25,6 @@ if [ -z "$SINGULARITY_libexecdir" ]; then
     exit 1
 fi
 
-# Ensure the user has provided a docker image name with "From"
-if [ -z "$SINGULARITY_DOCKER_IMAGE" ]; then
-    echo "Please specify the Docker image name with From: in the definition file."
-    exit 1
-fi
-
-# Does the user want to include the docker CMD? Default, no.
-if [ -z "$SINGULARITY_DOCKER_INCLUDE_CMD:-}" ]; then
-    SINGULARITY_DOCKER_INCLUDE_CMD=""
-fi
-
 ## Load functions
 if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
     . "$SINGULARITY_libexecdir/singularity/functions"
@@ -82,6 +71,17 @@ if [ -n "${SINGULARITY_DOCKER_CMD:-}" ]; then
 
 # Default (not finding the IncludeCmd) is to not include
 else
+    SINGULARITY_DOCKER_INCLUDE_CMD=""
+fi
+
+# Ensure the user has provided a docker image name with "From"
+if [ -z "$SINGULARITY_DOCKER_IMAGE" ]; then
+    echo "Please specify the Docker image name with From: in the definition file."
+    exit 1
+fi
+
+# Does the user want to include the docker CMD? Default, no.
+if [ -z "$SINGULARITY_DOCKER_INCLUDE_CMD:-}" ]; then
     SINGULARITY_DOCKER_INCLUDE_CMD=""
 fi
 
