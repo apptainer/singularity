@@ -30,6 +30,8 @@ import tarfile
 import urllib
 import urllib2
 
+from urllib2 import HTTPError
+
 # Python less than version 3 must import OSError
 if sys.version_info[0] < 3:
     from exceptions import OSError
@@ -117,8 +119,10 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
 
     try:
         response = urllib2.urlopen(request)
-    except:
-        return "Not Found"
+
+    # If we have an HTTPError, try to follow the response
+    except HTTPError as error:
+        return error
 
     # Does the call just want to return the response?
     if return_response == True:

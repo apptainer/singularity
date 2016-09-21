@@ -24,8 +24,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from docker import list_images, get_token, get_tags, get_layer, \
-    create_runscript, get_manifest 
+from docker import get_layer, create_runscript, get_manifest, get_config, get_images
 from utils import extract_tar, change_permissions
 import argparse
 import os
@@ -115,26 +114,16 @@ def main():
 
 
 # IMAGE METADATA -------------------------------------------
-# Use Docker Registry API (version 1.0) to get images ids, manifest
+# Use Docker Registry API (version 2.0) to get images ids, manifest
 
+        # Get an image manifest - has image ids to parse, and will be
+        # used later to get Cmd
+        manifest = get_manifest(repo_name=repo_name,
+                                namespace=namespace,
+                                repo_tag=repo_tag)
 
-        # Get full list of images for the repo
-        images = list_images(repo_name=repo_name,
-                             namespace=namespace)
-
-        # Get specific image names (first 8 characters) for the tag of interest
-        tags = get_tags(repo_name=repo_name,
-                        repo_tag=repo_tag,
-                        namespace=namespace)
-
-        # Get image manifest? Meta data should be added to image somewhere...
-
-        # Get token (default returns header object)
-        token = get_token(repo_name=repo_name,
-                          scope="repositories",
-                          namespace=namespace,
-                          content="images")
-
+        # Get images from manifest using version 2.0 of Docker Registry API
+        images = get_images(manifest=manifest)
         
        
 #  DOWNLOAD LAYERS -------------------------------------------
@@ -144,31 +133,26 @@ def main():
         tmpdir = tempfile.mkdtemp()
         layers = []
 
-        for tag in tags:
-            image_id = tag['id']
-
-            # Find the corresponding (complete) image id in the images
-            match = [x['id'] for x in images if re.search('^%s*' %(image_id),x['id'])]
-            if len(match) > 0:
-                image_id = match[0]
-            else:
-                print("WARNING: could not find layer with id %s in Docker registry!" %(image_id))
-                continue
+        for image_id in images:
 
             # Download the layer
-            targz = get_layer(image_id,token,download_folder=tmpdir) 
+            targz = get_layer(image_id=image_id,
+                              namespace=namespace,
+                              repo_name=repo_name,
+                              download_folder=tmpdir) 
+
             layers.append(targz) # in case we want a list at the end
                                  # @chrisfilo suggestion to try compiling into one tar.gz
 
             # Extract image
             extract_tar(targz,singularity_rootfs)
-                    
+               
+     
     # If the user wants to include the CMD as runscript, generate it here
     if includecmd == True:
 
         print("Adding Docker CMD as Singularity runscript...")
-        manifest = get_manifest(image_id,token)
-        cmd = manifest['container_config']['Cmd']
+        cmd = get_config(manifest) # default is spec="Cmd"
 
         # Only add runscript if command is defined
         if cmd != None:
