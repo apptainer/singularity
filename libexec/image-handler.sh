@@ -50,10 +50,25 @@ case "$SINGULARITY_IMAGE" in
         fi
     ;;
     docker://*)
-        echo
-        echo "A hint of things to come..."
-        echo
-        exit 1
+        NAME=`basename "$SINGULARITY_IMAGE"`
+        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
+            USERID=`id -u`
+            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
+            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+        fi
+        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/GET_ID_FROM_SOMEWHERE/$NAME"
+        if [ ! -d "$CONTAINER_DIR" ]; then
+            if ! mkdir -p "$CONTAINER_DIR"; then
+                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+                ABORT 255
+            fi
+            eval "$SINGULARITY_libexecdir/singularity/python/bootstrap.py --rootfs '$CONTAINER_DIR' --docker '$IMPORT_URI' --cmd"
+            CONTAINER_NAME=`echo "$IMPORT_URI" | sed -e 's@^docker://@@'`
+            if ! eval "$SINGULARITY_libexecdir/singularity/python/bootstrap.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' --cmd"; then
+                ABORT $?
+            fi
+
+        fi
     ;;
 esac
 
