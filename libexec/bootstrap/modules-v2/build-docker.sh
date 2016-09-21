@@ -19,11 +19,21 @@
 # 
 # 
 
-
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
     exit 1
+fi
+
+# Ensure the user has provided a docker image name with "From"
+if [ -z "$SINGULARITY_DOCKER_IMAGE" ]; then
+    echo "Please specify the Docker image name with From: in the definition file."
+    exit 1
+fi
+
+# Does the user want to include the docker CMD? Default, no.
+if [ -z "$SINGULARITY_DOCKER_INCLUDE_CMD:-}" ]; then
+    SINGULARITY_DOCKER_INCLUDE_CMD=""
 fi
 
 ## Load functions
@@ -34,37 +44,34 @@ else
     exit 1
 fi
 
-SINGULARITY_BUILDDEF="${1:-}"
-shift
-SINGULARITY_TMPDIR=`mktemp -d /tmp/singularity-bootstrap.XXXXXXX`
-PATH=/bin:/sbin:$PATH
-HOME=/root
-RETVAL=0
-
-export SINGULARITY_TMPDIR SINGULARITY_BUILDDEF
+if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
+    message ERROR "Singularity root file system not defined\n"
+    exit 1
+fi
 
 if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    BOOTSTRAP_VERSION="1"
-elif [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
-    message ERROR "Bootstrap defintion not found: ${SINGULARITY_BUILDDEF:-}\n"
-elif grep -q "^DistType " "${SINGULARITY_BUILDDEF:-}"; then
-    BOOTSTRAP_VERSION="1"
-else
-    BOOTSTRAP_VERSION="2"
+    message ERROR "Singularity build definition file not defined\n"
+    exit 1
 fi
 
-if [ -n "${BOOTSTRAP_VERSION:-}" ]; then
-    if [ -x "$SINGULARITY_libexecdir/singularity/bootstrap/driver-v$BOOTSTRAP_VERSION.sh" ]; then
-        eval "$SINGULARITY_libexecdir/singularity/bootstrap/driver-v$BOOTSTRAP_VERSION.sh" "$@"
-        RETVAL=$?
-    else
-        echo "Could not locate version $BOOTSTRAP_VERSION bootstrap driver\n";
-        exit 255
-    fi
-else
-    message ERROR "Unrecognized bootstrap format of bootstrap definition\n"
-fi
 
-rm -rf "$SINGULARITY_TMPDIR"
+########## BEGIN BOOTSTRAP SCRIPT ##########
 
-exit $RETVAL
+
+: ' ADMIN IMAGE STUFFS -------------------------------------------
+ Here we create the admin account, and define hosts
+'
+
+mkdir -p -m 0755 "$SINGULARITY_ROOTFS/bin"
+mkdir -p -m 0755 "$SINGULARITY_ROOTFS/etc"
+
+echo "root:!:0:0:root:/root:/bin/sh" > "$SINGULARITY_ROOTFS/etc/passwd"
+echo " root:x:0:" > "$SINGULARITY_ROOTFS/etc/group"
+echo "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4" > "$SINGULARITY_ROOTFS/etc/hosts"
+
+# TODO: if made into official module, export to pythonpath here
+#TODO: at install, python dependencies need to be installed, and check for python
+python $SINGULARITY_libexecdir/singularity/python/bootstrap.py --docker $SINGULARITY_DOCKER_IMAGE --rootfs $SINGULARITY_ROOTFS $SINGULARITY_DOCKER_INCLUDE_CMD
+
+# If we got here, exit...
+exit 0

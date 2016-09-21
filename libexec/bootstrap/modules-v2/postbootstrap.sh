@@ -133,6 +133,7 @@ chmod 0755 "$SINGULARITY_ROOTFS/.run"
 
 
 if [ -f "$SINGULARITY_BUILDDEF" ]; then
+
     ### CREATE RUNSCRIPT
     singularity_section_get "runscript" "$SINGULARITY_BUILDDEF" > "$SINGULARITY_ROOTFS/singularity"
     if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then

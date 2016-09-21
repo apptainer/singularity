@@ -271,5 +271,6 @@ AC_CONFIG_FILES([
    libexec/bootstrap/modules-v2/Makefile
    libexec/cli/Makefile
    libexec/helpers/Makefile
+   libexec/python/Makefile
 ])
 AC_OUTPUT

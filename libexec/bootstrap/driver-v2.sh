@@ -56,6 +56,7 @@ export LC_ALL LANG TERM DEBIAN_FRONTEND
 if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
     message 1 "Checking bootstrap definition\n";
     if [ -f "$SINGULARITY_BUILDDEF" ]; then
+
         ### Obtain the BootStrap build type from the SPEC
         if SINGULARITY_OSBUILD=`singularity_key_get "BootStrap" "$SINGULARITY_BUILDDEF"`; then
             true
@@ -66,7 +67,33 @@ if [ -n "${SINGULARITY_BUILDDEF:-}" ]; then
         else
             message 1 "No 'BootStrap' build module given, assuming overlay\n"
         fi
-        export SINGULARITY_BUILDDEF SINGULARITY_OSBUILD
+
+        ### Obtain the From from the spec (needed for docker bootstrap)
+        SINGULARITY_DOCKER_IMAGE=`singularity_key_get "From" "$SINGULARITY_BUILDDEF"`
+        if [ ! -z "$SINGULARITY_DOCKER_IMAGE" ]; then
+            message 1 "From: $SINGULARITY_DOCKER_IMAGE\n"
+        fi
+
+        ### Obtain the IncludeCmd from the spec (also needed for docker bootstrap)
+        SINGULARITY_DOCKER_CMD=`singularity_key_get "IncludeCmd" "$SINGULARITY_BUILDDEF"`
+        if [ ! -z "$SINGULARITY_DOCKER_CMD" ]; then
+            message 1 "IncludeCmd: $SINGULARITY_DOCKER_CMD\n"
+           
+            # A command of "yes" means that we will include the docker CMD as runscript
+            if [ "$SINGULARITY_DOCKER_CMD" == "yes" ]; then
+                SINGULARITY_DOCKER_INCLUDE_CMD="--cmd"
+
+            # Anything else, we will not include it
+            else
+                SINGULARITY_DOCKER_INCLUDE_CMD=""
+            fi
+
+        # Default (not finding the IncludeCmd) is to not include
+        else
+            SINGULARITY_DOCKER_INCLUDE_CMD=""
+        fi
+
+        export SINGULARITY_BUILDDEF SINGULARITY_OSBUILD SINGULARITY_DOCKER_IMAGE SINGULARITY_DOCKER_INCLUDE_CMD
     else
         message ERROR "Build Definition file not found: $SINGULARITY_BUILDDEF\n"
         exit 1
@@ -103,7 +130,7 @@ if [ -n "${SINGULARITY_OSBUILD:-}" ]; then
         if [ -x "$SINGULARITY_ROOTFS/bin/sh" -a -z "${SINGULARITY_REBOOTSTRAP:-}" ]; then
             message 1 "Not bootstrapping core container\n"
         else
-            message 1 "Executing OSBuild '$SINGULARITY_OSBUILD' module\n"
+            message 1 "Executing Bootstrap '$SINGULARITY_OSBUILD' module\n"
             if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/build-$SINGULARITY_OSBUILD.sh" "$@"; then
                 exit 255
             fi
