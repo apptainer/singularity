@@ -134,7 +134,7 @@ char *singularity_loop_bind(FILE *image_fp) {
 
     singularity_message(DEBUG, "Setting loop device flags\n");
     if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
-        fprintf(stderr, "ERROR: Failed to set loop flags on loop device: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to set loop flags on loop device: %s\n", strerror(errno));
         (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
         (void)singularity_loop_free(loop_dev);
         ABORT(255);
