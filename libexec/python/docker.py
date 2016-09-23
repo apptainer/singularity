@@ -136,8 +136,10 @@ def get_manifest(repo_name,namespace,repo_tag="latest"):
         response = json.loads(response)
     except:
         # If the call fails, give the user a list of acceptable tags
-
-        print("Error getting manifest using url %s" %(base))
+        tags = get_tags(namespace=namespace,
+                        repo_name=repo_name)
+        print("\n".join(tags))
+        print("Error getting manifest for %s/%s:%s. Acceptable tags are listed above." %(namespace,repo_name,repo_tag))
         sys.exit(1)
 
     return response
