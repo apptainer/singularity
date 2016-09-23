@@ -54,7 +54,7 @@ fi
 case "$IMPORT_URI" in
     docker://*)
         CONTAINER_NAME=`echo "$IMPORT_URI" | sed -e 's@^docker://@@'`
-        if ! SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/bootstrap.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' --cmd"; then
+        if ! SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' --cmd"; then
             ABORT $?
         fi
     ;;

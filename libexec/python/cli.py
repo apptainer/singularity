@@ -24,7 +24,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from docker import get_layer, create_runscript, get_manifest, get_config, get_images
+from docker.api import get_layer, create_runscript, get_manifest, get_config, get_images
 from utils import extract_tar, change_permissions
 import argparse
 import os
@@ -160,7 +160,7 @@ def main():
                                          base_dir=singularity_rootfs)
 
             # change permission of runscript to 0755 (default)
-            change_permissions("%s/runscript" %(singularity_rootfs))
+            change_permissions("%s/singularity" %(singularity_rootfs))
         else:
             print("No Docker CMD found, skipping runscript.")
 
