@@ -60,8 +60,8 @@ int check_mounted(char *mountpoint) {
             continue;
         }
 
-        // Check to see if mountpoint is in container (add the trailing slash to ensure we pick up directory)
-        if ( strncmp(joinpath(rootfs_dir, mountpoint), strjoin(mount, "/"), strlength(mount, 1024)+1) == 0 ) {
+        // Check to see if mountpoint is already mounted
+        if ( strcmp(joinpath(rootfs_dir, mountpoint), mount) == 0 ) {
             singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", mountpoint);
             retval = 1;
             break;
