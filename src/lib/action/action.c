@@ -104,7 +104,7 @@ int singularity_action_do(int argc, char **argv) {
     singularity_priv_drop_perm();
 
     singularity_message(DEBUG, "Trying to change directory to where we started\n");
-    char *target_pwd = getenv("SINGULARITY_TARGET_PWD");
+    char *target_pwd = envar_path("SINGULARITY_TARGET_PWD");
     if (!target_pwd || (chdir(target_pwd) < 0)) {
         if ( chdir(cwd_path) < 0 ) {
             struct passwd *pw;
