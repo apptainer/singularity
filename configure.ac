@@ -167,6 +167,50 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                       ]
                   )
 
+AC_MSG_CHECKING([for feature: MS_REC])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/mount.h>
+                                   ]],
+                                   [[#ifndef MS_REC
+                                     #error failed
+                                     #endif
+                                   ]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                      ], [
+                          AC_MSG_RESULT([no])
+                          echo
+                          echo "ERROR!!!!!!"
+                          echo
+                          echo "This host does not support the MS_REC mount option!"
+                          echo
+                          exit 255
+                      ]
+                  )
+
+
+AC_MSG_CHECKING([for feature: MS_PRIVATE])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/mount.h>
+                                   ]],
+                                   [[#ifndef MS_PRIVATE
+                                     #error failed
+                                     #endif
+                                   ]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                      ], [
+                          AC_MSG_RESULT([no])
+                          echo
+                          echo "ERROR!!!!!!"
+                          echo
+                          echo "This host does not support the MS_PRIVATE mount option!"
+                          echo
+                          exit 255
+                      ]
+                  )
+
+
 
 AC_ARG_WITH([userns],
             AS_HELP_STRING([--with-userns], [Enable use of user namespaces]),
