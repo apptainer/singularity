@@ -3,6 +3,7 @@ src/*.o
 singularity-*.tar.gz
 *.m4
 config.*
+*.pyc
 
 Makefile
 Makefile.in

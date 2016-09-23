@@ -89,7 +89,7 @@ fi
 
 # TODO: if made into official module, export to pythonpath here
 #TODO: at install, python dependencies need to be installed, and check for python
-python $SINGULARITY_libexecdir/singularity/python/bootstrap.py --docker $SINGULARITY_DOCKER_IMAGE --rootfs $SINGULARITY_ROOTFS $SINGULARITY_DOCKER_INCLUDE_CMD
+python $SINGULARITY_libexecdir/singularity/python/cli.py --docker $SINGULARITY_DOCKER_IMAGE --rootfs $SINGULARITY_ROOTFS $SINGULARITY_DOCKER_INCLUDE_CMD
 
 # If we got here, exit...
 exit 0

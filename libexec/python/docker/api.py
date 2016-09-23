@@ -23,8 +23,10 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from utils import api_get, write_file
 import sys
+sys.path.append('..') # parent directory
+
+from utils import api_get, write_file
 import json
 
 api_base = "https://registry-1.docker.io"
