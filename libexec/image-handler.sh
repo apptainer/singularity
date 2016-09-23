@@ -64,7 +64,7 @@ case "$SINGULARITY_IMAGE" in
             fi
         fi
         CONTAINER_NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/bootstrap.py --rootfs '$CONTAINER_DIR' --docker '$CONTAINER_NAME' --cmd"; then
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$CONTAINER_DIR' --docker '$CONTAINER_NAME' --cmd"; then
             ABORT $?
         fi
         SINGULARITY_IMAGE="$CONTAINER_DIR"
