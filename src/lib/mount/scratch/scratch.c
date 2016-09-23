@@ -66,9 +66,9 @@ void singularity_mount_scratch(void) {
     }
 
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
-    if ( singularity_rootfs_overlay_enabled() <= 0 ) {
-        singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled\n");
-        return;
+    int overlayfs_enabled = singularity_rootfs_overlay_enabled() > 0;
+    if ( !overlayfs_enabled ) {
+        singularity_message(VERBOSE, "Overlay is not enabled: cannot make directories not preexisting in container scratch.\n");
     }
 
     singularity_message(DEBUG, "Checking SINGULARITY_WORKDIR from environment\n");
@@ -107,29 +107,42 @@ void singularity_mount_scratch(void) {
 
     sourcedir_path = joinpath(tmpdir_path, "/scratch");
 
-    if ( s_mkpath(sourcedir_path, 0750) < 0 ) {
-        singularity_message(ERROR, "Could not create scratch source directory %s: %s\n", sourcedir_path, strerror(errno));
-        ABORT(255);
-    }
+    char *outside_token = NULL;
+    char *current = strtok_r(strdup(scratchdir_path), ",", &outside_token);
 
-    singularity_priv_escalate();
-    singularity_message(DEBUG, "Creating scratch directory inside container\n");
-    r = s_mkpath(joinpath(container_dir, scratchdir_path), 0755);
-    singularity_priv_drop();
-    if ( r < 0 ) {
-        singularity_message(VERBOSE, "Skipping scratch directory mount, could not create dir inside container %s: %s\n", scratchdir_path, strerror(errno));
-        return;
-    }
+    while ( current != NULL ) {
 
-    singularity_priv_escalate();
-    singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", sourcedir_path, container_dir, scratchdir_path);
-    r = mount(sourcedir_path, joinpath(container_dir, scratchdir_path), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL);
-    singularity_priv_drop();
-    if ( r < 0 ) {
-        singularity_message(WARNING, "Could not bind scratch direcotry into container %s: %s\n", sourcedir_path, strerror(errno));
-        ABORT(255);
-    }
+        char *full_sourcedir_path = joinpath(sourcedir_path, current);
 
+        if ( s_mkpath(full_sourcedir_path, 0750) < 0 ) {
+             singularity_message(ERROR, "Could not create scratch source directory %s: %s\n", full_sourcedir_path, strerror(errno));
+             ABORT(255);
+         }
+
+        if (overlayfs_enabled) {
+            singularity_priv_escalate();
+            singularity_message(DEBUG, "Creating scratch directory inside container\n");
+            r = s_mkpath(joinpath(container_dir, current), 0755);
+            singularity_priv_drop();
+            if ( r < 0 ) {
+                singularity_message(VERBOSE, "Skipping scratch directory mount, could not create dir inside container %s: %s\n", current, strerror(errno));
+                return;
+            }
+        }
+
+        singularity_priv_escalate();
+        singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", full_sourcedir_path, container_dir, current);
+        r = mount(full_sourcedir_path, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL);
+        singularity_priv_drop();
+        if ( r < 0 ) {
+            singularity_message(WARNING, "Could not bind scratch directory into container %s: %s\n", full_sourcedir_path, strerror(errno));
+            ABORT(255);
+        }
+
+        current = strtok_r(NULL, ",", &outside_token);
+        // Ignore empty directories.
+        while (current && !strlen(current)) {current = strtok_r(NULL, ",", &outside_token);}
+    }
     return;
 }
 

@@ -75,9 +75,9 @@ while true; do
             export SINGULARITY_WORKDIR
             shift
         ;;
-        -S|--scratchdir|--scratch-dir)
+        -S|--scratchdir|--scratch-dir|--scratch)
             shift
-            SINGULARITY_SCRATCHDIR="$1"
+            SINGULARITY_SCRATCHDIR="$1,${SINGULARITY_SCRATCHDIR:-}"
             export SINGULARITY_SCRATCHDIR
             shift
         ;;

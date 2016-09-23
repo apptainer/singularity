@@ -81,9 +81,9 @@ while true; do
             SINGULARITY_UNSHARE_IPC=1
             export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC
         ;;
-        -S|--scratchdir|--scratch-dir)
+        -S|--scratchdir|--scratch-dir|--scratch)
             shift
-            SINGULARITY_SCRATCHDIR="$1"
+            SINGULARITY_SCRATCHDIR="$1,${SINGULARITY_SCRATCHDIR:-}"
             export SINGULARITY_SCRATCHDIR
             shift
         ;;
