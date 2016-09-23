@@ -71,14 +71,14 @@ _singularity() {
             if [[ ${cur} == -B || ${cur} == --bind ]]; then
                 #TODO: Not really a path, but this should be a bind spec...
                 _filedir
-            elif [[ ${cur} == -S || ${cur} == --scratch* ]]; then
+            elif [[ ${cur} == -S || ${cur} == --scratch* || ${cur} == --pwd ]]; then
                 _filedir
             elif [[ ${cur} == -H || ${cur} == --home ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--help --bind --scratch --home --contain --containall --ipc --pid --user --workdir --writable" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--help --bind --scratch --home --pwd --contain --containall --ipc --pid --user --workdir --writable" -- ${cur}) )
             else
                 _filedir
             fi

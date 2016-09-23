@@ -104,25 +104,28 @@ int singularity_action_do(int argc, char **argv) {
     singularity_priv_drop_perm();
 
     singularity_message(DEBUG, "Trying to change directory to where we started\n");
-    if ( chdir(cwd_path) < 0 ) {
-        struct passwd *pw;
-        char *homedir;
-        uid_t uid = singularity_priv_getuid();
+    char *target_pwd = getenv("SINGULARITY_TARGET_PWD");
+    if (!target_pwd || (chdir(target_pwd) < 0)) {
+        if ( chdir(cwd_path) < 0 ) {
+            struct passwd *pw;
+            char *homedir;
+            uid_t uid = singularity_priv_getuid();
 
-        singularity_message(DEBUG, "Failed changing directory to: %s\n", cwd_path);
-        singularity_message(VERBOSE2, "Changing to home directory\n");
+            singularity_message(DEBUG, "Failed changing directory to: %s\n", cwd_path);
+            singularity_message(VERBOSE2, "Changing to home directory\n");
 
-        errno = 0;
-        if ( ( pw = getpwuid(uid) ) != NULL ) {
-            singularity_message(DEBUG, "Obtaining user's homedir\n");
+            errno = 0;
+            if ( ( pw = getpwuid(uid) ) != NULL ) {
+                singularity_message(DEBUG, "Obtaining user's homedir\n");
 
-            homedir = pw->pw_dir;
+                homedir = pw->pw_dir;
 
-            if ( chdir(homedir) < 0 ) {
-                singularity_message(WARNING, "Could not chdir to home directory: %s\n", homedir);
+                if ( chdir(homedir) < 0 ) {
+                    singularity_message(WARNING, "Could not chdir to home directory: %s\n", homedir);
+                }
+            } else {
+                singularity_message(WARNING, "Could not obtain pwinfo for uid: %i\n", uid);
             }
-        } else {
-            singularity_message(WARNING, "Could not obtain pwinfo for uid: %i\n", uid);
         }
     }
 
