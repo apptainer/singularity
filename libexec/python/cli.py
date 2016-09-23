@@ -144,8 +144,9 @@ def main():
             layers.append(targz) # in case we want a list at the end
                                  # @chrisfilo suggestion to try compiling into one tar.gz
 
-            # Extract image
+            # Extract image and remove tar
             extract_tar(targz,singularity_rootfs)
+            os.remove(targz)
                
      
     # If the user wants to include the CMD as runscript, generate it here
