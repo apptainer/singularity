@@ -68,6 +68,7 @@ case "$SINGULARITY_IMAGE" in
             ABORT $?
         fi
         SINGULARITY_IMAGE="$CONTAINER_DIR"
+        eval singularity bootstrap "$CONTAINER_DIR"
     ;;
 esac
 
