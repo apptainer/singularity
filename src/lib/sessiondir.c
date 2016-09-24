@@ -99,12 +99,13 @@ char *singularity_sessiondir_init(char *file) {
         ABORT(255);
     }
 
-    if ( envar_defined("SINGULARITY_NOSESSIONCLEANUP") == TRUE ) {
+    if ( ( envar_defined("SINGULARITY_NOSESSIONCLEANUP") == TRUE ) || ( envar_defined("SINGULARITY_NOCLEANUP") == TRUE ) ) {
         singularity_message(VERBOSE2, "Not forking a sessiondir cleanup process\n");
 
     } else {
         if ( ( child_pid = singularity_fork() ) > 0 ) {
             int tmpstatus;
+            char *rundir = envar_path("SINGULARITY_RUNDIR");
 
             singularity_message(DEBUG, "Cleanup thread waiting on child...\n");
 
@@ -116,6 +117,13 @@ char *singularity_sessiondir_init(char *file) {
                 singularity_message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
                 if ( s_rmdir(sessiondir) < 0 ) {
                     singularity_message(ERROR, "Could not remove session directory %s: %s\n", sessiondir, strerror(errno));
+                }
+            }
+
+            if ( rundir != NULL ) {
+                singularity_message(VERBOSE, "Cleaning run directory: %s\n", rundir);
+                if ( s_rmdir(rundir) < 0 ) {
+                    singularity_message(ERROR, "Could not remove run directory %s: %s\n", rundir, strerror(errno));
                 }
             }
     
