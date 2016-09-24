@@ -88,7 +88,7 @@ int rootfs_dir_mount(void) {
         if ( singularity_ns_user_enabled() <= 0 ) {
             singularity_priv_escalate();
             singularity_message(VERBOSE2, "Making mount read only: %s\n", mount_point);
-            if ( mount(NULL, mount_point, NULL, MS_BIND|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
+            if ( mount(NULL, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT|MS_RDONLY, NULL) < 0 ) {
                 singularity_message(ERROR, "Could not bind read only %s: %s\n", mount_point, strerror(errno));
                 ABORT(255);
             }
