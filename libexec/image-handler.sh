@@ -51,134 +51,193 @@ case "$SINGULARITY_IMAGE" in
     ;;
     docker://*)
         NAME=`basename "$SINGULARITY_IMAGE"`
-        CONTAINER_DIR="$NAME.dir"
-
-        if [ ! -L "$CONTAINER_DIR/bin/sh" -a ! -x "$CONTAINER_DIR/bin/sh" ]; then
-            if [ -d "$CONTAINER_DIR" ]; then
-                message ERROR "Directory '$CONTAINER_DIR' exists, not caching $SINGULARITY_IMAGE\n"
-                ABORT 255
-            fi
-            if ! mkdir -p "$CONTAINER_DIR"; then
-                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-                ABORT 255
-            fi
-            CONTAINER_NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
-            if ! eval "$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$CONTAINER_DIR' --docker '$CONTAINER_NAME' --cmd"; then
-                ABORT $?
-            fi
-            eval singularity bootstrap "$CONTAINER_DIR"
-            message 1 "Cached '$CONTAINER_DIR' to current directory\n"
+        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
+            SINGULARITY_CACHEDIR="/tmp"
         fi
+        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
+            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
+            ABORT 1
+        fi
+        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
+            message ERROR "Failed to create tmpdir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+            ABORT 255
+        fi
+
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$CONTAINER_DIR' --docker '$NAME' --cmd"; then
+            ABORT $?
+        fi
+        eval singularity -q bootstrap "$CONTAINER_DIR"
+
+        chmod -R +w "$CONTAINER_DIR"
+
         SINGULARITY_IMAGE="$CONTAINER_DIR"
+        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
     ;;
 esac
 
 case "$SINGULARITY_IMAGE" in
     *.cpioz|*.vnfs)
         NAME=`basename "$SINGULARITY_IMAGE"`
-        TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            USERID=`id -u`
-            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
-            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+            SINGULARITY_CACHEDIR="/tmp"
         fi
-        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
-        if [ ! -d "$CONTAINER_DIR" ]; then
-            if ! mkdir -p "$CONTAINER_DIR"; then
-                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-                ABORT 255
-            fi
-            message 1 "Opening cpio archive, stand by...\n"
-            # this almost always gives permission errors, so ignore them when
-            # running as a user.
-            zcat "$SINGULARITY_IMAGE" | ( cd "$CONTAINER_DIR"; cpio -id >/dev/null 2>&1 )
+        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
+            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
+            ABORT 1
         fi
+        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
+            message ERROR "Failed to create tmpdir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+            ABORT 255
+        fi
+
+        message 1 "Opening cpio archive, stand by...\n"
+        # this almost always gives permission errors, so ignore them when
+        # running as a user.
+        zcat "$SINGULARITY_IMAGE" | ( cd "$CONTAINER_DIR"; cpio -id >/dev/null 2>&1 )
+
+        chmod -R +w "$CONTAINER_DIR"
+
         SINGULARITY_IMAGE="$CONTAINER_DIR"
+        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
     ;;
     *.cpio)
         NAME=`basename "$SINGULARITY_IMAGE"`
-        TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            USERID=`id -u`
-            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
-            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+            SINGULARITY_CACHEDIR="/tmp"
         fi
-        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
-        if [ ! -d "$CONTAINER_DIR" ]; then
-            if ! mkdir -p "$CONTAINER_DIR"; then
-                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-                ABORT 255
-            fi
-            message 1 "Opening cpio archive, stand by...\n"
-            # this almost always gives permission errors, so ignore them when
-            # running as a user.
-            cat "$SINGULARITY_IMAGE" | ( cd "$CONTAINER_DIR"; cpio -id >/dev/null 2>&1 )
+        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
+            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
+            ABORT 1
         fi
+        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
+            message ERROR "Failed to create tmpdir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+            ABORT 255
+        fi
+
+        message 1 "Opening cpio archive, stand by...\n"
+        # this almost always gives permission errors, so ignore them when
+        # running as a user.
+        cat "$SINGULARITY_IMAGE" | ( cd "$CONTAINER_DIR"; cpio -id >/dev/null 2>&1 )
+
+        chmod -R +w "$CONTAINER_DIR"
+
         SINGULARITY_IMAGE="$CONTAINER_DIR"
+        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
     ;;
     *.tar)
         NAME=`basename "$SINGULARITY_IMAGE"`
-        TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            USERID=`id -u`
-            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
-            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+            SINGULARITY_CACHEDIR="/tmp"
         fi
-        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
-        if [ ! -d "$CONTAINER_DIR" ]; then
-            if ! mkdir -p "$CONTAINER_DIR"; then
-                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-                ABORT 255
-            fi
-            message 1 "Opening tar archive, stand by...\n"
-            # this almost always gives permission errors, so ignore them when
-            # running as a user.
-            tar -C "$CONTAINER_DIR" -xf "$SINGULARITY_IMAGE" 2>/dev/null
+        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
+            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
+            ABORT 1
         fi
+        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
+            message ERROR "Failed to create tmpdir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+            ABORT 255
+        fi
+
+        message 1 "Opening tar archive, stand by...\n"
+        # this almost always gives permission errors, so ignore them when
+        # running as a user.
+        tar -C "$CONTAINER_DIR" -xf "$SINGULARITY_IMAGE" 2>/dev/null
+
+        chmod -R +w "$CONTAINER_DIR"
+
         SINGULARITY_IMAGE="$CONTAINER_DIR"
+        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
     ;;
     *.tgz|*.tar.gz)
         NAME=`basename "$SINGULARITY_IMAGE"`
-        TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            USERID=`id -u`
-            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
-            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+            SINGULARITY_CACHEDIR="/tmp"
         fi
-        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
-        if [ ! -d "$CONTAINER_DIR" ]; then
-            if ! mkdir -p "$CONTAINER_DIR"; then
-                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-                ABORT 255
-            fi
-            message 1 "Opening gzip compressed archive, stand by...\n"
-            # this almost always gives permission errors, so ignore them when
-            # this almost always gives permission errors, so ignore them when
-            # running as a user.
-            tar -C "$CONTAINER_DIR" -xzf "$SINGULARITY_IMAGE"
+        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
+            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
+            ABORT 1
         fi
+        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
+            message ERROR "Failed to create tmpdir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+            ABORT 255
+        fi
+
+        message 1 "Opening gzip compressed archive, stand by...\n"
+        # this almost always gives permission errors, so ignore them when
+        # this almost always gives permission errors, so ignore them when
+        # running as a user.
+        tar -C "$CONTAINER_DIR" -xzf "$SINGULARITY_IMAGE" 2>/dev/null
+
+        chmod -R +w "$CONTAINER_DIR"
+
         SINGULARITY_IMAGE="$CONTAINER_DIR"
+        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
     ;;
     *.tbz|*.tar.bz)
         NAME=`basename "$SINGULARITY_IMAGE"`
-        TIMESTAMP=`stat -c "%Y" "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            USERID=`id -u`
-            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
-            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
+            SINGULARITY_CACHEDIR="/tmp"
         fi
-        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/$TIMESTAMP/$NAME"
-        if [ ! -d "$CONTAINER_DIR" ]; then
-            if ! mkdir -p "$CONTAINER_DIR"; then
-                message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-                ABORT 255
-            fi
-            message 1 "Opening bzip compressed archive, stand by...\n"
-            # this almost always gives permission errors, so ignore them when
-            # running as a user.
-            tar -C "$CONTAINER_DIR" -xjf "$SINGULARITY_IMAGE" 2>/dev/null
+        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
+            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
+            ABORT 1
         fi
+        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
+            message ERROR "Failed to create tmpdir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+            ABORT 255
+        fi
+
+        message 1 "Opening bzip compressed archive, stand by...\n"
+        # this almost always gives permission errors, so ignore them when
+        # running as a user.
+        tar -C "$CONTAINER_DIR" -xjf "$SINGULARITY_IMAGE" 2>/dev/null
+
+        chmod -R +w "$CONTAINER_DIR"
+
         SINGULARITY_IMAGE="$CONTAINER_DIR"
+        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
     ;;
 esac
 

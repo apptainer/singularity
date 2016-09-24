@@ -44,7 +44,7 @@ RETVAL=0
 export SINGULARITY_TMPDIR SINGULARITY_BUILDDEF
 
 if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    BOOTSTRAP_VERSION="1"
+    BOOTSTRAP_VERSION="2"
 elif [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
     message ERROR "Bootstrap defintion not found: ${SINGULARITY_BUILDDEF:-}\n"
 elif grep -q "^DistType " "${SINGULARITY_BUILDDEF:-}"; then

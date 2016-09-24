@@ -42,8 +42,7 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
 fi
 
 if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    message ERROR "Singularity build definition file not defined.\n"
-    ABORT 1
+    exit
 fi
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########

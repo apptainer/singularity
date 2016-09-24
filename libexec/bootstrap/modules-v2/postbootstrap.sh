@@ -38,11 +38,6 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
-if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    message ERROR "Singularity build definition file not defined\n"
-    exit 1
-fi
-
 
 
 # At this point, the container should be valid, and valid i defined by the
