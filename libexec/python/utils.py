@@ -180,7 +180,7 @@ def change_permissions(path,permission="0755",recursive=True):
         cmd = ["chmod",permission,"-R",path]
         if recursive == False:
            cmd = ["chmod",permission,path]
-        print("Changing permission of %s to %s" %(path,permission))
+#        print("Changing permission of %s to %s" %(path,permission))
         return run_command(cmd)
 
 

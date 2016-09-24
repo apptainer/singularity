@@ -152,18 +152,16 @@ def main():
     # If the user wants to include the CMD as runscript, generate it here
     if includecmd == True:
 
-        print("Adding Docker CMD as Singularity runscript...")
         cmd = get_config(manifest) # default is spec="Cmd"
 
         # Only add runscript if command is defined
         if cmd != None:
+            print("Adding Docker CMD as Singularity runscript...")
             runscript = create_runscript(cmd=cmd,
                                          base_dir=singularity_rootfs)
 
             # change permission of runscript to 0755 (default)
             change_permissions("%s/singularity" %(singularity_rootfs))
-        else:
-            print("No Docker CMD found, skipping runscript.")
 
     # When we finish, change permissions for the entire thing
     #change_permissions("%s/" %(singularity_rootfs))
