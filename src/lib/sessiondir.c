@@ -121,9 +121,13 @@ char *singularity_sessiondir_init(char *file) {
             }
 
             if ( rundir != NULL ) {
-                singularity_message(VERBOSE, "Cleaning run directory: %s\n", rundir);
-                if ( s_rmdir(rundir) < 0 ) {
-                    singularity_message(ERROR, "Could not remove run directory %s: %s\n", rundir, strerror(errno));
+                if ( strncmp(rundir, "/tmp/", 5) == 0 ) {
+                    singularity_message(VERBOSE, "Cleaning run directory: %s\n", rundir);
+                    if ( s_rmdir(rundir) < 0 ) {
+                        singularity_message(ERROR, "Could not remove run directory %s: %s\n", rundir, strerror(errno));
+                    }
+                } else {
+                    singularity_message(WARNING, "Only clean run directories in /tmp: %s\n", rundir);
                 }
             }
     
