@@ -47,7 +47,7 @@ fi
 
 # At this point, the container should be valid, and valid i defined by the
 # existance of /bin/sh
-if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+if [ ! -L "$SINGULARITY_ROOTFS/bin/sh" -a ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
     message ERROR "Container does not contain the valid minimum requirement of /bin/sh\n"
     exit 1
 fi
