@@ -51,24 +51,25 @@ case "$SINGULARITY_IMAGE" in
     ;;
     docker://*)
         NAME=`basename "$SINGULARITY_IMAGE"`
-        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            USERID=`id -u`
-            HOMEDIR=`getent passwd $USERID | cut -d: -f6`
-            SINGULARITY_CACHEDIR="$HOMEDIR/.singularity/cache"
-        fi
-        CONTAINER_DIR="$SINGULARITY_CACHEDIR/$NAME/GET_ID_FROM_SOMEWHERE/$NAME"
-        if [ ! -d "$CONTAINER_DIR" ]; then
+        CONTAINER_DIR="$NAME.dir"
+
+        if [ ! -L "$CONTAINER_DIR/bin/sh" -a ! -x "$CONTAINER_DIR/bin/sh" ]; then
+            if [ -d "$CONTAINER_DIR" ]; then
+                message ERROR "Directory '$CONTAINER_DIR' exists, not caching $SINGULARITY_IMAGE\n"
+                ABORT 255
+            fi
             if ! mkdir -p "$CONTAINER_DIR"; then
                 message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
                 ABORT 255
             fi
-        fi
-        CONTAINER_NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$CONTAINER_DIR' --docker '$CONTAINER_NAME' --cmd"; then
-            ABORT $?
+            CONTAINER_NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
+            if ! eval "$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$CONTAINER_DIR' --docker '$CONTAINER_NAME' --cmd"; then
+                ABORT $?
+            fi
+            eval singularity bootstrap "$CONTAINER_DIR"
+            message 1 "Cached '$CONTAINER_DIR' to current directory\n"
         fi
         SINGULARITY_IMAGE="$CONTAINER_DIR"
-        eval singularity bootstrap "$CONTAINER_DIR"
     ;;
 esac
 
