@@ -57,6 +57,7 @@ case "$IMPORT_URI" in
         if ! SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' --cmd"; then
             ABORT $?
         fi
+        eval singularity bootstrap "$SINGULARITY_ROOTFS"
     ;;
     http://*|https://*)
         SINGULARITY_IMPORT_GET="curl -L -k '$IMPORT_URI'"
