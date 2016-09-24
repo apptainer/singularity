@@ -27,8 +27,7 @@ Group: System Environment/Development
 Development files for Singularity
 
 %prep
-%setup  -q -n %{name}-%{ver}
-NO_CONFIGURE=y ./autogen.sh
+%setup
 
 %build
 %configure 
