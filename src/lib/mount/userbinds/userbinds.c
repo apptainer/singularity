@@ -47,9 +47,14 @@ void singularity_mount_userbinds(void) {
 
         singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
         if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
-            singularity_message(WARNING, "User bind control is disabled by system administrator\n");
+            singularity_message(WARNING, "Ignoring user bind request: user bind control is disabled by system administrator\n");
             return;
         }
+
+#ifndef SINGULARITY_NO_NEW_PRIVS
+        singularity_message(WARNING, "Ignoring user bind request: host does not support PR_SET_NO_NEW_PRIVS\n");
+        return;
+#endif
 
         singularity_message(DEBUG, "Parsing SINGULARITY_BINDPATH for user-specified bind mounts.\n");
         char *outside_token = NULL;

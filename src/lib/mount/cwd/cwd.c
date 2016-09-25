@@ -55,9 +55,14 @@ void singularity_mount_cwd(void) {
     singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
     singularity_config_rewind();
     if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
-        singularity_message(VERBOSE, "Not mounting current direcotry: user bind control is disabled by system administrator\n");
+        singularity_message(WARNING, "Not mounting current direcotry: user bind control is disabled by system administrator\n");
         return;
     }
+
+#ifndef SINGULARITY_NO_NEW_PRIVS
+        singularity_message(WARNING, "Not mounting current direcotry: host does not support PR_SET_NO_NEW_PRIVS\n");
+        return;
+#endif  
 
     singularity_message(DEBUG, "Checking for contain option\n");
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {

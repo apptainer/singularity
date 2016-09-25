@@ -50,20 +50,23 @@ void singularity_mount_scratch(void) {
     char *sourcedir_path;
     int r;
 
-    singularity_message(DEBUG, "Checking to see if we should mount scratch directory\n");
-
-    singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
-        singularity_message(VERBOSE, "Not mounting current direcotry: user bind control is disabled by system administrator\n");
-        return;
-    }
-
     singularity_message(DEBUG, "Getting SINGULARITY_SCRATCHDIR from environment\n");
     if ( ( scratchdir_path = envar_path("SINGULARITY_SCRATCHDIR") ) == NULL ) {
         singularity_message(DEBUG, "Not mounting scratch directory: Not requested\n");
         return;
     }
+
+    singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
+        singularity_message(VERBOSE, "Not mounting scratch: user bind control is disabled by system administrator\n");
+        return;
+    }
+
+#ifndef SINGULARITY_NO_NEW_PRIVS
+        singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
+        return;
+#endif  
 
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
     int overlayfs_enabled = singularity_rootfs_overlay_enabled() > 0;
@@ -72,33 +75,7 @@ void singularity_mount_scratch(void) {
     }
 
     singularity_message(DEBUG, "Checking SINGULARITY_WORKDIR from environment\n");
-    if ( ( tmpdir_path = envar_path("SINGULARITY_WORKDIR") ) != NULL ) {
-//TODO: This should be done somewhere globally... Perhaps another module? YES!
-//      But until then, we are counting on something else to clean us up (e.g.
-//      the resource manager)
-//
-//        pid_t child_pid;
-//        if ( ( child_pid = singularity_fork() ) > 0 ) {
-//            int tmpstatus;
-//            int retval;
-//
-//            singularity_message(DEBUG, "Cleanup thread waiting on child...\n");
-//
-//            waitpid(child_pid, &tmpstatus, 0);
-//            retval = WEXITSTATUS(tmpstatus);
-//
-//            singularity_message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
-//            if ( flock(sessiondir_fd, LOCK_EX | LOCK_NB) == 0 ) {
-//                singularity_message(VERBOSE, "Cleaning sessiondir: %s\n", sessiondir);
-//                if ( s_rmdir(sessiondir) < 0 ) {
-//                    singularity_message(ERROR, "Could not remove session directory %s: %s\n", sessiondir, strerror(errno));
-//                }
-//            }
-//
-//            exit(retval);
-//        }
-
-    } else {
+    if ( ( tmpdir_path = envar_path("SINGULARITY_WORKDIR") ) == NULL ) {
         if ( ( tmpdir_path = singularity_sessiondir_get() ) == NULL ) {
             singularity_message(ERROR, "Could not identify a suitable temporary directory for scratch\n");
             return;
@@ -112,7 +89,7 @@ void singularity_mount_scratch(void) {
 
     while ( current != NULL ) {
 
-        char *full_sourcedir_path = joinpath(sourcedir_path, current);
+        char *full_sourcedir_path = joinpath(sourcedir_path, basename(strdup(current)));
 
         if ( s_mkpath(full_sourcedir_path, 0750) < 0 ) {
              singularity_message(ERROR, "Could not create scratch source directory %s: %s\n", full_sourcedir_path, strerror(errno));
@@ -141,7 +118,7 @@ void singularity_mount_scratch(void) {
 
         current = strtok_r(NULL, ",", &outside_token);
         // Ignore empty directories.
-        while (current && !strlen(current)) {current = strtok_r(NULL, ",", &outside_token);}
+        while (current && !strlength(current, 1024)) {current = strtok_r(NULL, ",", &outside_token);}
     }
     return;
 }
