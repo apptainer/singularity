@@ -264,6 +264,7 @@ stest 1 singularity exec --workdir /tmp/foo --contain $CONTAINER test -d /tmp/fo
 if [ -n "@OVERLAY_FS@" ]; then
     /bin/echo
     /bin/echo "Testing user bind mounts"
+    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|enable overlay = no|enable overlay = yes|'
     stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
     stest 0 singularity exec -B /tmp/foo:/etc/foo "$CONTAINER" test -d /etc/foo
     stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" touch /foo/hello
@@ -281,6 +282,7 @@ if [ -n "@OVERLAY_FS@" ]; then
     # Can't create a directory here as a non-privileged user... Quirk of user
     # namespaces and the overlay file system permission semantics
     stest 1 singularity exec -B /tmp/foo:/etc/foo -u "$CONTAINERDIR" test -d /etc/foo
+    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|enable overlay = yes|enable overlay = no|'
 else
     /bin/echo
     /bin/echo "Skipping user bind mount tests, overlay FS support is not enabled"
