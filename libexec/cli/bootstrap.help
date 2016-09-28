@@ -17,9 +17,22 @@ You can also bootstrap a Docker image, in which case you must also specify
 the namespace (library), image repository (ubuntu) and tag (14.04.1) that
 you want to use:
 
-    OSBuild: docker
+    BootStrap: docker
     From: library/ubuntu:14.04.1
 
+The default Docker registry is registry-1.docker.io. To change that, add the
+Registry argument:
+
+    BootStrap: docker
+    From: tensorflow/tensorflow:latest
+    Registry: gcr.io
+
+If you want to remove token authentication, then add the Token argument:
+
+    BootStrap: docker
+    From: tensorflow/tensorflow:latest
+    Registry: gcr.io
+    Token: no
 
 CREATE OPTIONS:
     -f/--force      Force a rebootstrap of an OS (note: this does not delete
