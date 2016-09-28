@@ -48,13 +48,13 @@ int container_file_bind(char *source, char *dest_path) {
     dest = joinpath(containerdir, dest_path);
 
     if ( is_file(source) < 0 ) {
-        singularity_message(ERROR, "Bind file source does not exist: %s\n", source);
-        ABORT(255);
+        singularity_message(WARNING, "Bind file source does not exist on host: %s\n", source);
+        return(1);
     }
 
     if ( is_file(dest) < 0 ) {
-        singularity_message(ERROR, "Bind file source does not exist: %s\n", dest);
-        ABORT(255);
+        singularity_message(WARNING, "Bind file destination does not exist in container: %s\n", dest);
+        return(1);
     }
 
     singularity_priv_escalate();

@@ -89,7 +89,7 @@ void singularity_mount_userbinds(void) {
                             singularity_message(VERBOSE3, "Retrying with privileges to create bind directory on overlay file system: %s\n", dest);
                             if ( s_mkpath(joinpath(container_dir, dir), 0755) < 0 ) {
                                 singularity_message(ERROR, "Could not create basedir for file bind %s: %s\n", dest, strerror(errno));
-                                ABORT(255);
+                                continue;
                             }
                             singularity_priv_drop();
                         }

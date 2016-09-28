@@ -126,7 +126,7 @@ int singularity_mount_home(void) {
     // Check to make sure whatever we were given as the home directory is really ours
     singularity_message(DEBUG, "Checking permissions on home directory: %s\n", homedir_source);
     if ( is_owner(homedir_source, uid) < 0 ) {
-        singularity_message(ERROR, "Home directory permissions incorrect: %s\n", homedir_source);
+        singularity_message(ERROR, "Home directory ownership incorrect: %s\n", homedir_source);
         ABORT(255);
     }
 
@@ -148,8 +148,8 @@ int singularity_mount_home(void) {
             singularity_message(ERROR, "Could not identify basedir for home directory path: %s\n", homedir);
         }
         if ( is_dir(joinpath(container_dir, homedir_base)) < 0 ) {
-            singularity_message(ERROR, "Home directory bind path not present inside container: %s\n", homedir_base);
-            ABORT(255);
+            singularity_message(WARNING, "Not mounting home directory: bind point does not exist in container: %s\n", homedir_base);
+            return(1);
         }
     }
 

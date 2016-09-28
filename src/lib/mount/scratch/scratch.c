@@ -92,7 +92,7 @@ void singularity_mount_scratch(void) {
         char *full_sourcedir_path = joinpath(sourcedir_path, basename(strdup(current)));
 
         if ( s_mkpath(full_sourcedir_path, 0750) < 0 ) {
-             singularity_message(ERROR, "Could not create scratch source directory %s: %s\n", full_sourcedir_path, strerror(errno));
+             singularity_message(ERROR, "Could not create scratch working directory %s: %s\n", full_sourcedir_path, strerror(errno));
              ABORT(255);
          }
 
