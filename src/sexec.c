@@ -119,7 +119,6 @@ int main(int argc, char **argv) {
     singularity_ns_unshare();
 
     singularity_rootfs_mount();
-    singularity_rootfs_check();
 
     singularity_file();
 
@@ -127,6 +126,7 @@ int main(int argc, char **argv) {
 
     singularity_rootfs_chroot();
 
+//    singularity_rootfs_check();
     singularity_action_do(argc, argv);
 
     return(0);

@@ -245,8 +245,6 @@ int singularity_rootfs_check(void) {
 
 int singularity_rootfs_chroot(void) {
     
-    singularity_rootfs_check();
-
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Entering container file system root: %s\n", joinpath(mount_point, OVERLAY_FINAL));
     if ( chroot(joinpath(mount_point, OVERLAY_FINAL)) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
