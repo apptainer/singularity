@@ -96,6 +96,6 @@ case "$IMPORT_URI" in
 esac
 
 eval "$SINGULARITY_IMPORT_GET ${SINGULARITY_IMPORT_SPLAT:-}"
-eval singularity bootstrap "$SINGULARITY_ROOTFS"
+eval "$SINGULARITY_libexecdir/singularity/bootstrap/main.sh"
 
 exit $?
