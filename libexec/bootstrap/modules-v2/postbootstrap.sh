@@ -55,6 +55,8 @@ install -d -m 0755 "$SINGULARITY_ROOTFS/proc"
 install -d -m 0755 "$SINGULARITY_ROOTFS/sys"
 install -d -m 1777 "$SINGULARITY_ROOTFS/tmp"
 install -d -m 1777 "$SINGULARITY_ROOTFS/var/tmp"
+touch "$SINGULARITY_ROOTFS/etc/hosts"
+touch "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 test -L "$SINGULARITY_ROOTFS/etc/mtab"  && rm -f "$SINGULARITY_ROOTFS/etc/mtab"
 
@@ -126,6 +128,7 @@ fi
 EOF
 chmod 0755 "$SINGULARITY_ROOTFS/.run"
 
+ldconfig -r "$SINGULARITY_ROOTFS" >/dev/null 2>&1
 
 if [ -f "$SINGULARITY_BUILDDEF" ]; then
 
