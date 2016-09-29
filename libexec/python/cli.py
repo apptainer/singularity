@@ -49,9 +49,25 @@ def main():
                         type=str, 
                         default=None)
 
+    # Docker registry (default is registry-1.docker.io
+    parser.add_argument("--registry", 
+                        dest='registry', 
+                        help="the registry path to use, to replace registry-1.docker.io", 
+                        type=str, 
+                        default=None)
+
+
     # Flag to add the Docker CMD as a runscript
     parser.add_argument("--cmd", 
                         dest='includecmd', 
+                        action="store_true",
+                        help="boolean to specify that the CMD should be included as a runscript (default is not included)", 
+                        default=False)
+
+
+    # Flag to indicate a token is not required
+    parser.add_argument("--no-token", 
+                        dest='notoken', 
                         action="store_true",
                         help="boolean to specify that the CMD should be included as a runscript (default is not included)", 
                         default=False)
@@ -71,6 +87,11 @@ def main():
        if singularity_rootfs == None:
            print("ERROR: root file system not specified or defined as environmental variable, exiting!")
            sys.exit(1)
+
+    # Does the registry require a token?
+    doauth = True
+    if args.notoken == True:
+       doauth = False
 
     # Does the user want to include the CMD as runscript?
     includecmd = args.includecmd
@@ -120,10 +141,14 @@ def main():
         # used later to get Cmd
         manifest = get_manifest(repo_name=repo_name,
                                 namespace=namespace,
-                                repo_tag=repo_tag)
+                                repo_tag=repo_tag,
+                                registry=args.registry,
+                                auth=doauth)
 
         # Get images from manifest using version 2.0 of Docker Registry API
-        images = get_images(manifest=manifest)
+        images = get_images(manifest=manifest,
+                            registry=args.registry,
+                            auth=doauth)
         
        
 #  DOWNLOAD LAYERS -------------------------------------------
@@ -139,7 +164,9 @@ def main():
             targz = get_layer(image_id=image_id,
                               namespace=namespace,
                               repo_name=repo_name,
-                              download_folder=tmpdir) 
+                              download_folder=tmpdir,
+                              registry=args.registry,
+                              auth=doauth) 
 
             layers.append(targz) # in case we want a list at the end
                                  # @chrisfilo suggestion to try compiling into one tar.gz

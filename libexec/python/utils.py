@@ -23,6 +23,7 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -41,6 +42,24 @@ if sys.version_info[0] < 3:
 ## HTTP OPERATIONS #########################################################
 ############################################################################
 
+def add_http(url,use_https=True):
+    '''add_http will add a http / https prefix to a url, in case the user didn't
+    specify
+    :param url: the url to add the prefix to
+    :param use_https: should we default to https? default is True
+    '''
+    prefix = "https://"
+    if use_https == False:
+        prefix="http://"
+    
+    # Does the url have http?
+    if re.search('^http*',url) == None:
+        url = "%s%s" %(prefix,url)
+
+    # Always remove extra slash
+    url = url.strip('/')
+
+    return url
 
 def api_get_pagination(url):
    '''api_pagination is a wrapper for "api_get" that will also handle pagination

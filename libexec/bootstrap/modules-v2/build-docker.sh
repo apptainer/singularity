@@ -73,6 +73,36 @@ else
     SINGULARITY_DOCKER_INCLUDE_CMD=""
 fi
 
+
+### Obtain the remote registry url, if provided
+SINGULARITY_DOCKER_REGISTRY=`singularity_key_get "Registry" "$SINGULARITY_BUILDDEF"`
+if [ -n "${SINGULARITY_DOCKER_REGISTRY:-}" ]; then
+    message 1 "Registry: $SINGULARITY_DOCKER_REGISTRY\n"
+    SINGULARITY_DOCKER_REGISTRY="--registry $SINGULARITY_DOCKER_REGISTRY"   
+else
+    SINGULARITY_DOCKER_REGISTRY=""   
+fi
+
+
+### Does the registry require authentication?
+SINGULARITY_DOCKER_AUTH=`singularity_key_get "Token" "$SINGULARITY_BUILDDEF"`
+if [ -n "${SINGULARITY_DOCKER_AUTH:-}" ]; then
+    message 1 "Token: $SINGULARITY_DOCKER_AUTH\n"
+
+    # A command of "no" means don't add token auth header
+    if [ "$SINGULARITY_DOCKER_AUTH" == "no" ]; then
+        SINGULARITY_DOCKER_AUTH="--no-token"
+
+    # Anything else, we do authentication
+    else
+        SINGULARITY_DOCKER_AUTH=""
+    fi
+
+else
+    SINGULARITY_DOCKER_AUTH=""   
+fi
+
+
 # Ensure the user has provided a docker image name with "From"
 if [ -z "$SINGULARITY_DOCKER_IMAGE" ]; then
     echo "Please specify the Docker image name with From: in the definition file."
@@ -86,9 +116,7 @@ fi
 
 ### Run it!
 
-# TODO: if made into official module, export to pythonpath here
-#TODO: at install, python dependencies need to be installed, and check for python
-python $SINGULARITY_libexecdir/singularity/python/cli.py --docker $SINGULARITY_DOCKER_IMAGE --rootfs $SINGULARITY_ROOTFS $SINGULARITY_DOCKER_INCLUDE_CMD
+python $SINGULARITY_libexecdir/singularity/python/cli.py --docker $SINGULARITY_DOCKER_IMAGE --rootfs $SINGULARITY_ROOTFS $SINGULARITY_DOCKER_INCLUDE_CMD $SINGULARITY_DOCKER_REGISTRY $SINGULARITY_DOCKER_AUTH
 
 # If we got here, exit...
 exit 0
