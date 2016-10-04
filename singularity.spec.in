@@ -61,7 +61,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/image-create
 %{_libexecdir}/singularity/image-expand
 %{_libexecdir}/singularity/image-mount
-%{_libexecdir}/singularity/python
 %{_bindir}/singularity
 %{_bindir}/run-singularity
 %{_mandir}/man1/*

@@ -70,14 +70,9 @@ int singularity_mount_tmp(void) {
     }
 
     if ( s_mkpath(tmp_source, 0755) < 0 ) {
-        singularity_message(ERROR, "Could not create tmp directory %s: %s\n", tmp_source, strerror(errno));
+        singularity_message(ERROR, "Could not create source /tmp directory %s: %s\n", tmp_source, strerror(errno));
         ABORT(255);
     }
-    if ( s_mkpath(vartmp_source, 0755) < 0 ) {
-        singularity_message(ERROR, "Could not create vartmp directory %s: %s\n", vartmp_source, strerror(errno));
-        ABORT(255);
-    }
-
     if ( is_dir(tmp_source) == 0 ) {
         if ( is_dir(joinpath(container_dir, "/tmp")) == 0 ) {
             singularity_priv_escalate();
@@ -94,6 +89,10 @@ int singularity_mount_tmp(void) {
         singularity_message(VERBOSE, "Could not mount host's /tmp directory (%s): does not exist\n", tmp_source);
     }
 
+    if ( s_mkpath(vartmp_source, 0755) < 0 ) {
+        singularity_message(ERROR, "Could not create source /var/tmp directory %s: %s\n", vartmp_source, strerror(errno));
+        ABORT(255);
+    }
     if ( is_dir(vartmp_source) == 0 ) {
         if ( is_dir(joinpath(container_dir, "/var/tmp")) == 0 ) {
             singularity_priv_escalate();

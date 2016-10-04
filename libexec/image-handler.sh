@@ -69,10 +69,10 @@ case "$SINGULARITY_IMAGE" in
             ABORT 255
         fi
 
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$CONTAINER_DIR' --docker '$NAME' --cmd"; then
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$CONTAINER_DIR' --docker '$NAME'"; then
             ABORT $?
         fi
-        eval singularity -q bootstrap "$CONTAINER_DIR"
+        MESSAGELEVEL=0 SINGULARITY_ROOTFS="$CONTAINER_DIR" eval "$SINGULARITY_libexecdir/singularity/bootstrap/main.sh"
 
         chmod -R +w "$CONTAINER_DIR"
 

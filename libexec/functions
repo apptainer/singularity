@@ -75,7 +75,7 @@ singularity_key_get() {
     KEY="${1:-}"
     FILE="${2:-}"
     if OUT=`egrep -i "^$KEY:" $FILE`; then
-        echo "$OUT" | head -n 1 | sed -e "s@^$KEY:\s*@@i"
+        echo "$OUT" | head -n 1 | sed -e "s@^$KEY:\s*@@i" | sed -e "s@\s*#.*@@"
         return 0
     fi
     return 1
@@ -86,7 +86,7 @@ singularity_keys_get() {
     KEY="${1:-}"
     FILE="${2:-}"
     egrep -i "^$KEY:" "$FILE" | while read i; do
-        echo "$i" | sed -e "s@^$KEY:\s*@@i"
+        echo "$i" | sed -e "s@^$KEY:\s*@@i" | sed -e "s@\s*#.*@@"
     done | tr '\n' ' '
     echo
 

@@ -54,10 +54,7 @@ fi
 case "$IMPORT_URI" in
     docker://*)
         CONTAINER_NAME=`echo "$IMPORT_URI" | sed -e 's@^docker://@@'`
-        if ! SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' --cmd"; then
-            ABORT $?
-        fi
-        eval singularity bootstrap "$SINGULARITY_ROOTFS"
+        SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' --cmd"
     ;;
     http://*|https://*)
         SINGULARITY_IMPORT_GET="curl -L -k '$IMPORT_URI'"
@@ -99,5 +96,6 @@ case "$IMPORT_URI" in
 esac
 
 eval "$SINGULARITY_IMPORT_GET ${SINGULARITY_IMPORT_SPLAT:-}"
+eval "$SINGULARITY_libexecdir/singularity/bootstrap/main.sh"
 
 exit $?
