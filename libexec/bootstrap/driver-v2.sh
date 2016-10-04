@@ -89,17 +89,6 @@ else
 fi
 
 
-if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/setup.sh" ]; then
-    message 1 "Executing Setup module\n"
-    if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/setup.sh" "$@"; then
-        exit 255
-    fi
-else
-    message ERROR "Could not locate Setup Bootstrap module"
-    exit 255
-fi
-
-
 if [ -n "${SINGULARITY_OSBUILD:-}" ]; then
     if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/build-$SINGULARITY_OSBUILD.sh" ]; then
         if [ -x "$SINGULARITY_ROOTFS/bin/sh" -a -z "${SINGULARITY_REBOOTSTRAP:-}" ]; then
@@ -115,6 +104,18 @@ if [ -n "${SINGULARITY_OSBUILD:-}" ]; then
         exit 255
     fi
 fi
+
+
+if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/setup.sh" ]; then
+    message 1 "Executing Setup module\n"
+    if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/setup.sh" "$@"; then
+        exit 255
+    fi
+else
+    message ERROR "Could not locate Setup Bootstrap module"
+    exit 255
+fi
+
 
 
 if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/postbootstrap.sh" ]; then
