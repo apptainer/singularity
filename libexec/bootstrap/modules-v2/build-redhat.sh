@@ -71,6 +71,10 @@ if [ -z "${MIRROR:-}" ]; then
     message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
     ABORT 1
 fi
+MIRROR_UPDATES=`singularity_key_get "UpdateURL" "$SINGULARITY_BUILDDEF" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+if [ ! -z "${MIRROR_UPDATES:-}" ]; then
+    message 1 "'UpdateURL' defined in bootstrap definition\n"
+fi
 
 INSTALLPKGS=`singularity_keys_get "Include" "$SINGULARITY_BUILDDEF"`
 
@@ -108,6 +112,15 @@ echo 'name=Linux $releasever - $basearch' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "baseurl=$MIRROR" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "enabled=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+
+if [ ! -z "${MIRROR_UPDATES:-}" ]; then
+echo "[updates]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo 'name=Linux $releasever - $basearch updates' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "baseurl=${MIRROR_UPDATES}" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "enabled=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+fi
+
 echo "" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 
 if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS -y install /etc/redhat-release coreutils $INSTALLPKGS"; then
