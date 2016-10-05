@@ -43,7 +43,7 @@
 
 
 char *envar(char *name, char *allowed, int len) {
-    char *ret = (char *) malloc(len);
+    char *ret;
     char *env = getenv(name); // Flawfinder: ignore
     int count;
 
@@ -62,6 +62,7 @@ char *envar(char *name, char *allowed, int len) {
     }
 
     singularity_message(DEBUG, "Checking environment variable has allowed characters: %s\n", name);
+    ret = (char *) malloc(len+1);
     for(count=0; count <= len && env[count] != '\0'; count++) {
         int test_char = env[count];
         int c, success = 0;
@@ -81,6 +82,7 @@ char *envar(char *name, char *allowed, int len) {
         }
         ret[count] = test_char;
     }
+    ret[count] = '\0';
 
     singularity_message(VERBOSE2, "Obtained input from environment '%s' = '%s'\n", name, ret);
     return(ret);
