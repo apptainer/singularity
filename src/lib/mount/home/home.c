@@ -134,7 +134,7 @@ int singularity_mount_home(void) {
     singularity_message(DEBUG, "Trying to create home dir within container\n");
     if ( singularity_rootfs_overlay_enabled() > 0 ) {
         singularity_priv_escalate();
-        if ( s_mkpath(joinpath(container_dir, homedir), 0750) == 0 ) {
+        if ( s_mkpath(joinpath(container_dir, homedir), 0755) == 0 ) {
             singularity_priv_drop();
             singularity_message(DEBUG, "Created home directory within the container: %s\n", homedir);
             homedir_base = strdup(homedir);
