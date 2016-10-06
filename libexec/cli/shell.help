@@ -13,8 +13,10 @@ SHELL OPTIONS:
     -c/--contain        This option disables the automatic sharing of writable
                         filesystems on your host (e.g. $HOME and /tmp).
     -C/--containall     Contain not only fle systems, but also PID and IPC
-    -H/--home <path>    Path to a different home directory to virtualize within
-                        the container
+    -H/--home <spec>    A home directory specification.  spec can either be a
+                        src path or src:dest pair.  src is the source path
+                        of the home directory outside the container and dest
+                        overrides the home directory within the container
     -i/--ipc            Run container in a new IPC namespace
     -p/--pid            Run container in a new PID namespace (creates child)
     --pwd               Initial working directory for payload process inside
