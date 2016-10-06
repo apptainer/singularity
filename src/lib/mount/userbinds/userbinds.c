@@ -61,6 +61,8 @@ void singularity_mount_userbinds(void) {
         char *inside_token = NULL;
         char *current = strtok_r(strdup(bind_path_string), ",", &outside_token);
 
+        free(bind_path_string);
+
         while ( current != NULL ) {
             char *source = strtok_r(current, ":", &inside_token);
             char *dest = strtok_r(NULL, ":", &inside_token);

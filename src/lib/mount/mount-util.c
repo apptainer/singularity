@@ -40,7 +40,7 @@ int check_mounted(char *mountpoint) {
     char *rootfs_dir = singularity_rootfs_dir();
 
     singularity_message(DEBUG, "Opening /proc/mounts\n");
-    if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) {
+    if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open /proc/mounts: %s\n", strerror(errno));
         ABORT(255);
     }

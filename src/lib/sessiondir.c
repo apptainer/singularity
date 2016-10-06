@@ -73,6 +73,7 @@ char *singularity_sessiondir_init(char *file) {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "/tmp/.singularity-session-%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
         }
         singularity_message(DEBUG, "Set sessiondir to: %s\n", sessiondir);
+        free(sessiondir_prefix);
     }
 
     if ( is_dir(sessiondir) < 0 ) {
@@ -130,6 +131,8 @@ char *singularity_sessiondir_init(char *file) {
                     singularity_message(WARNING, "Only clean run directories in /tmp: %s\n", rundir);
                 }
             }
+
+            free(rundir);
     
             exit(retval);
         }

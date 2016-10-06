@@ -84,8 +84,12 @@ void singularity_mount_scratch(void) {
 
     sourcedir_path = joinpath(tmpdir_path, "/scratch");
 
+    free(tmpdir_path);
+
     char *outside_token = NULL;
     char *current = strtok_r(strdup(scratchdir_path), ",", &outside_token);
+
+    free(scratchdir_path);
 
     while ( current != NULL ) {
 
