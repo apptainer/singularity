@@ -69,18 +69,20 @@ int singularity_mount_home(void) {
     singularity_message(DEBUG, "Obtaining user's homedir\n");
     homedir = pw->pw_dir;
 
-    singularity_message(DEBUG, "Checking if home directory is already mounted: %s\n", homedir);
-    if ( check_mounted(homedir) >= 0 ) {
-        singularity_message(VERBOSE, "Not mounting home directory (already mounted in container): %s\n", homedir);
-        return(0);
-    }
-
     // Figure out home directory source
     if ( ( homedir_source = envar_path("SINGULARITY_HOME") ) != NULL ) {
+        char *colon;
         singularity_config_rewind();
         if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
             singularity_message(ERROR, "User bind control is disabled by system administrator\n");
             ABORT(5);
+        }
+
+        colon = strchr(homedir_source, ':');
+        if ( colon != NULL ) {
+            homedir = colon + 1;
+            *colon = '\0';
+            singularity_message(VERBOSE2, "Set the home directory (via envar) to: %s\n", homedir);
         }
 
         singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
@@ -113,6 +115,12 @@ int singularity_mount_home(void) {
     } else {
         singularity_message(ERROR, "Could not identify home directory path: %s\n", homedir_source);
         ABORT(255);
+    }
+
+    singularity_message(DEBUG, "Checking if home directory is already mounted: %s\n", homedir);
+    if ( check_mounted(homedir) >= 0 ) {
+        singularity_message(VERBOSE, "Not mounting home directory (already mounted in container): %s\n", homedir);
+        return(0);
     }
 
     // Create a location to stage the directories
