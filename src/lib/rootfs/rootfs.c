@@ -99,7 +99,7 @@ int singularity_rootfs_init(char *source) {
         return(rootfs_dir_init(source, joinpath(mount_point, ROOTFS_SOURCE)));
     }
 
-    singularity_message(ERROR, "Unknown container type: %s\n", source);
+    singularity_message(ERROR, "Container not found: %s\n", source);
     ABORT(255);
     return(-1);
 }
