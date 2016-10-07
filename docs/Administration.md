@@ -1,6 +1,5 @@
 # Singularity Administration Guide
-
-This document will cover installation and administration points of Singularity for multi-tenant HPC resources.
+This document will cover installation and administration points of Singularity for multi-tenant HPC resources and will not cover usage of the command line tools, container usage, or example use cases.
 
 
 # Installation
@@ -24,7 +23,9 @@ cd singularity
 Once you have downloaded the source, the following installation procedures will assume you are running from the root of the source directory.
 
 ## Source Installation
-From the base source directory, do the following to install into /usr/local/ and put the configuration files into the `/etc/` directory:
+The following example demonstrates how to install Singularity into `/usr/local`. You can install Singularity into any directory of your choosing, but you must ensure that the location you select supports programs running as `SUID`. It is common for people to disable `SUID` with the mount option `nosuid` for various network mounted file systems. To ensure proper support, it is easiest to make sure you install Singularity to a local file system.
+
+Assuming that `/usr/local` is a local file system:
 
 ```bash
 ./configure --prefix=/usr/local --sysconfdir=/etc
@@ -163,4 +164,25 @@ In addition to the system bind points as specified within this configuration fil
 Singularity will automatically disable this feature if the host does not support the prctl option `PR_SET_NO_NEW_PRIVS`.
 
 
+# Logging
+In order to facilitate monitoring and auditing, Singularity will syslog() every action and error that takes place to the `LOCAL0` syslog facility. You can define what to do with those logs in your syslog configuration.
 
+# Troubleshooting
+This section will help you debug (from the system administrator's perspective) Singularity.
+
+#### Not installed correctly, or installed to a non-compatible location
+Singularity must be installed by root into a location that allows for `SUID` programs to be executed (as described above in the installation section of this manual). If you fail to do that, you may have user's reporting one of the following error conditions:
+
+```
+ERROR  : Singularity must be executed in privileged mode to use images
+ABORT  : Retval = 255
+```
+```
+ERROR  : User namespace not supported, and program not running privileged.
+ABORT  : Retval = 255
+```
+```
+ABORT  : This program must be SUID root
+ABORT  : Retval = 255
+```
+If one of these errors is reported, it is best to check the installation of Singularity and ensure that it was properly installed by the root user onto a local file system.
