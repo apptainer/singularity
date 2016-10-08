@@ -27,7 +27,6 @@
 #include <linux/limits.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <pwd.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -107,30 +106,13 @@ int singularity_action_do(int argc, char **argv) {
     char *target_pwd = envar_path("SINGULARITY_TARGET_PWD");
     if (!target_pwd || (chdir(target_pwd) < 0)) {
         if ( chdir(cwd_path) < 0 ) {
-            struct passwd *pw;
-            char *home;
-            char *homedir = NULL;
-            uid_t uid = singularity_priv_getuid();
+            char *homedir;
 
             singularity_message(DEBUG, "Failed changing directory to: %s\n", cwd_path);
             singularity_message(VERBOSE2, "Changing to home directory\n");
 
-            errno = 0;
             singularity_message(DEBUG, "Obtaining user's homedir\n");
-
-            if ( ( home = envar_path("SINGULARITY_HOME") ) != NULL ) {
-                char *colon = strchr(home, ':');
-                if ( colon != NULL ) {
-                    homedir = colon + 1;
-                }
-            }
-            if ( homedir == NULL ) {
-                if ( ( pw = getpwuid(uid) ) != NULL ) {
-                    homedir = pw->pw_dir;
-                } else {
-                    singularity_message(WARNING, "Could not obtain pwinfo for uid: %i\n", uid);
-                }
-            }
+            homedir = get_homedir(NULL);
 
             if ( ( homedir != NULL ) && ( chdir(homedir) < 0 ) ) {
                 singularity_message(WARNING, "Could not chdir to home directory: %s\n", homedir);

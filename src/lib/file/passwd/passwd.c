@@ -103,15 +103,10 @@ int singularity_file_passwd(void) {
         ABORT(255);
     }
 
-    if ( ( home = envar_path("SINGULARITY_HOME") ) != NULL ) {
-        char *colon = strchr(home, ':');
-        if ( colon != NULL ) {
-            homedir = colon + 1;
-            setenv("HOME", homedir, 1);
-        }
-    }
+    homedir = get_homedir(pwent);
     if ( homedir == NULL ) {
-        homedir = pwent->pw_dir;
+        singularity_message(ERROR, "Failed to get home directory: %s\n", strerror(errno));
+        ABORT(255);
     }
 
     fprintf(file_fp, "%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, homedir, pwent->pw_shell);
