@@ -40,7 +40,6 @@
 
 
 int singularity_mount_home(void) {
-    char *tmpdirpath;
     char *homedir;
     char *homedir_source;
     char *homedir_base = NULL;
@@ -86,6 +85,7 @@ int singularity_mount_home(void) {
 
         singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
     } else if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
+        char *tmpdirpath;
         if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR")) != NULL ) {
             singularity_config_rewind();
             if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
@@ -104,6 +104,8 @@ int singularity_mount_home(void) {
         } else {
             singularity_message(VERBOSE2, "Set the contained home directory source to: %s\n", homedir_source);
         }
+
+        free(tmpdirpath);
 
     } else if ( is_dir(homedir) == 0 ) {
         homedir_source = strdup(homedir);
@@ -167,6 +169,8 @@ int singularity_mount_home(void) {
         ABORT(255);
     }
     singularity_priv_drop();
+
+    free(homedir_source);
 
     return(0);
 }

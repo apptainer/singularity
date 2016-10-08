@@ -88,6 +88,8 @@ int singularity_action_init(void) {
         ABORT(1);
     }
 
+    free(command);
+
     cwd_path = (char *) malloc(PATH_MAX);
 
     singularity_message(DEBUG, "Getting current working directory path string\n");
@@ -128,6 +130,7 @@ int singularity_action_do(int argc, char **argv) {
             }
         }
     }
+    free(target_pwd);
 
     if ( action == ACTION_SHELL ) {
         singularity_message(DEBUG, "Running action: shell\n");

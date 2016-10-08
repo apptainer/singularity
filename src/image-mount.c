@@ -65,6 +65,8 @@ int main(int argc, char ** argv) {
     singularity_rootfs_init(containerimage);
     singularity_rootfs_mount();
 
+    free(containerimage);
+
     singularity_message(VERBOSE, "Setting SINGULARITY_ROOTFS to '%s'\n", singularity_rootfs_dir());
     setenv("SINGULARITY_ROOTFS", singularity_rootfs_dir(), 1);
 

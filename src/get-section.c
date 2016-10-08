@@ -58,7 +58,7 @@ int main(int argc, char ** argv) {
         ABORT(1);
     }
 
-    if ( ( input = fopen(file, "r") ) == NULL ) {
+    if ( ( input = fopen(file, "r") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open file %s: %s\n", file, strerror(errno));
         ABORT(255);
     }
