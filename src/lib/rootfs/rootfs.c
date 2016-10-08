@@ -227,8 +227,6 @@ int singularity_rootfs_mount(void) {
         singularity_priv_drop();
     }
 
-    singularity_rootfs_check();
-
     return(0);
 }
 
