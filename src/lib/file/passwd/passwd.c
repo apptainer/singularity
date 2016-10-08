@@ -45,8 +45,7 @@ int singularity_file_passwd(void) {
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
-    char *home;
-    char *homedir = NULL;
+    char *homedir;
     uid_t uid = singularity_priv_getuid();
     struct passwd *pwent = getpwuid(uid);
     char *containerdir = singularity_rootfs_dir();
