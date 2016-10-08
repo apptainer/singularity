@@ -27,7 +27,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <pwd.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -46,8 +45,6 @@ int singularity_mount_home(void) {
     char *homedir_base = NULL;
     char *container_dir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
-    struct passwd *pw;
-    uid_t uid = singularity_priv_getuid();
 
     singularity_config_rewind();
     if ( singularity_config_get_bool("mount home", 1) <= 0 ) {
@@ -55,20 +52,12 @@ int singularity_mount_home(void) {
         return(0);
     }
 
-    errno = 0;
-    if ( ( pw = getpwuid(uid) ) == NULL ) {
-        // List of potential error codes for unknown name taken from man page.
-        if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
-            singularity_message(VERBOSE3, "Not mounting home directory as passwd entry for %d not found.\n", uid);
-            return(1);
-        } else {
-            singularity_message(ERROR, "Failed to lookup username for UID %d: %s\n", getuid, strerror(errno));
-            ABORT(255);
-        }
-    }
-
     singularity_message(DEBUG, "Obtaining user's homedir\n");
-    homedir = pw->pw_dir;
+    homedir = get_homedir(NULL);
+    if ( homedir == NULL ) {
+        singularity_message(ERROR, "Failed to get home directory: %s\n", strerror(errno));
+        ABORT(255);
+    }
 
     // Figure out home directory source
     if ( ( homedir_source = envar_path("SINGULARITY_HOME") ) != NULL ) {
@@ -81,8 +70,9 @@ int singularity_mount_home(void) {
 
         colon = strchr(homedir_source, ':');
         if ( colon != NULL ) {
-            homedir = colon + 1;
             *colon = '\0';
+            homedir_source = strdup(homedir_source);
+            *colon = ':';
             singularity_message(VERBOSE2, "Set the home directory (via envar) to: %s\n", homedir);
         }
 
@@ -133,7 +123,7 @@ int singularity_mount_home(void) {
 
     // Check to make sure whatever we were given as the home directory is really ours
     singularity_message(DEBUG, "Checking permissions on home directory: %s\n", homedir_source);
-    if ( is_owner(homedir_source, uid) < 0 ) {
+    if ( is_owner(homedir_source, singularity_priv_getuid()) < 0 ) {
         singularity_message(ERROR, "Home directory ownership incorrect: %s\n", homedir_source);
         ABORT(255);
     }

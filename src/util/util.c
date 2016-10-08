@@ -36,6 +36,7 @@
 #include <time.h>
 #include <linux/limits.h>
 #include <ctype.h>
+#include <pwd.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -214,4 +215,42 @@ int str2int(const char *input_str, long int *output_num) {
     }
     errno = EINVAL;
     return -1;
+}
+
+// pw may be NULL, in which case the passwd info will be looked up if needed.
+// If pw is is filled in with a passwd structure, this function skips
+//   looking it up.
+// The home directory value is saved for later lookups.
+char *get_homedir(struct passwd *pw) {
+    static char *homedir = NULL;
+
+    if ( homedir != NULL )
+        return homedir;
+
+    if ( ( homedir = envar_path("SINGULARITY_HOME") ) != NULL ) {
+        char *colon = strchr(homedir, ':');
+        if ( colon != NULL ) {
+            homedir = colon + 1;
+            singularity_message(VERBOSE2, "Set the home directory (via envar) to: %s\n", homedir);
+            return homedir;
+        }
+    }
+
+    if ( pw == NULL ) {
+        uid_t uid = singularity_priv_getuid();
+        if ( ( pw = getpwuid(uid) ) == NULL ) {
+            singularity_message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
+            ABORT(255);
+        }
+        singularity_message(VERBOSE2, "Set the home directory (via getpwuid) to: %s\n", pw->pw_dir);
+    }
+    else {
+        singularity_message(VERBOSE2, "Set the home directory (via passwd) to: %s\n", pw->pw_dir);
+    }
+
+    // Note that currently the only way this function can return NULL
+    //   is if strdup() fails here.
+    homedir = strdup(pw->pw_dir);
+
+    return homedir;
 }
