@@ -72,7 +72,6 @@ int singularity_mount_home(void) {
             *colon = '\0';
             homedir_source = strdup(homedir_source);
             *colon = ':';
-            singularity_message(VERBOSE2, "Set the home directory (via envar) to: %s\n", homedir);
         }
 
         singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
