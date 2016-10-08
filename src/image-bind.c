@@ -83,6 +83,8 @@ int main(int argc, char ** argv) {
     singularity_sessiondir_init(containerimage);
     singularity_ns_mnt_unshare();
 
+    free(containerimage);
+
     singularity_message(DEBUG, "Binding container to loop interface\n");
     if ( ( loop_dev = singularity_loop_bind(containerimage_fp)) == NULL ) {
         singularity_message(ERROR, "Could not bind image to loop!\n");

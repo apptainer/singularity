@@ -61,15 +61,13 @@ static struct PRIV_INFO {
 void singularity_priv_init(void) {
     long int target_uid = -1;
     long int target_gid = -1;
-    char *target_uid_str = NULL;
-    char *target_gid_str = NULL;
     memset(&uinfo, '\0', sizeof(uinfo));
 
     singularity_message(DEBUG, "Called singularity_priv_init(void)\n");
 
     if ( getuid() == 0 ) {
-        target_uid_str = envar("SINGULARITY_TARGET_UID", "", 32); 
-        target_gid_str = envar("SINGULARITY_TARGET_GID", "", 32); 
+        char *target_uid_str = envar("SINGULARITY_TARGET_UID", "", 32); 
+        char *target_gid_str = envar("SINGULARITY_TARGET_GID", "", 32); 
         if ( target_uid_str && !target_gid_str ) {
             singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
             ABORT(255);
@@ -106,6 +104,8 @@ void singularity_priv_init(void) {
                 ABORT(255);
             }
         }
+        free(target_uid_str);
+        free(target_gid_str);
     }
     if ( (target_uid >= 500) && (target_gid >= 500) ) {
         uinfo.target_mode = 1;

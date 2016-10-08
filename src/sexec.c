@@ -116,6 +116,8 @@ int main(int argc, char **argv) {
     singularity_rootfs_init(image);
     singularity_sessiondir_init(image);
 
+    free(image);
+
     singularity_ns_unshare();
 
     singularity_rootfs_mount();
