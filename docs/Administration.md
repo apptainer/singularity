@@ -2,14 +2,14 @@
 This document will cover installation and administration points of Singularity for multi-tenant HPC resources and will not cover usage of the command line tools, container usage, or example use cases.
 
 
-# Installation
+## Installation
 There are two common ways to install Singularity, from source code and via binary packages. This document will explain the process of installation from source, and it will depend on your build host to have the appropriate development tools and packages installed. For Red Hat and derivitives, you should install the following `yum` group to ensure you have an appropriately setup build server:
 
 ```bash
 yum groupinstall "Development Tools"
 ```
 
-## Downloading the Source
+### Downloading the Source
 You can download the source code either from the latest stable tarball release or via the GitHub master repository. Here is an example downloading and preparing the latest development code from GitHub:
 
 ```bash
@@ -22,7 +22,7 @@ cd singularity
 
 Once you have downloaded the source, the following installation procedures will assume you are running from the root of the source directory.
 
-## Source Installation
+### Source Installation
 The following example demonstrates how to install Singularity into `/usr/local`. You can install Singularity into any directory of your choosing, but you must ensure that the location you select supports programs running as `SUID`. It is common for people to disable `SUID` with the mount option `nosuid` for various network mounted file systems. To ensure proper support, it is easiest to make sure you install Singularity to a local file system.
 
 Assuming that `/usr/local` is a local file system:
@@ -35,7 +35,7 @@ sudo make install
 
 ***NOTE: The `make install` above must be run as root to have Singularity properly installed. Failure to install as root will cause Singularity to not function properly or have limited functionality when run by a non-root user.***
 
-## Building an RPM directly from the source
+### Building an RPM directly from the source
 Singularity includes all of the necessary bits to properly create an RPM package directly from the source tree, and you can create an RPM by doing the following:
 
 ```bash
@@ -68,7 +68,7 @@ PREFIX=/opt/singularity
 rpmbuild -ta --define="_prefix $PREFIX" --define "_sysconfdir $PREFIX/etc" --define "_defaultdocdir $PREFIX/share" singularity-*.tar.gz
 ```
 
-# Security
+## Security
 Once Singularity is installed in it's default configuration you may find that there is a SETUID component installed at `$PREFIX/libexec/singularity/sexec-suid`. The purpose of this is to do the require privilege escalation necessary for Singularity to operate properly. There are a few aspects of Singularity's functionality that require escalated privileges:
 
 1. Mounting (and looping) the Singularity container image
@@ -79,10 +79,10 @@ In general, it is impossible to implement a container system that employs the fe
 
 Many people (ignorantly) claim that the 'user namespace' will solve all of the implementation problems with unprivileged containers. While it does solve some, it is currently feature limited. With time this may change, but even on kernels that have a reasonable feature list implemented, it is known to be very buggy and cause kernel panics. Additionally very few distribution vendors are shipping supported kernels that include this feature. For example, Red Hat considers this a "technology preview" and is only available via a system modification, while other kernels enable it and have been trying to keep up with the bugs it has caused. But, even in it's most stable form, the user namespace does not completely alleviate the necessity of privilege escalation unless you also give up the desire to support images (#1 above).
 
-## How do other container solutions do it?
+### How do other container solutions do it?
 Docker and the like implement a root owned daemon to control the bring up, teardown, and functions of the containers. Users have the ability to control the daemon via a socket (either a UNIX domain socket or network socket). Allowing users to control a root owned daemon process which has the ability to assign network addresses, bind file systems, spawn other scripts and tools, is a large problem to solve and one of the reasons why Docker is not typically used on multi-tenant HPC resources.
 
-## Security mitigations
+### Security mitigations
 SUID programs are common targets for attackers because they provide a direct mechanism to gain privileged command execution. These are some of the baseline security mitigations for Singularity:
 
 1. Keep the escalated bits within the code as simple and transparent so it can be easily audit-able
@@ -120,7 +120,7 @@ DEBUG   [U=1000,P=111121]  privilege.c:169:singularity_priv_drop()    : Not drop
 ...
 ```
 
-# The Configuration File
+## The Configuration File
 When Singularity is running via the SUID pathway, the configuration **must** be owned by the root user otherwise Singularity will error out. This ensures that the system administrators have direct say as to what functions the users can utilize when running as root. If Singularity is installed as a non-root user, the SUID components are not installed, and the configuration file can be owned by the user (but again, this will limit functionality).
 
 The Configuration file can be found at `$SYSCONFDIR/singularity/singularity.conf` and is generally self documenting but there are several things to pay special attention to:
@@ -164,13 +164,13 @@ In addition to the system bind points as specified within this configuration fil
 Singularity will automatically disable this feature if the host does not support the prctl option `PR_SET_NO_NEW_PRIVS`.
 
 
-# Logging
+## Logging
 In order to facilitate monitoring and auditing, Singularity will syslog() every action and error that takes place to the `LOCAL0` syslog facility. You can define what to do with those logs in your syslog configuration.
 
-# Troubleshooting
+## Troubleshooting
 This section will help you debug (from the system administrator's perspective) Singularity.
 
-#### Not installed correctly, or installed to a non-compatible location
+### Not installed correctly, or installed to a non-compatible location
 Singularity must be installed by root into a location that allows for `SUID` programs to be executed (as described above in the installation section of this manual). If you fail to do that, you may have user's reporting one of the following error conditions:
 
 ```
