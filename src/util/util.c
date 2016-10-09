@@ -40,6 +40,7 @@
 
 #include "config.h"
 #include "util/util.h"
+#include "lib/singularity.h"
 #include "lib/message.h"
 
 
