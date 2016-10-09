@@ -339,11 +339,11 @@ The `Bootstrap: ` keyword identifies the Singularity module that will be used fo
 ### Bootstrap sections:
 Once the `Bootstrap` module has completed, the sections are identified and utilized if present. The following sections are supported in the bootstrap definition, and integrated during the bootstrap process in the following order:
 
-#### %outside
-This section blob is a Bourne shell scriptlet which will be executed on the host outside the container. The path to the container is accessible from within the running scriptlet environment via the variable `$SINGULARITY_ROOTFS`. For example, consider the following scriptlet:
+#### %setup
+This section blob is a Bourne shell scriptlet which will be executed on the host outside the container during bootstrap. The path to the container is accessible from within the running scriptlet environment via the variable `$SINGULARITY_ROOTFS`. For example, consider the following scriptlet:
 
 ```
-%outside
+%setup
     echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
     if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
         echo "Hrmm, this container does not have /bin/sh installed..."
@@ -354,39 +354,432 @@ This section blob is a Bourne shell scriptlet which will be executed on the host
 
 As we investigate this example scriptlet, you will first see this is the `%outside` scriptlet as would be defined within our bootstrap. The following line simply echos a message and prints the variable `$SINGULARITY_ROOTFS` which is defined within the shell context that this scriptlet runs in. Then we check to see if `/bin/sh` is executable, and if it is not, we print an error message. Notice the `exit 1`. The exit value of the scriptlets communicates if the scriptlet ran successfully or not. As with any shell return value, an exit of 0 (zero) means success, and any other exit value is a failure.
 
-#### %inside
+*note: Any uncaught command errors that occur within the scriptlet will cause the entire build process to halt!*
+
+
+#### %post
+Similar to the `%setup` section, this section will be executed once during bootstrapping, but this scriptlet will be run from inside the container. This is where you should put additional installation commands, downloads, and configuration into your containers. Here is an example to consider:
+
+```
+%post
+	echo "Installing Development Tools YUM group"
+	yum -y groupinstall "Development Tools"
+	echo "Installing OpenMPI into container..."
+	mkdir /tmp/git
+	cd /tmp/git
+	git clone https://github.com/open-mpi/ompi.git
+	cd ompi
+	./autogen.pl
+	./configure --prefix=/usr/local
+	make
+	make install
+	/usr/local/bin/mpicc examples/ring_c.c -o /usr/bin/mpi_ring
+	cd /
+	rm -rf /tmp/git
+	exit 0
+```
+
+The above example runs inside the container, so in this case we will first install the Centos YUM group development tools into the container, and then download Open MPI from the master branch from GitHub. We then build Open MPI and install it within the container. Next we compile one of the MPI test examples `ring_c.c` and install that to `/usr/bin/mpi_ring`. Finally we clean up and exit success.
+
+*note: As with the `%setup` scriptlet, if any errors are encountered the entire process will fail.*
+
+*another note: This is not a good example of a reproducible definition because it is pulling Open MPI from a moving target. A better example, would be to pull a static released version, but this serves as a good example of building a `%post` scriptlet.*
 
 
 #### %runscript
+The `%runscript` is another scriptlet, but it does not get executed during bootstrapping. Instead it gets persisted within the container to a file called `/singularity` which is the execution driver when the container image is ***run*** (either via the `singularity run` command or via executing the container directly).
 
+When the `%runscript` is executed, all options are passed along to the executing script at runtime, this means that you can (and should) manage argument processing from within your runscript. Here is an example of how to do that:
+
+```
+%runscript
+	echo "Arguments received: $*"
+	exec /usr/bin/python "$@"
+```
+
+In this particular runscript, the arguments are printed as a single string (`$*`) and then they are passed to `/usr/bin/python` via a quoted array (`$@`) which ensures that all of the arguments are properly parsed by the executed command. The `exec` command causes the given command to replace the current entry in the process table with the one that is to be called. This makes it so the runscript shell process ceases to exist, and the only process running inside this container is the called Python command.
 
 #### %test
+You may choose to add a `%test` section to your definition file. This section will be run at the very end of the boostrapping process and will give you a chance to validate the container during the bootstrap process. You can also execute this scriptlet through the container itself, such that you can always test the validity of the container itself as you transport it to different hosts. Extending on the above Open MPI `%post`, consider this example:
 
+```
+%test
+	/usr/local/bin/mpirun --allow-run-as-root /usr/bin/mpi_test
 
+```
 
-## Bootstrapping an Image
+This is a simple Open MPI test to ensure that the MPI is build properly and communicates between processes as it should.
 
+## Bootstrapping a Container
+Bootstrapping is the process where we install an operating system and then configure it appropriately for a specified need. To do this we use a bootstrap definition file which is a recipe of how to specifically build the container and explained in detail in the previous section.
 
-## Making Changes to an Existing Container
+For the purpose of this example, we will use the portions of the bootstrap definition file above, and assemble it into a complete definition file:
 
-include increasing size of container image
+```
+# Bootstrap definition example for Centos-7 with the latest Open MPI from GitHub master
+
+BootStrap: yum
+OSVersion: 7
+MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+Include: yum
+
+%setup
+    echo "Looking in directory '$SINGULARITY_ROOTFS' for /bin/sh"
+    if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+        echo "Hrmm, this container does not have /bin/sh installed..."
+        exit 1
+    fi
+    exit 0
+
+%post
+	echo "Installing Development Tools YUM group"
+	yum -y groupinstall "Development Tools"
+	echo "Installing OpenMPI into container..."
+	mkdir /tmp/git
+	cd /tmp/git
+	git clone https://github.com/open-mpi/ompi.git
+	cd ompi
+	./autogen.pl
+	./configure --prefix=/usr/local
+	make
+	make install
+	/usr/local/bin/mpicc examples/ring_c.c -o /usr/bin/mpi_ring
+	cd /
+	rm -rf /tmp/git
+	exit 0
+
+%runscript
+	echo "Arguments received: $*"
+	exec /usr/bin/python "$@"
+
+%test
+	/usr/local/bin/mpirun --allow-run-as-root /usr/bin/mpi_ring
+
+```
+
+Taking this particular definition file as the example, we can use this to create our container.
+
+The Singularity bootstrap command syntax is as follows:
+
+```bash
+$ singularity bootstrap
+USAGE: singularity [...] bootstrap <container path> <definition file>
+```
+
+The `<container path>` is the path to the Singularity image file, and the `<definition file>` is the location of the definition file (the recipe) we will use to create this container. The process of building a container should always be done by root so that the correct file ownership and permissions are maintained. Also, so installation programs check to ensure they are the root user before proceeding. The bootstrap process may take anywhere from one minute to one hour depending on what needs to be done and how fast your network connection is.
+
+Here are the steps necessary to create a container using the above definition file:
+
+```bash
+$ sudo singularity create --size 2048 /tmp/Centos7-ompi.img
+Creating a new image with a maximum size of 2048MiB...
+Executing image create helper
+Formatting image with ext3 file system
+Done.
+$ sudo singularity bootstrap /tmp/Centos7-ompi.img centos7-ompi_master.def 
+Bootstrap initialization
+Checking bootstrap definition
+Executing Prebootstrap module
+Executing Bootstrap 'yum' module
+
+...
+
++ /usr/local/bin/mpicc examples/ring_c.c -o /usr/bin/mpi_ring
++ cd /
++ rm -rf /tmp/git
++ exit 0
++ /usr/local/bin/mpirun --allow-run-as-root /usr/bin/mpi_ring
+Process 0 sending 10 to 1, tag 201 (4 processes in ring)
+Process 0 sent to 1
+Process 0 decremented value: 9
+Process 0 decremented value: 8
+Process 0 decremented value: 7
+Process 0 decremented value: 6
+Process 0 decremented value: 5
+Process 0 decremented value: 4
+Process 0 decremented value: 3
+Process 0 decremented value: 2
+Process 0 decremented value: 1
+Process 0 decremented value: 0
+Process 0 exiting
+Process 1 exiting
+Process 2 exiting
+Process 3 exiting
+```
+
+You can see from the output above, that the container has been built and the `%test` section has executed as expected. Our container has now been bootstrapped.
+
 
 ## Using Your Container Image
-When using your containers, Shell, exec, run, test...
+Singularity offers several primary user interfaces to containers: `shell`, `exec`, `run` and `test`. Using these interfaces, you can include any application or workflow that exists inside of a container as easy as if they were on the host system. These interfaces are designed specifically such that you do not need to be root or have escalated privileges to execute them. Additionally, Singularity is designed to abstract out the container system as elegantly as possibly such that the container does not exist. All IO, pipes, sockets, and native process control is handed through the container and to the calling application and Singularity elegantly gets completely out of the way for the process to run.
 
-### Executing a container directly
+Generally the differences can be explained as follows
 
-### Options and runtime features
+- **shell**: The `shell` interface (or Singularity subcommand) will invoke an interactive shell within the container. By default the shell called is `/bin/sh`, but this can be overridden with the shell option `--shell /path/to/shell` or via the environment variable `SINGULARITY_SHELL`. Once the shell is exited, the namespaces all collapse, and all mounts, binds, and contained processes exit.
+- **exec**: As the name implies, the `exec` interface/subcommand offers the ability to execute a single command within a container environment. This is a simple way to run programs, scripts and workflows that exist within a container from the host system. You can run this command from within a script on the host system or from a batch scheduler or an `mpirun` command.
+- **run**: Running a container will execute a predefined script (defined in the Singularity bootstrap definition as `%runscript`). If not run script has been provided, the container will launch a shell instead.
+- **test**: If you specified a `%test` section within the Singularity bootstrap definition, you can run that test as yourself. This is a useful way to ensure that a container works properly not only when built, but when transferred to other hosts or infrastructures.
 
-### Alternative image formats
 
-#### Directories
-#### Archives
-#### Dockers
+### Bind Paths
+Singularity 'swaps' out the currently running root operating system on the host for what is inside the container, and in doing so none of the host file systems are accessible anymore. As a workaround for this, Singularity will *bind* those paths back in via two primary methods: system defined bind points and conditional user defined bind points.
 
-## Creating a Container Workflow
+To *mount* a bind path inside the container, a ***bind point*** must be defined within the container. The bind point is a target location entity to which the actual directory or file can be bound to. This means that if you want to bind to a point within the container such as `/global`, that directory must already exist within the container.
 
+It is however possible that the system administrator has enabled a Singularity feature called *overlay* in the `/etc/singularity/singularity.conf` file. This will cause the bind points to be created on an as needed basis in an overlay file system so that the underlying container is not modified. But because the *overlay* feature is not always used, it maybe necessary for container standards to exist to ensure portability from host to host.
+
+If a bind path is requested, and the bind point does not exist within the container, a warning message will be displayed, and Singularity will continue trying to mount file system. For example:
+
+```bash
+$ singularity shell /tmp/Centos7-ompi.img 
+WARNING: Non existant bind point (directory) in container: '/global'
+Singularity: Invoking an interactive shell within container...
+
+Singularity.Centos7-ompi.img> 
+```
+
+Even though `/global` did not exist inside the container, the shell command printed a warning but continued on. If we enable `enable overlay = yes` in the `/etc/singularity/singularity.conf` you will find that we no longer get the error and `/global` is created and accessible as expected:
+
+```bash
+$ singularity shell /tmp/Centos7-ompi.img 
+Singularity: Invoking an interactive shell within container...
+
+Singularity.Centos7-ompi.img> 
+```
+
+#### System defined bind points
+The system administrator has the ability to define what bind points will be included automatically inside each container. The bind paths are locations on the host's root file system which should also be visible within the container. Some of the bind paths are automatically derived (e.g. a user's home directory) and some are statically defined (e.g. `bind path = ` in `/etc/singularity/singularity.conf`).
+
+
+#### User defined bind points
+If the system administrator has enabled user control of binds (via `user bind control = yes` in `/etc/singularity/singularity.conf`), you will be able to request your own bind points within your container processes. The most typical example of this is the `--bind` option and here is an example binding `/tmp` to `/scratch` (which again does not exist within the container):
+
+```bash
+$ singularity shell -B /tmp:/scratch /tmp/Centos7-ompi.img 
+WARNING: Skipping user bind, non existant bind point (directory) in container: '/scratch'
+Singularity: Invoking an interactive shell within container...
+
+Singularity.Centos7-ompi.img> 
+```
+
+
+### Examples
+Here are some examples using the container we created earlier on how to use the Singularity container interface commands as a normal user:
+
+#### Shell
+```bash
+$ echo world > hello
+$ singularity shell /tmp/Centos7-ompi.img 
+Singularity: Invoking an interactive shell within container...
+
+Singularity.Centos7-ompi.img> pwd
+/home/gmk/demo
+Singularity.Centos7-ompi.img> ls
+hello
+Singularity.Centos7-ompi.img> cat hello 
+world
+Singularity.Centos7-ompi.img> exit
+```
+You can see from the above example, we were able to have access to our current working directory. That is because one of the default bind paths that is included and enabled by default in Singularity is the binding of the user's home directory. In this example, you can see that we created a file called `hello` in the current directory and after we entered the Singularity container we landed in the same directory and thus `hello` is accessible to us here as we would expect.
+
+
+#### Exec
+Starting with the file `hello.py` in the current directory with the contents of:
+
+```python
+#!/usr/bin/python
+
+import sys
+print("Hello World: The Python version is %s.%s.%s" % sys.version_info[:3])
+```
+
+Because our home directory is automatically bound into the container, and we are running this from our home directory, we can easily execute that script using the Python within the container:
+
+```bash
+$ singularity exec /tmp/Centos7-ompi.img /usr/bin/python hello.py 
+Hello World: The Python version is 2.7.5
+```
+
+We can also pipe that script through the container and into the Python binary which exists inside the container using the following command:
+
+```bash
+$ cat hello.py | singularity exec /tmp/Centos7-ompi.img /usr/bin/python 
+Hello World: The Python version is 2.7.5
+```
+
+For demonstration purposes, let's also try to use the latest Python container which exists in DockerHub to run this script:
+
+```bash
+$ singularity exec docker://python:latest /usr/local/bin/python hello.py
+library/python:latest
+Downloading layer: sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+Downloading layer: sha256:fbd06356349dd9fb6af91f98c398c0c5d05730a9996bbf88ff2f2067d59c70c4
+Downloading layer: sha256:644eaeceac9ff6195008c1e20dd693346c35b0b65b9a90b3bcba18ea4bcef071
+Downloading layer: sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+Downloading layer: sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+Downloading layer: sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+Downloading layer: sha256:766692404ca72f4e31e248eb82f8eca6b2fcc15b22930ec50e3804cc3efe0aba
+Downloading layer: sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+Downloading layer: sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+Downloading layer: sha256:6a3d69edbe90ef916e1ecd8d197f056de873ed08bcfd55a1cd0b43588f3dbb9a
+Downloading layer: sha256:ff18e19c2db42055e6f34323700737bde3c819b413997cddace2c1b7180d7efd
+Downloading layer: sha256:7b9457ec39de00bc70af1c9631b9ae6ede5a3ab715e6492c0a2641868ec1deda
+Downloading layer: sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4
+Downloading layer: sha256:6a5a5368e0c2d3e5909184fa28ddfd56072e7ff3ee9a945876f7eee5896ef5bb
+Hello World: The Python version is 3.5.2
+```
+
+#### Run
+As we have defined within the `%runscript` above, we can execute a script, workflow, or a given command using the `run` Singularity container interface command. In the above examples, we specified the run script to `exec /usr/bin/python "%@"` which will call Python and pass along any arguments we have supply.
+
+For example:
+
+```bash
+$ singularity run /tmp/Centos7-ompi.img --version
+Python 2.7.5
+$ singularity run /tmp/Centos7-ompi.img hello.py 
+Hello World: The Python version is 2.7.5
+$ singularity run /tmp/Centos7-ompi.img 
+Python 2.7.5 (default, Nov 20 2015, 02:00:19) 
+[GCC 4.8.5 20150623 (Red Hat 4.8.5-4)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> 
+```
+
+#### Executing a container directly
+Additionally, the `run` interface gets called when the container file is executed directly (yes, the container is set as executable!):
+
+```bash
+$ ls -l /tmp/Centos7-ompi.img 
+-rwxr-xr-x. 1 root root 2147483679 Oct  9 05:31 /tmp/Centos7-ompi.img
+$ /tmp/Centos7-ompi.img hello.py 
+Hello World: The Python version is 2.7.5
+```
+
+This means you could even rename this container to something related to the runscript (perhaps "*centos7-python.exe*") and have users call that directly instead of the system python program.
+
+## Making Changes to an Existing Container
+It is possible that you may need to make changes to a container after it has been bootstrapped. For that, let's repeat the Singularity mantra "*A user inside a Singularity container is the same user as outside the container*". This means if you want to make changes to your container, you must be root inside your container, which means you must first become root outside your container. Additionally you will need to tell Singularity that you wish to mount the container as `--writable` so you can change the contents. Let's examine the following example:
+
+```bash
+$ singularity shell /tmp/Centos7-ompi.img 
+Singularity: Invoking an interactive shell within container...
+
+Singularity.Centos7-ompi.img> which ls
+sh: which: command not found
+```
+
+Let's use this opportunity to install an additional package into this container:
+
+```bash
+$ sudo singularity exec --writable /tmp/Centos7-ompi.img yum install which
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: mirror.hostduplex.com
+ * extras: mirrors.centos.webair.com
+ * updates: linux.mirrors.es.net
+Resolving Dependencies
+--> Running transaction check
+---> Package which.x86_64 0:2.20-7.el7 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+====================================================================================================
+ Package               Arch                   Version                    Repository            Size
+====================================================================================================
+Installing:
+ which                 x86_64                 2.20-7.el7                 base                  41 k
+
+Transaction Summary
+====================================================================================================
+Install  1 Package
+
+Total download size: 41 k
+Installed size: 75 k
+Is this ok [y/d/N]: y
+Downloading packages:
+which-2.20-7.el7.x86_64.rpm                                                  |  41 kB  00:00:00     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : which-2.20-7.el7.x86_64                                                          1/1 
+  Verifying  : which-2.20-7.el7.x86_64                                                          1/1 
+
+Installed:
+  which.x86_64 0:2.20-7.el7                                                                         
+
+Complete!
+```
+
+We could have also used the `shell` container interface command to do this.
+
+```bash
+$ sudo singularity shell --writable /tmp/Centos7-ompi.img
+Singularity: Invoking an interactive shell within container...
+
+Singularity.Centos7-ompi.img> yum install vi
+Loaded plugins: fastestmirror
+Loading mirror speeds from cached hostfile
+ * base: mirror.hostduplex.com
+ * extras: mirrors.centos.webair.com
+ * updates: linux.mirrors.es.net
+Resolving Dependencies
+--> Running transaction check
+---> Package vim-minimal.x86_64 2:7.4.160-1.el7 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+====================================================================================================
+ Package                  Arch                Version                       Repository         Size
+====================================================================================================
+Installing:
+ vim-minimal              x86_64              2:7.4.160-1.el7               base              436 k
+
+Transaction Summary
+====================================================================================================
+Install  1 Package
+
+Total download size: 436 k
+Installed size: 896 k
+Is this ok [y/d/N]: y
+Downloading packages:
+vim-minimal-7.4.160-1.el7.x86_64.rpm                                         | 436 kB  00:00:00     
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+  Installing : 2:vim-minimal-7.4.160-1.el7.x86_64                                               1/1 
+  Verifying  : 2:vim-minimal-7.4.160-1.el7.x86_64                                               1/1 
+
+Installed:
+  vim-minimal.x86_64 2:7.4.160-1.el7                                                                
+
+Complete!
+Singularity.Centos7-ompi.img> exit
+```
 
 ## Best Practices for Bootstrapping
-install things into OS locations (e.g. not /home, or /tmp)
-don't count on non OS standard paths
+When bootstrapping a container, it is best to consider the following:
+
+1. Install packages, programs, data, and files into operating system locations (e.g. not `/home`, `/tmp`, or any other directories that might get commonly binded on).
+2. If you require any special environment variables to be defined, add them the `/environment` file inside the container.
+3. Files should never be owned by actual users, they should always be owned by a system account (UID < 500).
+4. Ensure that the container's `/etc/passwd`, `/etc/group`, `/etc/shadow`, and no other sensitive files have anything but the bare essentials within them.
+5. Do all of your bootstrapping via a definition file instead of manipulating the containers by hand (with the `--writable` options), this ensures greatest possibility of reproducibility and mitigates the *black box effect*.
+
+
+## Getting Additional Help, Support, Information
+
+As always, goto http://singularity.lbl.gov for the latest information, documentation, support, and news.
+
+If you think you have found a bug, or want to request a new feature, submit a bug report at: https://github.com/gmkurtzer/singularity/issues/new
+
+## Want to Join the Team?!
+We want you! Your help! Your contributions! Your presence! Come and hop on our Slack channel by requesting an invite from gmkurtzer@lbl.gov!
+
+
+
+

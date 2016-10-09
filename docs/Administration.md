@@ -187,7 +187,6 @@ After making this change, you should be able to reboot your system or unload/rel
 # modprobe loop
 ```
 
-
 ## Troubleshooting
 This section will help you debug (from the system administrator's perspective) Singularity.
 
