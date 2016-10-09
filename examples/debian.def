@@ -4,7 +4,7 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 
-BootStrap: debian
+BootStrap: debootstrap
 OSVersion: stable
 MirrorURL: http://ftp.us.debian.org/debian/
 
