@@ -3,7 +3,7 @@ This document will cover the usage of Singularity, working with containers, and 
 
 
 ## Welcome to Singularity!
-Singularity is a container solution created by necessity.
+Singularity is a container solution created by necessity for scientific and application driven workloads.
 
 Over the past decade and a half, virtualization has gone from an engineering tool to an infrastructure necessity and the evolution of enabling technologies has flourished. Most recently, we have seen the introduction of the latest ... "containers". People's general conception of containers carry the heredity of it's lineage. The use cases of virtual machines have not only guided the understanding of what a container is, but it has also influenced many of the features that people expect from any virtualization solution. This is both a good and a bad thing...
 
