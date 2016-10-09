@@ -1,23 +1,18 @@
-<h1>Singularity</h1>
+<h1>Singularity: Extreme Mobility of Compute</h1>
 <br/>
 
-<h2>Bring Your Own Operating System</h2>
+<h2>Enabling users to have full control of their environment.</h2>
 <p>
-As a user, Singularity containers can "swap" out the host operating
-system environment for one you control. Additionally Singularity
-makes the features and resources of the host system available within
-the container. This includes shared file systems, high performance
-interconnects and network components, GPUs and accelerators.
+Singularity allows a non-privileged user to "swap out" the operating system
+on the host for one they control. So if the host system is running RHEL6 but
+your application runs in Ubuntu, you can create an Ubuntu image, install your
+applications into that image, copy the image to another host, and run your
+application on that host in it's native Ubuntu environment!
 </p>
 <p>
-For example:
-<em>
-If Ubuntu is installed on your workstation or server, but an application
-is required which only runs on Red Hat Enterprise Linux 6.3. With
-Singularity, you can virtually change the host's operating system for
-a single process or process group. The application can then run within
-it's supported Red Hat environment.
-</em>
+Singularity also allows you to leverage the resources of whatever host you
+are on. This includes HPC interconnects, resource managers, file systems,
+GPUs and/or accelerators, etc.
 </p>
 <h3>Singularity does this by enabling several key facets:</h3>
 <p>
