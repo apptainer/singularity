@@ -1,6 +1,6 @@
 modsdir = $(libexecdir)/singularity/bootstrap/modules-v2
 
-dist_mods_SCRIPTS = postbootstrap.sh prebootstrap.sh build-arch.sh build-busybox.sh build-debian.sh build-docker.sh build-redhat.sh setup.sh
+dist_mods_SCRIPTS = postbootstrap.sh prebootstrap.sh build-arch.sh build-busybox.sh build-debian.sh build-docker.sh build-redhat.sh
 
 MAINTAINERCLEANFILES = Makefile.in
 
