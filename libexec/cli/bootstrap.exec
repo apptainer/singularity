@@ -45,6 +45,11 @@ while true; do
             fi
             exit
         ;;
+        -f|--force)
+            shift
+            SINGULARITY_REBOOTSTRAP=1
+            export SINGULARITY_REBOOTSTRAP
+        ;;
         -*)
             message ERROR "Unknown option: $1\n"
             exit 1
@@ -64,28 +69,14 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-if [ "${UID:-}" != 0 ]; then
-    message ERROR "Calling user must be root!\n"
-    exit 1
-fi
 
 
-IMAGE="${1:-}"
+SINGULARITY_IMAGE="${1:-}"
 DEFINITION="${2:-}"
+SINGULARITY_WRITABLE=1
+SINGULARITY_NOIMAGELOCK=1
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK SINGULARITY_libexecdir
 shift
 shift
 
-if [ ! -f "$IMAGE" ]; then
-    message ERROR "Container image does not exist: $IMAGE\n"
-    exit 1
-fi
-
-SINGULARITY_libexecdir="$SINGULARITY_libexecdir"
-SINGULARITY_BUILD_ROOT="$SINGULARITY_localstatedir/singularity/mnt"
-export SINGULARITY_libexecdir SINGULARITY_BUILD_ROOT
-
-if [ ! -d "$SINGULARITY_BUILD_ROOT" ]; then
-    mkdir -m 0755 -p "$SINGULARITY_BUILD_ROOT"
-fi
-
-exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" "$SINGULARITY_libexecdir/singularity/bootstrap.sh" "$DEFINITION" "$@"
+exec "$SINGULARITY_libexecdir/singularity/image-mount" "$SINGULARITY_libexecdir/singularity/helpers/bootstrap.sh" "$DEFINITION" "$@"

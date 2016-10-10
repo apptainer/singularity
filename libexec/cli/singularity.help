@@ -1,11 +1,12 @@
 USAGE: singularity [global options...] <command> [command options...] ...
 
 GLOBAL OPTIONS:
+    -d --debug    Print debugging information
     -h --help     Display usage summary
+    -q --quiet    Only print errors
        --version  Show application version
     -v --verbose  Increase verbosity +1
-    -d --debug    Show debugging information
-    -q --quiet    Only print errors
+    -x --sh-debug Print shell wrapper debugging information
 
 GENERAL COMMANDS:
     help          Show additional help for a command
@@ -14,8 +15,7 @@ CONTAINER USAGE COMMANDS:
     exec          Execute a command within container
     run           Launch a runscript within container
     shell         Run a Bourne shell within container
-    start         Start a namespace daemon process in a container
-    stop          Stop the namespace daemon process for a container
+    test          Execute any test code defined within container
 
 CONTAINER MANAGEMENT COMMANDS (requires root):
     bootstrap     Bootstrap a new Singularity image from scratch

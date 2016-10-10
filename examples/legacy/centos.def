@@ -1,0 +1,17 @@
+RELEASE=7
+
+if [ -n "${1:-}" ]; then
+    RELEASE="$1"
+fi
+echo "Setting RELEASE=$RELEASE"
+
+DistType "redhat"
+MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
+
+Setup
+Bootstrap
+
+InstallPkgs yum vim-minimal
+
+Cleanup
+

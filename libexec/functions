@@ -21,6 +21,11 @@
 
 set -u
 
+if [ -z "${SINGULARITY_libexecdir:-}" ]; then
+    /bin/echo "ERROR: SINGULARITY_libexecdir not defined in environment"
+    exit 2
+fi
+
 if [ -z "${MESSAGELEVEL:-}" ]; then
     /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     MESSAGELEVEL=5
@@ -66,17 +71,29 @@ message() {
 }
 
 
-get_key_from_conf() {
+singularity_key_get() {
     KEY="${1:-}"
     FILE="${2:-}"
-    if OUT=`egrep -i "^$KEY:\s*" $FILE`; then
-        echo "$OUT" | head -n 1 | sed -e "s@^$KEY:\s*@@i"
+    if OUT=`egrep -i "^$KEY:" $FILE`; then
+        echo "$OUT" | head -n 1 | sed -e "s@^$KEY:\s*@@i" | sed -e "s@\s*#.*@@"
         return 0
     fi
     return 1
 }
 
-get_section_from_conf() {
+
+singularity_keys_get() {
+    KEY="${1:-}"
+    FILE="${2:-}"
+    egrep -i "^$KEY:" "$FILE" | while read i; do
+        echo "$i" | sed -e "s@^$KEY:\s*@@i" | sed -e "s@\s*#.*@@"
+    done | tr '\n' ' '
+    echo
+
+    return 0
+}
+
+singularity_section_exists() {
     SECTION="${1:-}"
     FILE="${2:-}"
     TOGGLE=""
@@ -84,24 +101,53 @@ get_section_from_conf() {
         message ERROR "File not found ($FILE)\n"
         exit 1
     fi
-    if ! grep -q "^%$SECTION\$" "$FILE"; then
+    if ! egrep -i -q -- "^%$SECTION\W*" "$FILE"; then
         return 1
     fi
-    cat "$FILE" | while read line; do
-        if [ -n "$TOGGLE" ]; then
-            if /bin/echo "$line" | grep -q "^%"; then
-                # we are done...
-                return 0
-            fi
-            /bin/echo "$line"
-        else
-            if /bin/echo "$line" | grep -q "^%$SECTION\$"; then
-                TOGGLE=1
-            fi
-        fi
-    done
 
     return 0
+}
+
+singularity_section_args() {
+    SECTION="${1:-}"
+    FILE="${2:-}"
+    TOGGLE=""
+    if [ ! -f "$FILE" ]; then
+        message ERROR "File not found ($FILE)\n"
+        exit 1
+    fi
+
+    egrep -i -- "^%$SECTION\W*" "$FILE" | sed -e "s@%$SECTION\s*@@i"
+
+    return 0
+}
+
+singularity_section_get() {
+    SECTION="${1:-}"
+    FILE="${2:-}"
+    if [ ! -x "$SINGULARITY_libexecdir/singularity/get-section" ]; then
+        message ERROR "Could not locate get-section program\n"
+        exit 255
+    fi
+
+    if [ ! -f "$FILE" ]; then
+        message ERROR "File not found ($FILE)\n"
+        exit 1
+    fi
+
+    eval "$SINGULARITY_libexecdir/singularity/get-section" "$SECTION" "$FILE"
+
+    return 0
+}
+
+
+ABORT() {
+    RETVAL="${1:-}"
+    if [ -z "$RETVAL" ]; then
+        RETVAL=1
+    fi
+    message ERROR "Aborting with RETVAL=$RETVAL\n"
+    exit $RETVAL
 }
 
 check_pattern() {
@@ -231,6 +277,6 @@ parse_opts() {
 
 
 
-if [ "${DEBUG:-}" = "1" ]; then
+if [ -n "${SHELL_DEBUG:-}" ]; then
     set -x
 fi

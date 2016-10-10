@@ -7,12 +7,28 @@ by default writable.
 
 
 SHELL OPTIONS:
-    -w/--writable   By default all Singularity containers are available as
-                    read only. This option makes the file system accessible
-                    as read/write.
-    -C/--contain    This option disables the automatic sharing of writable
-                    filesystems on your host (e.g. $HOME and /tmp).
-    -s/--shell      Path to program to use for interactive shell
+    -B/--bind <spec>    A user-bind path specification.  spec can either be a
+                        path or a src:dest pair, specifying the bind mount to
+                        perform (can be called multiple times)
+    -c/--contain        This option disables the automatic sharing of writable
+                        filesystems on your host (e.g. $HOME and /tmp).
+    -C/--containall     Contain not only fle systems, but also PID and IPC
+    -H/--home <path>    Path to a different home directory to virtualize within
+                        the container
+    -i/--ipc            Run container in a new IPC namespace
+    -p/--pid            Run container in a new PID namespace (creates child)
+    --pwd               Initial working directory for payload process inside
+                        the container
+    -S/--scratch <path> Include a scratch directory within the container that
+                        is linked to a temporary dir (use -W to force location)
+    -s/--shell <shell>  Path to program to use for interactive shell
+    -u/--user           Try to run completely unprivileged (only works on very
+                        new kernels/distros)
+    -W/--workdir        Working directory to be used for /tmp, /var/tmp and
+                        $HOME (if -c/--contain was also used)
+    -w/--writable       By default all Singularity containers are available as
+                        read only. This option makes the file system accessible
+                        as read/write.
 
 
 NOTE:

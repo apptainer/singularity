@@ -47,12 +47,14 @@ while true; do
         ;;
         -f|--file)
             shift
-            FILE="${1:-}"
+            SINGULARITY_EXPORT_FILE="${1:-}"
+            export SINGULARITY_EXPORT_FILE
             shift
         ;;
         --command)
             shift
-            TAR_COMMAND="${1:-}"
+            SINGULARITY_EXPORT_COMMAND="${1:-}"
+            export SINGULARITY_EXPORT_COMMAND
             shift
         ;;
         -*)
@@ -74,35 +76,14 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-if [ "${UID:-}" != 0 ]; then
-    message ERROR "Calling user must be root!\n"
-    exit 1
-fi
 
-IMAGE="${1:-}"
+SINGULARITY_IMAGE="${1:-}"
+export SINGULARITY_IMAGE
 shift
 
-if [ ! -f "$IMAGE" ]; then
-    message ERROR "Container image does not exist: $IMAGE\n"
-    exit 1
-fi
 
-SINGULARITY_BUILD_ROOT="$SINGULARITY_localstatedir/singularity/mnt"
-export SINGULARITY_BUILD_ROOT
+exec "$SINGULARITY_libexecdir/singularity/image-mount" "$SINGULARITY_libexecdir/singularity/helpers/image-export.sh" "$@"
 
-if [ ! -d "$SINGULARITY_BUILD_ROOT" ]; then
-    mkdir -m 0755 -p "$SINGULARITY_BUILD_ROOT"
-fi
 
-if [ -n "${TAR_COMMAND:-}" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; ${TAR_COMMAND:-}"
-elif [ -n "${FILE:-}" ]; then
-    if touch "${FILE:-}"; then
-        exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "(cd \"$SINGULARITY_BUILD_ROOT\"; tar cf - . ) > \"${FILE:-}\""
-    else
-        message ERROR "Could not create file: ${FILE:-}\n"
-        exit 255
-    fi
-else
-    exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$SINGULARITY_BUILD_ROOT" -c "cd \"$SINGULARITY_BUILD_ROOT\"; tar cf - ."
-fi
+message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+exit 255

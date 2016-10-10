@@ -72,63 +72,33 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-IMAGE_FILE="${1:-}"
+if [ "$UID" != 0 ]; then
+    message ERROR "Calling user must be root!\n"
+    exit 1
+fi
 
-if [ -z "$IMAGE_FILE" ]; then
+SINGULARITY_IMAGE="${1:-}"
+SINGULARITY_WRITABLE=1
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE
+
+if [ -z "$SINGULARITY_IMAGE" ]; then
     message ERROR "You must supply a path to an image to create\n"
     exit 1
 fi
-
-if [ ! -f "$IMAGE_FILE" ]; then
-    message ERROR "Base image file does not exist\n"
+if [ ! -f "$SINGULARITY_IMAGE" ]; then
+    message ERROR "Image file exists, not overwriting.\n"
     exit 1
 fi
 
-if ! MKFS_PATH=`singularity_which mkfs.ext4`; then
-    if ! MKFS_PATH=`singularity_which mkfs.ext3`; then
-        message ERROR "Could not locate program: mkfs.ext3/4\n"
-        exit 255
-    fi
-fi
-
-if ! RESIZE2FS_PATH=`singularity_which resize2fs`; then
-    message ERROR "Could not locate program: resize2fs\n"
-    exit 255
-fi
-
-if ! E2FSCK_PATH=`singularity_which e2fsck`; then
-    message ERROR "Could not locate program: resize2fs\n"
-    exit 255
-fi
-
-
-message 1 "Expanding sparse image by ${IMAGE_SIZE}MiB...\n"
-if ! eval "$SINGULARITY_libexecdir/singularity/image-expand" "$IMAGE_FILE" "$IMAGE_SIZE"; then
-    messsage ERROR "Failed creating image: $IMAGE_FILE\n"
+message 1 "Expanding existing image with a size of ${IMAGE_SIZE}MiB...\n"
+if ! eval "$SINGULARITY_libexecdir/singularity/image-expand" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
+    message ERROR "Failed expanding image: $SINGULARITY_IMAGE\n"
     exit 1
 fi
 
-if ! LOOP_DEV=`eval "$SINGULARITY_libexecdir/singularity/image-bind" attach "$IMAGE_FILE" 2>/dev/null`; then
-    message ERROR "Failed binding image: $IMAGE_FILE\n"
-    exit 1
-fi
-
-message 1 "Checking image ($MKFS_PATH)\n"
-if ! eval $E2FSCK_PATH -fy "$LOOP_DEV" >/dev/null; then
-    message ERROR "Failed checking loop image: $LOOP_DEV\n"
-    eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$LOOP_DEV"
-    exit 1
-fi
-
-message 1 "Growing file system\n"
-if ! eval $RESIZE2FS_PATH "$LOOP_DEV" >/dev/null; then
-    message ERROR "Failed resizing loop image: $LOOP_DEV\n"
-    eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$LOOP_DEV"
-    exit 1
-fi
-
-eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$LOOP_DEV"
-message 1 "Done. Image can be found at: $IMAGE_FILE\n"
+message 1 "Executing image expand helper\n"
+exec "$SINGULARITY_libexecdir/singularity/image-bind" "$SINGULARITY_libexecdir/singularity/helpers/image-expand.sh"
 
 
-exit 0
+message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+exit 255

@@ -1,9 +1,21 @@
 [![Build Status](https://travis-ci.org/gmkurtzer/singularity.svg?branch=master)](https://travis-ci.org/gmkurtzer/singularity)
 
-# Singularity - Enabling Mobility of Compute
+
+# Singularity - Enabling users to have full control of their environment.
+
+Starting a Singularity container "swaps" out the host operating system
+environment for one the user controls!
+
+Let's say you are running Ubuntu on your workstation or server, but you
+have an application which only runs on Red Hat Enterprise Linux 6.3.
+Singularity can instantly virtualize the operating system, without
+having root access, and allow you to run that application in it's native
+environment!
+
+# About
 
 Singularity is a container platform focused on supporting "Mobility of
-Compute".
+Compute" 
 
 Mobility of Compute encapsulates the development to compute model where
 developers can work in an environment of their choosing and creation and
@@ -143,6 +155,13 @@ above. Doing so reveals this:
 
 And as expected, the Python version we now see is what comes from by 
 default in CentOS-6.
+
+# Cite as:
+Kurtzer, Gregory M.. (2016). Singularity 2.1.2 - Linux application and environment
+containers for science. 10.5281/zenodo.60736
+
+http://dx.doi.org/10.5281/zenodo.60736
+
 
 # Webpage
 We are working on documentation and web pages now, but checkout the work

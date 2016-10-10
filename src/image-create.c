@@ -29,11 +29,9 @@
 #include <fcntl.h>  
 
 #include "config.h"
-#include "file.h"
-#include "image.h"
-#include "message.h"
-#include "util.h"
-
+#include "lib/singularity.h"
+#include "util/util.h"
+#include "util/file.h"
 
 
 int main(int argc, char ** argv) {
@@ -46,13 +44,11 @@ int main(int argc, char ** argv) {
 
     if ( argv[2] == NULL ) {
         size = 1024;
-        message(1, "Using Default image size of %ld\n", size);
     } else {
         size = ( strtol(argv[2], (char **)NULL, 10) );
-        message(1, "Using given image size of %ld\n", size);
     }
 
-    return(image_create(argv[1], size));
+    return(singularity_image_create(argv[1], size));
 
     return(0);
 }

@@ -38,6 +38,9 @@ fi
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
 fi
+if [ -f "${HOME:-}/.singularity-init" ]; then
+    . "${HOME:-}/.singularity-init"
+fi
 
 while true; do
     case ${1:-} in
@@ -50,15 +53,67 @@ while true; do
             fi
             exit
         ;;
+        -u|--user)
+            SINGULARITY_NOSUID=1
+            export SINGULARITY_NOSUID
+            shift
+        ;;
         -w|--writable)
             shift
             SINGULARITY_WRITABLE=1
             export SINGULARITY_WRITABLE
         ;;
-        -C|--contain)
+        -H|--home)
+            shift
+            SINGULARITY_HOME="$1"
+            export SINGULARITY_HOME
+            shift
+        ;; 
+        -W|--wdir|--workdir|--workingdir)
+            shift
+            SINGULARITY_WORKDIR="$1"
+            export SINGULARITY_WORKDIR
+            shift
+        ;;
+        -S|--scratchdir|--scratch-dir|--scratch)
+            shift
+            SINGULARITY_SCRATCHDIR="$1,${SINGULARITY_SCRATCHDIR:-}"
+            export SINGULARITY_SCRATCHDIR
+            shift
+        ;;
+        -B|--bind)
+            shift
+            SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
+            export SINGULARITY_BINDPATH
+            shift
+        ;;
+        -c|--contain)
             shift
             SINGULARITY_CONTAIN=1
             export SINGULARITY_CONTAIN
+        ;;
+        -C|--containall|--CONTAIN)
+            shift
+            SINGULARITY_CONTAIN=1
+            SINGULARITY_UNSHARE_PID=1
+            SINGULARITY_UNSHARE_IPC=1
+            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC
+        ;;
+        -p|--pid)
+            shift
+            SINGULARITY_UNSHARE_PID=1
+            export SINGULARITY_UNSHARE_PID
+        ;;
+        -i|--ipc)
+            shift
+            SINGULARITY_UNSHARE_IPC=1
+            export SINGULARITY_UNSHARE_IPC
+        ;;
+        --pwd)
+            shift
+            SINGULARITY_TARGET_PWD="$1"
+            export SINGULARITY_TARGET_PWD
+            shift
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -70,7 +125,13 @@ while true; do
     esac
 done
 
-if [ -z "${1:-}" ]; then
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+    SINGULARITY_IMAGE="${1:-}"
+    export SINGULARITY_IMAGE
+    shift
+fi
+
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -79,9 +140,15 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-SINGULARITY_IMAGE="${1:-}"
-export SINGULARITY_IMAGE
-shift
 
+if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
+    . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
+fi
 
-exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
+if [ -x "$SINGULARITY_libexecdir/singularity/sexec" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
+else
+    message ERROR "Could not locate the Singularity Exec module: $SEXEC\n"
+    exit 1
+fi
+

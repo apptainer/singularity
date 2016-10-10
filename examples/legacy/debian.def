@@ -1,0 +1,10 @@
+DistType "debian"
+MirrorURL "http://ftp.us.debian.org/debian/"
+OSVersion "stable"
+
+Setup
+Bootstrap
+
+InstallPkgs vim
+
+Cleanup

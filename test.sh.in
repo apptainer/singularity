@@ -1,0 +1,309 @@
+#!/bin/bash
+# 
+# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# 
+# "Singularity" Copyright (c) 2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+# 
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
+# 
+# NOTICE.  This Software was developed under funding from the U.S. Department of
+# Energy and the U.S. Government consequently retains certain rights. As such,
+# the U.S. Government has been granted for itself and others acting on its
+# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+# to reproduce, distribute copies to the public, prepare derivative works, and
+# perform publicly and display publicly, and to permit other to do so. 
+# 
+# 
+
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+libexecdir="@libexecdir@"
+sysconfdir="@sysconfdir@"
+localstatedir="@localstatedir@"
+bindir="@bindir@"
+
+SINGULARITY_libexecdir="$libexecdir"
+SINGULARITY_sysconfdir="$sysconfdir"
+SINGULARITY_localstatedir="$localstatedir"
+SINGULARITY_PATH="$bindir"
+
+
+ALL_COMMANDS="exec run shell start stop test bootstrap copy create expand export import mount"
+
+if [ ! -f "autogen.sh" ]; then
+    /bin/echo "ERROR: Run this from the singularity source root"
+    exit 1
+fi
+
+if [ ! -f "libexec/functions" ]; then
+    /bin/echo "ERROR: Could not find functions file"
+    exit 1
+fi
+
+if [ ! -x "$SINGULARITY_PATH/singularity" ]; then
+    /bin/echo "ERROR: Could not locate singularity program at: $SINGULARITY_PATH/singularity"
+    exit 1
+fi
+
+if [ ! -f "$SINGULARITY_sysconfdir/singularity/singularity.conf" ]; then
+    /bin/echo "ERROR: Could not locate singularity configuration at: $SINGULARITY_sysconfdir/singularity/singularity.conf"
+    exit 1
+fi
+
+if [ -z "$CLEAN_SHELL" ]; then
+    /bin/echo "Building/Installing Singularity to temporary directory"
+    /bin/echo "Reinvoking in a clean shell"
+    sleep 1
+    exec env -i CLEAN_SHELL=1 PATH="$SINGULARITY_PATH:/bin:/usr/bin:/sbin:/usr/sbin" bash "$0" "$@"
+fi
+
+alias singularity="$SINGULARITY_PATH/singularity"
+
+MESSAGELEVEL=5
+STARTDIR=`pwd`
+TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
+CONTAINER="container.img"
+CONTAINERDIR="container_dir"
+export MESSAGELEVEL
+
+/bin/echo "Gaining/checking sudo access..."
+sudo true
+
+. ./libexec/functions
+
+/bin/echo
+/bin/echo "SINGULARITY_TMPDIR=$TEMPDIR"
+/bin/echo
+
+/bin/echo "Creating temp working space at: $TEMPDIR"
+stest 0 mkdir -p "$TEMPDIR"
+stest 0 pushd "$TEMPDIR"
+
+/bin/echo
+/bin/echo "Running base tests..."
+/bin/echo
+
+# Testing singularity internal commands
+stest 0 singularity
+stest 0 singularity --help
+stest 0 singularity --version
+for i in $ALL_COMMANDS; do
+    echo
+    echo "Testing command usage: '$i'"
+    stest 0 singularity --help "$i"
+    stest 0 singularity -h "$i"
+    stest 0 singularity help "$i"
+    stest 0 singularity $i help
+    stest 0 singularity $i -h
+    stest 0 singularity $i --help
+done
+
+/bin/echo
+/bin/echo "Testing error on bad commands"
+
+stest 1 singularity help bogus
+stest 1 singularity bogus help
+
+/bin/echo
+/bin/echo "Building test container..."
+
+stest 0 sudo singularity create -s 568 "$CONTAINER"
+# We will need a setuid binary (ping) for the NO_NEW_PRIVS test below.
+stest 0 sed -i "$STARTDIR/examples/centos.def" -e 's|#InstallPkgs yum vim-minimal|InstallPkgs iputils|'
+stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/busybox.def"
+
+/bin/echo
+/bin/echo "Running container shell tests..."
+
+stest 0 singularity shell "$CONTAINER" -c "true"
+stest 1 singularity shell "$CONTAINER" -c "false"
+stest 0 sh -c "echo true | singularity shell '$CONTAINER'"
+stest 1 sh -c "echo false | singularity shell '$CONTAINER'"
+
+/bin/echo
+/bin/echo "Running container exec tests..."
+
+stest 0 singularity exec "$CONTAINER" true
+stest 0 singularity exec "$CONTAINER" /bin/true
+stest 1 singularity exec "$CONTAINER" false
+stest 1 singularity exec "$CONTAINER" /bin/false
+stest 1 singularity exec "$CONTAINER" /blahh
+stest 1 singularity exec "$CONTAINER" blahh
+stest 0 sh -c "echo hi | singularity exec $CONTAINER grep hi"
+stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
+
+/bin/echo
+/bin/echo "Running container run tests..."
+
+# Before we have a runscript, it should invoke a shell
+stest 0 singularity run "$CONTAINER" -c true
+stest 1 singularity run "$CONTAINER" -c false
+echo -ne "#!/bin/sh\n\neval \"\$@\"\n" > singularity
+stest 0 chmod 0644 singularity
+stest 0 sudo singularity copy "$CONTAINER" -a singularity /
+stest 1 singularity run "$CONTAINER" true
+stest 0 sudo singularity exec -w "$CONTAINER" chmod 0755 /singularity
+stest 0 singularity run "$CONTAINER" true
+stest 1 singularity run "$CONTAINER" false
+
+
+/bin/echo
+/bin/echo "Checking writableness..."
+
+stest 0 sudo chown root.root "$CONTAINER"
+stest 0 sudo chmod 0644 "$CONTAINER"
+stest 0 sudo singularity shell -w "$CONTAINER" -c true
+stest 0 sudo singularity exec -w "$CONTAINER" true
+stest 0 sudo singularity run -w "$CONTAINER" true
+stest 1 singularity shell -w "$CONTAINER" -c true
+stest 1 singularity exec -w "$CONTAINER" true
+stest 1 singularity run -w "$CONTAINER" true
+stest 0 sudo chmod 0666 "$CONTAINER"
+stest 0 sudo singularity shell -w "$CONTAINER" -c true
+stest 0 sudo singularity exec -w "$CONTAINER" true
+stest 0 sudo singularity run -w "$CONTAINER" true
+stest 0 singularity shell -w "$CONTAINER" -c true
+stest 0 singularity exec -w "$CONTAINER" true
+stest 0 singularity run -w "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" touch /writetest.fail
+#stest 0 sudo singularity exec "$CONTAINER" touch /writetest.fail #### This works thanks to the overlayfs now, maybe it should be conditional here?
+stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
+
+
+/bin/echo
+/bin/echo "Checking Bootstrap on existing container..."
+
+stest 0 sudo singularity bootstrap "$CONTAINER"
+stest 0 singularity exec "$CONTAINER" test -f /environment
+stest 0 sudo singularity exec -w "$CONTAINER" rm /environment
+stest 1 singularity exec "$CONTAINER" test -f /environment
+stest 0 sudo singularity bootstrap "$CONTAINER"
+stest 0 singularity exec "$CONTAINER" test -f /environment
+stest 0 singularity exec "$CONTAINER" test -f /.shell
+stest 0 singularity exec "$CONTAINER" test -f /.exec
+stest 0 singularity exec "$CONTAINER" test -f /.run
+
+
+/bin/echo
+/bin/echo "Checking configuration file ownership..."
+
+stest 0 singularity exec "$CONTAINER" true
+stest 0 sudo chown `id -un` "$SINGULARITY_sysconfdir/singularity/singularity.conf"
+stest 1 singularity exec "$CONTAINER" true
+stest 0 sudo chown root.root "$SINGULARITY_sysconfdir/singularity/singularity.conf"
+stest 0 singularity exec "$CONTAINER" true
+
+
+/bin/echo
+/bin/echo "Checking export/import..."
+
+stest 0 sudo singularity export -f ${CONTAINERDIR}.tar "$CONTAINER"
+stest 0 mkdir $CONTAINERDIR
+stest 0 sudo tar -C $CONTAINERDIR -xvf ${CONTAINERDIR}.tar
+stest 0 sudo chmod 0644 ${CONTAINERDIR}.tar
+stest 0 sudo rm -f "$CONTAINER"
+stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 sh -c "cat ${CONTAINERDIR}.tar | sudo singularity import $CONTAINER"
+
+
+/bin/echo
+/bin/echo "Checking directory mode"
+stest 0 singularity exec $CONTAINERDIR true
+stest 1 singularity exec /tmp true
+stest 1 singularity exec / true
+
+
+/bin/echo
+/bin/echo "Checking NO_NEW_PRIVS"
+stest 1 singularity exec "$CONTAINER" ping localhost -c 1
+stest 1 singularity exec $CONTAINERDIR ping localhost -c 1
+
+
+/bin/echo
+/bin/echo "Checking target UID mode"
+stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep -q `id -un`"
+
+ 
+#TODO: The following tests must be conditional based on host capabilities
+/bin/echo
+/bin/echo "Disabling setuid config flag"
+stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow setuid = yes|allow setuid = no|'
+stest 1 singularity exec "$CONTAINER" true
+
+/bin/echo
+/bin/echo "Checking unprivileged mode"
+stest 0 sh -c "singularity exec $CONTAINERDIR whoami | grep -q `id -un`"
+stest 1 sh -c "singularity exec $CONTAINER whoami"
+
+
+/bin/echo
+/bin/echo "Re-enabling setuid config flag"
+stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow setuid = no|allow setuid = yes|'
+stest 0 singularity exec "$CONTAINER" true
+
+
+/bin/echo
+/bin/echo "Checking unprivileged mode from environment"
+stest 0 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINERDIR whoami | grep -q `id -un`"
+stest 1 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINER whoami"
+
+
+/bin/echo
+/bin/echo "Checking workdir functionality"
+stest 0 mkdir -p /tmp/foo
+stest 0 singularity exec $CONTAINER test -d /tmp/foo
+stest 0 singularity exec --workdir /tmp/foo $CONTAINER test -d /tmp/foo
+stest 1 singularity exec --workdir /tmp/foo --contain $CONTAINER test -d /tmp/foo
+
+
+if [ -n "@OVERLAY_FS@" ]; then
+    /bin/echo
+    /bin/echo "Testing user bind mounts"
+    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|enable overlay = no|enable overlay = yes|'
+    stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
+    stest 0 singularity exec -B /tmp/foo:/etc/foo "$CONTAINER" test -d /etc/foo
+    stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" touch /foo/hello
+    stest 1 singularity exec "$CONTAINER" test -d /foo
+    stest 0 singularity exec -B /tmp/foo:/foo,/tmp/foo:/foo1 "$CONTAINER" test -d /foo1
+    stest 0 singularity exec -B /tmp/foo:/foo -B /tmp/foo:/foo1 "$CONTAINER" test -d /foo1
+    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|user bind control = yes|user bind control = no|'
+    stest 1 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
+    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|user bind control = no|user bind control = yes|'
+    stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
+
+    /bin/echo
+    /bin/echo "Testing non-privileged user bind mounts"
+    stest 0 singularity exec -B /tmp/foo:/foo -u "$CONTAINERDIR" test -d /foo
+    # Can't create a directory here as a non-privileged user... Quirk of user
+    # namespaces and the overlay file system permission semantics
+    stest 1 singularity exec -B /tmp/foo:/etc/foo -u "$CONTAINERDIR" test -d /etc/foo
+    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|enable overlay = yes|enable overlay = no|'
+else
+    /bin/echo
+    /bin/echo "Skipping user bind mount tests, overlay FS support is not enabled"
+fi
+
+
+/bin/echo
+/bin/echo "Cleaning up"
+
+stest 0 popd
+stest 0 sudo rm -rf "$TEMPDIR"
+
+/bin/echo
+if `which flawfinder > /dev/null`; then
+    /bin/echo "Testing source code with flawfinder"
+    stest 0 sh -c "flawfinder . | tee /dev/stderr | grep -q -e 'No hits found'"
+else
+    /bin/echo "WARNING: flawfinder is not found, test skipped"
+fi
+
+/bin/echo
+/bin/echo "Done. All tests completed successfully"
+/bin/echo
+

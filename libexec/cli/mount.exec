@@ -70,29 +70,10 @@ if [ "${UID:-}" != 0 ]; then
     exit 1
 fi
 
-IMAGE="${1:-}"
-MOUNT="${2:-}"
+SINGULARITY_IMAGE="${1:-}"
+SINGULARITY_WRITABLE=1
+SINGULARITY_NOIMAGELOCK=1
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
 shift
-shift
 
-if [ ! -f "$IMAGE" ]; then
-    message ERROR "Image file not found: $IMAGE\n"
-    exit 1
-fi
-
-if [ ! -d "$MOUNT" ]; then
-    message ERROR "Mount point not acceptable: $MOUNT\n"
-    exit 1
-fi
-
-cat <<EOF
-
-Mounting image '$IMAGE' into '$MOUNT'
-
-To unmount, simply exit this new shell.
-
-EOF
-PS1="$IMAGE:$MOUNT> "
-export PS1
-
-exec "$SINGULARITY_libexecdir/singularity/image-mount" "$IMAGE" "$MOUNT"
+exec "$SINGULARITY_libexecdir/singularity/image-mount" "$SINGULARITY_libexecdir/singularity/helpers/image-mount.sh"

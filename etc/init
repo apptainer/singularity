@@ -3,26 +3,19 @@
 # Environment modules if set, cause errors in containers
 unset module
 
+# Bash env has been known to cause issues in containers
+unset BASH_ENV
+
 # Some distributions don't have /bin and /sbin in PATH anymore
 PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
 
 # Don't save the shell's HISTFILE
 HISTFILE="/dev/null"
 
-export PATH HISTFILE
-
-
-# Conditionally disable the PID namespace if we are invoked via a
-# # resource manager.  Others (OAR, Hydra)?
-if [ -n "${OMPI_COMM_WORLD_SIZE:-}" ] ||    # ORTE (Open MPI)
-   [ -n "${SLURM_JOB_ID:-}" ] ||            # SLURM
-   [ -n "${JOB_ID:-}" ] ||                  # SGE
-   [ -n "${PBS_JOBID:-}" ] ||               # PBS/Torque
-   [ -n "${LSB_JOBID:-}" ] ||               # LSF (and Open Lava?)
-   [ -n "${COBALT_JOBID:-}" ] ||            # Cobalt
-   [ -n "${_CONDOR_JOB_AD:-}" ] ||          # Condor (is there a better one?)
-   [ -n "${LOAD_STEP_ID:-}" ]               # LoadLeveler
-then
-    SINGULARITY_NO_NAMESPACE_PID=1
-    export SINGULARITY_NO_NAMESPACE_PID
+# Set the timezone if it is not already set
+if [ -z "${TZ:-}" ]; then
+    TZ=`date +%Z`
 fi
+
+export PATH HISTFILE TZ
+

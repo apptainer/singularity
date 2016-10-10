@@ -34,9 +34,10 @@ SINGULARITY_localstatedir="$localstatedir"
 
 RETVAL=0
 MESSAGELEVEL=1
-DEBUG=""
+NEW_HOME=""
+CHANGE_HOME="NO"
 
-export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL DEBUG
+export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL NEW_HOME CHANGE_HOME
 
 # the Modules package always calls 
 unset module
@@ -74,13 +75,37 @@ while true; do
         ;;
         -d|--debug)
             MESSAGELEVEL=5
-            DEBUG=1
             message 4 "enabling debugging\n"
-            #set -x
+            shift
+        ;;
+        -x|--shdebug)
+            SHELL_DEBUG=1
+            export SHELL_DEBUG
+            message 4 "enabling shell debugging\n"
             shift
         ;;
         -v|--verbose)
             MESSAGELEVEL=`expr $MESSAGELEVEL + 1`
+            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            shift
+        ;;
+        -vv)
+            MESSAGELEVEL=`expr $MESSAGELEVEL + 2`
+            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            shift
+        ;;
+        -vvv)
+            MESSAGELEVEL=`expr $MESSAGELEVEL + 3`
+            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            shift
+        ;;
+        -vvvv)
+            MESSAGELEVEL=`expr $MESSAGELEVEL + 4`
+            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            shift
+        ;;
+        -vvvv)
+            MESSAGELEVEL=`expr $MESSAGELEVEL + 4`
             message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
             shift
         ;;

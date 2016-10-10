@@ -1,0 +1,7 @@
+DistType "busybox"
+MirrorURL "https://www.busybox.net/downloads/binaries/busybox-x86_64"
+
+Setup
+Bootstrap
+
+Cleanup

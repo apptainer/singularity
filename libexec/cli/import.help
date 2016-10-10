@@ -1,28 +1,24 @@
-USAGE: singularity [...] import [import options...] <container path>
+USAGE: singularity [...] import <container path> [import from URI]
 
-By default import opens standard input (stdin) and will accept tar
-streams to import into a container. Note that the stream MUST be in
-uncompressed tar format or the command will fail.
-
-The tar archive can be anything from a root file system, to a layer you
-wish to add to a container, to an existing docker image.
+Import takes a URI and will populate a container with the contents of
+the URI. If no URI is given, import will expect an incoming tar pipe.
 
 The size of the container you need to create to import a complete system
 may be significantly larger than the size of the tar file/stream due to
 overheads of the container filesystem.
 
-It is also possible to import from a Docker image specified with -f by
-using the format option; that actually creates the container.  Docker
-conversion hides substantial complexity and is relatively slow.  It
-creates /singularity in the container if the Docker image defines a
-Cmd and/or Entrypoint.
+note: This command must be executed as root if you intend to operate on
+      a Singularity image.
 
-note: This command must be executed as root.
+SUPPORTED URIs:
 
-IMPORT OPTIONS:
-    -f/--file       Use an input file instead of a pipe for tar, or
-                    name an image of the specified format to import
-       --command    Replace the tar command (DEFAULT: 'tar xvf -')
+    http/https: Pull an image using curl over HTTPD
+    docker:     Pull an image from the Docker repository
+    file:       Use a local file (same as just passing local path)
+
+SUPPORTED FILE TYPES:
+
+    .tar, .tar.gz, .tgz, .tar.bz2
 
 EXAMPLES:
 
@@ -30,13 +26,13 @@ EXAMPLES:
 
     $ sudo singularity create /tmp/Debian.img
 
-    You can then import from a tar pipe
+    You can then import:
 
     $ gunzip -c debian.tar.gz | sudo singularity import /tmp/Debian
-    $ cat debian.tar | sudo singularity import /tmp/Debian.img
-    $ sudo singularity import /tmp/Debian.img < debian.tar
-    $ sudo singularity import -f Debian.tar /tmp/Debian.img
-    $ docker export [container] | sudo singularity import [container].img
+    $ sudo singularity import /tmp/Debian.img debian.tar.gz
+    $ sudo singularity import /tmp/Debian.img file://debian.tar.gz
+    $ sudo singularity import /tmp/Debian.img http://foo.com/debian.tar.gz
+    $ sudo singularity import /tmp/Debian.img docker://ubuntu:latest
 
 For additional help, please visit our public documentation pages which are
 found at:

@@ -35,8 +35,7 @@ else
 fi
 
 PATH=/sbin:/usr/sbin:${PATH:-}
-IMAGE_SIZE="1024"
-FILESYSTEM="ext3"
+IMAGE_SIZE="768"
 
 while true; do
     case ${1:-} in
@@ -52,11 +51,6 @@ while true; do
         -s|--size)
             shift
             IMAGE_SIZE="${1:-}"
-            shift
-        ;;
-        -f|--fs)
-            shift
-            FILESYSTEM="${1:-}"
             shift
         ;;
         -F|--force)
@@ -82,57 +76,38 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-if [ "$FILESYSTEM" != "ext3" -a "$FILESYSTEM" != "ext4" ]; then
-    message ERROR "File system's supported: ext3/4\n"
-    exit 1
-fi
-
 if [ "$UID" != 0 ]; then
     message ERROR "Calling user must be root!\n"
     exit 1
 fi
 
-IMAGE_FILE="${1:-}"
+SINGULARITY_IMAGE="${1:-}"
+SINGULARITY_WRITABLE=1
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE
 
-if [ -z "$IMAGE_FILE" ]; then
+if [ -z "$SINGULARITY_IMAGE" ]; then
     message ERROR "You must supply a path to an image to create\n"
     exit 1
 fi
-if [ -f "$IMAGE_FILE" ]; then
+if [ -f "$SINGULARITY_IMAGE" ]; then
     if [ -n "${OVERWRITE:-}" ]; then
         message 2 "Removing existing file\n"
-        /bin/rm -f "$IMAGE_FILE"
+        /bin/rm -f "$SINGULARITY_IMAGE"
     else
         message ERROR "Image file exists, not overwriting.\n"
         exit 1
     fi
 fi
 
-if ! MKFS_PATH=`singularity_which "mkfs.$FILESYSTEM"`; then
-    message ERROR "Could not locate program: mkfs.$FILESYSTEM\n"
-    exit 255
-fi
-
-message 1 "Creating a sparse image with a maximum size of ${IMAGE_SIZE}MiB...\n"
-if ! eval "$SINGULARITY_libexecdir/singularity/image-create" "$IMAGE_FILE" "$IMAGE_SIZE"; then
-    message ERROR "Failed creating image: $IMAGE_FILE\n"
+message 1 "Creating a new image with a maximum size of ${IMAGE_SIZE}MiB...\n"
+if ! eval "$SINGULARITY_libexecdir/singularity/image-create" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
+    message ERROR "Failed creating image: $SINGULARITY_IMAGE\n"
     exit 1
 fi
 
-if ! LOOP_DEV=`eval "$SINGULARITY_libexecdir/singularity/image-bind" attach "$IMAGE_FILE"`; then
-    message ERROR "Failed binding image: $IMAGE_FILE\n"
-    exit 1
-fi
-
-message 1 "Formatting image ($MKFS_PATH)\n"
-if ! eval $MKFS_PATH -q "$LOOP_DEV" >/dev/null; then
-    message ERROR "Failed formatting loop image: $LOOP_DEV\n"
-    eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$LOOP_DEV"
-    exit 1
-fi
-
-eval "$SINGULARITY_libexecdir/singularity/image-bind" detach "$LOOP_DEV"
-message 1 "Done. Image can be found at: $IMAGE_FILE\n"
+message 1 "Executing image create helper\n"
+exec "$SINGULARITY_libexecdir/singularity/image-bind" "$SINGULARITY_libexecdir/singularity/helpers/image-create.sh"
 
 
-exit 0
+message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+exit 255

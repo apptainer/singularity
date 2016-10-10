@@ -4,7 +4,7 @@ Create a new Singularity formatted blank image.
 
 CREATE OPTIONS:
     -s/--size   Specify a size for an operation in MiB, i.e. 1024*1024B
-                (default 1024MiB)
+                (default 768MiB)
     -F/--force  Overwrite an image file if it exists
 
 EXAMPLES:

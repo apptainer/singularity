@@ -4,18 +4,40 @@ The bootstrap command is useful for creating a new bootstrap or modifying an
 existing one using a definition file that describes how to build the
 container. A simple bootstrap definition file may be as simple as:
 
-    DistType "debian"
-    MirrorURL "http://ftp.us.debian.org/debian/"
-    OSVersion "stable"
-    Setup
-    Bootstrap
-    InstallPkgs vim
-    Cleanup
+    BootStrap: debian
+    OSVersion: stable
+    MirrorURL: http://us.archive.ubuntu.com/ubuntu/
 
 This simple bootstrap has within it all of the necessary bits of information
-to bootstrap a minimal container image.
+to bootstrap a minimal Ubuntu container image.
 
 note: This command must be executed as root.
+
+You can also bootstrap a Docker image, in which case you must also specify
+the namespace (library), image repository (ubuntu) and tag (14.04.1) that
+you want to use:
+
+    BootStrap: docker
+    From: library/ubuntu:14.04.1
+
+The default Docker registry is registry-1.docker.io. To change that, add the
+Registry argument:
+
+    BootStrap: docker
+    From: tensorflow/tensorflow:latest
+    Registry: gcr.io
+
+If you want to remove token authentication, then add the Token argument:
+
+    BootStrap: docker
+    From: tensorflow/tensorflow:latest
+    Registry: gcr.io
+    Token: no
+
+CREATE OPTIONS:
+    -f/--force      Force a rebootstrap of an OS (note: this does not delete
+                    what is currently in the image, just causes the core to
+                    be reinstalled)
 
 EXAMPLES:
 
