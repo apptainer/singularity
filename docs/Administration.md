@@ -6,18 +6,18 @@ This document will cover installation and administration points of Singularity f
 There are two common ways to install Singularity, from source code and via binary packages. This document will explain the process of installation from source, and it will depend on your build host to have the appropriate development tools and packages installed. For Red Hat and derivitives, you should install the following `yum` group to ensure you have an appropriately setup build server:
 
 ```bash
-yum groupinstall "Development Tools"
+$ sudo yum groupinstall "Development Tools"
 ```
 
 ### Downloading the Source
 You can download the source code either from the latest stable tarball release or via the GitHub master repository. Here is an example downloading and preparing the latest development code from GitHub:
 
 ```bash
-mkdir ~/git
-cd ~/git
-git clone https://github.com/gmkurtzer/singularity.git
-cd singularity
-./autogen.sh
+$ mkdir ~/git
+$ cd ~/git
+$ git clone https://github.com/gmkurtzer/singularity.git
+$ cd singularity
+$ ./autogen.sh
 ```
 
 Once you have downloaded the source, the following installation procedures will assume you are running from the root of the source directory.
@@ -28,9 +28,9 @@ The following example demonstrates how to install Singularity into `/usr/local`.
 Assuming that `/usr/local` is a local file system:
 
 ```bash
-./configure --prefix=/usr/local --sysconfdir=/etc
-make
-sudo make install
+$ ./configure --prefix=/usr/local --sysconfdir=/etc
+$ make
+$ sudo make install
 ```
 
 ***NOTE: The `make install` above must be run as root to have Singularity properly installed. Failure to install as root will cause Singularity to not function properly or have limited functionality when run by a non-root user.***
@@ -39,9 +39,9 @@ sudo make install
 Singularity includes all of the necessary bits to properly create an RPM package directly from the source tree, and you can create an RPM by doing the following:
 
 ```bash
-./configure
-make dist
-rpmbuild -ta singularity-*.tar.gz
+$ ./configure
+$ make dist
+$ rpmbuild -ta singularity-*.tar.gz
 ```
 
 Near the bottom of the build output you will see several lines like:
@@ -58,14 +58,14 @@ Wrote: /home/gmk/rpmbuild/RPMS/x86_64/singularity-debuginfo-2.2-0.1.el7.centos.x
 You will want to identify the appropriate path to the binary RPM that you wish to install, in the above example the package we want to install is `singularity-2.2-0.1.el7.centos.x86_64.rpm`, and you should install it with the following command:
 
 ```bash
-sudo yum install /home/gmk/rpmbuild/RPMS/x86_64/singularity-2.2-0.1.el7.centos.x86_64.rpm
+$ sudo yum install /home/gmk/rpmbuild/RPMS/x86_64/singularity-2.2-0.1.el7.centos.x86_64.rpm
 ```
 
 *Note: If you want to have the binary RPM install the files to an alternative location, you should define the environment variable 'PREFIX' (below) to suit your needs, and use the following command to build:*
 
 ```bash
-PREFIX=/opt/singularity
-rpmbuild -ta --define="_prefix $PREFIX" --define "_sysconfdir $PREFIX/etc" --define "_defaultdocdir $PREFIX/share" singularity-*.tar.gz
+$ PREFIX=/opt/singularity
+$ rpmbuild -ta --define="_prefix $PREFIX" --define "_sysconfdir $PREFIX/etc" --define "_defaultdocdir $PREFIX/share" singularity-*.tar.gz
 ```
 
 ## Security
@@ -166,6 +166,26 @@ Singularity will automatically disable this feature if the host does not support
 
 ## Logging
 In order to facilitate monitoring and auditing, Singularity will syslog() every action and error that takes place to the `LOCAL0` syslog facility. You can define what to do with those logs in your syslog configuration.
+
+## Loop Devices
+Singularity images have `ext3` file systems embedded within them, and thus to mount them, we need to convert the raw file system image (with variable offset) to a block device. To do this, Singularity utilizes the `/dev/loop*` block devices on the host system and manages the devices programmatically within Singularity itself. Singularity also uses the `LO_FLAGS_AUTOCLEAR` loop device `ioctl()` flag which tells the kernel to automatically free the loop device when there are no more open file descriptors to the device itself.
+
+Earlier versions of Singularity managed the loop devices via a background watchdog process, but since version 2.2 we leverage the `LO_FLAGS_AUTOCLEAR` functionality and we forego the watchdog process. Unfortunately, this means that some older Linux distributions are no longer supported (e.g. RHEL <= 5).
+
+Given that loop devices are consumable (there are a limited number of them on a system), Singularity attempts to be smart in how loop devices are allocated. For example, if a given user executes a specific container it will bind that image to the next available loop device automatically. If that same user executes another command on the same container, it will use the loop device that has already been allocated instead of binding to another loop device. Most Linux distributions only support 8 loop devices by default, so if you find that you have a lot of different users running Singularity containers, you may need to increase the number of loop devices that your system supports by doing the following:
+
+Edit or create the file `/etc/modprobe.d/loop.conf` and add the following line:
+
+```options loop max_loop=128
+
+```
+
+After making this change, you should be able to reboot your system or unload/reload the loop device as root using the following commands:
+
+```bash
+# modprobe -r loop
+# modprobe loop
+```
 
 ## Troubleshooting
 This section will help you debug (from the system administrator's perspective) Singularity.

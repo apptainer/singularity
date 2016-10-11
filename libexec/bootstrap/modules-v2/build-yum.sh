@@ -46,7 +46,8 @@ fi
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
 
-# dnf should probably be preferred if it's present
+# dnf should probably be preferred if it's present, at some point we will make
+# a dnf specific bootstrap module.
 if INSTALL_CMD=`singularity_which dnf`; then
     message 1 "Found DNF at: $INSTALL_CMD\n"
 elif INSTALL_CMD=`singularity_which yum`; then

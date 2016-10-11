@@ -106,18 +106,6 @@ if [ -n "${SINGULARITY_OSBUILD:-}" ]; then
 fi
 
 
-if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/setup.sh" ]; then
-    message 1 "Executing Setup module\n"
-    if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/setup.sh" "$@"; then
-        exit 255
-    fi
-else
-    message ERROR "Could not locate Setup Bootstrap module"
-    exit 255
-fi
-
-
-
 if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/postbootstrap.sh" ]; then
     message 1 "Executing Postbootstrap module\n"
     if ! eval "$SINGULARITY_libexecdir/singularity/bootstrap/modules-v2/postbootstrap.sh" "$@"; then
