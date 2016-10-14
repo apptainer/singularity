@@ -1,0 +1,22 @@
+Bootstrap: docker
+From: ubuntu:trusty
+IncludeCmd: no
+
+%post
+	## Install dependencies for ROOT (gcc cmake etc) ##
+    	apt-get install -y software-properties-common
+    	add-apt-repository ppa:ubuntu-toolchain-r/test
+    	apt-get update
+    	apt-get install -y gcc-4.8 g++-4.8
+    	apt-get install -y git dpkg-dev cmake binutils libx11-dev libxpm-dev libxft-dev libxext-dev wget python
+
+    	## Setup for ROOT install ##
+    	mkdir /usr/local/ROOT && cd /usr/local/ROOT && mkdir 6.06.08
+    
+	## Download ROOT from CERN and install binary ##
+    	wget https://root.cern.ch/download/root_v6.06.08.Linux-ubuntu14-x86_64-gcc4.8.tar.gz
+    	tar -zxvf root_*.tar.gz -C /usr/local/ROOT/6.06.08
+
+%runscript
+	source /usr/local/ROOT/6.06.08/root/bin/thisroot.sh
+	/bin/bash
