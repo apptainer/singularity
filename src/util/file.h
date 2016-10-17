@@ -24,6 +24,7 @@ int is_file(char *path);
 int is_fifo(char *path);
 int is_link(char *path);
 int is_dir(char *path);
+int is_subdir(char *path, char *subpath);
 int is_exec(char *path);
 int is_write(char *path);
 int is_suid(char *path);

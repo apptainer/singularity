@@ -126,6 +126,21 @@ int is_dir(char *path) {
     return(-1);
 }
 
+int is_subdir(char *path, char *subpath) {
+  char *testdir = strdup(subpath);
+
+  singularity_message(DEBUG, "Testing if %s is contained within %s\n", subpath, path);
+
+  while ( strcmp(testdir, "/") != 0 ) {
+    if ( strcmp(testdir, path) == 0 ) {
+      return(0);
+    } else {
+      testdir = dirname(strdup(testdir));
+    }
+  }
+  return(-1);
+}
+
 int is_suid(char *path) {
     struct stat filestat;
 
@@ -394,7 +409,3 @@ char *basedir(char *dir) {
 
     return(ret);
 }
-
-
-
-
