@@ -92,7 +92,7 @@ void singularity_mount_userbinds(void) {
 	      }
 	      if ( tmp_path == NULL ) {
 		singularity_message(WARNING, "Ignoring user bind request: %s is not in allowed sources.\n", source);
-		return;
+		continue;
 	      } else {
 		singularity_message(DEBUG, "Proceeding since %s is subdir of %s\n", source, tmp_path);
 	      }
@@ -104,7 +104,7 @@ void singularity_mount_userbinds(void) {
 	      }
 	      if ( tmp_path == NULL ) {
 		singularity_message(WARNING, "Ignoring user bind request: %s is not in allowed destinations.\n", dest);
-		return;
+		continue;
 	      }
 	    }
 	      

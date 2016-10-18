@@ -132,10 +132,13 @@ int is_subdir(char *path, char *subpath) {
   singularity_message(DEBUG, "Testing if %s is contained within %s\n", subpath, path);
 
   while ( strcmp(testdir, "/") != 0 ) {
+    singularity_message(DEBUG, "testdir: %s\n", testdir);
     if ( strcmp(testdir, path) == 0 ) {
+      singularity_message(DEBUG, "%s is subdir of %s\n", subpath, path);
       return(0);
     } else {
       testdir = dirname(strdup(testdir));
+      
     }
   }
   return(-1);
