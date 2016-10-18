@@ -51,6 +51,10 @@ void singularity_mount_userbinds(void) {
             return;
         }
 
+	if (singularity_config_get_bool("allow select binds", 0) <= 0) {
+	  singularity_message(WARNING, "allow select binds set to off\n");
+	}
+
 #ifndef SINGULARITY_NO_NEW_PRIVS
         singularity_message(WARNING, "Ignoring user bind request: host does not support PR_SET_NO_NEW_PRIVS\n");
         return;
@@ -79,19 +83,25 @@ void singularity_mount_userbinds(void) {
 	    singularity_message(DEBUG, "Checking if %s is within user bind sources if enabled\n", source);
 	    if ( singularity_config_get_bool("allow select binds", 0) > 0 ) {
 	      char *tmp_path;
+	      singularity_message(DEBUG, "allow select binds on\n");
 	      while ( ( ( tmp_path = singularity_config_get_value("user bind source") ) != NULL ) && ( is_subdir(tmp_path, source) <= 0 ) ) {
+		singularity_message(DEBUG, "tmp_path: %s source: %s\n", tmp_path, source);
 		continue;
 	      }
 	      if ( tmp_path == NULL ) {
 		singularity_message(WARNING, "Ignoring user bind request: %s is not in allowed sources.\n", source);
 		return;
+	      } else {
+		singularity_message(DEBUG, "Proceeding since %s is subdir of %s\n", source, tmp_path);
 	      }
+	      
 	      while ( ( ( tmp_path = singularity_config_get_value("user bind destination") ) != NULL ) && ( is_subdir(tmp_path, dest) <= 0 ) ) {
 		continue;
 	      }
 	      if ( tmp_path == NULL ) {
 		singularity_message(WARNING, "Ignoring user bind request: %s is not in allowed destinations.\n", dest);
 		return;
+	      }
 	    }
 	      
 
