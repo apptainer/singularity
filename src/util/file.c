@@ -149,7 +149,7 @@ int is_subdir(char *path, char *subpath) {
     singularity_message(DEBUG, "test_subpath: %s\n", test_subpath);
     if ( strcmp(test_subpath, test_path) == 0 ) {
       singularity_message(DEBUG, "%s is subdir of %s\n", subpath, path);
-      return(0);
+      return(1);
     } else {
       test_subpath = dirname(strdup(test_subpath));
     }

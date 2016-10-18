@@ -86,7 +86,7 @@ void singularity_mount_userbinds(void) {
 	    if ( singularity_config_get_bool("allow select binds", 0) > 0 ) {
 	      char *tmp_path;
 	      singularity_message(DEBUG, "allow select binds on\n");
-	      while ( ( ( tmp_path = singularity_config_get_value("user bind source") ) != NULL ) && ( is_subdir(tmp_path, source) <= 0 ) ) {
+	      while ( ( (tmp_path = singularity_config_get_value("user bind source") ) != NULL) && (is_subdir(tmp_path, source) <= 0) ) {
 		singularity_message(DEBUG, "tmp_path: %s source: %s\n", tmp_path, source);
 		continue;
 	      }
@@ -98,13 +98,15 @@ void singularity_mount_userbinds(void) {
 	      }
 
 	      singularity_config_rewind();
-	      
-	      while ( ( ( tmp_path = singularity_config_get_value("user bind destination") ) != NULL ) && ( is_subdir(tmp_path, dest) <= 0 ) ) {
+	      while ( ( (tmp_path = singularity_config_get_value("user bind destination") ) != NULL) && (is_subdir(tmp_path, dest) <= 0) ) {
+		singularity_message(DEBUG, "tmp_path: %s dest: %s\n", tmp_path, dest);
 		continue;
 	      }
 	      if ( tmp_path == NULL ) {
 		singularity_message(WARNING, "Ignoring user bind request: %s is not in allowed destinations.\n", dest);
 		continue;
+	      } else {
+		singularity_message(DEBUG, "Proceeding since %s is subdir of %s\n", dest, tmp_path);
 	      }
 	    }
 	      
