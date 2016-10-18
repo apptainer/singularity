@@ -130,13 +130,14 @@ int is_subdir(char *path, char *subpath) {
   char *test_path;
   char *test_subpath;
 
-  if( strcmp(path[strlen(path)-1], "/" ) ) {
+  if( strcmp(&path[strlen(path)-1], "/" ) == 0 ) {
     test_path = strndup(path, strlen(path)-1);
+    singularity_message(DEBUG, "removed trailing / from %s -> %s\n", path, test_path);
   } else {
     test_path = strdup(path);
   }
   
-  if ( strcmp(subpath[strlen(subpath)-1], "/") ) {
+  if ( strcmp(&subpath[strlen(subpath)-1], "/") == 0 ) {
     test_subpath = strndup(subpath, strlen(subpath)-1);
   } else {
     test_subpath = strdup(subpath);
