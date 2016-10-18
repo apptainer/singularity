@@ -47,18 +47,16 @@ void singularity_mount_userbinds(void) {
 
         singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
         if ( ( singularity_config_get_bool("user bind control", 1) <= 0 ) && ( singularity_config_get_bool("allow select binds", 0) <= 0 ) ) {
-            singularity_message(WARNING, "Ignoring user bind request: user bind control is disabled by system administrator\n");
+            singularity_message(WARNING, "Ignoring user bind request: user bind control and allow select binds are disabled by system administrator\n");
             return;
         }
 
-	singularity_config_rewind();
-	if (singularity_config_get_bool("allow select binds", 0) <= 0) {
-	  singularity_message(WARNING, "allow select binds set to off\n");
-	}
-
 #ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Ignoring user bind request: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return;
+	singularity_config_rewind();
+	if ( singularity_config_get_bool("allow select binds", 0) <= 0 ) {
+            singularity_message(WARNING, "Ignoring user bind request: host does not support PR_SET_NO_NEW_PRIVS and allow select binds is not enabled\n");
+            return;
+	}
 #endif
 
         singularity_message(DEBUG, "Parsing SINGULARITY_BINDPATH for user-specified bind mounts.\n");
@@ -79,35 +77,31 @@ void singularity_mount_userbinds(void) {
             }
 
             singularity_message(DEBUG, "Found bind: %s -> container:%s\n", source, dest);
-
 	    
-	    singularity_message(DEBUG, "Checking if %s is within user bind sources if enabled\n", source);
 	    singularity_config_rewind();
 	    if ( singularity_config_get_bool("allow select binds", 0) > 0 ) {
-	      char *tmp_path;
-	      singularity_message(DEBUG, "allow select binds on\n");
-	      while ( ( (tmp_path = singularity_config_get_value("user bind source") ) != NULL) && (is_subdir(tmp_path, source) <= 0) ) {
-		singularity_message(DEBUG, "tmp_path: %s source: %s\n", tmp_path, source);
-		continue;
-	      }
-	      if ( tmp_path == NULL ) {
-		singularity_message(WARNING, "Ignoring user bind request: %s is not in allowed sources.\n", source);
-		continue;
-	      } else {
-		singularity_message(DEBUG, "Proceeding since %s is subdir of %s\n", source, tmp_path);
-	      }
+	        char *tmp_path;
 
-	      singularity_config_rewind();
-	      while ( ( (tmp_path = singularity_config_get_value("user bind destination") ) != NULL) && (is_subdir(tmp_path, dest) <= 0) ) {
-		singularity_message(DEBUG, "tmp_path: %s dest: %s\n", tmp_path, dest);
-		continue;
-	      }
-	      if ( tmp_path == NULL ) {
-		singularity_message(WARNING, "Ignoring user bind request: %s is not in allowed destinations.\n", dest);
-		continue;
-	      } else {
-		singularity_message(DEBUG, "Proceeding since %s is subdir of %s\n", dest, tmp_path);
-	      }
+		singularity_message(DEBUG, "Checking if %s is within user bind sources if enabled\n", source);
+
+		while ( ( (tmp_path = singularity_config_get_value("user bind source") ) != NULL) && (is_subdir(tmp_path, source) <= 0) ) {
+		    singularity_message(DEBUG, "tmp_path: %s source: %s\n", tmp_path, source);
+		    continue;
+	        }
+	        if ( tmp_path == NULL ) {
+		    singularity_message(WARNING, "Ignoring user bind request: %s is not in allowed sources.\n", source);
+		    continue;
+	        } 
+
+	        singularity_config_rewind();
+	        while ( ( (tmp_path = singularity_config_get_value("user bind destination") ) != NULL) && (is_subdir(tmp_path, dest) <= 0) ) {
+		    singularity_message(DEBUG, "tmp_path: %s dest: %s\n", tmp_path, dest);
+		    continue;
+	        }
+	        if ( tmp_path == NULL ) {
+		    singularity_message(WARNING, "Ignoring user bind request: %s is not in allowed destinations.\n", dest);
+		    continue;
+	        } 
 	    }
 	      
 

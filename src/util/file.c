@@ -127,34 +127,33 @@ int is_dir(char *path) {
 }
 
 int is_subdir(char *path, char *subpath) {
-  char *test_path;
-  char *test_subpath;
+    char *test_path;
+    char *test_subpath;
 
-  if( strcmp(&path[strlen(path)-1], "/" ) == 0 ) {
-    test_path = strndup(path, strlen(path)-1);
-    singularity_message(DEBUG, "removed trailing / from %s -> %s\n", path, test_path);
-  } else {
-    test_path = strdup(path);
-  }
-  
-  if ( strcmp(&subpath[strlen(subpath)-1], "/") == 0 ) {
-    test_subpath = strndup(subpath, strlen(subpath)-1);
-  } else {
-    test_subpath = strdup(subpath);
-  }
-  
-  singularity_message(DEBUG, "Testing if %s is contained within %s\n", subpath, path);
-
-  while ( strcmp(test_subpath, "/") != 0 ) {
-    singularity_message(DEBUG, "test_subpath: %s\n", test_subpath);
-    if ( strcmp(test_subpath, test_path) == 0 ) {
-      singularity_message(DEBUG, "%s is subdir of %s\n", subpath, path);
-      return(1);
+    if( strcmp(&path[strlen(path)-1], "/" ) == 0 ) {
+        test_path = strndup(path, strlen(path)-1);
     } else {
-      test_subpath = dirname(strdup(test_subpath));
+        test_path = strdup(path);
     }
-  }
-  return(-1);
+  
+    if ( strcmp(&subpath[strlen(subpath)-1], "/") == 0 ) {
+        test_subpath = strndup(subpath, strlen(subpath)-1);
+    } else {
+        test_subpath = strdup(subpath);
+    }
+  
+    singularity_message(DEBUG, "Testing if %s is contained within %s\n", subpath, path);
+
+    while ( strcmp(test_subpath, "/") != 0 ) {
+        if ( strcmp(test_subpath, test_path) == 0 ) {
+            singularity_message(DEBUG, "%s is subdir of %s\n", subpath, path);
+            return(1);
+        } else {
+            test_subpath = dirname(strdup(test_subpath));
+        }
+    }
+    singularity_message(DEBUG, "%s is not a subdir of %s\n", subpath, path);
+    return(-1);
 }
 
 int is_suid(char *path) {
