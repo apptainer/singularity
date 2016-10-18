@@ -46,7 +46,7 @@ void singularity_mount_userbinds(void) {
     if ( ( bind_path_string = envar_path("SINGULARITY_BINDPATH") ) != NULL ) {
 
         singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
-        if ( ( singularity_config_get_bool("user bind control", 1) <= 0 ) && ( singularity_config_get_bool("allow select binds", 1) <= 0 ) ) {
+        if ( ( singularity_config_get_bool("user bind control", 1) <= 0 ) && ( singularity_config_get_bool("allow select binds", 0) <= 0 ) ) {
             singularity_message(WARNING, "Ignoring user bind request: user bind control is disabled by system administrator\n");
             return;
         }
@@ -77,7 +77,7 @@ void singularity_mount_userbinds(void) {
 
 	    
 	    singularity_message(DEBUG, "Checking if %s is within user bind sources if enabled\n", source);
-	    if ( singularity_config_get_bool("allow select binds", 1) > 0 ) {
+	    if ( singularity_config_get_bool("allow select binds", 0) > 0 ) {
 	      char *tmp_path;
 	      while ( ( ( tmp_path = singularity_config_get_value("user bind source") ) != NULL ) && ( is_subdir(tmp_path, source) <= 0 ) ) {
 		continue;
