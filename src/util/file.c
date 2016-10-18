@@ -127,18 +127,30 @@ int is_dir(char *path) {
 }
 
 int is_subdir(char *path, char *subpath) {
-  char *testdir = strdup(subpath);
+  char *test_path;
+  char *test_subpath;
 
+  if( strcmp(path[strlen(path)-1], "/" ) ) {
+    test_path = strndup(path, strlen(path)-1);
+  } else {
+    test_path = strdup(path);
+  }
+  
+  if ( strcmp(subpath[strlen(subpath)-1], "/") ) {
+    test_subpath = strndup(subpath, strlen(subpath)-1);
+  } else {
+    test_subpath = strdup(subpath);
+  }
+  
   singularity_message(DEBUG, "Testing if %s is contained within %s\n", subpath, path);
 
-  while ( strcmp(testdir, "/") != 0 ) {
-    singularity_message(DEBUG, "testdir: %s\n", testdir);
-    if ( strcmp(testdir, path) == 0 ) {
+  while ( strcmp(test_subpath, "/") != 0 ) {
+    singularity_message(DEBUG, "test_subpath: %s\n", test_subpath);
+    if ( strcmp(test_subpath, test_path) == 0 ) {
       singularity_message(DEBUG, "%s is subdir of %s\n", subpath, path);
       return(0);
     } else {
-      testdir = dirname(strdup(testdir));
-      
+      test_subpath = dirname(strdup(test_subpath));
     }
   }
   return(-1);
