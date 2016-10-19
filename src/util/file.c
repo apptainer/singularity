@@ -132,7 +132,9 @@ int is_subdir(char *testpath, char *basepath) {
   struct stat test_fd_st;
   int parent_fd;
   int test_fd;
-  char *real_fname = basename(testpath);
+  char *testpath_real;
+  realpath(testpath, testpath_real);
+  char *real_fname = basename(testpath_real);
   
   if ( ( stat(testpath, &testpath_st) == -1 ) || ( stat(basepath, &basepath_st) == -1 ) ) {
     return(-1);
@@ -156,36 +158,6 @@ int is_subdir(char *testpath, char *basepath) {
   return(test_fd);   
 }
   
-
-int is_subdir(char *path, char *subpath) {
-    char *test_path;
-    char *test_subpath;
-
-    if( strcmp(&path[strlen(path)-1], "/" ) == 0 ) {
-        test_path = realpath(strndup(path, strlen(path)-1), NULL);
-    } else {
-        test_path = realpath(path, NULL);
-    }
-  
-    if ( strcmp(&subpath[strlen(subpath)-1], "/") == 0 ) {
-        test_subpath = realpath(strndup(subpath, strlen(subpath)-1), NULL);
-    } else {
-        test_subpath = realpath(subpath, NULL);
-    }
-  
-    singularity_message(DEBUG, "Testing if %s is contained within %s\n", test_subpath, test_path);
-
-    while ( strcmp(test_subpath, "/") != 0 ) {
-        if ( strcmp(test_subpath, test_path) == 0 ) {
-            singularity_message(DEBUG, "%s is subdir of %s\n", subpath, path);
-            return(1);
-        } else {
-            test_subpath = dirname(strdup(test_subpath));
-        }
-    }
-    singularity_message(DEBUG, "%s is not a subdir of %s\n", subpath, path);
-    return(-1);
-}
 
 int is_suid(char *path) {
     struct stat filestat;
