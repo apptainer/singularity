@@ -151,7 +151,7 @@ int is_subdir(char *testpath, char *basepath) {
   close(parent_fd);
 
   if ( (test_fd_st.st_dev != testpath_st.st_dev) || (test_fd_st.st_ino != testpath_st.st_ino) ) {
-    close(test_fd)
+    close(test_fd);
     return(-1);
   }
 
