@@ -131,18 +131,18 @@ int is_subdir(char *path, char *subpath) {
     char *test_subpath;
 
     if( strcmp(&path[strlen(path)-1], "/" ) == 0 ) {
-        test_path = strndup(path, strlen(path)-1);
+        test_path = realpath(strndup(path, strlen(path)-1), NULL);
     } else {
-        test_path = strdup(path);
+        test_path = realpath(path, NULL);
     }
   
     if ( strcmp(&subpath[strlen(subpath)-1], "/") == 0 ) {
-        test_subpath = strndup(subpath, strlen(subpath)-1);
+        test_subpath = realpath(strndup(subpath, strlen(subpath)-1), NULL);
     } else {
-        test_subpath = strdup(subpath);
+        test_subpath = realpath(subpath, NULL);
     }
   
-    singularity_message(DEBUG, "Testing if %s is contained within %s\n", subpath, path);
+    singularity_message(DEBUG, "Testing if %s is contained within %s\n", test_subpath, test_path);
 
     while ( strcmp(test_subpath, "/") != 0 ) {
         if ( strcmp(test_subpath, test_path) == 0 ) {
