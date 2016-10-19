@@ -126,6 +126,37 @@ int is_dir(char *path) {
     return(-1);
 }
 
+int is_subdir(char *testpath, char *basepath) {
+  struct stat testpath_st;
+  struct stat basepath_st;
+  struct stat test_fd_st;
+  int parent_fd;
+  int test_fd;
+  char *real_fname = basename(testpath);
+  
+  if ( ( stat(testpath, &testpath_st) == -1 ) || ( stat(basepath, &basepath_st) == -1 ) ) {
+    return(-1);
+  }
+  
+  if ( (basepath_st.st_dev == testpath_st.st_dev) && (basepath_st.st_ino == testpath_st.st_ino) ) {
+    parent_fd = open(basepath, O_CLOEXEC);
+  } else {
+    parent_fd = is_subdir(dirname(testpath), basepath);
+  }
+
+  test_fd = openat(parent_fd, real_fname, O_CLOEXEC);
+  fstat(test_fd, &test_fd_st);
+  close(parent_fd);
+
+  if ( (test_fd_st.st_dev != testpath_st.st_dev) || (test_fd_st.st_ino != testpath_st.st_ino) ) {
+    close(test_fd)
+    return(-1);
+  }
+
+  return(test_fd);   
+}
+  
+
 int is_subdir(char *path, char *subpath) {
     char *test_path;
     char *test_subpath;
