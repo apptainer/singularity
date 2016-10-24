@@ -15,7 +15,7 @@ You can download the source code either from the latest stable tarball release o
 ```bash
 $ mkdir ~/git
 $ cd ~/git
-$ git clone https://github.com/gmkurtzer/singularity.git
+$ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
 $ ./autogen.sh
 ```
@@ -176,7 +176,8 @@ Given that loop devices are consumable (there are a limited number of them on a 
 
 Edit or create the file `/etc/modprobe.d/loop.conf` and add the following line:
 
-```options loop max_loop=128
+```
+options loop max_loop=128
 
 ```
 
