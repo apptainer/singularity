@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/gmkurtzer/singularity.svg?branch=master)](https://travis-ci.org/gmkurtzer/singularity)
+[![Build Status](https://travis-ci.org/singularityware/singularity.svg?branch=master)](https://travis-ci.org/singularityware/singularity)
 
 
 # Singularity - Enabling users to have full control of their environment.
