@@ -151,7 +151,7 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
         return response
 
     if do_stream == False:
-        return response.read()
+        return response.read().decode('utf-8')
        
     chunk_size = 1 << 20
     with open(stream, 'wb') as filey:
