@@ -87,7 +87,8 @@ int main(int argc, char **argv) {
             singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
             if ( envar_defined("SINGULARITY_NOSUID") == FALSE ) {
                 char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";
-
+		
+		singularity_message(VERBOSE, "Checking for sexec-suid at %s\n", sexec_suid_path);
                 if ( ( is_owner(sexec_suid_path, 0 ) == 0 ) && ( is_suid(sexec_suid_path) == 0 ) ) {
                     singularity_message(VERBOSE, "Invoking SUID sexec: %s\n", sexec_suid_path);
 
