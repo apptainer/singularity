@@ -50,7 +50,7 @@ case "$SINGULARITY_IMAGE" in
         fi
     ;;
     docker://*)
-        NAME=`basename "$SINGULARITY_IMAGE"`
+        NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
             SINGULARITY_CACHEDIR="/tmp"
         fi
