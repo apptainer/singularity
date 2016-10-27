@@ -28,10 +28,13 @@ import shutil
 import subprocess
 import sys
 import tarfile
-import urllib
-import urllib2
-
-from urllib2 import HTTPError
+try:
+    from urllib.parse import urlencode
+    from urllib.request import urlopen, Request
+    from urllib.error import HTTPError
+except ImportError:
+    from urllib import urlencode
+    from urllib2 import urlopen, Request, HTTPError
 
 # Python less than version 3 must import OSError
 if sys.version_info[0] < 3:
@@ -128,16 +131,16 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
         do_stream = True
 
     if data != None:
-        args = urllib.urlencode(data)
-        request = urllib2.Request(url=url, 
+        args = urlencode(data)
+        request = Request(url=url, 
                                   data=args, 
                                   headers=headers) 
     else:
-        request = urllib2.Request(url=url, 
+        request = Request(url=url, 
                                   headers=headers) 
 
     try:
-        response = urllib2.urlopen(request)
+        response = urlopen(request)
 
     # If we have an HTTPError, try to follow the response
     except HTTPError as error:
@@ -148,7 +151,7 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
         return response
 
     if do_stream == False:
-        return response.read()
+        return response.read().decode('utf-8')
        
     chunk_size = 1 << 20
     with open(stream, 'wb') as filey:
