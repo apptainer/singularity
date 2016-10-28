@@ -121,6 +121,7 @@ def get_tags(namespace,repo_name,registry=None,auth=True):
     token = None
     if auth == True:
         token = get_token(repo_name=repo_name,
+                          namespace=namespace,
                           permission="pull")
        
     response = api_get(base,headers=token)
@@ -151,6 +152,7 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=True):
     token = None
     if auth == True:
         token = get_token(repo_name=repo_name,
+                          namespace=namespace,
                           permission="pull")
 
     response = api_get(base,headers=token,default_header=True)
@@ -209,6 +211,7 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
     token = None
     if auth == True:
         token = get_token(repo_name=repo_name,
+                          namespace=namespace,
                           permission="pull")
 
     if download_folder != None:
