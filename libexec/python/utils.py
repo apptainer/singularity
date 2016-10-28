@@ -215,7 +215,7 @@ def extract_tar(targz,output_folder):
     return run_command(["tar","-xzf",targz,"-C",output_folder,"--exclude=dev/*"]) 
 
 
-def write_file(filename,content,mode="wb"):
+def write_file(filename,content,mode="w"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
@@ -240,7 +240,7 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     return filename
 
 
-def read_file(filename,mode="rb"):
+def read_file(filename,mode="r"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
