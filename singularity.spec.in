@@ -42,6 +42,7 @@ Development files for Singularity
 %package slurm
 Summary: Singularity plugin for SLURM
 Group: System Environment/Libraries
+Requires: singularity = %{version}-%{release}
 
 %description slurm
 The Singularity plugin for SLURM allows jobs to be started within
