@@ -141,6 +141,7 @@ static int setup_container(spank_t spank) {
     // At this point, the current process is in the runtime container environment.
     // Return control flow back to SLURM: when execv is invoked, it'll be done from
     // within the container.
+    singularity_priv_escalate();
 
     return(0);
 }
@@ -149,7 +150,6 @@ static int setup_container(spank_t spank) {
 static int determine_image(int val, const char *optarg, int remote)
 {
     if (val) {}  // Suppresses unused error...
-    if (remote) { return 0;}
     // TODO: could do some basic path validation here in order to prevent an ABORT() later.
     job_image = strdup(optarg);
 
