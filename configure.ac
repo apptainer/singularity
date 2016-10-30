@@ -217,7 +217,6 @@ AC_ARG_WITH([userns],
             [SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_USERNS"]
            )
 
-
 AC_CHECK_FUNCS(setns, [
                       ], [
                           NO_SETNS="-DNO_SETNS"
@@ -244,7 +243,17 @@ fi
 AC_SUBST(OVERLAY_FS)
 AC_SUBST(SINGULARITY_DEFINES)
 
-
+AC_MSG_CHECKING([if slurm integration should be built])
+AC_ARG_WITH([slurm],
+            AS_HELP_STRING([--with-slurm], [Enable build of slurm integration]),
+           )
+AS_IF([test "x$with_slurm" != "xno"], [
+    AC_MSG_RESULT([yes])
+    BUILD_SLURM="libsingularity_spank.la"
+], [
+    AC_MSG_RESULT([no])
+    BUILD_SLURM=""
+])
 
 AC_MSG_CHECKING([if suid should be enabled])
 AC_ARG_ENABLE([suid],

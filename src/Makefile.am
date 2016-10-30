@@ -35,7 +35,12 @@ image_bind_LDADD = lib/libsingularity.la
 get_section_SOURCES = get-section.c util/util.c util/file.c
 get_section_LDADD = lib/libsingularity.la
 
-
+plugindir = $(libdir)/slurm
+#plugin_LTLIBRARIES = $(BUILD_SLURM)
+plugin_LTLIBRARIES = singularity_spank.la
+singularity_spank_la_SOURCES = slurm/singularity.c
+singularity_spank_la_LIBADD = lib/libsingularity.la
+singularity_spank_la_LDFLAGS = -module -no-undefined -avoid-version -export-symbols-regex '^slurm_spank_|^plugin_'
 
 #sexec_nosuid_CPPFLAGS = -DSINGULARITY_NOSUID=1 -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 #bootstrap_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"
@@ -43,7 +48,7 @@ get_section_LDADD = lib/libsingularity.la
 
 #dist_suidPROGRAM_INSTALL = ${INSTALL} -m 640
 
-install-data-hook: make_suid
+install-data-hook: make_suid cleanup_plugin
 
 make_suid:
 	@if test `id -ru` = "0" -a "x$(BUILD_SUID)" = "xsexec-suid"; then \
@@ -51,6 +56,16 @@ make_suid:
 		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
 		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-suid"; \
 		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
+	fi
+
+cleanup_plugin:
+	@if test -e "$(DESTDIR)$(plugindir)/singularity_spank.so"; then \
+		echo "cp $(DESTDIR)$(plugindir)/singularity_spank.so $(DESTDIR)$(plugindir)/backup_singularity_spank"; \
+		cp "$(DESTDIR)$(plugindir)/singularity_spank.so" "$(DESTDIR)$(plugindir)/backup_singularity_spank"; \
+		echo "rm -f $(DESTDIR)$(plugindir)/singularity_spank.*"; \
+		rm -f "$(DESTDIR)$(plugindir)/"singularity_spank.*; \
+		echo "mv $(DESTDIR)$(plugindir)/backup_singularity_spank $(DESTDIR)$(plugindir)/singularity_spank.so"; \
+		mv "$(DESTDIR)$(plugindir)/backup_singularity_spank" "$(DESTDIR)$(plugindir)/singularity.so"; \
 	fi
 
 EXTRA_DIST = config.h
