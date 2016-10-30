@@ -267,6 +267,7 @@ AS_IF([test "x$with_slurm" != "xno"],
     ]
 )
 AM_CONDITIONAL([WITH_SLURM], [test "$with_slurm" = "yes"])
+AC_SUBST(with_slurm)
 
 
 AC_MSG_CHECKING([if suid should be enabled])
