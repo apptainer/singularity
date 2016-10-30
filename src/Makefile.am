@@ -36,11 +36,13 @@ get_section_SOURCES = get-section.c util/util.c util/file.c
 get_section_LDADD = lib/libsingularity.la
 
 plugindir = $(libdir)/slurm
-#plugin_LTLIBRARIES = $(BUILD_SLURM)
+
+if WITH_SLURM
 plugin_LTLIBRARIES = singularity_spank.la
 singularity_spank_la_SOURCES = slurm/singularity.c
 singularity_spank_la_LIBADD = lib/libsingularity.la
 singularity_spank_la_LDFLAGS = -module -no-undefined -avoid-version -export-symbols-regex '^slurm_spank_|^plugin_'
+endif
 
 #sexec_nosuid_CPPFLAGS = -DSINGULARITY_NOSUID=1 -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 #bootstrap_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"

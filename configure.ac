@@ -247,13 +247,27 @@ AC_MSG_CHECKING([if slurm integration should be built])
 AC_ARG_WITH([slurm],
             AS_HELP_STRING([--with-slurm], [Enable build of slurm integration]),
            )
-AS_IF([test "x$with_slurm" != "xno"], [
-    AC_MSG_RESULT([yes])
-    BUILD_SLURM="libsingularity_spank.la"
-], [
-    AC_MSG_RESULT([no])
-    BUILD_SLURM=""
-])
+AS_IF([test "x$with_slurm" != "xno"],
+    [
+        AC_CHECK_HEADER([slurm/spank.h],
+            [AC_MSG_RESULT([yes])
+             with_slurm="yes"
+            ],
+            [AS_IF([test "$with_slurm" = "yes"],
+                   [AC_MSG_ERROR([SLURM support requested, but slurm/spank.h header not found.])],
+                   [ AC_MSG_RESULT([no])
+                     with_slurm="no"
+                   ]
+            ])
+        )
+    ],
+    [
+        AC_MSG_RESULT([no])
+        with_slurm="no"
+    ]
+)
+AM_CONDITIONAL([WITH_SLURM], [test "$with_slurm" = "yes"])
+
 
 AC_MSG_CHECKING([if suid should be enabled])
 AC_ARG_ENABLE([suid],
