@@ -29,14 +29,19 @@ int main(int argc, char ** argv) {
     return(1);
   }
 
+  //Check for $SINGULARITY_ROOTFS && $SINGULARITY_libexecdir definitions
+  
   //image-mount has finished, we are now inside a fork of image-mount running instead of bootstrap.sh
   
   //Parse args for bootstrap_version
+
+  //mkdir -d /tmp/singularity-bootstrap.XXXXXXX
+
+  singularity_prebootstrap(); //lib/bootstrap/prebootstrap/prebootstrap.c
   
-  mainsh();
-  driverv2();
-  prebootstrap();
-  build-docker();
-  postbootstrap();
-  
+  singularity_bootstrap_init(); //lib/bootstrap/bootstrap.c
+
+  singularity_postbootstrap(); //lib/bootstrap/postbootstrap/postbootstrap.c
+
+  return(0);
 }
