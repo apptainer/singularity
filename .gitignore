@@ -1,4 +1,6 @@
 *~
+#*
+*#
 src/*.o
 singularity-*.tar.gz
 *.m4
