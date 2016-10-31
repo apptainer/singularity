@@ -23,30 +23,15 @@
 
 
 int main(int argc, char ** argv) {
+  
   if ( argv[1] == NULL ) {
     fprintf(stderr, "USAGE: UPDATE USAGE HERE!! SINGULARITY_IMAGE=[image] %s [command...]\n", argv[0]);
     return(1);
   }
 
-  //For now copy code from image-mount.c
-  singularity_priv_init();
-  singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-  singularity_sessiondir_init(containerimage);
-  singularity_ns_user_unshare();
-  singularity_ns_mnt_unshare();
-
-  singularity_rootfs_init(containerimage);
-  singularity_rootfs_mount();
-
-  free(containerimage);
-
-  singularity_message(VERBOSE, "Setting SINGULARITY_ROOTFS to '%s'\n", singularity_rootfs_dir());
-  setenv("SINGULARITY_ROOTFS", singularity_rootfs_dir(), 1);
-
-  if( singularity_fork() != 0 ) {
-    singularity_message(DEBUG, "Parent process is exiting\n");
-    return(-1);
-  }
+  //image-mount has finished, we are now inside a fork of image-mount running instead of bootstrap.sh
+  
+  //Parse args for bootstrap_version
   
   mainsh();
   driverv2();
