@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
 
   //Check for $SINGULARITY_ROOTFS && $SINGULARITY_libexecdir definitions
   
-  //image-mount has finished, we are now inside a fork of image-mount running instead of bootstrap.sh
+  //image-mount has finished, we are now inside a fork of image-mount running image-bootstrap binary instead of bootstrap.sh
   
   //Parse args for bootstrap_version
 
