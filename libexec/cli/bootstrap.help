@@ -24,7 +24,7 @@ If you want to include the Docker CMD as the runscript:
 
     BootStrap: docker
     From: tensorflow/tensorflow:latest
-    RunCmd: yes
+    IncludeCmd: yes
 
 
 CREATE OPTIONS:
