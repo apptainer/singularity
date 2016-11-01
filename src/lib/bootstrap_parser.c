@@ -57,7 +57,7 @@ char *singularity_bootdef_get_value(char *key) {
     ABORT(255);
   }
 
-  line = (char *)mallaoc(MAX_LINE_LEN);
+  line = (char *)malloc(MAX_LINE_LEN);
 
   while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
     if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
@@ -93,8 +93,26 @@ int singularity_bootdef_get_version() {
 singularity_bootdef_keys_get()
 
 
+//returns section args as well as leaves file open at first line of the script
+char *singularity_bootdef_section_find(char *section_name) {
+  char *line;
+  
+  if ( bootdef_fp == NULL ) {
+    singularity_message(ERROR, "Called singularity_bootdef_section_find() before opening a bootstrap definition file!\n");
+    ABORT(255);
+  }
 
-singularity_bootdef_section_exists()
+  singularity_bootdef_rewind();
+  line = (char *)malloc(MAX_LINE_LEN);
+  
+  while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
+    strtok(line, "%");
+    if ( strcmp(strtok(NULL, " "), section_name) == 0 ) {
+      return(line);
+    }
+  }
+  return(NULL);
+}
 
 
 
@@ -102,7 +120,24 @@ singularity_bootdef_section_args()
 
 
 //Can either directly call on get-section binary, or reimplement it here. Not sure what the best idea is?
-singularity_bootdef_section_get()
+char *singularity_bootdef_section_get(char *script, char *section_name) {
+  char *script_args;
+  char *buf;
+  if( ( script_args = singularity_bootdef_section_find(section_name) ) == NULL ) {
+    singularity_message(DEBUG, "Unable to find section: \%%s in bootstrap definition file", section_name);
+    return(NULL);
+  }
+
+  while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
+    if( strncmp(line, "%", 1) == 0 ) {
+      break;
+    } else {
+      buf = script;
+      sprintf(script, "%s%s", buf, line);
+    }
+  }
+  return(script_args);
+}
 
 
 singularity_bootdef_parse_opts()
