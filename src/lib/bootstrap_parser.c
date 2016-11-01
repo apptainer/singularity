@@ -16,14 +16,14 @@
 
 #define MAX_LINE_LEN 2048
 
-FILE *bootstrap_fp = NULL;
+FILE *bootdef_fp = NULL;
 
-//Should these functions be singularity_bootstrap_* or singularity_bootstrap_def_*?
+//All bootstrap definition file parser functions should follow singularity_bootdef_* naming convention
 
-int singularity_bootstrap_open(char *bootstrap_path) {
-  singularity_message(VERBOSE, "Opening bootstrap definition file: %s\n", bootstrap_path);
-  if ( is_file(bootstrap_path) == 0 ) {
-    if ( ( bootstrap_fp = fopen(bootstrap_path, "r") ) != NULL ) { // Flawfinder: ignore (we have to open the file...)
+int singularity_bootdef_open(char *bootdef_path) {
+  singularity_message(VERBOSE, "Opening bootstrap definition file: %s\n", bootdef_path);
+  if ( is_file(bootdef_path) == 0 ) {
+    if ( ( bootdef_fp = fopen(bootdef_path, "r") ) != NULL ) { // Flawfinder: ignore (we have to open the file...)
       return(0);
     }
   }
@@ -31,18 +31,18 @@ int singularity_bootstrap_open(char *bootstrap_path) {
   return(-1);
 }
 
-void singularity_bootstrap_rewind() {
+void singularity_bootdef_rewind() {
   singularity_message(DEBUG, "Rewinding bootstrap definition file\n");
   if ( _fp != NULL ) {
-    rewind(bootstrap_fp);
+    rewind(bootdef_fp);
   }
 }
 
-void singularity_bootstrap_close() {
+void singularity_bootdef_close() {
   singularity_message(VERBOSE, "Closing bootstrap definition file\n");
-  if ( bootstrap_fp != NULL ) {
-    fclose(bootstrap_fp);
-    bootstrap_fp = NULL;
+  if ( bootdef_fp != NULL ) {
+    fclose(bootdef_fp);
+    bootdef_fp = NULL;
   }
 }
 
@@ -52,7 +52,7 @@ char *singularity_bootstrap_get_value(char *key) {
   char *bootdef_value;
   char *line;
 
-  if ( bootstrap_fp == NULL ) {
+  if ( bootdef_fp == NULL ) {
     singularity_message(ERROR, "Called singularity_bootstrap_get_value() before opening a bootstrap definition file!\n");
     ABORT(255);
   }
@@ -80,19 +80,19 @@ char *singularity_bootstrap_get_value(char *key) {
   return(NULL);
 }
 
-singularity_bootstrap_keys_get()
+singularity_bootdef_keys_get()
 
 
 
-singularity_bootstrap_section_exists()
+singularity_bootdef_section_exists()
 
 
 
-singularity_bootstrap_section_args()
+singularity_bootdef_section_args()
 
 
 //Can either directly call on get-section binary, or reimplement it here. Not sure what the best idea is?
-singularity_bootstrap_section_get()
+singularity_bootdef_section_get()
 
 
-singularity_bootstrap_parse_opts()
+singularity_bootdef_parse_opts()
