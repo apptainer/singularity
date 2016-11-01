@@ -329,6 +329,7 @@ AC_CONFIG_FILES([
    src/lib/mount/userbinds/Makefile
    src/lib/mount/scratch/Makefile
    src/util/Makefile
+   src/slurm/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity
