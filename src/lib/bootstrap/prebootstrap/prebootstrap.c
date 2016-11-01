@@ -25,13 +25,16 @@ static char *rootfs_envar = "SINGULARITY_ROOTFS";
 static char *rootfs_path = NULL;
 
 void singularity_prebootstrap_init() {
+  
   singularity_prebootstrap_set_rootfs();
-  singularity_prebootstrap_rootfs_install();
+  singularity_prebootstrap_install_rootfs();
+  singularity_prebootstrap_run_script();
+  
 }
 
-void singularity_prebootstrap_rootfs_install() {
-  s_mkpath(rootfs, 0755);
-  s_mkpath(rootfs+/dev, 0755);
+void singularity_prebootstrap_install_rootfs() {
+  s_mkpath(rootfs_path, 0755);
+  s_mkpath(strjoin(rootfs, "/dev"), 0755);
 
 
   //Do this in C
@@ -48,3 +51,12 @@ void singularity_prebootstrap_set_rootfs() {
     rootfs_path = envar_path(rootfs_envar);
   }
 }
+
+void singularity_prebootstrap_run_script() {
+  char *pre_script;
+  char *section_name = "pre";
+
+  singularity_bootdef_section_get(pre_script, section_name);
+
+  
+  
