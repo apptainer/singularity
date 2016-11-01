@@ -47,13 +47,13 @@ void singularity_bootdef_close() {
 }
 
 //Equal to singularity_key_get in functions
-char *singularity_bootstrap_get_value(char *key) {
+char *singularity_bootdef_get_value(char *key) {
   char *bootdef_key;
   char *bootdef_value;
   char *line;
 
   if ( bootdef_fp == NULL ) {
-    singularity_message(ERROR, "Called singularity_bootstrap_get_value() before opening a bootstrap definition file!\n");
+    singularity_message(ERROR, "Called singularity_bootdef_get_value() before opening a bootstrap definition file!\n");
     ABORT(255);
   }
 
@@ -78,6 +78,16 @@ char *singularity_bootstrap_get_value(char *key) {
 
   singularity_message(DEBUG, "No bootstrap definition file entry found for '%s'\n", key);
   return(NULL);
+}
+
+int singularity_bootdef_get_version() {
+  char *v1_key = "DistType";
+
+  if( singularity_bootdef_get_value(v1_key) != NULL ) {
+    return(1);
+  } else {
+    return(2);
+  }
 }
 
 singularity_bootdef_keys_get()
