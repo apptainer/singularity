@@ -155,16 +155,20 @@ char *strjoin(char *str1, char *str2) {
 void chomp(char *str) {
     int len;
 
-    if ( str[0] == ' ' ) {
+    while ( str[0] == ' ' ) {
         str++;
     }
+
     len = strlength(str, 4096);  
-    if ( str[len - 1] == ' ' ) {
+    while ( str[len - 1] == ' ' ) {
         str[len - 1] = '\0';
+	len--;
     }
+
     if ( str[0] == '\n' ) {
         str[0] = '\0';
     }
+
     if ( str[len - 1] == '\n' ) {
         str[len - 1] = '\0';
     }
