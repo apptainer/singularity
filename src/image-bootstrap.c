@@ -40,6 +40,8 @@ int main(int argc, char ** argv) {
   
   //image-mount has finished, we are now inside a fork of image-mount running image-bootstrap binary instead of bootstrap.sh
 
+  //mktemp -d /tmp/singularity-bootstrap.XXXXXXX 
+  
   //Execute old driver-v1.sh if bootdef_ver = 1, else execute new bootstrap code
   if( ( bootstrap_ver = singularity_bootdef_get_version() ) == 1 ) {
     singularity_message(DEBUG, "Running bootstrap driver v1\n");
@@ -62,7 +64,5 @@ int main(int argc, char ** argv) {
   }
   
   
-  //mkdir -d /tmp/singularity-bootstrap.XXXXXXX
-
     return(0);
 }
