@@ -106,7 +106,7 @@ char *singularity_bootdef_section_find(char *section_name) {
   line = (char *)malloc(MAX_LINE_LEN);
   
   while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
-    strtok(line, "%");
+    strtok(line, '%');
     if ( strcmp(strtok(NULL, " "), section_name) == 0 ) {
       return(line);
     }
@@ -124,12 +124,12 @@ char *singularity_bootdef_section_get(char *script, char *section_name) {
   char *script_args;
   char *buf;
   if( ( script_args = singularity_bootdef_section_find(section_name) ) == NULL ) {
-    singularity_message(DEBUG, "Unable to find section: \%%s in bootstrap definition file", section_name);
+    singularity_message(DEBUG, "Unable to find section: %%%s in bootstrap definition file", section_name);
     return(NULL);
   }
 
   while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
-    if( strncmp(line, "%", 1) == 0 ) {
+    if( strncmp(line, '%', 1) == 0 ) {
       break;
     } else {
       buf = script;
