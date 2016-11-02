@@ -9,7 +9,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = $(BUILD_SUID) sexec image-create image-expand image-mount image-bind get-section
+bin_PROGRAMS = $(BUILD_SUID) sexec image-create image-expand image-mount image-bind image-bootstrap get-section 
 EXTRA_PROGRAMS = sexec-suid
 
 sexec_SOURCES = sexec.c util/util.c util/file.c
@@ -31,6 +31,9 @@ image_mount_LDADD = lib/libsingularity.la
 
 image_bind_SOURCES = image-bind.c util/util.c util/file.c
 image_bind_LDADD = lib/libsingularity.la
+
+image_bootstrap_SOURCES = image-bootstrap.c util/util.c util/file.c
+image_bootstrap_LDADD = lib/libsingularity.la
 
 get_section_SOURCES = get-section.c util/util.c util/file.c
 get_section_LDADD = lib/libsingularity.la
