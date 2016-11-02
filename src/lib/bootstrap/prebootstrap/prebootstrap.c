@@ -34,7 +34,7 @@ void singularity_prebootstrap_init() {
 
 void singularity_prebootstrap_install_rootfs() {
   s_mkpath(rootfs_path, 0755);
-  s_mkpath(strjoin(rootfs, "/dev"), 0755);
+  s_mkpath(strjoin(rootfs_path, "/dev"), 0755);
 
 
   //Do this in C
@@ -53,10 +53,15 @@ void singularity_prebootstrap_set_rootfs() {
 }
 
 void singularity_prebootstrap_run_script() {
-  char *pre_script;
+  char ** pre_script;
   char *section_name = "pre";
+  char *args;
+  singularity_message(VERBOSE, "Searching for %%pre bootstrap script\n");
+  if ( ( args = singularity_bootdef_section_get(pre_script, section_name) ) == NULL ) {
+    singularity_message(VERBOSE, "No %%pre bootstrap script found, skipping\n");
+    return;
+  } else {
+    singularity_message(INFO, "Running %%pre bootstrap script on host\n");
+    singularity_fork_exec() //use this to execute the script with the arguments and commands
 
-  singularity_bootdef_section_get(pre_script, section_name);
-
-  
-  
+  }
