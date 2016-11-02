@@ -28,10 +28,13 @@ import shutil
 import subprocess
 import sys
 import tarfile
-import urllib
-import urllib2
-
-from urllib2 import HTTPError
+try:
+    from urllib.parse import urlencode
+    from urllib.request import urlopen, Request
+    from urllib.error import HTTPError
+except ImportError:
+    from urllib import urlencode
+    from urllib2 import urlopen, Request, HTTPError
 
 # Python less than version 3 must import OSError
 if sys.version_info[0] < 3:
@@ -128,16 +131,16 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
         do_stream = True
 
     if data != None:
-        args = urllib.urlencode(data)
-        request = urllib2.Request(url=url, 
+        args = urlencode(data)
+        request = Request(url=url, 
                                   data=args, 
                                   headers=headers) 
     else:
-        request = urllib2.Request(url=url, 
+        request = Request(url=url, 
                                   headers=headers) 
 
     try:
-        response = urllib2.urlopen(request)
+        response = urlopen(request)
 
     # If we have an HTTPError, try to follow the response
     except HTTPError as error:
@@ -148,7 +151,7 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
         return response
 
     if do_stream == False:
-        return response.read()
+        return response.read().decode('utf-8')
        
     chunk_size = 1 << 20
     with open(stream, 'wb') as filey:
@@ -199,7 +202,7 @@ def change_permissions(path,permission="0755",recursive=True):
         cmd = ["chmod",permission,"-R",path]
         if recursive == False:
            cmd = ["chmod",permission,path]
-#        print("Changing permission of %s to %s" %(path,permission))
+        # print("Changing permission of %s to %s" %(path,permission))
         return run_command(cmd)
 
 
@@ -212,7 +215,7 @@ def extract_tar(targz,output_folder):
     return run_command(["tar","-xzf",targz,"-C",output_folder,"--exclude=dev/*"]) 
 
 
-def write_file(filename,content,mode="wb"):
+def write_file(filename,content,mode="w"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
@@ -237,7 +240,7 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     return filename
 
 
-def read_file(filename,mode="rb"):
+def read_file(filename,mode="r"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''

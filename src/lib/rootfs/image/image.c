@@ -127,16 +127,20 @@ int rootfs_image_mount(void) {
         singularity_message(VERBOSE, "Mounting image in read/write\n");
         singularity_priv_escalate();
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
-            singularity_message(ERROR, "Failed to mount image in (read/write): %s\n", strerror(errno));
-            ABORT(255);
+            if ( mount(loop_dev, mount_point, "ext4", MS_NOSUID, "errors=remount-ro") < 0 ) {
+                singularity_message(ERROR, "Failed to mount image in (read/write): %s\n", strerror(errno));
+                ABORT(255);
+            }
         }
         singularity_priv_drop();
     } else {
         singularity_priv_escalate();
         singularity_message(VERBOSE, "Mounting image in read/only\n");
         if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-            singularity_message(ERROR, "Failed to mount image in (read only): %s\n", strerror(errno));
-            ABORT(255);
+            if ( mount(loop_dev, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+                singularity_message(ERROR, "Failed to mount image in (read only): %s\n", strerror(errno));
+                ABORT(255);
+            }
         }
         singularity_priv_drop();
     }

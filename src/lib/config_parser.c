@@ -39,6 +39,17 @@
 
 FILE *config_fp = NULL;
 
+
+/* 
+ * Opens up config file for reading. Config parsing works by scanning
+ * the file line by line. config_fp will not be reset to the beginning
+ * of the file after each function, you must do this yourself. Otherwise
+ * the next function call will pick up where the file was left from
+ * the last function.
+ *
+ * @param char *config_path pointer to string containing path to configuration file
+ * @returns 0 if sucessful, -1 if failure 
+ */
 int singularity_config_open(char *config_path) {
     singularity_message(VERBOSE, "Opening configuration file: %s\n", config_path);
     if ( is_file(config_path) == 0 ) {
@@ -50,6 +61,11 @@ int singularity_config_open(char *config_path) {
     return(-1);
 }
 
+/*
+ * Closes config_fp
+ * 
+ * @returns nothing
+ */
 void singularity_config_close(void) {
     singularity_message(VERBOSE, "Closing configuration file\n");
     if ( config_fp != NULL ) {
@@ -58,6 +74,11 @@ void singularity_config_close(void) {
     }
 }
 
+/*  
+ * Reset config_fp to line 0
+ *
+ * @returns nothing
+ */
 void singularity_config_rewind(void) {
     singularity_message(DEBUG, "Rewinding configuration file\n");
     if ( config_fp != NULL ) {
@@ -65,6 +86,16 @@ void singularity_config_rewind(void) {
     }
 }
 
+/* 
+ * Moves line by line through config_fp until key is found. Once key is 
+ * found the value is returned. The file remains opened at the line 
+ * that contained key, thus requiring multiple calls to find all values
+ * corresponding with key. Should call singularity_config_rewind() before
+ * searching for a new key to ensure entire config file is searched. 
+ *
+ * @param char *key pointer to string containing key to search for in config_fp
+ * @returns NULL if key not found, otherways returns 
+ */
 char *singularity_config_get_value(char *key) {
     char *config_key;
     char *config_value;
@@ -100,7 +131,15 @@ char *singularity_config_get_value(char *key) {
     return(NULL);
 }
 
-
+/*
+ * Gets the associated boolean value of key from config_fp. Passes
+ * key into singularity_get_config_value() and then checks if that
+ * value is yes, no, or NULL. If not yes or no and not NULL, errors out.
+ * 
+ * @param char *key pointer to key to search for
+ * @param int def integer representing the default value of key
+ * @returns 1 for yes, 0 for no, def if NULL
+ */
 int singularity_config_get_bool(char *key, int def) {
     char *config_value;
 

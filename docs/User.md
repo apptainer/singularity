@@ -155,7 +155,7 @@ If you already have Singularity installed, or if you are using Singularity from 
 ```bash
 $ mkdir ~/git
 $ cd ~/git
-$ git clone https://github.com/gmkurtzer/singularity.git
+$ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
 $ ./autogen.sh
 $ ./configure --prefix=/usr/local --sysconfdir=/etc
@@ -775,7 +775,7 @@ When bootstrapping a container, it is best to consider the following:
 
 As always, goto http://singularity.lbl.gov for the latest information, documentation, support, and news.
 
-If you think you have found a bug, or want to request a new feature, submit a bug report at: https://github.com/gmkurtzer/singularity/issues/new
+If you think you have found a bug, or want to request a new feature, submit a bug report at: https://github.com/singularityware/singularity/issues/new
 
 ## Want to Join the Team?!
 We want you! Your help! Your contributions! Your presence! Come and hop on our Slack channel by requesting an invite from gmkurtzer@lbl.gov!

@@ -1,3 +1,10 @@
+singularity (2.2-1) unstable; urgency=low
+
+  * New upstream release
+  * Install sexec-suid as suid instead of sexec
+
+ -- Roland Fehrenbacher <rf@q-leap.de>  Fri, 21 Oct 2016 13:25:06 +0200
+
 singularity (2.0-1) UNRELEASED; urgency=medium
 
   * New upstream release
