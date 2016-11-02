@@ -51,6 +51,9 @@ int strlength(const char *string, int max_len);
 //   errno is set to EINVAL
 int str2int(const char *input_str, long int *output_num);
 
+struct passwd;
+char *get_homedir(struct passwd *pw);
+
 #define ABORT(a) {singularity_message(ABRT, "Retval = %d\n", a); exit(a);}
 
 
