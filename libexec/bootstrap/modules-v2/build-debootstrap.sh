@@ -72,9 +72,6 @@ fi
 
 REQUIRES=`singularity_keys_get "Include" "$SINGULARITY_BUILDDEF" | sed -e 's/\s/,/g'`
 
-# debootstrap will create the device entries it needs (or some versions fail)
-eval "rm -rf $SINGULARITY_ROOTFS/dev/*"
-
 # The excludes save 25M or so with jessie.  (Excluding udev avoids
 # systemd, for instance.)  There are a few more we could exclude
 # to save a few MB.  I see 182M cleaned with this, v. 241M with

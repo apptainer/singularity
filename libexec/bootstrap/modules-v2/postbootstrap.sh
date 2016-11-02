@@ -48,6 +48,7 @@ if [ ! -L "$SINGULARITY_ROOTFS/bin/sh" -a ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; t
 fi
 
 install -d -m 0755 "$SINGULARITY_ROOTFS/bin"
+install -d -m 0755 "$SINGULARITY_ROOTFS/dev"
 install -d -m 0755 "$SINGULARITY_ROOTFS/home"
 install -d -m 0755 "$SINGULARITY_ROOTFS/etc"
 install -d -m 0750 "$SINGULARITY_ROOTFS/root"
