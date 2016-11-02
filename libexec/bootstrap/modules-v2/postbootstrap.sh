@@ -132,6 +132,24 @@ ldconfig -r "$SINGULARITY_ROOTFS" >/dev/null 2>&1
 
 if [ -f "$SINGULARITY_BUILDDEF" ]; then
 
+#    #TODO: This needs lots of love...
+#    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | while read source dest; do
+#        if [ -z "$source" ]; then
+#            continue
+#        fi
+#        if [ -z "$dest" ]; then
+#            dest="$source"
+#        fi
+#        dirname=`dirname $dest`
+#
+#        if [ ! -d "$SINGULARITY_ROOTFS/$dirname" ]; then
+#            mkdir -p "$SINGULARITY_ROOTFS/$dirname"
+#        fi
+#
+#        message 1 "Installing file: $source -> $dest\n"
+#        cp -r "$source" "$SINGULARITY_ROOTFS/$dest"
+#    done
+
     ### CREATE RUNSCRIPT
     singularity_section_get "runscript" "$SINGULARITY_BUILDDEF" > "$SINGULARITY_ROOTFS/singularity"
     if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
@@ -139,24 +157,6 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
     else
         rm -f "$SINGULARITY_ROOTFS/singularity"
     fi
-
-    #TODO: This needs lots of love...
-    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | while read source dest; do
-        if [ -z "$source" ]; then
-            continue
-        fi
-        if [ -z "$dest" ]; then
-            dest="$source"
-        fi
-        dirname=`dirname $dest`
-
-        if [ ! -d "$SINGULARITY_ROOTFS/$dirname" ]; then
-            mkdir -p "$SINGULARITY_ROOTFS/$dirname"
-        fi
-
-        message 1 "Installing file: $source -> $dest\n"
-        cp -r "$source" "$SINGULARITY_ROOTFS/$dest"
-    done
 
     mount -t proc proc "$SINGULARITY_ROOTFS/proc"
     mount -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
@@ -168,6 +168,12 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
 
     cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
     cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
+
+    ### RUN SETUP
+    if singularity_section_exists "setup" "$SINGULARITY_BUILDDEF"; then
+        ARGS=`singularity_section_args "setup" "$SINGULARITY_BUILDDEF"`
+        singularity_section_get "setup" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x $ARGS || ABORT 255
+    fi
 
     ### RUN POST
     if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then

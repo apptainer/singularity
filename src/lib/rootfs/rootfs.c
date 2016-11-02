@@ -83,7 +83,7 @@ int singularity_rootfs_init(char *source) {
         singularity_message(DEBUG, "Using default container path of: /var/singularity/mnt\n");
         mount_point = strdup("/var/singularity/mnt");
     }
-    singularity_message(DEBUG, "Set image mount path to: %s\n", mount_point);
+    singularity_message(VERBOSE3, "Set image mount path to: %s\n", mount_point);
 
     if ( is_file(source) == 0 ) {
         int len = strlength(source, PATH_MAX);
@@ -112,9 +112,17 @@ int singularity_rootfs_mount(void) {
     char *overlay_final = joinpath(mount_point, OVERLAY_FINAL);
     int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
     char *overlay_options = (char *) malloc(overlay_options_len);
-    int abort_error = 0;
 
-    singularity_message(DEBUG, "Mounting image\n");
+    singularity_message(DEBUG, "Checking 'container dir' mount location: %s\n", mount_point);
+    if ( is_dir(mount_point) < 0 ) {
+        singularity_priv_escalate();
+        singularity_message(VERBOSE, "Creating container dir: %s\n", mount_point);
+        if ( s_mkpath(mount_point, 0755) < 0 ) {
+            singularity_message(ERROR, "Could not create directory: %s\n", mount_point);
+            ABORT(255);
+        }
+        singularity_priv_drop();
+    }
 
     singularity_message(DEBUG, "Checking for rootfs_source directory: %s\n", rootfs_source);
     if ( is_dir(rootfs_source) < 0 ) {
@@ -122,7 +130,7 @@ int singularity_rootfs_mount(void) {
         singularity_message(VERBOSE, "Creating container destination dir: %s\n", rootfs_source);
         if ( s_mkpath(rootfs_source, 0755) < 0 ) {
             singularity_message(ERROR, "Could not create directory: %s\n", rootfs_source);
-            abort_error++;
+            ABORT(255);
         }
         singularity_priv_drop();
     }
@@ -133,7 +141,7 @@ int singularity_rootfs_mount(void) {
         singularity_message(VERBOSE, "Creating container mount dir: %s\n", overlay_mount);
         if ( s_mkpath(overlay_mount, 0755) < 0 ) {
             singularity_message(ERROR, "Could not create directory: %s\n", overlay_mount);
-            abort_error++;
+            ABORT(255);
         }
         singularity_priv_drop();
     }
@@ -144,14 +152,9 @@ int singularity_rootfs_mount(void) {
         singularity_message(VERBOSE, "Creating overlay final dir: %s\n", overlay_final);
         if ( s_mkpath(overlay_final, 0755) < 0 ) {
             singularity_message(ERROR, "Could not create directory: %s\n", overlay_final);
-            abort_error++;
+            ABORT(255);
         }
         singularity_priv_drop();
-    }
-
-    if ( abort_error > 0 ) {
-        singularity_message(ERROR, "Required directories could not be created.\n");
-        ABORT(3);
     }
 
     if ( module == ROOTFS_IMAGE ) {
@@ -227,14 +230,13 @@ int singularity_rootfs_mount(void) {
         singularity_priv_drop();
     }
 
-
     return(0);
 }
 
 int singularity_rootfs_check(void) {
 
     singularity_message(DEBUG, "Checking if container has /bin/sh...\n");
-    if ( is_exec(joinpath(joinpath(mount_point, OVERLAY_FINAL), "/bin/sh")) < 0 ) {
+    if ( ( is_exec(joinpath(joinpath(mount_point, OVERLAY_FINAL), "/bin/sh")) < 0 ) && ( is_link(joinpath(joinpath(mount_point, OVERLAY_FINAL), "/bin/sh")) < 0 ) ) {
         singularity_message(ERROR, "Container does not have a valid /bin/sh\n");
         ABORT(255);
     }

@@ -84,7 +84,8 @@ int singularity_mount_dev(void) {
 
             return(0);
         } else {
-            singularity_message(VERBOSE2, "Not enabling 'mount dev = minimal', overlayfs not enabled\n");
+            singularity_message(ERROR, "Config option 'mount dev = minimal', requires overlayFS\n");
+            ABORT(255);
         }
     }
 

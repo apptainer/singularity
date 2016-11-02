@@ -20,19 +20,12 @@ you want to use:
     BootStrap: docker
     From: library/ubuntu:14.04.1
 
-The default Docker registry is registry-1.docker.io. To change that, add the
-Registry argument:
+If you want to include the Docker CMD as the runscript:
 
     BootStrap: docker
     From: tensorflow/tensorflow:latest
-    Registry: gcr.io
+    IncludeCmd: yes
 
-If you want to remove token authentication, then add the Token argument:
-
-    BootStrap: docker
-    From: tensorflow/tensorflow:latest
-    Registry: gcr.io
-    Token: no
 
 CREATE OPTIONS:
     -f/--force      Force a rebootstrap of an OS (note: this does not delete
@@ -50,5 +43,5 @@ demonstrated above.
 For additional help, please visit our public documentation pages which are
 found at:
 
-    http://gmkurtzer.github.io/singularity
+    http://singularity.lbl.gov/
 
