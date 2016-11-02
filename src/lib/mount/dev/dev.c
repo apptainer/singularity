@@ -62,7 +62,7 @@ int singularity_mount_dev(void) {
             singularity_message(DEBUG, "Checking container's /dev/zero\n");
             if ( is_chr(joinpath(container_dir, "/dev/zero")) < 0 ) {
                 if ( mknod(joinpath(container_dir, "/dev/zero"), S_IFCHR | 0644, makedev(1, 5)) < 0 ) {
-                    singularity_message(VERBOSE, "Can not create /dev/null: %s\n", strerror(errno));
+                    singularity_message(VERBOSE, "Can not create /dev/zero: %s\n", strerror(errno));
                 }
             }
 
