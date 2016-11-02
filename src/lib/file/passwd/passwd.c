@@ -45,6 +45,7 @@ int singularity_file_passwd(void) {
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
+    char *homedir;
     uid_t uid = singularity_priv_getuid();
     struct passwd *pwent = getpwuid(uid);
     char *containerdir = singularity_rootfs_dir();
@@ -100,11 +101,21 @@ int singularity_file_passwd(void) {
         singularity_message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
         ABORT(255);
     }
-    fprintf(file_fp, "\n%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, pwent->pw_dir, pwent->pw_shell);
+
+    homedir = get_homedir(pwent);
+    if ( homedir == NULL ) {
+        singularity_message(ERROR, "Failed to get home directory: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    fprintf(file_fp, "%s:x:%d:%d:%s:%s:%s\n", pwent->pw_name, pwent->pw_uid, pwent->pw_gid, pwent->pw_gecos, homedir, pwent->pw_shell);
     fclose(file_fp);
 
 
     container_file_bind(tmp_file, "/etc/passwd");
+
+    // set HOME to the homedir, because it might be different than outside
+    setenv("HOME", homedir, 1);
 
     return(0);
 }
