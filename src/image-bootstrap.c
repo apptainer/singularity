@@ -55,11 +55,11 @@ int main(int argc, char ** argv) {
   else {
     singularity_message(DEBUG, "Running bootstrap driver v2\n");
 
-    singularity_prebootstrap(); //lib/bootstrap/prebootstrap/prebootstrap.c
+    singularity_prebootstrap_init(); //lib/bootstrap/prebootstrap/prebootstrap.c
 
     singularity_bootstrap_init(); //lib/bootstrap/bootstrap.c
 
-    singularity_postbootstrap(); //lib/bootstrap/postbootstrap/postbootstrap.c
+    singularity_postbootstrap_init(); //lib/bootstrap/postbootstrap/postbootstrap.c
 
     singularity_bootdef_close();
     
