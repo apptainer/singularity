@@ -45,6 +45,13 @@ fi
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
+install -d -m 0755 "$SINGULARITY_ROOTFS/dev"
+
+cp -a /dev/null         "$SINGULARITY_ROOTFS/dev/null"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/null"
+cp -a /dev/zero         "$SINGULARITY_ROOTFS/dev/zero"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/zero"
+cp -a /dev/random       "$SINGULARITY_ROOTFS/dev/random"    2>/dev/null || > "$SINGULARITY_ROOTFS/dev/random"
+cp -a /dev/urandom      "$SINGULARITY_ROOTFS/dev/urandom"   2>/dev/null || > "$SINGULARITY_ROOTFS/dev/urandom"
+
 
 # dnf should probably be preferred if it's present, at some point we will make
 # a dnf specific bootstrap module.
