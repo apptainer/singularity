@@ -45,7 +45,7 @@ get_section_LDADD = lib/libsingularity.la
 
 install-data-hook: make_suid
 
-make_suid:
+make_suid: sexec-suid
 	@if test `id -ru` = "0" -a "x$(BUILD_SUID)" = "xsexec-suid"; then \
 		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-suid"; \
 		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
