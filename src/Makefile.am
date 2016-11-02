@@ -43,7 +43,7 @@ get_section_LDADD = lib/libsingularity.la
 
 #dist_suidPROGRAM_INSTALL = ${INSTALL} -m 640
 
-install-data-hook: make_suid
+install-exec-hook: make_suid
 
 make_suid: install-exec
 	@if test `id -ru` = "0" -a "x$(BUILD_SUID)" = "xsexec-suid"; then \
