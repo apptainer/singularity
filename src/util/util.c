@@ -153,14 +153,29 @@ char *strjoin(char *str1, char *str2) {
 }
 
 void chomp(char *str) {
-    int len = strlength(str, 4096);
-    if ( str[len - 1] == ' ') {
-        str[len - 1] = '\0';
+    int len;
+    int i;
+    
+    len = strlength(str, 4096);
+
+    while ( str[0] == ' ' ) {
+        for ( i = 1; i < len; i++ ) {
+	    str[i-1] = str[i];
+	}
+	str[len] = '\0';
+	len--;
     }
-    if ( str[0] == '\n') {
+
+    while ( str[len - 1] == ' ' ) {
+        str[len - 1] = '\0';
+	len--;
+    }
+
+    if ( str[0] == '\n' ) {
         str[0] = '\0';
     }
-    if ( str[len - 1] == '\n') {
+
+    if ( str[len - 1] == '\n' ) {
         str[len - 1] = '\0';
     }
 }

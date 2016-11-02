@@ -54,9 +54,6 @@ int singularity_mount_binds(void) {
         if ( dest == NULL ) {
             dest = strdup(source);
         } else {
-            if ( dest[0] == ' ' ) {
-                dest++;
-            }
             chomp(dest);
         }
 
