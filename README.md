@@ -1,5 +1,9 @@
 [![Build Status](https://travis-ci.org/singularityware/singularity.svg?branch=master)](https://travis-ci.org/singularityware/singularity)
 
+- [Guidelines for Contributing](.github/CONTRIBUTING)
+- [Pull Request Template](.github/PULL_REQUEST_TEMPLATE)
+- [Documentation](http://singularity.lbl.gov/)
+
 
 # Singularity - Enabling users to have full control of their environment.
 
@@ -165,6 +169,4 @@ http://dx.doi.org/10.5281/zenodo.60736
 
 # Webpage
 We are working on documentation and web pages now, but checkout the work
-in progress here:
-
-http://singularity.lbl.gov/
+in progress: [http://singularity.lbl.gov/](http://singularity.lbl.gov/).
