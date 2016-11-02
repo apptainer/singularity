@@ -33,7 +33,7 @@ int singularity_bootdef_open(char *bootdef_path) {
 
 void singularity_bootdef_rewind() {
   singularity_message(DEBUG, "Rewinding bootstrap definition file\n");
-  if ( _fp != NULL ) {
+  if ( bootdef_fp != NULL ) {
     rewind(bootdef_fp);
   }
 }
@@ -65,9 +65,6 @@ char *singularity_bootdef_get_value(char *key) {
       if ( strcmp(bootdef_key, key) == 0 ) {
 	if ( ( bootdef_value = strdup(strtok(NULL, ":")) ) != NULL ) {
 	  chomp(bootdef_value);
-	  if ( bootdef_value[0] == ' ' ) {
-	    bootdef_value++;
-	  }
 	  singularity_message(VERBOSE2, "Got bootstrap definition key %s(: '%s')\n", key, bootdef_value);
 	  return(bootdef_value);
 	}
@@ -93,7 +90,8 @@ int singularity_bootdef_get_version() {
 singularity_bootdef_keys_get()
 
 
-//returns section args as well as leaves file open at first line of the script
+//Returns section args as well as leaves file open at first line of the script
+//Returns NULL when section not found
 char *singularity_bootdef_section_find(char *section_name) {
   char *line;
   
@@ -120,20 +118,26 @@ singularity_bootdef_section_args()
 
 
 //Can either directly call on get-section binary, or reimplement it here. Not sure what the best idea is?
-char *singularity_bootdef_section_get(char *script, char *section_name) {
+char *singularity_bootdef_section_get(char **script, char *section_name) {
   char *script_args;
-  char *buf;
+  char *line;
+  int pointer_index = 0;
+  
   if( ( script_args = singularity_bootdef_section_find(section_name) ) == NULL ) {
     singularity_message(DEBUG, "Unable to find section: %%%s in bootstrap definition file", section_name);
     return(NULL);
   }
 
+  line = (char *)malloc(MAX_LINE_LEN);
   while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
     if( strncmp(line, '%', 1) == 0 ) {
       break;
     } else {
-      buf = script;
-      sprintf(script, "%s%s", buf, line);
+      script = realloc( script, sizeof(char *) * ( pointer_index + 1) );
+      *( script + pointer_index ) = strdup(line); //Store line at next pointer in script
+      //Question: Do we need to null-terminate each line or is this good as is? I think we do but I'm not an expert
+      //Ex: find index of '\n' and put '\0' in index+1 to terminate the string
+      pointer_index++; //increment pointer_index to look at next pointer in next loopthrough
     }
   }
   return(script_args);
