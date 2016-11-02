@@ -36,9 +36,11 @@
 #include <time.h>
 #include <linux/limits.h>
 #include <ctype.h>
+#include <pwd.h>
 
 #include "config.h"
 #include "util/util.h"
+#include "lib/singularity.h"
 #include "lib/message.h"
 
 
@@ -153,14 +155,29 @@ char *strjoin(char *str1, char *str2) {
 }
 
 void chomp(char *str) {
-    int len = strlength(str, 4096);
-    if ( str[len - 1] == ' ') {
-        str[len - 1] = '\0';
+    int len;
+    int i;
+    
+    len = strlength(str, 4096);
+
+    while ( str[0] == ' ' ) {
+        for ( i = 1; i < len; i++ ) {
+	    str[i-1] = str[i];
+	}
+	str[len] = '\0';
+	len--;
     }
-    if ( str[0] == '\n') {
+
+    while ( str[len - 1] == ' ' ) {
+        str[len - 1] = '\0';
+	len--;
+    }
+
+    if ( str[0] == '\n' ) {
         str[0] = '\0';
     }
-    if ( str[len - 1] == '\n') {
+
+    if ( str[len - 1] == '\n' ) {
         str[len - 1] = '\0';
     }
 }
@@ -214,4 +231,42 @@ int str2int(const char *input_str, long int *output_num) {
     }
     errno = EINVAL;
     return -1;
+}
+
+// pw may be NULL, in which case the passwd info will be looked up if needed.
+// If pw is is filled in with a passwd structure, this function skips
+//   looking it up.
+// The home directory value is saved for later lookups.
+char *get_homedir(struct passwd *pw) {
+    static char *homedir = NULL;
+
+    if ( homedir != NULL )
+        return homedir;
+
+    if ( ( homedir = envar_path("SINGULARITY_HOME") ) != NULL ) {
+        char *colon = strchr(homedir, ':');
+        if ( colon != NULL ) {
+            homedir = colon + 1;
+            singularity_message(VERBOSE2, "Set the home directory (via envar) to: %s\n", homedir);
+            return homedir;
+        }
+    }
+
+    if ( pw == NULL ) {
+        uid_t uid = singularity_priv_getuid();
+        if ( ( pw = getpwuid(uid) ) == NULL ) {
+            singularity_message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
+            ABORT(255);
+        }
+        singularity_message(VERBOSE2, "Set the home directory (via getpwuid) to: %s\n", pw->pw_dir);
+    }
+    else {
+        singularity_message(VERBOSE2, "Set the home directory (via passwd) to: %s\n", pw->pw_dir);
+    }
+
+    // Note that currently the only way this function can return NULL
+    //   is if strdup() fails here.
+    homedir = strdup(pw->pw_dir);
+
+    return homedir;
 }
