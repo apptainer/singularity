@@ -51,8 +51,9 @@ int main(int argc, char ** argv) {
     singularity_fork_exec(argv); //Use singularity_fork_exec to directly call the v1 driver
     
     //Maybe directly use driver-v2.sh since it is outdated and we don't need to rewrite it for future use?
-  }
-  else {
+  } else {
+    singularity_priv_init(); //We need SUID to escalate privs for non-priv bootstrap, initialize that here and error out if we can't do it
+    
     singularity_message(DEBUG, "Running bootstrap driver v2\n");
 
     singularity_prebootstrap_init(); //lib/bootstrap/prebootstrap/prebootstrap.c

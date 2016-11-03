@@ -25,6 +25,7 @@ void singularity_bootstrap_init() {
   if ( singularity_bootstrap_run_module() == -1 ) {
     singularity_message(ERROR, "Problem running bootstrap module\n");
     ABORT(255);
+  }
 }
 
 
