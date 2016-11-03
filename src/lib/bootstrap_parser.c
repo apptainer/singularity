@@ -87,9 +87,6 @@ int singularity_bootdef_get_version() {
   }
 }
 
-singularity_bootdef_keys_get()
-
-
 //Returns section args as well as leaves file open at first line of the script
 //Returns NULL when section not found
 char *singularity_bootdef_section_find(char *section_name) {
@@ -112,9 +109,6 @@ char *singularity_bootdef_section_find(char *section_name) {
   return(NULL);
 }
 
-
-
-singularity_bootdef_section_args()
 
 
 //Can either directly call on get-section binary, or reimplement it here. Not sure what the best idea is?
@@ -140,8 +134,9 @@ char *singularity_bootdef_section_get(char **script, char *section_name) {
       pointer_index++; //increment pointer_index to look at next pointer in next loopthrough
     }
   }
+  free(line);
   return(script_args);
 }
 
 
-singularity_bootdef_parse_opts()
+//singularity_bootdef_parse_opts()
