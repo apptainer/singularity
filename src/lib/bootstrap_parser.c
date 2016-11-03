@@ -10,8 +10,8 @@
 
 #include "config.h"
 #include "util/util.h"
-#include "lib/message.h"
 #include "util/file.h"
+#include "lib/message.h"
 
 
 #define MAX_LINE_LEN 2048
