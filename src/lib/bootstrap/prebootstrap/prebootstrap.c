@@ -34,14 +34,14 @@ void singularity_prebootstrap_init() {
 
 void singularity_prebootstrap_install_rootfs() {
   s_mkpath(rootfs_path, 0755);
-  s_mkpath(strjoin(rootfs_path, "/dev"), 0755);
+  //s_mkpath(strjoin(rootfs_path, "/dev"), 0755);
 
 
-  //Do this in C
-  cp -a /dev/null         "$SINGULARITY_ROOTFS/dev/null"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/null";
-  cp -a /dev/zero         "$SINGULARITY_ROOTFS/dev/zero"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/zero";
-  cp -a /dev/random       "$SINGULARITY_ROOTFS/dev/random"    2>/dev/null || > "$SINGULARITY_ROOTFS/dev/random";
-  cp -a /dev/urandom      "$SINGULARITY_ROOTFS/dev/urandom"   2>/dev/null || > "$SINGULARITY_ROOTFS/dev/urandom";
+  //Do this in C (Or maybe move this to yum.c since it was changed in upstream/master??)
+  //cp -a /dev/null         "$SINGULARITY_ROOTFS/dev/null"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/null";
+  //cp -a /dev/zero         "$SINGULARITY_ROOTFS/dev/zero"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/zero";
+  //cp -a /dev/random       "$SINGULARITY_ROOTFS/dev/random"    2>/dev/null || > "$SINGULARITY_ROOTFS/dev/random";
+  //cp -a /dev/urandom      "$SINGULARITY_ROOTFS/dev/urandom"   2>/dev/null || > "$SINGULARITY_ROOTFS/dev/urandom";
 
   
 }
