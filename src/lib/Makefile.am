@@ -1,4 +1,4 @@
-SUBDIRS = ns rootfs action mount file img
+SUBDIRS = ns rootfs action mount file image
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
