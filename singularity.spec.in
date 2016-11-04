@@ -1,6 +1,8 @@
-%{!?_rel:%{expand:%%global _rel 0.1}}
+# Release is version of specfile, not of software; will automatically
+# be inserted after version and separated with a -, e.g., 2.1.2-1.el7-2.rpm
+%{!?_rel:%{expand:%%global _rel 1}}
 
-Summary: Application and environment virtualization
+Summary: Enables portable containerization of applications or workflows into a runnable application.
 Name: singularity
 Version: @PACKAGE_VERSION@
 Release: %{_rel}%{?dist}
@@ -26,7 +28,6 @@ Development files for Singularity
 
 %prep
 %setup
-
 
 %build
 %configure 
