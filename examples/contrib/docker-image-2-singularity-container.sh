@@ -1,6 +1,7 @@
 #!/bin/sh
 # convert docker images in singularity container
 # requirements:
+# docker and sudo privileges to run docker
 # singularity and sudo privileges to run singularity
 # 2016/11/04 Tru Huynh <tru@pasteur.fr>
 
