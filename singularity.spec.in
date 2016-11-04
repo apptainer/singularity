@@ -1,5 +1,13 @@
 %{!?_rel:%{expand:%%global _rel 0.1}}
 
+# This allows us to pick up the default value from the configure
+%define with_slurm @with_slurm@
+%if "%{with_slurm}" == "yes"
+%define slurm 1
+%else
+%define slurm 0
+%endif
+
 Summary: Application and environment virtualization
 Name: singularity
 Version: @PACKAGE_VERSION@
@@ -11,6 +19,12 @@ URL: http://singularity.lbl.gov/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
+
+%if %slurm
+# NOTE: doing a direct file dependency because experience has shown there are a few
+# site-local RPMs that have random pieces missing.
+BuildRequires: /usr/include/slurm/spank.h
+%endif
 
 %description
 Singularity provides functionality to build the smallest most minimal
@@ -24,12 +38,36 @@ Group: System Environment/Development
 %description devel
 Development files for Singularity
 
+%if %slurm
+%package slurm
+Summary: Singularity plugin for SLURM
+Group: System Environment/Libraries
+Requires: singularity = %{version}-%{release}
+
+%description slurm
+The Singularity plugin for SLURM allows jobs to be started within
+a container.  This provides a simpler interface to the user (they
+don't have to be aware of the singularity executable) and doesn't
+require a setuid binary.
+%endif
+
+
 %prep
 %setup
 
 
 %build
-%configure 
+if [ ! -f configure ]; then
+  ./autogen.sh
+fi
+
+%configure \
+%if %slurm
+  --with-slurm
+%else
+  --without-slurm
+%endif
+
 %{__make} %{?mflags}
 
 
@@ -74,6 +112,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/lib*.a
 %{_includedir}/*.h
 
+
+%files slurm
+%defattr(-, root, root)
+%{_libdir}/slurm/singularity.so
 
 
 %changelog

@@ -18,6 +18,7 @@
  * 
 */
 
+#include <stdio.h>
 
 #ifndef __SINGULARITY_H_
 #define __SINGULARITY_H_
