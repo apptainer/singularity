@@ -328,6 +328,11 @@ AC_CONFIG_FILES([
    src/lib/mount/tmp/Makefile
    src/lib/mount/userbinds/Makefile
    src/lib/mount/scratch/Makefile
+   src/lib/image/Makefile
+   src/lib/image/mount/Makefile
+   src/lib/image/bind/Makefile
+   src/lib/image/create/Makefile
+   src/lib/image/expand/Makefile
    src/util/Makefile
    src/slurm/Makefile
    etc/Makefile

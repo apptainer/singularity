@@ -91,13 +91,13 @@ if [ ! -f "$SINGULARITY_IMAGE" ]; then
 fi
 
 message 1 "Expanding existing image with a size of ${IMAGE_SIZE}MiB...\n"
-if ! eval "$SINGULARITY_libexecdir/singularity/image-expand" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
+if ! eval "$SINGULARITY_libexecdir/singularity/simage" "expand" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
     message ERROR "Failed expanding image: $SINGULARITY_IMAGE\n"
     exit 1
 fi
 
 message 1 "Executing image expand helper\n"
-exec "$SINGULARITY_libexecdir/singularity/image-bind" "$SINGULARITY_libexecdir/singularity/helpers/image-expand.sh"
+exec "$SINGULARITY_libexecdir/singularity/simage" "bind" "$SINGULARITY_libexecdir/singularity/helpers/image-expand.sh"
 
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
