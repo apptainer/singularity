@@ -30,7 +30,7 @@ int main(int argc, char ** argv) {
 
     //Loop through argv, each time chopping off argv[0], until argv[1] is a relevant shell script or is empty
     singularity_priv_init(); //Make sure user is running as root before we add SUID code
-    while ( true ) {
+    while ( 1 ) {
       singularity_message(DEBUG, "Running %s %s workflow\n", argv[0], argv[1]);
 
       singularity_priv_init();
@@ -51,13 +51,13 @@ int main(int argc, char ** argv) {
 	}
 	
       } else if ( strcmp(argv[1], "create") == 0 ) {
-	if ( singularity_image_create(argc - 1, &argv[1]) != 0 ) {
+	if ( singularity_image_extern_create(argc - 1, &argv[1]) != 0 ) {
 	  singularity_priv_drop_perm();
 	  return(1);
 	}
 	
       } else if ( strcmp(argv[1], "expand") == 0 ) {
-	if ( singularity_image_expand(argc - 1, &argv[1]) != 0 ) {
+	if ( singularity_image_extern_expand(argc - 1, &argv[1]) != 0 ) {
 	  singularity_priv_drop_perm();
 	  return(1);
 	}

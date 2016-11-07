@@ -7,4 +7,4 @@ AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 noinst_LTLIBRARIES = libimagebind.la
-libnsuser_la_SOURCES = bind.c
+libimagebind_la_SOURCES = bind.c

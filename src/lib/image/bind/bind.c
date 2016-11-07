@@ -42,7 +42,7 @@
 #include "util/util.h"
 
 
-int main(int argc, char ** argv) {
+int singularity_image_bind(int argc, char ** argv) {
     uid_t uid = geteuid();
     FILE *containerimage_fp;
     char *containerimage;

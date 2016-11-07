@@ -15,17 +15,17 @@ EXTRA_PROGRAMS = sexec-suid simage-suid
 sexec_SOURCES = sexec.c util/util.c util/file.c
 sexec_LDADD = lib/libsingularity.la
 
-# sexec_suid_SOURCES = sexec.c util/util.c util/file.c
-# sexec_suid_LDADD = lib/libsingularity.la
-# sexec_suid_LDFLAGS = -static
-# sexec_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
+sexec_suid_SOURCES = sexec.c util/util.c util/file.c
+sexec_suid_LDADD = lib/libsingularity.la
+sexec_suid_LDFLAGS = -static
+sexec_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
-simage_SOURCES = sexec.c util/util.c util/file.c
+simage_SOURCES = simage.c util/util.c util/file.c
 simage_LDADD = lib/libsingularity.la
 
-simage_suid_SOURCES = sexec.c util/util.c util/file.c
+simage_suid_SOURCES = simage.c util/util.c util/file.c
 simage_suid_LDADD = lib/libsingularity.la
-siamge_suid_LDFLAGS = -static
+simage_suid_LDFLAGS = -static
 simage_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 #image_create_SOURCES = image-create.c util/file.c util/util.c
