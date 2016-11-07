@@ -6,5 +6,5 @@ AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-noinst_LTLIBRARIES = libimagemount.la
-libnsuser_la_SOURCES = mount.c
+noinst_LTLIBRARIES = libimagebind.la
+libnsuser_la_SOURCES = bind.c

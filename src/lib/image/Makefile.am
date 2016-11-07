@@ -12,6 +12,5 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 noinst_LTLIBRARIES = libimg.la
 
 libns_la_LIBADD = mount/libimagemount.la create/libimagecreate.la bind/libimagebind.la expand/libimageexpand.la
-libns_la_SOURCES = image.c
 
 EXTRA_DIST = image.h
