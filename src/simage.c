@@ -29,6 +29,7 @@ int main(int argc, char ** argv) {
   } else {
 
     //Loop through argv, each time chopping off argv[0], until argv[1] is a relevant shell script or is empty
+    singularity_priv_init();
     while ( true ) {
       singularity_message(DEBUG, "Running %s %s workflow\n", argv[0], argv[1]);
     
