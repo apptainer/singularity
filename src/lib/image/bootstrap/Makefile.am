@@ -1,4 +1,4 @@
-SUBDIRS = prebootstrap postbootstrap
+SUBDIRS = prebootstrap postbootstrap module
 
 MAINTAINERCLEANFILES = Makefile.in 
 DISTCLEANFILES = Makefile
@@ -10,7 +10,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libimagebootstrap.la
 
-libimagebootstrap_la_LIBADD = prebootstrap/libbootstrappre.la postbootstrap/libbootstrappost.la
+libimagebootstrap_la_LIBADD = prebootstrap/libbootstrappre.la postbootstrap/libbootstrappost.la module/libbootstrapmodule.la
 libimagebootstrap_la_SOURCES = bootstrap.c bootdef_parser.c
 
 EXTRA_DIST = bootstrap.h bootdef_parser.h
