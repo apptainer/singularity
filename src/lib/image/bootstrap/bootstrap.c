@@ -15,7 +15,6 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-#include "lib/bootstrap_parser.h"
 #include "lib/singularity.h"
 
 static char *module_name;

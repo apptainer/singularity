@@ -85,7 +85,7 @@ int main(int argc_in, char ** argv_in) {
                 return(1);
             }
         }
-
+        
         /* Run image create workflow */
         else if ( strcmp(argv[1], "create") == 0 ) {
             if ( argv[2] == NULL ) {
@@ -108,12 +108,21 @@ int main(int argc_in, char ** argv_in) {
             return(singularity_image_expand(argv[2], size));
         }
 
+        /* Run image bootstrap workflow */
+        else if ( strcmp(argv[1], "bootstrap") == 0 ) {
+            if ( singularity_image_bootstrap_init(argc - 1, &argv[1] != 0 ) ) {
+                singularity_priv_drop_perm();
+                return(1);
+            }
+        
+        } 
+
         /* If there is a trailing arg containing a script, attempt to execute it */
         else {
             singularity_priv_drop_perm();
             return(singularity_fork_exec(&argv[1]));
         }
-      
+        
         argv++;
         argc--;
         singularity_priv_drop();

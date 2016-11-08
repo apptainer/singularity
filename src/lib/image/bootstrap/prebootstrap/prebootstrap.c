@@ -26,13 +26,13 @@ static char *rootfs_path = NULL;
 
 void singularity_prebootstrap_init() {
   
-  singularity_prebootstrap_set_rootfs();
-  singularity_prebootstrap_install_rootfs();
-  singularity_prebootstrap_run_script();
+  singularity_prebootstrap_rootfs_set();
+  singularity_prebootstrap_rootfs_install();
+  singularity_prebootstrap_script_run();
   
 }
 
-void singularity_prebootstrap_install_rootfs() {
+void singularity_prebootstrap_rootfs_install() {
   s_mkpath(rootfs_path, 0755);
   //s_mkpath(strjoin(rootfs_path, "/dev"), 0755);
 
@@ -46,13 +46,13 @@ void singularity_prebootstrap_install_rootfs() {
   
 }
 
-void singularity_prebootstrap_set_rootfs() {
+void singularity_prebootstrap_rootfs_set() {
   if( rootfs_path == NULL ) {
     rootfs_path = envar_path(rootfs_envar);
   }
 }
 
-void singularity_prebootstrap_run_script() {
+void singularity_prebootstrap_script_run() {
   char ** pre_script;
   char *section_name = "pre";
   char *args;
