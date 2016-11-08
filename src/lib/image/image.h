@@ -1,5 +1,5 @@
-#ifndef __SINGULARITY_IMAGE_H
-#define __SINGULARITY_IMAGE_H
+#ifndef __SINGULARITY_IMAGE_H_
+#define __SINGULARITY_IMAGE_H_
 
 extern int singularity_image_extern_create(int argc, char ** argv);
 extern int singularity_image_extern_expand(int argc, char ** argv);
