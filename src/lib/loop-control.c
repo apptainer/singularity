@@ -33,7 +33,7 @@
 
 #include "config.h"
 #include "lib/loop-control.h"
-#include "lib/image-util.h"
+#include "lib/image/image.h"
 #include "util/util.h"
 #include "util/file.h"
 //#include "image.h"
