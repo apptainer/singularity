@@ -1,4 +1,4 @@
-SUBDIRS = lib util
+SUBDIRS = lib util slurm
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -34,8 +34,6 @@ image_bind_LDADD = lib/libsingularity.la
 
 get_section_SOURCES = get-section.c util/util.c util/file.c
 get_section_LDADD = lib/libsingularity.la
-
-
 
 #sexec_nosuid_CPPFLAGS = -DSINGULARITY_NOSUID=1 -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 #bootstrap_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"

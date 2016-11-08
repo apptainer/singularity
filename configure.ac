@@ -217,7 +217,6 @@ AC_ARG_WITH([userns],
             [SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_USERNS"]
            )
 
-
 AC_CHECK_FUNCS(setns, [
                       ], [
                           NO_SETNS="-DNO_SETNS"
@@ -244,6 +243,31 @@ fi
 AC_SUBST(OVERLAY_FS)
 AC_SUBST(SINGULARITY_DEFINES)
 
+AC_MSG_CHECKING([if slurm integration should be built])
+AC_ARG_WITH([slurm],
+            AS_HELP_STRING([--with-slurm], [Enable build of slurm integration]),
+           )
+AS_IF([test "x$with_slurm" != "xno"],
+    [
+        AC_CHECK_HEADER([slurm/spank.h],
+            [AC_MSG_RESULT([yes])
+             with_slurm="yes"
+            ],
+            [AS_IF([test "$with_slurm" = "yes"],
+                   [AC_MSG_ERROR([SLURM support requested, but slurm/spank.h header not found.])],
+                   [ AC_MSG_RESULT([no])
+                     with_slurm="no"
+                   ]
+            ])
+        )
+    ],
+    [
+        AC_MSG_RESULT([no])
+        with_slurm="no"
+    ]
+)
+AM_CONDITIONAL([WITH_SLURM], [test "$with_slurm" = "yes"])
+AC_SUBST(with_slurm)
 
 
 AC_MSG_CHECKING([if suid should be enabled])
@@ -305,6 +329,7 @@ AC_CONFIG_FILES([
    src/lib/mount/userbinds/Makefile
    src/lib/mount/scratch/Makefile
    src/util/Makefile
+   src/slurm/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity

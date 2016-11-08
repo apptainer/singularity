@@ -45,6 +45,7 @@ src/.libs/
 src/lib*.la
 src/*.o
 src/*.lo
+src/slurm/singularity_spank.la
 
 src/*/.deps/
 src/*/.libs/

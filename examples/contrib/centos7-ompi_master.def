@@ -28,4 +28,4 @@ Include: yum
     exit 0
 
 %test
-    /usr/local/bin/mpirun --allow-run-as-root /usr/bin/mpi_test
+    /usr/local/bin/mpirun --allow-run-as-root /usr/bin/mpi_ring

@@ -35,7 +35,7 @@ int messagelevel = -1;
 
 extern const char *__progname;
 
-void init(void) {
+static void message_init(void) {
     char *messagelevel_string = getenv("MESSAGELEVEL"); // Flawfinder: ignore (need to get string, validation in atol())
 
     openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
@@ -67,7 +67,7 @@ void _singularity_message(int level, const char *function, const char *file, int
     va_end (args);
 
     if ( messagelevel == -1 ) {
-        init();
+        message_init();
     }
 
     while( ( ! isalpha(file[0]) ) && ( file[0] != '\0') ) {
