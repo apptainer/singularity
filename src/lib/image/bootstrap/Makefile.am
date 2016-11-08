@@ -1,4 +1,4 @@
-SUBDIRS = mount create bind expand bootstrap
+SUBDIRS = prebootstrap postbootstrap
 
 MAINTAINERCLEANFILES = Makefile.in 
 DISTCLEANFILES = Makefile
@@ -8,9 +8,9 @@ AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-noinst_LTLIBRARIES = libimage.la
+noinst_LTLIBRARIES = libimagebootstrap.la
 
-libimage_la_LIBADD = mount/libimagemount.la create/libimagecreate.la bind/libimagebind.la expand/libimageexpand.la bootstrap/libimagebootstrap.la
-libimage_la_SOURCES = image.c
+libimagebootstrap_la_LIBADD = prebootstrap/libbootstrappre.la postbootstrap/libbootstrappost.la
+libimagebootstrap_la_SOURCES = bootstrap.c bootdef_parser.c
 
-EXTRA_DIST = image.h
+EXTRA_DIST = bootstrap.h bootdef_parser.h
