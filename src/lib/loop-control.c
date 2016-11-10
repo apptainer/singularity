@@ -130,7 +130,7 @@ char *singularity_loop_bind(FILE *image_fp) {
 
     }
 
-    singularity_message(VERBOSE, "Found avaialble loop device: %s\n", loop_dev);
+    singularity_message(VERBOSE, "Found available loop device: %s\n", loop_dev);
 
     singularity_message(DEBUG, "Setting loop device flags\n");
     if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
