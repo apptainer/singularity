@@ -76,7 +76,7 @@ case "$IMPORT_URI" in
     ;;
     *)
         if [ ! -f "$IMPORT_URI" ]; then
-            message ERROR "File not found: $LOCAL_FILE\n"
+            message ERROR "File not found: $IMPORT_URI\n"
             ABORT 1
         fi
         SINGULARITY_IMPORT_GET="cat $IMPORT_URI"
