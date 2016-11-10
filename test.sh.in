@@ -209,6 +209,7 @@ stest 0 sudo chmod 0644 ${CONTAINERDIR}.tar
 stest 0 sudo rm -f "$CONTAINER"
 stest 0 sudo singularity create -s 568 "$CONTAINER"
 stest 0 sh -c "cat ${CONTAINERDIR}.tar | sudo singularity import $CONTAINER"
+stest 1 sh -c "sudo singularity import $CONTAINER not_a_file 2>&1 | grep "unbound variable""
 
 
 /bin/echo
