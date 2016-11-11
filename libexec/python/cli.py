@@ -199,12 +199,12 @@ def main():
             change_permissions("%s/singularity" %(singularity_rootfs))
 
 
-    logging.info("*** FINISHING DOCKER BOOTSTRAP PYTHON PORTION ****\n\n")
+    logging.info("*** FINISHING DOCKER BOOTSTRAP PYTHON PORTION ****\n")
 
 
 if __name__ == '__main__':
     level = get_logging_level()
-    logging.info("Logging level set to %s",level)
     logging.basicConfig(stream=sys.stdout,level=level)
-    logging.info("\n\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
+    logging.info("Logging level set to %s",level)
+    logging.info("\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
     main()
