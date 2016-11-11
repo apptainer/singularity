@@ -191,7 +191,6 @@ def get_logging_level():
     NOTSET	0
     # https://docs.python.org/2/library/logging.html
     '''
-
     MESSAGELEVEL = os.environ.get("MESSAGELEVEL", 5)
     if MESSAGELEVEL == 5:
         level = logging.INFO
@@ -204,7 +203,7 @@ def get_logging_level():
     elif MESSAGELEVEL == 1:
         level = logging.DEBUG
     else: # NOTSET defaults to parent loggers, then all messages
-        level = logging.NOTSET
+        level = logging.INFO
     return level
 
 
