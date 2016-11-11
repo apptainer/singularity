@@ -27,8 +27,8 @@ import sys
 sys.path.append('..') # parent directory
 
 from utils import api_get, write_file, add_http
+from logman import logger
 import json
-import logging
 
 api_base = "registry-1.docker.io"
 api_version = "v2"
@@ -41,7 +41,7 @@ def create_runscript(cmd,base_dir):
     :param base_dir: the base directory to write the runscript to
     '''
     runscript = "%s/singularity" %(base_dir)
-    logging.info("Generating runscript at %s",runscript)
+    logger.info("Generating runscript at %s",runscript)
     content = "#!/bin/sh\n\n%s" %(cmd)
     output_file = write_file(runscript,content)
     return output_file
@@ -62,7 +62,7 @@ def get_token(repo_name,namespace="library",scope="repository",permission="pull"
                                                                                          namespace,
                                                                                          repo_name,
                                                                                          permission)
-    logging.info("Obtaining token: %s", base)
+    logger.info("Obtaining token: %s", base)
 
     response = api_get(base,default_header=False)
     try:
@@ -70,7 +70,7 @@ def get_token(repo_name,namespace="library",scope="repository",permission="pull"
         token = {"Authorization": "Bearer %s" %(token) }
         return token
     except:
-        logging.error("Error getting %s token for repository %s/%s, exiting.", permission,namespace,repo_name)
+        logger.error("Error getting %s token for repository %s/%s, exiting.", permission,namespace,repo_name)
         sys.exit(1)
 
 
@@ -97,14 +97,14 @@ def get_images(repo_name=None,namespace=None,manifest=None,repo_tag="latest",reg
                                     registry=registry,
                                     auth=auth)
         else:
-            logging.error("No namespace and repo name OR manifest provided, exiting.")
+            logger.error("No namespace and repo name OR manifest provided, exiting.")
             sys.exit(1)
 
     digests = []
     if 'fsLayers' in manifest:
         for fslayer in manifest['fsLayers']:
             if 'blobSum' in fslayer:
-                logging.info("Adding digest %s",fslayer['blobSum'])
+                logger.info("Adding digest %s",fslayer['blobSum'])
                 digests.append(fslayer['blobSum'])
     return digests
     
@@ -121,7 +121,7 @@ def get_tags(namespace,repo_name,registry=None,auth=True):
     registry = add_http(registry) # make sure we have a complete url
 
     base = "%s/%s/%s/%s/tags/list" %(registry,api_version,namespace,repo_name)
-    logging.info("Obtaining tags: %s", base)
+    logger.info("Obtaining tags: %s", base)
 
     # Does the api need an auth token?
     token = None
@@ -135,7 +135,7 @@ def get_tags(namespace,repo_name,registry=None,auth=True):
         response = json.loads(response)
         return response['tags']
     except:
-        logging.error("Error obtaining tags: %s", base)
+        logger.error("Error obtaining tags: %s", base)
         sys.exit(1)
 
 
@@ -153,7 +153,7 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=True):
     registry = add_http(registry) # make sure we have a complete url
 
     base = "%s/%s/%s/%s/manifests/%s" %(registry,api_version,namespace,repo_name,repo_tag)
-    logging.info("Obtaining manifest: %s", base)
+    logger.info("Obtaining manifest: %s", base)
     
     # Format the token, and prepare a header
     token = None
@@ -171,7 +171,7 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=True):
                         repo_name=repo_name,
                         registry=registry)
         print("\n".join(tags))
-        logging.error("Error getting manifest for %s/%s:%s, exiting.", namespace,
+        logger.error("Error getting manifest for %s/%s:%s, exiting.", namespace,
                                                                        repo_name,
                                                                        repo_tag)
         print("Error getting manifest for %s/%s:%s. Acceptable tags are listed above." %(namespace,repo_name,repo_tag))
@@ -198,7 +198,7 @@ def get_config(manifest,spec="Cmd"):
     # Standard is to include commands like ['/bin/sh']
     if isinstance(cmd,list):
         cmd = "\n".join(cmd)
-    logging.info("Found Docker command (CMD) %s", cmd)
+    logger.info("Found Docker command (CMD) %s", cmd)
     return cmd
 
 
@@ -217,7 +217,7 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
 
     # The <name> variable is the namespace/repo_name
     base = "%s/%s/%s/%s/blobs/%s" %(registry,api_version,namespace,repo_name,image_id)
-    logging.info("Downloading layers from %s", base)
+    logger.info("Downloading layers from %s", base)
     
     # To get the image layers, we need a valid token to read the repo
     token = None
@@ -230,7 +230,7 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
         download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
 
         # Update user what we are doing
-        logging.info("Downloading layer %s", image_id)
+        logger.info("Downloading layer %s", image_id)
 
     return api_get(base,headers=token,stream=download_folder)
     
