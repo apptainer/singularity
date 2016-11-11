@@ -21,23 +21,26 @@ def get_logging_level():
 
     MESSAGELEVEL = int(os.environ.get("MESSAGELEVEL",5))
 
-    print("Environment message level found to be %s" %MESSAGELEVEL)
+    #print("Environment message level found to be %s" %MESSAGELEVEL)
+
+    if MESSAGELEVEL == 0:
+        level = logging.FATAL
 
     #define ABRT -4
-    if MESSAGELEVEL == -4:
+    elif MESSAGELEVEL == -4:
         level = logging.CRITICAL
 
     #define ERROR -3
-    if MESSAGELEVEL == -3:
+    elif MESSAGELEVEL == -3:
         level = logging.ERROR
 
     #define WARNING -2
-    if MESSAGELEVEL == -2:
+    elif MESSAGELEVEL == -2:
         level = logging.WARNING
 
     #define LOG -1
     #define INFO 1
-    elif MESSAGELEVEL in [0,1,-1]:
+    elif MESSAGELEVEL in [1,-1]:
         level = logging.INFO
 
     #define VERBOSE 2
@@ -47,7 +50,7 @@ def get_logging_level():
     elif MESSAGELEVEL in [2,3,4,5]:
         level = logging.DEBUG
 
-    print("Logging level set to %s" %level)
+    #print("Logging level set to %s" %level)
     return level
 
 level = get_logging_level()
