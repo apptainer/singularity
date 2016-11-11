@@ -113,9 +113,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/*.h
 
 
+%if %slurm
 %files slurm
 %defattr(-, root, root)
 %{_libdir}/slurm/singularity.so
-
+%endif
 
 %changelog
