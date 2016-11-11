@@ -25,8 +25,10 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 from docker.api import get_layer, create_runscript, get_manifest, get_config, get_images
-from utils import extract_tar, change_permissions
+from utils import extract_tar, change_permissions, get_logging_level
+
 import argparse
+import logging
 import os
 import re
 import sys
@@ -76,30 +78,36 @@ def main():
     try:
         args = parser.parse_args()
     except:
+        logging.error("Input args to %s improperly set, exiting.", os.path.abspath(__file__))
         parser.print_help()
         sys.exit(0)
+
 
     # Find root filesystem location
     if args.rootfs != None:
        singularity_rootfs = args.rootfs
+       logging.info("Root file system defined by command line variable as %s", singularity_rootfs)
     else:
        singularity_rootfs = os.environ.get("SINGULARITY_ROOTFS",None)
        if singularity_rootfs == None:
-           print("ERROR: root file system not specified or defined as environmental variable, exiting!")
+           logging.error("root file system not specified OR defined as environmental variable, exiting!")
            sys.exit(1)
+       logging.info("Root file system defined by env variable as %s", singularity_rootfs)
 
     # Does the registry require a token?
     doauth = True
     if args.notoken == True:
        doauth = False
+    logging.info("Do registry authentication set to %s", doauth)
 
     # Does the user want to include the CMD as runscript?
     includecmd = args.includecmd
+    logging.info("Including Docker command as Runscript? %s", includecmd)
 
     # Do we have a docker image specified?
     if args.docker != None:
         image = args.docker
-
+        logging.info("Docker image: %s", image)
 
 
 # INPUT PARSING -------------------------------------------
@@ -131,7 +139,7 @@ def main():
             repo_tag = "latest"
 
         # Tell the user the namespace, repo name and tag
-        print("%s/%s:%s" %(namespace,repo_name,repo_tag))
+        logging.info("Docker image path: %s/%s:%s", namespace,repo_name,repo_tag)
 
 
 # IMAGE METADATA -------------------------------------------
@@ -183,16 +191,20 @@ def main():
 
         # Only add runscript if command is defined
         if cmd != None:
-            print("Adding Docker CMD as Singularity runscript...")
+            logging.info("Adding Docker CMD as Singularity runscript...")            
             runscript = create_runscript(cmd=cmd,
                                          base_dir=singularity_rootfs)
 
             # change permission of runscript to 0755 (default)
             change_permissions("%s/singularity" %(singularity_rootfs))
 
-    # When we finish, change permissions for the entire thing
-    #change_permissions("%s/" %(singularity_rootfs))
+
+    logging.info("*** FINISHING DOCKER BOOTSTRAP PYTHON PORTION ****\n\n")
 
 
 if __name__ == '__main__':
+    level = get_logging_level()
+    logging.info("Logging level set to %s",level)
+    logging.basicConfig(stream=sys.stdout,level=level)
+    logging.info("\n\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
     main()
