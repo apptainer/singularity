@@ -91,7 +91,7 @@ def main():
     if args.rootfs != None:
        singularity_rootfs = args.rootfs
     else:
-       singularity_rootfs = os.environ.get("SINGULARITY_ROOTFS",None)
+       singularity_rootfs = os.environ.get("SINGULARITY_ROOTFS", None)
        if singularity_rootfs == None:
            print("ERROR: root file system not specified or defined as environmental variable, exiting!")
            sys.exit(1)
