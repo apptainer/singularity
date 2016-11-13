@@ -25,7 +25,7 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 from docker.api import get_layer, create_runscript, get_manifest, get_config, get_images
-from utils import extract_tar, change_permissions
+from utils import extract_tar, change_permissions, get_cache
 import argparse
 import os
 import re
@@ -70,6 +70,14 @@ def main():
                         dest='notoken', 
                         action="store_true",
                         help="boolean to specify that the CMD should be included as a runscript (default is not included)", 
+                        default=False)
+
+
+    # Flag to disable cache
+    parser.add_argument("--no-cache", 
+                        dest='disable_cache', 
+                        action="store_true",
+                        help="boolean to specify disabling the cache.", 
                         default=False)
 
     
@@ -154,26 +162,32 @@ def main():
 #  DOWNLOAD LAYERS -------------------------------------------
 # Each is a .tar.gz file, obtained from registry with curl
 
-        # Create a temporary directory for targzs
-        tmpdir = tempfile.mkdtemp()
+        # Get the cache (or temporary one) for docker
+        cache_base = get_cache(subfolder="docker", 
+                               disable_cache = args.disable_cache)
+
         layers = []
 
         for image_id in images:
 
-            # Download the layer
-            targz = get_layer(image_id=image_id,
-                              namespace=namespace,
-                              repo_name=repo_name,
-                              download_folder=tmpdir,
-                              registry=args.registry,
-                              auth=doauth) 
+            # Download the layer, if we don't have it
+            targz = "%s/%s.tar.gz" %(cache_base,image_id)
+ 
+            if not os.path.exists(targz):
+                targz = get_layer(image_id=image_id,
+                                  namespace=namespace,
+                                  repo_name=repo_name,
+                                  download_folder=cache_base,
+                                  registry=args.registry,
+                                  auth=doauth) 
 
             layers.append(targz) # in case we want a list at the end
                                  # @chrisfilo suggestion to try compiling into one tar.gz
 
             # Extract image and remove tar
             extract_tar(targz,singularity_rootfs)
-            os.remove(targz)
+            if args.disable_cache == True:
+                os.remove(targz)
                
      
     # If the user wants to include the CMD as runscript, generate it here
@@ -190,8 +204,9 @@ def main():
             # change permission of runscript to 0755 (default)
             change_permissions("%s/singularity" %(singularity_rootfs))
 
-    # When we finish, change permissions for the entire thing
-    #change_permissions("%s/" %(singularity_rootfs))
+    # When we finish, clean up images
+    if args.disable_cache == True:
+        shutil.rmtree(cache_base)
 
 
 if __name__ == '__main__':

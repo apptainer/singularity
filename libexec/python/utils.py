@@ -22,11 +22,13 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
+from defaults import SINGULARITY_CACHE
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import tarfile
 try:
     from urllib.parse import urlencode
@@ -188,6 +190,40 @@ def run_command(cmd):
 ## FILE OPERATIONS #########################################################
 ############################################################################
 
+
+def get_cache(cache_base=None,subfolder=None,disable_cache=False):
+    '''get_cache will return the user's cache for singularity. If not specified
+    via environmental variable, will be created in $HOME/.singularity
+    :param cache_base: the cache base
+    :param subfolder: a subfolder in the cache base to retrieve, specifically
+    :param disable_cache: boolean, if True, will return temporary directory
+    instead. The other functions are responsible for cleaning this up after use.
+    for a particular kind of image cache (eg, docker, shub, etc.)
+    '''
+    # Obtain cache base from environment (1st priority, then variable)
+    if disable_cache == True:
+        return tempfile.mkdtemp()
+    else:
+        cache_base = os.environ.get("SINGULARITY_CACHE", cache_base)
+
+    # Default is set in defaults.py, $HOME/.singularity
+    if cache_base == None:
+        cache_base = SINGULARITY_CACHE
+
+    # Clean up the path and create
+    cache_base = clean_path(cache_base)
+    if not os.path.exists(cache_base):
+        os.mkdir(cache_base)        
+
+    # Does the user want to get a subfolder in cache base?
+    if subfolder != None:
+        cache_base = "%s/%s" %(cache_base,subfolder)
+        if not os.path.exists(cache_base):
+            os.mkdir(cache_base)
+    print("Cache folder set to %s" %(cache_base))
+    return cache_base
+
+
 def change_permissions(path,permission="0755",recursive=True):
     '''change_permissions will use subprocess to change permissions of a file
     or directory. Recursive is default True
@@ -248,3 +284,13 @@ def read_file(filename,mode="r"):
     content = filey.readlines()
     filey.close()
     return content
+
+
+def clean_path(path):
+    '''clean_path will strip spaces and extra slashes from the path
+    :param path: the path to clean
+    '''
+    path = path.strip(" ")
+    if path[-1] == "/":
+        path = path[:-1]
+    return path
