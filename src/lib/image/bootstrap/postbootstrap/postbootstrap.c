@@ -44,10 +44,10 @@ void singularity_postbootstrap_init() {
     ABORT(255);
   }
   
-  postbootstrap_script_run("setup");
+  singularity_bootstrap_script_run("setup");
 
   singularity_rootfs_chroot();
-  postbootstrap_script_run("post");
+  singularity_bootstrap_script_run("post");
 }
 
 int postbootstrap_rootfs_install() {
@@ -98,30 +98,5 @@ void postbootstrap_copy_runscript() {
   
   if ( fileput(joinpath(rootfs_path, "/singularity"), script) < 0 ) {
     singularity_message(WARNING, "Couldn't write to rootfs/singularity, skipping runscript.\n");
-  }
-}
-
-void postbootstrap_script_run(char *section_name) {
-  char ** fork_args;
-  char *script;
-  char *args;
-  int retval;
-
-  fork_args = malloc(sizeof(char *) * 4);
-  
-  singularity_message(VERBOSE, "Searching for %%%s bootstrap script\n", section_name);
-  if ( ( args = singularity_bootdef_section_get(script, section_name) ) == NULL ) {
-    singularity_message(VERBOSE, "No %%%s bootstrap script found, skipping\n", section_name);
-    return;
-  } else {
-    fork_args[0] = strdup("/bin/sh");
-    fork_args[1] = strdup("-e -x");
-    fork_args[2] = args;
-    fork_args[3] = script;
-    singularity_message(INFO, "Running %%%s bootstrap script\n", section_name);
-    
-    if ( ( retval = singularity_fork_exec(fork_args) ) != 0 ) {
-      singularity_message(WARNING, "Something may have gone wrong. %%%s script exited with status: %i\n", section_name, retval);
-    }
   }
 }

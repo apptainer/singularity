@@ -6,8 +6,8 @@
 #define __SINGULARITY_BOOTSTRAP_H_
     
     int singularity_bootstrap_init();
+    int singularity_bootstrap_script_run();
 
-    extern int singularity_bootstrap_pre_init();
     extern int singularity_bootstrap_post_init();
     extern int singularity_bootstrap_module_init();
 
