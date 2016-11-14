@@ -24,18 +24,30 @@
 static char *rootfs_envar = "SINGULARITY_ROOTFS";
 static char *rootfs_path = NULL;
 
-void singularity_prebootstrap_init() {
-  
+void singularity_postbootstrap_init() {
   rootfs_path = singularity_rootfs_dir();
-  singularity_prebootstrap_rootfs_install();
-  singularity_prebootstrap_script_run();
+  singularity_rootfs_check();
   
+
+  
+  postbootstrap_script_run("setup");
+
+  singularity_rootfs_chroot();
+  postbootstrap_script_run("post");
 }
 
-void singularity_prebootstrap_rootfs_install() {
+void postbootstrap_rootfs_install() {
   s_mkpath(rootfs_path, 0755);
-  //s_mkpath(strjoin(rootfs_path, "/dev"), 0755);
-
+  s_mkpath(joinpath(rootfs_path, "/bin"), 0755);
+  s_mkpath(joinpath(rootfs_path, "/dev"), 0755);
+  s_mkpath(joinpath(rootfs_path, "/home"), 0755);
+  s_mkpath(joinpath(rootfs_path, "/etc"), 0755);
+  s_mkpath(joinpath(rootfs_path, "/root"), 0750);
+  s_mkpath(joinpath(rootfs_path, "/proc"), 0755);
+  s_mkpath(joinpath(rootfs_path, "/sys"), 0755);
+  s_mkpath(joinpath(rootfs_path, "/tmp"), 1777);
+  s_mkpath(joinpath(rootfs_path, "/var/tmp"), 1777);
+  
 
   //Do this in C (Or maybe move this to yum.c since it was changed in upstream/master??)
   //cp -a /dev/null         "$SINGULARITY_ROOTFS/dev/null"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/null";
@@ -46,22 +58,17 @@ void singularity_prebootstrap_rootfs_install() {
   
 }
 
-void singularity_prebootstrap_rootfs_set() {
-  if( rootfs_path == NULL ) {
-    rootfs_path = envar_path(rootfs_envar);
-  }
-}
-
-void singularity_prebootstrap_script_run() {
-  char ** pre_script;
-  char *section_name = "pre";
+void postbootstrap_script_run(char *section_name) {
+  char ** script;
+  //char *section_name = "post";
   char *args;
-  singularity_message(VERBOSE, "Searching for %%pre bootstrap script\n");
-  if ( ( args = singularity_bootdef_section_get(pre_script, section_name) ) == NULL ) {
-    singularity_message(VERBOSE, "No %%pre bootstrap script found, skipping\n");
+  singularity_message(VERBOSE, "Searching for %%%s bootstrap script\n", section_name);
+  if ( ( args = singularity_bootdef_section_get(script, section_name) ) == NULL ) {
+    singularity_message(VERBOSE, "No %%%s bootstrap script found, skipping\n", section_name);
     return;
   } else {
-    singularity_message(INFO, "Running %%pre bootstrap script on host\n");
+    singularity_message(INFO, "Running %%%s bootstrap script on host\n", section_name);
     singularity_fork_exec() //use this to execute the script with the arguments and commands
 
   }
+}
