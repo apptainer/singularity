@@ -107,6 +107,7 @@ char *singularity_bootdef_section_find(char *section_name) {
   while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
     strtok(line, '%');
     if ( strcmp(strtok(NULL, " "), section_name) == 0 ) {
+      //make sure that line contains -e -x here
       return(line);
     }
   }

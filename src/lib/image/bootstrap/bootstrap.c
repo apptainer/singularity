@@ -59,7 +59,9 @@ int singularity_bootstrap_init(int argc, char ** argv) {
 
     singularity_message(DEBUG, "Running bootstrap driver v2\n");
 
-    singularity_prebootstrap_init(); //lib/bootstrap/prebootstrap/prebootstrap.c
+    //singularity_prebootstrap_init(); //lib/bootstrap/prebootstrap/prebootstrap.c
+
+    singularity_bootstrap_script_run("pre"); //Replaces prebootstrap file since it does nothing else
 
     singularity_bootstrap_module_init(); //lib/bootstrap/bootstrap.c
 
@@ -71,4 +73,34 @@ int singularity_bootstrap_init(int argc, char ** argv) {
 
 
   return(0);
+}
+
+
+void singularity_bootstrap_script_run(char *section_name) {
+  char ** fork_args;
+  char *script;
+  char *args;
+  int retval;
+
+  fork_args = malloc(sizeof(char *) * 3);
+
+  singularity_message(VERBOSE, "Searching for %%%s bootstrap script\n", section_name);
+  if ( ( args = singularity_bootdef_section_get(script, section_name) ) == NULL ) {
+    singularity_message(VERBOSE, "No %%%s bootstrap script found, skipping\n", section_name);
+    return;
+  } else {
+    fork_args[0] = strdup("/bin/sh");
+    //fork_args[1] = strdup("-e -x"); //Will handle in section_get
+    fork_args[1] = args;
+    fork_args[2] = script;
+    singularity_message(INFO, "Running %%%s bootstrap script\n", section_name);
+
+    if ( ( retval = singularity_fork_exec(fork_args) ) != 0 ) {
+      singularity_message(WARNING, "Something may have gone wrong. %%%s script exited with status: %i\n", section_name, retval);
+    }
+    free(fork_args[0]);
+    free(fork_args[1]);
+    free(fork_args[2]);
+    free(fork_args);
+  }
 }
