@@ -54,14 +54,15 @@ void singularity_prebootstrap_rootfs_set() {
 
 void singularity_prebootstrap_script_run() {
   char ** pre_script;
-  char *section_name = "pre";
+  char *section_name = "setup";
   char *args;
-  singularity_message(VERBOSE, "Searching for %%pre bootstrap script\n");
+  singularity_message(VERBOSE, "Searching for %%%s bootstrap script\n", section_name);
   if ( ( args = singularity_bootdef_section_get(pre_script, section_name) ) == NULL ) {
-    singularity_message(VERBOSE, "No %%pre bootstrap script found, skipping\n");
+    singularity_message(VERBOSE, "No %%%s bootstrap script found, skipping\n", section_name);
     return;
   } else {
-    singularity_message(INFO, "Running %%pre bootstrap script on host\n");
-    singularity_fork_exec() //use this to execute the script with the arguments and commands
-
+    singularity_message(INFO, "Running %%%s bootstrap script on host\n", section_name);
+    singularity_fork_exec(); //use this to execute the script with the arguments and commands
+      
   }
+}
