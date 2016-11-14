@@ -1,0 +1,3 @@
+#!$HELPER_SHELL
+. /environment
+exec "\$@"
