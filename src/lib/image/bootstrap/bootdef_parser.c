@@ -112,10 +112,10 @@ char *singularity_bootdef_section_find(char *section_name) {
 
 
 //Can either directly call on get-section binary, or reimplement it here. Not sure what the best idea is?
-char *singularity_bootdef_section_get(char **script, char *section_name) {
+char *singularity_bootdef_section_get(char *script, char *section_name) {
   char *script_args;
   char *line;
-  int pointer_index = 0;
+  int len = 1;
   
   if( ( script_args = singularity_bootdef_section_find(section_name) ) == NULL ) {
     singularity_message(DEBUG, "Unable to find section: %%%s in bootstrap definition file", section_name);
@@ -127,16 +127,16 @@ char *singularity_bootdef_section_get(char **script, char *section_name) {
     if( strncmp(line, '%', 1) == 0 ) {
       break;
     } else {
-      script = realloc( script, sizeof(char *) * ( pointer_index + 1) );
-      *( script + pointer_index ) = strdup(line); //Store line at next pointer in script
-      //Question: Do we need to null-terminate each line or is this good as is? I think we do but I'm not an expert
-      //Ex: find index of '\n' and put '\0' in index+1 to terminate the string
-      pointer_index++; //increment pointer_index to look at next pointer in next loopthrough
+      chomp(line);
+      len = len + strlength(line, 2048);
+      if ( ( script = realloc( script, len) ) == NULL ) {
+	singularity_message(ERROR, "Unable to allocate enough memory. Aborting...\n");
+	ABORT(255);
+      }
+
+      snprintf(script, len, "%s%s", script, line);
     }
   }
   free(line);
   return(script_args);
 }
-
-
-//singularity_bootdef_parse_opts()
