@@ -36,6 +36,8 @@ void singularity_postbootstrap_init() {
     singularity_message(ERROR, "Failed to create container rootfs. Aborting...\n");
     ABORT(255);
   }
+
+  postbootstrap_copy_runscript();
   
   if ( postbootstrap_copy_defaults() != 0 ) {
     singularity_message(ERROR, "Failed to copy necessary default files to container rootfs. Aborting...\n");
@@ -60,15 +62,12 @@ int postbootstrap_rootfs_install() {
   retval += s_mkpath(joinpath(rootfs_path, "/sys"), 0755);
   retval += s_mkpath(joinpath(rootfs_path, "/tmp"), 1777);
   retval += s_mkpath(joinpath(rootfs_path, "/var/tmp"), 1777);
+  retval += mount("/proc/", joinpath(rootfs_path, "/proc"), "proc", NULL, NULL);
+  retval += mount("/sys/", joinpath(rootfs_path, "/sys"), "sysfs", NULL, NULL);
+  retval += mount("/dev/", joinpath(rootfs_path, "/dev"), /* Type of /dev/ */, MS_REMOUNT, NULL);
 
   return(retval);
-  
 
-  //Do this in C (Or maybe move this to yum.c since it was changed in upstream/master??)
-  //cp -a /dev/null         "$SINGULARITY_ROOTFS/dev/null"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/null";
-  //cp -a /dev/zero         "$SINGULARITY_ROOTFS/dev/zero"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/zero";
-  //cp -a /dev/random       "$SINGULARITY_ROOTFS/dev/random"    2>/dev/null || > "$SINGULARITY_ROOTFS/dev/random";
-  //cp -a /dev/urandom      "$SINGULARITY_ROOTFS/dev/urandom"   2>/dev/null || > "$SINGULARITY_ROOTFS/dev/urandom";  
 }
 
 int postbootstrap_copy_defaults() {
@@ -88,7 +87,19 @@ int postbootstrap_copy_defaults() {
 
   return(retval);
 }
+
+void postbootstrap_copy_runscript() {
+  char *script;
+
+  if ( singularity_bootdef_section_get(script, "runscript") == NULL ) {
+    singularity_message(VERBOSE, "Definition file does not contain runscript, skipping.\n");
+    return;
+  }
   
+  if ( fileput(joinpath(rootfs_path, "/singularity"), script) < 0 ) {
+    singularity_message(WARNING, "Couldn't write to rootfs/singularity, skipping runscript.\n");
+  }
+}
 
 void postbootstrap_script_run(char *section_name) {
   char ** fork_args;
