@@ -1,3 +1,7 @@
+/* Copyright (c) 2016, Michael Bauer. All rights reserved.
+ *
+ */
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,22 +82,35 @@ int postbootstrap_copy_defaults() {
   retval += copy_file( LIBEXECDIR "/singularity/defaults/exec", joinpath(rootfs_path, "/.exec") );
   retval += copy_file( LIBEXECDIR "/singularity/defaults/shell", joinpath(rootfs_path, "/.shell") );
   retval += copy_file( LIBEXECDIR "/singularity/defaults/run", joinpath(rootfs_path, "/.run") );
+  retval += copy_file( "/etc/hosts", joinpath(rootfs_path, "/etc/hosts") );
+  retval += copy_file( "/etc/resolv.conf", joinpath(rootfs_path, "/etc/resolv.conf") );
+  
 
   return(retval);
 }
   
 
 void postbootstrap_script_run(char *section_name) {
-  char ** script;
-  //char *section_name = "post";
+  char ** fork_args;
+  char *script;
   char *args;
+  int retval;
+
+  fork_args = malloc(sizeof(char *) * 4);
+  
   singularity_message(VERBOSE, "Searching for %%%s bootstrap script\n", section_name);
   if ( ( args = singularity_bootdef_section_get(script, section_name) ) == NULL ) {
     singularity_message(VERBOSE, "No %%%s bootstrap script found, skipping\n", section_name);
     return;
   } else {
-    singularity_message(INFO, "Running %%%s bootstrap script on host\n", section_name);
-    singularity_fork_exec() //use this to execute the script with the arguments and commands
-
+    fork_args[0] = strdup("/bin/sh");
+    fork_args[1] = strdup("-e -x");
+    fork_args[2] = args;
+    fork_args[3] = script;
+    singularity_message(INFO, "Running %%%s bootstrap script\n", section_name);
+    
+    if ( ( retval = singularity_fork_exec(fork_args) ) != 0 ) {
+      singularity_message(WARNING, "Something may have gone wrong. %%%s script exited with status: %i\n", section_name, retval);
+    }
   }
 }
