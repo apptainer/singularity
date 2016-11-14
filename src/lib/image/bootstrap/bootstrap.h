@@ -1,3 +1,7 @@
+/* Copyright (c) 2016, Michael Bauer. All rights reserved.
+ *
+ */
+
 #ifndef __SINGULARITY_BOOTSTRAP_H_
 #define __SINGULARITY_BOOTSTRAP_H_
     
