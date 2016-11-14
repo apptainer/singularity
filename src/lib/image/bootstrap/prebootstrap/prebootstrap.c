@@ -1,3 +1,7 @@
+/* Copyright (c) 2016, Michael Bauer. All rights reserved.
+ *
+ */
+
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,3 +1,7 @@
+/* Copyright (c) 2016, Michael Bauer. All rights reserved.
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
