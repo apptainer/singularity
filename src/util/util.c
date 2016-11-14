@@ -202,11 +202,6 @@ void chomp(char *str) {
         str[0] = '\0';
     }
 
-    // Trim trailing new line characters
-    if ( str[len - 1] == '\n' ) {
-        str[len - 1] = '\0';
-    }
-
 }
 
 int strlength(const char *string, int max_len) {
