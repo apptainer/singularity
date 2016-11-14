@@ -125,29 +125,37 @@ def parse_add(add):
     the image. The add command is done for an entire directory.
     :param add: the command to parse
     '''
-    from_thing,to_thing = add.split(" ")
+    # In the case that there are newlines or comments
+    command,rest = add.split('\n',1)
+    from_thing,to_thing = command.split(" ")
+
     # People like to use dots for PWD.
     if from_thing == ".":
         from_thing = os.getcwd()
     if to_thing == ".":
         to_thing = os.getcwd()
+
     # If it's a url or http address, then we need to use wget/curl to get it
     if re.search("^http",from_thing):
-        return parse_http(url=from_thing,
-                          destination=to_thing)
+        result = parse_http(url=from_thing,
+                           destination=to_thing)
+
     # If it's a tar.gz, then we are supposed to uncompress
     if re.search(".tar.gz$",from_thing):
-        return parse_targz(targz=from_thing,
-                           destination=to_thing)
+        result = parse_targz(targz=from_thing,
+                             destination=to_thing)
+
     # If it's .zip, then we are supposed to unzip it
     if re.search(".zip$",from_thing):
-        return parse_zip(zipfile=from_thing,
+        result = parse_zip(zipfile=from_thing,
                          destination=to_thing)
+
     # Is from thing a directory or something else?
     if os.path.isdir(from_thing):
-        return "cp -R %s %s" %(from_thing,to_thing)
+        result = "cp -R %s %s" %(from_thing,to_thing)
     else:
-        return "cp %s %s" %(from_thing,to_thing)
+        result = "cp %s %s" %(from_thing,to_thing)
+    return "%s\n%s" %(result,rest)
 
 
 def parse_workdir(workdir):
@@ -249,7 +257,7 @@ def organize_sections(lines,mapping=None):
                                          command=command,
                                          mapping=mapping,
                                          sections=sections)
-                name,command = line.split(" ",1)
+            name,command = line.split(" ",1)
         # We have a continuation of the last command or an empty line
         else:
             command = "%s %s" %(command,line)
