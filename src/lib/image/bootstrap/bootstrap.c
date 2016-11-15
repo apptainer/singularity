@@ -29,22 +29,24 @@ int singularity_bootstrap_init(int argc, char ** argv) {
   char *bootdef_path;
   char *driver_v1_path = LIBEXECDIR "/singularity/bootstrap/driver-v1.sh";
 
+  rootfs_path = singularity_rootfs_dir();
+
   if ( argv[1] == NULL ) {
     fprintf(stderr, "USAGE: UPDATE USAGE HERE!! SINGULARITY_IMAGE=[image] %s [command...]\n", argv[0]);
     return(1);
   }
 
-  //Abort if we can't open the bootstrap definition file
+  /* Sanity check to ensure we can properly open the bootstrap definition file */
   if( singularity_bootdef_open(argv[1]) != 0 ) {
     ABORT(255);
   }
 
-  //image-mount has finished, we are now inside a fork of image-mount running image-bootstrap binary instead of bootstrap.sh
-
   //mktemp -d /tmp/singularity-bootstrap.XXXXXXX ?? Unsure where this was used but was in the bootstrap shell scripts
 
-  //Execute old driver-v1.sh if bootdef_ver = 1, else execute new bootstrap code
+  /* Determine if Singularity file is v1 or v2. v1 files will directly use the old driver-v1.sh script */
   if( ( bootstrap_ver = singularity_bootdef_get_version() ) == 1 ) {
+
+    /* Directly call on old driver-v1.sh */
     singularity_message(INFO, "Running bootstrap driver v1\n");
     singularity_bootdef_close();
 
@@ -52,18 +54,15 @@ int singularity_bootstrap_init(int argc, char ** argv) {
     //singularity_fork_exec(argv); //Use singularity_fork_exec to directly call the v1 driver
     return(0);
 
-    //Maybe directly use driver-v2.sh since it is outdated and we don't need to rewrite it for future use?
   } else {
     singularity_message(DEBUG, "Running bootstrap driver v2\n");
-
-    singularity_bootstrap_script_run("pre"); //Replaces prebootstrap file since it does nothing else
-
+    
+    /* Next section replaces prebootstrap script */    
+    singularity_bootstrap_script_run("pre");
+    
     singularity_bootstrap_module_init(); //lib/bootstrap/bootstrap.c
 
-    //singularity_postbootstrap_init(); //lib/bootstrap/postbootstrap/postbootstrap.c
-
-    /* Next section here replaces postbootstrap module */
-    rootfs_path = singularity_rootfs_dir();
+    /* Next section here replaces postbootstrap script */
     singularity_rootfs_check();
     
     if ( postbootstrap_rootfs_install() != 0 ) {
@@ -88,6 +87,13 @@ int singularity_bootstrap_init(int argc, char ** argv) {
   return(0);
 }
 
+/*
+ * Runs the specified script within the bootstrap spec file. Forks a child process and waits
+ * until that process terminates to continue in the main process thread.
+ *
+ * @param char *section_name pointer to string containing section name of script to run
+ * @returns nothing
+ */
 void singularity_bootstrap_script_run(char *section_name) {
   char ** fork_args;
   char *script;
@@ -117,6 +123,11 @@ void singularity_bootstrap_script_run(char *section_name) {
   }
 }
 
+/*
+ * Determines which module the bootstrap spec file belongs to and runs the appropriate workflow.
+ *
+ * @returns 0 on success, -1 on failure
+ */
 int singularity_bootstrap_module_init() {
   singularity_bootdef_rewind();
 
@@ -150,6 +161,12 @@ int singularity_bootstrap_module_init() {
   }
 }
 
+/*
+ * Ensures that the paths are properly installed with correct permissions, as
+ * well as ensuring that /proc/ & /sys/ & /dev/ are mounted
+ *
+ * @returns 0 on success, <0 on failure
+ */
 int postbootstrap_rootfs_install() {
   int retval = 0;
   retval += s_mkpath(rootfs_path, 0755);
@@ -170,6 +187,12 @@ int postbootstrap_rootfs_install() {
 
 }
 
+/*
+ * Copies .exec & .shell & .run into container rootfs. Copies environment file
+ * if no environment file is already present.
+ *
+ * @returns 0 on success, <0 on failure
+ */
 int postbootstrap_copy_defaults() {
   int retval = 0;
 
@@ -188,6 +211,12 @@ int postbootstrap_copy_defaults() {
   return(retval);
 }
 
+/*
+ * Copies %runscript as defined in bootstrap spec file into container rootfs.
+ * Verbose output will inform user if no runscript was found.
+ *
+ * @returns nothing
+ */
 void postbootstrap_copy_runscript() {
   char *script;
 
