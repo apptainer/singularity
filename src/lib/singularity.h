@@ -167,5 +167,13 @@
     extern char *singularity_config_get_value(char *key);
     extern int singularity_config_get_bool(char *key, int def);
 
+    extern int singularity_bootdef_open(char *bootdef_path);
+    extern void singularity_bootdef_rewind();
+    extern void singularity_bootdef_close();
+    extern char *singularity_bootdef_get_value(char *key);
+    extern int singularity_bootdef_get_version();
+    extern char *singularity_bootdef_section_find(char *section_name);
+    extern char *singularity_bootdef_section_get(char **script, char *section_name);
+
 
 #endif /* __SINGULARITY_H */

@@ -110,11 +110,10 @@ int main(int argc_in, char ** argv_in) {
 
         /* Run image bootstrap workflow */
         else if ( strcmp(argv[1], "bootstrap") == 0 ) {
-            if ( singularity_image_bootstrap_init(argc - 1, &argv[1] != 0 ) ) {
+            if ( singularity_image_bootstrap(argc - 1, &argv[1] != 0 ) ) {
                 singularity_priv_drop_perm();
                 return(1);
             }
-        
         } 
 
         /* If there is a trailing arg containing a script, attempt to execute it */
