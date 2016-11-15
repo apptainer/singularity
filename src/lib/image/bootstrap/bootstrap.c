@@ -45,9 +45,9 @@ int singularity_bootstrap_init(int argc, char ** argv) {
 
   /* Determine if Singularity file is v1 or v2. v1 files will directly use the old driver-v1.sh script */
   if( ( bootstrap_ver = singularity_bootdef_get_version() ) == 1 ) {
-
-    /* Directly call on old driver-v1.sh */
     singularity_message(INFO, "Running bootstrap driver v1\n");
+    
+    /* Directly call on old driver-v1.sh */
     singularity_bootdef_close();
 
     //argv[0] = driver_v1_path; //pointer to some string containing path to driver-v1.sh script
@@ -57,12 +57,13 @@ int singularity_bootstrap_init(int argc, char ** argv) {
   } else {
     singularity_message(DEBUG, "Running bootstrap driver v2\n");
     
-    /* Next section replaces prebootstrap script */    
+    /* Run %pre script to replace prebootstrap module */    
     singularity_bootstrap_script_run("pre");
-    
-    singularity_bootstrap_module_init(); //lib/bootstrap/bootstrap.c
 
-    /* Next section here replaces postbootstrap script */
+    /* Run appropriate module to create the base OS in the container */
+    singularity_bootstrap_module_init();
+
+    /* Run through postbootstrap module logic */
     singularity_rootfs_check();
     
     if ( postbootstrap_rootfs_install() != 0 ) {
@@ -74,6 +75,11 @@ int singularity_bootstrap_init(int argc, char ** argv) {
     
     if ( postbootstrap_copy_defaults() != 0 ) {
       singularity_message(ERROR, "Failed to copy necessary default files to container rootfs. Aborting...\n");
+      ABORT(255);
+    }
+
+    if ( singularity_mount() < 0 ) {
+      singularity_message(ERROR, "Failed to mount necessary files into container rootfs. Aborting...\n");
       ABORT(255);
     }
     
@@ -128,7 +134,7 @@ void singularity_bootstrap_script_run(char *section_name) {
  *
  * @returns 0 on success, -1 on failure
  */
-int singularity_bootstrap_module_init() {
+int bootstrap_module_init() {
   singularity_bootdef_rewind();
 
   if ( ( module_name = singularity_bootdef_get_value("Bootstrap") ) == NULL ) {
@@ -162,12 +168,11 @@ int singularity_bootstrap_module_init() {
 }
 
 /*
- * Ensures that the paths are properly installed with correct permissions, as
- * well as ensuring that /proc/ & /sys/ & /dev/ are mounted
+ * Ensures that the paths are properly installed with correct permissions.
  *
  * @returns 0 on success, <0 on failure
  */
-int postbootstrap_rootfs_install() {
+int bootstrap_rootfs_install() {
   int retval = 0;
   retval += s_mkpath(rootfs_path, 0755);
   retval += s_mkpath(joinpath(rootfs_path, "/bin"), 0755);
@@ -179,9 +184,6 @@ int postbootstrap_rootfs_install() {
   retval += s_mkpath(joinpath(rootfs_path, "/sys"), 0755);
   retval += s_mkpath(joinpath(rootfs_path, "/tmp"), 1777);
   retval += s_mkpath(joinpath(rootfs_path, "/var/tmp"), 1777);
-  retval += mount("/proc/", joinpath(rootfs_path, "/proc"), "proc", NULL, NULL);
-  retval += mount("/sys/", joinpath(rootfs_path, "/sys"), "sysfs", NULL, NULL);
-  retval += mount("/dev/", joinpath(rootfs_path, "/dev"), /* Type of /dev/ */, MS_REMOUNT, NULL);
 
   return(retval);
 
@@ -193,7 +195,7 @@ int postbootstrap_rootfs_install() {
  *
  * @returns 0 on success, <0 on failure
  */
-int postbootstrap_copy_defaults() {
+int bootstrap_copy_defaults() {
   int retval = 0;
 
   if ( is_file(joinpath(rootfs_path, "/environment")) ) {
@@ -217,7 +219,7 @@ int postbootstrap_copy_defaults() {
  *
  * @returns nothing
  */
-void postbootstrap_copy_runscript() {
+void bootstrap_copy_runscript() {
   char *script;
 
   if ( singularity_bootdef_section_get(script, "runscript") == NULL ) {
