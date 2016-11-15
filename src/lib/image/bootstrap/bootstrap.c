@@ -24,8 +24,8 @@
 static char *module_name;
 static char *rootfs_path;
 
-int singularity_bootstrap_init(int argc, char ** argv) {
-
+int singularity_bootstrap(int argc, char ** argv) {
+  char *containerimage;
   char *bootdef_path;
   char *driver_v1_path = LIBEXECDIR "/singularity/bootstrap/driver-v1.sh";
 
@@ -41,7 +41,13 @@ int singularity_bootstrap_init(int argc, char ** argv) {
     ABORT(255);
   }
 
-  //mktemp -d /tmp/singularity-bootstrap.XXXXXXX ?? Unsure where this was used but was in the bootstrap shell scripts
+  /* Run logic from lib/image/mount/mount.c in order to streamline the workflow */
+  singularity_sessiondir_init(containerimage);
+  singularity_ns_user_unshare();
+  singularity_ns_mnt_unshare();
+
+  singularity_rootfs_init(containerimage);
+  singularity_rootfs_mount();
 
   /* Determine if Singularity file is v1 or v2. v1 files will directly use the old driver-v1.sh script */
   if( ( bootstrap_ver = singularity_bootdef_get_version() ) == 1 ) {
