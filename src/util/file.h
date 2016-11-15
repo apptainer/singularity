@@ -19,6 +19,7 @@
  */
 
 
+int has_perm(int level, struct stat file_stat);
 char *file_id(char *path);
 int is_file(char *path);
 int is_fifo(char *path);
