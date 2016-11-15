@@ -22,6 +22,7 @@
 #include "lib/singularity.h"
 
 static char *module_name;
+static char *rootfs_path;
 
 int singularity_bootstrap_init(int argc, char ** argv) {
 
@@ -53,23 +54,37 @@ int singularity_bootstrap_init(int argc, char ** argv) {
 
     //Maybe directly use driver-v2.sh since it is outdated and we don't need to rewrite it for future use?
   } else {
-    //singularity_priv_init(); //We need SUID to escalate privs for non-priv bootstrap, initialize that here and error out if we can't do it
-
     singularity_message(DEBUG, "Running bootstrap driver v2\n");
-
-    //singularity_prebootstrap_init(); //lib/bootstrap/prebootstrap/prebootstrap.c
 
     singularity_bootstrap_script_run("pre"); //Replaces prebootstrap file since it does nothing else
 
     singularity_bootstrap_module_init(); //lib/bootstrap/bootstrap.c
 
-    singularity_postbootstrap_init(); //lib/bootstrap/postbootstrap/postbootstrap.c
+    //singularity_postbootstrap_init(); //lib/bootstrap/postbootstrap/postbootstrap.c
 
-    singularity_bootdef_close();
-
+    /* Next section here replaces postbootstrap module */
+    rootfs_path = singularity_rootfs_dir();
+    singularity_rootfs_check();
+    
+    if ( postbootstrap_rootfs_install() != 0 ) {
+      singularity_message(ERROR, "Failed to create container rootfs. Aborting...\n");
+      ABORT(255);
+    }
+    
+    postbootstrap_copy_runscript();
+    
+    if ( postbootstrap_copy_defaults() != 0 ) {
+      singularity_message(ERROR, "Failed to copy necessary default files to container rootfs. Aborting...\n");
+      ABORT(255);
+    }
+    
+    singularity_bootstrap_script_run("setup");
+      
+    singularity_rootfs_chroot();
+    singularity_bootstrap_script_run("post");
+    
+    singularity_bootdef_close();   
   }
-
-
   return(0);
 }
 
@@ -132,5 +147,56 @@ int singularity_bootstrap_module_init() {
       ABORT(255);
     }
 
+  }
+}
+
+int postbootstrap_rootfs_install() {
+  int retval = 0;
+  retval += s_mkpath(rootfs_path, 0755);
+  retval += s_mkpath(joinpath(rootfs_path, "/bin"), 0755);
+  retval += s_mkpath(joinpath(rootfs_path, "/dev"), 0755);
+  retval += s_mkpath(joinpath(rootfs_path, "/home"), 0755);
+  retval += s_mkpath(joinpath(rootfs_path, "/etc"), 0755);
+  retval += s_mkpath(joinpath(rootfs_path, "/root"), 0750);
+  retval += s_mkpath(joinpath(rootfs_path, "/proc"), 0755);
+  retval += s_mkpath(joinpath(rootfs_path, "/sys"), 0755);
+  retval += s_mkpath(joinpath(rootfs_path, "/tmp"), 1777);
+  retval += s_mkpath(joinpath(rootfs_path, "/var/tmp"), 1777);
+  retval += mount("/proc/", joinpath(rootfs_path, "/proc"), "proc", NULL, NULL);
+  retval += mount("/sys/", joinpath(rootfs_path, "/sys"), "sysfs", NULL, NULL);
+  retval += mount("/dev/", joinpath(rootfs_path, "/dev"), /* Type of /dev/ */, MS_REMOUNT, NULL);
+
+  return(retval);
+
+}
+
+int postbootstrap_copy_defaults() {
+  int retval = 0;
+
+  if ( is_file(joinpath(rootfs_path, "/environment")) ) {
+    singularity_message(INFO, "Skipping environment file, file already exists.\n");
+  } else {
+    retval += copy_file( LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment") );
+  }
+  retval += copy_file( LIBEXECDIR "/singularity/defaults/exec", joinpath(rootfs_path, "/.exec") );
+  retval += copy_file( LIBEXECDIR "/singularity/defaults/shell", joinpath(rootfs_path, "/.shell") );
+  retval += copy_file( LIBEXECDIR "/singularity/defaults/run", joinpath(rootfs_path, "/.run") );
+  retval += copy_file( "/etc/hosts", joinpath(rootfs_path, "/etc/hosts") );
+  retval += copy_file( "/etc/resolv.conf", joinpath(rootfs_path, "/etc/resolv.conf") );
+
+
+  return(retval);
+}
+
+void postbootstrap_copy_runscript() {
+  char *script;
+
+  if ( singularity_bootdef_section_get(script, "runscript") == NULL ) {
+    singularity_message(VERBOSE, "Definition file does not contain runscript, skipping.\n");
+    return;
+  }
+
+  if ( fileput(joinpath(rootfs_path, "/singularity"), script) < 0 ) {
+    singularity_message(WARNING, "Couldn't write to rootfs/singularity, skipping runscript.\n");
   }
 }
