@@ -30,10 +30,10 @@ import sys
 import tarfile
 try:
     from urllib.parse import urlencode
-    from urllib.request import urlopen, Request
+    from urllib.request import urlopen, Request, unquote
     from urllib.error import HTTPError
 except ImportError:
-    from urllib import urlencode
+    from urllib import urlencode, unquote
     from urllib2 import urlopen, Request, HTTPError
 
 # Python less than version 3 must import OSError

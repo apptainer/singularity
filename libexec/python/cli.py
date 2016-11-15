@@ -25,6 +25,7 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 from docker.api import get_layer, create_runscript, get_manifest, get_config, get_images
+from shub.api import download_image, get_manifest as get_shub_manifest
 from utils import extract_tar, change_permissions
 import argparse
 import os
@@ -35,10 +36,17 @@ import tempfile
 def main():
     parser = argparse.ArgumentParser(description="bootstrap Docker images for Singularity containers")
 
-    # Name of the docker image, required
+    # Name of the docker image
     parser.add_argument("--docker", 
                         dest='docker', 
                         help="name of Docker image to bootstrap, in format library/ubuntu:latest", 
+                        type=str, 
+                        default=None)
+
+    # ID of the Singularity Hub container
+    parser.add_argument("--shub", 
+                        dest='shub', 
+                        help="unique id of the Singularity Hub image", 
                         type=str, 
                         default=None)
 
@@ -96,11 +104,29 @@ def main():
     # Does the user want to include the CMD as runscript?
     includecmd = args.includecmd
 
+    # Does the user want to download a Singularity image?
+    if args.shub != None:
+        image_id = int(args.shub)
+        manifest = get_shub_manifest(image_id)
+        tmpdir = tempfile.mkdtemp()
+        image_file = download_image(manifest=manifest,
+                                    download_folder=tmpdir)
+        
+        # STOPPED HERE - image is downloading ok, but two issues:
+        # 1) not a valid image (something wrong with build? download?)
+        # 2) not sure what to do with it, given it is valid...
+
+        # Export new singularity_rootfs (can I do that?)
+        os.environ['SINGULARITY_ROOTFS'] = image_file
+        os.environ['SINGULARITY_IMAGE'] = image_file
+        #command = 'eval "(cd %s; tar -c .) > %s"' %(singularity_rootfs,image_file) 
+        #eval "(cd $SINGULARITY_ROOTFS; tar -c .) > $SINGULARITY_EXPORT_FILE"
+        #os.system('singularity export %s > %s' %(image_file,singularity_rootfs))
+
     # Do we have a docker image specified?
     if args.docker != None:
+
         image = args.docker
-
-
 
 # INPUT PARSING -------------------------------------------
 # Parse image name, repo name, and namespace
