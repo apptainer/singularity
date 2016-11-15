@@ -19,7 +19,7 @@
 
 
 //Return 0 if successful, return 1 otherwise.
-int singularity_bootstrap_docker_init() {
+int singularity_bootstrap_docker() {
 
   int index = 6;
   char ** python_args = malloc( sizeof(char *) * 9 );

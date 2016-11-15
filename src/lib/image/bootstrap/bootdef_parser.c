@@ -31,7 +31,7 @@ int singularity_bootdef_open(char *bootdef_path) {
       return(0);
     }
   }
-  singularity_message(ERROR, "Could not open bootstrap definition file %s: %s\n", bootstrap_path, strerror(errno));
+  singularity_message(ERROR, "Could not open bootstrap definition file %s: %s\n", bootdef_path, strerror(errno));
   return(-1);
 }
 
@@ -63,7 +63,7 @@ char *singularity_bootdef_get_value(char *key) {
 
   line = (char *)malloc(MAX_LINE_LEN);
 
-  while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
+  while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
     if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
       chomp(bootdef_key);
       if ( strcmp(bootdef_key, key) == 0 ) {
@@ -104,8 +104,8 @@ char *singularity_bootdef_section_find(char *section_name) {
   singularity_bootdef_rewind();
   line = (char *)malloc(MAX_LINE_LEN);
   
-  while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
-    strtok(line, '%');
+  while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
+    strtok(line, "%%");
     if ( strcmp(strtok(NULL, " "), section_name) == 0 ) {
       //make sure that line contains -e -x here
       return(line);
@@ -117,7 +117,7 @@ char *singularity_bootdef_section_find(char *section_name) {
 
 
 //Can either directly call on get-section binary, or reimplement it here. Not sure what the best idea is?
-char *singularity_bootdef_section_get(char *script, char *section_name) {
+char *singularity_bootdef_section_get(char **script, char *section_name) {
   char *script_args;
   char *line;
   int len = 1;
@@ -128,18 +128,18 @@ char *singularity_bootdef_section_get(char *script, char *section_name) {
   }
 
   line = (char *)malloc(MAX_LINE_LEN);
-  while ( fgets(line, MAX_LINE_LEN, bootstrap_fp) ) {
-    if( strncmp(line, '%', 1) == 0 ) {
+  while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
+    if( strncmp(line, "%%", 1) == 0 ) {
       break;
     } else {
       chomp(line);
       len = len + strlength(line, 2048);
-      if ( ( script = realloc( script, len) ) == NULL ) {
+      if ( ( *script = realloc( *script, len) ) == NULL ) {
 	singularity_message(ERROR, "Unable to allocate enough memory. Aborting...\n");
 	ABORT(255);
       }
 
-      snprintf(script, len, "%s%s", script, line);
+      snprintf(*script, len, "%s%s", *script, line);
     }
   }
   free(line);

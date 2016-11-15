@@ -330,6 +330,8 @@ AC_CONFIG_FILES([
    src/lib/image/bind/Makefile
    src/lib/image/create/Makefile
    src/lib/image/expand/Makefile
+   src/lib/image/bootstrap/Makefile
+   src/lib/image/bootstrap/docker/Makefile
    src/util/Makefile
    src/slurm/Makefile
    etc/Makefile

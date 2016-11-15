@@ -5,12 +5,14 @@
 #ifndef __SINGULARITY_BOOTSTRAP_H_
 #define __SINGULARITY_BOOTSTRAP_H_
     
-    int singularity_bootstrap_init(int argc, char ** argv);
+    int singularity_bootstrap(int argc, char ** argv);
     void singularity_bootstrap_script_run(char *section_name);
 
     int bootstrap_module_init();
     int bootstrap_rootfs_install();
     int bootstrap_copy_defaults();
     void bootstrap_copy_runscript();
+
+    extern int singularity_bootstrap_docker();
 
 #endif
