@@ -25,7 +25,6 @@
 #include "util/file.h"
 #include "util/util.h"
 
-static char *rootfs_envar = "SINGULARITY_ROOTFS";
 static char *rootfs_path = NULL;
 
 void singularity_postbootstrap_init() {
