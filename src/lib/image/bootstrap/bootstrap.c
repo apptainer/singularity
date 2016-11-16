@@ -225,6 +225,13 @@ int bootstrap_rootfs_install() {
 int bootstrap_copy_defaults() {
   singularity_message(DEBUG, "Copying default files into container rootfs.\n");
   int retval = 0;
+  char *helper_shell;
+
+  if ( is_file(joinpath(rootfs_path, "/bin/bash")) == 0 ) {
+    helper_shell = strdup("#!/bin/bash");
+  } else {
+    helper_shell = strdup("#!/bin/sh");
+  }
 
   if ( is_file(joinpath(rootfs_path, "/environment")) == 0 ) {
     singularity_message(INFO, "Skipping environment file, file already exists.\n");
@@ -233,20 +240,21 @@ int bootstrap_copy_defaults() {
     retval += copy_file( LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment") );
     retval += chmod( joinpath(rootfs_path, "/environment"), 0644 );
   }
-  retval += fileput(joinpath(rootfs_path, "/.exec"), strjoin(prepend_line, filecat(LIBEXECDIR "/singularity/defaults/exec")));
-  retval += fileput(joinpath(rootfs_path, "/.shell"), strjoin(prepend_line, filecat(LIBEXECDIR "/singularity/defaults/shell")));
-  retval += fileput(joinpath(rootfs_path, "/.run"), strjoin(prepend_line, filecat(LIBEXECDIR "/singularity/defaults/run")));
+  retval += fileput(joinpath(rootfs_path, "/.exec"), strjoin(helper_shell, filecat(LIBEXECDIR "/singularity/defaults/exec")));
+  retval += chmod( joinpath(rootfs_path, "/.exec"), 0755 );
+  
+  retval += fileput(joinpath(rootfs_path, "/.shell"), strjoin(helper_shell, filecat(LIBEXECDIR "/singularity/defaults/shell")));
+  retval += chmod( joinpath(rootfs_path, "/.shell"), 0755 );
+  
+  retval += fileput(joinpath(rootfs_path, "/.run"), strjoin(helper_shell, filecat(LIBEXECDIR "/singularity/defaults/run")));
+  retval += chmod( joinpath(rootfs_path, "/.run"), 0755 );
+  
   //retval += copy_file( LIBEXECDIR "/singularity/defaults/exec", joinpath(rootfs_path, "/.exec") );
   //retval += copy_file( LIBEXECDIR "/singularity/defaults/shell", joinpath(rootfs_path, "/.shell") );
   //retval += copy_file( LIBEXECDIR "/singularity/defaults/run", joinpath(rootfs_path, "/.run") );
-  
 
+  free(helper_shell);
   return(retval);
-}
-
-int prepend_helpershell(char *prepend_line, char) {
-
-  
 }
 
 /*
