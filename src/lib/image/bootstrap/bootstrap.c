@@ -27,54 +27,54 @@ static char *module_name;
 static char *rootfs_path;
 
 int singularity_bootstrap(int argc, char ** argv) {
-  singularity_message(DEBUG, "Reached bootstrap interior\n");
   char *containerimage;
   char *bootdef_path;
   char *driver_v1_path = LIBEXECDIR "/singularity/bootstrap/driver-v1.sh";
-
-  singularity_message(DEBUG, "Reached before argv[1] check\n");
+  singularity_message(VERBOSE, "Preparing to bootstrap image with definition file: %s\n", argv[1]);
   
   /* Sanity check on input */
   if ( argv[1] == NULL ) {
-    singularity_message(DEBUG, "argv0:%s|argv1:%s|\n", argv[0], argv[1]);
+    singularity_message(ERROR, "singularity_bootstrap expects argv[1] to contain file, found NULL\n");
     return(1);
   }
 
   /* Error out if $SINGULARITY_IMAGE is not defined */
-  singularity_message(VERBOSE, "Obtaining container name from environment variable\n");
+  singularity_message(DEBUG, "Obtaining container name from environment variable\n");
   if ( ( containerimage = envar_path("SINGULARITY_IMAGE") ) == NULL ) {
     singularity_message(ERROR, "SINGULARITY_IMAGE not defined!\n");
     ABORT(255);
   }
 
   /* Sanity check to ensure we can properly open the bootstrap definition file */
+  singularity_message(DEBUG, "Opening singularity bootdef file: %s\n", argv[1]);
   if( singularity_bootdef_open(argv[1]) != 0 ) {
     singularity_message(ERROR, "Could not open bootdef file\n");
     ABORT(255);
   }
 
   /* Run logic from lib/image/mount/mount.c in order to streamline the workflow */
+  singularity_message(DEBUG, "Initializing container directory\n");
   singularity_sessiondir_init(containerimage);
   singularity_ns_user_unshare();
   singularity_ns_mnt_unshare();
 
+  singularity_message(DEBUG, "Mounting container rootfs\n");
   singularity_rootfs_init(containerimage);
   singularity_rootfs_mount();
-
   rootfs_path = singularity_rootfs_dir();
 
   /* Determine if Singularity file is v1 or v2. v1 files will directly use the old driver-v1.sh script */
   if( singularity_bootdef_get_version() == 1 ) {
-    singularity_message(INFO, "Running bootstrap driver v1\n");
+    singularity_message(VERBOSE, "Running bootstrap driver v1\n");
     singularity_bootdef_close();
     
     /* Directly call on old driver-v1.sh */
-    //argv[0] = driver_v1_path; //pointer to some string containing path to driver-v1.sh script
-    //singularity_fork_exec(argv); //Use singularity_fork_exec to directly call the v1 driver
+    argv[0] = driver_v1_path; //pointer to some string containing path to driver-v1.sh script
+    singularity_fork_exec(argv); //Use singularity_fork_exec to directly call the v1 driver
     return(0);
 
   } else {
-    singularity_message(DEBUG, "Running bootstrap driver v2\n");
+    singularity_message(VERBOSE, "Running bootstrap driver v2\n");
     
     /* Run %pre script to replace prebootstrap module */    
     singularity_bootstrap_script_run("pre");
@@ -144,7 +144,7 @@ void singularity_bootstrap_script_run(char *section_name) {
     fork_args[0] = strdup("/bin/sh");
     fork_args[1] = args;
     fork_args[2] = *script;
-    singularity_message(INFO, "Running %%%s bootstrap script\n", section_name);
+    singularity_message(VERBOSE, "Running %%%s bootstrap script\n", section_name);
 
     if ( ( retval = singularity_fork_exec(fork_args) ) != 0 ) {
       singularity_message(WARNING, "Something may have gone wrong. %%%s script exited with status: %i\n", section_name, retval);
@@ -165,11 +165,11 @@ int bootstrap_module_init() {
   singularity_bootdef_rewind();
 
   if ( ( module_name = singularity_bootdef_get_value("Bootstrap") ) == NULL ) {
-    singularity_message(ERROR, "Bootstrap definition file does not contain a Bootstrap: line\n");
-    ABORT(255);
+    singularity_message(ERROR, "Bootstrap definition file does not contain required Bootstrap: option\n");
+    return(-1);
 
   } else {
-    singularity_message(INFO, "Running bootstrap module %s\n", module_name);
+    singularity_message(VERBOSE, "Running bootstrap module %s\n", module_name);
 
     if ( strcmp(module_name, "docker") == 0 ) { //Docker
       return( singularity_bootstrap_docker() );
@@ -188,7 +188,7 @@ int bootstrap_module_init() {
 
     } */else {
       singularity_message(ERROR, "Could not parse bootstrap module of type: %s\n", module_name);
-      ABORT(255);
+      return(-1);
     }
 
   }
@@ -223,7 +223,7 @@ int bootstrap_rootfs_install() {
  * @returns 0 on success, <0 on failure
  */
 int bootstrap_copy_defaults() {
-  singularity_message(DEBUG, "Copying default files into container rootfs.\n");
+  singularity_message(VERBOSE, "Copying default files into container rootfs.\n");
   int retval = 0;
   char *helper_shell;
 
@@ -234,12 +234,14 @@ int bootstrap_copy_defaults() {
   }
 
   if ( is_file(joinpath(rootfs_path, "/environment")) == 0 ) {
-    singularity_message(INFO, "Skipping environment file, file already exists.\n");
+    singularity_message(VERBOSE, "Skipping environment file, file already exists.\n");
   } else {
-    singularity_message(DEBUG, "Reached environment copy\n");
+    singularity_message(DEBUG, "Copying /environment into container rootfs\n");
     retval += copy_file( LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment") );
     retval += chmod( joinpath(rootfs_path, "/environment"), 0644 );
   }
+
+  singularity_message(DEBUG, "Copying /.exec, /.shell, && /.run into container rootfs\n");
   retval += fileput(joinpath(rootfs_path, "/.exec"), strjoin(helper_shell, filecat(LIBEXECDIR "/singularity/defaults/exec")));
   retval += chmod( joinpath(rootfs_path, "/.exec"), 0755 );
   
@@ -248,20 +250,10 @@ int bootstrap_copy_defaults() {
   
   retval += fileput(joinpath(rootfs_path, "/.run"), strjoin(helper_shell, filecat(LIBEXECDIR "/singularity/defaults/run")));
   retval += chmod( joinpath(rootfs_path, "/.run"), 0755 );
-  
-  //retval += copy_file( LIBEXECDIR "/singularity/defaults/exec", joinpath(rootfs_path, "/.exec") );
-  //retval += copy_file( LIBEXECDIR "/singularity/defaults/shell", joinpath(rootfs_path, "/.shell") );
-  //retval += copy_file( LIBEXECDIR "/singularity/defaults/run", joinpath(rootfs_path, "/.run") );
 
   free(helper_shell);
   return(retval);
 }
-
-/*
-int singularity_get_environment() {
-
-}
-*/
 
 /*
  * Copies %runscript as defined in bootstrap spec file into container rootfs.
@@ -275,10 +267,14 @@ void bootstrap_copy_runscript() {
 
   if ( singularity_bootdef_section_get(script, "runscript") == NULL ) {
     singularity_message(VERBOSE, "Definition file does not contain runscript, skipping.\n");
+    free(script);
     return;
   }
 
   if ( fileput(joinpath(rootfs_path, "/singularity"), *script) < 0 ) {
     singularity_message(WARNING, "Couldn't write to rootfs/singularity, skipping runscript.\n");
   }
+  
+  free(*script);
+  free(script);
 }
