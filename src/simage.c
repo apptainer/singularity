@@ -42,6 +42,12 @@
 #include "util/file.h"
 #include "util/util.h"
 
+
+#ifndef SYSCONFDIR
+#define SYSCONFDIR "/etc"
+#endif
+
+
 int main(int argc_in, char ** argv_in) {
     // Note: SonarQube complains when we change the value of parameters, even
     // in obviously-OK cases like this one...
@@ -53,6 +59,9 @@ int main(int argc_in, char ** argv_in) {
         fprintf(stderr, "USAGE: simage command args\n");
         return(1);
     }
+
+    /* Open the config file for parsing */
+    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     /* 
      * Even though we don't have SUID for this binary, singularity_priv_init and 
@@ -110,9 +119,12 @@ int main(int argc_in, char ** argv_in) {
 
         /* Run image bootstrap workflow */
         else if ( strcmp(argv[1], "bootstrap") == 0 ) {
-            if ( singularity_image_bootstrap(argc - 1, &argv[1] != 0 ) ) {
+            if ( singularity_bootstrap(argc - 1, &argv[1] != 0 ) ) {
                 singularity_priv_drop_perm();
                 return(1);
+            } else {
+                singularity_priv_drop_perm();
+                return(0);
             }
         } 
 

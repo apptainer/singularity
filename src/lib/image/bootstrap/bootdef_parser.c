@@ -95,7 +95,9 @@ int singularity_bootdef_get_version() {
 //Returns NULL when section not found
 char *singularity_bootdef_section_find(char *section_name) {
   char *line;
-  
+  char *tok;
+
+  singularity_message(DEBUG, "Reached section_find\n");
   if ( bootdef_fp == NULL ) {
     singularity_message(ERROR, "Called singularity_bootdef_section_find() before opening a bootstrap definition file!\n");
     ABORT(255);
@@ -103,14 +105,22 @@ char *singularity_bootdef_section_find(char *section_name) {
 
   singularity_bootdef_rewind();
   line = (char *)malloc(MAX_LINE_LEN);
-  
+
+  singularity_message(DEBUG, "Moved past bootdef_rewind\n");
   while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
+    chomp(line);
+    singularity_message(DEBUG, "%s\n", line);
     strtok(line, "%%");
-    if ( strcmp(strtok(NULL, " "), section_name) == 0 ) {
+    singularity_message(DEBUG, "%s\n", line);
+    tok = strtok(line, " ");
+    singularity_message(DEBUG, "%s\n", tok);
+    if ( strcmp(tok, section_name) == 0 ) {
+      singularity_message(DEBUG, "line: %s\n", line);
       //make sure that line contains -e -x here
       return(line);
     }
   }
+  singularity_message(DEBUG, "Returning from section_find NULL\n");
   return(NULL);
 }
 
@@ -121,7 +131,8 @@ char *singularity_bootdef_section_get(char **script, char *section_name) {
   char *script_args;
   char *line;
   int len = 1;
-  
+
+  singularity_message(DEBUG, "Reached section_get\n");
   if( ( script_args = singularity_bootdef_section_find(section_name) ) == NULL ) {
     singularity_message(DEBUG, "Unable to find section: %%%s in bootstrap definition file", section_name);
     return(NULL);
