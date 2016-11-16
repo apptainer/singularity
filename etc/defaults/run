@@ -1,4 +1,4 @@
-#!$HELPER_SHELL
+
 . /environment
 if test -x /singularity; then
     exec /singularity "\$@"
