@@ -1,4 +1,4 @@
-#!$HELPER_SHELL
+
 . /environment
 if test -n "$\SHELL" -a -x "\$SHELL"; then
     exec "\$SHELL" "\$@"

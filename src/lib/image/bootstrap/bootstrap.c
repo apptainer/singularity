@@ -233,14 +233,21 @@ int bootstrap_copy_defaults() {
     retval += copy_file( LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment") );
     retval += chmod( joinpath(rootfs_path, "/environment"), 0644 );
   }
-  retval += copy_file( LIBEXECDIR "/singularity/defaults/exec", joinpath(rootfs_path, "/.exec") );
-  retval += copy_file( LIBEXECDIR "/singularity/defaults/shell", joinpath(rootfs_path, "/.shell") );
-  retval += copy_file( LIBEXECDIR "/singularity/defaults/run", joinpath(rootfs_path, "/.run") );
+  retval += fileput(joinpath(rootfs_path, "/.exec"), strjoin(prepend_line, filecat(LIBEXECDIR "/singularity/defaults/exec")));
+  retval += fileput(joinpath(rootfs_path, "/.shell"), strjoin(prepend_line, filecat(LIBEXECDIR "/singularity/defaults/shell")));
+  retval += fileput(joinpath(rootfs_path, "/.run"), strjoin(prepend_line, filecat(LIBEXECDIR "/singularity/defaults/run")));
+  //retval += copy_file( LIBEXECDIR "/singularity/defaults/exec", joinpath(rootfs_path, "/.exec") );
+  //retval += copy_file( LIBEXECDIR "/singularity/defaults/shell", joinpath(rootfs_path, "/.shell") );
+  //retval += copy_file( LIBEXECDIR "/singularity/defaults/run", joinpath(rootfs_path, "/.run") );
   
 
   return(retval);
 }
 
+int prepend_helpershell(char *prepend_line, char) {
+
+  
+}
 
 /*
 int singularity_get_environment() {
