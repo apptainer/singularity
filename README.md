@@ -118,15 +118,10 @@ modifications necessary.
 
 Here is an example of a very simple bootstrap definition file for CentOS:
 
-    RELEASE=7
-    MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
-     
-    Setup
-    Bootstrap
-     
-    InstallPkgs procps-ng vim-minimal
-     
-    Cleanup
+    BootStrap: yum
+    OSVersion: 7
+    MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+    Include: yum
 
 Once you have created your bootstrap definition, you can build your
 Singularity container image by first creating a blank image, and then
@@ -145,7 +140,7 @@ From there we can immediately start using the container:
     hello world
     [gmk@centos7-x64 demo]$ 
 
-And if I do this same process again, while changing the **RELEASE**
+And if I do this same process again, while changing the **OSVersion**
 variable in the bootstrap definition to **6** (where previously it was
 automatically ascertained by querying the RPM database), we can
 essentially build a CentOS-6 image in exactly the same manner as
