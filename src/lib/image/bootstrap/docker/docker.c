@@ -37,7 +37,12 @@ int singularity_bootstrap_docker() {
   }
   
   if ( ( python_args[index] = singularity_bootdef_get_value("IncludeCmd") ) != NULL ) {
-    index++;
+    if ( strcmp(python_args[index], "yes") == 0 ) {
+      python_args[index] = strdup("--cmd");
+      index++;
+    } else {
+      python_args[index] = NULL;
+    }
   }
 
   if ( ( python_args[index] = singularity_bootdef_get_value("Registry") ) != NULL ) {
@@ -49,7 +54,7 @@ int singularity_bootstrap_docker() {
   }
   python_args = realloc(python_args, (sizeof(char *) * index) ); //Realloc to free space at end of python_args, is this necessary?
     
-  
+  singularity_message(DEBUG, "\n 1: %s \n2: %s \n3: %s \n4: %s \n5: %s", python_args[1], python_args[2], python_args[3], python_args[4], python_args[5]);
   
   //  python_args = {
   //  strdup("python"),
