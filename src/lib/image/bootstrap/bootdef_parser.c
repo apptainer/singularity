@@ -146,18 +146,22 @@ char *singularity_bootdef_section_get(char **script, char *section_name) {
     return(NULL);
   }
 
+  *script = strdup("");
   line = (char *)malloc(MAX_LINE_LEN);
   while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
+    singularity_message(DEBUG, "Reading line: %s", line);
     if( strncmp(line, "%%", 1) == 0 ) {
       break;
     } else {
       chomp(line);
-      len = len + strlength(line, 2048);
+      *script = strjoin(*script, line);
+      singularity_message(DEBUG, "script: %s\n", *script);
+      /*len = len + strlength(line, 2048);
       if ( ( *script = realloc( *script, len) ) == NULL ) {
 	singularity_message(ERROR, "Unable to allocate enough memory. Aborting...\n");
 	ABORT(255);
       }
-      snprintf(*script, len, "%s%s", *script, line);
+      snprintf(*script, len, "%s%s", *script, line);*/
     }
   }
   free(line);
