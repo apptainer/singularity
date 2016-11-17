@@ -133,7 +133,7 @@ void singularity_bootstrap_script_run(char *section_name) {
   char *args;
   int retval;
 
-  fork_args = malloc(sizeof(char *) * 3);
+  fork_args = malloc(sizeof(char *) * 4);
   script = malloc(sizeof(char *));
   
   singularity_message(VERBOSE, "Searching for %%%s bootstrap script\n", section_name);
@@ -142,9 +142,10 @@ void singularity_bootstrap_script_run(char *section_name) {
     return;
   } else {
     fork_args[0] = strdup("/bin/sh");
-    fork_args[1] = args;
-    fork_args[2] = *script;
-    singularity_message(VERBOSE, "Running %%%s bootstrap script\n", section_name);
+    fork_args[1] = *script;
+    fork_args[2] = NULL;
+    fork_args[3] = NULL;
+    singularity_message(VERBOSE, "Running %%%s bootstrap script\n%s\n%s\n", section_name, fork_args[1], fork_args[2]);
 
     if ( ( retval = singularity_fork_exec(fork_args) ) != 0 ) {
       singularity_message(WARNING, "Something may have gone wrong. %%%s script exited with status: %i\n", section_name, retval);
@@ -152,6 +153,7 @@ void singularity_bootstrap_script_run(char *section_name) {
     free(fork_args[0]);
     free(fork_args[1]);
     free(fork_args[2]);
+    free(fork_args[3]);
     free(fork_args);
   }
 }
