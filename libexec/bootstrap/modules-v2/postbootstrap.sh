@@ -158,6 +158,7 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
 
     # If the command is not empty, write to file.
     if [ ! -z "$runscript_command" ]; then
+        echo "User defined %runscript found! Taking priority."
         echo "$runscript_command" > "$SINGULARITY_ROOTFS/singularity"    
     fi
 

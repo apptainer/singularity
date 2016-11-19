@@ -40,7 +40,7 @@ def create_runscript(cmd,base_dir):
     :param base_dir: the base directory to write the runscript to
     '''
     runscript = "%s/singularity" %(base_dir)
-    content = '#!/bin/sh\n\nexec %s "$@"' %(cmd)
+    content = 'exec %s "$@"' %(cmd)
     output_file = write_file(runscript,content)
     return output_file
 
