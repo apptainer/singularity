@@ -158,7 +158,7 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
 
     # If the command is not empty, write to file.
     if [ ! -z "$runscript_command" ]; then
-        cat $runscript_command > "$SINGULARITY_ROOTFS/singularity"    
+        cat "$runscript_command" > "$SINGULARITY_ROOTFS/singularity"    
     fi
 
     # If we have a runscript, whether docker, user defined, change permissions    
