@@ -61,7 +61,7 @@ def main():
     parser.add_argument("--cmd", 
                         dest='includecmd', 
                         action="store_true",
-                        help="boolean to specify that the CMD should be included as a runscript (default is not included)", 
+                        help="boolean to specify that CMD should be used instead of ENTRYPOINT as the runscript.", 
                         default=False)
 
 
@@ -93,7 +93,7 @@ def main():
     if args.notoken == True:
        doauth = False
 
-    # Does the user want to include the CMD as runscript?
+    # Does the user want to override default Entrypoint and use CMD as runscript?
     includecmd = args.includecmd
 
     # Do we have a docker image specified?
@@ -178,21 +178,18 @@ def main():
      
     # If the user wants to include the CMD as runscript, generate it here
     if includecmd == True:
+        spec="Cmd"
+    else:
+        spec="Entrypoint"
 
-        cmd = get_config(manifest) # default is spec="Cmd"
+    cmd = get_config(manifest,spec=spec)
 
-        # Only add runscript if command is defined
-        if cmd != None:
-            print("Adding Docker CMD as Singularity runscript...")
-            runscript = create_runscript(cmd=cmd,
-                                         base_dir=singularity_rootfs)
-
-            # change permission of runscript to 0755 (default)
-            change_permissions("%s/singularity" %(singularity_rootfs))
-
-    # When we finish, change permissions for the entire thing
-    #change_permissions("%s/" %(singularity_rootfs))
-
+    # Only add runscript if command is defined
+    if cmd != None:
+        print("Adding Docker %s as Singularity runscript..." %(spec.upper()))
+        print(cmd)
+        runscript = create_runscript(cmd=cmd,
+                                     base_dir=singularity_rootfs)
 
 if __name__ == '__main__':
     main()

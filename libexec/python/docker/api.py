@@ -40,7 +40,7 @@ def create_runscript(cmd,base_dir):
     :param base_dir: the base directory to write the runscript to
     '''
     runscript = "%s/singularity" %(base_dir)
-    content = "#!/bin/sh\n\n%s" %(cmd)
+    content = '#!/bin/sh\n\nexec %s "$@"' %(cmd)
     output_file = write_file(runscript,content)
     return output_file
 
@@ -170,10 +170,10 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=True):
     return response
 
 
-def get_config(manifest,spec="Cmd"):
-    '''get_config returns a particular spec (default is Cmd) from a manifest obtained with get_manifest.
+def get_config(manifest,spec="Entrypoint"):
+    '''get_config returns a particular spec (default is Entrypoint) from a manifest obtained with get_manifest.
     :param manifest: the manifest obtained from get_manifest
-    :param spec: the key of the spec to return, default is "Cmd"
+    :param spec: the key of the spec to return, default is "Entrypoint"
     '''
   
     cmd = None
