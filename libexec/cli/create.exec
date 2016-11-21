@@ -92,7 +92,7 @@ fi
 if [ -f "$SINGULARITY_IMAGE" ]; then
     if [ -n "${OVERWRITE:-}" ]; then
         message 2 "Removing existing file\n"
-        /bin/rm -f "$SINGULARITY_IMAGE"
+        rm -f "$SINGULARITY_IMAGE"
     else
         message ERROR "Image file exists, not overwriting.\n"
         exit 1
