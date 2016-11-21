@@ -36,7 +36,7 @@
 #include "lib/message.h"
 #include "lib/singularity.h"
 
-//Return 0 if successful, return 1 otherwise.
+/* Return 0 if successful, return -1 otherwise. */
 int singularity_bootstrap_docker() {
 
   int index = 6;
@@ -66,23 +66,14 @@ int singularity_bootstrap_docker() {
   if ( ( python_args[index] = singularity_bootdef_get_value("Registry") ) != NULL ) {
     index++;
   }
-
   if ( ( python_args[index] = singularity_bootdef_get_value("Token" ) ) != NULL ) {
     index++;
   }
+  
   python_args = realloc(python_args, (sizeof(char *) * index) ); //Realloc to free space at end of python_args, is this necessary?
     
   singularity_message(DEBUG, "\n 1: %s \n2: %s \n3: %s \n4: %s \n5: %s", python_args[1], python_args[2], python_args[3], python_args[4], python_args[5]);
-  
-  //  python_args = {
-  //  strdup("python"),
-  //  strdup(LIBEXECDIR "/singularity/python/cli.py"),
-  //  strdup("--docker"),
-  //  singularity_bootdef_get_value("From"),
-  //  strdup("--rootfs"),
-  //  singularity_rootfs_dir()
-  // }
-  
+
   //Python libexecdir/singularity/python/cli.py --docker $docker_image --rootfs $rootfs $docker_cmd $docker_registry $docker_auth
   return(singularity_fork_exec(python_args));
 }
