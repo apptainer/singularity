@@ -154,7 +154,7 @@ char *singularity_bootdef_section_get(char **script, char *section_name) {
       break;
     } else {
       chomp(line);
-      *script = strjoin(*script, line);
+      *script = strjoin( *script, strjoin("\n", line) );
       singularity_message(DEBUG, "script: %s\n", *script);
       /*len = len + strlength(line, 2048);
       if ( ( *script = realloc( *script, len) ) == NULL ) {

@@ -14,5 +14,9 @@
     void bootstrap_copy_runscript();
 
     extern int singularity_bootstrap_docker();
+    extern int singularity_bootstrap_yum();
+    extern int singularity_bootstrap_debootstrap();
+    extern int singularity_bootstrap_busybox();
+    extern int singularity_bootstrap_arch();
 
 #endif
