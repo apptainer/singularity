@@ -35,7 +35,6 @@
 
 
 #define MAX_LINE_LEN 2048
-
 FILE *bootdef_fp = NULL;
 
 //All bootstrap definition file parser functions should follow singularity_bootdef_* naming convention
@@ -107,12 +106,9 @@ int singularity_bootdef_get_version() {
   }
 }
 
-//Returns section args as well as leaves file open at first line of the script
-//Returns NULL when section not found
-char *singularity_bootdef_section_find(char *section_name) {
+int singularity_bootdef_section_find(char *section_name) {
   char *line;
   char *tok;
-  char *args;
 
   singularity_message(VERBOSE, "Searching for section %%%s\n", section_name);
   if ( bootdef_fp == NULL ) {
@@ -131,35 +127,26 @@ char *singularity_bootdef_section_find(char *section_name) {
       singularity_message(DEBUG, "Comparing token: %s to section name: %s\n", tok, section_name);
 
       if ( strcmp(tok, section_name) == 0 ) {
-	args = strdup("-e -x");
-	
-	while ( ( tok = strtok(NULL, "%% :") ) != NULL ) {
-	  args = strjoin( args, strjoin(" ", tok) );
-	}
-	
-	singularity_message(DEBUG, "Returning args: %s\n", args);
+	singularity_message(DEBUG, "Found %%%s section, returning 0.\n", section_name);
 	free(line);
-	return(args);
+	return(0);
       }
     }
   }
-  singularity_message(DEBUG, "Returning NULL\n");
+  singularity_message(DEBUG, "Unable to find %%%s section\n", section_name);
   free(line);
-  return(NULL);
+  return(-1);
 }
 
 
-
-//Can either directly call on get-section binary, or reimplement it here. Not sure what the best idea is?
-char *singularity_bootdef_section_get(char **script, char *section_name) {
-  char *script_args;
+int singularity_bootdef_section_get(char **script, char *section_name) {
   char *line;
   int len = 1;
 
   singularity_message(VERBOSE, "Attempting to find and return script defined by section %%%s\n", section_name);
-  if( ( script_args = singularity_bootdef_section_find(section_name) ) == NULL ) {
+  if( singularity_bootdef_section_find(section_name) == -1 ) {
     singularity_message(DEBUG, "Unable to find section: %%%s in bootstrap definition file\n", section_name);
-    return(NULL);
+    return(-1);
   }
 
   *script = strdup("");
@@ -172,14 +159,8 @@ char *singularity_bootdef_section_get(char **script, char *section_name) {
       chomp(line);
       *script = strjoin( *script, strjoin("\n", line) );
       singularity_message(DEBUG, "script: %s\n", *script);
-      /*len = len + strlength(line, 2048);
-      if ( ( *script = realloc( *script, len) ) == NULL ) {
-	singularity_message(ERROR, "Unable to allocate enough memory. Aborting...\n");
-	ABORT(255);
-      }
-      snprintf(*script, len, "%s%s", *script, line);*/
     }
   }
   free(line);
-  return(script_args);
+  return(0);
 }
