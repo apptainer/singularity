@@ -113,6 +113,9 @@ stest 1 singularity bogus help
 /bin/echo "Building test container..."
 
 stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/docker.def"
+stest 0 sudo rm -rf "$CONTAINER"
+stest 0 sudo singularity create -s 568 "$CONTAINER"
 # We will need a setuid binary (ping) for the NO_NEW_PRIVS test below.
 stest 0 sed -i "$STARTDIR/examples/centos.def" -e 's|#InstallPkgs yum vim-minimal|InstallPkgs iputils|'
 stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/busybox.def"
@@ -178,15 +181,15 @@ stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
 /bin/echo
 /bin/echo "Checking Bootstrap on existing container..."
 
-stest 0 sudo singularity bootstrap "$CONTAINER"
-stest 0 singularity exec "$CONTAINER" test -f /environment
-stest 0 sudo singularity exec -w "$CONTAINER" rm /environment
-stest 1 singularity exec "$CONTAINER" test -f /environment
-stest 0 sudo singularity bootstrap "$CONTAINER"
-stest 0 singularity exec "$CONTAINER" test -f /environment
-stest 0 singularity exec "$CONTAINER" test -f /.shell
-stest 0 singularity exec "$CONTAINER" test -f /.exec
-stest 0 singularity exec "$CONTAINER" test -f /.run
+stest 1 sudo singularity bootstrap "$CONTAINER"
+#stest 0 singularity exec "$CONTAINER" test -f /environment
+#stest 0 sudo singularity exec -w "$CONTAINER" rm /environment
+#stest 1 singularity exec "$CONTAINER" test -f /environment
+#stest 0 sudo singularity bootstrap "$CONTAINER"
+#stest 0 singularity exec "$CONTAINER" test -f /environment
+#stest 0 singularity exec "$CONTAINER" test -f /.shell
+#stest 0 singularity exec "$CONTAINER" test -f /.exec
+#stest 0 singularity exec "$CONTAINER" test -f /.run
 
 
 /bin/echo
