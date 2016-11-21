@@ -30,7 +30,7 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-#include "lib/image-util.h"
+#include "lib/singularity.h"
 
 
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"

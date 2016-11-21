@@ -34,7 +34,7 @@
 #include "util/util.h"
 
 
-int main(int argc, char ** argv) {
+int singularity_image_extern_expand(int argc, char ** argv) {
     long int size;
 
     if ( argv[1] == NULL ) {

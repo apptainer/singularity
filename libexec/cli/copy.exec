@@ -72,4 +72,4 @@ export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
 shift
 
 
-exec "$SINGULARITY_libexecdir/singularity/image-mount" "$SINGULARITY_libexecdir/singularity/helpers/copy.sh" "$@"
+exec "$SINGULARITY_libexecdir/singularity/simage" "mount" "$SINGULARITY_libexecdir/singularity/helpers/copy.sh" "$@"

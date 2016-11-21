@@ -82,7 +82,7 @@ export SINGULARITY_IMAGE
 shift
 
 
-exec "$SINGULARITY_libexecdir/singularity/image-mount" "$SINGULARITY_libexecdir/singularity/helpers/image-export.sh" "$@"
+exec "$SINGULARITY_libexecdir/singularity/simage" "mount" "$SINGULARITY_libexecdir/singularity/helpers/image-export.sh" "$@"
 
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
