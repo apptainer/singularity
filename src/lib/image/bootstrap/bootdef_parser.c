@@ -37,8 +37,16 @@
 #define MAX_LINE_LEN 2048
 FILE *bootdef_fp = NULL;
 
-//All bootstrap definition file parser functions should follow singularity_bootdef_* naming convention
-
+/* 
+ * Opens up config file for reading. Config parsing works by scanning
+ * the file line by line. bootdef_fp will not be reset to the beginning
+ * of the file after each function, you must do this yourself. Otherwise
+ * the next function call will pick up where the file was left from
+ * the last function.
+ *
+ * @param char *bootdef_path pointer to string containing path to configuration file
+ * @returns 0 on success, -1 on failure 
+ */
 int singularity_bootdef_open(char *bootdef_path) {
   singularity_message(VERBOSE, "Opening bootstrap definition file: %s\n", bootdef_path);
   if ( is_file(bootdef_path) == 0 ) {
@@ -50,6 +58,11 @@ int singularity_bootdef_open(char *bootdef_path) {
   return(-1);
 }
 
+/*  
+ * Reset bootdef_fp to line 0
+ *
+ * @returns nothing
+ */
 void singularity_bootdef_rewind() {
   singularity_message(VERBOSE, "Rewinding bootstrap definition file\n");
   if ( bootdef_fp != NULL ) {
@@ -57,6 +70,11 @@ void singularity_bootdef_rewind() {
   }
 }
 
+/*
+ * Closes bootdef_fp
+ * 
+ * @returns nothing
+ */
 void singularity_bootdef_close() {
   singularity_message(VERBOSE, "Closing bootstrap definition file\n");
   if ( bootdef_fp != NULL ) {
@@ -65,7 +83,16 @@ void singularity_bootdef_close() {
   }
 }
 
-//Equal to singularity_key_get in functions
+/* 
+ * Moves line by line through bootdef_fp until key is found. Once key is 
+ * found the value is returned. The file remains opened at the line 
+ * that contained key, thus requiring multiple calls to find all values
+ * corresponding with key. Should call singularity_bootdef_rewind() before
+ * searching for a new key to ensure entire config file is searched. 
+ *
+ * @param char *key pointer to string containing key to search for in bootdef_fp
+ * @returns NULL if key not found, otherways returns value
+ */
 char *singularity_bootdef_get_value(char *key) {
   char *bootdef_key;
   char *bootdef_value;
@@ -96,6 +123,11 @@ char *singularity_bootdef_get_value(char *key) {
   return(NULL);
 }
 
+/*
+ * Finds out whether bootdef_fp uses driver-v1 or driver-v2 syntax
+ * 
+ * @returns 1 if driver-v1, 2 if driver-v2
+ */
 int singularity_bootdef_get_version() {
   char *v1_key = "DistType";
 
@@ -106,6 +138,13 @@ int singularity_bootdef_get_version() {
   }
 }
 
+/*
+ * Searches the bootdef file for the script section given by section_name. Leaves
+ * the file pointer open to the first line of the script if found.
+ *
+ * @param char *section_name pointer to string containing name of script section to search for
+ * @returns 0 if section was successfully located, -1 if it was not
+ */
 int singularity_bootdef_section_find(char *section_name) {
   char *line;
   char *tok;
@@ -138,10 +177,18 @@ int singularity_bootdef_section_find(char *section_name) {
   return(-1);
 }
 
-
+/*
+ * Locates script defined by section_name in bootdef_fp, parsers each line
+ * of the script and concatenates all the commands into one long string defined
+ * at *script. Each command is stripped of leading/trailing whitespace, and each
+ * is separated by a \n newline character
+ *
+ * @param char **script pointer to a pointer where the script should be stored
+ * @param char *section_name pointer to string containing name of script section to parse
+ * @returns 0 if script was found, -1 if script was not found
+ */
 int singularity_bootdef_section_get(char **script, char *section_name) {
   char *line;
-  int len = 1;
 
   singularity_message(VERBOSE, "Attempting to find and return script defined by section %%%s\n", section_name);
   if( singularity_bootdef_section_find(section_name) == -1 ) {
