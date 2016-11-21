@@ -148,14 +148,12 @@ int singularity_bootstrap(int argc, char ** argv) {
 void singularity_bootstrap_script_run(char *section_name) {
   char **fork_args;
   char **script;
-  char *args;
-  int retval;
 
   fork_args = malloc(sizeof(char *) * 4);
   script = malloc(sizeof(char *));
   
   singularity_message(VERBOSE, "Searching for %%%s bootstrap script\n", section_name);
-  if ( ( args = singularity_bootdef_section_get(script, section_name) ) == NULL ) {
+  if ( singularity_bootdef_section_get(script, section_name) == -1 ) {
     singularity_message(VERBOSE, "No %%%s bootstrap script found, skipping\n", section_name);
     return;
   } else {
@@ -164,10 +162,10 @@ void singularity_bootstrap_script_run(char *section_name) {
     fork_args[1] = strdup("-c");
     fork_args[2] = *script;
     fork_args[3] = NULL;
-    singularity_message(VERBOSE, "Running %%%s bootstrap script\n%s\n%s\n", section_name, fork_args[1], fork_args[2]);
+    singularity_message(VERBOSE, "Running %%%s bootstrap script\n%s%s\n%s\n", section_name, fork_args[0], fork_args[1], fork_args[2]);
 
-    if ( ( retval = singularity_fork_exec(fork_args) ) != 0 ) {
-      singularity_message(WARNING, "Something may have gone wrong. %%%s script exited with status: %i\n", section_name, retval);
+    if ( singularity_fork_exec(fork_args) != 0 ) {
+      singularity_message(WARNING, "Something may have gone wrong. %%%s script exited with non-zero status.\n", section_name);
     }
     free(fork_args[0]);
     free(fork_args[1]);
@@ -286,7 +284,7 @@ void bootstrap_copy_runscript() {
   char **script = malloc(sizeof(char *));
   singularity_message(DEBUG, "Searching for runscript in definition file.\n");
 
-  if ( singularity_bootdef_section_get(script, "runscript") == NULL ) {
+  if ( singularity_bootdef_section_get(script, "runscript") == -1 ) {
     singularity_message(VERBOSE, "Definition file does not contain runscript, skipping.\n");
     free(script);
     return;

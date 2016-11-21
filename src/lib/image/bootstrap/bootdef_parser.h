@@ -26,7 +26,7 @@
     void singularity_bootdef_close();
     char *singularity_bootdef_get_value(char *key);
     int singularity_bootdef_get_version();
-    char *singularity_bootdef_section_find(char *section_name);
-    char *singularity_bootdef_section_get(char **script, char *section_name);
+    int singularity_bootdef_section_find(char *section_name);
+    int singularity_bootdef_section_get(char **script, char *section_name);
 
 #endif
