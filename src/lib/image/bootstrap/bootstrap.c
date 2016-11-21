@@ -28,7 +28,6 @@ static char *rootfs_path;
 
 int singularity_bootstrap(int argc, char ** argv) {
   char *containerimage;
-  char *bootdef_path;
   char *driver_v1_path = LIBEXECDIR "/singularity/bootstrap/driver-v1.sh";
   singularity_message(VERBOSE, "Preparing to bootstrap image with definition file: %s\n", argv[1]);
   
@@ -47,21 +46,24 @@ int singularity_bootstrap(int argc, char ** argv) {
 
   /* Sanity check to ensure we can properly open the bootstrap definition file */
   singularity_message(DEBUG, "Opening singularity bootdef file: %s\n", argv[1]);
+  setenv("SINGULARITY_BUILDDEF", argv[1], 1);
   if( singularity_bootdef_open(argv[1]) != 0 ) {
     singularity_message(ERROR, "Could not open bootdef file\n");
     ABORT(255);
   }
 
-  /* Run logic from lib/image/mount/mount.c in order to streamline the workflow */
+  /* Initialize namespaces and session directory on the host */
   singularity_message(DEBUG, "Initializing container directory\n");
   singularity_sessiondir_init(containerimage);
   singularity_ns_user_unshare();
   singularity_ns_mnt_unshare();
 
+  /* Initialize container rootfs directory and corresponding variables */
   singularity_message(DEBUG, "Mounting container rootfs\n");
   singularity_rootfs_init(containerimage);
   singularity_rootfs_mount();
   rootfs_path = singularity_rootfs_dir();
+  setenv("SINGULARITY_ROOTFS", singularity_rootfs_dir(), 1);
 
   /* Determine if Singularity file is v1 or v2. v1 files will directly use the old driver-v1.sh script */
   if( singularity_bootdef_get_version() == 1 ) {
@@ -141,9 +143,10 @@ void singularity_bootstrap_script_run(char *section_name) {
     singularity_message(VERBOSE, "No %%%s bootstrap script found, skipping\n", section_name);
     return;
   } else {
+    
     fork_args[0] = strdup("/bin/sh");
-    fork_args[1] = *script;
-    fork_args[2] = NULL;
+    fork_args[1] = strdup("-c");
+    fork_args[2] = *script;
     fork_args[3] = NULL;
     singularity_message(VERBOSE, "Running %%%s bootstrap script\n%s\n%s\n", section_name, fork_args[1], fork_args[2]);
 
@@ -166,7 +169,7 @@ void singularity_bootstrap_script_run(char *section_name) {
 int bootstrap_module_init() {
   singularity_bootdef_rewind();
 
-  if ( ( module_name = singularity_bootdef_get_value("Bootstrap") ) == NULL ) {
+  if ( ( module_name = singularity_bootdef_get_value("BootStrap") ) == NULL ) {
     singularity_message(ERROR, "Bootstrap definition file does not contain required Bootstrap: option\n");
     return(-1);
 
@@ -176,19 +179,19 @@ int bootstrap_module_init() {
     if ( strcmp(module_name, "docker") == 0 ) { //Docker
       return( singularity_bootstrap_docker() );
 
-    } /*else if ( strcmp(module_name, "yum") ) { //Yum
-      return( singularity_bootstrap_yum_init() );
+    } else if ( strcmp(module_name, "yum") == 0) { //Yum
+      return( singularity_bootstrap_yum() );
 
-    } else if ( strcmp(module_name, "debootstrap") ) { //Debootstrap
-      return( singularity_bootstrap_debootstrap_init() );
+    } else if ( strcmp(module_name, "debootstrap") == 0 ) { //Debootstrap
+      return( singularity_bootstrap_debootstrap() );
 
-    } else if ( strcmp(module_name, "arch") ) { //Arch
-      return( singularity_bootstrap_arch_init() );
+    } else if ( strcmp(module_name, "arch") == 0 ) { //Arch
+      return( singularity_bootstrap_arch() );
 
-    } else if ( strcmp(module_name, "busybox") ) { //Busybox
-      return( singularity_bootstrap_busybox_init() );
+    } else if ( strcmp(module_name, "busybox") == 0 ) { //Busybox
+      return( singularity_bootstrap_busybox() );
 
-    } */else {
+    } else {
       singularity_message(ERROR, "Could not parse bootstrap module of type: %s\n", module_name);
       return(-1);
     }
