@@ -22,6 +22,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
+from logman import logger
 import os
 import re
 import shutil
@@ -77,7 +78,7 @@ def api_get_pagination(url):
        try:
            response = json.loads(response)
        except:
-           print("Error parsing response for url %s, exiting." %(url))
+           logger.error("Error parsing response for url %s, exiting.", url)        
            sys.exit(1)
 
        # If we have a next url
@@ -124,7 +125,7 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
     '''
     headers = parse_headers(default_header=default_header,
                             headers=headers)
-        
+
     # Does the user want to stream a response?
     do_stream = False
     if stream != None:
@@ -133,17 +134,18 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
     if data != None:
         args = urlencode(data)
         request = Request(url=url, 
-                                  data=args, 
-                                  headers=headers) 
+                          data=args, 
+                          headers=headers) 
     else:
         request = Request(url=url, 
-                                  headers=headers) 
+                          headers=headers) 
 
     try:
         response = urlopen(request)
 
     # If we have an HTTPError, try to follow the response
     except HTTPError as error:
+        logger.error("HTTPError %s", error)        
         return error
 
     # Does the call just want to return the response?
@@ -174,10 +176,11 @@ def run_command(cmd):
     :param cmd: the command to send, should be a list for subprocess
     '''
     try:
+        logger.info("Running command %s with subprocess", " ".join(cmd))
         process = subprocess.Popen(cmd,stdout=subprocess.PIPE)
         output, err = process.communicate()
     except OSError as error:
-        print(err)
+        logger.error("Error with subprocess: %s, returning None",error)
         return None
     
     return output
@@ -196,13 +199,13 @@ def change_permissions(path,permission="0755",recursive=True):
     :param recursive: do recursively (default is True)
     '''
     if not isinstance(permission,str):
-        print("Please provide permission as a string, not number!")
+        logger.warning("Please provide permission as a string, not number! Skipping.")
     else:
         permission = str(permission)
         cmd = ["chmod",permission,"-R",path]
         if recursive == False:
            cmd = ["chmod",permission,path]
-        # print("Changing permission of %s to %s" %(path,permission))
+        logger.info("Changing permission of %s to %s with command %s",path,permission," ".join(cmd))
         return run_command(cmd)
 
 
@@ -212,13 +215,16 @@ def extract_tar(targz,output_folder):
     :param output_folder: the output folder to extract to
     '''
     # Just use command line, more succinct.
-    return run_command(["tar","-xzf",targz,"-C",output_folder,"--exclude=dev/*"]) 
+    command = ["tar","-xzf",targz,"-C",output_folder,"--exclude=dev/*"]
+    logger.info("Extracting %s", " ".join(command))
+    return run_command(command) 
 
 
 def write_file(filename,content,mode="w"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
+    logger.info("Writing file %s with mode %s.",filename,mode)
     filey = open(filename,mode)
     filey.writelines(content)
     filey.close()
@@ -231,6 +237,7 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     :param filename: the output file to write to
     :param pretty_print: if True, will use nicer formatting   
     '''
+    logger.info("Writing json file %s with mode %s.",filename,mode)
     filey = open(filename,mode)
     if print_pretty == True:
         filey.writelines(simplejson.dumps(json_obj, indent=4, separators=(',', ': ')))
@@ -244,6 +251,7 @@ def read_file(filename,mode="r"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
+    logger.info("Reading file %s with mode %s.",filename,mode)
     filey = open(filename,mode)
     content = filey.readlines()
     filey.close()
