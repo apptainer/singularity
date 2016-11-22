@@ -39,41 +39,41 @@
 /* Return 0 if successful, return -1 otherwise. */
 int singularity_bootstrap_docker() {
 
-  int index = 6;
-  char ** python_args = malloc( sizeof(char *) * 9 );
+    int index = 6;
+    char ** python_args = malloc( sizeof(char *) * 9 );
 
-  python_args[0] = strdup("python");
-  python_args[1] = strdup(LIBEXECDIR "/singularity/python/cli.py");
-  python_args[2] = strdup("--docker");
-  python_args[3] = singularity_bootdef_get_value("From");
-  python_args[4] = strdup("--rootfs");
-  python_args[5] = singularity_rootfs_dir();
+    python_args[0] = strdup("python");
+    python_args[1] = strdup(LIBEXECDIR "/singularity/python/cli.py");
+    python_args[2] = strdup("--docker");
+    python_args[3] = singularity_bootdef_get_value("From");
+    python_args[4] = strdup("--rootfs");
+    python_args[5] = singularity_rootfs_dir();
 
-  if ( python_args[3] == NULL ) {
-    singularity_message(VERBOSE, "Unable to bootstrap with docker container, missing From in definition file\n");
-    return(1);
-  }
-  
-  if ( ( python_args[index] = singularity_bootdef_get_value("IncludeCmd") ) != NULL ) {
-    if ( strcmp(python_args[index], "yes") == 0 ) {
-      python_args[index] = strdup("--cmd");
-      index++;
-    } else {
-      python_args[index] = NULL;
+    if ( python_args[3] == NULL ) {
+        singularity_message(VERBOSE, "Unable to bootstrap with docker container, missing From in definition file\n");
+        return(1);
     }
-  }
-
-  if ( ( python_args[index] = singularity_bootdef_get_value("Registry") ) != NULL ) {
-    index++;
-  }
-  if ( ( python_args[index] = singularity_bootdef_get_value("Token" ) ) != NULL ) {
-    index++;
-  }
   
-  python_args = realloc(python_args, (sizeof(char *) * index) ); //Realloc to free space at end of python_args, is this necessary?
-    
-  singularity_message(DEBUG, "\n 1: %s \n2: %s \n3: %s \n4: %s \n5: %s", python_args[1], python_args[2], python_args[3], python_args[4], python_args[5]);
+    if ( ( python_args[index] = singularity_bootdef_get_value("IncludeCmd") ) != NULL ) {
+        if ( strcmp(python_args[index], "yes") == 0 ) {
+            python_args[index] = strdup("--cmd");
+            index++;
+        } else {
+            python_args[index] = NULL;
+        }
+    }
 
-  //Python libexecdir/singularity/python/cli.py --docker $docker_image --rootfs $rootfs $docker_cmd $docker_registry $docker_auth
-  return(singularity_fork_exec(python_args));
+    if ( ( python_args[index] = singularity_bootdef_get_value("Registry") ) != NULL ) {
+        index++;
+    }
+    if ( ( python_args[index] = singularity_bootdef_get_value("Token" ) ) != NULL ) {
+        index++;
+    }
+  
+    python_args = realloc(python_args, (sizeof(char *) * index) ); //Realloc to free space at end of python_args, is this necessary?
+    
+    singularity_message(DEBUG, "\n 1: %s \n2: %s \n3: %s \n4: %s \n5: %s", python_args[1], python_args[2], python_args[3], python_args[4], python_args[5]);
+
+    //Python libexecdir/singularity/python/cli.py --docker $docker_image --rootfs $rootfs $docker_cmd $docker_registry $docker_auth
+    return(singularity_fork_exec(python_args));
 }

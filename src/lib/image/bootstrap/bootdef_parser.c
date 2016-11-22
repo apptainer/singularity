@@ -48,14 +48,14 @@ FILE *bootdef_fp = NULL;
  * @returns 0 on success, -1 on failure 
  */
 int singularity_bootdef_open(char *bootdef_path) {
-  singularity_message(VERBOSE, "Opening bootstrap definition file: %s\n", bootdef_path);
-  if ( is_file(bootdef_path) == 0 ) {
-    if ( ( bootdef_fp = fopen(bootdef_path, "r") ) != NULL ) { // Flawfinder: ignore (we have to open the file...)
-      return(0);
+    singularity_message(VERBOSE, "Opening bootstrap definition file: %s\n", bootdef_path);
+    if ( is_file(bootdef_path) == 0 ) {
+        if ( ( bootdef_fp = fopen(bootdef_path, "r") ) != NULL ) { // Flawfinder: ignore (we have to open the file...)
+            return(0);
+        }
     }
-  }
-  singularity_message(ERROR, "Could not open bootstrap definition file %s: %s\n", bootdef_path, strerror(errno));
-  return(-1);
+    singularity_message(ERROR, "Could not open bootstrap definition file %s: %s\n", bootdef_path, strerror(errno));
+    return(-1);
 }
 
 /*  
@@ -64,10 +64,10 @@ int singularity_bootdef_open(char *bootdef_path) {
  * @returns nothing
  */
 void singularity_bootdef_rewind() {
-  singularity_message(VERBOSE, "Rewinding bootstrap definition file\n");
-  if ( bootdef_fp != NULL ) {
-    rewind(bootdef_fp);
-  }
+    singularity_message(VERBOSE, "Rewinding bootstrap definition file\n");
+    if ( bootdef_fp != NULL ) {
+        rewind(bootdef_fp);
+    }
 }
 
 /*
@@ -76,11 +76,11 @@ void singularity_bootdef_rewind() {
  * @returns nothing
  */
 void singularity_bootdef_close() {
-  singularity_message(VERBOSE, "Closing bootstrap definition file\n");
-  if ( bootdef_fp != NULL ) {
-    fclose(bootdef_fp);
-    bootdef_fp = NULL;
-  }
+    singularity_message(VERBOSE, "Closing bootstrap definition file\n");
+    if ( bootdef_fp != NULL ) {
+        fclose(bootdef_fp);
+        bootdef_fp = NULL;
+    }
 }
 
 /* 
@@ -94,33 +94,33 @@ void singularity_bootdef_close() {
  * @returns NULL if key not found, otherways returns value
  */
 char *singularity_bootdef_get_value(char *key) {
-  char *bootdef_key;
-  char *bootdef_value;
-  char *line;
+    char *bootdef_key;
+    char *bootdef_value;
+    char *line;
 
-  if ( bootdef_fp == NULL ) {
-    singularity_message(ERROR, "Called singularity_bootdef_get_value() before opening a bootstrap definition file!\n");
-    ABORT(255);
-  }
-
-  line = (char *)malloc(MAX_LINE_LEN);
-
-  while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
-    if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
-      chomp(bootdef_key);
-      if ( strcmp(bootdef_key, key) == 0 ) {
-	if ( ( bootdef_value = strdup(strtok(NULL, ":")) ) != NULL ) {
-	  chomp(bootdef_value);
-	  singularity_message(VERBOSE2, "Got bootstrap definition key %s(: '%s')\n", key, bootdef_value);
-	  return(bootdef_value);
-	}
-      }
+    if ( bootdef_fp == NULL ) {
+        singularity_message(ERROR, "Called singularity_bootdef_get_value() before opening a bootstrap definition file!\n");
+        ABORT(255);
     }
-  }
-  free(line);
 
-  singularity_message(DEBUG, "No bootstrap definition file entry found for '%s'\n", key);
-  return(NULL);
+    line = (char *)malloc(MAX_LINE_LEN);
+
+    while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
+        if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
+            chomp(bootdef_key);
+            if ( strcmp(bootdef_key, key) == 0 ) {
+                if ( ( bootdef_value = strdup(strtok(NULL, ":")) ) != NULL ) {
+                    chomp(bootdef_value);
+                    singularity_message(VERBOSE2, "Got bootstrap definition key %s(: '%s')\n", key, bootdef_value);
+                    return(bootdef_value);
+                }
+            }
+        }
+    }
+    free(line);
+
+    singularity_message(DEBUG, "No bootstrap definition file entry found for '%s'\n", key);
+    return(NULL);
 }
 
 /*
@@ -129,13 +129,13 @@ char *singularity_bootdef_get_value(char *key) {
  * @returns 1 if driver-v1, 2 if driver-v2
  */
 int singularity_bootdef_get_version() {
-  char *v1_key = "DistType";
+    char *v1_key = "DistType";
 
-  if( singularity_bootdef_get_value(v1_key) != NULL ) {
-    return(1);
-  } else {
-    return(2);
-  }
+    if( singularity_bootdef_get_value(v1_key) != NULL ) {
+        return(1);
+    } else {
+        return(2);
+    }
 }
 
 /*
@@ -146,35 +146,35 @@ int singularity_bootdef_get_version() {
  * @returns 0 if section was successfully located, -1 if it was not
  */
 int singularity_bootdef_section_find(char *section_name) {
-  char *line;
-  char *tok;
+    char *line;
+    char *tok;
 
-  singularity_message(VERBOSE, "Searching for section %%%s\n", section_name);
-  if ( bootdef_fp == NULL ) {
-    singularity_message(ERROR, "Called singularity_bootdef_section_find() before opening a bootstrap definition file. Aborting...\n");
-    ABORT(255);
-  }
-
-  singularity_bootdef_rewind();
-  line = (char *)malloc(MAX_LINE_LEN);
-
-  singularity_message(DEBUG, "Scanning file for start of %%%s section\n", section_name);
-  while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
-    chomp(line);
-
-    if ( ( tok = strtok(line, "%% :") ) != NULL ) {
-      singularity_message(DEBUG, "Comparing token: %s to section name: %s\n", tok, section_name);
-
-      if ( strcmp(tok, section_name) == 0 ) {
-	singularity_message(DEBUG, "Found %%%s section, returning 0.\n", section_name);
-	free(line);
-	return(0);
-      }
+    singularity_message(VERBOSE, "Searching for section %%%s\n", section_name);
+    if ( bootdef_fp == NULL ) {
+        singularity_message(ERROR, "Called singularity_bootdef_section_find() before opening a bootstrap definition file. Aborting...\n");
+        ABORT(255);
     }
-  }
-  singularity_message(DEBUG, "Unable to find %%%s section\n", section_name);
-  free(line);
-  return(-1);
+
+    singularity_bootdef_rewind();
+    line = (char *)malloc(MAX_LINE_LEN);
+
+    singularity_message(DEBUG, "Scanning file for start of %%%s section\n", section_name);
+    while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
+        chomp(line);
+
+        if ( ( tok = strtok(line, "%% :") ) != NULL ) {
+            singularity_message(DEBUG, "Comparing token: %s to section name: %s\n", tok, section_name);
+
+            if ( strcmp(tok, section_name) == 0 ) {
+                singularity_message(DEBUG, "Found %%%s section, returning 0.\n", section_name);
+                free(line);
+                return(0);
+            }
+        }
+    }
+    singularity_message(DEBUG, "Unable to find %%%s section\n", section_name);
+    free(line);
+    return(-1);
 }
 
 /*
@@ -188,26 +188,26 @@ int singularity_bootdef_section_find(char *section_name) {
  * @returns 0 if script was found, -1 if script was not found
  */
 int singularity_bootdef_section_get(char **script, char *section_name) {
-  char *line;
+    char *line;
 
-  singularity_message(VERBOSE, "Attempting to find and return script defined by section %%%s\n", section_name);
-  if( singularity_bootdef_section_find(section_name) == -1 ) {
-    singularity_message(DEBUG, "Unable to find section: %%%s in bootstrap definition file\n", section_name);
-    return(-1);
-  }
-
-  *script = strdup("");
-  line = (char *)malloc(MAX_LINE_LEN);
-  while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
-    singularity_message(DEBUG, "Reading line: %s", line);
-    if( strncmp(line, "%%", 1) == 0 ) {
-      break;
-    } else {
-      chomp(line);
-      *script = strjoin( *script, strjoin("\n", line) );
-      singularity_message(DEBUG, "script: %s\n", *script);
+    singularity_message(VERBOSE, "Attempting to find and return script defined by section %%%s\n", section_name);
+    if( singularity_bootdef_section_find(section_name) == -1 ) {
+        singularity_message(DEBUG, "Unable to find section: %%%s in bootstrap definition file\n", section_name);
+        return(-1);
     }
-  }
-  free(line);
-  return(0);
+
+    *script = strdup("");
+    line = (char *)malloc(MAX_LINE_LEN);
+    while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
+        singularity_message(DEBUG, "Reading line: %s", line);
+        if( strncmp(line, "%%", 1) == 0 ) {
+            break;
+        } else {
+            chomp(line);
+            *script = strjoin( *script, strjoin("\n", line) );
+            singularity_message(DEBUG, "script: %s\n", *script);
+        }
+    }
+    free(line);
+    return(0);
 }
