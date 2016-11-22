@@ -68,10 +68,9 @@ $ PREFIX=/opt/singularity
 $ rpmbuild -ta --define="_prefix $PREFIX" --define "_sysconfdir $PREFIX/etc" --define "_defaultdocdir $PREFIX/share" singularity-*.tar.gz
 ```
 
-### Building an DEB directly from source
+### Building a DEB directly from source
 
-To build a deb package for Debian/Ubuntu/LinuxMint the first time on on a fresh pull invoke the following commands:
-fakeroot dpkg-buildpackage -b -us -uc
+To build a deb package for Debian/Ubuntu/LinuxMint invoke the following commands:
 
 ```bash
 $ fakeroot dpkg-buildpackage -b -us -uc # sudo will ask for a password to run the tests
@@ -83,7 +82,7 @@ In that case run the following sequence:
 
 ```bash
 $ echo "echo SKIPPING TESTS THEYRE BROKEN" > ./test.sh
-$ fakeroot dpkg-buildpackage -nc -b -us -uc # this will run the build without an initial 'make clean'
+$ fakeroot dpkg-buildpackage -nc -b -us -uc # this will continue the previous build without an initial 'make clean'
 ```
 
 ## Security
