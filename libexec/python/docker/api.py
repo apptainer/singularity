@@ -2,7 +2,7 @@
 
 '''
 
-docker.py: Docker helper functions for Singularity in Python
+api.py: Docker helper functions for Singularity in Python
 
 Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
 
