@@ -104,8 +104,9 @@ def get_images(repo_name=None,namespace=None,manifest=None,repo_tag="latest",reg
     if 'fsLayers' in manifest:
         for fslayer in manifest['fsLayers']:
             if 'blobSum' in fslayer:
-                logger.info("Adding digest %s",fslayer['blobSum'])
-                digests.append(fslayer['blobSum'])
+                if fslayer['blobSum'] not in digests:
+                    logger.info("Adding digest %s",fslayer['blobSum'])
+                    digests.append(fslayer['blobSum'])
     return digests
     
 
@@ -202,7 +203,7 @@ def get_config(manifest,spec="Entrypoint"):
     return cmd
 
 
-def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,auth=True):
+def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,auth=True,token=None):
     '''get_layer will download an image layer (.tar.gz) to a specified download folder.
     :param image_id: the (full) image id to get the manifest for, required
     :param namespace: the namespace (eg, "library")
@@ -210,6 +211,7 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
     :param download_folder: if specified, download to folder. Otherwise return response with raw data (not recommended)
     :param registry: the docker registry to use (default will use registry-1.docker.io
     :param auth: does the API require obtaining an authentication Token? (default True)
+    :param token: a token to pass to the api to get a layer (optional)
     '''
     if registry == None:
         registry = api_base
@@ -220,11 +222,11 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
     logger.info("Downloading layers from %s", base)
     
     # To get the image layers, we need a valid token to read the repo
-    token = None
     if auth == True:
-        token = get_token(repo_name=repo_name,
-                          namespace=namespace,
-                          permission="pull")
+        if token == None:
+            token = get_token(repo_name=repo_name,
+                              namespace=namespace,
+                              permission="pull")
 
     if download_folder != None:
         download_folder = "%s/%s.tar.gz" %(download_folder,image_id)

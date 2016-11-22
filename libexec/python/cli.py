@@ -24,7 +24,15 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from docker.api import get_layer, create_runscript, get_manifest, get_config, get_images
+from docker.api import (
+    create_runscript, 
+    get_config, 
+    get_images,
+    get_layer, 
+    get_token,
+    get_manifest 
+)
+
 from utils import extract_tar, change_permissions, get_cache
 from logman import logger
 import argparse
@@ -178,6 +186,11 @@ def main():
 
         layers = []
 
+        # Let's get a token to use across image downloads
+        token = get_token(repo_name=repo_name,
+                          namespace=namespace,
+                          permission="pull")
+
         for image_id in images:
 
             # Download the layer, if we don't have it
@@ -189,7 +202,8 @@ def main():
                                   repo_name=repo_name,
                                   download_folder=cache_base,
                                   registry=args.registry,
-                                  auth=doauth) 
+                                  auth=doauth,
+                                  token=token) 
 
             layers.append(targz) # in case we want a list at the end
                                  # @chrisfilo suggestion to try compiling into one tar.gz
