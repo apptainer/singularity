@@ -28,27 +28,51 @@
 #include <string.h>
 #include <fcntl.h>  
 
-#include "config.h"
+#include "lib/message.h"
 #include "lib/singularity.h"
 #include "util/file.h"
 #include "util/util.h"
 
 
-int singularity_image_extern_expand(int argc, char ** argv) {
-    long int size;
+#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
+#define MAX_LINE_LEN 2048
 
-    if ( argv[1] == NULL ) {
-        fprintf(stderr, "USAGE: %s [singularity container image] [increase size in MiB]\n", argv[0]);
-        return(1);
+
+int singularity_image_expand(char *image, int size) {
+    FILE *image_fp;
+    char *buff = (char *) malloc(1024*1024);
+    long position;
+    int i;
+
+    singularity_message(VERBOSE, "Expanding sparse image at: %s\n", image);
+
+    singularity_message(DEBUG, "Opening image 'r+'\n");
+    if ( ( image_fp = fopen(image, "r+") ) == NULL ) { // Flawfinder: ignore
+        fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
+        return(-1);
     }
 
-    if ( argv[2] == NULL ) {
-        size = 1024;
-    } else {
-        size = ( strtol(argv[2], (char **)NULL, 10) );
-    }
+    singularity_message(DEBUG, "Jumping to the end of the current image file\n");
+    fseek(image_fp, 0L, SEEK_END);
+    position = ftell(image_fp);
 
-    return(singularity_image_expand(argv[1], size));
+    singularity_message(DEBUG, "Removing the footer from image\n");
+    if ( ftruncate(fileno(image_fp), position-1) < 0 ) {
+        fprintf(stderr, "ERROR: Failed truncating the marker bit off of image %s: %s\n", image, strerror(errno));
+        return(-1);
+    }
+    singularity_message(VERBOSE2, "Expanding image by %dMB\n", size);
+    for(i = 0; i < size; i++ ) {
+        if ( fwrite(buff, 1, 1024*1024, image_fp) < 1024 * 1024 ) {
+            singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    }
+    fprintf(image_fp, "0");
+    fclose(image_fp);
+
+    singularity_message(DEBUG, "Returning image_expand(%s, %d) = 0\n", image, size);
 
     return(0);
 }
+
