@@ -38,7 +38,7 @@
 
 /* Return 0 if successful, return -1 otherwise. */
 int singularity_bootstrap_yum() {
-  char ** module_script = malloc( sizeof(char *) * 1);
-  module_script[0] = strdup(LIBEXECDIR "/singularity/bootstrap/modules-v2/build-yum.sh");
-  return(singularity_fork_exec(module_script));
+    char ** module_script = malloc( sizeof(char *) * 1);
+    module_script[0] = strdup(LIBEXECDIR "/singularity/bootstrap/modules-v2/build-yum.sh");
+    return(singularity_fork_exec(module_script));
 }
