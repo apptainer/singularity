@@ -232,7 +232,7 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
         download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
 
         # Update user what we are doing
-        logger.info("Downloading layer %s", image_id)
+        print("Downloading layer %s" %image_id)
 
     return api_get(base,headers=token,stream=download_folder)
     
