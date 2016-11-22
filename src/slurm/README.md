@@ -31,9 +31,9 @@ Finally, a user may select their image through the `--image` optional argument:
 srun --image=/cvmfs/cms.cern.ch/rootfs/x86_64/centos7/latest ls -lh /
 ```
 
-Within a batch file:
+Within a batch file, you would append this header:
 
 ```
-#SBATCH --image=/cvmfs/cms.cern.ch/rootfs/x86_64/centos7/latest ls -lh /
+#SBATCH --image=/cvmfs/cms.cern.ch/rootfs/x86_64/centos7/latest
 ```
 
