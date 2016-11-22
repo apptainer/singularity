@@ -34,7 +34,7 @@
 #include "util/file.h"
 
 
-int main(int argc, char ** argv) {
+int singularity_image_extern_create(int argc, char ** argv) {
     long int size;
 
     if ( argv[1] == NULL ) {

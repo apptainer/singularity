@@ -72,7 +72,7 @@ export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
 shift
 
 
-exec "$SINGULARITY_libexecdir/singularity/image-mount" "$SINGULARITY_libexecdir/singularity/helpers/image-import.sh" "$@"
+exec "$SINGULARITY_libexecdir/singularity/simage" "mount" "$SINGULARITY_libexecdir/singularity/helpers/image-import.sh" "$@"
 
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"

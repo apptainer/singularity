@@ -1,4 +1,4 @@
-SUBDIRS = ns rootfs action mount file
+SUBDIRS = ns rootfs action mount file image
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -8,8 +8,8 @@ AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 noinst_LTLIBRARIES = libsingularity_internal.la
-libsingularity_internal_la_LIBADD = ns/libns.la rootfs/librootfs.la action/libaction.la mount/libmount.la file/libfile.la
-libsingularity_internal_la_SOURCES = singularity.c privilege.c message.c util.c file.c sessiondir.c config_parser.c fork.c loop-control.c image-util.c
+libsingularity_internal_la_LIBADD = ns/libns.la rootfs/librootfs.la action/libaction.la mount/libmount.la file/libfile.la image/libimage.la
+libsingularity_internal_la_SOURCES = singularity.c privilege.c message.c util.c file.c sessiondir.c config_parser.c fork.c loop-control.c
 libsingularity_internal_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
 include_HEADERS = singularity.h
@@ -20,5 +20,5 @@ libsingularity_la_LIBADD = libsingularity_internal.la
 libsingularity_la_LDFLAGS = -version-info 1:0:0 
 libsingularity_la_CFLAGS = $(AM_CFLAGS)
 
-EXTRA_DIST = config_parser.h fork.h image-util.h loop-control.h message.h privilege.h sessiondir.h singularity.h
+EXTRA_DIST = config_parser.h fork.h loop-control.h message.h privilege.h sessiondir.h singularity.h
 

@@ -36,6 +36,28 @@
 #include "lib/ns/ns.h"
 #include "lib/rootfs/rootfs.h"
 
+static int mount_dev(const char *dev) {
+    char *container_dir = singularity_rootfs_dir();
+    char *path = joinpath(container_dir, dev);
+
+    singularity_message(DEBUG, "Mounting device %s at %s\n", dev, path);
+
+    if ( is_chr(path) == 0 ) {
+        return(0);
+    }
+
+    if ( fileput(path, "") < 0 ) {
+        singularity_message(VERBOSE, "Can not create %s: %s\n", dev, strerror(errno));
+        return(-1);
+    }
+
+    if ( mount(dev, path, NULL, MS_BIND, NULL) < 0 ) {
+        unlink(path);
+        singularity_message(VERBOSE, "Can not mount %s: %s\n", dev, strerror(errno));
+    }
+
+    return(0);
+}
 
 int singularity_mount_dev(void) {
     char *container_dir = singularity_rootfs_dir();
@@ -52,33 +74,10 @@ int singularity_mount_dev(void) {
 
             singularity_priv_escalate();
 
-            singularity_message(DEBUG, "Checking container's /dev/null\n");
-            if ( is_chr(joinpath(container_dir, "/dev/null")) < 0 ) {
-                if ( mknod(joinpath(container_dir, "/dev/null"), S_IFCHR | 0666, makedev(1, 3)) < 0 ) {
-                    singularity_message(VERBOSE, "Can not create /dev/null: %s\n", strerror(errno));
-                }
-            }
-
-            singularity_message(DEBUG, "Checking container's /dev/zero\n");
-            if ( is_chr(joinpath(container_dir, "/dev/zero")) < 0 ) {
-                if ( mknod(joinpath(container_dir, "/dev/zero"), S_IFCHR | 0644, makedev(1, 5)) < 0 ) {
-                    singularity_message(VERBOSE, "Can not create /dev/zero: %s\n", strerror(errno));
-                }
-            }
-
-            singularity_message(DEBUG, "Checking container's /dev/random\n");
-            if ( is_chr(joinpath(container_dir, "/dev/random")) < 0 ) {
-                if ( mknod(joinpath(container_dir, "/dev/random"), S_IFCHR | 0644, makedev(1, 8)) < 0 ) {
-                    singularity_message(VERBOSE, "Can not create /dev/random: %s\n", strerror(errno));
-                }
-            }
-
-            singularity_message(DEBUG, "Checking container's /dev/urandom\n");
-            if ( is_chr(joinpath(container_dir, "/dev/urandom")) < 0 ) {
-                if ( mknod(joinpath(container_dir, "/dev/urandom"), S_IFCHR | 0644, makedev(1, 9)) < 0 ) {
-                    singularity_message(VERBOSE, "Can not create /dev/urandom: %s\n", strerror(errno));
-                }
-            }
+            mount_dev("/dev/null");
+            mount_dev("/dev/zero");
+            mount_dev("/dev/random");
+            mount_dev("/dev/urandom");
 
             singularity_priv_drop();
 
