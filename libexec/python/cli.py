@@ -24,7 +24,15 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from docker.api import get_layer, create_runscript, get_manifest, get_config, get_images
+from docker.api import (
+    create_runscript, 
+    get_config, 
+    get_images,
+    get_layer, 
+    get_token,
+    get_manifest 
+)
+
 from utils import extract_tar, change_permissions, get_cache
 from logman import logger
 import argparse
@@ -65,7 +73,7 @@ def main():
     parser.add_argument("--cmd", 
                         dest='includecmd', 
                         action="store_true",
-                        help="boolean to specify that the CMD should be included as a runscript (default is not included)", 
+                        help="boolean to specify that CMD should be used instead of ENTRYPOINT as the runscript.", 
                         default=False)
 
 
@@ -110,7 +118,7 @@ def main():
        doauth = False
     logger.info("Do registry authentication set to %s", doauth)
 
-    # Does the user want to include the CMD as runscript?
+    # Does the user want to override default Entrypoint and use CMD as runscript?
     includecmd = args.includecmd
     logger.info("Including Docker command as Runscript? %s", includecmd)
 
@@ -178,6 +186,11 @@ def main():
 
         layers = []
 
+        # Let's get a token to use across image downloads
+        token = get_token(repo_name=repo_name,
+                          namespace=namespace,
+                          permission="pull")
+
         for image_id in images:
 
             # Download the layer, if we don't have it
@@ -189,7 +202,8 @@ def main():
                                   repo_name=repo_name,
                                   download_folder=cache_base,
                                   registry=args.registry,
-                                  auth=doauth) 
+                                  auth=doauth,
+                                  token=token) 
 
             layers.append(targz) # in case we want a list at the end
                                  # @chrisfilo suggestion to try compiling into one tar.gz
@@ -200,25 +214,27 @@ def main():
                 os.remove(targz)
                
      
-    # If the user wants to include the CMD as runscript, generate it here
-    if includecmd == True:
+        # If the user wants to include the CMD as runscript, generate it here
+        if includecmd == True:
+            spec="Cmd"
+        else:
+            spec="Entrypoint"
 
-        cmd = get_config(manifest) # default is spec="Cmd"
+        cmd = get_config(manifest,spec=spec)
 
         # Only add runscript if command is defined
         if cmd != None:
-            logger.info("Adding Docker CMD as Singularity runscript...")            
+            print("Adding Docker %s as Singularity runscript..." %(spec.upper()))
+            print(cmd)
             runscript = create_runscript(cmd=cmd,
                                          base_dir=singularity_rootfs)
 
-            # change permission of runscript to 0755 (default)
-            change_permissions("%s/singularity" %(singularity_rootfs))
+        # When we finish, clean up images
+        if args.disable_cache == True:
+            shutil.rmtree(cache_base)
 
-    # When we finish, clean up images
-    if args.disable_cache == True:
-        shutil.rmtree(cache_base)
 
-    logger.info("*** FINISHING DOCKER BOOTSTRAP PYTHON PORTION ****\n")
+        logger.info("*** FINISHING DOCKER BOOTSTRAP PYTHON PORTION ****\n")
 
 
 if __name__ == '__main__':

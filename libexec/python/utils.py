@@ -223,7 +223,7 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
         cache_base = "%s/%s" %(cache_base,subfolder)
         if not os.path.exists(cache_base):
             os.mkdir(cache_base)
-    logger.info("Cache folder set to %s", cache_base)
+    print("Cache folder set to %s" %cache_base)
     return cache_base
 
 
@@ -252,7 +252,7 @@ def extract_tar(targz,output_folder):
     '''
     # Just use command line, more succinct.
     command = ["tar","-xzf",targz,"-C",output_folder,"--exclude=dev/*"]
-    logger.info("Extracting %s", " ".join(command))
+    print("Extracting %s" %(targz))
     return run_command(command) 
 
 

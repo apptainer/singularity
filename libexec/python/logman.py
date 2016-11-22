@@ -35,12 +35,12 @@ def get_logging_level():
         level = logging.ERROR
 
     #define WARNING -2
-    elif MESSAGELEVEL == -2:
+    elif MESSAGELEVEL in [1,-2]:
         level = logging.WARNING
 
     #define LOG -1
     #define INFO 1
-    elif MESSAGELEVEL in [1,-1]:
+    elif MESSAGELEVEL == -1:
         level = logging.INFO
 
     #define VERBOSE 2
