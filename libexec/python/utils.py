@@ -223,7 +223,7 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
         cache_base = "%s/%s" %(cache_base,subfolder)
         if not os.path.exists(cache_base):
             os.mkdir(cache_base)
-    print("Cache folder set to %s" %(cache_base))
+    logger.info("Cache folder set to %s", cache_base)
     return cache_base
 
 

@@ -30,6 +30,7 @@ import sys
 sys.path.append('..') # parent directory
 
 from utils import write_file, read_file
+from logman import logger
 import json
 
 # Parsing functions ---------------------------------------------------------------
@@ -232,6 +233,7 @@ def dockerfile_to_singularity(dockerfile_path, output_dir=None):
         return build_file
 
     # If we make it here, something didn't work
+    logger.error("Could not find %s, exiting.", dockerfile_path)
     return sys.exit(1)
 
 
