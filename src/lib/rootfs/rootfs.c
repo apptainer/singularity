@@ -177,7 +177,6 @@ int singularity_rootfs_mount(void) {
         ABORT(255);
     }
 
-#ifdef SINGULARITY_OVERLAYFS
     singularity_message(DEBUG, "OverlayFS enabled by host build\n");
     singularity_config_rewind();
     if ( singularity_config_get_bool("enable overlay", 1) <= 0 ) {
@@ -187,6 +186,7 @@ int singularity_rootfs_mount(void) {
     } else if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS, image mounted writablable\n");
     } else {
+#ifdef SINGULARITY_OVERLAYFS
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work); // Flawfinder: ignore
 
         singularity_priv_escalate();
@@ -216,9 +216,10 @@ int singularity_rootfs_mount(void) {
         singularity_priv_drop();
 
         overlay_enabled = 1;
-    }
-
+#else /* SINGULARITY_OVERLAYFS */
+        singularity_message(WARNING, "OverlayFS not supported by host build\n");
 #endif /* SINGULARITY_OVERLAYFS */
+    }
 
     if ( overlay_enabled != 1 ) {
         singularity_priv_escalate();

@@ -42,7 +42,7 @@
 #include "util/util.h"
 
 
-int main(int argc, char ** argv) {
+int singularity_image_bind(int argc, char ** argv) {
     uid_t uid = geteuid();
     FILE *containerimage_fp;
     char *containerimage;
@@ -94,5 +94,5 @@ int main(int argc, char ** argv) {
     singularity_message(VERBOSE, "Setting SINGULARITY_LOOPDEV to '%s'\n", loop_dev);
     setenv("SINGULARITY_LOOPDEV", loop_dev, 1);
 
-    return(singularity_fork_exec(&argv[1]));
+    return(0);
 }

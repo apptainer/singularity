@@ -30,10 +30,7 @@ singularity.spec
 test.sh
 
 src/get-section
-src/image-bind
-src/image-create
-src/image-expand
-src/image-mount
+src/simage
 src/sexec
 src/sexec-suid
 src/stamp-h1

@@ -33,7 +33,7 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/config_parser.h"
-#include "lib/image-util.h"
+#include "lib/image/image.h"
 #include "lib/loop-control.h"
 #include "lib/privilege.h"
 
