@@ -70,7 +70,7 @@
     extern int singularity_image_mount(int argc, char ** argv);
     // Bind an image. Replaces old image-bind binary
     extern int singularity_image_bind(int argc, char ** argv);
-    extern int singularity_bootstrap(int argc, char ** argv);
+    extern int singularity_bootstrap(char *containerimage, char *bootdef_path);
 
 
     // ROOTFS

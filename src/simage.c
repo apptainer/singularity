@@ -56,7 +56,7 @@ int main(int argc_in, char ** argv_in) {
     long int size = 1024;
     
     if ( argv[1] == NULL ) {
-        fprintf(stderr, "USAGE: simage command args\n");
+        fprintf(stderr, "USAGE: %s [bootstrap/mount/bind/create/expand] [args]\n", argv[0]);
         return(1);
     }
 
@@ -119,13 +119,11 @@ int main(int argc_in, char ** argv_in) {
 
         /* Run image bootstrap workflow */
         else if ( strcmp(argv[1], "bootstrap") == 0 ) {
-            if ( singularity_bootstrap(argc - 1, &argv[1] != 0 ) ) {
-                singularity_priv_drop_perm();
+            if ( (argv[2] == NULL) || (argv[3] == NULL) ) {
+                fprintf(stderr, "USAGE: %s bootstrap [singularity container image] [bootstrap definition file]\n", argv[0]);
                 return(1);
-            } else {
-                singularity_priv_drop_perm();
-                return(0);
             }
+            return(singularity_bootstrap(argv[2], argv[3]));
         } 
 
         /* If there is a trailing arg containing a script, attempt to execute it */

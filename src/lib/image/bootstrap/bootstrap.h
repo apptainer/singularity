@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_BOOTSTRAP_H_
 #define __SINGULARITY_BOOTSTRAP_H_
     
-    int singularity_bootstrap(int argc, char ** argv);
+    int singularity_bootstrap(char *containerimage, char *bootdef_path);
     void singularity_bootstrap_script_run(char *section_name);
 
     int bootstrap_module_init();

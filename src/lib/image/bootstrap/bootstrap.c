@@ -18,7 +18,6 @@
  * 
  */
 
-#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -31,7 +30,6 @@
 #include <stdlib.h>
 #include <sched.h>
 
-
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
@@ -39,32 +37,19 @@
 #include "lib/image/bootstrap/bootdef_parser.h"
 #include "lib/image/bootstrap/bootstrap.h"
 
+
 static char *module_name;
 static char *rootfs_path;
 
-int singularity_bootstrap(int argc, char ** argv) {
-    char *containerimage;
-    char *driver_v1_path = LIBEXECDIR "/singularity/bootstrap/driver-v1.sh";
-    singularity_message(VERBOSE, "Preparing to bootstrap image with definition file: %s\n", argv[1]);
-  
-    /* Sanity check on input */
-    if ( argv[1] == NULL ) {
-        singularity_message(ERROR, "singularity_bootstrap expects argv[1] to contain file, found NULL\n");
-        return(1);
-    }
 
-    /* Error out if $SINGULARITY_IMAGE is not defined */
-    singularity_message(DEBUG, "Obtaining container name from environment variable\n");
-    if ( ( containerimage = envar_path("SINGULARITY_IMAGE") ) == NULL ) {
-        singularity_message(ERROR, "SINGULARITY_IMAGE not defined!\n");
-        ABORT(255);
-    }
+int singularity_bootstrap(char *containerimage, char *bootdef_path) {
+    char *driver_v1_path = LIBEXECDIR "/singularity/bootstrap/driver-v1.sh";
+    singularity_message(VERBOSE, "Preparing to bootstrap image with definition file: %s\n", bootdef_path);
 
     /* Sanity check to ensure we can properly open the bootstrap definition file */
-    singularity_message(DEBUG, "Opening singularity bootdef file: %s\n", argv[1]);
-    setenv("SINGULARITY_BUILDDEF", argv[1], 1);
-    if( singularity_bootdef_open(argv[1]) != 0 ) {
-        singularity_message(ERROR, "Could not open bootdef file\n");
+    singularity_message(DEBUG, "Opening singularity bootdef file: %s\n", bootdef_path);
+    if( singularity_bootdef_open(bootdef_path) != 0 ) {
+        singularity_message(ERROR, "Could not open bootstrap definition file\n");
         ABORT(255);
     }
 
@@ -79,7 +64,11 @@ int singularity_bootstrap(int argc, char ** argv) {
     singularity_rootfs_init(containerimage);
     singularity_rootfs_mount();
     rootfs_path = singularity_rootfs_dir();
+    
+    /* Set environment variables required for any shell scripts we will call on */
     setenv("SINGULARITY_ROOTFS", singularity_rootfs_dir(), 1);
+    setenv("SINGULARITY_IMAGE", containerimage, 1);
+    setenv("SINGULARITY_BUILDDEF", bootdef_path, 1);
 
     /* Determine if Singularity file is v1 or v2. v1 files will directly use the old driver-v1.sh script */
     if( singularity_bootdef_get_version() == 1 ) {
@@ -87,8 +76,7 @@ int singularity_bootstrap(int argc, char ** argv) {
         singularity_bootdef_close();
     
         /* Directly call on old driver-v1.sh */
-        argv[0] = driver_v1_path; //pointer to some string containing path to driver-v1.sh script
-        singularity_fork_exec(argv); //Use singularity_fork_exec to directly call the v1 driver
+        singularity_fork_exec(&driver_v1_path); //Use singularity_fork_exec to directly call the v1 driver
         return(0);
 
     } else {
