@@ -87,6 +87,12 @@ int rootfs_image_init(char *source, char *mount_dir) {
         if ( ( image_fp = fopen(source, "r") ) != NULL ) { // Flawfinder: ignore
             singularity_message(VERBOSE, "Opened image (read only, without privileges) %s\n", source);
         } else {
+            singularity_config_rewind();
+            if ( singularity_config_get_bool("allow privileged fopen", 0) == 0 ) {
+                singularity_message(ERROR, "Privileged fopen is not enabled in config\n" );
+                ABORT(255);
+            }
+
             singularity_priv_escalate();
             if ( ( image_fp = fopen(source, "r") ) == NULL ) { // Flawfinder: ignore
 	            singularity_message(ERROR, "Could not open image (read only, with privileges) %s: %s\n", source, strerror(errno));
