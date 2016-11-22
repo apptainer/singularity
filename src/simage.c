@@ -43,14 +43,20 @@
 #include "util/util.h"
 
 int main(int argc, char ** argv) {
+    long int size = 1024;
+    
     if ( argv[1] == NULL ) {
         fprintf(stderr, "USAGE: simage command args\n");
         return(1);
-    
     }
 
-    //Loop through argv, each time chopping off argv[0], until argv[1] is a relevant shell script or is empty
-    singularity_priv_init(); //Make sure user is running as root before we add SUID code
+    /* 
+     * Even though we don't have SUID for this binary, singularity_priv_init and 
+     * singularity_priv_escalate can be used to ensure that the calling user is root.
+     */
+    singularity_priv_init();
+
+    /* Loop until we've gone through argv and returned */
     while ( 1 ) {
         singularity_message(DEBUG, "Running %s %s workflow\n", argv[0], argv[1]);
 
@@ -58,37 +64,50 @@ int main(int argc, char ** argv) {
         if ( argv[1] == NULL ) {
             singularity_message(DEBUG, "Finished running simage command and returning\n");
             return(0);
+        }
 
-        } else if ( strcmp(argv[1], "mount") == 0 ) {
+        /* Run image mount workflow */
+        else if ( strcmp(argv[1], "mount") == 0 ) {
             if ( singularity_image_mount(argc - 1, &argv[1]) != 0 ) {
                 singularity_priv_drop_perm();
                 return(1);
             }
-        
-        } else if ( strcmp(argv[1], "bind") == 0 ) {
+        }
+
+        /* Run image bind workflow */
+        else if ( strcmp(argv[1], "bind") == 0 ) {
             if ( singularity_image_bind(argc - 1, &argv[1]) != 0 ) {
                 singularity_priv_drop_perm();
                 return(1);
             }
-        
-        } else if ( strcmp(argv[1], "create") == 0 ) {
-            if ( singularity_image_extern_create(argc - 1, &argv[1]) != 0 ) {
-                singularity_priv_drop_perm();
-                return(1);
-            } else {
-                singularity_priv_drop_perm();
-                return(0);
+        }
+
+        /* Run image create workflow */
+        else if ( strcmp(argv[1], "create") == 0 ) {
+            if ( argv[2] == NULL ) {
+                fprintf(stderr, "USAGE: %s create [singularity container image] [size in MiB]\n", argv[0]);
             }
-        
-        } else if ( strcmp(argv[1], "expand") == 0 ) {
-            if ( singularity_image_extern_expand(argc - 1, &argv[1]) != 0 ) {
-                singularity_priv_drop_perm();
-                return(1);
+            if ( argv[3] != NULL ) {
+                size = ( strtol(argv[3], (char **)NULL, 10) );
             }
+            return(singularity_image_create(argv[2], size));
+        }
         
-        } else {
-            singularity_priv_drop_perm(); //Drop all privs permanently and return to calling user
-            return(singularity_fork_exec(&argv[1])); //Can NOT run this with root privs
+        /* Run image expand workflow */
+        else if ( strcmp(argv[1], "expand") == 0 ) {
+            if ( argv[2] == NULL ) {
+                fprintf(stderr, "USAGE: %s expand [singularity container image] [size in MiB]\n", argv[0]);
+            }
+            if ( argv[3] != NULL ) {
+                size = ( strtol(argv[3], (char **)NULL, 10) );
+            }
+            return(singularity_image_expand(argv[2], size));
+        }
+
+        /* If there is a trailing arg containing a script, attempt to execute it */
+        else {
+            singularity_priv_drop_perm();
+            return(singularity_fork_exec(&argv[1]));
         }
       
         argv++;
