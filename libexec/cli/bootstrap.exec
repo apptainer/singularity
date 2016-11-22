@@ -79,4 +79,4 @@ export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK SINGULARIT
 shift
 shift
 
-exec "$SINGULARITY_libexecdir/singularity/simage" "bootstrap" "$DEFINITION" "$@"
+exec "$SINGULARITY_libexecdir/singularity/simage" "bootstrap" "$SINGULARITY_IMAGE" "$DEFINITION" "$@"
