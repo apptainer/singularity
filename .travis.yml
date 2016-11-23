@@ -18,6 +18,7 @@ before_install:
   # so that adjusted PATH propagates into sudo
   - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
   - sudo apt-get install flawfinder
+  - echo $PATH
 
 install:
   - ./autogen.sh
