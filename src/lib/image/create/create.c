@@ -18,7 +18,6 @@
  * 
  */
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,27 +27,51 @@
 #include <string.h>
 #include <fcntl.h>  
 
-#include "config.h"
+#include "lib/message.h"
 #include "lib/singularity.h"
 #include "util/util.h"
 #include "util/file.h"
 
 
-int singularity_image_extern_create(int argc, char ** argv) {
-    long int size;
+#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
+#define MAX_LINE_LEN 2048
 
-    if ( argv[1] == NULL ) {
-        fprintf(stderr, "USAGE: %s [singularity container image] [size in MiB]\n", argv[0]);
-        return(1);
+
+int singularity_image_create(char *image, int size) {
+    FILE *image_fp;
+    char *buff = (char *) malloc(1024*1024);
+    int i;
+
+    singularity_message(VERBOSE, "Creating new sparse image at: %s\n", image);
+
+    if ( is_file(image) == 0 ) {
+        singularity_message(ERROR, "Will not overwrite existing file: %s\n", image);
+        ABORT(255);
     }
 
-    if ( argv[2] == NULL ) {
-        size = 1024;
-    } else {
-        size = ( strtol(argv[2], (char **)NULL, 10) );
+    singularity_message(DEBUG, "Opening image 'w'\n");
+    if ( ( image_fp = fopen(image, "w") ) == NULL ) { // Flawfinder: ignore
+        fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
+        return(-1);
     }
 
-    return(singularity_image_create(argv[1], size));
+    singularity_message(VERBOSE2, "Writing image header\n");
+    fprintf(image_fp, LAUNCH_STRING); // Flawfinder: ignore (LAUNCH_STRING is a constant)
+
+    singularity_message(VERBOSE2, "Expanding image to %dMB\n", size);
+    for(i = 0; i < size; i++ ) {
+        if ( fwrite(buff, 1, 1024*1024, image_fp) < 1024 * 1024 ) {
+            singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    }
+
+    singularity_message(VERBOSE2, "Making image executable\n");
+    fchmod(fileno(image_fp), 0755);
+
+    fclose(image_fp);
+
+    singularity_message(DEBUG, "Returning image_create(%s, %d) = 0\n", image, size);
 
     return(0);
 }

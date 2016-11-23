@@ -55,7 +55,7 @@
     extern int singularity_ns_user_enabled(void);
 
 
-    // IMAGE-UTIL
+    // IMAGE
     // Check that a particular file is a valid Singularity image (note this
     // is not an exhaustive check, only checks header)
     extern int singularity_image_check(FILE *image_fp);
@@ -66,14 +66,6 @@
     extern int singularity_image_create(char *image, int size);
     // Expand an existing image ...
     extern int singularity_image_expand(char *image, int size);
-
-    // IMAGE
-    // Expand an image by calling singularity_image_expand
-    // Replaces old image-expand binary
-    extern int singularity_image_extern_expand(int argc, char ** argv);
-    // Create an image by calling singularity_image_create
-    // Replaces old image-create binary
-    extern int singularity_image_extern_create(int argc, char ** argv);
     // Mount an image. Replaces old image-mount binary
     extern int singularity_image_mount(int argc, char ** argv);
     // Bind an image. Replaces old image-bind binary
