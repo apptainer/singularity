@@ -2,6 +2,10 @@ language: cpp
 
 addons:
   sonarqube: true
+  apt:
+    packages:
+      - oracle-java8-installer
+      - flawfinder
 
 env:
   global:
@@ -11,17 +15,13 @@ sudo: true
 
 os: linux
 
-# Needed for SonarQube support.
-jdk:
-  - oraclejdk8
-
 compiler:
   - gcc
 
 before_install:
   # so that adjusted PATH propagates into sudo
   - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
-  - sudo apt-get install flawfinder
+  # Testing to see if SonarQube shows up.
   - echo $PATH
 
 install:
