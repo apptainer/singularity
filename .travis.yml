@@ -38,6 +38,7 @@ install:
 
 script:
   - make test
+  - export SONARQUBE_SKIPPED=false
   - jdk_switcher use oraclejdk8
   - sonar-scanner -Dsonar.login=$SONAR_TOKEN
 
