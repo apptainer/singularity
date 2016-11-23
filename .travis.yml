@@ -1,7 +1,9 @@
 language: cpp
 
 addons:
-  sonarqube: true
+  sonarqube:
+    branches:
+      - sonarqube_test
   apt:
     packages:
       - oracle-java8-installer
