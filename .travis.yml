@@ -1,5 +1,12 @@
 language: cpp
 
+addons:
+  sonarqube: true
+
+env:
+  global:
+    - secure: "lqrkBFowgob/DIYzWN1CmlWCY7nWch9jXKCdx44L2x7ieypSgXlWm9iTAvR3uNkGH6RvPfRiHkg0DpeQdXwynCpXbeUsIql2UN+10PvI8DqrRhDZZpRYWUNXv6f8JcA2Cb+XgK005BAX1Ho/MZNHz83mOxKe8lygM50A3uf9Iv9oeSgSlTwOPtCQtK6wNcYx1xJKp8ELGj6V0EXVSBbj6RbZfWzlBwwXDKYWhjI0lgVRKKmPKoGbQV9HWa4LVkrUtjg3z5dB9FqqedSQd/EW7/a+lZigQ7z/EQRRKkeDh4C2K0po+qQGk/8CnMk3aAscgSFsfBMuOxiDdAw2Ey6XTcTh6c30J1934CdlsbtvwfBjNdJnsHI823aiisb6c/pQ2VXlEDXi3O08bOrDGIhIS8tcCFR6QDzo6y+YMciPYVXzUDT7eZd6CyE5Qryju+sEDq75OfoCJaS44DFOZ+Fm8B0A5fShPwEL17bYwnTQelUgoMrWce8rf1AJvMGrpikDsmShF/9qi2EGXFU5BIbELaMFGYd0+b1Eijp8eO4XStcs2NVmSkFQRRdOPeKxOPwh05D7VseyqATx+ZrHrM4JzyFnmszUY1UcnpEhFQwOYN0k/1e6UAaHDKUTrVIX9fWkCt77M/M3VsshjlTqMScakmtYs5gSt/mnGgOnRYRk6Sw="
+
 sudo: true
 
 os: linux
@@ -21,3 +28,4 @@ install:
 
 script:
   - make test
+  - sonar-scanner -Dsonar.login=$SONAR_TOKEN
