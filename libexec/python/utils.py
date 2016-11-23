@@ -295,10 +295,7 @@ def read_file(filename,mode="r"):
 
 
 def clean_path(path):
-    '''clean_path will strip spaces and extra slashes from the path
+    '''clean_path will canonicalize the path
     :param path: the path to clean
     '''
-    path = path.strip(" ")
-    if path[-1] == "/":
-        path = path[:-1]
-    return path
+    return os.path.realpath(path.strip(" "))
