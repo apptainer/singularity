@@ -21,8 +21,13 @@ compiler:
 before_install:
   # so that adjusted PATH propagates into sudo
   - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
-  # Testing to see if SonarQube shows up.
-  - echo $PATH
+  # Seems sonarqube plugin misses the CPP pieces?
+  - mkdir -p      $TRAVIS_BUILD_DIR/3rdparty
+  - cd $TRAVIS_BUILD_DIR/3rdparty
+  - wget https://sonarqube.com/static/cpp/build-wrapper-linux-x86.zip
+  - unzip build-wrapper-linux-x86.zip
+  - export PATH=$PWD/build-wrapper-linux-x86:$PATH
+  - cd $TRAVIS_BUILD_DIR/
 
 install:
   - ./autogen.sh
@@ -33,4 +38,6 @@ install:
 
 script:
   - make test
+  - jdk_switcher use oraclejdk8
   - sonar-scanner -Dsonar.login=$SONAR_TOKEN
+
