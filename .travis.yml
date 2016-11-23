@@ -32,7 +32,7 @@ before_install:
 install:
   - ./autogen.sh
   - ./configure --prefix=/usr/local
-  - build-wrapper --out-dir bw-outputs make
+  - build-wrapper-linux-x86-64 --out-dir bw-outputs make
   - sudo make install
 #  - sudo ldconfig
 
