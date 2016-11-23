@@ -11,6 +11,10 @@ sudo: true
 
 os: linux
 
+# Needed for SonarQube support.
+jdk:
+  - oraclejdk8
+
 compiler:
   - gcc
 
