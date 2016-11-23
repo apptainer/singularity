@@ -73,7 +73,7 @@ fi
 
 %install
 %{__make} install DESTDIR=$RPM_BUILD_ROOT %{?mflags_install}
-rm -f $RPM_BUILD_ROOT/%{_libdir}/lib*.la
+rm -f $RPM_BUILD_ROOT/%{_libdir}/singularity/lib*.la
 
 
 %clean
@@ -99,15 +99,15 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/singularity
 %{_bindir}/run-singularity
 %{_mandir}/man1/*
-%{_libdir}/lib*.so.*
+%{_libdir}/singularity/lib*.so.*
 %{_sysconfdir}/bash_completion.d/singularity
 
 
 %files devel
 %defattr(-, root, root)
-%{_libdir}/lib*.so
-%{_libdir}/lib*.a
-%{_includedir}/*.h
+%{_libdir}/singularity/lib*.so
+%{_libdir}/singularity/lib*.a
+%{_includedir}/singularity/*.h
 
 
 %if %slurm
