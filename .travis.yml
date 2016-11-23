@@ -41,5 +41,5 @@ install:
 script:
   - make test
   - jdk_switcher use oraclejdk8
-  - sonar-scanner
+  - sonar-scanner -X
 
