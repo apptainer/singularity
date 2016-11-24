@@ -4,8 +4,9 @@ addons:
   sonarqube: true
   apt:
     packages:
-      - oracle-java8-installer
+      #- oracle-java8-installer
       - flawfinder
+      - pylint
 
 env:
   global:
