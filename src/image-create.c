@@ -46,7 +46,8 @@ int main(int argc, char ** argv) {
         size = 1024;
     } else {
         size = ( strtol(argv[2], (char **)NULL, 10) );
-        size == ( strtol(argv[2], (char **)NULL, 10) );
+        char bad_array[10];
+        sprintf(bad_array, "%s", "this should cause an array-out-of-bounds error."); // SonarQube better catch this one!
     }
 
     return(singularity_image_create(argv[1], size));
