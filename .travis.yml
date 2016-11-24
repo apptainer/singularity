@@ -43,6 +43,6 @@ script:
   - sudo pip install pylint
   - jdk_switcher use oraclejdk8
   - |-
-    PYTHONPATH=libexec/python/ pylint libexec/python/ -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > pylint-report.txt && cat pylint-report.txt
+    PYTHONPATH=libexec/python/ pylint libexec/python/ -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" || :; pylint-report.txt && cat pylint-report.txt
   - sonar-scanner
 
