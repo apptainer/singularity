@@ -54,7 +54,7 @@ int str2int(const char *input_str, long int *output_num);
 struct passwd;
 char *get_homedir(struct passwd *pw);
 
-#define ABORT(a) {singularity_message(ABRT, "Retval = %d\n", a); exit(a);}
+#define ABORT(a) do {singularity_message(ABRT, "Retval = %d\n", a); exit(a);} while (0)
 
 
 #endif
