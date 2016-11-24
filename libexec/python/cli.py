@@ -33,7 +33,7 @@ from docker.api import (
     get_manifest 
 )
 
-from utils import extract_tar, change_permissions, get_cache
+from utils import extract_tar, change_permissions, get_cache, basic_auth_header
 from logman import logger
 import argparse
 import os
@@ -76,13 +76,15 @@ def main():
                         help="boolean to specify that CMD should be used instead of ENTRYPOINT as the runscript.", 
                         default=False)
 
+    parser.add_argument("--username",
+                        dest='username',
+                        help="username for registry authentication",
+                        default=None)
 
-    # Flag to indicate a token is not required
-    parser.add_argument("--no-token", 
-                        dest='notoken', 
-                        action="store_true",
-                        help="boolean to specify that the CMD should be included as a runscript (default is not included)", 
-                        default=False)
+    parser.add_argument("--password",
+                        dest='password',
+                        help="password for registry authentication",
+                        default=None)
 
 
     # Flag to disable cache
@@ -112,11 +114,11 @@ def main():
            sys.exit(1)
        logger.info("Root file system defined by env variable as %s", singularity_rootfs)
 
-    # Does the registry require a token?
-    doauth = True
-    if args.notoken == True:
-       doauth = False
-    logger.info("Do registry authentication set to %s", doauth)
+    # Does the registry require authentication?
+    auth = None
+    if args.username is not None and args.password is not None:
+        auth = basic_auth_header(args.username, args.password)
+        logger.info("Username for registry authentication: %s", args.username)
 
     # Does the user want to override default Entrypoint and use CMD as runscript?
     includecmd = args.includecmd
@@ -169,12 +171,12 @@ def main():
                                 namespace=namespace,
                                 repo_tag=repo_tag,
                                 registry=args.registry,
-                                auth=doauth)
+                                auth=auth)
 
         # Get images from manifest using version 2.0 of Docker Registry API
         images = get_images(manifest=manifest,
                             registry=args.registry,
-                            auth=doauth)
+                            auth=auth)
         
        
 #  DOWNLOAD LAYERS -------------------------------------------
@@ -185,12 +187,6 @@ def main():
                                disable_cache = args.disable_cache)
 
         layers = []
-
-        # Let's get a token to use across image downloads
-        token = get_token(repo_name=repo_name,
-                          namespace=namespace,
-                          permission="pull")
-
         for image_id in images:
 
             # Download the layer, if we don't have it
@@ -202,8 +198,7 @@ def main():
                                   repo_name=repo_name,
                                   download_folder=cache_base,
                                   registry=args.registry,
-                                  auth=doauth,
-                                  token=token) 
+                                  auth=auth)
 
             layers.append(targz) # in case we want a list at the end
                                  # @chrisfilo suggestion to try compiling into one tar.gz

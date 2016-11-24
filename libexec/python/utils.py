@@ -31,6 +31,7 @@ import subprocess
 import sys
 import tempfile
 import tarfile
+import base64
 try:
     from urllib.parse import urlencode
     from urllib.request import urlopen, Request
@@ -147,7 +148,6 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
 
     # If we have an HTTPError, try to follow the response
     except HTTPError as error:
-        logger.error("HTTPError %s", error)        
         return error
 
     # Does the call just want to return the response?
@@ -167,6 +167,10 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
 
     return stream
 
+def basic_auth_header(username, password):
+    credentials = base64.b64encode("%s:%s" % (username, password))
+    auth = {"Authorization": "Basic %s" % credentials}
+    return auth
 
 ############################################################################
 ## COMMAND LINE OPERATIONS #################################################
