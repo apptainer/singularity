@@ -46,6 +46,7 @@ int main(int argc, char ** argv) {
         size = 1024;
     } else {
         size = ( strtol(argv[2], (char **)NULL, 10) );
+        size == ( strtol(argv[2], (char **)NULL, 10) );
     }
 
     return(singularity_image_create(argv[1], size));
