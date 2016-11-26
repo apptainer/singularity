@@ -24,9 +24,22 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from docker.api import get_layer, create_runscript, get_manifest, get_config, get_images
-from shub.api import download_image, get_manifest as get_shub_manifest
-from utils import extract_tar, change_permissions
+from shub.api import (
+    download_image, 
+    get_manifest as get_shub_manifest
+)
+
+from docker.api import (
+    create_runscript, 
+    get_config, 
+    get_images,
+    get_layer, 
+    get_token,
+    get_manifest 
+)
+
+from utils import extract_tar, change_permissions, get_cache, basic_auth_header
+from logman import logger
 import argparse
 import os
 import re
@@ -34,6 +47,9 @@ import sys
 import tempfile
 
 def main():
+
+    logger.info("\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
+
     parser = argparse.ArgumentParser(description="bootstrap Docker images for Singularity containers")
 
     # Name of the docker image
@@ -69,40 +85,56 @@ def main():
     parser.add_argument("--cmd", 
                         dest='includecmd', 
                         action="store_true",
-                        help="boolean to specify that the CMD should be included as a runscript (default is not included)", 
+                        help="boolean to specify that CMD should be used instead of ENTRYPOINT as the runscript.", 
                         default=False)
 
+    parser.add_argument("--username",
+                        dest='username',
+                        help="username for registry authentication",
+                        default=None)
 
-    # Flag to indicate a token is not required
-    parser.add_argument("--no-token", 
-                        dest='notoken', 
+    parser.add_argument("--password",
+                        dest='password',
+                        help="password for registry authentication",
+                        default=None)
+
+
+    # Flag to disable cache
+    parser.add_argument("--no-cache", 
+                        dest='disable_cache', 
                         action="store_true",
-                        help="boolean to specify that the CMD should be included as a runscript (default is not included)", 
+                        help="boolean to specify disabling the cache.", 
                         default=False)
 
     
     try:
         args = parser.parse_args()
     except:
+        logger.error("Input args to %s improperly set, exiting.", os.path.abspath(__file__))
         parser.print_help()
         sys.exit(0)
+
 
     # Find root filesystem location
     if args.rootfs != None:
        singularity_rootfs = args.rootfs
+       logger.info("Root file system defined by command line variable as %s", singularity_rootfs)
     else:
-       singularity_rootfs = os.environ.get("SINGULARITY_ROOTFS",None)
+       singularity_rootfs = os.environ.get("SINGULARITY_ROOTFS", None)
        if singularity_rootfs == None:
-           print("ERROR: root file system not specified or defined as environmental variable, exiting!")
+           logger.error("root file system not specified OR defined as environmental variable, exiting!")
            sys.exit(1)
+       logger.info("Root file system defined by env variable as %s", singularity_rootfs)
 
-    # Does the registry require a token?
-    doauth = True
-    if args.notoken == True:
-       doauth = False
+    # Does the registry require authentication?
+    auth = None
+    if args.username is not None and args.password is not None:
+        auth = basic_auth_header(args.username, args.password)
+        logger.info("Username for registry authentication: %s", args.username)
 
-    # Does the user want to include the CMD as runscript?
+    # Does the user want to override default Entrypoint and use CMD as runscript?
     includecmd = args.includecmd
+    logger.info("Including Docker command as Runscript? %s", includecmd)
 
     # Does the user want to download a Singularity image?
     if args.shub != None:
@@ -125,6 +157,11 @@ def main():
 
     # Do we have a docker image specified?
     if args.docker != None:
+<<<<<<< HEAD
+=======
+        image = args.docker
+        logger.info("Docker image: %s", image)
+>>>>>>> e575e00c7311b34f0bc463961fa52b004e31a307
 
         image = args.docker
 
@@ -157,7 +194,7 @@ def main():
             repo_tag = "latest"
 
         # Tell the user the namespace, repo name and tag
-        print("%s/%s:%s" %(namespace,repo_name,repo_tag))
+        logger.info("Docker image path: %s/%s:%s", namespace,repo_name,repo_tag)
 
 
 # IMAGE METADATA -------------------------------------------
@@ -169,55 +206,65 @@ def main():
                                 namespace=namespace,
                                 repo_tag=repo_tag,
                                 registry=args.registry,
-                                auth=doauth)
+                                auth=auth)
 
         # Get images from manifest using version 2.0 of Docker Registry API
         images = get_images(manifest=manifest,
                             registry=args.registry,
-                            auth=doauth)
+                            auth=auth)
         
        
 #  DOWNLOAD LAYERS -------------------------------------------
 # Each is a .tar.gz file, obtained from registry with curl
 
-        # Create a temporary directory for targzs
-        tmpdir = tempfile.mkdtemp()
-        layers = []
+        # Get the cache (or temporary one) for docker
+        cache_base = get_cache(subfolder="docker", 
+                               disable_cache = args.disable_cache)
 
+        layers = []
         for image_id in images:
 
-            # Download the layer
-            targz = get_layer(image_id=image_id,
-                              namespace=namespace,
-                              repo_name=repo_name,
-                              download_folder=tmpdir,
-                              registry=args.registry,
-                              auth=doauth) 
+            # Download the layer, if we don't have it
+            targz = "%s/%s.tar.gz" %(cache_base,image_id)
+ 
+            if not os.path.exists(targz):
+                targz = get_layer(image_id=image_id,
+                                  namespace=namespace,
+                                  repo_name=repo_name,
+                                  download_folder=cache_base,
+                                  registry=args.registry,
+                                  auth=auth)
 
             layers.append(targz) # in case we want a list at the end
                                  # @chrisfilo suggestion to try compiling into one tar.gz
 
             # Extract image and remove tar
             extract_tar(targz,singularity_rootfs)
-            os.remove(targz)
+            if args.disable_cache == True:
+                os.remove(targz)
                
      
-    # If the user wants to include the CMD as runscript, generate it here
-    if includecmd == True:
+        # If the user wants to include the CMD as runscript, generate it here
+        if includecmd == True:
+            spec="Cmd"
+        else:
+            spec="Entrypoint"
 
-        cmd = get_config(manifest) # default is spec="Cmd"
+        cmd = get_config(manifest,spec=spec)
 
         # Only add runscript if command is defined
         if cmd != None:
-            print("Adding Docker CMD as Singularity runscript...")
+            print("Adding Docker %s as Singularity runscript..." %(spec.upper()))
+            print(cmd)
             runscript = create_runscript(cmd=cmd,
                                          base_dir=singularity_rootfs)
 
-            # change permission of runscript to 0755 (default)
-            change_permissions("%s/singularity" %(singularity_rootfs))
+        # When we finish, clean up images
+        if args.disable_cache == True:
+            shutil.rmtree(cache_base)
 
-    # When we finish, change permissions for the entire thing
-    #change_permissions("%s/" %(singularity_rootfs))
+
+        logger.info("*** FINISHING DOCKER BOOTSTRAP PYTHON PORTION ****\n")
 
 
 if __name__ == '__main__':

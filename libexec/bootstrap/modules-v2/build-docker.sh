@@ -85,19 +85,12 @@ fi
 
 
 ### Does the registry require authentication?
-SINGULARITY_DOCKER_AUTH=`singularity_key_get "Token" "$SINGULARITY_BUILDDEF"`
-if [ -n "${SINGULARITY_DOCKER_AUTH:-}" ]; then
-    message 1 "Token: $SINGULARITY_DOCKER_AUTH\n"
-
-    # A command of "no" means don't add token auth header
-    if [ "$SINGULARITY_DOCKER_AUTH" == "no" ]; then
-        SINGULARITY_DOCKER_AUTH="--no-token"
-
-    # Anything else, we do authentication
-    else
-        SINGULARITY_DOCKER_AUTH=""
-    fi
-
+SINGULARITY_DOCKER_USERNAME=`singularity_key_get "Username" "$SINGULARITY_BUILDDEF"`
+SINGULARITY_DOCKER_PASSWORD=`singularity_key_get "Password" "$SINGULARITY_BUILDDEF"`
+if [ -n "${SINGULARITY_DOCKER_USERNAME:-}" ] && [ -n "${SINGULARITY_DOCKER_PASSWORD:-}" ]; then
+    message 1 "Username: $SINGULARITY_DOCKER_USERNAME\n"
+    message 1 "Password: [hidden]\n"
+    SINGULARITY_DOCKER_AUTH="--username $SINGULARITY_DOCKER_USERNAME --password $SINGULARITY_DOCKER_PASSWORD"
 else
     SINGULARITY_DOCKER_AUTH=""   
 fi

@@ -22,12 +22,12 @@
 set -u
 
 if [ -z "${SINGULARITY_libexecdir:-}" ]; then
-    /bin/echo "ERROR: SINGULARITY_libexecdir not defined in environment"
+    echo "ERROR: SINGULARITY_libexecdir not defined in environment"
     exit 2
 fi
 
 if [ -z "${MESSAGELEVEL:-}" ]; then
-    /bin/echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
+    echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     MESSAGELEVEL=5
 fi
 

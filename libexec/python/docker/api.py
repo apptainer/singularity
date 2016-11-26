@@ -2,7 +2,7 @@
 
 '''
 
-docker.py: Docker helper functions for Singularity in Python
+api.py: Docker helper functions for Singularity in Python
 
 Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
 
@@ -27,9 +27,15 @@ import sys
 sys.path.append('..') # parent directory
 
 from utils import api_get, write_file, add_http
+from logman import logger
 import json
+import re
+try:
+    from urllib.error import HTTPError
+except ImportError:
+    from urllib2 import HTTPError
 
-api_base = "registry-1.docker.io"
+api_base = "index.docker.io"
 api_version = "v2"
 
 # Authentication not required ---------------------------------------------------------------------------------
@@ -40,33 +46,60 @@ def create_runscript(cmd,base_dir):
     :param base_dir: the base directory to write the runscript to
     '''
     runscript = "%s/singularity" %(base_dir)
-    content = "#!/bin/sh\n\n%s" %(cmd)
+    content = 'exec %s "$@"' %(cmd)
+    logger.info("Generating runscript at %s",runscript)
     output_file = write_file(runscript,content)
     return output_file
 
 
-def get_token(repo_name,namespace="library",scope="repository",permission="pull"):
-    '''get_token will use version 2.0 of Docker's service to return a token with given permission and scope - this
-    function does work, but the token doesn't seem to work when used with other functions below for authentication
+def get_token(namespace,repo_name,registry=None,auth=None):
+    '''get_token uses HTTP basic authentication to get a token for Docker registry API V2 operations
+    :param namespace: the namespace for the image
     :param repo_name: the name of the repo, eg "ubuntu"
-    :param repo_tag: the name of a tag for the repo, default is "latest"
-    :param scope: scope of the request, default is "repository"
-    :param permission: permission for the request, default is "read"
+    :param registry: the docker registry to use
+    :param auth: authorization header (default None)
     :: note
             # https://docs.docker.com/registry/spec/auth/token/
     '''
+    if registry == None:
+        registry = api_base
+    registry = add_http(registry) # make sure we have a complete url
 
-    base = "https://auth.docker.io/token?service=registry.docker.io&scope=%s:%s/%s:%s" %(scope,
-                                                                                         namespace,
-                                                                                         repo_name,
-                                                                                         permission)
-    response = api_get(base,default_header=False)
+    # Check if we need a token at all by probing the tags/list endpoint.  This
+    # is an arbitrary choice, ideally we should always attempt without a token
+    # and then retry with a token if we received a 401.
+    base = "%s/%s/%s/%s/tags/list" %(registry,api_version,namespace,repo_name)
+    response = api_get(base, default_header=False)
+    if not isinstance(response, HTTPError):
+        # No token required for registry.
+        return None
+
+    if response.code != 401 or not response.headers.has_key("WWW-Authenticate"):
+        logger.error("Authentication error for registry %s, exiting.", registry)
+        sys.exit(1)
+
+    challenge = response.headers["WWW-Authenticate"]
+    match = re.match('^Bearer\s+realm="([^"]+)",service="([^"]+)",scope="([^"]+)"\s*$', challenge)
+    if not match:
+        logger.error("Unrecognized authentication challenge from registry %s, exiting.", registry)
+        sys.exit(1)
+
+    realm = match.group(1)
+    service = match.group(2)
+    scope = match.group(3)
+
+    base = "%s?service=%s&scope=%s" % (realm, service, scope)
+    headers = dict()
+    if auth is not None:
+        headers.update(auth)
+
+    response = api_get(base,default_header=False,headers=headers)
     try:
         token = json.loads(response)["token"]
         token = {"Authorization": "Bearer %s" %(token) }
         return token
     except:
-        print("Error getting %s token for repository %s/%s, exiting." %(permission,namespace,repo_name))
+        logger.error("Error getting token for repository %s/%s, exiting.", namespace,repo_name)
         sys.exit(1)
 
 
@@ -75,13 +108,13 @@ def get_token(repo_name,namespace="library",scope="repository",permission="pull"
 # Docker Registry Version 2.0 Functions - IN USE
 
 
-def get_images(repo_name=None,namespace=None,manifest=None,repo_tag="latest",registry=None,auth=True):
+def get_images(repo_name=None,namespace=None,manifest=None,repo_tag="latest",registry=None,auth=None):
     '''get_images is a wrapper for get_manifest, but it additionally parses the repo_name and tag's
     images and returns the complete ids
     :param repo_name: the name of the repo, eg "ubuntu"
     :param namespace: the namespace for the image, default is "library"
     :param repo_tag: the repo tag, default is "latest"
-    :param registry: the docker registry url, default will use registry-1.docker.io
+    :param registry: the docker registry url, default will use index.docker.io
     '''
 
     # Get full image manifest, using version 2.0 of Docker Registry API
@@ -93,67 +126,68 @@ def get_images(repo_name=None,namespace=None,manifest=None,repo_tag="latest",reg
                                     registry=registry,
                                     auth=auth)
         else:
-            print("You must specify a namespace and repo name OR provide a manifest.")
+            logger.error("No namespace and repo name OR manifest provided, exiting.")
             sys.exit(1)
 
     digests = []
     if 'fsLayers' in manifest:
         for fslayer in manifest['fsLayers']:
             if 'blobSum' in fslayer:
-                digests.append(fslayer['blobSum'])
+                if fslayer['blobSum'] not in digests:
+                    logger.info("Adding digest %s",fslayer['blobSum'])
+                    digests.append(fslayer['blobSum'])
     return digests
     
 
-def get_tags(namespace,repo_name,registry=None,auth=True):
+def get_tags(namespace,repo_name,registry=None,auth=None):
     '''get_tags will return the tags for a repo using the Docker Version 2.0 Registry API
     :param namespace: the namespace (eg, "library")
     :param repo_name: the name for the repo (eg, "ubuntu")
-    :param registry: the docker registry to use (default will use registry-1.docker.io
-    :param auth: does the API require obtaining an authentication token? (default True)
+    :param registry: the docker registry to use (default will use index.docker.io)
+    :param auth: authorization header (default None)
     '''
     if registry == None:
         registry = api_base
     registry = add_http(registry) # make sure we have a complete url
 
     base = "%s/%s/%s/%s/tags/list" %(registry,api_version,namespace,repo_name)
+    logger.info("Obtaining tags: %s", base)
 
-    # Does the api need an auth token?
-    token = None
-    if auth == True:
-        token = get_token(repo_name=repo_name,
-                          namespace=namespace,
-                          permission="pull")
-       
+    token = get_token(registry=registry,
+                      repo_name=repo_name,
+                      namespace=namespace,
+                      auth=auth)
+
     response = api_get(base,headers=token)
     try:
         response = json.loads(response)
         return response['tags']
     except:
-        print("Error getting tags using url %s" %(base))
+        logger.error("Error obtaining tags: %s", base)
         sys.exit(1)
 
 
-def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=True):
+def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None):
     '''get_manifest should return an image manifest for a particular repo and tag. The token is expected to
     be from version 2.0 (function above)
     :param repo_name: the name of the repo, eg "ubuntu"
     :param namespace: the namespace for the image, default is "library"
     :param repo_tag: the repo tag, default is "latest"
-    :param registry: the docker registry to use (default will use registry-1.docker.io
-    :param auth: does the API require obtaining an authentication Token? (default True)
+    :param registry: the docker registry to use (default will use index.docker.io)
+    :param auth: authorization header (default None)
     '''
     if registry == None:
         registry = api_base
     registry = add_http(registry) # make sure we have a complete url
 
     base = "%s/%s/%s/%s/manifests/%s" %(registry,api_version,namespace,repo_name,repo_tag)
+    logger.info("Obtaining manifest: %s", base)
     
     # Format the token, and prepare a header
-    token = None
-    if auth == True:
-        token = get_token(repo_name=repo_name,
-                          namespace=namespace,
-                          permission="pull")
+    token = get_token(registry=registry,
+                      repo_name=repo_name,
+                      namespace=namespace,
+                      auth=auth)
 
     response = api_get(base,headers=token,default_header=True)
     try:
@@ -162,18 +196,22 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=True):
         # If the call fails, give the user a list of acceptable tags
         tags = get_tags(namespace=namespace,
                         repo_name=repo_name,
-                        registry=registry)
+                        registry=registry,
+                        auth=auth)
         print("\n".join(tags))
+        logger.error("Error getting manifest for %s/%s:%s, exiting.", namespace,
+                                                                       repo_name,
+                                                                       repo_tag)
         print("Error getting manifest for %s/%s:%s. Acceptable tags are listed above." %(namespace,repo_name,repo_tag))
         sys.exit(1)
 
     return response
 
 
-def get_config(manifest,spec="Cmd"):
-    '''get_config returns a particular spec (default is Cmd) from a manifest obtained with get_manifest.
+def get_config(manifest,spec="Entrypoint"):
+    '''get_config returns a particular spec (default is Entrypoint) from a manifest obtained with get_manifest.
     :param manifest: the manifest obtained from get_manifest
-    :param spec: the key of the spec to return, default is "Cmd"
+    :param spec: the key of the spec to return, default is "Entrypoint"
     '''
   
     cmd = None
@@ -188,17 +226,18 @@ def get_config(manifest,spec="Cmd"):
     # Standard is to include commands like ['/bin/sh']
     if isinstance(cmd,list):
         cmd = "\n".join(cmd)
+    logger.info("Found Docker command (CMD) %s", cmd)
     return cmd
 
 
-def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,auth=True):
+def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,auth=None):
     '''get_layer will download an image layer (.tar.gz) to a specified download folder.
     :param image_id: the (full) image id to get the manifest for, required
     :param namespace: the namespace (eg, "library")
     :param repo_name: the repo name, (eg, "ubuntu")
     :param download_folder: if specified, download to folder. Otherwise return response with raw data (not recommended)
-    :param registry: the docker registry to use (default will use registry-1.docker.io
-    :param auth: does the API require obtaining an authentication Token? (default True)
+    :param registry: the docker registry to use (default will use index.docker.io)
+    :param auth: authorization header (default None)
     '''
     if registry == None:
         registry = api_base
@@ -206,22 +245,26 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
 
     # The <name> variable is the namespace/repo_name
     base = "%s/%s/%s/%s/blobs/%s" %(registry,api_version,namespace,repo_name,image_id)
+    logger.info("Downloading layers from %s", base)
     
     # To get the image layers, we need a valid token to read the repo
-    token = None
-    if auth == True:
-        token = get_token(repo_name=repo_name,
-                          namespace=namespace,
-                          permission="pull")
+    token = get_token(registry=registry,
+                      repo_name=repo_name,
+                      namespace=namespace,
+                      auth=auth)
 
     if download_folder != None:
         download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
-  
-        # Update user what we are doing
-        print("Downloading layer: %s" %(image_id))
 
-    return api_get(base,headers=token,stream=download_folder)
-    
+        # Update user what we are doing
+        print("Downloading layer %s" %image_id)
+
+    response = api_get(base,headers=token,stream=download_folder)
+    if isinstance(response, HTTPError):
+        logger.error("Error downloading layer %s, exiting.", base)
+        sys.exit(1)
+
+    return response
 
 
 # Under Development! ---------------------------------------------------------------------------------
@@ -229,4 +272,4 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
 
 # TODO: this will let us get all Docker repos to generate images automatically
 def get_repositories():
-    base = "https://registry-1.docker.io/v2/_catalog"
+    base = "https://index.docker.io/v2/_catalog"

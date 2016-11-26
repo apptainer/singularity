@@ -18,7 +18,6 @@
  * 
  */
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -42,7 +41,7 @@
 #include "util/util.h"
 
 
-int main(int argc, char ** argv) {
+int singularity_image_mount(int argc, char ** argv) {
     char *containerimage;
 
     if ( argv[1] == NULL ) {
@@ -70,5 +69,6 @@ int main(int argc, char ** argv) {
     singularity_message(VERBOSE, "Setting SINGULARITY_ROOTFS to '%s'\n", singularity_rootfs_dir());
     setenv("SINGULARITY_ROOTFS", singularity_rootfs_dir(), 1);
 
-    return(singularity_fork_exec(&argv[1]));
+    //return(singularity_fork_exec(&argv[1])); //Will actually return 0 to indicated successful execution of function
+    return(0); //Returns 0, simage binary will handle running &argv[1]
 }

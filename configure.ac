@@ -243,23 +243,20 @@ fi
 AC_SUBST(OVERLAY_FS)
 AC_SUBST(SINGULARITY_DEFINES)
 
-AC_MSG_CHECKING([if slurm integration should be built])
+AC_MSG_CHECKING([--with-slurm])
 AC_ARG_WITH([slurm],
             AS_HELP_STRING([--with-slurm], [Enable build of slurm integration]),
            )
-AS_IF([test "x$with_slurm" != "xno"],
+AS_IF([test "x$with_slurm" == "xyes"],
     [
+        AC_MSG_RESULT([yes])
         AC_CHECK_HEADER([slurm/spank.h],
             [AC_MSG_RESULT([yes])
-             with_slurm="yes"
+                with_slurm="yes"
             ],
-            [AS_IF([test "$with_slurm" = "yes"],
-                   [AC_MSG_ERROR([SLURM support requested, but slurm/spank.h header not found.])],
-                   [ AC_MSG_RESULT([no])
-                     with_slurm="no"
-                   ]
+            [
+                AC_MSG_ERROR([SLURM support requested, but slurm/spank.h header not found.])
             ])
-        )
     ],
     [
         AC_MSG_RESULT([no])
@@ -328,6 +325,11 @@ AC_CONFIG_FILES([
    src/lib/mount/tmp/Makefile
    src/lib/mount/userbinds/Makefile
    src/lib/mount/scratch/Makefile
+   src/lib/image/Makefile
+   src/lib/image/mount/Makefile
+   src/lib/image/bind/Makefile
+   src/lib/image/create/Makefile
+   src/lib/image/expand/Makefile
    src/util/Makefile
    src/slurm/Makefile
    etc/Makefile

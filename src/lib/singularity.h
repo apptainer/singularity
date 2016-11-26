@@ -66,6 +66,10 @@
     extern int singularity_image_create(char *image, int size);
     // Expand an existing image ...
     extern int singularity_image_expand(char *image, int size);
+    // Mount an image. Replaces old image-mount binary
+    extern int singularity_image_mount(int argc, char ** argv);
+    // Bind an image. Replaces old image-bind binary
+    extern int singularity_image_bind(int argc, char ** argv);
 
 
     // ROOTFS
