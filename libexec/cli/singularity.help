@@ -26,6 +26,10 @@ CONTAINER MANAGEMENT COMMANDS (requires root):
     import        Import/add container contents via a tar pipe
     mount         Mount a Singularity container image
 
+CONTAINER REGISTRY COMMANDS:
+    pull          pull a Singularity Hub container
+
+
 For any additional help or support visit the Singularity
 website: http://singularity.lbl.gov/
 

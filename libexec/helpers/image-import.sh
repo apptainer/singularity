@@ -56,10 +56,6 @@ case "$IMPORT_URI" in
         CONTAINER_NAME=`echo "$IMPORT_URI" | sed -e 's@^docker://@@'`
         SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' ${SINGULARITY_DOCKER_REGISTRY:-} ${SINGULARITY_DOCKER_AUTH:-}"
     ;;
-    shub://*)
-        IMAGE_SHUB_ID=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
-        SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$SINGULARITY_ROOTFS' --shub '$IMAGE_SHUB_ID'"
-    ;;
     http://*|https://*)
         SINGULARITY_IMPORT_GET="curl -L -k '$IMPORT_URI'"
     ;;

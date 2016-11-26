@@ -27,8 +27,15 @@ import sys
 sys.path.append('..') # parent directory
 
 from utils import api_get, write_file, add_http
+from logman import logger
 import json
 import os
+import re
+
+try:
+    from urllib import unquote 
+except:
+    from urllib.parse import unquote
 
 api_base = "singularity-hub.org/api"
 
@@ -92,9 +99,27 @@ def download_image(manifest,download_folder=None):
     '''download_image will download a singularity image from singularity
     hub to a download_folder, named based on the image version (commit id)
     '''
-    image_name = "%s.img" %(manifest['version'])
+    
+    image_name = get_image_name(manifest)
+
     print("Downloading image... %s" %(image_name))
     if download_folder != None:
         image_name = "%s/%s" %(download_folder,image_name)
     url = manifest['image']
     return api_get(url,stream=image_name)
+
+
+# Various Helpers ---------------------------------------------------------------------------------
+def get_image_name(manifest,extension='tar.gz'):
+    '''get_image_name will return the image name for a manifest
+    :param manifest: the image manifest with 'image' as key with download link
+    :param extension: the extension to look for (without .) Default tar.gz
+    '''
+    image_url = os.path.basename(unquote(manifest['image']))
+    image_name = re.findall(".+[.]%s" %(extension),image_url)
+    if len(image_name) > 0:
+        logger.info("Singularity Hub Image: %s", image_name[0])
+        return image_name[0]
+    else:
+        logger.error("Singularity Hub Image not found with expected extension %s, exiting.",extension)
+        sys.exit(1)

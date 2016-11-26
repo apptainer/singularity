@@ -26,7 +26,8 @@ perform publicly and display publicly, and to permit other to do so.
 
 from shub.api import (
     download_image, 
-    get_manifest as get_shub_manifest
+    get_manifest as get_shub_manifest,
+    get_image_name
 )
 
 from docker.api import (
@@ -48,7 +49,7 @@ import tempfile
 
 def main():
 
-    logger.info("\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
+    logger.info("\n*** STARTING PYTHON CLIENT PORTION ****")
 
     parser = argparse.ArgumentParser(description="bootstrap Docker images for Singularity containers")
 
@@ -114,17 +115,17 @@ def main():
         parser.print_help()
         sys.exit(0)
 
-
     # Find root filesystem location
     if args.rootfs != None:
        singularity_rootfs = args.rootfs
-       logger.info("Root file system defined by command line variable as %s", singularity_rootfs)
     else:
        singularity_rootfs = os.environ.get("SINGULARITY_ROOTFS", None)
-       if singularity_rootfs == None:
+       if singularity_rootfs == None and args.shub == None: 
            logger.error("root file system not specified OR defined as environmental variable, exiting!")
            sys.exit(1)
-       logger.info("Root file system defined by env variable as %s", singularity_rootfs)
+    
+    if singularity_rootfs != None:
+        logger.info("Root file system defined as %s", singularity_rootfs)
 
     # Does the registry require authentication?
     auth = None
@@ -132,42 +133,38 @@ def main():
         auth = basic_auth_header(args.username, args.password)
         logger.info("Username for registry authentication: %s", args.username)
 
-    # Does the user want to override default Entrypoint and use CMD as runscript?
-    includecmd = args.includecmd
-    logger.info("Including Docker command as Runscript? %s", includecmd)
 
     # Does the user want to download a Singularity image?
     if args.shub != None:
         image_id = int(args.shub)
         manifest = get_shub_manifest(image_id)
-        tmpdir = tempfile.mkdtemp()
-        image_file = download_image(manifest=manifest,
-                                    download_folder=tmpdir)
-        
-        # STOPPED HERE - image is downloading ok, but two issues:
-        # 1) not a valid image (something wrong with build? download?)
-        # 2) not sure what to do with it, given it is valid...
 
-        # Export new singularity_rootfs (can I do that?)
-        os.environ['SINGULARITY_ROOTFS'] = image_file
-        os.environ['SINGULARITY_IMAGE'] = image_file
-        #command = 'eval "(cd %s; tar -c .) > %s"' %(singularity_rootfs,image_file) 
-        #eval "(cd $SINGULARITY_ROOTFS; tar -c .) > $SINGULARITY_EXPORT_FILE"
-        #os.system('singularity export %s > %s' %(image_file,singularity_rootfs))
+        cache_base = get_cache(subfolder="shub", 
+                               disable_cache = args.disable_cache)
+
+        # The image name is the md5 hash, download if it's not there
+        image_name = get_image_name(manifest)
+        image_file = "%s/%s" %(cache_base,image_name)
+        if not os.path.exists(image_file):
+            image_file = download_image(manifest=manifest,
+                                        download_folder=cache_base)
+        else:
+            print("Image already exists at %s, skipping download." %image_file)
+        logger.info("Singularity Hub Image Download: %s", image_file)
+
 
     # Do we have a docker image specified?
-    if args.docker != None:
-<<<<<<< HEAD
-=======
+    elif args.docker != None:
+
+        # Does the user want to override default Entrypoint and use CMD as runscript?
+        includecmd = args.includecmd
+        logger.info("Including Docker command as Runscript? %s", includecmd)
+
         image = args.docker
         logger.info("Docker image: %s", image)
->>>>>>> e575e00c7311b34f0bc463961fa52b004e31a307
 
-        image = args.docker
-
-# INPUT PARSING -------------------------------------------
-# Parse image name, repo name, and namespace
-
+        # Input Parsing ----------------------------
+        # Parse image name, repo name, and namespace
 
         # First split the docker image name by /
         image = image.split('/')
@@ -197,8 +194,8 @@ def main():
         logger.info("Docker image path: %s/%s:%s", namespace,repo_name,repo_tag)
 
 
-# IMAGE METADATA -------------------------------------------
-# Use Docker Registry API (version 2.0) to get images ids, manifest
+        # IMAGE METADATA -------------------------------------------
+        # Use Docker Registry API (version 2.0) to get images ids, manifest
 
         # Get an image manifest - has image ids to parse, and will be
         # used later to get Cmd
@@ -214,8 +211,8 @@ def main():
                             auth=auth)
         
        
-#  DOWNLOAD LAYERS -------------------------------------------
-# Each is a .tar.gz file, obtained from registry with curl
+        #  DOWNLOAD LAYERS -------------------------------------------
+        # Each is a .tar.gz file, obtained from registry with curl
 
         # Get the cache (or temporary one) for docker
         cache_base = get_cache(subfolder="docker", 

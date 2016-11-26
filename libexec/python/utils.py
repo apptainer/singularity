@@ -163,7 +163,11 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
             chunk = response.read(chunk_size)
             if not chunk: 
                 break
-            filey.write(chunk)
+            try:
+                filey.write(chunk)
+            except: #PermissionError
+                logger.error("Cannot write to %s, exiting",stream)
+                sys.exit(1)
 
     return stream
 
