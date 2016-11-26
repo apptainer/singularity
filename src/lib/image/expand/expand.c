@@ -34,12 +34,12 @@
 
 
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
-#define MAX_LINE_LEN 2048
-
+#define BUFFER_SIZE (1024*1024)
 
 int singularity_image_expand(char *image, int size) {
     FILE *image_fp;
-    char *buff = (char *) malloc(1024*1024);
+    char *buff = (char *) malloc(BUFFER_SIZE);
+    memset(buff, '\255', BUFFER_SIZE);
     long position;
     int i;
 
@@ -48,6 +48,7 @@ int singularity_image_expand(char *image, int size) {
     singularity_message(DEBUG, "Opening image 'r+'\n");
     if ( ( image_fp = fopen(image, "r+") ) == NULL ) { // Flawfinder: ignore
         fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
+        free(buff);
         return(-1);
     }
 
@@ -58,17 +59,19 @@ int singularity_image_expand(char *image, int size) {
     singularity_message(DEBUG, "Removing the footer from image\n");
     if ( ftruncate(fileno(image_fp), position-1) < 0 ) {
         fprintf(stderr, "ERROR: Failed truncating the marker bit off of image %s: %s\n", image, strerror(errno));
+        free(buff);
         return(-1);
     }
     singularity_message(VERBOSE2, "Expanding image by %dMB\n", size);
     for(i = 0; i < size; i++ ) {
-        if ( fwrite(buff, 1, 1024*1024, image_fp) < 1024 * 1024 ) {
+        if ( fwrite(buff, 1, BUFFER_SIZE, image_fp) < BUFFER_SIZE ) {
             singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
             ABORT(255);
         }
     }
     fprintf(image_fp, "0");
     fclose(image_fp);
+    free(buff);
 
     singularity_message(DEBUG, "Returning image_expand(%s, %d) = 0\n", image, size);
 

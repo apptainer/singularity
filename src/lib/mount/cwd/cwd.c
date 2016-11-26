@@ -18,6 +18,10 @@
  * 
 */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -41,13 +45,14 @@
 
 void singularity_mount_cwd(void) {
     char *container_dir = singularity_rootfs_dir();
-    char *cwd_path = (char *) malloc(PATH_MAX);
+    char *cwd_path = NULL;
     int r;
 
     singularity_message(DEBUG, "Checking to see if we should mount current working directory\n");
 
     singularity_message(DEBUG, "Getting current working directory\n");
-    if ( getcwd(cwd_path, PATH_MAX) == NULL ) {
+    cwd_path = get_current_dir_name();
+    if ( cwd_path == NULL ) {
         singularity_message(ERROR, "Could not obtain current directory path: %s\n", strerror(errno));
         ABORT(1);
     }
@@ -56,12 +61,14 @@ void singularity_mount_cwd(void) {
     singularity_config_rewind();
     if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
         singularity_message(WARNING, "Not mounting current directory: user bind control is disabled by system administrator\n");
+        free(cwd_path);
         return;
     }
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return;
+    singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
+    free(cwd_path);
+    return;
 #endif  
 
     singularity_message(DEBUG, "Checking for contain option\n");
@@ -73,6 +80,7 @@ void singularity_mount_cwd(void) {
     singularity_message(DEBUG, "Checking if CWD is already mounted: %s\n", cwd_path);
     if ( check_mounted(cwd_path) >= 0 ) {
         singularity_message(VERBOSE, "Not mounting CWD (already mounted in container): %s\n", cwd_path);
+        free(cwd_path);
         return;
     }
 
@@ -88,6 +96,7 @@ void singularity_mount_cwd(void) {
     singularity_priv_drop();
     if ( r < 0 ) {
         singularity_message(VERBOSE, "Could not create directory for current directory, skipping CWD mount\n");
+        free(cwd_path);
         return;
     }
 
@@ -99,6 +108,7 @@ void singularity_mount_cwd(void) {
         singularity_message(WARNING, "Could not bind CWD to container %s: %s\n", cwd_path, strerror(errno));
     }
 
+    free(cwd_path);
     return;
 }
 

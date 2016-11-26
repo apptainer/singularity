@@ -117,6 +117,7 @@ char *singularity_config_get_value(char *key) {
                 if ( ( config_value = strdup(strtok(NULL, "=")) ) != NULL ) {
                     chomp(config_value);
                     singularity_message(VERBOSE2, "Got config key %s (= '%s')\n", key, config_value);
+                    free(line);
                     return(config_value);
                 }
             }

@@ -32,14 +32,16 @@
 #include "util/util.h"
 #include "util/file.h"
 
-
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
-#define MAX_LINE_LEN 2048
-
+#define BUFFER_SIZE (1024*1024)
 
 int singularity_image_create(char *image, int size) {
     FILE *image_fp;
-    char *buff = (char *) malloc(1024*1024);
+    // Even though we only need junk written into the image, to create it, we
+    // write a fixed value to the blank image to prevent contents of our memory
+    // from being leaked to the disk.
+    char *buff = (char *) malloc(BUFFER_SIZE);
+    memset(buff, '\255', BUFFER_SIZE);
     int i;
 
     singularity_message(VERBOSE, "Creating new sparse image at: %s\n", image);
@@ -52,6 +54,7 @@ int singularity_image_create(char *image, int size) {
     singularity_message(DEBUG, "Opening image 'w'\n");
     if ( ( image_fp = fopen(image, "w") ) == NULL ) { // Flawfinder: ignore
         fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
+        free(buff);
         return(-1);
     }
 
@@ -59,8 +62,10 @@ int singularity_image_create(char *image, int size) {
     fprintf(image_fp, LAUNCH_STRING); // Flawfinder: ignore (LAUNCH_STRING is a constant)
 
     singularity_message(VERBOSE2, "Expanding image to %dMB\n", size);
+    // TODO: there are likely better ways to do this (falloc?); further, we should really handle
+    // EINTR here.
     for(i = 0; i < size; i++ ) {
-        if ( fwrite(buff, 1, 1024*1024, image_fp) < 1024 * 1024 ) {
+        if ( fwrite(buff, 1, BUFFER_SIZE, image_fp) < BUFFER_SIZE ) {
             singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
             ABORT(255);
         }
@@ -70,6 +75,7 @@ int singularity_image_create(char *image, int size) {
     fchmod(fileno(image_fp), 0755);
 
     fclose(image_fp);
+    free(buff);
 
     singularity_message(DEBUG, "Returning image_create(%s, %d) = 0\n", image, size);
 
