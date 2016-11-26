@@ -43,6 +43,6 @@ int singularity_file(void) {
     retval += singularity_file_group();
     retval += singularity_file_resolvconf();
 
-    return(0);
+    return (retval);
 }
 

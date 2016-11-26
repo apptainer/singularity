@@ -90,13 +90,7 @@ int singularity_file_passwd(void) {
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Opening the template passwd file: %s\n", tmp_file);
-    if ( ( file_fp = fopen(tmp_file, "a") ) == NULL ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
-        ABORT(255);
-    }
-
-    singularity_message(VERBOSE, "Creating template passwd file and appending user data\n");
+    singularity_message(VERBOSE, "Creating template passwd file and appending user data: %s\n", tmp_file);
     if ( ( file_fp = fopen(tmp_file, "a") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
         ABORT(255);

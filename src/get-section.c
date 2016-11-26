@@ -44,7 +44,7 @@ int main(int argc, char ** argv) {
     int toggle_section = 0;
     int retval = 1;
     FILE *input;
-    char *line = (char *)malloc(MAX_LINE_LEN);;
+    char *line = (char *)malloc(MAX_LINE_LEN);
 
     if ( argc < 3 ) {
         printf("USAGE: %s [section] [file]\n", argv[0]);
@@ -75,6 +75,8 @@ int main(int argc, char ** argv) {
             printf("%s", line);
         }
     }
-
+    fclose(input);
+    free(section);
+    free(file);
     return(retval);
 }
