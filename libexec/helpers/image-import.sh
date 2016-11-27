@@ -79,6 +79,8 @@ case "$IMPORT_URI" in
 
         # The python script saves names to files in CONTAINER_DIR, we then pass this image as targz to import
         IMPORT_URI=`cat $CONTAINER_DIR/SINGULARITY_IMAGE`
+        rm $CONTAINER_DIR/SINGULARITY_IMAGE
+        rm $CONTAINER_DIR/SINGULARITY_RUNDIR
         SINGULARITY_IMPORT_GET="cat $IMPORT_URI"
         export IMPORT_URI
     ;;
