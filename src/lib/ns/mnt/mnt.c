@@ -68,7 +68,9 @@ int singularity_ns_mnt_unshare(void) {
     //
 #ifdef SINGULARITY_MS_SLAVE
     singularity_message(DEBUG, "Making mounts %s\n", (slave ? "slave" : "private"));
-    if ( mount(NULL, "/", NULL, (slave ? MS_SLAVE : MS_PRIVATE)|MS_REC, NULL) < 0 ) {
+    unsigned mount_flags = MS_REC;
+    mount_flags |= (slave ? MS_SLAVE : MS_PRIVATE);
+    if ( mount(NULL, "/", NULL, mount_flags, NULL) < 0 ) {
         singularity_message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
         ABORT(255);
     }

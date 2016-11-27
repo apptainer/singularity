@@ -60,6 +60,7 @@ int singularity_image_expand(char *image, int size) {
     if ( ftruncate(fileno(image_fp), position-1) < 0 ) {
         fprintf(stderr, "ERROR: Failed truncating the marker bit off of image %s: %s\n", image, strerror(errno));
         free(buff);
+        fclose(image_fp);
         return(-1);
     }
     singularity_message(VERBOSE2, "Expanding image by %dMB\n", size);

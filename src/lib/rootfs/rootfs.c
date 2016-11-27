@@ -110,8 +110,6 @@ int singularity_rootfs_mount(void) {
     char *overlay_upper = joinpath(mount_point, OVERLAY_UPPER);
     char *overlay_work  = joinpath(mount_point, OVERLAY_WORK);
     char *overlay_final = joinpath(mount_point, OVERLAY_FINAL);
-    int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
-    char *overlay_options = (char *) malloc(overlay_options_len);
 
     singularity_message(DEBUG, "Checking 'container dir' mount location: %s\n", mount_point);
     if ( is_dir(mount_point) < 0 ) {
@@ -187,6 +185,8 @@ int singularity_rootfs_mount(void) {
         singularity_message(VERBOSE3, "Not enabling overlayFS, image mounted writablable\n");
     } else {
 #ifdef SINGULARITY_OVERLAYFS
+        int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
+        char *overlay_options = (char *) malloc(overlay_options_len);
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work); // Flawfinder: ignore
 
         singularity_priv_escalate();
@@ -213,6 +213,7 @@ int singularity_rootfs_mount(void) {
             singularity_message(ERROR, "Could not create overlay: %s\n", strerror(errno));
             ABORT(255); 
         }
+        free(overlay_options);
         singularity_priv_drop();
 
         overlay_enabled = 1;
