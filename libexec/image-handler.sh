@@ -78,6 +78,36 @@ case "$SINGULARITY_IMAGE" in
         SINGULARITY_RUNDIR="$CONTAINER_DIR"
         export SINGULARITY_RUNDIR SINGULARITY_IMAGE
     ;;
+    shub://*)
+        NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^shub://@@'`
+
+        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+            SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
+        else
+            SINGULARITY_CACHEDIR_LOCAL="/tmp"
+        fi
+        if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
+            message ERROR "Failed to create container_dir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$BASE_CONTAINER_DIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Failed to create named container_dir\n"
+            ABORT 255
+        fi
+
+        eval $SINGULARITY_libexecdir/singularity/python/cli.py --shub $NAME --rootfs $CONTAINER_DIR
+
+        # The python script saves names to files in CONTAINER_DIR
+        SINGULARITY_RUNDIR=`cat $CONTAINER_DIR/SINGULARITY_RUNDIR`
+        SINGULARITY_IMAGE=`cat $CONTAINER_DIR/SINGULARITY_IMAGE`
+        chmod -R +w "$SINGULARITY_RUNDIR"
+        echo $SINGULARITY_RUNDIR
+        echo $SINGULARITY_IMAGE
+        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+
+    ;;
 esac
 
 case "$SINGULARITY_IMAGE" in

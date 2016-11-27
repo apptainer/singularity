@@ -39,7 +39,14 @@ from docker.api import (
     get_manifest 
 )
 
-from utils import extract_tar, change_permissions, get_cache, basic_auth_header
+from utils import (
+    basic_auth_header,
+    change_permissions, 
+    extract_tar, 
+    get_cache, 
+    write_file
+)
+
 from logman import logger
 import argparse
 import os
@@ -151,7 +158,12 @@ def main():
         else:
             print("Image already exists at %s, skipping download." %image_file)
         logger.info("Singularity Hub Image Download: %s", image_file)
-
+       
+        # If singularity_rootfs is provided, write metadata to it
+        if singularity_rootfs != None:
+            logger.debug("Writing SINGULARITY_RUNDIR and SINGULARITY_IMAGE to %s",singularity_rootfs)
+            write_file("%s/SINGULARITY_RUNDIR" %singularity_rootfs, os.path.dirname(image_file))
+            write_file("%s/SINGULARITY_IMAGE" %singularity_rootfs, image_file)
 
     # Do we have a docker image specified?
     elif args.docker != None:
