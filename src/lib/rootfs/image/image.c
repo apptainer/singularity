@@ -56,6 +56,18 @@ int rootfs_image_init(char *source, char *mount_dir) {
         return(1);
     }
 
+    singularity_config_rewind();
+    int allow_user_image = singularity_config_get_bool("allow user image", 1);
+    singularity_config_rewind();
+    char *protected_image_mode = singularity_config_get_value_default("protected image mode", "none");
+    int protected_image_user = !strcmp(protected_image_mode, "user");
+    int protected_image_group = !strcmp(protected_image_mode, "group");
+    if (!protected_image_user && !protected_image_group && strcmp(protected_image_mode, "none")) {
+        singularity_message(ERROR, "Protected image mode set to %s; known values are 'none', 'user', or 'group'\n", protected_image_mode);
+        ABORT(255);
+    }
+    singularity_message(DEBUG, "Protected image mode set to %s.\n", protected_image_mode);
+
     if ( is_file(source) == 0 ) {
         mount_point = strdup(mount_dir);
     } else {
@@ -66,6 +78,10 @@ int rootfs_image_init(char *source, char *mount_dir) {
     mount_point = strdup(mount_dir);
 
     if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
+        if ( !allow_user_image ) {
+            singularity_message(ERROR, "Writable image requested, but user images disabled.  Only user images may be writable\n");
+            ABORT(255);
+        }
         if ( ( image_fp = fopen(source, "r+") ) == NULL ) { // Flawfinder: ignore
             singularity_message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
             ABORT(255);
@@ -78,11 +94,45 @@ int rootfs_image_init(char *source, char *mount_dir) {
             }
         }
         read_write = 1;
-    } else {
-        if ( ( image_fp = fopen(source, "r") ) == NULL ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
+    } else if ( allow_user_image && (( image_fp = fopen(source, "r") ) != NULL) ) { // Flawfinder: ignore
+        singularity_message(VERBOSE, "Successfully opened image (read only, as invoking user) %s: %s\n", source, strerror(errno));
+    } else if (protected_image_user) {
+        singularity_priv_escalate_singularity();
+        if ( (image_fp = fopen(source, "r")) == NULL ) {
+            singularity_message(ERROR, "Could not open image (%s) as 'singularity' user: %s (errno=%d)\n", source, strerror(errno), errno);
+            if (allow_user_image) {
+               singularity_message(ERROR, "Additionally, could not open image as invoking user.\n");
+            } else {
+               singularity_message(ERROR, "Additionally, user-owned images are disabled.\n");
+            }
             ABORT(255);
         }
+        singularity_priv_drop();
+        singularity_message(VERBOSE, "Opened image (read only, as user 'singularity').\n");
+    } else if (protected_image_group) {
+        singularity_priv_escalate_singularity();
+        if ( (image_fp = fopen(source, "r")) == NULL ) {
+            singularity_message(ERROR, "Could not open image (%s) as unprivileged or 'singularity' user: %s (errno=%d)\n", source, strerror(errno), errno);
+            if (allow_user_image) {
+               singularity_message(ERROR, "Additionally, could not open image as invoking user.\n");
+            } else {
+               singularity_message(ERROR, "Additionally, user-owned images are disabled.\n");
+            }
+            ABORT(255);
+        }
+        singularity_priv_drop();
+        struct stat image_stat;
+        if ( fstat(fileno(image_fp), &image_stat) != 0 ) {
+            singularity_message(ERROR, "Could not fstat image (%s): %s (errno=%d)\n", source, strerror(errno), errno);
+            ABORT(255);
+        }
+        if ( !singularity_priv_has_gid(image_stat.st_gid) ) {
+            singularity_message(ERROR, "Invoking user is not a member of GID %d, which is required to execute image %s.\n", image_stat.st_gid, source);
+            ABORT(255);
+        }
+    } else {
+        singularity_message(ERROR, "Failed to open image %s as invoking user (and privileged mode is disabled): %s (errno=%d).\n", source, strerror(errno), errno);
+        ABORT(255);
     }
 
     if ( singularity_image_check(image_fp) < 0 ) {

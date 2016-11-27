@@ -39,8 +39,7 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-//#include "singularity.h"
-
+#include "lib/config_parser.h"
 
 
 static struct PRIV_INFO {
@@ -58,10 +57,18 @@ static struct PRIV_INFO {
 } uinfo;
 
 
+// Cache of UID / GID of the 'singularity' user.
+static struct SINGULARITY_PRIV_INFO {
+    int ready;
+    uid_t uid;
+    gid_t gid;
+} sinfo;
+
 void singularity_priv_init(void) {
     long int target_uid = -1;
     long int target_gid = -1;
     memset(&uinfo, '\0', sizeof(uinfo));
+    memset(&sinfo, '\0', sizeof(sinfo));
 
     singularity_message(DEBUG, "Called singularity_priv_init(void)\n");
 
@@ -158,6 +165,54 @@ void singularity_priv_escalate(void) {
 
 }
 
+// Note that we don't initialize the singularity user at the beginning of the program;
+// this is because the 'singularity' user feature may not be used and hence not on the
+// system.
+//
+// This helps with sites upgrading from older versions without this user.
+static void cache_singularity_user(void) {
+
+    if (sinfo.ready == 1) {
+        return;
+    }
+
+    singularity_config_rewind();
+    char *username = singularity_config_get_value_default("singularity user", "singularity");
+    struct passwd *pw = getpwnam(username);
+    if (pw == NULL) {
+        singularity_message(ERROR, "Unable to determine UID/GID for user %s: %s (errno=%d)", username, strerror(errno), errno);
+        ABORT(255);
+    }
+    sinfo.uid = pw->pw_uid;
+    sinfo.gid = pw->pw_gid;
+}
+
+void singularity_priv_escalate_singularity(void) {
+
+    if ( uinfo.ready != 1 ) {
+        singularity_message(ERROR, "User info is not available\n");
+        ABORT(255);
+    }
+
+    if ( uinfo.userns_ready == 1 ) {
+        singularity_message(DEBUG, "Not escalating privileges to 'singularity', user namespace enabled\n");
+        return;
+    }
+
+    cache_singularity_user();
+
+    singularity_message(DEBUG, "Temporarily escalating privileges to user singularity (UID=%d, GID=%d) (U=%d)\n", sinfo.uid, sinfo.gid, getuid());
+
+    if ( seteuid(0) < 0 ) {
+        singularity_message(ERROR, "Unable to escalate effective privileges to root.\n");
+        ABORT(255);
+    }
+    if ( ( setegid(sinfo.gid) < 0 ) || ( seteuid(sinfo.uid) < 0 ) ) {
+        singularity_message(ERROR, "The feature you are requesting requires the ability to switch to the singularity user (UID=%d, GID=%d), and you do not have this capability.\n", sinfo.uid, sinfo.gid);
+        ABORT(255);
+    }
+}
+
 void singularity_priv_drop(void) {
 
     if ( uinfo.ready != 1 ) {
@@ -175,6 +230,11 @@ void singularity_priv_drop(void) {
         return;
     }
 
+    // If we escalated privileges to user singularity (!=0), we need to set the EUID back to 0 first before
+    // we can switch back to the invoking user.
+    if ( (geteuid() != 0) && (seteuid(0) < 0) ) {
+        singularity_message(VERBOSE, "Could not restore EUID to 0: %s (errno=%d).\n", strerror(errno), errno);
+    }
 
     singularity_message(DEBUG, "Dropping privileges to UID=%d, GID=%d\n", uinfo.uid, uinfo.gid);
 
@@ -323,5 +383,19 @@ int singularity_priv_getgidcount(void) {
         ABORT(255);
     }
     return uinfo.gids_count;
+}
+
+int singularity_priv_has_gid(gid_t gid) {
+    if ( !uinfo.ready ) {
+        singularity_message(ERROR, "Invoked singularity_priv_has_gid before privilege info initialized!\n");
+        ABORT(255);
+    }
+    int gid_idx;
+    for (gid_idx=0; gid_idx<uinfo.gids_count; gid_idx++) {
+        if (uinfo.gids[gid_idx] == gid) {
+            return 1;
+        }
+    }
+    return 0;
 }
 

@@ -33,4 +33,10 @@
     void singularity_priv_userns_ready(void);
     int singularity_priv_userns_enabled(void);
 
+    // Escalate privileges to the 'singularity' user.
+    void singularity_priv_escalate_singularity(void);
+
+    // Returns 1 if invoking user is a member of `gid`, 0 otherwise
+    int singularity_priv_has_gid(gid_t gid);
+
 #endif /* __PRIVILEGE_H_ */
