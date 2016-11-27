@@ -14,12 +14,13 @@ EXAMPLES:
 
     $ singularity pull shub://7
       Cache folder set to /home/vanessa/.singularity/shub
-      Downloading image... 435a1e321a6277213596f7d68d02ef0b.tar.gz
+      Found image vsoch/singularity-images
+      Downloading image... 61b4721e3583d1c84b524696c08771dd6fa188bc.tar.gz
     
     $ export SINGULARITY_CACHEDIR=/home/vanessa/Desktop
       Cache folder set to /home/vanessa/Desktop/shub
-      Downloading image... 435a1e321a6277213596f7d68d02ef0b.tar.gz
-
+      Found image vsoch/singularity-images
+      Downloading image... 61b4721e3583d1c84b524696c08771dd6fa188bc.tar.gz
 
 For additional help, please visit our public documentation pages which are
 found at:

@@ -98,28 +98,36 @@ def get_manifest(image_id,registry=None):
 def download_image(manifest,download_folder=None):
     '''download_image will download a singularity image from singularity
     hub to a download_folder, named based on the image version (commit id)
+    :param manifest: the manifest obtained with get_manifest
+    :param download_folder: the folder to download to, if None, will be pwd
     '''
     
-    image_name = get_image_name(manifest)
+    image_file = get_image_name(manifest)
 
-    print("Downloading image... %s" %(image_name))
+    print("Found image %s" %(manifest['name']))
+    print("Downloading image... %s" %(image_file))
+
     if download_folder != None:
-        image_name = "%s/%s" %(download_folder,image_name)
+        image_file = "%s/%s" %(download_folder,image_file)
     url = manifest['image']
-    return api_get(url,stream=image_name)
+    return api_get(url,stream=image_file)
 
 
 # Various Helpers ---------------------------------------------------------------------------------
-def get_image_name(manifest,extension='tar.gz'):
+def get_image_name(manifest,extension='tar.gz',use_commit=True):
     '''get_image_name will return the image name for a manifest
     :param manifest: the image manifest with 'image' as key with download link
     :param extension: the extension to look for (without .) Default tar.gz
+    :param use_commit: use the commit id to name the image (default) otherwise use md5sum
     '''
     image_url = os.path.basename(unquote(manifest['image']))
     image_name = re.findall(".+[.]%s" %(extension),image_url)
     if len(image_name) > 0:
-        logger.info("Singularity Hub Image: %s", image_name[0])
-        return image_name[0]
+        image_name = image_name[0]
+        if use_commit == True:
+            image_name = "%s.tar.gz" %(manifest["version"])            
+        logger.info("Singularity Hub Image: %s", image_name)
+        return image_name
     else:
         logger.error("Singularity Hub Image not found with expected extension %s, exiting.",extension)
         sys.exit(1)
