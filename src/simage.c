@@ -42,7 +42,11 @@
 #include "util/file.h"
 #include "util/util.h"
 
-int main(int argc, char ** argv) {
+int main(int argc_in, char ** argv_in) {
+    // Note: SonarQube complains when we change the value of parameters, even
+    // in obviously-OK cases like this one...
+    char **argv = argv_in;
+    int argc = argc_in;
     long int size = 1024;
     
     if ( argv[1] == NULL ) {

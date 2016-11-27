@@ -89,6 +89,7 @@ int singularity_image_bind(int argc, char ** argv) {
         singularity_message(ERROR, "Could not bind image to loop!\n");
         ABORT(255);
     }
+    fclose(containerimage_fp);
 
     singularity_message(VERBOSE, "Setting SINGULARITY_LOOPDEV to '%s'\n", loop_dev);
     setenv("SINGULARITY_LOOPDEV", loop_dev, 1);
