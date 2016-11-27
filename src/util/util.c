@@ -106,8 +106,9 @@ char *envar_path(char *name) {
 }
 
 
-int intlen(int input) {
+int intlen(int input_int) {
     unsigned int len = 1;
+    int input = input_int;
 
     while (input /= 10) {
         len ++;
@@ -126,7 +127,8 @@ char *int2str(int num) {
     return(ret);
 }
 
-char *joinpath(const char * path1, const char * path2) {
+char *joinpath(const char * path1, const char * path2_in) {
+    const char *path2 = path2_in;
     char *tmp_path1 = strdup(path1);
     int path1_len = strlength(tmp_path1, 4096);
     char *ret;
@@ -237,7 +239,8 @@ int str2int(const char *input_str, long int *output_num) {
 // If pw is is filled in with a passwd structure, this function skips
 //   looking it up.
 // The home directory value is saved for later lookups.
-char *get_homedir(struct passwd *pw) {
+char *get_homedir(struct passwd *pw_in) {
+    struct passwd *pw = pw_in;
     static char *homedir = NULL;
 
     if ( homedir != NULL )

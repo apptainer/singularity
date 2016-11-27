@@ -55,7 +55,8 @@ static void message_init(void) {
 }
 
 
-void _singularity_message(int level, const char *function, const char *file, int line, char *format, ...) {
+void _singularity_message(int level, const char *function, const char *file_in, int line, char *format, ...) {
+    const char *file = file_in;
     int syslog_level = LOG_NOTICE;
     char message[512]; // Flawfinder: ignore (messages are truncated to 512 chars)
     char *prefix = "";

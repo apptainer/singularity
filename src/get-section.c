@@ -78,5 +78,6 @@ int main(int argc, char ** argv) {
     fclose(input);
     free(section);
     free(file);
+    free(line);
     return(retval);
 }

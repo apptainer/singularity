@@ -297,12 +297,16 @@ int copy_file(char * source, char * dest) {
     singularity_message(DEBUG, "Calling fstat() on source file descriptor: %d\n", fileno(fp_s));
     if ( fstat(fileno(fp_s), &filestat) < 0 ) {
         singularity_message(ERROR, "Could not fstat() on %s: %s\n", source, strerror(errno));
+        fclose(fp_s);
+        fclose(fp_d);
         return(-1);
     }
 
     singularity_message(DEBUG, "Cloning permission string of source to dest\n");
     if ( fchmod(fileno(fp_d), filestat.st_mode) < 0 ) {
         singularity_message(ERROR, "Could not set permission mode on %s: %s\n", dest, strerror(errno));
+        fclose(fp_s);
+        fclose(fp_d);
         return(-1);
     }
 
@@ -358,6 +362,7 @@ char *filecat(char *path) {
 
     if ( fseek(fd, 0L, SEEK_END) < 0 ) {
         singularity_message(ERROR, "Could not seek to end of file %s: %s\n", path, strerror(errno));
+        fclose(fd);
         return(NULL);
     }
 
