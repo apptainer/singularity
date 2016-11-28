@@ -117,9 +117,11 @@
     // FILE
     // Create temporary files incontainers
     extern int singularity_file(void);
+    extern int singularity_file_bootstrap(void);
     extern int singularity_file_passwd(void);
     extern int singularity_file_group(void);
     extern int singularity_file_resolvconf(void);
+    extern int singularity_file_entrypoint(char *entrypoint_name);
 
 
     extern void singularity_sessiondir_init(char *file);

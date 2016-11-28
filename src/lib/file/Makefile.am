@@ -1,4 +1,4 @@
-SUBDIRS = passwd group resolvconf
+SUBDIRS = passwd group resolvconf entrypoint
 
 MAINTAINERCLEANFILES = Makefile.in
 DISTCLEANFILES = Makefile
@@ -11,7 +11,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libfile.la
 
-libfile_la_LIBADD = passwd/libfilepasswd.la group/libfilegroup.la resolvconf/libfileresolvconf.la
+libfile_la_LIBADD = passwd/libfilepasswd.la group/libfilegroup.la resolvconf/libfileresolvconf.la entrypoint/libfileentrypoint.la
 libfile_la_SOURCES = file.c file-bind.c
 
 EXTRA_DIST = file-bind.h
