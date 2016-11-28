@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 utils.py: python helper for singularity command line tool
 

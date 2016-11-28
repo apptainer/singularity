@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 
 converted.py: Parse a Dockerfile into a Singularity spec file
