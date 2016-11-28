@@ -224,6 +224,10 @@ int bootstrap_rootfs_install() {
     retval += s_mkpath(joinpath(rootfs_path, "/sys"), 0755);
     retval += s_mkpath(joinpath(rootfs_path, "/tmp"), 1777);
     retval += s_mkpath(joinpath(rootfs_path, "/var/tmp"), 1777);
+    retval += copy_file("/etc/hosts", joinpath(rootfs_path, "/etc/hosts"));
+    retval += copy_file("/etc/resolv.conf", joinpath(rootfs_path, "/etc/resolv.conf"));
+    unlink(joinpath(rootfs_path, "/etc/mtab"));
+    retval += fileput(joinpath(rootfs_path, "/etc/mtab"), "singularity / rootfs rw 0 0");
 
     return(retval);
 
@@ -245,7 +249,6 @@ int bootstrap_copy_script(char *section_name, char *dest_path) {
     if ( singularity_bootdef_section_get(script, section_name) == -1 ) {
         singularity_message(VERBOSE, "Definition file does not contain %s, skipping.\n", section_name);
         free(full_dest_path);
-        free(*script);
         free(script);
         return(-1);
     }
