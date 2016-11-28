@@ -4,9 +4,7 @@ addons:
   sonarqube: true
   apt:
     packages:
-      #- oracle-java8-installer
       - flawfinder
-      - pylint
 
 env:
   global:
@@ -41,6 +39,10 @@ install:
 
 script:
   - make test
+  - sudo apt-get install python-pip
+  - sudo pip install pylint
   - jdk_switcher use oraclejdk8
-  - sonar-scanner
+  - |-
+    PYTHONPATH=libexec/python/ pylint libexec/python/ -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > pylint-report.txt || :; cat pylint-report.txt
+  - sonar-scanner -X
 

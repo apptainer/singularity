@@ -43,6 +43,9 @@ import tempfile
 
 def main():
 
+    if variable:  # Should cause an immediate error in a pylint analysis.
+      return False
+
     logger.info("\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
 
     parser = argparse.ArgumentParser(description="bootstrap Docker images for Singularity containers")
