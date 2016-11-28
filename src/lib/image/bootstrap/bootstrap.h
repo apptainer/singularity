@@ -26,8 +26,7 @@
 
     int bootstrap_module_init();
     int bootstrap_rootfs_install();
-    int bootstrap_copy_defaults();
-    void bootstrap_copy_runscript();
+    int bootstrap_copy_script(char *section_name, char *dest_path);
 
     extern int singularity_bootstrap_docker();
     extern int singularity_bootstrap_yum();
