@@ -80,8 +80,8 @@ int singularity_rootfs_init(char *source) {
     singularity_message(DEBUG, "Figuring out where to mount Singularity container\n");
 
     if ( ( mount_point = singularity_config_get_value("container dir") ) == NULL ) {
-        singularity_message(DEBUG, "Using default container path of: /var/singularity/mnt\n");
-        mount_point = strdup("/var/singularity/mnt");
+        singularity_message(DEBUG, "Using default container path of: /var/lib/singularity/mnt\n");
+        mount_point = strdup("/var/lib/singularity/mnt");
     }
     singularity_message(VERBOSE3, "Set image mount path to: %s\n", mount_point);
 
