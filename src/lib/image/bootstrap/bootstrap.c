@@ -103,9 +103,9 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
         bootstrap_copy_script("runscript", "/singularity");
         if ( bootstrap_copy_script("environment", "/environment") != 0 ) {
             singularity_message(VERBOSE, "Copying default environment file instead of user specified environment\n");
-            retval += copy_file(LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment"));
-            retval += chmod(joinpath(rootfs_path, "/environment"), 0644);
+            copy_file(LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment"));
         }
+        chmod(joinpath(rootfs_path, "/environment"), 0644);
             
 
         /* Copy/mount necessary files directly into container rootfs */
@@ -257,6 +257,8 @@ int bootstrap_copy_script(char *section_name, char *dest_path) {
         free(script);
         return(-1);
     }
+
+    chmod(full_dest_path, 0755);
 
     free(full_dest_path);
     free(*script);
