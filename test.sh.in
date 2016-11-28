@@ -325,9 +325,10 @@ stest 0 sudo chown singularity:test_singularity2 /tmp/container.img
 stest 0 sudo -u test_singularity singularity exec /tmp/container.img echo "hello world"
 stest 0 sudo chown singularity:root /tmp/container.img
 stest 1 singularity exec /tmp/container.img echo "hello world"
+# Make sure there is singularity user or group ownership of image, even if it is world-readable.
 stest 0 sudo chown `id -u -n`: /tmp/container.img
-# This should fail in the future - commented out for now as it succeeds.
-# stest 1 singularity exec /tmp/container.img echo "hello world"
+stest 0 sudo chmod 644 /tmp/container.img
+stest 1 singularity exec /tmp/container.img echo "hello world"
 # Restore state
 stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|protected image mode = group|protected image mode = none|'
 stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow user image = no|allow user image = yes|'

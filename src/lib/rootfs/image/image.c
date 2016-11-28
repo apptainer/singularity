@@ -47,6 +47,31 @@ static char *mount_point = NULL;
 static char *loop_dev = NULL;
 static int read_write = 0;
 
+static FILE *open_as_singularity(const char *source, int allow_user_image) {
+    FILE *new_fp = NULL;
+    singularity_priv_escalate_singularity();
+    singularity_message(DEBUG, "Opening image %s as singularity user.\n", source);
+    if ( (new_fp = fopen(source, "r")) == NULL ) {
+            singularity_message(ERROR, "Could not open image (%s) as 'singularity' user: %s (errno=%d)\n", source, strerror(errno), errno);
+            if (allow_user_image) {
+               singularity_message(ERROR, "Additionally, could not open image as invoking user.\n");
+            } else {
+               singularity_message(ERROR, "Additionally, user-owned images are disabled.\n");
+            }
+            ABORT(255);
+    }
+    singularity_priv_drop();
+    struct stat image_stat;
+    if ( fstat(fileno(new_fp), &image_stat) != 0 ) {
+        singularity_message(ERROR, "Could not fstat image (%s): %s (errno=%d)\n", source, strerror(errno), errno);
+        ABORT(255);
+    }
+    if ( (image_stat.st_uid != singularity_priv_singularity_uid()) && (image_stat.st_gid != singularity_priv_singularity_gid()) ) {
+        singularity_message(ERROR, "In protected mode, the image must be owned by the singularity user or its group (UID=%d or GID=%d).\n", singularity_priv_singularity_uid(), singularity_priv_singularity_gid());
+        ABORT(255);
+    }
+    return new_fp;
+}
 
 int rootfs_image_init(char *source, char *mount_dir) {
     singularity_message(DEBUG, "Inializing container rootfs image subsystem\n");
@@ -97,30 +122,11 @@ int rootfs_image_init(char *source, char *mount_dir) {
     } else if ( allow_user_image && (( image_fp = fopen(source, "r") ) != NULL) ) { // Flawfinder: ignore
         singularity_message(VERBOSE, "Successfully opened image (read only, as invoking user) %s: %s\n", source, strerror(errno));
     } else if (protected_image_user) {
-        singularity_priv_escalate_singularity();
-        if ( (image_fp = fopen(source, "r")) == NULL ) {
-            singularity_message(ERROR, "Could not open image (%s) as 'singularity' user: %s (errno=%d)\n", source, strerror(errno), errno);
-            if (allow_user_image) {
-               singularity_message(ERROR, "Additionally, could not open image as invoking user.\n");
-            } else {
-               singularity_message(ERROR, "Additionally, user-owned images are disabled.\n");
-            }
-            ABORT(255);
-        }
-        singularity_priv_drop();
+        image_fp = open_as_singularity(source, allow_user_image);
         singularity_message(VERBOSE, "Opened image (read only, as user 'singularity').\n");
     } else if (protected_image_group) {
-        singularity_priv_escalate_singularity();
-        if ( (image_fp = fopen(source, "r")) == NULL ) {
-            singularity_message(ERROR, "Could not open image (%s) as unprivileged or 'singularity' user: %s (errno=%d)\n", source, strerror(errno), errno);
-            if (allow_user_image) {
-               singularity_message(ERROR, "Additionally, could not open image as invoking user.\n");
-            } else {
-               singularity_message(ERROR, "Additionally, user-owned images are disabled.\n");
-            }
-            ABORT(255);
-        }
-        singularity_priv_drop();
+        image_fp = open_as_singularity(source, allow_user_image);
+        // Perform additional group-matching test.
         struct stat image_stat;
         if ( fstat(fileno(image_fp), &image_stat) != 0 ) {
             singularity_message(ERROR, "Could not fstat image (%s): %s (errno=%d)\n", source, strerror(errno), errno);

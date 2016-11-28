@@ -39,4 +39,10 @@
     // Returns 1 if invoking user is a member of `gid`, 0 otherwise
     int singularity_priv_has_gid(gid_t gid);
 
+    // Returns the UID of the singularity user.
+    uid_t singularity_priv_singularity_uid();
+
+    // Returns the GID of the singularity user.
+    gid_t singularity_priv_singularity_gid();
+
 #endif /* __PRIVILEGE_H_ */
