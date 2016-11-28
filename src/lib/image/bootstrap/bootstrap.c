@@ -100,10 +100,16 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
             ABORT(255);
         }
     
-        bootstrap_copy_runscript();
+        bootstrap_copy_script("runscript", "/singularity");
+        if ( bootstrap_copy_script("environment", "/environment") != 0 ) {
+            singularity_message(VERBOSE, "Copying default environment file instead of user specified environment\n");
+            retval += copy_file(LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment"));
+            retval += chmod(joinpath(rootfs_path, "/environment"), 0644);
+        }
+            
 
-        singularity_file();
-        if ( bootstrap_copy_defaults() != 0 ) {
+        /* Copy/mount necessary files directly into container rootfs */
+        if ( singularity_file_bootstrap() < 0 ) {
             singularity_message(ERROR, "Failed to copy necessary default files to container rootfs. Aborting...\n");
             ABORT(255);
         }
@@ -224,45 +230,6 @@ int bootstrap_rootfs_install() {
 }
 
 /*
- * Copies .exec & .shell & .run into container rootfs. Copies environment file
- * if no environment file is already present.
- *
- * @returns 0 on success, <0 on failure
- */
-int bootstrap_copy_defaults() {
-    singularity_message(VERBOSE, "Copying default files into container rootfs.\n");
-    int retval = 0;
-    char *helper_shell;
-
-    if ( is_file(joinpath(rootfs_path, "/bin/bash")) == 0 ) {
-        helper_shell = strdup("#!/bin/bash");
-    } else {
-        helper_shell = strdup("#!/bin/sh");
-    }
-
-    if ( is_file(joinpath(rootfs_path, "/environment")) == 0 ) {
-        singularity_message(VERBOSE, "Skipping environment file, file already exists.\n");
-    } else {
-        singularity_message(DEBUG, "Copying /environment into container rootfs\n");
-        retval += copy_file( LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment") );
-        retval += chmod( joinpath(rootfs_path, "/environment"), 0644 );
-    }
-
-    singularity_message(DEBUG, "Copying /.exec, /.shell, && /.run into container rootfs\n");
-    retval += fileput(joinpath(rootfs_path, "/.exec"), strjoin(helper_shell, filecat(LIBEXECDIR "/singularity/defaults/exec")));
-    retval += chmod( joinpath(rootfs_path, "/.exec"), 0755 );
-  
-    retval += fileput(joinpath(rootfs_path, "/.shell"), strjoin(helper_shell, filecat(LIBEXECDIR "/singularity/defaults/shell")));
-    retval += chmod( joinpath(rootfs_path, "/.shell"), 0755 );
-  
-    retval += fileput(joinpath(rootfs_path, "/.run"), strjoin(helper_shell, filecat(LIBEXECDIR "/singularity/defaults/run")));
-    retval += chmod( joinpath(rootfs_path, "/.run"), 0755 );
-
-    free(helper_shell);
-    return(retval);
-}
-
-/*
  * Copies script given by section_name into file in container rootfs given
  * by dest_path.
  *
@@ -272,19 +239,26 @@ int bootstrap_copy_defaults() {
  */
 int bootstrap_copy_script(char *section_name, char *dest_path) {
     char **script = malloc(sizeof(char *));
-    singularity_message(VERBOSE, "Copying %%%s script in definition file into %s in container.\n", section_name, dest_path);
+    char *full_dest_path = joinpath(rootfs_path, dest_path);
+    singularity_message(VERBOSE, "Attempting to copy %%%s script into %s in container.\n", section_name, dest_path);
     
     if ( singularity_bootdef_section_get(script, section_name) == -1 ) {
         singularity_message(VERBOSE, "Definition file does not contain %s, skipping.\n", section_name);
+        free(full_dest_path);
+        free(*script);
         free(script);
         return(-1);
     }
     
-    if ( fileput(joinpath(rootfs_path, dest_path), *script) < 0 ) {
-        singularity_message(WARNING, "Couldn't write to rootfs/singularity, skipping %s.\n", section_name);
+    if ( fileput(full_dest_path, *script) < 0 ) {
+        singularity_message(WARNING, "Couldn't write to %s, skipping %s.\n", full_dest_path, section_name);
+        free(full_dest_path);
+        free(*script);
+        free(script);
         return(-1);
     }
-    
+
+    free(full_dest_path);
     free(*script);
     free(script);
     return(0);
