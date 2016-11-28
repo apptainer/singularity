@@ -33,6 +33,7 @@
 #include "passwd/passwd.h"
 #include "group/group.h"
 #include "resolvconf/resolvconf.h"
+#include "entrypoint/entrypoint.h"
 
 
 
