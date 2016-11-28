@@ -263,25 +263,29 @@ int bootstrap_copy_defaults() {
 }
 
 /*
- * Copies %runscript as defined in bootstrap spec file into container rootfs.
- * Verbose output will inform user if no runscript was found.
+ * Copies script given by section_name into file in container rootfs given
+ * by dest_path.
  *
+ * @param char *section_name pointer to string containing name of section to copy
+ * @param char *dest_path pointer to string containing path to copy script into
  * @returns nothing
  */
-void bootstrap_copy_runscript() {
+int bootstrap_copy_script(char *section_name, char *dest_path) {
     char **script = malloc(sizeof(char *));
-    singularity_message(DEBUG, "Searching for runscript in definition file.\n");
+    singularity_message(VERBOSE, "Copying %%%s script in definition file into %s in container.\n", section_name, dest_path);
     
-    if ( singularity_bootdef_section_get(script, "runscript") == -1 ) {
-        singularity_message(VERBOSE, "Definition file does not contain runscript, skipping.\n");
+    if ( singularity_bootdef_section_get(script, section_name) == -1 ) {
+        singularity_message(VERBOSE, "Definition file does not contain %s, skipping.\n", section_name);
         free(script);
-        return;
+        return(-1);
     }
     
-    if ( fileput(joinpath(rootfs_path, "/singularity"), *script) < 0 ) {
-        singularity_message(WARNING, "Couldn't write to rootfs/singularity, skipping runscript.\n");
+    if ( fileput(joinpath(rootfs_path, dest_path), *script) < 0 ) {
+        singularity_message(WARNING, "Couldn't write to rootfs/singularity, skipping %s.\n", section_name);
+        return(-1);
     }
     
     free(*script);
     free(script);
+    return(0);
 }
