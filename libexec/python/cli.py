@@ -25,7 +25,8 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 from docker.api import (
-    create_runscript, 
+    create_runscript,
+    create_envfile,
     get_config, 
     get_images,
     get_layer, 
@@ -240,6 +241,9 @@ def run(args):
         if args.disable_cache == True:
             shutil.rmtree(cache_base)
 
+        env = get_config(manifest, 'Env').split("\n")
+        create_envfile(env=env,
+                       base_dir=singularity_rootfs)
 
         logger.info("*** FINISHING DOCKER BOOTSTRAP PYTHON PORTION ****\n")
 
