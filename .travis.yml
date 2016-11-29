@@ -46,5 +46,5 @@ script:
   - make test
   - jdk_switcher use oraclejdk8
   - sonar-scanner
-  - python2 -m unittest libexec.python.tests.test_client
-  - python3 -m unittest libexec.python.tests.test_client
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_client
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest libexec.python.tests.test_client
