@@ -2,7 +2,7 @@
 
 '''
 
-bootstrap.py: python helper for Singularity command line tool
+cli.py: python helper for Singularity command line tool
 
 Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
 
@@ -241,8 +241,8 @@ def run(args):
         if args.disable_cache == True:
             shutil.rmtree(cache_base)
 
-        env = get_config(manifest, 'Env').split("\n")
-        create_envfile(env=env,
+        # environment is added to ~/environment in the image
+        create_envfile(manifest=manifest,
                        base_dir=singularity_rootfs)
 
         logger.info("*** FINISHING DOCKER BOOTSTRAP PYTHON PORTION ****\n")

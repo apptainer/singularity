@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 
 api.py: Docker helper functions for Singularity in Python
@@ -51,13 +49,34 @@ def create_runscript(cmd,base_dir):
     output_file = write_file(runscript,content)
     return output_file
 
-def create_envfile(env, base_dir):
-    envfile = "%s/environment" % base_dir
+
+def create_envfile(base_dir,env=None,manifest=None):
+    '''create_envfile will generate a file called environment
+    in the base_dir of an image
+    :param base_dir: the base_dir to write the file to
+    :param manifest: the manifest to generate the Env for.
+    :param env: a list of environment variables to export, if manifest
+    is not provided
+    '''
+    if env == None:
+        if manifest == None:
+            logger.error("env or manifest must be provided, exiting")
+            sys.exit(1)    
+        env = get_config(manifest, 'Env').split("\n")
+
+    # A user providing an environment not split by '/n' --> error
+    if not isinstance(env,list):
+        env = [env]
+
+    envfile = "%s/environment" %(base_dir)
+    logger.info("Generating environment file %s",envfile)
     with open(envfile, "w") as f:
         f.write("# Docker image environment\n")
         for e in env:
             f.write("export %s\n" % e)
         f.write('export PS1="Singularity.$SINGULARITY_CONTAINER> "\n')
+    return envfile
+
 
 def get_token(namespace,repo_name,registry=None,auth=None):
     '''get_token uses HTTP basic authentication to get a token for Docker registry API V2 operations
