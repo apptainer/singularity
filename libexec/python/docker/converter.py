@@ -27,7 +27,7 @@ import json
 import os
 import re
 import sys
-sys.path = ['../'] + sys.path # parent directory
+sys.path.append('..') # parent directory
 
 from utils import write_file, read_file
 from logman import logger
