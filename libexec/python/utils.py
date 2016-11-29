@@ -95,7 +95,7 @@ def api_get_pagination(url):
    return results
     
 
-def parse_headers(default_header,headers):
+def parse_headers(default_header,headers=None):
     '''parse_headers will return a completed header object, adding additional headers to some
     default header
     :param default_header: include default_header (above)
