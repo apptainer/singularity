@@ -30,9 +30,6 @@ before_install:
   - wget https://sonarqube.com/static/cpp/build-wrapper-linux-x86.zip
   - unzip build-wrapper-linux-x86.zip
   - export PATH=$PWD/build-wrapper-linux-x86:$PATH
-  # For testing against python 2 and 3
-  - sudo apt-get install python
-  - sudo apt-get install python3
   - cd $TRAVIS_BUILD_DIR/
 
 install:
