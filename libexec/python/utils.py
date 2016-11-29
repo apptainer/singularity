@@ -265,10 +265,17 @@ def extract_tar(targz,output_folder):
     :param targz: the tar.gz file to extract
     :param output_folder: the output folder to extract to
     '''
+    # If extension is .tar.gz, use -xzf
+    args = '-xf'
+    if re.search('.tar.gz$',targz):
+        args = '-xzf'
+
     # Just use command line, more succinct.
-    command = ["tar","-xzf",targz,"-C",output_folder,"--exclude=dev/*"]
+    command = ["tar", args, targz, "-C", output_folder, "--exclude=dev/*"]
     print("Extracting %s" %(targz))
-    return run_command(command) 
+
+    # Should we return a list of extracted files? Current returns empty string
+    return run_command(command)
 
 
 def write_file(filename,content,mode="w"):

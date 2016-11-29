@@ -24,6 +24,7 @@ perform publicly and display publicly, and to permit other to do so.
 import os
 import re
 import sys
+import tarfile
 sys.path.append('..') # directory with client
 
 from unittest import TestCase
@@ -217,8 +218,62 @@ class TestUtils(TestCase):
         shutil.rmtree(tmpdir)
 
 
-    #TODO: need to test api_get
+    def test_extract_tar(self):
+        '''test_extract_tar will test extraction of a tar.gz file
+        '''
+        print("Testing utils.extract_tar...")
+
+        # First create a temporary tar file
+        from utils import extract_tar
+        from glob import glob
+        import tarfile 
         
+        # Create and close a temporary tar.gz
+        print("Case 1: Testing tar.gz...")
+        creation_dir = tempfile.mkdtemp()
+        targz,files = create_test_tar(creation_dir)
+
+        # Extract to different directory
+        extract_dir = tempfile.mkdtemp()
+        extract_tar(targz=targz,
+                    output_folder=extract_dir)
+        extracted_files = [x.replace(extract_dir,'') for x in glob("%s/tmp/*" %(extract_dir))]
+        [self.assertTrue(x in files) for x in extracted_files]
+        
+        # Clean up
+        for dirname in [extract_dir,creation_dir]:
+            shutil.rmtree(dirname)
+
+        print("Case 1: Testing tar...")
+        creation_dir = tempfile.mkdtemp()
+        targz,files = create_test_tar(creation_dir,compressed=False)
+
+        # Extract to different directory
+        extract_dir = tempfile.mkdtemp()
+        extract_tar(targz=targz,
+                    output_folder=extract_dir)
+        extracted_files = [x.replace(extract_dir,'') for x in glob("%s/tmp/*" %(extract_dir))]
+        [self.assertTrue(x in files) for x in extracted_files]
+        
+
+
+    #TODO: need to test api_get
+    #TODO: need to test api_get_pagination
+        
+# Supporting Test Functions
+def create_test_tar(tmpdir,compressed=True):
+    targz = "%s/toodles.tar.gz" %tmpdir
+    if compressed == False:
+        targz = "%s/toodles.tar" %tmpdir
+    mode = "w:gz"
+    if compressed == False:
+        mode = "w"
+    print("Creating %s" %(targz))
+    tar = tarfile.open(targz, mode)
+    files = [tempfile.mkstemp()[1] for x in range(3)]
+    [tar.add(x) for x in files]
+    tar.close()
+    return targz,files
 
 if __name__ == '__main__':
     unittest.main()

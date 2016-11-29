@@ -226,7 +226,7 @@ def get_config(manifest,spec="Entrypoint"):
     # Standard is to include commands like ['/bin/sh']
     if isinstance(cmd,list):
         cmd = "\n".join(cmd)
-    logger.info("Found Docker command (CMD) %s", cmd)
+    logger.info("Found Docker command (%s) %s",spec,cmd)
     return cmd
 
 

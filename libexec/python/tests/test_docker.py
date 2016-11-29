@@ -173,7 +173,7 @@ class TestApi(TestCase):
         '''test_get_config will obtain parameters from the DOcker configuration json
         '''
         from docker.api import get_config
-        from docker.api import get_manfiest
+        from docker.api import get_manifest
 
         # Default should return entrypoint
         print("Case 1: Ask for default command (Entrypoint)")
