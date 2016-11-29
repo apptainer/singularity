@@ -6,6 +6,7 @@ addons:
     packages:
       #- oracle-java8-installer
       - flawfinder
+      - python-pip
 
 env:
   global:
@@ -29,8 +30,8 @@ before_install:
   - wget https://sonarqube.com/static/cpp/build-wrapper-linux-x86.zip
   - unzip build-wrapper-linux-x86.zip
   - export PATH=$PWD/build-wrapper-linux-x86:$PATH
-  # Pylint for tests
-  - sudo apt-get install pylint
+  # Install updated version of pylint
+  - pip install pylint
   - cd $TRAVIS_BUILD_DIR/
 
 install:
@@ -48,4 +49,5 @@ script:
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_client
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker
+  - pylint --version
   - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611
