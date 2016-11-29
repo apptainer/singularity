@@ -140,21 +140,16 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
  * @returns nothing
  */
 void singularity_bootstrap_script_run(char *section_name) {
-    char **fork_args;
-    char **script;
-
-    fork_args = malloc(sizeof(char *) * 4);
-    script = malloc(sizeof(char *));
+    char **fork_args = malloc(sizeof(char *) * 4);
   
     singularity_message(VERBOSE, "Searching for %%%s bootstrap script\n", section_name);
-    if ( singularity_bootdef_section_get(script, section_name) == -1 ) {
+    if ( singularity_bootdef_section_get(&fork_args[2], section_name) == -1 ) {
         singularity_message(VERBOSE, "No %%%s bootstrap script found, skipping\n", section_name);
         return;
     } else {
     
         fork_args[0] = strdup("/bin/sh");
         fork_args[1] = strdup("-c");
-        fork_args[2] = *script;
         fork_args[3] = NULL;
         singularity_message(VERBOSE, "Running %%%s bootstrap script\n%s%s\n%s\n", section_name, fork_args[0], fork_args[1], fork_args[2]);
 
@@ -187,7 +182,7 @@ int bootstrap_module_init() {
         if ( strcmp(module_name, "docker") == 0 ) { //Docker
             return( singularity_bootstrap_docker() );
 
-        } else if ( strcmp(module_name, "yum") == 0) { //Yum
+        } else if ( strcmp(module_name, "yum") == 0 ) { //Yum
             return( singularity_bootstrap_yum() );
 
         } else if ( strcmp(module_name, "debootstrap") == 0 ) { //Debootstrap
