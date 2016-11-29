@@ -61,6 +61,24 @@ char *file_id(char *path) {
     return(ret);
 }
 
+char *file_devino(char *path) {
+    struct stat filestat;
+    char *ret;
+
+    singularity_message(DEBUG, "Called file_devino(%s)\n", path);
+
+    // Stat path
+    if (lstat(path, &filestat) < 0) {
+        return(NULL);
+    }
+
+    ret = (char *) malloc(128);
+    snprintf(ret, 128, "%d.%lu", (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
+
+    singularity_message(DEBUG, "Returning file_devino(%s) = %s\n", path, ret);
+    return(ret);
+}
+
 
 int is_file(char *path) {
     struct stat filestat;

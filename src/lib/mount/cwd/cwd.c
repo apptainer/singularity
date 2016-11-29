@@ -57,19 +57,24 @@ void singularity_mount_cwd(void) {
         ABORT(1);
     }
 
-    singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
-        singularity_message(WARNING, "Not mounting current directory: user bind control is disabled by system administrator\n");
-        free(cwd_path);
-        return;
-    }
+    singularity_message(DEBUG, "Checking if current directory exists in container\n");
+    if ( is_dir(joinpath(container_dir, cwd_path)) == 0 ) {
+        char *cwd_fileid = file_devino(cwd_path);
+        char *container_cwd_fileid = file_devino(joinpath(container_dir, cwd_path));
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-    singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
-    free(cwd_path);
-    return;
-#endif  
+        singularity_message(DEBUG, "Checking if container's cwd == host's cwd\n");
+        if ( strcmp(cwd_fileid, container_cwd_fileid) == 0 ) {
+            singularity_message(VERBOSE, "Not mounting current directory: location already available within container\n");
+            free(cwd_path);
+            free(cwd_fileid);
+            free(container_cwd_fileid);
+            return;
+        } else {
+            singularity_message(DEBUG, "Container's cwd is not the same as the host, continuing on...\n");
+        }
+    } else {
+        singularity_message(DEBUG, "Container does not have the directory: %s\n", cwd_path);
+    }
 
     singularity_message(DEBUG, "Checking for contain option\n");
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
@@ -86,9 +91,25 @@ void singularity_mount_cwd(void) {
 
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
     if ( singularity_rootfs_overlay_enabled() <= 0 ) {
-        singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled\n");
+        if ( is_dir(joinpath(container_dir, cwd_path)) < 0 ) {
+            singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled and directory does not exist in container: %s\n", joinpath(container_dir, cwd_path));
+            return;
+        }
+    }
+
+    singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
+    singularity_config_rewind();
+    if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
+        singularity_message(WARNING, "Not mounting current directory: user bind control is disabled by system administrator\n");
+        free(cwd_path);
         return;
     }
+
+#ifndef SINGULARITY_NO_NEW_PRIVS
+    singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
+    free(cwd_path);
+    return;
+#endif  
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Creating current working directory inside container\n");
