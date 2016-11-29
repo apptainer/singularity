@@ -31,7 +31,7 @@ before_install:
   - unzip build-wrapper-linux-x86.zip
   - export PATH=$PWD/build-wrapper-linux-x86:$PATH
   # Install updated version of pylint
-  - pip install pylint
+  - sudo pip install pylint
   - cd $TRAVIS_BUILD_DIR/
 
 install:
