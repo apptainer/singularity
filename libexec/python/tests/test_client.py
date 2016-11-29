@@ -24,10 +24,13 @@ perform publicly and display publicly, and to permit other to do so.
 import os
 import re
 import sys
+import tarfile
 sys.path.append('..') # directory with client
 
 from unittest import TestCase
 from cli import get_parser, run
+import shutil
+import tempfile
 
 VERSION = sys.version_info[0]
 
@@ -37,7 +40,6 @@ class TestClient(TestCase):
 
     def setUp(self):
         print("\n---START----------------------------------------")
-        self.parser = get_parser()
 
     def tearDown(self):
         print("---END------------------------------------------")
@@ -46,7 +48,8 @@ class TestClient(TestCase):
         '''test_singularity_rootfs ensures that --rootfs is required
         '''
         print("Testing --rootfs command...")
-        args = self.parser.parse_args([])
+        parser = get_parser()
+        args = parser.parse_args([])
         with self.assertRaises(SystemExit) as cm:
             run(args)
         self.assertEqual(cm.exception.code, 1)
@@ -55,15 +58,17 @@ class TestClient(TestCase):
 class TestUtils(TestCase):
 
     def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
         print("\n---START----------------------------------------")
 
     def tearDown(self):
+        shutil.rmtree(self.tmpdir)
         print("---END------------------------------------------")
 
     def test_add_http(self):
         '''test_add_http ensures that http is added to a url
         '''
-        print("Testing utils.add_http...")
+        print("Case 1: adding https to url with nothing specified...")
 
         from utils import add_http
         url = 'registry.docker.io'
@@ -73,10 +78,12 @@ class TestUtils(TestCase):
         self.assertEqual("https://%s"%url,http)
 
         # http
+        print("Case 2: adding http to url with nothing specified...")
         http = add_http(url,use_https=False)
         self.assertEqual("http://%s"%url,http)
 
         # This should not change. Note - is url is http, stays http
+        print("Case 3: url already has https, should not change...")
         url = 'https://registry.docker.io'
         http = add_http(url)
         self.assertEqual(url,http)
@@ -93,15 +100,18 @@ class TestUtils(TestCase):
         from utils import basic_auth_header
         
         # If we don't give headers, and no default, should get {} 
+        print("Case 1: Don't give headers, return empty dictionary")
         empty_dict = parse_headers(default_header=False)
         self.assertEqual(empty_dict,dict())
 
         # If we ask for default, should get something back
+        print("Case 2: ask for default headers...")
         headers = parse_headers(default_header=True)
         for field in ["Accept","Content-Type"]:
             self.assertTrue(field in headers)
 
         # Can we add a header?
+        print("Case 3: add a custom header")
         new_header = {"cookies":"nom"}
         headers = parse_headers(default_header=True,
                                 headers=new_header)
@@ -110,6 +120,7 @@ class TestUtils(TestCase):
 
 
         # Basic auth header
+        print("Case 4: basic_auth_header - ask for custom authentication header")
         auth = basic_auth_header(username='vanessa',
                                  password='pancakes')
         self.assertEqual(auth['Authorization'],
@@ -125,10 +136,12 @@ class TestUtils(TestCase):
         from utils import run_command
         
         # An error should return None
+        print("Case 1: Command errors returns None ")
         none  = run_command(['exec','whaaczasd'])
         self.assertEqual(none,None)
 
         # A success should return console output
+        print("Case 2: Command success returns output")
         hello  = run_command(['echo','hello'])
         if not isinstance(hello,str): # python 3 support
             hello = hello.decode('utf-8')
@@ -144,29 +157,34 @@ class TestUtils(TestCase):
         from utils import get_cache
         
         # If there is no cache_base, we should get default
+        print("Case 1: No cache base returns default")
         home = os.environ['HOME']
         cache = get_cache()
         self.assertEqual("%s/.singularity" %home,cache)
         self.assertTrue(os.path.exists(cache))
 
         # If we give a base, we should get that base instead
+        print("Case 2: custom specification of cache base")
         cache_base = '%s/cache' %(home)
         cache = get_cache(cache_base=cache_base)
         self.assertEqual(cache_base,cache)
         self.assertTrue(os.path.exists(cache))
 
         # If we specify a subfolder, we should get that added
+        print("Case 3: Ask for subfolder in cache base")
         subfolder = 'docker'
         cache = get_cache(subfolder=subfolder)
         self.assertEqual("%s/.singularity/%s" %(home,subfolder),cache)
         self.assertTrue(os.path.exists(cache))
 
         # If we disable the cache, we should get temporary directory
+        print("Case 4: Disable the cache (uses /tmp)")
         cache = get_cache(disable_cache=True)
         self.assertTrue(os.path.exists(cache))
         self.assertTrue(re.search("tmp",cache)!=None)
 
         # If environmental variable set, should use that
+        print("Case 5: cache base obtained from environment")
         SINGULARITY_CACHEDIR = '%s/cache' %(home)
         os.environ['SINGULARITY_CACHEDIR'] = SINGULARITY_CACHEDIR
         cache = get_cache()
@@ -182,26 +200,123 @@ class TestUtils(TestCase):
 
         from utils import change_permissions
         from stat import ST_MODE
-        
-        os.system('touch .mooza')
+        tmpfile = '%s/.mooza' %(self.tmpdir)
+        os.system('touch %s' %(tmpfile))
 
         # 664
-        permissions = oct(os.stat(".mooza")[ST_MODE])[-3:]
+        permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(permissions,'664')
         # to 755
-        change_permissions(".mooza",permission="0755")  
-        new_permissions = oct(os.stat(".mooza")[ST_MODE])[-3:]
+        change_permissions(tmpfile,permission="0755")  
+        new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'755')
         # and back
-        change_permissions(".mooza",permission="0644")  
-        new_permissions = oct(os.stat(".mooza")[ST_MODE])[-3:]
+        change_permissions(tmpfile,permission="0644")  
+        new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'664')
 
-        os.remove('.mooza')
 
+    def test_extract_tar(self):
+        '''test_extract_tar will test extraction of a tar.gz file
+        '''
+        print("Testing utils.extract_tar...")
+
+        # First create a temporary tar file
+        from utils import extract_tar
+        from glob import glob
+        import tarfile 
+        
+        # Create and close a temporary tar.gz
+        print("Case 1: Testing tar.gz...")
+        creation_dir = tempfile.mkdtemp()
+        targz,files = create_test_tar(creation_dir)
+
+        # Extract to different directory
+        extract_dir = tempfile.mkdtemp()
+        extract_tar(targz=targz,
+                    output_folder=extract_dir)
+        extracted_files = [x.replace(extract_dir,'') for x in glob("%s/tmp/*" %(extract_dir))]
+        [self.assertTrue(x in files) for x in extracted_files]
+        
+        # Clean up
+        for dirname in [extract_dir,creation_dir]:
+            shutil.rmtree(dirname)
+
+        print("Case 1: Testing tar...")
+        creation_dir = tempfile.mkdtemp()
+        targz,files = create_test_tar(creation_dir,compressed=False)
+
+        # Extract to different directory
+        extract_dir = tempfile.mkdtemp()
+        extract_tar(targz=targz,
+                    output_folder=extract_dir)
+        extracted_files = [x.replace(extract_dir,'') for x in glob("%s/tmp/*" %(extract_dir))]
+        [self.assertTrue(x in files) for x in extracted_files]
+        
+
+
+    def test_write_read_files(self):
+        '''test_write_read_files will test the functions write_file and read_file
+        '''
+        print("Testing utils.write_file...")
+        from utils import write_file
+        import json
+        tmpfile = tempfile.mkstemp()[1]
+        os.remove(tmpfile)
+        write_file(tmpfile,"hello!")
+        self.assertTrue(os.path.exists(tmpfile))        
+
+        print("Testing utils.read_file...")
+        from utils import read_file
+        content = read_file(tmpfile)[0]
+        self.assertEqual("hello!",content)
+
+        from utils import write_json
+        print("Testing utils.write_json...")
+        print("Case 1: Providing bad json")
+        bad_json = {"Wakkawakkawakka'}":[{True},"2",3]}
+        tmpfile = tempfile.mkstemp()[1]
+        os.remove(tmpfile)        
+        with self.assertRaises(TypeError) as cm:
+            write_json(bad_json,tmpfile)
+
+        print("Case 2: Providing good json")        
+        good_json = {"Wakkawakkawakka":[True,"2",3]}
+        tmpfile = tempfile.mkstemp()[1]
+        os.remove(tmpfile)
+        write_json(good_json,tmpfile)
+        content = json.load(open(tmpfile,'r'))
+        self.assertTrue(isinstance(content,dict))
+        self.assertTrue("Wakkawakkawakka" in content)
+
+
+    def test_clean_path(self):
+        '''test_clean_path will test the clean_path function
+        '''
+        print("Testing utils.clean_path...")
+        from utils import clean_path
+        ideal_path = '/home/vanessa/Desktop/stuff'
+        self.assertEqual(clean_path('/home/vanessa/Desktop/stuff/'),ideal_path)
+        self.assertEqual(clean_path('/home/vanessa/Desktop/stuff//'),ideal_path)
+        self.assertEqual(clean_path('/home/vanessa//Desktop/stuff/'),ideal_path)
 
     #TODO: need to test api_get
+    #TODO: need to test api_get_pagination
         
+# Supporting Test Functions
+def create_test_tar(tmpdir,compressed=True):
+    targz = "%s/toodles.tar.gz" %tmpdir
+    if compressed == False:
+        targz = "%s/toodles.tar" %tmpdir
+    mode = "w:gz"
+    if compressed == False:
+        mode = "w"
+    print("Creating %s" %(targz))
+    tar = tarfile.open(targz, mode)
+    files = [tempfile.mkstemp()[1] for x in range(3)]
+    [tar.add(x) for x in files]
+    tar.close()
+    return targz,files
 
 if __name__ == '__main__':
     unittest.main()

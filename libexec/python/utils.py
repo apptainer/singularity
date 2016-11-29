@@ -24,6 +24,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 from defaults import SINGULARITY_CACHE
 from logman import logger
+import json
 import os
 import re
 import shutil
@@ -173,25 +174,15 @@ def basic_auth_header(username, password):
     :param username: the username
     :param password: the password
     '''
-    credentials = "%s:%s" % (username, password)   
-    credentials = check_encoding(credentials)
-    credentials = base64.b64encode(credentials)
-
-    if isinstance(credentials,bytes):
-        credentials = credentials.decode('utf-8')
+    s = "%s:%s" % (username, password)
+    if sys.version_info[0] >= 3:
+        s = bytes(s, 'utf-8')
+        credentials = base64.b64encode(s).decode('utf-8')
+    else:
+        credentials = base64.b64encode(s)
     auth = {"Authorization": "Basic %s" % credentials}
     return auth
 
-
-def check_encoding(string):
-    '''check_encoding will check for a string, and if so, encode in utf-8. In
-    python 2.x this does not much, but in 3.x it makes sure we have a bytes
-    object
-    :param string: the string to check
-    '''
-    if isinstance(string,str):
-        return string.encode('utf-8')
-    return string
 
 ############################################################################
 ## COMMAND LINE OPERATIONS #################################################
@@ -275,10 +266,17 @@ def extract_tar(targz,output_folder):
     :param targz: the tar.gz file to extract
     :param output_folder: the output folder to extract to
     '''
+    # If extension is .tar.gz, use -xzf
+    args = '-xf'
+    if re.search('.tar.gz$',targz):
+        args = '-xzf'
+
     # Just use command line, more succinct.
-    command = ["tar","-xzf",targz,"-C",output_folder,"--exclude=dev/*"]
+    command = ["tar", args, targz, "-C", output_folder, "--exclude=dev/*"]
     print("Extracting %s" %(targz))
-    return run_command(command) 
+
+    # Should we return a list of extracted files? Current returns empty string
+    return run_command(command)
 
 
 def write_file(filename,content,mode="w"):
@@ -301,9 +299,9 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     logger.info("Writing json file %s with mode %s.",filename,mode)
     filey = open(filename,mode)
     if print_pretty == True:
-        filey.writelines(simplejson.dumps(json_obj, indent=4, separators=(',', ': ')))
+        filey.writelines(json.dumps(json_obj, indent=4, separators=(',', ': ')))
     else:
-        filey.writelines(simplejson.dumps(json_obj))
+        filey.writelines(json.dumps(json_obj))
     filey.close()
     return filename
 
