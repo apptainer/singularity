@@ -21,12 +21,15 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
+import os
 import re
 import sys
 sys.path.append('..') # directory with client
 
 from unittest import TestCase
 from cli import get_parser, run
+
+print("*** PYTHON CLIENT TESTING START ***")
 
 class TestClient(TestCase):
 
@@ -36,6 +39,7 @@ class TestClient(TestCase):
     def test_singularity_rootfs(self):
         '''test_singularity_rootfs ensures that --rootfs is required
         '''
+        print("Testing --rootfs command...")
         args = self.parser.parse_args([])
         with self.assertRaises(SystemExit) as cm:
             run(args)
@@ -45,11 +49,16 @@ class TestClient(TestCase):
 class TestUtils(TestCase):
 
     def setUp(self):
-        self.parser = get_parser()
+        print("\n---START----------------------------------------")
+
+    def tearDown(self):
+        print("---END------------------------------------------")
 
     def test_add_http(self):
         '''test_add_http ensures that http is added to a url
         '''
+        print("Testing utils.add_http...")
+
         from utils import add_http
         url = 'registry.docker.io'
 
@@ -72,6 +81,8 @@ class TestUtils(TestCase):
     def test_headers(self):
         '''test_add_http ensures that http is added to a url
         '''
+        print("Testing utils header functions...")
+
         from utils import parse_headers
         from utils import basic_auth_header
         
@@ -97,6 +108,94 @@ class TestUtils(TestCase):
                                  password='pancakes')
         self.assertEqual(auth['Authorization'],
                          'Basic dmFuZXNzYTpwYW5jYWtlcw==')
+
+
+    def test_run_command(self):
+        '''test_run_command tests sending a command to commandline
+        using subprocess
+        '''
+        print("Testing utils.run_command...")
+
+        from utils import run_command
+        
+        # An error should return None
+        none  = run_command(['exec','whaaczasd'])
+        self.assertEqual(none,None)
+
+        # A success should return console output
+        hello  = run_command(['echo','hello'])
+        if not isinstance(hello,str): # python 3 support
+            hello = hello.decode('utf-8')
+        self.assertEqual(hello,'hello\n')
+
+
+    def test_get_cache(self):
+        '''test_run_command tests sending a command to commandline
+        using subprocess
+        '''
+        print("Testing utils.get_cache...")
+
+        from utils import get_cache
+        
+        # If there is no cache_base, we should get default
+        home = os.environ['HOME']
+        cache = get_cache()
+        self.assertEqual("%s/.singularity" %home,cache)
+        self.assertTrue(os.path.exists(cache))
+
+        # If we give a base, we should get that base instead
+        cache_base = '%s/cache' %(home)
+        cache = get_cache(cache_base=cache_base)
+        self.assertEqual(cache_base,cache)
+        self.assertTrue(os.path.exists(cache))
+
+        # If we specify a subfolder, we should get that added
+        subfolder = 'docker'
+        cache = get_cache(subfolder=subfolder)
+        self.assertEqual("%s/.singularity/%s" %(home,subfolder),cache)
+        self.assertTrue(os.path.exists(cache))
+
+        # If we disable the cache, we should get temporary directory
+        cache = get_cache(disable_cache=True)
+        self.assertTrue(os.path.exists(cache))
+        self.assertTrue(re.search("tmp",cache)!=None)
+
+        # If environmental variable set, should use that
+        SINGULARITY_CACHEDIR = '%s/cache' %(home)
+        os.environ['SINGULARITY_CACHEDIR'] = SINGULARITY_CACHEDIR
+        cache = get_cache()
+        self.assertEqual(SINGULARITY_CACHEDIR,cache)
+        self.assertTrue(os.path.exists(cache))
+
+
+    def test_change_permission(self):
+        '''test_change_permissions will make sure that we can change
+        permissions of a file
+        '''
+        print("Testing utils.change_permissions...")
+
+        from utils import change_permissions
+        from stat import ST_MODE
+        
+        os.system('touch .mooza')
+
+        # 664
+        permissions = oct(os.stat(".mooza")[ST_MODE])[-3:]
+        self.assertTrue(permissions,'664')
+        # to 755
+        change_permissions(".mooza",permission="0755")  
+        new_permissions = oct(os.stat(".mooza")[ST_MODE])[-3:]
+        self.assertTrue(new_permissions,'755')
+        # and back
+        change_permissions(".mooza",permission="0644")  
+        new_permissions = oct(os.stat(".mooza")[ST_MODE])[-3:]
+        self.assertTrue(new_permissions,'664')
+
+        os.remove('.mooza')
+
+
+    #TODO: need to test api_get
+        
 
 if __name__ == '__main__':
     unittest.main()
