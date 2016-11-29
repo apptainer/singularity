@@ -96,7 +96,9 @@ def get_parser():
 
 
 def main():
-
+    '''main is a wrapper for the client to hand the parser to the executable functions
+    This makes it possible to set up a parser in test cases
+    '''
     logger.info("\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
     parser = get_parser()
     
@@ -107,6 +109,11 @@ def main():
         parser.print_help()
         sys.exit(0)
 
+    # Give the args to the main executable to run
+    run(args)
+
+
+def run(args):
 
     # Find root filesystem location
     if args.rootfs != None:
