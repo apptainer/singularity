@@ -36,6 +36,7 @@
 #include "lib/singularity.h"
 #include "lib/image/bootstrap/bootdef_parser.h"
 #include "lib/image/bootstrap/bootstrap.h"
+#include "lib/action/test/test.h"
 
 
 static char *module_name;
@@ -100,8 +101,9 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
             ABORT(255);
         }
 
-        /* Copy runscript and environment file into container rootfs */
+        /* Copy runscript, environment, and .test files into container rootfs */
         bootstrap_copy_script("runscript", "/singularity");
+        bootstrap_copy_script("test", "/.test");
         if ( bootstrap_copy_script("environment", "/environment") != 0 ) {
             singularity_message(VERBOSE, "Copying default environment file instead of user specified environment\n");
             copy_file(LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment"));
@@ -124,10 +126,11 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
         /* Run %setup script from host */
         singularity_bootstrap_script_run("setup");
 
-        /* Run %post script from inside container */
+        /* Run %post and %test scripts from inside container */
         singularity_rootfs_chroot();
         singularity_bootstrap_script_run("post");
-    
+        action_test_do(0, NULL);
+        
         singularity_bootdef_close();
     }
     return(0);
@@ -235,7 +238,7 @@ int bootstrap_rootfs_install() {
  *
  * @param char *section_name pointer to string containing name of section to copy
  * @param char *dest_path pointer to string containing path to copy script into
- * @returns nothing
+ * @returns 0 if script was copied, -1 if script was not copied
  */
 int bootstrap_copy_script(char *section_name, char *dest_path) {
     char **script = malloc(sizeof(char *));
