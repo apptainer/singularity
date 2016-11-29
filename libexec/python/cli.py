@@ -41,9 +41,7 @@ import re
 import sys
 import tempfile
 
-def main():
-
-    logger.info("\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
+def get_parser():
 
     parser = argparse.ArgumentParser(description="bootstrap Docker images for Singularity containers")
 
@@ -94,6 +92,13 @@ def main():
                         help="boolean to specify disabling the cache.", 
                         default=False)
 
+    return parser
+
+
+def main():
+
+    logger.info("\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
+    parser = get_parser()
     
     try:
         args = parser.parse_args()
