@@ -66,7 +66,7 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
     rootfs_path = singularity_rootfs_dir();
     
     /* Set environment variables required for any shell scripts we will call on */
-    setenv("SINGULARITY_ROOTFS", singularity_rootfs_dir(), 1);
+    setenv("SINGULARITY_ROOTFS", rootfs_path, 1);
     setenv("SINGULARITY_IMAGE", containerimage, 1);
     setenv("SINGULARITY_BUILDDEF", bootdef_path, 1);
 
@@ -99,7 +99,8 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
             singularity_message(ERROR, "Failed to create container rootfs. Aborting...\n");
             ABORT(255);
         }
-    
+
+        /* Copy runscript and environment file into container rootfs */
         bootstrap_copy_script("runscript", "/singularity");
         if ( bootstrap_copy_script("environment", "/environment") != 0 ) {
             singularity_message(VERBOSE, "Copying default environment file instead of user specified environment\n");
@@ -127,7 +128,7 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
         singularity_rootfs_chroot();
         singularity_bootstrap_script_run("post");
     
-        singularity_bootdef_close();   
+        singularity_bootdef_close();
     }
     return(0);
 }
