@@ -69,10 +69,11 @@ class TestUtils(TestCase):
         #TODO: add test to change http to https
 
 
-    def test_parse_headers(self):
+    def test_headers(self):
         '''test_add_http ensures that http is added to a url
         '''
         from utils import parse_headers
+        from utils import basic_auth_header
         
         # If we don't give headers, and no default, should get {} 
         empty_dict = parse_headers(default_header=False)
@@ -90,6 +91,12 @@ class TestUtils(TestCase):
         for field in ["Accept","Content-Type","cookies"]:
             self.assertTrue(field in headers)
 
+
+        # Basic auth header
+        auth = basic_auth_header(username='vanessa',
+                                 password='pancakes')
+        self.assertEqual(auth['Authorization'],
+                         'Basic dmFuZXNzYTpwYW5jYWtlcw==')
 
 if __name__ == '__main__':
     unittest.main()
