@@ -95,7 +95,7 @@ def api_get_pagination(url):
    return results
     
 
-def parse_headers(default_header,headers):
+def parse_headers(default_header,headers=None):
     '''parse_headers will return a completed header object, adding additional headers to some
     default header
     :param default_header: include default_header (above)
@@ -168,9 +168,30 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
     return stream
 
 def basic_auth_header(username, password):
-    credentials = base64.b64encode("%s:%s" % (username, password))
+    '''basic_auth_header will return a base64 encoded header object to
+    generate a token
+    :param username: the username
+    :param password: the password
+    '''
+    credentials = "%s:%s" % (username, password)   
+    credentials = check_encoding(credentials)
+    credentials = base64.b64encode(credentials)
+
+    if isinstance(credentials,bytes):
+        credentials = credentials.decode('utf-8')
     auth = {"Authorization": "Basic %s" % credentials}
     return auth
+
+
+def check_encoding(string):
+    '''check_encoding will check for a string, and if so, encode in utf-8. In
+    python 2.x this does not much, but in 3.x it makes sure we have a bytes
+    object
+    :param string: the string to check
+    '''
+    if isinstance(string,str):
+        return string.encode('utf-8')
+    return string
 
 ############################################################################
 ## COMMAND LINE OPERATIONS #################################################

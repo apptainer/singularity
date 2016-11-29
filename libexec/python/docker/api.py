@@ -74,7 +74,7 @@ def get_token(namespace,repo_name,registry=None,auth=None):
         # No token required for registry.
         return None
 
-    if response.code != 401 or not response.headers.has_key("WWW-Authenticate"):
+    if response.code != 401 or "WWW-Authenticate" not in response.headers:
         logger.error("Authentication error for registry %s, exiting.", registry)
         sys.exit(1)
 
