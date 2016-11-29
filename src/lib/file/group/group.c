@@ -50,8 +50,6 @@ int singularity_file_group(void) {
     uid_t gid = singularity_priv_getgid();
     const gid_t *gids = singularity_priv_getgids();
     int gid_count = singularity_priv_getgidcount();
-    struct passwd *pwent = getpwuid(uid);
-    struct group *grent = getgrgid(gid);
     char *containerdir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
 
@@ -88,6 +86,7 @@ int singularity_file_group(void) {
     }
 
     errno = 0;
+    struct passwd *pwent = getpwuid(uid);
     if ( ! pwent ) {
         // List of potential error codes for unknown name taken from man page.
         if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) || (errno == ENOENT)) {
@@ -111,6 +110,7 @@ int singularity_file_group(void) {
     }
 
     errno = 0;
+    struct group *grent = getgrgid(gid);
     if ( grent ) {
         singularity_message(VERBOSE, "Updating group file with user info\n");
         fprintf(file_fp, "\n%s:x:%u:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
