@@ -173,25 +173,15 @@ def basic_auth_header(username, password):
     :param username: the username
     :param password: the password
     '''
-    credentials = "%s:%s" % (username, password)   
-    credentials = check_encoding(credentials)
-    credentials = base64.b64encode(credentials)
-
-    if isinstance(credentials,bytes):
-        credentials = credentials.decode('utf-8')
+    s = "%s:%s" % (username, password)
+    if sys.version_info[0] >= 3:
+        s = bytes(s, 'utf-8')
+        credentials = base64.b64encode(s).decode('utf-8')
+    else:
+        credentials = base64.b64encode(s)
     auth = {"Authorization": "Basic %s" % credentials}
     return auth
 
-
-def check_encoding(string):
-    '''check_encoding will check for a string, and if so, encode in utf-8. In
-    python 2.x this does not much, but in 3.x it makes sure we have a bytes
-    object
-    :param string: the string to check
-    '''
-    if isinstance(string,str):
-        return string.encode('utf-8')
-    return string
 
 ############################################################################
 ## COMMAND LINE OPERATIONS #################################################
