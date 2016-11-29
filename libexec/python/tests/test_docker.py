@@ -27,6 +27,7 @@ sys.path.append('..') # directory with docker
 
 from unittest import TestCase
 from utils import read_file
+import shutil
 import tempfile
 
 VERSION = sys.version_info[0]
@@ -39,9 +40,12 @@ class TestApi(TestCase):
     def setUp(self):
         self.namespace = 'library'
         self.repo_name = 'ubuntu'
+        self.tmpdir = tempfile.mkdtemp()
         print("\n---START----------------------------------------")
 
     def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
         print("---END------------------------------------------")
 
     def test_create_runscript(self):
@@ -188,6 +192,32 @@ class TestApi(TestCase):
         entrypoint = get_config(manifest=manifest,
                                 spec="Cmd")
         self.assertEqual(entrypoint,'/bin/bash')
+
+
+
+    def test_get_layer(self):
+        '''test_get_layer will download docker layers
+        '''
+        from docker.api import get_layer
+        from docker.api import get_images
+        images = get_images(namespace = self.namespace,
+                            repo_name = self.repo_name)
+        
+        print("Case 1: Download an existing layer, should succeed")
+        layer_file = get_layer(image_id=images[0], 
+                               repo_name = self.repo_name,
+                               namespace = self.namespace,
+                               download_folder = self.tmpdir)
+        self.assertTrue(os.path.exists(layer_file))
+
+        print("Case 2: Download a non existing layer, should fail")
+        fake_layer = "sha256:111111111112222222222223333333333"
+        with self.assertRaises(SystemExit) as cm:
+            layer_file = get_layer(image_id=fake_layer, 
+                                   repo_name = self.repo_name,
+                                   namespace = self.namespace,
+                                   download_folder = self.tmpdir)
+        self.assertEqual(cm.exception.code, 1)
 
 
 if __name__ == '__main__':

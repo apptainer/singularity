@@ -40,7 +40,6 @@ class TestClient(TestCase):
 
     def setUp(self):
         print("\n---START----------------------------------------")
-        self.parser = get_parser()
 
     def tearDown(self):
         print("---END------------------------------------------")
@@ -49,7 +48,8 @@ class TestClient(TestCase):
         '''test_singularity_rootfs ensures that --rootfs is required
         '''
         print("Testing --rootfs command...")
-        args = self.parser.parse_args([])
+        parser = get_parser()
+        args = parser.parse_args([])
         with self.assertRaises(SystemExit) as cm:
             run(args)
         self.assertEqual(cm.exception.code, 1)
@@ -58,9 +58,11 @@ class TestClient(TestCase):
 class TestUtils(TestCase):
 
     def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
         print("\n---START----------------------------------------")
 
     def tearDown(self):
+        shutil.rmtree(self.tmpdir)
         print("---END------------------------------------------")
 
     def test_add_http(self):
@@ -198,9 +200,7 @@ class TestUtils(TestCase):
 
         from utils import change_permissions
         from stat import ST_MODE
-        
-        tmpdir = tempfile.mkdtemp()
-        tmpfile = '%s/.mooza' %(tmpdir)
+        tmpfile = '%s/.mooza' %(self.tmpdir)
         os.system('touch %s' %(tmpfile))
 
         # 664
@@ -214,8 +214,6 @@ class TestUtils(TestCase):
         change_permissions(tmpfile,permission="0644")  
         new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'664')
-
-        shutil.rmtree(tmpdir)
 
 
     def test_extract_tar(self):
