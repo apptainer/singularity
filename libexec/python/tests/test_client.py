@@ -29,12 +29,18 @@ sys.path.append('..') # directory with client
 from unittest import TestCase
 from cli import get_parser, run
 
-print("*** PYTHON CLIENT TESTING START ***")
+VERSION = sys.version_info[0]
+
+print("*** PYTHON VERSION %s CLIENT TESTING START ***" %(VERSION))
 
 class TestClient(TestCase):
 
     def setUp(self):
+        print("\n---START----------------------------------------")
         self.parser = get_parser()
+
+    def tearDown(self):
+        print("---END------------------------------------------")
 
     def test_singularity_rootfs(self):
         '''test_singularity_rootfs ensures that --rootfs is required
