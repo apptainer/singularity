@@ -57,6 +57,19 @@ void singularity_mount_cwd(void) {
         ABORT(1);
     }
 
+    if ( is_dir(joinpath(container_dir, cwd_path)) == 0 ) {
+         char *cwd_fileid = file_devino(cwd_path);
+         char *container_cwd_fileid = file_devino(joinpath(container_dir, cwd_path));
+
+         if ( strcmp(cwd_fileid, container_cwd_fileid) == 0 ) {
+            singularity_message(VERBOSE, "Not mounting current directory: location already available within container\n");
+            free(cwd_path);
+            free(cwd_fileid);
+            free(container_cwd_fileid);
+            return;
+         }
+    }
+
     singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
     singularity_config_rewind();
     if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
@@ -86,8 +99,10 @@ void singularity_mount_cwd(void) {
 
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
     if ( singularity_rootfs_overlay_enabled() <= 0 ) {
-        singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled\n");
-        return;
+        if ( is_dir(joinpath(container_dir, cwd_path)) < 0 ) {
+            singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled and directory does not exist in container: %s\n", joinpath(container_dir, cwd_path));
+            return;
+        }
     }
 
     singularity_priv_escalate();
