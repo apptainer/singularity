@@ -24,6 +24,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 from defaults import SINGULARITY_CACHE
 from logman import logger
+import json
 import os
 import re
 import shutil
@@ -298,9 +299,9 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     logger.info("Writing json file %s with mode %s.",filename,mode)
     filey = open(filename,mode)
     if print_pretty == True:
-        filey.writelines(simplejson.dumps(json_obj, indent=4, separators=(',', ': ')))
+        filey.writelines(json.dumps(json_obj, indent=4, separators=(',', ': ')))
     else:
-        filey.writelines(simplejson.dumps(json_obj))
+        filey.writelines(json.dumps(json_obj))
     filey.close()
     return filename
 

@@ -257,6 +257,51 @@ class TestUtils(TestCase):
         
 
 
+    def test_write_read_files(self):
+        '''test_write_read_files will test the functions write_file and read_file
+        '''
+        print("Testing utils.write_file...")
+        from utils import write_file
+        import json
+        tmpfile = tempfile.mkstemp()[1]
+        os.remove(tmpfile)
+        write_file(tmpfile,"hello!")
+        self.assertTrue(os.path.exists(tmpfile))        
+
+        print("Testing utils.read_file...")
+        from utils import read_file
+        content = read_file(tmpfile)[0]
+        self.assertEqual("hello!",content)
+
+        from utils import write_json
+        print("Testing utils.write_json...")
+        print("Case 1: Providing bad json")
+        bad_json = {"Wakkawakkawakka'}":[{True},"2",3]}
+        tmpfile = tempfile.mkstemp()[1]
+        os.remove(tmpfile)        
+        with self.assertRaises(TypeError) as cm:
+            write_json(bad_json,tmpfile)
+
+        print("Case 2: Providing good json")        
+        good_json = {"Wakkawakkawakka":[True,"2",3]}
+        tmpfile = tempfile.mkstemp()[1]
+        os.remove(tmpfile)
+        write_json(good_json,tmpfile)
+        content = json.load(open(tmpfile,'r'))
+        self.assertTrue(isinstance(content,dict))
+        self.assertTrue("Wakkawakkawakka" in content)
+
+
+    def test_clean_path(self):
+        '''test_clean_path will test the clean_path function
+        '''
+        print("Testing utils.clean_path...")
+        from utils import clean_path
+        ideal_path = '/home/vanessa/Desktop/stuff'
+        self.assertEqual(clean_path('/home/vanessa/Desktop/stuff/'),ideal_path)
+        self.assertEqual(clean_path('/home/vanessa/Desktop/stuff//'),ideal_path)
+        self.assertEqual(clean_path('/home/vanessa//Desktop/stuff/'),ideal_path)
+
     #TODO: need to test api_get
     #TODO: need to test api_get_pagination
         
