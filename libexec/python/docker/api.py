@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 
 api.py: Docker helper functions for Singularity in Python

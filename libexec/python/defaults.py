@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 defaults.py: python helper for singularity command line tool. This script stores
 default variables for core python modules for singularity, akin to __init__.py.
