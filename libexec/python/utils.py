@@ -36,7 +36,7 @@ try:
     from urllib.error import HTTPError
 except ImportError:
     from urllib import urlencode
-    import urlparse
+    from urlparse import urlparse
     from urllib2 import urlopen, Request, HTTPError
 
 # Python less than version 3 must import OSError
