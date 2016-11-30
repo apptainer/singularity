@@ -37,16 +37,10 @@
 int singularity_file_entrypoint(char *entrypoint_name) {
     singularity_message(DEBUG, "Copying entrypoint file: %s\n", entrypoint_name);
     int retval = 0;
-    char *helper_shell;
+    char *helper_shell = strdup("#!/bin/sh");
     char *rootfs_path = singularity_rootfs_dir();
     char *dest_path = joinpath(rootfs_path, strjoin("/.", entrypoint_name));
     char *entrypoint = filecat(strjoin(LIBEXECDIR "/singularity/defaults/", entrypoint_name));
-
-    if ( is_file(joinpath(rootfs_path, "/bin/bash")) == 0 ) {
-        helper_shell = strdup("#!/bin/bash");
-    } else {
-        helper_shell = strdup("#!/bin/sh");
-    }
 
     retval += fileput(dest_path, strjoin(helper_shell, entrypoint));
     retval += chmod(dest_path, 0755);
