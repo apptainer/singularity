@@ -68,27 +68,13 @@ class TestUtils(TestCase):
     def test_add_http(self):
         '''test_add_http ensures that http is added to a url
         '''
-        print("Case 1: adding https to url with nothing specified...")
-
         from utils import add_http
-        url = 'registry.docker.io'
-
-        # Default is https
-        http = add_http(url)
-        self.assertEqual("https://%s"%url,http)
-
-        # http
-        print("Case 2: adding http to url with nothing specified...")
-        http = add_http(url,use_https=False)
-        self.assertEqual("http://%s"%url,http)
-
-        # This should not change. Note - is url is http, stays http
-        print("Case 3: url already has https, should not change...")
-        url = 'https://registry.docker.io'
-        http = add_http(url)
-        self.assertEqual(url,http)
-
-        #TODO: add test to change http to https
+        self.assertEqual(add_http("registry.docker.io"), "https://registry.docker.io")
+        self.assertEqual(add_http("registry.docker.io", default_scheme="http"), "http://registry.docker.io")
+        self.assertEqual(add_http("http://registry.docker.io"), "http://registry.docker.io")
+        self.assertEqual(add_http("httpbin.org"), "https://httpbin.org")
+        self.assertEqual(add_http("ftp://registry.docker.io"), None)
+        self.assertEqual(add_http("registry.docker.io", default_scheme="ftp"), None)
 
 
     def test_headers(self):
