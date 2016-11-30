@@ -24,7 +24,6 @@ from defaults import SINGULARITY_CACHE
 from logman import logger
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -32,12 +31,13 @@ import tempfile
 import tarfile
 import base64
 try:
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, urlsplit
     from urllib.request import urlopen, Request
     from urllib.error import HTTPError
 except ImportError:
     from urllib import urlencode
     from urllib2 import urlopen, Request, HTTPError
+    from urlparse import urlsplit
 
 # Python less than version 3 must import OSError
 if sys.version_info[0] < 3:
@@ -48,24 +48,21 @@ if sys.version_info[0] < 3:
 ## HTTP OPERATIONS #########################################################
 ############################################################################
 
-def add_http(url,use_https=True):
-    '''add_http will add a http / https prefix to a url, in case the user didn't
-    specify
-    :param url: the url to add the prefix to
-    :param use_https: should we default to https? default is True
+def add_http(url, default_scheme="https"):
+    '''add_http will verify the URL scheme and add a default one if needed
+    :param url: the url to add the scheme to
+    :param default_scheme: the default scheme to add (http or https)
     '''
-    prefix = "https://"
-    if use_https == False:
-        prefix="http://"
-    
-    # Does the url have http?
-    if re.search('^http*',url) == None:
-        url = "%s%s" %(prefix,url)
+    u = urlsplit(url)
+    if u.scheme is "":
+        url = "%s://%s" % (default_scheme, url)
+        # If URL didn't have a scheme, it might have been parsed incorrectly.
+        u = urlsplit(url)
 
-    # Always remove extra slash
-    url = url.strip('/')
+    if u.netloc is "" or u.scheme not in ["http", "https"]:
+        return None
 
-    return url
+    return u.geturl().rstrip("/")
 
 def api_get_pagination(url):
    '''api_pagination is a wrapper for "api_get" that will also handle pagination
@@ -259,19 +256,19 @@ def change_permissions(path,permission="0755",recursive=True):
         return run_command(cmd)
 
 
-def extract_tar(targz,output_folder):
-    '''extract_tar will extract a tar.gz to a specified output folder
-    :param targz: the tar.gz file to extract
+def extract_tar(archive,output_folder):
+    '''extract_tar will extract a tar archive to a specified output folder
+    :param archive: the archive file to extract
     :param output_folder: the output folder to extract to
     '''
     # If extension is .tar.gz, use -xzf
     args = '-xf'
-    if re.search('.tar.gz$',targz):
+    if archive.endswith(".tar.gz"):
         args = '-xzf'
 
     # Just use command line, more succinct.
-    command = ["tar", args, targz, "-C", output_folder, "--exclude=dev/*"]
-    print("Extracting %s" %(targz))
+    command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
+    print("Extracting %s" %(archive))
 
     # Should we return a list of extracted files? Current returns empty string
     return run_command(command)
