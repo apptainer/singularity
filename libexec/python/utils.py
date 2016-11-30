@@ -31,11 +31,12 @@ import tempfile
 import tarfile
 import base64
 try:
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, urlparse
     from urllib.request import urlopen, Request
     from urllib.error import HTTPError
 except ImportError:
     from urllib import urlencode
+    import urlparse
     from urllib2 import urlopen, Request, HTTPError
 
 # Python less than version 3 must import OSError
@@ -53,18 +54,15 @@ def add_http(url,use_https=True):
     :param url: the url to add the prefix to
     :param use_https: should we default to https? default is True
     '''
-    prefix = "https://"
+    scheme = "https://"
     if use_https == False:
-        prefix="http://"
+        scheme="http://"
 
-    # Does the url have http?
-    if not url.startswith('http'):
-        url = "%s%s" %(prefix,url)
+    parsed = urlparse(url)
+    # Returns tuple with(scheme,netloc,path,params,query,fragment)
 
-    # Always remove extra slash
-    url = url.rstrip('/')
+    return "%s%s" %(scheme,"".join(parsed[1:]))
 
-    return url
 
 def api_get_pagination(url):
    '''api_pagination is a wrapper for "api_get" that will also handle pagination

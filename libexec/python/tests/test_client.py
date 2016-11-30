@@ -68,27 +68,44 @@ class TestUtils(TestCase):
     def test_add_http(self):
         '''test_add_http ensures that http is added to a url
         '''
-        print("Case 1: adding https to url with nothing specified...")
 
         from utils import add_http
-        url = 'registry.docker.io'
+        url_http = 'http://registry.docker.io'
+        url_https = 'https://registry.docker.io'
+
+        print("Case 1: adding https to url with nothing specified...")
 
         # Default is https
+        url = 'registry.docker.io'
         http = add_http(url)
-        self.assertEqual("https://%s"%url,http)
+        self.assertEqual(url_https,http)
 
         # http
         print("Case 2: adding http to url with nothing specified...")
         http = add_http(url,use_https=False)
-        self.assertEqual("http://%s"%url,http)
+        self.assertEqual(url_http,http)
 
         # This should not change. Note - is url is http, stays http
         print("Case 3: url already has https, should not change...")
         url = 'https://registry.docker.io'
         http = add_http(url)
-        self.assertEqual(url,http)
+        self.assertEqual(url_https,http)
 
-        #TODO: add test to change http to https
+        # This should not change. Note - is url is http, stays http
+        print("Case 4: url already has http, should not change...")
+        url = 'http://registry.docker.io'
+        http = add_http(url,use_https=False)
+        self.assertEqual(url_http,http)
+
+        print("Case 5: url has http, should change to https")
+        url = 'http://registry.docker.io'
+        http = add_http(url)
+        self.assertEqual(url_https,http)
+
+        print("Case 6: url has https, should change to http")
+        url = 'https://registry.docker.io'
+        http = add_http(url,use_https=False)
+        self.assertEqual(url_http,http)
 
 
     def test_headers(self):
