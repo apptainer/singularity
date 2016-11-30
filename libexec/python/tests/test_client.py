@@ -285,7 +285,8 @@ class TestUtils(TestCase):
         tmpfile = tempfile.mkstemp()[1]
         os.remove(tmpfile)
         write_json(good_json,tmpfile)
-        content = json.load(open(tmpfile,'r'))
+        with open(tmpfile,'r') as filey:
+            content = json.load(filey)
         self.assertTrue(isinstance(content,dict))
         self.assertTrue("Wakkawakkawakka" in content)
 
