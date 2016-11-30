@@ -57,13 +57,13 @@ def add_http(url,use_https=True):
     prefix = "https://"
     if use_https == False:
         prefix="http://"
-    
+
     # Does the url have http?
-    if re.search('^http*',url) == None:
+    if not url.startswith('http'):
         url = "%s%s" %(prefix,url)
 
     # Always remove extra slash
-    url = url.strip('/')
+    url = url.rstrip('/')
 
     return url
 
