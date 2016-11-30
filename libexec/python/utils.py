@@ -61,7 +61,7 @@ def add_http(url,use_https=True):
     parsed = urlparse(url)
     # Returns tuple with(scheme,netloc,path,params,query,fragment)
 
-    return "%s%s" %(scheme,"".join(parsed[1:]))
+    return "%s%s" %(scheme,"".join(parsed[1:]).rstrip('/'))
 
 
 def api_get_pagination(url):

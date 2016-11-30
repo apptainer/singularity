@@ -107,6 +107,11 @@ class TestUtils(TestCase):
         http = add_http(url,use_https=False)
         self.assertEqual(url_http,http)
 
+        print("Case 7: url should have trailing slash stripped")
+        url = 'https://registry.docker.io/'
+        http = add_http(url,use_https=False)
+        self.assertEqual(url_http,http)
+
 
     def test_headers(self):
         '''test_add_http ensures that http is added to a url
