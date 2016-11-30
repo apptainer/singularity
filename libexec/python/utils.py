@@ -24,7 +24,6 @@ from defaults import SINGULARITY_CACHE
 from logman import logger
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -32,11 +31,12 @@ import tempfile
 import tarfile
 import base64
 try:
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, urlparse
     from urllib.request import urlopen, Request
     from urllib.error import HTTPError
 except ImportError:
     from urllib import urlencode
+    from urlparse import urlparse
     from urllib2 import urlopen, Request, HTTPError
 
 # Python less than version 3 must import OSError
@@ -54,18 +54,15 @@ def add_http(url,use_https=True):
     :param url: the url to add the prefix to
     :param use_https: should we default to https? default is True
     '''
-    prefix = "https://"
+    scheme = "https://"
     if use_https == False:
-        prefix="http://"
-    
-    # Does the url have http?
-    if re.search('^http*',url) == None:
-        url = "%s%s" %(prefix,url)
+        scheme="http://"
 
-    # Always remove extra slash
-    url = url.strip('/')
+    parsed = urlparse(url)
+    # Returns tuple with(scheme,netloc,path,params,query,fragment)
 
-    return url
+    return "%s%s" %(scheme,"".join(parsed[1:]).rstrip('/'))
+
 
 def api_get_pagination(url):
    '''api_pagination is a wrapper for "api_get" that will also handle pagination
@@ -259,19 +256,19 @@ def change_permissions(path,permission="0755",recursive=True):
         return run_command(cmd)
 
 
-def extract_tar(targz,output_folder):
-    '''extract_tar will extract a tar.gz to a specified output folder
-    :param targz: the tar.gz file to extract
+def extract_tar(archive,output_folder):
+    '''extract_tar will extract a tar archive to a specified output folder
+    :param archive: the archive file to extract
     :param output_folder: the output folder to extract to
     '''
     # If extension is .tar.gz, use -xzf
     args = '-xf'
-    if re.search('.tar.gz$',targz):
+    if archive.endswith(".tar.gz"):
         args = '-xzf'
 
     # Just use command line, more succinct.
-    command = ["tar", args, targz, "-C", output_folder, "--exclude=dev/*"]
-    print("Extracting %s" %(targz))
+    command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
+    print("Extracting %s" %(archive))
 
     # Should we return a list of extracted files? Current returns empty string
     return run_command(command)
