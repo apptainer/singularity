@@ -215,11 +215,11 @@ class TestUtils(TestCase):
         # Create and close a temporary tar.gz
         print("Case 1: Testing tar.gz...")
         creation_dir = tempfile.mkdtemp()
-        targz,files = create_test_tar(creation_dir)
+        archive,files = create_test_tar(creation_dir)
 
         # Extract to different directory
         extract_dir = tempfile.mkdtemp()
-        extract_tar(targz=targz,
+        extract_tar(archive=archive,
                     output_folder=extract_dir)
         extracted_files = [x.replace(extract_dir,'') for x in glob("%s/tmp/*" %(extract_dir))]
         [self.assertTrue(x in files) for x in extracted_files]
@@ -230,11 +230,11 @@ class TestUtils(TestCase):
 
         print("Case 1: Testing tar...")
         creation_dir = tempfile.mkdtemp()
-        targz,files = create_test_tar(creation_dir,compressed=False)
+        archive,files = create_test_tar(creation_dir,compressed=False)
 
         # Extract to different directory
         extract_dir = tempfile.mkdtemp()
-        extract_tar(targz=targz,
+        extract_tar(archive=archive,
                     output_folder=extract_dir)
         extracted_files = [x.replace(extract_dir,'') for x in glob("%s/tmp/*" %(extract_dir))]
         [self.assertTrue(x in files) for x in extracted_files]
@@ -291,18 +291,18 @@ class TestUtils(TestCase):
         
 # Supporting Test Functions
 def create_test_tar(tmpdir,compressed=True):
-    targz = "%s/toodles.tar.gz" %tmpdir
+    archive = "%s/toodles.tar.gz" %tmpdir
     if compressed == False:
-        targz = "%s/toodles.tar" %tmpdir
+        archive = "%s/toodles.tar" %tmpdir
     mode = "w:gz"
     if compressed == False:
         mode = "w"
-    print("Creating %s" %(targz))
-    tar = tarfile.open(targz, mode)
+    print("Creating %s" %(archive))
+    tar = tarfile.open(archive, mode)
     files = [tempfile.mkstemp()[1] for x in range(3)]
     [tar.add(x) for x in files]
     tar.close()
-    return targz,files
+    return archive,files
 
 if __name__ == '__main__':
     unittest.main()
