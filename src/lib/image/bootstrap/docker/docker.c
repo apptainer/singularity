@@ -38,7 +38,6 @@
 
 /* Return 0 if successful, return -1 otherwise. */
 int singularity_bootstrap_docker() {
-
     int index = 6;
     char ** python_args = malloc( sizeof(char *) * 9 );
 
@@ -53,27 +52,22 @@ int singularity_bootstrap_docker() {
         singularity_message(VERBOSE, "Unable to bootstrap with docker container, missing From in definition file\n");
         return(1);
     }
-  
-    if ( ( python_args[index] = singularity_bootdef_get_value("IncludeCmd") ) != NULL ) {
-        if ( strcmp(python_args[index], "yes") == 0 ) {
-            python_args[index] = strdup("--cmd");
-            index++;
-        } else {
-            python_args[index] = NULL;
-        }
+    if ( strcmp((python_args[index] = singularity_bootdef_get_value("IncludeCmd")), "yes") == 0 ) {
+        free(python_args[index]);
+        python_args[index] = strdup("--cmd");
+        index++;
     }
-
     if ( ( python_args[index] = singularity_bootdef_get_value("Registry") ) != NULL ) {
         index++;
     }
     if ( ( python_args[index] = singularity_bootdef_get_value("Token" ) ) != NULL ) {
         index++;
     }
-  
-    python_args = realloc(python_args, (sizeof(char *) * index) ); //Realloc to free space at end of python_args, is this necessary?
-    
-    singularity_message(DEBUG, "\n 1: %s \n2: %s \n3: %s \n4: %s \n5: %s", python_args[1], python_args[2], python_args[3], python_args[4], python_args[5]);
 
-    //Python libexecdir/singularity/python/cli.py --docker $docker_image --rootfs $rootfs $docker_cmd $docker_registry $docker_auth
+    singularity_message(DEBUG, "\nPython Docker Arguments:\n    1: %s\n    2: %s\n    3: %s\n    4: %s\n    5: %s\n    6: %s\n    7: %s\n    8: %s\n", python_args[1], python_args[2], python_args[3], python_args[4], python_args[5], python_args[6], python_args[7], python_args[8]);
+  
+    python_args = realloc(python_args, (sizeof(char *) * (index + 1)) );
+    python_args[index] = NULL;
+
     return(singularity_fork_exec(python_args));
 }
