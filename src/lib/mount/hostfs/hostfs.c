@@ -163,6 +163,12 @@ int singularity_mount_hostfs(void) {
             singularity_message(ERROR, "There was an error binding the path %s: %s\n", mountpoint, strerror(errno));
             ABORT(255);
         }
+        if ( singularity_priv_userns_enabled() != 1 ) {
+            if ( mount(NULL, joinpath(container_dir, mountpoint), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                singularity_message(ERROR, "There was an error remounting the path %s: %s\n", mountpoint, strerror(errno));
+                ABORT(255);
+            }
+        }
         singularity_priv_drop();
 
     }

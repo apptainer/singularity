@@ -59,6 +59,12 @@ int singularity_mount_kernelfs(void) {
                     singularity_message(ERROR, "Could not bind mount container's /proc: %s\n", strerror(errno));
                     ABORT(255);
                 }
+                if ( singularity_priv_userns_enabled() != 1 ) {
+                    if ( mount(NULL, joinpath(container_dir, "/proc"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                        singularity_message(ERROR, "Could not remount container's /proc: %s\n", strerror(errno));
+                        ABORT(255);
+                    }
+                }
                 singularity_priv_drop();
             }
         } else {
@@ -88,6 +94,12 @@ int singularity_mount_kernelfs(void) {
                 if ( mount("/sys", joinpath(container_dir, "/sys"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not bind mount container's /sys: %s\n", strerror(errno));
                     ABORT(255);
+                }
+                if ( singularity_priv_userns_enabled() != 1 ) {
+                    if ( mount(NULL, joinpath(container_dir, "/sys"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                        singularity_message(ERROR, "Could not remount container's /sys: %s\n", strerror(errno));
+                        ABORT(255);
+                    }
                 }
                 singularity_priv_drop();
             }

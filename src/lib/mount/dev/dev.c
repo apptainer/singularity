@@ -98,6 +98,12 @@ int singularity_mount_dev(void) {
                     singularity_message(ERROR, "Could not bind mount container's /dev: %s\n", strerror(errno));
                     ABORT(255);
                 }
+                if ( singularity_priv_userns_enabled() != 1 ) {
+                    if ( mount(NULL, joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                        singularity_message(ERROR, "Could not remount container's /dev: %s\n", strerror(errno));
+                        ABORT(255);
+                    }
+                }
                 singularity_priv_drop();
         } else {
             singularity_message(WARNING, "Not mounting /dev, container has no bind directory\n");

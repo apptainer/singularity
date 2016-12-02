@@ -159,11 +159,23 @@ int singularity_mount_home(void) {
         singularity_message(ERROR, "Failed to mount home directory to stage: %s\n", strerror(errno));
         ABORT(255);
     }
+    if ( singularity_priv_userns_enabled() != 1 ) {
+        if ( mount(NULL, joinpath(sessiondir, homedir), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+            singularity_message(ERROR, "Failed to remount home directory to stage: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    }
     // Then mount the stage to the container
     singularity_message(VERBOSE, "Mounting staged home directory into container: %s->%s\n", joinpath(sessiondir, homedir_base), joinpath(container_dir, homedir_base));
     if ( mount(joinpath(sessiondir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
         singularity_message(ERROR, "Failed to mount staged home directory into container: %s\n", strerror(errno));
         ABORT(255);
+    }
+    if ( singularity_priv_userns_enabled() != 1 ) {
+        if ( mount(NULL, joinpath(container_dir, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+            singularity_message(ERROR, "Failed to remount staged home directory into container: %s\n", strerror(errno));
+            ABORT(255);
+        }
     }
     singularity_priv_drop();
 

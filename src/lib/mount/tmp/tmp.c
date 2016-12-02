@@ -82,6 +82,12 @@ int singularity_mount_tmp(void) {
                 singularity_message(ERROR, "Failed to mount %s -> /tmp: %s\n", tmp_source, strerror(errno));
                 ABORT(255);
             }
+            if ( singularity_priv_userns_enabled() != 1 ) {
+                if ( mount(NULL, joinpath(container_dir, "/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    singularity_message(ERROR, "Failed to remount /tmp: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+            }
             singularity_priv_drop();
         } else {
             singularity_message(VERBOSE, "Could not mount container's /tmp directory: does not exist\n");
@@ -101,6 +107,12 @@ int singularity_mount_tmp(void) {
             if ( mount(vartmp_source, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
                 singularity_message(ERROR, "Failed to mount %s -> /var/tmp: %s\n", vartmp_source, strerror(errno));
                 ABORT(255);
+            }
+            if ( singularity_priv_userns_enabled() != 1 ) {
+                if ( mount(NULL, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    singularity_message(ERROR, "Failed to remount /var/tmp: %s\n", strerror(errno));
+                    ABORT(255);
+                }
             }
             singularity_priv_drop();
         } else {

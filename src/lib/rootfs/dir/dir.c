@@ -82,6 +82,12 @@ int rootfs_dir_mount(void) {
         singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", source_dir, mount_point, strerror(errno));
         return 1;
     }
+    if ( singularity_priv_userns_enabled() != 1 ) {
+        if ( mount(NULL, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+            singularity_message(ERROR, "Could not bind read only %s: %s\n", mount_point, strerror(errno));
+            ABORT(255);
+        }
+    }
     singularity_priv_drop();
 
     if ( read_write <= 0 ) {
