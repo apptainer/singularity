@@ -177,36 +177,27 @@ void chomp_noline(char *str) {
 }
 
 void chomp(char *str) {
+    if (!str) {return;}
+
     int len;
     int i;
     
     len = strlength(str, 4096);
 
-    // Trim leading whitespace by shifting array up by one
-    while ( str[0] == ' ' ) {
-        for ( i = 1; i < len; i++ ) {
-            str[i-1] = str[i];
-        }
-        str[len-1] = '\0';
-        len--;
+    // Trim leading whitespace by shifting array.
+    i = 0;
+    while ( isspace(str[i]) ) {i++;}
+    if (i) {
+        len -= i;
+        memmove(str, str+i, len);
+        str[len] = '\0';
     }
 
-    // Trim trailing whitespace and redefine NULL
-    while ( str[len - 1] == ' ' ) {
+    // Trim trailing whitespace.
+    while ( len && isspace(str[len - 1]) ) {
         str[len - 1] = '\0';
         len--;
     }
-
-    // If str starts with a new line, there is nothing here
-    if ( str[0] == '\n' ) {
-        str[0] = '\0';
-    }
-
-    // Trim trailing new line characters
-    if ( str[len - 1] == '\n' ) {
-        str[len - 1] = '\0';
-    }
-
 }
 
 int strlength(const char *string, int max_len) {

@@ -48,8 +48,7 @@ int singularity_mount_hostfs(void) {
     char *line = NULL;
     char *container_dir = singularity_rootfs_dir();
 
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("mount hostfs", 0) <= 0 ) {
+    if ( singularity_config_get_bool(MOUNT_HOSTFS) <= 0 ) {
         singularity_message(DEBUG, "Not mounting host file systems per configuration\n");
         return(0);
     }

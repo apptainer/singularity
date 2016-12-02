@@ -43,8 +43,7 @@ int singularity_mount_tmp(void) {
     char *tmp_source;
     char *vartmp_source;
 
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("mount tmp", 1) <= 0 ) {
+    if ( singularity_config_get_bool(MOUNT_TMP) <= 0 ) {
         singularity_message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
         return(0);
     }
@@ -52,8 +51,7 @@ int singularity_mount_tmp(void) {
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         char *tmpdirpath;
         if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR") ) != NULL ) {
-            singularity_config_rewind();
-            if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
+            if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
                 singularity_message(ERROR, "User bind control is disabled by system administrator\n");
                 ABORT(5);
             }

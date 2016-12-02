@@ -71,8 +71,7 @@ int singularity_file_group(void) {
     }
 
     singularity_message(DEBUG, "Checking configuration option: 'config group'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("config group", 1) <= 0 ) {
+    if ( singularity_config_get_bool(CONFIG_GROUP) <= 0 ) {
         singularity_message(VERBOSE, "Skipping bind of the host's /etc/group\n");
         return(0);
     }

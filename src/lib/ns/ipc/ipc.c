@@ -49,8 +49,7 @@ int singularity_ns_ipc_enabled(void) {
 
 int singularity_ns_ipc_unshare(void) {
 
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("allow ipc ns", 1) <= 0 ) {
+    if ( singularity_config_get_bool(ALLOW_IPC_NS) <= 0 ) {
         singularity_message(VERBOSE2, "Not virtualizing IPC namespace by configuration\n");
         return(0);
     }

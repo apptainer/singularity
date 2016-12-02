@@ -158,14 +158,4 @@
     extern int singularity_fork_exec(char **argv);
 
 
-
-
-    extern int singularity_config_open(char *config_path);
-    extern void singularity_config_close(void);
-    extern void singularity_config_rewind(void);
-
-    extern char *singularity_config_get_value(char *key);
-    extern int singularity_config_get_bool(char *key, int def);
-
-
 #endif /* __SINGULARITY_H */

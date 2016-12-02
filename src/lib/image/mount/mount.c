@@ -36,6 +36,7 @@
 #include <linux/limits.h>
 
 #include "config.h"
+#include "lib/config_parser.h"
 #include "lib/singularity.h"
 #include "util/file.h"
 #include "util/util.h"
@@ -56,7 +57,7 @@ int singularity_image_mount(int argc, char ** argv) {
     }
 
     singularity_priv_init();
-    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_sessiondir_init(containerimage);
     singularity_ns_user_unshare();
     singularity_ns_mnt_unshare();

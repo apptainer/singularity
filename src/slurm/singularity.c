@@ -110,9 +110,7 @@ static int setup_container(spank_t spank) {
 
     singularity_message(VERBOSE, "Running SLURM/Singularity integration plugin\n");
 
-    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-
-    singularity_config_rewind();
+    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     char *image;
     if ( ( image = envar_path("SINGULARITY_IMAGE") ) == NULL ) {

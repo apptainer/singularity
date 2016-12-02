@@ -57,8 +57,7 @@ void singularity_mount_scratch(void) {
     }
 
     singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
+    if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
         singularity_message(VERBOSE, "Not mounting scratch: user bind control is disabled by system administrator\n");
         return;
     }

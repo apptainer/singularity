@@ -69,8 +69,7 @@ int singularity_file_passwd(void) {
     }
 
     singularity_message(DEBUG, "Checking configuration option: 'config passwd'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("config passwd", 1) <= 0 ) {
+    if ( singularity_config_get_bool(CONFIG_PASSWD) <= 0 ) {
         singularity_message(VERBOSE, "Skipping bind of the host's /etc/passwd\n");
         return(0);
     }

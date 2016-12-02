@@ -64,13 +64,13 @@ char *singularity_sessiondir_init(char *file) {
             return(NULL);
         }
 
-        singularity_config_rewind();
         if ( ( sessiondir_prefix = envar_path("SINGULARITY_SESSIONDIR") ) != NULL ) {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s/singularity-session-%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
-        } else if ( ( sessiondir_prefix = singularity_config_get_value("sessiondir prefix") ) != NULL ) {
+        } else if ( ( sessiondir_prefix = strdup(singularity_config_get_value(SESSIONDIR_PREFIX)) ) != NULL ) {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
         } else {
-            snprintf(sessiondir, sizeof(char) * PATH_MAX, "/tmp/.singularity-session-%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
+            singularity_message(ERROR, "Programming error - default for %s returned NULL.\n", sessiondir_prefix);
+            ABORT(255);
         }
         singularity_message(DEBUG, "Set sessiondir to: %s\n", sessiondir);
         free(sessiondir_prefix);
