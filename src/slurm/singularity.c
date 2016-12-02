@@ -43,8 +43,8 @@ SPANK_PLUGIN(singularity, 1);
 
 // These should only be set post-fork and before exec;
 // this means reading / writing to these should be thread-safe.
-static char job_uid_str[INT_MAX_STRING_SIZE];
-static char job_gid_str[INT_MAX_STRING_SIZE];
+static char job_uid_str[INT_MAX_STRING_SIZE]; //Flawfinder: ignore
+static char job_gid_str[INT_MAX_STRING_SIZE]; //Flawfinder: ignore
 static char *job_cwd = NULL;
 static char *job_image = NULL;
 
@@ -55,7 +55,7 @@ static int setup_container_environment(spank_t spank) {
         slurm_error("Failed to get job's target UID");
         return -1;
     }
-    if (INT_MAX_STRING_SIZE == snprintf(job_uid_str, INT_MAX_STRING_SIZE, "%u", job_uid)) {
+    if (INT_MAX_STRING_SIZE == snprintf(job_uid_str, INT_MAX_STRING_SIZE, "%u", job_uid)) { // Flawfinder: ignore
         slurm_error("Failed to serialize job's UID to string");
         return -1;
     }
@@ -65,7 +65,7 @@ static int setup_container_environment(spank_t spank) {
         slurm_error("Failed to get job's target GID");
         return -1;
     }
-    if (INT_MAX_STRING_SIZE == snprintf(job_gid_str, INT_MAX_STRING_SIZE, "%u", job_gid)) {
+    if (INT_MAX_STRING_SIZE == snprintf(job_gid_str, INT_MAX_STRING_SIZE, "%u", job_gid)) { // Flawfinder: ignore
         slurm_error("Failed to serialize job's GID to string");
         return -1;
     }

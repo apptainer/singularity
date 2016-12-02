@@ -57,9 +57,9 @@ int singularity_ns_join(pid_t attach_pid) {
     singularity_message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);
 #else
-    char nsjoin_pid[64];
-    char nsjoin_mnt[64];
-    char nsjoin_ipc[64];
+    char nsjoin_pid[64]; // Flawfinder: ignore
+    char nsjoin_mnt[64]; // Flawfinder: ignore
+    char nsjoin_ipc[64]; // Flawfinder: ignore
 
     snprintf(nsjoin_pid, 64, "/proc/%d/ns/pid", attach_pid); // Flawfinder: ignore
     snprintf(nsjoin_mnt, 64, "/proc/%d/ns/mnt", attach_pid); // Flawfinder: ignore
