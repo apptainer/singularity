@@ -40,11 +40,13 @@
 
 #define NULLONE ((char*)1)
 
+int config_initialized = 0;
+
 // Return a new, empty hash entry appropriate for adding to the config hash.
 //
 // By default, each hash bucket can have 7 values.  We set currently-empty
 // entries
-static ENTRY *new_hash_entry(char *value) {
+static ENTRY *new_hash_entry(char *key, char *value) {
     char **hash_value = (char**)malloc(sizeof(char*)*8);
     int idx;
     hash_value[0] = value;
@@ -53,6 +55,7 @@ static ENTRY *new_hash_entry(char *value) {
 
     ENTRY *hash_entry = (ENTRY*)malloc(sizeof(ENTRY));
     memset(hash_entry, '\0', sizeof(ENTRY));
+    hash_entry->key = key;
     hash_entry->data = hash_value;
     return hash_entry;
 }
@@ -83,7 +86,7 @@ static void add_entry(char *key, char *value) {
         }
         return;
     }
-    ENTRY *new_entry = new_hash_entry(value);
+    ENTRY *new_entry = new_hash_entry(key, value);
     new_entry = hsearch(*new_entry, ENTER);
     if (!new_entry) {
         singularity_message(ERROR, "Internal error - unable to initialize configuration entry %s=%s.\n", key, value);
@@ -147,9 +150,22 @@ int singularity_config_parse(char *config_path) {
 
 /*
  * Initialize the configuration, starting at a particular file.
+ *
+ * Returns 0 if the configuration was already initialized or the operation
+ * was successful
+ *
+ * Returns non-zero on error.
  */
 int singularity_config_init(char *config_path) {
-    return singularity_config_parse(config_path);
+    if (config_initialized == 1) {
+        return 0;
+    }
+    hcreate(60);
+    int retval = singularity_config_parse(config_path);
+    if (!retval) {
+        config_initialized = 1;
+    }
+    return retval;
 }
 
 /* 
@@ -160,6 +176,10 @@ int singularity_config_init(char *config_path) {
  */
 const char *_singularity_config_get_value_impl(const char *key, const char *default_value)
 {
+    if (!config_initialized) {
+        return NULL;
+    }
+
     ENTRY search_item;
     search_item.key = (char*)key;
     search_item.data = NULL;
@@ -186,6 +206,9 @@ static const char *_default_entry[2];
 
 const char **_singularity_config_get_value_multi_impl(const char *key, const char *default_value)
 {
+    if (!config_initialized) {
+        return NULL;
+    }
     _default_entry[1] = '\0';
     _default_entry[0] = default_value;
 
@@ -248,7 +271,7 @@ int _singularity_config_get_bool_char_impl(const char *key, const char *def) {
             ABORT(255);
         }
     } else {
-        singularity_message(ERROR, "Undefined configuration for '%s'; should resulted in a compile error.\n", key);
+        singularity_message(ERROR, "Undefined configuration for '%s'; should have resulted in a compile error.\n", key);
         ABORT(255);
     }
 
