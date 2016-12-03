@@ -194,7 +194,10 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None,h
 
     # Add ['Accept'] header to specify version 2 of manifest
     if headers != None:
-        token.update(headers)
+        if token != None:
+            token.update(headers)
+        else:
+            token = headers
 
     response = api_get(base,headers=token,default_header=True)
     try:
