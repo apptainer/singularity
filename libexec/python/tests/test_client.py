@@ -229,13 +229,26 @@ class TestUtils(TestCase):
         permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(permissions,'664')
         # to 755
-        change_permissions(tmpfile,permission="0755")  
+        change_permissions(tmpfile,permission=0755)  
         new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'755')
         # and back
-        change_permissions(tmpfile,permission="0644")  
+        change_permissions(tmpfile,permission=0644)  
         new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'664')
+
+
+    def test_has_writability(self):
+        '''test_has_writability should return True if the bitwise
+        operations on a file are > 0
+        '''
+        print("Testing utils.has_writability...")
+
+        from utils import has_writability
+        from stat import ST_MODE
+        tmpfile = '%s/.mooza' %(self.tmpdir)
+        os.system('touch %s' %(tmpfile))
+
 
 
     def test_extract_tar(self):

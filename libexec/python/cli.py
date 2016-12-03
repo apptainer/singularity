@@ -33,7 +33,7 @@ from docker.api import (
     get_manifest 
 )
 
-from utils import extract_tar, change_permissions, get_cache, basic_auth_header
+from utils import extract_tar, get_cache, basic_auth_header
 from logman import logger
 import argparse
 import os
@@ -214,7 +214,6 @@ def run(args):
                                   auth=auth)
 
             layers.append(targz) # in case we want a list at the end
-                                 # @chrisfilo suggestion to try compiling into one tar.gz
 
             # Extract image and remove tar
             extract_tar(targz,singularity_rootfs)

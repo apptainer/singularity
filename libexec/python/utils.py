@@ -26,6 +26,8 @@ import json
 import os
 import shutil
 import subprocess
+import stat
+from stat import ST_MODE
 import sys
 import tempfile
 import tarfile
@@ -201,6 +203,81 @@ def run_command(cmd):
 
 
 ############################################################################
+## PERMISSIONS #############################################################
+############################################################################
+
+
+def has_permission(file_path,permission=None):
+    '''has_writability will check if a file has writability using
+    bitwise operations
+    :param file_path: the path to the file
+    :param permission: the stat permission to check for
+    is False)
+    '''
+    if permission == None:
+        permission = stat.S_IWUSR
+    st = os.stat(file_path)
+    has_permission = st.st_mode & permission
+    if has_permission > 0:
+        return True
+    return False
+
+
+def change_permission(file_path,**kwargs):
+    '''change_permission changes a permission if the file does not have it
+    :param file_path the path to the file
+    :param permission: the stat permission to use
+    '''
+    if "permission" in kwargs:
+        permission = kwargs['permission']
+    if permission == None:
+        permission = stat.S_IWUSR
+    st = os.stat(file_path)
+    has_perm = has_permission(file_path,permission)
+    if not has_perm:
+        os.chmod(file_path, st.st_mode | permission)
+    return has_permission(file_path,permission)
+
+
+def change_permissions(path,permission=None,recursive=True):
+    '''change_permissions will change all permissions of files
+    and directories. Recursive is default True, given a folder
+    :param path: path to change permissions for
+    :param permission: the permission from stat to add (default is stat.S_IWUSR)
+    :param recursive: do recursively (default is True)
+    '''
+    # Default permission to change is adding write
+    if permission == None:
+        permission = stat.S_IWUSR
+
+    # For a file, recursion is not relevant
+    if os.path.isfile(path):
+        logger.info("Changing permission of %s to %s",path,permission)
+        change_permission(file_path,permission)
+    else:
+        # If the user wants recursive, use os.walk
+        logger.info("Changing permission of files and folders under %s to %s",path,permission)
+        recursive_walk(path=path,
+                       function=change_permission,
+                       permission=permission)
+
+
+def recursive_walk(path, function, **kwargs):
+    '''recursive_walk will apply a function to each file and folder
+    under a path
+    :param path: the path to walk
+    :param function: the function to apply
+    '''
+    print(kwargs)
+    for root, folder, files in os.walk(path):
+        for single_file in files:
+            file_path = os.path.join(root, single_file)
+            # Make sure it's a file or directory
+            if os.path.isfile(file_path) or os.path.isdir(file_path):
+                function(file_path, **kwargs)
+                
+
+############################################################################
 ## FILE OPERATIONS #########################################################
 ############################################################################
 
@@ -238,24 +315,6 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
     return cache_base
 
 
-def change_permissions(path,permission="0755",recursive=True):
-    '''change_permissions will use subprocess to change permissions of a file
-    or directory. Recursive is default True
-    :param path: path to change permissions for
-    :param permission: the permission level (default is 0755)
-    :param recursive: do recursively (default is True)
-    '''
-    if not isinstance(permission,str):
-        logger.warning("Please provide permission as a string, not number! Skipping.")
-    else:
-        permission = str(permission)
-        cmd = ["chmod",permission,"-R",path]
-        if recursive == False:
-           cmd = ["chmod",permission,path]
-        logger.info("Changing permission of %s to %s with command %s",path,permission," ".join(cmd))
-        return run_command(cmd)
-
-
 def extract_tar(archive,output_folder):
     '''extract_tar will extract a tar archive to a specified output folder
     :param archive: the archive file to extract
@@ -269,6 +328,9 @@ def extract_tar(archive,output_folder):
     # Just use command line, more succinct.
     command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
     print("Extracting %s" %(archive))
+
+    # Change permissions (default ensures writable)
+    change_permissions(output_folder)
 
     # Should we return a list of extracted files? Current returns empty string
     return run_command(command)
