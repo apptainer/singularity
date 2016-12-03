@@ -1,33 +1,106 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import os
 import re
 import sys
+sys.path.append('../libexec/python')
 
-define_re = re.compile("#define ([A-Z_]+) (.*)")
+from utils import (
+    get_fullpath,
+    read_file,
+    write_file
+)
 
-defaultfile = open(sys.argv[1], "r")
-infile = open(sys.argv[2], "r")
-outfile = open(sys.argv[3] + ".tmp", "w")
+from logman import logger
+import argparse
 
-data = infile.read()
 
-defaults = {}
-for line in defaultfile:
-    m = define_re.match(line)
-    if m:
-        key, value = m.groups()
-        defaults[key] = value
+def get_parser():
 
-for key, value in defaults.items():
-    new_value = value.replace('"', '')
-    if new_value == "1":
-        new_value = "yes"
-    elif new_value == "0":
-        new_value = "no"
-    data = data.replace("@" + key + "@", new_value)
+    parser = argparse.ArgumentParser(description="singularity configuration parsing helper in python")
 
-outfile.write(data)
-outfile.close()
-os.rename(sys.argv[3] + ".tmp", sys.argv[3])
+    # Configuration defaults header
+    parser.add_argument("--defaults",
+                        dest='defaults',
+                        help="configuration defaults header file (../src/lib/config_defaults.h)",
+                        type=str,
+                        required=True)
 
+    # input configuration file
+    parser.add_argument("--infile",
+                        dest='infile',
+                        help="the configuration input file path (singularity.conf.in)",
+                        type=str,
+                        required=True)
+
+    # Output configuration file
+    parser.add_argument("--outfile",
+                        dest='outfile',
+                        help="the configuration output file path (singularity.conf)",
+                        type=str,
+                        required=True)
+
+    return parser
+
+
+def main():
+    '''parse configuration options and produce configuration output file
+    '''
+    logger.info("\n*** STARTING PYTHON CONFIGURATION HELPER ****")
+    parser = get_parser()
+
+    try:
+        args = parser.parse_args()
+    except:
+        logger.error("Input args to %s improperly set, exiting.", os.path.abspath(__file__))
+        parser.print_help()
+        sys.exit(0)
+
+    # Run the configuration
+    configure(args)
+
+
+def configure(args):
+
+
+    # Get fullpath to each file, and concurrently check that exists
+    defaultfile = get_fullpath(args.defaults) # ../src/lib/config_defaults.h
+    infile = get_fullpath(args.infile)       # singularity.conf.in
+
+    # Find define statements
+    define_re = re.compile("#define ([A-Z_]+) (.*)")
+
+    # Read in input and default files
+    defaultfile = read_file(defaultfile)
+    data = "".join(read_file(infile))
+
+    # Lookup for values we want replaced
+    lookup = {'0':'no',
+              '1':'yes'}
+
+    defaults = {}
+    # Read in defaults to dictionary
+    for line in defaultfile:
+        match = define_re.match(line)
+        if match:
+            key, value = match.groups()
+
+            # Maintain the original default set by user
+            defaults[key] = value
+
+            # Use parsed value for final config
+            new_value = value.replace('"', '')
+            if new_value in lookup:
+                new_value = lookup[new_value]
+            data = data.replace("@" + key + "@", new_value)
+
+    # Write to output file
+    outfile = "%s.tmp" %(args.outfile)
+    write_file(outfile,data)
+    os.rename(outfile, args.outfile)
+
+    logger.info("*** FINISHED PYTHON CONFIGURATION HELPER ****\n")
+
+
+if __name__ == '__main__':
+    main()

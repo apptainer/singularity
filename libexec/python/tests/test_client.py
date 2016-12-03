@@ -322,6 +322,26 @@ class TestUtils(TestCase):
         self.assertEqual(clean_path('/home/vanessa/Desktop/stuff//'),ideal_path)
         self.assertEqual(clean_path('/home/vanessa//Desktop/stuff/'),ideal_path)
 
+
+    def test_get_fullpath(self):
+        '''test_get_fullpath will test the get_fullpath function
+        '''
+        print("Testing utils.get_fullpath...")
+        from utils import get_fullpath
+        tmpfile = tempfile.mkstemp()[1]
+
+        print("Case 1: File exists, should return full path")
+        self.assertEqual(get_fullpath(tmpfile),tmpfile)
+
+        print("Case 2: File doesn't exist, should return error")
+        os.remove(tmpfile)
+        with self.assertRaises(SystemExit) as cm:
+            get_fullpath(tmpfile)
+        self.assertEqual(cm.exception.code, 1)
+
+        print("Case 3: File doesn't exist, but not required, should return None")
+        self.assertEqual(get_fullpath(tmpfile,required=False),None)
+
     #TODO: need to test api_get
     #TODO: need to test api_get_pagination
         

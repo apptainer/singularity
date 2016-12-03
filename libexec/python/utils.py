@@ -279,9 +279,8 @@ def write_file(filename,content,mode="w"):
     and properly close the file
     '''
     logger.info("Writing file %s with mode %s.",filename,mode)
-    filey = open(filename,mode)
-    filey.writelines(content)
-    filey.close()
+    with open(filename,mode) as filey:
+        filey.writelines(content)
     return filename
 
 
@@ -292,12 +291,11 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     :param pretty_print: if True, will use nicer formatting   
     '''
     logger.info("Writing json file %s with mode %s.",filename,mode)
-    filey = open(filename,mode)
-    if print_pretty == True:
-        filey.writelines(json.dumps(json_obj, indent=4, separators=(',', ': ')))
-    else:
-        filey.writelines(json.dumps(json_obj))
-    filey.close()
+    with open(filename,mode) as filey:
+        if print_pretty == True:
+            filey.writelines(json.dumps(json_obj, indent=4, separators=(',', ': ')))
+        else:
+            filey.writelines(json.dumps(json_obj))
     return filename
 
 
@@ -306,9 +304,8 @@ def read_file(filename,mode="r"):
     and properly close the file
     '''
     logger.info("Reading file %s with mode %s.",filename,mode)
-    filey = open(filename,mode)
-    content = filey.readlines()
-    filey.close()
+    with open(filename,mode) as filey:
+        content = filey.readlines()
     return content
 
 
@@ -317,3 +314,23 @@ def clean_path(path):
     :param path: the path to clean
     '''
     return os.path.realpath(path.strip(" "))
+
+
+def get_fullpath(file_path,required=True):
+    '''get_fullpath checks if a file exists, and returns the
+    full path to it if it does. If required is true, an error is triggered.
+    :param file_path: the path to check
+    :param required: is the file required? If True, will exit with error
+    '''
+    file_path = os.path.abspath(file_path)
+    if os.path.exists(file_path):
+        return file_path
+
+    # If file is required, we exit
+    if required == True:
+        logger.error("Cannot find file %s, exiting.",file_path)
+        sys.exit(1)
+
+    # If file isn't required and doesn't exist, return None
+    logger.warning("Cannot find file %s",file_path)
+    return None
