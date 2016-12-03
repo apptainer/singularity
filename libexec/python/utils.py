@@ -268,7 +268,6 @@ def recursive_walk(path, function, **kwargs):
     :param path: the path to walk
     :param function: the function to apply
     '''
-    print(kwargs)
     for root, folder, files in os.walk(path):
         for single_file in files:
             file_path = os.path.join(root, single_file)
