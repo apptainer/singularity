@@ -131,13 +131,39 @@ def get_images(repo_name=None,namespace=None,manifest=None,repo_tag="latest",reg
             logger.error("No namespace and repo name OR manifest provided, exiting.")
             sys.exit(1)
 
+    digests = read_digests(manifest)
+    return digests
+
+
+def read_digests(manifest):
+    '''read_layers will return a list of layers from a manifest. The function is
+    intended to work with both version 1 and 2 of the schema
+    :param manifest: the manifest to read_layers from
+    '''
+
     digests = []
+
+    # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-2.md#image-manifest
     if 'layers' in manifest:
-        for layer in manifest['layers']:
-            if 'digest' in layer:
-                if layer['digest'] not in digests:
-                    logger.info("Adding digest %s",layer['digest'])
-                    digests.append(layer['digest'])
+        layer_key = 'layers'
+        digest_key = 'digest'
+        logger.info('Image manifest version 2.2 found.')
+
+    # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-1.md#example-manifest
+    elif 'fsLayers' in manifest:
+        layer_key = 'fsLayers'
+        digest_key = 'blobSum'
+        logger.info('Image manifest version 2.1 found.')
+
+    else:
+        logger.error('Improperly formed manifest, layers or fsLayers must be present')
+        sys.exit(1)
+
+    for layer in manifest[layer_key]:
+        if digest_key in layer:
+            if layer[digest_key] not in digests:
+                logger.info("Adding digest %s",layer[digest_key])
+                digests.append(layer[digest_key])
     return digests
     
 
