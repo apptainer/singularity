@@ -29,6 +29,7 @@
 #include <fcntl.h>  
 #include <limits.h>
 #include <search.h>
+#include <glob.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -94,6 +95,13 @@ static void add_entry(char *key, char *value) {
     }
 }
 
+// Logs any errors that occur while the config glob is run.
+static int log_glob_error(const char *epath, int eerrno) {
+    singularity_message(ERROR, "Failed to evaluate config include glob due to error at %s: %s (errno=%d).\n", epath, strerror(eerrno), eerrno);
+    ABORT(255);
+    return 1;
+}
+
 /* 
  * Parses the singularity configuration into memory.
  *
@@ -124,6 +132,36 @@ int singularity_config_parse(char *config_path) {
             continue;
         }
 
+        // Include files
+        if (strncmp("%include", line_buf, 8) == 0) {
+            char *fname_glob = line_buf += 8;
+            if (isspace(*fname_glob)) {
+                chomp(fname_glob);
+                singularity_message(DEBUG, "Parsing '%%include %s' directive.\n", fname_glob);
+                glob_t glob_results;
+                int err = glob(fname_glob, GLOB_TILDE, log_glob_error, &glob_results);
+                if (err == GLOB_NOSPACE) {
+                    singularity_message(ERROR, "Failed to evaluate '%%include %s' due to running out of memory.\n", fname_glob);
+                    ABORT(255);
+                } else if (err == GLOB_ABORTED) {
+                    singularity_message(ERROR, "Failed to evaluate '%%include %s' due read error.\n", fname_glob);
+                    ABORT(255);
+                } else if (err == GLOB_NOMATCH) {
+                    singularity_message(ERROR, "No file matches '%%include %s'\n", fname_glob);
+                    ABORT(255);
+                } else if (err) {
+                    singularity_message(ERROR, "Unknown error when evaluating '%%include %s'\n", fname_glob);
+                    ABORT(255);
+                }
+                int idx;
+                for (idx=0; idx<glob_results.gl_pathc; idx++) {
+                    singularity_config_parse(glob_results.gl_pathv[idx]);
+                }
+                globfree(&glob_results);
+                continue;
+            }
+        }
+
         // Parse assignments.
         char *config_key = strtok(line, "=");
         if ( config_key != NULL ) {
@@ -135,7 +173,7 @@ int singularity_config_parse(char *config_path) {
                 char *config_value = strdup(config_value_tmp);
                 chomp(config_value);
                 singularity_message(VERBOSE2, "Got config key %s = '%s'\n", config_key, config_value);
-                
+
                 add_entry(config_key, config_value);
             }
         }
