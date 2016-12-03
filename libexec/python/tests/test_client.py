@@ -137,6 +137,7 @@ class TestUtils(TestCase):
         new_header = {"cookies":"nom"}
         headers = parse_headers(default_header=True,
                                 headers=new_header)
+        print(headers)
         for field in ["Accept","Content-Type","cookies"]:
             self.assertTrue(field in headers)
 

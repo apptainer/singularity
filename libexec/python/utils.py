@@ -103,15 +103,17 @@ def parse_headers(default_header,headers=None):
 
     if default_header == True:
         if headers != None:
-            header.update(headers)
+            final_headers = header.copy()
+            final_headers.update(headers)
         else:
-            headers = header
+            final_headers = header
 
     else:
+        final_headers = headers
         if headers == None:
-            headers = dict() 
+            final_headers = dict() 
 
-    return headers
+    return final_headers
 
 
 def api_get(url,data=None,default_header=True,headers=None,stream=None,return_response=False):
