@@ -118,22 +118,26 @@ def get_images(repo_name=None,namespace=None,manifest=None,repo_tag="latest",reg
     # Get full image manifest, using version 2.0 of Docker Registry API
     if manifest == None:
         if repo_name != None and namespace != None:
+
+            # Custom header to specify we want a list of the version 2 schema, meaning the correct order of digests returned (base to child)
+            headers = {"Accept":'application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json'}
             manifest = get_manifest(repo_name=repo_name,
                                     namespace=namespace,
                                     repo_tag=repo_tag,
                                     registry=registry,
+                                    headers=headers,
                                     auth=auth)
         else:
             logger.error("No namespace and repo name OR manifest provided, exiting.")
             sys.exit(1)
 
     digests = []
-    if 'fsLayers' in manifest:
-        for fslayer in manifest['fsLayers']:
-            if 'blobSum' in fslayer:
-                if fslayer['blobSum'] not in digests:
-                    logger.info("Adding digest %s",fslayer['blobSum'])
-                    digests.append(fslayer['blobSum'])
+    if 'layers' in manifest:
+        for layer in manifest['layers']:
+            if 'digest' in layer:
+                if layer['digest'] not in digests:
+                    logger.info("Adding digest %s",layer['digest'])
+                    digests.append(layer['digest'])
     return digests
     
 
@@ -165,7 +169,7 @@ def get_tags(namespace,repo_name,registry=None,auth=None):
         sys.exit(1)
 
 
-def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None):
+def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None,headers=None):
     '''get_manifest should return an image manifest for a particular repo and tag. The token is expected to
     be from version 2.0 (function above)
     :param repo_name: the name of the repo, eg "ubuntu"
@@ -173,6 +177,7 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None):
     :param repo_tag: the repo tag, default is "latest"
     :param registry: the docker registry to use (default will use index.docker.io)
     :param auth: authorization header (default None)
+    :param headers: dictionary of custom headers to add to token header (to get more specific manifest)
     '''
     if registry == None:
         registry = api_base
@@ -186,6 +191,10 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None):
                       repo_name=repo_name,
                       namespace=namespace,
                       auth=auth)
+
+    # Add ['Accept'] header to specify version 2 of manifest
+    if headers != None:
+        token.update(headers)
 
     response = api_get(base,headers=token,default_header=True)
     try:

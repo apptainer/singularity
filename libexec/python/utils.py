@@ -103,7 +103,7 @@ def parse_headers(default_header,headers=None):
 
     if default_header == True:
         if headers != None:
-            headers.update(header)
+            header.update(headers)
         else:
             headers = header
 
