@@ -223,13 +223,11 @@ def has_permission(file_path,permission=None):
     return False
 
 
-def change_permission(file_path,**kwargs):
+def change_permission(file_path,permission=None):
     '''change_permission changes a permission if the file does not have it
     :param file_path the path to the file
     :param permission: the stat permission to use
     '''
-    if "permission" in kwargs:
-        permission = kwargs['permission']
     if permission == None:
         permission = stat.S_IWUSR
     st = os.stat(file_path)
@@ -257,23 +255,12 @@ def change_permissions(path,permission=None,recursive=True):
     else:
         # If the user wants recursive, use os.walk
         logger.info("Changing permission of files and folders under %s to %s",path,permission)
-        recursive_walk(path=path,
-                       function=change_permission,
-                       permission=permission)
-
-
-def recursive_walk(path, function, **kwargs):
-    '''recursive_walk will apply a function to each file and folder
-    under a path
-    :param path: the path to walk
-    :param function: the function to apply
-    '''
-    for root, folder, files in os.walk(path):
-        for single_file in files:
-            file_path = os.path.join(root, single_file)
-            # Make sure it's a file or directory
-            if os.path.isfile(file_path) or os.path.isdir(file_path):
-                function(file_path, **kwargs)
+        for root, folder, files in os.walk(path):
+            for single_file in files:
+                file_path = os.path.join(root, single_file)
+                # Make sure it's a file or directory
+                if os.path.isfile(file_path) or os.path.isdir(file_path):
+                    change_permission(file_path, permission)
                 
 
 ############################################################################
