@@ -251,7 +251,7 @@ def change_permissions(path,permission=None,recursive=True):
     # For a file, recursion is not relevant
     if os.path.isfile(path):
         logger.info("Changing permission of %s to %s",path,permission)
-        change_permission(file_path,permission)
+        change_permission(path,permission)
     else:
         # If the user wants recursive, use os.walk
         logger.info("Changing permission of files and folders under %s to %s",path,permission)
