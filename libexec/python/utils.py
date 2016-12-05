@@ -238,7 +238,7 @@ def change_permission(file_path,permission=None):
             os.chmod(file_path, st.st_mode | permission)
         except:
             print("ERROR: Couldn't change permission on ", file_path)
-            # TODO: We need to bomb out here with a non-zero exit code
+            sys.exit(1)
     return has_permission(file_path,permission)
 
 
@@ -261,14 +261,16 @@ def change_permissions(path,permission=None,recursive=True):
         # If the user wants recursive, use os.walk
         logger.info("Changing permission of files and folders under %s to %s",path,oct(permission))
         for root, dirs, files in os.walk(path, topdown=False, followlinks=False):
+
+            # Walking through directories
             for name in dirs:
-#                logger.info("filewalk-dirs: %s", os.path.join(root, name))
                 dir_path = os.path.join(root, name)
                 # Make sure it's a valid dir
                 if os.path.isdir(dir_path):
                     change_permission(dir_path, permission)
+
+            # Walking through files (and checking for symbolic links)
             for name in files:
-#                logger.info("filewalk-files: %s", os.path.join(root, name))
                 file_path = os.path.join(root, name)
                 # Make sure it's a valid file
                 if os.path.isfile(file_path) and not os.path.islink(file_path):
