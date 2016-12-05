@@ -233,7 +233,12 @@ def change_permission(file_path,permission=None):
     st = os.stat(file_path)
     has_perm = has_permission(file_path,permission)
     if not has_perm:
-        os.chmod(file_path, st.st_mode | permission)
+        logger.info("Fixing permission on: %s", file_path)
+        try:
+            os.chmod(file_path, st.st_mode | permission)
+        except:
+            print("ERROR: Couldn't change permission on ", file_path)
+            # TODO: We need to bomb out here with a non-zero exit code
     return has_permission(file_path,permission)
 
 
@@ -250,16 +255,23 @@ def change_permissions(path,permission=None,recursive=True):
 
     # For a file, recursion is not relevant
     if os.path.isfile(path):
-        logger.info("Changing permission of %s to %s",path,permission)
+        logger.info("Changing permission of %s to %s",path,oct(permission))
         change_permission(path,permission)
     else:
         # If the user wants recursive, use os.walk
-        logger.info("Changing permission of files and folders under %s to %s",path,permission)
-        for root, folder, files in os.walk(path):
-            for single_file in files:
-                file_path = os.path.join(root, single_file)
-                # Make sure it's a file or directory
-                if os.path.isfile(file_path) or os.path.isdir(file_path):
+        logger.info("Changing permission of files and folders under %s to %s",path,oct(permission))
+        for root, dirs, files in os.walk(path, topdown=False, followlinks=False):
+            for name in dirs:
+#                logger.info("filewalk-dirs: %s", os.path.join(root, name))
+                dir_path = os.path.join(root, name)
+                # Make sure it's a valid dir
+                if os.path.isdir(dir_path):
+                    change_permission(dir_path, permission)
+            for name in files:
+#                logger.info("filewalk-files: %s", os.path.join(root, name))
+                file_path = os.path.join(root, name)
+                # Make sure it's a valid file
+                if os.path.isfile(file_path) and not os.path.islink(file_path):
                     change_permission(file_path, permission)
                 
 
@@ -315,11 +327,13 @@ def extract_tar(archive,output_folder):
     command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
     print("Extracting %s" %(archive))
 
+    retval = run_command(command)
+
     # Change permissions (default ensures writable)
     change_permissions(output_folder)
 
     # Should we return a list of extracted files? Current returns empty string
-    return run_command(command)
+    return retval
 
 
 def write_file(filename,content,mode="w"):
