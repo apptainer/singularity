@@ -129,6 +129,11 @@ char *singularity_config_get_value(char *key) {
     return(NULL);
 }
 
+char *singularity_config_get_value_default(char *key, const char *def) {
+    char *value = singularity_config_get_value(key);
+    return value ? value : strdup(def);
+}
+
 /*
  * Gets the associated boolean value of key from config_fp. Passes
  * key into singularity_get_config_value() and then checks if that

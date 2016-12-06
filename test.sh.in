@@ -77,6 +77,12 @@ sudo true
 . ./libexec/functions
 
 /bin/echo
+/bin/echo "Adding users and groups for a test."
+stest 0 sudo groupadd test_singularity2
+stest 0 sudo useradd singularity
+stest 0 sudo useradd test_singularity -G test_singularity2 -d /tmp
+
+/bin/echo
 /bin/echo "SINGULARITY_TMPDIR=$TEMPDIR"
 /bin/echo
 
@@ -291,6 +297,41 @@ else
     /bin/echo
     /bin/echo "Skipping user bind mount tests, overlay FS support is not enabled"
 fi
+
+
+/bin/echo
+/bin/echo "Testing protected mode"
+cp "$CONTAINER" /tmp/container.img
+stest 0 sudo chown singularity:test_singularity /tmp/container.img
+stest 0 sudo chmod 644 /tmp/container.img
+stest 0 singularity exec /tmp/container.img echo "hello world"
+stest 0 sudo chmod 640 /tmp/container.img
+stest 0 sudo chown singularity: /tmp/container.img
+stest 1 singularity exec /tmp/container.img echo "hello world"
+stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|protected image mode = none|protected image mode = user|'
+stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow user image = yes|allow user image = no|'
+stest 0 singularity exec /tmp/container.img echo "hello world"
+stest 0 sudo chown root:singularity /tmp/container.img
+stest 0 singularity exec /tmp/container.img echo "hello world"
+stest 0 sudo chown root: /tmp/container.img
+stest 1 singularity exec /tmp/container.img echo "hello world"
+stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|protected image mode = user|protected image mode = group|'
+stest 0 sudo chmod 600 /tmp/container.img
+stest 0 sudo chown singularity: /tmp/container.img
+stest 1 singularity exec /tmp/container.img echo "hello world"
+stest 0 sudo chown singularity:test_singularity /tmp/container.img
+stest 0 sudo -u test_singularity singularity exec /tmp/container.img echo "hello world"
+stest 0 sudo chown singularity:test_singularity2 /tmp/container.img
+stest 0 sudo -u test_singularity singularity exec /tmp/container.img echo "hello world"
+stest 0 sudo chown singularity:root /tmp/container.img
+stest 1 singularity exec /tmp/container.img echo "hello world"
+# Make sure there is singularity user or group ownership of image, even if it is world-readable.
+stest 0 sudo chown `id -u -n`: /tmp/container.img
+stest 0 sudo chmod 644 /tmp/container.img
+stest 1 singularity exec /tmp/container.img echo "hello world"
+# Restore state
+stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|protected image mode = group|protected image mode = none|'
+stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow user image = no|allow user image = yes|'
 
 
 /bin/echo

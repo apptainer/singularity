@@ -27,6 +27,7 @@
     void singularity_config_rewind(void);
 
     char *singularity_config_get_value(char *key);
+    char *singularity_config_get_value_default(char *key, const char *def);
     int singularity_config_get_bool(char *key, int def);
 
 #endif /* __SINGULARITY_CONFIG_H_ */
