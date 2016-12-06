@@ -187,7 +187,8 @@ def run(args):
                                 auth=auth)
 
         # Get images from manifest using version 2.0 of Docker Registry API
-        images = get_images(manifest=manifest,
+        images = get_images(repo_name=repo_name,
+                            namespace=namespace,
                             registry=args.registry,
                             auth=auth)
         
