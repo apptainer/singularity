@@ -88,7 +88,7 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
 
         /* Run appropriate module to create the base OS in the container */
         if ( bootstrap_module_init() != 0 ) {
-            singularity_message(ERROR, "Something went wrong during build module. \n");
+            singularity_message(ERROR, "Something went wrong during build module: %s. \n", strerror(errno));
         }
 
         /* Run through postbootstrap module logic */
