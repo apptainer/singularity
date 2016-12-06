@@ -104,7 +104,9 @@ class TestApi(TestCase):
         manifest = get_manifest(repo_name = self.repo_name,
                                 namespace = self.namespace, 
                                 repo_tag = repo_tag)
-        self.assertEqual(manifest['tag'],repo_tag)
+
+        # This will trigger if/when they change the schema on us
+        self.assertEqual(manifest['schemaVersion'],1)
 
         # Giving a bad tag sould return error
         print("Case 3: Bad tag should print valid tags and exit")
@@ -119,10 +121,7 @@ class TestApi(TestCase):
         manifest = get_manifest(repo_name = "tensorflow",
                                 namespace = "tensorflow", 
                                 registry = "gcr.io")
-        self.assertEqual(manifest['tag'],"latest")
         self.assertTrue("fsLayers" in manifest)
-        self.assertEqual(manifest['name'],"%s/%s" %("tensorflow",
-                                                    "tensorflow"))
 
 
     def test_get_images(self):
