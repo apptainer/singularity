@@ -174,6 +174,7 @@ void singularity_bootstrap_script_run(char *section_name) {
  * @returns 0 on success, -1 on failure
  */
 int bootstrap_module_init() {
+    char ** fork_args = malloc(sizeof(char *) * 2);
     singularity_bootdef_rewind();
 
     if ( ( module_name = singularity_bootdef_get_value("BootStrap") ) == NULL ) {
@@ -186,7 +187,13 @@ int bootstrap_module_init() {
         if ( strcmp(module_name, "docker") == 0 ) { //Docker
             return( singularity_bootstrap_docker() );
 
-        } else if ( strcmp(module_name, "yum") == 0 ) { //Yum
+        } else {
+            fork_args[0] = (char *)malloc(2048);
+            snprintf(fork_args[0], 2048, LIBEXECDIR "/singularity/bootstrap/modules-v2/build-%s.sh", module_name);
+            fork_args[1] = NULL;
+            return(singularity_fork_exec(fork_args));
+        }
+        /* else if ( strcmp(module_name, "yum") == 0 ) { //Yum
             return( singularity_bootstrap_yum() );
 
         } else if ( strcmp(module_name, "debootstrap") == 0 ) { //Debootstrap
@@ -201,8 +208,7 @@ int bootstrap_module_init() {
         } else {
             singularity_message(ERROR, "Could not parse bootstrap module of type: %s\n", module_name);
             return(-1);
-        }
-
+            } */
     }
 }
 
