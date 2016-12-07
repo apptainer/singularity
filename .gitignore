@@ -1,4 +1,6 @@
 *~
+#*
+*#
 src/*.o
 singularity-*.tar.gz
 *.m4
@@ -64,4 +66,11 @@ src/*/*/*/lib*.la
 src/*/*/*/*.o
 src/*/*/*/*.lo
 src/*/*/*/.dirstamp
+
+src/*/*/*/*/.deps/
+src/*/*/*/*/.libs/
+src/*/*/*/*/lib*.la
+src/*/*/*/*/*.o
+src/*/*/*/*/*.lo
+src/*/*/*/*/.dirstamp
 

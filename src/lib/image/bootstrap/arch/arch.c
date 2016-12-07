@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2016, Michael W. Bauer. All rights reserved.
  * 
  * “Singularity” Copyright (c) 2016, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -16,46 +16,29 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
+#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/mount.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sched.h>
 
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-#include "lib/privilege.h"
-#include "passwd/passwd.h"
-#include "group/group.h"
-#include "resolvconf/resolvconf.h"
-#include "entrypoint/entrypoint.h"
+#include "lib/singularity.h"
 
-
-
-int singularity_file(void) {
-    int retval = 0;
-
-    retval += singularity_file_passwd();
-    retval += singularity_file_group();
-    retval += singularity_file_resolvconf();
-
-    return(retval);
-}
-
-int singularity_file_bootstrap(void) {
-    int retval = 0;
-
-    retval += singularity_file_passwd();
-    retval += singularity_file_group();
-    retval += singularity_file_resolvconf();
-    retval += singularity_file_entrypoint("run");
-    retval += singularity_file_entrypoint("exec");
-    retval += singularity_file_entrypoint("shell");
-
-    return(retval);
+/* Return 0 if successful, return 1 otherwise. */
+int singularity_bootstrap_arch() {
+    char ** module_script = malloc( sizeof(char *) * 1);
+    module_script[0] = strdup(LIBEXECDIR "/singularity/bootstrap/modules-v2/build-arch.sh");
+    return(singularity_fork_exec(module_script));
 }

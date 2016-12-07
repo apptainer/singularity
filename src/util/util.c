@@ -190,7 +190,7 @@ void chomp(char *str) {
         str[len-1] = '\0';
         len--;
     }
-
+    
     // Trim trailing whitespace and redefine NULL
     while ( str[len - 1] == ' ' ) {
         str[len - 1] = '\0';
@@ -202,7 +202,6 @@ void chomp(char *str) {
         str[0] = '\0';
     }
 
-    // Trim trailing new line characters
     if ( str[len - 1] == '\n' ) {
         str[len - 1] = '\0';
     }

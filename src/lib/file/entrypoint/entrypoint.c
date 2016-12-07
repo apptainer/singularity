@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2016, Michael W. Bauer. All rights reserved.
  * 
  * “Singularity” Copyright (c) 2016, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -16,46 +16,39 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
 
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-#include "lib/privilege.h"
-#include "passwd/passwd.h"
-#include "group/group.h"
-#include "resolvconf/resolvconf.h"
-#include "entrypoint/entrypoint.h"
+#include "lib/rootfs/rootfs.h"
 
 
-
-int singularity_file(void) {
+int singularity_file_entrypoint(char *entrypoint_name) {
+    singularity_message(DEBUG, "Copying entrypoint file: %s\n", entrypoint_name);
     int retval = 0;
+    char *helper_shell = strdup("#!/bin/sh");
+    char *rootfs_path = singularity_rootfs_dir();
+    char *dest_path = joinpath(rootfs_path, strjoin("/.", entrypoint_name));
+    char *entrypoint = filecat(strjoin(LIBEXECDIR "/singularity/defaults/", entrypoint_name));
 
-    retval += singularity_file_passwd();
-    retval += singularity_file_group();
-    retval += singularity_file_resolvconf();
+    retval += fileput(dest_path, strjoin(helper_shell, entrypoint));
+    retval += chmod(dest_path, 0755);
 
-    return(retval);
-}
-
-int singularity_file_bootstrap(void) {
-    int retval = 0;
-
-    retval += singularity_file_passwd();
-    retval += singularity_file_group();
-    retval += singularity_file_resolvconf();
-    retval += singularity_file_entrypoint("run");
-    retval += singularity_file_entrypoint("exec");
-    retval += singularity_file_entrypoint("shell");
+    free(helper_shell);
+    free(rootfs_path);
+    free(dest_path);
+    free(entrypoint);
 
     return(retval);
 }
