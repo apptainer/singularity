@@ -32,7 +32,7 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-#include "lib/rootfs/rootfs.h"
+#include "lib/file/environment/environment.h"
 
 
 int singularity_file_environment(int rootfs_fd) {
@@ -44,12 +44,12 @@ int singularity_file_environment(int rootfs_fd) {
 
     singularity_message(DEBUG, "Sorting through /.env/ folder and assembling ordered list of files to source\n");
     
-    if ( scandirat(rootfs_fd, ".env/", &namelist, filter_meta, filter_filenames) < 0 ) {
+    if ( scandirat(rootfs_fd, ".env/", &namelist, filter_metafile, compare_filenames) < 0 ) {
         return(-1);
     }
     
     for (i = 0; namelist[i] != NULL; i++) {
-        buff_line = strjoin("source ", namelist[i]->d_name);
+        buff_line = strjoin("source ", (namelist[i])->d_name);
         size = size + strlength(buff_line, 2048) + 1; //+1 for newline
         if ( (meta_file = (char *)realloc(meta_file, size)) == NULL ) {
             return(-1);
@@ -64,7 +64,6 @@ int singularity_file_environment(int rootfs_fd) {
     i = fileput(".env/.metasource", meta_file);
 
     free(meta_file);
-    free(rootfs_path);
     return(i);
 }
 
@@ -73,5 +72,10 @@ int filter_metafile(const struct dirent *entry) {
 }
 
 int compare_filenames(const struct dirent **a, const struct dirent **b) {
-    return( str2int((*a)->d_name) - str2int((*b)->d_name) );
+    long int a_int, b_int;
+    if ( (str2int((*a)->d_name, &a_int) != 0) || (str2int((*b)->d_name, &b_int) != 0) ) {
+        return(-1);
+    } else {
+        return(a_int - b_int);
+    }
 }
