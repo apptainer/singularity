@@ -49,7 +49,7 @@ class TestClient(TestCase):
         '''
         print("Testing --rootfs command...")
         parser = get_parser()
-        args = parser.parse_args([])
+        (args,options) = parser.parse_args([])
         with self.assertRaises(SystemExit) as cm:
             run(args)
         self.assertEqual(cm.exception.code, 1)
