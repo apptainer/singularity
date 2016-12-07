@@ -62,7 +62,7 @@ int main(int argc_in, char ** argv_in) {
     }
 
     /* Open the config file for parsing */
-    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     /* 
      * Even though we don't have SUID for this binary, singularity_priv_init and 
