@@ -104,7 +104,9 @@ class TestApi(TestCase):
         manifest = get_manifest(repo_name = self.repo_name,
                                 namespace = self.namespace, 
                                 repo_tag = repo_tag)
-        self.assertEqual(manifest['tag'],repo_tag)
+
+        # This will trigger if/when they change the schema on us
+        self.assertEqual(manifest['schemaVersion'],1)
 
         # Giving a bad tag sould return error
         print("Case 3: Bad tag should print valid tags and exit")
@@ -119,10 +121,7 @@ class TestApi(TestCase):
         manifest = get_manifest(repo_name = "tensorflow",
                                 namespace = "tensorflow", 
                                 registry = "gcr.io")
-        self.assertEqual(manifest['tag'],"latest")
         self.assertTrue("fsLayers" in manifest)
-        self.assertEqual(manifest['name'],"%s/%s" %("tensorflow",
-                                                    "tensorflow"))
 
 
     def test_get_images(self):
@@ -130,20 +129,13 @@ class TestApi(TestCase):
         '''
         from docker.api import get_images
         from docker.api import get_manifest
-        print("Case 1: Ask for images without providing manifest")
+        print("Case 1: Ask for images")
         images = get_images(repo_name = self.repo_name,
                             namespace = self.namespace)
         self.assertTrue(isinstance(images,list))
         self.assertTrue(len(images)>1)
 
-        # Get manifest for same repo should return same images
-        print("Case 2: Ask for images with provided manifest")
-        manifest = get_manifest(repo_name = self.repo_name,
-                                namespace = self.namespace)
-        images_manifest = get_images(manifest=manifest)
-        [self.assertEqual(images[x],images_manifest[x]) for x in range(len(images))]
-
-        print("Case 3: Ask for images from custom registry")
+        print("Case 2: Ask for images from custom registry")
         images = get_images(repo_name = 'tensorflow',
                             namespace = 'tensorflow',
                             registry = 'gcr.io')

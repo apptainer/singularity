@@ -229,11 +229,11 @@ class TestUtils(TestCase):
         permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(permissions,'664')
         # to 755
-        change_permissions(tmpfile,permission="0755")  
+        change_permissions(tmpfile,permission=755)  
         new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'755')
         # and back
-        change_permissions(tmpfile,permission="0644")  
+        change_permissions(tmpfile,permission=644)  
         new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'664')
 

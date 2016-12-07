@@ -60,6 +60,8 @@ int main(int argc_in, char ** argv_in) {
      */
     singularity_priv_init();
 
+    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
     /* Loop until we've gone through argv and returned */
     while ( 1 ) {
         singularity_message(DEBUG, "Running %s %s workflow\n", argv[0], argv[1]);
@@ -72,6 +74,7 @@ int main(int argc_in, char ** argv_in) {
 
         /* Run image mount workflow */
         else if ( strcmp(argv[1], "mount") == 0 ) {
+            singularity_ns_mnt_unshare();
             if ( singularity_image_mount(argc - 1, &argv[1]) != 0 ) {
                 singularity_priv_drop_perm();
                 return(1);

@@ -18,6 +18,35 @@
 @ALLOW_PID_NS@ = @ALLOW_PID_NS_DEFAULT@
 
 
+# ALLOW USER IMAGE: [BOOL]
+# DEFAULT: @ALLOW_USER_IMAGE_DEFAULT@
+# Should we allow users to run images they can access according to normal
+# filesystem privileges?  If set to 'no', then the image can only be executed
+# through 'protected image mode' (see below).
+#
+# Note that if 'allow user image' is no and 'protected image mode' is none,
+# then no image file may be used.
+@ALLOW_USER_IMAGE@ = @ALLOW_USER_IMAGE_DEFAULT@
+
+
+# PROTECTED IMAGE MODE: [STRING]
+# DEFAULT: @PROTECTED_IMAGE_MODE_DEFAULT@
+# The 'protected image mode' allows users to launch singularity with images
+# that they cannot access according to filesystem privileges.
+# There are three allowed modes:
+# - none: Protected image mode is disabled.  The typical filesystem rules
+#         are applied.
+# - group: The image file must be readable by the user 'singularity' AND the
+#          invoking user must be in the same group as the image file.
+# - user: The image file must be readable by the user 'singularity'.
+# In both 'group' and 'user' cases, the image must be either owned by the
+# singularity user or be owned by the singularity user's primary group.
+#
+# The name of the user 'singularity' can be controlled via the
+# 'singularity user' option below.
+@PROTECTED_IMAGE_MODE@ = @PROTECTED_IMAGE_MODE_DEFAULT@
+
+
 # ENABLE OVERLAY: [BOOL]
 # DEFAULT: @ENABLE_OVERLAY_DEFAULT@
 # Enabling this option will make it possible to specify bind paths to locations
@@ -140,4 +169,15 @@
 # /tmp/ does not work for your system, /var/lib/singularity/sessions maybe a
 # better option.
 #@SESSIONDIR_PREFIX@ = /var/lib/singularity/sessions/
+
+
+# SINGULARITY USER: [STRING]
+# DEFAULT: @SINGULARITY_USER_DEFAULT@
+# The protected image mode will restrict Singularity images to those owned by
+# the 'singularity user'; this option allows admins to change the username we
+# use as a test.
+#
+# If user namespaces are enabled, the singularity user setting is ignored and
+# instead the invoking user is utilized for all access privilege checks.
+@SINGULARITY_USER@ = @SINGULARITY_USER_DEFAULT@
 
