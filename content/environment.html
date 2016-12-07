@@ -12,7 +12,7 @@ Additionally your current working directory (cwd/pwd) is also bound into
 the container iff it is not an operating system directory or already
 accessible via another mount. For almost all cases, this will work
 flawlessly as follows:
-<pre>
+<pre class="padPre text-justify">
 $ pwd
 /home/gmk/demo
 $ singularity shell container.img 
@@ -45,7 +45,7 @@ is not (e.g. if the base dir of your current working directory does not
 exist). In that case, Singularity will retain the file descriptor to your
 current directory and change you back to it. If you do a 'pwd' within the
 container, you may see some weird things. For example:
-<pre>
+<pre class="padPre text-justify">
 $ pwd
 /foobar
 $ ls -l
@@ -70,7 +70,7 @@ directory contents are available.
 Singularity automatically sends and receives all standard IO from the host
 to the applications within the container to facilitate expected behavior
 from the interaction between the host and the container. For example:
-<pre>
+<pre class="padPre text-justify">
 $ cat debian.def | singularity exec container.img grep 'MirrorURL'
 MirrorURL "http://ftp.us.debian.org/debian/"
 $ 

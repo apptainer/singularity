@@ -23,11 +23,11 @@ box compatibility with Open MPI (both in Open MPI v2.x as well as part of
 Singularity). Here is a document that illustrates the Open MPI/Singularity workflow:
 </p>
 <center>
-<img src="../images/singularity-openmpi.png" border="0">
+<img src="https://github.com/gmkurtzer/singularity/blob/gh-pages/images/singularity-openmpi.png?raw=true" border="0">
 </center>
 <p>
 From the above image you can follow the invocation pathway:
-<ol>
+<ul class="text-justify">
 <li>mpirun is called by the resource manager or the user directly from a shell</li>
 <li>Open MPI then calls the process management daemon (ORTED)</li>
 <li>The ORTED process launches the Singularity container requested by the mpirun command</li>
@@ -35,7 +35,8 @@ From the above image you can follow the invocation pathway:
 <li>Singularity then launches the MPI application within the container</li>
 <li>The MPI application launches and loads the Open MPI libraries</li>
 <li>The Open MPI libraries connect back to the ORTED process via the Process Management Interface (PMI)</li>
-</ol>
+</ul>
+</br>
 At this point the processes within the container run as they would normally directly
 on the host at full bandwidth! This entire process happens behind the scenes, and
 from the user's perspective running via MPI is as simple as just calling mpirun on
@@ -47,7 +48,7 @@ the host as they would normally.
 Below is an example snippet of building and installing OpenMPI into a container
 and then running an example MPI program through Singularity.
 <br/>&nbsp;<br/>
-<pre>
+<pre class="padPre text-justify">
 $ # Include the appropriate development tools into the container (notice we are calling
 $ # singularity as root and the container is writeable)
 $ sudo singularity exec -w /tmp/Centos-7.img yum groupinstall "Development Tools"
@@ -107,8 +108,8 @@ Process 19 exiting
 </pre>
 </p>
 
-<h3>Notes:</h3>
 <p>
+<h3>Notes</h3>
 <h4>Supported Open MPI Version(s):</h4>
 To achieve proper container'ized Open MPI support, you must use Open MPI
 version 2.1 which at the time of this writing has not been released yet.

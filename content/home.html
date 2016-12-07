@@ -1,211 +1,221 @@
-<h1>Singularity: Extreme Mobility of Compute</h1>
-<br/>
+<div class="container-fluid">
+    <div class="row">
+    <div class="col-md-12 hidden-xs">
+    <img class="logo center-block" src="images/Singularity-logo-transparent.png"/>
+    </div><!--col-md hidden-xs"-->
+<!--Section 0 -->
+    <div class="row">
+    <div class="col-md-12 section0 text-center">
+    <p>
+    <h3>Application containers enabling mobility of compute</h3>
 
-<h2>Enabling users to have full control of their environment.</h2>
-<p>
-Singularity allows a non-privileged user to "swap out" the operating system
-on the host for one they control. So if the host system is running RHEL6 but
-your application runs in Ubuntu, you can create an Ubuntu image, install your
-applications into that image, copy the image to another host, and run your
-application on that host in it's native Ubuntu environment!
-</p>
-<p>
-Singularity also allows you to leverage the resources of whatever host you
-are on. This includes HPC interconnects, resource managers, file systems,
-GPUs and/or accelerators, etc.
-</p>
-<h3>Singularity does this by enabling several key facets:</h3>
-<p>
-<h4 class="loud">
-<ul>
-<li><a href="javascript:open_popup('env_encapsulation')">Encapsulation of the environment</a></li>
-<li><a href="javascript:open_popup('image')">Containers are image based</a></li>
-<li><a href="javascript:open_popup('rootless')">No user contextual changes or root escalation allowed</a></li>
-<li><a href="javascript:open_popup('daemonless')">No root owned daemon processes</a></li>
-</ul>
-</h4>
-</p>
-<p>
-Additionally, you can check out the
-<a href="javascript:load_content('use-cases')">use cases</a>
-and the 
-<a href="javascript:load_content('faq')">frequently asked questions</a>
-for more information.
-</p>
-<h2>For Example...</h2>
-<p>
-<pre>
-$ # Shell into container
-$ singularity shell --contain /tmp/Centos7.img 
-Singularity.Centos7.img&gt; ps aux
-USER        PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-gmk           1  0.0  0.3 115372  1768 pts/6    S    12:23   0:00 /bin/bash --norc --noprofile
-gmk           2  0.0  0.3 151024  1800 pts/6    R+   12:23   0:00 ps aux
-Singularity.Centos7.img&gt; exit
+    <h2>HPC centers, users, and admins need to support portable workflows!</h2>
+    Containers are proving to be an extremly valuable technology for science;
+    Singularity focuses container approaches, workflows, and methods to create
+    portable environments enabling computational science!
+    </p>
+    <p>
+    Singularity does this by enabling several key facets:
+    <ul class="list-unstyled">
+    <li>
+    <a href="#env_encapsulation" data-toggle="collapse">
+    Encapsulation of the environment
+    </a>
+    </li>
+    <div id="env_encapsulation" class="collapse dpdiv">
+    <p>
+    Mobility of Compute is the encapsulation of an environment in such a
+    manner to make it portable between systems. This operating system
+    environment can contain the necessary applications for a particular
+    work-flow, development tools, and/or raw data. Once this environment has
+    been developed it can be easily copied and run from any other Linux
+    system.
+    </p>
+    <p>
+    This allows users to BYOE (Bring Their Own Environment) and work within
+    that environment anywhere that Singularity is installed. From a service
+    provider's perspective we can easily allow users the flexibility of
+    "cloud"-like environments enabling custom requirements and workflows.
+    </p>
+    <p>
+    Additionally there is always a misalignment between development and production
+    environments. The service provider can only offer a stable, secure tuned
+    production environment which in many times will not keep up with the fast
+    paced requirements of developers. With Singularity, you can control your own
+    development environment and simply copy them to the production resources.
+    </p>
+    </div><!--env_encapsulation-->
+    <li>
+    <a href="#image" data-toggle="collapse">
+    Containers are image based
+    </a>
+    </li>
+    <div id="image" class="collapse dpdiv">
+    <p>
+    Using images have several key benefits:
+    </p>
+    <p>
+    First, this image serves as a vector for mobility while retaining permissions
+    of the files within the image. For example, a user may own the image file so
+    they can copy the image to and from system to system. But, files within an
+    image must be owned by the appropriate user. For example, '/etc/passwd' and
+    '/' must be owned by root to achieve appropriate access permission. These
+    permissions are maintained within a user owned image.
+    </p>
+    <p>
+    There is never a need to build, rebuild, or cache an image! All IO happens
+    on an as needed basis. The overhead in starting a container is in the
+    thousandanths of a second because there is never a need to pull, build or
+    cache anything!
+    </p>
+    <p>
+    On HPC systems a single image file optimizes the benefits of a shared parallel
+    file system! There is a single metadata lookup for the image itself, and the
+    subsequent IO is all directed to the storage servers themselves. Compare this
+    to the massive amount of metadata IO that would be required if the container's
+    root file system was in a directory structure. It is not uncommon for large
+    Python jobs to DDOS (distributed denial of service) a parallel meta-data server
+    for minutes! The Singularity image mitigates this considerably.
+    </p>
+    </div><!--image-->
 
-$ # I am the same user inside the container as outside the container
-$ id
-uid=1000(gmk) gid=1000(gmk) groups=1000(gmk),10(wheel),2222(testgroup)
-$ singularity exec /tmp/Centos7.img id
-uid=1000(gmk) gid=1000(gmk) groups=1000(gmk),10(wheel),2222(testgroup)
+    <li>
+    <a href="#rootless" data-toggle="collapse">
+    No user contextual changes or root escalation allowed
+    </a>
+    </li>
+    <div id="rootless" class="collapse dpdiv">
+    <p>
+    When Singularity is executed, the calling user is maintained within the
+    container. For example, if user 'gmk' starts a Singularity container,
+    the same user 'gmk' will end up within the container. If 'root' starts the
+    container, 'root' will be the user inside the container.
+    </p>
+    <p>
+    Singularity also limits a user's ability to escalate privileges within the
+    container. Even if the user works in their own environment where they
+    configured 'sudo' or even removed root's password, they will not be able
+    to 'sudo' or 'su' to root. If you want to be root inside the container,
+    you must first be root outside the container.
+    </p>
+    <p>
+    Because of this model, it becomes possible to blur the line of access
+    between what is contained and what is on the host as Singularity does not
+    grant the user any more access then they already have. It also enables
+    the implementation on shared/multi-tenant resources.
+    </p>
+    </div><!--rootless-->
 
-$ # Files on the host can be reachable from within the container
-$ echo "Hello World" &gt; /home/gmk/testfile
-$ singularity exec /tmp/Centos7.img cat /home/gmk/testfile 
-Hello World
+    <li>
+    <a href="#daemonless" data-toggle="collapse">
+    No root owned daemon processes
+    </a>
+    </li>
+    </ul>
+    <div id="daemonless" class="collapse dpdiv">
+    <p>
+    Singularity does not utilize a daemon process to manage the containers. While
+    daemon processes do facilitate certain types of workflows and privilege
+    escalation, it breaks all resource controlled environments. This is because
+    a user's job becomes a subprocess of the daemon (rather then the user's shell)
+    and the daemon process is outside of the reach of a resource manager or batch
+    scheduler.
+    </p>
+    <p>
+    Additionally, securing a root owned daemon process which is designed to
+    manipulate the host's environment becomes tricky. In currently implemented
+    models, it is possible to grant permissions to users to control the daemon,
+    or not. There is no sense of ACL's or access of what users can and can not do.
+    </p>
+    <p>
+    While there are some other container implementations that do not leverage a
+    daemon, they lack other features necessary to be considered as reasonable
+    user facing solution without having root access. For example, there has been
+    a standing unimplemented patch to RunC (already daemon-less) which allows for
+    root-less usage (no root). But, user contexts are not maintained, and it will
+    only work with chroot directories (instead of an image) where files must be
+    owned and manipulated by the root user!
+    </p>
+    </div><!--daemonless-->
+</br>
+    </div> <!--col-md-12 section0"-->
+<!--Section 1-->
+    <div class="col-md-12 section1 text-center">
+        <div class="row">
+            <div class="col-md-6 col0">
+                <a href="#about">
+                <span class="icon">
+                    <i class="fa fa-plus-square fa-3x"></i></span>
+                    <p>
+About
+                    </p>
+                </a>
+            </div> <!--col-md-6-->
+            <div class="col-md-6 col1">
+                <a href="#download">
+                <span class="icon">
+                    <i class="fa fa-arrow-circle-o-down fa-3x"></i></span>
+                <p>
+Download
+                </p>
+                </a>
+            </div><!--col-md-6 col1-->
+        </div> <!--Row-->
+    </div> <!--col-md-12 section1-->
+<!-- Section 2 --> 
+    <div class="col-md-12 section2 text-center">
+    <p>
+    Additionally, you can check out the
+    <a href="javascript:load_content('use-cases')">use cases</a>
+    and the 
+    <a href="javascript:load_content('faq')">frequently asked questions</a>
+    for more information.
+    </p>
+    <p>But, sometimes a snippet is worth a thousand words...
+    Here is a demonstration of how simple Singularity is to use! Change your
+    entire operating system environment with a single command!
+    <pre class="padPre text-justify">
+    $ # Shell into container
+    $ singularity shell /tmp/Centos7.img 
+    Singularity.Centos7.img&gt; ps aux
+    USER        PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+    gmk           1  0.0  0.3 115372  1768 pts/6    S    12:23   0:00 /bin/bash --norc --noprofile
+    gmk           2  0.0  0.3 151024  1800 pts/6    R+   12:23   0:00 ps aux
+    Singularity.Centos7.img&gt; exit
 
-$ # Switching operating systems is as easy as pointing to a different image!
-$ singularity exec /tmp/Centos7.img cat /etc/redhat-release 
-CentOS Linux release 7.2.1511 (Core) 
+    $ # I am the same user inside the container as outside the container
+    $ id
+    uid=1000(gmk) gid=1000(gmk) groups=1000(gmk),10(wheel),2222(testgroup)
+    $ singularity exec /tmp/Centos7.img id
+    uid=1000(gmk) gid=1000(gmk) groups=1000(gmk),10(wheel),2222(testgroup)
 
-$ singularity exec /tmp/SL6.img cat /etc/redhat-release 
-Scientific Linux release 6.8 (Carbon)
+    $ # Files on the host can be reachable from within the container
+    $ echo "Hello World" &gt; /home/gmk/testfile
+    $ singularity exec /tmp/Centos7.img cat /home/gmk/testfile 
+    Hello World
 
-$ singularity exec /tmp/Debian-stable.img cat /etc/debian_version
-8.5
-
-$ singularity exec /tmp/Ubuntu-trusty.img cat /etc/lsb-release 
-DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=14.04
-DISTRIB_CODENAME=trusty
-DISTRIB_DESCRIPTION="Ubuntu 14.04 LTS"
-</pre>
-</p>
-
-
-<h2>Watch it in action!</h2>
-<p>
-Below is a short introduction and demonstration video:
-</p>
-<p>
-<center>
-<a target="_blank" href="https://www.youtube.com/watch?v=xuIQoth0r4E"><img src="images/singularity-v2-intro.png" border="1px"></a>
-</center>
-</p>
-
-
-
-<div id="env_encapsulation" class="popup-background">
-<div class="popup-content">
-<h4>Encapsulation of the environment</h4>
-<br/>&nbsp;<br/>
-<p>
-Mobility of Compute is the encapsulation of an environment in such a
-manner to make it portable between systems. This operating system
-environment can contain the necessary applications for a particular
-work-flow, development tools, and/or raw data. Once this environment has
-been developed it can be easily copied and run from any other Linux
-system.
-</p>
-<p>
-This allows users to BYOE (Bring Their Own Environment) and work within
-that environment anywhere that Singularity is installed. From a service
-provider's perspective we can easily allow users the flexibility of
-"cloud"-like environments enabling custom requirements and workflows.
-</p>
-<p>
-Additionally there is always a misalignment between development and production
-environments. The service provider can only offer a stable, secure tuned
-production environment which in many times will not keep up with the fast
-paced requirements of developers. With Singularity, you can control your own
-development environment and simply copy them to the production resources.
-</p>
-<a class="popup-close" href="javascript:close_popup()">x</a>
-</div>
-</div>
-
-
-<div id="image" class="popup-background">
-<div class="popup-content">
-<h4>Containers are image based</h4>
-<br/>&nbsp;<br/>
-<p>
-Using images have several key benefits:
-</p>
-<p>
-First, this image serves as a vector for mobility while retaining permissions
-of the files within the image. For example, a user may own the image file so
-they can copy the image to and from system to system. But, files within an
-image must be owned by the appropriate user. For example, '/etc/passwd' and
-'/' must be owned by root to achieve appropriate access permission. These
-permissions are maintained within a user owned image.
-</p>
-<p>
-There is never a need to build, rebuild, or cache an image! All IO happens
-on an as needed basis. The overhead in starting a container is in the
-thousandanths of a second because there is never a need to pull, build or
-cache anything!
-</p>
-<p>
-On HPC systems a single image file optimizes the benefits of a shared parallel
-file system! There is a single metadata lookup for the image itself, and the
-subsequent IO is all directed to the storage servers themselves. Compare this
-to the massive amount of metadata IO that would be required if the container's
-root file system was in a directory structure. It is not uncommon for large
-Python jobs to DDOS (distributed denial of service) a parallel meta-data server
-for minutes! The Singularity image mitigates this considerably.
-</p>
-<a class="popup-close" href="javascript:close_popup()">x</a>
-</div>
-</div>
-
-
-<div id="rootless" class="popup-background">
-<div class="popup-content">
-<h4>No user contextual changes or root escalation allowed</h4>
-<br/>&nbsp;<br/>
-<p>
-When Singularity is executed, the calling user is maintained within the
-container. For example, if user 'gmk' starts a Singularity container,
-the same user 'gmk' will end up within the container. If 'root' starts the
-container, 'root' will be the user inside the container.
-</p>
-<p>
-Singularity also limits a user's ability to escalate privileges within the
-container. Even if the user works in their own environment where they
-configured 'sudo' or even removed root's password, they will not be able
-to 'sudo' or 'su' to root. If you want to be root inside the container,
-you must first be root outside the container.
-</p>
-<p>
-Because of this model, it becomes possible to blur the line of access
-between what is contained and what is on the host as Singularity does not
-grant the user any more access then they already have. It also enables
-the implementation on shared/multi-tenant resources.
-</p>
-<a class="popup-close" href="javascript:close_popup()">x</a>
-</div>
-</div>
-
-
-<div id="daemonless" class="popup-background">
-<div class="popup-content">
-<h4>No root owned daemon processes</h4>
-<br/>&nbsp;<br/>
-<p>
-Singularity does not utilize a daemon process to manage the containers. While
-daemon processes do facilitate certain types of workflows and privilege
-escalation, it breaks all resource controlled environments. This is because
-a user's job becomes a subprocess of the daemon (rather then the user's shell)
-and the daemon process is outside of the reach of a resource manager or batch
-scheduler.
-</p>
-<p>
-Additionally, securing a root owned daemon process which is designed to
-manipulate the host's environment becomes tricky. In currently implemented
-models, it is possible to grant permissions to users to control the daemon,
-or not. There is no sense of ACL's or access of what users can and can not do.
-</p>
-<p>
-While there are some other container implementations that do not leverage a
-daemon, they lack other features necessary to be considered as reasonable
-user facing solution without having root access. For example, there has been
-a standing unimplemented patch to RunC (already daemon-less) which allows for
-root-less usage (no root). But, user contexts are not maintained, and it will
-only work with chroot directories (instead of an image) where files must be
-owned and manipulated by the root user!
-</p>
-<a class="popup-close" href="javascript:close_popup()">x</a>
-</div>
-</div>
-
+    $ # Switching operating systems is as easy as pointing to a different image!
+    $ singularity exec /tmp/Centos7.img cat /etc/redhat-release 
+    CentOS Linux release 7.2.1511 (Core) 
+    $ singularity exec /tmp/SL6.img cat /etc/redhat-release 
+    Scientific Linux release 6.8 (Carbon)
+    $ singularity exec /tmp/Debian-stable.img cat /etc/debian_version
+    8.5
+    $ singularity exec /tmp/Ubuntu-trusty.img cat /etc/lsb-release 
+    DISTRIB_ID=Ubuntu
+    DISTRIB_RELEASE=14.04
+    DISTRIB_CODENAME=trusty
+    DISTRIB_DESCRIPTION="Ubuntu 14.04 LTS"
+    </pre>
+    </p>
+    </div><!--col-md-12 section2 text-center"-->
+    </div><!--row-->
+<!--Section 3-->
+    <div class="col-md-12 section3 text-center hidden-xs">
+    <div class="row">
+    <h2 class="sec2H">Watch it in action!</h2>
+    <h5> Below is a short introduction and demonstration video:</h5>
+    <iframe id="youtube" width="560" height="315" src="https://www.youtube.com/embed/xuIQoth0r4E" frameborder="0" allowfullscreen></iframe>
+    </div><!--col-md-12 section3 text-center-->
+    </div><!--row-->
+</div><!--container-->

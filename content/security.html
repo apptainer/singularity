@@ -21,7 +21,7 @@ privileges are necessary.
 <h2>How do container systems work as users</h2>
 <p>
 Generally speaking a container system will do one of three things:
-<ol>
+<ul class="text-justify">
 <li>
 As mentioned above, the CLONE_NEWUSER name-space allows some container
 functionality, but not enough for what Singularity targets as the base
@@ -42,14 +42,14 @@ to escalate privileges and when to drop them. It also allows Singularity
 to run daemon free which facilitates scheduling and resource management
 complexities as well as keeps the code easily audit-able.
 </li>
-</ol>
+</ul>
 </p>
 <h2>What security mitigations does Singularity employ</h2>
 <p>
 SUID programs are common targets for attackers because they provide a
 direct mechanism to gain privileged command execution. These are some of
 the baseline security mitigations for Singularity:
-<ol>
+<ul class="text-justify">
 <li>Keep the escalated bits within the code as simple and transparent so it can be easily audit-able</li>
 <li>Check the return value of every system call, command, and check and bomb out early if anything looks weird</li>
 <li>Make sure that proper permissions of files and directories are owned by root (e.g. the config must be owned by root to work)</li>
@@ -59,7 +59,8 @@ the baseline security mitigations for Singularity:
 <li>Drop permissions before running any non trusted code pathways</li>
 <li>Limit all user actions within the container to that single user (disable escalation of privileges within a container)</li>
 <li>All root owned files are encapsulated within a user owned image</li>
-</ol>
+</ul>
+</br>
 Additionally Singularity is being evaluated for inclusion into some large
 Linux distributions which will get more eyes on the code.
 </p>

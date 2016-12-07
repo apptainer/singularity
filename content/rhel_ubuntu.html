@@ -10,7 +10,7 @@ This recipe describes how to build an Ubuntu image using Singularity on a RHEL c
   This recipe assumes that you have already installed Singularity on your computer. If you have not, follow the instructions here to <a href="javascript:load_content('install')">install</a>. After Singularity is installed on your computer, you will need to install the 'debootstrap' package. The 'debootstrap' package is a tool that will allow you to create Debian-based distributions such as Ubuntu. In order to install 'debootstrap', you will also need to install 'epel-release'. You will need to download the appropriate RPM from the <a href="https://dl.fedoraproject.org/pub/epel/">EPEL website</a>. Make sure you download the correct version of the RPM for your release. 
 </p>
 
-<pre>
+<pre class="padPre text-justify">
 # First, wget the appropriate RPM from the EPEL website (https://dl.fedoraproject.org/pub/epel/)
 # In this example we used RHEL 7, so we downloaded epel-release-latest-7.noarch.rpm
 $ wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
@@ -27,7 +27,7 @@ $ sudo yum install debootstrap
   You will need to create a definition file to describe how to build your Ubuntu image. Definition files are plaintext files that contain Singularity keywords. By using certain Singularity keywords, you can specify how you want your image to be built. The extension '.def' is recommended for user clarity. Below is a definition file for a minimal Ubuntu image:
 </p>
 
-<pre>
+<pre class="padPre text-justify">
 DistType "debian"
 MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
 OSVersion "trusty"
@@ -40,7 +40,7 @@ Cleanup
 
 <p>
   The following keywords were used in this definition file:
-  <ul>
+  <ul class="bslist text-justify">
     <li>
       <b>DistType</b>: DistType specifies the distribution type of your intended operating system. Because we are trying to build an Ubuntu image, the type "debian" was chosen. 
     </li>
@@ -66,7 +66,7 @@ Cleanup
   While this definition file is enough to create a working Ubuntu image, you may want increased customization of your image. There are several Singularity keywords that allow the user to do things such as install packages or files. Some of these keywords are used in the example below:
 </p>
 
-<pre>
+<pre class="padPre text-justify">
 DistType "debian"
 MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
 OSVersion "trusty"
@@ -86,7 +86,7 @@ Cleanup
 
 <p>
   Before going over exactly what image this definition file specifies, the remaining Singularity keywords should be introduced.
-  <ul>
+  <ul class="bslist text-justify">
     <li>
       <b>InstallPkgs</b>: InstallPkgs allows you to install any packages that you want on your newly created image.
     </li>
@@ -110,7 +110,7 @@ Cleanup
 <p>
   Once you have created your definition file, you will be ready to actually create your image. You will do this by utilizing the Singularity 'create' and 'bootstrap' subcommands. The process for doing this can be seen below (note that we have saved our definition file as "ubuntu.def"):
 
-<pre>
+<pre class="padPre text-justify">
 # First we will create an empty image container called ubuntu.img
 $ sudo singularity create ubuntu.img
 Creating a sparse image with a maximum size of 1024MiB...
@@ -134,7 +134,7 @@ I: Retrieving apt 1.0.1ubuntu2
 I: Validating apt 1.0.1ubuntu2
 </pre>
 snip...
-<pre>
+<pre class="padPre text-justify">
 Downloading pip-8.1.2-py2.py3-none-any.whl (1.2MB)
   100% |################################| 1.2MB 1.1MB/s 
 Collecting setuptools
@@ -152,10 +152,10 @@ At this point, you have successfully created an Ubuntu image with 'python', 'pip
 <h4>Tips and Tricks</h4>
 <p>
   Here are some tips and tricks that you can use to create more efficient definition files:
-  <ol>
+  <ol class="list-unstyled">
     <b><li>Use here documents with RunCmd</li></b>
     <p>Using here documents with conjunction with RunCmd can be a great way to decrease the number of RunCmd keywords that you need to include in your definition file. For example, we can substitute a here document into the previous example: </p>
-    <pre>
+    <pre class="padPre text-justify">
 DistType "debian"
 MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
 OSVersion "trusty"
@@ -177,7 +177,7 @@ Cleanup
     <p>As you can see, using a here document allowed us to decrease the number of RunCmd keywords from 4 to 1. This can be useful when your definition file has a lot of RunCmd keywords and can also ease copying and pasting command line recipes from other sources. </p>
     <b><li>Use InstallPkgs with multiple packages</li></b>
     <p>The InstallPkgs keyword is able to install multiple packages with a single keyword. Thus, another way you can increase the efficiency of your code is to use a single InstallPkgs keyword to install multiple packages, as seen below:</p>
-    <pre>
+    <pre class="padPre text-justify">
 DistType "debian"
 MirrorURL "http://us.archive.ubuntu.com/ubuntu/"
 OSVersion "trusty"
