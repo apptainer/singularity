@@ -30,6 +30,7 @@
 #include <sys/wait.h>
 
 
+#include "lib/ns/ns.h"
 #include "lib/privilege.h"
 #include "lib/message.h"
 #include "util/util.h"
@@ -248,7 +249,9 @@ pid_t singularity_fork(void) {
         // At this point, we have nothing to do but wait on some external action.
         // We should never again need to increase our privileges.  Drop privs
         // permanently and then indicate the child can proceed.
-        singularity_priv_drop_perm();
+        if (singularity_ns_user_configured() < 0) {
+            singularity_priv_drop_perm();
+        }
         signal_go_ahead(0);
 
         do {

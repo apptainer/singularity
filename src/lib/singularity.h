@@ -53,6 +53,7 @@
     // Unshare the user namespace (if supported by platform itself)
     extern int singularity_ns_user_unshare(void);
     extern int singularity_ns_user_enabled(void);
+    extern int singularity_ns_user_configured(void);
 
 
     // IMAGE
