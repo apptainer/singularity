@@ -46,7 +46,7 @@ def get_parser():
 
 
     parser = optparse.OptionParser(description='bootstrap Docker images for Singularity containers',
-                                   usage="usage: %prog [options] filename",
+                                   usage="usage: %prog [options]",
                                    version="%prog 2.2")
 
 
