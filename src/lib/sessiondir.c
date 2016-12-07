@@ -111,7 +111,13 @@ char *singularity_sessiondir_init(char *file) {
             singularity_message(DEBUG, "Cleanup thread waiting on child...\n");
 
             waitpid(child_pid, &tmpstatus, 0);
-            retval = WEXITSTATUS(tmpstatus);
+            if (WIFEXITED(tmpstatus)) {
+                retval = WEXITSTATUS(tmpstatus);
+                singularity_message(DEBUG, "Child exited with status %d.\n", retval);
+            } else {
+                retval = WTERMSIG(tmpstatus);
+                singularity_message(DEBUG, "Child exited with signal %d.\n", retval);
+            }
 
             singularity_message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
             if ( flock(sessiondir_fd, LOCK_EX | LOCK_NB) == 0 ) {
@@ -134,7 +140,18 @@ char *singularity_sessiondir_init(char *file) {
 
             free(rundir);
     
-            exit(retval);
+            if (WIFEXITED(tmpstatus)) {
+                exit(retval);
+            } else {
+                // Try to reset this signal handler to the default one.
+                // Raise will _only_ return after the signal is handled,
+                // meaning that the default case for this signal is likely to
+                // be ignored.  In such a case, we abort.
+                signal(retval, SIG_DFL);  // Ignore failures; we'll abort later.
+                raise(retval);
+                singularity_message(ERROR, "Payload process failed with signal %d.\n", retval);
+                ABORT(255);
+            }
         }
     }
 
