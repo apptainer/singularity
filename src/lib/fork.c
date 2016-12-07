@@ -30,6 +30,7 @@
 #include <sys/wait.h>
 
 
+#include "lib/privilege.h"
 #include "lib/message.h"
 #include "util/util.h"
 
@@ -42,19 +43,95 @@ int watchdog_wpipe = -1;
 pid_t child_pid;
 
 
+// NOTE: singularity_message is NOT signal handler safe.
+// Hence, we MUST NOT do any sort of generic logging from these
+// functions.  We might, in the future, add in a signal-safe
+// version of singularity_message here.
 void handle_signal(int sig, siginfo_t * _, void * __) {
     char info = (char)sig;
-    singularity_message(DEBUG, "Forwarding signal through generic_signal_wpipe\n");
     while (-1 == write(generic_signal_wpipe, &info, 1) && errno == EINTR) {}
 }
 
 void handle_sigchld(int sig, siginfo_t *siginfo, void * _) {
-    singularity_message(DEBUG, "Checking child pids: %i %i\n", siginfo->si_pid, child_pid);
     if ( siginfo->si_pid == child_pid ) {
-        singularity_message(DEBUG, "Forwarding signal through sigchld_signal_wpipe\n");
         char one = '1';
         while (-1 == write(sigchld_signal_wpipe, &one, 1) && errno == EINTR) {}
     }
+}
+
+
+/* Setup the communication between parent and child.
+ *
+ * These series of functions force the child to wait for an explicit go-ahead from the
+ * parent before proceeding.
+ * - `prepare_for_fork`: Must be called by both parent and child before fork() is called.
+ * - `wait_for_go_ahead`: Called by child, waits until the parent gives the go-ahead signal.
+ * - `signal_go_ahead`: Called by parent, indicates the child may proceed.
+ *
+ * Keeps global state in the coordination_pipe variable.
+ */
+static int coordination_pipe[] = {-1, -1};
+
+static void prepare_fork() {
+    singularity_message(DEBUG, "Creating parent/child coordination pipes.\n");
+    // Note we use pipe and not pipe2 here with CLOEXEC.  This is because we eventually want the parent process
+    // to exec a separate unprivileged process and inherit the communication pipe.
+    if ( -1 == pipe(coordination_pipe) ) {
+        singularity_message(ERROR, "Failed to create coordination pipe for fork: %s (errno=%d)\n", strerror(errno), errno);
+        ABORT(255);
+    }
+}
+
+static void wait_for_go_ahead() {
+    if ( (coordination_pipe[0] == -1) || (coordination_pipe[1] == -1)) {
+        singularity_message(ERROR, "Internal error!  wait_for_go_ahead invoked with invalid pipe state (%d, %d).\n",
+                            coordination_pipe[0], coordination_pipe[1]);
+        ABORT(255);
+    }
+
+    // Close our copy of the write end of the pipe; only the parent should write.
+    close(coordination_pipe[1]);
+    coordination_pipe[1] = -1;
+
+    char parent_code = -1;
+    int retval;
+    // Block until parent indicates it is OK to proceed.
+    while ( (-1 == (retval = read(coordination_pipe[0], &parent_code, 1))) && errno == EINTR) {}
+    if (retval == -1) {  // Failed to communicate with parent.
+        singularity_message(ERROR, "Failed to communicate with parent process: %s (errno=%d)\n", strerror(errno), errno);
+        ABORT(255);
+    } else if (retval == 0) {  // Parent closed the write pipe unexpectedly.
+        singularity_message(ERROR, "Parent closed write pipe unexpectedly.\n");
+        ABORT(255);
+    }
+    // Parent successfully sent a code.
+    if (parent_code != 0) {
+        singularity_message(ERROR, "Parent indicated an error occurred; exiting with the suggested status.\n");
+        ABORT(parent_code);
+    }
+    close(coordination_pipe[0]);
+}
+
+static void signal_go_ahead(char code) {
+    if ( (coordination_pipe[0] == -1) || (coordination_pipe[1] == -1)) {
+        singularity_message(ERROR, "Internal error!  signal_go_ahead invoked with invalid pipe state (%d, %d).\n",
+                            coordination_pipe[0], coordination_pipe[1]);
+        ABORT(255);
+    }
+
+    // Close our copy of the read end of the pipe; only the child should read.
+    close(coordination_pipe[0]);
+    coordination_pipe[0] = -1;
+
+    int retval;
+    while ( (-1 == (retval = write(coordination_pipe[1], &code, 1))) && errno == EINTR) {}
+
+    if (retval == -1) {
+        singularity_message(ERROR, "Failed to send go-ahead to child process: %s (errno=%d)\n", strerror(errno), errno);
+        ABORT(255);
+    }  // Note that we don't test for retval == 0 as we should get a EPIPE instead.
+
+    close(coordination_pipe[1]);
 }
 
 
@@ -69,6 +146,7 @@ pid_t singularity_fork(void) {
     watchdog_rpipe = pipes[0];
     watchdog_wpipe = pipes[1];
 
+    prepare_fork();
 
     // Fork child
     singularity_message(VERBOSE2, "Forking child process\n");
@@ -82,6 +160,8 @@ pid_t singularity_fork(void) {
             close(watchdog_wpipe);
         }
         watchdog_wpipe = -1;
+
+        wait_for_go_ahead();
 
         singularity_message(DEBUG, "Child process is returning control to process thread\n");
         return(0);
@@ -145,7 +225,7 @@ pid_t singularity_fork(void) {
         generic_signal_rpipe = pipes[0];
         generic_signal_wpipe = pipes[1];
 
-        singularity_message(DEBUG, "Creating sigcld signal pipes\n");
+        singularity_message(DEBUG, "Creating sigchld signal pipes\n");
         if ( -1 == pipe2(pipes, O_CLOEXEC) ) {
             singularity_message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
             ABORT(255);
@@ -165,6 +245,11 @@ pid_t singularity_fork(void) {
         fds[2].events = POLLIN;
         fds[2].revents = 0;
 
+        // At this point, we have nothing to do but wait on some external action.
+        // We should never again need to increase our privileges.  Drop privs
+        // permanently and then indicate the child can proceed.
+        singularity_priv_drop_perm();
+        signal_go_ahead(0);
 
         do {
             singularity_message(DEBUG, "Waiting on signal from watchdog\n");
@@ -186,7 +271,8 @@ pid_t singularity_fork(void) {
                 kill(child_pid, signum);
             }
             if (watchdog_rpipe != -1 && fds[2].revents) {
-                // Parent died.  Immediately kill child.
+                // Parent died.  Immediately kill child.  NOTE that this only
+                // works if the child has also dropped privileges.
                 kill(child_pid, SIGKILL);
                 close(watchdog_rpipe);
                 watchdog_rpipe = -1;
