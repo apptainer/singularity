@@ -8,3 +8,4 @@ dist_conf_DATA = default-nsswitch.conf singularity.conf init
 dist_completion_DATA =  bash_completion.d/singularity
 
 MAINTAINERCLEANFILES = Makefile.in
+EXTRA_DIST = singularity.conf.in
