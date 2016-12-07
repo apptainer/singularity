@@ -22,5 +22,5 @@ libsingularity_la_LIBADD = libsingularity_internal.la
 libsingularity_la_LDFLAGS = -version-info 1:0:0 
 libsingularity_la_CFLAGS = $(AM_CFLAGS)
 
-EXTRA_DIST = config_parser.h fork.h loop-control.h message.h privilege.h sessiondir.h singularity.h
+EXTRA_DIST = config_parser.h fork.h loop-control.h message.h privilege.h sessiondir.h singularity.h config_defaults.h
 
