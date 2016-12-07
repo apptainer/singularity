@@ -53,6 +53,7 @@ class TestApi(TestCase):
         with some command
         '''
         from docker.api import create_runscript
+        print("Testing api.create_runscript to create runscript...")
         cmd = "echo 'Hello World'"
         base_dir = tempfile.mkdtemp()
         runscript = create_runscript(cmd=cmd,
@@ -62,6 +63,48 @@ class TestApi(TestCase):
         # Commands are always in format exec [] "$@"
         # 'exec echo \'Hello World\' "$@"'
         self.assertEqual('exec %s "$@"' %cmd,generated_cmd)
+
+
+    def test_create_envfile(self):
+        '''test_create_envfile should test if a list of environment commands
+        obtained from a manifest return a proper file
+        '''
+        from docker.api import create_envfile
+        from docker.api import get_manifest
+        from docker.api import get_config
+        
+        print("Testing generation of environment file...")
+        print("Case 1: Generating environment from manifest")
+        manifest = get_manifest(repo_name = self.repo_name,
+                                namespace = self.namespace)
+        
+        # Env is a variable in the manifest config
+        envfile = create_envfile(manifest=manifest,
+                                 base_dir=self.tmpdir)
+        self.assertTrue(os.path.exists(envfile))
+        generated_env = read_file(envfile)
+        print("".join(generated_env))
+        
+        print("Case 2: Generating environment from user string")        
+        env = get_config(manifest,spec="Env")      
+        envfile = create_envfile(env=env,
+                                 base_dir=self.tmpdir)
+        self.assertTrue(os.path.exists(envfile))
+        generated_env = read_file(envfile)
+        print("".join(generated_env))
+
+        print("Case 3: Generating environment from user list")        
+        env = get_config(manifest,spec="Env").split('\n')      
+        envfile = create_envfile(env=env,
+                                 base_dir=self.tmpdir)
+        self.assertTrue(os.path.exists(envfile))
+        generated_env = read_file(envfile)
+        print("".join(generated_env))
+
+        print("Case 4: User does not supply manifest or env")        
+        with self.assertRaises(SystemExit) as cm:
+            envfile = create_envfile(base_dir=self.tmpdir)
+        self.assertEqual(cm.exception.code, 1)
 
 
     def test_get_token(self):
