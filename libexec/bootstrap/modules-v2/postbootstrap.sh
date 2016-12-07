@@ -224,5 +224,11 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
     > "$SINGULARITY_ROOTFS/etc/hosts"
     > "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
+    # These are here not because the un-mount is necessary, but because the above mounts modified the
+    # /etc/mtab, and this will undo those changes
+    umount "$SINGULARITY_ROOTFS/proc"
+    umount "$SINGULARITY_ROOTFS/sys"
+    umount "$SINGULARITY_ROOTFS/dev"
+
 fi
 
