@@ -195,8 +195,7 @@ static void cache_singularity_user(void) {
         return;
     }
 
-    singularity_config_rewind();
-    char *username = singularity_config_get_value_default("singularity user", "singularity");
+    const char *username = singularity_config_get_value(SINGULARITY_USER);
     struct passwd *pw = getpwnam(username);
     if (pw == NULL) {
         singularity_message(ERROR, "Unable to determine UID/GID for user %s: %s (errno=%d)", username, strerror(errno), errno);

@@ -76,13 +76,9 @@ int singularity_rootfs_init(char *source) {
         setenv("SINGULARITY_CONTAINER", "unknown", 1);
     }
 
-    singularity_config_rewind();
     singularity_message(DEBUG, "Figuring out where to mount Singularity container\n");
 
-    if ( ( mount_point = singularity_config_get_value("container dir") ) == NULL ) {
-        singularity_message(DEBUG, "Using default container path of: /var/lib/singularity/mnt\n");
-        mount_point = strdup("/var/lib/singularity/mnt");
-    }
+    mount_point = strdup(singularity_config_get_value(CONTAINER_DIR));
     singularity_message(VERBOSE3, "Set image mount path to: %s\n", mount_point);
 
     if ( is_file(source) == 0 ) {
@@ -176,8 +172,7 @@ int singularity_rootfs_mount(void) {
     }
 
     singularity_message(DEBUG, "OverlayFS enabled by host build\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("enable overlay", 1) <= 0 ) {
+    if ( singularity_config_get_bool(ENABLE_OVERLAY) <= 0 ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS via configuration\n");
     } else if ( envar_defined("SINGULARITY_DISABLE_OVERLAYFS") == TRUE ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS via environment\n");

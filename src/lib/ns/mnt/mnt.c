@@ -44,10 +44,9 @@ int singularity_ns_mnt_enabled(void) {
 }
 
 int singularity_ns_mnt_unshare(void) {
-    singularity_config_rewind();
     int slave;
 
-    slave = singularity_config_get_bool("mount slave", 1);
+    slave = singularity_config_get_bool(MOUNT_SLAVE);
 
     singularity_priv_escalate();
 #ifdef NS_CLONE_FS

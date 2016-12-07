@@ -46,8 +46,10 @@ int singularity_mount_binds(void) {
     }
 
     singularity_message(DEBUG, "Checking configuration file for 'bind path'\n");
-    singularity_config_rewind();
-    while ( ( tmp_config_string = singularity_config_get_value("bind path") ) != NULL ) {
+    const char **tmp_config_string_list = singularity_config_get_value_multi(BIND_PATH);
+    while ( *tmp_config_string_list != NULL ) {
+        tmp_config_string = strdup(*tmp_config_string_list);
+        tmp_config_string_list++;
         char *source = strtok(tmp_config_string, ":");
         char *dest = strtok(NULL, ":");
         chomp(source);

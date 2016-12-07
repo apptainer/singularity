@@ -81,10 +81,8 @@ int rootfs_image_init(char *source, char *mount_dir) {
         return(1);
     }
 
-    singularity_config_rewind();
-    int allow_user_image = singularity_config_get_bool("allow user image", 1);
-    singularity_config_rewind();
-    char *protected_image_mode = singularity_config_get_value_default("protected image mode", "none");
+    int allow_user_image = singularity_config_get_bool(ALLOW_USER_IMAGE);
+    const char *protected_image_mode = singularity_config_get_value(PROTECTED_IMAGE_MODE);
     int protected_image_user = !strcmp(protected_image_mode, "user");
     int protected_image_group = !strcmp(protected_image_mode, "group");
     if (!protected_image_user && !protected_image_group && strcmp(protected_image_mode, "none")) {

@@ -62,8 +62,7 @@ static int mount_dev(const char *dev) {
 int singularity_mount_dev(void) {
     char *container_dir = singularity_rootfs_dir();
 
-    singularity_config_rewind();
-    if ( strcmp("minimal", singularity_config_get_value("mount dev")) == 0 ) {
+    if ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) {
         if ( singularity_rootfs_overlay_enabled() > 0 ) {
             if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
                 if ( s_mkpath(joinpath(container_dir, "/dev"), 0755) < 0 ) {
@@ -89,8 +88,7 @@ int singularity_mount_dev(void) {
     }
 
     singularity_message(DEBUG, "Checking configuration file for 'mount dev'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("mount dev", 1) > 0 ) {
+    if ( singularity_config_get_bool_char(MOUNT_DEV) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/dev")) == 0 ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Bind mounting /dev\n");

@@ -16,6 +16,7 @@ bin/singularity
 compile
 configure
 depcomp
+etc/singularity.conf
 etc/Makefile
 etc/Makefile.in
 install-sh

@@ -41,6 +41,7 @@
 #include "lib/singularity.h"
 #include "util/file.h"
 #include "util/util.h"
+#include "lib/config_parser.h"
 
 
 #ifndef SYSCONFDIR
@@ -69,7 +70,7 @@ int main(int argc_in, char ** argv_in) {
      */
     singularity_priv_init();
 
-    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     /* Loop until we've gone through argv and returned */
     while ( 1 ) {
