@@ -38,7 +38,7 @@ class TestApi(TestCase):
 
 
     def setUp(self):
-        self.image_id = 7
+        self.image_id = 8
         self.tmpdir = tempfile.mkdtemp()
         print("\n---START----------------------------------------")
 
@@ -67,7 +67,7 @@ class TestApi(TestCase):
         '''
         from shub.api import download_image, get_manifest
         print("Case 1: Specifying a directory downloads to it")
-        manifest = get_manifest(image_id=7)
+        manifest = get_manifest(image_id=self.image_id)
         image = download_image(manifest,
                                download_folder=self.tmpdir)
         self.assertEqual(os.path.dirname(image),self.tmpdir)
@@ -75,7 +75,7 @@ class TestApi(TestCase):
 
         print("Case 2: Not specifying a directory downloads to PWD")
         os.chdir(self.tmpdir)
-        manifest = get_manifest(image_id=7)
+        manifest = get_manifest(image_id=self.image_id)
         image = download_image(manifest)
         self.assertEqual(os.getcwd(),self.tmpdir)
 
@@ -84,11 +84,11 @@ class TestApi(TestCase):
         '''test_get_image_name will return the image name from the manifest
         '''
         from shub.api import get_image_name, get_manifest
-        manifest = get_manifest(image_id=7)
+        manifest = get_manifest(image_id=self.image_id)
         
         print("Case 1: return an image name using the commit id")
         image_name = get_image_name(manifest)
-        self.assertEqual('61b4721e3583d1c84b524696c08771dd6fa188bc.tar.gz',
+        self.assertEqual('f57e631a0434c31f0b4fa5276a314a6d8a672a55.img.gz',
                          image_name)
 
         print("Case 2: ask for invalid extension")
@@ -100,7 +100,8 @@ class TestApi(TestCase):
         print("Case 3: don't use commit (use md5 sum on generation)")
         image_name = get_image_name(manifest,
                                     use_commit=False)
-        self.assertEqual('435a1e321a6277213596f7d68d02ef0b.tar.gz',image_name)
+        print(image_name)
+        self.assertEqual('be4b9ba8fc22525d2ee2b27846513d42.img.gz',image_name)
 
 
 if __name__ == '__main__':

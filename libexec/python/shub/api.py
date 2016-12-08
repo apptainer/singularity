@@ -119,10 +119,9 @@ def download_image(manifest,download_folder=None):
 
 
 # Various Helpers ---------------------------------------------------------------------------------
-def get_image_name(manifest,extension='tar.gz',use_commit=True):
+def get_image_name(manifest,extension='img.gz',use_commit=True):
     '''get_image_name will return the image name for a manifest
     :param manifest: the image manifest with 'image' as key with download link
-    :param extension: the extension to look for (without .) Default tar.gz
     :param use_commit: use the commit id to name the image (default) otherwise use md5sum
     '''
     image_url = os.path.basename(unquote(manifest['image']))
@@ -130,7 +129,7 @@ def get_image_name(manifest,extension='tar.gz',use_commit=True):
     if len(image_name) > 0:
         image_name = image_name[0]
         if use_commit == True:
-            image_name = "%s.tar.gz" %(manifest["version"])            
+            image_name = "%s.img.gz" %(manifest["version"])            
         logger.info("Singularity Hub Image: %s", image_name)
         return image_name
     else:
