@@ -12,33 +12,31 @@ from utils import (
 )
 
 from logman import logger
-import argparse
+import optparse
 
 
 def get_parser():
 
-    parser = argparse.ArgumentParser(description="singularity configuration parsing helper in python")
+    parser = optparse.OptionParser(description="singularity configuration parsing helper in python")
+
 
     # Configuration defaults header
-    parser.add_argument("--defaults",
-                        dest='defaults',
-                        help="configuration defaults header file (../src/lib/config_defaults.h)",
-                        type=str,
-                        required=True)
+    parser.add_option("--defaults",
+                      dest='defaults',
+                      help="configuration defaults header file (../src/lib/config_defaults.h)",
+                      type=str)
 
     # input configuration file
-    parser.add_argument("--infile",
-                        dest='infile',
-                        help="the configuration input file path (singularity.conf.in)",
-                        type=str,
-                        required=True)
+    parser.add_option("--infile",
+                      dest='infile',
+                      help="the configuration input file path (singularity.conf.in)",
+                      type=str)
 
     # Output configuration file
-    parser.add_argument("--outfile",
-                        dest='outfile',
-                        help="the configuration output file path (singularity.conf)",
-                        type=str,
-                        required=True)
+    parser.add_option("--outfile",
+                      dest='outfile',
+                      help="the configuration output file path (singularity.conf)",
+                      type=str)
 
     return parser
 
@@ -50,18 +48,33 @@ def main():
     parser = get_parser()
 
     try:
-        args = parser.parse_args()
+        (args,options) = parser.parse_args()
     except:
         logger.error("Input args to %s improperly set, exiting.", os.path.abspath(__file__))
         parser.print_help()
-        sys.exit(0)
+        sys.exit(1)
+
+    # Check for required args
+    [check_required(parser,arg) for arg in [args.defaults,
+                                            args.infile,
+                                            args.outfile]]
 
     # Run the configuration
     configure(args)
 
+def check_required(parser,arg):
+    '''check_required arg checks that an argument is defined.
+    It is a workaround for missing required parameter of argparse
+    :param parser: the parser
+    :param arg: the argument
+    '''
+    if not arg:   # if filename is not given
+        parser.error('Missing required argument.')
+        parser.print_help()
+        sys.exit(1)
+
 
 def configure(args):
-
 
     # Get fullpath to each file, and concurrently check that exists
     defaultfile = get_fullpath(args.defaults) # ../src/lib/config_defaults.h
