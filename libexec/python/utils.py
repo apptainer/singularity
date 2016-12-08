@@ -146,7 +146,7 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
     try:
         response = urlopen(request)
 
-    # If we have an HTTPError, tell the user and exit
+    # If we have an HTTPError, try to follow the response
     except HTTPError as error:
         return error
 
