@@ -320,7 +320,8 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
 
 def mkdir_p(path):
     '''mkdir_p attempts to get the same functionality as mkdir -p
-    :param path: the path to create
+    :param path: the path to create.
+    Thanks to https://goo.gl/LyppZ0
     '''
     try:
         os.makedirs(path)
