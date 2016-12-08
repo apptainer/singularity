@@ -312,21 +312,20 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
         cache_base = "%s/%s" %(cache_base,subfolder)
         
     # Create the cache folder(s), if don't exist
-    mkdir_p(cache_base)
+    create_folders(cache_base)
 
     print("Cache folder set to %s" %cache_base)
     return cache_base
 
 
-def mkdir_p(path):
-    '''mkdir_p attempts to get the same functionality as mkdir -p
+def create_folders(path):
+    '''create_folders attempts to get the same functionality as mkdir -p
     :param path: the path to create.
-    Thanks to http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
     '''
     try:
         os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
+    except OSError as e:
+        if e.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else:
             logger.error("Error creating path %s, exiting.",path)
