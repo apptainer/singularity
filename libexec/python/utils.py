@@ -35,10 +35,11 @@ import base64
 try:
     from urllib.parse import urlencode, urlparse
     from urllib.request import urlopen, Request, unquote
+    from urllib.error import HTTPError
 except ImportError:
     from urllib import urlencode, unquote
     from urlparse import urlparse
-    from urllib2 import urlopen, Request
+    from urllib2 import urlopen, Request, HTTPError
 
 # Python less than version 3 must import OSError
 if sys.version_info[0] < 3:
@@ -145,10 +146,9 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
     try:
         response = urlopen(request)
 
-    # If we have an error, tell the user and exit
-    except:
-        logger.error("Error with URL %s, exiting.",url)
-        sys.exit(1)
+    # If we have an HTTPError, tell the user and exit
+    except HTTPError as error:
+        return error
 
     # Does the call just want to return the response?
     if return_response == True:
