@@ -26,7 +26,12 @@ perform publicly and display publicly, and to permit other to do so.
 import sys
 sys.path.append('..') # parent directory
 
-from utils import api_get, write_file, add_http
+from utils import (
+    add_http,
+    api_get, 
+    read_file,
+    write_file 
+)
 from logman import logger
 import json
 import os
