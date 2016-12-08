@@ -18,6 +18,10 @@
  * 
 */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -41,28 +45,36 @@
 
 void singularity_mount_cwd(void) {
     char *container_dir = singularity_rootfs_dir();
-    char *cwd_path = (char *) malloc(PATH_MAX);
+    char *cwd_path = NULL;
     int r;
 
     singularity_message(DEBUG, "Checking to see if we should mount current working directory\n");
 
     singularity_message(DEBUG, "Getting current working directory\n");
-    if ( getcwd(cwd_path, PATH_MAX) == NULL ) {
+    cwd_path = get_current_dir_name();
+    if ( cwd_path == NULL ) {
         singularity_message(ERROR, "Could not obtain current directory path: %s\n", strerror(errno));
         ABORT(1);
     }
 
-    singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
-        singularity_message(WARNING, "Not mounting current directory: user bind control is disabled by system administrator\n");
-        return;
-    }
+    singularity_message(DEBUG, "Checking if current directory exists in container\n");
+    if ( is_dir(joinpath(container_dir, cwd_path)) == 0 ) {
+        char *cwd_fileid = file_devino(cwd_path);
+        char *container_cwd_fileid = file_devino(joinpath(container_dir, cwd_path));
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return;
-#endif  
+        singularity_message(DEBUG, "Checking if container's cwd == host's cwd\n");
+        if ( strcmp(cwd_fileid, container_cwd_fileid) == 0 ) {
+            singularity_message(VERBOSE, "Not mounting current directory: location already available within container\n");
+            free(cwd_path);
+            free(cwd_fileid);
+            free(container_cwd_fileid);
+            return;
+        } else {
+            singularity_message(DEBUG, "Container's cwd is not the same as the host, continuing on...\n");
+        }
+    } else {
+        singularity_message(DEBUG, "Container does not have the directory: %s\n", cwd_path);
+    }
 
     singularity_message(DEBUG, "Checking for contain option\n");
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
@@ -73,14 +85,30 @@ void singularity_mount_cwd(void) {
     singularity_message(DEBUG, "Checking if CWD is already mounted: %s\n", cwd_path);
     if ( check_mounted(cwd_path) >= 0 ) {
         singularity_message(VERBOSE, "Not mounting CWD (already mounted in container): %s\n", cwd_path);
+        free(cwd_path);
         return;
     }
 
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
     if ( singularity_rootfs_overlay_enabled() <= 0 ) {
-        singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled\n");
+        if ( is_dir(joinpath(container_dir, cwd_path)) < 0 ) {
+            singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled and directory does not exist in container: %s\n", joinpath(container_dir, cwd_path));
+            return;
+        }
+    }
+
+    singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
+    if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
+        singularity_message(WARNING, "Not mounting current directory: user bind control is disabled by system administrator\n");
+        free(cwd_path);
         return;
     }
+
+#ifndef SINGULARITY_NO_NEW_PRIVS
+    singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
+    free(cwd_path);
+    return;
+#endif  
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Creating current working directory inside container\n");
@@ -88,17 +116,22 @@ void singularity_mount_cwd(void) {
     singularity_priv_drop();
     if ( r < 0 ) {
         singularity_message(VERBOSE, "Could not create directory for current directory, skipping CWD mount\n");
+        free(cwd_path);
         return;
     }
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", cwd_path, container_dir, cwd_path);
     r = mount(cwd_path, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL);
+    if ( singularity_priv_userns_enabled() != 1 ) {
+        r = mount(NULL, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL);
+    }
     singularity_priv_drop();
     if ( r < 0 ) {
         singularity_message(WARNING, "Could not bind CWD to container %s: %s\n", cwd_path, strerror(errno));
     }
 
+    free(cwd_path);
     return;
 }
 

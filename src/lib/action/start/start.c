@@ -102,6 +102,7 @@ void action_start_do(int argc, char **argv) {
         }
     }
     fclose(comm);
+    free(line);
 
     singularity_message(VERBOSE, "Namespace process exiting...\n");
     exit(0);

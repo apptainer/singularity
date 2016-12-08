@@ -57,8 +57,7 @@ void singularity_mount_scratch(void) {
     }
 
     singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
+    if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
         singularity_message(VERBOSE, "Not mounting scratch: user bind control is disabled by system administrator\n");
         return;
     }
@@ -114,6 +113,9 @@ void singularity_mount_scratch(void) {
         singularity_priv_escalate();
         singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", full_sourcedir_path, container_dir, current);
         r = mount(full_sourcedir_path, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL);
+        if ( singularity_priv_userns_enabled() != 1 ) {
+            r += mount(NULL, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL);
+        }
         singularity_priv_drop();
         if ( r < 0 ) {
             singularity_message(WARNING, "Could not bind scratch directory into container %s: %s\n", full_sourcedir_path, strerror(errno));

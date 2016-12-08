@@ -44,7 +44,7 @@ int main(int argc, char ** argv) {
     int toggle_section = 0;
     int retval = 1;
     FILE *input;
-    char *line = (char *)malloc(MAX_LINE_LEN);;
+    char *line = (char *)malloc(MAX_LINE_LEN);
 
     if ( argc < 3 ) {
         printf("USAGE: %s [section] [file]\n", argv[0]);
@@ -64,7 +64,7 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Iterating through file looking for sections matching: \%%s\n", section);
+    singularity_message(DEBUG, "Iterating through file looking for sections matching: %%%s\n", section);
     while ( fgets(line, MAX_LINE_LEN, input) != NULL ) {
         if ( strncmp(line, strjoin("%", section), strlength(section, 128) + 1) == 0 ) {
             toggle_section = 1;
@@ -75,6 +75,9 @@ int main(int argc, char ** argv) {
             printf("%s", line);
         }
     }
-
+    fclose(input);
+    free(section);
+    free(file);
+    free(line);
     return(retval);
 }

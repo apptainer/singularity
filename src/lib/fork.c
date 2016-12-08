@@ -96,7 +96,7 @@ pid_t singularity_fork(void) {
         sigprocmask(SIG_SETMASK, &blocked_mask, &old_mask);
 
         struct sigaction action;
-        action.sa_sigaction = handle_signal;
+        action.sa_sigaction = &handle_signal;
         action.sa_flags = SA_SIGINFO|SA_RESTART;
         // All our handlers are signal safe.
         action.sa_mask = empty_mask;
@@ -131,7 +131,7 @@ pid_t singularity_fork(void) {
             singularity_message(ERROR, "Failed to install SIGUSR2 signal handler: %s\n", strerror(errno));
             ABORT(255);
         }
-        action.sa_sigaction = handle_sigchld;
+        action.sa_sigaction = &handle_sigchld;
         if ( -1 == sigaction(SIGCHLD, &action, NULL) ) {
             singularity_message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
             ABORT(255);
@@ -229,7 +229,7 @@ int singularity_fork_exec(char **argv) {
 
     if ( child == 0 ) {
         if ( execvp(argv[0], argv) < 0 ) { //Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv(%s, ...)\n", argv[0]);
+            singularity_message(ERROR, "Failed to execv(%s, ...): %s\n", argv[0], strerror(errno));
             ABORT(255);
         }
 

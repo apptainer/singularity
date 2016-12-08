@@ -167,13 +167,13 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
         chmod 0755 "$SINGULARITY_ROOTFS/singularity"
     fi
 
-    mount -t proc proc "$SINGULARITY_ROOTFS/proc"
-    mount -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
+    mount --no-mtab -t proc proc "$SINGULARITY_ROOTFS/proc"
+    mount --no-mtab -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
 
     if [ -d "/dev" -a -d "$SINGULARITY_ROOTFS/dev" ]; then
         mkdir -p -m 0755 "$SINGULARITY_ROOTFS/dev"
     fi
-    mount --rbind "/dev/" "$SINGULARITY_ROOTFS/dev"
+    mount --no-mtab --rbind "/dev/" "$SINGULARITY_ROOTFS/dev"
 
     cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
     cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"

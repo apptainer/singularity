@@ -67,8 +67,7 @@ int singularity_ns_user_unshare(void) {
         return(0);
     }
 
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("allow user ns", 1) <= 0 ) {
+    if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
         singularity_message(VERBOSE2, "Not virtualizing USER namespace by configuration\n");
         return(0);
     }

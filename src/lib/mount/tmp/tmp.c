@@ -43,8 +43,7 @@ int singularity_mount_tmp(void) {
     char *tmp_source;
     char *vartmp_source;
 
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("mount tmp", 1) <= 0 ) {
+    if ( singularity_config_get_bool(MOUNT_TMP) <= 0 ) {
         singularity_message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
         return(0);
     }
@@ -52,8 +51,7 @@ int singularity_mount_tmp(void) {
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         char *tmpdirpath;
         if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR") ) != NULL ) {
-            singularity_config_rewind();
-            if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
+            if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
                 singularity_message(ERROR, "User bind control is disabled by system administrator\n");
                 ABORT(5);
             }
@@ -82,6 +80,12 @@ int singularity_mount_tmp(void) {
                 singularity_message(ERROR, "Failed to mount %s -> /tmp: %s\n", tmp_source, strerror(errno));
                 ABORT(255);
             }
+            if ( singularity_priv_userns_enabled() != 1 ) {
+                if ( mount(NULL, joinpath(container_dir, "/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    singularity_message(ERROR, "Failed to remount /tmp: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+            }
             singularity_priv_drop();
         } else {
             singularity_message(VERBOSE, "Could not mount container's /tmp directory: does not exist\n");
@@ -101,6 +105,12 @@ int singularity_mount_tmp(void) {
             if ( mount(vartmp_source, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
                 singularity_message(ERROR, "Failed to mount %s -> /var/tmp: %s\n", vartmp_source, strerror(errno));
                 ABORT(255);
+            }
+            if ( singularity_priv_userns_enabled() != 1 ) {
+                if ( mount(NULL, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    singularity_message(ERROR, "Failed to remount /var/tmp: %s\n", strerror(errno));
+                    ABORT(255);
+                }
             }
             singularity_priv_drop();
         } else {

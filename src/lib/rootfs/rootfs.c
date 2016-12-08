@@ -76,13 +76,9 @@ int singularity_rootfs_init(char *source) {
         setenv("SINGULARITY_CONTAINER", "unknown", 1);
     }
 
-    singularity_config_rewind();
     singularity_message(DEBUG, "Figuring out where to mount Singularity container\n");
 
-    if ( ( mount_point = singularity_config_get_value("container dir") ) == NULL ) {
-        singularity_message(DEBUG, "Using default container path of: /var/singularity/mnt\n");
-        mount_point = strdup("/var/singularity/mnt");
-    }
+    mount_point = strdup(singularity_config_get_value(CONTAINER_DIR));
     singularity_message(VERBOSE3, "Set image mount path to: %s\n", mount_point);
 
     if ( is_file(source) == 0 ) {
@@ -110,8 +106,6 @@ int singularity_rootfs_mount(void) {
     char *overlay_upper = joinpath(mount_point, OVERLAY_UPPER);
     char *overlay_work  = joinpath(mount_point, OVERLAY_WORK);
     char *overlay_final = joinpath(mount_point, OVERLAY_FINAL);
-    int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
-    char *overlay_options = (char *) malloc(overlay_options_len);
 
     singularity_message(DEBUG, "Checking 'container dir' mount location: %s\n", mount_point);
     if ( is_dir(mount_point) < 0 ) {
@@ -178,8 +172,7 @@ int singularity_rootfs_mount(void) {
     }
 
     singularity_message(DEBUG, "OverlayFS enabled by host build\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("enable overlay", 1) <= 0 ) {
+    if ( singularity_config_get_bool(ENABLE_OVERLAY) <= 0 ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS via configuration\n");
     } else if ( envar_defined("SINGULARITY_DISABLE_OVERLAYFS") == TRUE ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS via environment\n");
@@ -187,6 +180,8 @@ int singularity_rootfs_mount(void) {
         singularity_message(VERBOSE3, "Not enabling overlayFS, image mounted writablable\n");
     } else {
 #ifdef SINGULARITY_OVERLAYFS
+        int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
+        char *overlay_options = (char *) malloc(overlay_options_len);
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work); // Flawfinder: ignore
 
         singularity_priv_escalate();
@@ -213,6 +208,7 @@ int singularity_rootfs_mount(void) {
             singularity_message(ERROR, "Could not create overlay: %s\n", strerror(errno));
             ABORT(255); 
         }
+        free(overlay_options);
         singularity_priv_drop();
 
         overlay_enabled = 1;

@@ -68,6 +68,23 @@ $ PREFIX=/opt/singularity
 $ rpmbuild -ta --define="_prefix $PREFIX" --define "_sysconfdir $PREFIX/etc" --define "_defaultdocdir $PREFIX/share" singularity-*.tar.gz
 ```
 
+### Building a DEB directly from source
+
+To build a deb package for Debian/Ubuntu/LinuxMint invoke the following commands:
+
+```bash
+$ fakeroot dpkg-buildpackage -b -us -uc # sudo will ask for a password to run the tests
+$ sudo dpkg -i ../singularity-container_2.2-1_amd64.deb
+```
+ 
+Note that the tests will fail if singularity is not already installed on your system. This is the case when you run this procedure for the first time.
+In that case run the following sequence:
+
+```bash
+$ echo "echo SKIPPING TESTS THEYRE BROKEN" > ./test.sh
+$ fakeroot dpkg-buildpackage -nc -b -us -uc # this will continue the previous build without an initial 'make clean'
+```
+
 ## Security
 Once Singularity is installed in it's default configuration you may find that there is a SETUID component installed at `$PREFIX/libexec/singularity/sexec-suid`. The purpose of this is to do the require privilege escalation necessary for Singularity to operate properly. There are a few aspects of Singularity's functionality that require escalated privileges:
 

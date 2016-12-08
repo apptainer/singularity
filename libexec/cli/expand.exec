@@ -86,7 +86,7 @@ if [ -z "$SINGULARITY_IMAGE" ]; then
     exit 1
 fi
 if [ ! -f "$SINGULARITY_IMAGE" ]; then
-    message ERROR "Image file exists, not overwriting.\n"
+    message ERROR "Image file not found.\n"
     exit 1
 fi
 

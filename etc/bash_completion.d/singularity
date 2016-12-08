@@ -1,4 +1,4 @@
-#!/bin/sh ## Only here for syntax highlighting
+#!/bin/bash ## Only here for syntax highlighting
 
 _singularity() {
     local cur cmd opts cmd_idx container_idx

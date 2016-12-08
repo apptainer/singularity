@@ -273,7 +273,7 @@ __mountproc() {
     if [ -d "/proc" -a -d "$SINGULARITY_ROOTFS/proc" ]; then
         mkdir -p -m 0755 "$SINGULARITY_ROOTFS/proc"
     fi
-    mount -t proc proc "$SINGULARITY_ROOTFS/proc"
+    mount --no-mtab -t proc proc "$SINGULARITY_ROOTFS/proc"
 
     return $?
 }
@@ -282,7 +282,7 @@ __mountsys() {
     if [ ! -d "$SINGULARITY_ROOTFS/sys" ]; then
         mkdir -p -m 0755 "$SINGULARITY_ROOTFS/sys"
     fi
-    mount -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
+    mount --no-mtab -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
 
     return $?
 }
@@ -291,7 +291,7 @@ __mountdev() {
     if [ -d "/dev" -a -d "$SINGULARITY_ROOTFS/dev" ]; then
         mkdir -p -m 0755 "$SINGULARITY_ROOTFS/dev"
     fi
-    mount --rbind "/dev/" "$SINGULARITY_ROOTFS/dev"
+    mount --no-mtab --rbind "/dev/" "$SINGULARITY_ROOTFS/dev"
 
     return $?
 }

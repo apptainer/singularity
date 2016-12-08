@@ -1,4 +1,4 @@
-SUBDIRS = mount create bind expand
+SUBDIRS = mount create bind expand bootstrap
 
 MAINTAINERCLEANFILES = Makefile.in 
 DISTCLEANFILES = Makefile
@@ -10,7 +10,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libimage.la
 
-libimage_la_LIBADD = mount/libimagemount.la create/libimagecreate.la bind/libimagebind.la expand/libimageexpand.la
+libimage_la_LIBADD = mount/libimagemount.la create/libimagecreate.la bind/libimagebind.la expand/libimageexpand.la bootstrap/libimagebootstrap.la
 libimage_la_SOURCES = image.c
 
 EXTRA_DIST = image.h

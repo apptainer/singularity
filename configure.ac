@@ -31,6 +31,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects]) ## SEE ABOVE BEFORE CHANGING
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
+AC_GNU_SOURCE
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_CC
@@ -315,6 +316,7 @@ AC_CONFIG_FILES([
    src/lib/file/group/Makefile
    src/lib/file/passwd/Makefile
    src/lib/file/resolvconf/Makefile
+   src/lib/file/entrypoint/Makefile
    src/lib/mount/Makefile
    src/lib/mount/cwd/Makefile
    src/lib/mount/dev/Makefile
@@ -330,6 +332,12 @@ AC_CONFIG_FILES([
    src/lib/image/bind/Makefile
    src/lib/image/create/Makefile
    src/lib/image/expand/Makefile
+   src/lib/image/bootstrap/Makefile
+   src/lib/image/bootstrap/docker/Makefile
+   src/lib/image/bootstrap/yum/Makefile
+   src/lib/image/bootstrap/debootstrap/Makefile
+   src/lib/image/bootstrap/busybox/Makefile
+   src/lib/image/bootstrap/arch/Makefile
    src/util/Makefile
    src/slurm/Makefile
    etc/Makefile
@@ -341,6 +349,7 @@ AC_CONFIG_FILES([
    libexec/bootstrap/modules-v1/Makefile
    libexec/bootstrap/modules-v2/Makefile
    libexec/cli/Makefile
+   libexec/defaults/Makefile
    libexec/helpers/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile

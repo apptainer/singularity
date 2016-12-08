@@ -1,4 +1,6 @@
 *~
+#*
+*#
 src/*.o
 singularity-*.tar.gz
 *.m4
@@ -14,6 +16,7 @@ bin/singularity
 compile
 configure
 depcomp
+etc/singularity.conf
 etc/Makefile
 etc/Makefile.in
 install-sh
@@ -64,4 +67,11 @@ src/*/*/*/lib*.la
 src/*/*/*/*.o
 src/*/*/*/*.lo
 src/*/*/*/.dirstamp
+
+src/*/*/*/*/.deps/
+src/*/*/*/*/.libs/
+src/*/*/*/*/lib*.la
+src/*/*/*/*/*.o
+src/*/*/*/*/*.lo
+src/*/*/*/*/.dirstamp
 

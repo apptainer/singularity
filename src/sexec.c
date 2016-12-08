@@ -30,6 +30,7 @@
 #include "lib/singularity.h"
 #include "util/util.h"
 #include "util/file.h"
+#include "lib/config_parser.h"
 
 #ifndef SYSCONFDIR
 #define SYSCONFDIR "/etc"
@@ -55,12 +56,10 @@ int main(int argc, char **argv) {
         singularity_abort(255, "Running in privileged mode, root must own the Singularity configuration file\n");
     }
 
-    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
-    singularity_config_rewind();
-    
     singularity_message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
-    if ( singularity_config_get_bool("allow setuid", 1) == 0 ) {
+    if ( singularity_config_get_bool(ALLOW_SETUID) == 0 ) {
         singularity_abort(255, "SUID mode has been disabled by the sysadmin... Aborting\n");
     }
 
@@ -77,13 +76,11 @@ int main(int argc, char **argv) {
         singularity_abort(255, "This program must **NOT** be SUID\n");
     }
 
-    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-
-    singularity_config_rewind();
+    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     if ( singularity_priv_getuid() != 0 ) {
         singularity_message(VERBOSE2, "Checking that we are allowed to run as SUID\n");
-        if ( singularity_config_get_bool("allow setuid", 1) == 1 ) {
+        if ( singularity_config_get_bool(ALLOW_SETUID) == 1 ) {
             singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
             if ( envar_defined("SINGULARITY_NOSUID") == FALSE ) {
                 char sexec_suid_path[] = LIBEXECDIR "/singularity/sexec-suid";

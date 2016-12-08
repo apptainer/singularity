@@ -62,8 +62,7 @@ static int mount_dev(const char *dev) {
 int singularity_mount_dev(void) {
     char *container_dir = singularity_rootfs_dir();
 
-    singularity_config_rewind();
-    if ( strcmp("minimal", singularity_config_get_value("mount dev")) == 0 ) {
+    if ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) {
         if ( singularity_rootfs_overlay_enabled() > 0 ) {
             if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
                 if ( s_mkpath(joinpath(container_dir, "/dev"), 0755) < 0 ) {
@@ -89,14 +88,19 @@ int singularity_mount_dev(void) {
     }
 
     singularity_message(DEBUG, "Checking configuration file for 'mount dev'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("mount dev", 1) > 0 ) {
+    if ( singularity_config_get_bool_char(MOUNT_DEV) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/dev")) == 0 ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Bind mounting /dev\n");
                 if ( mount("/dev", joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not bind mount container's /dev: %s\n", strerror(errno));
                     ABORT(255);
+                }
+                if ( singularity_priv_userns_enabled() != 1 ) {
+                    if ( mount(NULL, joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                        singularity_message(ERROR, "Could not remount container's /dev: %s\n", strerror(errno));
+                        ABORT(255);
+                    }
                 }
                 singularity_priv_drop();
         } else {

@@ -70,6 +70,7 @@
     extern int singularity_image_mount(int argc, char ** argv);
     // Bind an image. Replaces old image-bind binary
     extern int singularity_image_bind(int argc, char ** argv);
+    extern int singularity_bootstrap(char *containerimage, char *bootdef_path);
 
 
     // ROOTFS
@@ -116,9 +117,11 @@
     // FILE
     // Create temporary files incontainers
     extern int singularity_file(void);
+    extern int singularity_file_bootstrap(void);
     extern int singularity_file_passwd(void);
     extern int singularity_file_group(void);
     extern int singularity_file_resolvconf(void);
+    extern int singularity_file_entrypoint(char *entrypoint_name);
 
 
     extern void singularity_sessiondir_init(char *file);
@@ -158,33 +161,13 @@
     extern int singularity_fork_exec(char **argv);
 
 
-
-
-    extern int singularity_config_open(char *config_path);
-    extern void singularity_config_close(void);
-    extern void singularity_config_rewind(void);
-
-    extern char *singularity_config_get_value(char *key);
-    extern int singularity_config_get_bool(char *key, int def);
-
-
-
-    #define ABRT -4
-    #define ERROR -3
-    #define WARNING -2
-    #define LOG -1
-    #define INFO 1
-    #define VERBOSE 2
-    #define VERBOSE1 2
-    #define VERBOSE2 3
-    #define VERBOSE3 4
-    #define DEBUG 5
-
-    extern void _singularity_message(int level, const char *function, const char *file, int line, char *format, ...);
-
-    #define singularity_message(a,b...) _singularity_message(a, __func__, __FILE__, __LINE__, b)
-
-    #define singularity_abort(a,b...) {_singularity_message(ABRT,  __func__, __FILE__, __LINE__, b); _singularity_message(ABRT,  __func__, __FILE__, __LINE__, "Retval = %d\n", a); exit(a);}
-
+    // Bootstrap code
+    extern int singularity_bootdef_open(char *bootdef_path);
+    extern void singularity_bootdef_rewind();
+    extern void singularity_bootdef_close();
+    extern char *singularity_bootdef_get_value(char *key);
+    extern int singularity_bootdef_get_version();
+    extern int singularity_bootdef_section_find(char *section_name);
+    extern int singularity_bootdef_section_get(char **script, char *section_name);
 
 #endif /* __SINGULARITY_H */

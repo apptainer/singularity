@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 utils.py: python helper for singularity command line tool
 
@@ -24,20 +22,23 @@ perform publicly and display publicly, and to permit other to do so.
 
 from defaults import SINGULARITY_CACHE
 from logman import logger
+import json
 import os
-import re
 import shutil
 import subprocess
+import stat
+from stat import ST_MODE
 import sys
 import tempfile
 import tarfile
 import base64
 try:
-    from urllib.parse import urlencode
+    from urllib.parse import urlencode, urlparse
     from urllib.request import urlopen, Request, unquote
     from urllib.error import HTTPError
 except ImportError:
     from urllib import urlencode, unquote
+    from urlparse import urlparse
     from urllib2 import urlopen, Request, HTTPError
 
 # Python less than version 3 must import OSError
@@ -55,18 +56,15 @@ def add_http(url,use_https=True):
     :param url: the url to add the prefix to
     :param use_https: should we default to https? default is True
     '''
-    prefix = "https://"
+    scheme = "https://"
     if use_https == False:
-        prefix="http://"
-    
-    # Does the url have http?
-    if re.search('^http*',url) == None:
-        url = "%s%s" %(prefix,url)
+        scheme="http://"
 
-    # Always remove extra slash
-    url = url.strip('/')
+    parsed = urlparse(url)
+    # Returns tuple with(scheme,netloc,path,params,query,fragment)
 
-    return url
+    return "%s%s" %(scheme,"".join(parsed[1:]).rstrip('/'))
+
 
 def api_get_pagination(url):
    '''api_pagination is a wrapper for "api_get" that will also handle pagination
@@ -95,7 +93,7 @@ def api_get_pagination(url):
    return results
     
 
-def parse_headers(default_header,headers):
+def parse_headers(default_header,headers=None):
     '''parse_headers will return a completed header object, adding additional headers to some
     default header
     :param default_header: include default_header (above)
@@ -107,15 +105,17 @@ def parse_headers(default_header,headers):
 
     if default_header == True:
         if headers != None:
-            headers.update(header)
+            final_headers = header.copy()
+            final_headers.update(headers)
         else:
-            headers = header
+            final_headers = header
 
     else:
+        final_headers = headers
         if headers == None:
-            headers = dict() 
+            final_headers = dict() 
 
-    return headers
+    return final_headers
 
 
 def api_get(url,data=None,default_header=True,headers=None,stream=None,return_response=False):
@@ -172,9 +172,20 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
     return stream
 
 def basic_auth_header(username, password):
-    credentials = base64.b64encode("%s:%s" % (username, password))
+    '''basic_auth_header will return a base64 encoded header object to
+    generate a token
+    :param username: the username
+    :param password: the password
+    '''
+    s = "%s:%s" % (username, password)
+    if sys.version_info[0] >= 3:
+        s = bytes(s, 'utf-8')
+        credentials = base64.b64encode(s).decode('utf-8')
+    else:
+        credentials = base64.b64encode(s)
     auth = {"Authorization": "Basic %s" % credentials}
     return auth
+
 
 ############################################################################
 ## COMMAND LINE OPERATIONS #################################################
@@ -196,6 +207,81 @@ def run_command(cmd):
     return output
 
 
+
+############################################################################
+## PERMISSIONS #############################################################
+############################################################################
+
+
+def has_permission(file_path,permission=None):
+    '''has_writability will check if a file has writability using
+    bitwise operations
+    :param file_path: the path to the file
+    :param permission: the stat permission to check for
+    is False)
+    '''
+    if permission == None:
+        permission = stat.S_IWUSR
+    st = os.stat(file_path)
+    has_permission = st.st_mode & permission
+    if has_permission > 0:
+        return True
+    return False
+
+
+def change_permission(file_path,permission=None):
+    '''change_permission changes a permission if the file does not have it
+    :param file_path the path to the file
+    :param permission: the stat permission to use
+    '''
+    if permission == None:
+        permission = stat.S_IWUSR
+    st = os.stat(file_path)
+    has_perm = has_permission(file_path,permission)
+    if not has_perm:
+        logger.info("Fixing permission on: %s", file_path)
+        try:
+            os.chmod(file_path, st.st_mode | permission)
+        except:
+            print("ERROR: Couldn't change permission on ", file_path)
+            sys.exit(1)
+    return has_permission(file_path,permission)
+
+
+def change_permissions(path,permission=None,recursive=True):
+    '''change_permissions will change all permissions of files
+    and directories. Recursive is default True, given a folder
+    :param path: path to change permissions for
+    :param permission: the permission from stat to add (default is stat.S_IWUSR)
+    :param recursive: do recursively (default is True)
+    '''
+    # Default permission to change is adding write
+    if permission == None:
+        permission = stat.S_IWUSR
+
+    # For a file, recursion is not relevant
+    if os.path.isfile(path):
+        logger.info("Changing permission of %s to %s",path,oct(permission))
+        change_permission(path,permission)
+    else:
+        # If the user wants recursive, use os.walk
+        logger.info("Changing permission of files and folders under %s to %s",path,oct(permission))
+        for root, dirs, files in os.walk(path, topdown=False, followlinks=False):
+
+            # Walking through directories
+            for name in dirs:
+                dir_path = os.path.join(root, name)
+                # Make sure it's a valid dir
+                if os.path.isdir(dir_path):
+                    change_permission(dir_path, permission)
+
+            # Walking through files (and checking for symbolic links)
+            for name in files:
+                file_path = os.path.join(root, name)
+                # Make sure it's a valid file
+                if os.path.isfile(file_path) and not os.path.islink(file_path):
+                    change_permission(file_path, permission)
+                
 
 ############################################################################
 ## FILE OPERATIONS #########################################################
@@ -235,33 +321,27 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
     return cache_base
 
 
-def change_permissions(path,permission="0755",recursive=True):
-    '''change_permissions will use subprocess to change permissions of a file
-    or directory. Recursive is default True
-    :param path: path to change permissions for
-    :param permission: the permission level (default is 0755)
-    :param recursive: do recursively (default is True)
-    '''
-    if not isinstance(permission,str):
-        logger.warning("Please provide permission as a string, not number! Skipping.")
-    else:
-        permission = str(permission)
-        cmd = ["chmod",permission,"-R",path]
-        if recursive == False:
-           cmd = ["chmod",permission,path]
-        logger.info("Changing permission of %s to %s with command %s",path,permission," ".join(cmd))
-        return run_command(cmd)
-
-
-def extract_tar(targz,output_folder):
-    '''extract_tar will extract a tar.gz to a specified output folder
-    :param targz: the tar.gz file to extract
+def extract_tar(archive,output_folder):
+    '''extract_tar will extract a tar archive to a specified output folder
+    :param archive: the archive file to extract
     :param output_folder: the output folder to extract to
     '''
+    # If extension is .tar.gz, use -xzf
+    args = '-xf'
+    if archive.endswith(".tar.gz"):
+        args = '-xzf'
+
     # Just use command line, more succinct.
-    command = ["tar","-xzf",targz,"-C",output_folder,"--exclude=dev/*"]
-    print("Extracting %s" %(targz))
-    return run_command(command) 
+    command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
+    print("Extracting %s" %(archive))
+
+    retval = run_command(command)
+
+    # Change permissions (default ensures writable)
+    change_permissions(output_folder)
+
+    # Should we return a list of extracted files? Current returns empty string
+    return retval
 
 
 def write_file(filename,content,mode="w"):
@@ -269,9 +349,8 @@ def write_file(filename,content,mode="w"):
     and properly close the file
     '''
     logger.info("Writing file %s with mode %s.",filename,mode)
-    filey = open(filename,mode)
-    filey.writelines(content)
-    filey.close()
+    with open(filename,mode) as filey:
+        filey.writelines(content)
     return filename
 
 
@@ -282,12 +361,11 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     :param pretty_print: if True, will use nicer formatting   
     '''
     logger.info("Writing json file %s with mode %s.",filename,mode)
-    filey = open(filename,mode)
-    if print_pretty == True:
-        filey.writelines(simplejson.dumps(json_obj, indent=4, separators=(',', ': ')))
-    else:
-        filey.writelines(simplejson.dumps(json_obj))
-    filey.close()
+    with open(filename,mode) as filey:
+        if print_pretty == True:
+            filey.writelines(json.dumps(json_obj, indent=4, separators=(',', ': ')))
+        else:
+            filey.writelines(json.dumps(json_obj))
     return filename
 
 
@@ -296,9 +374,8 @@ def read_file(filename,mode="r"):
     and properly close the file
     '''
     logger.info("Reading file %s with mode %s.",filename,mode)
-    filey = open(filename,mode)
-    content = filey.readlines()
-    filey.close()
+    with open(filename,mode) as filey:
+        content = filey.readlines()
     return content
 
 
@@ -307,3 +384,23 @@ def clean_path(path):
     :param path: the path to clean
     '''
     return os.path.realpath(path.strip(" "))
+
+
+def get_fullpath(file_path,required=True):
+    '''get_fullpath checks if a file exists, and returns the
+    full path to it if it does. If required is true, an error is triggered.
+    :param file_path: the path to check
+    :param required: is the file required? If True, will exit with error
+    '''
+    file_path = os.path.abspath(file_path)
+    if os.path.exists(file_path):
+        return file_path
+
+    # If file is required, we exit
+    if required == True:
+        logger.error("Cannot find file %s, exiting.",file_path)
+        sys.exit(1)
+
+    # If file isn't required and doesn't exist, return None
+    logger.warning("Cannot find file %s",file_path)
+    return None

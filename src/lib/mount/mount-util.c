@@ -36,7 +36,7 @@
 int check_mounted(char *mountpoint) {
     int retval = -1;
     FILE *mounts;
-    char *line = (char *)malloc(MAX_LINE_LEN);;
+    char *line = (char *)malloc(MAX_LINE_LEN);
     char *rootfs_dir = singularity_rootfs_dir();
 
     singularity_message(DEBUG, "Opening /proc/mounts\n");

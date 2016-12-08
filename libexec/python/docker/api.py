@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 
 api.py: Docker helper functions for Singularity in Python
@@ -74,7 +72,7 @@ def get_token(namespace,repo_name,registry=None,auth=None):
         # No token required for registry.
         return None
 
-    if response.code != 401 or not response.headers.has_key("WWW-Authenticate"):
+    if response.code != 401 or "WWW-Authenticate" not in response.headers:
         logger.error("Authentication error for registry %s, exiting.", registry)
         sys.exit(1)
 
@@ -120,22 +118,52 @@ def get_images(repo_name=None,namespace=None,manifest=None,repo_tag="latest",reg
     # Get full image manifest, using version 2.0 of Docker Registry API
     if manifest == None:
         if repo_name != None and namespace != None:
+
+            # Custom header to specify we want a list of the version 2 schema, meaning the correct order of digests returned (base to child)
+            headers = {"Accept":'application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json'}
             manifest = get_manifest(repo_name=repo_name,
                                     namespace=namespace,
                                     repo_tag=repo_tag,
                                     registry=registry,
+                                    headers=headers,
                                     auth=auth)
         else:
             logger.error("No namespace and repo name OR manifest provided, exiting.")
             sys.exit(1)
 
+    digests = read_digests(manifest)
+    return digests
+
+
+def read_digests(manifest):
+    '''read_layers will return a list of layers from a manifest. The function is
+    intended to work with both version 1 and 2 of the schema
+    :param manifest: the manifest to read_layers from
+    '''
+
     digests = []
-    if 'fsLayers' in manifest:
-        for fslayer in manifest['fsLayers']:
-            if 'blobSum' in fslayer:
-                if fslayer['blobSum'] not in digests:
-                    logger.info("Adding digest %s",fslayer['blobSum'])
-                    digests.append(fslayer['blobSum'])
+
+    # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-2.md#image-manifest
+    if 'layers' in manifest:
+        layer_key = 'layers'
+        digest_key = 'digest'
+        logger.info('Image manifest version 2.2 found.')
+
+    # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-1.md#example-manifest
+    elif 'fsLayers' in manifest:
+        layer_key = 'fsLayers'
+        digest_key = 'blobSum'
+        logger.info('Image manifest version 2.1 found.')
+
+    else:
+        logger.error('Improperly formed manifest, layers or fsLayers must be present')
+        sys.exit(1)
+
+    for layer in manifest[layer_key]:
+        if digest_key in layer:
+            if layer[digest_key] not in digests:
+                logger.info("Adding digest %s",layer[digest_key])
+                digests.append(layer[digest_key])
     return digests
     
 
@@ -167,7 +195,7 @@ def get_tags(namespace,repo_name,registry=None,auth=None):
         sys.exit(1)
 
 
-def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None):
+def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None,headers=None):
     '''get_manifest should return an image manifest for a particular repo and tag. The token is expected to
     be from version 2.0 (function above)
     :param repo_name: the name of the repo, eg "ubuntu"
@@ -175,6 +203,7 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None):
     :param repo_tag: the repo tag, default is "latest"
     :param registry: the docker registry to use (default will use index.docker.io)
     :param auth: authorization header (default None)
+    :param headers: dictionary of custom headers to add to token header (to get more specific manifest)
     '''
     if registry == None:
         registry = api_base
@@ -188,6 +217,13 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None):
                       repo_name=repo_name,
                       namespace=namespace,
                       auth=auth)
+
+    # Add ['Accept'] header to specify version 2 of manifest
+    if headers != None:
+        if token != None:
+            token.update(headers)
+        else:
+            token = headers
 
     response = api_get(base,headers=token,default_header=True)
     try:
@@ -226,7 +262,7 @@ def get_config(manifest,spec="Entrypoint"):
     # Standard is to include commands like ['/bin/sh']
     if isinstance(cmd,list):
         cmd = "\n".join(cmd)
-    logger.info("Found Docker command (CMD) %s", cmd)
+    logger.info("Found Docker command (%s) %s",spec,cmd)
     return cmd
 
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 '''
 
 converted.py: Parse a Dockerfile into a Singularity spec file
@@ -104,7 +102,7 @@ def parse_http(url,destination):
     to download it to some location
     '''
     file_name = os.path.basename(url)
-    download_path = "%s/%s" %(to_thing,file_name)
+    download_path = "%s/%s" %(destination,file_name)
     return "curl %s -o %s" %(url,download_path)
 
 
@@ -117,7 +115,7 @@ def parse_targz(targz,destination):
 def parse_zip(zipfile,destination):
     '''parse_zipfile will return a commnd to unzip a file to a destination.
     '''
-    return "unzip %s %s" %(targz,destination)
+    return "unzip %s %s" %(zipfile,destination)
 
 
 def parse_add(add):

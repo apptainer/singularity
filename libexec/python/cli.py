@@ -48,79 +48,97 @@ from utils import (
 )
 
 from logman import logger
-import argparse
+import optparse
 import os
 import re
+import shutil
 import sys
 import tempfile
 
-def main():
+def get_parser():
 
-    logger.info("\n*** STARTING PYTHON CLIENT PORTION ****")
 
-    parser = argparse.ArgumentParser(description="bootstrap Docker images for Singularity containers")
+    parser = optparse.OptionParser(description='bootstrap Docker images for Singularity containers',
+                                   usage="usage: %prog [options]",
+                                   version="%prog 2.2")
 
-    # Name of the docker image
-    parser.add_argument("--docker", 
-                        dest='docker', 
-                        help="name of Docker image to bootstrap, in format library/ubuntu:latest", 
-                        type=str, 
-                        default=None)
+
+    # Name of the docker image, required
+    parser.add_option("--docker", 
+                      dest='docker', 
+                      help="name of Docker image to bootstrap, in format library/ubuntu:latest", 
+                      type=str, 
+                      default=None)
 
     # ID of the Singularity Hub container
-    parser.add_argument("--shub", 
-                        dest='shub', 
-                        help="unique id of the Singularity Hub image", 
-                        type=str, 
-                        default=None)
+    parser.add_option("--shub", 
+                      dest='shub', 
+                      help="unique id of the Singularity Hub image", 
+                      type=str, 
+                      default=None)
 
     # root file system of singularity image
-    parser.add_argument("--rootfs", 
-                        dest='rootfs', 
-                        help="the path for the root filesystem to extract to", 
-                        type=str, 
-                        default=None)
+    parser.add_option("--rootfs", 
+                      dest='rootfs', 
+                      help="the path for the root filesystem to extract to", 
+                      type=str, 
+                      default=None)
 
     # Docker registry (default is registry-1.docker.io
-    parser.add_argument("--registry", 
-                        dest='registry', 
-                        help="the registry path to use, to replace registry-1.docker.io", 
-                        type=str, 
-                        default=None)
+    parser.add_option("--registry", 
+                      dest='registry', 
+                      help="the registry path to use, to replace registry-1.docker.io", 
+                      type=str, 
+                      default=None)
 
 
     # Flag to add the Docker CMD as a runscript
-    parser.add_argument("--cmd", 
-                        dest='includecmd', 
-                        action="store_true",
-                        help="boolean to specify that CMD should be used instead of ENTRYPOINT as the runscript.", 
-                        default=False)
+    parser.add_option("--cmd", 
+                      dest='includecmd', 
+                      action="store_true",
+                      help="boolean to specify that CMD should be used instead of ENTRYPOINT as the runscript.", 
+                      default=False)
 
-    parser.add_argument("--username",
-                        dest='username',
-                        help="username for registry authentication",
-                        default=None)
+    parser.add_option("--username",
+                      dest='username',
+                      help="username for registry authentication",
+                      default=None)
 
-    parser.add_argument("--password",
-                        dest='password',
-                        help="password for registry authentication",
-                        default=None)
+    parser.add_option("--password",
+                      dest='password',
+                      help="password for registry authentication",
+                      default=None)
 
 
     # Flag to disable cache
-    parser.add_argument("--no-cache", 
-                        dest='disable_cache', 
-                        action="store_true",
-                        help="boolean to specify disabling the cache.", 
-                        default=False)
+    parser.add_option("--no-cache", 
+                      dest='disable_cache', 
+                      action="store_true",
+                      help="boolean to specify disabling the cache.", 
+                      default=False)
 
+    return parser
+
+
+def main():
+    '''main is a wrapper for the client to hand the parser to the executable functions
+    This makes it possible to set up a parser in test cases
+    '''
+    logger.info("\n*** STARTING PYTHON CLIENT PORTION ****")
+    parser = get_parser()
     
     try:
-        args = parser.parse_args()
+        (args,options) = parser.parse_args()
     except:
         logger.error("Input args to %s improperly set, exiting.", os.path.abspath(__file__))
         parser.print_help()
         sys.exit(0)
+
+    # Give the args to the main executable to run
+    run(args)
+
+
+def run(args):
 
     # Find root filesystem location
     if args.rootfs != None:
@@ -218,7 +236,8 @@ def main():
                                 auth=auth)
 
         # Get images from manifest using version 2.0 of Docker Registry API
-        images = get_images(manifest=manifest,
+        images = get_images(repo_name=repo_name,
+                            namespace=namespace,
                             registry=args.registry,
                             auth=auth)
         
@@ -245,7 +264,6 @@ def main():
                                   auth=auth)
 
             layers.append(targz) # in case we want a list at the end
-                                 # @chrisfilo suggestion to try compiling into one tar.gz
 
             # Extract image and remove tar
             extract_tar(targz,singularity_rootfs)
