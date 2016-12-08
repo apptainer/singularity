@@ -56,6 +56,34 @@ case "$IMPORT_URI" in
         CONTAINER_NAME=`echo "$IMPORT_URI" | sed -e 's@^docker://@@'`
         SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' ${SINGULARITY_DOCKER_REGISTRY:-} ${SINGULARITY_DOCKER_AUTH:-}"
     ;;
+    shub://*)
+        NAME=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
+
+        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+            SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
+        else
+            SINGULARITY_CACHEDIR_LOCAL="/tmp"
+        fi
+        if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
+            message ERROR "Failed to create container_dir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$BASE_CONTAINER_DIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Failed to create named container_dir\n"
+            ABORT 255
+        fi
+
+        eval $SINGULARITY_libexecdir/singularity/python/cli.py --shub $NAME --rootfs $CONTAINER_DIR
+
+        # The python script saves names to files in CONTAINER_DIR, we then pass this image as targz to import
+        IMPORT_URI=`cat $CONTAINER_DIR/SINGULARITY_IMAGE`
+        rm $CONTAINER_DIR/SINGULARITY_IMAGE
+        rm $CONTAINER_DIR/SINGULARITY_RUNDIR
+        SINGULARITY_IMPORT_GET="cat $IMPORT_URI"
+        export IMPORT_URI
+    ;;
     http://*|https://*)
         SINGULARITY_IMPORT_GET="curl -L -k '$IMPORT_URI'"
     ;;

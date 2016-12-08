@@ -47,7 +47,9 @@ script:
   - sonar-scanner
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_client
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_shub
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_client
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_shub
   - pylint --version
   - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611

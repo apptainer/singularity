@@ -24,6 +24,12 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
+from shub.api import (
+    download_image, 
+    get_manifest as get_shub_manifest,
+    get_image_name
+)
+
 from docker.api import (
     create_runscript, 
     get_config, 
@@ -33,7 +39,14 @@ from docker.api import (
     get_manifest 
 )
 
-from utils import extract_tar, get_cache, basic_auth_header
+from utils import (
+    basic_auth_header,
+    change_permissions, 
+    extract_tar, 
+    get_cache, 
+    write_file
+)
+
 from logman import logger
 import optparse
 import os
@@ -54,6 +67,13 @@ def get_parser():
     parser.add_option("--docker", 
                       dest='docker', 
                       help="name of Docker image to bootstrap, in format library/ubuntu:latest", 
+                      type=str, 
+                      default=None)
+
+    # ID of the Singularity Hub container
+    parser.add_option("--shub", 
+                      dest='shub', 
+                      help="unique id of the Singularity Hub image", 
                       type=str, 
                       default=None)
 
@@ -104,7 +124,7 @@ def main():
     '''main is a wrapper for the client to hand the parser to the executable functions
     This makes it possible to set up a parser in test cases
     '''
-    logger.info("\n*** STARTING DOCKER BOOTSTRAP PYTHON PORTION ****")
+    logger.info("\n*** STARTING PYTHON CLIENT PORTION ****")
     parser = get_parser()
     
     try:
@@ -123,13 +143,14 @@ def run(args):
     # Find root filesystem location
     if args.rootfs != None:
        singularity_rootfs = args.rootfs
-       logger.info("Root file system defined by command line variable as %s", singularity_rootfs)
     else:
        singularity_rootfs = os.environ.get("SINGULARITY_ROOTFS", None)
-       if singularity_rootfs == None:
+       if singularity_rootfs == None and args.shub == None: 
            logger.error("root file system not specified OR defined as environmental variable, exiting!")
            sys.exit(1)
-       logger.info("Root file system defined by env variable as %s", singularity_rootfs)
+    
+    if singularity_rootfs != None:
+        logger.info("Root file system defined as %s", singularity_rootfs)
 
     # Does the registry require authentication?
     auth = None
@@ -137,19 +158,43 @@ def run(args):
         auth = basic_auth_header(args.username, args.password)
         logger.info("Username for registry authentication: %s", args.username)
 
-    # Does the user want to override default Entrypoint and use CMD as runscript?
-    includecmd = args.includecmd
-    logger.info("Including Docker command as Runscript? %s", includecmd)
+
+    # Does the user want to download a Singularity image?
+    if args.shub != None:
+        image_id = int(args.shub)
+        manifest = get_shub_manifest(image_id)
+
+        cache_base = get_cache(subfolder="shub", 
+                               disable_cache = args.disable_cache)
+
+        # The image name is the md5 hash, download if it's not there
+        image_name = get_image_name(manifest)
+        image_file = "%s/%s" %(cache_base,image_name)
+        if not os.path.exists(image_file):
+            image_file = download_image(manifest=manifest,
+                                        download_folder=cache_base)
+        else:
+            print("Image already exists at %s, skipping download." %image_file)
+        logger.info("Singularity Hub Image Download: %s", image_file)
+       
+        # If singularity_rootfs is provided, write metadata to it
+        if singularity_rootfs != None:
+            logger.debug("Writing SINGULARITY_RUNDIR and SINGULARITY_IMAGE to %s",singularity_rootfs)
+            write_file("%s/SINGULARITY_RUNDIR" %singularity_rootfs, os.path.dirname(image_file))
+            write_file("%s/SINGULARITY_IMAGE" %singularity_rootfs, image_file)
 
     # Do we have a docker image specified?
-    if args.docker != None:
+    elif args.docker != None:
+
+        # Does the user want to override default Entrypoint and use CMD as runscript?
+        includecmd = args.includecmd
+        logger.info("Including Docker command as Runscript? %s", includecmd)
+
         image = args.docker
         logger.info("Docker image: %s", image)
 
-
-# INPUT PARSING -------------------------------------------
-# Parse image name, repo name, and namespace
-
+        # Input Parsing ----------------------------
+        # Parse image name, repo name, and namespace
 
         # First split the docker image name by /
         image = image.split('/')
@@ -179,8 +224,8 @@ def run(args):
         logger.info("Docker image path: %s/%s:%s", namespace,repo_name,repo_tag)
 
 
-# IMAGE METADATA -------------------------------------------
-# Use Docker Registry API (version 2.0) to get images ids, manifest
+        # IMAGE METADATA -------------------------------------------
+        # Use Docker Registry API (version 2.0) to get images ids, manifest
 
         # Get an image manifest - has image ids to parse, and will be
         # used later to get Cmd
@@ -197,8 +242,8 @@ def run(args):
                             auth=auth)
         
        
-#  DOWNLOAD LAYERS -------------------------------------------
-# Each is a .tar.gz file, obtained from registry with curl
+        #  DOWNLOAD LAYERS -------------------------------------------
+        # Each is a .tar.gz file, obtained from registry with curl
 
         # Get the cache (or temporary one) for docker
         cache_base = get_cache(subfolder="docker", 
