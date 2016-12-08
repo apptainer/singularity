@@ -28,6 +28,8 @@ from utils import api_get, write_file, add_http
 from logman import logger
 import json
 import re
+import os
+import tempfile
 try:
     from urllib.error import HTTPError
 except ImportError:
@@ -295,12 +297,24 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
         # Update user what we are doing
         print("Downloading layer %s" %image_id)
 
-    response = api_get(base,headers=token,stream=download_folder)
-    if isinstance(response, HTTPError):
-        logger.error("Error downloading layer %s, exiting.", base)
+    try:
+        # Create temporary file with format .tar.gz.tmp.XXXXX
+        fd, tmp_file = tempfile.mkstemp(prefix=("%s.tmp." % download_folder))
+        os.close(fd)
+        response = api_get(base,headers=token,stream=tmp_file)
+        if isinstance(response, HTTPError):
+            logger.error("Error downloading layer %s, exiting.", base)
+            sys.exit(1)
+        os.rename(tmp_file, download_folder)
+    except:
+        logger.error("Removing temporary download file %s", tmp_file)
+        try:
+            os.remove(tmp_file)
+        except:
+            pass
         sys.exit(1)
 
-    return response
+    return download_folder
 
 
 # Under Development! ---------------------------------------------------------------------------------
