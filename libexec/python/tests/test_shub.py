@@ -59,12 +59,6 @@ class TestApi(TestCase):
         [self.assertTrue(x in manifest) for x in keys]
         self.assertTrue(manifest['id']==self.image_id)
 
-        print("Case 2: Testing retrieval of invalid registry, should exit.")
-        with self.assertRaises(SystemExit) as cm:
-            manifest = get_manifest(self.image_id,
-                                    registry='shubby-singularity.xxx')
-        self.assertEqual(cm.exception.code, 1)
-
 
 
     def test_download_image(self):
