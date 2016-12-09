@@ -34,6 +34,7 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
+#include "lib/singularity.h"
 #include "lib/file/environment/environment.h"
 
 
