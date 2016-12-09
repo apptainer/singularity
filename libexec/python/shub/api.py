@@ -118,7 +118,7 @@ def download_image(manifest,download_folder=None,extract=True):
     image_file = api_get(url,stream=image_file)
     if extract == True:
         print("Decompressing", image_file)
-        os.system('gzip -d %s' %(image_file))
+        os.system('gzip -d -f %s' %(image_file))
         image_file = image_file.replace('.gz','')
     return image_file
 
