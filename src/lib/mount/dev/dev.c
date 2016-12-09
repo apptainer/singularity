@@ -78,6 +78,18 @@ int singularity_mount_dev(void) {
             mount_dev("/dev/random");
             mount_dev("/dev/urandom");
 
+            if ( is_dir(joinpath(container_dir, "/dev/shm")) < 0 ) {
+                if ( s_mkpath(joinpath(container_dir, "/dev/shm"), 0755) < 0 ) {
+                    singularity_message(VERBOSE2, "Could not create /dev/shm inside container, returning...\n");
+                    return(0);
+                }
+            }
+
+            if ( mount("/dev/shm", joinpath(container_dir, "/dev/shm"), NULL, MS_BIND, NULL) < 0 ) {
+                unlink(joinpath(container_dir, "/dev/shm"));
+                singularity_message(VERBOSE, "Can not mount /dev/shm: %s\n", strerror(errno));
+            }
+
             singularity_priv_drop();
 
             return(0);
