@@ -1,4 +1,4 @@
-SUBDIRS = docker yum debootstrap busybox arch
+SUBDIRS = docker
 
 MAINTAINERCLEANFILES = Makefile.in 
 DISTCLEANFILES = Makefile
@@ -10,7 +10,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libimagebootstrap.la
 
-libimagebootstrap_la_LIBADD = docker/libbootstrapdocker.la debootstrap/libbootstrapdebootstrap.la yum/libbootstrapyum.la busybox/libbootstrapbusybox.la arch/libbootstraparch.la
+libimagebootstrap_la_LIBADD = docker/libbootstrapdocker.la
 libimagebootstrap_la_SOURCES = bootstrap.c bootdef_parser.c
 
 EXTRA_DIST = bootstrap.h bootdef_parser.h
