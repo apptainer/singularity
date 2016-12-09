@@ -18,6 +18,7 @@
  * 
 */
 
+#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -53,7 +54,7 @@
 static int module = 0;
 static int overlay_enabled = 0;
 static char *mount_point = NULL;
-
+static int rootfs_fd;
 
 int singularity_rootfs_overlay_enabled(void) {
     singularity_message(DEBUG, "Returning singularity_rootfs_overlay: %d\n", overlay_enabled);
@@ -63,6 +64,11 @@ int singularity_rootfs_overlay_enabled(void) {
 char *singularity_rootfs_dir(void) {
     singularity_message(DEBUG, "Returning singularity_rootfs_dir: %s\n", joinpath(mount_point, OVERLAY_FINAL));
     return(joinpath(mount_point, OVERLAY_FINAL));
+}
+
+int singularity_rootfs_fd(void) {
+    singularity_message(DEBUG, "Returning singularity_rootfs_fd: %d\n", rootfs_fd);
+    return(rootfs_fd);
 }
 
 int singularity_rootfs_init(char *source) {
@@ -226,6 +232,9 @@ int singularity_rootfs_mount(void) {
         }
         singularity_priv_drop();
     }
+
+    rootfs_fd = open(singularity_rootfs_dir(), O_PATH | O_DIRECTORY);
+    singularity_message(DEBUG, "Stored rootfs fd as: %d\n", rootfs_fd);
 
     return(0);
 }
