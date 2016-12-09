@@ -34,10 +34,10 @@ import tarfile
 import base64
 try:
     from urllib.parse import urlencode, urlparse
-    from urllib.request import urlopen, Request
+    from urllib.request import urlopen, Request, unquote
     from urllib.error import HTTPError
 except ImportError:
-    from urllib import urlencode
+    from urllib import urlencode, unquote
     from urlparse import urlparse
     from urllib2 import urlopen, Request, HTTPError
 
@@ -163,7 +163,11 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
             chunk = response.read(chunk_size)
             if not chunk: 
                 break
-            filey.write(chunk)
+            try:
+                filey.write(chunk)
+            except: #PermissionError
+                logger.error("Cannot write to %s, exiting",stream)
+                sys.exit(1)
 
     return stream
 

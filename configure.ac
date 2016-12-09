@@ -353,5 +353,6 @@ AC_CONFIG_FILES([
    libexec/helpers/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile
+   libexec/python/shub/Makefile
 ])
 AC_OUTPUT

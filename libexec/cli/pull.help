@@ -1,0 +1,29 @@
+USAGE: singularity [...] pull shub:// [unique id]
+
+pull takes a Singularity Hub (shub) URI and will pull a container
+to SINGULARITY_CACHEDIR.
+
+note: This command must be executed as root if you intend to operate on
+      a Singularity image.
+
+SUPPORTED URIs:
+
+    shub: Pull an image using python from Singularity Hub
+
+EXAMPLES:
+
+    $ singularity pull shub://7
+      Cache folder set to /home/vanessa/.singularity/shub
+      Found image vsoch/singularity-images
+      Downloading image... 61b4721e3583d1c84b524696c08771dd6fa188bc.tar.gz
+    
+    $ export SINGULARITY_CACHEDIR=/home/vanessa/Desktop
+      Cache folder set to /home/vanessa/Desktop/shub
+      Found image vsoch/singularity-images
+      Downloading image... 61b4721e3583d1c84b524696c08771dd6fa188bc.tar.gz
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+

@@ -14,6 +14,7 @@ SUPPORTED URIs:
 
     http/https: Pull an image using curl over HTTPD
     docker:     Pull an image from the Docker repository
+    shub:       Pull an image from Singularity Hub
     file:       Use a local file (same as just passing local path)
 
 SUPPORTED FILE TYPES:
