@@ -22,6 +22,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 from defaults import SINGULARITY_CACHE
 from logman import logger
+import errno
 import json
 import os
 import shutil
@@ -309,16 +310,30 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
 
     # Clean up the path and create
     cache_base = clean_path(cache_base)
-    if not os.path.exists(cache_base):
-        os.mkdir(cache_base)        
 
     # Does the user want to get a subfolder in cache base?
     if subfolder != None:
         cache_base = "%s/%s" %(cache_base,subfolder)
-        if not os.path.exists(cache_base):
-            os.mkdir(cache_base)
+        
+    # Create the cache folder(s), if don't exist
+    create_folders(cache_base)
+
     print("Cache folder set to %s" %cache_base)
     return cache_base
+
+
+def create_folders(path):
+    '''create_folders attempts to get the same functionality as mkdir -p
+    :param path: the path to create.
+    '''
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            logger.error("Error creating path %s, exiting.",path)
+            sys.exit(1)
 
 
 def extract_tar(archive,output_folder):
