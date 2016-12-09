@@ -125,6 +125,7 @@
     extern int singularity_file_group(void);
     extern int singularity_file_resolvconf(void);
     extern int singularity_file_entrypoint(char *entrypoint_name);
+    extern int singularity_file_environment(void);
 
 
     extern void singularity_sessiondir_init(char *file);

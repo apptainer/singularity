@@ -22,7 +22,7 @@
 #ifndef __SINGULARITY_FILE_ENVIRONMENT_H_
 #define __SINGULARITY_FILE_ENVIRONMENT_H_
 
-    int singularity_file_environment();
+    int singularity_file_environment(void);
     int filter_metafile(const struct dirent *entry);
     int compare_filenames(const struct dirent **a, const struct dirent **b);
                                     

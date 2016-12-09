@@ -18,6 +18,7 @@
  * 
  */
 
+#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -29,13 +30,14 @@
 #include <stdlib.h>
 #include <dirent.h>
 
+
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/file/environment/environment.h"
 
 
-int singularity_file_environment() {
+int singularity_file_environment(void) {
     struct dirent **namelist;
     char *meta_file = strdup("");
     char *buff_line;
