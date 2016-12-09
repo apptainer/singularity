@@ -53,6 +53,7 @@ int singularity_file_bootstrap(void) {
     retval += singularity_file_passwd();
     retval += singularity_file_group();
     retval += singularity_file_resolvconf();
+    retval += singularity_file_environment();
     retval += singularity_file_entrypoint("run");
     retval += singularity_file_entrypoint("exec");
     retval += singularity_file_entrypoint("shell");

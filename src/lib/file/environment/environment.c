@@ -35,10 +35,11 @@
 #include "lib/file/environment/environment.h"
 
 
-int singularity_file_environment(int rootfs_fd) {
+int singularity_file_environment() {
     struct dirent **namelist;
     char *meta_file = strdup("");
     char *buff_line;
+    int rootfs_fd = singularity_rootfs_fd();
     int size = 1; //Starts with 1 to account for single null terminator
     int i;
 
@@ -54,17 +55,19 @@ int singularity_file_environment(int rootfs_fd) {
         if ( (meta_file = (char *)realloc(meta_file, size)) == NULL ) {
             return(-1);
         }
-        
         snprintf(meta_file, size, "%s\n%s", meta_file, buff_line);
 
         free(buff_line);
         free(namelist[i]);
     }
+
     fchdir(rootfs_fd);
-    i = fileput(".env/.metasource", meta_file);
+    if ( ( i = fileput(".env/.metasource", meta_file) ) != 0 ) {
+        singularity_message(WARNING, "Unable to write .metasource file: %s\n", strerror(errno));
+    }
 
     free(meta_file);
-    return(i);
+    return(0);
 }
 
 int filter_metafile(const struct dirent *entry) {
