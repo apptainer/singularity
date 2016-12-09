@@ -75,9 +75,13 @@ class TestApi(TestCase):
 
         print("Case 2: Not specifying a directory downloads to PWD")
         os.chdir(self.tmpdir)
-        manifest = get_manifest(image_id=self.image_id)
         image = download_image(manifest)
         self.assertEqual(os.getcwd(),self.tmpdir)
+        os.remove(image)
+
+        print("Case 3: Image should not be extracted.")
+        image = download_image(manifest,extract=False)
+        self.assertTrue(image.endswith('.img.gz'))        
 
 
     def test_get_image_name(self):

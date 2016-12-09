@@ -100,13 +100,13 @@ def get_manifest(image_id,registry=None):
     return response
 
 
-def download_image(manifest,download_folder=None):
+def download_image(manifest,download_folder=None,extract=True):
     '''download_image will download a singularity image from singularity
     hub to a download_folder, named based on the image version (commit id)
     :param manifest: the manifest obtained with get_manifest
     :param download_folder: the folder to download to, if None, will be pwd
-    '''
-    
+    :param extract: if True, will extract image to .img and return that.
+    '''    
     image_file = get_image_name(manifest)
 
     print("Found image %s" %(manifest['name']))
@@ -115,7 +115,12 @@ def download_image(manifest,download_folder=None):
     if download_folder != None:
         image_file = "%s/%s" %(download_folder,image_file)
     url = manifest['image']
-    return api_get(url,stream=image_file)
+    image_file = api_get(url,stream=image_file)
+    if extract == True:
+        print("Decompressing", image_file)
+        os.system('gzip -d -f %s' %(image_file))
+        image_file = image_file.replace('.gz','')
+    return image_file
 
 
 # Various Helpers ---------------------------------------------------------------------------------
