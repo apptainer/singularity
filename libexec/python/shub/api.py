@@ -105,7 +105,7 @@ def download_image(manifest,download_folder=None,extract=True):
     hub to a download_folder, named based on the image version (commit id)
     :param manifest: the manifest obtained with get_manifest
     :param download_folder: the folder to download to, if None, will be pwd
-    :param remove_extract: if True, will extract image to .img and return that.
+    :param extract: if True, will extract image to .img and return that.
     '''    
     image_file = get_image_name(manifest)
 
