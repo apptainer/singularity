@@ -88,7 +88,7 @@ void check_for_suid(void) {
 int singularity_ns_user_unshare(void) {
 
     if (singularity_ns_user_configured() < 0) {
-        singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
+        singularity_message(VERBOSE3, "Skipping USER namespace creation...\n");
         return(0);
     }
 
