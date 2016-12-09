@@ -39,7 +39,6 @@
 #include "lib/action/test/test.h"
 
 
-static char *module_name;
 static char *rootfs_path;
 
 
@@ -174,6 +173,7 @@ void singularity_bootstrap_script_run(char *section_name) {
  * @returns 0 on success, -1 on failure
  */
 int bootstrap_module_init() {
+    char *module_name;
     char ** fork_args = malloc(sizeof(char *) * 2);
     singularity_bootdef_rewind();
 
@@ -185,30 +185,16 @@ int bootstrap_module_init() {
         singularity_message(VERBOSE, "Running bootstrap module %s\n", module_name);
 
         if ( strcmp(module_name, "docker") == 0 ) { //Docker
+            free(module_name);
             return( singularity_bootstrap_docker() );
-
         } else {
             fork_args[0] = (char *)malloc(2048);
             snprintf(fork_args[0], 2048, LIBEXECDIR "/singularity/bootstrap/modules-v2/build-%s.sh", module_name);
             fork_args[1] = NULL;
-            return(singularity_fork_exec(fork_args));
+            
+            free(module_name);
+            return( singularity_fork_exec(fork_args) );
         }
-        /* else if ( strcmp(module_name, "yum") == 0 ) { //Yum
-            return( singularity_bootstrap_yum() );
-
-        } else if ( strcmp(module_name, "debootstrap") == 0 ) { //Debootstrap
-            return( singularity_bootstrap_debootstrap() );
-
-        } else if ( strcmp(module_name, "arch") == 0 ) { //Arch
-            return( singularity_bootstrap_arch() );
-
-        } else if ( strcmp(module_name, "busybox") == 0 ) { //Busybox
-            return( singularity_bootstrap_busybox() );
-
-        } else {
-            singularity_message(ERROR, "Could not parse bootstrap module of type: %s\n", module_name);
-            return(-1);
-            } */
     }
 }
 
