@@ -1,5 +1,5 @@
 
-. /environment
+. /.env/.metasource
 if test -n "$SHELL" -a -x "$SHELL"; then
     exec "$SHELL" "$@"
 else
