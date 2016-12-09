@@ -34,6 +34,7 @@
 #include "group/group.h"
 #include "resolvconf/resolvconf.h"
 #include "entrypoint/entrypoint.h"
+#include "environment/environment.h"
 
 
 

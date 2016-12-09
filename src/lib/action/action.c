@@ -35,6 +35,7 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
+#include "lib/singularity.h"
 #include "exec/exec.h"
 #include "shell/shell.h"
 #include "run/run.h"
@@ -160,4 +161,5 @@ int singularity_action_do(int argc, char **argv) {
         retval = WEXITSTATUS(tmpstatus);
         singularity_file_environment();
     }
+    return(retval);
 }
