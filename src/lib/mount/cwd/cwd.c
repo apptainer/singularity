@@ -79,6 +79,7 @@ void singularity_mount_cwd(void) {
     singularity_message(DEBUG, "Checking for contain option\n");
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         singularity_message(VERBOSE, "Not mounting current directory: contain was requested\n");
+        free(cwd_path);
         return;
     }
 
@@ -89,10 +90,25 @@ void singularity_mount_cwd(void) {
         return;
     }
 
+    singularity_message(DEBUG, "Checking if cwd is in an operating system directory\n");
+    if ( ( strcmp(cwd_path, "/") == 0 ) ||
+         ( strcmp(cwd_path, "/bin") == 0 ) ||
+         ( strcmp(cwd_path, "/etc") == 0 ) ||
+         ( strcmp(cwd_path, "/mnt") == 0 ) ||
+         ( strcmp(cwd_path, "/usr") == 0 ) ||
+         ( strcmp(cwd_path, "/var") == 0 ) ||
+         ( strcmp(cwd_path, "/opt") == 0 ) ||
+         ( strcmp(cwd_path, "/sbin") == 0 ) ) {
+        singularity_message(VERBOSE, "Not mounting CWD within operating system directory: %s\n", cwd_path);
+        free(cwd_path);
+        return;
+    }
+
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
     if ( singularity_rootfs_overlay_enabled() <= 0 ) {
         if ( is_dir(joinpath(container_dir, cwd_path)) < 0 ) {
             singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled and directory does not exist in container: %s\n", joinpath(container_dir, cwd_path));
+            free(cwd_path);
             return;
         }
     }
