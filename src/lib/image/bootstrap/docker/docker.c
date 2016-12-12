@@ -64,8 +64,6 @@ int singularity_bootstrap_docker() {
     if ( ( python_args[index] = singularity_bootdef_get_value("Token" ) ) != NULL ) {
         index++;
     }
-
-    singularity_message(DEBUG, "\nPython Docker Arguments:\n    1: %s\n    2: %s\n    3: %s\n    4: %s\n    5: %s\n    6: %s\n    7: %s\n    8: %s\n", python_args[1], python_args[2], python_args[3], python_args[4], python_args[5], python_args[6], python_args[7], python_args[8]);
   
     python_args = realloc(python_args, (sizeof(char *) * (index + 1)) );
     python_args[index] = NULL;
