@@ -47,12 +47,13 @@ int singularity_bootstrap_docker() {
     python_args[3] = singularity_bootdef_get_value("From");
     python_args[4] = strdup("--rootfs");
     python_args[5] = singularity_rootfs_dir();
+    python_args[index] = singularity_bootdef_get_value("IncludeCmd");
 
     if ( python_args[3] == NULL ) {
         singularity_message(VERBOSE, "Unable to bootstrap with docker container, missing From in definition file\n");
         return(1);
     }
-    if ( strcmp((python_args[index] = singularity_bootdef_get_value("IncludeCmd")), "yes") == 0 ) {
+    if ( ( python_args[index] != NULL ) && ( strcmp(python_args[index], "yes") == 0 ) ) {
         free(python_args[index]);
         python_args[index] = strdup("--cmd");
         index++;
