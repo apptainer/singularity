@@ -264,7 +264,7 @@ class TestUtils(TestCase):
         for dirname in [extract_dir,creation_dir]:
             shutil.rmtree(dirname)
 
-        print("Case 1: Testing tar...")
+        print("Case 2: Testing tar...")
         creation_dir = tempfile.mkdtemp()
         archive,files = create_test_tar(creation_dir,compressed=False)
 
@@ -275,6 +275,15 @@ class TestUtils(TestCase):
         extracted_files = [x.replace(extract_dir,'') for x in glob("%s/tmp/*" %(extract_dir))]
         [self.assertTrue(x in files) for x in extracted_files]
         
+
+        print("Case 3: Testing that extract_tar returns None on error...")
+        creation_dir = tempfile.mkdtemp()
+        archive,files = create_test_tar(creation_dir,compressed=False)
+        extract_dir = tempfile.mkdtemp()
+        shutil.rmtree(extract_dir)
+        output = extract_tar(archive=archive,
+                             output_folder=extract_dir)
+        self.assertEqual(output,None)
 
 
     def test_write_read_files(self):
