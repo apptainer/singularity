@@ -266,7 +266,10 @@ def run(args):
             layers.append(targz) # in case we want a list at the end
 
             # Extract image and remove tar
-            extract_tar(targz,singularity_rootfs)
+            output = extract_tar(targz,singularity_rootfs)
+            if output is None:
+                logger.error("Error extracting image: %s", targz)
+                sys.exit(1)
             if args.disable_cache == True:
                 os.remove(targz)
                
