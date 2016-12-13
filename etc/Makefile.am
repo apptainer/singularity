@@ -9,4 +9,4 @@ dist_completion_DATA =  bash_completion.d/singularity
 
 CLEANFILES = singularity.conf
 MAINTAINERCLEANFILES = Makefile.in
-EXTRA_DIST = singularity.conf.in
+EXTRA_DIST = singularity.conf.in configure_transform.py
