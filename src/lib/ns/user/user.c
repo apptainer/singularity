@@ -46,13 +46,18 @@ static int enabled = -1;
 int singularity_ns_user_configured(void) {
     singularity_message(DEBUG, "Checking if user namespaces are configured.\n");
 
+#ifndef NS_CLONE_NEWUSER
+    singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
+    return(-1);
+#endif
+    
     if ( getuid() == 0 ) {
         singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as root\n");
         return(-1);
     }
 
     if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
-        singularity_message(VERBOSE2, "Not virtualizing USER namespace by configuration\n");
+        singularity_message(VERBOSE2, "Not virtualizing USER namespace: ALLOW_USER_NS in configuration\n");
         return(-1);
     }
 
@@ -61,29 +66,7 @@ int singularity_ns_user_configured(void) {
         return(-1);
     }
 
-#ifdef NS_CLONE_NEWUSER
-    
-    singularity_message(DEBUG, "Attempting to virtualize the USER namespace\n");
-    if ( unshare(CLONE_NEWUSER) != 0 ) {
-        singularity_message(VERBOSE3, "Not virtualizing USER namespace: runtime support failed (%d:%s)\n", errno, strerror(errno));
-        if ( singularity_priv_is_suid() != 0 ) {
-            singularity_message(ERROR, "User namespace not supported, and program not running privileged.\n");
-            ABORT(255);
-        }
-        return(-1); // Don't fail when host support doesn't exist
-    }
-    
-#else
-    
-    singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
-    if ( singularity_priv_is_suid() != 0 ) {
-        singularity_message(ERROR, "User namespace not supported, and program not running privileged.\n");
-        ABORT(255);
-    }
-    return(-1);
-    
-#endif
-    
+    // If we get this far, we are expecting that we will run inside the NEWUSER namespace
     return(0);
 }
 
@@ -103,6 +86,12 @@ int singularity_ns_user_unshare(void) {
     if (singularity_ns_user_configured() < 0) {
         singularity_message(VERBOSE3, "Skipping USER namespace creation...\n");
         return(0);
+    }
+
+    singularity_message(DEBUG, "Attempting to virtualize the USER namespace\n");
+    if ( unshare(CLONE_NEWUSER) != 0 ) {
+        singularity_message(ERROR, "Failed invoking the NEWUSER namespace runtime: %s\n", strerror(errno));
+        ABORT(255); // If we are configured to use CLONE_NEWUSER, we should abort if that fails
     }
 
     uid_t uid = singularity_priv_getuid();
