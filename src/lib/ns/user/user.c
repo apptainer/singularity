@@ -39,34 +39,55 @@
 #include "lib/config_parser.h"
 #include "lib/privilege.h"
 
+
+static int enabled = -1;
+
+
 int singularity_ns_user_configured(void) {
     singularity_message(DEBUG, "Checking if user namespaces are configured.\n");
 
-    if ( ( is_suid("/proc/self/exe") == 0 ) && ( is_owner("/proc/self/exe", 0)  == 0) ) {
-        singularity_message(VERBOSE, "Not virtualizing user namespace: running SUID root\n");
-        return -1;
-    }
-
     if ( getuid() == 0 ) {
         singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as root\n");
-        return -1;
+        return(-1);
     }
 
     if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
         singularity_message(VERBOSE2, "Not virtualizing USER namespace by configuration\n");
-        return -1;
+        return(-1);
+    }
+
+    if ( singularity_priv_is_suid() == 0 ) {
+        singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as suid\n");
+        return(-1);
     }
 
 #ifdef NS_CLONE_NEWUSER
-    singularity_message(DEBUG, "User namespace will be attempted.\n");
-    return 0;
+    
+    singularity_message(DEBUG, "Attempting to virtualize the USER namespace\n");
+    if ( unshare(CLONE_NEWUSER) != 0 ) {
+        singularity_message(VERBOSE3, "Not virtualizing USER namespace: runtime support failed (%d:%s)\n", errno, strerror(errno));
+        if ( singularity_priv_is_suid() != 0 ) {
+            singularity_message(ERROR, "User namespace not supported, and program not running privileged.\n");
+            ABORT(255);
+        }
+        return(-1); // Don't fail when host support doesn't exist
+    }
+    
 #else
-    singularity_message(DEBUG, "User namespace support disabled at compile time; support not available on host\n");
-    return -1;
+    
+    singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
+    if ( singularity_priv_is_suid() != 0 ) {
+        singularity_message(ERROR, "User namespace not supported, and program not running privileged.\n");
+        ABORT(255);
+    }
+    return(-1);
+    
 #endif
+    
+    return(0);
 }
 
-static int enabled = -1;
+
 int singularity_ns_user_enabled(void) {
     if (enabled < 0) {
         singularity_message(DEBUG, "User namespaces have not been activated.\n");
@@ -76,14 +97,6 @@ int singularity_ns_user_enabled(void) {
     return enabled;
 }
 
-// Check to make sure we are SUID or error
-void check_for_suid(void) {
-    if ( ( is_owner("/proc/self/exe", 0) != 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
-        singularity_message(ERROR, "User namespace not supported, and program not running privileged.\n");
-        ABORT(255);
-    }
-}
-
 
 int singularity_ns_user_unshare(void) {
 
@@ -91,19 +104,6 @@ int singularity_ns_user_unshare(void) {
         singularity_message(VERBOSE3, "Skipping USER namespace creation...\n");
         return(0);
     }
-
-#ifdef NS_CLONE_NEWUSER
-    singularity_message(DEBUG, "Attempting to virtualize the USER namespace\n");
-    if ( unshare(CLONE_NEWUSER) != 0 ) {
-        singularity_message(VERBOSE3, "Not virtualizing USER namespace: runtime support failed (%d:%s)\n", errno, strerror(errno));
-        check_for_suid();
-        return(0); // Don't fail when host support doesn't exist
-    }
-#else
-    singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
-    check_for_suid();
-    return(0);
-#endif
 
     uid_t uid = singularity_priv_getuid();
     gid_t gid = singularity_priv_getgid();
