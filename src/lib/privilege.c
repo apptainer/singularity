@@ -388,6 +388,15 @@ void singularity_priv_userns_ready(void) {
     uinfo.userns_ready = 1;
 }
 
+/* Return 0 if program is SUID, -1 if not SUID */
+int singularity_priv_is_suid(void) {
+    if ( ( is_suid("/proc/self/exe") == 0 ) && ( is_owner("/proc/self/exe", 0)  == 0) ) {
+        return(0);
+    } else {
+        return(-1);
+    }
+}
+
 uid_t singularity_priv_getuid(void) {
     if ( !uinfo.ready ) {
         singularity_message(ERROR, "Invoked before privilege info initialized!\n");
