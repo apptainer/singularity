@@ -32,6 +32,7 @@
     int singularity_priv_getgidcount(void);
     void singularity_priv_userns_ready(void);
     int singularity_priv_userns_enabled(void);
+    int singularity_priv_is_suid(void);
 
     // Escalate privileges to the 'singularity' user.
     void singularity_priv_escalate_singularity(void);

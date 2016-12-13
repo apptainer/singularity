@@ -78,9 +78,21 @@ sudo true
 
 /bin/echo
 /bin/echo "Adding users and groups for a test."
-stest 0 sudo groupadd test_singularity2
-stest 0 sudo useradd singularity
-stest 0 sudo useradd test_singularity -G test_singularity2 -d /tmp
+if [ $(getent group test_singularity2) ]; then
+  /bin/echo "- Not adding test_singularity2 group; already exists."
+else
+  stest 0 sudo groupadd test_singularity2
+fi
+if [ $(getent passwd singularity) ]; then
+  /bin/echo "- Not creating user singularity; already exists."
+else
+  stest 0 sudo useradd singularity
+fi
+if [ $(getent passwd test_singularity) ]; then
+  /bin/echo "- Not creating user test_singularity; already exists."
+else
+  stest 0 sudo useradd test_singularity -G test_singularity2 -d /tmp
+fi
 
 /bin/echo
 /bin/echo "SINGULARITY_TMPDIR=$TEMPDIR"
