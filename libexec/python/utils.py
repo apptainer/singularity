@@ -200,11 +200,14 @@ def run_command(cmd):
     try:
         logger.info("Running command %s with subprocess", " ".join(cmd))
         process = subprocess.Popen(cmd,stdout=subprocess.PIPE)
-        output, err = process.communicate()
     except OSError as error:
         logger.error("Error with subprocess: %s, returning None",error)
         return None
-    
+
+    output = process.communicate()[0]
+    if process.returncode != 0:
+        return None
+
     return output
 
 
