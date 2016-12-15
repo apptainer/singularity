@@ -51,7 +51,7 @@ static FILE *open_as_singularity(const char *source, int allow_user_image) {
     FILE *new_fp = NULL;
     singularity_priv_escalate_singularity();
     singularity_message(DEBUG, "Opening image %s as singularity user.\n", source);
-    if ( (new_fp = fopen(source, "r")) == NULL ) {
+    if ( (new_fp = fopen(source, "re")) == NULL ) {
             singularity_message(ERROR, "Could not open image (%s) as 'singularity' user: %s (errno=%d)\n", source, strerror(errno), errno);
             if (allow_user_image) {
                singularity_message(ERROR, "Additionally, could not open image as invoking user.\n");
@@ -105,7 +105,7 @@ int rootfs_image_init(char *source, char *mount_dir) {
             singularity_message(ERROR, "Writable image requested, but user images disabled.  Only user images may be writable\n");
             ABORT(255);
         }
-        if ( ( image_fp = fopen(source, "r+") ) == NULL ) { // Flawfinder: ignore
+        if ( ( image_fp = fopen(source, "r+e") ) == NULL ) { // Flawfinder: ignore
             singularity_message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
@@ -117,7 +117,7 @@ int rootfs_image_init(char *source, char *mount_dir) {
             }
         }
         read_write = 1;
-    } else if ( allow_user_image && (( image_fp = fopen(source, "r") ) != NULL) ) { // Flawfinder: ignore
+    } else if ( allow_user_image && (( image_fp = fopen(source, "re") ) != NULL) ) { // Flawfinder: ignore
         singularity_message(VERBOSE, "Successfully opened image (read only, as invoking user) %s: %s\n", source, strerror(errno));
     } else if (protected_image_user) {
         image_fp = open_as_singularity(source, allow_user_image);
