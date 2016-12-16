@@ -74,7 +74,7 @@ int singularity_file_environment(void) {
     singularity_message(DEBUG, "Writing to /.env/.metafile:%s\n", meta_file);
 
     if ( ( i = fileputat(rootfs_fd, ".env/.metasource", meta_file) ) != 0 ) {
-        singularity_message(WARNING, "Unable to write .metasource file: %s\n", strerror(errno));
+        singularity_message(DEBUG, "Unable to write .metasource file: %s\n", strerror(errno));
     }
 
     free(namelist);
