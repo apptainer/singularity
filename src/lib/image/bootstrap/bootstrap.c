@@ -128,6 +128,9 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
         /* Run %post and %test scripts from inside container */
         singularity_rootfs_chroot();
         singularity_bootstrap_script_run("post");
+
+        /* Generate /.env/.metasource file one last time, in case post/setup changed it */
+        singularity_file_environment();
         action_test_do(0, NULL);
         
         singularity_bootdef_close();
