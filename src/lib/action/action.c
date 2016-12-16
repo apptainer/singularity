@@ -109,8 +109,6 @@ int singularity_action_do(int argc, char **argv) {
     int tmpstatus;
     int retval = 0;
 
-    singularity_priv_drop_perm();
-
     singularity_message(DEBUG, "Trying to change directory to where we started\n");
     char *target_pwd = envar_path("SINGULARITY_TARGET_PWD");
     if (!target_pwd || (chdir(target_pwd) < 0)) {
@@ -133,6 +131,7 @@ int singularity_action_do(int argc, char **argv) {
     child = singularity_fork();
 
     if ( child == 0 ) {
+        singularity_priv_drop_perm();
         if ( action == ACTION_SHELL ) {
             singularity_message(DEBUG, "Running action: shell\n");
             action_shell_do(argc, argv);
