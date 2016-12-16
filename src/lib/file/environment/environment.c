@@ -43,7 +43,6 @@ int singularity_file_environment(void) {
     char *meta_file = strdup("");
     char *buff_line;
     char *buff_line2;
-    char *cwd = get_current_dir_name();
     int rootfs_fd = singularity_rootfs_fd();
     int size = 1; //Starts with 1 to account for single null terminator
     int i;
@@ -74,14 +73,11 @@ int singularity_file_environment(void) {
 
     singularity_message(DEBUG, "Writing to /.env/.metafile:%s\n", meta_file);
 
-    ret = fchdir(rootfs_fd);
-    if ( ( i = fileput(".env/.metasource", meta_file) ) != 0 ) {
+    if ( ( i = fileputat(rootfs_fd, ".env/.metasource", meta_file) ) != 0 ) {
         singularity_message(WARNING, "Unable to write .metasource file: %s\n", strerror(errno));
     }
-    ret = chdir(cwd);
 
     free(namelist);
-    free(cwd);
     free(meta_file);
     return(0);
 }
