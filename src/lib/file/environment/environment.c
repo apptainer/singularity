@@ -42,39 +42,52 @@ int singularity_file_environment(void) {
     struct dirent **namelist;
     char *meta_file = strdup("");
     char *buff_line;
+    char *buff_line2;
+    char *cwd = get_current_dir_name();
     int rootfs_fd = singularity_rootfs_fd();
     int size = 1; //Starts with 1 to account for single null terminator
     int i;
+    int ret = 0;
 
     singularity_message(DEBUG, "Sorting through /.env/ folder and assembling ordered list of files to source\n");
     
-    if ( scandirat(rootfs_fd, ".env/", &namelist, filter_metafile, compare_filenames) < 0 ) {
+    if ( ( ret = scandirat(rootfs_fd, ".env/", &namelist, filter_metafile, compare_filenames) ) < 0 ) {
         return(-1);
+    } else if ( ret == 0 ) {
+        singularity_message(DEBUG, "No files in /.env/, adding empty file\n");
     }
     
-    for (i = 0; namelist[i] != NULL; i++) {
-        buff_line = strjoin("source ", (namelist[i])->d_name);
+    for (i = 0; i < ret; i++) {
+        buff_line = strjoin("source /.env/", (namelist[i])->d_name);
         size = size + strlength(buff_line, 2048) + 1; //+1 for newline
         if ( (meta_file = (char *)realloc(meta_file, size)) == NULL ) {
+            singularity_message(ERROR, "Memory allocation failed: %s\n", strerror(errno));
             return(-1);
         }
-        snprintf(meta_file, size, "%s\n%s", meta_file, buff_line);
+        buff_line2 = strdup(meta_file);
+        snprintf(meta_file, size, "%s\n%s", buff_line2, buff_line);
 
+        free(buff_line2);
         free(buff_line);
         free(namelist[i]);
     }
 
-    fchdir(rootfs_fd);
+    singularity_message(DEBUG, "Writing to /.env/.metafile:%s\n", meta_file);
+
+    ret = fchdir(rootfs_fd);
     if ( ( i = fileput(".env/.metasource", meta_file) ) != 0 ) {
         singularity_message(WARNING, "Unable to write .metasource file: %s\n", strerror(errno));
     }
+    ret = chdir(cwd);
 
+    free(namelist);
+    free(cwd);
     free(meta_file);
     return(0);
 }
 
 int filter_metafile(const struct dirent *entry) {
-    return( strncmp(entry->d_name, ".metasource", 11) );
+    return( strncmp(entry->d_name, ".", 1) );
 }
 
 int compare_filenames(const struct dirent **a, const struct dirent **b) {
