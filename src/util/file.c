@@ -358,6 +358,30 @@ int fileput(char *path, char *string) {
     return(0);
 }
 
+int fileputat(int fd, char *path, char *string) {
+    int file_fd;
+    FILE *fp;
+
+    singularity_message(DEBUG, "Called fileputat(%d, %s, %s)\n", fd, path, string);
+    if ( ( file_fd = openat(fd, path, O_CREAT | O_WRONLY | O_TRUNC, 00755) ) < 0 ) {
+        singularity_message(ERROR, "Could not open fd(%d): %s\n", fd, strerror(errno));
+        return(-1);
+    }
+    
+    if ( ( fp = fdopen(file_fd, "w") ) == NULL ) { // Flawfinder: ignore
+        singularity_message(ERROR, "Could not write to %s at %d: %s\n", path, fd, strerror(errno));
+        close(file_fd);
+        return(-1);
+    }
+
+    fprintf(fp, "%s", string);
+    fclose(fp);
+    close(file_fd);
+
+    return(0);
+}
+
+
 char *filecat(char *path) {
     char *ret;
     FILE *fd;

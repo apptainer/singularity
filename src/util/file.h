@@ -36,4 +36,5 @@ int s_rmdir(char *dir);
 int copy_file(char * source, char * dest);
 char *filecat(char *path);
 int fileput(char *path, char *string);
+int fileputat(int fd, char *path, char *string);
 char *basedir(char *dir);
