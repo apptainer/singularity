@@ -117,10 +117,7 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
         }
 
         /* Mount necessary folders into container */
-        if ( singularity_mount() < 0 ) {
-            singularity_message(ERROR, "Failed to mount necessary files into container rootfs. Aborting...\n");
-            ABORT(255);
-        }
+        singularity_mount();
 
         /* Run %setup script from host */
         singularity_bootstrap_script_run("setup");
