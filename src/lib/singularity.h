@@ -99,6 +99,8 @@
     extern int singularity_action_init(void);
     // Do the requested action
     extern int singularity_action_do(int agc, char **argv);
+    // Export proxied unsecure ld variables to container
+    extern int singularity_proxy_unsecvars(void);
 
 
     // MOUNT

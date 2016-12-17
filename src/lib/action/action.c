@@ -49,19 +49,62 @@
 static int action = 0;
 static char *cwd_path;
 
+static char *LD_UNSECVARS[] = {
+    "GCONV_PATH",
+    "GETCONF_DIR",
+    "HOSTALIASES",
+    "LD_AUDIT",
+    "LD_DEBUG",
+    "LD_DEBUG_OUTPUT",
+    "LD_DYNAMIC_WEAK",
+    "LD_LIBRARY_PATH",
+    "LD_ORIGIN_PATH",
+    "LD_PRELOAD",
+    "LD_PROFILE",
+    "LD_SHOW_AUXV",
+    "LD_USE_LOAD_BIAS",
+    "LOCALDOMAIN",
+    "LOCPATH",
+    "MALLOC_TRACE",
+    "NIS_PATH",
+    "NLSPATH",
+    "RESOLV_HOST_CONF",
+    "RES_OPTIONS",
+    "TMPDIR",
+    "TZDIR",
+};
+
+static int LD_UNSECVARS_LEN = 22;
+static int LD_UNSECVARS_MAX_STRLEN = 16;
+static int LD_UNSECVARS_PREFIX_LEN = 10;
+static char * LD_UNSECVARS_PREFIX = "CONTAINER_%s";
+
+int singularity_proxy_unsecvars() {
+    int prefixedvar_max_len = LD_UNSECVARS_MAX_STRLEN + LD_UNSECVARS_PREFIX_LEN + 1;
+    char prefixedvar[prefixedvar_max_len];
+    char *varname;
+    char *value;
+    int c;
+    for (c = 0; c < LD_UNSECVARS_LEN; c++) {
+        varname = LD_UNSECVARS[c];
+        snprintf(prefixedvar, prefixedvar_max_len, LD_UNSECVARS_PREFIX, varname);
+        value = getenv(prefixedvar);
+        if ( value != NULL ) {
+             singularity_message(VERBOSE, "Setting %s to `%s`\n", varname, value);
+             setenv(varname, value, 1);
+        }
+        unsetenv(prefixedvar);
+    }
+    return 0;
+}
+
 int singularity_action_init(void) {
+    singularity_proxy_unsecvars();
+
     char *command = envar("SINGULARITY_COMMAND", "", 10);
-    char *libpath = envar_path("SINGULARITY_LD_LIBRARY_PATH");
     singularity_message(DEBUG, "Checking on action to run\n");
 
     unsetenv("SINGULARITY_COMMAND");
-    unsetenv("SINGULARITY_LD_LIBRARY_PATH");
-
-    if ( libpath != NULL ) {
-        singularity_message(VERBOSE, "Setting LD_LIBRARY_PATH to `%s`\n", libpath);
-        setenv("LD_LIBRARY_PATH", libpath, 1);
-        free(libpath);
-    }
 
     if ( command == NULL ) {
         singularity_message(ERROR, "SINGULARITY_COMMAND is undefined\n");
