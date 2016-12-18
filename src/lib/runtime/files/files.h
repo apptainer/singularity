@@ -18,10 +18,12 @@
  * 
 */
 
+#ifndef __SINGULARITY_RUNTIME_FILES_H_
+#define __SINGULARITY_RUNTIME_FILES_H_
 
-#ifndef __SINGULARITY_FILE_PASSWD_H_
-#define __SINGULARITY_FILE_PASSWD_H_
+extern int singularity_runtime_files_check(void);
+extern int singularity_runtime_files_prepare(void);
+extern int singularity_runtime_files_activate(void);
 
-    extern int singularity_file_passwd(void);
+#endif /* __SINGULARITY_RUNTIME_FILES_H */
 
-#endif /* __SINGULARITY_FILE_PASSWD_H_ */

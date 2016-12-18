@@ -296,46 +296,29 @@ AC_CONFIG_FILES([
    test.sh
    src/Makefile
    src/lib/Makefile
-   src/lib/ns/Makefile
-   src/lib/ns/ipc/Makefile
-   src/lib/ns/mnt/Makefile
-   src/lib/ns/pid/Makefile
-   src/lib/ns/user/Makefile
-   src/lib/rootfs/Makefile
-   src/lib/rootfs/image/Makefile
-   src/lib/rootfs/dir/Makefile
-   src/lib/rootfs/squashfs/Makefile
-   src/lib/action/Makefile
-   src/lib/action/exec/Makefile
-   src/lib/action/shell/Makefile
-   src/lib/action/start/Makefile
-   src/lib/action/stop/Makefile
-   src/lib/action/test/Makefile
-   src/lib/action/run/Makefile
-   src/lib/file/Makefile
-   src/lib/file/group/Makefile
-   src/lib/file/passwd/Makefile
-   src/lib/file/resolvconf/Makefile
-   src/lib/file/entrypoint/Makefile
-   src/lib/mount/Makefile
-   src/lib/mount/cwd/Makefile
-   src/lib/mount/dev/Makefile
-   src/lib/mount/binds/Makefile
-   src/lib/mount/home/Makefile
-   src/lib/mount/hostfs/Makefile
-   src/lib/mount/kernelfs/Makefile
-   src/lib/mount/tmp/Makefile
-   src/lib/mount/userbinds/Makefile
-   src/lib/mount/scratch/Makefile
-   src/lib/image/Makefile
-   src/lib/image/mount/Makefile
-   src/lib/image/bind/Makefile
-   src/lib/image/create/Makefile
-   src/lib/image/expand/Makefile
-   src/lib/image/bootstrap/Makefile
-   src/lib/image/bootstrap/docker/Makefile
-   src/util/Makefile
-   src/slurm/Makefile
+   src/lib/runtime/Makefile
+   src/lib/runtime/ns/Makefile
+   src/lib/runtime/ns/ipc/Makefile
+   src/lib/runtime/ns/mnt/Makefile
+   src/lib/runtime/ns/pid/Makefile
+   src/lib/runtime/ns/user/Makefile
+   src/lib/runtime/files/Makefile
+   src/lib/runtime/files/group/Makefile
+   src/lib/runtime/files/passwd/Makefile
+   src/lib/runtime/files/resolvconf/Makefile
+   src/lib/runtime/files/entrypoint/Makefile
+   src/lib/runtime/mount/Makefile
+   src/lib/runtime/mount/cwd/Makefile
+   src/lib/runtime/mount/dev/Makefile
+   src/lib/runtime/mount/binds/Makefile
+   src/lib/runtime/mount/home/Makefile
+   src/lib/runtime/mount/hostfs/Makefile
+   src/lib/runtime/mount/kernelfs/Makefile
+   src/lib/runtime/mount/tmp/Makefile
+   src/lib/runtime/mount/userbinds/Makefile
+   src/lib/runtime/mount/scratch/Makefile
+
+
    etc/Makefile
    bin/Makefile
    bin/singularity
@@ -352,3 +335,24 @@ AC_CONFIG_FILES([
    libexec/python/shub/Makefile
 ])
 AC_OUTPUT
+
+#   src/lib/rootfs/Makefile
+#   src/lib/rootfs/image/Makefile
+#   src/lib/rootfs/dir/Makefile
+#   src/lib/rootfs/squashfs/Makefile
+#   src/lib/action/Makefile
+#   src/lib/action/exec/Makefile
+#   src/lib/action/shell/Makefile
+#   src/lib/action/start/Makefile
+#   src/lib/action/stop/Makefile
+#   src/lib/action/test/Makefile
+#   src/lib/action/run/Makefile
+#   src/lib/image/Makefile
+#   src/lib/image/mount/Makefile
+#   src/lib/image/bind/Makefile
+#   src/lib/image/create/Makefile
+#   src/lib/image/expand/Makefile
+#   src/lib/image/bootstrap/Makefile
+#   src/lib/image/bootstrap/docker/Makefile
+#   src/util/Makefile
+#   src/slurm/Makefile

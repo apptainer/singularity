@@ -38,10 +38,22 @@
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
-#include "lib/file/file-bind.h"
+#include "../file-bind.h"
 
 
-int singularity_file_passwd(void) {
+int singularity_runtime_files_passwd_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_files_passwd_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_files_passwd_activate(void) {
+
+/*
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
@@ -110,5 +122,6 @@ int singularity_file_passwd(void) {
     // set HOME to the homedir, because it might be different than outside
     setenv("HOME", homedir, 1);
 
+*/
     return(0);
 }
