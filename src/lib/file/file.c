@@ -33,6 +33,7 @@
 #include "passwd/passwd.h"
 #include "group/group.h"
 #include "resolvconf/resolvconf.h"
+#include "entrypoint/entrypoint.h"
 
 
 
@@ -43,6 +44,18 @@ int singularity_file(void) {
     retval += singularity_file_group();
     retval += singularity_file_resolvconf();
 
-    return(0);
+    return(retval);
 }
 
+int singularity_file_bootstrap(void) {
+    int retval = 0;
+
+    retval += singularity_file_passwd();
+    retval += singularity_file_group();
+    retval += singularity_file_resolvconf();
+    retval += singularity_file_entrypoint("run");
+    retval += singularity_file_entrypoint("exec");
+    retval += singularity_file_entrypoint("shell");
+
+    return(retval);
+}

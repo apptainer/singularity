@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2016, Michael W. Bauer. All rights reserved.
  * 
  * “Singularity” Copyright (c) 2016, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -18,37 +18,10 @@
  * 
  */
 
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <errno.h> 
-#include <string.h>
-#include <fcntl.h>  
 
-#include "config.h"
-#include "lib/singularity.h"
-#include "util/file.h"
-#include "util/util.h"
+#ifndef __SINGULARITY_FILE_ENTRYPOINT_H_
+#define __SINGULARITY_FILE_ENTRYPOINT_H_
 
+    int singularity_file_entrypoint(char *entrypoint_name);
 
-int main(int argc, char ** argv) {
-    long int size;
-
-    if ( argv[1] == NULL ) {
-        fprintf(stderr, "USAGE: %s [singularity container image] [increase size in MiB]\n", argv[0]);
-        return(1);
-    }
-
-    if ( argv[2] == NULL ) {
-        size = 1024;
-    } else {
-        size = ( strtol(argv[2], (char **)NULL, 10) );
-    }
-
-    return(singularity_image_expand(argv[1], size));
-
-    return(0);
-}
+#endif /* __SINGULARITY_FILE_ENTRYPOINT_H_ */

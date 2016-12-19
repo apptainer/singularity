@@ -39,52 +39,60 @@
 #include "lib/config_parser.h"
 #include "lib/privilege.h"
 
+
 static int enabled = -1;
 
-int singularity_ns_user_enabled(void) {
-    singularity_message(DEBUG, "Checking user namespace enabled: %d\n", enabled);
-    return(enabled);
+
+int singularity_ns_user_configured(void) {
+    singularity_message(DEBUG, "Checking if user namespaces are configured.\n");
+
+#ifndef NS_CLONE_NEWUSER
+    singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
+    return(-1);
+#endif
+    
+    if ( getuid() == 0 ) {
+        singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as root\n");
+        return(-1);
+    }
+
+    if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
+        singularity_message(VERBOSE2, "Not virtualizing USER namespace: ALLOW_USER_NS in configuration\n");
+        return(-1);
+    }
+
+    if ( singularity_priv_is_suid() == 0 ) {
+        singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as suid\n");
+        return(-1);
+    }
+
+    // If we get this far, we are expecting that we will run inside the NEWUSER namespace
+    return(0);
 }
 
-// Check to make sure we are SUID or error
-void check_for_suid(void) {
-    if ( ( is_owner("/proc/self/exe", 0) != 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
-        singularity_message(ERROR, "User namespace not supported, and program not running privileged.\n");
-        ABORT(255);
+
+int singularity_ns_user_enabled(void) {
+    if (enabled < 0) {
+        singularity_message(DEBUG, "User namespaces have not been activated.\n");
+    } else {
+        singularity_message(DEBUG, "User namespaces have been activated.\n");
     }
+    return enabled;
 }
 
 
 int singularity_ns_user_unshare(void) {
 
-    if ( ( is_suid("/proc/self/exe") == 0 ) && ( is_owner("/proc/self/exe", 0)  == 0) ) {
-        singularity_message(VERBOSE, "Not virtualizing user namespace: running SUID root\n");
-        return(0);
-    }
-    
-    if ( getuid() == 0 ) {
-        singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as root\n");
+    if (singularity_ns_user_configured() < 0) {
+        singularity_message(VERBOSE3, "Skipping USER namespace creation...\n");
         return(0);
     }
 
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("allow user ns", 1) <= 0 ) {
-        singularity_message(VERBOSE2, "Not virtualizing USER namespace by configuration\n");
-        return(0);
-    }
-
-#ifdef NS_CLONE_NEWUSER
     singularity_message(DEBUG, "Attempting to virtualize the USER namespace\n");
     if ( unshare(CLONE_NEWUSER) != 0 ) {
-        singularity_message(VERBOSE3, "Not virtualizing USER namespace: runtime support failed (%d:%s)\n", errno, strerror(errno));
-        check_for_suid();
-        return(0); // Don't fail when host support doesn't exist
+        singularity_message(ERROR, "Failed invoking the NEWUSER namespace runtime: %s\n", strerror(errno));
+        ABORT(255); // If we are configured to use CLONE_NEWUSER, we should abort if that fails
     }
-#else
-    singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
-    check_for_suid();
-    return(0);
-#endif
 
     uid_t uid = singularity_priv_getuid();
     gid_t gid = singularity_priv_getgid();
@@ -109,7 +117,7 @@ int singularity_ns_user_unshare(void) {
         }
         free(map_file);
     }
-    {   
+    {
         singularity_message(DEBUG, "Setting GID map to: '0 %i 1'\n", gid);
         char *map_file = (char *) malloc(PATH_MAX);
         snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid()); // Flawfinder: ignore
@@ -127,7 +135,7 @@ int singularity_ns_user_unshare(void) {
         }
         free(map_file);
     }
-    {   
+    {
         singularity_message(DEBUG, "Setting UID map to: '0 %i 1'\n", uid);
         char *map_file = (char *) malloc(PATH_MAX);
         snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid()); // Flawfinder: ignore

@@ -45,8 +45,7 @@ int singularity_file_resolvconf(void) {
     char *file = "/etc/resolv.conf";
 
     singularity_message(DEBUG, "Checking configuration option\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("config resolv_conf", 1) <= 0 ) {
+    if ( singularity_config_get_bool(CONFIG_RESOLV_CONF) <= 0 ) {
         singularity_message(VERBOSE, "Skipping bind of the host's %s\n", file);
         return(0);
     }

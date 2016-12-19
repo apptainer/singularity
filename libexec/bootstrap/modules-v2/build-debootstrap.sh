@@ -51,10 +51,12 @@ if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     exit 1
 fi
 
-if uname -m | grep -q x86_64; then
+ARCH=`uname -m`
+
+if [ "$ARCH" == "x86_64" ]; then
     ARCH=amd64
-else
-    ARCH=i386
+elif [ "$ARCH" == "ppc64le" ]; then
+    ARCH=ppc64el
 fi
 
 

@@ -35,7 +35,7 @@ int messagelevel = -1;
 
 extern const char *__progname;
 
-void init(void) {
+static void message_init(void) {
     char *messagelevel_string = getenv("MESSAGELEVEL"); // Flawfinder: ignore (need to get string, validation in atol())
 
     openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
@@ -55,10 +55,11 @@ void init(void) {
 }
 
 
-void _singularity_message(int level, const char *function, const char *file, int line, char *format, ...) {
+void _singularity_message(int level, const char *function, const char *file_in, int line, char *format, ...) {
+    const char *file = file_in;
     int syslog_level = LOG_NOTICE;
     char message[512]; // Flawfinder: ignore (messages are truncated to 512 chars)
-    char *prefix = "";
+    char *prefix = NULL;
     va_list args;
     va_start (args, format);
 
@@ -67,7 +68,7 @@ void _singularity_message(int level, const char *function, const char *file, int
     va_end (args);
 
     if ( messagelevel == -1 ) {
-        init();
+        message_init();
     }
 
     while( ( ! isalpha(file[0]) ) && ( file[0] != '\0') ) {
@@ -76,28 +77,28 @@ void _singularity_message(int level, const char *function, const char *file, int
 
     switch (level) {
         case ABRT:
-            prefix = strdup("ABORT");
+            prefix = "ABORT";
             syslog_level = LOG_ALERT;
             break;
         case ERROR:
-            prefix = strdup("ERROR");
+            prefix = "ERROR";
             syslog_level = LOG_ERR;
             break;
         case  WARNING:
-            prefix = strdup("WARNING");
+            prefix = "WARNING";
             syslog_level = LOG_WARNING;
             break;
         case LOG:
-            prefix = strdup("LOG");
+            prefix = "LOG";
             break;
         case DEBUG:
-            prefix = strdup("DEBUG");
+            prefix = "DEBUG";
             break;
         case INFO:
-            prefix = strdup("INFO");
+            prefix = "INFO";
             break;
         default:
-            prefix = strdup("VERBOSE");
+            prefix = "VERBOSE";
             break;
     }
 
@@ -109,7 +110,7 @@ void _singularity_message(int level, const char *function, const char *file, int
     }
 
     if ( level <= messagelevel ) {
-        char *header_string;
+        char *header_string = NULL;
 
         if ( messagelevel >= DEBUG ) {
             char *debug_string = (char *) malloc(25);
@@ -131,14 +132,14 @@ void _singularity_message(int level, const char *function, const char *file, int
         if ( level == INFO && messagelevel == INFO ) {
             printf("%s", message);
         } else if ( level == INFO ) {
-            printf("%s", strjoin(header_string, message));
+            printf("%s%s", header_string, message);
         } else if ( level == LOG && messagelevel <= INFO ) {
             // Don't print anything...
         } else {
-            fprintf(stderr, "%s", strjoin(header_string, message));
+            fprintf(stderr, "%s%s", header_string, message);
         }
 
-
+        free(header_string);
         fflush(stdout);
         fflush(stderr);
 

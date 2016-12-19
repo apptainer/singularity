@@ -92,7 +92,7 @@ fi
 if [ -f "$SINGULARITY_IMAGE" ]; then
     if [ -n "${OVERWRITE:-}" ]; then
         message 2 "Removing existing file\n"
-        /bin/rm -f "$SINGULARITY_IMAGE"
+        rm -f "$SINGULARITY_IMAGE"
     else
         message ERROR "Image file exists, not overwriting.\n"
         exit 1
@@ -100,13 +100,13 @@ if [ -f "$SINGULARITY_IMAGE" ]; then
 fi
 
 message 1 "Creating a new image with a maximum size of ${IMAGE_SIZE}MiB...\n"
-if ! eval "$SINGULARITY_libexecdir/singularity/image-create" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
+if ! eval "$SINGULARITY_libexecdir/singularity/simage" "create" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
     message ERROR "Failed creating image: $SINGULARITY_IMAGE\n"
     exit 1
 fi
 
 message 1 "Executing image create helper\n"
-exec "$SINGULARITY_libexecdir/singularity/image-bind" "$SINGULARITY_libexecdir/singularity/helpers/image-create.sh"
+exec "$SINGULARITY_libexecdir/singularity/simage" "bind" "$SINGULARITY_libexecdir/singularity/helpers/image-create.sh"
 
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"

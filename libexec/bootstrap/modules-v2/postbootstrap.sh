@@ -152,20 +152,28 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
 #    done
 
     ### CREATE RUNSCRIPT
-    singularity_section_get "runscript" "$SINGULARITY_BUILDDEF" > "$SINGULARITY_ROOTFS/singularity"
-    if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
-        chmod 0755 "$SINGULARITY_ROOTFS/singularity"
-    else
-        rm -f "$SINGULARITY_ROOTFS/singularity"
+
+    # First priority goes to runscript defined in build file
+    runscript_command=$(singularity_section_get "runscript" "$SINGULARITY_BUILDDEF")
+
+    # If the command is not empty, write to file.
+    if [ ! -z "$runscript_command" ]; then
+        echo "User defined %runscript found! Taking priority."
+        echo "$runscript_command" > "$SINGULARITY_ROOTFS/singularity"    
     fi
 
-    mount -t proc proc "$SINGULARITY_ROOTFS/proc"
-    mount -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
+    # If we have a runscript, whether docker, user defined, change permissions    
+    if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
+        chmod 0755 "$SINGULARITY_ROOTFS/singularity"
+    fi
+
+    mount --no-mtab -t proc proc "$SINGULARITY_ROOTFS/proc"
+    mount --no-mtab -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
 
     if [ -d "/dev" -a -d "$SINGULARITY_ROOTFS/dev" ]; then
         mkdir -p -m 0755 "$SINGULARITY_ROOTFS/dev"
     fi
-    mount --rbind "/dev/" "$SINGULARITY_ROOTFS/dev"
+    mount --no-mtab --rbind "/dev/" "$SINGULARITY_ROOTFS/dev"
 
     cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
     cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"

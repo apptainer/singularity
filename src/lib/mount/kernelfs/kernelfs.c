@@ -41,8 +41,7 @@ int singularity_mount_kernelfs(void) {
 
     // Mount /proc if we are configured
     singularity_message(DEBUG, "Checking configuration file for 'mount proc'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("mount proc", 1) > 0 ) {
+    if ( singularity_config_get_bool(MOUNT_PROC) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/proc")) == 0 ) {
             if ( singularity_ns_pid_enabled() >= 0 ) {
                 singularity_priv_escalate();
@@ -59,6 +58,12 @@ int singularity_mount_kernelfs(void) {
                     singularity_message(ERROR, "Could not bind mount container's /proc: %s\n", strerror(errno));
                     ABORT(255);
                 }
+                if ( singularity_priv_userns_enabled() != 1 ) {
+                    if ( mount(NULL, joinpath(container_dir, "/proc"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                        singularity_message(ERROR, "Could not remount container's /proc: %s\n", strerror(errno));
+                        ABORT(255);
+                    }
+                }
                 singularity_priv_drop();
             }
         } else {
@@ -71,8 +76,7 @@ int singularity_mount_kernelfs(void) {
 
     // Mount /sys if we are configured
     singularity_message(DEBUG, "Checking configuration file for 'mount sys'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("mount sys", 1) > 0 ) {
+    if ( singularity_config_get_bool(MOUNT_SYS) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/sys")) == 0 ) {
             if ( singularity_ns_user_enabled() < 0 ) {
                 singularity_priv_escalate();
@@ -88,6 +92,12 @@ int singularity_mount_kernelfs(void) {
                 if ( mount("/sys", joinpath(container_dir, "/sys"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not bind mount container's /sys: %s\n", strerror(errno));
                     ABORT(255);
+                }
+                if ( singularity_priv_userns_enabled() != 1 ) {
+                    if ( mount(NULL, joinpath(container_dir, "/sys"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                        singularity_message(ERROR, "Could not remount container's /sys: %s\n", strerror(errno));
+                        ABORT(255);
+                    }
                 }
                 singularity_priv_drop();
             }

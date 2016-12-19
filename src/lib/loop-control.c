@@ -33,7 +33,7 @@
 
 #include "config.h"
 #include "lib/loop-control.h"
-#include "lib/image-util.h"
+#include "lib/image/image.h"
 #include "util/util.h"
 #include "util/file.h"
 //#include "image.h"
@@ -63,7 +63,7 @@ char *singularity_loop_bind(FILE *image_fp) {
     }
 
     singularity_message(DEBUG, "Opening image loop device file: %s\n", image_loop_file);
-    if ( ( image_loop_file_fd = open(image_loop_file, O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
+    if ( ( image_loop_file_fd = open(image_loop_file, O_CLOEXEC | O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open image loop device cache file %s: %s\n", image_loop_file, strerror(errno));
         ABORT(255);
     }
@@ -109,7 +109,7 @@ char *singularity_loop_bind(FILE *image_fp) {
             }
         }
 
-        if ( ( loop_fp = fopen(test_loopdev, "r+") ) == NULL ) { // Flawfinder: ignore
+        if ( ( loop_fp = fopen(test_loopdev, "r+e") ) == NULL ) { // Flawfinder: ignore
             singularity_message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
             continue;
         }
@@ -130,7 +130,7 @@ char *singularity_loop_bind(FILE *image_fp) {
 
     }
 
-    singularity_message(VERBOSE, "Found avaialble loop device: %s\n", loop_dev);
+    singularity_message(VERBOSE, "Found available loop device: %s\n", loop_dev);
 
     singularity_message(DEBUG, "Setting loop device flags\n");
     if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {

@@ -18,4 +18,8 @@ install-perms:
 	@echo "install-perms is no longer required"
 	@echo
 
+install-data-hook:
+	install -d -m 0755 $(DESTDIR)$(localstatedir)/lib/singularity/mnt
+
+
 ACLOCAL_AMFLAGS = -I m4

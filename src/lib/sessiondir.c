@@ -64,13 +64,13 @@ char *singularity_sessiondir_init(char *file) {
             return(NULL);
         }
 
-        singularity_config_rewind();
         if ( ( sessiondir_prefix = envar_path("SINGULARITY_SESSIONDIR") ) != NULL ) {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s/singularity-session-%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
-        } else if ( ( sessiondir_prefix = singularity_config_get_value("sessiondir prefix") ) != NULL ) {
+        } else if ( ( sessiondir_prefix = strdup(singularity_config_get_value(SESSIONDIR_PREFIX)) ) != NULL ) {
             snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
         } else {
-            snprintf(sessiondir, sizeof(char) * PATH_MAX, "/tmp/.singularity-session-%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
+            singularity_message(ERROR, "Programming error - default for %s returned NULL.\n", sessiondir_prefix);
+            ABORT(255);
         }
         singularity_message(DEBUG, "Set sessiondir to: %s\n", sessiondir);
         free(sessiondir_prefix);
@@ -89,7 +89,7 @@ char *singularity_sessiondir_init(char *file) {
     }
 
     singularity_message(DEBUG, "Opening sessiondir file descriptor\n");
-    if ( ( sessiondir_fd = open(sessiondir, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
+    if ( ( sessiondir_fd = open(sessiondir, O_CLOEXEC | O_RDONLY) ) < 0 ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not obtain file descriptor for session directory %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }
@@ -111,7 +111,13 @@ char *singularity_sessiondir_init(char *file) {
             singularity_message(DEBUG, "Cleanup thread waiting on child...\n");
 
             waitpid(child_pid, &tmpstatus, 0);
-            retval = WEXITSTATUS(tmpstatus);
+            if (WIFEXITED(tmpstatus)) {
+                retval = WEXITSTATUS(tmpstatus);
+                singularity_message(DEBUG, "Child exited with status %d.\n", retval);
+            } else {
+                retval = WTERMSIG(tmpstatus);
+                singularity_message(DEBUG, "Child exited with signal %d.\n", retval);
+            }
 
             singularity_message(DEBUG, "Checking to see if we are the last process running in this sessiondir\n");
             if ( flock(sessiondir_fd, LOCK_EX | LOCK_NB) == 0 ) {
@@ -128,13 +134,24 @@ char *singularity_sessiondir_init(char *file) {
                         singularity_message(ERROR, "Could not remove run directory %s: %s\n", rundir, strerror(errno));
                     }
                 } else {
-                    singularity_message(WARNING, "Only clean run directories in /tmp: %s\n", rundir);
+                    singularity_message(VERBOSE, "Not removing the SINGULARITY_RUNDIR when not in /tmp: %s\n", rundir);
                 }
             }
 
             free(rundir);
     
-            exit(retval);
+            if (WIFEXITED(tmpstatus)) {
+                exit(retval);
+            } else {
+                // Try to reset this signal handler to the default one.
+                // Raise will _only_ return after the signal is handled,
+                // meaning that the default case for this signal is likely to
+                // be ignored.  In such a case, we abort.
+                signal(retval, SIG_DFL);  // Ignore failures; we'll abort later.
+                raise(retval);
+                singularity_message(ERROR, "Payload process failed with signal %d.\n", retval);
+                ABORT(255);
+            }
         }
     }
 

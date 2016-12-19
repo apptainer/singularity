@@ -18,7 +18,6 @@
  * 
  */
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -38,11 +37,12 @@
 
 #include "config.h"
 #include "lib/singularity.h"
+#include "lib/config_parser.h"
 #include "util/file.h"
 #include "util/util.h"
 
 
-int main(int argc, char ** argv) {
+int singularity_image_bind(int argc, char ** argv) {
     uid_t uid = geteuid();
     FILE *containerimage_fp;
     char *containerimage;
@@ -79,7 +79,7 @@ int main(int argc, char ** argv) {
     }
 
     singularity_priv_init();
-    singularity_config_open(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_sessiondir_init(containerimage);
     singularity_ns_mnt_unshare();
 
@@ -90,9 +90,10 @@ int main(int argc, char ** argv) {
         singularity_message(ERROR, "Could not bind image to loop!\n");
         ABORT(255);
     }
+    fclose(containerimage_fp);
 
     singularity_message(VERBOSE, "Setting SINGULARITY_LOOPDEV to '%s'\n", loop_dev);
     setenv("SINGULARITY_LOOPDEV", loop_dev, 1);
 
-    return(singularity_fork_exec(&argv[1]));
+    return(0);
 }

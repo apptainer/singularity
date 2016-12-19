@@ -51,7 +51,7 @@ fi
 
 message 1 "Formatting image with ext3 file system\n"
 
-eval "$MKFS_PATH" -q "$SINGULARITY_LOOPDEV" >/dev/null
+eval "$MKFS_PATH" -E nodiscard -q "$SINGULARITY_LOOPDEV" >/dev/null
 
 
 message 1 "Done.\n"
