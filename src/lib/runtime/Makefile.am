@@ -1,4 +1,5 @@
-SUBDIRS = files mount ns
+SUBDIRS = files
+#SUBDIRS = files mount ns
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -9,10 +10,11 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
-noinst_LTLIBRARIES = libsingularity_runtime_internal.la
-libsingularity_runtime_internal_la_LIBADD = ns/libns.la mount/libmount.la file/libfile.la
-libsingularity_runtime_internal_la_SOURCES = runtime.c
-libsingularity_runtime_internal_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
+noinst_LTLIBRARIES = libinternal.la
+libinternal_la_LIBADD = file/libinternal.la
+#libinternal_la_LIBADD = ns/libns.la mount/libmount.la file/libfile.la
+libinternal_la_SOURCES = runtime.c
+libinternal_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
 distinclude_HEADERS = runtime.h
 distlib_LTLIBRARIES = libsingularity_runtime.la
