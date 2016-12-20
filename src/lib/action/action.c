@@ -87,7 +87,7 @@ int singularity_env_override(char * prefix) {
 }
 
 int singularity_action_init(void) {
-    char *env_prefix = envar("SINGULARITY_ENV_PREFIX", "", 32);
+    char *env_prefix = envar("SINGULARITY_ENV_PREFIX", "_", 32);
     if ( env_prefix == NULL ) {
         env_prefix = "_SENV";
     }
