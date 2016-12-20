@@ -39,6 +39,7 @@
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
 #include "../file-bind.h"
+#include "../../runtime.h"
 
 
 int singularity_runtime_files_passwd_check(void) {
@@ -52,16 +53,14 @@ int singularity_runtime_files_passwd_prepare(void) {
 
 
 int singularity_runtime_files_passwd_activate(void) {
-
-/*
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
     char *homedir;
     uid_t uid = singularity_priv_getuid();
     struct passwd *pwent = getpwuid(uid);
-    char *containerdir = singularity_rootfs_dir();
-    char *sessiondir = singularity_sessiondir_get();
+    char *containerdir = singularity_runtime_containerdir(NULL);
+    char *tmpdir = singularity_runtime_tmpdir(NULL);
 
     singularity_message(DEBUG, "Called singularity_file_passwd_create()\n");
 
@@ -75,7 +74,7 @@ int singularity_runtime_files_passwd_activate(void) {
         ABORT(255);
     }
 
-    if ( sessiondir == NULL ) {
+    if ( tmpdir == NULL ) {
         singularity_message(ERROR, "Failed to obtain session directory\n");
         ABORT(255);
     }
@@ -87,7 +86,7 @@ int singularity_runtime_files_passwd_activate(void) {
     }
 
     source_file = joinpath(containerdir, "/etc/passwd");
-    tmp_file = joinpath(sessiondir, "/passwd");
+    tmp_file = joinpath(tmpdir, "/passwd");
 
     singularity_message(VERBOSE2, "Checking for template passwd file: %s\n", source_file);
     if ( is_file(source_file) < 0 ) {
@@ -97,7 +96,7 @@ int singularity_runtime_files_passwd_activate(void) {
 
     singularity_message(VERBOSE2, "Creating template of /etc/passwd\n");
     if ( ( copy_file(source_file, tmp_file) ) < 0 ) {
-        singularity_message(ERROR, "Failed copying template passwd file to sessiondir: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed copying template passwd file to tmpdir: %s\n", strerror(errno));
         ABORT(255);
     }
 
@@ -122,6 +121,5 @@ int singularity_runtime_files_passwd_activate(void) {
     // set HOME to the homedir, because it might be different than outside
     setenv("HOME", homedir, 1);
 
-*/
     return(0);
 }

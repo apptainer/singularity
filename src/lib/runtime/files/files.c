@@ -36,7 +36,7 @@
 
 
 int singularity_runtime_files_check(void) {
-    retval = 0;
+    int retval = 0;
 
     singularity_message(VERBOSE, "Checking all file components\n");
     retval += singularity_runtime_files_passwd_check();
@@ -48,7 +48,7 @@ int singularity_runtime_files_check(void) {
 
 
 int singularity_runtime_files_prepare(void) {
-    retval = 0;
+    int retval = 0;
 
     singularity_message(VERBOSE, "Preparing all file components\n");
     retval += singularity_runtime_files_passwd_prepare();
@@ -60,7 +60,7 @@ int singularity_runtime_files_prepare(void) {
 
 
 int singularity_runtime_files_activate(void) {
-    retval = 0;
+    int retval = 0;
 
     singularity_message(VERBOSE, "Activating all file components\n");
     retval += singularity_runtime_files_passwd_activate();

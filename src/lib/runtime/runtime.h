@@ -23,7 +23,11 @@
 
 // Set and return the runtime container directory location to use. If
 // 'directory' is NULL, then it will return the currently set directory.
-char *singularity_runtime_dir(char *directory);
+char *singularity_runtime_containerdir(char *directory);
+
+// Set and return the runtime temporary directory location to use. If
+// 'directory' is NULL, then it will return the currently set directory.
+char *singularity_runtime_tmpdir(char *directory);
 
 // Set the runtime flags (below). Flags can be combined using a bitwise OR.
 int singularity_runtime_flags(unsigned int flags);

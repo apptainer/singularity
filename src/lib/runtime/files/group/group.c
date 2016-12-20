@@ -38,10 +38,21 @@
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
-#include "lib/file/file-bind.h"
+#include "../file-bind.h"
+#include "../../runtime.h"
 
 
-int singularity_file_group(void) {
+int singularity_runtime_files_group_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_files_group_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_files_group_activate(void) {
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
@@ -50,8 +61,8 @@ int singularity_file_group(void) {
     uid_t gid = singularity_priv_getgid();
     const gid_t *gids = singularity_priv_getgids();
     int gid_count = singularity_priv_getgidcount();
-    char *containerdir = singularity_rootfs_dir();
-    char *sessiondir = singularity_sessiondir_get();
+    char *containerdir = singularity_runtime_containerdir(NULL);
+    char *tmpdir = singularity_runtime_tmpdir(NULL);
 
     singularity_message(DEBUG, "Called singularity_file_group_create()\n");
 
@@ -65,7 +76,7 @@ int singularity_file_group(void) {
         ABORT(255);
     }
 
-    if ( sessiondir == NULL ) {
+    if ( tmpdir == NULL ) {
         singularity_message(ERROR, "Failed to obtain session directory\n");
         ABORT(255);
     }
@@ -77,7 +88,7 @@ int singularity_file_group(void) {
     }
 
     source_file = joinpath(containerdir, "/etc/group");
-    tmp_file = joinpath(sessiondir, "/group");
+    tmp_file = joinpath(tmpdir, "/group");
 
     if ( is_file(source_file) < 0 ) {
         singularity_message(VERBOSE, "Group file does not exist in container, not updating\n");
@@ -99,7 +110,7 @@ int singularity_file_group(void) {
 
     singularity_message(VERBOSE2, "Creating template of /etc/group for containment\n");
     if ( ( copy_file(source_file, tmp_file) ) < 0 ) {
-        singularity_message(ERROR, "Failed copying template group file to sessiondir: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed copying template group file to tmpdir: %s\n", strerror(errno));
         ABORT(255);
     }
 

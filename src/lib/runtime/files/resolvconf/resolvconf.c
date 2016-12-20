@@ -38,10 +38,21 @@
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
-#include "lib/file/file-bind.h"
+#include "../file-bind.h"
+#include "../../runtime.h"
 
 
-int singularity_file_resolvconf(void) {
+int singularity_runtime_files_resolvconf_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_files_resolvconf_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_files_resolvconf_activate(void) {
     char *file = "/etc/resolv.conf";
 
     singularity_message(DEBUG, "Checking configuration option\n");

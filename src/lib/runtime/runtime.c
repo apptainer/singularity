@@ -41,9 +41,10 @@
 
 
 char *container_directory = NULL;
+char *temp_directory = NULL;
 unsigned int runtime_flags = 0;
 
-char *singularity_runtime_dir(char *directory) {
+char *singularity_runtime_containerdir(char *directory) {
     if ( directory != NULL ) {
         if ( is_dir(directory) == 0 ) {
             container_directory = strdup(directory);
@@ -54,6 +55,19 @@ char *singularity_runtime_dir(char *directory) {
     }
 
     return(container_directory);
+}
+
+char *singularity_runtime_tempdir(char *directory) {
+    if ( directory != NULL ) {
+        if ( is_dir(directory) == 0 ) {
+            temp_directry = strdup(directory);
+        } else {
+            singularity_message(ERROR, "Session path is not a directory: %s\n", directory);
+            ABORT(255);
+        }
+    }
+
+    return(temp_directory);
 }
 
 
