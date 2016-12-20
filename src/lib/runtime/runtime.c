@@ -34,7 +34,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
-#include "util/message.h"
+#include "lib/message.h"
 #include "./ns/ns.h"
 #include "./mount/mount.h"
 #include "./files/files.h"

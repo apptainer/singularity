@@ -36,9 +36,21 @@
 #include "lib/ns/ns.h"
 #include "../mount-util.h"
 
-int singularity_mount_binds(void) {
+
+
+int singularity_runtime_mount_bind_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_bind_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_bind_activate(void) {
     char *tmp_config_string;
-    char *container_dir = singularity_rootfs_dir();
+    char *container_dir = singularity_runtime_containerdir();
 
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         singularity_message(DEBUG, "Skipping bind mounts as contain was requested\n");
