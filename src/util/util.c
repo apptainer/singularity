@@ -299,3 +299,13 @@ char *get_homedir(struct passwd *pw_in) {
 
     return homedir;
 }
+
+void slice_str(const char * str, char * buffer, size_t start, size_t end)
+{
+    size_t j = 0;
+    size_t i;
+    for ( i = start; i <= end; ++i ) {
+        buffer[j++] = str[i];
+    }
+    buffer[j] = 0;
+}

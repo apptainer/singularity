@@ -27,6 +27,7 @@
 #include <linux/limits.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <regex.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -49,57 +50,49 @@
 static int action = 0;
 static char *cwd_path;
 
-static char *LD_UNSECVARS[] = {
-    "GCONV_PATH",
-    "GETCONF_DIR",
-    "HOSTALIASES",
-    "LD_AUDIT",
-    "LD_DEBUG",
-    "LD_DEBUG_OUTPUT",
-    "LD_DYNAMIC_WEAK",
-    "LD_LIBRARY_PATH",
-    "LD_ORIGIN_PATH",
-    "LD_PRELOAD",
-    "LD_PROFILE",
-    "LD_SHOW_AUXV",
-    "LD_USE_LOAD_BIAS",
-    "LOCALDOMAIN",
-    "LOCPATH",
-    "MALLOC_TRACE",
-    "NIS_PATH",
-    "NLSPATH",
-    "RESOLV_HOST_CONF",
-    "RES_OPTIONS",
-    "TMPDIR",
-    "TZDIR",
-};
+extern char **environ;
+static char * ENV_OVERRIDE_REGEX = "^%s_([^=]+)=(.*)";
 
-static int LD_UNSECVARS_LEN = 22;
-static int LD_UNSECVARS_MAX_STRLEN = 16;
-static int LD_UNSECVARS_PREFIX_LEN = 10;
-static char * LD_UNSECVARS_PREFIX = "CONTAINER_%s";
+int singularity_env_override(char * prefix) {
+    int reti;
+    regex_t regex;
+    char regstr[strlen(prefix) + strlen(ENV_OVERRIDE_REGEX) + 1];
 
-int singularity_proxy_unsecvars() {
-    int prefixedvar_max_len = LD_UNSECVARS_MAX_STRLEN + LD_UNSECVARS_PREFIX_LEN + 1;
-    char prefixedvar[prefixedvar_max_len];
-    char *varname;
-    char *value;
-    int c;
-    for (c = 0; c < LD_UNSECVARS_LEN; c++) {
-        varname = LD_UNSECVARS[c];
-        snprintf(prefixedvar, prefixedvar_max_len, LD_UNSECVARS_PREFIX, varname);
-        value = getenv(prefixedvar);
-        if ( value != NULL ) {
-             singularity_message(VERBOSE, "Setting %s to `%s`\n", varname, value);
-             setenv(varname, value, 1);
-        }
-        unsetenv(prefixedvar);
+    sprintf(regstr, ENV_OVERRIDE_REGEX, prefix);
+    reti = regcomp(&regex, regstr, REG_EXTENDED);
+    if (reti) {
+        singularity_message(ERROR, "Could not compile prefix regex\n");
+        ABORT(1);
     }
+
+    char * kv;
+    int ngroups = regex.re_nsub + 1;
+    regmatch_t groups[ngroups];
+    char ** envp = environ;
+
+    while(*envp) {
+        kv = *envp++;
+        reti = regexec(&regex, kv, ngroups, groups, 0);
+        if (!reti) {
+            char key[groups[1].rm_eo - groups[1].rm_so + 1];
+            char value[groups[2].rm_eo - groups[2].rm_so + 1];
+            slice_str(kv, key, groups[1].rm_so, groups[1].rm_eo - 1);
+            slice_str(kv, value, groups[2].rm_so, groups[2].rm_eo - 1);
+            setenv(key, value, 1);
+        }
+    }
+
+    regfree(&regex);
     return 0;
 }
 
 int singularity_action_init(void) {
-    singularity_proxy_unsecvars();
+    char *env_prefix = envar("SINGULARITY_ENV_PREFIX", "", 32);
+    if ( env_prefix == NULL ) {
+        env_prefix = "_SENV";
+    }
+    unsetenv("SINGULARITY_ENV_PREFIX");
+    singularity_env_override(env_prefix);
 
     char *command = envar("SINGULARITY_COMMAND", "", 10);
     singularity_message(DEBUG, "Checking on action to run\n");

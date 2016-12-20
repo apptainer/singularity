@@ -55,6 +55,7 @@ int str2int(const char *input_str, long int *output_num);
 
 struct passwd;
 char *get_homedir(struct passwd *pw);
+void slice_str(const char * str, char * buffer, size_t start, size_t end);
 
 #define ABORT(a) do {singularity_message(ABRT, "Retval = %d\n", a); exit(a);} while (0)
 
