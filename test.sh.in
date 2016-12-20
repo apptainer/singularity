@@ -378,6 +378,11 @@ for UNSEC_VAR in $UNSEC_VARS; do
     PREFIXED_UNSEC_VAR="_SENV_$UNSEC_VAR"
     stest 1 sh -c "$UNSEC_VAR=test singularity exec $CONTAINER env | grep $UNSEC_VAR=test"
     stest 0 sh -c "$PREFIXED_UNSEC_VAR=test singularity exec $CONTAINER env | grep $UNSEC_VAR=test"
+    export SINGULARITY_ENV_PREFIX="SOME_OTHER_PREFIX"
+    PREFIXED_UNSEC_VAR="${SINGULARITY_ENV_PREFIX}_${UNSEC_VAR}"
+    echo PREFIXED_UNSEC_VAR
+    stest 1 sh -c "$UNSEC_VAR=test singularity exec $CONTAINER env | grep $UNSEC_VAR=test"
+    stest 0 sh -c "$PREFIXED_UNSEC_VAR=test singularity exec $CONTAINER env | grep $UNSEC_VAR=test"
 done
 
 /bin/echo
