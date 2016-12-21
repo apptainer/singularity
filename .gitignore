@@ -19,6 +19,7 @@ depcomp
 etc/singularity.conf
 etc/Makefile
 etc/Makefile.in
+etc/bash_completion.d/singularity
 install-sh
 libexec/Makefile
 libexec/Makefile.in
