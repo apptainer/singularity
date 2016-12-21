@@ -39,12 +39,23 @@
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
 #include "lib/rootfs/rootfs.h"
-#include "lib/ns/ns.h"
+
 #include "../mount-util.h"
+#include "../../runtime.h"
 
 
-void singularity_mount_cwd(void) {
-    char *container_dir = singularity_rootfs_dir();
+int singularity_runtime_mount_cwd_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_cwd_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_cwd_activate(void) {
+    char *container_dir = singularity_runtime_containerdir(NULL);
     char *cwd_path = NULL;
     int r;
 
@@ -68,7 +79,7 @@ void singularity_mount_cwd(void) {
             free(cwd_path);
             free(cwd_fileid);
             free(container_cwd_fileid);
-            return;
+            return(0);
         } else {
             singularity_message(DEBUG, "Container's cwd is not the same as the host, continuing on...\n");
         }
@@ -80,14 +91,14 @@ void singularity_mount_cwd(void) {
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         singularity_message(VERBOSE, "Not mounting current directory: contain was requested\n");
         free(cwd_path);
-        return;
+        return(0);
     }
 
     singularity_message(DEBUG, "Checking if CWD is already mounted: %s\n", cwd_path);
     if ( check_mounted(cwd_path) >= 0 ) {
         singularity_message(VERBOSE, "Not mounting CWD (already mounted in container): %s\n", cwd_path);
         free(cwd_path);
-        return;
+        return(0);
     }
 
     singularity_message(DEBUG, "Checking if cwd is in an operating system directory\n");
@@ -101,7 +112,7 @@ void singularity_mount_cwd(void) {
          ( strcmp(cwd_path, "/sbin") == 0 ) ) {
         singularity_message(VERBOSE, "Not mounting CWD within operating system directory: %s\n", cwd_path);
         free(cwd_path);
-        return;
+        return(0);
     }
 
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
@@ -109,7 +120,7 @@ void singularity_mount_cwd(void) {
         if ( is_dir(joinpath(container_dir, cwd_path)) < 0 ) {
             singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled and directory does not exist in container: %s\n", joinpath(container_dir, cwd_path));
             free(cwd_path);
-            return;
+            return(0);
         }
     }
 
@@ -117,13 +128,13 @@ void singularity_mount_cwd(void) {
     if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
         singularity_message(WARNING, "Not mounting current directory: user bind control is disabled by system administrator\n");
         free(cwd_path);
-        return;
+        return(0);
     }
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
     singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
     free(cwd_path);
-    return;
+    return(0);
 #endif  
 
     singularity_priv_escalate();
@@ -133,7 +144,7 @@ void singularity_mount_cwd(void) {
     if ( r < 0 ) {
         singularity_message(VERBOSE, "Could not create directory for current directory, skipping CWD mount\n");
         free(cwd_path);
-        return;
+        return(0);
     }
 
     singularity_priv_escalate();
@@ -148,6 +159,6 @@ void singularity_mount_cwd(void) {
     }
 
     free(cwd_path);
-    return;
+    return(0);
 }
 

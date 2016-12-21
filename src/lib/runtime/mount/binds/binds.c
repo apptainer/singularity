@@ -33,9 +33,9 @@
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
 #include "lib/rootfs/rootfs.h"
-#include "lib/ns/ns.h"
-#include "../mount-util.h"
 
+#include "../mount-util.h"
+#include "../../runtime.h"
 
 
 int singularity_runtime_mount_bind_check(void) {
@@ -50,7 +50,7 @@ int singularity_runtime_mount_bind_prepare(void) {
 
 int singularity_runtime_mount_bind_activate(void) {
     char *tmp_config_string;
-    char *container_dir = singularity_runtime_containerdir();
+    char *container_dir = singularity_runtime_containerdir(NULL);
 
     if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         singularity_message(DEBUG, "Skipping bind mounts as contain was requested\n");

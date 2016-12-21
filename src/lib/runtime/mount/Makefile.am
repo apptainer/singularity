@@ -1,4 +1,4 @@
-SUBDIRS = kernelfs binds home tmp hostfs userbinds dev cwd scratch
+SUBDIRS = binds cwd dev home hostfs kernelfs scratch tmp userbinds
 
 MAINTAINERCLEANFILES = Makefile.in
 DISTCLEANFILES = Makefile

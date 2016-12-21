@@ -1,4 +1,4 @@
-SUBDIRS = files
+SUBDIRS = files mount
 #SUBDIRS = files mount ns
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
