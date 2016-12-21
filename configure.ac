@@ -336,6 +336,7 @@ AC_CONFIG_FILES([
    src/lib/image/bootstrap/docker/Makefile
    src/util/Makefile
    src/slurm/Makefile
+   etc/bash_completion.d/singularity
    etc/Makefile
    bin/Makefile
    bin/singularity
