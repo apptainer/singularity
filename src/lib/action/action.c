@@ -87,14 +87,7 @@ int singularity_env_override(char * prefix) {
 }
 
 int singularity_action_init(void) {
-    char *env_prefix = envar("SINGULARITY_ENV_PREFIX", "_", 32);
-    if ( env_prefix == NULL ) {
-        env_prefix = "_SENV";
-    }
-    unsetenv("SINGULARITY_ENV_PREFIX");
-    singularity_env_override(env_prefix);
-
-    free(env_prefix);
+    singularity_env_override("SENV");
 
     char *command = envar("SINGULARITY_COMMAND", "", 10);
     singularity_message(DEBUG, "Checking on action to run\n");
