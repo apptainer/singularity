@@ -18,10 +18,12 @@
  * 
 */
 
+#ifndef __SINGULARITY_RUNTIME_MOUNT_DEV_H_
+#define __SINGULARITY_RUNTIME_MOUNT_DEV_H_
 
-#ifndef __MOUNT_DEV_H_
-#define __MOUNT_DEV_H_
+extern int singularity_runtime_mount_dev_check(void);
+extern int singularity_runtime_mount_dev_prepare(void);
+extern int singularity_runtime_mount_dev_activate(void);
 
-    int singularity_mount_dev(void);
+#endif /* __SINGULARITY_RUNTIME_MOUNT_DEV_H */
 
-#endif /* __MOUNT_DEV_H_ */

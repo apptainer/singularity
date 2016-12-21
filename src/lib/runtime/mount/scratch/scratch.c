@@ -39,12 +39,23 @@
 #include "lib/fork.h"
 #include "lib/config_parser.h"
 #include "lib/rootfs/rootfs.h"
-#include "lib/ns/ns.h"
+
 #include "../mount-util.h"
+#include "../../runtime.h"
 
 
-void singularity_mount_scratch(void) {
-    char *container_dir = singularity_rootfs_dir();
+int singularity_runtime_mount_scratch_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_scratch_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_scratch_activate(void) {
+    char *container_dir = singularity_runtime_containerdir(NULL);
     char *scratchdir_path;
     char *tmpdir_path;
     char *sourcedir_path;
@@ -53,18 +64,18 @@ void singularity_mount_scratch(void) {
     singularity_message(DEBUG, "Getting SINGULARITY_SCRATCHDIR from environment\n");
     if ( ( scratchdir_path = envar_path("SINGULARITY_SCRATCHDIR") ) == NULL ) {
         singularity_message(DEBUG, "Not mounting scratch directory: Not requested\n");
-        return;
+        return(0);
     }
 
     singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
     if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
         singularity_message(VERBOSE, "Not mounting scratch: user bind control is disabled by system administrator\n");
-        return;
+        return(0);
     }
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
         singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return;
+        return(0);
 #endif  
 
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
@@ -77,7 +88,7 @@ void singularity_mount_scratch(void) {
     if ( ( tmpdir_path = envar_path("SINGULARITY_WORKDIR") ) == NULL ) {
         if ( ( tmpdir_path = singularity_sessiondir_get() ) == NULL ) {
             singularity_message(ERROR, "Could not identify a suitable temporary directory for scratch\n");
-            return;
+            return(0);
         }
     }
 
@@ -106,7 +117,7 @@ void singularity_mount_scratch(void) {
             singularity_priv_drop();
             if ( r < 0 ) {
                 singularity_message(VERBOSE, "Skipping scratch directory mount, could not create dir inside container %s: %s\n", current, strerror(errno));
-                return;
+                return(0);
             }
         }
 
@@ -126,6 +137,6 @@ void singularity_mount_scratch(void) {
         // Ignore empty directories.
         while (current && !strlength(current, 1024)) {current = strtok_r(NULL, ",", &outside_token);}
     }
-    return;
+    return(0);
 }
 

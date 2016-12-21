@@ -18,10 +18,12 @@
  * 
 */
 
+#ifndef __SINGULARITY_RUNTIME_MOUNT_HOME_H_
+#define __SINGULARITY_RUNTIME_MOUNT_HOME_H_
 
-#ifndef __MOUNT_HOME_H_
-#define __MOUNT_HOME_H_
+extern int singularity_runtime_mount_home_check(void);
+extern int singularity_runtime_mount_home_prepare(void);
+extern int singularity_runtime_mount_home_activate(void);
 
-    int singularity_mount_home(void);
+#endif /* __SINGULARITY_RUNTIME_MOUNT_HOME_H */
 
-#endif /* __MOUNT_HOME_H_ */

@@ -18,10 +18,12 @@
  * 
 */
 
+#ifndef __SINGULARITY_RUNTIME_MOUNT_HOSTFS_H_
+#define __SINGULARITY_RUNTIME_MOUNT_HOSTFS_H_
 
-#ifndef __MOUNT_HOSTFS_H_
-#define __MOUNT_HOSTFS_H_
+extern int singularity_runtime_mount_hostfs_check(void);
+extern int singularity_runtime_mount_hostfs_prepare(void);
+extern int singularity_runtime_mount_hostfs_activate(void);
 
-    int singularity_mount_hostfs(void);
+#endif /* __SINGULARITY_RUNTIME_MOUNT_HOSTFS_H */
 
-#endif /* __MOUNT_HOSTFS_H_ */

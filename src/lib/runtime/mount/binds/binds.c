@@ -38,17 +38,17 @@
 #include "../../runtime.h"
 
 
-int singularity_runtime_mount_bind_check(void) {
+int singularity_runtime_mount_binds_check(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_bind_prepare(void) {
+int singularity_runtime_mount_binds_prepare(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_bind_activate(void) {
+int singularity_runtime_mount_binds_activate(void) {
     char *tmp_config_string;
     char *container_dir = singularity_runtime_containerdir(NULL);
 

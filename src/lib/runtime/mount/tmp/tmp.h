@@ -18,10 +18,12 @@
  * 
 */
 
+#ifndef __SINGULARITY_RUNTIME_MOUNT_TMP_H_
+#define __SINGULARITY_RUNTIME_MOUNT_TMP_H_
 
-#ifndef __MOUNT_TMP_H_
-#define __MOUNT_TMP_H_
+extern int singularity_runtime_mount_tmp_check(void);
+extern int singularity_runtime_mount_tmp_prepare(void);
+extern int singularity_runtime_mount_tmp_activate(void);
 
-    int singularity_mount_tmp(void);
+#endif /* __SINGULARITY_RUNTIME_MOUNT_TMP_H */
 
-#endif /* __MOUNT_TMP_H_ */

@@ -34,13 +34,24 @@
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
 #include "lib/rootfs/rootfs.h"
-#include "lib/ns/ns.h"
+
 #include "../mount-util.h"
+#include "../../runtime.h"
 
 
-void singularity_mount_userbinds(void) {
+int singularity_runtime_mount_userbinds_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_userbinds_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_userbinds_activate(void) {
+    char *container_dir = singularity_runtime_containerdir(NULL);
     char *bind_path_string;
-    char *container_dir = singularity_rootfs_dir();
 
     singularity_message(DEBUG, "Checking for environment variable 'SINGULARITY_BINDPATH'\n");
     if ( ( bind_path_string = envar_path("SINGULARITY_BINDPATH") ) != NULL ) {
@@ -48,12 +59,12 @@ void singularity_mount_userbinds(void) {
         singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
         if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
             singularity_message(WARNING, "Ignoring user bind request: user bind control is disabled by system administrator\n");
-            return;
+            return(0);
         }
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
         singularity_message(WARNING, "Ignoring user bind request: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return;
+        return(0);
 #endif
 
         singularity_message(DEBUG, "Parsing SINGULARITY_BINDPATH for user-specified bind mounts.\n");
@@ -153,5 +164,6 @@ void singularity_mount_userbinds(void) {
     } else {
         singularity_message(DEBUG, "No user bind mounts specified.\n");
     }
+    return(0);
 }
 

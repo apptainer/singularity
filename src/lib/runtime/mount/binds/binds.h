@@ -18,12 +18,12 @@
  * 
 */
 
-#ifndef __SINGULARITY_RUNTIME_MOUNT_BIND_H_
-#define __SINGULARITY_RUNTIME_MOUNT_BIND_H_
+#ifndef __SINGULARITY_RUNTIME_MOUNT_BINDS_H_
+#define __SINGULARITY_RUNTIME_MOUNT_BINDS_H_
 
-extern int singularity_runtime_mount_bind_check(void);
-extern int singularity_runtime_mount_bind_prepare(void);
-extern int singularity_runtime_mount_bind_activate(void);
+extern int singularity_runtime_mount_binds_check(void);
+extern int singularity_runtime_mount_binds_prepare(void);
+extern int singularity_runtime_mount_binds_activate(void);
 
-#endif /* __SINGULARITY_RUNTIME_MOUNT_BIND_H */
+#endif /* __SINGULARITY_RUNTIME_MOUNT_BINDS_H */
 

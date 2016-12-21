@@ -37,9 +37,22 @@
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
 
+#include "../mount-util.h"
+#include "../../runtime.h"
 
-int singularity_mount_tmp(void) {
-    char *container_dir = singularity_rootfs_dir();
+
+int singularity_runtime_mount_tmp_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_tmp_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_tmp_activate(void) {
+    char *container_dir = singularity_runtime_containerdir(NULL);
     char *tmp_source;
     char *vartmp_source;
 

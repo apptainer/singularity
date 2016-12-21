@@ -35,15 +35,27 @@
 #include "lib/config_parser.h"
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
+
 #include "../mount-util.h"
+#include "../../runtime.h"
 
 
-int singularity_mount_home(void) {
+int singularity_runtime_mount_home_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_home_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_home_activate(void) {
     char *homedir;
     char *homedir_source;
     char *homedir_base = NULL;
-    char *container_dir = singularity_rootfs_dir();
-    char *sessiondir = singularity_sessiondir_get();
+    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *tmpdir = singularity_runtime_tmpdir(NULL);
 
     if ( singularity_config_get_bool(MOUNT_HOME) <= 0 ) {
         singularity_message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
@@ -84,7 +96,7 @@ int singularity_mount_home(void) {
             homedir_source = joinpath(tmpdirpath, "/home");
         } else {
             // TODO: Randomize tmp_home, so multiple calls to the same container don't overlap
-            homedir_source = joinpath(sessiondir, "/home.tmp");
+            homedir_source = joinpath(tmpdir, "/home.tmp");
         }
         if ( s_mkpath(homedir_source, 0755) < 0 ) {
             singularity_message(ERROR, "Could not create temporary home directory %s: %s\n", homedir_source, strerror(errno));
@@ -115,7 +127,7 @@ int singularity_mount_home(void) {
     }
 
     // Create a location to stage the directories
-    if ( s_mkpath(joinpath(sessiondir, homedir), 0755) < 0 ) {
+    if ( s_mkpath(joinpath(tmpdir, homedir), 0755) < 0 ) {
         singularity_message(ERROR, "Failed creating home directory bind path\n");
     }
 
@@ -151,20 +163,20 @@ int singularity_mount_home(void) {
 
     singularity_priv_escalate();
     // First mount the real home directory to the stage
-    singularity_message(VERBOSE, "Mounting home directory to stage: %s->%s\n", homedir_source, joinpath(sessiondir, homedir));
-    if ( mount(homedir_source, joinpath(sessiondir, homedir), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+    singularity_message(VERBOSE, "Mounting home directory to stage: %s->%s\n", homedir_source, joinpath(tmpdir, homedir));
+    if ( mount(homedir_source, joinpath(tmpdir, homedir), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
         singularity_message(ERROR, "Failed to mount home directory to stage: %s\n", strerror(errno));
         ABORT(255);
     }
     if ( singularity_priv_userns_enabled() != 1 ) {
-        if ( mount(NULL, joinpath(sessiondir, homedir), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+        if ( mount(NULL, joinpath(tmpdir, homedir), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to remount home directory to stage: %s\n", strerror(errno));
             ABORT(255);
         }
     }
     // Then mount the stage to the container
-    singularity_message(VERBOSE, "Mounting staged home directory into container: %s->%s\n", joinpath(sessiondir, homedir_base), joinpath(container_dir, homedir_base));
-    if ( mount(joinpath(sessiondir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+    singularity_message(VERBOSE, "Mounting staged home directory into container: %s->%s\n", joinpath(tmpdir, homedir_base), joinpath(container_dir, homedir_base));
+    if ( mount(joinpath(tmpdir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
         singularity_message(ERROR, "Failed to mount staged home directory into container: %s\n", strerror(errno));
         ABORT(255);
     }

@@ -18,10 +18,12 @@
  * 
 */
 
+#ifndef __SINGULARITY_RUNTIME_MOUNT_USERBINDS_H_
+#define __SINGULARITY_RUNTIME_MOUNT_USERBINDS_H_
 
-#ifndef __MOUNT_USERBINDS_H_
-#define __MOUNT_USERBINDS_H_
+extern int singularity_runtime_mount_userbinds_check(void);
+extern int singularity_runtime_mount_userbinds_prepare(void);
+extern int singularity_runtime_mount_userbinds_activate(void);
 
-    int singularity_mount_userbinds(void);
+#endif /* __SINGULARITY_RUNTIME_MOUNT_USERBINDS_H */
 
-#endif /* __MOUNT_USERBINDS_H_ */

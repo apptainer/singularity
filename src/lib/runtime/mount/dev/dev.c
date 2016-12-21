@@ -33,34 +33,28 @@
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
-#include "lib/ns/ns.h"
 #include "lib/rootfs/rootfs.h"
 
-static int mount_dev(const char *dev) {
-    char *container_dir = singularity_rootfs_dir();
-    char *path = joinpath(container_dir, dev);
 
-    singularity_message(DEBUG, "Mounting device %s at %s\n", dev, path);
+#include "../mount-util.h"
+#include "../../runtime.h"
 
-    if ( is_chr(path) == 0 ) {
-        return(0);
-    }
+static int mount_dev(const char *dev);
 
-    if ( fileput(path, "") < 0 ) {
-        singularity_message(VERBOSE, "Can not create %s: %s\n", dev, strerror(errno));
-        return(-1);
-    }
 
-    if ( mount(dev, path, NULL, MS_BIND, NULL) < 0 ) {
-        unlink(path);
-        singularity_message(VERBOSE, "Can not mount %s: %s\n", dev, strerror(errno));
-    }
 
+int singularity_runtime_mount_dev_check(void) {
     return(0);
 }
 
-int singularity_mount_dev(void) {
-    char *container_dir = singularity_rootfs_dir();
+
+int singularity_runtime_mount_dev_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_dev_activate(void) {
+    char *container_dir = singularity_runtime_containerdir(NULL);
 
     if ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) {
         if ( singularity_rootfs_overlay_enabled() > 0 ) {
@@ -125,3 +119,31 @@ int singularity_mount_dev(void) {
 
     return(0);
 }
+
+
+
+
+static int mount_dev(const char *dev) {
+    char *container_dir = singularity_rootfs_dir();
+    char *path = joinpath(container_dir, dev);
+
+    singularity_message(DEBUG, "Mounting device %s at %s\n", dev, path);
+
+    if ( is_chr(path) == 0 ) {
+        return(0);
+    }
+
+    if ( fileput(path, "") < 0 ) {
+        singularity_message(VERBOSE, "Can not create %s: %s\n", dev, strerror(errno));
+        return(-1);
+    }
+
+    if ( mount(dev, path, NULL, MS_BIND, NULL) < 0 ) {
+        unlink(path);
+        singularity_message(VERBOSE, "Can not mount %s: %s\n", dev, strerror(errno));
+    }
+
+    return(0);
+}
+
+

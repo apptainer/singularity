@@ -32,12 +32,26 @@
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
-#include "lib/ns/ns.h"
 #include "lib/rootfs/rootfs.h"
 
 
-int singularity_mount_kernelfs(void) {
-    char *container_dir = singularity_rootfs_dir();
+#include "../mount-util.h"
+#include "../../runtime.h"
+#include "../../ns/ns.h"
+
+
+int singularity_runtime_mount_kernelfs_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_kernelfs_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_kernelfs_activate(void) {
+    char *container_dir = singularity_runtime_containerdir(NULL);
 
     // Mount /proc if we are configured
     singularity_message(DEBUG, "Checking configuration file for 'mount proc'\n");

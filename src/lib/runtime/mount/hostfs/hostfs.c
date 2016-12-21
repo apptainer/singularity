@@ -37,16 +37,28 @@
 #include "lib/config_parser.h"
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
-#include "../mount-util.h"
 
+
+#include "../mount-util.h"
+#include "../../runtime.h"
 
 #define MAX_LINE_LEN 4096
 
 
-int singularity_mount_hostfs(void) {
+int singularity_runtime_mount_hostfs_check(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_hostfs_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_hostfs_activate(void) {
     FILE *mounts;
     char *line = NULL;
-    char *container_dir = singularity_rootfs_dir();
+    char *container_dir = singularity_runtime_containerdir(NULL);
 
     if ( singularity_config_get_bool(MOUNT_HOSTFS) <= 0 ) {
         singularity_message(DEBUG, "Not mounting host file systems per configuration\n");
