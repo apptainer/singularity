@@ -94,6 +94,8 @@ int singularity_action_init(void) {
     unsetenv("SINGULARITY_ENV_PREFIX");
     singularity_env_override(env_prefix);
 
+    free(env_prefix);
+
     char *command = envar("SINGULARITY_COMMAND", "", 10);
     singularity_message(DEBUG, "Checking on action to run\n");
 
