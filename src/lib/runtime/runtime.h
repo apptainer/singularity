@@ -23,14 +23,14 @@
 
 // Set and return the runtime container directory location to use. If
 // 'directory' is NULL, then it will return the currently set directory.
-char *singularity_runtime_containerdir(char *directory);
+extern char *singularity_runtime_containerdir(char *directory);
 
 // Set and return the runtime temporary directory location to use. If
 // 'directory' is NULL, then it will return the currently set directory.
-char *singularity_runtime_tmpdir(char *directory);
+extern char *singularity_runtime_tmpdir(char *directory);
 
 // Set the runtime flags (below). Flags can be combined using a bitwise OR.
-int singularity_runtime_flags(unsigned int flags);
+extern int singularity_runtime_flags(unsigned int flags);
 
 // Each of the below will cascade down the modules activatng each of the
 // primary interface drivers:
