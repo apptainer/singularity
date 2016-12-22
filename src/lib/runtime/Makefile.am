@@ -16,12 +16,12 @@ libinternal_la_SOURCES = runtime.c
 libinternal_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
 distinclude_HEADERS = runtime.h
-distlib_LTLIBRARIES = libruntime.la
+distlib_LTLIBRARIES = libsingularity-runtime.la
 
-libruntime_la_SOURCES =
-libruntime_la_LIBADD = $(noinst_LTLIBRARIES)
-libruntime_la_LDFLAGS = -version-info 1:0:0 
-libruntime_la_CFLAGS = $(AM_CFLAGS)
+libsingularity_runtime_la_SOURCES =
+libsingularity_runtime_la_LIBADD = $(noinst_LTLIBRARIES)
+libsingularity_runtime_la_LDFLAGS = -version-info 1:0:0 
+libsingularity_runtime_la_CFLAGS = $(AM_CFLAGS)
 
 EXTRA_DIST = 
 
