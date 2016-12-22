@@ -317,6 +317,8 @@ AC_CONFIG_FILES([
    src/lib/runtime/mount/tmp/Makefile
    src/lib/runtime/mount/userbinds/Makefile
    src/lib/runtime/mount/scratch/Makefile
+   src/lib/runtime/rootfs/Makefile
+   src/lib/runtime/rootfs/chroot/Makefile
 
 
    etc/Makefile

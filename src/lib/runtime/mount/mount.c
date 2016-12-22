@@ -44,37 +44,37 @@
 
 
 
-int singularity_runtime_mount_check(void) {
+int singularity_runtime_mount_precheck(void) {
     int retval = 0;
 
     singularity_message(VERBOSE, "Checking all mount components\n");
-    retval += singularity_runtime_mount_hostfs_check();
-    retval += singularity_runtime_mount_binds_check();
-    retval += singularity_runtime_mount_kernelfs_check();
-    retval += singularity_runtime_mount_dev_check();
-    retval += singularity_runtime_mount_tmp_check();
-    retval += singularity_runtime_mount_home_check();
-    retval += singularity_runtime_mount_userbinds_check();
-    retval += singularity_runtime_mount_scratch_check();
-    retval += singularity_runtime_mount_cwd_check();
+    retval += singularity_runtime_mount_hostfs_precheck();
+    retval += singularity_runtime_mount_binds_precheck();
+    retval += singularity_runtime_mount_kernelfs_precheck();
+    retval += singularity_runtime_mount_dev_precheck();
+    retval += singularity_runtime_mount_tmp_precheck();
+    retval += singularity_runtime_mount_home_precheck();
+    retval += singularity_runtime_mount_userbinds_precheck();
+    retval += singularity_runtime_mount_scratch_precheck();
+    retval += singularity_runtime_mount_cwd_precheck();
 
     return(retval);
 }
 
 
-int singularity_runtime_mount_prepare(void) {
+int singularity_runtime_mount_setup(void) {
     int retval = 0;
 
     singularity_message(VERBOSE, "Preparing all mount components\n");
-    retval += singularity_runtime_mount_hostfs_prepare();
-    retval += singularity_runtime_mount_binds_prepare();
-    retval += singularity_runtime_mount_kernelfs_prepare();
-    retval += singularity_runtime_mount_dev_prepare();
-    retval += singularity_runtime_mount_tmp_prepare();
-    retval += singularity_runtime_mount_home_prepare();
-    retval += singularity_runtime_mount_userbinds_prepare();
-    retval += singularity_runtime_mount_scratch_prepare();
-    retval += singularity_runtime_mount_cwd_prepare();
+    retval += singularity_runtime_mount_hostfs_setup();
+    retval += singularity_runtime_mount_binds_setup();
+    retval += singularity_runtime_mount_kernelfs_setup();
+    retval += singularity_runtime_mount_dev_setup();
+    retval += singularity_runtime_mount_tmp_setup();
+    retval += singularity_runtime_mount_home_setup();
+    retval += singularity_runtime_mount_userbinds_setup();
+    retval += singularity_runtime_mount_scratch_setup();
+    retval += singularity_runtime_mount_cwd_setup();
 
     return(retval);
 }
@@ -93,6 +93,24 @@ int singularity_runtime_mount_activate(void) {
     retval += singularity_runtime_mount_userbinds_activate();
     retval += singularity_runtime_mount_scratch_activate();
     retval += singularity_runtime_mount_cwd_activate();
+
+    return(retval);
+}
+
+
+int singularity_runtime_mount_contain(void) {
+    int retval = 0;
+
+    singularity_message(VERBOSE, "Containing all mount components\n");
+    retval += singularity_runtime_mount_hostfs_contain();
+    retval += singularity_runtime_mount_binds_contain();
+    retval += singularity_runtime_mount_kernelfs_contain();
+    retval += singularity_runtime_mount_dev_contain();
+    retval += singularity_runtime_mount_tmp_contain();
+    retval += singularity_runtime_mount_home_contain();
+    retval += singularity_runtime_mount_userbinds_contain();
+    retval += singularity_runtime_mount_scratch_contain();
+    retval += singularity_runtime_mount_cwd_contain();
 
     return(retval);
 }

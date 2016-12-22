@@ -44,12 +44,17 @@
 #include "../../runtime.h"
 
 
-int singularity_runtime_mount_scratch_check(void) {
+int singularity_runtime_mount_scratch_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_scratch_prepare(void) {
+int singularity_runtime_mount_scratch_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_scratch_contain(void) {
     return(0);
 }
 

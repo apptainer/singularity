@@ -43,12 +43,17 @@ static int mount_dev(const char *dev);
 
 
 
-int singularity_runtime_mount_dev_check(void) {
+int singularity_runtime_mount_dev_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_dev_prepare(void) {
+int singularity_runtime_mount_dev_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_dev_contain(void) {
     return(0);
 }
 

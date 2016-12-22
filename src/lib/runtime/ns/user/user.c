@@ -45,12 +45,17 @@ int singularity_runtime_ns_user_configured(void);
 static int enabled = -1;
 
 
-int singularity_runtime_ns_user_check(void) {
+int singularity_runtime_ns_user_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_ns_user_prepare(void) {
+int singularity_runtime_ns_user_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_ns_user_contain(void) {
     return(0);
 }
 

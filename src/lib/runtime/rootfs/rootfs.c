@@ -30,54 +30,44 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
-#include "./passwd/passwd.h"
-#include "./group/group.h"
-#include "./resolvconf/resolvconf.h"
+#include "./chroot/chroot.h"
 
 
-int singularity_runtime_files_precheck(void) {
+int singularity_runtime_rootfs_precheck(void) {
     int retval = 0;
 
-    singularity_message(VERBOSE, "Checking all file components\n");
-    retval += singularity_runtime_files_passwd_precheck();
-    retval += singularity_runtime_files_group_precheck();
-    retval += singularity_runtime_files_resolvconf_precheck();
+    singularity_message(VERBOSE, "Checking all rootfs components\n");
+    retval += singularity_runtime_rootfs_chroot_precheck();
 
     return(retval);
 }
 
 
-int singularity_runtime_files_setup(void) {
+int singularity_runtime_rootfs_setup(void) {
     int retval = 0;
 
-    singularity_message(VERBOSE, "Preparing all file components\n");
-    retval += singularity_runtime_files_passwd_setup();
-    retval += singularity_runtime_files_group_setup();
-    retval += singularity_runtime_files_resolvconf_setup();
+    singularity_message(VERBOSE, "Preparing all rootfs components\n");
+    retval += singularity_runtime_rootfs_chroot_setup();
 
     return(retval);
 }
 
 
-int singularity_runtime_files_activate(void) {
+int singularity_runtime_rootfs_activate(void) {
     int retval = 0;
 
-    singularity_message(VERBOSE, "Activating all file components\n");
-    retval += singularity_runtime_files_passwd_activate();
-    retval += singularity_runtime_files_group_activate();
-    retval += singularity_runtime_files_resolvconf_activate();
+    singularity_message(VERBOSE, "Activating all rootfs components\n");
+    retval += singularity_runtime_rootfs_chroot_activate();
 
     return(retval);
 }
 
 
-int singularity_runtime_files_contain(void) {
+int singularity_runtime_rootfs_contain(void) {
     int retval = 0;
 
-    singularity_message(VERBOSE, "Containing all file components\n");
-    retval += singularity_runtime_files_passwd_contain();
-    retval += singularity_runtime_files_group_contain();
-    retval += singularity_runtime_files_resolvconf_contain();
+    singularity_message(VERBOSE, "Containing all rootfs components\n");
+    retval += singularity_runtime_rootfs_chroot_contain();
 
     return(retval);
 }

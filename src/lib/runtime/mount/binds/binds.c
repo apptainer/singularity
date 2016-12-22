@@ -38,12 +38,16 @@
 #include "../../runtime.h"
 
 
-int singularity_runtime_mount_binds_check(void) {
+int singularity_runtime_mount_binds_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_binds_prepare(void) {
+int singularity_runtime_mount_binds_setup(void) {
+    return(0);
+}
+
+int singularity_runtime_mount_binds_contain(void) {
     return(0);
 }
 

@@ -44,12 +44,17 @@
 #include "../../runtime.h"
 
 
-int singularity_runtime_mount_cwd_check(void) {
+int singularity_runtime_mount_cwd_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_cwd_prepare(void) {
+int singularity_runtime_mount_cwd_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_cwd_contain(void) {
     return(0);
 }
 

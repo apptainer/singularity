@@ -18,13 +18,13 @@
  * 
 */
 
-#ifndef __SINGULARITY_RUNTIME_NS_IPC_H_
-#define __SINGULARITY_RUNTIME_NS_IPC_H_
+#ifndef __SINGULARITY_RUNTIME_ROOTFS_CHROOT_H_
+#define __SINGULARITY_RUNTIME_ROOTFS_CHROOT_H_
 
-extern int singularity_runtime_ns_ipc_precheck(void);
-extern int singularity_runtime_ns_ipc_setup(void);
-extern int singularity_runtime_ns_ipc_activate(void);
-extern int singularity_runtime_ns_ipc_contain(void);
+extern int singularity_runtime_rootfs_chroot_precheck(void);
+extern int singularity_runtime_rootfs_chroot_setup(void);
+extern int singularity_runtime_rootfs_chroot_activate(void);
+extern int singularity_runtime_rootfs_chroot_contain(void);
 
-#endif /* __SINGULARITY_RUNTIME_NS_IPC_H */
+#endif /* __SINGULARITY_RUNTIME_ROOTFS_CHROOT_H */
 

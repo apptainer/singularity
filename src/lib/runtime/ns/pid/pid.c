@@ -43,12 +43,17 @@
 static int enabled = -1;
 
 
-int singularity_runtime_ns_pid_check(void) {
+int singularity_runtime_ns_pid_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_ns_pid_prepare(void) {
+int singularity_runtime_ns_pid_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_ns_pid_contain(void) {
     return(0);
 }
 

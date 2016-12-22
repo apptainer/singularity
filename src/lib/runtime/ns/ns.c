@@ -44,27 +44,27 @@
 
 
 
-int singularity_runtime_ns_check(void) {
+int singularity_runtime_ns_precheck(void) {
     int retval = 0;
 
     singularity_message(VERBOSE, "Checking all namespace components\n");
-    retval += singularity_runtime_ns_ipc_check();
-    retval += singularity_runtime_ns_mnt_check();
-    retval += singularity_runtime_ns_pid_check();
-    retval += singularity_runtime_ns_user_check();
+    retval += singularity_runtime_ns_ipc_precheck();
+    retval += singularity_runtime_ns_mnt_precheck();
+    retval += singularity_runtime_ns_pid_precheck();
+    retval += singularity_runtime_ns_user_precheck();
 
     return(retval);
 }
 
 
-int singularity_runtime_ns_prepare(void) {
+int singularity_runtime_ns_setup(void) {
     int retval = 0;
 
     singularity_message(VERBOSE, "Checking all namespace components\n");
-    retval += singularity_runtime_ns_ipc_prepare();
-    retval += singularity_runtime_ns_mnt_prepare();
-    retval += singularity_runtime_ns_pid_prepare();
-    retval += singularity_runtime_ns_user_prepare();
+    retval += singularity_runtime_ns_ipc_setup();
+    retval += singularity_runtime_ns_mnt_setup();
+    retval += singularity_runtime_ns_pid_setup();
+    retval += singularity_runtime_ns_user_setup();
 
     return(retval);
 }
@@ -78,6 +78,19 @@ int singularity_runtime_ns_activate(void) {
     retval += singularity_runtime_ns_mnt_activate();
     retval += singularity_runtime_ns_pid_activate();
     retval += singularity_runtime_ns_user_activate();
+
+    return(retval);
+}
+
+
+int singularity_runtime_ns_contain(void) {
+    int retval = 0;
+
+    singularity_message(VERBOSE, "Containing all namespace components\n");
+    retval += singularity_runtime_ns_ipc_contain();
+    retval += singularity_runtime_ns_mnt_contain();
+    retval += singularity_runtime_ns_pid_contain();
+    retval += singularity_runtime_ns_user_contain();
 
     return(retval);
 }

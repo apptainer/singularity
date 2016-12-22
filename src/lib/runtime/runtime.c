@@ -38,6 +38,7 @@
 #include "./ns/ns.h"
 #include "./mount/mount.h"
 #include "./files/files.h"
+#include "./rootfs/rootfs.h"
 
 
 char *container_directory = NULL;
@@ -80,7 +81,7 @@ int singularity_runtime_flags(unsigned int flags) {
 }
 
 
-int singularity_runtime_check(void) {
+int singularity_runtime_precheck(void) {
     int retval = 0;
 
     if ( singularity_runtime_containerdir(NULL) == NULL ) {
@@ -88,16 +89,17 @@ int singularity_runtime_check(void) {
         ABORT(5);
     }
 
-    singularity_message(VERBOSE, "Checking all runtime components\n");
-    retval += singularity_runtime_ns_check();
-    retval += singularity_runtime_mount_check();
-    retval += singularity_runtime_files_check();
+    singularity_message(VERBOSE, "PreChecking all runtime components\n");
+    retval += singularity_runtime_ns_precheck();
+    retval += singularity_runtime_mount_precheck();
+    retval += singularity_runtime_files_precheck();
+    retval += singularity_runtime_rootfs_precheck();
     
     return(retval);
 }
 
 
-int singularity_runtime_prepare(void) {
+int singularity_runtime_setup(void) {
     int retval = 0;
 
     if ( singularity_runtime_containerdir(NULL) == NULL ) {
@@ -105,10 +107,11 @@ int singularity_runtime_prepare(void) {
         ABORT(5);
     }
 
-    singularity_message(VERBOSE, "Preparing all runtime components\n");
-    retval += singularity_runtime_ns_prepare();
-    retval += singularity_runtime_mount_prepare();
-    retval += singularity_runtime_files_prepare();
+    singularity_message(VERBOSE, "Setting up environment components\n");
+    retval += singularity_runtime_ns_setup();
+    retval += singularity_runtime_mount_setup();
+    retval += singularity_runtime_files_setup();
+    retval += singularity_runtime_rootfs_setup();
     
     return(retval);
 }
@@ -126,6 +129,24 @@ int singularity_runtime_activate(void) {
     retval += singularity_runtime_ns_activate();
     retval += singularity_runtime_mount_activate();
     retval += singularity_runtime_files_activate();
+    retval += singularity_runtime_rootfs_activate();
+    
+    return(retval);
+}
+
+int singularity_runtime_contain(void) {
+    int retval = 0;
+
+    if ( singularity_runtime_containerdir(NULL) == NULL ) {
+        singularity_message(ERROR, "The runtime container directory has not been set!\n");
+        ABORT(5);
+    }
+
+    singularity_message(VERBOSE, "Containing all runtime components\n");
+    retval += singularity_runtime_ns_contain();
+    retval += singularity_runtime_mount_contain();
+    retval += singularity_runtime_files_contain();
+    retval += singularity_runtime_rootfs_contain();
     
     return(retval);
 }

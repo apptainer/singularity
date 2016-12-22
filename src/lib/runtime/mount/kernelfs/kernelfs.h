@@ -21,9 +21,10 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_KERNELFS_H_
 #define __SINGULARITY_RUNTIME_MOUNT_KERNELFS_H_
 
-extern int singularity_runtime_mount_kernelfs_check(void);
-extern int singularity_runtime_mount_kernelfs_prepare(void);
+extern int singularity_runtime_mount_kernelfs_precheck(void);
+extern int singularity_runtime_mount_kernelfs_setup(void);
 extern int singularity_runtime_mount_kernelfs_activate(void);
+extern int singularity_runtime_mount_kernelfs_contain(void);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_KERNELFS_H */
 

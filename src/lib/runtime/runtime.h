@@ -37,10 +37,12 @@ int singularity_runtime_flags(unsigned int flags);
 //
 //  check:      Make sure the environment is such that it is ready to run
 //  prepare:    Any presetup functions that need to happen before acivation
-//  activate:   Run the module
-extern int singularity_runtime_check(void);
-extern int singularity_runtime_prepare(void);
+//  activate:   Activate/run any specific bits
+//  contain:    Finalize and contain the process inside the container
+extern int singularity_runtime_precheck(void);
+extern int singularity_runtime_setup(void);
 extern int singularity_runtime_activate(void);
+extern int singularity_runtime_contain(void);
 
 // Runtime flags
 #define SR_FLAGS        0   // Do not make any changes and return flags

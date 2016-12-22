@@ -42,12 +42,17 @@
 #include "../../runtime.h"
 
 
-int singularity_runtime_files_passwd_check(void) {
+int singularity_runtime_files_passwd_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_files_passwd_prepare(void) {
+int singularity_runtime_files_passwd_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_files_passwd_contain(void) {
     return(0);
 }
 

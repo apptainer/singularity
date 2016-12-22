@@ -42,12 +42,16 @@
 #include "../../runtime.h"
 
 
-int singularity_runtime_files_group_check(void) {
+int singularity_runtime_files_group_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_files_group_prepare(void) {
+int singularity_runtime_files_group_setup(void) {
+    return(0);
+}
+
+int singularity_runtime_files_group_contain(void) {
     return(0);
 }
 

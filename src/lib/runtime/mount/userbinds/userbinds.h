@@ -21,9 +21,10 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_USERBINDS_H_
 #define __SINGULARITY_RUNTIME_MOUNT_USERBINDS_H_
 
-extern int singularity_runtime_mount_userbinds_check(void);
-extern int singularity_runtime_mount_userbinds_prepare(void);
+extern int singularity_runtime_mount_userbinds_precheck(void);
+extern int singularity_runtime_mount_userbinds_setup(void);
 extern int singularity_runtime_mount_userbinds_activate(void);
+extern int singularity_runtime_mount_userbinds_contain(void);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_USERBINDS_H */
 

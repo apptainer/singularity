@@ -45,12 +45,17 @@
 #define MAX_LINE_LEN 4096
 
 
-int singularity_runtime_mount_hostfs_check(void) {
+int singularity_runtime_mount_hostfs_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_hostfs_prepare(void) {
+int singularity_runtime_mount_hostfs_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_hostfs_contain(void) {
     return(0);
 }
 

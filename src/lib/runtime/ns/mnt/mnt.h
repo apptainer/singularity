@@ -21,9 +21,10 @@
 #ifndef __SINGULARITY_RUNTIME_NS_MNT_H_
 #define __SINGULARITY_RUNTIME_NS_MNT_H_
 
-extern int singularity_runtime_ns_mnt_check(void);
-extern int singularity_runtime_ns_mnt_prepare(void);
+extern int singularity_runtime_ns_mnt_precheck(void);
+extern int singularity_runtime_ns_mnt_setup(void);
 extern int singularity_runtime_ns_mnt_activate(void);
+extern int singularity_runtime_ns_mnt_contain(void);
 
 #endif /* __SINGULARITY_RUNTIME_NS_MNT_H */
 

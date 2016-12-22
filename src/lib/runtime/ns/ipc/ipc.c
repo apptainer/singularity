@@ -41,12 +41,17 @@
 
 static int enabled = -1;
 
-int singularity_runtime_ns_ipc_check(void) {
+int singularity_runtime_ns_ipc_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_ns_ipc_prepare(void) {
+int singularity_runtime_ns_ipc_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_ns_ipc_contain(void) {
     return(0);
 }
 

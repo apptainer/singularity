@@ -40,12 +40,17 @@
 #include "../../ns/ns.h"
 
 
-int singularity_runtime_mount_kernelfs_check(void) {
+int singularity_runtime_mount_kernelfs_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_kernelfs_prepare(void) {
+int singularity_runtime_mount_kernelfs_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_kernelfs_contain(void) {
     return(0);
 }
 

@@ -39,12 +39,17 @@
 
 static int enabled = -1;
 
-int singularity_runtime_ns_mnt_check(void) {
+int singularity_runtime_ns_mnt_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_ns_mnt_prepare(void) {
+int singularity_runtime_ns_mnt_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_ns_mnt_contain(void) {
     return(0);
 }
 

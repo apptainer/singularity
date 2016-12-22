@@ -39,12 +39,17 @@
 #include "../../runtime.h"
 
 
-int singularity_runtime_mount_userbinds_check(void) {
+int singularity_runtime_mount_userbinds_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_userbinds_prepare(void) {
+int singularity_runtime_mount_userbinds_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_userbinds_contain(void) {
     return(0);
 }
 

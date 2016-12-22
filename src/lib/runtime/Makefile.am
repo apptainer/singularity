@@ -1,5 +1,4 @@
-SUBDIRS = files mount
-#SUBDIRS = files mount ns
+SUBDIRS = files mount ns rootfs
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile

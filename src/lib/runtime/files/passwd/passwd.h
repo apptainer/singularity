@@ -21,9 +21,10 @@
 #ifndef __SINGULARITY_RUNTIME_FILES_PASSWD_H_
 #define __SINGULARITY_RUNTIME_FILES_PASSWD_H_
 
-extern int singularity_runtime_files_passwd_check(void);
-extern int singularity_runtime_files_passwd_prepare(void);
+extern int singularity_runtime_files_passwd_precheck(void);
+extern int singularity_runtime_files_passwd_setup(void);
 extern int singularity_runtime_files_passwd_activate(void);
+extern int singularity_runtime_files_passwd_contain(void);
 
 #endif /* __SINGULARITY_RUNTIME_FILES_PASSWD_H */
 

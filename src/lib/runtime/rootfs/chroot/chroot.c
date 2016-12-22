@@ -22,51 +22,54 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <grp.h>
-#include <pwd.h>
-
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/config_parser.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
-#include "lib/sessiondir.h"
-#include "lib/rootfs/rootfs.h"
-#include "../file-bind.h"
+#include "lib/config_parser.h"
+
 #include "../../runtime.h"
 
 
-int singularity_runtime_files_resolvconf_precheck(void) {
+int singularity_runtime_rootfs_chroot_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_files_resolvconf_setup(void) {
+int singularity_runtime_rootfs_chroot_setup(void) {
     return(0);
 }
 
 
-int singularity_runtime_files_resolvconf_contain(void) {
+int singularity_runtime_rootfs_chroot_activate(void) {
     return(0);
 }
 
 
-int singularity_runtime_files_resolvconf_activate(void) {
-    char *file = "/etc/resolv.conf";
+int singularity_runtime_rootfs_chroot_contain(void) {
+    char *container_dir = singularity_runtime_containerdir(NULL);
 
-    singularity_message(DEBUG, "Checking configuration option\n");
-    if ( singularity_config_get_bool(CONFIG_RESOLV_CONF) <= 0 ) {
-        singularity_message(VERBOSE, "Skipping bind of the host's %s\n", file);
-        return(0);
+    singularity_priv_escalate();
+    singularity_message(VERBOSE, "Entering container file system root: %s\n", container_dir);
+    if ( chroot(container_dir) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
+        singularity_message(ERROR, "failed chroot to container at: %s\n", container_dir);
+        ABORT(255);
+    }
+    singularity_priv_drop();
+
+    singularity_message(DEBUG, "Changing dir to '/' within the new root\n");
+    if ( chdir("/") < 0 ) {
+        singularity_message(ERROR, "Could not chdir after chroot to /: %s\n", strerror(errno));
+        ABORT(1);
     }
 
-    container_file_bind(file, file);
-
     return(0);
 }
+
+

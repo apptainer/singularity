@@ -21,9 +21,10 @@
 #ifndef __SINGULARITY_RUNTIME_FILES_RESOLVCONF_H_
 #define __SINGULARITY_RUNTIME_FILES_RESOLVCONF_H_
 
-extern int singularity_runtime_files_resolvconf_check(void);
-extern int singularity_runtime_files_resolvconf_prepare(void);
+extern int singularity_runtime_files_resolvconf_precheck(void);
+extern int singularity_runtime_files_resolvconf_setup(void);
 extern int singularity_runtime_files_resolvconf_activate(void);
+extern int singularity_runtime_files_resolvconf_contain(void);
 
 #endif /* __SINGULARITY_RUNTIME_FILES_RESOLVCONF_H */
 

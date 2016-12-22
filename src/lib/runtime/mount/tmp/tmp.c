@@ -41,12 +41,17 @@
 #include "../../runtime.h"
 
 
-int singularity_runtime_mount_tmp_check(void) {
+int singularity_runtime_mount_tmp_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_tmp_prepare(void) {
+int singularity_runtime_mount_tmp_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_tmp_contain(void) {
     return(0);
 }
 

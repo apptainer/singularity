@@ -21,9 +21,10 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_SCRATCH_H_
 #define __SINGULARITY_RUNTIME_MOUNT_SCRATCH_H_
 
-extern int singularity_runtime_mount_scratch_check(void);
-extern int singularity_runtime_mount_scratch_prepare(void);
+extern int singularity_runtime_mount_scratch_precheck(void);
+extern int singularity_runtime_mount_scratch_setup(void);
 extern int singularity_runtime_mount_scratch_activate(void);
+extern int singularity_runtime_mount_scratch_contain(void);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_SCRATCH_H */
 

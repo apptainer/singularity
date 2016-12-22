@@ -21,9 +21,10 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_CWD_H_
 #define __SINGULARITY_RUNTIME_MOUNT_CWD_H_
 
-extern int singularity_runtime_mount_cwd_check(void);
-extern int singularity_runtime_mount_cwd_prepare(void);
+extern int singularity_runtime_mount_cwd_precheck(void);
+extern int singularity_runtime_mount_cwd_setup(void);
 extern int singularity_runtime_mount_cwd_activate(void);
+extern int singularity_runtime_mount_cwd_contain(void);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_CWD_H */
 

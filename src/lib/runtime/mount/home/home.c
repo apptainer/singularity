@@ -40,12 +40,17 @@
 #include "../../runtime.h"
 
 
-int singularity_runtime_mount_home_check(void) {
+int singularity_runtime_mount_home_precheck(void) {
     return(0);
 }
 
 
-int singularity_runtime_mount_home_prepare(void) {
+int singularity_runtime_mount_home_setup(void) {
+    return(0);
+}
+
+
+int singularity_runtime_mount_home_contain(void) {
     return(0);
 }
 

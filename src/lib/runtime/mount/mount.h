@@ -21,9 +21,10 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_H_
 #define __SINGULARITY_RUNTIME_MOUNT_H_
 
-extern int singularity_runtime_mount_check(void);
-extern int singularity_runtime_mount_prepare(void);
+extern int singularity_runtime_mount_precheck(void);
+extern int singularity_runtime_mount_setup(void);
 extern int singularity_runtime_mount_activate(void);
+extern int singularity_runtime_mount_contain(void);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_H */
 

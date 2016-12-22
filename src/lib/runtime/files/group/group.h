@@ -21,9 +21,10 @@
 #ifndef __SINGULARITY_RUNTIME_FILES_GROUP_H_
 #define __SINGULARITY_RUNTIME_FILES_GROUP_H_
 
-extern int singularity_runtime_files_group_check(void);
-extern int singularity_runtime_files_group_prepare(void);
+extern int singularity_runtime_files_group_precheck(void);
+extern int singularity_runtime_files_group_setup(void);
 extern int singularity_runtime_files_group_activate(void);
+extern int singularity_runtime_files_group_contain(void);
 
 #endif /* __SINGULARITY_RUNTIME_FILES_GROUP_H */
 
