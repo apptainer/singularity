@@ -6,7 +6,7 @@ AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-noinst_LTLIBRARIES = libmountdev.la
-libmountdev_la_SOURCES = dev.c
+noinst_LTLIBRARIES = libinternal.la
+libinternal_la_SOURCES = dev.c
 
 EXTRA_DIST = dev.h

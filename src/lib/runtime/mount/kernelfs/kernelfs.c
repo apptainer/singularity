@@ -57,29 +57,13 @@ int singularity_runtime_mount_kernelfs_activate(void) {
     singularity_message(DEBUG, "Checking configuration file for 'mount proc'\n");
     if ( singularity_config_get_bool(MOUNT_PROC) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/proc")) == 0 ) {
-            if ( singularity_ns_pid_enabled() >= 0 ) {
-                singularity_priv_escalate();
-                singularity_message(VERBOSE, "Mounting /proc\n");
-                if ( mount("proc", joinpath(container_dir, "/proc"), "proc", 0, NULL) < 0 ) {
-                    singularity_message(ERROR, "Could not mount /proc into container: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-                singularity_priv_drop();
-            } else {
-                singularity_priv_escalate();
-                singularity_message(VERBOSE, "Bind mounting /proc\n");
-                if ( mount("/proc", joinpath(container_dir, "/proc"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-                    singularity_message(ERROR, "Could not bind mount container's /proc: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-                if ( singularity_priv_userns_enabled() != 1 ) {
-                    if ( mount(NULL, joinpath(container_dir, "/proc"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
-                        singularity_message(ERROR, "Could not remount container's /proc: %s\n", strerror(errno));
-                        ABORT(255);
-                    }
-                }
-                singularity_priv_drop();
+            singularity_priv_escalate();
+            singularity_message(VERBOSE, "Mounting /proc\n");
+            if ( mount("proc", joinpath(container_dir, "/proc"), "proc", 0, NULL) < 0 ) {
+                singularity_message(ERROR, "Could not mount /proc into container: %s\n", strerror(errno));
+                ABORT(255);
             }
+            singularity_priv_drop();
         } else {
             singularity_message(WARNING, "Not mounting /proc, container has no bind directory\n");
         }
@@ -92,29 +76,13 @@ int singularity_runtime_mount_kernelfs_activate(void) {
     singularity_message(DEBUG, "Checking configuration file for 'mount sys'\n");
     if ( singularity_config_get_bool(MOUNT_SYS) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/sys")) == 0 ) {
-            if ( singularity_ns_user_enabled() < 0 ) {
-                singularity_priv_escalate();
-                singularity_message(VERBOSE, "Mounting /sys\n");
-                if ( mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", 0, NULL) < 0 ) {
-                    singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-                singularity_priv_drop();
-            } else {
-                singularity_priv_escalate();
-                singularity_message(VERBOSE, "Bind mounting /sys\n");
-                if ( mount("/sys", joinpath(container_dir, "/sys"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-                    singularity_message(ERROR, "Could not bind mount container's /sys: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-                if ( singularity_priv_userns_enabled() != 1 ) {
-                    if ( mount(NULL, joinpath(container_dir, "/sys"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
-                        singularity_message(ERROR, "Could not remount container's /sys: %s\n", strerror(errno));
-                        ABORT(255);
-                    }
-                }
-                singularity_priv_drop();
+            singularity_priv_escalate();
+            singularity_message(VERBOSE, "Mounting /sys\n");
+            if ( mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", 0, NULL) < 0 ) {
+                singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
+                ABORT(255);
             }
+            singularity_priv_drop();
         } else {
             singularity_message(WARNING, "Not mounting /sys, container has no bind directory\n");
         }

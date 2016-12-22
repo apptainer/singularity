@@ -36,14 +36,20 @@
 #include "lib/config_parser.h"
 #include "lib/privilege.h"
 
+
 static int enabled = -1;
 
-int singularity_ns_mnt_enabled(void) {
-    singularity_message(DEBUG, "Checking MNT namespace enabled: %d\n", enabled);
-    return(enabled);
+int singularity_runtime_ns_mnt_check(void) {
+    return(0);
 }
 
-int singularity_ns_mnt_unshare(void) {
+
+int singularity_runtime_ns_mnt_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_ns_mnt_activate(void) {
     int slave;
 
     slave = singularity_config_get_bool(MOUNT_SLAVE);
@@ -90,3 +96,9 @@ int singularity_ns_mnt_unshare(void) {
     return(0);
 }
 
+/*
+int singularity_ns_mnt_enabled(void) {
+    singularity_message(DEBUG, "Checking MNT namespace enabled: %d\n", enabled);
+    return(enabled);
+}
+*/

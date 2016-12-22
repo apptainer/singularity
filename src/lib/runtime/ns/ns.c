@@ -31,28 +31,60 @@
 #include <stdlib.h>
 #include <sched.h>
 
-
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/config_parser.h"
 #include "lib/singularity.h"
 
+#include "./ipc/ipc.h"
+#include "./mnt/mnt.h"
+#include "./pid/pid.h"
+#include "./user/user.h"
 
-int singularity_ns_unshare(void) {
+
+
+int singularity_runtime_ns_check(void) {
     int retval = 0;
 
-    singularity_message(DEBUG, "Unsharing all namespaces\n");
-    retval += singularity_ns_user_unshare();
-    retval += singularity_ns_pid_unshare();
-    retval += singularity_ns_mnt_unshare();
-    retval += singularity_ns_ipc_unshare();
+    singularity_message(VERBOSE, "Checking all namespace components\n");
+    retval += singularity_runtime_ns_ipc_check();
+    retval += singularity_runtime_ns_mnt_check();
+    retval += singularity_runtime_ns_pid_check();
+    retval += singularity_runtime_ns_user_check();
 
     return(retval);
 }
 
 
-int singularity_ns_join(pid_t attach_pid) {
+int singularity_runtime_ns_prepare(void) {
+    int retval = 0;
+
+    singularity_message(VERBOSE, "Checking all namespace components\n");
+    retval += singularity_runtime_ns_ipc_prepare();
+    retval += singularity_runtime_ns_mnt_prepare();
+    retval += singularity_runtime_ns_pid_prepare();
+    retval += singularity_runtime_ns_user_prepare();
+
+    return(retval);
+}
+
+
+int singularity_runtime_ns_activate(void) {
+    int retval = 0;
+
+    singularity_message(VERBOSE, "Checking all namespace components\n");
+    retval += singularity_runtime_ns_ipc_activate();
+    retval += singularity_runtime_ns_mnt_activate();
+    retval += singularity_runtime_ns_pid_activate();
+    retval += singularity_runtime_ns_user_activate();
+
+    return(retval);
+}
+
+
+/*
+int presently_unused(pid_t attach_pid) {
 #ifdef NO_SETNS
     singularity_message(ERROR, "This host does not support joining existing name spaces\n");
     ABORT(1);
@@ -110,3 +142,5 @@ int singularity_ns_join(pid_t attach_pid) {
     return(0);
 }
 
+
+*/

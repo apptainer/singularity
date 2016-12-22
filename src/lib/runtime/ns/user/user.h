@@ -18,29 +18,12 @@
  * 
 */
 
-#ifndef __SINGULARITY_RUNTIME_NS_H_
-#define __SINGULARITY_RUNTIME_NS_H_
+#ifndef __SINGULARITY_RUNTIME_NS_USER_H_
+#define __SINGULARITY_RUNTIME_NS_USER_H_
 
-extern int singularity_runtime_ns_check(void);
-extern int singularity_runtime_ns_prepare(void);
-extern int singularity_runtime_ns_activate(void);
+extern int singularity_runtime_ns_user_check(void);
+extern int singularity_runtime_ns_user_prepare(void);
+extern int singularity_runtime_ns_user_activate(void);
 
-#endif /* __SINGULARITY_RUNTIME_NS_H */
+#endif /* __SINGULARITY_RUNTIME_NS_USER_H */
 
-
-/*
-    extern int singularity_ns_unshare(void);
-
-    extern int singularity_ns_pid_unshare(void);
-    extern int singularity_ns_pid_enabled(void);
-
-    extern int singularity_ns_mnt_unshare(void);
-    extern int singularity_ns_mnt_enabled(void);
-
-    extern int singularity_ns_user_unshare(void);
-    extern int singularity_ns_user_enabled(void);
-    extern int singularity_ns_user_configured(void);
-
-    extern int singularity_ns_join(pid_t attach_pid);
-
-*/

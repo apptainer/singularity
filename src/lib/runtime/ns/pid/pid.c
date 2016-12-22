@@ -42,12 +42,18 @@
 
 static int enabled = -1;
 
-int singularity_ns_pid_enabled(void) {
-    singularity_message(DEBUG, "Checking PID namespace enabled: %d\n", enabled);
-    return(enabled);
+
+int singularity_runtime_ns_pid_check(void) {
+    return(0);
 }
 
-int singularity_ns_pid_unshare(void) {
+
+int singularity_runtime_ns_pid_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_ns_pid_activate(void) {
 
     if ( singularity_config_get_bool(ALLOW_PID_NS) <= 0 ) {
         singularity_message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
@@ -103,3 +109,10 @@ int singularity_ns_pid_unshare(void) {
 }
 
 
+
+/*
+int singularity_ns_pid_enabled(void) {
+    singularity_message(DEBUG, "Checking PID namespace enabled: %d\n", enabled);
+    return(enabled);
+}
+*/

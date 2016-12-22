@@ -60,7 +60,7 @@ char *singularity_runtime_containerdir(char *directory) {
 char *singularity_runtime_tempdir(char *directory) {
     if ( directory != NULL ) {
         if ( is_dir(directory) == 0 ) {
-            temp_directry = strdup(directory);
+            temp_directory = strdup(directory);
         } else {
             singularity_message(ERROR, "Session path is not a directory: %s\n", directory);
             ABORT(255);
@@ -83,7 +83,7 @@ int singularity_runtime_flags(unsigned int flags) {
 int singularity_runtime_check(void) {
     int retval = 0;
 
-    if ( singularity_runtime_dir(NULL) == NULL ) {
+    if ( singularity_runtime_containerdir(NULL) == NULL ) {
         singularity_message(ERROR, "The runtime container directory has not been set!\n");
         ABORT(5);
     }
@@ -100,15 +100,15 @@ int singularity_runtime_check(void) {
 int singularity_runtime_prepare(void) {
     int retval = 0;
 
-    if ( singularity_runtime_dir(NULL) == NULL ) {
+    if ( singularity_runtime_containerdir(NULL) == NULL ) {
         singularity_message(ERROR, "The runtime container directory has not been set!\n");
         ABORT(5);
     }
 
     singularity_message(VERBOSE, "Preparing all runtime components\n");
-    retval += singularity_runtime_ns_setup();
-    retval += singularity_runtime_mount_setup();
-    retval += singularity_runtime_files_setup();
+    retval += singularity_runtime_ns_prepare();
+    retval += singularity_runtime_mount_prepare();
+    retval += singularity_runtime_files_prepare();
     
     return(retval);
 }
@@ -117,15 +117,15 @@ int singularity_runtime_prepare(void) {
 int singularity_runtime_activate(void) {
     int retval = 0;
 
-    if ( singularity_runtime_dir(NULL) == NULL ) {
+    if ( singularity_runtime_containerdir(NULL) == NULL ) {
         singularity_message(ERROR, "The runtime container directory has not been set!\n");
         ABORT(5);
     }
 
     singularity_message(VERBOSE, "Activating all runtime components\n");
-    retval += singularity_runtime_ns_do();
-    retval += singularity_runtime_mount_do();
-    retval += singularity_runtime_files_do();
+    retval += singularity_runtime_ns_activate();
+    retval += singularity_runtime_mount_activate();
+    retval += singularity_runtime_files_activate();
     
     return(retval);
 }

@@ -40,50 +40,24 @@
 #include "lib/privilege.h"
 
 
+int singularity_runtime_ns_user_configured(void);
+
 static int enabled = -1;
 
 
-int singularity_ns_user_configured(void) {
-    singularity_message(DEBUG, "Checking if user namespaces are configured.\n");
-
-#ifndef NS_CLONE_NEWUSER
-    singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
-    return(-1);
-#endif
-    
-    if ( getuid() == 0 ) {
-        singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as root\n");
-        return(-1);
-    }
-
-    if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
-        singularity_message(VERBOSE2, "Not virtualizing USER namespace: ALLOW_USER_NS in configuration\n");
-        return(-1);
-    }
-
-    if ( singularity_priv_is_suid() == 0 ) {
-        singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as suid\n");
-        return(-1);
-    }
-
-    // If we get this far, we are expecting that we will run inside the NEWUSER namespace
+int singularity_runtime_ns_user_check(void) {
     return(0);
 }
 
 
-int singularity_ns_user_enabled(void) {
-    if (enabled < 0) {
-        singularity_message(DEBUG, "User namespaces have not been activated.\n");
-    } else {
-        singularity_message(DEBUG, "User namespaces have been activated.\n");
-    }
-    return enabled;
+int singularity_runtime_ns_user_prepare(void) {
+    return(0);
 }
 
 
-int singularity_ns_user_unshare(void) {
+int singularity_runtime_ns_user_activate(void) {
 
-    if (singularity_ns_user_configured() < 0) {
+    if (singularity_runtime_ns_user_configured() < 0) {
         singularity_message(VERBOSE3, "Skipping USER namespace creation...\n");
         return(0);
     }
@@ -161,3 +135,46 @@ int singularity_ns_user_unshare(void) {
 }
 
 
+
+int singularity_runtime_ns_user_configured(void) {
+    singularity_message(DEBUG, "Checking if user namespaces are configured.\n");
+
+#ifndef NS_CLONE_NEWUSER
+    singularity_message(WARNING, "Skipping USER namespace creation, support not available on host\n");
+    return(-1);
+#endif
+    
+    if ( getuid() == 0 ) {
+        singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as root\n");
+        return(-1);
+    }
+
+    if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
+        singularity_message(VERBOSE2, "Not virtualizing USER namespace: ALLOW_USER_NS in configuration\n");
+        return(-1);
+    }
+
+    if ( singularity_priv_is_suid() == 0 ) {
+        singularity_message(VERBOSE3, "Not virtualizing USER namespace: running as suid\n");
+        return(-1);
+    }
+
+    // If we get this far, we are expecting that we will run inside the NEWUSER namespace
+    return(0);
+}
+
+/*
+
+int singularity_ns_user_enabled(void) {
+    if (enabled < 0) {
+        singularity_message(DEBUG, "User namespaces have not been activated.\n");
+    } else {
+        singularity_message(DEBUG, "User namespaces have been activated.\n");
+    }
+    return enabled;
+}
+
+
+
+
+*/

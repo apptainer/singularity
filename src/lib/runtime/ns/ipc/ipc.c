@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <sched.h>
 
-
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
@@ -42,13 +41,17 @@
 
 static int enabled = -1;
 
-int singularity_ns_ipc_enabled(void) {
-    singularity_message(DEBUG, "Checking IPC namespace enabled: %d\n", enabled);
-    return(enabled);
+int singularity_runtime_ns_ipc_check(void) {
+    return(0);
 }
 
-int singularity_ns_ipc_unshare(void) {
 
+int singularity_runtime_ns_ipc_prepare(void) {
+    return(0);
+}
+
+
+int singularity_runtime_ns_ipc_activate(void) {
     if ( singularity_config_get_bool(ALLOW_IPC_NS) <= 0 ) {
         singularity_message(VERBOSE2, "Not virtualizing IPC namespace by configuration\n");
         return(0);
@@ -79,3 +82,9 @@ int singularity_ns_ipc_unshare(void) {
 }
 
 
+/*
+int singularity_ns_ipc_enabled(void) {
+    singularity_message(DEBUG, "Checking IPC namespace enabled: %d\n", enabled);
+    return(enabled);
+}
+*/

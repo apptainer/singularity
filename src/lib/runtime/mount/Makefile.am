@@ -9,9 +9,9 @@ AM_LDFLAGS = -pie
 libns_pid_a_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-noinst_LTLIBRARIES = libmount.la
+noinst_LTLIBRARIES = libinternal.la
 
-libmount_la_LIBADD = kernelfs/libmountkernelfs.la binds/libmountbinds.la home/libmounthome.la tmp/libmounttmp.la hostfs/libmounthostfs.la userbinds/libmountuserbinds.la dev/libmountdev.la cwd/libmountcwd.la scratch/libmountscratch.la
-libmount_la_SOURCES = mount.c mount-util.c
+libinternal_la_LIBADD = kernelfs/libinternal.la binds/libinternal.la home/libinternal.la tmp/libinternal.la hostfs/libinternal.la userbinds/libinternal.la dev/libinternal.la cwd/libinternal.la scratch/libinternal.la
+libinternal_la_SOURCES = mount.c mount-util.c
 
 EXTRA_DIST = mount-util.c mount-util.h
