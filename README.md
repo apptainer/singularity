@@ -163,5 +163,4 @@ http://dx.doi.org/10.5281/zenodo.60736
 
 
 # Webpage
-We are working on documentation and web pages now, but checkout the work
-in progress: [http://singularity.lbl.gov/](http://singularity.lbl.gov/).
+We have full documentation at [http://singularity.lbl.gov/](http://singularity.lbl.gov/), and [welcome contributions](http://www.github.com/singularityware/singularityware.github.io).
