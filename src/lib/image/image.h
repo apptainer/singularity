@@ -18,15 +18,28 @@
  *                                                                                                                                     
  */
 
+
 #ifndef __SINGULARITY_IMAGE_H_
 #define __SINGULARITY_IMAGE_H_
 
-    extern int singularity_image_create(char *image, int size);
-    extern int singularity_image_expand(char *image, int size);
-    extern int singularity_image_mount(int argc, char ** argv);
-    extern int singularity_image_bind(int argc, char ** argv);
+// Attach the process to a given image
+extern int singularity_image_attach(char *image);
+extern int singualrity_image_check();
+extern int singualrity_image_offset();
 
-    int singularity_image_check(FILE *image_fp);
-    int singularity_image_offset(FILE *image_fp);
+extern int singularity_image_bind();
+extern char *singularity_image_loopdev();
+
+extern int singularity_image_fd();
+
+extern int singularity_image_create(char *image, unsigned int size)
+extern int singularity_image_expand(char *image, unsigned int size)
+
+extern int singularity_image_mount(char *mountpoint, unsigned int flags);
+
+#define SI_MOUNT_DEFAULTS   0
+#define SI_MOUNT_RW         1
+#define SI_MOUNT_EXT4       2
+#define SI_MOUNT_XFS        4
 
 #endif

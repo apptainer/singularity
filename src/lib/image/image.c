@@ -36,6 +36,36 @@
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
 #define MAX_LINE_LEN 2048
 
+FILE *image_fp = NULL;
+
+int singularity_image_attach(char *image) {
+
+    if ( image_fp != NULL ) {
+        singularity_message(ERROR, "Call to singularity_image_attach() when already attached!\n");
+        ABORT(255);
+    }
+
+    if ( is_file(image) == 0 ) {
+        image_fp = fopen(image, "r");
+
+        if ( image_fp == NULL ) {
+            singularity_message(ERROR, "Could not open image %s: %s\n", image, strerror(errno));
+            ABORT(255);
+        }
+    }
+
+    return(0);
+}
+
+
+
+
+
+
+
+
+
+
 
 int singularity_image_check(FILE *image_fp) {
     char *line;
