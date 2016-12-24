@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_NS_USER_H_
 #define __SINGULARITY_RUNTIME_NS_USER_H_
 
-int _singularity_runtime_ns_user(void);
+extern int _singularty_runtime_ns_user(void);
 
 #endif /* __SINGULARITY_RUNTIME_NS_USER_H */
 

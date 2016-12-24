@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_ENTER_H_
 #define __SINGULARITY_RUNTIME_ENTER_H_
 
-int _singularity_runtime_enter(void);
+extern int _singularty_runtime_enter(void);
 
 #endif /* __SINGULARITY_RUNTIME_ENTER_H */
 

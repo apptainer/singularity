@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_FILES_PASSWD_H_
 #define __SINGULARITY_RUNTIME_FILES_PASSWD_H_
 
-int _singularity_runtime_files_passwd(void);
+extern int _singularty_runtime_files_passwd(void);
 
 #endif /* __SINGULARITY_RUNTIME_FILES_PASSWD_H */
 

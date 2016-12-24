@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_NS_MNT_H_
 #define __SINGULARITY_RUNTIME_NS_MNT_H_
 
-int _singularity_runtime_ns_mnt(void);
+extern int _singularty_runtime_ns_mnt(void);
 
 #endif /* __SINGULARITY_RUNTIME_NS_MNT_H */
 

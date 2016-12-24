@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_NS_IPC_H_
 #define __SINGULARITY_RUNTIME_NS_IPC_H_
 
-int _singularity_runtime_ns_ipc(void);
+extern int _singularty_runtime_ns_ipc(void);
 
 #endif /* __SINGULARITY_RUNTIME_NS_IPC_H */
 
