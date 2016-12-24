@@ -21,10 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_NS_USER_H_
 #define __SINGULARITY_RUNTIME_NS_USER_H_
 
-extern int singularity_runtime_ns_user_precheck(void);
-extern int singularity_runtime_ns_user_setup(void);
-extern int singularity_runtime_ns_user_activate(void);
-extern int singularity_runtime_ns_user_contain(void);
+int _singularity_runtime_ns_user(void);
 
 #endif /* __SINGULARITY_RUNTIME_NS_USER_H */
 

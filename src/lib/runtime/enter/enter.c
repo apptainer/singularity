@@ -18,10 +18,27 @@
  * 
 */
 
-#ifndef __SINGULARITY_RUNTIME_FILES_GROUP_H_
-#define __SINGULARITY_RUNTIME_FILES_GROUP_H_
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
 
-int _singularity_runtime_files_group(void);
+#include "util/file.h"
+#include "util/util.h"
+#include "lib/message.h"
+#include "lib/privilege.h"
+#include "./chroot/chroot.h"
 
-#endif /* __SINGULARITY_RUNTIME_FILES_GROUP_H */
+
+int _singularity_runtime_enter(void) {
+    int retval = 0;
+
+    singularity_message(VERBOSE, "Containing all rootfs components\n");
+    retval += _singularity_runtime_enter_chroot();
+
+    return(retval);
+}
 

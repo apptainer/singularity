@@ -32,37 +32,19 @@
 #include <sched.h>
 #include <linux/limits.h>
 
-
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/config_parser.h"
 #include "lib/privilege.h"
 
-
-int singularity_runtime_ns_user_configured(void);
-
+static int _singularity_runtime_ns_user_configured(void);
 static int enabled = -1;
 
 
-int singularity_runtime_ns_user_precheck(void) {
-    return(0);
-}
+int _singularity_runtime_ns_user(void) {
 
-
-int singularity_runtime_ns_user_setup(void) {
-    return(0);
-}
-
-
-int singularity_runtime_ns_user_contain(void) {
-    return(0);
-}
-
-
-int singularity_runtime_ns_user_activate(void) {
-
-    if (singularity_runtime_ns_user_configured() < 0) {
+    if (_singularity_runtime_ns_user_configured() < 0) {
         singularity_message(VERBOSE3, "Skipping USER namespace creation...\n");
         return(0);
     }
@@ -141,7 +123,7 @@ int singularity_runtime_ns_user_activate(void) {
 
 
 
-int singularity_runtime_ns_user_configured(void) {
+int _singularity_runtime_ns_user_configured(void) {
     singularity_message(DEBUG, "Checking if user namespaces are configured.\n");
 
 #ifndef NS_CLONE_NEWUSER

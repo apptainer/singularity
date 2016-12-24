@@ -43,54 +43,14 @@
 #include "./user/user.h"
 
 
-
-int singularity_runtime_ns_precheck(void) {
+int _singularity_runtime_ns(void) {
     int retval = 0;
 
-    singularity_message(VERBOSE, "Checking all namespace components\n");
-    retval += singularity_runtime_ns_ipc_precheck();
-    retval += singularity_runtime_ns_mnt_precheck();
-    retval += singularity_runtime_ns_pid_precheck();
-    retval += singularity_runtime_ns_user_precheck();
-
-    return(retval);
-}
-
-
-int singularity_runtime_ns_setup(void) {
-    int retval = 0;
-
-    singularity_message(VERBOSE, "Checking all namespace components\n");
-    retval += singularity_runtime_ns_ipc_setup();
-    retval += singularity_runtime_ns_mnt_setup();
-    retval += singularity_runtime_ns_pid_setup();
-    retval += singularity_runtime_ns_user_setup();
-
-    return(retval);
-}
-
-
-int singularity_runtime_ns_activate(void) {
-    int retval = 0;
-
-    singularity_message(VERBOSE, "Checking all namespace components\n");
-    retval += singularity_runtime_ns_ipc_activate();
-    retval += singularity_runtime_ns_mnt_activate();
-    retval += singularity_runtime_ns_pid_activate();
-    retval += singularity_runtime_ns_user_activate();
-
-    return(retval);
-}
-
-
-int singularity_runtime_ns_contain(void) {
-    int retval = 0;
-
-    singularity_message(VERBOSE, "Containing all namespace components\n");
-    retval += singularity_runtime_ns_ipc_contain();
-    retval += singularity_runtime_ns_mnt_contain();
-    retval += singularity_runtime_ns_pid_contain();
-    retval += singularity_runtime_ns_user_contain();
+    singularity_message(VERBOSE, "Running all namespace components\n");
+    retval += _singularity_runtime_ns_ipc();
+    retval += _singularity_runtime_ns_mnt();
+    retval += _singularity_runtime_ns_pid();
+    retval += _singularity_runtime_ns_user();
 
     return(retval);
 }

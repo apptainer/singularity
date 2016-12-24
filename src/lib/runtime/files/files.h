@@ -21,10 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_FILES_H_
 #define __SINGULARITY_RUNTIME_FILES_H_
 
-extern int singularity_runtime_files_precheck(void);
-extern int singularity_runtime_files_setup(void);
-extern int singularity_runtime_files_activate(void);
-extern int singularity_runtime_files_contain(void);
+int _singularity_runtime_files(void);
 
 #endif /* __SINGULARITY_RUNTIME_FILES_H */
 

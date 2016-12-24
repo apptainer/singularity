@@ -1,4 +1,4 @@
-SUBDIRS = files mount ns rootfs
+SUBDIRS = files mounts ns enter
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -10,7 +10,7 @@ distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
 noinst_LTLIBRARIES = libinternal.la
-libinternal_la_LIBADD = ns/libinternal.la mount/libinternal.la files/libinternal.la
+libinternal_la_LIBADD = ns/libinternal.la mounts/libinternal.la files/libinternal.la enter/libinternal.la
 libinternal_la_SOURCES = runtime.c
 libinternal_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 

@@ -18,63 +18,43 @@
  * 
 */
 
-#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/mount.h>
-#include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <sched.h>
 
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-#include "lib/config_parser.h"
 #include "lib/privilege.h"
-#include "lib/fork.h"
+#include "lib/config_parser.h"
 
-static int enabled = -1;
+#include "../../runtime.h"
 
 
-int _singularity_runtime_ns_ipc(void) {
-    if ( singularity_config_get_bool(ALLOW_IPC_NS) <= 0 ) {
-        singularity_message(VERBOSE2, "Not virtualizing IPC namespace by configuration\n");
-        return(0);
-    }
+int _singularity_runtime_enter_chroot(void) {
+    char *container_dir = singularity_runtime_containerdir(NULL);
 
-    if ( envar_defined("SINGULARITY_UNSHARE_IPC") == FALSE ) {
-        singularity_message(VERBOSE2, "Not virtualizing IPC namespace on user request\n");
-        return(0);
-    }
-
-#ifdef NS_CLONE_NEWIPC
-    singularity_message(DEBUG, "Using IPC namespace: CLONE_NEWIPC\n");
     singularity_priv_escalate();
-    singularity_message(DEBUG, "Virtualizing IPC namespace\n");
-    if ( unshare(CLONE_NEWIPC) < 0 ) {
-        singularity_message(ERROR, "Could not virtualize IPC namespace: %s\n", strerror(errno));
+    singularity_message(VERBOSE, "Entering container file system root: %s\n", container_dir);
+    if ( chroot(container_dir) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
+        singularity_message(ERROR, "failed chroot to container at: %s\n", container_dir);
         ABORT(255);
     }
     singularity_priv_drop();
-    enabled = 0;
 
-#else
-    singularity_message(WARNING, "Skipping IPC namespace creation, support not available on host\n");
-    return(0);
-#endif
+    singularity_message(DEBUG, "Changing dir to '/' within the new root\n");
+    if ( chdir("/") < 0 ) {
+        singularity_message(ERROR, "Could not chdir after chroot to /: %s\n", strerror(errno));
+        ABORT(1);
+    }
 
     return(0);
 }
 
 
-/*
-int singularity_ns_ipc_enabled(void) {
-    singularity_message(DEBUG, "Checking IPC namespace enabled: %d\n", enabled);
-    return(enabled);
-}
-*/

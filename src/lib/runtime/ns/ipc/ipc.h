@@ -21,10 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_NS_IPC_H_
 #define __SINGULARITY_RUNTIME_NS_IPC_H_
 
-extern int singularity_runtime_ns_ipc_precheck(void);
-extern int singularity_runtime_ns_ipc_setup(void);
-extern int singularity_runtime_ns_ipc_activate(void);
-extern int singularity_runtime_ns_ipc_contain(void);
+int _singularity_runtime_ns_ipc(void);
 
 #endif /* __SINGULARITY_RUNTIME_NS_IPC_H */
 

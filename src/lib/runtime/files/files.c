@@ -35,49 +35,13 @@
 #include "./resolvconf/resolvconf.h"
 
 
-int singularity_runtime_files_precheck(void) {
+int _singularity_runtime_files(void) {
     int retval = 0;
 
-    singularity_message(VERBOSE, "Checking all file components\n");
-    retval += singularity_runtime_files_passwd_precheck();
-    retval += singularity_runtime_files_group_precheck();
-    retval += singularity_runtime_files_resolvconf_precheck();
-
-    return(retval);
-}
-
-
-int singularity_runtime_files_setup(void) {
-    int retval = 0;
-
-    singularity_message(VERBOSE, "Preparing all file components\n");
-    retval += singularity_runtime_files_passwd_setup();
-    retval += singularity_runtime_files_group_setup();
-    retval += singularity_runtime_files_resolvconf_setup();
-
-    return(retval);
-}
-
-
-int singularity_runtime_files_activate(void) {
-    int retval = 0;
-
-    singularity_message(VERBOSE, "Activating all file components\n");
-    retval += singularity_runtime_files_passwd_activate();
-    retval += singularity_runtime_files_group_activate();
-    retval += singularity_runtime_files_resolvconf_activate();
-
-    return(retval);
-}
-
-
-int singularity_runtime_files_contain(void) {
-    int retval = 0;
-
-    singularity_message(VERBOSE, "Containing all file components\n");
-    retval += singularity_runtime_files_passwd_contain();
-    retval += singularity_runtime_files_group_contain();
-    retval += singularity_runtime_files_resolvconf_contain();
+    singularity_message(VERBOSE, "Running file components\n");
+    retval += _singularity_runtime_files_passwd();
+    retval += _singularity_runtime_files_group();
+    retval += _singularity_runtime_files_resolvconf();
 
     return(retval);
 }

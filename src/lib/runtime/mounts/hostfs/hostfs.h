@@ -18,10 +18,10 @@
  * 
 */
 
-#ifndef __SINGULARITY_RUNTIME_FILES_GROUP_H_
-#define __SINGULARITY_RUNTIME_FILES_GROUP_H_
+#ifndef __SINGULARITY_RUNTIME_MOUNT_HOSTFS_H_
+#define __SINGULARITY_RUNTIME_MOUNT_HOSTFS_H_
 
-int _singularity_runtime_files_group(void);
+int _singularity_runtime_mount_hostfs(void);
 
-#endif /* __SINGULARITY_RUNTIME_FILES_GROUP_H */
+#endif /* __SINGULARITY_RUNTIME_MOUNT_HOSTFS_H */
 

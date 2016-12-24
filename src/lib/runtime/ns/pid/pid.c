@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <sched.h>
 
-
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
@@ -39,26 +38,10 @@
 #include "lib/privilege.h"
 #include "lib/fork.h"
 
-
 static int enabled = -1;
 
 
-int singularity_runtime_ns_pid_precheck(void) {
-    return(0);
-}
-
-
-int singularity_runtime_ns_pid_setup(void) {
-    return(0);
-}
-
-
-int singularity_runtime_ns_pid_contain(void) {
-    return(0);
-}
-
-
-int singularity_runtime_ns_pid_activate(void) {
+int _singularity_runtime_ns_pid(void) {
 
     if ( singularity_config_get_bool(ALLOW_PID_NS) <= 0 ) {
         singularity_message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");

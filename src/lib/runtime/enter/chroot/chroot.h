@@ -18,10 +18,10 @@
  * 
 */
 
-#ifndef __SINGULARITY_RUNTIME_FILES_GROUP_H_
-#define __SINGULARITY_RUNTIME_FILES_GROUP_H_
+#ifndef __SINGULARITY_RUNTIME_ENTER_CHROOT_H_
+#define __SINGULARITY_RUNTIME_ENTER_CHROOT_H_
 
-int _singularity_runtime_files_group(void);
+int _singularity_runtime_enter_chroot(void);
 
-#endif /* __SINGULARITY_RUNTIME_FILES_GROUP_H */
+#endif /* __SINGULARITY_RUNTIME_ENTER_CHROOT_H */
 

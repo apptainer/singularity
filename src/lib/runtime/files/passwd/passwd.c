@@ -30,7 +30,6 @@
 #include <grp.h>
 #include <pwd.h>
 
-
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/config_parser.h"
@@ -38,26 +37,12 @@
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"
 #include "lib/rootfs/rootfs.h"
+
 #include "../file-bind.h"
 #include "../../runtime.h"
 
 
-int singularity_runtime_files_passwd_precheck(void) {
-    return(0);
-}
-
-
-int singularity_runtime_files_passwd_setup(void) {
-    return(0);
-}
-
-
-int singularity_runtime_files_passwd_contain(void) {
-    return(0);
-}
-
-
-int singularity_runtime_files_passwd_activate(void) {
+int _singularity_runtime_files_passwd(void) {
     FILE *file_fp;
     char *source_file;
     char *tmp_file;

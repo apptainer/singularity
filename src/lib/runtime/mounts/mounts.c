@@ -23,35 +23,39 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <grp.h>
-#include <pwd.h>
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/config_parser.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
-#include "lib/sessiondir.h"
-#include "lib/rootfs/rootfs.h"
 
-#include "../file-bind.h"
-#include "../../runtime.h"
+#include "./binds/binds.h"
+#include "./home/home.h"
+#include "./hostfs/hostfs.h"
+#include "./kernelfs/kernelfs.h"
+#include "./tmp/tmp.h"
+#include "./dev/dev.h"
+#include "./cwd/cwd.h"
+#include "./userbinds/userbinds.h"
+#include "./scratch/scratch.h"
 
 
-int _singularity_runtime_files_resolvconf(void) {
-    char *file = "/etc/resolv.conf";
+int _singularity_runtime_mount(void) {
+    int retval = 0;
 
-    singularity_message(DEBUG, "Checking configuration option\n");
-    if ( singularity_config_get_bool(CONFIG_RESOLV_CONF) <= 0 ) {
-        singularity_message(VERBOSE, "Skipping bind of the host's %s\n", file);
-        return(0);
-    }
+    singularity_message(VERBOSE, "Running all mount components\n");
+    retval += _singularity_runtime_mount_hostfs();
+    retval += _singularity_runtime_mount_binds();
+    retval += _singularity_runtime_mount_kernelfs();
+    retval += _singularity_runtime_mount_dev();
+    retval += _singularity_runtime_mount_tmp();
+    retval += _singularity_runtime_mount_home();
+    retval += _singularity_runtime_mount_userbinds();
+    retval += _singularity_runtime_mount_scratch();
+    retval += _singularity_runtime_mount_cwd();
 
-    container_file_bind(file, file);
-
-    return(0);
+    return(retval);
 }
+

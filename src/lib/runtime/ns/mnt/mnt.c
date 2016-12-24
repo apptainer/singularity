@@ -36,25 +36,10 @@
 #include "lib/config_parser.h"
 #include "lib/privilege.h"
 
-
 static int enabled = -1;
 
-int singularity_runtime_ns_mnt_precheck(void) {
-    return(0);
-}
 
-
-int singularity_runtime_ns_mnt_setup(void) {
-    return(0);
-}
-
-
-int singularity_runtime_ns_mnt_contain(void) {
-    return(0);
-}
-
-
-int singularity_runtime_ns_mnt_activate(void) {
+int _singularity_runtime_ns_mnt(void) {
     int slave;
 
     slave = singularity_config_get_bool(MOUNT_SLAVE);

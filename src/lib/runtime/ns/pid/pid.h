@@ -21,10 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_NS_PID_H_
 #define __SINGULARITY_RUNTIME_NS_PID_H_
 
-extern int singularity_runtime_ns_pid_precheck(void);
-extern int singularity_runtime_ns_pid_setup(void);
-extern int singularity_runtime_ns_pid_activate(void);
-extern int singularity_runtime_ns_pid_contain(void);
+int _singularity_runtime_ns_pid(void);
 
 #endif /* __SINGULARITY_RUNTIME_NS_PID_H */
 
