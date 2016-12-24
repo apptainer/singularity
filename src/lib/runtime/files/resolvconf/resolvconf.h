@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_FILES_RESOLVCONF_H_
 #define __SINGULARITY_RUNTIME_FILES_RESOLVCONF_H_
 
-extern int _singularty_runtime_files_resolvconf(void);
+extern int _singularity_runtime_files_resolvconf(void);
 
 #endif /* __SINGULARITY_RUNTIME_FILES_RESOLVCONF_H */
 

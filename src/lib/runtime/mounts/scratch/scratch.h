@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_SCRATCH_H_
 #define __SINGULARITY_RUNTIME_MOUNT_SCRATCH_H_
 
-extern int _singularty_runtime_mount_scratch(void);
+extern int _singularity_runtime_mount_scratch(void);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_SCRATCH_H */
 

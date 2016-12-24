@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_USERBINDS_H_
 #define __SINGULARITY_RUNTIME_MOUNT_USERBINDS_H_
 
-extern int _singularty_runtime_mount_userbinds(void);
+extern int _singularity_runtime_mount_userbinds(void);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_USERBINDS_H */
 

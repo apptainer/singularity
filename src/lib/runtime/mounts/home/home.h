@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_HOME_H_
 #define __SINGULARITY_RUNTIME_MOUNT_HOME_H_
 
-extern int _singularty_runtime_mount_home(void);
+extern int _singularity_runtime_mount_home(void);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_HOME_H */
 

@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_FILES_GROUP_H_
 #define __SINGULARITY_RUNTIME_FILES_GROUP_H_
 
-extern int _singularty_runtime_files_group(void);
+extern int _singularity_runtime_files_group(void);
 
 #endif /* __SINGULARITY_RUNTIME_FILES_GROUP_H */
 

@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_ENTER_CHROOT_H_
 #define __SINGULARITY_RUNTIME_ENTER_CHROOT_H_
 
-extern int _singularty_runtime_enter_chroot(void);
+extern int _singularity_runtime_enter_chroot(void);
 
 #endif /* __SINGULARITY_RUNTIME_ENTER_CHROOT_H */
 

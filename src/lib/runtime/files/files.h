@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_FILES_H_
 #define __SINGULARITY_RUNTIME_FILES_H_
 
-extern int _singularty_runtime_files(void);
+extern int _singularity_runtime_files(void);
 
 #endif /* __SINGULARITY_RUNTIME_FILES_H */
 
