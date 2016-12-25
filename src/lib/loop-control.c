@@ -51,7 +51,7 @@ char *loop_dev;
 FILE *loop_fp;
 int image_loop_file_fd; // This has to be global for the flock to be held
 
-char *singularity_loop_bind(FILE *image_fp) {
+char *singularity_loop_bind_with_offset(FILE *image_fp, int image_offset) {
     char *sessiondir = singularity_sessiondir_get();
     char *image_loop_file = joinpath(sessiondir, "image_loop_dev");
     struct loop_info64 lo64 = {0};
@@ -91,10 +91,15 @@ char *singularity_loop_bind(FILE *image_fp) {
     lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
 #endif
 
-    singularity_message(DEBUG, "Calculating image offset\n");
-    if ( ( lo64.lo_offset = singularity_image_offset(image_fp) ) < 0 ) {
-        singularity_message(ERROR, "Could not obtain message offset of image\n");
-        ABORT(255);
+    if (image_offset < 0) {
+        singularity_message(DEBUG, "Calculating image offset\n");
+        if ( ( lo64.lo_offset = singularity_image_offset(image_fp) ) < 0 ) {
+            singularity_message(ERROR, "Could not obtain message offset of image\n");
+            ABORT(255);
+        }       
+    } else {
+        singularity_message(DEBUG, "Using fixed image offset of %d\n", image_offset);
+        lo64.lo_offset = image_offset;
     }
 
     singularity_priv_escalate();
@@ -156,6 +161,11 @@ char *singularity_loop_bind(FILE *image_fp) {
     singularity_message(DEBUG, "Returning singularity_loop_bind(image_fp) = loop_fp\n");
 
     return(loop_dev);
+}
+
+
+char *singularity_loop_bind(FILE *image_fp) {
+    return singularity_loop_bind_with_offset(image_fp, -1);
 }
 
 

@@ -96,7 +96,7 @@ int rootfs_squashfs_mount(void) {
     }
 
     singularity_message(DEBUG, "Binding image to loop device\n");
-    if ( ( loop_dev = singularity_loop_bind(image_fp) ) == NULL ) {
+    if ( ( loop_dev = singularity_loop_bind_with_offset(image_fp, 0) ) == NULL ) {
         singularity_message(ERROR, "There was a problem bind mounting the image\n");
         ABORT(255);
     }
