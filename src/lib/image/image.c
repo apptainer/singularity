@@ -30,44 +30,45 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-#include "lib/singularity.h"
 
+#include "./image.h"
+#include "./attach/attach.h"
+#include "./create/create.h"
 
-#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
 #define MAX_LINE_LEN 2048
 
-FILE *image_fp = NULL;
+// extern int singualrity_image_check();
+// extern int singualrity_image_offset();
+//
+// extern int singularity_image_bind();
+// extern char *singularity_image_bind_dev();
+//
+// extern int singularity_image_create(char *image, unsigned int size)
+// extern int singularity_image_expand(char *image, unsigned int size)
+//
+// extern int singularity_image_mount(char *mountpoint, unsigned int flags);
+//
 
 int singularity_image_attach(char *image) {
+    return(_singularity_image_attach(image));
+}
 
-    if ( image_fp != NULL ) {
-        singularity_message(ERROR, "Call to singularity_image_attach() when already attached!\n");
-        ABORT(255);
-    }
+int singularity_image_attach_fd(void) {
+    return(_singularity_image_attach_fd());
+}
 
-    if ( is_file(image) == 0 ) {
-        image_fp = fopen(image, "r");
-
-        if ( image_fp == NULL ) {
-            singularity_message(ERROR, "Could not open image %s: %s\n", image, strerror(errno));
-            ABORT(255);
-        }
-    }
-
-    return(0);
+FILE *singularity_image_attach_fp(void) {
+    return(_singularity_image_attach_fp());
 }
 
 
+int singularity_image_create(char *image, unsigned int size) {
+    return(_singularity_image_create(image, size));
+}
 
 
-
-
-
-
-
-
-
-int singularity_image_check(FILE *image_fp) {
+/*
+int singularity_image_check() {
     char *line;
 
     if ( image_fp == NULL ) {
@@ -100,9 +101,14 @@ int singularity_image_check(FILE *image_fp) {
 }
 
 
-int singularity_image_offset(FILE *image_fp) {
+int singularity_image_offset() {
     int ret = 0;
     int i = 0;
+
+    if ( image_fp == NULL ) {
+        singularity_message(ERROR, "Called singularity_image_offset() with NULL image pointer\n");
+        ABORT(255);
+    }
 
     singularity_message(VERBOSE, "Calculating image offset\n");
     rewind(image_fp);
@@ -122,3 +128,4 @@ int singularity_image_offset(FILE *image_fp) {
 
     return(ret);
 }
+*/

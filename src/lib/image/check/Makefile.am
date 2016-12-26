@@ -7,6 +7,6 @@ AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 noinst_LTLIBRARIES = libimagecreate.la
-libimagecreate_la_SOURCES = create.c
+libimagecreate_la_SOURCES = check.c
 
-EXTRA_DIST = create.h
+EXTRA_DIST = check.h

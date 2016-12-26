@@ -319,6 +319,14 @@ AC_CONFIG_FILES([
    src/lib/runtime/mounts/scratch/Makefile
    src/lib/runtime/enter/Makefile
    src/lib/runtime/enter/chroot/Makefile
+   src/lib/image/Makefile
+   src/lib/image/attach/Makefile
+   src/lib/image/bind/Makefile
+   src/lib/image/check/Makefile
+   src/lib/image/create/Makefile
+   src/lib/image/expand/Makefile
+   src/lib/image/mount/Makefile
+   src/lib/image/offset/Makefile
 
 
    etc/Makefile
