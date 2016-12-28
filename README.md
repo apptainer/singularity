@@ -13,7 +13,7 @@ environment for one the user controls!
 Let's say you are running Ubuntu on your workstation or server, but you
 have an application which only runs on Red Hat Enterprise Linux 6.3.
 Singularity can instantly virtualize the operating system, without
-having root access, and allow you to run that application in it's native
+having root access, and allow you to run that application in its native
 environment!
 
 # About
