@@ -58,7 +58,7 @@ int singularity_env_override(char * prefix) {
     char *value;
     char *equals = "=";
     char **envp = environ;
-    int len = strlen(prefix);
+    int len = strlength(prefix, 64);
 
     while(*envp) {
         pair = *envp++;
