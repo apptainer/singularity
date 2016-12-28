@@ -27,7 +27,6 @@
 #include <linux/limits.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <regex.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -51,38 +50,35 @@ static int action = 0;
 static char *cwd_path;
 
 extern char **environ;
-static char * ENV_OVERRIDE_REGEX = "^%s_([^=]+)=(.*)";
 
 int singularity_env_override(char * prefix) {
-    int reti;
-    regex_t regex;
-    char regstr[strlen(prefix) + strlen(ENV_OVERRIDE_REGEX) + 1];
-
-    sprintf(regstr, ENV_OVERRIDE_REGEX, prefix);
-    reti = regcomp(&regex, regstr, REG_EXTENDED);
-    if (reti) {
-        singularity_message(ERROR, "Could not compile prefix regex\n");
-        ABORT(1);
-    }
-
-    char * kv;
-    int ngroups = regex.re_nsub + 1;
-    regmatch_t groups[ngroups];
-    char ** envp = environ;
+    char *pair;
+    char *save;
+    char *key;
+    char *value;
+    char *equals = "=";
+    char **envp = environ;
+    int len = strlen(prefix);
 
     while(*envp) {
-        kv = *envp++;
-        reti = regexec(&regex, kv, ngroups, groups, 0);
-        if (!reti) {
-            char key[groups[1].rm_eo - groups[1].rm_so + 1];
-            char value[groups[2].rm_eo - groups[2].rm_so + 1];
-            slice_str(kv, key, groups[1].rm_so, groups[1].rm_eo - 1);
-            slice_str(kv, value, groups[2].rm_so, groups[2].rm_eo - 1);
+        pair = *envp++;
+        if (strncmp(pair, prefix, len) != 0) {
+            continue;
+        }
+        key = strtok_r(pair, equals, &save);
+        value = strtok_r(NULL, equals, &save);
+        if (key == NULL) {
+            continue;
+        }
+        if (value == NULL){
+            value = "";
+        }
+        key = strstr(key, "_") + 1;
+        if (key[0] != '\0') {
             setenv(key, value, 1);
         }
     }
 
-    regfree(&regex);
     return 0;
 }
 
