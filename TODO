@@ -1,7 +1,11 @@
-2.2:
-    * Bootstrap containers pulling from a Docker repo
-    * Run from a Docker URI
-
 2.3:
-    * Start a process daemon automatically when running a command and
+    ? Start a process daemon automatically when running a command and
       keep it running until all other process are done
+    * Redefine library space
+        * Runtime
+        * Image
+        * Container (bootstrap, import, etc..)
+    * Update library modules so all options, features and configs are passed
+      via API and FLAGS
+    * Write new binary interfaces for libraries
+        * One binary suid pair for each command verb
