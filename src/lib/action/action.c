@@ -49,19 +49,46 @@
 static int action = 0;
 static char *cwd_path;
 
+extern char **environ;
+
+int singularity_env_override(char * prefix) {
+    char *pair;
+    char *save;
+    char *key;
+    char *value;
+    char *equals = "=";
+    char **envp = environ;
+    int len = strlength(prefix, 64);
+
+    while(*envp) {
+        pair = *envp++;
+        if (strncmp(pair, prefix, len) != 0) {
+            continue;
+        }
+        key = strtok_r(pair, equals, &save);
+        value = strtok_r(NULL, equals, &save);
+        if (key == NULL) {
+            continue;
+        }
+        if (value == NULL){
+            value = "";
+        }
+        key = &key[len];
+        if (key[0] != '\0') {
+            setenv(key, value, 1);
+        }
+    }
+
+    return 0;
+}
+
 int singularity_action_init(void) {
+    singularity_env_override("SENV_");
+
     char *command = envar("SINGULARITY_COMMAND", "", 10);
-    char *libpath = envar_path("SINGULARITY_LD_LIBRARY_PATH");
     singularity_message(DEBUG, "Checking on action to run\n");
 
     unsetenv("SINGULARITY_COMMAND");
-    unsetenv("SINGULARITY_LD_LIBRARY_PATH");
-
-    if ( libpath != NULL ) {
-        singularity_message(VERBOSE, "Setting LD_LIBRARY_PATH to `%s`\n", libpath);
-        setenv("LD_LIBRARY_PATH", libpath, 1);
-        free(libpath);
-    }
 
     if ( command == NULL ) {
         singularity_message(ERROR, "SINGULARITY_COMMAND is undefined\n");
