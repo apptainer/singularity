@@ -33,18 +33,34 @@
 
 #include "./image.h"
 #include "./attach/attach.h"
+#include "./bind/bind.h"
 #include "./create/create.h"
 #include "./check/check.h"
 #include "./expand/expand.h"
 
 #include "./offset/offset.h"
 
-//#define MAX_LINE_LEN 2048
+static char *temp_directory = NULL;
+
 
 // extern int singularity_image_expand(char *image, unsigned int size)
 //
 // extern int singularity_image_mount(char *mountpoint, unsigned int flags);
-//
+
+
+char *singularity_image_tempdir(char *directory) {
+    if ( directory != NULL ) {
+        if ( is_dir(directory) == 0 ) {
+            temp_directory = strdup(directory);
+        } else {
+            singularity_message(ERROR, "Temp directory path is not a directory: %s\n", directory);
+            ABORT(255);
+        }
+    }
+
+    return(temp_directory);
+}
+
 
 int singularity_image_attach(char *image) {
     return(_singularity_image_attach(image));

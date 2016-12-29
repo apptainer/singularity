@@ -22,13 +22,16 @@
 #ifndef __SINGULARITY_IMAGE_H_
 #define __SINGULARITY_IMAGE_H_
 
+
+extern char *singularity_image_tempdir(char *directory);
+
 // Attach the process to a given image
 extern int singularity_image_attach(char *path);
 extern int singularity_image_attach_fd();
 extern FILE *singularity_image_attach_fp();
 
-extern int singualrity_image_check(FILE *image_fp);
-extern int singualrity_image_offset(FILE *image_fp);
+extern int singularity_image_check(FILE *image_fp);
+extern int singularity_image_offset(FILE *image_fp);
 
 extern int singularity_image_bind(FILE *image_fp);
 extern char *singularity_image_bind_dev();
