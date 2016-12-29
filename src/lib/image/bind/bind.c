@@ -37,10 +37,8 @@
 #include "util/file.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
-#include "sessiondir.h"
 
-
-#include "./loop-control.h"
+#include "../image.h"
 
 
 #ifndef LO_FLAGS_AUTOCLEAR
@@ -54,10 +52,15 @@ FILE *loop_fp = NULL;
 int lockfile_fd; // This has to be global for the flock to be held
 
 int singularity_loop_bind(FILE *image_fp) {
-    char *sessiondir = singularity_sessiondir_get();
-    char *lockfile = joinpath(sessiondir, "loop_lock");
+    char *tmpdir = singularity_image_tempdir(NULL);
+    char *lockfile = joinpath(tmpdir, "loop_lock");
     struct loop_info64 lo64 = {0};
     int i;
+
+    if ( tmpdir == NULL ) {
+        singularity_message(ERROR, "Failed to obtain session directory\n");
+        ABORT(255);
+    }
 
     if ( image_fp == NULL ) {
         singularity_message(ERROR, "Called singularity_loop_bind() with NULL image pointer\n");
