@@ -18,10 +18,10 @@
  * 
 */
 
-#ifndef __SINGULARITY_IMAGE_CREATE_H_
-#define __SINGULARITY_IMAGE_CREATE_H_
+#ifndef __SINGULARITY_IMAGE_CHECK_H_
+#define __SINGULARITY_IMAGE_CHECK_H_
 
-extern int _singularity_image_create(char *image, unsigned int size);
+extern int _singularity_image_check(FILE *image_fp);
 
-#endif /* __SINGULARITY_IMAGE_CREATE_H */
+#endif /* __SINGULARITY_IMAGE_CHECK_H */
 

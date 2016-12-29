@@ -33,51 +33,39 @@
 
 #include "../image.h"
 
-#define BUFFER_SIZE (1024*1024)
+#define BUFFER_SIZE     (1024*1024)
+#define MAX_LINE_LEN    2048
 
-int _singularity_image_create(char *image, unsigned int size) {
-    FILE *image_fp;
-    // Even though we only need junk written into the image, to create it, we
-    // write a fixed value to the blank image to prevent contents of our memory
-    // from being leaked to the disk.
-    char *buff = (char *) malloc(BUFFER_SIZE);
-    memset(buff, '\255', BUFFER_SIZE);
-    int i;
 
-    singularity_message(VERBOSE, "Creating new sparse image at: %s\n", image);
+int _singularity_image_check(FILE *image_fp) {
+    char *line;
 
-    if ( is_file(image) == 0 ) {
-        singularity_message(ERROR, "Will not overwrite existing file: %s\n", image);
+    if ( image_fp == NULL ) {
+        singularity_message(ERROR, "Called singularity_image_check() with NULL image pointer\n");
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Opening image 'w'\n");
-    if ( ( image_fp = fopen(image, "w") ) == NULL ) { // Flawfinder: ignore
-        fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
-        free(buff);
+    singularity_message(VERBOSE3, "Checking that file pointer is a Singularity image\n");
+    rewind(image_fp);
+
+    line = (char *)malloc(MAX_LINE_LEN);
+
+    // Get the first line from the config
+    if ( fgets(line, MAX_LINE_LEN, image_fp) == NULL ) {
+        singularity_message(ERROR, "Unable to read the first line of image: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    singularity_message(DEBUG, "Checking if first line matches key\n");
+    if ( strcmp(line, LAUNCH_STRING) == 0 ) {
+        free(line);
+        singularity_message(VERBOSE2, "File is a valid Singularity image\n");
+    } else {
+        free(line);
+        singularity_message(VERBOSE, "File is not a valid Singularity image\n");
         return(-1);
     }
 
-    singularity_message(VERBOSE2, "Writing image header\n");
-    fprintf(image_fp, LAUNCH_STRING); // Flawfinder: ignore (LAUNCH_STRING is a constant)
-
-    singularity_message(VERBOSE2, "Expanding image to %dMB\n", size);
-    // TODO: there are likely better ways to do this (falloc?); further, we should really handle
-    // EINTR here.
-    for(i = 0; i < size; i++ ) {
-        if ( fwrite(buff, 1, BUFFER_SIZE, image_fp) < BUFFER_SIZE ) {
-            singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
-            ABORT(255);
-        }
-    }
-
-    singularity_message(VERBOSE2, "Making image executable\n");
-    fchmod(fileno(image_fp), 0755);
-
-    fclose(image_fp);
-    free(buff);
-
-    singularity_message(DEBUG, "Returning image_create(%s, %d) = 0\n", image, size);
-
     return(0);
 }
+

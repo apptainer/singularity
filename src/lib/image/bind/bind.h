@@ -18,10 +18,11 @@
  * 
 */
 
-#ifndef __SINGULARITY_IMAGE_OFFSET_H_
-#define __SINGULARITY_IMAGE_OFFSET_H_
+#ifndef __SINGULARITY_IMAGE_BIND_H_
+#define __SINGULARITY_IMAGE_BIND_H_
 
-extern int _singularity_image_offset(FILE *image_fp);
+extern int _singularity_image_bind(FILE *image_fp);
+extern char *_singularity_image_bind_dev();
 
-#endif /* __SINGULARITY_IMAGE_OFFSET_H */
+#endif /* __SINGULARITY_IMAGE_BIND_H */
 

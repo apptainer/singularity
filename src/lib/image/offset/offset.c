@@ -16,58 +16,49 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
-#include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <limits.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <grp.h>
-#include <pwd.h>
+#include <errno.h> 
+#include <string.h>
+#include <fcntl.h>  
 
-#include "util/file.h"
-#include "util/util.h"
-#include "lib/config_parser.h"
 #include "lib/message.h"
-#include "lib/privilege.h"
-#include "lib/sessiondir.h"
-#include "lib/rootfs/rootfs.h"
+#include "util/util.h"
+#include "util/file.h"
 
-static FILE *image_fp;
+#include "../image.h"
 
 
-int _singularity_image_attach(char *image) {
+int _singularity_image_offset(FILE *image_fp) {
+    int ret = 0;
+    int i = 0;
 
-    if ( image_fp != NULL ) {
-        singularity_message(ERROR, "Call to singularity_image_attach() when already attached!\n");
+    if ( image_fp == NULL ) {
+        singularity_message(ERROR, "Called singularity_image_offset() with NULL image pointer\n");
         ABORT(255);
     }
 
-    if ( is_file(image) == 0 ) {
-        image_fp = fopen(image, "r");
+    singularity_message(VERBOSE, "Calculating image offset\n");
+    rewind(image_fp);
 
-        if ( image_fp == NULL ) {
-            singularity_message(ERROR, "Could not open image %s: %s\n", image, strerror(errno));
-            ABORT(255);
+    for (i=0; i < 64; i++) {
+        int c = fgetc(image_fp); // Flawfinder: ignore
+        if ( c == EOF ) {
+            break;
+        } else if ( c == '\n' ) {
+            ret = i + 1;
+            singularity_message(VERBOSE2, "Found image at an offset of %d bytes\n", ret);
+            break;
         }
     }
 
-    return(fileno(image_fp));
+    singularity_message(DEBUG, "Returning image_offset(image_fp) = %d\n", ret);
+
+    return(ret);
 }
 
-int _singularity_image_attach_fd(void) {
-    if ( image_fp == NULL ) {
-        return(-1);
-    }
-    return(fileno(image_fp));
-}
-
-
-FILE *_singularity_image_attach_fp(void) {
-    return(image_fp);
-}

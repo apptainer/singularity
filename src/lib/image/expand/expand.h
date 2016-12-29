@@ -18,10 +18,10 @@
  * 
 */
 
-#ifndef __SINGULARITY_IMAGE_OFFSET_H_
-#define __SINGULARITY_IMAGE_OFFSET_H_
+#ifndef __SINGULARITY_IMAGE_EXPAND_H_
+#define __SINGULARITY_IMAGE_EXPAND_H_
 
-extern int _singularity_image_offset(FILE *image_fp);
+extern int _singularity_image_expand(FILE *image_fp, unsigned int size);
 
-#endif /* __SINGULARITY_IMAGE_OFFSET_H */
+#endif /* __SINGULARITY_IMAGE_EXPAND_H */
 

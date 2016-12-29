@@ -28,41 +28,27 @@
 #include <fcntl.h>  
 
 #include "lib/message.h"
-#include "lib/singularity.h"
 #include "util/file.h"
 #include "util/util.h"
 
+#include "../image.h"
 
-#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
 #define BUFFER_SIZE (1024*1024)
 
-int singularity_image_expand(char *image, int size) {
-    FILE *image_fp;
+
+int _singularity_image_expand(FILE *image_fp, unsigned int size) {
     char *buff = (char *) malloc(BUFFER_SIZE);
     memset(buff, '\255', BUFFER_SIZE);
-    long position;
     int i;
 
-    singularity_message(VERBOSE, "Expanding sparse image at: %s\n", image);
-
-    singularity_message(DEBUG, "Opening image 'r+'\n");
-    if ( ( image_fp = fopen(image, "r+") ) == NULL ) { // Flawfinder: ignore
-        fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
-        free(buff);
-        return(-1);
+    if ( image_fp == NULL ) {
+        singularity_message(ERROR, "Called _singularity_image_expand() with NULL image pointer\n");
+        ABORT(255);
     }
 
     singularity_message(DEBUG, "Jumping to the end of the current image file\n");
     fseek(image_fp, 0L, SEEK_END);
-    position = ftell(image_fp);
 
-    singularity_message(DEBUG, "Removing the footer from image\n");
-    if ( ftruncate(fileno(image_fp), position-1) < 0 ) {
-        fprintf(stderr, "ERROR: Failed truncating the marker bit off of image %s: %s\n", image, strerror(errno));
-        free(buff);
-        fclose(image_fp);
-        return(-1);
-    }
     singularity_message(VERBOSE2, "Expanding image by %dMB\n", size);
     for(i = 0; i < size; i++ ) {
         if ( fwrite(buff, 1, BUFFER_SIZE, image_fp) < BUFFER_SIZE ) {
@@ -70,11 +56,8 @@ int singularity_image_expand(char *image, int size) {
             ABORT(255);
         }
     }
-    fprintf(image_fp, "0");
     fclose(image_fp);
     free(buff);
-
-    singularity_message(DEBUG, "Returning image_expand(%s, %d) = 0\n", image, size);
 
     return(0);
 }

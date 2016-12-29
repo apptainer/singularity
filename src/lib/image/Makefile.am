@@ -1,4 +1,5 @@
-SUBDIRS = attach create check mount bind expand offset
+SUBDIRS = attach bind create check expand offset
+#SUBDIRS = attach create check mount bind expand offset
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -10,7 +11,7 @@ distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
 noinst_LTLIBRARIES = libinternal.la
-libinternal_la_LIBADD = attach/libinternal.la create/libinternal.la check/libinternal.la
+libinternal_la_LIBADD = attach/libinternal.la bind/libinternal.la create/libinternal.la check/libinternal.la expand/libinternal.la offset/libinternal.la
 libinternal_la_SOURCES = image.c
 libinternal_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
