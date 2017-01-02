@@ -27,19 +27,21 @@ extern char *singularity_image_tempdir(char *directory);
 
 // Attach the process to a given image
 extern int singularity_image_attach(char *path);
-extern int singularity_image_attach_fd();
-extern FILE *singularity_image_attach_fp();
+extern int singularity_image_attach_fd(void);
+extern FILE *singularity_image_attach_fp(void);
 
 extern int singularity_image_check(FILE *image_fp);
 extern int singularity_image_offset(FILE *image_fp);
 
 extern int singularity_image_bind(FILE *image_fp);
-extern char *singularity_image_bind_dev();
+extern char *singularity_image_bind_dev(void);
 
 extern int singularity_image_create(char *image, unsigned int size);
 extern int singularity_image_expand(FILE *image_fp, unsigned int size);
 
-extern int singularity_image_mount(char *mountpoint, unsigned int flags);
+extern int singularity_image_mount(unsigned int flags);
+extern int singularity_image_mount_overlayfs(void);
+extern char *singularity_image_mount_path(void);
 
 #define SI_MOUNT_DEFAULTS   0
 #define SI_MOUNT_RW         1
