@@ -25,5 +25,6 @@
 extern int _singularity_image_mount(void);
 extern int _singularity_image_mount_overlayfs(void);
 extern char *_singularity_image_mount_path(void);
+extern char *_singularity_image_mount_sourcepath(void);
 
 #endif /* __SINGULARITY_IMAGE_MOUNT_H_ */

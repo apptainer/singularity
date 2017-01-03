@@ -32,8 +32,45 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
-#include "lib/ns/ns.h"
 
+#include "../../image.h"
+#include "../mount.h"
+
+
+int _singularity_image_mount_dir_check(void) {
+    char *source = singularity_image_path(NULL);
+
+    if ( is_dir(source) != 0 ) {
+        singularity_message(VERBOSE2, "Source path is not a directory: %s\n", source);
+        return(-1);
+    }
+
+    return(0);
+}
+
+
+
+int _singularity_image_mount_dir_mount(void) {
+    char *source = singularity_image_path(NULL);
+    char *mount_point = _singularity_image_mount_sourcepath();
+
+    singularity_priv_escalate();
+    singularity_message(DEBUG, "Mounting container directory %s->%s\n", source, mount_point);
+    if ( mount(source, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+        singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", source, mount_point, strerror(errno));
+        return 1;
+    }
+    // TODO: Make container read/only if requested
+    singularity_priv_drop();
+    return(0);
+}
+
+
+
+
+
+
+/*
 
 static char *source_dir = NULL;
 static char *mount_point = NULL;
@@ -105,3 +142,4 @@ int rootfs_dir_mount(void) {
     return(0);
 }
 
+*/

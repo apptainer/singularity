@@ -1,5 +1,4 @@
-SUBDIRS = attach bind create check expand offset
-#SUBDIRS = attach create check mount bind expand offset
+SUBDIRS = attach bind create check expand offset mount
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile

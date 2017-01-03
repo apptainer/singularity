@@ -326,6 +326,9 @@ AC_CONFIG_FILES([
    src/lib/image/create/Makefile
    src/lib/image/expand/Makefile
    src/lib/image/mount/Makefile
+   src/lib/image/mount/dir/Makefile
+   src/lib/image/mount/image/Makefile
+   src/lib/image/mount/squashfs/Makefile
    src/lib/image/offset/Makefile
 
 

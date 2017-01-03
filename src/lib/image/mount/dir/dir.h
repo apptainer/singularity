@@ -16,13 +16,13 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
 
-#ifndef __ROOTFS_DIR_H_
-#define __ROOTFS_DIR_H_
+#ifndef __SINGULARITY_IMAGE_MOUNT_DIR_H_
+#define __SINGULARITY_IMAGE_MOUNT_DIR_H_
 
-    int rootfs_dir_init(char *source, char *mount_point);
-    int rootfs_dir_mount(void);
+extern int _singularity_image_mount_dir_check(void);
+extern int _singularity_image_mount_dir_mount(void);
 
-#endif /* __ROOTFS_DIR_H */
+#endif /* __SINGULARITY_IMAGE_MOUNT_DIR_H_ */

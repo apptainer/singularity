@@ -66,12 +66,26 @@ char *_singularity_image_mount_path(void) {
     return(joinpath(mount_point, OVERLAY_FINAL));
 }
 
+char *_singularity_image_mount_sourcepath(void) {
+    return(joinpath(mount_point, ROOTFS_SOURCE));
+}
+
 int _singularity_image_mount(void) {
-    char *rootfs_source = joinpath(mount_point, ROOTFS_SOURCE);
-    char *overlay_mount = joinpath(mount_point, OVERLAY_MOUNT);
-    char *overlay_upper = joinpath(mount_point, OVERLAY_UPPER);
-    char *overlay_work  = joinpath(mount_point, OVERLAY_WORK);
-    char *overlay_final = joinpath(mount_point, OVERLAY_FINAL);
+    char *rootfs_source;
+    char *overlay_mount;
+    char *overlay_upper;
+    char *overlay_work;
+    char *overlay_final;
+
+    singularity_message(DEBUG, "Figuring out where to mount Singularity container\n");
+    mount_point = strdup(singularity_config_get_value(CONTAINER_DIR));
+    singularity_message(VERBOSE3, "Set image mount path to: %s\n", mount_point);
+
+    rootfs_source = joinpath(mount_point, ROOTFS_SOURCE);
+    overlay_mount = joinpath(mount_point, OVERLAY_MOUNT);
+    overlay_upper = joinpath(mount_point, OVERLAY_UPPER);
+    overlay_work  = joinpath(mount_point, OVERLAY_WORK);
+    overlay_final = joinpath(mount_point, OVERLAY_FINAL);
 
     singularity_message(DEBUG, "Checking on container source type\n");
 
@@ -82,7 +96,7 @@ int _singularity_image_mount(void) {
     } else if ( _singularity_image_mount_dir_check() == 0 ) {
         module = ROOTFS_DIR;
     } else {
-        singularity_message(ERROR, "Could not identify image format type: %s\n", source);
+        singularity_message(ERROR, "Could not identify image format type\n");
         ABORT(255);
     }
 
@@ -131,17 +145,17 @@ int _singularity_image_mount(void) {
     }
 
     if ( module == ROOTFS_IMAGE ) {
-        if ( _singularity_image_mount_image_mount(source, joinpath(mount_point, ROOTFS_SOURCE)) < 0 ) {
+        if ( _singularity_image_mount_image_mount() < 0 ) {
             singularity_message(ERROR, "Failed mounting image, aborting...\n");
             ABORT(255);
         }
     } else if ( module == ROOTFS_DIR ) {
-        if ( _singularity_image_mount_dir_mount(source, joinpath(mount_point, ROOTFS_SOURCE)) < 0 ) {
+        if ( _singularity_image_mount_dir_mount() < 0 ) {
             singularity_message(ERROR, "Failed mounting directory, aborting...\n");
             ABORT(255);
         }
     } else if ( module == ROOTFS_SQUASHFS ) {
-        if ( _singularity_image_mount_squashfs_mount(source, joinpath(mount_point, ROOTFS_SOURCE)) < 0 ) {
+        if ( _singularity_image_mount_squashfs_mount() < 0 ) {
             singularity_message(ERROR, "Failed mounting SquashFS, aborting...\n");
             ABORT(255);
         }

@@ -33,21 +33,68 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/config_parser.h"
-#include "lib/image/image.h"
-#include "lib/loop-control.h"
 #include "lib/privilege.h"
 
-#ifndef LOCALSTATEDIR
-#define LOCALSTATEDIR "/var"
-#endif
+#include "../../image.h"
+#include "../mount.h"
 
+
+int _singularity_image_mount_image_check(void) {
+    return(singularity_image_check());
+}
+
+
+int _singularity_image_mount_image_mount(void) {
+    char *loop_dev = singularity_image_bind_dev();
+    char *mount_point = _singularity_image_mount_sourcepath();
+
+    if ( loop_dev == NULL ) {
+        singularity_message(ERROR, "Could not obtain the image loop device\n");
+        ABORT(255);
+    }
+
+    if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
+        singularity_message(VERBOSE, "Mounting image in read/write\n");
+        singularity_priv_escalate();
+        if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
+            if ( mount(loop_dev, mount_point, "ext4", MS_NOSUID, "errors=remount-ro") < 0 ) {
+                singularity_message(ERROR, "Failed to mount image in (read/write): %s\n", strerror(errno));
+                ABORT(255);
+            }
+        }
+        singularity_priv_drop();
+    } else {
+        singularity_priv_escalate();
+        singularity_message(VERBOSE, "Mounting image in read/only\n");
+        if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+            if ( mount(loop_dev, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+                singularity_message(ERROR, "Failed to mount image in (read only): %s\n", strerror(errno));
+                ABORT(255);
+            }
+        }
+        singularity_priv_drop();
+    }
+
+    return(0);
+}
+
+
+
+
+
+
+
+
+
+
+// TODO: This all needs to be moved into _singularity_image_attach()
+/*
 
 static FILE *image_fp = NULL;
 static char *mount_point = NULL;
 static char *loop_dev = NULL;
 static int read_write = 0;
 
-// TODO: This all needs to be moved into _singularity_image_attach()
 static FILE *open_as_singularity(const char *source, int allow_user_image) {
     FILE *new_fp = NULL;
     singularity_priv_escalate_singularity();
@@ -205,3 +252,4 @@ int rootfs_image_mount(void) {
 }
 
 
+*/

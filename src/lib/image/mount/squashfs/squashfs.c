@@ -33,74 +33,32 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/config_parser.h"
-#include "lib/image/image.h"
-#include "lib/loop-control.h"
 #include "lib/privilege.h"
 
-#ifndef LOCALSTATEDIR
-#define LOCALSTATEDIR "/var"
-#endif
+#include "../../image.h"
+#include "../mount.h"
 
 
-static FILE *image_fp = NULL;
-static char *mount_point = NULL;
-static char *loop_dev = NULL;
+int _singularity_image_mount_squashfs_check(void) {
+    char *image_name = singularity_image_name();
+    int len = strlength(image_name, 1024);
 
-
-int rootfs_squashfs_init(char *source, char *mount_dir) {
-    singularity_message(DEBUG, "Inializing container rootfs image subsystem\n");
-
-    if ( image_fp != NULL ) {
-        singularity_message(WARNING, "Called image_open, but image already open!\n");
-        return(1);
-    }
-
-    if ( ( getuid() != 0 ) && ( is_suid("/proc/self/exe") < 0 ) ) {
-        singularity_message(ERROR, "Singularity must be executed in privileged mode to use squashfs\n");
-        ABORT(255);
-    }
-
-    if ( is_file(source) == 0 ) {
-        mount_point = strdup(mount_dir);
-    } else {
-        singularity_message(ERROR, "Container image is not available: %s\n", mount_dir);
-        ABORT(255);
-    }
-
-    mount_point = strdup(mount_dir);
-
-    if ( ( image_fp = fopen(source, "r") ) == NULL ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
-        ABORT(255);
+    if ( strcmp(&image_name[len-5], ".sqsh") != 0 ) {
+        singularity_message(DEBUG, "Image does not appear to be of type '.sqsh': %s\n", image_name);
+        return(-1);
     }
 
     return(0);
 }
 
+int _singularity_image_mount_squashfs_mount(void) {
+    char *loop_dev = singularity_image_bind_dev();
+    char *mount_point = _singularity_image_mount_sourcepath();
 
-int rootfs_squashfs_mount(void) {
-
-    if ( mount_point == NULL ) {
-        singularity_message(ERROR, "Called image_mount but image_init() hasn't been called\n");
+    if ( loop_dev == NULL ) {
+        singularity_message(ERROR, "Could not obtain the image loop device\n");
         ABORT(255);
     }
-
-    if ( image_fp == NULL ) {
-        singularity_message(ERROR, "Called image_mount, but image has not been opened!\n");
-        ABORT(255);
-    }
-
-    if ( is_dir(mount_point) < 0 ) {
-        singularity_message(ERROR, "Container directory not available: %s\n", mount_point);
-        ABORT(255);
-    }
-
-    singularity_message(DEBUG, "Binding image to loop device\n");
-    if ( ( loop_dev = singularity_loop_bind(image_fp) ) == NULL ) {
-        singularity_message(ERROR, "There was a problem bind mounting the image\n");
-        ABORT(255);
-    }
-
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Mounting squashfs image\n");
@@ -110,8 +68,6 @@ int rootfs_squashfs_mount(void) {
     }
     singularity_priv_drop();
 
-
     return(0);
 }
-
 

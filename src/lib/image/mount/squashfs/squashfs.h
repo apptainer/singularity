@@ -16,13 +16,13 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
 
-#ifndef __ROOTFS_SQUASHFS_H_
-#define __ROOTFS_SQUASHFS_H_
+#ifndef __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_
+#define __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_
 
-    int rootfs_squashfs_init(char *source, char *mount_point);
-    int rootfs_squashfs_mount(void);
+extern int _singularity_image_mount_squashfs_check(void);
+extern int _singularity_image_mount_squashfs_mount(void);
 
-#endif /* __ROOTFS_SQUASHFS_H_ */
+#endif /* __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_ */
