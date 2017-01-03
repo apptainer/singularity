@@ -140,8 +140,12 @@ char *joinpath(const char * path1, const char * path2_in) {
         path2++;
     }
 
-    ret = (char *) malloc(strlength(tmp_path1, PATH_MAX) + strlength(path2, PATH_MAX) + 2);
-    snprintf(ret, strlength(tmp_path1, PATH_MAX) + strlen(path2) + 2, "%s/%s", tmp_path1, path2); // Flawfinder: ignore
+    size_t ret_pathlen = strlength(tmp_path1, PATH_MAX) + strlength(path2, PATH_MAX) + 2;
+    ret = (char *) malloc(ret_pathlen);
+    if (snprintf(ret, ret_pathlen, "%s/%s", tmp_path1, path2) >= ret_pathlen) { // Flawfinder: ignore
+        singularity_message(ERROR, "Overly-long path name.\n");
+        ABORT(255);
+    }
 
     return(ret);
 }
@@ -151,7 +155,10 @@ char *strjoin(char *str1, char *str2) {
     int len = strlength(str1, 2048) + strlength(str2, 2048) + 1;
 
     ret = (char *) malloc(len);
-    snprintf(ret, len, "%s%s", str1, str2); // Flawfinder: ignore
+    if (snprintf(ret, len, "%s%s", str1, str2) >= len) { // Flawfinder: ignore
+       singularity_message(ERROR, "Overly-long string encountered.\n");
+       ABORT(255);
+    }
 
     return(ret);
 }
