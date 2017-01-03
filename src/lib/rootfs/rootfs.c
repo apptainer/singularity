@@ -187,7 +187,10 @@ int singularity_rootfs_mount(void) {
     } else if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS, image mounted writablable\n");
     } else {
-        snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work); // Flawfinder: ignore
+        if (snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work) >= overlay_options_len) {
+            singularity_message(ERROR, "Overly-long path names for OverlayFS configuration.\n");
+            ABORT(255);
+        }
 
         singularity_priv_escalate();
         singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
