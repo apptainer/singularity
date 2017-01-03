@@ -63,7 +63,10 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     va_list args;
     va_start (args, format);
 
-    vsnprintf(message, 512, format, args); // Flawfinder: ignore (format is internally defined)
+    if (vsnprintf(message, 512, format, args) >= 512) {
+        memcpy(message+497, "(TRUNCATED...)", 14);
+        message[511] = '\0';
+    }
 
     va_end (args);
 
@@ -103,10 +106,15 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     }
 
     if ( level <= LOG ) {
-        char syslog_string[540]; // Flawfinder: ignore (512 max message length + 28'ish chars for header)
-        snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message); // Flawfinder: ignore
+        // Note __progname comes from the linker; the UID can be 5 characters and PID can be
+        // 10-or-so characters.
+        char syslog_string[560]; // Flawfinder: ignore (512 max message length + 48 for header).
+        if (snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message) >= 540) {
+            // This case shouldn't happen unless we have a very strange __progname; nul-terminating to be sure.
+            syslog_string[559] = '\0';
+        }
 
-        syslog(syslog_level, syslog_string, strlength(syslog_string, 1024)); // Flawfinder: ignore (format is internally defined)
+        syslog(syslog_level, "%s", syslog_string);
     }
 
     if ( level <= messagelevel ) {
