@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_IMAGE_OFFSET_H_
 #define __SINGULARITY_IMAGE_OFFSET_H_
 
-extern int _singularity_image_offset(FILE *image_fp);
+extern int _singularity_image_offset(void);
 
 #endif /* __SINGULARITY_IMAGE_OFFSET_H */
 

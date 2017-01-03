@@ -34,14 +34,10 @@
 #include "../image.h"
 
 
-int _singularity_image_offset(FILE *image_fp) {
+int _singularity_image_offset(void) {
     int ret = 0;
     int i = 0;
-
-    if ( image_fp == NULL ) {
-        singularity_message(ERROR, "Called singularity_image_offset() with NULL image pointer\n");
-        ABORT(255);
-    }
+    FILE *image_fp = singularity_image_attach_fp();
 
     singularity_message(VERBOSE, "Calculating image offset\n");
     rewind(image_fp);

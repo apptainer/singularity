@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <grp.h>
 #include <pwd.h>
+#include <libgen.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -36,12 +37,14 @@
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"
-#include "lib/rootfs/rootfs.h"
+
+#include "../image.h"
 
 static FILE *image_fp;
 
 
-int _singularity_image_attach(char *image) {
+int _singularity_image_attach(void) {
+    char *image = singularity_image_path(NULL);
 
     if ( image_fp != NULL ) {
         singularity_message(ERROR, "Call to singularity_image_attach() when already attached!\n");
@@ -62,12 +65,17 @@ int _singularity_image_attach(char *image) {
 
 int _singularity_image_attach_fd(void) {
     if ( image_fp == NULL ) {
-        return(-1);
+        singularity_message(ERROR, "Singularity image FD requested, but not attached!\n");
+        ABORT(255);
     }
     return(fileno(image_fp));
 }
 
 
 FILE *_singularity_image_attach_fp(void) {
+    if ( image_fp == NULL ) {
+        singularity_message(ERROR, "Singularity image FD requested, but not attached!\n");
+        ABORT(255);
+    }
     return(image_fp);
 }

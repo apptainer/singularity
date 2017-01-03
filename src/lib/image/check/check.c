@@ -37,13 +37,9 @@
 #define MAX_LINE_LEN    2048
 
 
-int _singularity_image_check(FILE *image_fp) {
+int _singularity_image_check(void) {
     char *line;
-
-    if ( image_fp == NULL ) {
-        singularity_message(ERROR, "Called singularity_image_check() with NULL image pointer\n");
-        ABORT(255);
-    }
+    FILE *image_fp = singularity_image_attach_fp();
 
     singularity_message(VERBOSE3, "Checking that file pointer is a Singularity image\n");
     rewind(image_fp);

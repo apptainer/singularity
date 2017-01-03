@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <libgen.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -37,15 +38,16 @@
 #include "./create/create.h"
 #include "./check/check.h"
 #include "./expand/expand.h"
-
 #include "./offset/offset.h"
 
 static char *temp_directory = NULL;
+static char *image_path = NULL;
 
 
 // extern int singularity_image_expand(char *image, unsigned int size)
 //
 // extern int singularity_image_mount(char *mountpoint, unsigned int flags);
+
 
 
 char *singularity_image_tempdir(char *directory) {
@@ -61,9 +63,28 @@ char *singularity_image_tempdir(char *directory) {
     return(temp_directory);
 }
 
+char *singularity_image_path(char *path) {
+    if ( path != NULL ) {
+        if ( ( is_file(path) != 0 ) && ( is_dir(path) != 0 ) ) {
+            singularity_message(ERROR, "Invalid image path: %s\n", path);
+            ABORT(255);
+        }
+        image_path = strdup(path);
+    }
+    return(image_path);
+}
 
-int singularity_image_attach(char *image) {
-    return(_singularity_image_attach(image));
+char *singularity_image_name(void) {
+    if ( image_path == NULL ) {
+        singularity_message(ERROR, "Image path has not een set\n");
+        ABORT(255);
+    }
+    return(basename(image_path));
+}
+
+
+int singularity_image_attach(void) {
+    return(_singularity_image_attach());
 }
 
 int singularity_image_attach_fd(void) {
@@ -74,24 +95,24 @@ FILE *singularity_image_attach_fp(void) {
     return(_singularity_image_attach_fp());
 }
 
-int singularity_image_create(char *image, unsigned int size) {
-    return(_singularity_image_create(image, size));
+int singularity_image_create(unsigned int size) {
+    return(_singularity_image_create(size));
 }
 
-int singularity_image_expand(FILE *image_fp, unsigned int size) {
-    return(_singularity_image_expand(image_fp, size));
+int singularity_image_expand(unsigned int size) {
+    return(_singularity_image_expand(size));
 }
 
-int singularity_image_check(FILE *image_fp) {
-    return(_singularity_image_check(image_fp));
+int singularity_image_check(void) {
+    return(_singularity_image_check());
 }
 
-int singularity_image_offset(FILE *image_fp) {
-    return(_singularity_image_offset(image_fp));
+int singularity_image_offset(void) {
+    return(_singularity_image_offset());
 }
 
-int singularity_image_bind(FILE *image_fp) {
-    return(_singularity_image_bind(image_fp));
+int singularity_image_bind(void) {
+    return(_singularity_image_bind());
 }
 
 char *singularity_image_bind_dev(void) {

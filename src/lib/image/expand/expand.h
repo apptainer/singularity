@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_IMAGE_EXPAND_H_
 #define __SINGULARITY_IMAGE_EXPAND_H_
 
-extern int _singularity_image_expand(FILE *image_fp, unsigned int size);
+extern int _singularity_image_expand(unsigned int size);
 
 #endif /* __SINGULARITY_IMAGE_EXPAND_H */
 

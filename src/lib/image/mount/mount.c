@@ -75,11 +75,11 @@ int _singularity_image_mount(void) {
 
     singularity_message(DEBUG, "Checking on container source type\n");
 
-    if ( _singularity_image_mount_image_check(source) == 0 ) {
+    if ( _singularity_image_mount_image_check() == 0 ) {
         module = ROOTFS_IMAGE;
-    } else if ( _singularity_image_mount_squashfs_check(source) == 0 ) {
+    } else if ( _singularity_image_mount_squashfs_check() == 0 ) {
         module = ROOTFS_SQUASHFS;
-    } else if ( _singularity_image_mount_dir_check(source) == 0 ) {
+    } else if ( _singularity_image_mount_dir_check() == 0 ) {
         module = ROOTFS_DIR;
     } else {
         singularity_message(ERROR, "Could not identify image format type: %s\n", source);

@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_IMAGE_ATTACH_H_
 #define __SINGULARITY_IMAGE_ATTACH_H_
 
-extern int _singularity_image_attach(char *path);
+extern int _singularity_image_attach(void);
 extern int _singularity_image_attach_fd(void);
 extern FILE *_singularity_image_attach_fp(void);
 

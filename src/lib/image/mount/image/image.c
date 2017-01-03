@@ -47,6 +47,7 @@ static char *mount_point = NULL;
 static char *loop_dev = NULL;
 static int read_write = 0;
 
+// TODO: This all needs to be moved into _singularity_image_attach()
 static FILE *open_as_singularity(const char *source, int allow_user_image) {
     FILE *new_fp = NULL;
     singularity_priv_escalate_singularity();

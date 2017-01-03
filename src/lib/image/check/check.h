@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_IMAGE_CHECK_H_
 #define __SINGULARITY_IMAGE_CHECK_H_
 
-extern int _singularity_image_check(FILE *image_fp);
+extern int _singularity_image_check(void);
 
 #endif /* __SINGULARITY_IMAGE_CHECK_H */
 

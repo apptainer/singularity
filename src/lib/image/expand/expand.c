@@ -36,10 +36,12 @@
 #define BUFFER_SIZE (1024*1024)
 
 
-int _singularity_image_expand(FILE *image_fp, unsigned int size) {
-    char *buff = (char *) malloc(BUFFER_SIZE);
-    memset(buff, '\255', BUFFER_SIZE);
+int _singularity_image_expand(unsigned int size) {
     int i;
+    char *buff = (char *) malloc(BUFFER_SIZE);
+    FILE *image_fp = singularity_image_attach_fp();
+
+    memset(buff, '\255', BUFFER_SIZE);
 
     if ( image_fp == NULL ) {
         singularity_message(ERROR, "Called _singularity_image_expand() with NULL image pointer\n");

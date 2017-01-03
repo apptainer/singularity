@@ -16,18 +16,14 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
 
-#ifndef __SINGULARITY_ROOTFS_H_
-#define __SINGULARITY_ROOTFS_H_
+#ifndef __SINGULARITY_IMAGE_MOUNT_H_
+#define __SINGULARITY_IMAGE_MOUNT_H_
 
-    int singularity_rootfs_init(char *source);
-    int singularity_rootfs_mount(void);
-    int singularity_rootfs_chroot(void);
-    int singularity_rootfs_check(void);
+extern int _singularity_image_mount(void);
+extern int _singularity_image_mount_overlayfs(void);
+extern char *_singularity_image_mount_path(void);
 
-    int singularity_rootfs_overlay_enabled(void);
-    char *singularity_rootfs_dir(void);
-
-#endif /* __SINGULARITY_ROOTFS_H_ */
+#endif /* __SINGULARITY_IMAGE_MOUNT_H_ */

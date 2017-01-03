@@ -51,11 +51,12 @@ char *loop_dev = NULL;
 FILE *loop_fp = NULL;
 int lockfile_fd; // This has to be global for the flock to be held
 
-int singularity_loop_bind(FILE *image_fp) {
-    char *tmpdir = singularity_image_tempdir(NULL);
-    char *lockfile = joinpath(tmpdir, "loop_lock");
+int singularity_loop_bind(void) {
     struct loop_info64 lo64 = {0};
     int i;
+    char *tmpdir = singularity_image_tempdir(NULL);
+    char *lockfile = joinpath(tmpdir, "loop_lock");
+    FILE *image_fp = singularity_image_attach_fp();
 
     if ( tmpdir == NULL ) {
         singularity_message(ERROR, "Failed to obtain session directory\n");
@@ -97,7 +98,7 @@ int singularity_loop_bind(FILE *image_fp) {
 #endif
 
     singularity_message(DEBUG, "Calculating image offset\n");
-    if ( ( lo64.lo_offset = singularity_image_offset(image_fp) ) < 0 ) {
+    if ( ( lo64.lo_offset = singularity_image_offset() ) < 0 ) {
         singularity_message(ERROR, "Could not obtain message offset of image\n");
         ABORT(255);
     }
@@ -164,5 +165,9 @@ int singularity_loop_bind(FILE *image_fp) {
 
 
 char *_singularity_image_bind_dev() {
+    if ( loop_dev == NULL ) {
+        singularity_message(ERROR, "Loop device not allocated!\n");
+        ABORT(255);
+    }
     return(loop_dev);
 }
