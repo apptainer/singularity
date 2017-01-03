@@ -48,7 +48,7 @@ fi
 
 MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF"`
 if [ -z "${MIRROR:-}" ]; then
-    MIRROR="https://www.busybox.net/downloads/binaries/busybox-x86_64"
+    MIRROR="https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64"
 fi
 
 
