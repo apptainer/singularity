@@ -32,7 +32,6 @@
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
-#include "lib/rootfs/rootfs.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"

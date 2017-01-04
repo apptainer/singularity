@@ -131,7 +131,7 @@ char *joinpath(const char * path1, const char * path2_in) {
     const char *path2 = path2_in;
     char *tmp_path1 = strdup(path1);
     int path1_len = strlength(tmp_path1, 4096);
-    char *ret;
+    char *ret = NULL;
 
     if ( tmp_path1[path1_len - 1] == '/' ) {
         tmp_path1[path1_len - 1] = '\0';
@@ -141,6 +141,12 @@ char *joinpath(const char * path1, const char * path2_in) {
     }
 
     ret = (char *) malloc(strlength(tmp_path1, PATH_MAX) + strlength(path2, PATH_MAX) + 2);
+
+    if ( ret == NULL ) {
+        singularity_message(ERROR, "Failed allocating space for joinpath()\n");
+        ABORT(255);
+    }
+
     snprintf(ret, strlength(tmp_path1, PATH_MAX) + strlen(path2) + 2, "%s/%s", tmp_path1, path2); // Flawfinder: ignore
 
     return(ret);

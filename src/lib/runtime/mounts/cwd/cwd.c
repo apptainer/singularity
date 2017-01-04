@@ -38,7 +38,6 @@
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
-#include "lib/rootfs/rootfs.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -106,7 +105,8 @@ int _singularity_runtime_mount_cwd(void) {
     }
 
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
-    if ( singularity_rootfs_overlay_enabled() <= 0 ) {
+    if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
+    } else {
         if ( is_dir(joinpath(container_dir, cwd_path)) < 0 ) {
             singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled and directory does not exist in container: %s\n", joinpath(container_dir, cwd_path));
             free(cwd_path);

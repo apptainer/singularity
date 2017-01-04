@@ -36,7 +36,6 @@
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/sessiondir.h"
-#include "lib/rootfs/rootfs.h"
 
 #include "../file-bind.h"
 #include "../../runtime.h"

@@ -33,7 +33,6 @@
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
-#include "lib/rootfs/rootfs.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -83,7 +82,7 @@ int _singularity_runtime_mount_userbinds(void) {
             }
 
             if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
-                if ( singularity_rootfs_overlay_enabled() > 0 ) {
+                if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
                     char *dir = dirname(strdup(dest));
                     if ( is_dir(joinpath(container_dir, dir)) < 0 ) {
                         singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
@@ -115,7 +114,7 @@ int _singularity_runtime_mount_userbinds(void) {
                     continue;
                 }
             } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
-                if ( singularity_rootfs_overlay_enabled() > 0 ) {
+                if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
                     singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
                     if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
                         singularity_priv_escalate();

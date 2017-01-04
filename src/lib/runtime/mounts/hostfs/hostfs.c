@@ -36,7 +36,6 @@
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
 #include "lib/sessiondir.h"
-#include "lib/rootfs/rootfs.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -142,7 +141,7 @@ int _singularity_runtime_mount_hostfs(void) {
         }
 
         if ( ( is_dir(mountpoint) == 0 ) && ( is_dir(joinpath(container_dir, mountpoint)) < 0 ) ) {
-            if ( singularity_rootfs_overlay_enabled() > 0 ) {
+            if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
                 singularity_priv_escalate();
                 if ( s_mkpath(joinpath(container_dir, mountpoint), 0755) < 0 ) {
                     singularity_priv_drop();

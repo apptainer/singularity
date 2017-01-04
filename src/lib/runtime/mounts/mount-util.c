@@ -29,7 +29,8 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
-#include "lib/rootfs/rootfs.h"
+
+#include "../runtime.h"
 
 #define MAX_LINE_LEN 2048
 
@@ -37,7 +38,7 @@ int check_mounted(char *mountpoint) {
     int retval = -1;
     FILE *mounts;
     char *line = (char *)malloc(MAX_LINE_LEN);
-    char *rootfs_dir = singularity_rootfs_dir();
+    char *rootfs_dir = singularity_runtime_containerdir(NULL);
 
     singularity_message(DEBUG, "Opening /proc/mounts\n");
     if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) { // Flawfinder: ignore

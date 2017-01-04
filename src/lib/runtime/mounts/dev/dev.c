@@ -33,7 +33,6 @@
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
-#include "lib/rootfs/rootfs.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -45,7 +44,7 @@ int _singularity_runtime_mount_dev(void) {
     char *container_dir = singularity_runtime_containerdir(NULL);
 
     if ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) {
-        if ( singularity_rootfs_overlay_enabled() > 0 ) {
+        if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
             if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
                 if ( s_mkpath(joinpath(container_dir, "/dev"), 0755) < 0 ) {
                     singularity_message(VERBOSE2, "Could not create /dev inside container, returning...\n");
@@ -110,7 +109,7 @@ int _singularity_runtime_mount_dev(void) {
 
 
 static int mount_dev(const char *dev) {
-    char *container_dir = singularity_rootfs_dir();
+    char *container_dir = singularity_runtime_containerdir(NULL);
     char *path = joinpath(container_dir, dev);
 
     singularity_message(DEBUG, "Mounting device %s at %s\n", dev, path);
