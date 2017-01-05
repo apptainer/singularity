@@ -114,7 +114,7 @@ def download_image(manifest,download_folder=None,extract=True):
     '''    
     image_file = get_image_name(manifest)
 
-    print("Found image %s" %(manifest['name']))
+    print("Found image %s:%s" %(manifest['name'],manifest['branch']))
     print("Downloading image... %s" %(image_file))
 
     if download_folder != None:

@@ -51,7 +51,6 @@ def parse_image_uri(image,uri=None,default_namespace=None):
 
     image = image.split('/')
 
-
     # If there are two parts, we have namespace with repo (and maybe tab)
     if len(image) >= 2:
         namespace = image[0]
