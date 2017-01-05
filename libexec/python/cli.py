@@ -39,7 +39,7 @@ from docker.api import (
     get_manifest 
 )
 
-from docker.shell import parse_image_uri
+from shell import parse_image_uri
 
 from utils import (
     basic_auth_header,
@@ -198,7 +198,7 @@ def run(args):
         # Input Parsing ----------------------------
         # Parse image name, repo name, and namespace
 
-        image = parse_image_uri(image=image)
+        image = parse_image_uri(image=image,uri="docker://")
         namespace = image['namespace']
         repo_name = image['repo_name']
         repo_tag = image['repo_tag']
