@@ -186,7 +186,6 @@ def basic_auth_header(username, password):
     else:
         credentials = base64.b64encode(s)
     auth = {"Authorization": "Basic %s" % credentials}
-    logger.debug("AUTH Final %s", auth)
     return auth
 
 
