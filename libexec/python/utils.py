@@ -220,7 +220,7 @@ def is_number(image):
     :param image: the image name, after the uri is removed (shub://)
     '''
     try:
-        float(s)
+        float(image)
         return True
     except ValueError:
         return False

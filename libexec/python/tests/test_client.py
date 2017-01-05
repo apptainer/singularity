@@ -214,6 +214,26 @@ class TestUtils(TestCase):
         self.assertTrue(os.path.exists(cache))
 
 
+    def test_is_number(self):
+        '''test_is_number should return True for any string or
+        number that turns to a number, and False for everything else
+        '''
+        print("Testing utils.is_number...")
+
+        from utils import is_number
+
+        print("Case 1: Testing string and float numbers returns True")
+        self.assertTrue(is_number("4"))
+        self.assertTrue(is_number(4))
+        self.assertTrue(is_number("2.0"))
+        self.assertTrue(is_number(2.0))
+
+        print("Case 2: Testing repo names, tags, commits, returns False")
+        self.assertFalse(is_number("vsoch/singularity-images"))
+        self.assertFalse(is_number("vsoch/singularity-images:latest"))
+        self.assertFalse(is_number("44ca6e7c6c35778ab80b34c3fc940c32f1810f39"))
+
+
     def test_change_permission(self):
         '''test_change_permissions will make sure that we can change
         permissions of a file
@@ -225,14 +245,16 @@ class TestUtils(TestCase):
         tmpfile = '%s/.mooza' %(self.tmpdir)
         os.system('touch %s' %(tmpfile))
 
-        # 664
+        print("Case 1: Base permissions are 644")
         permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(permissions,'664')
-        # to 755
+
+        print("Case 2: Permissions are changed to 755")
         change_permissions(tmpfile,permission=755)  
         new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'755')
-        # and back
+
+        print("Case 2: Permissions are changed back to 644")
         change_permissions(tmpfile,permission=644)  
         new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'664')
