@@ -163,8 +163,10 @@ def run(args):
 
     # Does the user want to download a Singularity image?
     if args.shub != None:
-        image_id = int(args.shub)
-        manifest = get_shub_manifest(image_id)
+        image = parse_image_uri(image=args.shub,
+                                uri = "shub://")
+
+        manifest = get_shub_manifest(image)
 
         cache_base = get_cache(subfolder="shub", 
                                disable_cache = args.disable_cache)

@@ -18,10 +18,10 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import sys
-sys.path.append('..') # parent directory
 
 from logman import logger
 from docker.api import get_tags
+from utils import is_number
 import json
 import re
 import os
@@ -41,6 +41,11 @@ def parse_image_uri(image,uri,default_namespace=None):
     # First split the docker image name by /
     image = image.replace(uri,'')
     image = image.split('/')
+
+    # If the user provided a number (unique id for an image), return it
+    if is_number(image) == True:
+        logger.info("Numeric image ID %s%s found.", uri, image)
+        return int(image)
 
     # If there are two parts, we have namespace with repo (and maybe tab)
     if len(image) >= 2:

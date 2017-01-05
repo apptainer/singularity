@@ -172,6 +172,7 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
 
     return stream
 
+
 def basic_auth_header(username, password):
     '''basic_auth_header will return a base64 encoded header object to
     generate a token
@@ -212,6 +213,17 @@ def run_command(cmd):
 
     return output
 
+
+def is_number(image):
+    '''is_number determines if the user is providing a singularity hub
+    number (meaning the id of an image to download) vs a full name)
+    :param image: the image name, after the uri is removed (shub://)
+    '''
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
 
 
 ############################################################################
