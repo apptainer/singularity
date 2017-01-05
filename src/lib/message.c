@@ -63,7 +63,10 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     va_list args;
     va_start (args, format);
 
-    vsnprintf(message, 512, format, args); // Flawfinder: ignore (format is internally defined)
+    if (vsnprintf(message, 512, format, args) >= 512) {
+        memcpy(message+497, "(TRUNCATED...)", 14);
+        message[511] = '\0';
+    }
 
     va_end (args);
 
@@ -103,30 +106,35 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     }
 
     if ( level <= LOG ) {
-        char syslog_string[540]; // Flawfinder: ignore (512 max message length + 28'ish chars for header)
-        snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message); // Flawfinder: ignore
+        // Note __progname comes from the linker; the UID can be 5 characters and PID can be
+        // 10-or-so characters.
+        char syslog_string[560]; // Flawfinder: ignore (512 max message length + 48 for header).
+        if (snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message) >= 540) {
+            // This case shouldn't happen unless we have a very strange __progname; nul-terminating to be sure.
+            syslog_string[559] = '\0';
+        }
 
-        syslog(syslog_level, syslog_string, strlength(syslog_string, 1024)); // Flawfinder: ignore (format is internally defined)
+        syslog(syslog_level, "%s", syslog_string);
     }
 
     if ( level <= messagelevel ) {
-        char *header_string = NULL;
+        char header_string[95];
 
         if ( messagelevel >= DEBUG ) {
-            char *debug_string = (char *) malloc(25);
-            char *location_string = (char *) malloc(60);
-            char *tmp_header_string = (char *) malloc(80);
-            header_string = (char *) malloc(80);
+            char debug_string[25];
+            char location_string[60];
+            char tmp_header_string[86];
             snprintf(location_string, 60, "%s:%d:%s()", file, line, function); // Flawfinder: ignore
+            location_string[59] = '\0';
             snprintf(debug_string, 25, "[U=%d,P=%d]", geteuid(), getpid()); // Flawfinder: ignore
-            snprintf(tmp_header_string, 80, "%-18s %s", debug_string, location_string); // Flawfinder: ignore
-            snprintf(header_string, 80, "%-7s %-62s: ", prefix, tmp_header_string); // Flawfinder: ignore
-            free(debug_string);
-            free(location_string);
-            free(tmp_header_string);
+            debug_string[24] = '\0';
+            snprintf(tmp_header_string, 86, "%-18s %s", debug_string, location_string); // Flawfinder: ignore
+            tmp_header_string[85] = '\0';
+            snprintf(header_string, 95, "%-7s %-62s: ", prefix, tmp_header_string); // Flawfinder: ignore
+            header_string[94] = '\0';
         } else {
-            header_string = (char *) malloc(11);
             snprintf(header_string, 10, "%-7s: ", prefix); // Flawfinder: ignore
+            header_string[9] = '\0';
         }
 
         if ( level == INFO && messagelevel == INFO ) {
@@ -139,7 +147,6 @@ void _singularity_message(int level, const char *function, const char *file_in, 
             fprintf(stderr, "%s%s", header_string, message);
         }
 
-        free(header_string);
         fflush(stdout);
         fflush(stderr);
 

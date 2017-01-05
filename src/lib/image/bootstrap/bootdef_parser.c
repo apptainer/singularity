@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <string.h>
+#include <strings.h>
 #include <fcntl.h>
 #include <limits.h>
 
@@ -108,7 +109,7 @@ char *singularity_bootdef_get_value(char *key) {
     while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
         if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
             chomp(bootdef_key);
-            if ( strcmp(bootdef_key, key) == 0 ) {
+            if ( strcasecmp(bootdef_key, key) == 0 ) {
                 if ( ( bootdef_value = strdup(strtok(NULL, ":")) ) != NULL ) {
                     chomp(bootdef_value);
                     singularity_message(VERBOSE2, "Got bootstrap definition key %s(: '%s')\n", key, bootdef_value);
@@ -165,7 +166,7 @@ int singularity_bootdef_section_find(char *section_name) {
         if ( ( tok = strtok(line, "%% :") ) != NULL ) {
             singularity_message(DEBUG, "Comparing token: %s to section name: %s\n", tok, section_name);
 
-            if ( strcmp(tok, section_name) == 0 ) {
+            if ( strcasecmp(tok, section_name) == 0 ) {
                 singularity_message(DEBUG, "Found %%%s section, returning 0.\n", section_name);
                 free(line);
                 return(0);

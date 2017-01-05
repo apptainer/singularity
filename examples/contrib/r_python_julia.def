@@ -1,4 +1,4 @@
-BootStrap: debian
+BootStrap: debootstrap
 OSVersion: trusty
 MirrorURL: http://us.archive.ubuntu.com/ubuntu/
 

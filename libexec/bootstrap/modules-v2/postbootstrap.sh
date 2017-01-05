@@ -131,6 +131,11 @@ chmod 0755 "$SINGULARITY_ROOTFS/.run"
 
 ldconfig -r "$SINGULARITY_ROOTFS" >/dev/null 2>&1
 
+
+##########################################################################################
+# RUNSCRIPT
+##########################################################################################
+
 if [ -f "$SINGULARITY_BUILDDEF" ]; then
 
 #    #TODO: This needs lots of love...
@@ -162,10 +167,18 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
         echo "$runscript_command" > "$SINGULARITY_ROOTFS/singularity"    
     fi
 
-    # If we have a runscript, whether docker, user defined, change permissions    
-    if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
-        chmod 0755 "$SINGULARITY_ROOTFS/singularity"
-    fi
+fi
+
+# If we have a runscript, whether docker, user defined, change permissions
+if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
+    chmod 0755 "$SINGULARITY_ROOTFS/singularity"
+fi
+
+#/RUNSCRIPT###############################################################################
+
+
+
+if [ -f "$SINGULARITY_BUILDDEF" ]; then
 
     mount --no-mtab -t proc proc "$SINGULARITY_ROOTFS/proc"
     mount --no-mtab -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
@@ -225,4 +238,3 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
     > "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 fi
-

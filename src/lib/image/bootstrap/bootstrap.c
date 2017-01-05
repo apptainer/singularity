@@ -19,6 +19,7 @@
  */
 
 #include <errno.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -188,8 +189,10 @@ int bootstrap_module_init() {
             free(module_name);
             return( singularity_bootstrap_docker() );
         } else {
-            fork_args[0] = (char *)malloc(2048);
-            snprintf(fork_args[0], 2048, LIBEXECDIR "/singularity/bootstrap/modules-v2/build-%s.sh", module_name);
+            fork_args[0] = (char *)malloc(PATH_MAX);
+            if (snprintf(fork_args[0], PATH_MAX, LIBEXECDIR "/singularity/bootstrap/modules-v2/build-%s.sh", module_name) >= PATH_MAX) {
+                singularity_message(ERROR, "Compiled setting for LIBEXECDIR too long.\n");
+            }
             fork_args[1] = NULL;
             
             free(module_name);
