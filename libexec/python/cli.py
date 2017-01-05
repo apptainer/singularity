@@ -39,6 +39,8 @@ from docker.api import (
     get_manifest 
 )
 
+from docker.shell import parse_image_uri
+
 from utils import (
     basic_auth_header,
     change_permissions, 
@@ -196,29 +198,10 @@ def run(args):
         # Input Parsing ----------------------------
         # Parse image name, repo name, and namespace
 
-        # First split the docker image name by /
-        image = image.split('/')
-
-        # If there are two parts, we have namespace with repo (and maybe tab)
-        if len(image) == 2:
-            namespace = image[0]
-            image = image[1]
-
-        # Otherwise, we must be using library namespace
-        else:
-            namespace = "library"
-            image = image[0]
-
-        # Now split the docker image name by :
-        image = image.split(':')
-        if len(image) == 2:
-            repo_name = image[0]
-            repo_tag = image[1]
-
-        # Otherwise, assume latest of an image
-        else:
-            repo_name = image[0]
-            repo_tag = "latest"
+        image = parse_image_uri(image=image)
+        namespace = image['namespace']
+        repo_name = image['repo_name']
+        repo_tag = image['repo_tag']
 
         # Tell the user the namespace, repo name and tag
         logger.info("Docker image path: %s/%s:%s", namespace,repo_name,repo_tag)
