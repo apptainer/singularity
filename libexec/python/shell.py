@@ -27,25 +27,30 @@ import re
 import os
 
 
-def parse_image_uri(image,uri,default_namespace=None):
+def parse_image_uri(image,uri=None,default_namespace=None):
     '''parse_image_uri will return a json structure with a repo name, tag, and
     namespace.
     :param image: the string provided on command line for the image name, eg: ubuntu:latest
-    :param uri: the uri (eg, docker:// to remove)
+    :param uri: the uri (eg, docker:// to remove), default uses ""
     :default_namespace: if not provided, will use "library"
     :returns parsed: a json structure with repo_name, repo_tag, and namespace
     '''
     if default_namespace == None:
         default_namespace = "library"
 
+    if uri == None:
+        uri = ""
+
     # First split the docker image name by /
     image = image.replace(uri,'')
-    image = image.split('/')
 
     # If the user provided a number (unique id for an image), return it
     if is_number(image) == True:
         logger.info("Numeric image ID %s%s found.", uri, image)
         return int(image)
+
+    image = image.split('/')
+
 
     # If there are two parts, we have namespace with repo (and maybe tab)
     if len(image) >= 2:

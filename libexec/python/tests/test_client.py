@@ -1,6 +1,7 @@
 '''
 
-test_cli.py: Client (cli.py) testing functions for Singularity in Python
+test_cli.py: Client (cli.py) testing functions for Singularity in Python,
+                    including client and supporting utils and shell functions.
 
 Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
 
@@ -53,6 +54,63 @@ class TestClient(TestCase):
         with self.assertRaises(SystemExit) as cm:
             run(args)
         self.assertEqual(cm.exception.code, 1)
+
+
+class TestShell(TestCase):
+
+    def setUp(self):
+        self.repo_name = "singularity-images"
+        self.namespace = "vsoch"
+        self.tag = "latest"
+        print("\n---START----------------------------------------")
+
+    def tearDown(self):
+        print("---END------------------------------------------")
+
+    def test_parse_image_uri(self):
+        '''test_parse_image_uri ensures that the correct namespace,
+        repo name, and tag (or unique id) is returned.
+        '''
+
+        from shell import parse_image_uri
+
+        print("Case 1: Specifying an shub:// image id should return a number")
+        image = parse_image_uri(image="shub://7",
+                                uri = "shub://")
+        self.assertTrue(isinstance(image,int))
+        self.assertEqual(image,7)
+
+        print("Case 2: Checking for correct output tags in digest...")
+        image_name = "%s/%s" %(self.namespace,self.repo_name)
+        digest = parse_image_uri(image=image_name)
+        for tag in ['repo_name','repo_tag','namespace']:
+            self.assertTrue(tag in digest)
+
+        print("Case 3: Tag when not specified should be latest.")
+        self.assertTrue(digest['repo_tag'] == 'latest')
+
+        print("Case 4: Tag when speciifed should be returned.")
+        image_name = "%s/%s:%s" %(self.namespace,self.repo_name,"pusheenasaurus")
+        digest = parse_image_uri(image=image_name)
+        self.assertTrue(digest['repo_tag'] == 'pusheenasaurus')
+
+        print("Case 5: Namespace when not specified should be library.")
+        digest = parse_image_uri(image=self.repo_name)
+        self.assertTrue(digest['repo_tag'] == 'latest')
+        self.assertTrue(digest['namespace'] == 'library')
+
+        print("Case 6: Repo name and tag without namespace...")
+        image_name = "%s:%s" %(self.repo_name,self.tag)
+        digest = parse_image_uri(image=image_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+        self.assertTrue(digest['namespace'] == 'library')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+
+        print("Case 7: Changing default namespace should not use library.")
+        image_name = "%s:%s" %(self.repo_name,self.tag)
+        digest = parse_image_uri(image=image_name,default_namespace="meow")
+        self.assertTrue(digest['namespace'] == 'meow')
+        
 
 
 class TestUtils(TestCase):
