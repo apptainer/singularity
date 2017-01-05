@@ -55,7 +55,7 @@ char *singularity_sessiondir_init(char *file) {
         struct stat filestat;
         uid_t uid = singularity_priv_getuid();
 
-        sessiondir = (char *) malloc(sizeof(char) * PATH_MAX);
+        sessiondir = (char *) malloc(PATH_MAX);
 
         singularity_message(DEBUG, "Checking Singularity configuration for 'sessiondir prefix'\n");
 
@@ -65,9 +65,15 @@ char *singularity_sessiondir_init(char *file) {
         }
 
         if ( ( sessiondir_prefix = envar_path("SINGULARITY_SESSIONDIR") ) != NULL ) {
-            snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s/singularity-session-%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
+            if (snprintf(sessiondir, PATH_MAX, "%s/singularity-session-%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino) >= PATH_MAX) { // Flawfinder: ignore
+                singularity_message(ERROR, "Overly-long session directory specified.\n");
+                ABORT(255);
+            }
         } else if ( ( sessiondir_prefix = strdup(singularity_config_get_value(SESSIONDIR_PREFIX)) ) != NULL ) {
-            snprintf(sessiondir, sizeof(char) * PATH_MAX, "%s%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
+            if (snprintf(sessiondir, PATH_MAX, "%s%d.%d.%lu", sessiondir_prefix, (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino) >= PATH_MAX) { // Flawfinder: ignore
+                singularity_message(ERROR, "Overly-long session directory specified.\n");
+                ABORT(255);
+            }
         } else {
             singularity_message(ERROR, "Programming error - default for %s returned NULL.\n", sessiondir_prefix);
             ABORT(255);

@@ -182,7 +182,10 @@ int singularity_rootfs_mount(void) {
 #ifdef SINGULARITY_OVERLAYFS
         int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
         char *overlay_options = (char *) malloc(overlay_options_len);
-        snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work); // Flawfinder: ignore
+        if (snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work) >= overlay_options_len) {
+            singularity_message(ERROR, "Overly-long path names for OverlayFS configuration.\n");
+            ABORT(255);
+        }
 
         singularity_priv_escalate();
         singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
