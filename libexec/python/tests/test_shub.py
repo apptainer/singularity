@@ -90,6 +90,7 @@ class TestApi(TestCase):
         from shub.api import get_image_name, get_manifest
         manifest = get_manifest(image_id=self.image_id)
         
+        
         print("Case 1: return an image name using the commit id")
         image_name = get_image_name(manifest)
         self.assertEqual('f57e631a0434c31f0b4fa5276a314a6d8a672a55.img.gz',

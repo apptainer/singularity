@@ -46,6 +46,7 @@ from utils import (
     change_permissions, 
     extract_tar, 
     get_cache, 
+    is_number,
     write_file
 )
 
@@ -163,11 +164,8 @@ def run(args):
 
     # Does the user want to download a Singularity image?
     if args.shub != None:
-        image = parse_image_uri(image=args.shub,
-                                uri = "shub://")
-
+        image = args.shub
         manifest = get_shub_manifest(image)
-
         cache_base = get_cache(subfolder="shub", 
                                disable_cache = args.disable_cache)
 

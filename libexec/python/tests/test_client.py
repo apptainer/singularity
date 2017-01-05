@@ -106,6 +106,7 @@ class TestShell(TestCase):
         self.assertTrue(digest['namespace'] == 'library')
         self.assertTrue(digest['repo_name'] == self.repo_name)
 
+
         print("Case 7: Changing default namespace should not use library.")
         image_name = "%s:%s" %(self.repo_name,self.tag)
         digest = parse_image_uri(image=image_name,default_namespace="meow")
