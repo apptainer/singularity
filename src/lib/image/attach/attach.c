@@ -36,7 +36,6 @@
 #include "lib/config_parser.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
-#include "lib/sessiondir.h"
 
 #include "../image.h"
 
@@ -46,12 +45,15 @@ static FILE *image_fp;
 int _singularity_image_attach(void) {
     char *image = singularity_image_path(NULL);
 
+    singularity_message(DEBUG, "Checking if image is set\n");
     if ( image_fp != NULL ) {
         singularity_message(ERROR, "Call to singularity_image_attach() when already attached!\n");
         ABORT(255);
     }
 
+    singularity_message(DEBUG, "Checking if image is a file: %s\n", image);
     if ( is_file(image) == 0 ) {
+        singularity_message(DEBUG, "Obtaining file pointer to image\n");
         image_fp = fopen(image, "r");
 
         if ( image_fp == NULL ) {

@@ -30,20 +30,89 @@
 #include <stdlib.h>
 #include <limits.h>
 
-
-
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
 #include "lib/fork.h"
+#include "lib/registry.h"
+
+#include "../image.h"
+#include "./sessiondir.h"
+
+
+//void singularity_image_sessiondir_init(struct image_object *image);
+//int singularity_image_sessiondir_create(struct image_object *image);
+//int singularity_image_sessiondir_remove(struct image_object *image);
+
+
+
+void singularity_image_sessiondir_init(struct image_object *image) {
+    char *sessiondir_prefix;
+    char *sessiondir_suffix;
+    char *file = strdup(image->path);
+    struct stat imagestat;
+    int sessiondir_fd;
+    int sessiondir_suffix_len;
+    uid_t uid = singularity_priv_getuid();
+
+    if ( file == NULL ) {
+        singularity_message(ERROR, "Internal error, image->path undefined\n");
+        ABORT(222);
+    }
+
+    if ( ( sessiondir_prefix = singularity_registry_get("SESSIONDIR") ) != NULL ) {
+        singularity_message(DEBUG, "Got sessiondir_prefix from environment: '%s'\n", sessiondir_prefix);
+    } else if ( ( sessiondir_prefix = strdup(singularity_config_get_value(SESSIONDIR_PREFIX)) ) != NULL ) {
+        singularity_message(DEBUG, "Got sessiondir_prefix from configuration: '%s'\n", sessiondir_prefix);
+    } else {
+        singularity_message(ERROR, "Could not obtain the session directory prefix.\n");
+        ABORT(255);
+    }
+    singularity_message(DEBUG, "Set sessiondir_prefix to: %s\n", sessiondir_prefix);
+
+    if ( stat(file, &imagestat) < 0 ) {
+        singularity_message(ERROR, "Failed calling stat() on %s: %s\n", file, strerror(errno));
+        ABORT(255);
+    }
+
+    sessiondir_suffix_len = intlen((int)uid) + intlen((int)imagestat.st_dev) + intlen((long unsigned)imagestat.st_ino) + 3;
+
+    sessiondir_suffix = (char *) malloc(sessiondir_suffix_len);
+
+    if ( snprintf(sessiondir_suffix, sessiondir_suffix_len, "%d.%d.%lu", (int)uid, (int)imagestat.st_dev, (long unsigned)imagestat.st_ino) != sessiondir_suffix_len -1 ) {
+        singularity_message(ERROR, "Failed creating sessiondir_suffix: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    singularity_message(DEBUG, "Set sessiondir_suffix to: %s\n", sessiondir_suffix);
+
+    if ( ( image->sessiondir = strcat(sessiondir_prefix, sessiondir_suffix) ) == NULL ) {
+        singularity_message(ERROR, "Could not set image->sessiondir\n");
+        ABORT(255);
+    }
+
+    singularity_registry_set("sessiondir", image->sessiondir);
+
+    singularity_message(VERBOSE, "Set session directory to: %s\n", image->sessiondir);
+
+    return;
+}
+
+
+
+
+/*
+
+
 
 
 char *sessiondir = NULL;
 int sessiondir_fd = 0;
 
 char *singularity_sessiondir_init(char *file) {
+
+    char *file = strdup(image->path);
     pid_t child_pid;
     int retval;
 
@@ -191,3 +260,5 @@ int singularity_sessiondir_rm(void) {
     
     return(0);
 }
+
+*/

@@ -35,7 +35,7 @@ extern void singularity_registry_init(void);
 
 // Set a value in the registry. If it already exists, this will overwrite the
 // previous entry as only one value for each key can be stored.
-extern int singularity_registry_add(char *key, char *value);
+extern int singularity_registry_set(char *key, char *value);
 
 // Get any value that is currently being stored in the registry. If the key
 // is not currently set, it will return with NULL.

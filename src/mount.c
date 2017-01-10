@@ -16,40 +16,48 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
-#include <errno.h>
-#include <fcntl.h>
+
+#define _GNU_SOURCE
 #include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <limits.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <grp.h>
-#include <pwd.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <fcntl.h>
 
+#include "config.h"
+#include "lib/image/image.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/config_parser.h"
-#include "lib/message.h"
+#include "lib/registry.h"
 #include "lib/privilege.h"
 
-#include "../file-bind.h"
-#include "../../runtime.h"
+#ifndef SYSCONFDIR
+#error SYSCONFDIR not defined
+#endif
 
 
-int _singularity_runtime_files_resolvconf(void) {
-    char *file = "/etc/resolv.conf";
+int main(int argc_in, char ** argv_in) {
 
-    singularity_message(DEBUG, "Checking configuration option\n");
-    if ( singularity_config_get_bool(CONFIG_RESOLV_CONF) <= 0 ) {
-        singularity_message(VERBOSE, "Skipping bind of the host's %s\n", file);
-        return(0);
-    }
 
-    container_file_bind(file, file);
+    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
+    // Before we do anything, check privileges and drop permission
+    singularity_priv_init();
+    singularity_priv_drop();
+
+    singularity_registry_init();
+
+    singularity_image_path(singularity_registry_get("CONTAINER"));
+    
+    struct image_object image = singularity_image_init(singularity_registry_get("CONTAINER"));
+
+    printf("Image name: %s\n", singularity_image_name(&image));
+    printf("Sessiondir: %s\n", image.sessiondir);
+
 
     return(0);
 }

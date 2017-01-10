@@ -19,11 +19,11 @@
 */
 
 
-#ifndef __SESSIONDIR_H_
-#define __SESSIONDIR_H_
+#ifndef __SINGULARITY_IMAGE_SESSIONDIR_H_
+#define __SINGULARITY_IMAGE_SESSIONDIR_H_
 
-    void singularity_sessiondir_init(char *file);
-    char *singularity_sessiondir_get(void);
-    int singularity_sessiondir_rm(void);
+extern void singularity_image_sessiondir_init(struct image_object *image);
+extern int singularity_image_sessiondir_create(struct image_object *image);
+extern int singularity_image_sessiondir_remove(struct image_object *image);
 
-#endif /* __SESSIONDIR_H_ */
+#endif /* __SINGULARITY_IMAGE_SESSIONDIR_H_ */

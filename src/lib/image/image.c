@@ -39,6 +39,7 @@
 #include "./check/check.h"
 #include "./expand/expand.h"
 #include "./offset/offset.h"
+#include "./sessiondir/sessiondir.h"
 
 static char *temp_directory = NULL;
 static char *image_path = NULL;
@@ -49,6 +50,18 @@ static char *image_path = NULL;
 // extern int singularity_image_mount(char *mountpoint, unsigned int flags);
 
 
+
+struct image_object singularity_image_init(char *path) {
+    struct image_object image;
+
+    image.path = strdup(path);
+    image.name = basename(strdup(path));
+    image.loopdev = NULL;
+
+    singularity_image_sessiondir_init(&image);
+
+    return(image);
+}
 
 char *singularity_image_tempdir(char *directory) {
     if ( directory != NULL ) {
@@ -69,17 +82,16 @@ char *singularity_image_path(char *path) {
             singularity_message(ERROR, "Invalid image path: %s\n", path);
             ABORT(255);
         }
+        singularity_message(DEBUG, "Setting image path to: %s\n", path);
         image_path = strdup(path);
+    } else {
+        singularity_message(DEBUG, "Returning image path: %s\n", image_path);
     }
     return(image_path);
 }
 
-char *singularity_image_name(void) {
-    if ( image_path == NULL ) {
-        singularity_message(ERROR, "Image path has not een set\n");
-        ABORT(255);
-    }
-    return(basename(image_path));
+char *singularity_image_name(struct image_object *object) {
+    return(object->name);
 }
 
 

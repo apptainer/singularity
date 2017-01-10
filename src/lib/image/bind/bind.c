@@ -51,7 +51,7 @@ char *loop_dev = NULL;
 FILE *loop_fp = NULL;
 int lockfile_fd; // This has to be global for the flock to be held
 
-int singularity_loop_bind(void) {
+int _singularity_image_bind(void) {
     struct loop_info64 lo64 = {0};
     int i;
     char *tmpdir = singularity_image_tempdir(NULL);

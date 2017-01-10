@@ -215,7 +215,8 @@ int singularity_config_init(char *config_path) {
 const char *_singularity_config_get_value_impl(const char *key, const char *default_value)
 {
     if (!config_initialized) {
-        return NULL;
+        singularity_message(ERROR, "Called singularity_config_get_value on uninitialized config subsystem\n");
+        ABORT(255);
     }
 
     ENTRY search_item;
@@ -245,7 +246,8 @@ static const char *_default_entry[2];
 const char **_singularity_config_get_value_multi_impl(const char *key, const char *default_value)
 {
     if (!config_initialized) {
-        return NULL;
+        singularity_message(ERROR, "Called singularity_config_get_value on uninitialized config subsystem\n");
+        ABORT(255);
     }
     _default_entry[1] = '\0';
     _default_entry[0] = default_value;

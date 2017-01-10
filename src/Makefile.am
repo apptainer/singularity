@@ -8,8 +8,19 @@ AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-#bindir = $(libexecdir)/singularity
-#
+bindir = $(libexecdir)/singularity
+
+bin_PROGRAMS = mount
+
+mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
+mount_LDADD = lib/image/libsingularity-image.la
+mount_LDFLAGS = -static
+
+
+
+
+
+
 #bin_PROGRAMS = $(BUILD_SUID) sexec simage get-section
 #EXTRA_PROGRAMS = sexec-suid
 #

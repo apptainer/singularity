@@ -82,8 +82,8 @@ void singularity_registry_init(void) {
                 val = "";
             }
 
-            singularity_message(VERBOSE, "Adding envar to registry: '%s' = '%s'\n", &key[12], val);
-            singularity_registry_add(&key[12], val);
+            singularity_message(VERBOSE, "Found environment variable: '%s'\n", key);
+            singularity_registry_set(&key[12], val);
         }
     }
 }
@@ -93,12 +93,13 @@ char *singularity_registry_get(char *key) {
     ENTRY *found;
     char *upperkey;
     int i = 0;
+    int len = strlength(key, MAX_KEY_LEN);
 
-    upperkey = (char *) malloc(strlength(key, MAX_KEY_LEN));
+    upperkey = (char *) malloc(len);
 
     singularity_registry_init();
 
-    while ( key[i] ) {
+    while ( i <= len ) {
         upperkey[i] = toupper(key[i]);
         i++;
     }
@@ -111,24 +112,25 @@ char *singularity_registry_get(char *key) {
 }
 
 
-int singularity_registry_add(char *key, char *value) {
+int singularity_registry_set(char *key, char *value) {
     ENTRY *prev;
     char *upperkey;
     int i = 0;
+    int len = strlength(key, MAX_KEY_LEN);
 
-    upperkey = (char *) malloc(strlength(key, MAX_KEY_LEN));
+    upperkey = (char *) malloc(len);
 
     singularity_registry_init();
 
-    while ( key[i] ) {
+    while ( i <= len ) {
         upperkey[i] = toupper(key[i]);
         i++;
     }
 
-    singularity_message(INFO, "Adding key '%s' to registry\n", upperkey);
+    singularity_message(VERBOSE2, "Adding value to registry: '%s' = '%s'\n", upperkey, value);
 
     if ( singularity_registry_get(upperkey) != NULL ) {
-        singularity_message(INFO, "Found prior value for '%s', overriding with '%s'\n", key, value);
+        singularity_message(VERBOSE2, "Found prior value for '%s', overriding with '%s'\n", key, value);
         prev->data = value;
     } else {
         if ( hsearch_r(keypair(upperkey, value), ENTER, &prev, &htab) == 0 ) {

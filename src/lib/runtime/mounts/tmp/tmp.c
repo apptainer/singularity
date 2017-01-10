@@ -34,7 +34,6 @@
 #include "lib/message.h"
 #include "lib/privilege.h"
 #include "lib/config_parser.h"
-#include "lib/sessiondir.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -60,7 +59,7 @@ int _singularity_runtime_mount_tmp(void) {
             tmp_source = joinpath(tmpdirpath, "/tmp");
             vartmp_source = joinpath(tmpdirpath, "/var_tmp");
         } else {
-            char *sessiondir = singularity_sessiondir_get();
+            char *sessiondir = singularity_runtime_tmpdir(NULL);
             tmp_source = joinpath(sessiondir, "/tmp");
             vartmp_source = joinpath(sessiondir, "/var_tmp");
         }

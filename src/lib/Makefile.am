@@ -1,4 +1,4 @@
-SUBDIRS = runtime
+SUBDIRS = runtime image
 #SUBDIRS = ns rootfs action mount file image
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in

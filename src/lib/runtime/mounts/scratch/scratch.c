@@ -35,7 +35,6 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
-#include "lib/sessiondir.h"
 #include "lib/fork.h"
 #include "lib/config_parser.h"
 
@@ -69,7 +68,7 @@ int _singularity_runtime_mount_scratch(void) {
 
     singularity_message(DEBUG, "Checking SINGULARITY_WORKDIR from environment\n");
     if ( ( tmpdir_path = envar_path("SINGULARITY_WORKDIR") ) == NULL ) {
-        if ( ( tmpdir_path = singularity_sessiondir_get() ) == NULL ) {
+        if ( ( tmpdir_path = singularity_runtime_tmpdir(NULL) ) == NULL ) {
             singularity_message(ERROR, "Could not identify a suitable temporary directory for scratch\n");
             return(0);
         }

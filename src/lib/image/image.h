@@ -22,10 +22,23 @@
 #ifndef __SINGULARITY_IMAGE_H_
 #define __SINGULARITY_IMAGE_H_
 
+#define IMAGE_TYPE_SINGULARITY 1
+#define IMAGE_TYPE_DIRECTORY 2
+#define IMAGE_TYPE_SQUASHFS 3
+
+struct image_object {
+    char *sessiondir;
+    char *path;
+    char *name;
+    char *loopdev;
+    int TYPE;
+};
+
+extern struct image_object singularity_image_init(char *path);
 
 extern char *singularity_image_tempdir(char *directory);
 extern char *singularity_image_path(char *path);
-extern char *singularity_image_name(void);
+extern char *singularity_image_name(struct image_object *object);
 
 // Attach the process to a given image
 extern int singularity_image_attach(void);

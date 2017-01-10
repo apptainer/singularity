@@ -40,7 +40,7 @@
 
 
 int _singularity_image_mount_squashfs_check(void) {
-    char *image_name = singularity_image_name();
+    char *image_name = singularity_image_path(NULL);
     int len = strlength(image_name, 1024);
 
     if ( strcmp(&image_name[len-5], ".sqsh") != 0 ) {

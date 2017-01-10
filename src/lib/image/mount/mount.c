@@ -208,7 +208,7 @@ int _singularity_image_mount(void) {
         singularity_priv_drop();
 
         overlay_enabled = 1;
-        singularity_registry_add("OVERLAY_ENABLED", "1");
+        singularity_registry_set("OVERLAY_ENABLED", "1");
 #else /* SINGULARITY_OVERLAYFS */
         singularity_message(VERBOSE, "OverlayFS not supported by host build\n");
 #endif /* SINGULARITY_OVERLAYFS */
