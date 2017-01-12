@@ -320,7 +320,6 @@ AC_CONFIG_FILES([
    src/lib/runtime/enter/Makefile
    src/lib/runtime/enter/chroot/Makefile
    src/lib/image/Makefile
-   src/lib/image/attach/Makefile
    src/lib/image/bind/Makefile
    src/lib/image/check/Makefile
    src/lib/image/create/Makefile
@@ -330,6 +329,7 @@ AC_CONFIG_FILES([
    src/lib/image/mount/image/Makefile
    src/lib/image/mount/squashfs/Makefile
    src/lib/image/offset/Makefile
+   src/lib/image/open/Makefile
    src/lib/image/sessiondir/Makefile
 
 

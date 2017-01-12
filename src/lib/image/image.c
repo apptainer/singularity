@@ -33,7 +33,7 @@
 #include "lib/message.h"
 
 #include "./image.h"
-#include "./attach/attach.h"
+#include "./open/open.h"
 #include "./bind/bind.h"
 #include "./create/create.h"
 #include "./check/check.h"
@@ -56,9 +56,10 @@ struct image_object singularity_image_init(char *path) {
 
     image.path = strdup(path);
     image.name = basename(strdup(path));
+    image.fd = -1;
     image.loopdev = NULL;
 
-    singularity_image_sessiondir_init(&image);
+    _singularity_image_sessiondir_init(&image);
 
     return(image);
 }
@@ -95,16 +96,8 @@ char *singularity_image_name(struct image_object *object) {
 }
 
 
-int singularity_image_attach(void) {
-    return(_singularity_image_attach());
-}
-
-int singularity_image_attach_fd(void) {
-    return(_singularity_image_attach_fd());
-}
-
-FILE *singularity_image_attach_fp(void) {
-    return(_singularity_image_attach_fp());
+int singularity_image_open(struct image_object *image, int open_flags) {
+    return(_singularity_image_open(image, open_flags));
 }
 
 int singularity_image_create(unsigned int size) {
@@ -115,18 +108,15 @@ int singularity_image_expand(unsigned int size) {
     return(_singularity_image_expand(size));
 }
 
-int singularity_image_check(void) {
-    return(_singularity_image_check());
+int singularity_image_check(struct image_object *image) {
+    return(_singularity_image_check(image));
 }
 
-int singularity_image_offset(void) {
-    return(_singularity_image_offset());
+int singularity_image_offset(struct image_object *image) {
+    return(_singularity_image_offset(image));
 }
 
-int singularity_image_bind(void) {
-    return(_singularity_image_bind());
+int singularity_image_bind(struct image_object *image) {
+    return(_singularity_image_bind(image));
 }
 
-char *singularity_image_bind_dev(void) {
-    return(_singularity_image_bind_dev());
-}

@@ -48,12 +48,11 @@
 
 
 
-void singularity_image_sessiondir_init(struct image_object *image) {
+void _singularity_image_sessiondir_init(struct image_object *image) {
     char *sessiondir_prefix;
     char *sessiondir_suffix;
     char *file = strdup(image->path);
     struct stat imagestat;
-    int sessiondir_fd;
     int sessiondir_suffix_len;
     uid_t uid = singularity_priv_getuid();
 

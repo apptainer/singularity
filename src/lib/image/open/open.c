@@ -39,45 +39,23 @@
 
 #include "../image.h"
 
-static FILE *image_fp;
 
+int _singularity_image_open(struct image_object *image, int open_flags) {
 
-int _singularity_image_attach(void) {
-    char *image = singularity_image_path(NULL);
-
-    singularity_message(DEBUG, "Checking if image is set\n");
-    if ( image_fp != NULL ) {
-        singularity_message(ERROR, "Call to singularity_image_attach() when already attached!\n");
+    if ( image->fd > 0 ) {
+        singularity_message(ERROR, "Called _singularity_image_attach() an open image object: %d\n", image->fd);
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Checking if image is a file: %s\n", image);
-    if ( is_file(image) == 0 ) {
-        singularity_message(DEBUG, "Obtaining file pointer to image\n");
-        image_fp = fopen(image, "r");
-
-        if ( image_fp == NULL ) {
-            singularity_message(ERROR, "Could not open image %s: %s\n", image, strerror(errno));
+    singularity_message(DEBUG, "Checking if image is a file: %s\n", image->path);
+    if ( is_file(image->path) == 0 ) {
+        singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
+        if ( ( image->fd = open(image->path, open_flags) ) < 0 ) {
+            singularity_message(ERROR, "Could not open image %s: %s\n", image->path, strerror(errno));
             ABORT(255);
         }
     }
 
-    return(fileno(image_fp));
+    return(0);
 }
 
-int _singularity_image_attach_fd(void) {
-    if ( image_fp == NULL ) {
-        singularity_message(ERROR, "Singularity image FD requested, but not attached!\n");
-        ABORT(255);
-    }
-    return(fileno(image_fp));
-}
-
-
-FILE *_singularity_image_attach_fp(void) {
-    if ( image_fp == NULL ) {
-        singularity_message(ERROR, "Singularity image FD requested, but not attached!\n");
-        ABORT(255);
-    }
-    return(image_fp);
-}

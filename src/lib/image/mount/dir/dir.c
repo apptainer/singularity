@@ -37,11 +37,11 @@
 #include "../mount.h"
 
 
-int _singularity_image_mount_dir_check(void) {
-    char *source = singularity_image_path(NULL);
+int _singularity_image_mount_dir_check(struct image_object *image) {
 
-    if ( is_dir(source) != 0 ) {
-        singularity_message(VERBOSE2, "Source path is not a directory: %s\n", source);
+    singularity_message(DEBUG, "Checking if image is a directory\n");
+    if ( is_dir(image->path) != 0 ) {
+        singularity_message(VERBOSE2, "Source path is not a directory: %s\n", image->path);
         return(-1);
     }
 
@@ -50,14 +50,12 @@ int _singularity_image_mount_dir_check(void) {
 
 
 
-int _singularity_image_mount_dir_mount(void) {
-    char *source = singularity_image_path(NULL);
-    char *mount_point = _singularity_image_mount_sourcepath();
+int _singularity_image_mount_dir_mount(struct image_object *image, char *mount_point) {
 
     singularity_priv_escalate();
-    singularity_message(DEBUG, "Mounting container directory %s->%s\n", source, mount_point);
-    if ( mount(source, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-        singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", source, mount_point, strerror(errno));
+    singularity_message(DEBUG, "Mounting container directory %s->%s\n", image->path, mount_point);
+    if ( mount(image->path, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+        singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
         return 1;
     }
     // TODO: Make container read/only if requested

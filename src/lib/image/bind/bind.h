@@ -21,8 +21,7 @@
 #ifndef __SINGULARITY_IMAGE_BIND_H_
 #define __SINGULARITY_IMAGE_BIND_H_
 
-extern int _singularity_image_bind(void);
-extern char *_singularity_image_bind_dev(void);
+extern int _singularity_image_bind(struct image_object *image);
 
 #endif /* __SINGULARITY_IMAGE_BIND_H */
 

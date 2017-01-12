@@ -31,6 +31,7 @@ struct image_object {
     char *path;
     char *name;
     char *loopdev;
+    int fd;
     int TYPE;
 };
 
@@ -40,21 +41,17 @@ extern char *singularity_image_tempdir(char *directory);
 extern char *singularity_image_path(char *path);
 extern char *singularity_image_name(struct image_object *object);
 
-// Attach the process to a given image
-extern int singularity_image_attach(void);
-extern int singularity_image_attach_fd(void);
-extern FILE *singularity_image_attach_fp(void);
+extern int singularity_image_open(struct image_object *object, int open_flags);
 
-extern int singularity_image_check(void);
-extern int singularity_image_offset(void);
+extern int singularity_image_check(struct image_object *image);
+extern int singularity_image_offset(struct image_object *image);
 
-extern int singularity_image_bind(void);
-extern char *singularity_image_bind_dev(void);
+extern int singularity_image_bind(struct image_object *image);
 
 extern int singularity_image_create(unsigned int size);
 extern int singularity_image_expand(unsigned int size);
 
-extern int singularity_image_mount(unsigned int flags);
+extern int singularity_image_mount(struct image_object *image, char *mount_point);
 extern int singularity_image_mount_overlayfs(void);
 extern char *singularity_image_mount_path(void);
 

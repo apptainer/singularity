@@ -22,7 +22,7 @@
 #ifndef __SINGULARITY_IMAGE_MOUNT_IMAGE_H_
 #define __SINGULARITY_IMAGE_MOUNT_IMAGE_H_
 
-extern int _singularity_image_mount_image_check(void);
-extern int _singularity_image_mount_image_mount(void);
+extern int _singularity_image_mount_image_check(struct image_object *image);
+extern int _singularity_image_mount_image_mount(struct image_object *image, char *mount_point);
 
 #endif /* __SINGULARITY_IMAGE_MOUNT_IMAGE_H_ */

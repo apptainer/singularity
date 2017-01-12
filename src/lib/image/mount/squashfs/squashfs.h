@@ -22,7 +22,7 @@
 #ifndef __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_
 #define __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_
 
-extern int _singularity_image_mount_squashfs_check(void);
-extern int _singularity_image_mount_squashfs_mount(void);
+extern int _singularity_image_mount_squashfs_check(struct image_object *image);
+extern int _singularity_image_mount_squashfs_mount(struct image_object *image, char *mount_point);
 
 #endif /* __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_ */

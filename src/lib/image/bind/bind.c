@@ -49,22 +49,16 @@
 
 char *loop_dev = NULL;
 FILE *loop_fp = NULL;
-int lockfile_fd; // This has to be global for the flock to be held
+int lockfile_fd;
 
-int _singularity_image_bind(void) {
+int _singularity_image_bind(struct image_object *image) {
     struct loop_info64 lo64 = {0};
     int i;
-    char *tmpdir = singularity_image_tempdir(NULL);
-    char *lockfile = joinpath(tmpdir, "loop_lock");
-    FILE *image_fp = singularity_image_attach_fp();
+    char *lockfile = joinpath(image->sessiondir, "loop_lock");
+    int image_fd = image->fd;
 
-    if ( tmpdir == NULL ) {
-        singularity_message(ERROR, "Failed to obtain session directory\n");
-        ABORT(255);
-    }
-
-    if ( image_fp == NULL ) {
-        singularity_message(ERROR, "Called singularity_loop_bind() with NULL image pointer\n");
+    if ( ! image_fd > 0 ) {
+        singularity_message(ERROR, "Called singularity_loop_bind() with no valid file descriptor\n");
         ABORT(255);
     }
 
@@ -98,7 +92,7 @@ int _singularity_image_bind(void) {
 #endif
 
     singularity_message(DEBUG, "Calculating image offset\n");
-    if ( ( lo64.lo_offset = singularity_image_offset() ) < 0 ) {
+    if ( ( lo64.lo_offset = singularity_image_offset(image) ) < 0 ) {
         singularity_message(ERROR, "Could not obtain message offset of image\n");
         ABORT(255);
     }
@@ -120,7 +114,7 @@ int _singularity_image_bind(void) {
             continue;
         }
 
-        if ( ioctl(fileno(loop_fp), LOOP_SET_FD, fileno(image_fp))== 0 ) {
+        if ( ioctl(fileno(loop_fp), LOOP_SET_FD, image_fd)== 0 ) {
             loop_dev = strdup(test_loopdev);
             break;
         } else {
@@ -158,16 +152,6 @@ int _singularity_image_bind(void) {
     singularity_message(DEBUG, "Resetting exclusive flock() to shared on lockfile\n");
     flock(lockfile_fd, LOCK_SH | LOCK_NB);
 
-    singularity_message(DEBUG, "Returning singularity_loop_bind(image_fp) = loop_fp\n");
-
     return(0);
 }
 
-
-char *_singularity_image_bind_dev() {
-    if ( loop_dev == NULL ) {
-        singularity_message(ERROR, "Loop device not allocated!\n");
-        ABORT(255);
-    }
-    return(loop_dev);
-}

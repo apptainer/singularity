@@ -55,8 +55,14 @@ int main(int argc_in, char ** argv_in) {
     
     struct image_object image = singularity_image_init(singularity_registry_get("CONTAINER"));
 
+    singularity_image_open(&image, O_RDONLY);
+    singularity_image_check(&image);
+    singularity_image_offset(&image);
+    singularity_image_bind(&image);
+
     printf("Image name: %s\n", singularity_image_name(&image));
     printf("Sessiondir: %s\n", image.sessiondir);
+    printf("FD: %d\n", image.fd);
 
 
     return(0);

@@ -37,9 +37,19 @@
 #define MAX_LINE_LEN    2048
 
 
-int _singularity_image_check(void) {
+int _singularity_image_check(struct image_object *image) {
     char *line;
-    FILE *image_fp = singularity_image_attach_fp();
+    FILE *image_fp;
+
+    if ( image->fd <= 0 ) {
+        singularity_message(ERROR, "Can not check image with no FD associated\n");
+        ABORT(255);
+    }
+
+    if ( ( image_fp = fdopen(image->fd, "r") ) == NULL ) {
+        singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
+        ABORT(255);
+    }
 
     singularity_message(VERBOSE3, "Checking that file pointer is a Singularity image\n");
     rewind(image_fp);

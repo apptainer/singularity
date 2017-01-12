@@ -22,8 +22,6 @@
 #ifndef __SINGULARITY_IMAGE_SESSIONDIR_H_
 #define __SINGULARITY_IMAGE_SESSIONDIR_H_
 
-extern void singularity_image_sessiondir_init(struct image_object *image);
-extern int singularity_image_sessiondir_create(struct image_object *image);
-extern int singularity_image_sessiondir_remove(struct image_object *image);
+extern void _singularity_image_sessiondir_init(struct image_object *image);
 
 #endif /* __SINGULARITY_IMAGE_SESSIONDIR_H_ */

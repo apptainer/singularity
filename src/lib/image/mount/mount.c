@@ -38,20 +38,45 @@
 #include "lib/registry.h"
 
 #include "../image.h"
-
 #include "./image/image.h"
 #include "./dir/dir.h"
 #include "./squashfs/squashfs.h"
 
-#define ROOTFS_IMAGE    1
-#define ROOTFS_DIR      2
-#define ROOTFS_SQUASHFS 3
 
+
+int _singularity_image_mount(struct image_object *image, char *mount_point) {
+
+    if ( _singularity_image_mount_image_check(image) == 0 ) {
+        if ( _singularity_image_mount_image_mount(image, mount_point) < 0 ) {
+            singularity_message(ERROR, "Failed mounting image, aborting...\n");
+            ABORT(255);
+        }
+    } else if ( _singularity_image_mount_squashfs_check(image) == 0 ) {
+        if ( _singularity_image_mount_squashfs_mount(image, mount_point) < 0 ) {
+            singularity_message(ERROR, "Failed mounting image, aborting...\n");
+            ABORT(255);
+        }
+    } else if ( _singularity_image_mount_dir_check(image) == 0 ) {
+        if ( _singularity_image_mount_dir_mount(image, mount_point) < 0 ) {
+            singularity_message(ERROR, "Failed mounting image, aborting...\n");
+            ABORT(255);
+        }
+    } else {
+        singularity_message(ERROR, "Could not identify image format type\n");
+        ABORT(255);
+    }
+
+    return(0);
+}
+
+
+/*
 #define ROOTFS_SOURCE   "/source"
 #define OVERLAY_MOUNT   "/overlay"
 #define OVERLAY_UPPER   "/overlay/upper"
 #define OVERLAY_WORK    "/overlay/work"
 #define OVERLAY_FINAL   "/final"
+
 
 
 static int module = -1;
@@ -71,7 +96,7 @@ char *_singularity_image_mount_sourcepath(void) {
     return(joinpath(mount_point, ROOTFS_SOURCE));
 }
 
-int _singularity_image_mount(void) {
+int _singularity_image_mount(char *mount_point) {
     char *rootfs_source;
     char *overlay_mount;
     char *overlay_upper;
@@ -79,7 +104,11 @@ int _singularity_image_mount(void) {
     char *overlay_final;
 
     singularity_message(DEBUG, "Figuring out where to mount Singularity container\n");
-    mount_point = strdup(singularity_config_get_value(CONTAINER_DIR));
+    if ( mount_point == NULL ) {
+        mount_point = strdup(singularity_config_get_value(CONTAINER_DIR));
+    } else {
+        // If mount_point is defined, we should disable all overlaying
+    }
     singularity_message(VERBOSE3, "Set image mount path to: %s\n", mount_point);
 
     rootfs_source = joinpath(mount_point, ROOTFS_SOURCE);
@@ -209,9 +238,9 @@ int _singularity_image_mount(void) {
 
         overlay_enabled = 1;
         singularity_registry_set("OVERLAY_ENABLED", "1");
-#else /* SINGULARITY_OVERLAYFS */
+#else
         singularity_message(VERBOSE, "OverlayFS not supported by host build\n");
-#endif /* SINGULARITY_OVERLAYFS */
+#endif
     }
 
     if ( overlay_enabled != 1 ) {
@@ -227,8 +256,6 @@ int _singularity_image_mount(void) {
     return(0);
 }
 
-
-/*
 
 int singularity_rootfs_check(void) {
 
@@ -300,3 +327,4 @@ int singularity_rootfs_init(char *source) {
 
 
 */
+

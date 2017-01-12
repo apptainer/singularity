@@ -39,25 +39,23 @@
 #include "../mount.h"
 
 
-int _singularity_image_mount_image_check(void) {
-    return(singularity_image_check());
+int _singularity_image_mount_image_check(struct image_object *image) {
+    return(singularity_image_check(image));
 }
 
 
-int _singularity_image_mount_image_mount(void) {
-    char *loop_dev = singularity_image_bind_dev();
-    char *mount_point = _singularity_image_mount_sourcepath();
+int _singularity_image_mount_image_mount(struct image_object *image, char *mount_point) {
 
-    if ( loop_dev == NULL ) {
-        singularity_message(ERROR, "Could not obtain the image loop device\n");
+    if ( image->loopdev == NULL ) {
+        singularity_message(ERROR, "Could not obtain the image loop device for: %s\n", image->path);
         ABORT(255);
     }
 
     if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
         singularity_message(VERBOSE, "Mounting image in read/write\n");
         singularity_priv_escalate();
-        if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
-            if ( mount(loop_dev, mount_point, "ext4", MS_NOSUID, "errors=remount-ro") < 0 ) {
+        if ( mount(image->loopdev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
+            if ( mount(image->loopdev, mount_point, "ext4", MS_NOSUID, "errors=remount-ro") < 0 ) {
                 singularity_message(ERROR, "Failed to mount image in (read/write): %s\n", strerror(errno));
                 ABORT(255);
             }
@@ -66,8 +64,8 @@ int _singularity_image_mount_image_mount(void) {
     } else {
         singularity_priv_escalate();
         singularity_message(VERBOSE, "Mounting image in read/only\n");
-        if ( mount(loop_dev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
-            if ( mount(loop_dev, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+        if ( mount(image->loopdev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+            if ( mount(image->loopdev, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
                 singularity_message(ERROR, "Failed to mount image in (read only): %s\n", strerror(errno));
                 ABORT(255);
             }

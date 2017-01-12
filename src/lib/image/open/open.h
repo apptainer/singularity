@@ -18,12 +18,10 @@
  * 
 */
 
-#ifndef __SINGULARITY_IMAGE_ATTACH_H_
-#define __SINGULARITY_IMAGE_ATTACH_H_
+#ifndef __SINGULARITY_IMAGE_OPEN_H_
+#define __SINGULARITY_IMAGE_OPEN_H_
 
-extern int _singularity_image_attach(void);
-extern int _singularity_image_attach_fd(void);
-extern FILE *_singularity_image_attach_fp(void);
+extern int _singularity_image_open(struct image_object *image, int open_flags);
 
-#endif /* __SINGULARITY_IMAGE_ATTACH_H */
+#endif /* __SINGULARITY_IMAGE_OPEN_H */
 
