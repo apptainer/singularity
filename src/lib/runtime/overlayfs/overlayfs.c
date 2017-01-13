@@ -68,7 +68,7 @@ int _singularity_runtime_overlayfs(void) {
         singularity_priv_escalate();
         singularity_message(DEBUG, "Creating top level overlay mount directory: %s\n", overlay_mount);
         if ( s_mkpath(overlay_mount, 0755) < 0 ) {
-            singularity_message(ERROR, "Could not create overlay_mount directory: %s\n", overlay_mount);
+            singularity_message(ERROR, "Could not create overlay_mount directory %s: %s\n", overlay_mount, strerror(errno));
             ABORT(255);
         }
 
@@ -108,7 +108,7 @@ int _singularity_runtime_overlayfs(void) {
         free(overlay_options);
 
         overlay_enabled = 1;
-        singularity_registry_set("OVERLAY_ENABLED", "1");
+        singularity_registry_set("OVERLAYFS_ENABLED", "1");
 #else
         singularity_message(VERBOSE, "OverlayFS not supported by host build\n");
 #endif
@@ -124,6 +124,8 @@ int _singularity_runtime_overlayfs(void) {
         singularity_priv_drop();
     }
 
+    // If we got here, then we now set the runtime containerdir to our new mount point
+    singularity_message(VERBOSE2, "Updating the containerdir to: %s\n", mount_final);
     singularity_runtime_containerdir(mount_final);
 
     return(0);

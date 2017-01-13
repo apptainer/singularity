@@ -35,14 +35,18 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
+#include "lib/privilege.h"
+#include "lib/config_parser.h"
 #include "./ns/ns.h"
 #include "./mounts/mounts.h"
 #include "./files/files.h"
 #include "./enter/enter.h"
+#include "./overlayfs/overlayfs.h"
 
 
 static char *container_directory = NULL;
 static char *temp_directory = NULL;
+static int runtime_flags = 0;
 
 char *singularity_runtime_containerdir(char *directory) {
     if ( directory != NULL ) {
@@ -52,6 +56,17 @@ char *singularity_runtime_containerdir(char *directory) {
             singularity_message(ERROR, "Container path is not a directory: %s\n", directory);
             ABORT(255);
         }
+    } else if ( container_directory == NULL ) {
+        container_directory = joinpath((singularity_config_get_value(CONTAINER_DIR)), "/source");
+
+        singularity_priv_escalate();
+        singularity_message(DEBUG, "Creating top level source mount directory to: %s\n", container_directory);
+        if ( s_mkpath(container_directory, 0755) < 0 ) {
+            singularity_message(ERROR, "Could not create source mount directory %s: %s\n", container_directory, strerror(errno));
+            ABORT(255);
+        }
+        singularity_priv_drop();
+
     }
 
     return(container_directory);
@@ -70,10 +85,19 @@ char *singularity_runtime_tmpdir(char *directory) {
     return(temp_directory);
 }
 
+int singularity_runtime_flags(unsigned int flags) {
+    runtime_flags |= flags;
+
+    return(runtime_flags);
+}
 
 
 int singularity_runtime_ns(void) {
     return(_singularity_runtime_ns());
+}
+
+int singularity_runtime_overlayfs(void) {
+    return(_singularity_runtime_overlayfs());
 }
 
 int singularity_runtime_mounts(void) {

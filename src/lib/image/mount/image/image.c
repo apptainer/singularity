@@ -52,7 +52,7 @@ int _singularity_image_mount_image_mount(struct image_object *image, char *mount
     }
 
     if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
-        singularity_message(VERBOSE, "Mounting image in read/write\n");
+        singularity_message(VERBOSE, "Mounting %s in read/write to: %s\n", image->loopdev, mount_point);
         singularity_priv_escalate();
         if ( mount(image->loopdev, mount_point, "ext3", MS_NOSUID, "errors=remount-ro") < 0 ) {
             if ( mount(image->loopdev, mount_point, "ext4", MS_NOSUID, "errors=remount-ro") < 0 ) {
@@ -63,7 +63,7 @@ int _singularity_image_mount_image_mount(struct image_object *image, char *mount
         singularity_priv_drop();
     } else {
         singularity_priv_escalate();
-        singularity_message(VERBOSE, "Mounting image in read/only: %s\n", image->loopdev);
+        singularity_message(VERBOSE, "Mounting %s in read/only to: %s\n", image->loopdev, mount_point);
         if ( mount(image->loopdev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
             singularity_message(ERROR, "Failed to mount image in (read only): %s\n", strerror(errno));
             if ( mount(image->loopdev, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {

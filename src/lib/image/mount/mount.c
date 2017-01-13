@@ -46,6 +46,11 @@
 
 int _singularity_image_mount(struct image_object *image, char *mount_point) {
 
+    if ( mount_point == NULL ) {
+        singularity_message(ERROR, "Mount point location must exist\n");
+        ABORT(255);
+    }
+
     singularity_message(VERBOSE, "Checking what kind of image we are mounting\n");
     if ( _singularity_image_mount_image_check(image) == 0 ) {
         if ( _singularity_image_mount_image_mount(image, mount_point) < 0 ) {

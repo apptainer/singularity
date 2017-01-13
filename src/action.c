@@ -29,6 +29,7 @@
 
 #include "config.h"
 #include "lib/image/image.h"
+#include "lib/runtime/runtime.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/config_parser.h"
@@ -40,8 +41,8 @@
 #endif
 
 
-int main(int argc, char **argv) {
-    struct image_object image;
+int main(int argc_in, char ** argv_in) {
+
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -51,17 +52,27 @@ int main(int argc, char **argv) {
 
     singularity_registry_init();
 
-    // Setting the location of the container
+    singularity_runtime_ns();
+
     singularity_image_path(singularity_registry_get("CONTAINER"));
     
-    // Obtain the image object
-    image = singularity_image_init(singularity_registry_get("CONTAINER"));
+    struct image_object image = singularity_image_init(singularity_registry_get("CONTAINER"));
 
     singularity_image_open(&image, O_RDONLY);
+//    singularity_image_check(&image);
     singularity_image_bind(&image);
-    singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
+    singularity_image_mount(&image, singularity_runtime_containerdir(NULL));
 
-    printf("%s is mounted at: %s\n", image.name, singularity_registry_get("MOUNTPOINT"));
+    singularity_runtime_overlayfs();
+
+    printf("Image name: %s\n", singularity_image_name(&image));
+    printf("Sessiondir: %s\n", image.sessiondir);
+    printf("FD: %d\n", image.fd);
+    printf("Loop Device: %s\n", image.loopdev);
+    printf("overlayFS: %s\n", singularity_runtime_containerdir(NULL));
+
+    //sleep(20);
+    system("/bin/sh");
 
     return(0);
 }
