@@ -65,8 +65,6 @@ int _singularity_image_offset(struct image_object *image) {
 
     singularity_message(DEBUG, "Returning image_offset(image_fp) = %d\n", ret);
 
-    fclose(image_fp);
-
     return(ret);
 }
 

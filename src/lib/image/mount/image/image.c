@@ -63,8 +63,9 @@ int _singularity_image_mount_image_mount(struct image_object *image, char *mount
         singularity_priv_drop();
     } else {
         singularity_priv_escalate();
-        singularity_message(VERBOSE, "Mounting image in read/only\n");
+        singularity_message(VERBOSE, "Mounting image in read/only: %s\n", image->loopdev);
         if ( mount(image->loopdev, mount_point, "ext3", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+            singularity_message(ERROR, "Failed to mount image in (read only): %s\n", strerror(errno));
             if ( mount(image->loopdev, mount_point, "ext4", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
                 singularity_message(ERROR, "Failed to mount image in (read only): %s\n", strerror(errno));
                 ABORT(255);

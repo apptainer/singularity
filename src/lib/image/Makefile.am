@@ -10,7 +10,7 @@ distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
 noinst_LTLIBRARIES = libimage.la
-libimage_la_LIBADD = open/libinternal.la bind/libinternal.la create/libinternal.la check/libinternal.la expand/libinternal.la offset/libinternal.la sessiondir/libinternal.la
+libimage_la_LIBADD = bind/libinternal.la create/libinternal.la check/libinternal.la expand/libinternal.la mount/libinternal.la offset/libinternal.la open/libinternal.la sessiondir/libinternal.la
 libimage_la_SOURCES = image.c ../registry.c ../message.c ../config_parser.c ../privilege.c ../../util/util.c ../../util/file.c
 libimage_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 

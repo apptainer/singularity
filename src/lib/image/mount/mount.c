@@ -46,6 +46,7 @@
 
 int _singularity_image_mount(struct image_object *image, char *mount_point) {
 
+    singularity_message(VERBOSE, "Checking what kind of image we are mounting\n");
     if ( _singularity_image_mount_image_check(image) == 0 ) {
         if ( _singularity_image_mount_image_mount(image, mount_point) < 0 ) {
             singularity_message(ERROR, "Failed mounting image, aborting...\n");

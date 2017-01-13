@@ -93,11 +93,27 @@ void _singularity_image_sessiondir_init(struct image_object *image) {
 
     singularity_registry_set("sessiondir", image->sessiondir);
 
-    singularity_message(VERBOSE, "Set session directory to: %s\n", image->sessiondir);
+    singularity_message(VERBOSE, "Creating session directory: %s\n", image->sessiondir);
+
+    if ( s_mkpath(image->sessiondir, 0755) < 0 ) {
+        singularity_message(ERROR, "Failed creating session directory %s: %s\n", image->sessiondir, strerror(errno));
+        ABORT(255);
+    }
+
+    singularity_message(DEBUG, "Opening sessiondir file descriptor\n");
+    if ( ( image->sessiondir_fd = open(image->sessiondir, O_CLOEXEC | O_RDONLY) ) < 0 ) { // Flawfinder: ignore
+        singularity_message(ERROR, "Could not obtain file descriptor for session directory %s: %s\n", image->sessiondir, strerror(errno));
+        ABORT(255);
+    }
+
+    singularity_message(DEBUG, "Setting shared flock() on session directory\n");
+    if ( flock(image->sessiondir_fd, LOCK_SH | LOCK_NB) < 0 ) {
+        singularity_message(ERROR, "Could not obtain shared lock on %s: %s\n", image->sessiondir, strerror(errno));
+        ABORT(255);
+    }
 
     return;
 }
-
 
 
 

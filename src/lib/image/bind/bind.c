@@ -47,24 +47,23 @@
 
 #define MAX_LOOP_DEVS 128
 
-char *loop_dev = NULL;
-FILE *loop_fp = NULL;
-int lockfile_fd;
 
 int _singularity_image_bind(struct image_object *image) {
     struct loop_info64 lo64 = {0};
-    int i;
     char *lockfile = joinpath(image->sessiondir, "loop_lock");
     int image_fd = image->fd;
+    int lockfile_fd; // This never gets closed so the flock() remains
+    FILE *loop_fp = NULL;
+    int i;
 
     if ( ! image_fd > 0 ) {
-        singularity_message(ERROR, "Called singularity_loop_bind() with no valid file descriptor\n");
+        singularity_message(ERROR, "Called _singularity_loop_bind() with no valid file descriptor\n");
         ABORT(255);
     }
 
     singularity_message(DEBUG, "Opening image loop device file: %s\n", lockfile);
     if ( ( lockfile_fd = open(lockfile, O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Could not open image loop device cache file %s: %s\n", lockfile, strerror(errno));
+        singularity_message(ERROR, "Could not open image loop device lock file %s: %s\n", lockfile, strerror(errno));
         ABORT(255);
     }
 
@@ -115,7 +114,7 @@ int _singularity_image_bind(struct image_object *image) {
         }
 
         if ( ioctl(fileno(loop_fp), LOOP_SET_FD, image_fd)== 0 ) {
-            loop_dev = strdup(test_loopdev);
+            image->loopdev = strdup(test_loopdev);
             break;
         } else {
             if ( errno == 16 ) {
@@ -130,7 +129,7 @@ int _singularity_image_bind(struct image_object *image) {
 
     }
 
-    singularity_message(VERBOSE, "Found available loop device: %s\n", loop_dev);
+    singularity_message(VERBOSE, "Found available loop device: %s\n", image->loopdev);
 
     singularity_message(DEBUG, "Setting loop device flags\n");
     if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
@@ -141,13 +140,15 @@ int _singularity_image_bind(struct image_object *image) {
 
     singularity_priv_drop();
 
-    singularity_message(VERBOSE, "Using loop device: %s\n", loop_dev);
+    singularity_message(VERBOSE, "Using loop device: %s\n", image->loopdev);
 
-    singularity_message(DEBUG, "Writing active loop device name (%s) to loop file cache: %s\n", loop_dev, lockfile);
-    if ( fileput(lockfile, loop_dev) < 0 ) {
+    singularity_message(DEBUG, "Writing active loop device name (%s) to loop file cache: %s\n", image->loopdev, lockfile);
+    if ( fileput(lockfile, image->loopdev) < 0 ) {
         singularity_message(ERROR, "Could not write to lockfile %s: %s\n", lockfile, strerror(errno));
         ABORT(255);
     }
+
+//    fclose(loop_fp);
 
     singularity_message(DEBUG, "Resetting exclusive flock() to shared on lockfile\n");
     flock(lockfile_fd, LOCK_SH | LOCK_NB);

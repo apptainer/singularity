@@ -32,6 +32,7 @@ struct image_object {
     char *name;
     char *loopdev;
     int fd;
+    int sessiondir_fd;
     int TYPE;
 };
 
