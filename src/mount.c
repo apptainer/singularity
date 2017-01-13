@@ -29,6 +29,7 @@
 
 #include "config.h"
 #include "lib/image/image.h"
+#include "lib/runtime/runtime.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/config_parser.h"
@@ -51,19 +52,24 @@ int main(int argc_in, char ** argv_in) {
 
     singularity_registry_init();
 
+    singularity_runtime_ns();
+
     singularity_image_path(singularity_registry_get("CONTAINER"));
     
     struct image_object image = singularity_image_init(singularity_registry_get("CONTAINER"));
 
     singularity_image_open(&image, O_RDONLY);
-    singularity_image_check(&image);
-    singularity_image_offset(&image);
+//    singularity_image_check(&image);
     singularity_image_bind(&image);
+    singularity_image_mount(&image, "/mnt");
 
     printf("Image name: %s\n", singularity_image_name(&image));
     printf("Sessiondir: %s\n", image.sessiondir);
     printf("FD: %d\n", image.fd);
+    printf("Loop Device: %s\n", image.loopdev);
 
+    //sleep(20);
+    system("/bin/sh");
 
     return(0);
 }

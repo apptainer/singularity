@@ -13,7 +13,7 @@ bindir = $(libexecdir)/singularity
 bin_PROGRAMS = mount
 
 mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
-mount_LDADD = lib/image/libsingularity-image.la
+mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
 mount_LDFLAGS = -static
 
 

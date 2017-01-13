@@ -42,7 +42,7 @@
 #include "./scratch/scratch.h"
 
 
-int _singularity_runtime_mount(void) {
+int _singularity_runtime_mounts(void) {
     int retval = 0;
 
     singularity_message(VERBOSE, "Running all mount components\n");

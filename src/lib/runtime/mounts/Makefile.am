@@ -11,7 +11,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libinternal.la
 
-libinternal_la_LIBADD = kernelfs/libinternal.la binds/libinternal.la home/libinternal.la tmp/libinternal.la hostfs/libinternal.la userbinds/libinternal.la dev/libinternal.la cwd/libinternal.la scratch/libinternal.la
+libinternal_la_LIBADD = binds/libinternal.la cwd/libinternal.la dev/libinternal.la home/libinternal.la hostfs/libinternal.la kernelfs/libinternal.la scratch/libinternal.la tmp/libinternal.la userbinds/libinternal.la
 libinternal_la_SOURCES = mounts.c mount-util.c
 
 EXTRA_DIST = mounts.h mount-util.c mount-util.h

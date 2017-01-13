@@ -58,7 +58,7 @@ char *singularity_runtime_containerdir(char *directory) {
     return(container_directory);
 }
 
-char *singularity_runtime_tempdir(char *directory) {
+char *singularity_runtime_tmpdir(char *directory) {
     if ( directory != NULL ) {
         if ( is_dir(directory) == 0 ) {
             temp_directory = strdup(directory);
@@ -83,11 +83,6 @@ int singularity_runtime_flags(unsigned int flags) {
 
 
 int singularity_runtime_ns(void) {
-    if ( singularity_runtime_containerdir(NULL) == NULL ) {
-        singularity_message(ERROR, "The runtime container directory has not been set!\n");
-        ABORT(5);
-    }
-
     return(_singularity_runtime_ns());
 }
 

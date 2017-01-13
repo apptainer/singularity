@@ -30,7 +30,6 @@
 #include <sys/wait.h>
 
 
-#include "lib/ns/ns.h"
 #include "lib/privilege.h"
 #include "lib/message.h"
 #include "util/util.h"
