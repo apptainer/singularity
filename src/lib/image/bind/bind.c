@@ -82,6 +82,7 @@ int _singularity_image_bind(struct image_object *image) {
         }
 
         singularity_message(DEBUG, "Active loop_lock bind in progress, returning success\n");
+        image->loopdev = strdup(active_loop_dev);
         return(0);
     }
 
