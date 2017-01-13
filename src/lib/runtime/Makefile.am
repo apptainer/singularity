@@ -1,4 +1,4 @@
-SUBDIRS = files mounts ns enter
+SUBDIRS = files mounts ns enter overlayfs
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -10,7 +10,7 @@ distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
 noinst_LTLIBRARIES = libinternal.la
-libinternal_la_LIBADD = ns/libinternal.la mounts/libinternal.la files/libinternal.la enter/libinternal.la
+libinternal_la_LIBADD = ns/libinternal.la mounts/libinternal.la files/libinternal.la enter/libinternal.la overlayfs/libinternal.la
 libinternal_la_SOURCES = runtime.c ../fork.c ../registry.c ../message.c ../config_parser.c ../privilege.c ../../util/util.c ../../util/file.c
 libinternal_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 

@@ -43,7 +43,6 @@
 
 static char *container_directory = NULL;
 static char *temp_directory = NULL;
-static unsigned int runtime_flags = 0;
 
 char *singularity_runtime_containerdir(char *directory) {
     if ( directory != NULL ) {
@@ -69,15 +68,6 @@ char *singularity_runtime_tmpdir(char *directory) {
     }
 
     return(temp_directory);
-}
-
-
-int singularity_runtime_flags(unsigned int flags) {
-    if ( flags > 0 ) {
-        runtime_flags |= flags;
-    }
-
-    return(runtime_flags);
 }
 
 
