@@ -15,7 +15,6 @@ EXTRA_PROGRAMS = action-suid
 
 mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
 mount_LDADD = lib/image/libsingularity-image.la
-mount_LDFLAGS = -static
 
 action_SOURCES = action.c util/util.c util/file.c lib/registry.c lib/privilege.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la

@@ -43,7 +43,6 @@
 
 int main(int argc_in, char ** argv_in) {
 
-
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     // Before we do anything, check privileges and drop permission
@@ -58,18 +57,16 @@ int main(int argc_in, char ** argv_in) {
     
     struct image_object image = singularity_image_init(singularity_registry_get("CONTAINER"));
 
+    singularity_runtime_tmpdir(image.sessiondir);
+
     singularity_image_open(&image, O_RDONLY);
-//    singularity_image_check(&image);
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_containerdir(NULL));
 
     singularity_runtime_overlayfs();
-
-    printf("Image name: %s\n", singularity_image_name(&image));
-    printf("Sessiondir: %s\n", image.sessiondir);
-    printf("FD: %d\n", image.fd);
-    printf("Loop Device: %s\n", image.loopdev);
-    printf("overlayFS: %s\n", singularity_runtime_containerdir(NULL));
+    singularity_runtime_mounts();
+    singularity_runtime_files();
+    singularity_runtime_enter();
 
     //sleep(20);
     system("/bin/sh");

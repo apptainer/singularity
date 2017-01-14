@@ -301,7 +301,6 @@ AC_CONFIG_FILES([
    src/lib/runtime/ns/ipc/Makefile
    src/lib/runtime/ns/mnt/Makefile
    src/lib/runtime/ns/pid/Makefile
-   src/lib/runtime/ns/user/Makefile
    src/lib/runtime/files/Makefile
    src/lib/runtime/files/group/Makefile
    src/lib/runtime/files/passwd/Makefile

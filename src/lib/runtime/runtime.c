@@ -105,6 +105,10 @@ int singularity_runtime_mounts(void) {
         singularity_message(ERROR, "The runtime container directory has not been set!\n");
         ABORT(5);
     }
+    if ( singularity_runtime_tmpdir(NULL) == NULL ) {
+        singularity_message(ERROR, "The runtime temporary directory has not been set!\n");
+        ABORT(5);
+    }
 
     return(_singularity_runtime_mounts());
 }

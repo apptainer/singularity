@@ -128,6 +128,15 @@ char *int2str(int num) {
 }
 
 char *joinpath(const char * path1, const char * path2_in) {
+    if ( path1 == NULL ) {
+        singularity_message(ERROR, "joinpath() called with NULL path1\n");
+        ABORT(255);
+    }
+    if ( path2_in == NULL ) {
+        singularity_message(ERROR, "joinpath() called with NULL path2\n");
+        ABORT(255);
+    }
+
     const char *path2 = path2_in;
     char *tmp_path1 = strdup(path1);
     int path1_len = strlength(tmp_path1, 4096);

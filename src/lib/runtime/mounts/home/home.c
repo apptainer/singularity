@@ -45,6 +45,11 @@ int _singularity_runtime_mount_home(void) {
     char *container_dir = singularity_runtime_containerdir(NULL);
     char *tmpdir = singularity_runtime_tmpdir(NULL);
 
+    if ( tmpdir == NULL ) {
+        singularity_message(ERROR, "internal error - singularity_runtime_tmpdir() not set\n");
+        ABORT(255);
+    }
+
     if ( singularity_config_get_bool(MOUNT_HOME) <= 0 ) {
         singularity_message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
         return(0);
@@ -110,11 +115,13 @@ int _singularity_runtime_mount_home(void) {
     }
 
     // Create a location to stage the directories
+    singularity_message(DEBUG, "Creating directory to stage home: %s\n", homedir_source);
     if ( s_mkpath(homedir_source, 0755) < 0 ) {
         singularity_message(ERROR, "Failed creating home directory bind path\n");
     }
 
     // Create a location to stage the directories
+    singularity_message(DEBUG, "Creating directory to stage tmpdir home: %s\n", joinpath(tmpdir, homedir));
     if ( s_mkpath(joinpath(tmpdir, homedir), 0755) < 0 ) {
         singularity_message(ERROR, "Failed creating home directory bind path\n");
     }

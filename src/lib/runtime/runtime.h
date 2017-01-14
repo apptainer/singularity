@@ -38,12 +38,12 @@ extern char *singularity_runtime_containerdir(char *directory);
 // 'directory' is NULL, then it will return the currently set directory.
 extern char *singularity_runtime_tmpdir(char *directory);
 
-// Setup/initialize the overlayFS
-extern int singularity_runtime_overlayfs(void);
-
 // The Following functions actually do work:
 // Unshare namespaces
 extern int singularity_runtime_ns(void);
+
+// Setup/initialize the overlayFS
+extern int singularity_runtime_overlayfs(void);
 
 // Setup mount points within container
 extern int singularity_runtime_mounts(void);
