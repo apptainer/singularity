@@ -42,22 +42,17 @@
 
 
 int main(int argc_in, char ** argv_in) {
+    struct image_object image;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-
-    // Before we do anything, check privileges and drop permission
+    singularity_registry_init();
     singularity_priv_init();
     singularity_priv_drop();
 
-    singularity_registry_init();
-
-    singularity_runtime_ns();
-
-    singularity_image_path(singularity_registry_get("CONTAINER"));
-    
-    struct image_object image = singularity_image_init(singularity_registry_get("CONTAINER"));
+    image = singularity_image_init(singularity_registry_get("CONTAINER"));
 
     singularity_runtime_tmpdir(image.sessiondir);
+    singularity_runtime_ns();
 
     singularity_image_open(&image, O_RDONLY);
     singularity_image_bind(&image);
