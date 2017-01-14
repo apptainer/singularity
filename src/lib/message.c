@@ -37,7 +37,7 @@ int messagelevel = -1;
 extern const char *__progname;
 
 static void message_init(void) {
-    char *messagelevel_string = getenv("MESSAGELEVEL"); // Flawfinder: ignore (need to get string, validation in atol())
+    char *messagelevel_string = getenv("SINGULARITY_MESSAGELEVEL"); // Flawfinder: ignore (need to get string, validation in atol())
 
     openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
 

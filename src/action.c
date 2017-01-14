@@ -36,13 +36,16 @@
 #include "lib/registry.h"
 #include "lib/privilege.h"
 
+#include "./action-lib/action.h"
+
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
 #endif
 
 
-int main(int argc_in, char ** argv_in) {
+int main(int argc, char **argv) {
     struct image_object image;
+    char *command;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
@@ -63,8 +66,26 @@ int main(int argc_in, char ** argv_in) {
     singularity_runtime_files();
     singularity_runtime_enter();
 
-    //sleep(20);
-    system("/bin/sh");
+    singularity_priv_drop_perm();
+
+    setenv("SINGULARITY_CONTAINER", singularity_image_name(&image), 1);
+    command = singularity_registry_get("COMMAND");
+    
+    if ( command == NULL ) {
+        singularity_message(INFO, "No action command verb was given, invoking 'shell'\n");
+        action_shell(argc, argv);
+    } else if ( strcmp(command, "shell") == 0 ) {
+        action_shell(argc, argv);
+    } else if ( strcmp(command, "exec") == 0 ) {
+        action_exec(argc, argv);
+    } else if ( strcmp(command, "run") == 0 ) {
+        action_run(argc, argv);
+    } else if ( strcmp(command, "test") == 0 ) {
+        action_test(argc, argv);
+    } else {
+        singularity_message(ERROR, "Unknown action command verb was given\n");
+        ABORT(255);
+    }
 
     return(0);
 }

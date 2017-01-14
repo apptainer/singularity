@@ -1,4 +1,4 @@
-SUBDIRS = lib
+SUBDIRS = lib action-lib
 #SUBDIRS = lib util slurm
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
@@ -17,7 +17,7 @@ mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
 mount_LDADD = lib/image/libsingularity-image.la
 
 action_SOURCES = action.c util/util.c util/file.c lib/registry.c lib/privilege.c
-action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
+action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 action_LDFLAGS = -static
 
 action_suid_SOURCES = $(action_SOURCES)

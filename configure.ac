@@ -331,6 +331,7 @@ AC_CONFIG_FILES([
    src/lib/image/offset/Makefile
    src/lib/image/open/Makefile
    src/lib/image/sessiondir/Makefile
+   src/action-lib/Makefile
 
 
    etc/Makefile
