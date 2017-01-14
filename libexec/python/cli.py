@@ -76,7 +76,14 @@ def get_parser():
     # ID of the Singularity Hub container
     parser.add_option("--shub", 
                       dest='shub', 
-                      help="unique id of the Singularity Hub image", 
+                      help="unique id or name of the Singularity Hub image", 
+                      type=str, 
+                      default=None)
+
+    # Download folder in case of pull, will be used in preference over cache
+    parser.add_option("--pull-folder", 
+                      dest='pull_folder', 
+                      help="Folder to pull image to (only for shub endpoint)", 
                       type=str, 
                       default=None)
 
@@ -166,8 +173,11 @@ def run(args):
     if args.shub != None:
         image = args.shub
         manifest = get_shub_manifest(image)
-        cache_base = get_cache(subfolder="shub", 
-                               disable_cache = args.disable_cache)
+        if args.pull_folder == None:
+            cache_base = get_cache(subfolder="shub", 
+                                   disable_cache = args.disable_cache)
+        else:
+            cache_base = args.pull_folder
 
         # The image name is the md5 hash, download if it's not there
         image_name = get_image_name(manifest)
