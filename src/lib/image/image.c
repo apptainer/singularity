@@ -42,9 +42,6 @@
 #include "./offset/offset.h"
 #include "./sessiondir/sessiondir.h"
 
-static char *temp_directory = NULL;
-static char *image_path = NULL;
-
 
 // extern int singularity_image_expand(char *image, unsigned int size)
 //
@@ -67,37 +64,25 @@ struct image_object singularity_image_init(char *path) {
     return(image);
 }
 
-char *singularity_image_tempdir(char *directory) {
-    if ( directory != NULL ) {
-        if ( is_dir(directory) == 0 ) {
-            temp_directory = strdup(directory);
-        } else {
-            singularity_message(ERROR, "Temp directory path is not a directory: %s\n", directory);
-            ABORT(255);
-        }
-    }
-
-    return(temp_directory);
+int singularity_image_fd(struct image_object *object) {
+    return(object->fd);
 }
 
-char *singularity_image_path(char *path) {
-    if ( path != NULL ) {
-        if ( ( is_file(path) != 0 ) && ( is_dir(path) != 0 ) ) {
-            singularity_message(ERROR, "Invalid image path: %s\n", path);
-            ABORT(255);
-        }
-        singularity_message(DEBUG, "Setting image path to: %s\n", path);
-        image_path = strdup(path);
-    } else {
-        singularity_message(DEBUG, "Returning image path: %s\n", image_path);
-    }
-    return(image_path);
+char *singularity_image_loopdev(struct image_object *object) {
+    return(object->loopdev);
+}
+
+char *singularity_image_sessiondir(struct image_object *object) {
+    return(object->sessiondir);
 }
 
 char *singularity_image_name(struct image_object *object) {
     return(object->name);
 }
 
+char *singularity_image_path(struct image_object *object) {
+    return(object->path);
+}
 
 int singularity_image_open(struct image_object *image, int open_flags) {
     return(_singularity_image_open(image, open_flags));

@@ -22,10 +22,6 @@
 #ifndef __SINGULARITY_IMAGE_H_
 #define __SINGULARITY_IMAGE_H_
 
-#define IMAGE_TYPE_SINGULARITY 1
-#define IMAGE_TYPE_DIRECTORY 2
-#define IMAGE_TYPE_SQUASHFS 3
-
 struct image_object {
     char *sessiondir;
     char *path;
@@ -33,14 +29,19 @@ struct image_object {
     char *loopdev;
     int fd;
     int sessiondir_fd;
-    int TYPE;
 };
+
 
 extern struct image_object singularity_image_init(char *path);
 
-extern char *singularity_image_tempdir(char *directory);
-extern char *singularity_image_path(char *path);
-extern char *singularity_image_name(struct image_object *object);
+// Helper functions for accessing the image_object
+int singularity_image_fd(struct image_object *object);
+char *singularity_image_loopdev(struct image_object *object);
+char *singularity_image_sessiondir(struct image_object *object);
+char *singularity_image_name(struct image_object *object);
+char *singularity_image_path(struct image_object *object);
+char *singularity_image_name(struct image_object *object);
+
 
 extern int singularity_image_open(struct image_object *object, int open_flags);
 

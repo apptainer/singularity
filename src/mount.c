@@ -51,9 +51,6 @@ int main(int argc, char **argv) {
 
     singularity_registry_init();
 
-    // Setting the location of the container
-    singularity_image_path(singularity_registry_get("CONTAINER"));
-    
     // Obtain the image object
     image = singularity_image_init(singularity_registry_get("CONTAINER"));
 
@@ -61,7 +58,7 @@ int main(int argc, char **argv) {
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
 
-    printf("%s is mounted at: %s\n", image.name, singularity_registry_get("MOUNTPOINT"));
+    printf("%s is mounted at: %s\n", singularity_image_name(&image), singularity_registry_get("MOUNTPOINT"));
 
     return(0);
 }

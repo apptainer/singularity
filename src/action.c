@@ -51,7 +51,7 @@ int main(int argc_in, char ** argv_in) {
 
     image = singularity_image_init(singularity_registry_get("CONTAINER"));
 
-    singularity_runtime_tmpdir(image.sessiondir);
+    singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
     singularity_runtime_ns();
 
     singularity_image_open(&image, O_RDONLY);
