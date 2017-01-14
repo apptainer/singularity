@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <syslog.h>
+#include <libgen.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -41,7 +42,7 @@ static void message_init(void) {
     openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
 
     if ( messagelevel_string == NULL ) {
-        messagelevel = 1;
+        messagelevel = 5;
     } else {
         messagelevel = atoi(messagelevel_string); // Flawfinder: ignore
         if ( messagelevel < 0 ) {
@@ -124,13 +125,14 @@ void _singularity_message(int level, const char *function, const char *file_in, 
             char debug_string[25];
             char location_string[60];
             char tmp_header_string[86];
-            snprintf(location_string, 60, "%s:%d:%s()", file, line, function); // Flawfinder: ignore
+//            snprintf(location_string, 60, "%s:%d:%s()", basename(strdup(file)), line, function); // Flawfinder: ignore
+            snprintf(location_string, 60, "%s:%d ", basename(strdup(file)), line); // Flawfinder: ignore
             location_string[59] = '\0';
             snprintf(debug_string, 25, "[U=%d,P=%d]", geteuid(), getpid()); // Flawfinder: ignore
             debug_string[24] = '\0';
             snprintf(tmp_header_string, 86, "%-18s %s", debug_string, location_string); // Flawfinder: ignore
             tmp_header_string[85] = '\0';
-            snprintf(header_string, 95, "%-7s %-62s: ", prefix, tmp_header_string); // Flawfinder: ignore
+            snprintf(header_string, 95, "%-7s %-40s ", prefix, tmp_header_string); // Flawfinder: ignore
             header_string[94] = '\0';
         } else {
             snprintf(header_string, 10, "%-7s: ", prefix); // Flawfinder: ignore

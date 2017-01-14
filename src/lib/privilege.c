@@ -40,6 +40,7 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/config_parser.h"
+#include "lib/registry.h"
 
 
 static struct PRIV_INFO {
@@ -64,6 +65,9 @@ static struct SINGULARITY_PRIV_INFO {
     gid_t gid;
 } sinfo;
 
+
+
+
 void singularity_priv_init(void) {
     long int target_uid = -1;
     long int target_gid = -1;
@@ -73,8 +77,8 @@ void singularity_priv_init(void) {
     singularity_message(DEBUG, "Called singularity_priv_init(void)\n");
 
     if ( getuid() == 0 ) {
-        char *target_uid_str = envar("SINGULARITY_TARGET_UID", "", 32); 
-        char *target_gid_str = envar("SINGULARITY_TARGET_GID", "", 32); 
+        char *target_uid_str = singularity_registry_get("TARGET_UID");
+        char *target_gid_str = singularity_registry_get("TARGET_GID");
         if ( target_uid_str && !target_gid_str ) {
             singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
             ABORT(255);
@@ -134,6 +138,82 @@ void singularity_priv_init(void) {
         }
     }
     uinfo.ready = 1;
+
+    if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
+        singularity_message(VERBOSE, "Not virtualizing USER namespace by configuration: 'allow user ns' = no\n");
+    } else if ( getuid() == 0 ) {
+        singularity_message(VERBOSE, "Not virtualizing USER namespace: running as root\n");
+    } else if ( singularity_priv_is_suid() == 0 ) {
+        singularity_message(VERBOSE, "Not virtualizing USER namespace: running as SUID\n");
+    } else {
+        uid_t uid = singularity_priv_getuid();
+        gid_t gid = singularity_priv_getgid();
+
+        singularity_message(DEBUG, "Attempting to virtualize the USER namespace\n");
+        if ( unshare(CLONE_NEWUSER) != 0 ) {
+            singularity_message(ERROR, "Failed invoking the NEWUSER namespace runtime: %s\n", strerror(errno));
+            ABORT(255); // If we are configured to use CLONE_NEWUSER, we should abort if that fails
+        }
+
+        singularity_message(DEBUG, "Enabled user namespaces\n");
+
+        {   
+            singularity_message(DEBUG, "Setting setgroups to: 'deny'\n");
+            char *map_file = (char *) malloc(PATH_MAX);
+            snprintf(map_file, PATH_MAX-1, "/proc/%d/setgroups", getpid()); // Flawfinder: ignore
+            FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
+            if ( map_fp != NULL ) {
+                singularity_message(DEBUG, "Updating setgroups: %s\n", map_file);
+                fprintf(map_fp, "deny\n");
+                if ( fclose(map_fp) < 0 ) {
+                    singularity_message(ERROR, "Failed to write deny to setgroup file %s: %s\n", map_file, strerror(errno));
+                    ABORT(255);
+                }
+            } else {
+                singularity_message(ERROR, "Could not write info to setgroups: %s\n", strerror(errno));
+                ABORT(255);
+            }
+            free(map_file);
+        }
+        {
+            singularity_message(DEBUG, "Setting GID map to: '0 %i 1'\n", gid);
+            char *map_file = (char *) malloc(PATH_MAX);
+            snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid()); // Flawfinder: ignore
+            FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
+            if ( map_fp != NULL ) {
+                singularity_message(DEBUG, "Updating the parent gid_map: %s\n", map_file);
+                fprintf(map_fp, "%i %i 1\n", gid, gid);
+                if ( fclose(map_fp) < 0 ) {
+                    singularity_message(ERROR, "Failed to write to GID map %s: %s\n", map_file, strerror(errno));
+                    ABORT(255);
+                }
+            } else {
+                singularity_message(ERROR, "Could not write parent info to gid_map: %s\n", strerror(errno));
+                ABORT(255);
+            }
+            free(map_file);
+        }
+        {   
+            singularity_message(DEBUG, "Setting UID map to: '0 %i 1'\n", uid);
+            char *map_file = (char *) malloc(PATH_MAX);
+            snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid()); // Flawfinder: ignore
+            FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
+            if ( map_fp != NULL ) {
+                singularity_message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
+                fprintf(map_fp, "%i %i 1\n", uid, uid);
+                if ( fclose(map_fp) < 0 ) {
+                    singularity_message(ERROR, "Failed to write to UID map %s: %s\n", map_file, strerror(errno));
+                    ABORT(255);
+                }
+            } else {
+                singularity_message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
+                ABORT(255);
+            }
+            free(map_file);
+        }
+
+        uinfo.userns_ready = 1;
+    }
 
     singularity_message(DEBUG, "Returning singularity_priv_init(void)\n");
 }
@@ -382,10 +462,6 @@ void singularity_priv_drop_perm(void) {
 
 int singularity_priv_userns_enabled(void) {
     return uinfo.userns_ready;
-}
-
-void singularity_priv_userns_ready(void) {
-    uinfo.userns_ready = 1;
 }
 
 /* Return 0 if program is SUID, -1 if not SUID */

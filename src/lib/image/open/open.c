@@ -47,13 +47,10 @@ int _singularity_image_open(struct image_object *image, int open_flags) {
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Checking if image is a file: %s\n", image->path);
-    if ( is_file(image->path) == 0 ) {
-        singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
-        if ( ( image->fd = open(image->path, open_flags) ) < 0 ) {
-            singularity_message(ERROR, "Could not open image %s: %s\n", image->path, strerror(errno));
-            ABORT(255);
-        }
+    singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
+    if ( ( image->fd = open(image->path, open_flags) ) < 0 ) {
+        singularity_message(ERROR, "Could not open image %s: %s\n", image->path, strerror(errno));
+        ABORT(255);
     }
 
     return(0);

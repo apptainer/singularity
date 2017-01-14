@@ -30,7 +30,6 @@
     gid_t singularity_priv_getgid(void);
     const gid_t *singularity_priv_getgids();
     int singularity_priv_getgidcount(void);
-    void singularity_priv_userns_ready(void);
     int singularity_priv_userns_enabled(void);
     int singularity_priv_is_suid(void);
 

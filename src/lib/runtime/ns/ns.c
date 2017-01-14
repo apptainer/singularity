@@ -40,7 +40,6 @@
 #include "./ipc/ipc.h"
 #include "./mnt/mnt.h"
 #include "./pid/pid.h"
-#include "./user/user.h"
 
 
 int _singularity_runtime_ns(void) {
@@ -50,7 +49,6 @@ int _singularity_runtime_ns(void) {
     retval += _singularity_runtime_ns_ipc();
     retval += _singularity_runtime_ns_mnt();
     retval += _singularity_runtime_ns_pid();
-    retval += _singularity_runtime_ns_user();
 
     return(retval);
 }

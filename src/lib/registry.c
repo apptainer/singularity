@@ -82,7 +82,6 @@ void singularity_registry_init(void) {
                 val = "";
             }
 
-            singularity_message(VERBOSE, "Found environment variable: '%s'\n", key);
             singularity_registry_set(&key[12], val);
         }
     }

@@ -41,6 +41,11 @@ int _singularity_image_check(struct image_object *image) {
     char *line;
     FILE *image_fp;
 
+    if ( is_file(image->path) != 0 ) {
+        singularity_message(VERBOSE, "Skipping check, image is not a file\n");
+        return(0);
+    }
+
     if ( image->fd <= 0 ) {
         singularity_message(ERROR, "Can not check image with no FD associated\n");
         ABORT(255);

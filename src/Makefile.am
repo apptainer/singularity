@@ -10,13 +10,21 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = mount
+bin_PROGRAMS = mount action action-suid
+EXTRA_PROGRAMS = action-suid
 
 mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
-mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
+mount_LDADD = lib/image/libsingularity-image.la
 mount_LDFLAGS = -static
 
+action_SOURCES = action.c util/util.c util/file.c lib/registry.c lib/privilege.c
+action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
+action_LDFLAGS = -static
 
+action_suid_SOURCES = $(action_SOURCES)
+action_suid_LDADD = $(action_LDADD)
+action_suid_LDFLAGS = -static
+action_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 
 

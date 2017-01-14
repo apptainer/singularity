@@ -56,6 +56,11 @@ int _singularity_image_bind(struct image_object *image) {
     FILE *loop_fp = NULL;
     int i;
 
+    if ( is_file(image->path) != 0 ) {
+        singularity_message(VERBOSE, "Skipping bind, image is not a file\n");
+        return(0);
+    }
+
     if ( ! image_fd > 0 ) {
         singularity_message(ERROR, "Called _singularity_loop_bind() with no valid file descriptor\n");
         ABORT(255);
