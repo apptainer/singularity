@@ -367,13 +367,12 @@ void singularity_priv_drop(void) {
     if ( getgid() != uinfo.gid ) {
         if ( uinfo.target_mode && getgid() != 0 ) {
             singularity_message(ERROR, "Non-zero real GID for target mode: %d\n", getgid());
-                ABORT(255);
-            } else if ( !uinfo.target_mode )
-            {
-                singularity_message(ERROR, "Failed to drop effective group privileges to gid %d (currently %d)\n", uinfo.gid, getgid());
-                ABORT(255);
-            }
+            ABORT(255);
+        } else if ( !uinfo.target_mode ) {
+            singularity_message(ERROR, "Failed to drop effective group privileges to gid %d (currently %d)\n", uinfo.gid, getgid());
+            ABORT(255);
         }
+    }
 
     if ( getuid() != uinfo.uid ) {
         if ( uinfo.target_mode && getuid() != 0 ) {

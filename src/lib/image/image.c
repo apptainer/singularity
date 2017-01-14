@@ -52,6 +52,11 @@
 struct image_object singularity_image_init(char *path) {
     struct image_object image;
 
+    if ( path == NULL ) {
+        singularity_message(ERROR, "No container image path defined\n");
+        ABORT(255);
+    }
+
     image.path = strdup(path);
     image.name = basename(strdup(path));
     image.fd = -1;
