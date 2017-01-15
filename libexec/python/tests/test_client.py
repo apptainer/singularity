@@ -1,6 +1,7 @@
 '''
 
-test_cli.py: Client (cli.py) testing functions for Singularity in Python
+test_cli.py: Client (cli.py) testing functions for Singularity in Python,
+                    including client and supporting utils and shell functions.
 
 Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
 
@@ -53,6 +54,64 @@ class TestClient(TestCase):
         with self.assertRaises(SystemExit) as cm:
             run(args)
         self.assertEqual(cm.exception.code, 1)
+
+
+class TestShell(TestCase):
+
+    def setUp(self):
+        self.repo_name = "singularity-images"
+        self.namespace = "vsoch"
+        self.tag = "latest"
+        print("\n---START----------------------------------------")
+
+    def tearDown(self):
+        print("---END------------------------------------------")
+
+    def test_parse_image_uri(self):
+        '''test_parse_image_uri ensures that the correct namespace,
+        repo name, and tag (or unique id) is returned.
+        '''
+
+        from shell import parse_image_uri
+
+        print("Case 1: Specifying an shub:// image id should return a number")
+        image = parse_image_uri(image="shub://7",
+                                uri = "shub://")
+        self.assertTrue(isinstance(image,int))
+        self.assertEqual(image,7)
+
+        print("Case 2: Checking for correct output tags in digest...")
+        image_name = "%s/%s" %(self.namespace,self.repo_name)
+        digest = parse_image_uri(image=image_name)
+        for tag in ['repo_name','repo_tag','namespace']:
+            self.assertTrue(tag in digest)
+
+        print("Case 3: Tag when not specified should be latest.")
+        self.assertTrue(digest['repo_tag'] == 'latest')
+
+        print("Case 4: Tag when speciifed should be returned.")
+        image_name = "%s/%s:%s" %(self.namespace,self.repo_name,"pusheenasaurus")
+        digest = parse_image_uri(image=image_name)
+        self.assertTrue(digest['repo_tag'] == 'pusheenasaurus')
+
+        print("Case 5: Namespace when not specified should be library.")
+        digest = parse_image_uri(image=self.repo_name)
+        self.assertTrue(digest['repo_tag'] == 'latest')
+        self.assertTrue(digest['namespace'] == 'library')
+
+        print("Case 6: Repo name and tag without namespace...")
+        image_name = "%s:%s" %(self.repo_name,self.tag)
+        digest = parse_image_uri(image=image_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+        self.assertTrue(digest['namespace'] == 'library')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+
+
+        print("Case 7: Changing default namespace should not use library.")
+        image_name = "%s:%s" %(self.repo_name,self.tag)
+        digest = parse_image_uri(image=image_name,default_namespace="meow")
+        self.assertTrue(digest['namespace'] == 'meow')
+        
 
 
 class TestUtils(TestCase):
@@ -214,6 +273,26 @@ class TestUtils(TestCase):
         self.assertTrue(os.path.exists(cache))
 
 
+    def test_is_number(self):
+        '''test_is_number should return True for any string or
+        number that turns to a number, and False for everything else
+        '''
+        print("Testing utils.is_number...")
+
+        from utils import is_number
+
+        print("Case 1: Testing string and float numbers returns True")
+        self.assertTrue(is_number("4"))
+        self.assertTrue(is_number(4))
+        self.assertTrue(is_number("2.0"))
+        self.assertTrue(is_number(2.0))
+
+        print("Case 2: Testing repo names, tags, commits, returns False")
+        self.assertFalse(is_number("vsoch/singularity-images"))
+        self.assertFalse(is_number("vsoch/singularity-images:latest"))
+        self.assertFalse(is_number("44ca6e7c6c35778ab80b34c3fc940c32f1810f39"))
+
+
     def test_change_permission(self):
         '''test_change_permissions will make sure that we can change
         permissions of a file
@@ -225,14 +304,16 @@ class TestUtils(TestCase):
         tmpfile = '%s/.mooza' %(self.tmpdir)
         os.system('touch %s' %(tmpfile))
 
-        # 664
+        print("Case 1: Base permissions are 644")
         permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(permissions,'664')
-        # to 755
+
+        print("Case 2: Permissions are changed to 755")
         change_permissions(tmpfile,permission=755)  
         new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'755')
-        # and back
+
+        print("Case 2: Permissions are changed back to 644")
         change_permissions(tmpfile,permission=644)  
         new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
         self.assertTrue(new_permissions,'664')
