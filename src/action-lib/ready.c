@@ -18,13 +18,27 @@
  * 
 */
 
-#ifndef __ACTION_LIB_H_
-#define __ACTION_LIB_
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
 
-extern int action_shell(int argc, char **argv);
-extern int action_exec(int argc, char **argv);
-extern int action_run(int argc, char **argv);
-extern int action_test(int argc, char **argv);
+#include "util/file.h"
+#include "util/util.h"
+#include "lib/message.h"
 
-#endif /* __ACTION_LIB_H */
 
+void action_ready(char *path) {
+
+    singularity_message(DEBUG, "Checking if container is valid at: %s\n", path);
+
+    if ( is_exec(joinpath(path, "/bin/sh")) != 0 ) {
+        singularity_message(ERROR, "No valid /bin/sh in container\n");
+        ABORT(255);
+    }
+
+    return;
+}

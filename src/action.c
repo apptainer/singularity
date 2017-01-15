@@ -36,7 +36,7 @@
 #include "lib/registry.h"
 #include "lib/privilege.h"
 
-#include "./action-lib/action.h"
+#include "./action-lib/action-lib.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
@@ -65,6 +65,8 @@ int main(int argc, char **argv) {
 
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_containerdir(NULL));
+
+    action_ready(singularity_runtime_containerdir(NULL));
 
     singularity_runtime_overlayfs();
     singularity_runtime_mounts();
