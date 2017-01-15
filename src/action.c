@@ -57,7 +57,12 @@ int main(int argc, char **argv) {
     singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
     singularity_runtime_ns();
 
-    singularity_image_open(&image, O_RDONLY);
+    if ( singularity_registry_get("WRITABLE") == NULL ) {
+        singularity_image_open(&image, O_RDONLY);
+    } else {
+        singularity_image_open(&image, O_RDWR);
+    }
+
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_containerdir(NULL));
 
