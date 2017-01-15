@@ -1,4 +1,4 @@
-SUBDIRS = lib action-lib
+SUBDIRS = lib action-lib bootstrap-lib
 #SUBDIRS = lib util slurm
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
@@ -10,11 +10,14 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = mount action action-suid
+bin_PROGRAMS = action action-suid bootstrap mount
 EXTRA_PROGRAMS = action-suid
 
 mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
 mount_LDADD = lib/image/libsingularity-image.la
+
+bootstrap_SOURCES = bootstrap.c util/util.c util/file.c lib/registry.c
+bootstrap_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
 
 action_SOURCES = action.c util/util.c util/file.c lib/registry.c lib/privilege.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
