@@ -29,8 +29,9 @@ sys.path.append('..') # parent directory
 from utils import (
     add_http,
     api_get, 
+    is_number,
     read_file,
-    write_file 
+    write_file
 )
 from logman import logger
 import json
@@ -76,16 +77,20 @@ def authenticate(domain=None,token_folder=None):
 # Docker Registry Version 2.0 Functions - IN USE
 
 
-def get_manifest(image_id,registry=None):
+def get_manifest(image,registry=None):
     '''get_image will return a json object with image metadata, based on a unique id.
-    :param image_id: the image_id
+    :param image: the image name, either an id, or a repo name, tag, etc.
     :param registry: the registry (hub) to use, if not defined, default is used
     '''
     if registry == None:
         registry = api_base
     registry = add_http(registry) # make sure we have a complete url
 
-    base = "%s/containers/%s" %(registry,image_id)
+    # Numeric images have slightly different endpoint from named
+    if is_number(image) == True:
+        base = "%s/containers/%s" %(registry,image)
+    else:
+        base = "%s/container/%s" %(registry,image)
 
     # ---------------------------------------------------------------
     # If we eventually have private images, need to authenticate here       
@@ -109,7 +114,7 @@ def download_image(manifest,download_folder=None,extract=True):
     '''    
     image_file = get_image_name(manifest)
 
-    print("Found image %s" %(manifest['name']))
+    print("Found image %s:%s" %(manifest['name'],manifest['branch']))
     print("Downloading image... %s" %(image_file))
 
     if download_folder != None:
