@@ -333,6 +333,7 @@ AC_CONFIG_FILES([
    src/lib/image/sessiondir/Makefile
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
+   src/import-lib/Makefile
 
 
    etc/Makefile

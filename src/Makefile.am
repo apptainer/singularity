@@ -1,4 +1,4 @@
-SUBDIRS = lib action-lib bootstrap-lib
+SUBDIRS = lib action-lib bootstrap-lib import-lib
 #SUBDIRS = lib util slurm
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
@@ -10,24 +10,31 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = action action-suid bootstrap mount
-EXTRA_PROGRAMS = action-suid
+bin_PROGRAMS = action action-suid bootstrap import import-suid mount
+EXTRA_PROGRAMS = action-suid import-suid
 
-mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
-mount_LDADD = lib/image/libsingularity-image.la
+action_SOURCES = action.c util/util.c util/file.c lib/registry.c lib/privilege.c
+action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 
 bootstrap_SOURCES = bootstrap.c util/util.c util/file.c lib/registry.c
 bootstrap_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
 
-action_SOURCES = action.c util/util.c util/file.c lib/registry.c lib/privilege.c
-action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
-action_LDFLAGS = -static
+import_SOURCES = import.c util/util.c util/file.c lib/registry.c
+import_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la import-lib/libinternal.la
+
+mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
+mount_LDADD = lib/image/libsingularity-image.la
+
 
 action_suid_SOURCES = $(action_SOURCES)
 action_suid_LDADD = $(action_LDADD)
 action_suid_LDFLAGS = -static
 action_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
+import_suid_SOURCES = $(import_SOURCES)
+import_suid_LDADD = $(import_LDADD)
+import_suid_LDFLAGS = -static
+import_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 
 
