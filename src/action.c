@@ -36,7 +36,7 @@
 #include "lib/registry.h"
 #include "lib/privilege.h"
 
-#include "./action-lib/action-lib.h"
+#include "./action-lib/include.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined

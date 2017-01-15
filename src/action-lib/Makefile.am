@@ -9,4 +9,4 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 noinst_LTLIBRARIES = libinternal.la
 libinternal_la_SOURCES = exec.c test.c ready.c run.c shell.c
 
-EXTRA_DIST = action-lib.h
+EXTRA_DIST = include.h
