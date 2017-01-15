@@ -10,7 +10,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = action action-suid bootstrap import import-suid mount
+bin_PROGRAMS = action action-suid bootstrap get-section import import-suid mount
 EXTRA_PROGRAMS = action-suid import-suid
 
 action_SOURCES = action.c util/util.c util/file.c lib/registry.c lib/privilege.c
@@ -24,6 +24,8 @@ import_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runt
 
 mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
 mount_LDADD = lib/image/libsingularity-image.la
+
+get_section_SOURCES = get-section.c util/util.c util/file.c lib/message.c lib/privilege.c lib/config_parser.c lib/registry.c
 
 
 action_suid_SOURCES = $(action_SOURCES)
@@ -63,9 +65,6 @@ import_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 #
 ##image_bind_SOURCES = image-bind.c util/util.c util/file.c
 ##image_bind_LDADD = lib/libsingularity.la
-#
-#get_section_SOURCES = get-section.c util/util.c util/file.c
-#get_section_LDADD = lib/libsingularity.la
 #
 ##sexec_nosuid_CPPFLAGS = -DSINGULARITY_NOSUID=1 -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 ##bootstrap_CPPFLAGS = -DLIBEXECDIR=\"$(libexecdir)\"
