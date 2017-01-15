@@ -59,6 +59,7 @@ char *singularity_runtime_containerdir(char *directory) {
     } else if ( container_directory == NULL ) {
         container_directory = joinpath((singularity_config_get_value(CONTAINER_DIR)), "/source");
 
+        singularity_message(DEBUG, "Setting container directory to: %s\n", container_directory);
         singularity_priv_escalate();
         singularity_message(DEBUG, "Creating top level source mount directory to: %s\n", container_directory);
         if ( s_mkpath(container_directory, 0755) < 0 ) {
