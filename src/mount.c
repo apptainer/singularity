@@ -44,17 +44,18 @@ int main(int argc, char **argv) {
     struct image_object image;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-
-    // Before we do anything, check privileges and drop permission
+    singularity_registry_init();
     singularity_priv_init();
     singularity_priv_drop();
 
-    singularity_registry_init();
-
-    // Obtain the image object
     image = singularity_image_init(singularity_registry_get("CONTAINER"));
 
-    singularity_image_open(&image, O_RDONLY);
+    if ( singularity_registry_get("WRITABLE") == NULL ) {
+        singularity_image_open(&image, O_RDONLY);
+    } else {
+        singularity_image_open(&image, O_RDWR);
+    }
+
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
 
