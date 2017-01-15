@@ -32,10 +32,13 @@ missing
 singularity.spec
 test.sh
 
+src/action
+src/action-suid
+src/bootstrap
+src/import
+src/import-suid
+src/mount
 src/get-section
-src/simage
-src/sexec
-src/sexec-suid
 src/stamp-h1
 src/include/stamp-h1
 src/.dirstamp
