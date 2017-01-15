@@ -105,12 +105,11 @@ char *singularity_bootdef_get_value(char *key) {
     }
 
     line = (char *)malloc(MAX_LINE_LEN);
-
     while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
         if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
             chomp(bootdef_key);
             if ( strcasecmp(bootdef_key, key) == 0 ) {
-                if ( ( bootdef_value = strdup(strtok(NULL, ":")) ) != NULL ) {
+                if ( ( bootdef_value = strdup(strtok(NULL, "\n")) ) != NULL ) {
                     chomp(bootdef_value);
                     singularity_message(VERBOSE2, "Got bootstrap definition key %s(: '%s')\n", key, bootdef_value);
                     return(bootdef_value);
