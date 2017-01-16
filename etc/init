@@ -14,7 +14,7 @@ HISTFILE="/dev/null"
 
 # Set the timezone if it is not already set
 if [ -z "${TZ:-}" ]; then
-    TZ=`date +%Z`
+    TZ=`strings /etc/localtime | tail -n 1`
 fi
 
 export PATH HISTFILE TZ
