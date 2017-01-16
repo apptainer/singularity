@@ -46,6 +46,7 @@
 int main(int argc, char **argv) {
     struct image_object image;
     char *command;
+    char *dir = get_current_dir_name();
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
@@ -74,6 +75,12 @@ int main(int argc, char **argv) {
     singularity_runtime_enter();
 
     singularity_priv_drop_perm();
+
+    if ( is_dir(dir) == 0 ) {
+        chdir(dir);
+    } else {
+        chdir(singularity_priv_home());
+    }
 
     setenv("SINGULARITY_CONTAINER", singularity_image_name(&image), 1);
     command = singularity_registry_get("COMMAND");
