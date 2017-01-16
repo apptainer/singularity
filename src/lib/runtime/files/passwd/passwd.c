@@ -35,7 +35,7 @@
 #include "util/config_parser.h"
 #include "util/message.h"
 #include "util/privilege.h"
-//#include "lib/sessiondir.h"
+#include "util/registry.h"
 
 #include "../file-bind.h"
 #include "../../runtime.h"
@@ -45,7 +45,7 @@ int _singularity_runtime_files_passwd(void) {
     FILE *file_fp;
     char *source_file;
     char *tmp_file;
-    char *homedir;
+    char *homedir = singularity_priv_home();
     uid_t uid = singularity_priv_getuid();
     struct passwd *pwent = getpwuid(uid);
     char *containerdir = singularity_runtime_containerdir(NULL);
@@ -92,12 +92,6 @@ int _singularity_runtime_files_passwd(void) {
     singularity_message(VERBOSE, "Creating template passwd file and appending user data: %s\n", tmp_file);
     if ( ( file_fp = fopen(tmp_file, "a") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
-        ABORT(255);
-    }
-
-    homedir = get_homedir(pwent);
-    if ( homedir == NULL ) {
-        singularity_message(ERROR, "Failed to get home directory: %s\n", strerror(errno));
         ABORT(255);
     }
 

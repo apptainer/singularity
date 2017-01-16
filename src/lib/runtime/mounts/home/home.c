@@ -33,15 +33,16 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
+#include "util/registry.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
 
 
 int _singularity_runtime_mount_home(void) {
-    char *homedir;
-    char *homedir_source;
+    char *homedir = NULL;
     char *homedir_base = NULL;
+    char *homedir_source = NULL;
     char *container_dir = singularity_runtime_containerdir(NULL);
     char *tmpdir = singularity_runtime_tmpdir(NULL);
 
@@ -56,29 +57,20 @@ int _singularity_runtime_mount_home(void) {
     }
 
     singularity_message(DEBUG, "Obtaining user's homedir\n");
-    homedir = get_homedir(NULL);
-    if ( homedir == NULL ) {
-        singularity_message(ERROR, "Failed to get home directory: %s\n", strerror(errno));
+
+    // Figure out home directory source
+    if ( ( homedir = singularity_registry_get("HOME") ) != NULL ) {
+        singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir);
+    } else if ( ( homedir = singularity_priv_home() ) != NULL ) {
+        singularity_message(VERBOSE2, "Set the home directory source (via getpwuid()) to: %s\n", homedir);
+    } else {
+        singularity_message(ERROR, "Could not obtain user's home directory\n");
         ABORT(255);
     }
 
-    // Figure out home directory source
-    if ( ( homedir_source = envar_path("SINGULARITY_HOME") ) != NULL ) {
-        char *colon;
-        if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
-            singularity_message(ERROR, "User bind control is disabled by system administrator\n");
-            ABORT(5);
-        }
-
-        colon = strchr(homedir_source, ':');
-        if ( colon != NULL ) {
-            *colon = '\0';
-            homedir_source = strdup(homedir_source);
-            *colon = ':';
-        }
-
-        singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir_source);
-    } else if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
+    if ( singularity_registry_get("CONTAIN") == NULL ) {
+        homedir_source = strdup(homedir);
+    } else {
         char *tmpdirpath;
         if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR")) != NULL ) {
             if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
@@ -89,7 +81,7 @@ int _singularity_runtime_mount_home(void) {
             homedir_source = joinpath(tmpdirpath, "/home");
         } else {
             // TODO: Randomize tmp_home, so multiple calls to the same container don't overlap
-            homedir_source = joinpath(tmpdir, "/home.tmp");
+            homedir_source = joinpath(tmpdir, "/home");
         }
         if ( s_mkpath(homedir_source, 0755) < 0 ) {
             singularity_message(ERROR, "Could not create temporary home directory %s: %s\n", homedir_source, strerror(errno));
@@ -99,13 +91,10 @@ int _singularity_runtime_mount_home(void) {
         }
 
         free(tmpdirpath);
+    }
 
-    } else if ( is_dir(homedir) == 0 ) {
-        homedir_source = strdup(homedir);
-        singularity_message(VERBOSE2, "Set base the home directory source to: %s\n", homedir_source);
-    } else {
-        singularity_message(ERROR, "Could not identify home directory path: %s\n", homedir_source);
-        ABORT(255);
+    if ( ( homedir_base = basedir(homedir) ) == NULL ) {
+        singularity_message(ERROR, "Could not identify basedir for home directory path: %s\n", homedir);
     }
 
     singularity_message(DEBUG, "Checking if home directory is already mounted: %s\n", homedir);
@@ -146,14 +135,9 @@ int _singularity_runtime_mount_home(void) {
         }
     }
 
-    if ( homedir_base == NULL ) {
-        if ( ( homedir_base = basedir(homedir) ) == NULL ) {
-            singularity_message(ERROR, "Could not identify basedir for home directory path: %s\n", homedir);
-        }
-        if ( is_dir(joinpath(container_dir, homedir_base)) < 0 ) {
-            singularity_message(WARNING, "Not mounting home directory: bind point does not exist in container: %s\n", homedir_base);
-            return(1);
-        }
+    if ( is_dir(joinpath(container_dir, homedir_base)) < 0 ) {
+        singularity_message(WARNING, "Not mounting home directory: bind point does not exist in container: %s\n", homedir_base);
+        return(1);
     }
 
     singularity_priv_escalate();
