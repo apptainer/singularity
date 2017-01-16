@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
     if ( is_dir(dir) == 0 ) {
         chdir(dir);
     } else {
+        singularity_message(VERBOSE, "Current directory is not available within container, landing in home\n");
         chdir(singularity_priv_home());
     }
 
