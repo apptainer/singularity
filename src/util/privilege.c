@@ -54,6 +54,7 @@ static struct PRIV_INFO {
     uid_t orig_uid;
     uid_t orig_gid;
     pid_t orig_pid;
+    char *home;
     int dropped_groups;
     int target_mode;  // Set to 1 if we are running in "target mode" (admin specifies UID/GID)
 } uinfo;
@@ -139,6 +140,18 @@ void singularity_priv_init(void) {
         }
     }
     uinfo.ready = 1;
+
+    singularity_message(DEBUG, "Obtaining home directory\n");
+    if ( ( uinfo.home = singularity_registry_get("HOME") ) != NULL ) {
+        singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", uinfo.home);
+    } else {
+        struct passwd *pw = getpwuid(singularity_priv_getuid());
+        if ( ( uinfo.home = strdup(pw->pw_dir) ) != NULL ) {
+            singularity_message(VERBOSE2, "Set the home directory source (via getpwuid()) to: %s\n", uinfo.home);
+        } else {
+            singularity_message(ERROR, "Could not obtain user's home directory\n");
+        }
+    }
 
     if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
         singularity_message(VERBOSE, "Not virtualizing USER namespace by configuration: 'allow user ns' = no\n");
@@ -471,6 +484,14 @@ int singularity_priv_is_suid(void) {
     } else {
         return(-1);
     }
+}
+
+char *singularity_priv_home(void) {
+    if ( !uinfo.ready ) {
+        singularity_message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.home;
 }
 
 uid_t singularity_priv_getuid(void) {
