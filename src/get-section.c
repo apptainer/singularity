@@ -32,7 +32,6 @@
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/singularity.h"
 
 
 #define MAX_LINE_LEN 4096

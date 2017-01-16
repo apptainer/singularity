@@ -35,7 +35,6 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/config_parser.h"
-#include "lib/singularity.h"
 
 #include "./ipc/ipc.h"
 #include "./mnt/mnt.h"

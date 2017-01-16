@@ -40,8 +40,8 @@
 
 #include "config.h"
 #include "util/util.h"
-#include "lib/singularity.h"
 #include "util/message.h"
+#include "util/privilege.h"
 
 
 char *envar(char *name, char *allowed, int len) {

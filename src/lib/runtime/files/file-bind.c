@@ -31,7 +31,6 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
-#include "lib/singularity.h"
 
 #include "../runtime.h"
 
