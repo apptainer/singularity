@@ -41,7 +41,7 @@
 #include "lib/singularity.h"
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/config_parser.h"
+#include "util/config_parser.h"
 
 
 #ifndef SYSCONFDIR

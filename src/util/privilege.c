@@ -34,13 +34,14 @@
 #include <limits.h>
 #include <sched.h>
 
-#include "lib/privilege.h"
 #include "config.h"
+
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/message.h"
-#include "lib/config_parser.h"
-#include "lib/registry.h"
+#include "util/registry.h"
+#include "util/privilege.h"
+#include "util/message.h"
+#include "util/config_parser.h"
 
 
 static struct PRIV_INFO {

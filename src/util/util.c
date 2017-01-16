@@ -41,7 +41,7 @@
 #include "config.h"
 #include "util/util.h"
 #include "lib/singularity.h"
-#include "lib/message.h"
+#include "util/message.h"
 
 
 char *envar(char *name, char *allowed, int len) {

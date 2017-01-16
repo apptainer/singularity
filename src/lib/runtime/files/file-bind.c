@@ -29,8 +29,8 @@
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/message.h"
-#include "lib/privilege.h"
+#include "util/message.h"
+#include "util/privilege.h"
 #include "lib/singularity.h"
 
 #include "../runtime.h"

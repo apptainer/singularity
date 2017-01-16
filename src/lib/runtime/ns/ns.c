@@ -33,8 +33,8 @@
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/message.h"
-#include "lib/config_parser.h"
+#include "util/message.h"
+#include "util/config_parser.h"
 #include "lib/singularity.h"
 
 #include "./ipc/ipc.h"

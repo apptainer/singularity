@@ -33,7 +33,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/message.h"
+#include "util/message.h"
 #include "lib/singularity.h"
 
 /* Return 0 if successful, return -1 otherwise. */

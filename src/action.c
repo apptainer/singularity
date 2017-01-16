@@ -28,13 +28,13 @@
 #include <fcntl.h>
 
 #include "config.h"
-#include "lib/image/image.h"
-#include "lib/runtime/runtime.h"
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/config_parser.h"
-#include "lib/registry.h"
-#include "lib/privilege.h"
+#include "util/registry.h"
+#include "lib/image/image.h"
+#include "lib/runtime/runtime.h"
+#include "util/config_parser.h"
+#include "util/privilege.h"
 
 #include "./action-lib/include.h"
 

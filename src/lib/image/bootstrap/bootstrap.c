@@ -33,7 +33,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/message.h"
+#include "util/message.h"
 #include "lib/singularity.h"
 #include "lib/image/bootstrap/bootdef_parser.h"
 #include "lib/image/bootstrap/bootstrap.h"

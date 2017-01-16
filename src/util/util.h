@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "../lib/message.h"
+#include "util/message.h"
 
 #ifndef __UTIL_H_
 #define __UTIL_H_

@@ -34,7 +34,7 @@
 
 #include "config.h"
 #include "util/util.h"
-#include "lib/message.h"
+#include "util/message.h"
 #include "util/file.h"
 #include "registry.h"
 

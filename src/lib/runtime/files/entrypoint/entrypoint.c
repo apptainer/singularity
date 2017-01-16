@@ -30,7 +30,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/message.h"
+#include "util/message.h"
 #include "lib/rootfs/rootfs.h"
 
 

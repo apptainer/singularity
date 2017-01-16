@@ -13,19 +13,24 @@ bindir = $(libexecdir)/singularity
 bin_PROGRAMS = action action-suid bootstrap get-section import import-suid mount
 EXTRA_PROGRAMS = action-suid import-suid
 
-action_SOURCES = action.c util/util.c util/file.c lib/registry.c lib/privilege.c
+action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
+action_CPPFLAGS = $(AM_CPPFLAGS)
 
-bootstrap_SOURCES = bootstrap.c util/util.c util/file.c lib/registry.c
+bootstrap_SOURCES = bootstrap.c util/util.c util/file.c util/registry.c
 bootstrap_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
+bootstrap_CPPFLAGS = $(AM_CPPFLAGS)
 
-import_SOURCES = import.c util/util.c util/file.c lib/registry.c
+import_SOURCES = import.c util/util.c util/file.c util/registry.c
 import_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la import-lib/libinternal.la
+import_CPPFLAGS = $(AM_CPPFLAGS)
 
-mount_SOURCES = mount.c util/util.c util/file.c lib/registry.c
+mount_SOURCES = mount.c util/util.c util/file.c util/registry.c
 mount_LDADD = lib/image/libsingularity-image.la
+mount_CPPFLAGS = $(AM_CPPFLAGS)
 
-get_section_SOURCES = get-section.c util/util.c util/file.c lib/message.c lib/privilege.c lib/config_parser.c lib/registry.c
+get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
+get_section_CPPFLAGS = $(AM_CPPFLAGS)
 
 
 action_suid_SOURCES = $(action_SOURCES)

@@ -30,8 +30,8 @@
 #include <sys/wait.h>
 
 
-#include "lib/privilege.h"
-#include "lib/message.h"
+#include "util/privilege.h"
+#include "util/message.h"
 #include "util/util.h"
 
 int generic_signal_rpipe = -1;

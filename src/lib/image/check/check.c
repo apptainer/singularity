@@ -27,7 +27,7 @@
 #include <string.h>
 #include <fcntl.h>  
 
-#include "lib/message.h"
+#include "util/message.h"
 #include "util/util.h"
 #include "util/file.h"
 

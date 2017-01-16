@@ -28,7 +28,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/message.h"
+#include "util/message.h"
 
 
 void import_init(int argc, char **argv) {

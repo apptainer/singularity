@@ -33,10 +33,10 @@
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/message.h"
-#include "lib/config_parser.h"
-#include "lib/privilege.h"
-#include "lib/fork.h"
+#include "util/message.h"
+#include "util/config_parser.h"
+#include "util/privilege.h"
+#include "util/fork.h"
 
 static int enabled = -1;
 

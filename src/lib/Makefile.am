@@ -24,4 +24,4 @@ distincludedir = $(includedir)/singularity
 #libsingularity_la_CFLAGS = $(AM_CFLAGS)
 #
 #EXTRA_DIST = config_parser.h fork.h loop-control.h message.h privilege.h sessiondir.h singularity.h config_defaults.h
-EXTRA_DIST = registry.c registry.h
+EXTRA_DIST =
