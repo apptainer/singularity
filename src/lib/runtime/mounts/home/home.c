@@ -52,7 +52,7 @@ int _singularity_runtime_mount_home(void) {
     }
 
     if ( singularity_config_get_bool(MOUNT_HOME) <= 0 ) {
-        singularity_message(VERBOSE, "Skipping tmp dir mounting (per config)\n");
+        singularity_message(VERBOSE, "Skipping home dir mounting (per config)\n");
         return(0);
     }
 
@@ -60,6 +60,10 @@ int _singularity_runtime_mount_home(void) {
 
     // Figure out home directory source
     if ( ( homedir = singularity_registry_get("HOME") ) != NULL ) {
+        if ( singularity_priv_getuid() == 0 ) {
+            singularity_message(ERROR, "Will not virtulize the root user's home directory\n");
+            ABORT(1);
+        }
         singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", homedir);
     } else if ( ( homedir = singularity_priv_home() ) != NULL ) {
         singularity_message(VERBOSE2, "Set the home directory source (via getpwuid()) to: %s\n", homedir);
