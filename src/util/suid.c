@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <errno.h> 
 #include <string.h>
+#include <limits.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -41,7 +42,20 @@ int singularity_suid_init(void) {
 
     singularity_message(VERBOSE2, "Checking program has appropriate permissions\n");
     if ( ( is_owner("/proc/self/exe", 0) < 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
-        singularity_abort(255, "This program must be SUID root\n");
+        char *path = (char*) malloc(PATH_MAX);
+        int len = readlink("/proc/self/exe", path, PATH_MAX - 1);
+        if ( len <= 0 ) {
+            singularity_abort(255, "Could not obtain link target of self\n");
+        }
+        if ( len == PATH_MAX - 1 ) {
+            singularity_abort(255, "Link length error!\n");
+        }
+        path[len] = '\0';
+
+        singularity_message(ERROR, "Installation error, run the following commands as root to fix:\n");
+        singularity_message(ERROR, "    chown root:root %s\n", path);
+        singularity_message(ERROR, "    chmod 4755 %s\n", path);
+        ABORT(255);
     }
 
     singularity_message(VERBOSE2, "Checking configuration file is properly owned by root\n");
