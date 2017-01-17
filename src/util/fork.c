@@ -245,12 +245,9 @@ pid_t singularity_fork(void) {
         fds[2].events = POLLIN;
         fds[2].revents = 0;
 
-        // At this point, we have nothing to do but wait on some external action.
-        // We should never again need to increase our privileges.  Drop privs
-        // permanently and then indicate the child can proceed. 
         if ( singularity_priv_is_suid() == 0 ) {
-            singularity_message(DEBUG, "Reached drop_perm in fork.c\n");
-            singularity_priv_drop_perm();
+            singularity_message(DEBUG, "Dropping permissions\n");
+            singularity_priv_drop();
         }
         
         signal_go_ahead(0);
