@@ -89,7 +89,7 @@ static int setup_container_environment(spank_t spank) {
 
 static int setup_container_cwd() {
     singularity_message(DEBUG, "Trying to change directory to where we started\n");
-    char *target_pwd = envar_path("SINGULARITY_TARGET_PWD");
+    char *target_pwd = singularity_registry_get("TARGET_PWD");
     if (!target_pwd || (chdir(target_pwd) < 0)) {
         singularity_message(ERROR, "Failed to change into correct directory (%s) inside container.", target_pwd ? target_pwd : "UNKNOWN");
         return -1;
@@ -113,8 +113,8 @@ static int setup_container(spank_t spank) {
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     char *image;
-    if ( ( image = envar_path("SINGULARITY_IMAGE") ) == NULL ) {
-        singularity_message(ERROR, "SINGULARITY_IMAGE not defined!\n");
+    if ( ( image = singularity_registry_get("CONTAINER") ) == NULL ) {
+        singularity_message(ERROR, "SINGULARITY_CONTAINER not defined!\n");
     }
 
     singularity_rootfs_init(image);

@@ -32,6 +32,7 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
+#include "util/registry.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -41,7 +42,7 @@ int _singularity_runtime_mount_binds(void) {
     char *tmp_config_string;
     char *container_dir = singularity_runtime_containerdir(NULL);
 
-    if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
+    if ( singularity_registry_get("CONTAIN") != NULL ) {
         singularity_message(DEBUG, "Skipping bind mounts as contain was requested\n");
         return(0);
     }

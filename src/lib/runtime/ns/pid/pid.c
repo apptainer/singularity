@@ -37,9 +37,10 @@
 #include "util/config_parser.h"
 #include "util/privilege.h"
 #include "util/fork.h"
+#include "util/registry.h"
+
 
 static int enabled = -1;
-
 
 int _singularity_runtime_ns_pid(void) {
 
@@ -48,7 +49,7 @@ int _singularity_runtime_ns_pid(void) {
         return(0);
     }
 
-    if ( envar_defined("SINGULARITY_UNSHARE_PID") == FALSE ) {
+    if ( singularity_registry_get("UNSHARE_PID") == NULL ) {
         singularity_message(VERBOSE2, "Not virtualizing PID namespace on user request\n");
         return(0);
     }

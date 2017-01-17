@@ -54,5 +54,8 @@ extern int singularity_runtime_files(void);
 // Enter container root
 extern int singularity_runtime_enter(void);
 
+// Clean, santize, update environment
+extern int singularity_runtime_environment(void);
+
 #endif /* __SINGULARITY_RUNTIME_H */
 

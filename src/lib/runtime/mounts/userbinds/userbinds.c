@@ -33,6 +33,7 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
+#include "util/registry.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -43,7 +44,7 @@ int _singularity_runtime_mount_userbinds(void) {
     char *bind_path_string;
 
     singularity_message(DEBUG, "Checking for environment variable 'SINGULARITY_BINDPATH'\n");
-    if ( ( bind_path_string = envar_path("SINGULARITY_BINDPATH") ) != NULL ) {
+    if ( ( bind_path_string = singularity_registry_get("BINDPATH") ) != NULL ) {
 
         singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
         if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {

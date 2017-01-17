@@ -72,7 +72,7 @@ int _singularity_runtime_mount_home(void) {
         homedir_source = strdup(homedir);
     } else {
         char *tmpdirpath;
-        if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR")) != NULL ) {
+        if ( ( tmpdirpath = singularity_registry_get("WORKDIR") ) != NULL ) {
             if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
                 singularity_message(ERROR, "User bind control is disabled by system administrator\n");
                 ABORT(5);

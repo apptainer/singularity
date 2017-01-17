@@ -34,6 +34,7 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
+#include "util/registry.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -49,9 +50,12 @@ int _singularity_runtime_mount_tmp(void) {
         return(0);
     }
 
-    if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
+    if ( singularity_registry_get("CONTAIN") == NULL ) {
+        tmp_source = strdup("/tmp");
+        vartmp_source = strdup("/var/tmp");
+    } else {
         char *tmpdirpath;
-        if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR") ) != NULL ) {
+        if ( ( tmpdirpath = singularity_registry_get("WORKDIR") ) != NULL ) {
             if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
                 singularity_message(ERROR, "User bind control is disabled by system administrator\n");
                 ABORT(5);
@@ -64,9 +68,6 @@ int _singularity_runtime_mount_tmp(void) {
             vartmp_source = joinpath(sessiondir, "/var_tmp");
         }
         free(tmpdirpath);
-    } else {
-        tmp_source = strdup("/tmp");
-        vartmp_source = strdup("/var/tmp");
     }
 
     if ( s_mkpath(tmp_source, 0755) < 0 ) {

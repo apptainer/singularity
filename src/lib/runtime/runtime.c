@@ -31,17 +31,18 @@
 #include <stdlib.h>
 #include <sched.h>
 
-
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
+
 #include "./ns/ns.h"
 #include "./mounts/mounts.h"
 #include "./files/files.h"
 #include "./enter/enter.h"
 #include "./overlayfs/overlayfs.h"
+#include "./environment/environment.h"
 
 
 static char *container_directory = NULL;
@@ -99,6 +100,10 @@ int singularity_runtime_ns(void) {
 
 int singularity_runtime_overlayfs(void) {
     return(_singularity_runtime_overlayfs());
+}
+
+int singularity_runtime_environment(void) {
+    return(_singularity_runtime_environment());
 }
 
 int singularity_runtime_mounts(void) {

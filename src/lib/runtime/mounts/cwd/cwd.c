@@ -38,6 +38,7 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
+#include "util/registry.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -77,7 +78,7 @@ int _singularity_runtime_mount_cwd(void) {
     }
 
     singularity_message(DEBUG, "Checking for contain option\n");
-    if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
+    if ( singularity_registry_get("CONTAIN") != NULL ) {
         singularity_message(VERBOSE, "Not mounting current directory: contain was requested\n");
         free(cwd_path);
         return(0);

@@ -74,6 +74,8 @@ int main(int argc, char **argv) {
     singularity_runtime_files();
     singularity_runtime_enter();
 
+    singularity_runtime_environment();
+
     singularity_priv_drop_perm();
 
     if ( is_dir(dir) == 0 ) {
@@ -83,6 +85,7 @@ int main(int argc, char **argv) {
         chdir(singularity_priv_home());
     }
 
+    setenv("HISTFILE", "/dev/null", 1);
     setenv("SINGULARITY_CONTAINER", singularity_image_name(&image), 1);
     command = singularity_registry_get("COMMAND");
     

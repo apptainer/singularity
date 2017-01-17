@@ -35,8 +35,8 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
-#include "util/fork.h"
 #include "util/config_parser.h"
+#include "util/registry.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -50,7 +50,7 @@ int _singularity_runtime_mount_scratch(void) {
     int r;
 
     singularity_message(DEBUG, "Getting SINGULARITY_SCRATCHDIR from environment\n");
-    if ( ( scratchdir_path = envar_path("SINGULARITY_SCRATCHDIR") ) == NULL ) {
+    if ( ( scratchdir_path = singularity_registry_get("SCRATCHDIR") ) == NULL ) {
         singularity_message(DEBUG, "Not mounting scratch directory: Not requested\n");
         return(0);
     }
@@ -67,7 +67,7 @@ int _singularity_runtime_mount_scratch(void) {
 #endif  
 
     singularity_message(DEBUG, "Checking SINGULARITY_WORKDIR from environment\n");
-    if ( ( tmpdir_path = envar_path("SINGULARITY_WORKDIR") ) == NULL ) {
+    if ( ( tmpdir_path = singularity_registry_get("WORKDIR") ) == NULL ) {
         if ( ( tmpdir_path = singularity_runtime_tmpdir(NULL) ) == NULL ) {
             singularity_message(ERROR, "Could not identify a suitable temporary directory for scratch\n");
             return(0);
