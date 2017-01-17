@@ -13,7 +13,7 @@ bindir = $(libexecdir)/singularity
 bin_PROGRAMS = action action-suid bootstrap get-section import import-suid mount
 EXTRA_PROGRAMS = action-suid import-suid
 
-action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c
+action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 action_CPPFLAGS = $(AM_CPPFLAGS)
 

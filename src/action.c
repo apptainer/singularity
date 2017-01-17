@@ -35,6 +35,7 @@
 #include "lib/runtime/runtime.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/suid.h"
 
 #include "./action-lib/include.h"
 
@@ -47,6 +48,8 @@ int main(int argc, char **argv) {
     struct image_object image;
     char *command;
     char *dir = get_current_dir_name();
+
+    singularity_suid_init();
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();

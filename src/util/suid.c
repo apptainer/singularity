@@ -1,0 +1,69 @@
+/* 
+ * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+ * 
+ * Copyright (c) 2016-2017, The Regents of the University of California,
+ * through Lawrence Berkeley National Laboratory (subject to receipt of any
+ * required approvals from the U.S. Dept. of Energy).  All rights reserved.
+ * 
+ * This software is licensed under a customized 3-clause BSD license.  Please
+ * consult LICENSE file distributed with the sources of this project regarding
+ * your rights to use or distribute this software.
+ *
+ * NOTICE.  This Software was developed under funding from the U.S. Department of
+ * Energy and the U.S. Government consequently retains certain rights. As such,
+ * the U.S. Government has been granted for itself and others acting on its
+ * behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+ * to reproduce, distribute copies to the public, prepare derivative works, and
+ * perform publicly and display publicly, and to permit other to do so. 
+ * 
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h> 
+#include <string.h>
+
+#include "config.h"
+#include "util/util.h"
+#include "util/message.h"
+#include "util/file.h"
+#include "util/registry.h"
+
+#ifndef SYSCONFDIR
+#error SYSCONFDIR not defined
+#endif
+
+
+int singularity_suid_init(void) {
+
+#ifdef SINGULARITY_SUID
+    singularity_message(VERBOSE2, "Running SUID program workflow\n");
+
+    singularity_message(VERBOSE2, "Checking program has appropriate permissions\n");
+    if ( ( is_owner("/proc/self/exe", 0) < 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
+        singularity_abort(255, "This program must be SUID root\n");
+    }
+
+    singularity_message(VERBOSE2, "Checking configuration file is properly owned by root\n");
+    if ( is_owner(joinpath(SYSCONFDIR, "/singularity/singularity.conf"), 0 ) < 0 ) {
+        singularity_abort(255, "Running in privileged mode, root must own the Singularity configuration file\n");
+    }
+
+    singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
+    if ( singularity_registry_get("NOSUID") != NULL ) {
+        singularity_abort(1, "NOSUID mode has been requested... Aborting\n");
+    }
+
+#else
+    singularity_message(VERBOSE, "Running NON-SUID program workflow\n");
+
+    singularity_message(DEBUG, "Checking program has appropriate permissions\n");
+    if ( is_suid("/proc/self/exe") >= 0 ) {
+        singularity_abort(255, "This program must **NOT** be SUID\n");
+    }
+
+#endif /* SINGULARITY_SUID */
+
+    return(0);
+
+}
