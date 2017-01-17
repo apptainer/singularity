@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_IMAGE_CREATE_H_
 #define __SINGULARITY_IMAGE_CREATE_H_
 
-extern int _singularity_image_create(unsigned int size);
+extern int _singularity_image_create(struct image_object *image, long int size);
 
 #endif /* __SINGULARITY_IMAGE_CREATE_H */
 

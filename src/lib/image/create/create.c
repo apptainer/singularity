@@ -35,33 +35,28 @@
 
 #define BUFFER_SIZE (1024*1024)
 
-int _singularity_image_create(char *image, unsigned int size) {
-    FILE *image_fp;
-    // Even though we only need junk written into the image, to create it, we
+int _singularity_image_create(struct image_object *image, long int size) {
     // write a fixed value to the blank image to prevent contents of our memory
     // from being leaked to the disk.
     char *buff = (char *) malloc(BUFFER_SIZE);
     memset(buff, '\255', BUFFER_SIZE);
     int i;
+    FILE *image_fp;
 
-    singularity_message(VERBOSE, "Creating new sparse image at: %s\n", image);
-
-    if ( is_file(image) == 0 ) {
-        singularity_message(ERROR, "Will not overwrite existing file: %s\n", image);
+    if ( image->fd <= 0 ) {
+        singularity_message(ERROR, "Can not check image with no FD associated\n");
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Opening image 'w'\n");
-    if ( ( image_fp = fopen(image, "w") ) == NULL ) { // Flawfinder: ignore
-        fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
-        free(buff);
-        return(-1);
+    if ( ( image_fp = fdopen(image->fd, "w") ) == NULL ) {
+        singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
+        ABORT(255);
     }
 
     singularity_message(VERBOSE2, "Writing image header\n");
     fprintf(image_fp, LAUNCH_STRING); // Flawfinder: ignore (LAUNCH_STRING is a constant)
 
-    singularity_message(VERBOSE2, "Expanding image to %dMB\n", size);
+    singularity_message(VERBOSE2, "Growing image to %ldMB\n", size);
     // TODO: there are likely better ways to do this (falloc?); further, we should really handle
     // EINTR here.
     for(i = 0; i < size; i++ ) {
@@ -74,10 +69,7 @@ int _singularity_image_create(char *image, unsigned int size) {
     singularity_message(VERBOSE2, "Making image executable\n");
     fchmod(fileno(image_fp), 0755);
 
-    fclose(image_fp);
     free(buff);
-
-    singularity_message(DEBUG, "Returning image_create(%s, %d) = 0\n", image, size);
 
     return(0);
 }

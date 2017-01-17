@@ -64,41 +64,41 @@ struct image_object singularity_image_init(char *path) {
     image.loopdev = NULL;
     image.sessiondir = NULL;
 
-    _singularity_image_sessiondir_init(&image);
-
     return(image);
 }
 
-int singularity_image_fd(struct image_object *object) {
-    return(object->fd);
+int singularity_image_fd(struct image_object *image) {
+    return(image->fd);
 }
 
-char *singularity_image_loopdev(struct image_object *object) {
-    return(object->loopdev);
+char *singularity_image_loopdev(struct image_object *image) {
+    return(image->loopdev);
 }
 
-char *singularity_image_sessiondir(struct image_object *object) {
-    return(object->sessiondir);
+char *singularity_image_sessiondir(struct image_object *image) {
+    _singularity_image_sessiondir_init(image);
+
+    return(image->sessiondir);
 }
 
-char *singularity_image_name(struct image_object *object) {
-    return(object->name);
+char *singularity_image_name(struct image_object *image) {
+    return(image->name);
 }
 
-char *singularity_image_path(struct image_object *object) {
-    return(object->path);
+char *singularity_image_path(struct image_object *image) {
+    return(image->path);
 }
 
 int singularity_image_open(struct image_object *image, int open_flags) {
     return(_singularity_image_open(image, open_flags));
 }
 
-int singularity_image_create(unsigned int size) {
-    return(_singularity_image_create(size));
+int singularity_image_create(struct image_object *image, long int size) {
+    return(_singularity_image_create(image, size));
 }
 
-int singularity_image_expand(unsigned int size) {
-    return(_singularity_image_expand(size));
+int singularity_image_expand(struct image_object *image, unsigned int size) {
+    return(_singularity_image_expand(image, size));
 }
 
 int singularity_image_check(struct image_object *image) {
@@ -110,10 +110,14 @@ int singularity_image_offset(struct image_object *image) {
 }
 
 int singularity_image_bind(struct image_object *image) {
+    _singularity_image_sessiondir_init(image);
+
     return(_singularity_image_bind(image));
 }
 
 int singularity_image_mount(struct image_object *image, char *mount_point) {
+    _singularity_image_sessiondir_init(image);
+
     return(_singularity_image_mount(image, mount_point));
 }
 

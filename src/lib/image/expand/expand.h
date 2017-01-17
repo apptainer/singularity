@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_IMAGE_EXPAND_H_
 #define __SINGULARITY_IMAGE_EXPAND_H_
 
-extern int _singularity_image_expand(unsigned int size);
+extern int _singularity_image_expand(struct image_object *image, unsigned int size);
 
 #endif /* __SINGULARITY_IMAGE_EXPAND_H */
 

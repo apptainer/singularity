@@ -55,10 +55,11 @@ void _singularity_image_sessiondir_init(struct image_object *image) {
     struct stat imagestat;
     int sessiondir_suffix_len;
     uid_t uid = singularity_priv_getuid();
+    int image_fd = image->fd;
 
-    if ( file == NULL ) {
-        singularity_message(ERROR, "Internal error, image->path undefined\n");
-        ABORT(222);
+    if ( image->sessiondir != NULL ) {
+        singularity_message(DEBUG, "Called singularity_image_sessiondir_init previously, returning\n");
+        return;
     }
 
     if ( ( sessiondir_prefix = singularity_registry_get("SESSIONDIR") ) != NULL ) {
@@ -71,7 +72,7 @@ void _singularity_image_sessiondir_init(struct image_object *image) {
     }
     singularity_message(DEBUG, "Set sessiondir_prefix to: %s\n", sessiondir_prefix);
 
-    if ( stat(file, &imagestat) < 0 ) {
+    if ( fstat(image_fd, &imagestat) < 0 ) {
         singularity_message(ERROR, "Failed calling stat() on %s: %s\n", file, strerror(errno));
         ABORT(255);
     }
