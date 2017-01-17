@@ -55,7 +55,11 @@ int singularity_suid_init(void) {
         singularity_message(ERROR, "Installation error, run the following commands as root to fix:\n");
         singularity_message(ERROR, "    chown root:root %s\n", path);
         singularity_message(ERROR, "    chmod 4755 %s\n", path);
-        ABORT(255);
+        if ( getuid() == 0 ) {
+            singularity_message(INFO, "\n");
+        } else {
+            ABORT(255);
+        }
     }
 
     singularity_message(VERBOSE2, "Checking configuration file is properly owned by root\n");
