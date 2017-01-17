@@ -23,6 +23,7 @@
 #define __PRIVILEGE_H_
 
     void singularity_priv_init(void);
+    void singularity_priv_userns(void);
     void singularity_priv_escalate(void);
     void singularity_priv_drop(void);
     void singularity_priv_drop_perm(void);

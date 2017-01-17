@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
     singularity_priv_init();
+    singularity_priv_userns();
     singularity_priv_drop();
 
     image = singularity_image_init(singularity_registry_get("CONTAINER"));

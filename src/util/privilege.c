@@ -76,7 +76,7 @@ void singularity_priv_init(void) {
     memset(&uinfo, '\0', sizeof(uinfo));
     memset(&sinfo, '\0', sizeof(sinfo));
 
-    singularity_message(DEBUG, "Called singularity_priv_init(void)\n");
+    singularity_message(DEBUG, "Initializing user info\n");
 
     if ( getuid() == 0 ) {
         char *target_uid_str = singularity_registry_get("TARGET_UID");
@@ -137,6 +137,8 @@ void singularity_priv_init(void) {
             ABORT(255);
         }
     }
+
+    singularity_message(DEBUG, "Marking uinfo structure as ready\n");
     uinfo.ready = 1;
 
     singularity_message(DEBUG, "Obtaining home directory\n");
@@ -150,6 +152,14 @@ void singularity_priv_init(void) {
             singularity_message(ERROR, "Could not obtain user's home directory\n");
         }
     }
+    
+    return;
+}
+
+
+void singularity_priv_userns(void) {
+
+    singularity_message(VERBOSE, "Invoking the user namespace\n");
 
     if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
         singularity_message(VERBOSE, "Not virtualizing USER namespace by configuration: 'allow user ns' = no\n");
@@ -421,7 +431,7 @@ void singularity_priv_drop_perm(void) {
 
     singularity_message(DEBUG, "Resetting supplementary groups\n");
     if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
-        singularity_message(ERROR, "Could not reset supplementary group list: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not reset supplementary group list (perm): %s\n", strerror(errno));
         ABORT(255);
     }
 
