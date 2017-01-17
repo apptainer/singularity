@@ -117,8 +117,6 @@ void singularity_priv_init(void) {
                 ABORT(255);
             }
         }
-        free(target_uid_str);
-        free(target_gid_str);
     }
     if ( (target_uid >= 500) && (target_gid >= 500) ) {
         uinfo.target_mode = 1;
