@@ -82,6 +82,12 @@ int main(int argc, char **argv) {
     mkfs_cmd[2] = strdup(image.loopdev);
     mkfs_cmd[3] = NULL;
 
+    singularity_message(DEBUG, "Cleaning environment\n");
+    if ( envclean() != 0 ) {
+        singularity_message(ERROR, "Failed sanitizing the environment\n");
+        ABORT(255);
+    }
+
     singularity_priv_escalate();
     singularity_message(INFO, "Creating file system within image\n");
     singularity_fork_exec(mkfs_cmd);
