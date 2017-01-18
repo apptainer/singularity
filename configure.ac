@@ -274,7 +274,7 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="sexec-suid"
+    BUILD_SUID="action-suid create-suid import-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
@@ -334,7 +334,6 @@ AC_CONFIG_FILES([
    src/lib/image/sessiondir/Makefile
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
-   src/import-lib/Makefile
 
 
    etc/Makefile

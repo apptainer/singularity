@@ -1,5 +1,4 @@
-SUBDIRS = lib action-lib bootstrap-lib import-lib
-#SUBDIRS = lib util slurm
+SUBDIRS = lib action-lib bootstrap-lib
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -25,8 +24,8 @@ create_SOURCES = create.c util/util.c util/file.c util/registry.c util/privilege
 create_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
 create_CPPFLAGS = $(AM_CPPFLAGS)
 
-import_SOURCES = import.c util/util.c util/file.c util/registry.c
-import_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la import-lib/libinternal.la
+import_SOURCES = import.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c
+import_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
 import_CPPFLAGS = $(AM_CPPFLAGS)
 
 mount_SOURCES = mount.c util/util.c util/file.c util/registry.c
@@ -86,14 +85,17 @@ import_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 #
 ##dist_suidPROGRAM_INSTALL = ${INSTALL} -m 640
 #
-#install-exec-hook: make_suid
-#
-#make_suid:
-#	@if test `id -ru` = "0" -a "x$(BUILD_SUID)" = "xsexec-suid"; then \
-#		echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-suid"; \
-#		/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
-#		echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-suid"; \
-#		/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/sexec-suid; \
-#	fi
-#
+install-exec-hook: make_suid
+
+make_suid:
+	@if test `id -ru` = "0"; then \
+		for i in $(BUILD_SUID); do \
+			echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/$$i"; \
+			/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/$$i ; \
+			echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/$$i"; \
+			/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/$$i; \
+		done; \
+	fi
+
+
 EXTRA_DIST = config.h
