@@ -215,3 +215,33 @@ int str2int(const char *input_str, long int *output_num) {
     return -1;
 }
 
+
+int envclean(void) {
+    int retval = 0;
+    char **env = environ;
+    char **envclone;
+    int i;
+    int envlen = 0;
+
+    for(i = 0; env[i] != 0; i++) {
+        envlen++;
+    }
+
+    envclone = (char**) malloc(i * sizeof(char *));
+
+    for(i = 0; env[i] != 0; i++) {
+        envclone[i] = strdup(env[i]);
+    }
+
+    for(i = 0; i < envlen; i++) {
+        char *tok, *key;
+
+        key = strtok_r(envclone[i], "=", &tok);
+
+        singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
+        unsetenv(key);
+    }
+
+    return(retval);
+}
+

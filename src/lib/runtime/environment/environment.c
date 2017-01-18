@@ -34,39 +34,34 @@
 #include "util/registry.h"
 
 
-extern char **environ;
 
 int _singularity_runtime_environment(void) {
     int retval = 0;
-    int cleanall = 0;
-    char **env = environ;
-    char **envclone;
-    int i;
-    int envlen = 0;
 
     if ( singularity_registry_get("CLEANENV") != NULL ) {
-        cleanall = 1;
-    }
+        retval = envclean();
+    } else {
+        extern char **environ;
+        char **env = environ;
+        char **envclone;
+        int i;
+        int envlen = 0;
 
-    for(i = 0; env[i] != 0; i++) {
-        envlen++;
-    }
+        for(i = 0; env[i] != 0; i++) {
+            envlen++;
+        }
 
-    envclone = (char**) malloc(i * sizeof(char *));
+        envclone = (char**) malloc(i * sizeof(char *));
 
-    for(i = 0; env[i] != 0; i++) {
-        envclone[i] = strdup(env[i]);
-    }
+        for(i = 0; env[i] != 0; i++) {
+            envclone[i] = strdup(env[i]);
+        }
 
-    for(i = 0; i < envlen; i++) {
-        char *tok, *key;
+        for(i = 0; i < envlen; i++) {
+            char *tok, *key;
         
-        key = strtok_r(envclone[i], "=", &tok);
+            key = strtok_r(envclone[i], "=", &tok);
 
-        if ( cleanall == 1 ) {
-            singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
-            unsetenv(key);
-        } else {
             if ( strncmp(key, "SINGULARITY_", 12) == 0 ) {
                 singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
                 unsetenv(key);
