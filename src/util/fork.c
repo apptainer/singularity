@@ -28,6 +28,7 @@
 #include <poll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <stdio.h>
 
 
 #include "util/privilege.h"
@@ -315,6 +316,7 @@ int singularity_fork_exec(char **argv) {
     child = singularity_fork();
 
     if ( child == 0 ) {
+        fclose(stdout);
         if ( execvp(argv[0], argv) < 0 ) { //Flawfinder: ignore
             singularity_message(ERROR, "Failed to execv(%s, ...): %s\n", argv[0], strerror(errno));
             ABORT(255);
@@ -327,6 +329,7 @@ int singularity_fork_exec(char **argv) {
         retval = WEXITSTATUS(tmpstatus);
     }
 
+    singularity_message(DEBUG, "Returning from singularity_fork_exec with: %d\n", retval);
     return(retval);
 }
 

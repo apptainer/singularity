@@ -50,11 +50,7 @@ int main(int argc, char **argv) {
 
     image = singularity_image_init(singularity_registry_get("CONTAINER"));
 
-    if ( singularity_registry_get("WRITABLE") == NULL ) {
-        singularity_image_open(&image, O_RDONLY);
-    } else {
-        singularity_image_open(&image, O_RDWR);
-    }
+    singularity_image_open(&image, O_RDWR);
 
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));

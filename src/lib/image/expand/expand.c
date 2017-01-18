@@ -69,7 +69,6 @@ int _singularity_image_expand(struct image_object *image, unsigned int size) {
         }
     }
 
-    fclose(image_fp);
     free(buff);
 
     return(0);

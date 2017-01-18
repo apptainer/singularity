@@ -67,6 +67,8 @@ int _singularity_image_check(struct image_object *image) {
         ABORT(255);
     }
 
+    singularity_message(DEBUG, "First line of image(fd=%d): %s\n", image->fd, line);
+
     singularity_message(DEBUG, "Checking if first line matches key\n");
     if ( strcmp(line, LAUNCH_STRING) == 0 ) {
         free(line);

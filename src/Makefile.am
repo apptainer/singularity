@@ -9,8 +9,8 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 bindir = $(libexecdir)/singularity
 
-bin_PROGRAMS = action action-suid bootstrap create create-suid get-section import import-suid mount
-EXTRA_PROGRAMS = action-suid create-suid import-suid
+bin_PROGRAMS = action bootstrap create expand get-section import mount $(BUILD_SUID)
+EXTRA_PROGRAMS = action-suid create-suid expand-suid import-suid
 
 action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
@@ -23,6 +23,10 @@ bootstrap_CPPFLAGS = $(AM_CPPFLAGS)
 create_SOURCES = create.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c
 create_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
 create_CPPFLAGS = $(AM_CPPFLAGS)
+
+expand_SOURCES = expand.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c
+expand_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
+expand_CPPFLAGS = $(AM_CPPFLAGS)
 
 import_SOURCES = import.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c
 import_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
@@ -45,6 +49,11 @@ create_suid_SOURCES = $(create_SOURCES)
 create_suid_LDADD = $(create_LDADD)
 create_suid_LDFLAGS = -static
 create_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
+
+expand_suid_SOURCES = $(expand_SOURCES)
+expand_suid_LDADD = $(expand_LDADD)
+expand_suid_LDFLAGS = -static
+expand_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 import_suid_SOURCES = $(import_SOURCES)
 import_suid_LDADD = $(import_LDADD)

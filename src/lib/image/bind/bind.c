@@ -56,6 +56,8 @@ int _singularity_image_bind(struct image_object *image) {
     FILE *loop_fp = NULL;
     int i;
 
+    singularity_message(DEBUG, "Entered singularity_image_bind()\n");
+
     if ( is_file(image->path) != 0 ) {
         singularity_message(VERBOSE, "Skipping bind, image is not a file\n");
         return(0);

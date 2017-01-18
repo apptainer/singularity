@@ -35,8 +35,10 @@ test.sh
 src/action
 src/action-suid
 src/bootstrap
-create
-create-suid
+src/create
+src/create-suid
+src/expand
+src/expand-suid
 src/import
 src/import-suid
 src/mount

@@ -274,7 +274,7 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid create-suid import-suid"
+    BUILD_SUID="action-suid create-suid expand-suid import-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
