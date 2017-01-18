@@ -74,6 +74,11 @@ int singularity_image_offset(FILE *image_fp) {
     int ret = 0;
     int i = 0;
 
+    if ( singularity_image_check(image_fp) != 0 ) {
+        singularity_message(DEBUG, "File is not a Singularity image, returning zero offset\n");
+        return(0);
+    }
+
     singularity_message(VERBOSE, "Calculating image offset\n");
     rewind(image_fp);
 
