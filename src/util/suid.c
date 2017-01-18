@@ -64,7 +64,7 @@ int singularity_suid_init(void) {
 
     singularity_message(VERBOSE2, "Checking configuration file is properly owned by root\n");
     if ( is_owner(joinpath(SYSCONFDIR, "/singularity/singularity.conf"), 0 ) < 0 ) {
-        singularity_abort(255, "Running in privileged mode, root must own the Singularity configuration file\n");
+        singularity_abort(255, "Running in privileged mode, root must own the Singularity configuration file: %s\n", joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     }
 
     singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
