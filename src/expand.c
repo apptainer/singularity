@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     }
 
     singularity_message(INFO, "Initializing Singularity image subsystem\n");
-    image = singularity_image_init(singularity_registry_get("CONTAINER"));
+    image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     singularity_message(INFO, "Opening image file: %s\n", image.name);
     singularity_image_open(&image, O_RDWR);

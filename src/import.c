@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     singularity_priv_init();
     singularity_priv_drop();
 
-    image = singularity_image_init(singularity_registry_get("CONTAINER"));
+    image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     singularity_image_open(&image, O_RDWR);
 
