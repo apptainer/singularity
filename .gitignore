@@ -42,6 +42,7 @@ src/expand-suid
 src/import
 src/import-suid
 src/mount
+src/mount-suid
 src/get-section
 src/stamp-h1
 src/include/stamp-h1

@@ -31,9 +31,11 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/registry.h"
-#include "lib/image/image.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/suid.h"
+#include "lib/image/image.h"
+#include "lib/runtime/runtime.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
@@ -43,19 +45,37 @@
 int main(int argc, char **argv) {
     struct image_object image;
 
+    singularity_suid_init();
+
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
     singularity_priv_init();
     singularity_priv_drop();
 
+    if ( argc == 3 ) {
+        singularity_registry_set("IMAGE", argv[1]);
+        singularity_registry_set("MOUNTPOINT", argv[2]);
+    }
+
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     singularity_image_open(&image, O_RDWR);
 
+    if ( singularity_priv_getuid() != 0 ) {
+        singularity_runtime_ns(SR_NS_MNT);
+    }
+
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
 
-    printf("%s is mounted at: %s\n", singularity_image_name(&image), singularity_registry_get("MOUNTPOINT"));
+    singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), singularity_registry_get("MOUNTPOINT"));
+
+    if ( singularity_priv_getuid() != 0 ) {
+        singularity_priv_drop_perm();
+        singularity_message(INFO, "Spawning a new shell in this namespace, to unmount, exit shell\n");
+        setenv("PS1", "Singularity> ", 1);
+        execl("/bin/sh", "/bin/sh", NULL);
+    }
 
     return(0);
 }
