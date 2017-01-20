@@ -39,78 +39,25 @@
 #include "./ipc/ipc.h"
 #include "./mnt/mnt.h"
 #include "./pid/pid.h"
+#include "../runtime.h"
 
 
-int _singularity_runtime_ns(void) {
+int _singularity_runtime_ns(unsigned int flags) {
     int retval = 0;
 
-    singularity_message(VERBOSE, "Running all namespace components\n");
-    retval += _singularity_runtime_ns_ipc();
-    retval += _singularity_runtime_ns_mnt();
-    retval += _singularity_runtime_ns_pid();
+    if ( flags & SR_NS_PID ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_pid()\n");
+        retval += _singularity_runtime_ns_pid();
+    }
+    if ( flags & SR_NS_IPC ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_ipc()\n");
+        retval += _singularity_runtime_ns_ipc();
+    }
+    if ( flags & SR_NS_MNT ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_mnt()\n");
+        retval += _singularity_runtime_ns_mnt();
+    }
 
     return(retval);
 }
 
-
-/*
-int presently_unused(pid_t attach_pid) {
-#ifdef NO_SETNS
-    singularity_message(ERROR, "This host does not support joining existing name spaces\n");
-    ABORT(1);
-#else
-    char nsjoin_pid[64]; // Flawfinder: ignore
-    char nsjoin_mnt[64]; // Flawfinder: ignore
-    char nsjoin_ipc[64]; // Flawfinder: ignore
-
-    snprintf(nsjoin_pid, 64, "/proc/%d/ns/pid", attach_pid); // Flawfinder: ignore
-    snprintf(nsjoin_mnt, 64, "/proc/%d/ns/mnt", attach_pid); // Flawfinder: ignore
-    snprintf(nsjoin_ipc, 64, "/proc/%d/ns/ipc", attach_pid); // Flawfinder: ignore
-
-    if ( is_file(nsjoin_pid) == 0 ) {
-        singularity_message(DEBUG, "Connecting to existing PID namespace\n");
-        int fd = open(nsjoin_pid, O_RDONLY); // Flawfinder: ignore
-        if ( setns(fd, CLONE_NEWPID) < 0 ) {
-            singularity_message(ERROR, "Could not join existing PID namespace: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        close(fd);
-
-    } else {
-        singularity_message(ERROR, "Could not identify PID namespace: %s\n", nsjoin_pid);
-        ABORT(255);
-    }
-
-    if ( is_file(nsjoin_mnt) == 0 ) {
-        singularity_message(DEBUG, "Connecting to existing mount namespace\n");
-        int fd = open(nsjoin_mnt, O_RDONLY); // Flawfinder: ignore
-        if ( setns(fd, CLONE_NEWNS) < 0 ) {
-            singularity_message(ERROR, "Could not join existing mount namespace: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        close(fd);
-
-    } else {
-        singularity_message(ERROR, "Could not identify mount namespace: %s\n", nsjoin_mnt);
-        ABORT(255);
-    }
-
-    if ( is_file(nsjoin_ipc) == 0 ) {
-        singularity_message(DEBUG, "Connecting to existing IPC namespace\n");
-        int fd = open(nsjoin_ipc, O_RDONLY); // Flawfinder: ignore
-        if ( setns(fd, CLONE_NEWIPC) < 0 ) {
-            singularity_message(ERROR, "Could not join existing IPC namespace: %s\n", strerror(errno));
-            ABORT(255);
-        }
-        close(fd);
-
-    } else {
-        singularity_message(ERROR, "Could not identify IPC namespace: %s\n", nsjoin_ipc);
-        ABORT(255);
-    }
-#endif
-    return(0);
-}
-
-
-*/

@@ -94,8 +94,8 @@ int singularity_runtime_flags(unsigned int flags) {
 }
 
 
-int singularity_runtime_ns(void) {
-    return(_singularity_runtime_ns());
+int singularity_runtime_ns(unsigned int flags) {
+    return(_singularity_runtime_ns(flags));
 }
 
 int singularity_runtime_overlayfs(void) {

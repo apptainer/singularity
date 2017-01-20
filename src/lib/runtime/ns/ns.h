@@ -21,7 +21,7 @@
 #ifndef __SINGULARITY_RUNTIME_NS_H_
 #define __SINGULARITY_RUNTIME_NS_H_
 
-extern int _singularity_runtime_ns(void);
+extern int _singularity_runtime_ns(unsigned int flags);
 
 #endif /* __SINGULARITY_RUNTIME_NS_H */
 

@@ -40,7 +40,12 @@ extern char *singularity_runtime_tmpdir(char *directory);
 
 // The Following functions actually do work:
 // Unshare namespaces
-extern int singularity_runtime_ns(void);
+extern int singularity_runtime_ns(unsigned int flags);
+
+#define SR_NS_PID 1
+#define SR_NS_IPC 2
+#define SR_NS_MNT 4
+#define SR_NS_ALL 255
 
 // Setup/initialize the overlayFS
 extern int singularity_runtime_overlayfs(void);
