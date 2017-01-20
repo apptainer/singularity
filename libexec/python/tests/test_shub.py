@@ -39,7 +39,7 @@ class TestApi(TestCase):
 
 
     def setUp(self):
-        self.image_id = 24 # https://singularity-hub.org/collections/12/
+        self.image_id = 60 # https://singularity-hub.org/collections/12/
         self.user_name = "vsoch"
         self.repo_name = "singularity-images"
         self.tmpdir = tempfile.mkdtemp()
@@ -138,7 +138,7 @@ class TestApi(TestCase):
         image_name = get_image_name(manifest,
                                     use_commit=False)
         print(image_name)
-        self.assertEqual('32394f413f46f070e76cc07308f0e791.img.gz',image_name)
+        self.assertEqual('9e46ba8be1e10b1a2812844ac8072259.img.gz',image_name)
 
 
 if __name__ == '__main__':
