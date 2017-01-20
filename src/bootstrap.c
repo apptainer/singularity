@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     }
 
     singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
-    singularity_runtime_ns();
+    singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_containerdir(NULL));
