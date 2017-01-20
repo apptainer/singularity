@@ -40,7 +40,7 @@
 
 
 int _singularity_runtime_mount_userbinds(void) {
-    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *container_dir = singularity_runtime_rootfs(NULL);
     char *bind_path_string;
 
     singularity_message(DEBUG, "Checking for environment variable 'SINGULARITY_BINDPATH'\n");

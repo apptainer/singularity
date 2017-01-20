@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);
-    singularity_image_mount(&image, singularity_runtime_containerdir(NULL));
+    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
     tar_cmd[0] = strdup("/usr/bin/tar");
     tar_cmd[1] = strdup("-cf");
@@ -75,8 +75,8 @@ int main(int argc, char **argv) {
     tar_cmd[3] = strdup(".");
     tar_cmd[4] = NULL;
 
-    if ( chdir(singularity_runtime_containerdir(NULL)) != 0 ) {
-        singularity_message(ERROR, "Could not change to working directory: %s\n", singularity_runtime_containerdir(NULL));
+    if ( chdir(singularity_runtime_rootfs(NULL)) != 0 ) {
+        singularity_message(ERROR, "Could not change to working directory: %s\n", singularity_runtime_rootfs(NULL));
         ABORT(255);
     }
 

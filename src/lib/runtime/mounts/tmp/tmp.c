@@ -41,7 +41,7 @@
 
 
 int _singularity_runtime_mount_tmp(void) {
-    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *container_dir = singularity_runtime_rootfs(NULL);
     char *tmp_source;
     char *vartmp_source;
 

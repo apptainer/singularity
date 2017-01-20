@@ -38,7 +38,7 @@
 
 
 int _singularity_runtime_enter_chroot(void) {
-    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *container_dir = singularity_runtime_rootfs(NULL);
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Entering container file system root: %s\n", container_dir);

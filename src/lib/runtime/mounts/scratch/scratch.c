@@ -43,7 +43,7 @@
 
 
 int _singularity_runtime_mount_scratch(void) {
-    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *container_dir = singularity_runtime_rootfs(NULL);
     char *scratchdir_path;
     char *tmpdir_path;
     char *sourcedir_path;

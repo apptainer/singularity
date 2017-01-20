@@ -69,9 +69,9 @@ int main(int argc, char **argv) {
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_image_bind(&image);
-    singularity_image_mount(&image, singularity_runtime_containerdir(NULL));
+    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
-    action_ready(singularity_runtime_containerdir(NULL));
+    action_ready(singularity_runtime_rootfs(NULL));
 
     singularity_runtime_overlayfs();
     singularity_runtime_mounts();

@@ -43,7 +43,7 @@ int _singularity_runtime_mount_home(void) {
     char *homedir = NULL;
     char *homedir_base = NULL;
     char *homedir_source = NULL;
-    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *container_dir = singularity_runtime_rootfs(NULL);
     char *tmpdir = singularity_runtime_tmpdir(NULL);
 
     if ( tmpdir == NULL ) {

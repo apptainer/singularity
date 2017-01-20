@@ -50,7 +50,7 @@ int _singularity_runtime_files_group(void) {
     uid_t gid = singularity_priv_getgid();
     const gid_t *gids = singularity_priv_getgids();
     int gid_count = singularity_priv_getgidcount();
-    char *containerdir = singularity_runtime_containerdir(NULL);
+    char *containerdir = singularity_runtime_rootfs(NULL);
     char *tmpdir = singularity_runtime_tmpdir(NULL);
 
     singularity_message(DEBUG, "Called singularity_file_group_create()\n");

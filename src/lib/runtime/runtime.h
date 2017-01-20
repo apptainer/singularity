@@ -32,7 +32,7 @@ extern int singularity_runtime_flags(unsigned int flags);
 
 // Set and return the runtime container directory location to use. If
 // 'directory' is NULL, then it will return the currently set directory.
-extern char *singularity_runtime_containerdir(char *directory);
+extern char *singularity_runtime_rootfs(char *directory);
 
 // Set and return the runtime temporary directory location to use. If
 // 'directory' is NULL, then it will return the currently set directory.

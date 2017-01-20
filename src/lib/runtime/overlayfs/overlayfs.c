@@ -41,7 +41,7 @@
 
 
 int _singularity_runtime_overlayfs(void) {
-    char *rootfs_source = singularity_runtime_containerdir(NULL);
+    char *rootfs_source = singularity_runtime_rootfs(NULL);
     char *container_dir = strdup(singularity_config_get_value(CONTAINER_DIR));
     char *mount_final   = joinpath(container_dir, "/final");
     int overlay_enabled = 0;
@@ -126,7 +126,7 @@ int _singularity_runtime_overlayfs(void) {
 
     // If we got here, then we now set the runtime containerdir to our new mount point
     singularity_message(VERBOSE2, "Updating the containerdir to: %s\n", mount_final);
-    singularity_runtime_containerdir(mount_final);
+    singularity_runtime_rootfs(mount_final);
 
     return(0);
 }

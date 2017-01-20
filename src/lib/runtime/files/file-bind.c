@@ -37,7 +37,7 @@
 
 int container_file_bind(char *source, char *dest_path) {
     char *dest;
-    char *containerdir = singularity_runtime_containerdir(NULL);
+    char *containerdir = singularity_runtime_rootfs(NULL);
 
     singularity_message(DEBUG, "Called file_bind(%s, %s()\n", source, dest_path);
 

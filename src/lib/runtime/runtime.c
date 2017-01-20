@@ -49,7 +49,7 @@ static char *container_directory = NULL;
 static char *temp_directory = NULL;
 static int runtime_flags = 0;
 
-char *singularity_runtime_containerdir(char *directory) {
+char *singularity_runtime_rootfs(char *directory) {
     if ( directory != NULL ) {
         if ( is_dir(directory) == 0 ) {
             container_directory = strdup(directory);
@@ -107,7 +107,7 @@ int singularity_runtime_environment(void) {
 }
 
 int singularity_runtime_mounts(void) {
-    if ( singularity_runtime_containerdir(NULL) == NULL ) {
+    if ( singularity_runtime_rootfs(NULL) == NULL ) {
         singularity_message(ERROR, "The runtime container directory has not been set!\n");
         ABORT(5);
     }
@@ -120,7 +120,7 @@ int singularity_runtime_mounts(void) {
 }
 
 int singularity_runtime_files(void) {
-    if ( singularity_runtime_containerdir(NULL) == NULL ) {
+    if ( singularity_runtime_rootfs(NULL) == NULL ) {
         singularity_message(ERROR, "The runtime container directory has not been set!\n");
         ABORT(5);
     }
@@ -129,7 +129,7 @@ int singularity_runtime_files(void) {
 }
 
 int singularity_runtime_enter(void) {
-    if ( singularity_runtime_containerdir(NULL) == NULL ) {
+    if ( singularity_runtime_rootfs(NULL) == NULL ) {
         singularity_message(ERROR, "The runtime container directory has not been set!\n");
         ABORT(5);
     }

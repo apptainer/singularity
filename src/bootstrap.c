@@ -66,10 +66,10 @@ int main(int argc, char **argv) {
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);
-    singularity_image_mount(&image, singularity_runtime_containerdir(NULL));
+    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
     // At this point, the container image is mounted at
-    // singularity_runtime_containerdir(NULL), and bootstrap code can be added
+    // singularity_runtime_rootfs(NULL), and bootstrap code can be added
     // in the bootstrap-lib/ directory.
 
     bootstrap_init(argc, argv);

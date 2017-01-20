@@ -38,7 +38,7 @@ int check_mounted(char *mountpoint) {
     int retval = -1;
     FILE *mounts;
     char *line = (char *)malloc(MAX_LINE_LEN);
-    char *rootfs_dir = singularity_runtime_containerdir(NULL);
+    char *rootfs_dir = singularity_runtime_rootfs(NULL);
 
     singularity_message(DEBUG, "Opening /proc/mounts\n");
     if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) { // Flawfinder: ignore

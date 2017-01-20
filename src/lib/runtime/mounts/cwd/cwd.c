@@ -45,7 +45,7 @@
 
 
 int _singularity_runtime_mount_cwd(void) {
-    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *container_dir = singularity_runtime_rootfs(NULL);
     char *cwd_path = NULL;
     int r;
 

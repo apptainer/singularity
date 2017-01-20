@@ -41,7 +41,7 @@ static int mount_dev(const char *dev);
 
 
 int _singularity_runtime_mount_dev(void) {
-    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *container_dir = singularity_runtime_rootfs(NULL);
 
     if ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) {
         if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
@@ -109,7 +109,7 @@ int _singularity_runtime_mount_dev(void) {
 
 
 static int mount_dev(const char *dev) {
-    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *container_dir = singularity_runtime_rootfs(NULL);
     char *path = joinpath(container_dir, dev);
 
     singularity_message(DEBUG, "Mounting device %s at %s\n", dev, path);

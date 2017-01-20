@@ -39,7 +39,7 @@
 
 
 int _singularity_runtime_mount_kernelfs(void) {
-    char *container_dir = singularity_runtime_containerdir(NULL);
+    char *container_dir = singularity_runtime_rootfs(NULL);
 
     // Mount /proc if we are configured
     singularity_message(DEBUG, "Checking configuration file for 'mount proc'\n");

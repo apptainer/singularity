@@ -48,7 +48,7 @@ int _singularity_runtime_files_passwd(void) {
     char *homedir = singularity_priv_home();
     uid_t uid = singularity_priv_getuid();
     struct passwd *pwent = getpwuid(uid);
-    char *containerdir = singularity_runtime_containerdir(NULL);
+    char *containerdir = singularity_runtime_rootfs(NULL);
     char *tmpdir = singularity_runtime_tmpdir(NULL);
 
     singularity_message(DEBUG, "Called singularity_file_passwd_create()\n");
