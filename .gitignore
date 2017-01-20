@@ -39,6 +39,8 @@ src/create
 src/create-suid
 src/expand
 src/expand-suid
+src/export
+src/export-suid
 src/import
 src/import-suid
 src/mount
