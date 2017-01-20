@@ -53,8 +53,8 @@ int singularity_suid_init(void) {
         path[len] = '\0';
 
         singularity_message(ERROR, "Installation error, run the following commands as root to fix:\n");
-        singularity_message(ERROR, "    chown root:root %s\n", path);
-        singularity_message(ERROR, "    chmod 4755 %s\n", path);
+        singularity_message(ERROR, "    sudo chown root:root %s\n", path);
+        singularity_message(ERROR, "    sudo chmod 4755 %s\n", path);
         if ( getuid() == 0 ) {
             singularity_message(INFO, "\n");
         } else {
