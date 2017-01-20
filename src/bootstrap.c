@@ -53,10 +53,13 @@ int main(int argc, char **argv) {
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    if ( singularity_registry_get("WRITABLE") == NULL ) {
+    if ( is_file(singularity_registry_get("IMAGE")) == 0 ) {
+        singularity_image_open(&image, O_RDWR);
+    } else if ( is_dir(singularity_registry_get("IMAGE")) == 0 ) {
         singularity_image_open(&image, O_RDONLY);
     } else {
-        singularity_image_open(&image, O_RDWR);
+        singularity_message(ERROR, "Container image is neither file nor directory: %s\n", singularity_registry_get("IMAGE"));
+        ABORT(255);
     }
 
     singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
