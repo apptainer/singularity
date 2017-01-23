@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2016-2017, Michael W. Bauer. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -16,12 +18,21 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
 #ifndef __BOOTSTRAP_LIB_H_
 #define __BOOTSTRAP_LIB_H_
 
-extern int bootstrap_init(int argc, char **argv);
+    /* bootdef_parser.c */
+    extern int singularity_bootdef_open(char *bootdef_path);
+    extern void singularity_bootdef_rewind();
+    extern void singularity_bootdef_close();
+    extern char *singularity_bootdef_get_value(char *key);
+    extern int singularity_bootdef_get_version();
+    extern int singularity_bootdef_section_find(char *section_name);
+    extern int singularity_bootdef_section_get(char **script, char *section_name);
 
-#endif /* __BOOTSTRAP_LIB_H */
+    /* bootstrap.c */
+    
 
+#endif
