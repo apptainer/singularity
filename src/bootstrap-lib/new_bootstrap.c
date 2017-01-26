@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2016, Michael W. Bauer. All rights reserved.
+ * Copyright (c) 2016-2017, Michael W. Bauer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -18,6 +18,7 @@
  * 
  */
 
+#define _GNU_SOURCE
 #include <errno.h>
 #include <limits.h>
 #include <fcntl.h>
@@ -34,10 +35,74 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
-#include "lib/singularity.h"
+#include "util/config_parser.h"
+#include "util/privilege.h"
+#include "util/registry.h"
+#include "lib/image/image.h"
+#include "lib/runtime/runtime.h"
+
+int bootstrap_ver_one() {
+    char *driver_v1_path = LIBEXECDIR "/singularity/bootstrap/driver-v1.sh";
+
+
+}
+
+int bootstrap_ver_two() {
+    /* Run %pre script to replace prebootstrap module */    
+    singularity_bootstrap_script_run("pre");
+
+    /* Run appropriate module to create the base OS in the container */
+    if ( bootstrap_module_init() != 0 ) {
+        singularity_message(ERROR, "Something went wrong during build module: %s. \n", strerror(errno));
+    }
+
+    /* Run through postbootstrap module logic */
+    
+    /* Ensure that rootfs has required folders, permissions and files */
+    singularity_rootfs_check();
+    
+    if ( bootstrap_rootfs_install() != 0 ) {
+        singularity_message(ERROR, "Failed to create container rootfs. Aborting...\n");
+        ABORT(255);
+    }
+
+    /* Copy runscript, environment, and .test files into container rootfs */
+    bootstrap_copy_script("runscript", "/singularity");
+    bootstrap_copy_script("test", "/.test");
+    if ( bootstrap_copy_script("environment", "/environment") != 0 ) {
+        singularity_message(VERBOSE, "Copying default environment file instead of user specified environment\n");
+        copy_file(LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment"));
+    }
+    chmod(joinpath(rootfs_path, "/environment"), 0644);
+            
+
+    /* Copy/mount necessary files directly into container rootfs */
+    if ( singularity_file_bootstrap() < 0 ) {
+        singularity_message(ERROR, "Failed to copy necessary default files to container rootfs. Aborting...\n");
+        ABORT(255);
+    }
+
+    /* Mount necessary folders into container */
+    if ( singularity_mount() < 0 ) {
+        singularity_message(ERROR, "Failed to mount necessary files into container rootfs. Aborting...\n");
+        ABORT(255);
+    }
+
+    /* Run %setup script from host */
+    singularity_bootstrap_script_run("setup");
+
+    /* Run %post and %test scripts from inside container */
+    singularity_rootfs_chroot();
+    singularity_bootstrap_script_run("post");
+    action_test_do(0, NULL);
+        
+    singularity_bootdef_close();
+    
+    return(0);
+}
 
 int singularity_bootstrap(char *containerimage, char *bootdef_path) {
-    char *driver_v1_path = LIBEXECDIR "/singularity/bootstrap/driver-v1.sh";
+
     singularity_message(VERBOSE, "Preparing to bootstrap image with definition file: %s\n", bootdef_path);
 
     /* Sanity check to ensure we can properly open the bootstrap definition file */
@@ -62,59 +127,6 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
         return(0);
 
     } else {
-        singularity_message(VERBOSE, "Running bootstrap driver v2\n");
-    
-        /* Run %pre script to replace prebootstrap module */    
-        singularity_bootstrap_script_run("pre");
-
-        /* Run appropriate module to create the base OS in the container */
-        if ( bootstrap_module_init() != 0 ) {
-            singularity_message(ERROR, "Something went wrong during build module: %s. \n", strerror(errno));
-        }
-
-        /* Run through postbootstrap module logic */
-    
-        /* Ensure that rootfs has required folders, permissions and files */
-        singularity_rootfs_check();
-    
-        if ( bootstrap_rootfs_install() != 0 ) {
-            singularity_message(ERROR, "Failed to create container rootfs. Aborting...\n");
-            ABORT(255);
-        }
-
-        /* Copy runscript, environment, and .test files into container rootfs */
-        bootstrap_copy_script("runscript", "/singularity");
-        bootstrap_copy_script("test", "/.test");
-        if ( bootstrap_copy_script("environment", "/environment") != 0 ) {
-            singularity_message(VERBOSE, "Copying default environment file instead of user specified environment\n");
-            copy_file(LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment"));
-        }
-        chmod(joinpath(rootfs_path, "/environment"), 0644);
-            
-
-        /* Copy/mount necessary files directly into container rootfs */
-        if ( singularity_file_bootstrap() < 0 ) {
-            singularity_message(ERROR, "Failed to copy necessary default files to container rootfs. Aborting...\n");
-            ABORT(255);
-        }
-
-        /* Mount necessary folders into container */
-        if ( singularity_mount() < 0 ) {
-            singularity_message(ERROR, "Failed to mount necessary files into container rootfs. Aborting...\n");
-            ABORT(255);
-        }
-
-        /* Run %setup script from host */
-        singularity_bootstrap_script_run("setup");
-
-        /* Run %post and %test scripts from inside container */
-        singularity_rootfs_chroot();
-        singularity_bootstrap_script_run("post");
-        action_test_do(0, NULL);
-        
-        singularity_bootdef_close();
-    }
-    return(0);
 }
 
 /*
