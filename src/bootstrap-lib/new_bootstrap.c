@@ -43,8 +43,10 @@
 
 int bootstrap_ver_one() {
     char *driver_v1_path = LIBEXECDIR "/singularity/bootstrap/driver-v1.sh";
+    singularity_bootdef_close();
 
-
+    /* Directly call on old driver-v1.sh */
+    return( singularity_fork_exec(&driver_v1_path) );
 }
 
 int bootstrap_ver_two() {
@@ -102,7 +104,6 @@ int bootstrap_ver_two() {
 }
 
 int singularity_bootstrap(char *containerimage, char *bootdef_path) {
-
     singularity_message(VERBOSE, "Preparing to bootstrap image with definition file: %s\n", bootdef_path);
 
     /* Sanity check to ensure we can properly open the bootstrap definition file */
@@ -113,20 +114,19 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
     }
     
     /* Set environment variables required for any shell scripts we will call on */
-    setenv("SINGULARITY_ROOTFS", rootfs_path, 1);
-    setenv("SINGULARITY_IMAGE", containerimage, 1);
+    setenv("SINGULARITY_ROOTFS", singularity_runtime_rootfs(NULL), 1);
+    setenv("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
     setenv("SINGULARITY_BUILDDEF", bootdef_path, 1);
 
     /* Determine if Singularity file is v1 or v2. v1 files will directly use the old driver-v1.sh script */
     if( singularity_bootdef_get_version() == 1 ) {
-        singularity_message(VERBOSE, "Running bootstrap driver v1\n");
-        singularity_bootdef_close();
-    
-        /* Directly call on old driver-v1.sh */
-        singularity_fork_exec(&driver_v1_path); //Use singularity_fork_exec to directly call the v1 driver
-        return(0);
+        singularity_message(VERBOSE, "Running bootstrap driver v1\n");    
+        return( bootstrap_ver_one() );
 
     } else {
+        singularity_message(VERBOSE, "Running bootstrap driver v2\n");
+        return( bootstrap_ver_two() );
+    }
 }
 
 /*
