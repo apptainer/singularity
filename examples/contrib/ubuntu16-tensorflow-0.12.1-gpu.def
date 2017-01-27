@@ -6,7 +6,7 @@
 # are present in the current directory (alongside this definition file):
 #
 #   * cuda-linux64-rel-8.0.44-21122537.run  (* see below)
-#   * NVIDIA-Linux-x86_64-367.48.run        (* see below)
+#   * NVIDIA-Linux-x86_64-375.20.run        (* see below)
 #   * cudnn-8.0-linux-x64-v5.1.tgz          (https://developer.nvidia.com/cudnn)
 #
 # * The cuda-linux64 and NVIDIA-Linux files can be obtained by downloading the
@@ -21,10 +21,15 @@
 # IF YOUR HPC SYSTEM IS USING A DIFFERENT VERSION OF CUDA AND/OR NVIDIA DRIVERS
 # YOU WILL NEED TO ADJUST THE ABOVE VERSION NUMBERS TO MATCH YOUR SYSTEM
 #
+# YOU WILL ALSO NEED TO DOWNLOAD THE APPROPRIATE DRIVER. For example,
+# cuda_8.0.44_linux.run returns driver version 367.48.
+#
+# If you use this to create a container inside a virtual machine with no access to
+# a GPU, comment out the final test.
 
 
 BootStrap: docker
-From: ubuntu:16.04
+From: ubuntu:16.10
 
 
 %runscript
@@ -43,7 +48,7 @@ From: ubuntu:16.04
 %setup
     # Runs from outside the container during Bootstrap
 
-    NV_DRIVER_VERSION=367.48
+    NV_DRIVER_VERSION=375.20
     NV_CUDA_FILE=cuda-linux64-rel-8.0.44-21122537.run
     NV_CUDNN_FILE=cudnn-8.0-linux-x64-v5.1.tgz
     NV_DRIVER_FILE=NVIDIA-Linux-x86_64-${NV_DRIVER_VERSION}.run
@@ -92,9 +97,9 @@ export PATH LD_LIBRARY_PATH
         build-essential \
         curl \
         git \
-        libcurl3-dev \
+        libcurl4-openssl-dev \
         libfreetype6-dev \
-        libpng12-dev \
+        libpng-dev \
         libzmq3-dev \
         python-pip \
         pkg-config \
@@ -132,5 +137,6 @@ export PATH LD_LIBRARY_PATH
     /usr/bin/python -c "import tensorflow as tf"
 
     # Runs in less than 30 minutes on low-end CPU; in less than 2 minutes on GPU
+    # Comment the following line if building the container inside a VM with no access to a GPU
     /usr/bin/python -m tensorflow.models.image.mnist.convolutional
 
