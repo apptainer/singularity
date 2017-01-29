@@ -48,7 +48,7 @@ int _singularity_image_create(struct image_object *image, long int size) {
         ABORT(255);
     }
 
-    if ( ( image_fp = fdopen(image->fd, "w") ) == NULL ) {
+    if ( ( image_fp = fdopen(dup(image->fd), "w") ) == NULL ) {
         singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
@@ -69,6 +69,7 @@ int _singularity_image_create(struct image_object *image, long int size) {
     singularity_message(VERBOSE2, "Making image executable\n");
     fchmod(fileno(image_fp), 0755);
 
+    fclose(image_fp);
     free(buff);
 
     return(0);
