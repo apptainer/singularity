@@ -82,8 +82,16 @@ export SINGULARITY_IMAGE
 shift
 
 
-exec "$SINGULARITY_libexecdir/singularity/simage" "mount" "$SINGULARITY_libexecdir/singularity/helpers/image-export.sh" "$@"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/export-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/export-suid"
+elif [ -x "$SINGULARITY_libexecdir/singularity/export" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/export"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/export\n"
+    exit 1
+fi
 
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
 exit 255
+
