@@ -55,8 +55,8 @@ int main(int argc, char **argv) {
     if ( argc == 3 ) {
         singularity_registry_set("IMAGE", argv[1]);
         singularity_registry_set("MOUNTPOINT", argv[2]);
-        singularity_registry_set("WRITABLE", "1");
     }
+    singularity_registry_set("WRITABLE", "1");
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
