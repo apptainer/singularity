@@ -63,6 +63,11 @@ int main(int argc, char **argv) {
 
     singularity_image_open(&image, O_RDWR);
 
+    if ( singularity_image_check(&image) != 0 ) {
+        singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
+        ABORT(255);
+    }
+
     singularity_registry_set("WRITABLE", "1");
 
     singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
