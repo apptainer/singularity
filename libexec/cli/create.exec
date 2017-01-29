@@ -35,7 +35,6 @@ else
 fi
 
 PATH=/sbin:/usr/sbin:${PATH:-}
-IMAGE_SIZE="768"
 
 while true; do
     case ${1:-} in
@@ -50,7 +49,8 @@ while true; do
         ;;
         -s|--size)
             shift
-            IMAGE_SIZE="${1:-}"
+            SINGULARITY_IMAGESIZE="${1:-}"
+            export SINGULARITY_IMAGESIZE
             shift
         ;;
         -F|--force)
@@ -99,15 +99,14 @@ if [ -f "$SINGULARITY_IMAGE" ]; then
     fi
 fi
 
-message 1 "Creating a new image with a maximum size of ${IMAGE_SIZE}MiB...\n"
-if ! eval "$SINGULARITY_libexecdir/singularity/simage" "create" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
-    message ERROR "Failed creating image: $SINGULARITY_IMAGE\n"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/create-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/create-suid"
+elif [ -x "$SINGULARITY_libexecdir/singularity/create" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/create"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/create\n"
     exit 1
 fi
-
-message 1 "Executing image create helper\n"
-exec "$SINGULARITY_libexecdir/singularity/simage" "bind" "$SINGULARITY_libexecdir/singularity/helpers/image-create.sh"
-
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
 exit 255

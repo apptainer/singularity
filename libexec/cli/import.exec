@@ -66,13 +66,18 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-SINGULARITY_NOIMAGELOCK=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
+export SINGULARITY_IMAGE
 shift
 
 
-exec "$SINGULARITY_libexecdir/singularity/simage" "mount" "$SINGULARITY_libexecdir/singularity/helpers/image-import.sh" "$@"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/import-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/import-suid"
+elif [ -x "$SINGULARITY_libexecdir/singularity/import" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/import"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/import\n"
+    exit 1
+fi
 
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"

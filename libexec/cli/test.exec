@@ -90,7 +90,7 @@ if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/act
 elif [ -x "$SINGULARITY_libexecdir/singularity/action" ]; then
     exec "$SINGULARITY_libexecdir/singularity/action" "$@" <&0
 else
-    message ERROR "Could not locate the Singularity container action module: $SEXEC\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/action\n"
     exit 1
 fi
 
