@@ -76,10 +76,6 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-if [ "$UID" != 0 ]; then
-    message ERROR "Calling user must be root!\n"
-    exit 1
-fi
 
 SINGULARITY_IMAGE="${1:-}"
 SINGULARITY_WRITABLE=1
