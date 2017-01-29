@@ -55,16 +55,15 @@ int main(int argc, char **argv) {
     if ( argc == 3 ) {
         singularity_registry_set("IMAGE", argv[1]);
         singularity_registry_set("MOUNTPOINT", argv[2]);
+        singularity_registry_set("WRITABLE", "1");
     }
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    if ( is_file(singularity_registry_get("IMAGE")) == 0 ) {
-        singularity_image_open(&image, O_RDWR);
-    } else if ( is_dir(singularity_registry_get("IMAGE")) == 0 ) {
-        singularity_image_open(&image, O_RDONLY);
-    } else {
-        singularity_message(ERROR, "Container image is neither file nor directory: %s\n", singularity_registry_get("IMAGE"));
+    singularity_image_open(&image, O_RDWR);
+
+    if ( singularity_image_check(&image) != 0 ) {
+        singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
         ABORT(255);
     }
 
