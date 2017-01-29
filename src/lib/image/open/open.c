@@ -47,10 +47,31 @@ int _singularity_image_open(struct image_object *image, int open_flags) {
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
-    if ( ( image->fd = open(image->path, open_flags) ) < 0 ) {
-        singularity_message(ERROR, "Could not open image %s: %s\n", image->path, strerror(errno));
-        ABORT(255);
+    if ( ( open_flags & O_RDWR ) || ( open_flags & O_WRONLY ) ) {
+        if ( is_file(image->path) == 0 ) {
+            singularity_message(DEBUG, "Opening read-write file descriptor to image file: %s\n", image->path);
+            if ( ( image->fd = open(image->path, open_flags) ) < 0 ) {
+                singularity_message(ERROR, "Could not open image in read-write %s: %s\n", image->path, strerror(errno));
+                ABORT(255);
+            }
+        } else if ( is_dir(image->path) == 0 ) {
+            if ( access(image->path, W_OK) != 0 ) {
+                singularity_message(ERROR, "Could not write to image location: %s\n", image->path);
+                ABORT(255);
+            }
+            singularity_message(DEBUG, "Opening read-only file descriptor to image directory: %s\n", image->path);
+            if ( ( image->fd = open(image->path, ( ( open_flags & ~(O_RDWR|O_WRONLY) ) | O_RDONLY ) ) ) < 0 ) {
+                singularity_message(ERROR, "Could not open directory %s: %s\n", image->path, strerror(errno));
+                ABORT(255);
+            }
+        }
+
+    } else {
+        singularity_message(DEBUG, "Opening read-only file descriptor to image: %s\n", image->path);
+        if ( ( image->fd = open(image->path, open_flags) ) < 0 ) {
+            singularity_message(ERROR, "Could not open image in read-only %s: %s\n", image->path, strerror(errno));
+            ABORT(255);
+        }
     }
 
     return(0);
