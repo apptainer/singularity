@@ -8,3 +8,5 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libinternal.la
 libinternal_la_SOURCES = ipc.c
+
+EXTRA_DIST = ipc.h

@@ -95,10 +95,6 @@ else
 fi
 
 
-#####
-echo "Not running any tests right now..."
-exit 0
-
 /bin/echo
 /bin/echo "SINGULARITY_TMPDIR=$TEMPDIR"
 /bin/echo
@@ -135,6 +131,8 @@ stest 1 singularity bogus help
 /bin/echo
 /bin/echo "Building test container..."
 
+stest 0 singularity create -s 568 "$CONTAINER"
+stest 0 rm -f "$CONTAINER"
 stest 0 sudo singularity create -s 568 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/docker.def"
 stest 0 sudo rm -rf "$CONTAINER"
@@ -167,6 +165,9 @@ stest 1 singularity exec "$CONTAINER" /blahh
 stest 1 singularity exec "$CONTAINER" blahh
 stest 0 sh -c "echo hi | singularity exec $CONTAINER grep hi"
 stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
+
+echo "not doing any more tests for now..."
+exit 0
 
 /bin/echo
 /bin/echo "Running container run tests..."

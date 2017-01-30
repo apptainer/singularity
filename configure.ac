@@ -305,7 +305,6 @@ AC_CONFIG_FILES([
    src/lib/runtime/files/group/Makefile
    src/lib/runtime/files/passwd/Makefile
    src/lib/runtime/files/resolvconf/Makefile
-   src/lib/runtime/files/entrypoint/Makefile
    src/lib/runtime/mounts/Makefile
    src/lib/runtime/mounts/cwd/Makefile
    src/lib/runtime/mounts/dev/Makefile
@@ -334,6 +333,7 @@ AC_CONFIG_FILES([
    src/lib/image/sessiondir/Makefile
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
+   src/util/Makefile
 
 
    etc/Makefile
@@ -349,24 +349,3 @@ AC_CONFIG_FILES([
    libexec/python/shub/Makefile
 ])
 AC_OUTPUT
-
-#   src/lib/rootfs/Makefile
-#   src/lib/rootfs/image/Makefile
-#   src/lib/rootfs/dir/Makefile
-#   src/lib/rootfs/squashfs/Makefile
-#   src/lib/action/Makefile
-#   src/lib/action/exec/Makefile
-#   src/lib/action/shell/Makefile
-#   src/lib/action/start/Makefile
-#   src/lib/action/stop/Makefile
-#   src/lib/action/test/Makefile
-#   src/lib/action/run/Makefile
-#   src/lib/image/Makefile
-#   src/lib/image/mount/Makefile
-#   src/lib/image/bind/Makefile
-#   src/lib/image/create/Makefile
-#   src/lib/image/expand/Makefile
-#   src/lib/image/bootstrap/Makefile
-#   src/lib/image/bootstrap/docker/Makefile
-#   src/util/Makefile
-#   src/slurm/Makefile

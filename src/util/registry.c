@@ -142,15 +142,16 @@ int singularity_registry_set(char *key, char *value) {
 
     singularity_message(VERBOSE2, "Adding value to registry: '%s' = '%s'\n", upperkey, value);
 
-    if ( singularity_registry_get(upperkey) != NULL ) {
+    if ( hsearch_r(keypair(upperkey, value), ENTER, &prev, &htab) == 0 ) {
         singularity_message(VERBOSE2, "Found prior value for '%s', overriding with '%s'\n", key, value);
-        prev->data = value;
+        prev->data = strdup(value);
     } else {
         if ( hsearch_r(keypair(upperkey, value), ENTER, &prev, &htab) == 0 ) {
             singularity_message(ERROR, "Internal error - Unable to set registry entry ('%s' = '%s'): %s\n", key, value, strerror(errno));
             ABORT(255);
         }
     }
+    singularity_message(DEBUG, "Returning singularity_registry_set(%s, %s) = 0\n", key, value);
 
     return(0);
 }

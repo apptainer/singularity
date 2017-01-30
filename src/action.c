@@ -82,11 +82,15 @@ int main(int argc, char **argv) {
 
     singularity_priv_drop_perm();
 
-    if ( is_dir(dir) == 0 ) {
-        chdir(dir);
-    } else {
+    if ( chdir(dir) != 0 ) {
         singularity_message(VERBOSE, "Current directory is not available within container, landing in home\n");
-        chdir(singularity_priv_home());
+        if ( chdir(singularity_priv_home()) != 0 ) {
+            singularity_message(WARNING, "Could not change directory to current dir or home, landing in /\n");
+            if ( chdir("/") != 0 ) {
+                singularity_message(ERROR, "Something is very very weird, couldn't change directory to /\n");
+                ABORT(255);
+            }
+        }
     }
 
     setenv("HISTFILE", "/dev/null", 1);
