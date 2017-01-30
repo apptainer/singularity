@@ -55,6 +55,19 @@ int intlen(int input_int) {
     return(len);
 }
 
+char *uppercase(char *string) {
+    int len = strlength(string, 4096);
+    char *upperkey = strdup(string);
+    int i = 0;
+
+    while ( i <= len ) {
+        upperkey[i] = toupper(string[i]);
+        i++;
+    }
+    singularity_message(DEBUG, "Transformed to uppercase: '%s' -> '%s'\n", string, upperkey);
+    return(upperkey);
+}
+
 char *int2str(int num) {
     char *ret;
     

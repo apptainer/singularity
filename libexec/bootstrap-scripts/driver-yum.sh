@@ -65,7 +65,6 @@ else
     ABORT 1
 fi
 
-OSVERSION=`singularity_key_get "OSVersion" "$SINGULARITY_BUILDDEF"`
 if [ -z "${OSVERSION:-}" ]; then
     if [ -f "/etc/redhat-release" ]; then
         OSVERSION=`rpm -qf --qf '%{VERSION}' /etc/redhat-release`
@@ -74,17 +73,15 @@ if [ -z "${OSVERSION:-}" ]; then
     fi
 fi
 
-MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR=`echo "${MIRRORURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 if [ -z "${MIRROR:-}" ]; then
     message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
     ABORT 1
 fi
-MIRROR_UPDATES=`singularity_key_get "UpdateURL" "$SINGULARITY_BUILDDEF" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+
 if [ ! -z "${MIRROR_UPDATES:-}" ]; then
     message 1 "'UpdateURL' defined in bootstrap definition\n"
 fi
-
-INSTALLPKGS=`singularity_keys_get "Include" "$SINGULARITY_BUILDDEF"`
 
 REPO_COUNT=0
 YUM_CONF="/etc/bootstrap-yum.conf"
@@ -131,7 +128,7 @@ fi
 
 echo "" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 
-if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS -y install /etc/redhat-release coreutils $INSTALLPKGS"; then
+if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS -y install /etc/redhat-release coreutils ${INCLUDE:-}"; then
     message ERROR "Bootstrap failed... exiting\n"
     ABORT 255
 fi

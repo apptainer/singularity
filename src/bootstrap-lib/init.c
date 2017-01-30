@@ -29,11 +29,19 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
+#include "util/registry.h"
 
+#include "./include.h"
 
-void bootstrap_init(int argc, char **argv) {
+int bootstrap_init(int argc, char **argv) {
 
     singularity_message(INFO, "Starting bootstrap process\n");
+    if ( bootstrap_keyval_parse(singularity_registry_get("BUILDDEF")) != 0 ) {
+        singularity_message(ERROR, "Failed parsing the bootstrap definition file: %s\n", singularity_registry_get("BUILDDEF"));
+        ABORT(255);
+    }
 
-    return;
+    bootstrap_driver();
+
+    return(0);
 }

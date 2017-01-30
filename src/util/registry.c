@@ -46,8 +46,20 @@ extern char **environ;
 
 static ENTRY keypair(char *key, char *value) {
     ENTRY hash_entry;
-    hash_entry.key = key;
-    hash_entry.data = value;
+
+    if ( key == NULL ) {
+        singularity_message(ERROR, "Internal - Called keypair() with NULL key\n");
+        ABORT(255);
+    }
+
+    hash_entry.key = strdup(key);
+
+    if ( value == NULL ) {
+        hash_entry.data = NULL;
+    } else {
+        hash_entry.data = strdup(value);
+    }
+
     return hash_entry;
 }
 
@@ -71,7 +83,7 @@ void singularity_registry_init(void) {
                 continue;
             }
 
-            key = strtok_r(string, "=", &tok);
+            key = strtok_r(strdup(string), "=", &tok);
             val = strtok_r(NULL, "=", &tok);
 
             if ( key == NULL ) {
@@ -106,8 +118,10 @@ char *singularity_registry_get(char *key) {
     if ( hsearch_r(keypair(upperkey, NULL), FIND, &found, &htab) == 0 ) {
         return(NULL);
     }
+    
+    singularity_message(DEBUG, "Retriving value from registry: '%s' = '%s'\n", upperkey, (char *)found->data);
 
-    return(found->data);
+    return((char *)found->data);
 }
 
 

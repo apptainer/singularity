@@ -22,6 +22,8 @@
 #define __BOOTSTRAP_LIB_H_
 
 extern int bootstrap_init(int argc, char **argv);
+extern int bootstrap_keyval_parse(char *path);
+extern int bootstrap_driver(void);
 
 #endif /* __BOOTSTRAP_LIB_H */
 

@@ -7,6 +7,6 @@ AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 noinst_LTLIBRARIES = libinternal.la
-libinternal_la_SOURCES = init.c
+libinternal_la_SOURCES = init.c keyval.c driver.c
 
 EXTRA_DIST = include.h

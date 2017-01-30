@@ -33,36 +33,49 @@ else
     exit 1
 fi
 
-# dnf should probably be preferred if it's present
+if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
+    message ERROR "Singularity root file system not defined\n"
+    exit 1
+fi
 
-OSVersion() {
-    return 0
-}
-
-if ! CURL=`singularity_which curl`; then
-    message ERROR "Could not locate program 'curl'\n"
-    exit 255
+if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
+    exit
 fi
 
 
-Bootstrap() {
-    mkdir -p -m 0755 "$SINGULARITY_ROOTFS/bin"
-    mkdir -p -m 0755 "$SINGULARITY_ROOTFS/etc"
+########## BEGIN BOOTSTRAP SCRIPT ##########
 
-    echo "root:!:0:0:root:/root:/bin/sh" > "$SINGULARITY_ROOTFS/etc/passwd"
-    echo " root:x:0:" > "$SINGULARITY_ROOTFS/etc/group"
-    echo "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4" > "$SINGULARITY_ROOTFS/etc/hosts"
 
-    curl "$MIRROR" > "$SINGULARITY_ROOTFS/bin/busybox"
+if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
+    message ERROR "debootstrap is not in PATH... Perhaps 'apt-get install' it?\n"
+    exit 1
+fi
 
-    chmod 0755 "$SINGULARITY_ROOTFS/bin/busybox"
+ARCH=`uname -m`
 
-    eval "$SINGULARITY_ROOTFS/bin/busybox" --install "$SINGULARITY_ROOTFS/bin/"
+if [ "$ARCH" == "x86_64" ]; then
+    ARCH=amd64
+elif [ "$ARCH" == "ppc64le" ]; then
+    ARCH=ppc64el
+fi
 
-    return 0
-}
 
-InstallPkgs() {
-    message ERROR "InstallPkgs is not supported on this distype\n"
-    return 1
-}
+if [ -z "${MIRRORURL:-}" ]; then
+    message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
+    ABORT 1
+fi
+
+if [ -z "${OSVERSION:-}" ]; then
+    message ERROR "No 'OSVersion' defined in bootstrap definition\n"
+    ABORT 1
+fi
+
+REQUIRES=`echo "${INCLUDE:-}" | sed -e 's/\s/,/g'`
+
+# The excludes save 25M or so with jessie.  (Excluding udev avoids
+# systemd, for instance.)  There are a few more we could exclude
+# to save a few MB.  I see 182M cleaned with this, v. 241M with
+# the default debootstrap.
+if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH '$OSVERSION' '$SINGULARITY_ROOTFS' '$MIRRORURL'"; then
+    ABORT 255
+fi

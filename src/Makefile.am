@@ -19,6 +19,7 @@ action_CPPFLAGS = $(AM_CPPFLAGS)
 bootstrap_SOURCES = bootstrap.c util/util.c util/file.c util/registry.c
 bootstrap_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
 bootstrap_CPPFLAGS = $(AM_CPPFLAGS)
+bootstrap_LDFLAGS = -static
 
 create_SOURCES = create.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c
 create_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la

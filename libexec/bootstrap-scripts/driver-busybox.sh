@@ -46,9 +46,8 @@ fi
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
 
-MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF"`
-if [ -z "${MIRROR:-}" ]; then
-    MIRROR="https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64"
+if [ -z "${MIRRORURL:-}" ]; then
+    MIRRORURL="https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64"
 fi
 
 
@@ -59,10 +58,10 @@ echo "root:!:0:0:root:/root:/bin/sh" > "$SINGULARITY_ROOTFS/etc/passwd"
 echo " root:x:0:" > "$SINGULARITY_ROOTFS/etc/group"
 echo "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4" > "$SINGULARITY_ROOTFS/etc/hosts"
 
-curl -f "$MIRROR" > "$SINGULARITY_ROOTFS/bin/busybox"
+curl -f "$MIRRORURL" > "$SINGULARITY_ROOTFS/bin/busybox"
 
 if [ $? -ne 0 ]; then
-    message ERROR "Failed fetching MirrorURL: $MIRROR\n"
+    message ERROR "Failed fetching MirrorURL: $MIRRORURL\n"
     exit 1
 fi
 

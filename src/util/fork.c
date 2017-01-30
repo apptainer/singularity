@@ -318,7 +318,7 @@ int singularity_fork_exec(char **argv) {
     if ( child == 0 ) {
         singularity_message(VERBOSE, "Running child program: %s\n", argv[0]);
         if ( execvp(argv[0], argv) < 0 ) { //Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv(%s, ...): %s\n", argv[0], strerror(errno));
+            singularity_message(ERROR, "Failed to exec program %s: %s\n", argv[0], strerror(errno));
             ABORT(255);
         }
 
