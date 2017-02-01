@@ -82,7 +82,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-, root, root)
-%doc examples AUTHORS COPYING ChangeLog INSTALL NEWS README.md
+%doc examples AUTHORS COPYING ChangeLog INSTALL LICENSE NEWS README.md
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_libexecdir}/singularity
