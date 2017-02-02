@@ -104,7 +104,7 @@ int rootfs_squashfs_mount(void) {
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Mounting squashfs image\n");
-    if ( mount(loop_dev, mount_point, "squashfs", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+    if ( mount(loop_dev, mount_point, "squashfs", MS_NOSUID|MS_RDONLY|MS_NODEV, "errors=remount-ro") < 0 ) {
         singularity_message(ERROR, "Failed to mount squashfs image in (read only): %s\n", strerror(errno));
         ABORT(255);
     }
