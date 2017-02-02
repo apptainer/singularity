@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
 
     singularity_rootfs_chroot();
 
-    while(1) {
+    while(fd <= 128) {
         if ( close(fd) == 0 ) {
             singularity_message(DEBUG, "Closed file descriptor: %d\n", fd);
         } else {
