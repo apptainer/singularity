@@ -18,6 +18,7 @@
  * 
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -37,6 +38,7 @@
 
 int main(int argc, char **argv) {
     char *image;
+    int fd = 4; // The file descriptor number to start at closing
 
     // Before we do anything, check privileges and drop permission
     singularity_priv_init();
@@ -136,6 +138,16 @@ int main(int argc, char **argv) {
     singularity_mount();
 
     singularity_rootfs_chroot();
+
+    while(1) {
+        if ( close(fd) == 0 ) {
+            singularity_message(DEBUG, "Closed file descriptor: %d\n", fd);
+        } else {
+            singularity_message(DEBUG, "No more file descriptors to close (%d)\n", fd);
+            break;
+        }
+        fd++;
+    }
 
     singularity_action_do(argc, argv);
 
