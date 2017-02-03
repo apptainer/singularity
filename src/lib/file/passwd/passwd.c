@@ -97,12 +97,6 @@ int singularity_file_passwd(void) {
         ABORT(255);
     }
 
-    singularity_message(VERBOSE, "Creating template passwd file and appending user data\n");
-    if ( ( file_fp = fopen(tmp_file, "a") ) == NULL ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Could not open template passwd file %s: %s\n", tmp_file, strerror(errno));
-        ABORT(255);
-    }
-
     if ( ( home = envar_path("SINGULARITY_HOME") ) != NULL ) {
         char *colon = strchr(home, ':');
         if ( colon != NULL ) {

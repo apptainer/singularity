@@ -18,6 +18,7 @@
  * 
 */
 
+#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -89,7 +90,7 @@ char *singularity_sessiondir_init(char *file) {
     }
 
     singularity_message(DEBUG, "Opening sessiondir file descriptor\n");
-    if ( ( sessiondir_fd = open(sessiondir, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
+    if ( ( sessiondir_fd = open(sessiondir, O_RDONLY|O_CLOEXEC) ) < 0 ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not obtain file descriptor for session directory %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }

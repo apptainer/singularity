@@ -18,7 +18,7 @@
  * 
  */
 
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <linux/loop.h>
@@ -63,7 +63,7 @@ char *singularity_loop_bind(FILE *image_fp) {
     }
 
     singularity_message(DEBUG, "Opening image loop device file: %s\n", image_loop_file);
-    if ( ( image_loop_file_fd = open(image_loop_file, O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
+    if ( ( image_loop_file_fd = open(image_loop_file, O_CLOEXEC | O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open image loop device cache file %s: %s\n", image_loop_file, strerror(errno));
         ABORT(255);
     }
@@ -109,7 +109,7 @@ char *singularity_loop_bind(FILE *image_fp) {
             }
         }
 
-        if ( ( loop_fp = fopen(test_loopdev, "r+") ) == NULL ) { // Flawfinder: ignore
+        if ( ( loop_fp = fopen(test_loopdev, "r+e") ) == NULL ) { // Flawfinder: ignore
             singularity_message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
             continue;
         }
@@ -168,7 +168,7 @@ int singularity_loop_free(char *loop_name) {
         ABORT(255);
     }
 
-    if ( ( loop_fp = fopen(loop_name, "r") ) == NULL ) { // Flawfinder: ignore
+    if ( ( loop_fp = fopen(loop_name, "re") ) == NULL ) { // Flawfinder: ignore
         singularity_message(VERBOSE, "Could not open loop device %s: %s\n", loop_name, strerror(errno));
         return(-1);
     }

@@ -18,6 +18,7 @@
  * 
 */
 
+#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -66,7 +67,7 @@ int rootfs_image_init(char *source, char *mount_dir) {
     mount_point = strdup(mount_dir);
 
     if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
-        if ( ( image_fp = fopen(source, "r+") ) == NULL ) { // Flawfinder: ignore
+        if ( ( image_fp = fopen(source, "r+e") ) == NULL ) { // Flawfinder: ignore
             singularity_message(ERROR, "Could not open image (read/write) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
@@ -79,7 +80,7 @@ int rootfs_image_init(char *source, char *mount_dir) {
         }
         read_write = 1;
     } else {
-        if ( ( image_fp = fopen(source, "r") ) == NULL ) { // Flawfinder: ignore
+        if ( ( image_fp = fopen(source, "re") ) == NULL ) { // Flawfinder: ignore
             singularity_message(ERROR, "Could not open image (read only) %s: %s\n", source, strerror(errno));
             ABORT(255);
         }
