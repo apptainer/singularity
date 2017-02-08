@@ -75,14 +75,17 @@ if [ -z "${OSVERSION:-}" ]; then
 fi
 
 MIRROR=`singularity_key_get "MirrorURL" "$SINGULARITY_BUILDDEF" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
-if [ -z "${MIRROR:-}" ]; then
-    message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
+MIRROR_META=`singularity_key_get "MetaLink" "$SINGULARITY_BUILDDEF" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+if [ -z "${MIRROR:-}" ] && [ -z "${MIRROR_META:-}" ]; then
+    message ERROR "No 'MirrorURL' or 'MetaLink' defined in bootstrap definition\n"
     ABORT 1
 fi
+
 MIRROR_UPDATES=`singularity_key_get "UpdateURL" "$SINGULARITY_BUILDDEF" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 if [ ! -z "${MIRROR_UPDATES:-}" ]; then
     message 1 "'UpdateURL' defined in bootstrap definition\n"
 fi
+MIRROR_UPDATES_META=`singularity_key_get "UpdateMetaLink" "$SINGULARITY_BUILDDEF" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 
 INSTALLPKGS=`singularity_keys_get "Include" "$SINGULARITY_BUILDDEF"`
 
@@ -117,14 +120,25 @@ echo "" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 
 echo "[base]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo 'name=Linux $releasever - $basearch' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+if [ -n "${MIRROR:-}" ]; then
 echo "baseurl=$MIRROR" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+fi
+if [ -n "${MIRROR_META:-}" ]; then
+    echo "metalink=$MIRROR_META" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+fi
 echo "enabled=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 
-if [ ! -z "${MIRROR_UPDATES:-}" ]; then
+
+if [ -n "${MIRROR_UPDATES:-}" ] || [ -n "${MIRROR_UPDATES_META:-}" ]; then
 echo "[updates]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo 'name=Linux $releasever - $basearch updates' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+if [ -n "${MIRROR_UPDATES:-}" ]; then
 echo "baseurl=${MIRROR_UPDATES}" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+fi
+if [ -n "${MIRROR_UPDATES_META:-}" ]; then
+    echo "metalink=$MIRROR_UPDATES_META" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+fi
 echo "enabled=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 fi
