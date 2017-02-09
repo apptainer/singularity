@@ -1,7 +1,7 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
- * “Singularity” Copyright (c) 2016, The Regents of the University of California,
+ * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
@@ -27,42 +27,45 @@
 #include <string.h>
 #include <fcntl.h>  
 
-#include "lib/message.h"
-#include "lib/singularity.h"
+#include "util/message.h"
 #include "util/file.h"
 #include "util/util.h"
 
+#include "../image.h"
 
-#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
 #define BUFFER_SIZE (1024*1024)
 
-int singularity_image_expand(char *image, int size) {
-    FILE *image_fp;
-    char *buff = (char *) malloc(BUFFER_SIZE);
-    memset(buff, '\255', BUFFER_SIZE);
-    long position;
+
+int _singularity_image_expand(struct image_object *image, unsigned int size) {
     int i;
+    char *buff = (char *) malloc(BUFFER_SIZE);
+    FILE *image_fp;
 
-    singularity_message(VERBOSE, "Expanding sparse image at: %s\n", image);
+    if ( singularity_image_check(image) != 0 ) {
+        singularity_message(ERROR, "File does not seem to be a valid Singularity image: %s\n", image->path);
+        ABORT(255);
+    }
 
-    singularity_message(DEBUG, "Opening image 'r+'\n");
-    if ( ( image_fp = fopen(image, "r+") ) == NULL ) { // Flawfinder: ignore
-        fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
-        free(buff);
-        return(-1);
+    if ( image->fd <= 0 ) {
+        singularity_message(ERROR, "Can not check image with no FD associated\n");
+        ABORT(255);
+    }
+
+    if ( ( image_fp = fdopen(dup(image->fd), "r+") ) == NULL ) {
+        singularity_message(ERROR, "Could not fdopen() image file descriptor for %s: %s\n", image->path, strerror(errno));
+        ABORT(255);
+    }
+
+    memset(buff, '\255', BUFFER_SIZE);
+
+    if ( image_fp == NULL ) {
+        singularity_message(ERROR, "Called _singularity_image_expand() with NULL image pointer\n");
+        ABORT(255);
     }
 
     singularity_message(DEBUG, "Jumping to the end of the current image file\n");
     fseek(image_fp, 0L, SEEK_END);
-    position = ftell(image_fp);
 
-    singularity_message(DEBUG, "Removing the footer from image\n");
-    if ( ftruncate(fileno(image_fp), position-1) < 0 ) {
-        fprintf(stderr, "ERROR: Failed truncating the marker bit off of image %s: %s\n", image, strerror(errno));
-        free(buff);
-        fclose(image_fp);
-        return(-1);
-    }
     singularity_message(VERBOSE2, "Expanding image by %dMB\n", size);
     for(i = 0; i < size; i++ ) {
         if ( fwrite(buff, 1, BUFFER_SIZE, image_fp) < BUFFER_SIZE ) {
@@ -70,11 +73,9 @@ int singularity_image_expand(char *image, int size) {
             ABORT(255);
         }
     }
-    fprintf(image_fp, "0");
+
     fclose(image_fp);
     free(buff);
-
-    singularity_message(DEBUG, "Returning image_expand(%s, %d) = 0\n", image, size);
 
     return(0);
 }

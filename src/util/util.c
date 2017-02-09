@@ -1,7 +1,7 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
- * “Singularity” Copyright (c) 2016, The Regents of the University of California,
+ * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
@@ -40,70 +40,8 @@
 
 #include "config.h"
 #include "util/util.h"
-#include "lib/singularity.h"
-#include "lib/message.h"
-
-
-char *envar(char *name, char *allowed, int len) {
-    char *ret;
-    char *env = getenv(name); // Flawfinder: ignore
-    int count;
-
-    singularity_message(VERBOSE2, "Checking input from environment: '%s'\n", name);
-
-    singularity_message(DEBUG, "Checking environment variable is defined: %s\n", name);
-    if ( env == NULL ) {
-        singularity_message(VERBOSE2, "Environment variable is NULL: %s\n", name);
-        return(NULL);
-    }
-
-    singularity_message(DEBUG, "Checking environment variable length (<= %d): %s\n", len, name);
-    if ( strlength(env, len+1) > len) {
-        singularity_message(ERROR, "Input length of '%s' is larger then allowed: %d\n", name, len);
-        ABORT(255);
-    }
-
-    singularity_message(DEBUG, "Checking environment variable has allowed characters: %s\n", name);
-    ret = (char *) malloc(len+1);
-    for(count=0; count <= len && env[count] != '\0'; count++) {
-        int test_char = env[count];
-        int c, success = 0;
-        if ( isalnum(test_char) > 0 ) {
-            success = 1;
-        } else {
-            for (c=0; allowed[c] != '\0'; c++) {
-                if ( test_char == allowed[c] ) {
-                    success = 1;
-                    continue;
-                }
-            }
-        }
-        if ( success == 0 ) {
-            singularity_message(ERROR, "Illegal input character '%c' in: '%s=%s'\n", test_char, name, env);
-            ABORT(255);
-        }
-        ret[count] = test_char;
-    }
-    ret[count] = '\0';
-
-    singularity_message(VERBOSE2, "Obtained input from environment '%s' = '%s'\n", name, ret);
-    return(ret);
-}
-
-int envar_defined(char *name) {
-    singularity_message(DEBUG, "Checking if environment variable is defined: %s\n", name);
-    if ( getenv(name) == NULL ) { // Flawfinder: ignore
-        singularity_message(VERBOSE2, "Environment variable is undefined: %s\n", name);
-        return(FALSE);
-    }
-    singularity_message(VERBOSE2, "Environment variable is defined: %s\n", name);
-    return(TRUE);
-}
-
-char *envar_path(char *name) {
-    singularity_message(DEBUG, "Checking environment variable is valid path: '%s'\n", name);
-    return(envar(name, "/._-=,:", PATH_MAX));
-}
+#include "util/message.h"
+#include "util/privilege.h"
 
 
 int intlen(int input_int) {
@@ -117,6 +55,19 @@ int intlen(int input_int) {
     return(len);
 }
 
+char *uppercase(char *string) {
+    int len = strlength(string, 4096);
+    char *upperkey = strdup(string);
+    int i = 0;
+
+    while ( i <= len ) {
+        upperkey[i] = toupper(string[i]);
+        i++;
+    }
+    singularity_message(DEBUG, "Transformed to uppercase: '%s' -> '%s'\n", string, upperkey);
+    return(upperkey);
+}
+
 char *int2str(int num) {
     char *ret;
     
@@ -128,10 +79,19 @@ char *int2str(int num) {
 }
 
 char *joinpath(const char * path1, const char * path2_in) {
+    if ( path1 == NULL ) {
+        singularity_message(ERROR, "joinpath() called with NULL path1\n");
+        ABORT(255);
+    }
+    if ( path2_in == NULL ) {
+        singularity_message(ERROR, "joinpath() called with NULL path2\n");
+        ABORT(255);
+    }
+
     const char *path2 = path2_in;
     char *tmp_path1 = strdup(path1);
     int path1_len = strlength(tmp_path1, 4096);
-    char *ret;
+    char *ret = NULL;
 
     if ( tmp_path1[path1_len - 1] == '/' ) {
         tmp_path1[path1_len - 1] = '\0';
@@ -268,41 +228,33 @@ int str2int(const char *input_str, long int *output_num) {
     return -1;
 }
 
-// pw may be NULL, in which case the passwd info will be looked up if needed.
-// If pw is is filled in with a passwd structure, this function skips
-//   looking it up.
-// The home directory value is saved for later lookups.
-char *get_homedir(struct passwd *pw_in) {
-    struct passwd *pw = pw_in;
-    static char *homedir = NULL;
 
-    if ( homedir != NULL )
-        return homedir;
+int envclean(void) {
+    int retval = 0;
+    char **env = environ;
+    char **envclone;
+    int i;
+    int envlen = 0;
 
-    if ( ( homedir = envar_path("SINGULARITY_HOME") ) != NULL ) {
-        char *colon = strchr(homedir, ':');
-        if ( colon != NULL ) {
-            homedir = colon + 1;
-            singularity_message(VERBOSE2, "Set the home directory (via envar) to: %s\n", homedir);
-            return homedir;
-        }
+    for(i = 0; env[i] != 0; i++) {
+        envlen++;
     }
 
-    if ( pw == NULL ) {
-        uid_t uid = singularity_priv_getuid();
-        if ( ( pw = getpwuid(uid) ) == NULL ) {
-            singularity_message(ERROR, "Failed to lookup username for UID %d: %s\n", uid, strerror(errno));
-            ABORT(255);
-        }
-        singularity_message(VERBOSE2, "Set the home directory (via getpwuid) to: %s\n", pw->pw_dir);
-    }
-    else {
-        singularity_message(VERBOSE2, "Set the home directory (via passwd) to: %s\n", pw->pw_dir);
+    envclone = (char**) malloc(i * sizeof(char *));
+
+    for(i = 0; env[i] != 0; i++) {
+        envclone[i] = strdup(env[i]);
     }
 
-    // Note that currently the only way this function can return NULL
-    //   is if strdup() fails here.
-    homedir = strdup(pw->pw_dir);
+    for(i = 0; i < envlen; i++) {
+        char *tok, *key;
 
-    return homedir;
+        key = strtok_r(envclone[i], "=", &tok);
+
+        singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
+        unsetenv(key);
+    }
+
+    return(retval);
 }
+

@@ -1,7 +1,7 @@
 /* 
  * Copyright (c) 2016, Michael W. Bauer. All rights reserved.
  * 
- * “Singularity” Copyright (c) 2016, The Regents of the University of California,
+ * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
@@ -32,7 +32,7 @@
 #include "config.h"
 #include "util/util.h"
 #include "util/file.h"
-#include "lib/message.h"
+#include "util/message.h"
 
 
 #define MAX_LINE_LEN 2048
