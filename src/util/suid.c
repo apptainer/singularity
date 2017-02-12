@@ -83,5 +83,18 @@ int singularity_suid_init(void) {
 #endif /* SINGULARITY_SUID */
 
     return(0);
+}
 
+int singularity_suid_enabled(void) {
+    if ( is_owner("/proc/self/exe", 0) < 0 ) {
+        singularity_message(DEBUG, "Executable is not root owned\n");
+        return(-1);
+    }
+
+    if ( is_suid("/proc/self/exe") < 0 ) {
+        singularity_message(DEBUG, "Executable is not SUID\n");
+        return(-1);
+    }
+
+    return(1);
 }
