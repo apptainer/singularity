@@ -84,7 +84,7 @@
 #define ALLOW_USER_CONTAINER "allow user container"
 #define ALLOW_USER_CONTAINER_DEFAULT 1
 
-#define ALLOWED_CONTAINER_OWNERS "limit container owners"
+#define ALLOWED_CONTAINER_OWNERS "allowed container owners"
 #define ALLOWED_CONTAINER_OWNERS_DEFAULT "singularity"
 
 /*

@@ -134,7 +134,7 @@
 # DEFAULT: @ALLOWED_CONTAINER_OWNERS_DEFAULT@
 # Only allow containers to be run that are owned by a given user. If this
 # configuration is undefined (commented), all container owners are allowed.
-@ALLOWED_CONTAINER_OWNERS@ = @ALLOWED_CONTAINER_OWNERS_DEFAULT@
+#@ALLOWED_CONTAINER_OWNERS@ = @ALLOWED_CONTAINER_OWNERS_DEFAULT@
 
 
 # SESSIONDIR PREFIX: [STRING]
