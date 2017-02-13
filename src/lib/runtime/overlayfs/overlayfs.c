@@ -46,12 +46,6 @@ int _singularity_runtime_overlayfs(void) {
     char *mount_final   = joinpath(container_dir, "/final");
     int overlay_enabled = 0;
 
-    singularity_message(DEBUG, "Creating mount_final directory: %s\n", mount_final);
-    if ( s_mkpath(mount_final, 0755) < 0 ) {
-        singularity_message(ERROR, "Failed creating mount_final directory %s: %s\n", mount_final, strerror(errno));
-        ABORT(255);
-    }
-
     singularity_message(DEBUG, "Checking if overlayfs should be used\n");
     if ( singularity_config_get_bool(ENABLE_OVERLAY) <= 0 ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS via configuration\n");
@@ -96,6 +90,12 @@ int _singularity_runtime_overlayfs(void) {
             ABORT(255);
         }
 
+        singularity_message(DEBUG, "Creating mount_final directory: %s\n", mount_final);
+        if ( s_mkpath(mount_final, 0755) < 0 ) {
+            singularity_message(ERROR, "Failed creating mount_final directory %s: %s\n", mount_final, strerror(errno));
+            ABORT(255);
+        }
+
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
         if ( mount("overlay", mount_final, "overlay", MS_NOSUID, overlay_options) < 0 ){
             singularity_message(ERROR, "Could not mount overlayFS: %s\n", strerror(errno));
@@ -116,6 +116,13 @@ int _singularity_runtime_overlayfs(void) {
 
     if ( overlay_enabled != 1 ) {
         singularity_priv_escalate();
+
+        singularity_message(DEBUG, "Creating mount_final directory: %s\n", mount_final);
+        if ( s_mkpath(mount_final, 0755) < 0 ) {
+            singularity_message(ERROR, "Failed creating mount_final directory %s: %s\n", mount_final, strerror(errno));
+            ABORT(255);
+        }
+
         singularity_message(VERBOSE3, "Binding the ROOTFS_SOURCE to OVERLAY_FINAL (%s->%s)\n", rootfs_source, mount_final);
         if ( mount(rootfs_source, mount_final, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "There was an error binding the container to path %s: %s\n", mount_final, strerror(errno));
