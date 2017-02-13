@@ -282,7 +282,7 @@ AS_IF([test "x$enable_suid" != "xno"], [
 
 
 AC_MSG_CHECKING([if mkfs.ext3 is new enough])
-dd if=/dev/zero of=testimage.iso bs=1M count=10 status=none
+dd if=/dev/zero of=testimage.iso bs=1M count=10 &> /dev/null
 mkfs.ext3 -q -E offset=10 testimage.iso &> /dev/null && mkfs_offset=yes
 rm testimage.iso
 AM_CONDITIONAL([SUID_CREATE], [test "x$mkfs_offset" != "xyes"])
