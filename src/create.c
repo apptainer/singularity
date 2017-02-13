@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 #endif
     singularity_message(INFO, "Creating file system within image\n");
     if ( singularity_fork_exec(mkfs_cmd) != 0 ) {
-        singularity_message(ERROR, "Failed to create filesystem in image");
+        singularity_message(ERROR, "Failed to create filesystem in image\n");
         ABORT(255);
     }
 
