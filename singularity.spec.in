@@ -105,6 +105,7 @@ rm -rf $RPM_BUILD_ROOT
 # Binaries
 %{_libexecdir}/singularity/action
 %{_libexecdir}/singularity/bootstrap
+%{_libexecdir}/singularity/copy
 %{_libexecdir}/singularity/create
 %{_libexecdir}/singularity/expand
 %{_libexecdir}/singularity/export
