@@ -109,7 +109,11 @@ int main(int argc, char **argv) {
     singularity_priv_escalate();
 #endif
     singularity_message(INFO, "Creating file system within image\n");
-    singularity_fork_exec(mkfs_cmd);
+    if ( singularity_fork_exec(mkfs_cmd) != 0 ) {
+        singularity_message(ERROR, "Failed to create filesystem in image");
+        ABORT(255);
+    }
+
 #ifdef SUID_CREATE
     singularity_priv_drop();
 #endif
