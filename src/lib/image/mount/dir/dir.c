@@ -54,7 +54,7 @@ int _singularity_image_mount_dir_mount(struct image_object *image, char *mount_p
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Mounting container directory %s->%s\n", image->path, mount_point);
-    if ( mount(image->path, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+    if ( mount(image->path, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV, NULL) < 0 ) {
         singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
         return 1;
     }

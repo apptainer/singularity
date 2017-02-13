@@ -116,7 +116,6 @@ int _singularity_runtime_overlayfs(void) {
 
     if ( overlay_enabled != 1 ) {
         singularity_priv_escalate();
-
         singularity_message(DEBUG, "Creating mount_final directory: %s\n", mount_final);
         if ( s_mkpath(mount_final, 0755) < 0 ) {
             singularity_message(ERROR, "Failed creating mount_final directory %s: %s\n", mount_final, strerror(errno));

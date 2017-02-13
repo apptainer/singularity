@@ -167,9 +167,6 @@ stest 1 singularity exec "$CONTAINER" blahh
 stest 0 sh -c "echo hi | singularity exec $CONTAINER grep hi"
 stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
 
-echo "not doing any more tests for now..."
-exit 0
-
 /bin/echo
 /bin/echo "Running container run tests..."
 
@@ -235,7 +232,10 @@ stest 0 singularity exec "$CONTAINER" true
 /bin/echo
 /bin/echo "Checking export/import..."
 
-stest 0 sudo $singularity_cmd export -f ${CONTAINERDIR}.tar "$CONTAINER"
+echo "Stopping here..."
+exit 0
+
+stest 0 sudo singularity export -f ${CONTAINERDIR}.tar "$CONTAINER"
 stest 0 mkdir $CONTAINERDIR
 stest 0 sudo tar -C $CONTAINERDIR -xvf ${CONTAINERDIR}.tar
 stest 0 sudo chmod 0644 ${CONTAINERDIR}.tar

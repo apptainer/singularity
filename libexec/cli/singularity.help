@@ -10,6 +10,8 @@ GLOBAL OPTIONS:
 
 GENERAL COMMANDS:
     help          Show additional help for a command
+    selftest      Run some self tests to make sure Singularity is
+                    installed and operating properly
 
 CONTAINER USAGE COMMANDS:
     exec          Execute a command within container
