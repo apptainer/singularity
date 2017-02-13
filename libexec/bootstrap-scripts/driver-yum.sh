@@ -74,15 +74,17 @@ if [ -z "${OSVERSION:-}" ]; then
 fi
 
 MIRROR=`echo "${MIRRORURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
-if [ -z "${MIRROR:-}" ]; then
-    message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
+MIRROR_META=`echo "${METALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+if [ -z "${MIRROR:-}" ] && [ -z "${MIRROR_META:-}" ]; then
+    message ERROR "No 'MirrorURL' or 'MetaLink' defined in bootstrap definition\n"
     ABORT 1
-fi
+ fi
 
-if [ ! -z "${MIRROR_UPDATES:-}" ]; then
-    message 1 "'UpdateURL' defined in bootstrap definition\n"
+MIRROR_UPDATES=`echo "${UPDATEURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_UPDATES_META=`echo "${UPDATEMETALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+if [ -n "${MIRROR_UPDATES:-}" ] || [ -n "${MIRROR_UPDATES_META:-}" ]; then
+    message 1 "'UpdateURL' or 'UpdateMetaLink' defined in bootstrap definition\n"
 fi
-MIRROR_UPDATES_META=`singularity_key_get "UpdateMetaLink" "$SINGULARITY_BUILDDEF" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 
 REPO_COUNT=0
 YUM_CONF="/etc/bootstrap-yum.conf"
@@ -111,6 +113,7 @@ echo "obsoletes=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "plugins=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "reposdir=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+echo "deltarpm=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 
 echo "[base]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
@@ -140,7 +143,7 @@ fi
 
 echo "" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 
-if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS -y install /etc/redhat-release coreutils ${INCLUDE:-}"; then
+if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS --releasever=${OSVERSION} -y install /etc/redhat-release coreutils ${INCLUDE:-}"; then
     message ERROR "Bootstrap failed... exiting\n"
     ABORT 255
 fi
