@@ -46,6 +46,12 @@ int _singularity_runtime_overlayfs(void) {
     char *mount_final   = joinpath(container_dir, "/final");
     int overlay_enabled = 0;
 
+    singularity_message(DEBUG, "Creating mount_final directory: %s\n", mount_final);
+    if ( s_mkpath(mount_final, 0755) < 0 ) {
+        singularity_message(ERROR, "Failed creating mount_final directory %s: %s\n", mount_final, strerror(errno));
+        ABORT(255);
+    }
+
     singularity_message(DEBUG, "Checking if overlayfs should be used\n");
     if ( singularity_config_get_bool(ENABLE_OVERLAY) <= 0 ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS via configuration\n");
