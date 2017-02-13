@@ -37,6 +37,7 @@ src/action-suid
 src/bootstrap
 src/create
 src/create-suid
+src/copy
 src/expand
 src/expand-suid
 src/export
