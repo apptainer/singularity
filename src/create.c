@@ -49,8 +49,16 @@ int main(int argc, char **argv) {
     char *size_s;
     char *mkfs_cmd[7];
 
+#ifdef SUID_CREATE
+    singularity_suid_init();
+#endif
+
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
+#ifdef SUID_CREATE
+    singularity_priv_init();
+    singularity_priv_drop();
+#endif
 
     if ( ( size_s = singularity_registry_get("IMAGESIZE") ) != NULL ) {
         if ( str2int(size_s, &size) == 0 ) {
@@ -70,13 +78,26 @@ int main(int argc, char **argv) {
     singularity_message(INFO, "Creating %ldMiB image\n", size);
     singularity_image_create(&image, size);
 
+#ifdef SUID_CREATE
+    singularity_message(INFO, "Binding image to loop\n");
+    singularity_image_bind(&image);
+#endif
+
     mkfs_cmd[0] = strdup("/sbin/mkfs.ext3");
     mkfs_cmd[1] = strdup("-q");
+
+#ifdef SUID_CREATE
+    mkfs_cmd[2] = strdup(image.loopdev);
+    mkfs_cmd[3] = NULL;
+#else
     mkfs_cmd[2] = strdup("-E");
+    // the offset in the file for the singularity header
     mkfs_cmd[3] = strjoin("offset=", int2str(strlength(LAUNCH_STRING, 1024)));
     mkfs_cmd[4] = strdup(image.path);
+    // pass the correct size of the file in KiB
     mkfs_cmd[5] = int2str((size*1024*1024-strlength(LAUNCH_STRING, 1024))/1024);
     mkfs_cmd[6] = NULL;
+#endif
 
     singularity_message(DEBUG, "Cleaning environment\n");
     if ( envclean() != 0 ) {
@@ -84,8 +105,14 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+#ifdef SUID_CREATE
+    singularity_priv_escalate();
+#endif
     singularity_message(INFO, "Creating file system within image\n");
     singularity_fork_exec(mkfs_cmd);
+#ifdef SUID_CREATE
+    singularity_priv_drop();
+#endif
 
     singularity_message(INFO, "Image is done: %s\n", image.path);
 
