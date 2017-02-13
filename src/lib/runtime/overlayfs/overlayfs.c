@@ -96,12 +96,6 @@ int _singularity_runtime_overlayfs(void) {
             ABORT(255);
         }
 
-        singularity_message(DEBUG, "Creating mount_final directory: %s\n", mount_final);
-        if ( s_mkpath(mount_final, 0755) < 0 ) {
-            singularity_message(ERROR, "Failed creating mount_final directory %s: %s\n", mount_final, strerror(errno));
-            ABORT(255);
-        }
-
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
         if ( mount("overlay", mount_final, "overlay", MS_NOSUID, overlay_options) < 0 ){
             singularity_message(ERROR, "Could not mount overlayFS: %s\n", strerror(errno));

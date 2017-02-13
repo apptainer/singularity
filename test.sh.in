@@ -263,7 +263,7 @@ stest 1 singularity exec $CONTAINERDIR ping localhost -c 1
 
 /bin/echo
 /bin/echo "Checking target UID mode"
-stest 0 sh -c "sudo $singularity_cmd_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep -q `id -un`"
+stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep -q `id -un`"
 
 
 #TODO: The following tests must be conditional based on host capabilities
