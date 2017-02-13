@@ -179,7 +179,7 @@ cmd() {
 
 stest() {
     ERROR="${1:-}"
-    TMPFILE=`mktemp`
+    TMPFILE=`mktemp -t singularity_test_output.XXXXXXXXXX`
     shift
     message 2 " + %-80.80s " "$*"
     "$@" >$TMPFILE 2>&1

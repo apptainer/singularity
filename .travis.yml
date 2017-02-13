@@ -53,3 +53,7 @@ script:
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_shub
   - pylint --version
   - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611
+
+after_failure:
+  - cd /tmp/singularity-test.*
+  - find -type f -name 'singularity_test_output.*' -print0 | xargs -0 cat
