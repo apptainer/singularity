@@ -85,25 +85,45 @@ rm -rf $RPM_BUILD_ROOT
 %doc examples AUTHORS COPYING ChangeLog INSTALL LICENSE NEWS README.md
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
-%dir %{_libexecdir}/singularity
 %dir %{_localstatedir}/lib/singularity
 %dir %{_localstatedir}/lib/singularity/mnt
-%attr(4755, root, root) %{_libexecdir}/singularity/sexec-suid
-%{_libexecdir}/singularity/bootstrap
-%{_libexecdir}/singularity/cli
-%{_libexecdir}/singularity/defaults
-%{_libexecdir}/singularity/helpers
-%{_libexecdir}/singularity/python
-%{_libexecdir}/singularity/get-section
-%{_libexecdir}/singularity/image-handler.sh
-%{_libexecdir}/singularity/sexec
-%{_libexecdir}/singularity/simage
-%{_libexecdir}/singularity/functions
+
 %{_bindir}/singularity
 %{_bindir}/run-singularity
 %{_mandir}/man1/*
 %{_libdir}/singularity/lib*.so.*
 %{_sysconfdir}/bash_completion.d/singularity
+
+#SUID programs
+%attr(4755, root, root) %{_libexecdir}/singularity/action-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/create-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/copy-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/expand-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/export-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/import-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/mount-suid
+
+# Binaries
+%{_libexecdir}/singularity/action
+%{_libexecdir}/singularity/bootstrap
+%{_libexecdir}/singularity/copy
+%{_libexecdir}/singularity/create
+%{_libexecdir}/singularity/expand
+%{_libexecdir}/singularity/export
+%{_libexecdir}/singularity/get-section
+%{_libexecdir}/singularity/import
+%{_libexecdir}/singularity/mount
+
+# Scripts
+%{_libexecdir}/singularity/functions
+%{_libexecdir}/singularity/image-handler.sh
+
+# Directories
+%{_libexecdir}/singularity/bootstrap-scripts
+%{_libexecdir}/singularity/cli
+%{_libexecdir}/singularity/defaults
+%{_libexecdir}/singularity/python
+
 
 
 %files devel
@@ -120,3 +140,4 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+
