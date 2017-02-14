@@ -111,7 +111,7 @@ static int log_glob_error(const char *epath, int eerrno) {
  */
 int singularity_config_parse(char *config_path) {
     singularity_message(VERBOSE, "Initialize configuration file: %s\n", config_path);
-    if ( !is_file(config_path) == 0 ) {
+    if ( is_file(config_path) != 0 ) {
         singularity_message(ERROR, "Specified configuration file %s does not appear to be a normal file.\n", config_path);
     }
     FILE *config_fp = fopen(config_path, "r");
