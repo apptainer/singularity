@@ -36,12 +36,8 @@
 #define BUFFER_SIZE (1024*1024)
 
 int _singularity_image_create(struct image_object *image, long int size) {
-    // write a fixed value to the blank image to prevent contents of our memory
-    // from being leaked to the disk.
-    char *buff = (char *) malloc(BUFFER_SIZE);
-    memset(buff, '\255', BUFFER_SIZE);
-    int i;
-    FILE *image_fp;
+    FILE* image_fp;
+    int retval;
 
     if ( image->fd <= 0 ) {
         singularity_message(ERROR, "Can not check image with no FD associated\n");
@@ -57,20 +53,42 @@ int _singularity_image_create(struct image_object *image, long int size) {
     fprintf(image_fp, LAUNCH_STRING); // Flawfinder: ignore (LAUNCH_STRING is a constant)
 
     singularity_message(VERBOSE2, "Growing image to %ldMB\n", size);
-    // TODO: there are likely better ways to do this (falloc?); further, we should really handle
-    // EINTR here.
-    for(i = 0; i < size; i++ ) {
-        if ( fwrite(buff, 1, BUFFER_SIZE, image_fp) < BUFFER_SIZE ) {
-            singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
-            ABORT(255);
+    while(1)
+    {
+        retval = posix_fallocate(image->fd, sizeof(LAUNCH_STRING), size*BUFFER_SIZE);
+
+        if(retval == EINTR)
+        {
+            singularity_message(DEBUG, "fallocate was interrupted by a signal, trying again...\n");
+            continue;
+        } else
+            break;
+    }
+
+    if(retval != 0)
+    {
+        switch(retval)
+        {
+            case ENOSPC:
+                singularity_message(ERROR, "There is not enough to space to allocate the image\n");
+                break;
+            case EBADF:
+                singularity_message(ERROR, "The image file descriptor is not valid for writing\n");
+                break;
+            case EFBIG:
+                singularity_message(ERROR, "The image size was too big for the filesystem\n");
+                break;
+            case EINVAL:
+                singularity_message(ERROR, "The image size is invalid.\n");
+                break;
         }
+        ABORT(255);
     }
 
     singularity_message(VERBOSE2, "Making image executable\n");
     fchmod(fileno(image_fp), 0755);
 
     fclose(image_fp);
-    free(buff);
 
     return(0);
 }
