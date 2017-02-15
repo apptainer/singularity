@@ -51,6 +51,13 @@ def create_runscript(cmd,base_dir):
     output_file = write_file(runscript,content)
     return output_file
 
+def create_envfile(env, base_dir):
+    envfile = "%s/environment" % base_dir
+    with open(envfile, "w") as f:
+        f.write("# Docker image environment\n")
+        for e in env:
+            f.write("export %s\n" % e)
+        f.write('export PS1="Singularity.$SINGULARITY_CONTAINER> "\n')
 
 def get_token(namespace,repo_name,registry=None,auth=None):
     '''get_token uses HTTP basic authentication to get a token for Docker registry API V2 operations
