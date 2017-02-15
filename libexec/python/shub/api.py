@@ -122,7 +122,7 @@ def download_image(manifest,download_folder=None,extract=True):
     url = manifest['image']
     image_file = api_get(url,stream=image_file)
     if extract == True:
-        print("Decompressing", image_file)
+        print("Decompressing %s" %image_file)
         os.system('gzip -d -f %s' %(image_file))
         image_file = image_file.replace('.gz','')
     return image_file
