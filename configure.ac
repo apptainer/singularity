@@ -317,6 +317,7 @@ AC_CONFIG_FILES([
    src/lib/file/passwd/Makefile
    src/lib/file/resolvconf/Makefile
    src/lib/file/entrypoint/Makefile
+   src/lib/file/environment/Makefile
    src/lib/mount/Makefile
    src/lib/mount/cwd/Makefile
    src/lib/mount/dev/Makefile

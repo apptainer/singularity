@@ -134,8 +134,7 @@ int main(int argc, char **argv) {
 
     singularity_rootfs_chroot();
 
-    singularity_action_do(argc, argv);
+    return(singularity_action_do(argc, argv));
 
-    return(0);
 
 }

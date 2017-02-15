@@ -18,6 +18,7 @@
  * 
 */
 
+#define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -53,7 +54,7 @@
 static int module = 0;
 static int overlay_enabled = 0;
 static char *mount_point = NULL;
-
+static int rootfs_fd;
 
 int singularity_rootfs_overlay_enabled(void) {
     singularity_message(DEBUG, "Returning singularity_rootfs_overlay: %d\n", overlay_enabled);
@@ -63,6 +64,11 @@ int singularity_rootfs_overlay_enabled(void) {
 char *singularity_rootfs_dir(void) {
     singularity_message(DEBUG, "Returning singularity_rootfs_dir: %s\n", joinpath(mount_point, OVERLAY_FINAL));
     return(joinpath(mount_point, OVERLAY_FINAL));
+}
+
+int singularity_rootfs_fd(void) {
+    singularity_message(DEBUG, "Returning singularity_rootfs_fd: %d\n", rootfs_fd);
+    return(rootfs_fd);
 }
 
 int singularity_rootfs_init(char *source) {
@@ -230,6 +236,9 @@ int singularity_rootfs_mount(void) {
         singularity_priv_drop();
     }
 
+    rootfs_fd = open(singularity_rootfs_dir(), O_PATH | O_DIRECTORY | O_CLOEXEC);
+    singularity_message(DEBUG, "Stored rootfs fd as: %d\n", rootfs_fd);
+
     return(0);
 }
 
@@ -248,18 +257,22 @@ int singularity_rootfs_check(void) {
 int singularity_rootfs_chroot(void) {
     
     singularity_priv_escalate();
-    singularity_message(VERBOSE, "Entering container file system root: %s\n", joinpath(mount_point, OVERLAY_FINAL));
-    if ( chroot(joinpath(mount_point, OVERLAY_FINAL)) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
-        singularity_message(ERROR, "failed enter container at: %s\n", joinpath(mount_point, OVERLAY_FINAL));
+
+    if ( fchdir(singularity_rootfs_fd()) < 0 ) {
+        singularity_message(ERROR, "Could not chdir to rootfs : %s\n", strerror(errno));
         ABORT(255);
     }
-    singularity_priv_drop();
-
-    singularity_message(DEBUG, "Changing dir to '/' within the new root\n");
-    if ( chdir("/") < 0 ) {
-        singularity_message(ERROR, "Could not chdir after chroot to /: %s\n", strerror(errno));
-        ABORT(1);
+    
+    singularity_message(VERBOSE, "Entering container file system root (fd: %d): %s\n",
+                        singularity_rootfs_fd(), joinpath(mount_point, OVERLAY_FINAL));
+    
+    if ( chroot(".") < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
+        singularity_message(ERROR, "Failed to enter container at (fd: %d): %s\n",
+                            singularity_rootfs_fd(), joinpath(mount_point, OVERLAY_FINAL));
+        ABORT(255);
     }
+    
+    singularity_priv_drop();
 
     return(0);
 }

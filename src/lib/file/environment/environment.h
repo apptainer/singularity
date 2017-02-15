@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2016, Michael W. Bauer. All rights reserved.
  * 
  * “Singularity” Copyright (c) 2016, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -19,22 +19,13 @@
  */
 
 
-char *file_id(char *path);
-char *file_devino(char *path);
-int is_file(char *path);
-int is_fifo(char *path);
-int is_link(char *path);
-int is_dir(char *path);
-int is_exec(char *path);
-int is_write(char *path);
-int is_suid(char *path);
-int is_owner(char *path, uid_t uid);
-int is_blk(char *path);
-int is_chr(char *path);
-int s_mkpath(char *dir, mode_t mode);
-int s_rmdir(char *dir);
-int copy_file(char * source, char * dest);
-char *filecat(char *path);
-int fileput(char *path, char *string);
-int fileputat(int fd, char *path, char *string);
-char *basedir(char *dir);
+#ifndef __SINGULARITY_FILE_ENVIRONMENT_H_
+#define __SINGULARITY_FILE_ENVIRONMENT_H_
+
+    #include <dirent.h>
+
+    int singularity_file_environment(void);
+    int filter_metafile(const struct dirent *entry);
+    int compare_filenames(const struct dirent **a, const struct dirent **b);
+                                    
+#endif /* __SINGULARITY_FILE_ENVIRONMENT_H_ */

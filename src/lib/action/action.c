@@ -27,11 +27,15 @@
 #include <linux/limits.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/wait.h>
+#include <poll.h>
+
 
 #include "util/file.h"
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/privilege.h"
+#include "lib/singularity.h"
 #include "exec/exec.h"
 #include "shell/shell.h"
 #include "run/run.h"
@@ -109,8 +113,9 @@ int singularity_action_init(void) {
 }
 
 int singularity_action_do(int argc, char **argv) {
-
-    singularity_priv_drop_perm();
+    pid_t child;
+    int tmpstatus;
+    int retval = 0;
 
     singularity_message(DEBUG, "Trying to change directory to where we started\n");
     char *target_pwd = envar_path("SINGULARITY_TARGET_PWD");
@@ -131,25 +136,37 @@ int singularity_action_do(int argc, char **argv) {
     }
     free(target_pwd);
 
-    if ( action == ACTION_SHELL ) {
-        singularity_message(DEBUG, "Running action: shell\n");
-        action_shell_do(argc, argv);
-    } else if ( action == ACTION_EXEC ) {
-        singularity_message(DEBUG, "Running action: exec\n");
-        action_exec_do(argc, argv);
-    } else if ( action == ACTION_RUN ) {
-        singularity_message(DEBUG, "Running action: run\n");
-        action_run_do(argc, argv);
-    } else if ( action == ACTION_TEST ) {
-        singularity_message(DEBUG, "Running action: test\n");
-        action_test_do(argc, argv);
-    } else if ( action == ACTION_START ) {
-        singularity_message(DEBUG, "Running action: start\n");
-        action_start_do(argc, argv);
-    } else if ( action == ACTION_STOP ) {
-        singularity_message(DEBUG, "Running action: stop\n");
-        action_stop_do(argc, argv);
+    child = singularity_fork();
+
+    if ( child == 0 ) {
+        singularity_priv_drop_perm();
+        if ( action == ACTION_SHELL ) {
+            singularity_message(DEBUG, "Running action: shell\n");
+            action_shell_do(argc, argv);
+        } else if ( action == ACTION_EXEC ) {
+            singularity_message(DEBUG, "Running action: exec\n");
+            action_exec_do(argc, argv);
+        } else if ( action == ACTION_RUN ) {
+            singularity_message(DEBUG, "Running action: run\n");
+            action_run_do(argc, argv);
+        } else if ( action == ACTION_TEST ) {
+            singularity_message(DEBUG, "Running action: test\n");
+            action_test_do(argc, argv);
+        } else if ( action == ACTION_START ) {
+            singularity_message(DEBUG, "Running action: start\n");
+            action_start_do(argc, argv);
+        } else if ( action == ACTION_STOP ) {
+            singularity_message(DEBUG, "Running action: stop\n");
+            action_stop_do(argc, argv);
+        }
+        singularity_message(ERROR, "Called singularity_action_do() without singularity_action_init()\n");
+        ABORT(255);
+    } else if ( child > 0 ) {
+        singularity_message(DEBUG, "Waiting on child process to finish to update /.env/.metadata file\n");
+
+        waitpid(child, &tmpstatus, 0);
+        retval = WEXITSTATUS(tmpstatus);
+        singularity_file_environment();
     }
-    singularity_message(ERROR, "Called singularity_action_do() without singularity_action_init()\n");
-    return(-1);
+    return(retval);
 }

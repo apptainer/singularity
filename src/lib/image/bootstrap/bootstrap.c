@@ -104,12 +104,12 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
         /* Copy runscript, environment, and .test files into container rootfs */
         bootstrap_copy_script("runscript", "/singularity");
         bootstrap_copy_script("test", "/.test");
-        if ( bootstrap_copy_script("environment", "/environment") != 0 ) {
-            singularity_message(VERBOSE, "Copying default environment file instead of user specified environment\n");
-            copy_file(LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/environment"));
+        singularity_message(VERBOSE, "Copying default environment file into /.env/ at lowest priority\n");
+        copy_file(LIBEXECDIR "/singularity/defaults/environment", joinpath(rootfs_path, "/.env/01-default"));
+        chmod(joinpath(rootfs_path, "/.env/01-default"), 0644);
+        if ( bootstrap_copy_script("environment", "/.env/02-userenv") == 0 ) {
+            chmod(joinpath(rootfs_path, "/.env/02-userenv"), 0644);
         }
-        chmod(joinpath(rootfs_path, "/environment"), 0644);
-            
 
         /* Copy/mount necessary files directly into container rootfs */
         if ( singularity_file_bootstrap() < 0 ) {
@@ -118,10 +118,7 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
         }
 
         /* Mount necessary folders into container */
-        if ( singularity_mount() < 0 ) {
-            singularity_message(ERROR, "Failed to mount necessary files into container rootfs. Aborting...\n");
-            ABORT(255);
-        }
+        singularity_mount();
 
         /* Run %setup script from host */
         singularity_bootstrap_script_run("setup");
@@ -129,6 +126,9 @@ int singularity_bootstrap(char *containerimage, char *bootdef_path) {
         /* Run %post and %test scripts from inside container */
         singularity_rootfs_chroot();
         singularity_bootstrap_script_run("post");
+
+        /* Generate /.env/.metasource file one last time, in case post/setup changed it */
+        singularity_file_environment();
         action_test_do(0, NULL);
         
         singularity_bootdef_close();
@@ -218,6 +218,7 @@ int bootstrap_rootfs_install() {
     retval += s_mkpath(joinpath(rootfs_path, "/sys"), 0755);
     retval += s_mkpath(joinpath(rootfs_path, "/tmp"), 1777);
     retval += s_mkpath(joinpath(rootfs_path, "/var/tmp"), 1777);
+    retval += s_mkpath(joinpath(rootfs_path, "/.env"), 0777);
     retval += copy_file("/etc/hosts", joinpath(rootfs_path, "/etc/hosts"));
     retval += copy_file("/etc/resolv.conf", joinpath(rootfs_path, "/etc/resolv.conf"));
     unlink(joinpath(rootfs_path, "/etc/mtab"));

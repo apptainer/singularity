@@ -29,5 +29,6 @@
 
     int singularity_rootfs_overlay_enabled(void);
     char *singularity_rootfs_dir(void);
+    int singularity_rootfs_fd(void);
 
 #endif /* __SINGULARITY_ROOTFS_H_ */

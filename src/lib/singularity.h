@@ -83,6 +83,8 @@
     extern int singularity_rootfs_chroot(void);
     // Return the location of the final rootfs directory/mount point
     extern char *singularity_rootfs_dir(void);
+    // Return an open fd of the rootfs_dir
+    extern int singularity_rootfs_fd(void);
     // Check to make sure rootfs is valid
     extern int singularity_rootfs_check(void);
 
@@ -123,6 +125,7 @@
     extern int singularity_file_group(void);
     extern int singularity_file_resolvconf(void);
     extern int singularity_file_entrypoint(char *entrypoint_name);
+    extern int singularity_file_environment(void);
 
 
     extern void singularity_sessiondir_init(char *file);
