@@ -27,6 +27,24 @@ import re
 import os
 
 
+def get_image_uri(image):
+    '''get_image_uri will parse a uri sent from Singularity to determine if it's 
+    singularity (shub://) or docker (docker://)
+    :param image: the complete image uri (example: docker://ubuntu:latest
+    '''
+    image_uri = None
+    image = image.replace(' ','')
+    match = re.findall('^[A-Za-z0-9-]+[:]//',image)
+
+    if len(match) == 0:
+        bot.logger.warning("Could not detect any uri in %s",image)
+    else:
+        image_uri = match[0].lower()
+        bot.logger.debug("Found uri %s",image_uri)
+    return image_uri
+
+
+
 def parse_image_uri(image,uri=None,default_namespace=None):
     '''parse_image_uri will return a json structure with a repo name, tag, and
     namespace.

@@ -2,7 +2,7 @@
 
 api.py: Docker helper functions for Singularity in Python
 
-Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -24,7 +24,12 @@ perform publicly and display publicly, and to permit other to do so.
 import sys
 sys.path.append('..') # parent directory
 
-from utils import api_get, write_file, add_http
+from utils import (
+    api_get, 
+    write_file, 
+    add_http
+)
+
 from logman import logger
 import json
 import re
@@ -315,11 +320,3 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
         sys.exit(1)
 
     return download_folder
-
-
-# Under Development! ---------------------------------------------------------------------------------
-# Docker Registry Version 2.0 functions
-
-# TODO: this will let us get all Docker repos to generate images automatically
-def get_repositories():
-    base = "https://index.docker.io/v2/_catalog"

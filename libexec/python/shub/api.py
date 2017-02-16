@@ -33,6 +33,7 @@ from utils import (
     read_file,
     write_file
 )
+
 from logman import logger
 import json
 import os
@@ -72,9 +73,6 @@ def authenticate(domain=None,token_folder=None):
             sys.exit(1)
     return token
 
-
-# Authentication required ---------------------------------------------------------------------------------
-# Docker Registry Version 2.0 Functions - IN USE
 
 
 def get_manifest(image,registry=None):
