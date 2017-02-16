@@ -99,6 +99,8 @@
     extern int singularity_action_init(void);
     // Do the requested action
     extern int singularity_action_do(int agc, char **argv);
+    // Override container environment
+    extern int singularity_env_override(char * prefix);
 
 
     // MOUNT

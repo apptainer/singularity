@@ -27,6 +27,7 @@
 #include <linux/limits.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <regex.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -49,19 +50,49 @@
 static int action = 0;
 static char *cwd_path;
 
+extern char **environ;
+static char * ENV_OVERRIDE_REGEX = "^%s_([^=]+)=(.*)";
+
+int singularity_env_override(char * prefix) {
+    int reti;
+    regex_t regex;
+    char regstr[strlen(prefix) + strlen(ENV_OVERRIDE_REGEX) + 1];
+
+    sprintf(regstr, ENV_OVERRIDE_REGEX, prefix);
+    reti = regcomp(&regex, regstr, REG_EXTENDED);
+    if (reti) {
+        singularity_message(ERROR, "Could not compile prefix regex\n");
+        ABORT(1);
+    }
+
+    char * kv;
+    int ngroups = regex.re_nsub + 1;
+    regmatch_t groups[ngroups];
+    char ** envp = environ;
+
+    while(*envp) {
+        kv = *envp++;
+        reti = regexec(&regex, kv, ngroups, groups, 0);
+        if (!reti) {
+            char key[groups[1].rm_eo - groups[1].rm_so + 1];
+            char value[groups[2].rm_eo - groups[2].rm_so + 1];
+            slice_str(kv, key, groups[1].rm_so, groups[1].rm_eo - 1);
+            slice_str(kv, value, groups[2].rm_so, groups[2].rm_eo - 1);
+            setenv(key, value, 1);
+        }
+    }
+
+    regfree(&regex);
+    return 0;
+}
+
 int singularity_action_init(void) {
+    singularity_env_override("SENV");
+
     char *command = envar("SINGULARITY_COMMAND", "", 10);
-    char *libpath = envar_path("SINGULARITY_LD_LIBRARY_PATH");
     singularity_message(DEBUG, "Checking on action to run\n");
 
     unsetenv("SINGULARITY_COMMAND");
-    unsetenv("SINGULARITY_LD_LIBRARY_PATH");
-
-    if ( libpath != NULL ) {
-        singularity_message(VERBOSE, "Setting LD_LIBRARY_PATH to `%s`\n", libpath);
-        setenv("LD_LIBRARY_PATH", libpath, 1);
-        free(libpath);
-    }
 
     if ( command == NULL ) {
         singularity_message(ERROR, "SINGULARITY_COMMAND is undefined\n");

@@ -32,6 +32,30 @@ SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
 SINGULARITY_PATH="$bindir"
 
+UNSEC_VARS="
+GCONV_PATH
+GETCONF_DIR
+HOSTALIASES
+LD_AUDIT
+LD_DEBUG
+LD_DEBUG_OUTPUT
+LD_DYNAMIC_WEAK
+LD_LIBRARY_PATH
+LD_ORIGIN_PATH
+LD_PRELOAD
+LD_PROFILE
+LD_SHOW_AUXV
+LD_USE_LOAD_BIAS
+LOCALDOMAIN
+LOCPATH
+MALLOC_TRACE
+NIS_PATH
+NLSPATH
+RESOLV_HOST_CONF
+RES_OPTIONS
+TMPDIR
+TZDIR
+"
 
 ALL_COMMANDS="exec run shell start stop test bootstrap copy create expand export import mount"
 
@@ -353,6 +377,14 @@ stest 1 singularity exec /tmp/container.img echo "hello world"
 stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|protected image mode = group|protected image mode = none|'
 stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow user image = no|allow user image = yes|'
 
+/bin/echo
+/bin/echo "Testing environment override"
+for UNSEC_VAR in $UNSEC_VARS; do
+    PREFIXED_UNSEC_VAR="SENV_$UNSEC_VAR"
+    stest 1 sh -c "$UNSEC_VAR=test singularity exec $CONTAINER env | grep $UNSEC_VAR=test"
+    stest 0 sh -c "$PREFIXED_UNSEC_VAR=test singularity exec $CONTAINER env | grep $UNSEC_VAR=test"
+    unset PREFIXED_UNSEC_VAR
+done
 
 /bin/echo
 /bin/echo "Cleaning up"
