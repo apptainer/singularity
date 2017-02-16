@@ -304,6 +304,20 @@ def change_permissions(path,permission=None,recursive=True):
 ############################################################################
 
 
+def get_env(variable_key,error_on_none=False,default=None):
+    '''get_env will attempt to get an environment variable. If the variable
+    is not found, None is returned.
+    :param variable_key: the variable name
+    :param error_on_none: exit with error if not found
+    '''
+    variable = os.environ.get(variable_key, default)
+    if variable == None and error_on_none:
+        logger.error("Cannot find environment variable %s, exiting.",variable_key)
+        sys.exit(1)
+    logger.debug("%s found as %s",variable_key,variable)
+    return variable 
+
+
 def get_cache(cache_base=None,subfolder=None,disable_cache=False):
     '''get_cache will return the user's cache for singularity. If not specified
     via environmental variable, will be created in $HOME/.singularity
@@ -317,11 +331,7 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
     if disable_cache == True:
         return tempfile.mkdtemp()
     else:
-        cache_base = os.environ.get("SINGULARITY_CACHEDIR", cache_base)
-
-    # Default is set in defaults.py, $HOME/.singularity
-    if cache_base == None:
-        cache_base = SINGULARITY_CACHE
+        cache_base = get_env("SINGULARITY_CACHEDIR", default=SINGULARITY_CACHE)
 
     # Clean up the path and create
     cache_base = clean_path(cache_base)

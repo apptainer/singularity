@@ -132,7 +132,6 @@ def run(args):
     # What image is the user asking for?
     image_uri = get_image_uri(args.container)
     
-
     # Find root filesystem location
     if args.rootfs != None:
        rootfs = args.rootfs

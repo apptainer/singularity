@@ -85,8 +85,10 @@ case "$IMPORT_URI" in
         exit 255
     ;;
     shub://*)
-        IMAGE_SHUB_ID=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
-        exec $SINGULARITY_libexecdir/singularity/python/cli.py --shub $IMAGE_SHUB_ID --pull-folder $PWD
+        SINGULARITY_IMAGE_SHUB=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
+        PULL_FOLDER_SHUB=$PWD
+        export SINGULARITY_IMAGE_SHUB PULL_FOLDER_SHUB
+        exec $SINGULARITY_libexecdir/singularity/python/shub/pull.py
     ;;
     http://*|https://*)
         message ERROR "pull is only supported for shub://\n"

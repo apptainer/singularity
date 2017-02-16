@@ -1,6 +1,6 @@
 '''
 
-api.py: Singularity Hub helper functions for Singularity in Python
+main.py: Singularity Hub helper functions for Singularity in Python
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
@@ -44,22 +44,22 @@ import json
 import re
 import os
 import tempfile
-try:
-    from urllib.error import HTTPError
-except ImportError:
-    from urllib2 import HTTPError
 
 
-def PULL(image,rootfs=None,pull_folder=None):
+def PULL(image,rootfs=None,pull_folder=None,disable_cache=False):
     '''PULL will retrieve a Singularity Hub image and download to the local file
     system. If a rootfs is provided, the path to the image is written to a file
     called SINGULARITY_RUNDIR and SINGULARITY_IMAGE here, with only the purpose
     of passing the variable up.
+    :param image: the singularity hub image name
+    :param pull folder: the folder to pull the image to (overrides cache)
+    :param disable_cache: use temporary folder instead of cache
     '''
+    image = image.replace("shub://","")
+    
     manifest = get_manifest(image)
     if pull_folder == None:
-        cache_base = get_cache(subfolder="shub", 
-                                   disable_cache = args.disable_cache)
+        cache_base = get_cache(subfolder="shub",disable_cache=disable_cache)
     else:
         cache_base = pull_folder
 
