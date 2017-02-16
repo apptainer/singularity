@@ -81,13 +81,19 @@
 #define SESSIONDIR_PREFIX "sessiondir prefix"
 #define SESSIONDIR_PREFIX_DEFAULT "/tmp/.singularity-session-"
 
+#define ALLOW_USER_CONTAINER "allow user container"
+#define ALLOW_USER_CONTAINER_DEFAULT 1
+
+#define ALLOWED_CONTAINER_OWNERS "allowed container owners"
+#define ALLOWED_CONTAINER_OWNERS_DEFAULT "singularity"
+
+/*
 #define SINGULARITY_USER "singularity user"
 #define SINGULARITY_USER_DEFAULT "singularity"
 
 #define PROTECTED_IMAGE_MODE "protected image mode"
 #define PROTECTED_IMAGE_MODE_DEFAULT "none"
 
-#define ALLOW_USER_IMAGE "allow user image"
-#define ALLOW_USER_IMAGE_DEFAULT 1
+*/
 
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_

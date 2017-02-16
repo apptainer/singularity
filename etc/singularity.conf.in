@@ -18,45 +18,6 @@
 @ALLOW_PID_NS@ = @ALLOW_PID_NS_DEFAULT@
 
 
-# ALLOW USER IMAGE: [BOOL]
-# DEFAULT: @ALLOW_USER_IMAGE_DEFAULT@
-# Should we allow users to run images they can access according to normal
-# filesystem privileges?  If set to 'no', then the image can only be executed
-# through 'protected image mode' (see below).
-#
-# Note that if 'allow user image' is no and 'protected image mode' is none,
-# then no image file may be used.
-@ALLOW_USER_IMAGE@ = @ALLOW_USER_IMAGE_DEFAULT@
-
-
-# PROTECTED IMAGE MODE: [STRING]
-# DEFAULT: @PROTECTED_IMAGE_MODE_DEFAULT@
-# The 'protected image mode' allows users to launch singularity with images
-# that they cannot access according to filesystem privileges.
-# There are three allowed modes:
-# - none: Protected image mode is disabled.  The typical filesystem rules
-#         are applied.
-# - group: The image file must be readable by the user 'singularity' AND the
-#          invoking user must be in the same group as the image file.
-# - user: The image file must be readable by the user 'singularity'.
-# In both 'group' and 'user' cases, the image must be either owned by the
-# singularity user or be owned by the singularity user's primary group.
-#
-# The name of the user 'singularity' can be controlled via the
-# 'singularity user' option below.
-@PROTECTED_IMAGE_MODE@ = @PROTECTED_IMAGE_MODE_DEFAULT@
-
-
-# ENABLE OVERLAY: [BOOL]
-# DEFAULT: @ENABLE_OVERLAY_DEFAULT@
-# Enabling this option will make it possible to specify bind paths to locations
-# that do not currently exist within the container. Some limitations still exist
-# when running in completely non-privileged mode. (note: this option is only
-# supported on hosts that support overlay file systems).
-# note: currently disabled because RHEL7 kernel crashes with it... :(
-@ENABLE_OVERLAY@ = @ENABLE_OVERLAY_DEFAULT@
-
-
 # CONFIG PASSWD: [BOOL]
 # DEFAULT: @CONFIG_PASSWD_DEFAULT@
 # If /etc/passwd exists within the container, this will automatically append
@@ -159,6 +120,21 @@
 # and other necessary file systems for the container. Note, this location
 # absolutely must be local on this host.
 @CONTAINER_DIR@ = @CONTAINER_DIR_DEFAULT@
+
+
+# ALLOW USER CONTAINER: [BOOL]
+# DEFAULT: @ALLOW_USER_CONTAINER_DEFAULT@
+# Should we allow users to run images they can access according to normal
+# filesystem privileges?  If set to 'no', then the image can only be executed
+# through 'allowed container owners'.
+@ALLOW_USER_CONTAINER@ = @ALLOW_USER_CONTAINER_DEFAULT@
+
+
+# ALLOWED CONTAINER OWNERS: [STRING]
+# DEFAULT: @ALLOWED_CONTAINER_OWNERS_DEFAULT@
+# Only allow containers to be run that are owned by a given user. If this
+# configuration is undefined (commented), all container owners are allowed.
+#@ALLOWED_CONTAINER_OWNERS@ = @ALLOWED_CONTAINER_OWNERS_DEFAULT@
 
 
 # SESSIONDIR PREFIX: [STRING]

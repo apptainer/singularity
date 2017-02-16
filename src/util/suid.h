@@ -23,5 +23,6 @@
 #define __SINGULARITY_SUID_H_
 
 extern int singularity_suid_init(void);
+extern int singularity_suid_enabled(void);
 
 #endif /* __SINGULARITY_SUID_H_ */
