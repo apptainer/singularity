@@ -52,6 +52,8 @@ int singularity_bootstrap_docker() {
     if ( python_args[3] == NULL ) {
         singularity_message(VERBOSE, "Unable to bootstrap with docker container, missing From in definition file\n");
         return(1);
+    } else {
+        singularity_message(VERBOSE, "Docker URI: %s\n", python_args[3] );
     }
     if ( ( python_args[index] != NULL ) && ( strcmp(python_args[index], "yes") == 0 ) ) {
         free(python_args[index]);
