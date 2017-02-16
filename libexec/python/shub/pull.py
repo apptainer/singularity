@@ -4,12 +4,13 @@
 
 pull.py: wrapper for "pull" for Singularity Hub command line tool.
 
-ENVIRONMENTAL VARIABLES that must be found for this executable:
+ENVIRONMENTAL VARIABLES that are found for this executable:
 
 
-   SINGULARITY_IMAGE_SHUB: maps to container name: shub://vsoch/singularity-images
+   SINGULARITY_HUB_IMAGE: maps to container name: shub://vsoch/singularity-images
    SINGULARITY_ROOTFS: the root file system location
-   PULL_FOLDER_SHUB: maps to location to pull folder to
+   SINGULARITY_HUB_PULL_FOLDER: maps to location to pull folder to
+   SINGULARITY_METADATA_DIR: if defined, will write paths to file pulled here
 
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
@@ -32,16 +33,13 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
+import sys
+sys.path.append('..')
+
 from shub.main import PULL
-
-from shell import get_image_uri,
-from utils import ( 
-    basic_auth_header
-    get_env
-)
-
+from shell import get_image_uri
+from utils import getenv
 from logman import logger
-import optparse
 import os
 import sys
 
@@ -50,19 +48,20 @@ def main():
     '''main is a wrapper for the client to hand the parser to the executable functions
     This makes it possible to set up a parser in test cases
     '''
-    logger.info("\n*** STARTING SINGULARITY HUB PYTHON PULL****")
+    logger.info("\n*** STARTING SINGULARITY HUB PYTHON PULL ****")
     
     # What image is the user asking for?
-    container = get_env("SINGULARITY_IMAGE_SHUB", error_on_none=True)
-    pull_folder = get_env("PULL_FOLDER_SHUB")
-    rootfs = get_env("SINGULARITY_ROOTFS", error_on_none=True)
+    container = getenv("SINGULARITY_HUB_IMAGE", error_on_none=True)
+    pull_folder = getenv("SINGULARITY_HUB_PULL_FOLDER")
+    rootfs = getenv("SINGULARITY_ROOTFS", error_on_none=True)
+    metadata_dir = getenv("SINGULARITY_METADATA_DIR")
 
     image_uri = get_image_uri(container)
     
     if image_uri == "shub://"
 
        PULL(image=container,
-            rootfs=rootfs,
+            metadata_dir=metadata_dir,
             pull_folder=pull_folder)
 
     else:

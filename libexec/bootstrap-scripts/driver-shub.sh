@@ -46,7 +46,7 @@ fi
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
 ### Obtain the From from the spec (needed for docker bootstrap)
-SINGULARITY_HUB_IMAGE=`singularity_key_get "From" "$SINGULARITY_BUILDDEF"`
+export SINGULARITY_HUB_IMAGE=`singularity_key_get "From" "$SINGULARITY_BUILDDEF"`
 if [ -z "${SINGULARITY_HUB_IMAGE:-}" ]; then
     message ERROR "Bootstrap type 'shub' given, but no 'From' defined!\n"
     ABORT 1
@@ -56,7 +56,7 @@ fi
 
 # Ensure the user has provided a singularity hub id
 if [ -z "$SINGULARITY_HUB_IMAGE" ]; then
-    echo "Please specify the Singularity Hub Container ID with From: 7 in the definition file."
+    echo "Please specify the Singularity Hub Container ID with From: username/repo:tag in the definition file."
     exit 1
 fi
 
@@ -70,18 +70,18 @@ if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-conta
     ABORT 255
 fi
 
-CONTAINER_DIR="$BASE_CONTAINER_DIR/$SINGULARITY_HUB_IMAGE"
-if ! mkdir -p "$CONTAINER_DIR"; then
+export SINGULARITY_METADATA_DIR="$BASE_CONTAINER_DIR/$SINGULARITY_HUB_IMAGE"
+if ! mkdir -p "$SINGULARITY_METADATA_DIR"; then
     message ERROR "Failed to create named container_dir\n"
     ABORT 255
 fi
 
-eval $SINGULARITY_libexecdir/singularity/python/cli.py --shub $SINGULARITY_HUB_IMAGE --rootfs $CONTAINER_DIR
+eval $SINGULARITY_libexecdir/singularity/python/shub/pull.py
 
 # The python script saves names to files in CONTAINER_DIR, we then pass this image as targz to import
-IMPORT_URI=`cat $CONTAINER_DIR/SINGULARITY_IMAGE`
-rm $CONTAINER_DIR/SINGULARITY_IMAGE
-rm $CONTAINER_DIR/SINGULARITY_RUNDIR
+IMPORT_URI=`cat $SINGULARITY_METADATA_DIR/SINGULARITY_IMAGE`
+rm $SINGULARITY_METADATA_DIR/SINGULARITY_IMAGE
+rm $SINGULARITY_METADATA_DIR/SINGULARITY_RUNDIR
 SINGULARITY_IMPORT_GET="cat $IMPORT_URI"
 SINGULARITY_IMPORT_SPLAT="| ( cd '$SINGULARITY_ROOTFS' ; tar -xzf - )"
 eval "$SINGULARITY_IMPORT_GET ${SINGULARITY_IMPORT_SPLAT:-}"

@@ -304,17 +304,23 @@ def change_permissions(path,permission=None,recursive=True):
 ############################################################################
 
 
-def get_env(variable_key,error_on_none=False,default=None):
-    '''get_env will attempt to get an environment variable. If the variable
+def getenv(variable_key,error_on_none=False,default=None,silent=False):
+    '''getenv will attempt to get an environment variable. If the variable
     is not found, None is returned.
     :param variable_key: the variable name
     :param error_on_none: exit with error if not found
+    :param silent: Do not print debugging information for variable
     '''
     variable = os.environ.get(variable_key, default)
     if variable == None and error_on_none:
         logger.error("Cannot find environment variable %s, exiting.",variable_key)
         sys.exit(1)
-    logger.debug("%s found as %s",variable_key,variable)
+
+    if silent:
+        logger.debug("%s found",variable_key)
+    else:
+        logger.debug("%s found as %s",variable_key,variable)
+
     return variable 
 
 
@@ -331,7 +337,7 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
     if disable_cache == True:
         return tempfile.mkdtemp()
     else:
-        cache_base = get_env("SINGULARITY_CACHEDIR", default=SINGULARITY_CACHE)
+        cache_base = getenv("SINGULARITY_CACHEDIR", default=SINGULARITY_CACHE)
 
     # Clean up the path and create
     cache_base = clean_path(cache_base)

@@ -85,9 +85,10 @@ case "$IMPORT_URI" in
         exit 255
     ;;
     shub://*)
-        SINGULARITY_IMAGE_SHUB=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
-        PULL_FOLDER_SHUB=$PWD
-        export SINGULARITY_IMAGE_SHUB PULL_FOLDER_SHUB
+        SINGULARITY_HUB_IMAGE=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
+        # @gmkurtzer this pull folder should be accessible to change by user
+        SINGULARITY_HUB_PULL_FOLDER=$PWD
+        export SINGULARITY_HUB_IMAGE SINGULARITY_HUB_PULL_FOLDER
         exec $SINGULARITY_libexecdir/singularity/python/shub/pull.py
     ;;
     http://*|https://*)

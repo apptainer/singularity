@@ -32,7 +32,7 @@ from docker.main import (
 
 from shub.main import PULL
 
-from shell import get_image_uri,
+from shell import get_image_uri
 from utils import basic_auth_header
 
 from logman import logger
@@ -137,7 +137,7 @@ def run(args):
        rootfs = args.rootfs
     else:
        rootfs = os.environ.get("SINGULARITY_ROOTFS", None)    
-    logger.info("Root file system: %s")
+    logger.info("Root file system: %s",rootfs)
 
 
     # Does the registry require authentication?

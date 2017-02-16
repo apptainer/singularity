@@ -51,6 +51,7 @@ if [ -z "${SINGULARITY_DOCKER_IMAGE:-}" ]; then
     message ERROR "Bootstrap type 'docker' given, but no 'From' defined!\n"
     ABORT 1
 else
+    export SINGULARITY_DOCKER_IMAGE
     message 1 "From: $SINGULARITY_DOCKER_IMAGE\n"
 fi
 
@@ -62,15 +63,8 @@ if [ -n "${SINGULARITY_DOCKER_CMD:-}" ]; then
     # A command of "yes" means that we will include the docker CMD as runscript
     if [ "$SINGULARITY_DOCKER_CMD" == "yes" ]; then
         SINGULARITY_DOCKER_INCLUDE_CMD="--cmd"
-
-    # Anything else, we will not include it
-    else
-        SINGULARITY_DOCKER_INCLUDE_CMD=""
+        export SINGULARITY_DOCKER_INCLUDE_CMD
     fi
-
-# Default (not finding the IncludeCmd) is to not include
-else
-    SINGULARITY_DOCKER_INCLUDE_CMD=""
 fi
 
 
@@ -78,9 +72,7 @@ fi
 SINGULARITY_DOCKER_REGISTRY=`singularity_key_get "Registry" "$SINGULARITY_BUILDDEF"`
 if [ -n "${SINGULARITY_DOCKER_REGISTRY:-}" ]; then
     message 1 "Registry: $SINGULARITY_DOCKER_REGISTRY\n"
-    SINGULARITY_DOCKER_REGISTRY="--registry $SINGULARITY_DOCKER_REGISTRY"   
-else
-    SINGULARITY_DOCKER_REGISTRY=""   
+    export SINGULARITY_DOCKER_REGISTRY
 fi
 
 
@@ -90,9 +82,7 @@ SINGULARITY_DOCKER_PASSWORD=`singularity_key_get "Password" "$SINGULARITY_BUILDD
 if [ -n "${SINGULARITY_DOCKER_USERNAME:-}" ] && [ -n "${SINGULARITY_DOCKER_PASSWORD:-}" ]; then
     message 1 "Username: $SINGULARITY_DOCKER_USERNAME\n"
     message 1 "Password: [hidden]\n"
-    SINGULARITY_DOCKER_AUTH="--username $SINGULARITY_DOCKER_USERNAME --password $SINGULARITY_DOCKER_PASSWORD"
-else
-    SINGULARITY_DOCKER_AUTH=""   
+    export SINGULARITY_DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD
 fi
 
 
@@ -102,14 +92,7 @@ if [ -z "$SINGULARITY_DOCKER_IMAGE" ]; then
     exit 1
 fi
 
-# Does the user want to include the docker CMD? Default, no.
-if [ -z "$SINGULARITY_DOCKER_INCLUDE_CMD:-}" ]; then
-    SINGULARITY_DOCKER_INCLUDE_CMD=""
-fi
-
-### Run it!
-
-python $SINGULARITY_libexecdir/singularity/python/cli.py --docker $SINGULARITY_DOCKER_IMAGE --rootfs $SINGULARITY_ROOTFS $SINGULARITY_DOCKER_INCLUDE_CMD $SINGULARITY_DOCKER_REGISTRY $SINGULARITY_DOCKER_AUTH
+eval $SINGULARITY_libexecdir/singularity/python/docker/import.py 
 
 # If we got here, exit...
 exit 0
