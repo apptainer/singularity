@@ -34,6 +34,8 @@ from utils import (
 from shell import parse_image_uri
 from docker.api import (
     create_runscript,
+    extract_env,
+    extract_labels,
     get_layer,
     get_manifest
 )
@@ -89,8 +91,23 @@ def IMPORT(image,rootfs,auth=None,disable_cache=False,metadata_dir=None,includec
         if disable_cache == True:
             os.remove(targz)
                
-    # If the user wants to include the CMD as runscript, generate it here
-    runscript = create_runscript(base_dir=rootfs,includecmd=includecmd)
+    # Generate runscript
+    runscript = create_runscript(manifest=manifest,
+                                 base_dir=rootfs,
+                                 includecmd=includecmd)
+
+    #TODO: NOT WRITTEN YET. I'm tired. :)
+    if metadata_dir != None:
+
+        # Generate environment file for Docker
+        extract_env(metadata_dir=metadata_dir,
+                    includecmd=includecmd,
+                    manifest=manifest)
+
+        # Generate labels files
+        extract_labels(metadata_dir=metadata_dir,
+                       includecmd=includecmd,
+                       manifest=manifest)
 
     # When we finish, clean up images
     if disable_cache == True:
