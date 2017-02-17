@@ -10,11 +10,10 @@ add.py: python helper for Singularity docker add, which is an
 ENVIRONMENTAL VARIABLES that are found for this executable:
 
     SINGULARITY_DOCKER_IMAGE 
-    SINGULARITY_DOCKER_REGISTRY
     SINGULARITY_DOCKER_USERNAME
     SINGULARITY_DOCKER_PASSWORD
     SINGULARITY_DISABLE_CACHE
-    SINGULARITY_METADATA_FILE
+    SINGULARITY_METADATA_FOLDER
 
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
@@ -61,11 +60,10 @@ def main():
     
     container = getenv("SINGULARITY_DOCKER_IMAGE",error_on_none=True)
     rootfs = getenv("SINGULARITY_ROOTFS",error_on_none=True)
-    registry = getenv("SINGULARITY_DOCKER_REGISTRY") 
     username = getenv("SINGULARITY_DOCKER_USERNAME") 
     password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
     disable_cache = getenv("SINGULARITY_DISABLE_CACHE",default=False)
-    metadata_file = getenv("SINGULARITY_METADATA_FILE",error_on_none=True)
+    metadata = getenv("SINGULARITY_METADATA_FOLDER",error_on_none=True)
 
     # What image is the user asking for?
     image_uri = get_image_uri(container)    
@@ -76,16 +74,13 @@ def main():
     if username is not None and password is not None:
         auth = basic_auth_header(username, password)
 
-    ################################################################################
-    # Docker image #################################################################
-    ################################################################################
 
+    # ADD will write list of docker layers to metadata_file
     if image_uri == "docker://":
 
         additions = ADD(auth=auth,
                         image=container,
-                        layerfile=metadata_file,
-                        registry=registry)
+                        metadata_dir=metadata)
 
     else:
         logger.error("uri %s is not a currently supported uri for docker add. Exiting.",image_uri)

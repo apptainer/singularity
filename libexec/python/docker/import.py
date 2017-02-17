@@ -9,10 +9,10 @@ ENVIRONMENTAL VARIABLES that are found for this executable:
 
     SINGULARITY_DOCKER_IMAGE 
     SINGULARITY_DOCKER_INCLUDE_CMD 
-    SINGULARITY_DOCKER_REGISTRY
     SINGULARITY_DOCKER_USERNAME
     SINGULARITY_DOCKER_PASSWORD
     SINGULARITY_DISABLE_CACHE
+    SINGULARITY_METADATA_FOLDER
 
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
@@ -39,6 +39,7 @@ import sys
 sys.path.append('..')
 
 from docker.main import IMPORT
+from docker.defaults import metadata_dir
 from shell import get_image_uri
 from utils import (
     basic_auth_header,
@@ -59,8 +60,8 @@ def main():
     
     container = getenv("SINGULARITY_DOCKER_IMAGE",error_on_none=True)
     rootfs = getenv("SINGULARITY_ROOTFS",error_on_none=True)
+    metadata = getenv("SINGULARITY_METADATA_FOLDER",default=metadata_dir)
     includecmd = getenv("SINGULARITY_DOCKER_INCLUDE_CMD")
-    registry = getenv("SINGULARITY_DOCKER_REGISTRY") 
     username = getenv("SINGULARITY_DOCKER_USERNAME") 
     password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
     disable_cache = getenv("SINGULARITY_DISABLE_CACHE",default=False)
@@ -74,15 +75,12 @@ def main():
     if username is not None and password is not None:
         auth = basic_auth_header(username, password)
 
-    ################################################################################
-    # Docker image #################################################################
-    ################################################################################
 
     if image_uri == "docker://":
 
         IMPORT(auth=auth,
                image=container,
-               registry=registry,
+               metadata_dir=metadata,
                rootfs=rootfs,
                disable_cache=disable_cache)
 

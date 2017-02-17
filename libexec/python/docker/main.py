@@ -32,6 +32,11 @@ from utils import (
 )
 
 from shell import parse_image_uri
+from docker.api import (
+    create_runscript,
+    get_layer,
+    get_manifest
+)
 
 from logman import logger
 import json
@@ -40,13 +45,12 @@ import os
 import tempfile
 
 
-def IMPORT(image,rootfs,auth=None,registry=None,disable_cache=False,includecmd=False):
+def IMPORT(image,rootfs,auth=None,disable_cache=False,metadata_dir=None,includecmd=False):
     '''run is the main script that will obtain docker layers, runscript information (either entrypoint
     or cmd), and environment, and either return the list of files to extract (in case of add 
     :param image: the docker image to add
     :param auth: if needed, an authentication header (default None)
-    :param layerfile: the file to write layers paths on the host to
-    :param registry: a custom registry to use (default None)
+    :param metadata_dir: the directory to write metadata, including environment
     :param disable_cache: if True, don't cache layers (default False)
     :param includecmd: use CMD as %runscript instead of ENTRYPOINT (default False)
     '''
@@ -59,7 +63,9 @@ def IMPORT(image,rootfs,auth=None,registry=None,disable_cache=False,includecmd=F
     else:
         logger.info("Specified Docker ENTRYPOINT as %runscript.")
 
-    additions = ADD(image,auth=auth,registry=registry,disable_cache=disable_cache)
+    additions = ADD(image=image,
+                    auth=auth,
+                    disable_cache=disable_cache)
 
     # Extract layers to filesystem
     for layer in additions['layers']:
@@ -71,8 +77,8 @@ def IMPORT(image,rootfs,auth=None,registry=None,disable_cache=False,includecmd=F
             targz = get_layer(image_id=image_id,
                               namespace=additions['image']['namespace'],
                               repo_name=additions['image']['repo_name'],
+                              registry=additions['image']['registry'],
                               download_folder=download_folder,
-                              registry=registry,
                               auth=auth)
 
         # Extract image and remove tar
@@ -84,18 +90,7 @@ def IMPORT(image,rootfs,auth=None,registry=None,disable_cache=False,includecmd=F
             os.remove(targz)
                
     # If the user wants to include the CMD as runscript, generate it here
-    if includecmd == True:
-        spec="Cmd"
-    else:
-        spec="Entrypoint"
-
-    cmd = get_config(additions["manifest"],spec=spec)
-
-    # Only add runscript if command is defined
-    if cmd != None:
-        print("Adding Docker %s as Singularity runscript..." %(spec.upper()))
-        print(cmd)
-        runscript = create_runscript(cmd=cmd,base_dir=rootfs)
+    runscript = create_runscript(base_dir=rootfs,includecmd=includecmd)
 
     # When we finish, clean up images
     if disable_cache == True:
@@ -104,13 +99,12 @@ def IMPORT(image,rootfs,auth=None,registry=None,disable_cache=False,includecmd=F
 
 
 
-def ADD(image,layerfile=None,auth=None,registry=None):
+def ADD(image,metadata_dir=None,auth=None):
     '''run is the main script that will obtain docker layers, runscript information (either entrypoint
     or cmd), and environment, and either return the list of files to extract (in case of add 
     :param image: the docker image to add
     :param auth: if needed, an authentication header (default None)
-    :param layerfile: the file to write layers paths on the host to. If not defined, not written.
-    :param registry: a custom registry to use (default None)
+    :param metadata_dir: the folder to write layers file to. If not defined, not written.
     :param includecmd: use CMD as %runscript instead of ENTRYPOINT (default False)
     :returns additions: a dict with "layers" and "manifest" for further parsing
     '''
@@ -131,7 +125,7 @@ def ADD(image,layerfile=None,auth=None,registry=None):
     manifest = get_manifest(repo_name=image['repo_name'],
                             namespace=image['namespace'],
                             repo_tag=image['repo_tag'],
-                            registry=registry,
+                            registry=image['registry'],
                             auth=auth)
 
     # Get images from manifest using version 2.0 of Docker Registry API
@@ -150,9 +144,17 @@ def ADD(image,layerfile=None,auth=None,registry=None):
         layers.append(targz) # in case we want a list at the end
 
     # If the user wants us to write the layers to file, do it.
-    if layerfile != None:
+    if metadata_dir != None:
+
+        # Standard for layerfile is under SINGULARITY_METADATA_FOLDER/.layers
+        metadata_file = "%s/.layers" %(metadata_dir)
+
+        # Question - here we will have /tmp paths - should this be changed
+        # after they are downloaded, kept ok as is, or the file removed?
+        logger.debug("Writing Docker layers files to %s", metadata_file)
+
         #TODO: need to have a lock of some kind here, or tmp.
-        write_file(layerfile,"\n".join(layers))
+        write_file(metadata_file,"\n".join(layers))
 
     # Return additions dictionary
     additions = { "layers": layers,

@@ -30,6 +30,11 @@ from utils import (
     add_http
 )
 
+from docker.defaults import (
+    api_base,
+    api_version
+)
+
 from logman import logger
 import json
 import re
@@ -40,17 +45,30 @@ try:
 except ImportError:
     from urllib2 import HTTPError
 
-api_base = "index.docker.io"
-api_version = "v2"
 
 # Authentication not required ---------------------------------------------------------------------------------
 
-def create_runscript(cmd,base_dir):
+def create_runscript(manifest,base_dir,includecmd=False):
     '''create_runscript will write a bash script with command "cmd" into the base_dir
-    :param cmd: the command to write into the bash script
+    :param manifest: the manifest to use to get the runscript
+    :param includecmd: overwrite default command (ENTRYPOINT) default is False
     :param base_dir: the base directory to write the runscript to
     '''
     runscript = "%s/singularity" %(base_dir)
+
+    # Does the user want to use the CMD instead of ENTRYPOINT?
+    if includecmd == True:
+        spec="Cmd"
+    else:
+        spec="Entrypoint"
+
+    cmd = get_config(manifest=manifest,spec=spec)
+
+    # Only add runscript if command is defined
+    if cmd != None:
+        print("Adding Docker %s as Singularity runscript..." %(spec.upper()))
+        print(cmd)
+        
     content = 'exec %s "$@"' %(cmd)
     logger.info("Generating runscript at %s",runscript)
     output_file = write_file(runscript,content)
