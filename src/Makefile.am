@@ -123,10 +123,10 @@ install-exec-hook: make_suid
 make_suid:
 	@if test `id -ru` = "0"; then \
 		for i in $(BUILD_SUID); do \
-			echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/$$i"; \
-			/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/$$i ; \
-			echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/$$i"; \
-			/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/$$i; \
+			echo " /bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/bin/$$i"; \
+			/bin/chown root:root $(DESTDIR)$(libexecdir)/singularity/bin/$$i ; \
+			echo " /bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/bin/$$i"; \
+			/bin/chmod 4755 $(DESTDIR)$(libexecdir)/singularity/bin/$$i; \
 		done; \
 	fi
 
