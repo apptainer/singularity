@@ -95,24 +95,24 @@ rm -rf $RPM_BUILD_ROOT
 %{_sysconfdir}/bash_completion.d/singularity
 
 #SUID programs
-%attr(4755, root, root) %{_libexecdir}/singularity/action-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/create-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/copy-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/expand-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/export-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/import-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/mount-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/action-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/create-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/copy-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/expand-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/export-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/import-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/mount-suid
 
 # Binaries
-%{_libexecdir}/singularity/action
-%{_libexecdir}/singularity/bootstrap
-%{_libexecdir}/singularity/copy
-%{_libexecdir}/singularity/create
-%{_libexecdir}/singularity/expand
-%{_libexecdir}/singularity/export
-%{_libexecdir}/singularity/get-section
-%{_libexecdir}/singularity/import
-%{_libexecdir}/singularity/mount
+%{_libexecdir}/singularity/bin/action
+%{_libexecdir}/singularity/bin/bootstrap
+%{_libexecdir}/singularity/bin/copy
+%{_libexecdir}/singularity/bin/create
+%{_libexecdir}/singularity/bin/expand
+%{_libexecdir}/singularity/bin/export
+%{_libexecdir}/singularity/bin/get-section
+%{_libexecdir}/singularity/bin/import
+%{_libexecdir}/singularity/bin/mount
 
 # Scripts
 %{_libexecdir}/singularity/functions

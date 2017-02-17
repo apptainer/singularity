@@ -95,12 +95,12 @@ if [ -f "$SINGULARITY_IMAGE" ]; then
     fi
 fi
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/create-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/create-suid"
-elif [ -x "$SINGULARITY_libexecdir/singularity/create" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/create"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/create-suid"
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/create" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/create"
 else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/create\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
     exit 1
 fi
 

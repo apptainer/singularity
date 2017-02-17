@@ -7,7 +7,7 @@ AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-bindir = $(libexecdir)/singularity
+bindir = $(libexecdir)/singularity/bin
 
 bin_PROGRAMS = action bootstrap copy create expand export get-section import mount $(BUILD_SUID)
 EXTRA_PROGRAMS = action-suid create-suid copy-suid expand-suid export-suid import-suid mount-suid
