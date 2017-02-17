@@ -42,6 +42,7 @@
 
 
 int _singularity_image_open(struct image_object *image, int open_flags) {
+    const char *limit_container_owner = singularity_config_get_value(LIMIT_CONTAINER_OWNERS);
 
     if ( image->fd > 0 ) {
         singularity_message(ERROR, "Called _singularity_image_open() on an open image object: %d\n", image->fd);
@@ -58,10 +59,9 @@ int _singularity_image_open(struct image_object *image, int open_flags) {
         ABORT(255);
     }
 
-    if ( ( singularity_suid_enabled() >= 0 ) && ( singularity_config_get_bool(ALLOW_USER_CONTAINER) == 0 ) ) { 
+    if ( ( singularity_suid_enabled() >= 0 ) && ( singularity_priv_getuid() != 0 ) && ( strcmp(limit_container_owner, "NULL") != 0 ) ) { 
         struct stat image_stat;
         char *user_token = NULL;
-        const char *limit_container_owner = singularity_config_get_value(ALLOWED_CONTAINER_OWNERS);
         char *current = strtok_r(strdup(limit_container_owner), ",", &user_token);
 
         chomp(current);
@@ -82,14 +82,11 @@ int _singularity_image_open(struct image_object *image, int open_flags) {
             } else {
                 singularity_message(DEBUG, "Checking user: '%s'\n", current);
 
-                if ( ( user_pw = getpwnam(current) ) == NULL ) {
-                    singularity_message(ERROR, "Could not obtain user info for '%s'\n", current);
-                    ABORT(255);
-                }
-
-                if ( user_pw->pw_uid == image_stat.st_uid ) {
-                    singularity_message(DEBUG, "Singularity image is owned by required user: %s\n", current);
-                    break;
+                if ( ( user_pw = getpwnam(current) ) != NULL ) {
+                    if ( user_pw->pw_uid == image_stat.st_uid ) {
+                        singularity_message(DEBUG, "Singularity image is owned by required user: %s\n", current);
+                        break;
+                    }
                 }
             }
 

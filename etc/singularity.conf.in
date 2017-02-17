@@ -122,19 +122,13 @@
 @CONTAINER_DIR@ = @CONTAINER_DIR_DEFAULT@
 
 
-# ALLOW USER CONTAINER: [BOOL]
-# DEFAULT: @ALLOW_USER_CONTAINER_DEFAULT@
-# Should we allow users to run images they can access according to normal
-# filesystem privileges?  If set to 'no', then the image can only be executed
-# through 'allowed container owners'.
-@ALLOW_USER_CONTAINER@ = @ALLOW_USER_CONTAINER_DEFAULT@
-
-
-# ALLOWED CONTAINER OWNERS: [STRING]
-# DEFAULT: @ALLOWED_CONTAINER_OWNERS_DEFAULT@
-# Only allow containers to be run that are owned by a given user. If this
-# configuration is undefined (commented), all container owners are allowed.
-#@ALLOWED_CONTAINER_OWNERS@ = @ALLOWED_CONTAINER_OWNERS_DEFAULT@
+# LIMIT CONTAINER OWNERS: [STRING]
+# DEFAULT: @LIMIT_CONTAINER_OWNERS_DEFAULT@
+# Only allow containers to be used that are owned by a given user. If this
+# configuration is undefined (commented or set to NULL), all containers are
+# allowed to be used. This feature only applies when Singularity is running in
+# SUID mode and the user is non-root.
+#@LIMIT_CONTAINER_OWNERS@ = gmk, singularity, nobody
 
 
 # SESSIONDIR PREFIX: [STRING]
