@@ -30,9 +30,11 @@ from utils import (
     add_http
 )
 
-from docker.defaults import (
-    api_base,
-    api_version
+from defaults import (
+    API_BASE,
+    API_VERSION,
+    ENV_DIR,
+    LABEL_DIR
 )
 
 from logman import logger
@@ -85,13 +87,13 @@ def get_token(namespace,repo_name,registry=None,auth=None):
             # https://docs.docker.com/registry/spec/auth/token/
     '''
     if registry == None:
-        registry = api_base
+        registry = API_BASE
     registry = add_http(registry) # make sure we have a complete url
 
     # Check if we need a token at all by probing the tags/list endpoint.  This
     # is an arbitrary choice, ideally we should always attempt without a token
     # and then retry with a token if we received a 401.
-    base = "%s/%s/%s/%s/tags/list" %(registry,api_version,namespace,repo_name)
+    base = "%s/%s/%s/%s/tags/list" %(registry,API_VERSION,namespace,repo_name)
     response = api_get(base, default_header=False)
     if not isinstance(response, HTTPError):
         # No token required for registry.
@@ -200,10 +202,10 @@ def get_tags(namespace,repo_name,registry=None,auth=None):
     :param auth: authorization header (default None)
     '''
     if registry == None:
-        registry = api_base
+        registry = API_BASE
     registry = add_http(registry) # make sure we have a complete url
 
-    base = "%s/%s/%s/%s/tags/list" %(registry,api_version,namespace,repo_name)
+    base = "%s/%s/%s/%s/tags/list" %(registry,API_VERSION,namespace,repo_name)
     logger.info("Obtaining tags: %s", base)
 
     token = get_token(registry=registry,
@@ -231,10 +233,10 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None,h
     :param headers: dictionary of custom headers to add to token header (to get more specific manifest)
     '''
     if registry == None:
-        registry = api_base
+        registry = API_BASE
     registry = add_http(registry) # make sure we have a complete url
 
-    base = "%s/%s/%s/%s/manifests/%s" %(registry,api_version,namespace,repo_name,repo_tag)
+    base = "%s/%s/%s/%s/manifests/%s" %(registry,API_VERSION,namespace,repo_name,repo_tag)
     logger.info("Obtaining manifest: %s", base)
     
     # Format the token, and prepare a header
@@ -301,11 +303,11 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
     :param auth: authorization header (default None)
     '''
     if registry == None:
-        registry = api_base
+        registry = API_BASE
     registry = add_http(registry) # make sure we have a complete url
 
     # The <name> variable is the namespace/repo_name
-    base = "%s/%s/%s/%s/blobs/%s" %(registry,api_version,namespace,repo_name,image_id)
+    base = "%s/%s/%s/%s/blobs/%s" %(registry,API_VERSION,namespace,repo_name,image_id)
     logger.info("Downloading layers from %s", base)
     
     # To get the image layers, we need a valid token to read the repo

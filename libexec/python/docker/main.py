@@ -40,6 +40,8 @@ from docker.api import (
     get_manifest
 )
 
+from defaults import LAYERFILE
+
 from logman import logger
 import json
 import re
@@ -164,7 +166,7 @@ def ADD(image,metadata_dir=None,auth=None):
     if metadata_dir != None:
 
         # Standard for layerfile is under SINGULARITY_METADATA_FOLDER/.layers
-        metadata_file = "%s/.layers" %(metadata_dir)
+        metadata_file = "%s/%s" %(metadata_dir, LAYERFILE)
 
         # Question - here we will have /tmp paths - should this be changed
         # after they are downloaded, kept ok as is, or the file removed?
