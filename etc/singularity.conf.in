@@ -130,6 +130,15 @@
 # SUID mode and the user is non-root.
 #@LIMIT_CONTAINER_OWNERS@ = gmk, singularity, nobody
 
+# LIMIT CONTAINER PATHS: [STRING]
+# DEFAULT: @LIMIT_CONTAINER_PATHS_DEFAULT@
+# Only allow containers to be used that are located within an allowed path
+# prefix. If this configuration is undefined (commented or set to NULL),
+# containers will be allowed to run from anywhere on the file system. This
+# feature only applies when Singularity is running in SUID mode and the user is
+# non-root.
+#@LIMIT_CONTAINER_PATHS@ = /scratch, /tmp, /global
+
 
 # SESSIONDIR PREFIX: [STRING]
 # DEFAULT: @SESSIONDIR_PREFIX_DEFAULT@

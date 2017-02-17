@@ -84,6 +84,9 @@
 #define LIMIT_CONTAINER_OWNERS "limit container owners"
 #define LIMIT_CONTAINER_OWNERS_DEFAULT "NULL"
 
+#define LIMIT_CONTAINER_PATHS "limit container paths"
+#define LIMIT_CONTAINER_PATHS_DEFAULT "NULL"
+
 /*
 #define SINGULARITY_USER "singularity user"
 #define SINGULARITY_USER_DEFAULT "singularity"
