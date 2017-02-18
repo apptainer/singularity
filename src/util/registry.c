@@ -77,7 +77,7 @@ void singularity_registry_init(void) {
 
         while (*env) {
             char *tok;
-            char *string = *env++;
+            char *string = strdup(*env++);
 
             if ( string == NULL ) {
                 continue;
