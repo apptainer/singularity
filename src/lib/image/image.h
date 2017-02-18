@@ -54,14 +54,6 @@ extern int singularity_image_expand(struct image_object *image, unsigned int siz
 
 extern int singularity_image_mount(struct image_object *image, char *mount_point);
 
-
-//#define SI_MOUNT_DEFAULTS   0
-//#define SI_MOUNT_RW         1
-//#define SI_MOUNT_DIR        2
-//#define SI_MOUNT_EXT4       4
-//#define SI_MOUNT_XFS        8
-//#define SI_MOUNT_SQUASHFS   16
-
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
 
 #endif
