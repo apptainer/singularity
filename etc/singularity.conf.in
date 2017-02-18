@@ -106,6 +106,14 @@
 @USER_BIND_CONTROL@ = @USER_BIND_CONTROL_DEFAULT@
 
 
+# ENABLE OVERLAY: [BOOL]
+# DEFAULT: @ENABLE_OVERLAY_DEFAULT@
+# Enabling this option will make it possible to specify bind paths to locations
+# that do not currently exist within the container. note: this only works when
+# using the standard SUID mode (not user-namespaces)).
+@ENABLE_OVERLAY@ = @ENABLE_OVERLAY_DEFAULT@
+
+
 # MOUNT SLAVE: [BOOL]
 # DEFAULT: @MOUNT_SLAVE_DEFAULT@
 # Should we automatically propagate file-system changes from the host?
