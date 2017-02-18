@@ -46,6 +46,11 @@ while true; do
             fi
             exit
         ;;
+        -w|--writable)
+            shift
+            SINGULARITY_WRITABLE=1
+            export SINGULARITY_WRITABLE
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -56,7 +61,7 @@ while true; do
     esac
 done
 
-if [ -z "${1:-}" ]; then
+if [ -z "${2:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then 
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
