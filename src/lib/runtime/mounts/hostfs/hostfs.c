@@ -35,6 +35,7 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
+#include "util/registry.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -140,7 +141,7 @@ int _singularity_runtime_mount_hostfs(void) {
         }
 
         if ( ( is_dir(mountpoint) == 0 ) && ( is_dir(joinpath(container_dir, mountpoint)) < 0 ) ) {
-            if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
+            if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                 singularity_priv_escalate();
                 if ( s_mkpath(joinpath(container_dir, mountpoint), 0755) < 0 ) {
                     singularity_priv_drop();

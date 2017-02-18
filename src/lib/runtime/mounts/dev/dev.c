@@ -33,6 +33,7 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
+#include "util/registry.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
@@ -44,7 +45,7 @@ int _singularity_runtime_mount_dev(void) {
     char *container_dir = singularity_runtime_rootfs(NULL);
 
     if ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) {
-        if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
+        if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
             if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
                 if ( s_mkpath(joinpath(container_dir, "/dev"), 0755) < 0 ) {
                     singularity_message(VERBOSE2, "Could not create /dev inside container, returning...\n");
