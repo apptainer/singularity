@@ -40,7 +40,9 @@ from docker.api import (
     get_manifest
 )
 
-from defaults import LAYERFILE
+from defaults import (
+    METADATA_BASE
+)
 
 from logman import logger
 import json
@@ -49,12 +51,11 @@ import os
 import tempfile
 
 
-def IMPORT(image,rootfs,auth=None,disable_cache=False,metadata_dir=None,includecmd=False):
+def IMPORT(image,rootfs,auth=None,disable_cache=False,includecmd=False):
     '''run is the main script that will obtain docker layers, runscript information (either entrypoint
     or cmd), and environment, and either return the list of files to extract (in case of add 
     :param image: the docker image to add
     :param auth: if needed, an authentication header (default None)
-    :param metadata_dir: the directory to write metadata, including environment
     :param disable_cache: if True, don't cache layers (default False)
     :param includecmd: use CMD as %runscript instead of ENTRYPOINT (default False)
     '''
@@ -69,6 +70,7 @@ def IMPORT(image,rootfs,auth=None,disable_cache=False,metadata_dir=None,includec
 
     additions = ADD(image=image,
                     auth=auth,
+                    layersfile=False,
                     disable_cache=disable_cache)
 
     # Extract layers to filesystem
@@ -98,18 +100,9 @@ def IMPORT(image,rootfs,auth=None,disable_cache=False,metadata_dir=None,includec
                                  base_dir=rootfs,
                                  includecmd=includecmd)
 
-    #TODO: NOT WRITTEN YET. I'm tired. :)
-    if metadata_dir != None:
-
-        # Generate environment file for Docker
-        extract_env(metadata_dir=metadata_dir,
-                    includecmd=includecmd,
-                    manifest=manifest)
-
-        # Generate labels files
-        extract_labels(metadata_dir=metadata_dir,
-                       includecmd=includecmd,
-                       manifest=manifest)
+    # Extract environment and labels
+    extract_env(manifest)
+    extract_labels(manifest)
 
     # When we finish, clean up images
     if disable_cache == True:
@@ -118,13 +111,12 @@ def IMPORT(image,rootfs,auth=None,disable_cache=False,metadata_dir=None,includec
 
 
 
-def ADD(image,metadata_dir=None,auth=None):
+def ADD(image,metadata_base,auth=None,layerfile=None):
     '''run is the main script that will obtain docker layers, runscript information (either entrypoint
     or cmd), and environment, and either return the list of files to extract (in case of add 
     :param image: the docker image to add
     :param auth: if needed, an authentication header (default None)
-    :param metadata_dir: the folder to write layers file to. If not defined, not written.
-    :param includecmd: use CMD as %runscript instead of ENTRYPOINT (default False)
+    :param layerfile: If True, write layers to METADATA_BASE/.layers
     :returns additions: a dict with "layers" and "manifest" for further parsing
     '''
 
@@ -163,17 +155,15 @@ def ADD(image,metadata_dir=None,auth=None):
         layers.append(targz) # in case we want a list at the end
 
     # If the user wants us to write the layers to file, do it.
-    if metadata_dir != None:
+    if layerfile != None:
 
         # Standard for layerfile is under SINGULARITY_METADATA_FOLDER/.layers
-        metadata_file = "%s/%s" %(metadata_dir, LAYERFILE)
+        metadata_file = "%s/%s" %(metadata_base, layerfile)
 
         # Question - here we will have /tmp paths - should this be changed
         # after they are downloaded, kept ok as is, or the file removed?
         logger.debug("Writing Docker layers files to %s", metadata_file)
-
-        #TODO: need to have a lock of some kind here, or tmp.
-        write_file(metadata_file,"\n".join(layers))
+        write_file(metadata_file,"\n".join(layers),mode="a")
 
     # Return additions dictionary
     additions = { "layers": layers,

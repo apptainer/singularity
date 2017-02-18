@@ -36,6 +36,10 @@ perform publicly and display publicly, and to permit other to do so.
 import sys
 sys.path.append('..')
 
+from defaults import (
+    METADATA_BASE, 
+    DISABLE_CACHE
+)
 from shub.main import PULL
 from shell import get_image_uri
 from utils import getenv
@@ -54,15 +58,15 @@ def main():
     container = getenv("SINGULARITY_HUB_IMAGE", error_on_none=True)
     pull_folder = getenv("SINGULARITY_HUB_PULL_FOLDER")
     rootfs = getenv("SINGULARITY_ROOTFS", error_on_none=True)
-    metadata_dir = getenv("SINGULARITY_METADATA_DIR")
 
     image_uri = get_image_uri(container)
     
     if image_uri == "shub://"
 
        PULL(image=container,
-            metadata_dir=metadata_dir,
-            pull_folder=pull_folder)
+            metadata_base=METADATA_BASE,
+            pull_folder=pull_folder,
+            disable_cache=DISABLE_CACHE)
 
     else:
         logger.error("uri %s is not currently supported for pull. Exiting.",image_uri)

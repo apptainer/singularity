@@ -304,26 +304,6 @@ def change_permissions(path,permission=None,recursive=True):
 ############################################################################
 
 
-def getenv(variable_key,error_on_none=False,default=None,silent=False):
-    '''getenv will attempt to get an environment variable. If the variable
-    is not found, None is returned.
-    :param variable_key: the variable name
-    :param error_on_none: exit with error if not found
-    :param silent: Do not print debugging information for variable
-    '''
-    variable = os.environ.get(variable_key, default)
-    if variable == None and error_on_none:
-        logger.error("Cannot find environment variable %s, exiting.",variable_key)
-        sys.exit(1)
-
-    if silent:
-        logger.debug("%s found",variable_key)
-    else:
-        logger.debug("%s found as %s",variable_key,variable)
-
-    return variable 
-
-
 def get_cache(cache_base=None,subfolder=None,disable_cache=False):
     '''get_cache will return the user's cache for singularity. If not specified
     via environmental variable, will be created in $HOME/.singularity
@@ -337,7 +317,7 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
     if disable_cache == True:
         return tempfile.mkdtemp()
     else:
-        cache_base = getenv("SINGULARITY_CACHEDIR", default=SINGULARITY_CACHE)
+        cache_base = SINGULARITY_CACHE
 
     # Clean up the path and create
     cache_base = clean_path(cache_base)
@@ -450,3 +430,30 @@ def get_fullpath(file_path,required=True):
     # If file isn't required and doesn't exist, return None
     logger.warning("Cannot find file %s",file_path)
     return None
+
+
+def write_singularity_infos(base_dir,prefix,start_number,content):
+    '''write_singularity_infos will write some metadata object
+    to a file in some base, starting at some default number. For example,
+    we would want to write dockerN files with docker environment exports to
+    some directory ENV_DIR and increase N until we find an available path
+    :param base_dir: the directory base to write the file to
+    :param prefix: the name of the file prefix (eg, docker)
+    :param start_number: the number to start looking for available file at
+    :param content: the content to write
+    '''
+    output_file = None
+    counter = start_number
+    written = False
+
+    while not written:
+        output_file = "%s/%s%s" %(base_dir,
+                                  prefix,
+                                  counter)
+        if not os.path.exists(output_file):
+            write_file(output_file,content)
+            logger.debug("Writing %s",output_file)
+            written = True
+        counter+=1
+
+    return output_file

@@ -39,7 +39,10 @@ import sys
 sys.path.append('..')
 
 from docker.main import IMPORT
-from docker.defaults import metadata_dir
+from defaults import (
+    METADATA_BASE
+    DISABLE_CACHE
+)
 from shell import get_image_uri
 from utils import (
     basic_auth_header,
@@ -60,11 +63,9 @@ def main():
     
     container = getenv("SINGULARITY_DOCKER_IMAGE",error_on_none=True)
     rootfs = getenv("SINGULARITY_ROOTFS",error_on_none=True)
-    metadata = getenv("SINGULARITY_METADATA_FOLDER",default=metadata_dir)
     includecmd = getenv("SINGULARITY_DOCKER_INCLUDE_CMD")
     username = getenv("SINGULARITY_DOCKER_USERNAME") 
     password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
-    disable_cache = getenv("SINGULARITY_DISABLE_CACHE",default=False)
 
     # What image is the user asking for?
     image_uri = get_image_uri(container)    
@@ -75,14 +76,13 @@ def main():
     if username is not None and password is not None:
         auth = basic_auth_header(username, password)
 
-
     if image_uri == "docker://":
 
         IMPORT(auth=auth,
                image=container,
-               metadata_dir=metadata,
+               metadata_dir=METADATA_BASE,
                rootfs=rootfs,
-               disable_cache=disable_cache)
+               disable_cache=DISABLE_CACHE)
 
     else:
         logger.error("uri %s is not a currently supported uri for docker import. Exiting.",image_uri)

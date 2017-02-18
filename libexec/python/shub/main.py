@@ -46,7 +46,7 @@ import os
 import tempfile
 
 
-def PULL(image,metadata_dir=None,pull_folder=None,disable_cache=False):
+def PULL(image,metadata_base=None,pull_folder=None,disable_cache=False):
     '''PULL will retrieve a Singularity Hub image and download to the local file
     system. If a metadata_dir is provided, the path to the image is written to a file
     called SINGULARITY_RUNDIR and SINGULARITY_IMAGE here, with only the purpose
@@ -75,7 +75,7 @@ def PULL(image,metadata_dir=None,pull_folder=None,disable_cache=False):
     logger.info("Singularity Hub Image Download: %s", image_file)
        
     # If singularity_rootfs is provided, write metadata to it
-    if metadata_dir != None:
+    if metadata_base != None:
         logger.debug("Writing SINGULARITY_RUNDIR and SINGULARITY_IMAGE to %s",metadata_dir)
-        write_file("%s/SINGULARITY_RUNDIR" %metadata_dir, os.path.dirname(image_file))
-        write_file("%s/SINGULARITY_IMAGE" %metadata_dir, image_file)
+        write_file("%s/SINGULARITY_RUNDIR" %metadata_base, os.path.dirname(image_file))
+        write_file("%s/SINGULARITY_IMAGE" %metadata_base, image_file)

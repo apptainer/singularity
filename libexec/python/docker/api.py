@@ -25,16 +25,19 @@ import sys
 sys.path.append('..') # parent directory
 
 from utils import (
+    add_http,
     api_get, 
     write_file, 
-    add_http
+    write_singularity_infos
 )
 
 from defaults import (
     API_BASE,
     API_VERSION,
-    ENV_DIR,
-    LABEL_DIR
+    DOCKER_NUMBER,
+    DOCKER_PREFIX,
+    ENV_BASE,
+    LABEL_BASE
 )
 
 from logman import logger
@@ -75,6 +78,51 @@ def create_runscript(manifest,base_dir,includecmd=False):
     logger.info("Generating runscript at %s",runscript)
     output_file = write_file(runscript,content)
     return output_file
+
+
+def extract_env(manifest):
+    '''extract_env will write a file of key value pairs of the environment
+    to export. The manner to export must be determined by the calling process
+    depending on the OS type.
+    :param manifest: the manifest to use
+    '''
+    environ = get_config(manifest,'Env')
+    if environ != None:
+        environ = "\n".join(environ)
+        logger.debug("Found Docker container environment!")    
+        environ_file = write_singularity_infos(base_dir=ENV_BASE,
+                                               prefix=DOCKER_PREFIX,
+                                               start_number=DOCKER_NUMBER,
+                                               content=environ)
+    return environ
+
+
+def extract_labels(manifest):
+    '''extract_labels will write a file of key value pairs including
+    maintainer, and labels.
+    :param manifest: the manifest to use
+    '''
+    labels = get_config(manifest,'Labels')
+    if labels != None:
+        labels = json.dumps(labels)
+        logger.debug("Found Docker container labels!")    
+        labels_file = write_singularity_infos(base_dir=LABELS_BASE,
+                                               prefix=DOCKER_PREFIX,
+                                               start_number=DOCKER_NUMBER,
+                                               content=labels)
+    return labels
+
+
+def get_config(manifest,key):
+    '''get_config returns the content of some key in the manifest "Config"
+    :param manifest: the complete manifest
+    :param key: the key to find
+    '''
+    if "Config" in manifest:
+        if key in manifest["Config"]:
+            if len(manifest["Config"][key] > 0):
+                return manifest["Config"][key]
+    return None
 
 
 def get_token(namespace,repo_name,registry=None,auth=None):

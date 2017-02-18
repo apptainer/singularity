@@ -9,12 +9,11 @@ add.py: python helper for Singularity docker add, which is an
 
 ENVIRONMENTAL VARIABLES that are found for this executable:
 
-    SINGULARITY_DOCKER_IMAGE 
+    SINGULARITY_ROOTFS
+    SINGULARITY_DOCKER_IMAGE
     SINGULARITY_DOCKER_USERNAME
     SINGULARITY_DOCKER_PASSWORD
-    SINGULARITY_DISABLE_CACHE
     SINGULARITY_METADATA_FOLDER
-
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
@@ -55,15 +54,14 @@ def main():
     '''main is a wrapper for the client to hand the parser to the executable functions
     This makes it possible to set up a parser in test cases
     '''
+    from defaults import METADATA_BASE,LAYERFILE
 
     logger.info("\n*** STARTING DOCKER ADD PYTHON  ****")
-    
+
     container = getenv("SINGULARITY_DOCKER_IMAGE",error_on_none=True)
     rootfs = getenv("SINGULARITY_ROOTFS",error_on_none=True)
     username = getenv("SINGULARITY_DOCKER_USERNAME") 
     password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
-    disable_cache = getenv("SINGULARITY_DISABLE_CACHE",default=False)
-    metadata = getenv("SINGULARITY_METADATA_FOLDER",error_on_none=True)
 
     # What image is the user asking for?
     image_uri = get_image_uri(container)    
@@ -80,7 +78,8 @@ def main():
 
         additions = ADD(auth=auth,
                         image=container,
-                        metadata_dir=metadata)
+                        layerfile=LAYERFILE,
+                        metadata_base=METADATA_BASE)
 
     else:
         logger.error("uri %s is not a currently supported uri for docker add. Exiting.",image_uri)
