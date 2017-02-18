@@ -1,9 +1,9 @@
 '''
 
-test_cli.py: Client (cli.py) testing functions for Singularity in Python,
-                    including client and supporting utils and shell functions.
+test_base.py: Base python testing functions for Singularity in Python,
+              including defaults, utils, and shell functions.
 
-Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -29,7 +29,6 @@ import tarfile
 sys.path.append('..') # directory with client
 
 from unittest import TestCase
-from cli import get_parser, run
 import shutil
 import tempfile
 
@@ -37,35 +36,47 @@ VERSION = sys.version_info[0]
 
 print("*** PYTHON VERSION %s CLIENT TESTING START ***" %(VERSION))
 
-class TestClient(TestCase):
-
-    def setUp(self):
-        print("\n---START----------------------------------------")
-
-    def tearDown(self):
-        print("---END------------------------------------------")
-
-    def test_singularity_rootfs(self):
-        '''test_singularity_rootfs ensures that --rootfs is required
-        '''
-        print("Testing --rootfs command...")
-        parser = get_parser()
-        (args,options) = parser.parse_args([])
-        with self.assertRaises(SystemExit) as cm:
-            run(args)
-        self.assertEqual(cm.exception.code, 1)
-
-
 class TestShell(TestCase):
 
     def setUp(self):
-        self.repo_name = "singularity-images"
-        self.namespace = "vsoch"
-        self.tag = "latest"
+
+        # Test repo information
+        self.registry = "registry"
+        self.repo_name = "repo"
+        self.namespace = "namespace"
+        self.tag = "tag"
+
+        # Default repo information
+        self.REGISTRY = 'index.docker.io'
+        self.NAMESPACE = 'library'
+        self.REPO_TAG = 'latest'
+        
         print("\n---START----------------------------------------")
 
     def tearDown(self):
         print("---END------------------------------------------")
+
+    def test_get_image_uri(self):
+        '''test_get_image_uri ensures that the correct uri is returned
+        for a user specified uri, registry, namespace.
+        '''
+        from shell import get_image_uri
+        print("Case 1: No image uri should return None")
+        image_uri = get_image_uri('namespace/repo:tag')
+        self.assertEqual(image_uri, None) 
+
+        print("Case 2: testing return of shub://")
+        image_uri = get_image_uri('shub://namespace/repo:tag')
+        self.assertEqual(image_uri, 'shub://') 
+
+        print("Case 3: testing return of docker uri")
+        image_uri = get_image_uri('docker://namespace/repo:tag')
+        self.assertEqual(image_uri, 'docker://') 
+
+        print("Case 4: weird capitalization should return lowercase")
+        image_uri = get_image_uri('DocKer://namespace/repo:tag')
+        self.assertEqual(image_uri, 'docker://') 
+
 
     def test_parse_image_uri(self):
         '''test_parse_image_uri ensures that the correct namespace,
@@ -74,44 +85,54 @@ class TestShell(TestCase):
 
         from shell import parse_image_uri
 
-        print("Case 1: Specifying an shub:// image id should return a number")
-        image = parse_image_uri(image="shub://7",
-                                uri = "shub://")
-        self.assertTrue(isinstance(image,int))
-        self.assertEqual(image,7)
+        print("Case 1: Empty repo_name should return error")
+        with self.assertRaises(SystemExit) as cm:
+            image = parse_image_uri(image="")
+        self.assertEqual(cm.exception.code, 1)
 
         print("Case 2: Checking for correct output tags in digest...")
         image_name = "%s/%s" %(self.namespace,self.repo_name)
         digest = parse_image_uri(image=image_name)
-        for tag in ['repo_name','repo_tag','namespace']:
+        for tag in ['registry','repo_name','repo_tag','namespace']:
             self.assertTrue(tag in digest)
 
-        print("Case 3: Tag when not specified should be latest.")
-        self.assertTrue(digest['repo_tag'] == 'latest')
+        print("Case 3: Specifying only an image should return defaults")
+        image = parse_image_uri(image="shub://lizardleezle",
+                                uri = "shub://")
+        self.assertTrue(isinstance(image,dict))
+        self.assertEqual(image["namespace"],self.NAMESPACE)
+        self.assertEqual(image["repo_tag"],self.REPO_TAG)
+        self.assertEqual(image["repo_name"],'lizardleezle')
+        self.assertEqual(image["registry"],self.REGISTRY)
 
         print("Case 4: Tag when speciifed should be returned.")
         image_name = "%s/%s:%s" %(self.namespace,self.repo_name,"pusheenasaurus")
-        digest = parse_image_uri(image=image_name)
+        digest = parse_image_uri(image_name)
         self.assertTrue(digest['repo_tag'] == 'pusheenasaurus')
 
-        print("Case 5: Namespace when not specified should be library.")
-        digest = parse_image_uri(image=self.repo_name)
-        self.assertTrue(digest['repo_tag'] == 'latest')
-        self.assertTrue(digest['namespace'] == 'library')
-
-        print("Case 6: Repo name and tag without namespace...")
+        print("Case 5: Repo name and tag without namespace...")
         image_name = "%s:%s" %(self.repo_name,self.tag)
-        digest = parse_image_uri(image=image_name)
+        digest = parse_image_uri(image_name)
         self.assertTrue(digest['repo_tag'] == self.tag)
         self.assertTrue(digest['namespace'] == 'library')
         self.assertTrue(digest['repo_name'] == self.repo_name)
 
-
-        print("Case 7: Changing default namespace should not use library.")
-        image_name = "%s:%s" %(self.repo_name,self.tag)
-        digest = parse_image_uri(image=image_name,default_namespace="meow")
+        print("Case 6: Changing default namespace should not use library.")
+        image_name = "meow/%s:%s" %(self.repo_name,self.tag)
+        digest = parse_image_uri(image_name)
         self.assertTrue(digest['namespace'] == 'meow')
         
+        print("Case 7: Changing default registry should not use index.docker.io.")
+        image_name = "meow/mix/%s:%s" %(self.repo_name,self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow')
+        self.assertTrue(digest['namespace'] == 'mix')
+
+        print("Case 8: Custom uri should use it.")
+        image_name = "catdog://meow/mix/%s:%s" %(self.repo_name,self.tag)
+        digest = parse_image_uri(image_name,uri="catdog://")
+        self.assertTrue(digest['registry'] == 'meow')
+        self.assertTrue(digest['namespace'] == 'mix')
 
 
 class TestUtils(TestCase):
@@ -227,51 +248,6 @@ class TestUtils(TestCase):
         if not isinstance(hello,str): # python 3 support
             hello = hello.decode('utf-8')
         self.assertEqual(hello,'hello\n')
-
-
-    def test_get_cache(self):
-        '''test_run_command tests sending a command to commandline
-        using subprocess
-        '''
-        print("Testing utils.get_cache...")
-
-        from utils import get_cache
-        
-        # If there is no cache_base, we should get default
-        print("Case 1: No cache base returns default")
-        home = os.environ['HOME']
-        cache = get_cache()
-        self.assertEqual("%s/.singularity" %home,cache)
-        self.assertTrue(os.path.exists(cache))
-
-        # If we give a base, we should get that base instead
-        print("Case 2: custom specification of cache base")
-        cache_base = '%s/cache' %(home)
-        cache = get_cache(cache_base=cache_base)
-        self.assertEqual(cache_base,cache)
-        self.assertTrue(os.path.exists(cache))
-
-        # If we specify a subfolder, we should get that added
-        print("Case 3: Ask for subfolder in cache base")
-        subfolder = 'docker'
-        cache = get_cache(subfolder=subfolder)
-        self.assertEqual("%s/.singularity/%s" %(home,subfolder),cache)
-        self.assertTrue(os.path.exists(cache))
-
-        # If we disable the cache, we should get temporary directory
-        print("Case 4: Disable the cache (uses /tmp)")
-        cache = get_cache(disable_cache=True)
-        self.assertTrue(os.path.exists(cache))
-        self.assertTrue(re.search("tmp",cache)!=None)
-
-        # If environmental variable set, should use that
-        print("Case 5: cache base obtained from environment")
-        SINGULARITY_CACHEDIR = '%s/cache' %(home)
-        os.environ['SINGULARITY_CACHEDIR'] = SINGULARITY_CACHEDIR
-        cache = get_cache()
-        self.assertEqual(SINGULARITY_CACHEDIR,cache)
-        self.assertTrue(os.path.exists(cache))
-
 
     def test_is_number(self):
         '''test_is_number should return True for any string or
@@ -432,9 +408,46 @@ class TestUtils(TestCase):
         print("Case 3: File doesn't exist, but not required, should return None")
         self.assertEqual(get_fullpath(tmpfile,required=False),None)
 
-    #TODO: need to test api_get
-    #TODO: need to test api_get_pagination
+
+    def test_write_singularity_infos(self):
+        '''test_get_fullpath will test the get_fullpath function
+        '''
+        print("Testing utils.write_singuarity_infos...")
+        from utils import write_singularity_infos
+        base_dir = '%s/ROOTFS' %(self.tmpdir)
+        prefix = 'docker'
+        start_number = 0
+        content = "export HELLO=MOTO"
+
+        print("Case 1: Metadata base doesn't exist, should return error")
+        with self.assertRaises(SystemExit) as cm:
+            info_file = write_singularity_infos(base_dir=base_dir,
+                                                prefix=prefix,
+                                                start_number=start_number,
+                                                content=content)
+        self.assertEqual(cm.exception.code, 1)
+
+        print("Case 2: Metadata base does exist, should return path.")
+        os.mkdir(base_dir)
+        info_file = write_singularity_infos(base_dir=base_dir,
+                                            prefix=prefix,
+                                            start_number=start_number,
+                                            content=content)
+        self.assertEqual(info_file,"%s/%s%s" %(base_dir,prefix,start_number))
+
+        print("Case 3: Adding another equivalent prefix should return next")
+        info_file = write_singularity_infos(base_dir=base_dir,
+                                            prefix=prefix,
+                                            start_number=start_number,
+                                            content=content)
+        self.assertEqual(info_file,"%s/%s%s" %(base_dir,prefix,start_number+1))
         
+        print("Case 4: Files have correct content.")
+        with open(info_file,'r') as filey:
+            written_content = filey.read()
+        self.assertEqual(content,written_content)
+
+
 # Supporting Test Functions
 def create_test_tar(tmpdir,compressed=True):
     archive = "%s/toodles.tar.gz" %tmpdir

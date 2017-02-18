@@ -33,6 +33,7 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 from logman import logger
+import tempfile
 import os
 
 def getenv(variable_key,required=False,default=None,silent=False):
@@ -54,30 +55,41 @@ def getenv(variable_key,required=False,default=None,silent=False):
 
     return variable 
 
+def convert2boolean(arg):
+  '''convert2boolean is used for environmental variables that must be
+  returned as boolean'''
+  if not isinstance(arg,bool):
+      return arg.lower() in ("yes", "true", "t", "1")
+  return arg
 
 #######################################################################
 # Singularity
 #######################################################################
 
-_cache = os.path.join(os.environ.get("HOME"),".singularity") 
-SINGULARITY_CACHE = getenv("SINGULARITY_CACHEDIR", default=_cache)
-
 METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER", 
                        default="/.singularity-info",
                        required=True)
 
-DISABLE_CACHE = getenv("SINGULARITY_DISABLE_CACHE",
-                       default=False)
+DISABLE_CACHE = convert2boolean(getenv("SINGULARITY_DISABLE_CACHE",
+                                default=False))
 
+if DISABLE_CACHE == True:
+    SINGULARITY_CACHE = tempfile.mkdtemp()
+else:
+    _cache = os.path.join(os.environ.get("HOME"),".singularity") 
+    SINGULARITY_CACHE = getenv("SINGULARITY_CACHEDIR", default=_cache)
+
+if not os.path.exists(SINGULARITY_CACHE):
+    os.mkdir(SINGULARITY_CACHE)
 
 #######################################################################
 # Docker
 #######################################################################
 
 # API
+API_BASE = "index.docker.io" # registry
 API_VERSION = "v2"
 NAMESPACE = "library"
-REGISTRY = "index.docker.io" # registry
 TAG = "latest"
 
 # Container Metadata
@@ -85,6 +97,6 @@ DOCKER_NUMBER = 10 # number to start docker files at in ENV_DIR
 DOCKER_PREFIX = "docker"
 ENV_BASE = ".env"
 LAYERFILE = ".layers"
-LABELS_BASE = ".labels"
+LABEL_BASE = ".labels"
 
 

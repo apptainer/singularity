@@ -20,7 +20,10 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from defaults import SINGULARITY_CACHE
+from defaults import (
+    SINGULARITY_CACHE,
+    DISABLE_CACHE
+)
 from logman import logger
 import errno
 import json
@@ -304,20 +307,21 @@ def change_permissions(path,permission=None,recursive=True):
 ############################################################################
 
 
-def get_cache(cache_base=None,subfolder=None,disable_cache=False):
-    '''get_cache will return the user's cache for singularity. If not specified
-    via environmental variable, will be created in $HOME/.singularity
+def get_cache(cache_base=None,subfolder=None):
+    '''get_cache will return the user's cache for singularity. It must include
+    the base (determined at start of run) and then an optional subfolder.
+    $HOME/.singularity. If disable_cache is  If not specified
     :param cache_base: the cache base
     :param subfolder: a subfolder in the cache base to retrieve, specifically
-    :param disable_cache: boolean, if True, will return temporary directory
     instead. The other functions are responsible for cleaning this up after use.
     for a particular kind of image cache (eg, docker, shub, etc.)
     '''
-    # Obtain cache base from environment (1st priority, then variable)
-    if disable_cache == True:
+    # Check if disabled via environmental variable
+    if DISABLE_CACHE == True:
         return tempfile.mkdtemp()
     else:
-        cache_base = SINGULARITY_CACHE
+        if cache_base == None:
+            cache_base = SINGULARITY_CACHE
 
     # Clean up the path and create
     cache_base = clean_path(cache_base)
@@ -445,6 +449,11 @@ def write_singularity_infos(base_dir,prefix,start_number,content):
     output_file = None
     counter = start_number
     written = False
+
+    # if the base directory doesn't exist, exit with error.
+    if not os.path.exists(base_dir):
+        logger.warning("Cannot find required metadata directory %s. Exiting!",base_dir)
+        sys.exit(1)
 
     while not written:
         output_file = "%s/%s%s" %(base_dir,

@@ -22,10 +22,10 @@ import sys
 from logman import logger
 from docker.api import get_tags
 
-from docker.defaults import (
-    api_base as default_registry,
-    namespace as default_namespace,
-    tag as default_tag
+from defaults import (
+    API_BASE as default_registry,
+    NAMESPACE as default_namespace,
+    TAG as default_tag
 )
 
 from utils import is_number
@@ -44,10 +44,10 @@ def get_image_uri(image):
     match = re.findall('^[A-Za-z0-9-]+[:]//',image)
 
     if len(match) == 0:
-        bot.logger.warning("Could not detect any uri in %s",image)
+        logger.warning("Could not detect any uri in %s",image)
     else:
         image_uri = match[0].lower()
-        bot.logger.debug("Found uri %s",image_uri)
+        logger.debug("Found uri %s",image_uri)
     return image_uri
 
 
@@ -57,8 +57,7 @@ def parse_image_uri(image,uri=None):
     repo name, tag, and namespace, intended for Docker.
     :param image: the string provided on command line for the image name, eg: ubuntu:latest
     :param uri: the uri (eg, docker:// to remove), default uses ""
-    :default_namespace: if not provided, will use "library"
-    :default_registry: if registry is not provided, will use default
+    ::note uri is maintained as a variable so we have some control over allowed
     :returns parsed: a json structure with repo_name, repo_tag, and namespace
     '''
 
@@ -108,6 +107,13 @@ def parse_image_uri(image,uri=None):
               'namespace':namespace, 
               'repo_name':repo_name,
               'repo_tag':repo_tag }
+
+    # No field should be empty
+    for fieldname,value in parsed.items():
+        if len(value) == 0:
+            logger.error("%s found empty, check uri! Exiting.", value)
+            sys.exit(1)
+
     return parsed
 
 
