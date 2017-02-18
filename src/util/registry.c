@@ -76,25 +76,23 @@ void singularity_registry_init(void) {
         registry_initialized = 1;
 
         while (*env) {
-            char *tok, *key, *val;
+            char *tok;
             char *string = *env++;
+
+            if ( string == NULL ) {
+                continue;
+            } 
 
             if ( strncmp(string, "SINGULARITY_", 12) != 0 ) {
                 continue;
             }
 
-            key = strtok_r(strdup(string), "=", &tok);
-            val = strtok_r(NULL, "=", &tok);
+            tok = strchr(string, '=');
+            *tok = '\0';
 
-            if ( key == NULL ) {
-                continue;
-            } 
+            string += 12; // Move string over so that SINGULARITY_ is skipped over
 
-            if ( val == NULL ) {
-                val = "";
-            }
-
-            singularity_registry_set(&key[12], val);
+            singularity_registry_set(string, tok+1);
         }
     }
 }
