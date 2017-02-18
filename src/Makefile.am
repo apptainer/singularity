@@ -9,8 +9,12 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 bindir = $(libexecdir)/singularity/bin
 
-bin_PROGRAMS = action bootstrap copy create expand export get-section import mount $(BUILD_SUID)
+bin_PROGRAMS = action bootstrap copy cleanup create expand export get-section import mount $(BUILD_SUID)
 EXTRA_PROGRAMS = action-suid create-suid copy-suid expand-suid export-suid import-suid mount-suid
+
+cleanup_SOURCES = cleanup.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
+cleanup_CPPFLAGS = $(AM_CPPFLAGS)
+
 
 action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la

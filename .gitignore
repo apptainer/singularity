@@ -35,6 +35,7 @@ test.sh
 src/action
 src/action-suid
 src/bootstrap
+src/cleanup
 src/create
 src/create-suid
 src/copy
