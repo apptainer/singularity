@@ -22,6 +22,8 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 sys.path.append('..') # parent directory
 from defaults import DISABLE_CACHE
 from utils import (
@@ -32,7 +34,7 @@ from utils import (
 )
 
 from shell import parse_image_uri
-from docker.api import (
+from api import (
     create_runscript,
     extract_env,
     extract_labels,
