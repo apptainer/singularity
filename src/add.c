@@ -29,35 +29,46 @@
 
 #include "config.h"
 #include "util/file.h"
-#include "util/fork.h"
 #include "util/util.h"
 #include "util/registry.h"
-#include "util/config_parser.h"
-#include "util/privilege.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
+#include "util/config_parser.h"
+#include "util/privilege.h"
+#include "util/suid.h"
+#include "util/fork.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
 #endif
 
-#ifndef LIBEXECDIR
-#error LIBEXECDIR is not defined
-#endif
-
 
 int main(int argc, char **argv) {
+    int retval = 0;
+    char *tar_cmd[4];
     struct image_object image;
+
+    singularity_suid_init();
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
     singularity_priv_init();
+    singularity_priv_drop();
 
-    singularity_registry_set("WRITABLE", "1");
+    if ( argc == 2 ) {
+        singularity_registry_set("IMAGE", argv[1]);
+    }
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     singularity_image_open(&image, O_RDWR);
+
+    if ( singularity_image_check(&image) != 0 ) {
+        singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
+        ABORT(255);
+    }
+
+    singularity_registry_set("WRITABLE", "1");
 
     singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
     singularity_runtime_ns(SR_NS_MNT);
@@ -65,15 +76,32 @@ int main(int argc, char **argv) {
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
-    singularity_message(DEBUG, "Setting SINGULARITY_ROOTFS to: %s\n", singularity_runtime_rootfs(NULL));
-    setenv("SINGULARITY_ROOTFS", singularity_runtime_rootfs(NULL), 1);
+    tar_cmd[0] = strdup("/usr/bin/tar");
+    tar_cmd[1] = strdup("-xf");
+    tar_cmd[2] = strdup("-");
+    tar_cmd[3] = NULL;
 
-    argv[0] = joinpath(LIBEXECDIR, "/singularity/import.sh");
-
-    if ( is_exec(argv[0]) != 0 ) {
-        singularity_message(ERROR, "Could not locate import driver: %s\n", argv[0]);
+    if ( chdir(singularity_runtime_rootfs(NULL)) != 0 ) {
+        singularity_message(ERROR, "Could not change to working directory: %s\n", singularity_runtime_rootfs(NULL));
         ABORT(255);
     }
 
-    return(singularity_fork_exec(argv));
+    singularity_message(DEBUG, "Cleaning environment\n");
+    if ( envclean() != 0 ) {
+        singularity_message(ERROR, "Failed sanitizing the environment\n");
+        ABORT(255);
+    }
+
+    singularity_priv_escalate();
+    singularity_message(INFO, "Opening STDIN for tar stream\n");
+    retval = singularity_fork_exec(tar_cmd);
+    singularity_priv_drop();
+
+    if ( retval == 0 ) {
+        singularity_message(INFO, "Done. Image ready: %s\n", image.path);
+    } else {
+        singularity_message(ERROR, "Tar did not return successful\n");
+    }
+
+    return(retval);
 }

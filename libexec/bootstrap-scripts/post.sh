@@ -47,96 +47,12 @@ if [ ! -L "$SINGULARITY_ROOTFS/bin/sh" -a ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; t
     exit 1
 fi
 
-install -d -m 0755 "$SINGULARITY_ROOTFS/bin"
-install -d -m 0755 "$SINGULARITY_ROOTFS/dev"
-install -d -m 0755 "$SINGULARITY_ROOTFS/home"
-install -d -m 0755 "$SINGULARITY_ROOTFS/etc"
-install -d -m 0750 "$SINGULARITY_ROOTFS/root"
-install -d -m 0755 "$SINGULARITY_ROOTFS/proc"
-install -d -m 0755 "$SINGULARITY_ROOTFS/sys"
-install -d -m 1777 "$SINGULARITY_ROOTFS/tmp"
-install -d -m 1777 "$SINGULARITY_ROOTFS/var/tmp"
-touch "$SINGULARITY_ROOTFS/etc/hosts"
-touch "$SINGULARITY_ROOTFS/etc/resolv.conf"
-
-test -L "$SINGULARITY_ROOTFS/etc/mtab"  && rm -f "$SINGULARITY_ROOTFS/etc/mtab"
-
-cat > "$SINGULARITY_ROOTFS/etc/mtab" << EOF
-singularity / rootfs rw 0 0
-EOF
-
-if [ ! -f "$SINGULARITY_ROOTFS/environment" ]; then
-cat > "$SINGULARITY_ROOTFS/environment" << EOF
-# Define any environment init code here
-
-if test -z "\$SINGULARITY_INIT"; then
-    PATH=\$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-    PS1="Singularity.\$SINGULARITY_CONTAINER> \$PS1"
-    SINGULARITY_INIT=1
-    export PATH PS1 SINGULARITY_INIT
-fi
-EOF
-fi
-chmod 0644 "$SINGULARITY_ROOTFS/environment"
-
-
-if [ -x "$SINGULARITY_ROOTFS/bin/bash" ]; then
-    HELPER_SHELL="/bin/bash"
-else
-    HELPER_SHELL="/bin/sh"
-fi
-
-cat > "$SINGULARITY_ROOTFS/.shell" << EOF
-#!$HELPER_SHELL
-. /environment
-if test -n "$\SHELL" -a -x "\$SHELL"; then
-    exec "\$SHELL" "\$@"
-else
-    echo "ERROR: Shell does not exist in container: \$SHELL" 1>&2
-    echo "ERROR: Using /bin/sh instead..." 1>&2
-fi
-if test -x /bin/sh; then
-    SHELL=/bin/sh
-    export SHELL
-    exec /bin/sh "\$@"
-else
-    echo "ERROR: /bin/sh does not exist in container" 1>&2
-fi
-exit 1
-EOF
-chmod 0755 "$SINGULARITY_ROOTFS/.shell"
-
-
-
-cat > "$SINGULARITY_ROOTFS/.exec" << EOF
-#!$HELPER_SHELL
-. /environment
-exec "\$@"
-EOF
-chmod 0755 "$SINGULARITY_ROOTFS/.exec"
-
-
-
-cat > "$SINGULARITY_ROOTFS/.run" << EOF
-#!$HELPER_SHELL
-. /environment
-if test -x /singularity; then
-    exec /singularity "\$@"
-else
-    echo "No Singularity runscript found, executing /bin/sh"
-    exec /bin/sh "\$@"
-fi
-EOF
-chmod 0755 "$SINGULARITY_ROOTFS/.run"
-
-ldconfig -r "$SINGULARITY_ROOTFS" >/dev/null 2>&1
-
 
 ##########################################################################################
 # RUNSCRIPT
 ##########################################################################################
 
-if [ -f "$SINGULARITY_BUILDDEF" ]; then
+if [ -n "${SINGULARITY_BUILDDEF:-}" -a -f "${SINGULARITY_BUILDDEF:-}" ]; then
 
 #    #TODO: This needs lots of love...
 #    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | while read source dest; do
@@ -166,19 +82,6 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
         echo "User defined %runscript found! Taking priority."
         echo "$runscript_command" > "$SINGULARITY_ROOTFS/singularity"    
     fi
-
-fi
-
-# If we have a runscript, whether docker, user defined, change permissions
-if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
-    chmod 0755 "$SINGULARITY_ROOTFS/singularity"
-fi
-
-#/RUNSCRIPT###############################################################################
-
-
-
-if [ -f "$SINGULARITY_BUILDDEF" ]; then
 
     mount --no-mtab -t proc proc "$SINGULARITY_ROOTFS/proc"
     mount --no-mtab -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
@@ -238,3 +141,10 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
     > "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 fi
+
+# If we have a runscript, whether docker, user defined, change permissions
+if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
+    chmod 0755 "$SINGULARITY_ROOTFS/singularity"
+fi
+
+

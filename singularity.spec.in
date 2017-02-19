@@ -96,17 +96,18 @@ rm -rf $RPM_BUILD_ROOT
 
 #SUID programs
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/action-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/add-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/create-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/copy-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/expand-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/export-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/bin/import-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/mount-suid
 
 # Binaries
 %{_libexecdir}/singularity/bin/action
+%{_libexecdir}/singularity/bin/add
 %{_libexecdir}/singularity/bin/bootstrap
-%{_libexecdir}/singularity/bin/cleanup
+%{_libexecdir}/singularity/bin/cleanupd
 %{_libexecdir}/singularity/bin/copy
 %{_libexecdir}/singularity/bin/create
 %{_libexecdir}/singularity/bin/expand
@@ -118,6 +119,7 @@ rm -rf $RPM_BUILD_ROOT
 # Scripts
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/image-handler.sh
+%{_libexecdir}/singularity/import.sh
 
 # Directories
 %{_libexecdir}/singularity/bootstrap-scripts

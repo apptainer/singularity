@@ -40,6 +40,7 @@
 
 int bootstrap_driver(void) {
     char *bootstrap_pre;
+    char *bootstrap_env;
     char *bootstrap_post;
     char *bootstrap_driver;
     char *driver_script;
@@ -52,7 +53,9 @@ int bootstrap_driver(void) {
     }
 
     bootstrap_pre = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/pre.sh");
+    bootstrap_env = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/env.sh");
     bootstrap_post = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/post.sh");
+
     driver_script = strjoin(driver, ".sh");
     bootstrap_driver = joinpath(LIBEXECDIR, strjoin("/singularity/bootstrap-scripts/driver-", driver_script));
 
@@ -66,6 +69,12 @@ int bootstrap_driver(void) {
     setenv("SINGULARITY_libexecdir", LIBEXECDIR, 1);
 
     driverproc[0] = bootstrap_pre;
+
+    if ( singularity_fork_exec(driverproc) != 0 ) {
+        ABORT(255);
+    }
+
+    driverproc[0] = bootstrap_env;
 
     if ( singularity_fork_exec(driverproc) != 0 ) {
         ABORT(255);

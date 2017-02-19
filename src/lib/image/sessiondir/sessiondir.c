@@ -120,7 +120,7 @@ void _singularity_image_sessiondir_init(struct image_object *image) {
         if ( child == 0 ) {
             char *cleanup_proc[2];
 
-            cleanup_proc[0] = joinpath(LIBEXECDIR, "/singularity/bin/cleanup");
+            cleanup_proc[0] = joinpath(LIBEXECDIR, "/singularity/bin/cleanupd");
             cleanup_proc[1] = NULL;
 
             setenv("SINGULARITY_CLEANDIR", image->sessiondir, 1);
