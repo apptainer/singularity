@@ -439,7 +439,7 @@ def write_singularity_infos(base_dir,prefix,start_number,content,extension=None)
     :param extension: the extension to use. If not defined, uses .sh
     '''
     if extension == None:
-        extension = ".sh"
+        extension = ""
     output_file = None
     counter = start_number
     written = False
