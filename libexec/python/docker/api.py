@@ -40,6 +40,7 @@ from defaults import (
     DOCKER_PREFIX,
     ENV_BASE,
     LABEL_BASE,
+    METADATA_BASE,
     RUNSCRIPT_COMMAND_ASIS
 )
 
@@ -56,15 +57,14 @@ except ImportError:
 
 # Authentication not required ---------------------------------------------------------------------------------
 
-def create_runscript(manifest,base_dir,includecmd=False):
+def create_runscript(manifest,includecmd=False):
     '''create_runscript will write a bash script with default "ENTRYPOINT" 
     into the base_dir. If includecmd is True, CMD is used instead. For both.
     if the result is found empty, the other is tried, and then a default used.
     :param manifest: the manifest to use to get the runscript
     :param includecmd: overwrite default command (ENTRYPOINT) default is False
-    :param base_dir: the base directory to write the runscript to
     '''
-    runscript = "%s/singularity" %(base_dir)
+    runscript = "%s/runscript" %(METADATA_BASE)
     cmd = None
 
     # Does the user want to use the CMD instead of ENTRYPOINT?

@@ -88,7 +88,6 @@ def IMPORT(image,rootfs,auth=None,includecmd=False):
                
     # Generate runscript
     runscript = create_runscript(manifest=additions['manifest'],
-                                 base_dir=rootfs,
                                  includecmd=includecmd)
 
     # Clean up?
