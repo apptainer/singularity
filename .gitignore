@@ -37,7 +37,7 @@ src/action-suid
 src/add
 src/add-suid
 src/bootstrap
-src/cleanup
+src/cleanupd
 src/create
 src/create-suid
 src/copy
@@ -47,6 +47,7 @@ src/expand-suid
 src/export
 src/export-suid
 src/import
+src/import-suid
 src/mount
 src/mount-suid
 src/get-section
