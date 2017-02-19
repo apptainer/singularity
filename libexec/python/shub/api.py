@@ -24,6 +24,8 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 sys.path.append('..') # parent directory
 
 from utils import (

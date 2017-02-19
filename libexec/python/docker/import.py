@@ -34,9 +34,11 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 sys.path.append('..')
 
-from docker.main import IMPORT
+from main import IMPORT
 from shell import get_image_uri
 from utils import (
     basic_auth_header,
