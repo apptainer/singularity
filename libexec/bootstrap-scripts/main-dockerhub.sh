@@ -42,5 +42,9 @@ fi
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/env.sh"
 eval "$SINGULARITY_libexecdir/singularity/python/cli.py" --rootfs "$SINGULARITY_ROOTFS" --docker "$SINGULARITY_BUILDDEF"
+RETVAL=$?
+if [ $RETVAL -ne 0 ]; then
+    exit $RETVAL
+fi
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 

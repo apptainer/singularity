@@ -41,7 +41,14 @@
 int bootstrap_init(int argc, char **argv) {
     char *builddef = singularity_registry_get("BUILDDEF");
 
-    if ( is_file(builddef) == 0 ) {
+
+    if ( strncmp(builddef, "docker://", 9) == 0 ) {
+        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-dockerhub.sh");
+
+        singularity_message(INFO, "Building from DockerHub container\n");
+        execl(bootstrap, bootstrap, NULL);
+
+    } else if ( is_file(builddef) == 0 ) {
         char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile.sh");
 
         singularity_message(INFO, "Building from bootstrap definition recipe\n");
@@ -51,11 +58,15 @@ int bootstrap_init(int argc, char **argv) {
         }
         execl(bootstrap, bootstrap, NULL);
 
-    } else if ( strncmp(builddef, "docker://", 9) == 0 ) {
-        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-dockerhub.sh");
+    } else if ( builddef == NULL || builddef[0] == '\0' ) {
+        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-rerun.sh");
 
-        singularity_message(INFO, "Building from DockerHub container\n");
+        singularity_message(INFO, "Running bootstrap with no recipe\n");
         execl(bootstrap, bootstrap, NULL);
+
+    } else {
+        singularity_message(ERROR, "Unsupported bootstrap definition format: '%s'\n", builddef);
+        ABORT(255);
 
     }
 
