@@ -39,7 +39,6 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
 fi
 
 
-
 # At this point, the container should be valid, and valid i defined by the
 # existance of /bin/sh
 if [ ! -L "$SINGULARITY_ROOTFS/bin/sh" -a ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
@@ -48,32 +47,7 @@ if [ ! -L "$SINGULARITY_ROOTFS/bin/sh" -a ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; t
 fi
 
 
-##########################################################################################
-# RUNSCRIPT
-##########################################################################################
-
 if [ -n "${SINGULARITY_BUILDDEF:-}" -a -f "${SINGULARITY_BUILDDEF:-}" ]; then
-
-#    #TODO: This needs lots of love...
-#    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | while read source dest; do
-#        if [ -z "$source" ]; then
-#            continue
-#        fi
-#        if [ -z "$dest" ]; then
-#            dest="$source"
-#        fi
-#        dirname=`dirname $dest`
-#
-#        if [ ! -d "$SINGULARITY_ROOTFS/$dirname" ]; then
-#            mkdir -p "$SINGULARITY_ROOTFS/$dirname"
-#        fi
-#
-#        message 1 "Installing file: $source -> $dest\n"
-#        cp -r "$source" "$SINGULARITY_ROOTFS/$dest"
-#    done
-
-    ### CREATE RUNSCRIPT
-
     # First priority goes to runscript defined in build file
     runscript_command=$(singularity_section_get "runscript" "$SINGULARITY_BUILDDEF")
 
@@ -146,5 +120,4 @@ fi
 if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
     chmod 0755 "$SINGULARITY_ROOTFS/singularity"
 fi
-
 
