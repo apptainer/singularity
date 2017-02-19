@@ -31,8 +31,16 @@ from utils import (
     api_get, 
     is_number,
     read_file,
-    write_file
+    write_file,
+    write_singularity_infos
 )
+
+from defaults import (
+    SHUB_API_BASE, 
+    SHUB_PREFIX, 
+    LABEL_BASE
+)
+
 from logman import logger
 import json
 import os
@@ -42,8 +50,6 @@ try:
     from urllib import unquote 
 except:
     from urllib.parse import unquote
-
-api_base = "singularity-hub.org/api"
 
 
 def authenticate(domain=None,token_folder=None):
@@ -66,15 +72,12 @@ def authenticate(domain=None,token_folder=None):
             token = read_file(token_file)[0].strip('\n')
         else:
             if domain == None:
-                domain = api_base
+                domain = SHUB_API_BASE
             print('''Please obtain token from %s/token
                      and save to .shub in your $HOME folder''' %(domain))
             sys.exit(1)
     return token
 
-
-# Authentication required ---------------------------------------------------------------------------------
-# Docker Registry Version 2.0 Functions - IN USE
 
 
 def get_manifest(image,registry=None):
@@ -83,7 +86,7 @@ def get_manifest(image,registry=None):
     :param registry: the registry (hub) to use, if not defined, default is used
     '''
     if registry == None:
-        registry = api_base
+        registry = SHUB_API_BASE
     registry = add_http(registry) # make sure we have a complete url
 
     # Numeric images have slightly different endpoint from named
@@ -122,7 +125,7 @@ def download_image(manifest,download_folder=None,extract=True):
     url = manifest['image']
     image_file = api_get(url,stream=image_file)
     if extract == True:
-        print("Decompressing", image_file)
+        print("Decompressing %s" %image_file)
         os.system('gzip -d -f %s' %(image_file))
         image_file = image_file.replace('.gz','')
     return image_file
@@ -145,3 +148,21 @@ def get_image_name(manifest,extension='img.gz',use_commit=True):
     else:
         logger.error("Singularity Hub Image not found with expected extension %s, exiting.",extension)
         sys.exit(1)
+
+
+def extract_metadata(manifest):
+    '''extract_metadata will write a file of metadata from shub
+    :param manifest: the manifest to use
+    '''
+
+    # The only metadata we don't need to keep is the spec
+    metadata = manifest.copy()
+    del metadata['files']
+    del metadata['spec']
+    metadata = json.dumps(metadata)
+    metadata_file = write_singularity_infos(base_dir=LABEL_BASE,
+                                            prefix=SHUB_PREFIX,
+                                            start_number=1,
+                                            content=metadata)
+    logger.debug("Saving Singularity Hub metadata to %s",metadata_file)    
+    return metadata

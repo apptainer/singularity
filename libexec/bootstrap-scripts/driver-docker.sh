@@ -46,41 +46,24 @@ fi
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
 ### Obtain the From from the spec (needed for docker bootstrap)
-SINGULARITY_DOCKER_IMAGE=`singularity_key_get "From" "$SINGULARITY_BUILDDEF"`
-if [ -z "${SINGULARITY_DOCKER_IMAGE:-}" ]; then
+SINGULARITY_CONTAINER=`singularity_key_get "From" "$SINGULARITY_BUILDDEF"`
+if [ -z "${SINGULARITY_CONTAINER:-}" ]; then
     message ERROR "Bootstrap type 'docker' given, but no 'From' defined!\n"
     ABORT 1
 else
-    message 1 "From: $SINGULARITY_DOCKER_IMAGE\n"
+    export SINGULARITY_CONTAINER
+    message 1 "From: $SINGULARITY_CONTAINER\n"
 fi
 
 ### Obtain the IncludeCmd from the spec (also needed for docker bootstrap)
-SINGULARITY_DOCKER_CMD=`singularity_key_get "IncludeCmd" "$SINGULARITY_BUILDDEF"`
-if [ -n "${SINGULARITY_DOCKER_CMD:-}" ]; then
-    message 1 "IncludeCmd: $SINGULARITY_DOCKER_CMD\n"
+SINGULARITY_DOCKER_INCLUDE_CMD=`singularity_key_get "IncludeCmd" "$SINGULARITY_BUILDDEF"`
+if [ -n "${SINGULARITY_DOCKER_INCLUDE_CMD:-}" ]; then
+    message 1 "IncludeCmd: $SINGULARITY_DOCKER_INCLUDE_CMD\n"
 
     # A command of "yes" means that we will include the docker CMD as runscript
-    if [ "$SINGULARITY_DOCKER_CMD" == "yes" ]; then
-        SINGULARITY_DOCKER_INCLUDE_CMD="--cmd"
-
-    # Anything else, we will not include it
-    else
-        SINGULARITY_DOCKER_INCLUDE_CMD=""
+    if [ "$SINGULARITY_DOCKER_INCLUDE_CMD" == "yes" ]; then
+        export SINGULARITY_DOCKER_INCLUDE_CMD
     fi
-
-# Default (not finding the IncludeCmd) is to not include
-else
-    SINGULARITY_DOCKER_INCLUDE_CMD=""
-fi
-
-
-### Obtain the remote registry url, if provided
-SINGULARITY_DOCKER_REGISTRY=`singularity_key_get "Registry" "$SINGULARITY_BUILDDEF"`
-if [ -n "${SINGULARITY_DOCKER_REGISTRY:-}" ]; then
-    message 1 "Registry: $SINGULARITY_DOCKER_REGISTRY\n"
-    SINGULARITY_DOCKER_REGISTRY="--registry $SINGULARITY_DOCKER_REGISTRY"   
-else
-    SINGULARITY_DOCKER_REGISTRY=""   
 fi
 
 
@@ -90,26 +73,17 @@ SINGULARITY_DOCKER_PASSWORD=`singularity_key_get "Password" "$SINGULARITY_BUILDD
 if [ -n "${SINGULARITY_DOCKER_USERNAME:-}" ] && [ -n "${SINGULARITY_DOCKER_PASSWORD:-}" ]; then
     message 1 "Username: $SINGULARITY_DOCKER_USERNAME\n"
     message 1 "Password: [hidden]\n"
-    SINGULARITY_DOCKER_AUTH="--username $SINGULARITY_DOCKER_USERNAME --password $SINGULARITY_DOCKER_PASSWORD"
-else
-    SINGULARITY_DOCKER_AUTH=""   
+    export SINGULARITY_DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD
 fi
 
 
 # Ensure the user has provided a docker image name with "From"
-if [ -z "$SINGULARITY_DOCKER_IMAGE" ]; then
+if [ -z "$SINGULARITY_CONTAINER" ]; then
     echo "Please specify the Docker image name with From: in the definition file."
     exit 1
 fi
 
-# Does the user want to include the docker CMD? Default, no.
-if [ -z "$SINGULARITY_DOCKER_INCLUDE_CMD:-}" ]; then
-    SINGULARITY_DOCKER_INCLUDE_CMD=""
-fi
-
-### Run it!
-
-python $SINGULARITY_libexecdir/singularity/python/cli.py --docker $SINGULARITY_DOCKER_IMAGE --rootfs $SINGULARITY_ROOTFS $SINGULARITY_DOCKER_INCLUDE_CMD $SINGULARITY_DOCKER_REGISTRY $SINGULARITY_DOCKER_AUTH
+eval $SINGULARITY_libexecdir/singularity/python/docker/import.py 
 
 # If we got here, exit...
 exit 0
