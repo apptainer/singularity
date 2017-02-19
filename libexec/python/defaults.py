@@ -111,11 +111,11 @@ DOCKER_NUMBER = 10 # number to start docker files at in ENV_DIR
 DOCKER_PREFIX = "docker"
 SHUB_PREFIX = "shub"
 
-_envbase = "%s/.env" %(METADATA_BASE)
+_envbase = "%s/env" %(METADATA_BASE)
 ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
 _layerfile = "%s/.layers" %(METADATA_BASE)
 LAYERFILE = getenv("SINGULARITY_LAYERFILE", default=_layerfile)
-_labelbase = "%s/.labels" %(METADATA_BASE)
+_labelbase = "%s/labels" %(METADATA_BASE)
 LABEL_BASE = getenv("SINGULARITY_LABELBASE", default=_labelbase)
 
 
