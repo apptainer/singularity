@@ -40,7 +40,6 @@ from defaults import (
     DOCKER_PREFIX,
     ENV_BASE,
     LABEL_BASE,
-    RUNSCRIPT_COMMAND,
     RUNSCRIPT_COMMAND_ASIS
 )
 
@@ -66,7 +65,7 @@ def create_runscript(manifest,base_dir,includecmd=False):
     :param base_dir: the base directory to write the runscript to
     '''
     runscript = "%s/singularity" %(base_dir)
-    cmd = RUNSCRIPT_COMMAND
+    cmd = None
 
     # Does the user want to use the CMD instead of ENTRYPOINT?
     commands = ["Entrypoint","Cmd"]
@@ -80,19 +79,22 @@ def create_runscript(manifest,base_dir,includecmd=False):
             cmd = configs[command]
             break
 
-    print("Adding Docker %s as Singularity runscript..." %(command.upper()))
-    print(cmd)
+    if cmd != None:
+        print("Adding Docker %s as Singularity runscript..." %(command.upper()))
+        print(cmd)
 
-    # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
-    if isinstance(cmd,list):
-        cmd = " ".join(cmd)
+        # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
+        if isinstance(cmd,list):
+            cmd = " ".join(cmd)
 
-    if not RUNSCRIPT_COMMAND_ASIS:
-        cmd = 'exec %s "$@"' %(cmd)
-    logger.info("Generating runscript at %s",runscript)
-    output_file = write_file(runscript,cmd)
-    return output_file
+        if not RUNSCRIPT_COMMAND_ASIS:
+            cmd = 'exec %s "$@"' %(cmd)
+        logger.info("Generating runscript at %s",runscript)
+        output_file = write_file(runscript,cmd)
+        return output_file
 
+    print("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
+    return cmd
 
 def extract_env(manifest):
     '''extract_env will write a file of key value pairs of the environment

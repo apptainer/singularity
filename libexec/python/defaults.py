@@ -69,7 +69,6 @@ def convert2boolean(arg):
 #######################################################################
 
 # Filled in to exec %s "$@"
-RUNSCRIPT_COMMAND = "/bin/bash"
 RUNSCRIPT_COMMAND_ASIS = convert2boolean(getenv("SINGULARITY_COMMAND_ASIS",
                                          default=False))
 
