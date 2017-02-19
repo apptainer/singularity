@@ -38,10 +38,12 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
+export SINGULARITY_CONTAINER
 
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/env.sh"
-eval "$SINGULARITY_libexecdir/singularity/python/cli.py" --rootfs "$SINGULARITY_ROOTFS" --docker "$SINGULARITY_BUILDDEF"
+eval "$SINGULARITY_libexecdir/singularity/python/docker/import.py"
 RETVAL=$?
 if [ $RETVAL -ne 0 ]; then
     exit $RETVAL
