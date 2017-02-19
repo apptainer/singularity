@@ -3,9 +3,10 @@ import logging
 
 def get_logging_level():
     '''get_logging_level will configure a logging to standard out based on the user's
-    selected level, which should be in an environment variable called MESSAGELEVEL.
-    if MESSAGELEVEL is not set, the maximum level (5) is assumed (all messages).
-    levels from https://github.com/singularityware/singularity/blob/master/src/lib/message.h
+    selected level, which should be in an environment variable called
+    SINGULARITY_MESSAGELEVEL. if SINGULARITY_MESSAGELEVEL is not set, the maximum level
+    (5) is assumed (all messages). levels from
+    https://github.com/singularityware/singularity/blob/master/src/lib/message.h
 
     #define ABRT -4
     #define ERROR -3
@@ -19,7 +20,7 @@ def get_logging_level():
     #define DEBUG 5
     '''
 
-    MESSAGELEVEL = int(os.environ.get("MESSAGELEVEL",5))
+    MESSAGELEVEL = int(os.environ.get("SINGULARITY_MESSAGELEVEL",5))
 
     #print("Environment message level found to be %s" %MESSAGELEVEL)
 
