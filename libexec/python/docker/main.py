@@ -149,9 +149,9 @@ def ADD(image,auth=None,layerfile=None):
         targz = "%s/%s.tar.gz" %(cache_base,image_id)
         if not os.path.exists(targz):
             targz = get_layer(image_id=image_id,
-                              namespace=additions['image']['namespace'],
-                              repo_name=additions['image']['repo_name'],
-                              registry=additions['image']['registry'],
+                              namespace=image['namespace'],
+                              repo_name=image['repo_name'],
+                              registry=image['registry'],
                               download_folder=cache_base,
                               auth=auth)
 
