@@ -2,10 +2,7 @@
 
 defaults.py: this script acts as a gateway between variables defined at
 runtime, and defaults. Any variable that has an unchanging default value 
-can be found here, for example, the folder at the root of the container for
-metadata (METADATA_BASE) is consistent. A variable like SINGULARITY_ROOTFS,
-on the other hand, is not, and is not in this file. The order of operations
-works as follows:
+can be found here. The order of operations works as follows:
   
     1. First preference goes to environment variable set at runtime
     2. Second preference goes to default defined in this file
@@ -35,6 +32,7 @@ perform publicly and display publicly, and to permit other to do so.
 from logman import logger
 import tempfile
 import os
+import sys
 
 def getenv(variable_key,required=False,default=None,silent=False):
     '''getenv will attempt to get an environment variable. If the variable
@@ -51,7 +49,10 @@ def getenv(variable_key,required=False,default=None,silent=False):
     if silent:
         logger.debug("%s found",variable_key)
     else:
-        logger.debug("%s found as %s",variable_key,variable)
+        if variable != None:
+            logger.debug("%s found as %s",variable_key,variable)
+        else:
+            logger.debug("%s not defined (None)",variable_key)
 
     return variable 
 
@@ -59,16 +60,28 @@ def convert2boolean(arg):
   '''convert2boolean is used for environmental variables that must be
   returned as boolean'''
   if not isinstance(arg,bool):
-      return arg.lower() in ("yes", "true", "t", "1")
+      return arg.lower() in ("yes", "true", "t", "1","y")
   return arg
+
 
 #######################################################################
 # Singularity
 #######################################################################
 
+# Filled in to exec %s "$@"
+RUNSCRIPT_COMMAND = "/bin/bash"
+RUNSCRIPT_COMMAND_ASIS = convert2boolean(getenv("SINGULARITY_COMMAND_ASIS",
+                                         default=False))
+
+SINGULARITY_ROOTFS = getenv("SINGULARITY_ROOTFS")
+_metadata_base = "%s/.singularity-info" %(SINGULARITY_ROOTFS)
 METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER", 
-                       default="/.singularity-info",
-                       required=True)
+                                   default=_metadata_base,
+                                   required=True)
+
+#######################################################################
+# Cache
+#######################################################################
 
 DISABLE_CACHE = convert2boolean(getenv("SINGULARITY_DISABLE_CACHE",
                                 default=False))
@@ -81,6 +94,7 @@ else:
 
 if not os.path.exists(SINGULARITY_CACHE):
     os.mkdir(SINGULARITY_CACHE)
+
 
 #######################################################################
 # Docker
@@ -95,8 +109,19 @@ TAG = "latest"
 # Container Metadata
 DOCKER_NUMBER = 10 # number to start docker files at in ENV_DIR
 DOCKER_PREFIX = "docker"
-ENV_BASE = ".env"
-LAYERFILE = ".layers"
-LABEL_BASE = ".labels"
+SHUB_PREFIX = "shub"
+
+_envbase = "%s/.env" %(METADATA_BASE)
+ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
+_layerfile = "%s/.layers" %(METADATA_BASE)
+LAYERFILE = getenv("SINGULARITY_LAYERFILE", default=_layerfile)
+_labelbase = "%s/.labels" %(METADATA_BASE)
+LABEL_BASE = getenv("SINGULARITY_LABELBASE", default=_labelbase)
 
 
+#######################################################################
+# Singularity Hub
+#######################################################################
+
+SINGULARITY_HUB_PULL_FOLDER = getenv("SINGULARITY_HUB_PULL_FOLDER", default=os.getcwd())
+SHUB_API_BASE = "singularity-hub.org/api"

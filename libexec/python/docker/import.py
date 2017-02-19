@@ -7,12 +7,10 @@ import.py: python helper for Singularity docker import
 
 ENVIRONMENTAL VARIABLES that are found for this executable:
 
-    SINGULARITY_DOCKER_IMAGE 
+    SINGULARITY_CONTAINER 
     SINGULARITY_DOCKER_INCLUDE_CMD 
     SINGULARITY_DOCKER_USERNAME
     SINGULARITY_DOCKER_PASSWORD
-    SINGULARITY_DISABLE_CACHE
-    SINGULARITY_METADATA_FOLDER
 
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
@@ -39,37 +37,33 @@ import sys
 sys.path.append('..')
 
 from docker.main import IMPORT
-from defaults import (
-    METADATA_BASE
-    DISABLE_CACHE
-)
 from shell import get_image_uri
 from utils import (
     basic_auth_header,
-    getenv
 )
 
+from defaults import getenv
 from logman import logger
 import os
 import sys
 
 
 def main():
-    '''main is a wrapper for the client to hand the parser to the executable functions
-    This makes it possible to set up a parser in test cases
+    '''this function will run a docker import, returning a list of layers 
+    and environmental variables and metadata to the metadata base
     '''
+    from defaults import SINGULARITY_ROOTFS
 
     logger.info("\n*** STARTING DOCKER IMPORT PYTHON  ****")
     
-    container = getenv("SINGULARITY_DOCKER_IMAGE",error_on_none=True)
-    rootfs = getenv("SINGULARITY_ROOTFS",error_on_none=True)
+    container = getenv("SINGULARITY_CONTAINER",required=True)
     includecmd = getenv("SINGULARITY_DOCKER_INCLUDE_CMD")
     username = getenv("SINGULARITY_DOCKER_USERNAME") 
     password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
 
     # What image is the user asking for?
     image_uri = get_image_uri(container)    
-    logger.info("Root file system: %s",rootfs)
+    logger.info("Root file system: %s",SINGULARITY_ROOTFS)
 
     # Does the registry require authentication?
     auth = None
@@ -80,9 +74,7 @@ def main():
 
         IMPORT(auth=auth,
                image=container,
-               metadata_dir=METADATA_BASE,
-               rootfs=rootfs,
-               disable_cache=DISABLE_CACHE)
+               rootfs=SINGULARITY_ROOTFS)
 
     else:
         logger.error("uri %s is not a currently supported uri for docker import. Exiting.",image_uri)

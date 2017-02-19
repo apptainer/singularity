@@ -34,7 +34,7 @@ import tempfile
 
 VERSION = sys.version_info[0]
 
-print("*** PYTHON VERSION %s CLIENT TESTING START ***" %(VERSION))
+print("*** PYTHON VERSION %s BASE TESTING START ***" %(VERSION))
 
 class TestShell(TestCase):
 
@@ -50,10 +50,14 @@ class TestShell(TestCase):
         self.REGISTRY = 'index.docker.io'
         self.NAMESPACE = 'library'
         self.REPO_TAG = 'latest'
+        self.tmpdir = tempfile.mkdtemp()
+        os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
         
         print("\n---START----------------------------------------")
 
     def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
         print("---END------------------------------------------")
 
     def test_get_image_uri(self):

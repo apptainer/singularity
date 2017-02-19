@@ -2,18 +2,15 @@
 
 '''
 
-add.py: python helper for Singularity docker add, which is an
-        import without environment or metadata that returns
-        a flat file with docker tars to SINGULARITY_META_DIR
+add.py: python helper for Singularity Hub add, which is basically
+        a pull to the SINGULARITY_ROOTFS instead of a user specified
+        pull folder
 
 
 ENVIRONMENTAL VARIABLES that are found for this executable:
 
     SINGULARITY_ROOTFS
     SINGULARITY_CONTAINER
-    SINGULARITY_DOCKER_USERNAME
-    SINGULARITY_DOCKER_PASSWORD
-    SINGULARITY_METADATA_BASE
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
@@ -38,49 +35,34 @@ perform publicly and display publicly, and to permit other to do so.
 import sys
 sys.path.append('..')
 
-from docker.main import ADD
+from shub.main import ADD
 from shell import get_image_uri
 from defaults import getenv
-from utils import (
-    basic_auth_header
-)
-
 from logman import logger
 import os
 import sys
 
 
 def main():
-    '''main is a wrapper for the client to hand the parser to the executable functions
-    This makes it possible to set up a parser in test cases
+    '''main will download a shub image to the METADATA_BASE folder
     '''
-    from defaults import SINGULARITY_ROOTFS,METADATA_BASE,LAYERFILE
+    from defaults import LAYERFILE
 
     container = getenv("SINGULARITY_CONTAINER",required=True)
-    username = getenv("SINGULARITY_DOCKER_USERNAME") 
-    password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
 
     logger.info("\n*** STARTING DOCKER ADD PYTHON  ****")
 
     # What image is the user asking for?
     image_uri = get_image_uri(container)    
-    logger.info("Root file system: %s",SINGULARITY_ROOTFS)
-
-    # Does the registry require authentication?
-    auth = None
-    if username is not None and password is not None:
-        auth = basic_auth_header(username, password)
-
 
     # ADD will write list of docker layers to metadata_file
-    if image_uri == "docker://":
+    if image_uri == "shub://":
 
-        additions = ADD(auth=auth,
-                        image=container,
+        additions = ADD(image=container,
                         layerfile=LAYERFILE)
 
     else:
-        logger.error("uri %s is not a currently supported uri for docker add. Exiting.",image_uri)
+        logger.error("uri %s is not a currently supported uri for singularity hub add. Exiting.",image_uri)
         sys.exit(1)
 
 

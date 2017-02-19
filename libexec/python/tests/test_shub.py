@@ -2,7 +2,7 @@
 
 test_shub.py: Singularity Hub testing functions for Singularity in Python
 
-Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -33,7 +33,7 @@ import tempfile
 
 VERSION = sys.version_info[0]
 
-print("*** PYTHON VERSION %s CLIENT TESTING START ***" %(VERSION))
+print("*** PYTHON VERSION %s SINGULARITY HUB API TESTING START ***" %(VERSION))
 
 class TestApi(TestCase):
 
@@ -43,6 +43,7 @@ class TestApi(TestCase):
         self.user_name = "vsoch"
         self.repo_name = "singularity-images"
         self.tmpdir = tempfile.mkdtemp()
+        os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
         print("\n---START----------------------------------------")
 
     def tearDown(self):

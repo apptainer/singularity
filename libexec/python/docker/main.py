@@ -23,7 +23,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 sys.path.append('..') # parent directory
-
+from defaults import DISABLE_CACHE
 from utils import (
     api_get, 
     extract_tar,
@@ -36,12 +36,9 @@ from docker.api import (
     create_runscript,
     extract_env,
     extract_labels,
+    get_images,
     get_layer,
     get_manifest
-)
-
-from defaults import (
-    METADATA_BASE
 )
 
 from logman import logger
@@ -51,12 +48,11 @@ import os
 import tempfile
 
 
-def IMPORT(image,rootfs,auth=None,disable_cache=False,includecmd=False):
+def IMPORT(image,rootfs,auth=None,includecmd=False):
     '''run is the main script that will obtain docker layers, runscript information (either entrypoint
     or cmd), and environment, and either return the list of files to extract (in case of add 
     :param image: the docker image to add
     :param auth: if needed, an authentication header (default None)
-    :param disable_cache: if True, don't cache layers (default False)
     :param includecmd: use CMD as %runscript instead of ENTRYPOINT (default False)
     '''
     logger.debug("Starting Docker IMPORT, includes environment, runscript, and metadata.")
@@ -70,54 +66,49 @@ def IMPORT(image,rootfs,auth=None,disable_cache=False,includecmd=False):
 
     additions = ADD(image=image,
                     auth=auth,
-                    layersfile=False,
-                    disable_cache=disable_cache)
+                    layerfile=None)
 
     # Extract layers to filesystem
-    for layer in additions['layers']:
-        if not os.path.exists(layer):
-
-            download_folder = os.path.dirname(layer)
-            image_id,_ = os.path.splitext(os.path.basename(layer))
-
-            targz = get_layer(image_id=image_id,
-                              namespace=additions['image']['namespace'],
-                              repo_name=additions['image']['repo_name'],
-                              registry=additions['image']['registry'],
-                              download_folder=download_folder,
-                              auth=auth)
+    for targz in additions['layers']:
+ 
+        if not os.path.exists(targz):
+            logger.error("Cannot find %s, was it removed by another process?")
+            sys.exit(1)
 
         # Extract image and remove tar
         output = extract_tar(targz,rootfs)
+        if DISABLE_CACHE == True:
+            os.remove(targz)
+
         if output is None:
             logger.error("Error extracting image: %s", targz)
             sys.exit(1)
-        if disable_cache == True:
-            os.remove(targz)
                
     # Generate runscript
-    runscript = create_runscript(manifest=manifest,
+    runscript = create_runscript(manifest=additions['manifest'],
                                  base_dir=rootfs,
                                  includecmd=includecmd)
 
+    # Clean up?
+    if DISABLE_CACHE == True:
+        shutil.rmtree(additions['cache_base'])
+
     # Extract environment and labels
-    extract_env(manifest)
-    extract_labels(manifest)
+    extract_env(additions['manifest'])
+    extract_labels(additions['manifest'])
 
     # When we finish, clean up images
-    if disable_cache == True:
-        shutil.rmtree(cache_base)
     logger.info("*** FINISHING DOCKER IMPORT PYTHON PORTION ****\n")
 
 
 
-def ADD(image,metadata_base,auth=None,layerfile=None):
+def ADD(image,auth=None,layerfile=None):
     '''run is the main script that will obtain docker layers, runscript information (either entrypoint
     or cmd), and environment, and either return the list of files to extract (in case of add 
     :param image: the docker image to add
     :param auth: if needed, an authentication header (default None)
     :param layerfile: If True, write layers to METADATA_BASE/.layers
-    :returns additions: a dict with "layers" and "manifest" for further parsing
+    :returns additions: a dict with "layers", "manifest", "cache_base" for further parsing
     '''
 
     logger.debug("Starting Docker ADD, only includes file and folder objects")
@@ -126,7 +117,10 @@ def ADD(image,metadata_base,auth=None,layerfile=None):
     # Input Parsing ----------------------------
     # Parse image name, repo name, and namespace
     image = parse_image_uri(image=image,uri="docker://")
-    logger.info("Docker image path: %s/%s:%s", namespace,repo_name,repo_tag)
+    logger.info("Docker image path: %s/%s/%s:%s", image['registry'],
+                                                  image["namespace"],
+                                                  image["repo_name"],
+                                                  image["repo_tag"])
 
     # IMAGE METADATA -------------------------------------------
     # Use Docker Registry API (version 2.0) to get images ids, manifest
@@ -146,28 +140,32 @@ def ADD(image,metadata_base,auth=None,layerfile=None):
     # Each is a .tar.gz file, obtained from registry with curl
        
     # Get the cache (or temporary one) for docker
-    cache_base = get_cache(subfolder="docker", 
-                           disable_cache=disable_cache)
+    cache_base = get_cache(subfolder="docker")
 
     layers = []
     for image_id in images:
+
         targz = "%s/%s.tar.gz" %(cache_base,image_id)
+        if not os.path.exists(targz):
+            targz = get_layer(image_id=image_id,
+                              namespace=additions['image']['namespace'],
+                              repo_name=additions['image']['repo_name'],
+                              registry=additions['image']['registry'],
+                              download_folder=cache_base,
+                              auth=auth)
+
         layers.append(targz) # in case we want a list at the end
 
     # If the user wants us to write the layers to file, do it.
     if layerfile != None:
 
-        # Standard for layerfile is under SINGULARITY_METADATA_FOLDER/.layers
-        metadata_file = "%s/%s" %(metadata_base, layerfile)
-
-        # Question - here we will have /tmp paths - should this be changed
-        # after they are downloaded, kept ok as is, or the file removed?
-        logger.debug("Writing Docker layers files to %s", metadata_file)
-        write_file(metadata_file,"\n".join(layers),mode="a")
+        logger.debug("Writing Docker layers files to %s", layerfile)
+        write_file(layerfile,"\n".join(layers),mode="w")
 
     # Return additions dictionary
     additions = { "layers": layers,
                   "image" : image,
-                  "manifest": manifest }
+                  "manifest": manifest,
+                  "cache_base":cache_base }
 
     return additions

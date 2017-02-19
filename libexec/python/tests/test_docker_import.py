@@ -1,8 +1,8 @@
 '''
 
-test_docker.py: Docker testing functions for Singularity in Python
+test_docker_import.py: Docker testing functions for Singularity in Python
 
-Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -26,21 +26,24 @@ import sys
 sys.path.append('..') # directory with docker
 
 from unittest import TestCase
-from utils import read_file
 import shutil
 import tempfile
 
 VERSION = sys.version_info[0]
 
-print("*** PYTHON VERSION %s CLIENT TESTING START ***" %(VERSION))
+print("*** PYTHON VERSION %s DOCKER IMPORT TESTING START ***" %(VERSION))
 
-class TestApi(TestCase):
-
+class TestImport(TestCase):
 
     def setUp(self):
         self.namespace = 'library'
         self.repo_name = 'ubuntu'
         self.tmpdir = tempfile.mkdtemp()
+        
+        # Variables are obtained from environment
+        os.environ["SINGULARITY_DOCKER_IMAGE"] = "docker://ubuntu:latest" 
+        os.environ["SINGULARITY_ROOTFS"] = self.tmpdir
+
         print("\n---START----------------------------------------")
 
     def tearDown(self):
@@ -48,20 +51,65 @@ class TestApi(TestCase):
 
         print("---END------------------------------------------")
 
-    def test_create_runscript(self):
-        '''test_create_runscript should ensure that a runscript is generated
-        with some command
+
+    def test_IMPORT(self):
+        '''test_import will 
         '''
-        from docker.api import create_runscript
-        cmd = "echo 'Hello World'"
-        base_dir = tempfile.mkdtemp()
-        runscript = create_runscript(cmd=cmd,
-                                     base_dir=base_dir)
+        print('Testing creation of runscript')
+        from docker.api import create_runscript, get_manifest
+
+        manifest = get_manifest(repo_name = self.repo_name,
+                                namespace = self.namespace)
+
+        print("Case 1: Asking for CMD when none defined")        
+        default_cmd = 'exec /bin/bash "$@"'
+        runscript = create_runscript(manifest=manifest,
+                                     base_dir=self.tmpdir,
+                                     includecmd=True)
         self.assertTrue(os.path.exists(runscript))
         generated_cmd = read_file(runscript)[0]
         # Commands are always in format exec [] "$@"
         # 'exec echo \'Hello World\' "$@"'
-        self.assertEqual('exec %s "$@"' %cmd,generated_cmd)
+        self.assertEqual(default_cmd,generated_cmd)
+
+        print("Case 2: Asking for ENTRYPOINT when none defined")        
+        runscript = create_runscript(manifest=manifest,
+                                     base_dir=self.tmpdir)
+        generated_cmd = read_file(runscript)[0]
+        self.assertEqual(default_cmd,generated_cmd)
+
+        manifest = get_manifest(repo_name = "mriqc",
+                                namespace = "bids",
+                                repo_tag="0.0.2")
+
+        print("Case 3: Asking for ENTRYPOINT when defined")        
+        runscript = create_runscript(manifest=manifest,
+                                     base_dir=self.tmpdir)
+        generated_cmd = read_file(runscript)[0]
+        self.assertEqual('exec /usr/bin/run_mriqc "$@"',generated_cmd)        
+
+
+        print("Case 3: Asking for CMD when defined")    
+          
+        runscript = create_runscript(manifest=manifest,
+                                     base_dir=self.tmpdir,
+                                     includecmd=True)
+        generated_cmd = read_file(runscript)[0]
+        self.assertEqual('exec --help "$@"',generated_cmd)        
+
+
+        print("Case 4: Asking for ENTRYPOINT when None, should return CMD")    
+        from docker.api import get_configs
+        manifest = get_manifest(repo_name = "tensorflow",
+                                namespace = "tensorflow",
+                                repo_tag="1.0.0")
+        configs = get_configs(manifest,['Cmd','Entrypoint'])
+        self.assertTrue(configs['Entrypoint'],None)
+        runscript = create_runscript(manifest=manifest,
+                                     base_dir=self.tmpdir)
+
+        generated_cmd = read_file(runscript)[0]
+        self.assertTrue(re.search(configs['Cmd'],generated_cmd))        
 
 
     def test_get_token(self):

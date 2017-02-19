@@ -38,10 +38,13 @@ print("*** PYTHON VERSION %s CLIENT TESTING START ***" %(VERSION))
 class TestDisabledCache(TestCase):
 
     def setUp(self):
-        os.environ['SINGULARITY_DISABLE_CACHE'] = "yes" 
+        os.environ['SINGULARITY_DISABLE_CACHE'] = "yes"
+        self.tmpdir = tempfile.mkdtemp() 
+        os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
         print("\n---START----------------------------------------")
 
     def tearDown(self):
+        shutil.rmtree(self.tmpdir)
         print("---END------------------------------------------")
 
     def test_cache_disabled(self):

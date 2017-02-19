@@ -28,7 +28,8 @@ from shell import parse_image_uri
 
 from shub.api import (
     download_image, 
-    get_manifest
+    extract_metadata,
+    get_manifest,
     get_image_name
 )
 
@@ -46,21 +47,17 @@ import os
 import tempfile
 
 
-def PULL(image,metadata_base=None,pull_folder=None,disable_cache=False):
+def PULL(image,pull_folder=None):
     '''PULL will retrieve a Singularity Hub image and download to the local file
-    system. If a metadata_dir is provided, the path to the image is written to a file
-    called SINGULARITY_RUNDIR and SINGULARITY_IMAGE here, with only the purpose
-    of passing the variable up.
+    system, to the variable specified by SINGULARITY_PULL_FOLDER.
     :param image: the singularity hub image name
     :param pull folder: the folder to pull the image to (overrides cache)
-    :param metadata_dir: if defined, write image paths to text files here
-    :param disable_cache: use temporary folder instead of cache
     '''
     image = image.replace("shub://","")
     
     manifest = get_manifest(image)
     if pull_folder == None:
-        cache_base = get_cache(subfolder="shub",disable_cache=disable_cache)
+        cache_base = get_cache(subfolder="shub")
     else:
         cache_base = pull_folder
 
@@ -73,9 +70,39 @@ def PULL(image,metadata_base=None,pull_folder=None,disable_cache=False):
     else:
         print("Image already exists at %s, skipping download." %image_file)
     logger.info("Singularity Hub Image Download: %s", image_file)
-       
-    # If singularity_rootfs is provided, write metadata to it
-    if metadata_base != None:
-        logger.debug("Writing SINGULARITY_RUNDIR and SINGULARITY_IMAGE to %s",metadata_dir)
-        write_file("%s/SINGULARITY_RUNDIR" %metadata_base, os.path.dirname(image_file))
-        write_file("%s/SINGULARITY_IMAGE" %metadata_base, image_file)
+
+    additions = {'image_file': image_file,
+                 'manifest': manifest,
+                 'cache_base': cache_base,
+                 'image': image }
+
+    return additions
+
+
+def ADD(image,layerfile=None):
+    '''ADD is essentially the same as PULL, except the image path is returned 
+    and written to layerfile, so it can be imported into rootfs.
+    :param image: the singularity hub image name
+    :param layerfile: the file to write the pulled image to.
+    '''
+    additions = PULL(image)
+
+    if layerfile != None:
+
+        logger.debug("Writing Singularity Hub image path to %s", layerfile)
+        write_file(layerfile,additions['image_file'],mode="w")
+
+    return additions
+
+
+
+def IMPORT(image,layerfile):
+    '''IMPORT takes one more step than ADD, returning the image written to a layerfile
+    plus metadata written to the metadata base in rootfs.
+    :param image: the singularity hub image name
+    '''
+    additions = ADD(image,layerfile)
+
+    # Write metadata to base    
+    additions['metadata'] = extract_metadata(additions['manifest'])
+    return additions

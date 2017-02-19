@@ -38,12 +38,16 @@ print("*** PYTHON VERSION %s CLIENT TESTING START ***" %(VERSION))
 class TestDefaultCache(TestCase):
 
     def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
         if "SINGULARITY_CACHE_DIR" in os.environ:
             del os.environ['SINGULARITY_CACHE_DIR']
 
         print("\n---START----------------------------------------")
 
     def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
         print("---END------------------------------------------")
 
     def test_get_cache_default(self):

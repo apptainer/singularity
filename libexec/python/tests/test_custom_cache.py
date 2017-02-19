@@ -40,6 +40,7 @@ class TestCustomCache(TestCase):
         self.tmpdir = tempfile.mkdtemp()
         self.custom_cache = '%s/cache' %(self.tmpdir)
         os.environ['SINGULARITY_CACHEDIR'] = self.custom_cache 
+        os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
         print("\n---START----------------------------------------")
 
     def tearDown(self):
@@ -54,6 +55,7 @@ class TestCustomCache(TestCase):
         from defaults import SINGULARITY_CACHE
         self.assertEqual(self.custom_cache,SINGULARITY_CACHE)   
         self.assertTrue(os.path.exists(SINGULARITY_CACHE))
+
 
 if __name__ == '__main__':
     unittest.main()

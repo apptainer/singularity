@@ -37,7 +37,9 @@ from defaults import (
     DOCKER_NUMBER,
     DOCKER_PREFIX,
     ENV_BASE,
-    LABEL_BASE
+    LABEL_BASE,
+    RUNSCRIPT_COMMAND,
+    RUNSCRIPT_COMMAND_ASIS
 )
 
 from logman import logger
@@ -54,29 +56,39 @@ except ImportError:
 # Authentication not required ---------------------------------------------------------------------------------
 
 def create_runscript(manifest,base_dir,includecmd=False):
-    '''create_runscript will write a bash script with command "cmd" into the base_dir
+    '''create_runscript will write a bash script with default "ENTRYPOINT" 
+    into the base_dir. If includecmd is True, CMD is used instead. For both.
+    if the result is found empty, the other is tried, and then a default used.
     :param manifest: the manifest to use to get the runscript
     :param includecmd: overwrite default command (ENTRYPOINT) default is False
     :param base_dir: the base directory to write the runscript to
     '''
     runscript = "%s/singularity" %(base_dir)
+    cmd = RUNSCRIPT_COMMAND
 
     # Does the user want to use the CMD instead of ENTRYPOINT?
+    commands = ["Entrypoint","Cmd"]
     if includecmd == True:
-        spec="Cmd"
-    else:
-        spec="Entrypoint"
+        commands.reverse()
+    configs = get_configs(manifest,commands)
+    
+    # Look for non "None" command
+    for command in commands:
+        if configs[command] != None:
+            cmd = configs[command]
+            break
 
-    cmd = get_config(manifest=manifest,spec=spec)
+    print("Adding Docker %s as Singularity runscript..." %(command.upper()))
+    print(cmd)
 
-    # Only add runscript if command is defined
-    if cmd != None:
-        print("Adding Docker %s as Singularity runscript..." %(spec.upper()))
-        print(cmd)
-        
-    content = 'exec %s "$@"' %(cmd)
+    # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
+    if isinstance(cmd,list):
+        cmd = " ".join(cmd)
+
+    if not RUNSCRIPT_COMMAND_ASIS:
+        cmd = 'exec %s "$@"' %(cmd)
     logger.info("Generating runscript at %s",runscript)
-    output_file = write_file(runscript,content)
+    output_file = write_file(runscript,cmd)
     return output_file
 
 
@@ -88,7 +100,8 @@ def extract_env(manifest):
     '''
     environ = get_config(manifest,'Env')
     if environ != None:
-        environ = "\n".join(environ)
+        if isinstance(environ,list):
+            environ = "\n".join(environ)
         logger.debug("Found Docker container environment!")    
         environ_file = write_singularity_infos(base_dir=ENV_BASE,
                                                prefix=DOCKER_PREFIX,
@@ -103,13 +116,13 @@ def extract_labels(manifest):
     :param manifest: the manifest to use
     '''
     labels = get_config(manifest,'Labels')
-    if labels != None:
+    if labels != None and len(labels) != 0:
         labels = json.dumps(labels)
         logger.debug("Found Docker container labels!")    
-        labels_file = write_singularity_infos(base_dir=LABELS_BASE,
-                                               prefix=DOCKER_PREFIX,
-                                               start_number=DOCKER_NUMBER,
-                                               content=labels)
+        labels_file = write_singularity_infos(base_dir=LABEL_BASE,
+                                              prefix=DOCKER_PREFIX,
+                                              start_number=DOCKER_NUMBER,
+                                              content=labels)
     return labels
 
 
@@ -123,6 +136,20 @@ def get_config(manifest,key):
             if len(manifest["Config"][key] > 0):
                 return manifest["Config"][key]
     return None
+
+
+def get_configs(manifest,keys):
+    '''get_configs is a wrapper for get_config to return a dictionary
+    with multiple config items.
+    :param manifest: the complete manifest
+    :param keys: the key to find
+    '''
+    configs = dict()
+    if not isinstance(keys,list):
+        keys = [keys]
+    for key in keys:
+        configs[key] = get_config(manifest,key)
+    return configs
 
 
 def get_token(namespace,repo_name,registry=None,auth=None):

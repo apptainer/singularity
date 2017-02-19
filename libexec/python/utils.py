@@ -307,24 +307,15 @@ def change_permissions(path,permission=None,recursive=True):
 ############################################################################
 
 
-def get_cache(cache_base=None,subfolder=None):
-    '''get_cache will return the user's cache for singularity. It must include
-    the base (determined at start of run) and then an optional subfolder.
-    $HOME/.singularity. If disable_cache is  If not specified
-    :param cache_base: the cache base
+def get_cache(subfolder=None):
+    '''get_cache will return the user's cache for singularity. The path
+    returned is generated at the start of the run, and returned optionally
+    with a subfolder
     :param subfolder: a subfolder in the cache base to retrieve, specifically
-    instead. The other functions are responsible for cleaning this up after use.
-    for a particular kind of image cache (eg, docker, shub, etc.)
     '''
-    # Check if disabled via environmental variable
-    if DISABLE_CACHE == True:
-        return tempfile.mkdtemp()
-    else:
-        if cache_base == None:
-            cache_base = SINGULARITY_CACHE
 
     # Clean up the path and create
-    cache_base = clean_path(cache_base)
+    cache_base = clean_path(SINGULARITY_CACHE)
 
     # Does the user want to get a subfolder in cache base?
     if subfolder != None:
@@ -368,7 +359,7 @@ def extract_tar(archive,output_folder):
     retval = run_command(command)
 
     # Change permissions (default ensures writable)
-    change_permissions(output_folder)
+    # change_permissions(output_folder)
 
     # Should we return a list of extracted files? Current returns empty string
     return retval
