@@ -165,6 +165,7 @@ def extract_metadata(manifest):
     metadata_file = write_singularity_infos(base_dir=LABEL_BASE,
                                             prefix=SHUB_PREFIX,
                                             start_number=1,
-                                            content=metadata)
+                                            content=metadata,
+                                            extension='.json')
     logger.debug("Saving Singularity Hub metadata to %s",metadata_file)    
     return metadata

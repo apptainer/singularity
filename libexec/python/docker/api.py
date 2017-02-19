@@ -40,7 +40,7 @@ from defaults import (
     DOCKER_PREFIX,
     ENV_BASE,
     LABEL_BASE,
-    RUNSCRIPT_COMMAND,
+    METADATA_BASE,
     RUNSCRIPT_COMMAND_ASIS
 )
 
@@ -57,16 +57,15 @@ except ImportError:
 
 # Authentication not required ---------------------------------------------------------------------------------
 
-def create_runscript(manifest,base_dir,includecmd=False):
+def create_runscript(manifest,includecmd=False):
     '''create_runscript will write a bash script with default "ENTRYPOINT" 
     into the base_dir. If includecmd is True, CMD is used instead. For both.
     if the result is found empty, the other is tried, and then a default used.
     :param manifest: the manifest to use to get the runscript
     :param includecmd: overwrite default command (ENTRYPOINT) default is False
-    :param base_dir: the base directory to write the runscript to
     '''
-    runscript = "%s/singularity" %(base_dir)
-    cmd = RUNSCRIPT_COMMAND
+    runscript = "%s/runscript" %(METADATA_BASE)
+    cmd = None
 
     # Does the user want to use the CMD instead of ENTRYPOINT?
     commands = ["Entrypoint","Cmd"]
@@ -80,18 +79,23 @@ def create_runscript(manifest,base_dir,includecmd=False):
             cmd = configs[command]
             break
 
-    print("Adding Docker %s as Singularity runscript..." %(command.upper()))
-    print(cmd)
+    if cmd != None:
+        print("Adding Docker %s as Singularity runscript..." %(command.upper()))
+        print(cmd)
 
-    # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
-    if isinstance(cmd,list):
-        cmd = " ".join(cmd)
+        # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
+        if isinstance(cmd,list):
+            cmd = " ".join(cmd)
 
-    if not RUNSCRIPT_COMMAND_ASIS:
-        cmd = 'exec %s "$@"' %(cmd)
-    logger.info("Generating runscript at %s",runscript)
-    output_file = write_file(runscript,cmd)
-    return output_file
+        if not RUNSCRIPT_COMMAND_ASIS:
+            cmd = 'exec %s "$@"' %(cmd)
+        cmd = "#!/bin/sh\n\n%s" %(cmd)
+        logger.info("Generating runscript at %s",runscript)
+        output_file = write_file(runscript,cmd)
+        return output_file
+
+    print("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
+    return cmd
 
 
 def extract_env(manifest):

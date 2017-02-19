@@ -91,11 +91,11 @@ This is the root file system location of the container. There are various checks
 Goes into the variable `METADATA_BASE`, and is the directory location to write the metadata file structure. Specifically, this means folders for environmental variable and layers files. The default looks like this:
 
       `$SINGULARITY_ROOTFS`
-           .singularity-info
+           .singularity
                env
                labels
 
-If the environmental variable `$SINGULARITY_METADATA_FOLDER` is defined, the metadata folder doesn't even need to live in the container. This could be useful if the calling API wants to skip over it's generation, however care should be taken given that the files are some kind of dependency to produce `/environment`. If the variable isn't defined, then the default metadata folder is set to be `$SINGULARITY_ROOTFS/.singularity-info`. The variable is required, an extra precaution, but probably not necessary since a default is provided.
+If the environmental variable `$SINGULARITY_METADATA_FOLDER` is defined, the metadata folder doesn't even need to live in the container. This could be useful if the calling API wants to skip over it's generation, however care should be taken given that the files are some kind of dependency to produce `/environment`. If the variable isn't defined, then the default metadata folder is set to be `$SINGULARITY_ROOTFS/.singularity`. The variable is required, an extra precaution, but probably not necessary since a default is provided.
 
 ### Cache
 The location and usage of the cache is also determined by environment variables. 
@@ -143,7 +143,7 @@ The [docker/add.py](docker/add.py) is akin to an import, but without any environ
  - `SINGULARITY_CONTAINER`: (eg, docker://ubuntu:latest)
  - `SINGULARITY_ROOTFS`: the folder where the container is being built
 
-The `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/.singularity-info` MUST exist for the function to run.
+The `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/.singularity` MUST exist for the function to run.
 
 #### Examples
 
@@ -159,7 +159,7 @@ An example use case is the following:
       mkdir -p $SINGULARITY_ROOTFS
 
       # For the rootfs, given an add, the metadata folder must exist
-      mkdir -p $SINGULARITY_ROOTFS/.singularity-info # see defaults.py
+      mkdir -p $SINGULARITY_ROOTFS/.singularity # see defaults.py
       cd libexec/python/tests
       python ../docker/add.py
 
@@ -191,7 +191,7 @@ Import is the more robust version of add, and works as it did before, meaning we
  - `SINGULARITY_CONTAINER`: (eg, docker://ubuntu:latest)
  - `SINGULARITY_ROOTFS`: the folder where the container is being built
 
-and the default metadata folder (`$SINGULARITY_ROOTFS/.singularity-info`) or the user defined `$SINGULARITY_METADATA_BASE` along with the `$SINGULARITY_ENVBASE` and `$SINGULARITY_LABELBASE` must also exist. Since we now are also (potentially) parsing a runscript, the user has the choice to use `CMD` instead of `ENTRYPOINT` by way of the variable `SINGULARITY_DOCKER_INCLUDE_CMD` parsed from `Cmd` in the build spec file, and `SINGULARITY_COMMAND_ASIS` to not include `exec` and `$@`. As with ADD, the user can again specify a `SINGULARITY_DOCKER_USERNAME` and `SINGULARITY_DOCKER_PASSWORD` if authentication is needed. And again, the `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/.singularity-info` MUST exist for the function to run.
+and the default metadata folder (`$SINGULARITY_ROOTFS/.singularity`) or the user defined `$SINGULARITY_METADATA_BASE` along with the `$SINGULARITY_ENVBASE` and `$SINGULARITY_LABELBASE` must also exist. Since we now are also (potentially) parsing a runscript, the user has the choice to use `CMD` instead of `ENTRYPOINT` by way of the variable `SINGULARITY_DOCKER_INCLUDE_CMD` parsed from `Cmd` in the build spec file, and `SINGULARITY_COMMAND_ASIS` to not include `exec` and `$@`. As with ADD, the user can again specify a `SINGULARITY_DOCKER_USERNAME` and `SINGULARITY_DOCKER_PASSWORD` if authentication is needed. And again, the `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/.singularity` MUST exist for the function to run.
 
 #### Examples
 
@@ -207,12 +207,12 @@ An example use case is the following:
       export SINGULARITY_CONTAINER="docker://ubuntu:latest"
       export SINGULARITY_ROOTFS=/tmp/hello-kitty
       mkdir -p $SINGULARITY_ROOTFS
-      mkdir -p $SINGULARITY_ROOTFS/.singularity-info # see defaults.py
-      mkdir -p $SINGULARITY_ROOTFS/.singularity-info/env
-      mkdir -p $SINGULARITY_ROOTFS/.singularity-info/labels
+      mkdir -p $SINGULARITY_ROOTFS/.singularity # see defaults.py
+      mkdir -p $SINGULARITY_ROOTFS/.singularity/env
+      mkdir -p $SINGULARITY_ROOTFS/.singularity/labels
       python ../docker/import.py
 
-After the script runs, the folder `/tmp/hello-kitty` will contain the full image, along with `.singularity-info` that contains `env` and `labels`.
+After the script runs, the folder `/tmp/hello-kitty` will contain the full image, along with `.singularity` that contains `env` and `labels`.
 
 
 ## Singularity Hub
@@ -250,8 +250,8 @@ ADD needs `SINGULARITY_CONTAINER` along with `SINGULARITY_ROOTFS`.
       export SINGULARITY_CONTAINER="shub://vsoch/singularity-images"
       export SINGULARITY_ROOTFS=/tmp/hello-kitty
       mkdir -p $SINGULARITY_ROOTFS
-      mkdir -p $SINGULARITY_ROOTFS/.singularity-info # see defaults.py
-      mkdir -p $SINGULARITY_ROOTFS/.singularity-info/labels
+      mkdir -p $SINGULARITY_ROOTFS/.singularity # see defaults.py
+      mkdir -p $SINGULARITY_ROOTFS/.singularity/labels
       python ../shub/add.py
 
 
@@ -264,8 +264,8 @@ Finally, IMPORT also writes to the `labels` folder, and needs the same as ADD
       export SINGULARITY_CONTAINER="shub://vsoch/singularity-images"
       export SINGULARITY_ROOTFS=/tmp/hello-kitty
       mkdir -p $SINGULARITY_ROOTFS
-      mkdir -p $SINGULARITY_ROOTFS/.singularity-info # see defaults.py
-      mkdir -p $SINGULARITY_ROOTFS/.singularity-info/labels
+      mkdir -p $SINGULARITY_ROOTFS/.singularity # see defaults.py
+      mkdir -p $SINGULARITY_ROOTFS/.singularity/labels
       python ../shub/import.py
 
 
