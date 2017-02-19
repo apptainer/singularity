@@ -427,7 +427,7 @@ def get_fullpath(file_path,required=True):
     return None
 
 
-def write_singularity_infos(base_dir,prefix,start_number,content):
+def write_singularity_infos(base_dir,prefix,start_number,content,extension=None):
     '''write_singularity_infos will write some metadata object
     to a file in some base, starting at some default number. For example,
     we would want to write dockerN files with docker environment exports to
@@ -436,7 +436,10 @@ def write_singularity_infos(base_dir,prefix,start_number,content):
     :param prefix: the name of the file prefix (eg, docker)
     :param start_number: the number to start looking for available file at
     :param content: the content to write
+    :param extension: the extension to use. If not defined, uses .sh
     '''
+    if extension == None:
+        extension = ".sh"
     output_file = None
     counter = start_number
     written = False
@@ -447,9 +450,10 @@ def write_singularity_infos(base_dir,prefix,start_number,content):
         sys.exit(1)
 
     while not written:
-        output_file = "%s/%s%s" %(base_dir,
-                                  prefix,
-                                  counter)
+        output_file = "%s/%s-%s%s" %(base_dir,
+                                     prefix,
+                                     counter,
+                                     extension)
         if not os.path.exists(output_file):
             write_file(output_file,content)
             logger.debug("Writing %s",output_file)

@@ -97,6 +97,7 @@ def create_runscript(manifest,base_dir,includecmd=False):
     print("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
     return cmd
 
+
 def extract_env(manifest):
     '''extract_env will write a file of key value pairs of the environment
     to export. The manner to export must be determined by the calling process

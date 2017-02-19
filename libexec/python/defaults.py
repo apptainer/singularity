@@ -73,7 +73,7 @@ RUNSCRIPT_COMMAND_ASIS = convert2boolean(getenv("SINGULARITY_COMMAND_ASIS",
                                          default=False))
 
 SINGULARITY_ROOTFS = getenv("SINGULARITY_ROOTFS")
-_metadata_base = "%s/.singularity-info" %(SINGULARITY_ROOTFS)
+_metadata_base = "%s/.singularity" %(SINGULARITY_ROOTFS)
 METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER", 
                                    default=_metadata_base,
                                    required=True)
