@@ -10,6 +10,8 @@ And so in the current version, the old client was removed, and each module (curr
  - `docker/import.py`
  - `docker/add.py`
  - `shub/pull.py`
+ - `shub/add.py`
+ - `shub/import.py`
 
 meaning that the Singularity software can, given all environmental variables are defined, call a function like:
 
@@ -141,7 +143,7 @@ The [docker/add.py](docker/add.py) is akin to an import, but without any environ
  - `SINGULARITY_CONTAINER`: (eg, docker://ubuntu:latest)
  - `SINGULARITY_ROOTFS`: the folder where the container is being built
 
-The `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/singularity-info` MUST exist for the function to run.
+The `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/.singularity-info` MUST exist for the function to run.
 
 #### Examples
 
@@ -189,7 +191,7 @@ Import is the more robust version of add, and works as it did before, meaning we
  - `SINGULARITY_CONTAINER`: (eg, docker://ubuntu:latest)
  - `SINGULARITY_ROOTFS`: the folder where the container is being built
 
-and the default metadata folder (`$SINGULARITY_ROOTFS/singularity-info`) or the user defined `$SINGULARITY_METADATA_BASE` along with the `$SINGULARITY_ENVBASE` and `$SINGULARITY_LABELBASE` must also exist. Since we now are also (potentially) parsing a runscript, the user has the choice to use `CMD` instead of `ENTRYPOINT` by way of the variable `SINGULARITY_DOCKER_INCLUDE_CMD` parsed from `Cmd` in the build spec file, and `SINGULARITY_COMMAND_ASIS` to not include `exec` and `$@`. As with ADD, the user can again specify a `SINGULARITY_DOCKER_USERNAME` and `SINGULARITY_DOCKER_PASSWORD` if authentication is needed. And again, the `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/singularity-info` MUST exist for the function to run.
+and the default metadata folder (`$SINGULARITY_ROOTFS/.singularity-info`) or the user defined `$SINGULARITY_METADATA_BASE` along with the `$SINGULARITY_ENVBASE` and `$SINGULARITY_LABELBASE` must also exist. Since we now are also (potentially) parsing a runscript, the user has the choice to use `CMD` instead of `ENTRYPOINT` by way of the variable `SINGULARITY_DOCKER_INCLUDE_CMD` parsed from `Cmd` in the build spec file, and `SINGULARITY_COMMAND_ASIS` to not include `exec` and `$@`. As with ADD, the user can again specify a `SINGULARITY_DOCKER_USERNAME` and `SINGULARITY_DOCKER_PASSWORD` if authentication is needed. And again, the `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/.singularity-info` MUST exist for the function to run.
 
 #### Examples
 
