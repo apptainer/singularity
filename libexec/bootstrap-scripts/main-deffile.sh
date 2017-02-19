@@ -44,6 +44,6 @@ eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/env.sh"
 if [ -n "${BOOTSTRAP:-}" ]; then
     eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh"
 fi
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-scripts.sh"
+eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-scriptlets.sh"
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 

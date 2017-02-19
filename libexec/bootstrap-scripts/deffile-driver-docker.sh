@@ -38,52 +38,16 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
-if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    exit
-fi
-
-
-########## BEGIN BOOTSTRAP SCRIPT ##########
-
-### Obtain the From from the spec (needed for docker bootstrap)
-SINGULARITY_CONTAINER=`singularity_key_get "From" "$SINGULARITY_BUILDDEF"`
-if [ -z "${SINGULARITY_CONTAINER:-}" ]; then
-    message ERROR "Bootstrap type 'docker' given, but no 'From' defined!\n"
-    ABORT 1
-else
-    export SINGULARITY_CONTAINER
-    message 1 "From: $SINGULARITY_CONTAINER\n"
-fi
-
-### Obtain the IncludeCmd from the spec (also needed for docker bootstrap)
-SINGULARITY_DOCKER_INCLUDE_CMD=`singularity_key_get "IncludeCmd" "$SINGULARITY_BUILDDEF"`
-if [ -n "${SINGULARITY_DOCKER_INCLUDE_CMD:-}" ]; then
-    message 1 "IncludeCmd: $SINGULARITY_DOCKER_INCLUDE_CMD\n"
-
-    # A command of "yes" means that we will include the docker CMD as runscript
-    if [ "$SINGULARITY_DOCKER_INCLUDE_CMD" == "yes" ]; then
-        export SINGULARITY_DOCKER_INCLUDE_CMD
-    fi
-fi
-
-
-### Does the registry require authentication?
-SINGULARITY_DOCKER_USERNAME=`singularity_key_get "Username" "$SINGULARITY_BUILDDEF"`
-SINGULARITY_DOCKER_PASSWORD=`singularity_key_get "Password" "$SINGULARITY_BUILDDEF"`
-if [ -n "${SINGULARITY_DOCKER_USERNAME:-}" ] && [ -n "${SINGULARITY_DOCKER_PASSWORD:-}" ]; then
-    message 1 "Username: $SINGULARITY_DOCKER_USERNAME\n"
-    message 1 "Password: [hidden]\n"
-    export SINGULARITY_DOCKER_USERNAME SINGULARITY_DOCKER_PASSWORD
-fi
-
-
-# Ensure the user has provided a docker image name with "From"
-if [ -z "$SINGULARITY_CONTAINER" ]; then
-    echo "Please specify the Docker image name with From: in the definition file."
+if [ -z "${FROM:-}" ]; then
+    message ERROR "Required Definition tag 'From:' not defined.\n"
     exit 1
 fi
 
-eval $SINGULARITY_libexecdir/singularity/python/docker/import.py 
+SINGULARITY_CONTAINER="docker://$FROM"
+export SINGULARITY_CONTAINER
 
-# If we got here, exit...
-exit 0
+eval "$SINGULARITY_libexecdir/singularity/python/docker/import.py"
+RETVAL=$?
+
+
+exit $RETVAL
