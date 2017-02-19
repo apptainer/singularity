@@ -89,6 +89,7 @@ def create_runscript(manifest,base_dir,includecmd=False):
 
         if not RUNSCRIPT_COMMAND_ASIS:
             cmd = 'exec %s "$@"' %(cmd)
+        cmd = "#!/bin/sh\n\n%s" %(cmd)
         logger.info("Generating runscript at %s",runscript)
         output_file = write_file(runscript,cmd)
         return output_file
