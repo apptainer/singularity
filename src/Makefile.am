@@ -9,8 +9,8 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 bindir = $(libexecdir)/singularity/bin
 
-bin_PROGRAMS = action add bootstrap copy cleanupd create expand export get-section import mount $(BUILD_SUID)
-EXTRA_PROGRAMS = action-suid add-suid create-suid copy-suid expand-suid export-suid mount-suid
+bin_PROGRAMS = action bootstrap copy cleanupd create expand export get-section import mount $(BUILD_SUID)
+EXTRA_PROGRAMS = action-suid create-suid copy-suid expand-suid export-suid import-suid mount-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
 cleanupd_CPPFLAGS = $(AM_CPPFLAGS)
@@ -19,10 +19,6 @@ cleanupd_CPPFLAGS = $(AM_CPPFLAGS)
 action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 action_CPPFLAGS = $(AM_CPPFLAGS)
-
-add_SOURCES = add.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c
-add_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
-add_CPPFLAGS = $(AM_CPPFLAGS)
 
 bootstrap_SOURCES = bootstrap.c util/util.c util/file.c util/registry.c
 bootstrap_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
@@ -62,10 +58,10 @@ action_suid_LDADD = $(action_LDADD)
 action_suid_LDFLAGS = -static
 action_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
-add_suid_SOURCES = $(add_SOURCES)
-add_suid_LDADD = $(add_LDADD)
-add_suid_LDFLAGS = -static
-add_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
+import_suid_SOURCES = $(import_SOURCES)
+import_suid_LDADD = $(import_LDADD)
+import_suid_LDFLAGS = -static
+import_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 create_suid_SOURCES = $(create_SOURCES)
 create_suid_LDADD = $(create_LDADD)
