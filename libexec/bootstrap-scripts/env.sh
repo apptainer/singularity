@@ -39,6 +39,10 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
 fi
 
 
+install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity"
+install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/env"
+install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/labels"
+install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/actions"
 install -d -m 0755 "$SINGULARITY_ROOTFS/bin"
 install -d -m 0755 "$SINGULARITY_ROOTFS/dev"
 install -d -m 0755 "$SINGULARITY_ROOTFS/home"
@@ -66,8 +70,7 @@ else
     HELPER_SHELL="/bin/sh"
 fi
 
-mkdir -p "$SINGULARITY_ROOTFS/.env"
-cat > "$SINGULARITY_ROOTFS/.env/01-base.sh" << EOF
+cat > "$SINGULARITY_ROOTFS/.singularity/env/01-base.sh" << EOF
 
 if test -z "\$SINGULARITY_INIT"; then
     PATH=\$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -76,13 +79,13 @@ if test -z "\$SINGULARITY_INIT"; then
     export PATH PS1 SINGULARITY_INIT
 fi
 EOF
-chmod 0644 "$SINGULARITY_ROOTFS/.env/01-base.sh"
+chmod 0644 "$SINGULARITY_ROOTFS/.singularity/env/01-base.sh"
 
 
-cat > "$SINGULARITY_ROOTFS/.shell" << EOF
+cat > "$SINGULARITY_ROOTFS/.singularity/actions/shell" << EOF
 #!$HELPER_SHELL
 
-for script in /.env/*.sh; do
+for script in /.singularity/env/*.sh; do
     if [ -f "\$script" ]; then
         . \$script
     fi
@@ -103,39 +106,39 @@ else
 fi
 exit 1
 EOF
-chmod 0755 "$SINGULARITY_ROOTFS/.shell"
+chmod 0755 "$SINGULARITY_ROOTFS/.singularity/actions/shell"
 
 
 
-cat > "$SINGULARITY_ROOTFS/.exec" << EOF
+cat > "$SINGULARITY_ROOTFS/.singularity/actions/exec" << EOF
 #!$HELPER_SHELL
 
-for script in /.env/*.sh; do
+for script in /.singularity/env/*.sh; do
     if [ -f "\$script" ]; then
         . \$script
     fi
 done
 exec "\$@"
 EOF
-chmod 0755 "$SINGULARITY_ROOTFS/.exec"
+chmod 0755 "$SINGULARITY_ROOTFS/.singularity/actions/exec"
 
 
 
-cat > "$SINGULARITY_ROOTFS/.run" << EOF
+cat > "$SINGULARITY_ROOTFS/.singularity/actions/run" << EOF
 #!$HELPER_SHELL
 
-for script in /.env/*.sh; do
+for script in /.singularity/env/*.sh; do
     if [ -f "\$script" ]; then
         . \$script
     fi
 done
 
-if test -x /singularity; then
-    exec /singularity "\$@"
+if test -x /.singularity/runscript; then
+    exec /.singularity/runscript "\$@"
 else
     echo "No Singularity runscript found, executing /bin/sh"
     exec /bin/sh "\$@"
 fi
 EOF
-chmod 0755 "$SINGULARITY_ROOTFS/.run"
+chmod 0755 "$SINGULARITY_ROOTFS/.singularity/actions/run"
 

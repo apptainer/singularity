@@ -117,7 +117,7 @@ if [ -n "${SINGULARITY_BUILDDEF:-}" -a -f "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 # If we have a runscript, whether docker, user defined, change permissions
-if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
-    chmod 0755 "$SINGULARITY_ROOTFS/singularity"
+if [ -s "$SINGULARITY_ROOTFS/.singularity/runscript" ]; then
+    chmod 0755 "$SINGULARITY_ROOTFS/.singularity/runscript"
 fi
 
