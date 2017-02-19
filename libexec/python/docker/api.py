@@ -112,7 +112,8 @@ def extract_env(manifest):
         environ_file = write_singularity_infos(base_dir=ENV_BASE,
                                                prefix=DOCKER_PREFIX,
                                                start_number=DOCKER_NUMBER,
-                                               content=environ)
+                                               content=environ,
+                                               extension='sh')
     return environ
 
 
@@ -128,7 +129,8 @@ def extract_labels(manifest):
         labels_file = write_singularity_infos(base_dir=LABEL_BASE,
                                               prefix=DOCKER_PREFIX,
                                               start_number=DOCKER_NUMBER,
-                                              content=labels)
+                                              content=labels,
+                                              extension='.txt')
     return labels
 
 
