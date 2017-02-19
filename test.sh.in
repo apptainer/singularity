@@ -207,7 +207,7 @@ stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
 /bin/echo
 /bin/echo "Checking Bootstrap on existing container..."
 
-stest 1 sudo singularity bootstrap "$CONTAINER"
+stest 0 sudo singularity bootstrap "$CONTAINER"
 #stest 0 singularity exec "$CONTAINER" test -f /environment
 #stest 0 sudo singularity exec -w "$CONTAINER" rm /environment
 #stest 1 singularity exec "$CONTAINER" test -f /environment
