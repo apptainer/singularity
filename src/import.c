@@ -93,13 +93,11 @@ int main(int argc, char **argv) {
     }
 
     singularity_priv_escalate();
-    singularity_message(INFO, "Opening STDIN for tar stream\n");
+    singularity_message(VERBOSE, "Opening STDIN for tar stream\n");
     retval = singularity_fork_exec(tar_cmd);
     singularity_priv_drop();
 
-    if ( retval == 0 ) {
-        singularity_message(INFO, "Done. Image ready: %s\n", image.path);
-    } else {
+    if ( retval != 0 ) {
         singularity_message(ERROR, "Tar did not return successful\n");
     }
 
