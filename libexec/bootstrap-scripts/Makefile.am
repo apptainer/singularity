@@ -1,3 +1,5 @@
+SUBDIRS = environment
+
 modsdir = $(libexecdir)/singularity/bootstrap-scripts
 
 dist_mods_SCRIPTS = deffile-driver-arch.sh \
@@ -7,7 +9,7 @@ dist_mods_SCRIPTS = deffile-driver-arch.sh \
                     deffile-driver-shub.sh \
                     deffile-driver-yum.sh \
                     deffile-scriptlets.sh \
-                    env.sh \
+                    environment.sh \
                     post.sh \
                     pre.sh \
                     main-deffile.sh \

@@ -342,8 +342,8 @@ AC_CONFIG_FILES([
    man/Makefile
    libexec/Makefile
    libexec/bootstrap-scripts/Makefile
+   libexec/bootstrap-scripts/environment/Makefile
    libexec/cli/Makefile
-   libexec/defaults/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile
    libexec/python/shub/Makefile

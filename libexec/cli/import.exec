@@ -86,6 +86,9 @@ if [ -n "${1:-}" ]; then
             SINGULARITY_LAYERFILE=`mktemp /tmp/.singularity-layers.XXXXXXXX`
             export SINGULARITY_CONTAINER SINGULARITY_LAYERFILE
             eval "$SINGULARITY_libexecdir/singularity/python/docker/add.py"
+            message 1 "Importing: base Singularity environment\n"
+            (cd $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment; tar -cf - .) | eval "$IMPORT_BIN"
+            echo "RETVAL=$?"
             for i in `cat "$SINGULARITY_LAYERFILE"`; do
                 message 1 "Importing: $i\n"
                 zcat "$i" | eval "$IMPORT_BIN"

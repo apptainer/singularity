@@ -40,7 +40,7 @@ fi
 
 
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/env.sh"
+eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 if [ -n "${BOOTSTRAP:-}" ]; then
     eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh"
 fi

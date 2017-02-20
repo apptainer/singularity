@@ -42,7 +42,7 @@ SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
 export SINGULARITY_CONTAINER
 
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/env.sh"
+eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 eval "$SINGULARITY_libexecdir/singularity/python/docker/import.py"
 RETVAL=$?
 if [ $RETVAL -ne 0 ]; then

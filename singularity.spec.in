@@ -123,7 +123,6 @@ rm -rf $RPM_BUILD_ROOT
 # Directories
 %{_libexecdir}/singularity/bootstrap-scripts
 %{_libexecdir}/singularity/cli
-%{_libexecdir}/singularity/defaults
 %{_libexecdir}/singularity/python
 
 

@@ -59,7 +59,7 @@ int bootstrap_init(int argc, char **argv) {
         execl(bootstrap, bootstrap, NULL);
 
     } else if ( builddef == NULL || builddef[0] == '\0' ) {
-        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-rerun.sh");
+        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-null.sh");
 
         singularity_message(INFO, "Running bootstrap with no recipe\n");
         execl(bootstrap, bootstrap, NULL);
