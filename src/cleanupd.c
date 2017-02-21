@@ -70,12 +70,6 @@ int main(int argc, char **argv) {
         return(0);
     }
 
-    singularity_message(VERBOSE, "Daemonizing cleandir cleanup process\n");
-    if ( daemon(0, 0) != 0 ) {
-        singularity_message(ERROR, "Failed daemonizing cleanup process: %s\n", strerror(errno));
-        ABORT(255);
-    }
-
     singularity_message(DEBUG, "Waiting for exclusive flock() on cleandir: %s\n", cleandir);
 
     if ( flock(cleandir_fd, LOCK_EX) == 0 ) {
