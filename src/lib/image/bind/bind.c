@@ -37,6 +37,7 @@
 #include "util/file.h"
 #include "util/message.h"
 #include "util/privilege.h"
+#include "util/registry.h"
 
 #include "../image.h"
 
@@ -50,7 +51,7 @@
 
 int _singularity_image_bind(struct image_object *image) {
     struct loop_info64 lo64 = {0};
-    char *lockfile = joinpath(image->sessiondir, "loop_lock");
+    char *lockfile = joinpath(singularity_registry_get("SESSIONDIR"), strjoin("loop_lock.", image->id));
     int image_fd = image->fd;
     int lockfile_fd; // This never gets closed so the flock() remains
     FILE *loop_fp = NULL;

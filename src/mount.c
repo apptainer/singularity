@@ -56,11 +56,14 @@ int main(int argc, char **argv) {
         singularity_registry_set("IMAGE", argv[1]);
         singularity_registry_set("MOUNTPOINT", argv[2]);
     }
-    singularity_registry_set("WRITABLE", "1");
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    singularity_image_open(&image, O_RDWR);
+    if ( singularity_registry_get("WRITABLE") == NULL ) {
+        singularity_image_open(&image, O_RDONLY);
+    } else {
+        singularity_image_open(&image, O_RDWR);
+    }
 
     if ( singularity_image_check(&image) != 0 ) {
         singularity_message(ERROR, "Import is only allowed on Singularity image files\n");

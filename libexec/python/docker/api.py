@@ -2,7 +2,7 @@
 
 api.py: Docker helper functions for Singularity in Python
 
-Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -22,9 +22,28 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 sys.path.append('..') # parent directory
 
-from utils import api_get, write_file, add_http
+from utils import (
+    add_http,
+    api_get, 
+    write_file, 
+    write_singularity_infos
+)
+
+from defaults import (
+    API_BASE,
+    API_VERSION,
+    DOCKER_NUMBER,
+    DOCKER_PREFIX,
+    ENV_BASE,
+    LABEL_BASE,
+    METADATA_BASE,
+    RUNSCRIPT_COMMAND_ASIS
+)
+
 from logman import logger
 import json
 import re
@@ -35,21 +54,110 @@ try:
 except ImportError:
     from urllib2 import HTTPError
 
-api_base = "index.docker.io"
-api_version = "v2"
 
 # Authentication not required ---------------------------------------------------------------------------------
 
-def create_runscript(cmd,base_dir):
-    '''create_runscript will write a bash script with command "cmd" into the base_dir
-    :param cmd: the command to write into the bash script
-    :param base_dir: the base directory to write the runscript to
+def create_runscript(manifest,includecmd=False):
+    '''create_runscript will write a bash script with default "ENTRYPOINT" 
+    into the base_dir. If includecmd is True, CMD is used instead. For both.
+    if the result is found empty, the other is tried, and then a default used.
+    :param manifest: the manifest to use to get the runscript
+    :param includecmd: overwrite default command (ENTRYPOINT) default is False
     '''
-    runscript = "%s/singularity" %(base_dir)
-    content = 'exec %s "$@"' %(cmd)
-    logger.info("Generating runscript at %s",runscript)
-    output_file = write_file(runscript,content)
-    return output_file
+    runscript = "%s/runscript" %(METADATA_BASE)
+    cmd = None
+
+    # Does the user want to use the CMD instead of ENTRYPOINT?
+    commands = ["Entrypoint","Cmd"]
+    if includecmd == True:
+        commands.reverse()
+    configs = get_configs(manifest,commands)
+    
+    # Look for non "None" command
+    for command in commands:
+        if configs[command] != None:
+            cmd = configs[command]
+            break
+
+    if cmd != None:
+        print("Adding Docker %s as Singularity runscript..." %(command.upper()))
+        print(cmd)
+
+        # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
+        if isinstance(cmd,list):
+            cmd = " ".join(cmd)
+
+        if not RUNSCRIPT_COMMAND_ASIS:
+            cmd = 'exec %s "$@"' %(cmd)
+        cmd = "#!/bin/sh\n\n%s" %(cmd)
+        logger.info("Generating runscript at %s",runscript)
+        output_file = write_file(runscript,cmd)
+        return output_file
+
+    print("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
+    return cmd
+
+
+def extract_env(manifest):
+    '''extract_env will write a file of key value pairs of the environment
+    to export. The manner to export must be determined by the calling process
+    depending on the OS type.
+    :param manifest: the manifest to use
+    '''
+    environ = get_config(manifest,'Env')
+    if environ != None:
+        if isinstance(environ,list):
+            environ = "\n".join(environ)
+        logger.debug("Found Docker container environment!")    
+        environ_file = write_singularity_infos(base_dir=ENV_BASE,
+                                               prefix=DOCKER_PREFIX,
+                                               start_number=DOCKER_NUMBER,
+                                               content=environ,
+                                               extension='sh')
+    return environ
+
+
+def extract_labels(manifest):
+    '''extract_labels will write a file of key value pairs including
+    maintainer, and labels.
+    :param manifest: the manifest to use
+    '''
+    labels = get_config(manifest,'Labels')
+    if labels != None and len(labels) != 0:
+        labels = json.dumps(labels)
+        logger.debug("Found Docker container labels!")    
+        labels_file = write_singularity_infos(base_dir=LABEL_BASE,
+                                              prefix=DOCKER_PREFIX,
+                                              start_number=DOCKER_NUMBER,
+                                              content=labels,
+                                              extension='.txt')
+    return labels
+
+
+def get_config(manifest,key):
+    '''get_config returns the content of some key in the manifest "Config"
+    :param manifest: the complete manifest
+    :param key: the key to find
+    '''
+    if "Config" in manifest:
+        if key in manifest["Config"]:
+            if len(manifest["Config"][key] > 0):
+                return manifest["Config"][key]
+    return None
+
+
+def get_configs(manifest,keys):
+    '''get_configs is a wrapper for get_config to return a dictionary
+    with multiple config items.
+    :param manifest: the complete manifest
+    :param keys: the key to find
+    '''
+    configs = dict()
+    if not isinstance(keys,list):
+        keys = [keys]
+    for key in keys:
+        configs[key] = get_config(manifest,key)
+    return configs
 
 
 def get_token(namespace,repo_name,registry=None,auth=None):
@@ -62,13 +170,13 @@ def get_token(namespace,repo_name,registry=None,auth=None):
             # https://docs.docker.com/registry/spec/auth/token/
     '''
     if registry == None:
-        registry = api_base
+        registry = API_BASE
     registry = add_http(registry) # make sure we have a complete url
 
     # Check if we need a token at all by probing the tags/list endpoint.  This
     # is an arbitrary choice, ideally we should always attempt without a token
     # and then retry with a token if we received a 401.
-    base = "%s/%s/%s/%s/tags/list" %(registry,api_version,namespace,repo_name)
+    base = "%s/%s/%s/%s/tags/list" %(registry,API_VERSION,namespace,repo_name)
     response = api_get(base, default_header=False)
     if not isinstance(response, HTTPError):
         # No token required for registry.
@@ -177,10 +285,10 @@ def get_tags(namespace,repo_name,registry=None,auth=None):
     :param auth: authorization header (default None)
     '''
     if registry == None:
-        registry = api_base
+        registry = API_BASE
     registry = add_http(registry) # make sure we have a complete url
 
-    base = "%s/%s/%s/%s/tags/list" %(registry,api_version,namespace,repo_name)
+    base = "%s/%s/%s/%s/tags/list" %(registry,API_VERSION,namespace,repo_name)
     logger.info("Obtaining tags: %s", base)
 
     token = get_token(registry=registry,
@@ -208,10 +316,10 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None,h
     :param headers: dictionary of custom headers to add to token header (to get more specific manifest)
     '''
     if registry == None:
-        registry = api_base
+        registry = API_BASE
     registry = add_http(registry) # make sure we have a complete url
 
-    base = "%s/%s/%s/%s/manifests/%s" %(registry,api_version,namespace,repo_name,repo_tag)
+    base = "%s/%s/%s/%s/manifests/%s" %(registry,API_VERSION,namespace,repo_name,repo_tag)
     logger.info("Obtaining manifest: %s", base)
     
     # Format the token, and prepare a header
@@ -278,11 +386,11 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
     :param auth: authorization header (default None)
     '''
     if registry == None:
-        registry = api_base
+        registry = API_BASE
     registry = add_http(registry) # make sure we have a complete url
 
     # The <name> variable is the namespace/repo_name
-    base = "%s/%s/%s/%s/blobs/%s" %(registry,api_version,namespace,repo_name,image_id)
+    base = "%s/%s/%s/%s/blobs/%s" %(registry,API_VERSION,namespace,repo_name,image_id)
     logger.info("Downloading layers from %s", base)
     
     # To get the image layers, we need a valid token to read the repo
@@ -315,11 +423,3 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
         sys.exit(1)
 
     return download_folder
-
-
-# Under Development! ---------------------------------------------------------------------------------
-# Docker Registry Version 2.0 functions
-
-# TODO: this will let us get all Docker repos to generate images automatically
-def get_repositories():
-    base = "https://index.docker.io/v2/_catalog"

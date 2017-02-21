@@ -42,27 +42,27 @@
 #include "./sessiondir.h"
 
 
-//void singularity_image_sessiondir_init(struct image_object *image);
-//int singularity_image_sessiondir_create(struct image_object *image);
-//int singularity_image_sessiondir_remove(struct image_object *image);
-
-
-
 void _singularity_image_sessiondir_init(struct image_object *image) {
-    char *sessiondir_prefix;
-    char *sessiondir_suffix;
+    char *tmpdir = NULL;
+    char *sessiondir_prefix = NULL;
+    char *sessiondir_suffix = NULL;
+    char *lockdir = NULL;
     char *file = strdup(image->path);
     struct stat imagestat;
     int sessiondir_suffix_len;
     uid_t uid = singularity_priv_getuid();
     int image_fd = image->fd;
+    int sessiondir_fd;
 
     if ( image->sessiondir != NULL ) {
         singularity_message(DEBUG, "Called singularity_image_sessiondir_init previously, returning\n");
         return;
     }
 
-    if ( ( sessiondir_prefix = singularity_registry_get("SESSIONDIR") ) != NULL ) {
+    if ( ( tmpdir = singularity_registry_get("TMPDIR") ) != NULL ) {
+        singularity_message(DEBUG, "Using SINGULARITY_TMPDIR to contain sessiondir\n");
+        sessiondir_prefix = joinpath(tmpdir, "/singularity_sessiondir-");
+    } else if ( ( sessiondir_prefix = singularity_registry_get("SESSIONDIR") ) != NULL ) {
         singularity_message(DEBUG, "Got sessiondir_prefix from environment: '%s'\n", sessiondir_prefix);
     } else if ( ( sessiondir_prefix = strdup(singularity_config_get_value(SESSIONDIR_PREFIX)) ) != NULL ) {
         singularity_message(DEBUG, "Got sessiondir_prefix from configuration: '%s'\n", sessiondir_prefix);
@@ -81,15 +81,22 @@ void _singularity_image_sessiondir_init(struct image_object *image) {
 
     sessiondir_suffix = (char *) malloc(sessiondir_suffix_len);
 
-    if ( snprintf(sessiondir_suffix, sessiondir_suffix_len, "%d.%d.%lu", (int)uid, (int)imagestat.st_dev, (long unsigned)imagestat.st_ino) != sessiondir_suffix_len -1 ) {
-        singularity_message(ERROR, "Failed creating sessiondir_suffix: %s\n", strerror(errno));
+    singularity_message(DEBUG, "Setting sessiondir suffix to: '%d.%d.%lu'\n", (int)uid, (int)imagestat.st_dev, (long unsigned)imagestat.st_ino);
+
+    if ( snprintf(sessiondir_suffix, sessiondir_suffix_len, "%d.%d.%lu", (int)uid, (int)imagestat.st_dev, (long unsigned)imagestat.st_ino) < 0 ) {
+        singularity_message(ERROR, "Failed creating sessiondir_suffix: %s\n", sessiondir_suffix);
         ABORT(255);
     }
-    singularity_message(DEBUG, "Set sessiondir_suffix to: %s\n", sessiondir_suffix);
 
     if ( ( image->sessiondir = strcat(sessiondir_prefix, sessiondir_suffix) ) == NULL ) {
         singularity_message(ERROR, "Could not set image->sessiondir\n");
         ABORT(255);
+    }
+
+    if ( tmpdir != NULL ) {
+        lockdir = tmpdir;
+    } else {
+        lockdir = image->sessiondir;
     }
 
     singularity_registry_set("sessiondir", image->sessiondir);
@@ -102,15 +109,40 @@ void _singularity_image_sessiondir_init(struct image_object *image) {
     }
 
     singularity_message(DEBUG, "Opening sessiondir file descriptor\n");
-    if ( ( image->sessiondir_fd = open(image->sessiondir, O_CLOEXEC | O_RDONLY) ) < 0 ) { // Flawfinder: ignore
+    if ( ( sessiondir_fd = open(lockdir, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not obtain file descriptor for session directory %s: %s\n", image->sessiondir, strerror(errno));
         ABORT(255);
     }
 
     singularity_message(DEBUG, "Setting shared flock() on session directory\n");
-    if ( flock(image->sessiondir_fd, LOCK_SH | LOCK_NB) < 0 ) {
+    if ( flock(sessiondir_fd, LOCK_SH | LOCK_NB) < 0 ) {
         singularity_message(ERROR, "Could not obtain shared lock on %s: %s\n", image->sessiondir, strerror(errno));
         ABORT(255);
+    }
+
+    if ( singularity_registry_get("NOSESSIONCLEANUP") == NULL ) {
+        int child = singularity_fork();
+
+        if ( child == 0 ) {
+            char *cleanup_proc[2];
+
+            cleanup_proc[0] = joinpath(LIBEXECDIR, "/singularity/bin/cleanupd");
+            cleanup_proc[1] = NULL;
+
+            setenv("SINGULARITY_CLEANDIR", lockdir, 1);
+            close(sessiondir_fd);
+
+            execv(cleanup_proc[0], cleanup_proc);
+
+        } else if ( child > 0 ) {
+            int tmpstatus;
+
+            waitpid(child, &tmpstatus, 0);
+            if ( WEXITSTATUS(tmpstatus) != 0 ) {
+                singularity_message(ERROR, "Failed to spawn cleanup daemon process\n");
+                ABORT(255);
+            }
+        }
     }
 
     return;

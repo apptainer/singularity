@@ -19,7 +19,6 @@
 # 
 # 
 
-
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -34,51 +33,21 @@ else
     exit 1
 fi
 
-## Init Singularity environment
-if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
-    . "$SINGULARITY_sysconfdir/singularity/init"
+if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
+    message ERROR "Singularity root file system not defined\n"
+    exit 1
 fi
 
-while true; do
-    case ${1:-} in
-        -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
-        ;;
-        -*)
-            message ERROR "Unknown option: ${1:-}\n"
-            exit 1
-        ;;
-        *)
-            break;
-        ;;
-    esac
-done
-
-
-if [ -z "${1:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-    else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
-    fi
-    exit 0
+if [ -z "${FROM:-}" ]; then
+    message ERROR "Required Definition tag 'From:' not defined.\n"
+    exit 1
 fi
 
-SINGULARITY_IMAGE="${1:-}"
-export SINGULARITY_IMAGE
-shift
+SINGULARITY_CONTAINER="docker://$FROM"
+export SINGULARITY_CONTAINER
 
-eval "$SINGULARITY_libexecdir/singularity/sexec"
+eval "$SINGULARITY_libexecdir/singularity/python/docker/import.py"
 RETVAL=$?
 
-if [ $RETVAL -eq 0 ]; then
-    message 1 "Singularity namespace process daemon has been stopped\n"
-else
-    exit $RETVAL
-fi
+
+exit $RETVAL
