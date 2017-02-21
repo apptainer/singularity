@@ -42,8 +42,7 @@ void chomp_noline(char *str);
 void chomp(char *str);
 int strlength(const char *string, int max_len);
 int envclean(void);
-
-//char *random_string(int length);
+char *random_string(int length);
 
 // Given a const char * string containing a base-10 integer,
 // try to convert to an C integer.

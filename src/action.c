@@ -36,6 +36,7 @@
 #include "util/config_parser.h"
 #include "util/privilege.h"
 #include "util/suid.h"
+#include "util/sessiondir.h"
 
 #include "./action-lib/include.h"
 
@@ -57,6 +58,8 @@ int main(int argc, char **argv) {
     singularity_priv_userns();
     singularity_priv_drop();
 
+    singularity_sessiondir();
+
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     if ( singularity_registry_get("WRITABLE") == NULL ) {
@@ -65,7 +68,7 @@ int main(int argc, char **argv) {
         singularity_image_open(&image, O_RDWR);
     }
 
-    singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
+    singularity_runtime_tmpdir(singularity_registry_get("SESSIONDIR"));
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_image_bind(&image);

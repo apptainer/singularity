@@ -37,6 +37,7 @@
 #include "util/privilege.h"
 #include "util/suid.h"
 #include "util/fork.h"
+#include "util/sessiondir.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
@@ -59,6 +60,8 @@ int main(int argc, char **argv) {
         singularity_registry_set("IMAGE", argv[1]);
     }
 
+    singularity_sessiondir();
+
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     singularity_image_open(&image, O_RDWR);
@@ -70,7 +73,7 @@ int main(int argc, char **argv) {
 
     singularity_registry_set("WRITABLE", "1");
 
-    singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
+    singularity_runtime_tmpdir(singularity_registry_get("SESSIONDIR"));
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);

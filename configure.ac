@@ -330,7 +330,6 @@ AC_CONFIG_FILES([
    src/lib/image/mount/squashfs/Makefile
    src/lib/image/offset/Makefile
    src/lib/image/open/Makefile
-   src/lib/image/sessiondir/Makefile
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
    src/util/Makefile

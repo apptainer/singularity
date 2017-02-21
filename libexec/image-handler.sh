@@ -56,27 +56,32 @@ case "$SINGULARITY_IMAGE" in
         else
             SINGULARITY_CACHEDIR_LOCAL="/tmp"
         fi
-        if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
-            message ERROR "Failed to create container_dir\n"
+
+        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
+            message ERROR "Failed to create cleandir\n"
             ABORT 255
         fi
 
-        CONTAINER_DIR="$BASE_CONTAINER_DIR/$NAME"
-        if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Failed to create named container_dir\n"
+        SINGULARITY_ROOTFS="$SINGULARITY_TMPDIR/container/$NAME"
+        if ! mkdir -p "$SINGULARITY_ROOTFS"; then
+            message ERROR "Failed to create named SINGULARITY_ROOTFS=$SINGULARITY_ROOTFS\n"
             ABORT 255
         fi
 
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$CONTAINER_DIR' --docker '$NAME'"; then
+        SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
+        SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
+
+        export SINGULARITY_TMPDIR SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER
+
+        (cd $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment; tar -cf - .) | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
+
+
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/docker/import.py"; then
             ABORT $?
         fi
-        MESSAGELEVEL=0 SINGULARITY_ROOTFS="$CONTAINER_DIR" eval "$SINGULARITY_libexecdir/singularity/bootstrap/main.sh"
 
-        chmod -R +w "$CONTAINER_DIR"
+        chmod -R +w "$SINGULARITY_ROOTFS"
 
-        SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_RUNDIR="$CONTAINER_DIR"
-        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
     ;;
     shub://*)
         NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^shub://@@'`

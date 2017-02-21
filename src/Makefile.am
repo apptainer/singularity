@@ -16,11 +16,11 @@ cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privil
 cleanupd_CPPFLAGS = $(AM_CPPFLAGS)
 
 
-action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c
+action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 action_CPPFLAGS = $(AM_CPPFLAGS)
 
-bootstrap_SOURCES = bootstrap.c util/util.c util/file.c util/registry.c
+bootstrap_SOURCES = bootstrap.c util/util.c util/file.c util/registry.c util/sessiondir.c
 bootstrap_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
 bootstrap_CPPFLAGS = $(AM_CPPFLAGS)
 bootstrap_LDFLAGS = -static
@@ -33,15 +33,15 @@ expand_SOURCES = expand.c util/util.c util/file.c util/registry.c util/privilege
 expand_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
 expand_CPPFLAGS = $(AM_CPPFLAGS)
 
-export_SOURCES = export.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c
+export_SOURCES = export.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c util/sessiondir.c
 export_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
 export_CPPFLAGS = $(AM_CPPFLAGS)
 
-copy_SOURCES = copy.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c
+copy_SOURCES = copy.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c util/sessiondir.c
 copy_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
 copy_CPPFLAGS = $(AM_CPPFLAGS)
 
-import_SOURCES = import.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c
+import_SOURCES = import.c util/util.c util/file.c util/registry.c util/privilege.c util/suid.c util/fork.c util/sessiondir.c
 import_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
 import_CPPFLAGS = $(AM_CPPFLAGS)
 

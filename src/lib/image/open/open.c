@@ -42,8 +42,11 @@
 
 
 int _singularity_image_open(struct image_object *image, int open_flags) {
+    struct stat imagestat;
+
     const char *limit_container_owners = singularity_config_get_value(LIMIT_CONTAINER_OWNERS);
     const char *limit_container_paths = singularity_config_get_value(LIMIT_CONTAINER_PATHS);
+
 
     if ( image->fd > 0 ) {
         singularity_message(ERROR, "Called _singularity_image_open() on an open image object: %d\n", image->fd);
@@ -57,6 +60,18 @@ int _singularity_image_open(struct image_object *image, int open_flags) {
     singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
     if ( ( image->fd = open(image->path, open_flags, 0755) ) < 0 ) {
         singularity_message(ERROR, "Could not open image %s: %s\n", image->path, strerror(errno));
+        ABORT(255);
+    }
+
+    if ( fstat(image->fd, &imagestat) < 0 ) {
+        singularity_message(ERROR, "Failed calling fstat() on %s (fd: %d): %s\n", image->path, image->fd, strerror(errno));
+        ABORT(255);
+    }
+
+    image->id = (char *) malloc(intlen((int)imagestat.st_dev) + intlen((long unsigned)imagestat.st_ino) + 2);
+
+    if ( snprintf(image->id, intlen((int)imagestat.st_dev) + intlen((long unsigned)imagestat.st_ino) + 2, "%d.%lu", (int)imagestat.st_dev, (long unsigned)imagestat.st_ino) < 0 ) {
+        singularity_message(ERROR, "Failed creating image->id: %s\n", image->path);
         ABORT(255);
     }
 

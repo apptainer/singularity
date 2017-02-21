@@ -246,7 +246,6 @@ int strlength(const char *string, int max_len) {
     return(len);
 }
 
-/*
 char *random_string(int length) {
     static const char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     char *ret;
@@ -264,7 +263,7 @@ char *random_string(int length) {
 
     return(ret);
 }
-*/
+
 
 int str2int(const char *input_str, long int *output_num) {
     long int result;

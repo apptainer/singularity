@@ -42,27 +42,27 @@
 #include "./sessiondir.h"
 
 
-//void singularity_image_sessiondir_init(struct image_object *image);
-//int singularity_image_sessiondir_create(struct image_object *image);
-//int singularity_image_sessiondir_remove(struct image_object *image);
-
-
-
 void _singularity_image_sessiondir_init(struct image_object *image) {
-    char *sessiondir_prefix;
-    char *sessiondir_suffix;
+    char *tmpdir = NULL;
+    char *sessiondir_prefix = NULL;
+    char *sessiondir_suffix = NULL;
+    char *lockdir = NULL;
     char *file = strdup(image->path);
     struct stat imagestat;
     int sessiondir_suffix_len;
     uid_t uid = singularity_priv_getuid();
     int image_fd = image->fd;
+    int sessiondir_fd;
 
     if ( image->sessiondir != NULL ) {
         singularity_message(DEBUG, "Called singularity_image_sessiondir_init previously, returning\n");
         return;
     }
 
-    if ( ( sessiondir_prefix = singularity_registry_get("SESSIONDIR") ) != NULL ) {
+    if ( ( tmpdir = singularity_registry_get("TMPDIR") ) != NULL ) {
+        singularity_message(DEBUG, "Using SINGULARITY_TMPDIR to contain sessiondir\n");
+        sessiondir_prefix = joinpath(tmpdir, "/singularity_sessiondir-");
+    } else if ( ( sessiondir_prefix = singularity_registry_get("SESSIONDIR") ) != NULL ) {
         singularity_message(DEBUG, "Got sessiondir_prefix from environment: '%s'\n", sessiondir_prefix);
     } else if ( ( sessiondir_prefix = strdup(singularity_config_get_value(SESSIONDIR_PREFIX)) ) != NULL ) {
         singularity_message(DEBUG, "Got sessiondir_prefix from configuration: '%s'\n", sessiondir_prefix);
@@ -93,6 +93,12 @@ void _singularity_image_sessiondir_init(struct image_object *image) {
         ABORT(255);
     }
 
+    if ( tmpdir != NULL ) {
+        lockdir = tmpdir;
+    } else {
+        lockdir = image->sessiondir;
+    }
+
     singularity_registry_set("sessiondir", image->sessiondir);
 
     singularity_message(VERBOSE, "Creating session directory: %s\n", image->sessiondir);
@@ -103,13 +109,13 @@ void _singularity_image_sessiondir_init(struct image_object *image) {
     }
 
     singularity_message(DEBUG, "Opening sessiondir file descriptor\n");
-    if ( ( image->sessiondir_fd = open(image->sessiondir, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
+    if ( ( sessiondir_fd = open(lockdir, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not obtain file descriptor for session directory %s: %s\n", image->sessiondir, strerror(errno));
         ABORT(255);
     }
 
     singularity_message(DEBUG, "Setting shared flock() on session directory\n");
-    if ( flock(image->sessiondir_fd, LOCK_SH | LOCK_NB) < 0 ) {
+    if ( flock(sessiondir_fd, LOCK_SH | LOCK_NB) < 0 ) {
         singularity_message(ERROR, "Could not obtain shared lock on %s: %s\n", image->sessiondir, strerror(errno));
         ABORT(255);
     }
@@ -123,8 +129,8 @@ void _singularity_image_sessiondir_init(struct image_object *image) {
             cleanup_proc[0] = joinpath(LIBEXECDIR, "/singularity/bin/cleanupd");
             cleanup_proc[1] = NULL;
 
-            setenv("SINGULARITY_CLEANDIR", image->sessiondir, 1);
-            close(image->sessiondir_fd);
+            setenv("SINGULARITY_CLEANDIR", lockdir, 1);
+            close(sessiondir_fd);
 
             execv(cleanup_proc[0], cleanup_proc);
 

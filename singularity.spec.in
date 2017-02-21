@@ -118,7 +118,6 @@ rm -rf $RPM_BUILD_ROOT
 # Scripts
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/image-handler.sh
-%{_libexecdir}/singularity/import.sh
 
 # Directories
 %{_libexecdir}/singularity/bootstrap-scripts
