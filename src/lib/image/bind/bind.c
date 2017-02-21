@@ -61,7 +61,7 @@ int _singularity_image_bind(struct image_object *image) {
         singularity_message(ERROR, "Failed converting config option '%s = %s' to integer\n", MAX_LOOP_DEVS, max_loop_devs_string);
         ABORT(255);
     }
-    singularity_message(DEBUG, "Converted max_loop_devs_string to int: '%s' -> %d\n", max_loop_devs_string, max_loop_devs);
+    singularity_message(DEBUG, "Converted max_loop_devs_string to int: '%s' -> %ld\n", max_loop_devs_string, max_loop_devs);
 
     singularity_message(DEBUG, "Checking if this image has been properly opened\n");
     if ( image->fd <= 0 ) {
