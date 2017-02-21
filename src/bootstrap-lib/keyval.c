@@ -61,7 +61,7 @@ int bootstrap_keyval_parse(char *path) {
             if ( strncmp(bootdef_key, "#", 1) != 0 ) {
                 char *bootdef_value;
 
-                if ( ( bootdef_value = strtok(NULL, "\n") ) != NULL ) {
+                if ( ( bootdef_value = strtok(NULL, "#\n") ) != NULL ) {
                     chomp(bootdef_value);
 
                     singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
