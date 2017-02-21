@@ -12,6 +12,12 @@
 @ALLOW_SETUID@ = @ALLOW_SETUID_DEFAULT@
 
 
+# MAX LOOP DEVICES: [INT]
+# DEFAULT: @MAX_LOOP_DEVS_DEFAULT@
+# How many loop devices should be allocated on this host by Singularity?
+@MAX_LOOP_DEVS@ = @MAX_LOOP_DEVS_DEFAULT@
+
+
 # ALLOW PID NS: [BOOL]
 # DEFAULT: @ALLOW_PID_NS_DEFAULT@
 # Should we allow users to request the PID namespace?
