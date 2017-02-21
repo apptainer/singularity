@@ -35,7 +35,7 @@ int messagelevel = -1;
 
 extern const char *__progname;
 
-void init(void) {
+static void message_init(void) {
     char *messagelevel_string = getenv("MESSAGELEVEL"); // Flawfinder: ignore (need to get string, validation in atol())
 
     openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
@@ -55,19 +55,23 @@ void init(void) {
 }
 
 
-void _singularity_message(int level, const char *function, const char *file, int line, char *format, ...) {
+void _singularity_message(int level, const char *function, const char *file_in, int line, char *format, ...) {
+    const char *file = file_in;
     int syslog_level = LOG_NOTICE;
     char message[512]; // Flawfinder: ignore (messages are truncated to 512 chars)
-    char *prefix = "";
+    char *prefix = NULL;
     va_list args;
     va_start (args, format);
 
-    vsnprintf(message, 512, format, args); // Flawfinder: ignore (format is internally defined)
+    if (vsnprintf(message, 512, format, args) >= 512) {
+        memcpy(message+497, "(TRUNCATED...)", 14);
+        message[511] = '\0';
+    }
 
     va_end (args);
 
     if ( messagelevel == -1 ) {
-        init();
+        message_init();
     }
 
     while( ( ! isalpha(file[0]) ) && ( file[0] != '\0') ) {
@@ -76,68 +80,72 @@ void _singularity_message(int level, const char *function, const char *file, int
 
     switch (level) {
         case ABRT:
-            prefix = strdup("ABORT");
+            prefix = "ABORT";
             syslog_level = LOG_ALERT;
             break;
         case ERROR:
-            prefix = strdup("ERROR");
+            prefix = "ERROR";
             syslog_level = LOG_ERR;
             break;
         case  WARNING:
-            prefix = strdup("WARNING");
+            prefix = "WARNING";
             syslog_level = LOG_WARNING;
             break;
         case LOG:
-            prefix = strdup("LOG");
+            prefix = "LOG";
             break;
         case DEBUG:
-            prefix = strdup("DEBUG");
+            prefix = "DEBUG";
             break;
         case INFO:
-            prefix = strdup("INFO");
+            prefix = "INFO";
             break;
         default:
-            prefix = strdup("VERBOSE");
+            prefix = "VERBOSE";
             break;
     }
 
     if ( level <= LOG ) {
-        char syslog_string[540]; // Flawfinder: ignore (512 max message length + 28'ish chars for header)
-        snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message); // Flawfinder: ignore
+        // Note __progname comes from the linker; the UID can be 5 characters and PID can be
+        // 10-or-so characters.
+        char syslog_string[560]; // Flawfinder: ignore (512 max message length + 48 for header).
+        if (snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message) >= 540) {
+            // This case shouldn't happen unless we have a very strange __progname; nul-terminating to be sure.
+            syslog_string[559] = '\0';
+        }
 
-        syslog(syslog_level, syslog_string, strlength(syslog_string, 1024)); // Flawfinder: ignore (format is internally defined)
+        syslog(syslog_level, "%s", syslog_string);
     }
 
     if ( level <= messagelevel ) {
-        char *header_string;
+        char header_string[95];
 
         if ( messagelevel >= DEBUG ) {
-            char *debug_string = (char *) malloc(25);
-            char *location_string = (char *) malloc(60);
-            char *tmp_header_string = (char *) malloc(80);
-            header_string = (char *) malloc(80);
+            char debug_string[25];
+            char location_string[60];
+            char tmp_header_string[86];
             snprintf(location_string, 60, "%s:%d:%s()", file, line, function); // Flawfinder: ignore
+            location_string[59] = '\0';
             snprintf(debug_string, 25, "[U=%d,P=%d]", geteuid(), getpid()); // Flawfinder: ignore
-            snprintf(tmp_header_string, 80, "%-18s %s", debug_string, location_string); // Flawfinder: ignore
-            snprintf(header_string, 80, "%-7s %-62s: ", prefix, tmp_header_string); // Flawfinder: ignore
-            free(debug_string);
-            free(location_string);
-            free(tmp_header_string);
+            debug_string[24] = '\0';
+            snprintf(tmp_header_string, 86, "%-18s %s", debug_string, location_string); // Flawfinder: ignore
+            tmp_header_string[85] = '\0';
+            snprintf(header_string, 95, "%-7s %-62s: ", prefix, tmp_header_string); // Flawfinder: ignore
+            header_string[94] = '\0';
         } else {
-            header_string = (char *) malloc(11);
             snprintf(header_string, 10, "%-7s: ", prefix); // Flawfinder: ignore
+            header_string[9] = '\0';
         }
 
         if ( level == INFO && messagelevel == INFO ) {
             printf("%s", message);
         } else if ( level == INFO ) {
-            printf("%s", strjoin(header_string, message));
+            printf("%s%s", header_string, message);
         } else if ( level == LOG && messagelevel <= INFO ) {
             // Don't print anything...
         } else {
-            fprintf(stderr, "%s", strjoin(header_string, message));
+            fprintf(stderr, "%s%s", header_string, message);
         }
-
 
         fflush(stdout);
         fflush(stderr);

@@ -61,6 +61,24 @@ char *file_id(char *path) {
     return(ret);
 }
 
+char *file_devino(char *path) {
+    struct stat filestat;
+    char *ret;
+
+    singularity_message(DEBUG, "Called file_devino(%s)\n", path);
+
+    // Stat path
+    if (lstat(path, &filestat) < 0) {
+        return(NULL);
+    }
+
+    ret = (char *) malloc(128);
+    snprintf(ret, 128, "%d.%lu", (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
+
+    singularity_message(DEBUG, "Returning file_devino(%s) = %s\n", path, ret);
+    return(ret);
+}
+
 
 int is_file(char *path) {
     struct stat filestat;
@@ -297,12 +315,16 @@ int copy_file(char * source, char * dest) {
     singularity_message(DEBUG, "Calling fstat() on source file descriptor: %d\n", fileno(fp_s));
     if ( fstat(fileno(fp_s), &filestat) < 0 ) {
         singularity_message(ERROR, "Could not fstat() on %s: %s\n", source, strerror(errno));
+        fclose(fp_s);
+        fclose(fp_d);
         return(-1);
     }
 
     singularity_message(DEBUG, "Cloning permission string of source to dest\n");
     if ( fchmod(fileno(fp_d), filestat.st_mode) < 0 ) {
         singularity_message(ERROR, "Could not set permission mode on %s: %s\n", dest, strerror(errno));
+        fclose(fp_s);
+        fclose(fp_d);
         return(-1);
     }
 
@@ -358,6 +380,7 @@ char *filecat(char *path) {
 
     if ( fseek(fd, 0L, SEEK_END) < 0 ) {
         singularity_message(ERROR, "Could not seek to end of file %s: %s\n", path, strerror(errno));
+        fclose(fd);
         return(NULL);
     }
 

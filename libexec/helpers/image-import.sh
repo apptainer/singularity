@@ -1,23 +1,23 @@
 #!/bin/bash
-# 
+#
 # Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
-# 
+#
 # “Singularity” Copyright (c) 2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
+#
 # This software is licensed under a customized 3-clause BSD license.  Please
 # consult LICENSE file distributed with the sources of this project regarding
 # your rights to use or distribute this software.
-# 
+#
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
 # the U.S. Government has been granted for itself and others acting on its
 # behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
 # to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
+# perform publicly and display publicly, and to permit other to do so.
+#
+#
 
 
 ## Basic sanity
@@ -54,7 +54,35 @@ fi
 case "$IMPORT_URI" in
     docker://*)
         CONTAINER_NAME=`echo "$IMPORT_URI" | sed -e 's@^docker://@@'`
-        SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' --cmd"
+        SINGULARITY_IMPORT_GET="$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$SINGULARITY_ROOTFS' --docker '$CONTAINER_NAME' ${SINGULARITY_DOCKER_REGISTRY:-} ${SINGULARITY_DOCKER_AUTH:-}"
+    ;;
+    shub://*)
+        NAME=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
+
+        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+            SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
+        else
+            SINGULARITY_CACHEDIR_LOCAL="/tmp"
+        fi
+        if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
+            message ERROR "Failed to create container_dir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$BASE_CONTAINER_DIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Failed to create named container_dir\n"
+            ABORT 255
+        fi
+
+        eval $SINGULARITY_libexecdir/singularity/python/cli.py --shub $NAME --rootfs $CONTAINER_DIR
+
+        # The python script saves names to files in CONTAINER_DIR, we then pass this image as targz to import
+        IMPORT_URI=`cat $CONTAINER_DIR/SINGULARITY_IMAGE`
+        rm $CONTAINER_DIR/SINGULARITY_IMAGE
+        rm $CONTAINER_DIR/SINGULARITY_RUNDIR
+        SINGULARITY_IMPORT_GET="cat $IMPORT_URI"
+        export IMPORT_URI
     ;;
     http://*|https://*)
         SINGULARITY_IMPORT_GET="curl -L -k '$IMPORT_URI'"
@@ -76,7 +104,7 @@ case "$IMPORT_URI" in
     ;;
     *)
         if [ ! -f "$IMPORT_URI" ]; then
-            message ERROR "File not found: $LOCAL_FILE\n"
+            message ERROR "File not found: $IMPORT_URI\n"
             ABORT 1
         fi
         SINGULARITY_IMPORT_GET="cat $IMPORT_URI"
@@ -96,6 +124,12 @@ case "$IMPORT_URI" in
 esac
 
 eval "$SINGULARITY_IMPORT_GET ${SINGULARITY_IMPORT_SPLAT:-}"
+
+ret_val=$?
+if [ $ret_val != 0 ];then
+    ABORT $ret_val
+fi
+
 eval "$SINGULARITY_libexecdir/singularity/bootstrap/main.sh"
 
 exit $?

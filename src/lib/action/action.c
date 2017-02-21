@@ -51,9 +51,17 @@ static char *cwd_path;
 
 int singularity_action_init(void) {
     char *command = envar("SINGULARITY_COMMAND", "", 10);
+    char *libpath = envar_path("SINGULARITY_LD_LIBRARY_PATH");
     singularity_message(DEBUG, "Checking on action to run\n");
 
     unsetenv("SINGULARITY_COMMAND");
+    unsetenv("SINGULARITY_LD_LIBRARY_PATH");
+
+    if ( libpath != NULL ) {
+        singularity_message(VERBOSE, "Setting LD_LIBRARY_PATH to `%s`\n", libpath);
+        setenv("LD_LIBRARY_PATH", libpath, 1);
+        free(libpath);
+    }
 
     if ( command == NULL ) {
         singularity_message(ERROR, "SINGULARITY_COMMAND is undefined\n");

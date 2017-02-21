@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2016, Michael W. Bauer. All rights reserved.
  * 
  * “Singularity” Copyright (c) 2016, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -18,37 +18,37 @@
  * 
  */
 
-#define _GNU_SOURCE
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <errno.h> 
-#include <string.h>
-#include <fcntl.h>  
+#include <limits.h>
+#include <unistd.h>
+#include <stdlib.h>
 
-#include "config.h"
-#include "lib/singularity.h"
-#include "util/util.h"
 #include "util/file.h"
+#include "util/util.h"
+#include "lib/message.h"
+#include "lib/rootfs/rootfs.h"
 
 
-int main(int argc, char ** argv) {
-    long int size;
+int singularity_file_entrypoint(char *entrypoint_name) {
+    singularity_message(DEBUG, "Copying entrypoint file: %s\n", entrypoint_name);
+    int retval = 0;
+    char *helper_shell = strdup("#!/bin/sh");
+    char *rootfs_path = singularity_rootfs_dir();
+    char *dest_path = joinpath(rootfs_path, strjoin("/.", entrypoint_name));
+    char *entrypoint = filecat(strjoin(LIBEXECDIR "/singularity/defaults/", entrypoint_name));
 
-    if ( argv[1] == NULL ) {
-        fprintf(stderr, "USAGE: %s [singularity container image] [size in MiB]\n", argv[0]);
-        return(1);
-    }
+    retval += fileput(dest_path, strjoin(helper_shell, entrypoint));
+    retval += chmod(dest_path, 0755);
 
-    if ( argv[2] == NULL ) {
-        size = 1024;
-    } else {
-        size = ( strtol(argv[2], (char **)NULL, 10) );
-    }
+    free(helper_shell);
+    free(rootfs_path);
+    free(dest_path);
+    free(entrypoint);
 
-    return(singularity_image_create(argv[1], size));
-
-    return(0);
+    return(retval);
 }

@@ -33,11 +33,11 @@
     #define VERBOSE3 4
     #define DEBUG 5
 
-    void _singularity_message(int level, const char *function, const char *file, int line, char *format, ...);
+    void _singularity_message(int level, const char *function, const char *file, int line, char *format, ...) __attribute__ ((__format__(printf, 5, 6)));
 
     #define singularity_message(a,b...) _singularity_message(a, __func__, __FILE__, __LINE__, b)
 
-    #define singularity_abort(a,b...) {_singularity_message(ABRT,  __func__, __FILE__, __LINE__, b); _singularity_message(ABRT,  __func__, __FILE__, __LINE__, "Retval = %d\n", a); exit(a);}
+    #define singularity_abort(a,b...) do {_singularity_message(ABRT,  __func__, __FILE__, __LINE__, b); _singularity_message(ABRT,  __func__, __FILE__, __LINE__, "Retval = %d\n", a); exit(a);} while(0)
 
 #endif /*__SINGULARITY_MESSAGE_H_ */
 

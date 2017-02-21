@@ -50,8 +50,6 @@ int singularity_file_group(void) {
     uid_t gid = singularity_priv_getgid();
     const gid_t *gids = singularity_priv_getgids();
     int gid_count = singularity_priv_getgidcount();
-    struct passwd *pwent = getpwuid(uid);
-    struct group *grent = getgrgid(gid);
     char *containerdir = singularity_rootfs_dir();
     char *sessiondir = singularity_sessiondir_get();
 
@@ -73,8 +71,7 @@ int singularity_file_group(void) {
     }
 
     singularity_message(DEBUG, "Checking configuration option: 'config group'\n");
-    singularity_config_rewind();
-    if ( singularity_config_get_bool("config group", 1) <= 0 ) {
+    if ( singularity_config_get_bool(CONFIG_GROUP) <= 0 ) {
         singularity_message(VERBOSE, "Skipping bind of the host's /etc/group\n");
         return(0);
     }
@@ -88,9 +85,10 @@ int singularity_file_group(void) {
     }
 
     errno = 0;
+    struct passwd *pwent = getpwuid(uid);
     if ( ! pwent ) {
         // List of potential error codes for unknown name taken from man page.
-        if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
+        if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) || (errno == ENOENT)) {
             singularity_message(VERBOSE3, "Not updating group file as passwd entry for UID %d not found.\n", uid);
             return(0);
         } else {
@@ -111,10 +109,11 @@ int singularity_file_group(void) {
     }
 
     errno = 0;
+    struct group *grent = getgrgid(gid);
     if ( grent ) {
         singularity_message(VERBOSE, "Updating group file with user info\n");
         fprintf(file_fp, "\n%s:x:%u:%s\n", grent->gr_name, grent->gr_gid, pwent->pw_name);
-    } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
+    } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) || (errno == ENOENT) ) {
         // It's rare, but certainly possible to have a GID that's not a group entry in this system.
         // According to the man page, all of the above errno's can indicate this situation.
         singularity_message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gid);

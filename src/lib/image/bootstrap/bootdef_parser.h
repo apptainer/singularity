@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2016, Michael W. Bauer. All rights reserved.
  * 
  * “Singularity” Copyright (c) 2016, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -16,15 +16,17 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
-*/
+ */
 
+#ifndef __SINGULARITY_BOOTDEF_H_
+#define __SINGULARITY_BOOTDEF_H_
 
-#ifndef __IMAGE_UTIL_H_
-#define __IMAGE_UTIL_H_
+    int singularity_bootdef_open(char *bootdef_path);
+    void singularity_bootdef_rewind();
+    void singularity_bootdef_close();
+    char *singularity_bootdef_get_value(char *key);
+    int singularity_bootdef_get_version();
+    int singularity_bootdef_section_find(char *section_name);
+    int singularity_bootdef_section_get(char **script, char *section_name);
 
-    int singularity_image_check(FILE *image_fp);
-    int singularity_image_offset(FILE *image_fp);
-    int singularity_image_create(char *image, int size);
-    int singularity_image_expand(char *image, int size);
-
-#endif /* __IMAGE_UTIL_H */
+#endif

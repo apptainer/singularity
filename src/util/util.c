@@ -106,8 +106,9 @@ char *envar_path(char *name) {
 }
 
 
-int intlen(int input) {
+int intlen(int input_int) {
     unsigned int len = 1;
+    int input = input_int;
 
     while (input /= 10) {
         len ++;
@@ -126,7 +127,8 @@ char *int2str(int num) {
     return(ret);
 }
 
-char *joinpath(const char * path1, const char * path2) {
+char *joinpath(const char * path1, const char * path2_in) {
+    const char *path2 = path2_in;
     char *tmp_path1 = strdup(path1);
     int path1_len = strlength(tmp_path1, 4096);
     char *ret;
@@ -138,8 +140,12 @@ char *joinpath(const char * path1, const char * path2) {
         path2++;
     }
 
-    ret = (char *) malloc(strlength(tmp_path1, PATH_MAX) + strlength(path2, PATH_MAX) + 2);
-    snprintf(ret, strlength(tmp_path1, PATH_MAX) + strlen(path2) + 2, "%s/%s", tmp_path1, path2); // Flawfinder: ignore
+    size_t ret_pathlen = strlength(tmp_path1, PATH_MAX) + strlength(path2, PATH_MAX) + 2;
+    ret = (char *) malloc(ret_pathlen);
+    if (snprintf(ret, ret_pathlen, "%s/%s", tmp_path1, path2) >= ret_pathlen) { // Flawfinder: ignore
+        singularity_message(ERROR, "Overly-long path name.\n");
+        ABORT(255);
+    }
 
     return(ret);
 }
@@ -149,30 +155,58 @@ char *strjoin(char *str1, char *str2) {
     int len = strlength(str1, 2048) + strlength(str2, 2048) + 1;
 
     ret = (char *) malloc(len);
-    snprintf(ret, len, "%s%s", str1, str2); // Flawfinder: ignore
+    if (snprintf(ret, len, "%s%s", str1, str2) >= len) { // Flawfinder: ignore
+       singularity_message(ERROR, "Overly-long string encountered.\n");
+       ABORT(255);
+    }
 
     return(ret);
 }
 
+void chomp_noline(char *str) {
+  int len;
+  int i;
+
+  len = strlength(str, 4096);
+
+  while ( str[0] == ' ' ) {
+    for ( i = 1; i < len; i++ ) {
+      str[i-1] = str[i];
+    }
+    str[len] = '\0';
+    len--;
+  }
+
+  while ( str[len - 1] == ' ' ) {
+    str[len - 1] = '\0';
+    len--;
+  }
+}
+
 void chomp(char *str) {
+    if (!str) {return;}
+
     int len;
     int i;
     
     len = strlength(str, 4096);
 
-    while ( str[0] == ' ' ) {
-        for ( i = 1; i < len; i++ ) {
-	    str[i-1] = str[i];
-	}
-	str[len] = '\0';
-	len--;
+    // Trim leading whitespace by shifting array.
+    i = 0;
+    while ( isspace(str[i]) ) {i++;}
+    if (i) {
+        len -= i;
+        memmove(str, str+i, len);
+        str[len] = '\0';
     }
-
+    
+    // Trim trailing whitespace and redefine NULL
     while ( str[len - 1] == ' ' ) {
         str[len - 1] = '\0';
-	len--;
+        len--;
     }
 
+    // If str starts with a new line, there is nothing here
     if ( str[0] == '\n' ) {
         str[0] = '\0';
     }
@@ -180,6 +214,7 @@ void chomp(char *str) {
     if ( str[len - 1] == '\n' ) {
         str[len - 1] = '\0';
     }
+
 }
 
 int strlength(const char *string, int max_len) {
@@ -237,7 +272,8 @@ int str2int(const char *input_str, long int *output_num) {
 // If pw is is filled in with a passwd structure, this function skips
 //   looking it up.
 // The home directory value is saved for later lookups.
-char *get_homedir(struct passwd *pw) {
+char *get_homedir(struct passwd *pw_in) {
+    struct passwd *pw = pw_in;
     static char *homedir = NULL;
 
     if ( homedir != NULL )

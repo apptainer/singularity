@@ -51,21 +51,19 @@ case "$SINGULARITY_IMAGE" in
     ;;
     docker://*)
         NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
-        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
+        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+            SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
+        else
+            SINGULARITY_CACHEDIR_LOCAL="/tmp"
         fi
-        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
-            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
-            ABORT 1
-        fi
-        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
-            message ERROR "Failed to create tmpdir\n"
+        if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
+            message ERROR "Failed to create container_dir\n"
             ABORT 255
         fi
 
-        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
+        CONTAINER_DIR="$BASE_CONTAINER_DIR/$NAME"
         if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
+            message ERROR "Failed to create named container_dir\n"
             ABORT 255
         fi
 
@@ -77,8 +75,36 @@ case "$SINGULARITY_IMAGE" in
         chmod -R +w "$CONTAINER_DIR"
 
         SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
+        SINGULARITY_RUNDIR="$CONTAINER_DIR"
         export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+    ;;
+    shub://*)
+        NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^shub://@@'`
+
+        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+            SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
+        else
+            SINGULARITY_CACHEDIR_LOCAL="/tmp"
+        fi
+        if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
+            message ERROR "Failed to create container_dir\n"
+            ABORT 255
+        fi
+
+        CONTAINER_DIR="$BASE_CONTAINER_DIR/$NAME"
+        if ! mkdir -p "$CONTAINER_DIR"; then
+            message ERROR "Failed to create named container_dir\n"
+            ABORT 255
+        fi
+
+        eval $SINGULARITY_libexecdir/singularity/python/cli.py --shub $NAME --rootfs $CONTAINER_DIR
+
+        # The python script saves names to files in CONTAINER_DIR
+        SINGULARITY_RUNDIR=`cat $CONTAINER_DIR/SINGULARITY_RUNDIR`
+        SINGULARITY_IMAGE=`cat $CONTAINER_DIR/SINGULARITY_IMAGE`
+        chmod -R +w "$SINGULARITY_RUNDIR"
+        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+
     ;;
 esac
 

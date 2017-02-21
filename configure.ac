@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.2],[gmkurtzer@lbl.gov])
+AC_INIT([singularity],[2.2.99],[gmkurtzer@lbl.gov])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -31,6 +31,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects]) ## SEE ABOVE BEFORE CHANGING
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
+AC_GNU_SOURCE
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_CC
@@ -217,7 +218,6 @@ AC_ARG_WITH([userns],
             [SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_USERNS"]
            )
 
-
 AC_CHECK_FUNCS(setns, [
                       ], [
                           NO_SETNS="-DNO_SETNS"
@@ -244,6 +244,28 @@ fi
 AC_SUBST(OVERLAY_FS)
 AC_SUBST(SINGULARITY_DEFINES)
 
+AC_MSG_CHECKING([--with-slurm])
+AC_ARG_WITH([slurm],
+            AS_HELP_STRING([--with-slurm], [Enable build of slurm integration]),
+           )
+AS_IF([test "x$with_slurm" == "xyes"],
+    [
+        AC_MSG_RESULT([yes])
+        AC_CHECK_HEADER([slurm/spank.h],
+            [AC_MSG_RESULT([yes])
+                with_slurm="yes"
+            ],
+            [
+                AC_MSG_ERROR([SLURM support requested, but slurm/spank.h header not found.])
+            ])
+    ],
+    [
+        AC_MSG_RESULT([no])
+        with_slurm="no"
+    ]
+)
+AM_CONDITIONAL([WITH_SLURM], [test "$with_slurm" = "yes"])
+AC_SUBST(with_slurm)
 
 
 AC_MSG_CHECKING([if suid should be enabled])
@@ -294,6 +316,7 @@ AC_CONFIG_FILES([
    src/lib/file/group/Makefile
    src/lib/file/passwd/Makefile
    src/lib/file/resolvconf/Makefile
+   src/lib/file/entrypoint/Makefile
    src/lib/mount/Makefile
    src/lib/mount/cwd/Makefile
    src/lib/mount/dev/Makefile
@@ -304,7 +327,15 @@ AC_CONFIG_FILES([
    src/lib/mount/tmp/Makefile
    src/lib/mount/userbinds/Makefile
    src/lib/mount/scratch/Makefile
+   src/lib/image/Makefile
+   src/lib/image/mount/Makefile
+   src/lib/image/bind/Makefile
+   src/lib/image/create/Makefile
+   src/lib/image/expand/Makefile
+   src/lib/image/bootstrap/Makefile
+   src/lib/image/bootstrap/docker/Makefile
    src/util/Makefile
+   src/slurm/Makefile
    etc/Makefile
    bin/Makefile
    bin/singularity
@@ -314,8 +345,10 @@ AC_CONFIG_FILES([
    libexec/bootstrap/modules-v1/Makefile
    libexec/bootstrap/modules-v2/Makefile
    libexec/cli/Makefile
+   libexec/defaults/Makefile
    libexec/helpers/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile
+   libexec/python/shub/Makefile
 ])
 AC_OUTPUT

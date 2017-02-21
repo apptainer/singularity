@@ -33,7 +33,7 @@
 #include "util/util.h"
 #include "lib/message.h"
 #include "lib/config_parser.h"
-#include "lib/image-util.h"
+#include "lib/image/image.h"
 #include "lib/loop-control.h"
 #include "lib/privilege.h"
 
@@ -96,7 +96,7 @@ int rootfs_squashfs_mount(void) {
     }
 
     singularity_message(DEBUG, "Binding image to loop device\n");
-    if ( ( loop_dev = singularity_loop_bind(image_fp) ) == NULL ) {
+    if ( ( loop_dev = singularity_loop_bind_with_offset(image_fp, 0) ) == NULL ) {
         singularity_message(ERROR, "There was a problem bind mounting the image\n");
         ABORT(255);
     }
@@ -104,7 +104,7 @@ int rootfs_squashfs_mount(void) {
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Mounting squashfs image\n");
-    if ( mount(loop_dev, mount_point, "squashfs", MS_NOSUID|MS_RDONLY, "errors=remount-ro") < 0 ) {
+    if ( mount(loop_dev, mount_point, "squashfs", MS_NOSUID|MS_RDONLY|MS_NODEV, "errors=remount-ro") < 0 ) {
         singularity_message(ERROR, "Failed to mount squashfs image in (read only): %s\n", strerror(errno));
         ABORT(255);
     }

@@ -12,10 +12,5 @@ PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
 # Don't save the shell's HISTFILE
 HISTFILE="/dev/null"
 
-# Set the timezone if it is not already set
-if [ -z "${TZ:-}" ]; then
-    TZ=`date +%Z`
-fi
-
-export PATH HISTFILE TZ
+export PATH HISTFILE
 

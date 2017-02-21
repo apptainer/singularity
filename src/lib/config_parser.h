@@ -22,11 +22,41 @@
 #ifndef __SINGULARITY_CONFIG_H_
 #define __SINGULARITY_CONFIG_H_
 
-    int singularity_config_open(char *config_path);
-    void singularity_config_close(void);
-    void singularity_config_rewind(void);
+#include "config_defaults.h"
 
-    char *singularity_config_get_value(char *key);
-    int singularity_config_get_bool(char *key, int def);
+// Retrieve a single value from the configuration; in the presence of
+// multiple values in the configuration file, only the last one is
+// returned.
+//
+// If the configuration file does not have a value for the given key,
+// then the compile-time default is returned.  singularity_config_get_value
+// is actually a macro and should cause a compile-time error if there is no
+// default specified in the code.
+//
+const char *_singularity_config_get_value_impl(const char *key, const char *default_value);
+#define singularity_config_get_value(NAME) \
+       _singularity_config_get_value_impl(NAME, NAME ## _DEFAULT)
+
+// Retrieve (possibly) multiple values from the configuration file; the char*
+// array is terminated by NULL.
+//
+const char **_singularity_config_get_value_multi_impl(const char *key, const char *default_value);
+#define singularity_config_get_value_multi(NAME) \
+       _singularity_config_get_value_multi_impl(NAME, NAME ## _DEFAULT)
+
+// Retrieves a boolean value from the configuration file.  If there are
+// multiple values in the configuration file, then only the last one is
+// returned.
+int _singularity_config_get_bool_impl(const char *key, int default_value);
+#define singularity_config_get_bool(NAME) \
+       _singularity_config_get_bool_impl(NAME, NAME ## _DEFAULT)
+
+int _singularity_config_get_bool_char_impl(const char *key, const char *value);
+#define singularity_config_get_bool_char(NAME) \
+       _singularity_config_get_bool_char_impl(NAME, NAME ## _DEFAULT)
+
+// Initialize the configuration table
+//
+int singularity_config_init(char *config_path);
 
 #endif /* __SINGULARITY_CONFIG_H_ */

@@ -46,7 +46,7 @@ void singularity_mount_userbinds(void) {
     if ( ( bind_path_string = envar_path("SINGULARITY_BINDPATH") ) != NULL ) {
 
         singularity_message(DEBUG, "Checking for 'user bind control' in config\n");
-        if ( singularity_config_get_bool("user bind control", 1) <= 0 ) {
+        if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
             singularity_message(WARNING, "Ignoring user bind request: user bind control is disabled by system administrator\n");
             return;
         }
@@ -137,6 +137,12 @@ void singularity_mount_userbinds(void) {
             if ( mount(source, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
                 singularity_message(ERROR, "There was an error binding the path %s: %s\n", source, strerror(errno));
                 ABORT(255);
+            }
+            if ( singularity_priv_userns_enabled() != 1 ) {
+                if ( mount(NULL, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    singularity_message(ERROR, "There was an error remounting the path %s: %s\n", source, strerror(errno));
+                    ABORT(255);
+                }
             }
             singularity_priv_drop();
 

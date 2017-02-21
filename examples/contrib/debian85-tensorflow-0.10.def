@@ -25,5 +25,5 @@ MirrorURL: http://ftp.us.debian.org/debian/
 
 
 %test
-    # This runs usually less then 30 minutes dependening on your host type
+    # This runs usually less then 30 minutes depending on your host type
     python -m tensorflow.models.image.mnist.convolutional

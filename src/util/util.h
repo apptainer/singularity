@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "../lib/message.h"
 
 #ifndef __UTIL_H_
 #define __UTIL_H_
@@ -36,6 +37,7 @@ int intlen(int input);
 char *int2str(int num);
 char *joinpath(const char * path1, const char * path2);
 char *strjoin(char *str1, char *str2);
+void chomp_noline(char *str);
 void chomp(char *str);
 int strlength(const char *string, int max_len);
 //char *random_string(int length);
@@ -54,7 +56,7 @@ int str2int(const char *input_str, long int *output_num);
 struct passwd;
 char *get_homedir(struct passwd *pw);
 
-#define ABORT(a) {singularity_message(ABRT, "Retval = %d\n", a); exit(a);}
+#define ABORT(a) do {singularity_message(ABRT, "Retval = %d\n", a); exit(a);} while (0)
 
 
 #endif
