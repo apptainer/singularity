@@ -166,11 +166,12 @@ stest 1 singularity exec "$CONTAINER" blahh
 stest 0 sh -c "echo hi | singularity exec $CONTAINER grep hi"
 stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
 
-/bin/echo
-/bin/echo "Running container run tests..."
 
-# Before we have a runscript, it should invoke a shell
-stest 0 singularity run "$CONTAINER"
+/bin/echo
+/bin/echo "Checking unprivileged mode"
+
+stest 0 sh -c "singularity exec $CONTAINER whoami | grep -q `id -un`"
+stest 0 sh -c "singularity exec $CONTAINER whoami"
 
 
 /bin/echo
@@ -200,14 +201,11 @@ stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
 /bin/echo "Checking Bootstrap on existing container..."
 
 stest 0 sudo singularity bootstrap "$CONTAINER"
-#stest 0 singularity exec "$CONTAINER" test -f /environment
-#stest 0 sudo singularity exec -w "$CONTAINER" rm /environment
-#stest 1 singularity exec "$CONTAINER" test -f /environment
-#stest 0 sudo singularity bootstrap "$CONTAINER"
-#stest 0 singularity exec "$CONTAINER" test -f /environment
-#stest 0 singularity exec "$CONTAINER" test -f /.shell
-#stest 0 singularity exec "$CONTAINER" test -f /.exec
-#stest 0 singularity exec "$CONTAINER" test -f /.run
+stest 0 singularity exec "$CONTAINER" test -f /.singularity/runscript
+stest 0 sudo singularity exec -w "$CONTAINER" rm /.singularity/runscript
+stest 1 singularity exec "$CONTAINER" test -f /.singularity/runscript
+stest 0 sudo singularity bootstrap "$CONTAINER"
+stest 0 singularity exec "$CONTAINER" test -f /.singularity/runscript
 
 
 /bin/echo
@@ -257,41 +255,12 @@ stest 1 singularity exec $CONTAINERDIR ping localhost -c 1
 stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep -q `id -un`"
 
 
-#TODO: The following tests must be conditional based on host capabilities
-/bin/echo
-/bin/echo "Disabling setuid config flag"
-stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow setuid = yes|allow setuid = no|'
-stest 1 singularity exec "$CONTAINER" true
-
-
-echo "Stopping here..."
-exit 0
-
-/bin/echo
-/bin/echo "Checking unprivileged mode"
-stest 0 sh -c "singularity exec $CONTAINERDIR whoami | grep -q `id -un`"
-stest 1 sh -c "singularity exec $CONTAINER whoami"
-
-
-/bin/echo
-/bin/echo "Re-enabling setuid config flag"
-stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow setuid = no|allow setuid = yes|'
-stest 0 singularity exec "$CONTAINER" true
-
-
-/bin/echo
-/bin/echo "Checking unprivileged mode from environment"
-stest 0 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINERDIR whoami | grep -q `id -un`"
-stest 1 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINER whoami"
-
-
 /bin/echo
 /bin/echo "Checking workdir functionality"
 stest 0 mkdir -p /tmp/foo
 stest 0 singularity exec $CONTAINER test -d /tmp/foo
 stest 0 singularity exec --workdir /tmp/foo $CONTAINER test -d /tmp/foo
 stest 1 singularity exec --workdir /tmp/foo --contain $CONTAINER test -d /tmp/foo
-
 
 if [ -n "@OVERLAY_FS@" ]; then
     /bin/echo
@@ -308,17 +277,14 @@ if [ -n "@OVERLAY_FS@" ]; then
     stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|user bind control = no|user bind control = yes|'
     stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
 
-    /bin/echo
-    /bin/echo "Testing non-privileged user bind mounts"
-    stest 0 singularity exec -B /tmp/foo:/foo -u "$CONTAINERDIR" test -d /foo
-    # Can't create a directory here as a non-privileged user... Quirk of user
-    # namespaces and the overlay file system permission semantics
-    stest 1 singularity exec -B /tmp/foo:/etc/foo -u "$CONTAINERDIR" test -d /etc/foo
-    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|enable overlay = yes|enable overlay = no|'
 else
     /bin/echo
     /bin/echo "Skipping user bind mount tests, overlay FS support is not enabled"
 fi
+
+
+echo "Stopping here..."
+exit 0
 
 
 /bin/echo
