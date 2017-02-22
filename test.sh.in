@@ -133,18 +133,18 @@ stest 1 singularity bogus help
 
 stest 0 singularity create -s 568 "$CONTAINER"
 stest 0 rm -f "$CONTAINER"
-stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 singularity create -s 568 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/docker.def"
 stest 0 sudo rm -rf "$CONTAINER"
-stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 singularity create -s 568 "$CONTAINER"
 stest 0 sh -c "sed "$STARTDIR/examples/busybox.def" -e 's|^MirrorURL:.*|MirrorURL: https://fake_mirror_url|' > "$TEMPDIR/busybox-busted-mirror.def""
-stest 255 singularity bootstrap "$CONTAINER" "$TEMPDIR/busybox-busted-mirror.def"
+stest 255 sudo singularity bootstrap "$CONTAINER" "$TEMPDIR/busybox-busted-mirror.def"
 stest 0 sh -c "sudo singularity bootstrap "$CONTAINER" "$TEMPDIR/busybox-busted-mirror.def" 2>&1 | grep -i 'failed fetching mirrorurl'"
 stest 0 sudo rm -rf "$CONTAINER"
-stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 singularity create -s 568 "$CONTAINER"
 # We will need a setuid binary (ping) for the NO_NEW_PRIVS test below.
 stest 0 sed -i "$STARTDIR/examples/centos.def" -e 's|#InstallPkgs yum vim-minimal|InstallPkgs iputils|'
-stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/busybox.def"
+stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/centos.def"
 
 /bin/echo
 /bin/echo "Running container shell tests..."
@@ -170,15 +170,7 @@ stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
 /bin/echo "Running container run tests..."
 
 # Before we have a runscript, it should invoke a shell
-stest 0 singularity run "$CONTAINER" -c true
-stest 1 singularity run "$CONTAINER" -c false
-echo -ne "#!/bin/sh\n\neval \"\$@\"\n" > singularity
-stest 0 chmod 0644 singularity
-stest 0 sudo singularity copy "$CONTAINER" -a singularity /
-stest 1 singularity run "$CONTAINER" true
-stest 0 sudo singularity exec -w "$CONTAINER" chmod 0755 /singularity
-stest 0 singularity run "$CONTAINER" true
-stest 1 singularity run "$CONTAINER" false
+stest 0 singularity run "$CONTAINER"
 
 
 /bin/echo
@@ -231,27 +223,27 @@ stest 0 singularity exec "$CONTAINER" true
 /bin/echo
 /bin/echo "Checking export/import..."
 
-echo "Stopping here..."
-exit 0
-
-stest 0 sudo singularity export -f ${CONTAINERDIR}.tar "$CONTAINER"
-stest 0 mkdir $CONTAINERDIR
-stest 0 sudo tar -C $CONTAINERDIR -xvf ${CONTAINERDIR}.tar
+stest 0 sh -c "singularity export "$CONTAINER" > ${CONTAINERDIR}.tar"
 stest 0 sudo chmod 0644 ${CONTAINERDIR}.tar
 stest 0 sudo rm -f "$CONTAINER"
-stest 0 sudo singularity create -s 568 "$CONTAINER"
-stest 0 sh -c "cat ${CONTAINERDIR}.tar | sudo singularity import $CONTAINER"
-stest 1 sh -c "sudo singularity import $CONTAINER not_a_file 2>&1 | grep "unbound variable""
+stest 0 singularity create -s 568 "$CONTAINER"
+stest 0 sh -c "cat ${CONTAINERDIR}.tar | singularity import $CONTAINER"
+stest 1 sh -c "sudo singularity import $CONTAINER not_a_file 2>&1 | grep \"unbound variable\""
 stest 1 sudo singularity import ${CONTAINER} http://fake_singularity_url
 stest 1 sudo singularity import ${CONTAINER} docker://not_a_docker_container/nope_nope_singularity
 stest 1 sh -c "sudo singularity import ${CONTAINER} docker://not_a_docker_container/nope_nope_singularity | grep 'ERROR: Container does not contain the valid minimum requirement of /bin/sh'"
+stest 0 singularity import ${CONTAINER} docker://centos
+stest 0 singularity exec ${CONTAINER} test -f /etc/redhat-release
 
 
 /bin/echo
 /bin/echo "Checking directory mode"
+stest 0 mkdir $CONTAINERDIR
+stest 0 sudo tar -C $CONTAINERDIR -xvf ${CONTAINERDIR}.tar
 stest 0 singularity exec $CONTAINERDIR true
+stest 1 singularity exec $CONTAINERDIR false
 stest 1 singularity exec /tmp true
-stest 1 singularity exec / true
+stest 0 singularity exec / true
 
 
 /bin/echo
@@ -270,6 +262,10 @@ stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u
 /bin/echo "Disabling setuid config flag"
 stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow setuid = yes|allow setuid = no|'
 stest 1 singularity exec "$CONTAINER" true
+
+
+echo "Stopping here..."
+exit 0
 
 /bin/echo
 /bin/echo "Checking unprivileged mode"
