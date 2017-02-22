@@ -9,7 +9,6 @@ dist_action_SCRIPTS = run shell exec
 dist_env_DATA = 01-base.sh
 
 install-data-local:
-	install -d -m 0755 $(DESTDIR)/$(basedir)/bin
 	install -d -m 0755 $(DESTDIR)/$(basedir)/dev
 	install -d -m 0755 $(DESTDIR)/$(basedir)/etc
 	install -d -m 0755 $(DESTDIR)/$(basedir)/home

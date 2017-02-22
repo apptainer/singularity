@@ -85,13 +85,17 @@ if [ -n "${1:-}" ]; then
             SINGULARITY_CONTAINER="$1"
             SINGULARITY_LAYERFILE=`mktemp /tmp/.singularity-layers.XXXXXXXX`
             export SINGULARITY_CONTAINER SINGULARITY_LAYERFILE
-            eval "$SINGULARITY_libexecdir/singularity/python/docker/add.py"
+            eval_abort "$SINGULARITY_libexecdir/singularity/python/docker/add.py"
             message 1 "Importing: base Singularity environment\n"
-            (cd $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment; tar -cf - .) | eval "$IMPORT_BIN" || exit $?
+            (cd $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment; tar -cf - .) | eval_abort "$IMPORT_BIN"
             for i in `cat "$SINGULARITY_LAYERFILE"`; do
                 message 1 "Importing: $i\n"
                 zcat "$i" | eval "$IMPORT_BIN" || exit $?
             done
+        ;;
+        *://*)
+            message ERROR "Unsupported URI: $1\n"
+            exit 1
         ;;
     esac
 else

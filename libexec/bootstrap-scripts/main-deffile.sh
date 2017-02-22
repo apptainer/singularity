@@ -39,11 +39,11 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
 fi
 
 
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 if [ -n "${BOOTSTRAP:-}" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh"
+    eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh"
 fi
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-scriptlets.sh"
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-scriptlets.sh"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 
