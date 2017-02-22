@@ -79,24 +79,20 @@ int singularity_sessiondir(void) {
 //        int child = singularity_fork(); 
         int child = fork();
 
-
         if ( child == 0 ) {
-            singularity_message(DEBUG, "Continuing Singularity as child thread\n");
-        } else if ( child > 0 ) {
-            char *cleanup_proc;
-
-            cleanup_proc = joinpath(LIBEXECDIR, "/singularity/bin/cleanupd");
-
             setenv("SINGULARITY_CLEANDIR", sessiondir, 1);
             close(sessiondir_fd);
 
-            singularity_message(DEBUG, "Exec()'ing the cleanupd process\n");
-
             execl(joinpath(LIBEXECDIR, "/singularity/bin/cleanupd"), "singularity: cleanupd", NULL);
-            //execl(cleanup_proc, cleanup_proc, NULL);
-        } else {
-            singularity_message(ERROR, "Could not fork cleanupd process: %s\n", strerror(errno));
-            ABORT(255);
+
+        } else if ( child > 0 ) {
+            int tmpstatus;
+
+            waitpid(child, &tmpstatus, 0);
+            if ( WEXITSTATUS(tmpstatus) != 0 ) {
+                singularity_message(ERROR, "Failed to spawn cleanup daemon process\n");
+                ABORT(255);
+            }
         }
     }
 
