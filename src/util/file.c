@@ -408,7 +408,7 @@ char *basedir(char *dir) {
 
     singularity_message(DEBUG, "Obtaining basedir for: %s\n", dir);
 
-    while ( strcmp(testdir, "/") != 0 ) {
+    while ( ( strcmp(testdir, "/") != 0 ) && ( strcmp(testdir, ".") != 0 ) ) {
         singularity_message(DEBUG, "Iterating basedir: %s\n", testdir);
 
         ret = strdup(testdir);
