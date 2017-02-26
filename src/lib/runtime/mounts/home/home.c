@@ -41,24 +41,52 @@
 
 int _singularity_runtime_mount_home(void) {
     char *homedir_base = NULL;
+    char *tmpdir = NULL;
     char *homedir = singularity_priv_home();
     char *homedir_source = singularity_priv_homedir();
     char *container_dir = singularity_runtime_rootfs(NULL);
-    char *tmpdir = singularity_runtime_tmpdir(NULL);
 
-    if ( tmpdir == NULL ) {
-        singularity_message(ERROR, "internal error - singularity_runtime_tmpdir() not set\n");
-        ABORT(255);
-    }
 
     if ( singularity_config_get_bool(MOUNT_HOME) <= 0 ) {
         singularity_message(VERBOSE, "Skipping home dir mounting (per config)\n");
         return(0);
     }
 
-    singularity_message(DEBUG, "Checking home and home dir (%s, %s)\n", homedir, homedir_source);
+    if ( ( tmpdir = singularity_registry_get("WORKDIR") ) != NULL ) {
+        singularity_message(DEBUG, "Obtained work directory from environment: %s\n", tmpdir);
+
+        singularity_message(DEBUG, "Checking if users are allowed to have control over binds\n");
+        if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
+            singularity_message(ERROR, "User bind control is disabled by system administrator\n");
+            ABORT(5);
+        }
+        singularity_message(DEBUG, "Checking if working directory exists: %s\n", tmpdir);
+        if ( is_dir(tmpdir) != 0 ) {
+            singularity_message(ERROR, "Working directory does not exist: %s\n", tmpdir);
+            ABORT(255);
+        }
+        singularity_message(DEBUG, "Checking if working directory is owned by %i: %s\n", singularity_priv_getuid(), tmpdir);
+        if ( is_owner(tmpdir, singularity_priv_getuid()) != 0 ) {
+            singularity_message(ERROR, "Working directory is now owned by calling user: %s\n", tmpdir);
+            ABORT(255);
+        }
+    } else {
+        tmpdir = singularity_runtime_tmpdir(NULL);
+        if ( tmpdir == NULL ) {
+            singularity_message(ERROR, "internal error - singularity_runtime_tmpdir() not set\n");
+            ABORT(255);
+        }
+    }
+
+    singularity_message(DEBUG, "Checking home and home dir are configured (%s, %s)\n", homedir, homedir_source);
     if ( ( homedir == NULL ) || ( homedir_source == NULL ) ) {
         singularity_message(ERROR, "Could not obtain user's home directory\n");
+        ABORT(255);
+    }
+
+    singularity_message(DEBUG, "Checking ownership of physical home directory: %s\n", homedir_source);
+    if ( is_owner(homedir_source, singularity_priv_getuid()) != 0 ) {
+        singularity_message(ERROR, "Home directory is not owned by calling user: %s\n", homedir_source);
         ABORT(255);
     }
 
@@ -105,17 +133,18 @@ int _singularity_runtime_mount_home(void) {
             singularity_message(ERROR, "Failed to mount home directory %s: %s\n", homedir_source, strerror(errno));
             ABORT(255);
         }
+
+        if ( singularity_priv_userns_enabled() != 1 ) {
+            singularity_message(DEBUG, "Remounting home directory with necessary options: %s\n", homedir);
+            if ( mount(NULL, joinpath(tmpdir, homedir), NULL, MS_BIND | MS_REMOUNT | MS_NODEV | MS_NOSUID | MS_REC , NULL) < 0 ) {
+                singularity_message(ERROR, "Failed to remount home directory %s: %s\n", homedir, strerror(errno));
+                ABORT(255);
+            }
+        }
         singularity_priv_drop();
     }
 
     singularity_priv_escalate();
-    if ( singularity_priv_userns_enabled() != 1 ) {
-        singularity_message(DEBUG, "Remounting home directory with necessary options: %s\n", homedir);
-        if ( mount(NULL, joinpath(tmpdir, homedir), NULL, MS_BIND | MS_REMOUNT | MS_NODEV | MS_NOSUID | MS_REC , NULL) < 0 ) {
-            singularity_message(ERROR, "Failed to remount home directory %s: %s\n", homedir, strerror(errno));
-            ABORT(255);
-        }
-    }
     singularity_message(VERBOSE, "Mounting home directory base into container: %s->%s\n", joinpath(tmpdir, homedir_base), joinpath(container_dir, homedir_base));
     if ( mount(joinpath(tmpdir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND | MS_REC, NULL) < 0 ) {
         singularity_message(ERROR, "Failed to mount home directory base %s: %s\n", homedir_base, strerror(errno));
