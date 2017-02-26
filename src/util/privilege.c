@@ -147,6 +147,16 @@ void singularity_priv_init(void) {
     if ( home_tmp != NULL ) {
         char *colon = strchr(home_tmp, ':');
 
+        if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
+            singularity_message(ERROR, "User defined binds are not allowed in configuration\n");
+            ABORT(255);
+        }
+
+#ifndef SINGULARITY_NO_NEW_PRIVS
+        singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
+        return(0);
+#endif
+
         if ( colon == NULL ) {
             uinfo.home = strdup(home_tmp);
             uinfo.homedir = uinfo.home;
