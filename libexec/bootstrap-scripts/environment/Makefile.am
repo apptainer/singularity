@@ -13,6 +13,7 @@ install-data-local:
 	install -d -m 0755 $(DESTDIR)/$(basedir)/etc
 	install -d -m 0755 $(DESTDIR)/$(basedir)/home
 	install -d -m 0755 $(DESTDIR)/$(basedir)/proc
+	install -d -m 0755 $(DESTDIR)/$(basedir)/root
 	install -d -m 0755 $(DESTDIR)/$(basedir)/sys
 	install -d -m 0755 $(DESTDIR)/$(basedir)/tmp
 	install -d -m 0755 $(DESTDIR)/$(basedir)/var
