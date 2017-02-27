@@ -73,7 +73,15 @@ int main(int argc, char **argv) {
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
-    tar_cmd[0] = strdup("/usr/bin/tar");
+    if ( is_exec("/usr/bin/tar") == 0 ) {
+        tar_cmd[0] = strdup("/usr/bin/tar");
+    } else if ( is_exec("/bin/tar") == 0 ) {
+        tar_cmd[0] = strdup("/bin/tar");
+    } else {
+        singularity_message(ERROR, "Could not locate the system version of 'tar'\n");
+        ABORT(255);
+    }
+
     tar_cmd[1] = strdup("-cf");
     tar_cmd[2] = strdup("-");
     tar_cmd[3] = strdup(".");
