@@ -40,11 +40,11 @@
 
 
 int _singularity_runtime_mount_home(void) {
+    char *homedir_source = NULL;
     char *homedir_base = NULL;
-    char *tmpdir = NULL;
     char *homedir = singularity_priv_home();
-    char *homedir_source = singularity_priv_homedir();
     char *container_dir = singularity_runtime_rootfs(NULL);
+    char *tmpdir = singularity_runtime_tmpdir(NULL);
 
 
     if ( singularity_config_get_bool(MOUNT_HOME) <= 0 ) {
@@ -52,41 +52,14 @@ int _singularity_runtime_mount_home(void) {
         return(0);
     }
 
-    if ( ( tmpdir = singularity_registry_get("WORKDIR") ) != NULL ) {
-        singularity_message(DEBUG, "Obtained work directory from environment: %s\n", tmpdir);
-
-        singularity_message(DEBUG, "Checking if users are allowed to have control over binds\n");
-        if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
-            singularity_message(ERROR, "User bind control is disabled by system administrator\n");
-            ABORT(5);
-        }
-        singularity_message(DEBUG, "Checking if working directory exists: %s\n", tmpdir);
-        if ( is_dir(tmpdir) != 0 ) {
-            singularity_message(ERROR, "Working directory does not exist: %s\n", tmpdir);
-            ABORT(255);
-        }
-        singularity_message(DEBUG, "Checking if working directory is owned by %i: %s\n", singularity_priv_getuid(), tmpdir);
-        if ( is_owner(tmpdir, singularity_priv_getuid()) != 0 ) {
-            singularity_message(ERROR, "Working directory is now owned by calling user: %s\n", tmpdir);
-            ABORT(255);
-        }
-    } else {
-        tmpdir = singularity_runtime_tmpdir(NULL);
-        if ( tmpdir == NULL ) {
-            singularity_message(ERROR, "internal error - singularity_runtime_tmpdir() not set\n");
-            ABORT(255);
-        }
-    }
-
-    singularity_message(DEBUG, "Checking home and home dir are configured (%s, %s)\n", homedir, homedir_source);
-    if ( ( homedir == NULL ) || ( homedir_source == NULL ) ) {
-        singularity_message(ERROR, "Could not obtain user's home directory\n");
+    if ( tmpdir == NULL ) {
+        singularity_message(ERROR, "internal error - singularity_runtime_tmpdir() not set\n");
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Checking ownership of physical home directory: %s\n", homedir_source);
-    if ( is_owner(homedir_source, singularity_priv_getuid()) != 0 ) {
-        singularity_message(ERROR, "Home directory is not owned by calling user: %s\n", homedir_source);
+    singularity_message(DEBUG, "Checking that home directry is configured: %s\n", homedir);
+    if ( homedir == NULL ) {
+        singularity_message(ERROR, "Could not obtain user's home directory\n");
         ABORT(255);
     }
 
@@ -124,9 +97,52 @@ int _singularity_runtime_mount_home(void) {
         }
     }
 
-    if ( ( singularity_registry_get("CONTAIN") != NULL ) && ( singularity_registry_get("HOME") == NULL ) ) {
-        singularity_message(VERBOSE, "Requested --contain option, using temporary storage for home directory\n");
+    singularity_message(DEBUG, "Configuring the source of the home directory\n");
+    if ( singularity_registry_get("CONTAIN") != NULL ) {
+        char *workdir = singularity_registry_get("WORKDIR");
+
+        if ( workdir != NULL ) {
+            singularity_message(DEBUG, "Using work directory for temporary home directory: %s\n", workdir);
+
+            singularity_message(DEBUG, "Checking if users are allowed to have control over binds\n");
+            if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
+                singularity_message(ERROR, "User bind control is disabled by system administrator\n");
+                ABORT(5);
+            }
+
+            singularity_message(DEBUG, "Creating temporary home in workdir: %s\n", joinpath(workdir, "/home"));
+            if ( s_mkpath(joinpath(workdir, "/home"), 0755) < 0 ) {
+                singularity_message(ERROR, "Failed creating working dir home directory %s: %s\n", joinpath(workdir, "/home"), strerror(errno));
+                ABORT(255);
+            }
+            singularity_message(VERBOSE, "Setting homedir_source to: %s\n", joinpath(workdir, "/home"));
+
+            homedir_source = strdup(joinpath(workdir, "/home"));
+
+        } else {
+            singularity_message(VERBOSE, "Requested --contain option with no workdir, leaving homedir_source undefined\n");
+        }
+
     } else {
+        singularity_message(VERBOSE, "Setting home directory source from singularity_priv_homedir()\n");
+        homedir_source = singularity_priv_homedir();
+        singularity_message(DEBUG, "Set home directory source to: %s\n", singularity_priv_homedir());
+    }
+
+
+    if ( homedir_source != NULL ) {
+        singularity_message(DEBUG, "Checking to make sure that the home directory exists: %s\n", homedir_source);
+        if ( is_dir(homedir_source) != 0 ) {
+            singularity_message(ERROR, "Home directory source does not exist: %s\n", homedir_source);
+            ABORT(255);
+        }
+
+        singularity_message(DEBUG, "Checking ownership of physical home directory: %s\n", homedir_source);
+        if ( is_owner(homedir_source, singularity_priv_getuid()) != 0 ) {
+            singularity_message(ERROR, "Home directory is not owned by calling user: %s\n", homedir_source);
+            ABORT(255);
+        }
+
         singularity_priv_escalate();
         singularity_message(VERBOSE, "Mounting home directory source to stage: %s->%s\n", homedir_source, joinpath(tmpdir, homedir));
         if ( mount(homedir_source, joinpath(tmpdir, homedir), NULL, MS_BIND | MS_REC, NULL) < 0 ) {
@@ -142,6 +158,8 @@ int _singularity_runtime_mount_home(void) {
             }
         }
         singularity_priv_drop();
+    } else {
+        singularity_message(VERBOSE, "Containing home directory to session dir\n");
     }
 
     singularity_priv_escalate();
