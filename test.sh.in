@@ -225,15 +225,14 @@ stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 0 sh -c "cat ${CONTAINERDIR}.tar | singularity import $CONTAINER"
 stest 1 sh -c "sudo singularity import $CONTAINER not_a_file 2>&1 | grep \"unbound variable\""
 stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 singularity import ${CONTAINER} docker://centos
+stest 0 singularity exec ${CONTAINER} test -f /etc/redhat-release
+stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 sudo singularity import ${CONTAINER} http://fake_singularity_url
 stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 sudo singularity import ${CONTAINER} docker://not_a_docker_container/nope_nope_singularity
 stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 sh -c "sudo singularity import ${CONTAINER} docker://not_a_docker_container/nope_nope_singularity | grep 'ERROR: Container does not contain the valid minimum requirement of /bin/sh'"
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 singularity import ${CONTAINER} docker://centos
-stest 0 singularity exec ${CONTAINER} test -f /etc/redhat-release
-
 
 /bin/echo
 /bin/echo "Checking directory mode"
