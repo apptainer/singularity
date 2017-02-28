@@ -415,7 +415,7 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
             sys.exit(1)
         os.rename(tmp_file, download_folder)
     except:
-        logger.error("Removing temporary download file %s", tmp_file)
+        logger.error("Error downloading %s. Do you have permission to write to %s?", base, download_folder)
         try:
             os.remove(tmp_file)
         except:
