@@ -242,7 +242,7 @@ stest 0 sudo tar -C $CONTAINERDIR -xvf ${CONTAINERDIR}.tar
 stest 0 singularity exec $CONTAINERDIR true
 stest 1 singularity exec $CONTAINERDIR false
 stest 1 singularity exec /tmp true
-stest 0 singularity exec / true
+stest 1 singularity exec / true
 
 
 /bin/echo
