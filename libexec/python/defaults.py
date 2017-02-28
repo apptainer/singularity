@@ -32,6 +32,7 @@ perform publicly and display publicly, and to permit other to do so.
 from logman import logger
 import tempfile
 import os
+import pwd
 import sys
 
 def getenv(variable_key,required=False,default=None,silent=False):
@@ -88,7 +89,8 @@ DISABLE_CACHE = convert2boolean(getenv("SINGULARITY_DISABLE_CACHE",
 if DISABLE_CACHE == True:
     SINGULARITY_CACHE = tempfile.mkdtemp()
 else:
-    _cache = os.path.join(os.environ.get("HOME"),".singularity") 
+    userhome = pwd.getpwuid(os.getuid())[5]
+    _cache = os.path.join(userhome,".singularity") 
     SINGULARITY_CACHE = getenv("SINGULARITY_CACHEDIR", default=_cache)
 
 if not os.path.exists(SINGULARITY_CACHE):
