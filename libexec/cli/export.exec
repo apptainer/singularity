@@ -82,7 +82,7 @@ export SINGULARITY_IMAGE
 shift
 
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/export-suid"
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/export"

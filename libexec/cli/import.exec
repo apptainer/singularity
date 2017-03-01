@@ -69,7 +69,7 @@ SINGULARITY_IMAGE="${1:-}"
 shift
 export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/bin/import-suid" ]; then
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/import-suid" ]; then
     IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import-suid"
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/import" ]; then
     IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import"
