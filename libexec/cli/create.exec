@@ -95,7 +95,7 @@ if [ -f "$SINGULARITY_IMAGE" ]; then
     fi
 fi
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/create-suid"
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/create" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/create"

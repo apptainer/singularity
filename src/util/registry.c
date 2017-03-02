@@ -119,7 +119,7 @@ char *singularity_registry_get(char *key) {
     
     singularity_message(DEBUG, "Retriving value from registry: '%s' = '%s'\n", upperkey, (char *)found->data);
 
-    return((char *)found->data);
+    return(strdup(found->data));
 }
 
 

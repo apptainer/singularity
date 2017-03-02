@@ -52,6 +52,11 @@ int _singularity_image_mount_dir_check(struct image_object *image) {
 
 int _singularity_image_mount_dir_mount(struct image_object *image, char *mount_point) {
 
+    if ( strcmp(image->path, "/") == 0 ) {
+        singularity_message(ERROR, "Naughty naughty naughty...\n");
+        ABORT(255);
+    }
+
     singularity_priv_escalate();
     singularity_message(DEBUG, "Mounting container directory %s->%s\n", image->path, mount_point);
     if ( mount(image->path, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV, NULL) < 0 ) {

@@ -50,9 +50,10 @@ int main(int argc, char **argv) {
     char *command;
     char *dir = get_current_dir_name();
 
-    singularity_suid_init();
-
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
+    singularity_suid_init(argv);
+
     singularity_registry_init();
     singularity_priv_init();
     singularity_priv_userns();

@@ -40,4 +40,4 @@ fi
 
 
 
-(cd $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment; tar -cf - . ) | ( cd $SINGULARITY_ROOTFS; tar --skip-old-files -xf - >/dev/null)
+(cd $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment; tar -cf - . ) | ( cd $SINGULARITY_ROOTFS; tar -xf - >/dev/null)

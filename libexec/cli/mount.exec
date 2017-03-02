@@ -76,7 +76,7 @@ SINGULARITY_MOUNTPOINT="${2:-}"
 export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 shift
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid"
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/mount"

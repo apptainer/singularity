@@ -133,18 +133,17 @@ stest 1 singularity bogus help
 
 stest 0 singularity create -s 568 "$CONTAINER"
 stest 0 rm -f "$CONTAINER"
-stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 singularity create -s 568 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/docker.def"
 stest 0 sh -c "sudo singularity -v bootstrap "$CONTAINER" "$STARTDIR/examples/docker.def" | grep -i 'ubuntu:latest'"
 stest 0 sudo rm -rf "$CONTAINER"
-stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 singularity create -s 568 "$CONTAINER"
 stest 0 sh -c "sed "$STARTDIR/examples/busybox.def" -e 's|^MirrorURL:.*|MirrorURL: https://fake_mirror_url|' > "$TEMPDIR/busybox-busted-mirror.def""
-stest 255 singularity bootstrap "$CONTAINER" "$TEMPDIR/busybox-busted-mirror.def"
+stest 255 sudo singularity bootstrap "$CONTAINER" "$TEMPDIR/busybox-busted-mirror.def"
 stest 0 sh -c "sudo singularity bootstrap "$CONTAINER" "$TEMPDIR/busybox-busted-mirror.def" 2>&1 | grep -i 'failed fetching mirrorurl'"
 stest 0 sudo rm -rf "$CONTAINER"
-stest 0 sudo singularity create -s 568 "$CONTAINER"
-# We will need a setuid binary (ping) for the NO_NEW_PRIVS test below.
-stest 0 sed -i "$STARTDIR/examples/centos.def" -e 's|#InstallPkgs yum vim-minimal|InstallPkgs iputils|'
+stest 0 singularity create -s 568 "$CONTAINER"
+stest 0 sed -i "$STARTDIR/examples/busybox.def" -e 's|#InstallPkgs yum vim-minimal|InstallPkgs iputils|'
 stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/examples/busybox.def"
 
 /bin/echo
@@ -167,19 +166,12 @@ stest 1 singularity exec "$CONTAINER" blahh
 stest 0 sh -c "echo hi | singularity exec $CONTAINER grep hi"
 stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
 
-/bin/echo
-/bin/echo "Running container run tests..."
 
-# Before we have a runscript, it should invoke a shell
-stest 0 singularity run "$CONTAINER" -c true
-stest 1 singularity run "$CONTAINER" -c false
-echo -ne "#!/bin/sh\n\neval \"\$@\"\n" > singularity
-stest 0 chmod 0644 singularity
-stest 0 sudo singularity copy "$CONTAINER" -a singularity /
-stest 1 singularity run "$CONTAINER" true
-stest 0 sudo singularity exec -w "$CONTAINER" chmod 0755 /singularity
-stest 0 singularity run "$CONTAINER" true
-stest 1 singularity run "$CONTAINER" false
+/bin/echo
+/bin/echo "Checking unprivileged mode"
+
+stest 0 sh -c "singularity exec $CONTAINER whoami | grep -q `id -un`"
+stest 0 sh -c "singularity exec $CONTAINER whoami"
 
 
 /bin/echo
@@ -188,20 +180,19 @@ stest 1 singularity run "$CONTAINER" false
 stest 0 sudo chown root.root "$CONTAINER"
 stest 0 sudo chmod 0644 "$CONTAINER"
 stest 0 sudo singularity shell -w "$CONTAINER" -c true
+stest 0 sudo singularity run -w "$CONTAINER" -c true
 stest 0 sudo singularity exec -w "$CONTAINER" true
-stest 0 sudo singularity run -w "$CONTAINER" true
 stest 1 singularity shell -w "$CONTAINER" -c true
+stest 1 singularity run -w "$CONTAINER" -c true
 stest 1 singularity exec -w "$CONTAINER" true
-stest 1 singularity run -w "$CONTAINER" true
 stest 0 sudo chmod 0666 "$CONTAINER"
 stest 0 sudo singularity shell -w "$CONTAINER" -c true
+stest 0 sudo singularity run -w "$CONTAINER" -c true
 stest 0 sudo singularity exec -w "$CONTAINER" true
-stest 0 sudo singularity run -w "$CONTAINER" true
 stest 0 singularity shell -w "$CONTAINER" -c true
+stest 0 singularity run -w "$CONTAINER" -c true
 stest 0 singularity exec -w "$CONTAINER" true
-stest 0 singularity run -w "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" touch /writetest.fail
-#stest 0 sudo singularity exec "$CONTAINER" touch /writetest.fail #### This works thanks to the overlayfs now, maybe it should be conditional here?
 stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
 
 
@@ -209,14 +200,11 @@ stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
 /bin/echo "Checking Bootstrap on existing container..."
 
 stest 0 sudo singularity bootstrap "$CONTAINER"
-#stest 0 singularity exec "$CONTAINER" test -f /environment
-#stest 0 sudo singularity exec -w "$CONTAINER" rm /environment
-#stest 1 singularity exec "$CONTAINER" test -f /environment
-#stest 0 sudo singularity bootstrap "$CONTAINER"
-#stest 0 singularity exec "$CONTAINER" test -f /environment
-#stest 0 singularity exec "$CONTAINER" test -f /.shell
-#stest 0 singularity exec "$CONTAINER" test -f /.exec
-#stest 0 singularity exec "$CONTAINER" test -f /.run
+stest 0 singularity exec "$CONTAINER" test -f /.singularity/runscript
+stest 0 sudo singularity exec -w "$CONTAINER" rm /.singularity/runscript
+stest 1 singularity exec "$CONTAINER" test -f /.singularity/runscript
+stest 0 sudo singularity bootstrap "$CONTAINER"
+stest 0 singularity exec "$CONTAINER" test -f /.singularity/runscript
 
 
 /bin/echo
@@ -232,25 +220,27 @@ stest 0 singularity exec "$CONTAINER" true
 /bin/echo
 /bin/echo "Checking export/import..."
 
-echo "Stopping here..."
-exit 0
-
-stest 0 sudo singularity export -f ${CONTAINERDIR}.tar "$CONTAINER"
-stest 0 mkdir $CONTAINERDIR
-stest 0 sudo tar -C $CONTAINERDIR -xvf ${CONTAINERDIR}.tar
+stest 0 sh -c "singularity export "$CONTAINER" > ${CONTAINERDIR}.tar"
 stest 0 sudo chmod 0644 ${CONTAINERDIR}.tar
-stest 0 sudo rm -f "$CONTAINER"
-stest 0 sudo singularity create -s 568 "$CONTAINER"
-stest 0 sh -c "cat ${CONTAINERDIR}.tar | sudo singularity import $CONTAINER"
-stest 1 sh -c "sudo singularity import $CONTAINER not_a_file 2>&1 | grep "unbound variable""
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 sh -c "cat ${CONTAINERDIR}.tar | singularity import $CONTAINER"
+stest 1 sh -c "sudo singularity import $CONTAINER not_a_file 2>&1 | grep \"unbound variable\""
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 singularity import ${CONTAINER} docker://centos
+stest 0 singularity exec ${CONTAINER} test -f /etc/redhat-release
+stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 sudo singularity import ${CONTAINER} http://fake_singularity_url
+stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 sudo singularity import ${CONTAINER} docker://not_a_docker_container/nope_nope_singularity
+stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 sh -c "sudo singularity import ${CONTAINER} docker://not_a_docker_container/nope_nope_singularity | grep 'ERROR: Container does not contain the valid minimum requirement of /bin/sh'"
-
 
 /bin/echo
 /bin/echo "Checking directory mode"
+stest 0 mkdir $CONTAINERDIR
+stest 0 sudo tar -C $CONTAINERDIR -xvf ${CONTAINERDIR}.tar
 stest 0 singularity exec $CONTAINERDIR true
+stest 1 singularity exec $CONTAINERDIR false
 stest 1 singularity exec /tmp true
 stest 1 singularity exec / true
 
@@ -266,37 +256,12 @@ stest 1 singularity exec $CONTAINERDIR ping localhost -c 1
 stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep -q `id -un`"
 
 
-#TODO: The following tests must be conditional based on host capabilities
-/bin/echo
-/bin/echo "Disabling setuid config flag"
-stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow setuid = yes|allow setuid = no|'
-stest 1 singularity exec "$CONTAINER" true
-
-/bin/echo
-/bin/echo "Checking unprivileged mode"
-stest 0 sh -c "singularity exec $CONTAINERDIR whoami | grep -q `id -un`"
-stest 1 sh -c "singularity exec $CONTAINER whoami"
-
-
-/bin/echo
-/bin/echo "Re-enabling setuid config flag"
-stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|allow setuid = no|allow setuid = yes|'
-stest 0 singularity exec "$CONTAINER" true
-
-
-/bin/echo
-/bin/echo "Checking unprivileged mode from environment"
-stest 0 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINERDIR whoami | grep -q `id -un`"
-stest 1 sh -c "SINGULARITY_NOSUID=1 singularity exec $CONTAINER whoami"
-
-
 /bin/echo
 /bin/echo "Checking workdir functionality"
 stest 0 mkdir -p /tmp/foo
 stest 0 singularity exec $CONTAINER test -d /tmp/foo
 stest 0 singularity exec --workdir /tmp/foo $CONTAINER test -d /tmp/foo
 stest 1 singularity exec --workdir /tmp/foo --contain $CONTAINER test -d /tmp/foo
-
 
 if [ -n "@OVERLAY_FS@" ]; then
     /bin/echo
@@ -313,17 +278,14 @@ if [ -n "@OVERLAY_FS@" ]; then
     stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|user bind control = no|user bind control = yes|'
     stest 0 singularity exec -B /tmp/foo:/foo "$CONTAINER" test -d /foo
 
-    /bin/echo
-    /bin/echo "Testing non-privileged user bind mounts"
-    stest 0 singularity exec -B /tmp/foo:/foo -u "$CONTAINERDIR" test -d /foo
-    # Can't create a directory here as a non-privileged user... Quirk of user
-    # namespaces and the overlay file system permission semantics
-    stest 1 singularity exec -B /tmp/foo:/etc/foo -u "$CONTAINERDIR" test -d /etc/foo
-    stest 0 sudo sed -i "$SINGULARITY_sysconfdir/singularity/singularity.conf" -e 's|enable overlay = yes|enable overlay = no|'
 else
     /bin/echo
     /bin/echo "Skipping user bind mount tests, overlay FS support is not enabled"
 fi
+
+
+echo "Stopping here..."
+exit 0
 
 
 /bin/echo

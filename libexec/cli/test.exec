@@ -85,7 +85,7 @@ if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
 fi
 
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/bin/action-suid" ]; then
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/action-suid" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/action-suid" "$@" <&0
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/action" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/action" "$@" <&0

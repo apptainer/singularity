@@ -176,6 +176,14 @@ cmd() {
     return $RETVAL
 }
 
+eval_abort() {
+    eval "$@"
+    RETVAL=$?
+    if [ $RETVAL -ne 0 ]; then
+        exit $RETVAL
+    fi
+    return 0
+}
 
 stest() {
     ERROR="${1:-}"

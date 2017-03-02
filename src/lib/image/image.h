@@ -41,7 +41,6 @@ char *singularity_image_loopdev(struct image_object *object);
 char *singularity_image_sessiondir(struct image_object *object);
 char *singularity_image_name(struct image_object *object);
 char *singularity_image_path(struct image_object *object);
-char *singularity_image_name(struct image_object *object);
 
 extern int singularity_image_open(struct image_object *object, int open_flags);
 

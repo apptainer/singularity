@@ -87,6 +87,9 @@
 #define LIMIT_CONTAINER_PATHS "limit container paths"
 #define LIMIT_CONTAINER_PATHS_DEFAULT "NULL"
 
+#define MAX_LOOP_DEVS "max loop devices"
+#define MAX_LOOP_DEVS_DEFAULT "256"
+
 /*
 #define SINGULARITY_USER "singularity user"
 #define SINGULARITY_USER_DEFAULT "singularity"

@@ -29,13 +29,18 @@
 #include "util/message.h"
 #include "util/file.h"
 #include "util/registry.h"
+#include "util/config_parser.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
 #endif
 
+#ifndef LIBEXECDIR
+#error LIBEXECDIR not defined
+#endif
 
-int singularity_suid_init(void) {
+
+int singularity_suid_init(char **argv) {
 
 #ifdef SINGULARITY_SUID
     singularity_message(VERBOSE2, "Running SUID program workflow\n");
@@ -65,6 +70,42 @@ int singularity_suid_init(void) {
     singularity_message(VERBOSE2, "Checking configuration file is properly owned by root\n");
     if ( is_owner(joinpath(SYSCONFDIR, "/singularity/singularity.conf"), 0 ) < 0 ) {
         singularity_abort(255, "Running in privileged mode, root must own the Singularity configuration file: %s\n", joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    }
+
+
+    singularity_message(VERBOSE2, "Checking if singularity.conf allows us to run as suid\n");
+    if ( singularity_config_get_bool(ALLOW_SETUID) <= 0 ) {
+        char *self;
+        char *self_tail;
+
+        self = (char *) malloc(PATH_MAX);
+        
+        if ( readlink("/proc/self/exe", self, PATH_MAX) <= 0 ) {
+            singularity_message(ERROR, "Could not dereference our own program name\n");
+            ABORT(255);
+        }
+
+        if ( ( self_tail = strstr(self, "-suid") ) == NULL ) {
+            singularity_message(ERROR, "Could not identify non-SUID operation path: %s\n", self);
+            ABORT(255);
+        }
+
+        *self_tail = '\0';
+
+        if ( is_exec(self) == 0 ) {
+            singularity_message(VERBOSE, "Invoking non-SUID program flow: %s\n", self);
+            argv[0] = strdup(self);
+
+            execv(argv[0], argv);
+
+            singularity_message(ERROR, "Failed exec'ing non-SUID program flow: %s\n", strerror(errno));
+            ABORT(255);
+        } else {
+            singularity_message(ERROR, "Could not locate non-SUID program flow: %s\n", self);
+        }
+
+        singularity_message(ERROR, "We never should have gotten here...\n");
+        ABORT(255);
     }
 
     singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");

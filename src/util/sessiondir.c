@@ -73,18 +73,17 @@ int singularity_sessiondir(void) {
         ABORT(255);
     }
 
-    if ( singularity_registry_get("NOSESSIONCLEANUP") == NULL ) {
-        int child = singularity_fork();
+    if ( ( singularity_registry_get("NOSESSIONCLEANUP") == NULL ) || ( singularity_registry_get("NOCLEANUP") == NULL ) ) {
+        // singularity_fork() is currently causing problems with mvapich2, plus
+        // it doesn't exec with the binaries real name properly
+//        int child = singularity_fork(); 
+        int child = fork();
 
         if ( child == 0 ) {
-            char *cleanup_proc;
-
-            cleanup_proc = joinpath(LIBEXECDIR, "/singularity/bin/cleanupd");
-
             setenv("SINGULARITY_CLEANDIR", sessiondir, 1);
             close(sessiondir_fd);
 
-            execl(cleanup_proc, cleanup_proc, NULL);
+            execl(joinpath(LIBEXECDIR, "/singularity/bin/cleanupd"), "singularity: cleanupd", NULL);
 
         } else if ( child > 0 ) {
             int tmpstatus;
