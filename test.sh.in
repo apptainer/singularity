@@ -246,7 +246,11 @@ stest 1 singularity exec / true
 
 /bin/echo
 /bin/echo "Checking NO_NEW_PRIVS"
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 singularity import ${CONTAINER} docker://centos
+stest 0 sudo singularity exec "$CONTAINER" ping localhost -c 1
 stest 1 singularity exec "$CONTAINER" ping localhost -c 1
+stest 0 sudo singularity exec $CONTAINERDIR ping localhost -c 1
 stest 1 singularity exec $CONTAINERDIR ping localhost -c 1
 
 
