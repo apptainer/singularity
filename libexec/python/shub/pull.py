@@ -50,7 +50,7 @@ def main():
     This makes it possible to set up a parser in test cases
     '''
     logger.info("\n*** STARTING SINGULARITY HUB PYTHON PULL ****")
-    from defaults import LAYERFILE DISABLE_CACHE getenv
+    from defaults import LAYERFILE, DISABLE_CACHE, getenv
 
     # What image is the user asking for?
     container = getenv("SINGULARITY_CONTAINER", required=True)
