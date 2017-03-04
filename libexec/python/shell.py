@@ -18,9 +18,10 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),"docker")))
 
 from logman import logger
-from docker.api import get_tags
 
 from defaults import (
     API_BASE as default_registry,
@@ -49,7 +50,6 @@ def get_image_uri(image):
         image_uri = match[0].lower()
         logger.debug("Found uri %s",image_uri)
     return image_uri
-
 
 
 def parse_image_uri(image,uri=None):
@@ -115,18 +115,3 @@ def parse_image_uri(image,uri=None):
             sys.exit(1)
 
     return parsed
-
-
-def get_tags_shell(image,uri):
-    '''get_tags_shell is a wrapper to run docker.api.get_tags with additional parsing
-    of the input string. It is assumed that a tag is not provided.
-    :image: the image name to be parsed by parse_image_uri
-    '''
-    parsed = parse_image_uri(image,uri)
-    repo_name = parsed['repo_name']
-    namespace = parsed['namespace']
-    registry = parsed['registry']
-
-    return get_tags(namespace=namespace,
-                    repo_name=repo_name,
-                    registry=registry)

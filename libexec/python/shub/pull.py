@@ -7,7 +7,7 @@ pull.py: wrapper for "pull" for Singularity Hub command line tool.
 ENVIRONMENTAL VARIABLES that are found for this executable:
 
 
-   SINGULARITY_HUB_IMAGE: maps to container name: shub://vsoch/singularity-images
+   SINGULARITY_CONTAINER: maps to container name: shub://vsoch/singularity-images
    SINGULARITY_ROOTFS: the root file system location
    SINGULARITY_HUB_PULL_FOLDER: maps to location to pull folder to
    SINGULARITY_METADATA_DIR: if defined, will write paths to file pulled here

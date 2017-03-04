@@ -45,7 +45,7 @@ script:
   - make test
   - jdk_switcher use oraclejdk8
   - sonar-scanner
-  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest discover --start-directory tests
-  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest discover --start-directory tests
+  - cd $TRAVIS_BUILD_DIR/libexec/python/tests && ./run_tests_python2.sh
+  - cd $TRAVIS_BUILD_DIR/libexec/python/tests && ./run_tests_python3.sh
   - pylint --version
   - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611
