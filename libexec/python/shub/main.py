@@ -49,7 +49,7 @@ import os
 import tempfile
 
 
-def PULL(image,pull_folder=None):
+def PULL(image,pull_folder=None,layerfile=None):
     '''PULL will retrieve a Singularity Hub image and download to the local file
     system, to the variable specified by SINGULARITY_PULL_FOLDER.
     :param image: the singularity hub image name
@@ -77,6 +77,10 @@ def PULL(image,pull_folder=None):
                  'manifest': manifest,
                  'cache_base': cache_base,
                  'image': image }
+
+    if layerfile != None:
+        logger.debug("Writing Singularity Hub image path to %s", layerfile)
+        write_file(layerfile,additions['image_file'],mode="w")
 
     return additions
 

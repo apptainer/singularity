@@ -38,11 +38,6 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 sys.path.append('..')
 
-from defaults import (
-    DISABLE_CACHE,
-    getenv
-)
-
 from shub.main import PULL
 from shell import get_image_uri
 from logman import logger
@@ -55,7 +50,8 @@ def main():
     This makes it possible to set up a parser in test cases
     '''
     logger.info("\n*** STARTING SINGULARITY HUB PYTHON PULL ****")
-    
+    from defaults import LAYERFILE DISABLE_CACHE getenv
+
     # What image is the user asking for?
     container = getenv("SINGULARITY_CONTAINER", required=True)
     pull_folder = getenv("SINGULARITY_HUB_PULL_FOLDER")
@@ -65,7 +61,8 @@ def main():
     if image_uri == "shub://":
 
        additions = PULL(image=container,
-                        pull_folder=pull_folder)
+                        pull_folder=pull_folder,
+                        layerfile=LAYERFILE)
 
     else:
         logger.error("uri %s is not currently supported for pull. Exiting.",image_uri)
