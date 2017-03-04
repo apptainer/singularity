@@ -65,8 +65,8 @@ def create_runscript(manifest,includecmd=False):
     :param includecmd: overwrite default command (ENTRYPOINT) default is False
     '''
     if METADATA_BASE == None:
-        bot.logger.warning('''METADATA_BASE/SINGULARITY_ROOTFS not defined in environment!
-                           Will not write runscript to file, but return to function call.''')
+        logger.warning('''METADATA_BASE/SINGULARITY_ROOTFS not defined in environment!
+                       Will not write runscript to file, but return to function call.''')
         runscript = None
     else:
         runscript = "%s/runscript" %(METADATA_BASE)
