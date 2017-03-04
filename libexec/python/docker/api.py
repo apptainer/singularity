@@ -47,7 +47,6 @@ from defaults import (
 from logman import logger
 import json
 import re
-import os
 import tempfile
 try:
     from urllib.error import HTTPError
@@ -139,17 +138,6 @@ def extract_labels(manifest):
                                               extension='.txt')
     return labels
 
-
-def get_config(manifest,key):
-    '''get_config returns the content of some key in the manifest "Config"
-    :param manifest: the complete manifest
-    :param key: the key to find
-    '''
-    if "Config" in manifest:
-        if key in manifest["Config"]:
-            if len(manifest["Config"][key] > 0):
-                return manifest["Config"][key]
-    return None
 
 
 def get_configs(manifest,keys):
