@@ -45,6 +45,7 @@ from api import (
 
 from logman import logger
 import json
+import shutil
 import re
 import os
 import tempfile

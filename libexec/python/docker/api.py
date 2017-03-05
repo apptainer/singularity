@@ -47,7 +47,6 @@ from defaults import (
 from logman import logger
 import json
 import re
-import os
 import tempfile
 try:
     from urllib.error import HTTPError
@@ -64,7 +63,12 @@ def create_runscript(manifest,includecmd=False):
     :param manifest: the manifest to use to get the runscript
     :param includecmd: overwrite default command (ENTRYPOINT) default is False
     '''
-    runscript = "%s/runscript" %(METADATA_BASE)
+    if METADATA_BASE == None:
+        logger.warning('''METADATA_BASE/SINGULARITY_ROOTFS not defined in environment!
+                       Will not write runscript to file, but return to function call.''')
+        runscript = None
+    else:
+        runscript = "%s/runscript" %(METADATA_BASE)
     cmd = None
 
     # Does the user want to use the CMD instead of ENTRYPOINT?
@@ -91,9 +95,10 @@ def create_runscript(manifest,includecmd=False):
             cmd = 'exec %s "$@"' %(cmd)
         cmd = "#!/bin/sh\n\n%s" %(cmd)
         logger.info("Generating runscript at %s",runscript)
-        output_file = write_file(runscript,cmd)
-        return output_file
-
+        if runscript != None:
+            output_file = write_file(runscript,cmd)
+            return output_file
+        return runscript
     print("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
     return cmd
 
@@ -133,17 +138,6 @@ def extract_labels(manifest):
                                               extension='.txt')
     return labels
 
-
-def get_config(manifest,key):
-    '''get_config returns the content of some key in the manifest "Config"
-    :param manifest: the complete manifest
-    :param key: the key to find
-    '''
-    if "Config" in manifest:
-        if key in manifest["Config"]:
-            if len(manifest["Config"][key] > 0):
-                return manifest["Config"][key]
-    return None
 
 
 def get_configs(manifest,keys):

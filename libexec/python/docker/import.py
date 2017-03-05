@@ -41,7 +41,7 @@ sys.path.append('..')
 from main import IMPORT
 from shell import get_image_uri
 from utils import (
-    basic_auth_header,
+    basic_auth_header
 )
 
 from defaults import getenv
