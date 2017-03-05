@@ -134,22 +134,26 @@ def download_image(manifest,download_folder=None,extract=True):
 
 
 # Various Helpers ---------------------------------------------------------------------------------
-def get_image_name(manifest,extension='img.gz',use_commit=True):
+def get_image_name(manifest,extension='img.gz',use_hash=False):
     '''get_image_name will return the image name for a manifest
     :param manifest: the image manifest with 'image' as key with download link
-    :param use_commit: use the commit id to name the image (default) otherwise use md5sum
+    :param use_hash: use the image hash instead of name
     '''
-    image_url = os.path.basename(unquote(manifest['image']))
-    image_name = re.findall(".+[.]%s" %(extension),image_url)
-    if len(image_name) > 0:
-        image_name = image_name[0]
-        if use_commit == True:
-            image_name = "%s.img.gz" %(manifest["version"])            
-        logger.info("Singularity Hub Image: %s", image_name)
-        return image_name
+    if not use_hash:
+        image_name = "%s-%s.%s" %(manifest['name'].replace('/','-'),
+                                  manifest['branch'].replace('/','-'),
+                                  extension)
     else:
-        logger.error("Singularity Hub Image not found with expected extension %s, exiting.",extension)
-        sys.exit(1)
+        image_url = os.path.basename(unquote(manifest['image']))
+        image_name = re.findall(".+[.]%s" %(extension),image_url)
+        if len(image_name) > 0:
+            image_name = image_name[0]
+        else:
+            logger.error("Singularity Hub Image not found with expected extension %s, exiting.",extension)
+            sys.exit(1)
+            
+    logger.info("Singularity Hub Image: %s", image_name)
+    return image_name
 
 
 def extract_metadata(manifest):

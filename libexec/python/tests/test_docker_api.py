@@ -22,11 +22,11 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import os
+import re
 import sys
 sys.path.append('..') # directory with docker
 
 from unittest import TestCase
-from utils import read_file
 import shutil
 import tempfile
 
@@ -41,6 +41,7 @@ class TestApi(TestCase):
         self.repo_name = 'ubuntu'
         self.tmpdir = tempfile.mkdtemp()
         os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
+        os.mkdir('%s/.singularity' %(self.tmpdir))
 
         print("\n---START----------------------------------------")
 
@@ -56,6 +57,7 @@ class TestApi(TestCase):
         '''
         print('Testing creation of runscript')
         from docker.api import create_runscript, get_manifest
+        from utils import read_file
 
         manifest = get_manifest(repo_name = self.repo_name,
                                 namespace = self.namespace)
@@ -63,52 +65,47 @@ class TestApi(TestCase):
         print("Case 1: Asking for CMD when none defined")        
         default_cmd = 'exec /bin/bash "$@"'
         runscript = create_runscript(manifest=manifest,
-                                     base_dir=self.tmpdir,
                                      includecmd=True)
         self.assertTrue(os.path.exists(runscript))
-        generated_cmd = read_file(runscript)[0]
+        generated_cmd = read_file(runscript)
         # Commands are always in format exec [] "$@"
         # 'exec echo \'Hello World\' "$@"'
-        self.assertEqual(default_cmd,generated_cmd)
+        self.assertTrue(default_cmd in generated_cmd)
 
         print("Case 2: Asking for ENTRYPOINT when none defined")        
-        runscript = create_runscript(manifest=manifest,
-                                     base_dir=self.tmpdir)
-        generated_cmd = read_file(runscript)[0]
-        self.assertEqual(default_cmd,generated_cmd)
+        runscript = create_runscript(manifest=manifest)
+        generated_cmd = read_file(runscript)
+        self.assertTrue(default_cmd in generated_cmd)
 
         manifest = get_manifest(repo_name = "mriqc",
                                 namespace = "bids",
                                 repo_tag="0.0.2")
 
         print("Case 3: Asking for ENTRYPOINT when defined")        
-        runscript = create_runscript(manifest=manifest,
-                                     base_dir=self.tmpdir)
-        generated_cmd = read_file(runscript)[0]
-        self.assertEqual('exec /usr/bin/run_mriqc "$@"',generated_cmd)        
+        runscript = create_runscript(manifest=manifest)
+        generated_cmd = read_file(runscript)
+        self.assertTrue('exec /usr/bin/run_mriqc "$@"' in generated_cmd)        
 
 
-        print("Case 3: Asking for CMD when defined")    
+        print("Case 4: Asking for CMD when defined")    
           
         runscript = create_runscript(manifest=manifest,
-                                     base_dir=self.tmpdir,
                                      includecmd=True)
-        generated_cmd = read_file(runscript)[0]
-        self.assertEqual('exec --help "$@"',generated_cmd)        
+        generated_cmd = read_file(runscript)
+        self.assertTrue('exec --help "$@"' in generated_cmd)        
 
 
-        print("Case 4: Asking for ENTRYPOINT when None, should return CMD")    
+        print("Case 5: Asking for ENTRYPOINT when None, should return CMD")    
         from docker.api import get_configs
         manifest = get_manifest(repo_name = "tensorflow",
                                 namespace = "tensorflow",
                                 repo_tag="1.0.0")
         configs = get_configs(manifest,['Cmd','Entrypoint'])
-        self.assertTrue(configs['Entrypoint'],None)
-        runscript = create_runscript(manifest=manifest,
-                                     base_dir=self.tmpdir)
+        self.assertEqual(configs['Entrypoint'],None)
+        runscript = create_runscript(manifest=manifest)
 
-        generated_cmd = read_file(runscript)[0]
-        self.assertTrue(re.search(configs['Cmd'],generated_cmd))        
+        generated_cmd = read_file(runscript)
+        self.assertTrue(re.search(configs['Cmd'], ''.join(generated_cmd)))
 
 
     def test_get_token(self):
