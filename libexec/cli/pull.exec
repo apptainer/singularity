@@ -64,15 +64,22 @@ if [ -z "${1:-}" ]; then
 fi
 
 
+RETVAL=0
 SINGULARITY_CONTAINER="${1:-}"
-SINGULARITY_HUB_PULL_FOLDER="."
+SINGULARITY_LAYERFILE=`mktemp /tmp/.singularity-layerfile.XXXXXX`
+if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+    SINGULARITY_HUB_PULL_FOLDER="$SINGULARITY_CACHEDIR"
+else
+    SINGULARITY_HUB_PULL_FOLDER="."
+fi
 shift
 
-export SINGULARITY_CONTAINER SINGULARITY_HUB_PULL_FOLDER
+export SINGULARITY_CONTAINER SINGULARITY_HUB_PULL_FOLDER SINGULARITY_LAYERFILE
 
 case "$SINGULARITY_CONTAINER" in
     shub://*)
-        exec $SINGULARITY_libexecdir/singularity/python/shub/pull.py
+        eval $SINGULARITY_libexecdir/singularity/python/shub/pull.py
+        RETVAL=$?
     ;;
     *)
         message ERROR "pull is only supported for shub://\n"
@@ -80,5 +87,14 @@ case "$SINGULARITY_CONTAINER" in
     ;;
 esac
 
-message ERROR "Beep boop, we should never get here!\n"
-exit 255
+SINGULARITY_IMAGE=`cat $SINGULARITY_LAYERFILE`
+rm -f "$SINGULARITY_LAYERFILE"
+
+if [ $RETVAL -eq 0 -a -f "$SINGULARITY_IMAGE" ]; then
+    chmod +x "$SINGULARITY_IMAGE"
+    echo "Done. Container is at: $SINGULARITY_IMAGE"
+else
+    message ERROR "pulling container failed!\n"
+fi
+
+exit $RETVAL
