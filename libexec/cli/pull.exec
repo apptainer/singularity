@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-# Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+# Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -64,46 +64,18 @@ if [ -z "${1:-}" ]; then
 fi
 
 
-SINGULARITY_IMAGE="${1:-}"
+SINGULARITY_CONTAINER="${1:-}"
 SINGULARITY_WRITABLE=1
 SINGULARITY_NOIMAGELOCK=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
+export SINGULARITY_CONTAINER SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
 shift
 
-
-IMPORT_URI="${SINGULARITY_IMAGE:-}"
-
-# We can currently only pull from singularity hub (shub://)
-if [ -z "$IMPORT_URI" ]; then
-    message ERROR "Currently pull is only supported for Singularity Hub, and not pipes.\n"
-    exit 255
+# If the user hasn't defined a pull directory, make it PWD
+if [ -z "$SINGULARITY_PULLFOLDER" ]; then
+    SINGULARITY_PULLFOLDER=$PWD
 fi
 
-case "$IMPORT_URI" in
-    docker://*)
-        message ERROR "pull is only supported for shub://, use import, shell, or bootstrap for docker://\n"
-        exit 255
-    ;;
-    shub://*)
-        SINGULARITY_HUB_IMAGE=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
-        # @gmkurtzer this pull folder should be accessible to change by user
-        SINGULARITY_HUB_PULL_FOLDER=$PWD
-        export SINGULARITY_HUB_IMAGE SINGULARITY_HUB_PULL_FOLDER
-        exec $SINGULARITY_libexecdir/singularity/python/shub/pull.py
-    ;;
-    http://*|https://*)
-        message ERROR "pull is only supported for shub://\n"
-        exit 255
-    ;;
-    file://*)
-        message ERROR "pull is only supported for shub://\n"
-        exit 255
-    ;;
-    *://*)
-        message ERROR "pull is only supported for shub://\n"
-        exit 255
-    ;;
-esac
+exec $SINGULARITY_libexecdir/singularity/python/pull.py
 
 message ERROR "Beep boop, we should never get here!\n"
 exit 255

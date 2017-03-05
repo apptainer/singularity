@@ -1,5 +1,6 @@
 '''
-shell.py: Docker shell parsing functions for Singularity in Python
+shell.py: General shell parsing functions for Singularity in Python
+
 Copyright (c) 2017, Vanessa Sochat. All rights reserved. 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -15,11 +16,11 @@ the U.S. Government has been granted for itself and others acting on its
 behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
 to reproduce, distribute copies to the public, prepare derivative works, and
 perform publicly and display publicly, and to permit other to do so. 
+
 '''
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),"docker")))
 
 from logman import logger
 
@@ -50,6 +51,19 @@ def get_image_uri(image):
         image_uri = match[0].lower()
         logger.debug("Found uri %s",image_uri)
     return image_uri
+
+
+def remove_image_uri(image,image_uri=None):
+    '''remove_image_uri will return just the image name
+    '''
+    if image_uri == None:
+        image_uri = get_image_uri(image)
+
+    image = image.replace(' ','')
+        
+    if image_uri != None:
+        image = image.replace(image_uri,'')
+    return image
 
 
 def parse_image_uri(image,uri=None):

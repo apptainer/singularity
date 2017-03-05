@@ -124,5 +124,5 @@ LABEL_BASE = getenv("SINGULARITY_LABELBASE", default=_labelbase)
 # Singularity Hub
 #######################################################################
 
-SINGULARITY_HUB_PULL_FOLDER = getenv("SINGULARITY_HUB_PULL_FOLDER", default=os.getcwd())
+SINGULARITY_PULLFOLDER = getenv("SINGULARITY_PULLFOLDER", default=os.getcwd())
 SHUB_API_BASE = "singularity-hub.org/api"

@@ -2,15 +2,14 @@
 
 '''
 
-import.py: python helper for Singularity docker import
+import.py: python helper for Singularity import
 
 
-ENVIRONMENTAL VARIABLES that are found for this executable:
+ENVIRONMENTAL VARIABLES that are required for this executable:
 
-    SINGULARITY_CONTAINER 
-    SINGULARITY_DOCKER_INCLUDE_CMD 
-    SINGULARITY_DOCKER_USERNAME
-    SINGULARITY_DOCKER_PASSWORD
+    SINGULARITY_CONTAINER
+    SINGULARITY_ROOTFS
+    SINGULARITY_LAYERFILE
 
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
@@ -35,13 +34,10 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-sys.path.append('..')
 
-from main import IMPORT
-from shell import get_image_uri
-from utils import (
-    basic_auth_header
+from shell import (
+    get_image_uri,
+    remove_image_uri
 )
 
 from defaults import getenv
@@ -54,33 +50,53 @@ def main():
     '''this function will run a docker import, returning a list of layers 
     and environmental variables and metadata to the metadata base
     '''
-    from defaults import SINGULARITY_ROOTFS
 
-    logger.info("\n*** STARTING DOCKER IMPORT PYTHON  ****")
-    
     container = getenv("SINGULARITY_CONTAINER",required=True)
-    includecmd = getenv("SINGULARITY_DOCKER_INCLUDE_CMD")
-    username = getenv("SINGULARITY_DOCKER_USERNAME") 
-    password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
-
-    # What image is the user asking for?
     image_uri = get_image_uri(container)    
-    logger.info("Root file system: %s",SINGULARITY_ROOTFS)
+    container = remove_image_uri(container)
 
-    # Does the registry require authentication?
-    auth = None
-    if username is not None and password is not None:
-        auth = basic_auth_header(username, password)
+    ##############################################################################
+    # Docker Image ###############################################################
+    ##############################################################################
 
     if image_uri == "docker://":
 
+        logger.info("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
+
+        from utils import  basic_auth_header
+        from defaults import SINGULARITY_ROOTFS
+        from docker.main import IMPORT
+
+        logger.info("Root file system: %s",SINGULARITY_ROOTFS)
+
+        username = getenv("SINGULARITY_DOCKER_USERNAME") 
+        password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
+
+        auth = None
+        if username is not None and password is not None:
+            auth = basic_auth_header(username, password)
         IMPORT(auth=auth,
                image=container,
                rootfs=SINGULARITY_ROOTFS)
 
+
+    ##############################################################################
+    # Singularity Hub ############################################################
+    ##############################################################################
+
+    elif image_uri == "shub://":
+
+        logger.info("\n*** STARTING SINGULARITY HUB IMPORT PYTHON  ****")    
+
+        from defaults import LAYERFILE
+        from shub.main import IMPORT
+        IMPORT(image=container,
+               layerfile=LAYERFILE)
+
     else:
         logger.error("uri %s is not a currently supported uri for docker import. Exiting.",image_uri)
         sys.exit(1)
+
 
 
 if __name__ == '__main__':

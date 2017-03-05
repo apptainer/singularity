@@ -5,23 +5,23 @@ This document explains how to use the Python functions from any calling Singular
  - variables are passed around via the environment
  - commands are simple and modular, named intuitively
 
-And so in the current version, the old client was removed, and each module (currently we have support for [shub](shub) and [docker](docker) has a set of functions not exposed for command line use (typically in a `main.py` and `api.py` module, and then another set of functions that are meant to be called from the command line, for example:
+And so in the current version, the old client was removed, and each module (currently we have support for [shub](shub) and [docker](docker) has a set of functions not exposed for command line use (typically in a `main.py` and `api.py` module, and then a main client (an executable script) that is meant to be called from the command line. For example: 
 
- - `docker/import.py`
- - `docker/add.py`
- - `shub/pull.py`
- - `shub/add.py`
- - `shub/import.py`
+ - `libexec/python/import.py`
+ - `libexec/python/add.py`
+ - `libexec/python/pull.py`
 
-meaning that the Singularity software can, given all environmental variables are defined, call a function like:
+For each of the above, the python takes car of parsing the uri, meaning that a uri of `docker://` or `shub://` can be passed to `python/import.py` and it will be directed to the correct module to handle it. This basic structure is meant to put more responsibility on python for parsing and handling uris, with possibility of easily adding other endpoints in the future. This means that the Singularity (calling process), given that required environmental variables are defined, can call a function like:
 
-      eval $SINGULARITY_libexecdir/singularity/python/docker/import.py 
+      eval $SINGULARITY_libexecdir/singularity/python/import.py 
 
-So basically, each function can be called without arguments, as the expectation is that the needed arguments are in the environment. For each, the details of required arguments are detailed in the scripts, and discussed below. First, we will review the environmental variables.
+and the environment might hold and image uri for `docker://` or `shub://`.
+
+For each, the details of required arguments are detailed in the scripts, and discussed below. First, we will review the environmental variables.
 
 
 ## Defaults
-The following variables in [defaults.py](defaults.py) are static values that do not change.
+The following variables in [defaults.py](defaults.py) are static values that do not change. You probably don't care much about these, but they are included for reference.
 
 ### Singularity
 
@@ -83,6 +83,7 @@ and we would parse it into the runscript as:
 
 However, it might be the case that the user does not want this. For this reason, we have the environmental variable `RUNSCRIPT_COMMAND_ASIS`. If defined as yes/y/1/True/true, etc., then the runscript will remain as `/usr/bin/python`.
 
+
 **SINGULARITY_ROOTFS**
 This is the root file system location of the container. There are various checks in all calling functions so the script should never get to this point without having it defined.
 
@@ -117,10 +118,9 @@ The environment base folder is the folder name within the metadata folder to hol
 The label base is akin to the `ENV_BASE`, except it is for labels from the docker image. If not defined, it defaults to `$SINGULARITY_METADATA_BASE/labels`
 
 
-### Singularity Hub
+**SINGULARITY_PULLFOLDER**
+By default, images are pulled to the present working directory. The user can change this variable to change that. Currently, the "pull" command is only relevant for Singularity Hub.
 
-**SINGULARITY_HUB_PULL_FOLDER**
-By default, images are pulled to the present working directory. The user can change this variable to change that.
 
 # Example Usage
 
@@ -161,7 +161,7 @@ An example use case is the following:
       # For the rootfs, given an add, the metadata folder must exist
       mkdir -p $SINGULARITY_ROOTFS/.singularity # see defaults.py
       cd libexec/python/tests
-      python ../docker/add.py
+      python ../add.py
 
 After the script runs, the file `/tmp/hello-kitty/.layers` will contain the list of layers to import. Something like:
 
@@ -180,7 +180,7 @@ Notice that the `.layers` is written inside the metadata folder, which means tha
       export SINGULARITY_ROOTFS=/tmp/hello-kitty
       export SINGULARITY_LAYERFILE=/tmp/.layers 
       mkdir -p $SINGULARITY_ROOTFS
-      python docker/add.py
+      python ../add.py
 
 Note that for the above, because this is running an add (that doesn't save any environmental variables) I didn't need to create the metadata folder. This is because it isn't used.
 
@@ -210,17 +210,16 @@ An example use case is the following:
       mkdir -p $SINGULARITY_ROOTFS/.singularity # see defaults.py
       mkdir -p $SINGULARITY_ROOTFS/.singularity/env
       mkdir -p $SINGULARITY_ROOTFS/.singularity/labels
-      python ../docker/import.py
+      python ../import.py
 
 After the script runs, the folder `/tmp/hello-kitty` will contain the full image, along with `.singularity` that contains `env` and `labels`.
 
 
 ## Singularity Hub
-The Singularity Hub python functions include ADD, IMPORT, and PULL, which are all slightly built upon one another.
+The Singularity Hub python functions include IMPORT, and PULL.
 
- - PULL: is the most basic of the three, pulling an image from Singularity Hub to the cache (default) or if defined, the `SINGULARITY_HUB_PULL_FOLDER`
- - ADD: is one step above pull, defining the pull folder as the cache directory by default, and writing the path to it (for the calling function) to whatever is defined as `SINGULARITY_LABELFILE`.
- - IMPORT: is the most robust, doing the same as ADD, but additionally extracting metadata about the image to the `SINGULARITY_LABELDIR` folder. 
+ - PULL: is the most basic of the three, pulling an image from Singularity Hub to the cache (default) or if defined, the `SINGULARITY_PULLFOLDER`. It names the image with the format `username-repo-tag.img.gz`, where the tag is optional. The path to the image is returned to the calling process via the `SINGULARITY_LAYERFILE` environmental variable.
+ - IMPORT: is the most robust, doing the same as PULL, but additionally extracting metadata about the image to the `SINGULARITY_LABELDIR` folder. 
 
 Examples are included below.
 
@@ -233,26 +232,12 @@ Pull must minimally have a container defined in `SINGULARITY_CONTAINER`
       cd libexec/python/tests
       # We need, minimally, a singularity hub container, default pulls to cache
       export SINGULARITY_CONTAINER="shub://vsoch/singularity-images"
-      python ../shub/pull.py
+      python ../pull.py
 
       # If we specify a different folder, we will specify it
       export SINGULARITY_HUB_PULL_FOLDER=$PWD
-      python ../shub/pull.py
+      python ../pull.py
 
-
-### ADD
-ADD needs `SINGULARITY_CONTAINER` along with `SINGULARITY_ROOTFS`.
-
-      #!/bin/bash
-
-      cd libexec/python/tests
-      # We need, minimally, a singularity hub container and rootfs, default pulls to
-      export SINGULARITY_CONTAINER="shub://vsoch/singularity-images"
-      export SINGULARITY_ROOTFS=/tmp/hello-kitty
-      mkdir -p $SINGULARITY_ROOTFS
-      mkdir -p $SINGULARITY_ROOTFS/.singularity # see defaults.py
-      mkdir -p $SINGULARITY_ROOTFS/.singularity/labels
-      python ../shub/add.py
 
 
 ### IMPORT
@@ -266,6 +251,6 @@ Finally, IMPORT also writes to the `labels` folder, and needs the same as ADD
       mkdir -p $SINGULARITY_ROOTFS
       mkdir -p $SINGULARITY_ROOTFS/.singularity # see defaults.py
       mkdir -p $SINGULARITY_ROOTFS/.singularity/labels
-      python ../shub/import.py
+      python ../import.py
 
 
