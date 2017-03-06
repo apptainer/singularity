@@ -48,8 +48,8 @@ class TestImport(TestCase):
 
         # Variables are obtained from environment
         os.environ["SINGULARITY_CONTAINER"] = "shub://vsoch/singularity-images" 
-        os.environ["SINGULARITY_HUB_PULL_FOLDER"] = self.tmpdir
-        os.environ["SINGULARITY_LAYERFILE"] = "%s/.layers" %self.tmpdir
+        os.environ["SINGULARITY_PULLFOLDER"] = self.tmpdir
+        os.environ["SINGULARITY_CONTENTS"] = "%s/.layers" %self.tmpdir
 
         print("\n---START----------------------------------------")
 
@@ -61,7 +61,7 @@ class TestImport(TestCase):
     def test_PULL(self):
         '''test_PULL will test the PULL function
         '''
-        script_path = "%s/shub/pull.py" %(self.here)
+        script_path = "%s/pull.py" %(self.here)
         if VERSION == 2:
             testing_command = ["python2",script_path]
         else:

@@ -23,8 +23,6 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-sys.path.append('..') # parent directory
 from defaults import DISABLE_CACHE
 from utils import (
     api_get, 
@@ -34,7 +32,7 @@ from utils import (
 )
 
 from shell import parse_image_uri
-from api import (
+from .api import (
     create_runscript,
     extract_env,
     extract_labels,
@@ -105,7 +103,7 @@ def IMPORT(image,rootfs,auth=None,includecmd=False):
 
 
 def ADD(image,auth=None,layerfile=None):
-    '''run is the main script that will obtain docker layers, runscript information (either entrypoint
+    '''ADD is the main script that will obtain docker layers, runscript information (either entrypoint
     or cmd), and environment, and either return the list of files to extract (in case of add 
     :param image: the docker image to add
     :param auth: if needed, an authentication header (default None)

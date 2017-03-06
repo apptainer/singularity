@@ -82,6 +82,19 @@ class TestShell(TestCase):
         self.assertEqual(image_uri, 'docker://') 
 
 
+    def test_remove_image_uri(self):
+        '''test_remove_image_uri removes the uri
+        '''
+        from shell import remove_image_uri
+        print("Case 1: No image_uri should estimate first")
+        image = remove_image_uri('myuri://namespace/repo:tag')
+        self.assertEqual(image, "namespace/repo:tag") 
+
+        print("Case 2: Missing image uri should return image")
+        image = remove_image_uri('namespace/repo:tag')
+        self.assertEqual(image, "namespace/repo:tag") 
+
+
     def test_parse_image_uri(self):
         '''test_parse_image_uri ensures that the correct namespace,
         repo name, and tag (or unique id) is returned.

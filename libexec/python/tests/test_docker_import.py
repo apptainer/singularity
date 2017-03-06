@@ -63,7 +63,7 @@ class TestImport(TestCase):
     def test_IMPORT(self):
         '''test_import will test the IMPORT function
         '''
-        script_path = "%s/docker/import.py" %(self.here)
+        script_path = "%s/import.py" %(self.here)
         if VERSION == 2:
             testing_command = ["python2",script_path]
         else:

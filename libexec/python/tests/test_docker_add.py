@@ -62,7 +62,7 @@ class TestAdd(TestCase):
     def test_ADD(self):
         '''test_ADD will test the ADD function
         '''
-        script_path = "%s/docker/add.py" %(self.here)
+        script_path = "%s/add.py" %(self.here)
         if VERSION == 2:
             testing_command = ["python2",script_path]
         else:
