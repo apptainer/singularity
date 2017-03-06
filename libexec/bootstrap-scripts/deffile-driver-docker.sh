@@ -46,7 +46,7 @@ fi
 SINGULARITY_CONTAINER="docker://$FROM"
 export SINGULARITY_CONTAINER
 
-eval "$SINGULARITY_libexecdir/singularity/python/docker/import.py"
+eval "$SINGULARITY_libexecdir/singularity/python/import.py"
 RETVAL=$?
 
 

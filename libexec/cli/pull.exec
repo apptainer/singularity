@@ -66,29 +66,29 @@ fi
 
 RETVAL=0
 SINGULARITY_CONTAINER="${1:-}"
-SINGULARITY_LAYERFILE=`mktemp /tmp/.singularity-layerfile.XXXXXX`
+SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
 if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
-    SINGULARITY_HUB_PULL_FOLDER="$SINGULARITY_CACHEDIR"
+    SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
 else
-    SINGULARITY_HUB_PULL_FOLDER="."
+    SINGULARITY_PULLFOLDER="."
 fi
 shift
 
-export SINGULARITY_CONTAINER SINGULARITY_HUB_PULL_FOLDER SINGULARITY_LAYERFILE
+export SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS
 
 case "$SINGULARITY_CONTAINER" in
-    shub://*)
-        eval $SINGULARITY_libexecdir/singularity/python/shub/pull.py
+    *://*)
+        eval $SINGULARITY_libexecdir/singularity/python/pull.py
         RETVAL=$?
     ;;
     *)
-        message ERROR "pull is only supported for shub://\n"
+        message ERROR "pull is only supported for URIs\n"
         exit 255
     ;;
 esac
 
-SINGULARITY_IMAGE=`cat $SINGULARITY_LAYERFILE`
-rm -f "$SINGULARITY_LAYERFILE"
+SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
+rm -f "$SINGULARITY_CONTENTS"
 
 if [ $RETVAL -eq 0 -a -f "$SINGULARITY_IMAGE" ]; then
     chmod +x "$SINGULARITY_IMAGE"

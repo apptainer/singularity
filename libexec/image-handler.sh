@@ -76,34 +76,34 @@ case "$SINGULARITY_IMAGE" in
         zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
 
 
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/docker/import.py"; then
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/import.py"; then
             ABORT 255
         fi
 
-        chmod -R +w "$SINGULARITY_ROOTFS"
+#        chmod -R +w "$SINGULARITY_ROOTFS"
 
     ;;
     shub://*)
-        SINGULARITY_LAYERFILE=`mktemp /tmp/.singularity-layerfile.XXXXXX`
+        SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
 
         if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_HUB_PULL_FOLDER="$SINGULARITY_CACHEDIR"
+            SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
         else
-            SINGULARITY_HUB_PULL_FOLDER="."
+            SINGULARITY_PULLFOLDER="."
         fi
 
         SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
-        export SINGULARITY_HUB_PULL_FOLDER SINGULARITY_CONTAINER SINGULARITY_LAYERFILE
+        export SINGULARITY_PULLFOLDER SINGULARITY_CONTAINER SINGULARITY_CONTENTS
 
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/shub/pull.py"; then
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/pull.py"; then
             ABORT 255
         fi
 
         # The python script saves names to files in CONTAINER_DIR
-        SINGULARITY_IMAGE=`cat $SINGULARITY_LAYERFILE`
+        SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
         export SINGULARITY_IMAGE
 
-        rm -f "$SINGULARITY_LAYERFILE"
+        rm -f "$SINGULARITY_CONTENTS"
 
         if [ -f "$SINGULARITY_IMAGE" ]; then
             chmod +x "$SINGULARITY_IMAGE"
