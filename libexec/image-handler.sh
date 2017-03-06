@@ -80,7 +80,10 @@ case "$SINGULARITY_IMAGE" in
             ABORT 255
         fi
 
-#        chmod -R +w "$SINGULARITY_ROOTFS"
+        # Kludge alert... Yes, this is needed for Singularity to have the
+        # necessary permissions in order to clean up files that don't have
+        # S_IXUSR set.
+        chmod -R +w "$SINGULARITY_ROOTFS"
 
     ;;
     shub://*)
