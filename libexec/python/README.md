@@ -8,7 +8,6 @@ This document explains how to use the Python functions from any calling Singular
 And so in the current version, the old client was removed, and each module (currently we have support for [shub](shub) and [docker](docker) has a set of functions not exposed for command line use (typically in a `main.py` and `api.py` module, and then a main client (an executable script) that is meant to be called from the command line. For example: 
 
  - `libexec/python/import.py`
- - `libexec/python/add.py`
  - `libexec/python/pull.py`
 
 For each of the above, the python takes car of parsing the uri, meaning that a uri of `docker://` or `shub://` can be passed to `python/import.py` and it will be directed to the correct module to handle it. This basic structure is meant to put more responsibility on python for parsing and handling uris, with possibility of easily adding other endpoints in the future. This means that the Singularity (calling process), given that required environmental variables are defined, can call a function like:
@@ -22,6 +21,7 @@ For each, the details of required arguments are detailed in the scripts, and dis
 
 ## Defaults
 The following variables in [defaults.py](defaults.py) are static values that do not change. You probably don't care much about these, but they are included for reference.
+
 
 ### Singularity
 
@@ -241,16 +241,33 @@ Pull must minimally have a container defined in `SINGULARITY_CONTAINER`
 
 
 ### IMPORT
-Finally, IMPORT also writes to the `labels` folder, and needs the same as ADD
+Finally, IMPORT also writes to the `labels` folder, and depending on if `SINGULARITY_ROOTFS` is defined or not, will either just return layers written to `SINGULARITY_CONTENTS` or do an entire extraction.
 
       #!/bin/bash
 
       cd libexec/python/tests
-      export SINGULARITY_CONTAINER="shub://vsoch/singularity-images"
-      export SINGULARITY_ROOTFS=/tmp/hello-kitty
+      SINGULARITY_CONTAINER="shub://vsoch/singularity-images"
+      
+      # This would be doing a full import
+      SINGULARITY_ROOTFS=/tmp/hello-kitty
       mkdir -p $SINGULARITY_ROOTFS
       mkdir -p $SINGULARITY_ROOTFS/.singularity # see defaults.py
       mkdir -p $SINGULARITY_ROOTFS/.singularity/labels
       python ../import.py
 
+      # This is just the layerfile writing
+      SINGULARITY_CONTENTS=/tmp/hello-kitty.layers
+      python ../import.py
+
+
+## Future Additions
+
+### Python Internal API URIs
+The internal python modules, in the case of returning a `SINGULARITY_CONTENTS` file with a list of contents to be parsed by the calling function, will prefix each content (line in the file) with a uri to tell the calling script how to manage it. Currently, we have the following defined:
+
+- URI_IMAGE: img:// - intended for Singularity Hub images, which are downloaded as .img.gz, but returned after decompression.
+- URI_TAR: tar:// - for a tar (not compressed)
+- URI_TARGZ: targz:// - for a compressed tarball
+
+For each of the above, a path would add an extra slash (e.g. `img:///home/vanessa/image.img.gz`)
 

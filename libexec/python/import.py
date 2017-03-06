@@ -8,9 +8,15 @@ import.py: python helper for Singularity import
 ENVIRONMENTAL VARIABLES that are required for this executable:
 
     SINGULARITY_CONTAINER
-    SINGULARITY_ROOTFS
-    SINGULARITY_LAYERFILE
 
+    one of:
+    SINGULARITY_ROOTFS
+    SINGULARITY_CONTENTS
+
+Given that SINGULARITY_ROOTFS is defined, a full import is done that includes
+environment, labels, and extraction of layers. If SINGULARITY_ROOTFS is not
+defined, then SINGULARITY_CONTENTS must be defined, which returns a list
+of layer contents.
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
@@ -64,10 +70,7 @@ def main():
         logger.info("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
 
         from utils import  basic_auth_header
-        from defaults import SINGULARITY_ROOTFS
-        from docker.main import IMPORT
-
-        logger.info("Root file system: %s",SINGULARITY_ROOTFS)
+        from defaults import SINGULARITY_ROOTFS, LAYERFILE
 
         username = getenv("SINGULARITY_DOCKER_USERNAME") 
         password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
@@ -75,9 +78,29 @@ def main():
         auth = None
         if username is not None and password is not None:
             auth = basic_auth_header(username, password)
-        IMPORT(auth=auth,
-               image=container,
-               rootfs=SINGULARITY_ROOTFS)
+
+        if SINGULARITY_ROOTFS is not None:
+            logger.info("Root file system found: %s",SINGULARITY_ROOTFS)
+            from docker.main import IMPORT
+
+            IMPORT(auth=auth,
+                   image=container,
+                   rootfs=SINGULARITY_ROOTFS)
+
+
+        else:
+            if LAYERFILE is not None:
+                logger.info("Root file system not found, writing layers to: %s", LAYERFILE)
+                from docker.main import ADD
+
+                manifest = ADD(auth=auth,
+                               image=container,
+                               layerfile=LAYERFILE)
+ 
+            else:
+                logger.error('''You must define either SINGULARITY_ROOTFS for a full import,
+                             or SINGULARITY_CONTENTS for a partial (non sudo) import. Exiting.''')
+                sys.exit(1)
 
 
     ##############################################################################

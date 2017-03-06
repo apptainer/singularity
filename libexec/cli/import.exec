@@ -85,7 +85,7 @@ if [ -n "${1:-}" ]; then
             SINGULARITY_CONTAINER="$1"
             SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
             export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
-            eval_abort "$SINGULARITY_libexecdir/singularity/python/add.py"
+            eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
             message 1 "Importing: base Singularity environment\n"
             zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | eval_abort "$IMPORT_BIN"
 
