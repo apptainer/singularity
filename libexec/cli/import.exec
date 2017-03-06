@@ -87,7 +87,7 @@ if [ -n "${1:-}" ]; then
             export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
             eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
             message 1 "Importing: base Singularity environment\n"
-            zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | eval_abort "$IMPORT_BIN"
+            zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | eval "$IMPORT_BIN" || exit $?
 
             for i in `cat "$SINGULARITY_CONTENTS"`; do
                 message 1 "Importing: $i\n"
