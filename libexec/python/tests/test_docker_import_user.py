@@ -1,6 +1,6 @@
 '''
 
-test_docker_add.py: Docker testing functions for Singularity in Python
+test_docker_import_user.py: Docker testing functions for Singularity in Python
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
@@ -38,20 +38,20 @@ import tempfile
 
 VERSION = sys.version_info[0]
 
-print("*** PYTHON VERSION %s DOCKER ADD TESTING START ***" %(VERSION))
+print("*** PYTHON VERSION %s DOCKER IMPORT (USER) TESTING START ***" %(VERSION))
 
-class TestAdd(TestCase):
+class TestImport(TestCase):
 
     def setUp(self):
         self.namespace = 'library'
         self.repo_name = 'ubuntu'
         self.tmpdir = tempfile.mkdtemp()
+        self.contents_file = "%s/hello-kitty" %self.tmpdir
         self.here = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))        
 
         # Variables are obtained from environment
         os.environ["SINGULARITY_CONTAINER"] = "docker://ubuntu:latest" 
-        os.environ["SINGULARITY_ROOTFS"] = self.tmpdir
-        os.mkdir('%s/.singularity' %(self.tmpdir))
+        os.environ["SINGULARITY_CONTENTS"] = self.contents_file
 
         print("\n---START----------------------------------------")
 
@@ -59,10 +59,10 @@ class TestAdd(TestCase):
         shutil.rmtree(self.tmpdir)
         print("---END------------------------------------------")
 
-    def test_ADD(self):
-        '''test_ADD will test the ADD function
+    def test_IMPORT(self):
+        '''test_import will test the IMPORT USER function
         '''
-        script_path = "%s/add.py" %(self.here)
+        script_path = "%s/import.py" %(self.here)
         if VERSION == 2:
             testing_command = ["python2",script_path]
         else:
@@ -74,7 +74,7 @@ class TestAdd(TestCase):
                   'return_code':t[1]}
         print(result['message'])
         self.assertEqual(result['return_code'],0)
-
+        self.assertTrue(os.path.exists(self.contents_file))
 
 if __name__ == '__main__':
     unittest.main()
