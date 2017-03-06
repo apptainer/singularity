@@ -44,7 +44,7 @@ export MESSAGELEVEL
 . ./functions
 
 /bin/echo
-/bin/echo "Running container execution tests"
+/bin/echo "Running container writableness tests"
 /bin/echo
 
 /bin/echo "Creating temp working space at: $TEMPDIR"
@@ -56,44 +56,35 @@ stest 0 pushd "$TEMPDIR"
 
 stest 0 sudo singularity create -s 568 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/../examples/busybox.def"
-
-/bin/echo
-/bin/echo "Running container shell tests..."
-
-stest 0 singularity shell "$CONTAINER" -c "true"
-stest 1 singularity shell "$CONTAINER" -c "false"
-stest 0 sh -c "echo true | singularity shell '$CONTAINER'"
-stest 1 sh -c "echo false | singularity shell '$CONTAINER'"
-
-/bin/echo
-/bin/echo "Running container exec tests..."
-
-stest 0 singularity exec "$CONTAINER" true
-stest 0 singularity exec "$CONTAINER" /bin/true
-stest 1 singularity exec "$CONTAINER" false
-stest 1 singularity exec "$CONTAINER" /bin/false
-stest 1 singularity exec "$CONTAINER" /blahh
-stest 1 singularity exec "$CONTAINER" blahh
-stest 0 sh -c "echo hi | singularity exec $CONTAINER grep hi"
-stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
-
-/bin/echo
-/bin/echo "Running container run tests..."
-
-# Before we have a runscript, it should invoke a shell
-stest 0 singularity run "$CONTAINER" -c true
-stest 1 singularity run "$CONTAINER" -c false
 echo -ne "#!/bin/sh\n\neval \"\$@\"\n" > singularity
 stest 0 chmod 0644 singularity
 stest 0 sudo singularity copy "$CONTAINER" -a singularity /
-stest 1 singularity run "$CONTAINER" true
-stest 0 sudo singularity exec -w "$CONTAINER" chmod 0755 /singularity
-stest 0 singularity run "$CONTAINER" true
-stest 1 singularity run "$CONTAINER" false
+
+/bin/echo
+/bin/echo "Checking writableness..."
+
+stest 0 sudo chown root.root "$CONTAINER"
+stest 0 sudo chmod 0644 "$CONTAINER"
+stest 0 sudo singularity shell -w "$CONTAINER" -c true
+stest 0 sudo singularity exec -w "$CONTAINER" true
+stest 0 sudo singularity run -w "$CONTAINER" true
+stest 1 singularity shell -w "$CONTAINER" -c true
+stest 1 singularity exec -w "$CONTAINER" true
+stest 1 singularity run -w "$CONTAINER" true
+stest 0 sudo chmod 0666 "$CONTAINER"
+stest 0 sudo singularity shell -w "$CONTAINER" -c true
+stest 0 sudo singularity exec -w "$CONTAINER" true
+stest 0 sudo singularity run -w "$CONTAINER" true
+stest 0 singularity shell -w "$CONTAINER" -c true
+stest 0 singularity exec -w "$CONTAINER" true
+stest 0 singularity run -w "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" touch /writetest.fail
+#stest 0 sudo singularity exec "$CONTAINER" touch /writetest.fail #### This works thanks to the overlayfs now, maybe it should be conditional here?
+stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
 
 stest 0 popd
 stest 0 sudo rm -rf "$TEMPDIR"
 
 /bin/echo
-/bin/echo "02-execute.sh tests OK"
+/bin/echo "03-writable.sh tests OK"
 /bin/echo
