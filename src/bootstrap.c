@@ -35,6 +35,7 @@
 #include "lib/runtime/runtime.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/sessiondir.h"
 
 #include "./bootstrap-lib/include.h"
 
@@ -49,24 +50,23 @@ int main(int argc, char **argv) {
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
     singularity_priv_init();
-    singularity_priv_drop();
+
+    singularity_registry_set("WRITABLE", "1");
+
+//    singularity_sessiondir();
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    if ( is_file(singularity_registry_get("IMAGE")) == 0 ) {
-        singularity_image_open(&image, O_RDWR);
-    } else if ( is_dir(singularity_registry_get("IMAGE")) == 0 ) {
-        singularity_image_open(&image, O_RDONLY);
-    } else {
-        singularity_message(ERROR, "Container image is neither file nor directory: %s\n", singularity_registry_get("IMAGE"));
-        ABORT(255);
-    }
+    singularity_image_open(&image, O_RDWR);
 
-    singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
+//    singularity_runtime_tmpdir(singularity_registry_get("SESSIONDIR"));
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+
+    singularity_message(DEBUG, "Setting SINGULARITY_ROOTFS to: %s\n", singularity_runtime_rootfs(NULL));
+    setenv("SINGULARITY_ROOTFS", singularity_runtime_rootfs(NULL), 1);
 
     // At this point, the container image is mounted at
     // singularity_runtime_rootfs(NULL), and bootstrap code can be added

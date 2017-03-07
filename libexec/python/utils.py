@@ -20,7 +20,10 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from defaults import SINGULARITY_CACHE
+from defaults import (
+    SINGULARITY_CACHE,
+    DISABLE_CACHE
+)
 from logman import logger
 import errno
 import json
@@ -304,27 +307,15 @@ def change_permissions(path,permission=None,recursive=True):
 ############################################################################
 
 
-def get_cache(cache_base=None,subfolder=None,disable_cache=False):
-    '''get_cache will return the user's cache for singularity. If not specified
-    via environmental variable, will be created in $HOME/.singularity
-    :param cache_base: the cache base
+def get_cache(subfolder=None):
+    '''get_cache will return the user's cache for singularity. The path
+    returned is generated at the start of the run, and returned optionally
+    with a subfolder
     :param subfolder: a subfolder in the cache base to retrieve, specifically
-    :param disable_cache: boolean, if True, will return temporary directory
-    instead. The other functions are responsible for cleaning this up after use.
-    for a particular kind of image cache (eg, docker, shub, etc.)
     '''
-    # Obtain cache base from environment (1st priority, then variable)
-    if disable_cache == True:
-        return tempfile.mkdtemp()
-    else:
-        cache_base = os.environ.get("SINGULARITY_CACHEDIR", cache_base)
-
-    # Default is set in defaults.py, $HOME/.singularity
-    if cache_base == None:
-        cache_base = SINGULARITY_CACHE
 
     # Clean up the path and create
-    cache_base = clean_path(cache_base)
+    cache_base = clean_path(SINGULARITY_CACHE)
 
     # Does the user want to get a subfolder in cache base?
     if subfolder != None:
@@ -368,7 +359,7 @@ def extract_tar(archive,output_folder):
     retval = run_command(command)
 
     # Change permissions (default ensures writable)
-    change_permissions(output_folder)
+    # change_permissions(output_folder)
 
     # Should we return a list of extracted files? Current returns empty string
     return retval
@@ -434,3 +425,39 @@ def get_fullpath(file_path,required=True):
     # If file isn't required and doesn't exist, return None
     logger.warning("Cannot find file %s",file_path)
     return None
+
+
+def write_singularity_infos(base_dir,prefix,start_number,content,extension=None):
+    '''write_singularity_infos will write some metadata object
+    to a file in some base, starting at some default number. For example,
+    we would want to write dockerN files with docker environment exports to
+    some directory ENV_DIR and increase N until we find an available path
+    :param base_dir: the directory base to write the file to
+    :param prefix: the name of the file prefix (eg, docker)
+    :param start_number: the number to start looking for available file at
+    :param content: the content to write
+    :param extension: the extension to use. If not defined, uses .sh
+    '''
+    if extension == None:
+        extension = ""
+    output_file = None
+    counter = start_number
+    written = False
+
+    # if the base directory doesn't exist, exit with error.
+    if not os.path.exists(base_dir):
+        logger.warning("Cannot find required metadata directory %s. Exiting!",base_dir)
+        sys.exit(1)
+
+    while not written:
+        output_file = "%s/%s-%s%s" %(base_dir,
+                                     prefix,
+                                     counter,
+                                     extension)
+        if not os.path.exists(output_file):
+            write_file(output_file,content)
+            logger.debug("Writing %s",output_file)
+            written = True
+        counter+=1
+
+    return output_file

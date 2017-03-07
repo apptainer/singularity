@@ -40,7 +40,6 @@
 #include "./expand/expand.h"
 #include "./mount/mount.h"
 #include "./offset/offset.h"
-#include "./sessiondir/sessiondir.h"
 
 
 // extern int singularity_image_expand(char *image, unsigned int size)
@@ -60,9 +59,8 @@ struct image_object singularity_image_init(char *path) {
     image.path = strdup(path);
     image.name = basename(strdup(path));
     image.fd = -1;
-    image.sessiondir_fd = -1;
     image.loopdev = NULL;
-    image.sessiondir = NULL;
+    image.id = NULL;
 
     return(image);
 }
@@ -73,12 +71,6 @@ int singularity_image_fd(struct image_object *image) {
 
 char *singularity_image_loopdev(struct image_object *image) {
     return(image->loopdev);
-}
-
-char *singularity_image_sessiondir(struct image_object *image) {
-    _singularity_image_sessiondir_init(image);
-
-    return(image->sessiondir);
 }
 
 char *singularity_image_name(struct image_object *image) {
@@ -110,14 +102,10 @@ int singularity_image_offset(struct image_object *image) {
 }
 
 int singularity_image_bind(struct image_object *image) {
-    _singularity_image_sessiondir_init(image);
-
     return(_singularity_image_bind(image));
 }
 
 int singularity_image_mount(struct image_object *image, char *mount_point) {
-    _singularity_image_sessiondir_init(image);
-
     return(_singularity_image_mount(image, mount_point));
 }
 

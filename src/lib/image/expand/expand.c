@@ -46,7 +46,12 @@ int _singularity_image_expand(struct image_object *image, unsigned int size) {
         ABORT(255);
     }
 
-    if ( ( image_fp = fdopen(image->fd, "r+") ) == NULL ) {
+    if ( image->fd <= 0 ) {
+        singularity_message(ERROR, "Can not check image with no FD associated\n");
+        ABORT(255);
+    }
+
+    if ( ( image_fp = fdopen(dup(image->fd), "r+") ) == NULL ) {
         singularity_message(ERROR, "Could not fdopen() image file descriptor for %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
@@ -69,6 +74,7 @@ int _singularity_image_expand(struct image_object *image, unsigned int size) {
         }
     }
 
+    fclose(image_fp);
     free(buff);
 
     return(0);

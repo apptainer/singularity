@@ -34,9 +34,14 @@ test.sh
 
 src/action
 src/action-suid
+src/add
+src/add-suid
 src/bootstrap
+src/cleanupd
 src/create
 src/create-suid
+src/copy
+src/copy-suid
 src/expand
 src/expand-suid
 src/export

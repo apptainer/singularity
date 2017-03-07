@@ -276,13 +276,38 @@ int s_mkpath(char *dir, mode_t mode) {
 }
 
 int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
-//    printf("remove(%s)\n", fpath);
-    return(remove(fpath));
+    int retval;
+
+    if ( ( retval = remove(fpath) ) < 0 ) { 
+        singularity_message(WARNING, "Failed removing file: %s\n", fpath);
+    }
+
+    return(retval);
+}
+
+int _writable(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+    int retval;
+
+    if ( is_link((char *) fpath) == 0 ) {
+        return(0);
+    }
+
+    if ( ( retval = chmod(fpath, 0700) ) < 0 ) { 
+        singularity_message(WARNING, "Failed changing permission of file: %s\n", fpath);
+    }
+
+    // Always return success
+    return(0);
 }
 
 int s_rmdir(char *dir) {
 
     singularity_message(DEBUG, "Removing directory: %s\n", dir);
+    if ( nftw(dir, _writable, 32, FTW_MOUNT|FTW_PHYS) < 0 ) {
+        singularity_message(ERROR, "Failed preparing directory for removal: %s\n", dir);
+        ABORT(255);
+    }
+
     return(nftw(dir, _unlink, 32, FTW_DEPTH|FTW_MOUNT|FTW_PHYS));
 }
 
@@ -408,7 +433,7 @@ char *basedir(char *dir) {
 
     singularity_message(DEBUG, "Obtaining basedir for: %s\n", dir);
 
-    while ( strcmp(testdir, "/") != 0 ) {
+    while ( ( strcmp(testdir, "/") != 0 ) && ( strcmp(testdir, ".") != 0 ) ) {
         singularity_message(DEBUG, "Iterating basedir: %s\n", testdir);
 
         ret = strdup(testdir);

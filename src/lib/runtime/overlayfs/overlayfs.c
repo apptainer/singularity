@@ -116,6 +116,12 @@ int _singularity_runtime_overlayfs(void) {
 
     if ( overlay_enabled != 1 ) {
         singularity_priv_escalate();
+        singularity_message(DEBUG, "Creating mount_final directory: %s\n", mount_final);
+        if ( s_mkpath(mount_final, 0755) < 0 ) {
+            singularity_message(ERROR, "Failed creating mount_final directory %s: %s\n", mount_final, strerror(errno));
+            ABORT(255);
+        }
+
         singularity_message(VERBOSE3, "Binding the ROOTFS_SOURCE to OVERLAY_FINAL (%s->%s)\n", rootfs_source, mount_final);
         if ( mount(rootfs_source, mount_final, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "There was an error binding the container to path %s: %s\n", mount_final, strerror(errno));

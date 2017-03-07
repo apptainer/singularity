@@ -27,14 +27,19 @@
 #include <stdarg.h>
 #include <syslog.h>
 #include <libgen.h>
+#include <time.h>
 
 #include "config.h"
 #include "util/util.h"
 #include "util/message.h"
+#include "util/config_parser.h"
 
 int messagelevel = -1;
 
 extern const char *__progname;
+
+int log_file_descriptor;
+FILE *log_file;
 
 static void message_init(void) {
     char *messagelevel_string = getenv("SINGULARITY_MESSAGELEVEL"); // Flawfinder: ignore (need to get string, validation in atol())
@@ -54,6 +59,14 @@ static void message_init(void) {
         singularity_message(VERBOSE, "Set messagelevel to: %d\n", messagelevel);
     }
 
+    if (strcmp(singularity_config_get_value(LOG_SYSTEM), "file") == 0) {
+        singularity_priv_init();
+        singularity_priv_escalate();
+        log_file = fopen("singularity.log", "a");
+        log_file_descriptor = fileno(log_file);
+        fchmod(log_file_descriptor, 0644);
+        singularity_priv_drop();
+    }
 }
 
 
@@ -110,13 +123,29 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     if ( level <= LOG ) {
         // Note __progname comes from the linker; the UID can be 5 characters and PID can be
         // 10-or-so characters.
-        char syslog_string[560]; // Flawfinder: ignore (512 max message length + 48 for header).
-        if (snprintf(syslog_string, 540, "%s (U=%d,P=%d)> %s", __progname, geteuid(), getpid(), message) >= 540) {
+        char log_message[560]; // Flawfinder: ignore (512 max message length + 48 for header).
+        if (snprintf(log_message, 540, "%s", message) >= 540) {
             // This case shouldn't happen unless we have a very strange __progname; nul-terminating to be sure.
-            syslog_string[559] = '\0';
+            log_message[559] = '\0';
         }
 
-        syslog(syslog_level, "%s", syslog_string);
+        // get current timestamp for file and stderr logging
+        time_t ltime;
+        ltime = time(NULL);
+        char *timestamp = asctime(localtime(&ltime));
+        // remove trailing newline
+        strtok(timestamp, "\n");
+
+        if (strcmp(singularity_config_get_value(LOG_SYSTEM), "syslog") == 0) {
+            syslog(syslog_level, "%s", log_message);
+        } else if (strcmp(singularity_config_get_value(LOG_SYSTEM), "std") == 0) {
+            fprintf(stderr, "%s: %s \n", timestamp, log_message);
+        } else {
+            fprintf(log_file, "%s: %s \n", timestamp, log_message);
+            fflush(log_file);
+        }
+
+        
     }
 
     if ( level <= messagelevel ) {

@@ -30,16 +30,19 @@
 #define TRUE 1
 #define FALSE 0
 
+char *envar(char *name, char *allowed, int len);
+char *envar_path(char *name);
+int envar_defined(char *name);
 int intlen(int input);
 char *int2str(int num);
 char *joinpath(const char * path1, const char * path2);
 char *strjoin(char *str1, char *str2);
+char *uppercase(char *string);
 void chomp_noline(char *str);
 void chomp(char *str);
 int strlength(const char *string, int max_len);
 int envclean(void);
-
-//char *random_string(int length);
+char *random_string(int length);
 
 // Given a const char * string containing a base-10 integer,
 // try to convert to an C integer.

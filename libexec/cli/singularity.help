@@ -10,12 +10,17 @@ GLOBAL OPTIONS:
 
 GENERAL COMMANDS:
     help          Show additional help for a command
+    selftest      Run some self tests to make sure Singularity is
+                    installed and operating properly
 
 CONTAINER USAGE COMMANDS:
     exec          Execute a command within container
     run           Launch a runscript within container
     shell         Run a Bourne shell within container
     test          Execute any test code defined within container
+
+CONTAINER USAGE OPTIONS:
+    -H  --home    Specify $HOME to mount 
 
 CONTAINER MANAGEMENT COMMANDS (requires root):
     bootstrap     Bootstrap a new Singularity image from scratch
@@ -27,7 +32,7 @@ CONTAINER MANAGEMENT COMMANDS (requires root):
     mount         Mount a Singularity container image
 
 CONTAINER REGISTRY COMMANDS:
-    pull          pull a Singularity Hub container
+    pull          pull a Singularity Hub container to $PWD
 
 
 For any additional help or support visit the Singularity

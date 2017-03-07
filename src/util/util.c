@@ -44,6 +44,67 @@
 #include "util/privilege.h"
 
 
+char *envar(char *name, char *allowed, int len) {
+    char *ret;
+    char *env = getenv(name); // Flawfinder: ignore
+    int count;
+
+    singularity_message(VERBOSE2, "Checking input from environment: '%s'\n", name);
+
+    singularity_message(DEBUG, "Checking environment variable is defined: %s\n", name);
+    if ( env == NULL ) {
+        singularity_message(VERBOSE2, "Environment variable is NULL: %s\n", name);
+        return(NULL);
+    }
+
+    singularity_message(DEBUG, "Checking environment variable length (<= %d): %s\n", len, name);
+    if ( strlength(env, len+1) > len) {
+        singularity_message(ERROR, "Input length of '%s' is larger then allowed: %d\n", name, len);
+        ABORT(255);
+    }
+
+    singularity_message(DEBUG, "Checking environment variable has allowed characters: %s\n", name);
+    ret = (char *) malloc(len+1);
+    for(count=0; count <= len && env[count] != '\0'; count++) {
+        int test_char = env[count];
+        int c, success = 0;
+        if ( isalnum(test_char) > 0 ) {
+            success = 1;
+        } else {
+            for (c=0; allowed[c] != '\0'; c++) {
+                if ( test_char == allowed[c] ) {
+                    success = 1;
+                    continue;
+                }
+            }
+        }
+        if ( success == 0 ) {
+            singularity_message(ERROR, "Illegal input character '%c' in: '%s=%s'\n", test_char, name, env);
+            ABORT(255);
+        }
+        ret[count] = test_char;
+    }
+    ret[count] = '\0';
+
+    singularity_message(VERBOSE2, "Obtained input from environment '%s' = '%s'\n", name, ret);
+    return(ret);
+}
+
+int envar_defined(char *name) {
+    singularity_message(DEBUG, "Checking if environment variable is defined: %s\n", name);
+    if ( getenv(name) == NULL ) { // Flawfinder: ignore
+        singularity_message(VERBOSE2, "Environment variable is undefined: %s\n", name);
+        return(FALSE);
+    }
+    singularity_message(VERBOSE2, "Environment variable is defined: %s\n", name);
+    return(TRUE);
+}
+
+char *envar_path(char *name) {
+    singularity_message(DEBUG, "Checking environment variable is valid path: '%s'\n", name);
+    return(envar(name, "/._-=,:", PATH_MAX));
+}
+
 int intlen(int input_int) {
     unsigned int len = 1;
     int input = input_int;
@@ -53,6 +114,19 @@ int intlen(int input_int) {
     }
 
     return(len);
+}
+
+char *uppercase(char *string) {
+    int len = strlength(string, 4096);
+    char *upperkey = strdup(string);
+    int i = 0;
+
+    while ( i <= len ) {
+        upperkey[i] = toupper(string[i]);
+        i++;
+    }
+    singularity_message(DEBUG, "Transformed to uppercase: '%s' -> '%s'\n", string, upperkey);
+    return(upperkey);
 }
 
 char *int2str(int num) {
@@ -172,7 +246,6 @@ int strlength(const char *string, int max_len) {
     return(len);
 }
 
-/*
 char *random_string(int length) {
     static const char characters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     char *ret;
@@ -190,7 +263,7 @@ char *random_string(int length) {
 
     return(ret);
 }
-*/
+
 
 int str2int(const char *input_str, long int *output_num) {
     long int result;

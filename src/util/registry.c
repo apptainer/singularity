@@ -46,8 +46,20 @@ extern char **environ;
 
 static ENTRY keypair(char *key, char *value) {
     ENTRY hash_entry;
-    hash_entry.key = key;
-    hash_entry.data = value;
+
+    if ( key == NULL ) {
+        singularity_message(ERROR, "Internal - Called keypair() with NULL key\n");
+        ABORT(255);
+    }
+
+    hash_entry.key = strdup(key);
+
+    if ( value == NULL ) {
+        hash_entry.data = NULL;
+    } else {
+        hash_entry.data = strdup(value);
+    }
+
     return hash_entry;
 }
 
@@ -64,25 +76,23 @@ void singularity_registry_init(void) {
         registry_initialized = 1;
 
         while (*env) {
-            char *tok, *key, *val;
-            char *string = *env++;
+            char *tok;
+            char *string = strdup(*env++);
+
+            if ( string == NULL ) {
+                continue;
+            } 
 
             if ( strncmp(string, "SINGULARITY_", 12) != 0 ) {
                 continue;
             }
 
-            key = strtok_r(string, "=", &tok);
-            val = strtok_r(NULL, "=", &tok);
+            tok = strchr(string, '=');
+            *tok = '\0';
 
-            if ( key == NULL ) {
-                continue;
-            } 
+            string += 12; // Move string over so that SINGULARITY_ is skipped over
 
-            if ( val == NULL ) {
-                val = "";
-            }
-
-            singularity_registry_set(&key[12], val);
+            singularity_registry_set(string, tok+1);
         }
     }
 }
@@ -106,8 +116,10 @@ char *singularity_registry_get(char *key) {
     if ( hsearch_r(keypair(upperkey, NULL), FIND, &found, &htab) == 0 ) {
         return(NULL);
     }
+    
+    singularity_message(DEBUG, "Retriving value from registry: '%s' = '%s'\n", upperkey, (char *)found->data);
 
-    return(found->data);
+    return(strdup(found->data));
 }
 
 
@@ -128,15 +140,16 @@ int singularity_registry_set(char *key, char *value) {
 
     singularity_message(VERBOSE2, "Adding value to registry: '%s' = '%s'\n", upperkey, value);
 
-    if ( singularity_registry_get(upperkey) != NULL ) {
+    if ( hsearch_r(keypair(upperkey, value), ENTER, &prev, &htab) == 0 ) {
         singularity_message(VERBOSE2, "Found prior value for '%s', overriding with '%s'\n", key, value);
-        prev->data = value;
+        prev->data = strdup(value);
     } else {
         if ( hsearch_r(keypair(upperkey, value), ENTER, &prev, &htab) == 0 ) {
             singularity_message(ERROR, "Internal error - Unable to set registry entry ('%s' = '%s'): %s\n", key, value, strerror(errno));
             ABORT(255);
         }
     }
+    singularity_message(DEBUG, "Returning singularity_registry_set(%s, %s) = 0\n", key, value);
 
     return(0);
 }

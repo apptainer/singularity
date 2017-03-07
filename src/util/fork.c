@@ -311,14 +311,26 @@ void singularity_fork_run(void) {
 int singularity_fork_exec(char **argv) {
     int tmpstatus;
     int retval = 0;
+    int i = 0;
     pid_t child;
 
     child = singularity_fork();
 
     if ( child == 0 ) {
+        while(1) {
+            if ( argv[i] == NULL ) {
+                break;
+            } else if ( i == 128 ) {
+                singularity_message(ERROR, "singularity_fork_exec() ARGV out of bounds\n");
+                ABORT(255);
+            }
+            singularity_message(DEBUG, "fork argv[%d] = %s\n", i, argv[i]);
+            i++;
+        }
+
         singularity_message(VERBOSE, "Running child program: %s\n", argv[0]);
         if ( execvp(argv[0], argv) < 0 ) { //Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv(%s, ...): %s\n", argv[0], strerror(errno));
+            singularity_message(ERROR, "Failed to exec program %s: %s\n", argv[0], strerror(errno));
             ABORT(255);
         }
 

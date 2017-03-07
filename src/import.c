@@ -37,6 +37,7 @@
 #include "util/privilege.h"
 #include "util/suid.h"
 #include "util/fork.h"
+#include "util/sessiondir.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
@@ -48,9 +49,10 @@ int main(int argc, char **argv) {
     char *tar_cmd[4];
     struct image_object image;
 
-    singularity_suid_init();
-
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
+    singularity_suid_init(argv);
+
     singularity_registry_init();
     singularity_priv_init();
     singularity_priv_drop();
@@ -59,26 +61,34 @@ int main(int argc, char **argv) {
         singularity_registry_set("IMAGE", argv[1]);
     }
 
+    singularity_sessiondir();
+
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    if ( is_file(singularity_registry_get("IMAGE")) == 0 ) {
-        singularity_image_open(&image, O_RDWR);
-    } else if ( is_dir(singularity_registry_get("IMAGE")) == 0 ) {
-        singularity_image_open(&image, O_RDONLY);
-    } else {
-        singularity_message(ERROR, "Container image is neither file nor directory: %s\n", singularity_registry_get("IMAGE"));
+    singularity_image_open(&image, O_RDWR);
+
+    if ( singularity_image_check(&image) != 0 ) {
+        singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
         ABORT(255);
     }
 
     singularity_registry_set("WRITABLE", "1");
 
-    singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
+    singularity_runtime_tmpdir(singularity_registry_get("SESSIONDIR"));
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
-    tar_cmd[0] = strdup("/usr/bin/tar");
+    if ( is_exec("/usr/bin/tar") == 0 ) {
+        tar_cmd[0] = strdup("/usr/bin/tar");
+    } else if ( is_exec("/bin/tar") == 0 ) {
+        tar_cmd[0] = strdup("/bin/tar");
+    } else {
+        singularity_message(ERROR, "Could not locate the system version of 'tar'\n");
+        ABORT(255);
+    }
+
     tar_cmd[1] = strdup("-xf");
     tar_cmd[2] = strdup("-");
     tar_cmd[3] = NULL;
@@ -95,13 +105,11 @@ int main(int argc, char **argv) {
     }
 
     singularity_priv_escalate();
-    singularity_message(INFO, "Opening STDIN for tar stream\n");
+    singularity_message(VERBOSE, "Opening STDIN for tar stream\n");
     retval = singularity_fork_exec(tar_cmd);
     singularity_priv_drop();
 
-    if ( retval == 0 ) {
-        singularity_message(INFO, "Done. Image ready: %s\n", image.path);
-    } else {
+    if ( retval != 0 ) {
         singularity_message(ERROR, "Tar did not return successful\n");
     }
 

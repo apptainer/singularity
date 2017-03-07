@@ -125,7 +125,7 @@ singularity_section_args() {
 singularity_section_get() {
     SECTION="${1:-}"
     FILE="${2:-}"
-    if [ ! -x "$SINGULARITY_libexecdir/singularity/get-section" ]; then
+    if [ ! -x "$SINGULARITY_libexecdir/singularity/bin/get-section" ]; then
         message ERROR "Could not locate get-section program\n"
         exit 255
     fi
@@ -135,7 +135,7 @@ singularity_section_get() {
         exit 1
     fi
 
-    eval "$SINGULARITY_libexecdir/singularity/get-section" "$SECTION" "$FILE"
+    eval "$SINGULARITY_libexecdir/singularity/bin/get-section" "$SECTION" "$FILE"
 
     return 0
 }
@@ -176,6 +176,14 @@ cmd() {
     return $RETVAL
 }
 
+eval_abort() {
+    eval "$@"
+    RETVAL=$?
+    if [ $RETVAL -ne 0 ]; then
+        exit $RETVAL
+    fi
+    return 0
+}
 
 stest() {
     ERROR="${1:-}"

@@ -34,6 +34,8 @@
     int singularity_priv_userns_enabled(void);
     int singularity_priv_is_suid(void);
     char *singularity_priv_home(void);
+    char *singularity_priv_homedir(void);
+    char *singularity_priv_getuser(void);
 
     // Escalate privileges to the 'singularity' user.
     void singularity_priv_escalate_singularity(void);

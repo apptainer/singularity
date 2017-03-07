@@ -66,10 +66,19 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-SINGULARITY_NOIMAGELOCK=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
+export SINGULARITY_IMAGE
 shift
 
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/copy-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/copy-suid" "$@"
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/copy" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/copy" "$@"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/copy\n"
+    exit 1
+fi
 
-exec "$SINGULARITY_libexecdir/singularity/simage" "mount" "$SINGULARITY_libexecdir/singularity/helpers/copy.sh" "$@"
+
+message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+exit 255
+

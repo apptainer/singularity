@@ -37,7 +37,7 @@
 #define ALLOW_USER_NS_DEFAULT 1
 
 #define ENABLE_OVERLAY "enable overlay"
-#define ENABLE_OVERLAY_DEFAULT 0
+#define ENABLE_OVERLAY_DEFAULT 1
 
 #define CONFIG_PASSWD "config passwd"
 #define CONFIG_PASSWD_DEFAULT 1
@@ -81,13 +81,24 @@
 #define SESSIONDIR_PREFIX "sessiondir prefix"
 #define SESSIONDIR_PREFIX_DEFAULT "/tmp/.singularity-session-"
 
+#define LIMIT_CONTAINER_OWNERS "limit container owners"
+#define LIMIT_CONTAINER_OWNERS_DEFAULT "NULL"
+
+#define LIMIT_CONTAINER_PATHS "limit container paths"
+#define LIMIT_CONTAINER_PATHS_DEFAULT "NULL"
+
+#define MAX_LOOP_DEVS "max loop devices"
+#define MAX_LOOP_DEVS_DEFAULT "256"
+
+#define LOG_SYSTEM "log system"
+#define LOG_SYSTEM_DEFAULT "file"
+/*
 #define SINGULARITY_USER "singularity user"
 #define SINGULARITY_USER_DEFAULT "singularity"
 
 #define PROTECTED_IMAGE_MODE "protected image mode"
 #define PROTECTED_IMAGE_MODE_DEFAULT "none"
 
-#define ALLOW_USER_IMAGE "allow user image"
-#define ALLOW_USER_IMAGE_DEFAULT 1
+*/
 
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_

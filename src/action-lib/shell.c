@@ -35,9 +35,13 @@ void action_shell(int argc, char **argv) {
 
     singularity_message(INFO, "Singularity: Invoking an interactive shell within container...\n\n");
 
-    singularity_message(VERBOSE, "Invoking the container's /.shell\n");
-    if ( is_exec("/.shell") == 0 ) {
-        singularity_message(DEBUG, "Found container's /.shell, executing that\n");
+    if ( is_exec("/.singularity/actions/shell") == 0 ) {
+        singularity_message(DEBUG, "Exec'ing /.singularity/actions/shell\n");
+        if ( execv("/.singularity/actions/shell", argv) < 0 ) { // Flawfinder: ignore
+            singularity_message(ERROR, "Failed to execv() /.singularity/actions/shell, continuing to /bin/sh: %s\n", strerror(errno));
+        }
+    } else if ( is_exec("/.shell") == 0 ) {
+        singularity_message(DEBUG, "Exec'ing /.shell\n");
         if ( execv("/.shell", argv) < 0 ) { // Flawfinder: ignore
             singularity_message(ERROR, "Failed to execv() /.shell, continuing to /bin/sh: %s\n", strerror(errno));
         }

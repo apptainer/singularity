@@ -44,7 +44,7 @@ int _singularity_image_offset(struct image_object *image) {
         ABORT(255);
     }
 
-    if ( ( image_fp = fdopen(image->fd, "r") ) == NULL ) {
+    if ( ( image_fp = fdopen(dup(image->fd), "r") ) == NULL ) {
         singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
@@ -67,6 +67,8 @@ int _singularity_image_offset(struct image_object *image) {
             break;
         }
     }
+
+    fclose(image_fp);
 
     singularity_message(DEBUG, "Returning image_offset(image_fp) = %d\n", ret);
 

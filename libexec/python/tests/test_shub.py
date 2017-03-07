@@ -2,7 +2,7 @@
 
 test_shub.py: Singularity Hub testing functions for Singularity in Python
 
-Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -33,16 +33,18 @@ import tempfile
 
 VERSION = sys.version_info[0]
 
-print("*** PYTHON VERSION %s CLIENT TESTING START ***" %(VERSION))
+print("*** PYTHON VERSION %s SINGULARITY HUB API TESTING START ***" %(VERSION))
 
 class TestApi(TestCase):
 
 
     def setUp(self):
-        self.image_id = 24 # https://singularity-hub.org/collections/12/
+        self.image_id = 60 # https://singularity-hub.org/collections/12/
         self.user_name = "vsoch"
         self.repo_name = "singularity-images"
         self.tmpdir = tempfile.mkdtemp()
+        os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
+        os.mkdir('%s/.singularity' %(self.tmpdir))
         print("\n---START----------------------------------------")
 
     def tearDown(self):
@@ -74,20 +76,15 @@ class TestApi(TestCase):
         image = download_image(manifest,
                                download_folder=self.tmpdir)
         self.assertEqual(os.path.dirname(image),self.tmpdir)
-        
-        print("Case 2: Image should be named based on commit.")
-        image_name = os.path.splitext(os.path.basename(image))[0]
-        self.assertEqual(image_name,manifest['version'])
-        os.remove(image)
-
-        print("Case 3: Not specifying a directory downloads to PWD")
+       
+        print("Case 2: Not specifying a directory downloads to PWD")
         os.chdir(self.tmpdir)
         image = download_image(manifest)
         self.assertEqual(os.getcwd(),self.tmpdir)
         self.assertTrue(image in glob("*"))
         os.remove(image)
 
-        print("Case 4: Image should not be extracted.")
+        print("Case 3: Image should not be extracted.")
         image = download_image(manifest,extract=False)
         self.assertTrue(image.endswith('.img.gz'))        
 
@@ -123,22 +120,18 @@ class TestApi(TestCase):
         from shub.api import get_image_name, get_manifest
         manifest = get_manifest(image=self.image_id)
                 
-        print("Case 1: return an image name using the commit id")
+        print("Case 1: return an image name corresponding to repo")
         image_name = get_image_name(manifest)
-        self.assertEqual('6d3715a982865863ff20e8783014522edf1240e4.img.gz',
+        self.assertEqual('vsoch-singularity-images-master.img.gz',
                          image_name)
 
-        print("Case 2: ask for invalid extension")
+        print("Case 2: ask for hash, but with invalid extension")
         with self.assertRaises(SystemExit) as cm:
             image_name = get_image_name(manifest,
-                                        extension='.bz2')
+                                        extension='.bz2',
+                                        use_hash=True)
         self.assertEqual(cm.exception.code, 1)
 
-        print("Case 3: don't use commit (use md5 sum on generation)")
-        image_name = get_image_name(manifest,
-                                    use_commit=False)
-        print(image_name)
-        self.assertEqual('32394f413f46f070e76cc07308f0e791.img.gz',image_name)
 
 
 if __name__ == '__main__':

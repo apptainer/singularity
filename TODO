@@ -3,5 +3,5 @@
       keep it running until all other process are done
     * create a src/util/user.c and move user info from privilege.c to
       there.
-    * Evaluate changing the privileged open options to just trust
-      containers that have +x
+    * Move privileged open code to image/open
+    * Fix all import commands to take tar stream(s)

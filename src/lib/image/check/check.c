@@ -40,18 +40,24 @@
 int _singularity_image_check(struct image_object *image) {
     char *line;
     FILE *image_fp;
-
-    if ( is_file(image->path) != 0 ) {
-        singularity_message(VERBOSE, "Skipping check, image is not a file\n");
-        return(0);
-    }
+    struct stat filestat;
 
     if ( image->fd <= 0 ) {
         singularity_message(ERROR, "Can not check image with no FD associated\n");
         ABORT(255);
     }
 
-    if ( ( image_fp = fdopen(image->fd, "r") ) == NULL ) {
+    if (fstat(image->fd, &filestat) < 0) {
+        singularity_message(ERROR, "Could not fstat() image file descriptor: %s\n", image->path);
+        ABORT(255);
+    }
+    
+    if ( ! S_ISREG(filestat.st_mode) ) {
+        singularity_message(VERBOSE2, "Image is not a file, returning retval=1: %s\n", image->path);
+        return(1);
+    }
+
+    if ( ( image_fp = fdopen(dup(image->fd), "r") ) == NULL ) {
         singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
@@ -78,6 +84,8 @@ int _singularity_image_check(struct image_object *image) {
         singularity_message(VERBOSE, "File is not a valid Singularity image\n");
         return(-1);
     }
+
+    fclose(image_fp);
 
     return(0);
 }

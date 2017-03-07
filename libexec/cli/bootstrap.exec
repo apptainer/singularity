@@ -72,11 +72,19 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-DEFINITION="${2:-}"
+SINGULARITY_BUILDDEF="${2:-}"
 SINGULARITY_WRITABLE=1
-SINGULARITY_NOIMAGELOCK=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK SINGULARITY_libexecdir
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_BUILDDEF SINGUARITY_libexecdir
 shift
 shift
 
-exec "$SINGULARITY_libexecdir/singularity/simage" "bootstrap" "$SINGULARITY_IMAGE" "$DEFINITION" "$@"
+
+if [ -x "$SINGULARITY_libexecdir/singularity/bin/bootstrap" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/bootstrap"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/bootstrap\n"
+    exit 1
+fi
+
+message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+exit 255

@@ -94,7 +94,7 @@ int _singularity_runtime_mount_scratch(void) {
         }
 
         if ( is_dir(full_destdir_path) != 0 ) {
-            if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
+            if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                 singularity_priv_escalate();
                 singularity_message(DEBUG, "Creating scratch directory inside container\n");
                 r = s_mkpath(full_destdir_path, 0755);
