@@ -32,6 +32,7 @@ SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
 SINGULARITY_PATH="$bindir"
 
+
 ALL_COMMANDS="exec run shell test bootstrap copy create expand export import mount"
 
 if [ ! -f "autogen.sh" ]; then
@@ -70,12 +71,6 @@ CONTAINER="container.img"
 CONTAINERDIR="container_dir"
 export MESSAGELEVEL
 
-## Export SINGULARITY_* vars needed for test scripts ##
-export SINGULARITY_libexecdir
-export SINGULARITY_sysconfdir
-export SINGULARITY_localstatedir
-export SINGULARITY_PATH
-
 /bin/echo "Gaining/checking sudo access..."
 sudo true
 
@@ -108,7 +103,30 @@ fi
 stest 0 mkdir -p "$TEMPDIR"
 stest 0 pushd "$TEMPDIR"
 
+/bin/echo
+/bin/echo "Running base tests..."
+/bin/echo
 
+# Testing singularity internal commands
+stest 0 singularity
+stest 0 singularity --help
+stest 0 singularity --version
+for i in $ALL_COMMANDS; do
+    echo
+    echo "Testing command usage: '$i'"
+    stest 0 singularity --help "$i"
+    stest 0 singularity -h "$i"
+    stest 0 singularity help "$i"
+    stest 0 singularity $i help
+    stest 0 singularity $i -h
+    stest 0 singularity $i --help
+done
+
+/bin/echo
+/bin/echo "Testing error on bad commands"
+
+stest 1 singularity help bogus
+stest 1 singularity bogus help
 
 /bin/echo
 /bin/echo "Building test container..."

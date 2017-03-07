@@ -1,0 +1,290 @@
+#!/bin/bash
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+#
+# Copyright (c) 2016-2017, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+#
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
+#
+# NOTICE.  This Software was developed under funding from the U.S. Department of
+# Energy and the U.S. Government consequently retains certain rights. As such,
+# the U.S. Government has been granted for itself and others acting on its
+# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+# to reproduce, distribute copies to the public, prepare derivative works, and
+# perform publicly and display publicly, and to permit other to do so.
+#
+#
+
+set -u
+
+if [ -z "${SINGULARITY_libexecdir:-}" ]; then
+    echo "ERROR: SINGULARITY_libexecdir not defined in environment"
+    exit 2
+fi
+
+if [ -z "${SINGULARITY_MESSAGELEVEL:-}" ]; then
+    echo "Warning: SINGULARITY_MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
+    SINGULARITY_MESSAGELEVEL=5
+fi
+
+if [ -z "${USER:-}" ]; then
+    USER=`id -un`
+    export USER
+fi
+if [ -z "${HOME:-}" ]; then
+    HOME=`getent passwd "$USER" | cut -d : -f 6`
+    export HOME
+fi
+
+
+message() {
+    LEVEL="${1:-}"
+    MESSAGE="${2:-}"
+    if [ -z "$MESSAGE" ]; then
+        return 0
+    fi
+    shift
+    shift
+    case "$LEVEL" in
+        e|error|E|ERROR)
+            tput -Txterm setaf 1 2>/dev/null
+            printf "ERROR: $MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
+        w|warn|warning|W|WARN|WARNING)
+            tput -Txterm setaf 3 2>/dev/null
+            printf "WARN: $MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
+        [1-5])
+            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
+                printf "$MESSAGE" "$@"
+            fi
+        ;;
+    esac
+
+    return 0
+}
+
+
+singularity_key_get() {
+    KEY="${1:-}"
+    FILE="${2:-}"
+    if OUT=`egrep -i "^$KEY:" $FILE`; then
+        echo "$OUT" | head -n 1 | sed -e "s@^$KEY:\s*@@i" | sed -e "s@\s*#.*@@"
+        return 0
+    fi
+    return 1
+}
+
+
+singularity_keys_get() {
+    KEY="${1:-}"
+    FILE="${2:-}"
+    egrep -i "^$KEY:" "$FILE" | while read i; do
+        echo "$i" | sed -e "s@^$KEY:\s*@@i" | sed -e "s@\s*#.*@@"
+    done | tr '\n' ' '
+    echo
+
+    return 0
+}
+
+singularity_section_exists() {
+    SECTION="${1:-}"
+    FILE="${2:-}"
+    TOGGLE=""
+    if [ ! -f "$FILE" ]; then
+        message ERROR "File not found ($FILE)\n"
+        exit 1
+    fi
+    if ! egrep -i -q -- "^%$SECTION\W*" "$FILE"; then
+        return 1
+    fi
+
+    return 0
+}
+
+singularity_section_args() {
+    SECTION="${1:-}"
+    FILE="${2:-}"
+    TOGGLE=""
+    if [ ! -f "$FILE" ]; then
+        message ERROR "File not found ($FILE)\n"
+        exit 1
+    fi
+
+    egrep -i -- "^%$SECTION\W*" "$FILE" | sed -e "s@%$SECTION\s*@@i"
+
+    return 0
+}
+
+singularity_section_get() {
+    SECTION="${1:-}"
+    FILE="${2:-}"
+    if [ ! -x "$SINGULARITY_libexecdir/singularity/bin/get-section" ]; then
+        message ERROR "Could not locate get-section program\n"
+        exit 255
+    fi
+
+    if [ ! -f "$FILE" ]; then
+        message ERROR "File not found ($FILE)\n"
+        exit 1
+    fi
+
+    eval "$SINGULARITY_libexecdir/singularity/bin/get-section" "$SECTION" "$FILE"
+
+    return 0
+}
+
+
+ABORT() {
+    RETVAL="${1:-}"
+    if [ -z "$RETVAL" ]; then
+        RETVAL=1
+    fi
+    message ERROR "Aborting with RETVAL=$RETVAL\n"
+    exit $RETVAL
+}
+
+check_pattern() {
+    STRING="${1:-}"
+    PATTERN="${2:-}"
+    case "$PATTERN" in
+        $STRING)
+            true
+        ;;
+        *)
+            return 1
+        ;;
+    esac
+    return 0
+}
+
+cmd() {
+    message 2 " + %-68.68s" "$*"
+    "$@" >/dev/null 2>&1
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+        message 2 "OK\n"
+    else
+        message 2 "ERROR\n"
+    fi
+    return $RETVAL
+}
+
+eval_abort() {
+    eval "$@"
+    RETVAL=$?
+    if [ $RETVAL -ne 0 ]; then
+        exit $RETVAL
+    fi
+    return 0
+}
+
+stest() {
+    ERROR="${1:-}"
+    TMPFILE=`mktemp`
+    shift
+    message 2 " + %-80.80s " "$*"
+    "$@" >$TMPFILE 2>&1
+    CODE="$?"
+    if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
+        message 2 "%13s ERROR\n" "(retval=$CODE)"
+        tail "$TMPFILE"
+        echo "Full output in: $TMPFILE"
+        exit 1
+    elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
+        message 2 "%13s ERROR\n" "(retval=$CODE)"
+        tail "$TMPFILE"
+        echo "Full output in: $TMPFILE"
+        exit 1
+    else
+        message 2 "%13s OK\n" "(retval=$CODE)"
+    fi
+    rm -f "$TMPFILE"
+}
+
+
+singularity_import() {
+    MOD="${1:-}"
+    if [ -z "$SINGULARITY_libexecdir" ]; then
+        message ERROR "libexecdir not defined, are you running this from within Singularity?\n"
+        exit 1
+    fi
+    if [ -f "$SINGULARITY_libexecdir/singularity/mods/$MOD.smod" ]; then
+        . "$SINGULARITY_libexecdir/singularity/mods/$MOD.smod"
+    else
+        message ERROR "Could not load Singularity module: $MOD\n"
+        exit 255
+    fi
+    return 0
+}
+
+
+# Different versions of which respond differently (print aliases, or take
+# different arguments)
+singularity_which() {
+    i="${1:-}"
+    # Avoid non-pathnames with . not in path, and directories
+    case $i in
+        .* | /*)
+            if [ -f "$i" -a -x "$i" ]; then
+                echo "$i"
+                return 0
+            fi
+    esac
+    for p in `echo $PATH | sed -e 's/:/ /g'`; do
+        if [ -f "$p/$i" -a -x "$p/$i" ]; then
+            echo "$p/$i"
+            return 0
+        fi
+    done
+    return 1
+}
+
+
+parse_opts() {
+    NEWOPTS=""
+    while [ -n "${1:-}" ]; do
+        case "${1:-}" in
+            -*=*)
+                ARG1=`echo -n "${1:-}" | cut -d = -f 1`
+                ARG2=`echo -n "${1:-}" | cut -d = -f 2`
+                NEWOPTS="$NEWOPTS \"$ARG1\" \"$ARG2\""
+                shift
+                continue
+            ;;
+            --*)
+                NEWOPTS="$NEWOPTS \"${1:-}\""
+                shift
+                continue
+            ;;
+            -*)
+                for o in `echo "${1:-}"| sed 's/^-//' | sed 's/./-& /g'`; do
+                    NEWOPTS="$NEWOPTS \"$o\""
+                done
+                shift
+                continue
+            ;;
+            *)
+                NEWOPTS="$NEWOPTS $@"
+                break
+            ;;
+        esac
+    done
+    # Eww, this is bad I know... Would be better just to pass the variable
+    # around without making ad-hoc modifications... Got a better idea, let
+    # me know! (gmk)
+    echo "$NEWOPTS" | sed -e 's/\\/\\\\/g'
+}
+
+
+
+
+if [ -n "${SHELL_DEBUG:-}" ]; then
+    set -x
+fi
