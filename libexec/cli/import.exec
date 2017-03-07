@@ -93,6 +93,8 @@ if [ -n "${1:-}" ]; then
                 message 1 "Importing: $i\n"
                 zcat "$i" | eval "$IMPORT_BIN" || exit $?
             done
+
+            rm -f "$SINGULARITY_CONTENTS"
         ;;
         *://*)
             message ERROR "Unsupported URI: $1\n"
