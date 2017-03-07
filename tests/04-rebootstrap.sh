@@ -44,7 +44,7 @@ export SINGULARITY_MESSAGELEVEL
 . ../libexec/functions
 
 /bin/echo
-/bin/echo "Running container execution tests"
+/bin/echo "Running container rebootstrap tests"
 /bin/echo
 
 /bin/echo "Creating temp working space at: $TEMPDIR"

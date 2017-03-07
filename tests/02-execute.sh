@@ -38,10 +38,10 @@ STARTDIR=`pwd`
 TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
 CONTAINER="container.img"
 CONTAINERDIR="container_dir"
-MESSAGELEVEL=5
-export MESSAGELEVEL
+SINGULARITY_MESSAGELEVEL=5
+export SINGULARITY_MESSAGELEVEL
 
-. ./functions
+. ../libexec/functions
 
 /bin/echo
 /bin/echo "Running container execution tests"
@@ -51,11 +51,13 @@ export MESSAGELEVEL
 stest 0 mkdir -p "$TEMPDIR"
 stest 0 pushd "$TEMPDIR"
 
+
 /bin/echo
 /bin/echo "Building test container..."
 
 stest 0 sudo singularity create -s 568 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/../examples/busybox.def"
+
 
 /bin/echo
 /bin/echo "Running container shell tests..."
@@ -64,6 +66,7 @@ stest 0 singularity shell "$CONTAINER" -c "true"
 stest 1 singularity shell "$CONTAINER" -c "false"
 stest 0 sh -c "echo true | singularity shell '$CONTAINER'"
 stest 1 sh -c "echo false | singularity shell '$CONTAINER'"
+
 
 /bin/echo
 /bin/echo "Running container exec tests..."
@@ -76,6 +79,7 @@ stest 1 singularity exec "$CONTAINER" /blahh
 stest 1 singularity exec "$CONTAINER" blahh
 stest 0 sh -c "echo hi | singularity exec $CONTAINER grep hi"
 stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
+
 
 /bin/echo
 /bin/echo "Running container run tests..."
@@ -90,6 +94,14 @@ stest 1 singularity run "$CONTAINER" true
 stest 0 sudo singularity exec -w "$CONTAINER" chmod 0755 /singularity
 stest 0 singularity run "$CONTAINER" true
 stest 1 singularity run "$CONTAINER" false
+
+
+/bin/echo
+/bin/echo "Checking unprivileged mode"
+
+stest 0 sh -c "singularity exec $CONTAINER whoami | grep -q `id -un`"
+stest 0 sh -c "singularity exec $CONTAINER whoami"
+
 
 stest 0 popd
 stest 0 sudo rm -rf "$TEMPDIR"

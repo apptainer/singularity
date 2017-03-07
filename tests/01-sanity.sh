@@ -19,6 +19,9 @@
 #
 #
 
+
+. ../libexec/functions
+
 /bin/echo
 /bin/echo "Running base tests..."
 /bin/echo

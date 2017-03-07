@@ -44,6 +44,24 @@ export SINGULARITY_MESSAGELEVEL
 
 . ../libexec/functions
 
+/bin/echo
+/bin/echo "Running config file ownership tests"
+/bin/echo
+
+/bin/echo "Creating temp working space at: $TEMPDIR"
+stest 0 mkdir -p "$TEMPDIR"
+stest 0 pushd "$TEMPDIR"
+
+
+/bin/echo
+/bin/echo "Building test container..."
+
+stest 0 sudo singularity create -s 568 "$CONTAINER"
+stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/../examples/busybox.def"
+echo -ne "#!/bin/sh\n\neval \"\$@\"\n" > singularity
+stest 0 chmod 0644 singularity
+stest 0 sudo singularity copy "$CONTAINER" -a singularity /
+
 
 /bin/echo
 /bin/echo "Checking configuration file ownership..."
