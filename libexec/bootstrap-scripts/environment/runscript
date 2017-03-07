@@ -1,0 +1,10 @@
+#!/bin/sh
+
+if test -x /bin/bash; then
+    exec /bin/bash "$@"
+elif test -x /bin/sh; then
+    exec /bin/sh "$@"
+else
+    echo "ERROR: No valid shell within container"
+    exit 255
+fi
