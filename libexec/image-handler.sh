@@ -57,12 +57,12 @@ case "$SINGULARITY_IMAGE" in
             SINGULARITY_CACHEDIR_LOCAL="/tmp"
         fi
 
-        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
+        if ! SINGULARITY_SESSIONDIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/.singularity-runtime.XXXXXXXX`; then
             message ERROR "Failed to create cleandir\n"
             ABORT 255
         fi
 
-        SINGULARITY_ROOTFS="$SINGULARITY_TMPDIR/container/$NAME"
+        SINGULARITY_ROOTFS="$SINGULARITY_SESSIONDIR/container/$NAME"
         if ! mkdir -p "$SINGULARITY_ROOTFS"; then
             message ERROR "Failed to create named SINGULARITY_ROOTFS=$SINGULARITY_ROOTFS\n"
             ABORT 255
@@ -71,45 +71,44 @@ case "$SINGULARITY_IMAGE" in
         SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
         SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
 
-        export SINGULARITY_TMPDIR SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER
+        export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_SESSIONDIR
 
-        (cd $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment; tar -cf - .) | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
+        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
 
 
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/docker/import.py"; then
-            ABORT $?
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/import.py"; then
+            ABORT 255
         fi
-
-        chmod -R +w "$SINGULARITY_ROOTFS"
 
     ;;
     shub://*)
-        NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^shub://@@'`
+        SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
 
         if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
+            SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
         else
-            SINGULARITY_CACHEDIR_LOCAL="/tmp"
-        fi
-        if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
-            message ERROR "Failed to create container_dir\n"
-            ABORT 255
+            SINGULARITY_PULLFOLDER="."
         fi
 
-        CONTAINER_DIR="$BASE_CONTAINER_DIR/$NAME"
-        if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Failed to create named container_dir\n"
+        SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
+        export SINGULARITY_PULLFOLDER SINGULARITY_CONTAINER SINGULARITY_CONTENTS
+
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/pull.py"; then
             ABORT 255
         fi
-
-        eval $SINGULARITY_libexecdir/singularity/python/cli.py --shub $NAME --rootfs $CONTAINER_DIR
 
         # The python script saves names to files in CONTAINER_DIR
-        SINGULARITY_RUNDIR=`cat $CONTAINER_DIR/SINGULARITY_RUNDIR`
-        SINGULARITY_IMAGE=`cat $CONTAINER_DIR/SINGULARITY_IMAGE`
-        chmod -R +w "$SINGULARITY_RUNDIR"
-        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+        SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
+        export SINGULARITY_IMAGE
 
+        rm -f "$SINGULARITY_CONTENTS"
+
+        if [ -f "$SINGULARITY_IMAGE" ]; then
+            chmod +x "$SINGULARITY_IMAGE"
+        else
+            message ERROR "Could not locate downloaded image\n"
+            ABORT 255
+        fi
     ;;
 esac
 

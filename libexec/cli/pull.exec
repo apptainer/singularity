@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-# Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+# Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -64,46 +64,37 @@ if [ -z "${1:-}" ]; then
 fi
 
 
-SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-SINGULARITY_NOIMAGELOCK=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
+RETVAL=0
+SINGULARITY_CONTAINER="${1:-}"
+SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
+if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+    SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
+else
+    SINGULARITY_PULLFOLDER="."
+fi
 shift
 
+export SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS
 
-IMPORT_URI="${SINGULARITY_IMAGE:-}"
-
-# We can currently only pull from singularity hub (shub://)
-if [ -z "$IMPORT_URI" ]; then
-    message ERROR "Currently pull is only supported for Singularity Hub, and not pipes.\n"
-    exit 255
-fi
-
-case "$IMPORT_URI" in
-    docker://*)
-        message ERROR "pull is only supported for shub://, use import, shell, or bootstrap for docker://\n"
-        exit 255
-    ;;
-    shub://*)
-        SINGULARITY_HUB_IMAGE=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
-        # @gmkurtzer this pull folder should be accessible to change by user
-        SINGULARITY_HUB_PULL_FOLDER=$PWD
-        export SINGULARITY_HUB_IMAGE SINGULARITY_HUB_PULL_FOLDER
-        exec $SINGULARITY_libexecdir/singularity/python/shub/pull.py
-    ;;
-    http://*|https://*)
-        message ERROR "pull is only supported for shub://\n"
-        exit 255
-    ;;
-    file://*)
-        message ERROR "pull is only supported for shub://\n"
-        exit 255
-    ;;
+case "$SINGULARITY_CONTAINER" in
     *://*)
-        message ERROR "pull is only supported for shub://\n"
+        eval $SINGULARITY_libexecdir/singularity/python/pull.py
+        RETVAL=$?
+    ;;
+    *)
+        message ERROR "pull is only supported for URIs\n"
         exit 255
     ;;
 esac
 
-message ERROR "Beep boop, we should never get here!\n"
-exit 255
+SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
+rm -f "$SINGULARITY_CONTENTS"
+
+if [ $RETVAL -eq 0 -a -f "$SINGULARITY_IMAGE" ]; then
+    chmod +x "$SINGULARITY_IMAGE"
+    echo "Done. Container is at: $SINGULARITY_IMAGE"
+else
+    message ERROR "pulling container failed!\n"
+fi
+
+exit $RETVAL

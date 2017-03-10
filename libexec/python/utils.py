@@ -440,6 +440,9 @@ def write_singularity_infos(base_dir,prefix,start_number,content,extension=None)
     '''
     if extension == None:
         extension = ""
+    else:
+        extension = ".%s" %(extension)
+
     output_file = None
     counter = start_number
     written = False
@@ -451,8 +454,8 @@ def write_singularity_infos(base_dir,prefix,start_number,content,extension=None)
 
     while not written:
         output_file = "%s/%s-%s%s" %(base_dir,
-                                     prefix,
                                      counter,
+                                     prefix,
                                      extension)
         if not os.path.exists(output_file):
             write_file(output_file,content)

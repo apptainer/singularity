@@ -1,5 +1,6 @@
 '''
-shell.py: Docker shell parsing functions for Singularity in Python
+shell.py: General shell parsing functions for Singularity in Python
+
 Copyright (c) 2017, Vanessa Sochat. All rights reserved. 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -15,12 +16,13 @@ the U.S. Government has been granted for itself and others acting on its
 behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
 to reproduce, distribute copies to the public, prepare derivative works, and
 perform publicly and display publicly, and to permit other to do so. 
+
 '''
 
 import sys
+import os
 
 from logman import logger
-from docker.api import get_tags
 
 from defaults import (
     API_BASE as default_registry,
@@ -50,6 +52,18 @@ def get_image_uri(image):
         logger.debug("Found uri %s",image_uri)
     return image_uri
 
+
+def remove_image_uri(image,image_uri=None):
+    '''remove_image_uri will return just the image name
+    '''
+    if image_uri == None:
+        image_uri = get_image_uri(image)
+
+    image = image.replace(' ','')
+        
+    if image_uri != None:
+        image = image.replace(image_uri,'')
+    return image
 
 
 def parse_image_uri(image,uri=None):
@@ -115,18 +129,3 @@ def parse_image_uri(image,uri=None):
             sys.exit(1)
 
     return parsed
-
-
-def get_tags_shell(image,uri):
-    '''get_tags_shell is a wrapper to run docker.api.get_tags with additional parsing
-    of the input string. It is assumed that a tag is not provided.
-    :image: the image name to be parsed by parse_image_uri
-    '''
-    parsed = parse_image_uri(image,uri)
-    repo_name = parsed['repo_name']
-    namespace = parsed['namespace']
-    registry = parsed['registry']
-
-    return get_tags(namespace=namespace,
-                    repo_name=repo_name,
-                    registry=registry)

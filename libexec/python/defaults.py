@@ -114,8 +114,6 @@ SHUB_PREFIX = "shub"
 
 _envbase = "%s/env" %(METADATA_BASE)
 ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
-_layerfile = "%s/.layers" %(METADATA_BASE)
-LAYERFILE = getenv("SINGULARITY_LAYERFILE", default=_layerfile)
 _labelbase = "%s/labels" %(METADATA_BASE)
 LABEL_BASE = getenv("SINGULARITY_LABELBASE", default=_labelbase)
 
@@ -124,5 +122,17 @@ LABEL_BASE = getenv("SINGULARITY_LABELBASE", default=_labelbase)
 # Singularity Hub
 #######################################################################
 
-SINGULARITY_HUB_PULL_FOLDER = getenv("SINGULARITY_HUB_PULL_FOLDER", default=os.getcwd())
+SINGULARITY_PULLFOLDER = getenv("SINGULARITY_PULLFOLDER", default=os.getcwd())
 SHUB_API_BASE = "singularity-hub.org/api"
+
+
+#######################################################################
+# Python Internal API URI Handling
+#######################################################################
+
+_layerfile = "%s/.layers" %(METADATA_BASE)
+LAYERFILE = getenv("SINGULARITY_CONTENTS", default=_layerfile)
+
+#URI_IMAGE = "img://"
+#URI_TAR = "tar://"
+#URI_TARGC = "targz://"

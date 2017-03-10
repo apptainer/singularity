@@ -45,7 +45,25 @@ script:
   - make test
   - jdk_switcher use oraclejdk8
   - sonar-scanner
-  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest discover --start-directory tests
-  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest discover --start-directory tests
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_base
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker_import
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker_import_user
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker_api
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_shub_import
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_shub_pull
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_shub
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_custom_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_default_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_disable_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_base
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker_import
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker_import_user
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker_api
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_shub_import
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_shub_pull
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_shub
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_custom_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_default_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_disable_cache
   - pylint --version
   - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611

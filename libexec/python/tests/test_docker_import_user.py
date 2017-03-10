@@ -1,6 +1,6 @@
 '''
 
-test_docker_import.py: Docker testing functions for Singularity in Python
+test_docker_import_user.py: Docker testing functions for Singularity in Python
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
@@ -38,7 +38,7 @@ import tempfile
 
 VERSION = sys.version_info[0]
 
-print("*** PYTHON VERSION %s DOCKER IMPORT TESTING START ***" %(VERSION))
+print("*** PYTHON VERSION %s DOCKER IMPORT (USER) TESTING START ***" %(VERSION))
 
 class TestImport(TestCase):
 
@@ -46,13 +46,12 @@ class TestImport(TestCase):
         self.namespace = 'library'
         self.repo_name = 'ubuntu'
         self.tmpdir = tempfile.mkdtemp()
+        self.contents_file = "%s/hello-kitty" %self.tmpdir
         self.here = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))        
 
         # Variables are obtained from environment
         os.environ["SINGULARITY_CONTAINER"] = "docker://ubuntu:latest" 
-        os.environ["SINGULARITY_ROOTFS"] = self.tmpdir
-        os.mkdir('%s/.singularity' %(self.tmpdir))
-        os.mkdir('%s/.singularity/env' %(self.tmpdir))
+        os.environ["SINGULARITY_CONTENTS"] = self.contents_file
 
         print("\n---START----------------------------------------")
 
@@ -61,7 +60,7 @@ class TestImport(TestCase):
         print("---END------------------------------------------")
 
     def test_IMPORT(self):
-        '''test_import will test the IMPORT function
+        '''test_import will test the IMPORT USER function
         '''
         script_path = "%s/import.py" %(self.here)
         if VERSION == 2:
@@ -75,6 +74,7 @@ class TestImport(TestCase):
                   'return_code':t[1]}
         print(result['message'])
         self.assertEqual(result['return_code'],0)
+        self.assertTrue(os.path.exists(self.contents_file))
 
 if __name__ == '__main__':
     unittest.main()

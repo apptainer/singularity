@@ -77,38 +77,40 @@ fi
 
 ### RUN POST
 if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
-    if [ "$UID" == "0" ]; then
-        if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
-            ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
-            singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
+    if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+        ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
+        singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
 
-        else
-            message ERROR "Could not run post scriptlet, /bin/sh not found in container\n"
-            exit 255
-        fi
     else
-        message 1 "Not running post scriptlet, not root user\n"
+        message ERROR "Could not run post scriptlet, /bin/sh not found in container\n"
+        exit 255
     fi
 fi
 
+### ENVIRONMENT
+if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
+    if [ ! -d "$SINGULARITY_ROOTFS/.singularity/env" ]; then
+        install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/env"
+    fi
+
+    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity/env/99-builddef.sh"
+fi
+
+
 ### RUN TEST
 if singularity_section_exists "test" "$SINGULARITY_BUILDDEF"; then
-    if [ "$UID" == "0" ]; then
-        if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
-            ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
-            echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
-            echo "" >> "$SINGULARITY_ROOTFS/.test"
-            singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
+    if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+        ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
+        echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
+        echo "" >> "$SINGULARITY_ROOTFS/.test"
+        singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
 
-            chmod 0755 "$SINGULARITY_ROOTFS/.test"
+        chmod 0755 "$SINGULARITY_ROOTFS/.test"
 
-            chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
-        else
-            message ERROR "Could not run test scriptlet, /bin/sh not found in container\n"
-            exit 255
-        fi
+        chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
     else
-        message 1 "Not running test scriptlet, not root user\n"
+        message ERROR "Could not run test scriptlet, /bin/sh not found in container\n"
+        exit 255
     fi
 fi
 

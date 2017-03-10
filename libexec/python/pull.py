@@ -2,12 +2,16 @@
 
 '''
 
-import.py: python helper for Singularity docker import
-
+pull.py: general "pull" wrapper for Singularity Hub command line tool.
+         Currently, only supported endpoint is shub://
 
 ENVIRONMENTAL VARIABLES that are found for this executable:
 
-    SINGULARITY_CONTAINER
+
+   SINGULARITY_CONTAINER: maps to container name: shub://vsoch/singularity-images
+   SINGULARITY_PULLFOLDER: maps to location to pull image to
+   SINGULARITY_METADATA_DIR: if defined, will write paths to file pulled here
+
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
@@ -30,35 +34,41 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import sys
-sys.path.append('..')
+import os
 
-from shub.main import IMPORT
-from shell import get_image_uri
-from defaults import getenv
+from shell import (
+    get_image_uri,
+    remove_image_uri
+)
+
 from logman import logger
 import os
 import sys
 
 
 def main():
-    '''this function will run a docker import, returning a list of layers 
-    and environmental variables and metadata to the metadata base
+    '''main is a wrapper for the client to hand the parser to the executable functions
+    This makes it possible to set up a parser in test cases
     '''
-    from defaults import LAYERFILE
-
-    logger.info("\n*** STARTING SINGULARITY HUB IMPORT PYTHON  ****")    
-    container = getenv("SINGULARITY_CONTAINER",required=True)
+    logger.info("\n*** STARTING SINGULARITY PYTHON PULL ****")
+    from defaults import LAYERFILE, DISABLE_CACHE, getenv
 
     # What image is the user asking for?
-    image_uri = get_image_uri(container)    
-
+    container = getenv("SINGULARITY_CONTAINER", required=True)
+    pull_folder = getenv("SINGULARITY_PULLFOLDER", required=True)
+    
+    image_uri = get_image_uri(container)
+    container = remove_image_uri(container)
+    
     if image_uri == "shub://":
 
-        additions = IMPORT(image=container,
-                           layerfile=LAYERFILE)
+       from shub.main import PULL
+       manifest = PULL(image=container,
+                       download_folder=pull_folder,
+                       layerfile=LAYERFILE)
 
     else:
-        logger.error("uri %s is not a currently supported uri for singularity hub import. Exiting.",image_uri)
+        logger.error("uri %s is not currently supported for pull. Exiting.",image_uri)
         sys.exit(1)
 
 

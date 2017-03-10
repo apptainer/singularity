@@ -82,6 +82,19 @@ class TestShell(TestCase):
         self.assertEqual(image_uri, 'docker://') 
 
 
+    def test_remove_image_uri(self):
+        '''test_remove_image_uri removes the uri
+        '''
+        from shell import remove_image_uri
+        print("Case 1: No image_uri should estimate first")
+        image = remove_image_uri('myuri://namespace/repo:tag')
+        self.assertEqual(image, "namespace/repo:tag") 
+
+        print("Case 2: Missing image uri should return image")
+        image = remove_image_uri('namespace/repo:tag')
+        self.assertEqual(image, "namespace/repo:tag") 
+
+
     def test_parse_image_uri(self):
         '''test_parse_image_uri ensures that the correct namespace,
         repo name, and tag (or unique id) is returned.
@@ -437,14 +450,14 @@ class TestUtils(TestCase):
                                             prefix=prefix,
                                             start_number=start_number,
                                             content=content)
-        self.assertEqual(info_file,"%s/%s%s" %(base_dir,prefix,start_number))
+        self.assertEqual(info_file,"%s/%s-%s" %(base_dir,start_number,prefix))
 
         print("Case 3: Adding another equivalent prefix should return next")
         info_file = write_singularity_infos(base_dir=base_dir,
                                             prefix=prefix,
                                             start_number=start_number,
                                             content=content)
-        self.assertEqual(info_file,"%s/%s%s" %(base_dir,prefix,start_number+1))
+        self.assertEqual(info_file,"%s/%s-%s" %(base_dir,start_number+1,prefix))
         
         print("Case 4: Files have correct content.")
         with open(info_file,'r') as filey:
