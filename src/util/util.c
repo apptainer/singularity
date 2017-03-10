@@ -247,6 +247,9 @@ void chomp_comments(char *str) {
         return;
     }
 
+    int len;
+    int i;
+    
     len = strlength(str, 4096);
     i = 0;
     while ( ( i < len ) && ( str[i] != '#' ) ) {i++;}
