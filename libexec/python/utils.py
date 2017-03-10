@@ -440,6 +440,9 @@ def write_singularity_infos(base_dir,prefix,start_number,content,extension=None)
     '''
     if extension == None:
         extension = ""
+    else:
+        extension = ".%s" %(extension)
+
     output_file = None
     counter = start_number
     written = False
