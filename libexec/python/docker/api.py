@@ -135,7 +135,7 @@ def extract_labels(manifest):
                                               prefix=DOCKER_PREFIX,
                                               start_number=DOCKER_NUMBER,
                                               content=labels,
-                                              extension='.txt')
+                                              extension='txt')
     return labels
 
 
