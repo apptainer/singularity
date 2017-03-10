@@ -453,7 +453,7 @@ def write_singularity_infos(base_dir,prefix,start_number,content,extension=None)
         sys.exit(1)
 
     while not written:
-        output_file = "%s/%s-%s.%s" %(base_dir,
+        output_file = "%s/%s-%s%s" %(base_dir,
                                      counter,
                                      prefix,
                                      extension)
