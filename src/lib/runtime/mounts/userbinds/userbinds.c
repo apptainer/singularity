@@ -67,6 +67,7 @@ int _singularity_runtime_mount_userbinds(void) {
         while ( current != NULL ) {
             char *source = strtok_r(current, ":", &inside_token);
             char *dest = strtok_r(NULL, ":", &inside_token);
+            char *opts = strtok_r(NULL, ":", &inside_token);
 
             current = strtok_r(NULL, ",", &outside_token);
 
@@ -75,6 +76,19 @@ int _singularity_runtime_mount_userbinds(void) {
             }
 
             singularity_message(DEBUG, "Found bind: %s -> container:%s\n", source, dest);
+
+            int read_only = 0;
+            if ( opts != NULL ) {
+                if ( strcmp(opts, "rw") == 0 ) {
+                    // This is the default
+                } else if ( strcmp(opts, "ro") == 0 ) {
+                    read_only = 1;
+                } else {
+                    singularity_message(WARNING, "Not mounting requested bind point, invalid mount options %s: %s\n", opts, dest);
+                    continue;
+                }
+            }
+
 
             singularity_message(DEBUG, "Checking if bind point is already mounted: %s\n", dest);
             if ( check_mounted(dest) >= 0 ) {
@@ -144,6 +158,18 @@ int _singularity_runtime_mount_userbinds(void) {
                     singularity_message(ERROR, "There was an error remounting the path %s: %s\n", source, strerror(errno));
                     ABORT(255);
                 }
+            }
+            if ( read_only ) {
+                singularity_message(VERBOSE, "Remounting %s read-only\n", dest);
+                if ( mount(NULL, joinpath(container_dir, dest), NULL, MS_RDONLY|MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    singularity_message(ERROR, "There was an error write-protecting the path %s: %s\n", source, strerror(errno));
+                    ABORT(255);
+                }
+                if ( access(joinpath(container_dir, dest), W_OK) == 0 || errno != EROFS ) {
+                    singularity_message(ERROR, "Failed to write-protect the path %s: %s\n", source, strerror(errno));
+                    ABORT(255);
+                }
+
             }
             singularity_priv_drop();
 
