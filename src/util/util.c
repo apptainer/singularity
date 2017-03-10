@@ -238,6 +238,25 @@ void chomp(char *str) {
 
 }
 
+void chomp_comments(char *str) {
+    if (!str) {return;}
+
+    // If str starts with a comment, there is nothing here
+    if ( str[0] == '#' ) {
+        str[0] = '\0';
+        return;
+    }
+
+    len = strlength(str, 4096);
+    i = 0;
+    while ( ( i < len ) && ( str[i] != '#' ) ) {i++;}
+    if ( str[i] == '#' ) {
+        str[i] = '\0';
+    }
+
+    chomp(str);
+}
+
 int strlength(const char *string, int max_len) {
     int len;
     for (len=0; string[len] && len < max_len; len++) {

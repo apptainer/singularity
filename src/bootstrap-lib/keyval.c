@@ -54,30 +54,28 @@ int bootstrap_keyval_parse(char *path) {
     while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
         char *bootdef_key;
 
+        chomp_comments(line);
 
-        if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
+        if ( ( line != NULL ) && ( ( bootdef_key = strtok(line, ":") ) != NULL ) ) {
             chomp(bootdef_key);
+            char *bootdef_value;
 
-            if ( strncmp(bootdef_key, "#", 1) != 0 ) {
-                char *bootdef_value;
+            if ( ( bootdef_value = strtok(NULL, "\n") ) != NULL ) {
+                chomp_comments(bootdef_value);
 
-                if ( ( bootdef_value = strtok(NULL, "#\n") ) != NULL ) {
-                    chomp(bootdef_value);
+                singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
 
-                    singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
-
-                    if ( strcasecmp(bootdef_key, "import") == 0 ) {
-                        bootstrap_keyval_parse(bootdef_value);
-                    }
-
-                    if ( strcasecmp(bootdef_key, "bootstrap") == 0 ) {
-                        singularity_registry_set("DRIVER", bootdef_value);
-                    }
-
-                    // Cool little feature, every key defined in def file is transposed
-                    // to environment
-                    setenv(uppercase(bootdef_key), bootdef_value, 1);
+                if ( strcasecmp(bootdef_key, "import") == 0 ) {
+                    bootstrap_keyval_parse(bootdef_value);
                 }
+
+                if ( strcasecmp(bootdef_key, "bootstrap") == 0 ) {
+                    singularity_registry_set("DRIVER", bootdef_value);
+                }
+
+                // Cool little feature, every key defined in def file is transposed
+                // to environment
+                setenv(uppercase(bootdef_key), bootdef_value, 1);
             }
         }
     }
