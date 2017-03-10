@@ -7,9 +7,12 @@ by default writable.
 
 
 SHELL OPTIONS:
-    -B/--bind <spec>    A user-bind path specification.  spec can either be a
-                        path or a src:dest pair, specifying the bind mount to
-                        perform (can be called multiple times)
+    -B/--bind <spec>    A user-bind path specification.  spec has the format
+                        src[:dest[:opts]], where src and dest are outside and
+                        inside paths.  If dest is not given, it is set equal
+                        to src.  Mount options ('opts') may be specified as
+                        'ro' (read-only) or 'rw' (read/write, which is the
+                        default). This option can be called multiple times.
     -c/--contain        This option disables the automatic sharing of writable
                         filesystems on your host (e.g. $HOME and /tmp).
     -C/--containall     Contain not only file systems, but also PID and IPC
