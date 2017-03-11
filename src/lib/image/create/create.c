@@ -55,7 +55,7 @@ int _singularity_image_create(struct image_object *image, long int size) {
     singularity_message(VERBOSE2, "Growing image to %ldMB\n", size);
     while(1)
     {
-        retval = posix_fallocate(singularity_image_fd(&image), sizeof(LAUNCH_STRING), size*BUFFER_SIZE);
+        retval = posix_fallocate(singularity_image_fd(image), sizeof(LAUNCH_STRING), size*BUFFER_SIZE);
 
         if(retval == EINTR)
         {
