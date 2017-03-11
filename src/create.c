@@ -82,12 +82,12 @@ int main(int argc, char **argv) {
 #ifdef SUID_CREATE
     singularity_message(INFO, "Binding image to loop\n");
     singularity_image_bind(&image);
-#endif
 
     if ( singularity_image_loopdev(&image) == NULL ) {
         singularity_message(ERROR, "Image was not bound correctly.\n");
         ABORT(255);
     }
+#endif
 
     mkfs_cmd[0] = strdup("/sbin/mkfs.ext3");
     mkfs_cmd[1] = strdup("-q");

@@ -220,7 +220,7 @@ stest 0 $singularity_cmd exec "$CONTAINER" true
 /bin/echo
 /bin/echo "Checking export/import..."
 
-stest 0 sh -c "$singularity_cmd export "$CONTAINER" > ${CONTAINERDIR}.tar"
+stest 0 sh -c "singularity export "$CONTAINER" > ${CONTAINERDIR}.tar"
 stest 0 sudo chmod 0644 ${CONTAINERDIR}.tar
 stest 0 $singularity_cmd create -F -s 568 "$CONTAINER"
 stest 0 sh -c "cat ${CONTAINERDIR}.tar | $singularity_cmd import $CONTAINER"
