@@ -157,12 +157,12 @@ if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
 fi
 
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -x "$SINGULARITY_libexecdir/singularity/action-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/action-suid" "$@" <&0
-elif [ -x "$SINGULARITY_libexecdir/singularity/action" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/action" "$@" <&0
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/action-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/action-suid" "$@" <&0
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/action" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/action" "$@" <&0
 else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/action\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/action\n"
     exit 1
 fi
 

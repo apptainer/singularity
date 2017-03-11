@@ -1,8 +1,0 @@
-
-. /environment
-if test -x /singularity; then
-    exec /singularity "$@"
-else
-    echo "No Singularity runscript found, executing /bin/sh"
-    exec /bin/sh "$@"
-fi

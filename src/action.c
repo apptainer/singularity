@@ -36,6 +36,7 @@
 #include "util/config_parser.h"
 #include "util/privilege.h"
 #include "util/suid.h"
+#include "util/sessiondir.h"
 
 #include "./action-lib/include.h"
 
@@ -49,13 +50,16 @@ int main(int argc, char **argv) {
     char *command;
     char *dir = get_current_dir_name();
 
-    singularity_suid_init();
-
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
+    singularity_suid_init(argv);
+
     singularity_registry_init();
     singularity_priv_init();
     singularity_priv_userns();
     singularity_priv_drop();
+
+    singularity_sessiondir();
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
@@ -65,7 +69,7 @@ int main(int argc, char **argv) {
         singularity_image_open(&image, O_RDWR);
     }
 
-    singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
+    singularity_runtime_tmpdir(singularity_registry_get("SESSIONDIR"));
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_image_bind(&image);

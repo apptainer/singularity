@@ -33,51 +33,60 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
+#include "util/registry.h"
 
 #include "../mount-util.h"
 #include "../../runtime.h"
 
-static int mount_dev(const char *dev);
+static int mount_dev(char *dev);
 
 
 int _singularity_runtime_mount_dev(void) {
     char *container_dir = singularity_runtime_rootfs(NULL);
 
-    if ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) {
-        if ( singularity_runtime_flags(SR_FLAGS) & SR_BINDPOINTS ) {
-            if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
-                if ( s_mkpath(joinpath(container_dir, "/dev"), 0755) < 0 ) {
-                    singularity_message(VERBOSE2, "Could not create /dev inside container, returning...\n");
-                    return(0);
-                }
-            }
+    if ( ( singularity_registry_get("CONTAIN") != NULL ) || ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) ) {
+
+        if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
+            int ret;
 
             singularity_priv_escalate();
-
-            mount_dev("/dev/null");
-            mount_dev("/dev/zero");
-            mount_dev("/dev/random");
-            mount_dev("/dev/urandom");
-
-            if ( is_dir(joinpath(container_dir, "/dev/shm")) < 0 ) {
-                if ( s_mkpath(joinpath(container_dir, "/dev/shm"), 0755) < 0 ) {
-                    singularity_message(VERBOSE2, "Could not create /dev/shm inside container, returning...\n");
-                    return(0);
-                }
-            }
-
-            if ( mount("/dev/shm", joinpath(container_dir, "/dev/shm"), NULL, MS_BIND, NULL) < 0 ) {
-                unlink(joinpath(container_dir, "/dev/shm"));
-                singularity_message(VERBOSE, "Can not mount /dev/shm: %s\n", strerror(errno));
-            }
-
+            ret = s_mkpath(joinpath(container_dir, "/dev"), 0755);
             singularity_priv_drop();
 
-            return(0);
-        } else {
-            singularity_message(ERROR, "Config option 'mount dev = minimal', requires overlayFS\n");
+            if ( ret < 0 ) {
+                singularity_message(ERROR, "Could not create /dev inside container\n");
+                ABORT(255);
+            }
+        }
+
+        mount_dev("/dev/null");
+        mount_dev("/dev/zero");
+        mount_dev("/dev/random");
+        mount_dev("/dev/urandom");
+
+
+        if ( is_dir(joinpath(container_dir, "/dev/shm")) < 0 ) {
+            int ret;
+
+            singularity_priv_escalate();
+            ret = s_mkpath(joinpath(container_dir, "/dev/shm"), 0755);
+            singularity_priv_drop();
+
+            if ( ret < 0 ) {
+                singularity_message(WARNING, "Could not create /dev/shm inside container, returning...\n");
+                return(-1);
+            }
+        }
+
+        singularity_message(DEBUG, "Mounting tmpfs for /dev/shm\n");
+        singularity_priv_escalate();
+        if ( mount("/dev/shm", joinpath(container_dir, "/dev/shm"), "tmpfs", MS_NOSUID, "") < 0 ){
+            singularity_message(ERROR, "Failed to mount /dev/shm: %s\n", strerror(errno));
             ABORT(255);
         }
+        singularity_priv_drop();
+
+        return(0);
     }
 
     singularity_message(DEBUG, "Checking configuration file for 'mount dev'\n");
@@ -108,25 +117,36 @@ int _singularity_runtime_mount_dev(void) {
 }
 
 
-static int mount_dev(const char *dev) {
+static int mount_dev(char *dev) {
     char *container_dir = singularity_runtime_rootfs(NULL);
     char *path = joinpath(container_dir, dev);
 
-    singularity_message(DEBUG, "Mounting device %s at %s\n", dev, path);
+    if ( ( is_chr(dev) == 0 ) || ( is_blk(dev) == 0 ) ) {
+        if ( is_file(path) != 0 ) {
+            int ret;
+            singularity_message(VERBOSE2, "Creating bind point within container: %s\n", dev);
 
-    if ( is_chr(path) == 0 ) {
-        return(0);
-    }
+            singularity_priv_escalate();
+            ret = fileput(path, "");
+            singularity_priv_drop();
 
-    if ( fileput(path, "") < 0 ) {
-        singularity_message(VERBOSE, "Can not create %s: %s\n", dev, strerror(errno));
+            if ( ret < 0 ) {
+                singularity_message(WARNING, "Can not create %s: %s\n", dev, strerror(errno));
+                return(-1);
+            }
+        }
+    } else {
+        singularity_message(WARNING, "Not setting up contained device: %s\n", dev);
         return(-1);
     }
 
+    singularity_priv_escalate();
+    singularity_message(DEBUG, "Mounting device %s at %s\n", dev, path);
     if ( mount(dev, path, NULL, MS_BIND, NULL) < 0 ) {
-        unlink(path);
-        singularity_message(VERBOSE, "Can not mount %s: %s\n", dev, strerror(errno));
+        singularity_message(WARNING, "Could not mount %s: %s\n", dev, strerror(errno));
+        return(-1);
     }
+    singularity_priv_drop();
 
     return(0);
 }

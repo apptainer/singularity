@@ -49,9 +49,10 @@ int main(int argc, char **argv) {
     char *size_s;
     char *mkfs_cmd[4];
 
-    singularity_suid_init();
-
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
+    singularity_suid_init(argv);
+
     singularity_registry_init();
     singularity_priv_init();
     singularity_priv_drop();
@@ -77,9 +78,14 @@ int main(int argc, char **argv) {
     singularity_message(INFO, "Binding image to loop\n");
     singularity_image_bind(&image);
 
+    if ( singularity_image_loopdev(&image) == NULL ) {
+        singularity_message(ERROR, "Image was not bound correctly.\n");
+        ABORT(255);
+    }
+
     mkfs_cmd[0] = strdup("/sbin/mkfs.ext3");
     mkfs_cmd[1] = strdup("-q");
-    mkfs_cmd[2] = strdup(image.loopdev);
+    mkfs_cmd[2] = strdup(singularity_image_loopdev(&image));
     mkfs_cmd[3] = NULL;
 
     singularity_message(DEBUG, "Cleaning environment\n");

@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.2],[gmkurtzer@lbl.gov])
+AC_INIT([singularity],[2.2.99],[gmkurtzer@lbl.gov])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -330,7 +330,6 @@ AC_CONFIG_FILES([
    src/lib/image/mount/squashfs/Makefile
    src/lib/image/offset/Makefile
    src/lib/image/open/Makefile
-   src/lib/image/sessiondir/Makefile
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
    src/util/Makefile
@@ -342,8 +341,8 @@ AC_CONFIG_FILES([
    man/Makefile
    libexec/Makefile
    libexec/bootstrap-scripts/Makefile
+   libexec/bootstrap-scripts/environment/Makefile
    libexec/cli/Makefile
-   libexec/defaults/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile
    libexec/python/shub/Makefile
