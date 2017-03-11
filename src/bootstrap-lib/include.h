@@ -23,7 +23,7 @@
 
 extern int bootstrap_init(int argc, char **argv);
 extern int bootstrap_keyval_parse(char *path);
-extern int bootstrap_driver(void);
+extern int bootstrap_deffile(void);
 
 #endif /* __BOOTSTRAP_LIB_H */
 

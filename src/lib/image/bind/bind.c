@@ -37,59 +37,47 @@
 #include "util/file.h"
 #include "util/message.h"
 #include "util/privilege.h"
+#include "util/registry.h"
+#include "util/config_parser.h"
 
 #include "../image.h"
-
 
 #ifndef LO_FLAGS_AUTOCLEAR
 #define LO_FLAGS_AUTOCLEAR 4
 #endif
 
-#define MAX_LOOP_DEVS 128
-
 
 int _singularity_image_bind(struct image_object *image) {
     struct loop_info64 lo64 = {0};
-    char *lockfile = joinpath(image->sessiondir, "loop_lock");
-    int image_fd = image->fd;
-    int lockfile_fd; // This never gets closed so the flock() remains
+    long int max_loop_devs;
+    const char *max_loop_devs_string = singularity_config_get_value(MAX_LOOP_DEVS);
     FILE *loop_fp = NULL;
     int i;
 
     singularity_message(DEBUG, "Entered singularity_image_bind()\n");
 
+    singularity_message(DEBUG, "Converting max_loop_devs_string to int: '%s'\n", max_loop_devs_string);
+    if ( str2int(max_loop_devs_string, &max_loop_devs) != 0 ) {
+        singularity_message(ERROR, "Failed converting config option '%s = %s' to integer\n", MAX_LOOP_DEVS, max_loop_devs_string);
+        ABORT(255);
+    }
+    singularity_message(DEBUG, "Converted max_loop_devs_string to int: '%s' -> %ld\n", max_loop_devs_string, max_loop_devs);
+
+    singularity_message(DEBUG, "Checking if this image has been properly opened\n");
+    if ( image->fd <= 0 ) {
+        singularity_message(ERROR, "Internal - Called _singularity_image_bind() on an unopen image FD\n");
+        ABORT(255);
+    }
+
+    singularity_message(DEBUG, "Checking if image is valid file\n");
     if ( is_file(image->path) != 0 ) {
-        singularity_message(VERBOSE, "Skipping bind, image is not a file\n");
+        singularity_message(VERBOSE, "Skipping image bind, container is not a file\n");
         return(0);
     }
 
-    if ( ! image_fd > 0 ) {
-        singularity_message(ERROR, "Called _singularity_loop_bind() with no valid file descriptor\n");
-        ABORT(255);
-    }
-
-    singularity_message(DEBUG, "Opening image loop device file: %s\n", lockfile);
-    if ( ( lockfile_fd = open(lockfile, O_CREAT | O_RDWR, 0644) ) < 0 ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Could not open image loop device lock file %s: %s\n", lockfile, strerror(errno));
-        ABORT(255);
-    }
-
-    singularity_message(DEBUG, "Requesting exclusive flock() on loop_dev lockfile\n");
-    if ( flock(lockfile_fd, LOCK_EX | LOCK_NB) < 0 ) {
-        char *active_loop_dev;
-        singularity_message(VERBOSE2, "Did not get exclusive lock on image loop device cache, assuming it is active\n");
-
-        singularity_message(DEBUG, "Waiting to obtain shared lock on loop_dev lockfile\n");
-        flock(lockfile_fd, LOCK_SH);
-
-        singularity_message(DEBUG, "Obtaining cached loop device name\n");
-        if ( ( active_loop_dev = filecat(lockfile) ) == NULL ) {
-            singularity_message(ERROR, "Could not retrieve active loop device from %s\n", lockfile);
-            ABORT(255);
-        }
-
-        singularity_message(DEBUG, "Active loop_lock bind in progress, returning success\n");
-        image->loopdev = strdup(active_loop_dev);
+    singularity_message(DEBUG, "Checking if image is already bound to a loop device\n");
+    if ( image->loopdev != NULL ) {
+        singularity_message(DEBUG, "Returning, image already bound to: %s\n", image->loopdev);
         return(0);
     }
 
@@ -106,10 +94,11 @@ int _singularity_image_bind(struct image_object *image) {
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Finding next available loop device...\n");
-    for( i=0; i < MAX_LOOP_DEVS; i++ ) {
+    for( i=0; i < max_loop_devs; i++ ) {
         char *test_loopdev = strjoin("/dev/loop", int2str(i));
 
         if ( is_blk(test_loopdev) < 0 ) {
+            singularity_message(DEBUG, "Instantiating loop device: %s\n", test_loopdev);
             if ( mknod(test_loopdev, S_IFBLK | 0644, makedev(7, i)) < 0 ) {
                 singularity_message(ERROR, "Could not create %s: %s\n", test_loopdev, strerror(errno));
                 ABORT(255);
@@ -121,7 +110,7 @@ int _singularity_image_bind(struct image_object *image) {
             continue;
         }
 
-        if ( ioctl(fileno(loop_fp), LOOP_SET_FD, image_fd)== 0 ) {
+        if ( ioctl(fileno(loop_fp), LOOP_SET_FD, image->fd)== 0 ) {
             image->loopdev = strdup(test_loopdev);
             break;
         } else {
@@ -137,6 +126,11 @@ int _singularity_image_bind(struct image_object *image) {
 
     }
 
+    if ( image->loopdev == NULL ) {
+        singularity_message(ERROR, "No more available loop devices, try increasing '%s' in singularity.conf\n", MAX_LOOP_DEVS);
+        ABORT(255);
+    }
+
     singularity_message(VERBOSE, "Found available loop device: %s\n", image->loopdev);
 
     singularity_message(DEBUG, "Setting loop device flags\n");
@@ -150,16 +144,7 @@ int _singularity_image_bind(struct image_object *image) {
 
     singularity_message(VERBOSE, "Using loop device: %s\n", image->loopdev);
 
-    singularity_message(DEBUG, "Writing active loop device name (%s) to loop file cache: %s\n", image->loopdev, lockfile);
-    if ( fileput(lockfile, image->loopdev) < 0 ) {
-        singularity_message(ERROR, "Could not write to lockfile %s: %s\n", lockfile, strerror(errno));
-        ABORT(255);
-    }
-
 //    fclose(loop_fp);
-
-    singularity_message(DEBUG, "Resetting exclusive flock() to shared on lockfile\n");
-    flock(lockfile_fd, LOCK_SH | LOCK_NB);
 
     return(0);
 }

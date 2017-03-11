@@ -66,7 +66,7 @@ int bootstrap_keyval_parse(char *path) {
 
                     singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
 
-                    if ( strcasecmp(bootdef_key, "addfile") == 0 ) {
+                    if ( strcasecmp(bootdef_key, "import") == 0 ) {
                         bootstrap_keyval_parse(bootdef_value);
                     }
 

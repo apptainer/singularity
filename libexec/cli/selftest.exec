@@ -42,15 +42,15 @@ SINGULARITY_MESSAGELEVEL=5
 
 
 SUID_FILES="
-    $SINGULARITY_libexecdir/singularity/action-suid
-    $SINGULARITY_libexecdir/singularity/create-suid
-    $SINGULARITY_libexecdir/singularity/expand-suid
-    $SINGULARITY_libexecdir/singularity/export-suid
-    $SINGULARITY_libexecdir/singularity/import-suid
-    $SINGULARITY_libexecdir/singularity/mount-suid
+    $SINGULARITY_libexecdir/singularity/bin/action-suid
+    $SINGULARITY_libexecdir/singularity/bin/create-suid
+    $SINGULARITY_libexecdir/singularity/bin/expand-suid
+    $SINGULARITY_libexecdir/singularity/bin/export-suid
+    $SINGULARITY_libexecdir/singularity/bin/import-suid
+    $SINGULARITY_libexecdir/singularity/bin/mount-suid
 "
 
-stest 0 sh -c "test -f $SINGULARITY_sysconfdir/singularity/singularity.conf"
+stest 0 sh -c "test -f $SINGULARITY_sysconfdir/singularity/bin/singularity.conf"
 
 for i in $SUID_FILES; do
     stest 0 test -u "$i"

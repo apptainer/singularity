@@ -19,6 +19,9 @@ CONTAINER USAGE COMMANDS:
     shell         Run a Bourne shell within container
     test          Execute any test code defined within container
 
+CONTAINER USAGE OPTIONS:
+    -H  --home    Specify $HOME to mount 
+
 CONTAINER MANAGEMENT COMMANDS (requires root):
     bootstrap     Bootstrap a new Singularity image from scratch
     copy          Copy files from your host into the container
@@ -29,7 +32,7 @@ CONTAINER MANAGEMENT COMMANDS (requires root):
     mount         Mount a Singularity container image
 
 CONTAINER REGISTRY COMMANDS:
-    pull          pull a Singularity Hub container
+    pull          pull a Singularity Hub container to $PWD
 
 
 For any additional help or support visit the Singularity

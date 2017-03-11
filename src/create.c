@@ -49,11 +49,12 @@ int main(int argc, char **argv) {
     char *size_s;
     char *mkfs_cmd[7];
 
+    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
 #ifdef SUID_CREATE
-    singularity_suid_init();
+    singularity_suid_init(argv);
 #endif
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
 #ifdef SUID_CREATE
     singularity_priv_init();
@@ -83,17 +84,22 @@ int main(int argc, char **argv) {
     singularity_image_bind(&image);
 #endif
 
+    if ( singularity_image_loopdev(&image) == NULL ) {
+        singularity_message(ERROR, "Image was not bound correctly.\n");
+        ABORT(255);
+    }
+
     mkfs_cmd[0] = strdup("/sbin/mkfs.ext3");
     mkfs_cmd[1] = strdup("-q");
 
 #ifdef SUID_CREATE
-    mkfs_cmd[2] = strdup(image.loopdev);
+    mkfs_cmd[2] = strdup(singularity_image_loopdev(&image));
     mkfs_cmd[3] = NULL;
 #else
     mkfs_cmd[2] = strdup("-E");
     // the offset in the file for the singularity header
     mkfs_cmd[3] = strjoin("offset=", int2str(strlength(LAUNCH_STRING, 1024)));
-    mkfs_cmd[4] = strdup(image.path);
+    mkfs_cmd[4] = strdup(singularity_image_path(&image));
     // pass the correct size of the file in KiB
     mkfs_cmd[5] = int2str((size*1024*1024-strlength(LAUNCH_STRING, 1024))/1024);
     mkfs_cmd[6] = NULL;

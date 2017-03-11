@@ -21,15 +21,6 @@
 #ifndef __SINGULARITY_RUNTIME_H_
 #define __SINGULARITY_RUNTIME_H_
 
-// Set the runtime flags (below). Flags can be combined using a bitwise OR.
-extern int singularity_runtime_flags(unsigned int flags);
-
-// Runtime flags
-#define SR_FLAGS        0   // Do not make any changes and return flags
-#define SR_NOSUID       1   // We are not running SUID
-#define SR_NOFORK       2   // Do not allow forking
-#define SR_BINDPOINTS   4   // Create bind points (e.g. if overlayfs)
-
 // Set and return the runtime container directory location to use. If
 // 'directory' is NULL, then it will return the currently set directory.
 extern char *singularity_runtime_rootfs(char *directory);
