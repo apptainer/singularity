@@ -1,6 +1,12 @@
+#!/bin/sh
 
-. /environment
-if test -n "$SHELL" -a -x "$SHELL"; then
+for script in /.singularity/env/*.sh; do
+    if [ -f "$script" ]; then
+        . $script
+    fi
+done
+
+if test -n "$\SHELL" -a -x "$SHELL"; then
     exec "$SHELL" "$@"
 else
     echo "ERROR: Shell does not exist in container: $SHELL" 1>&2

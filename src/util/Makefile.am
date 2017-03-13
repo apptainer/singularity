@@ -1,26 +1,27 @@
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
-CLEANFILES = core.* *~ *.la
+CLEANFILES = core.* *~ *.la *.o
 AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 
 EXTRA_DIST = config_parser.c \
-			 file.c \
-			 fork.c \
-			 message.c \
-			 privilege.c \
-			 registry.c \
-			 suid.c \
-			 util.c \
-			 config_defaults.h \
 			 config_parser.h \
+			 file.c \
 			 file.h \
+			 fork.c \
 			 fork.h \
+			 message.c \
 			 message.h \
+			 privilege.c \
 			 privilege.h \
+			 registry.c \
 			 registry.h \
+			 sessiondir.c \
+			 sessiondir.h \
+			 suid.c \
 			 suid.h \
-			 util.h
-
+			 util.c \
+			 util.h \
+			 config_defaults.h

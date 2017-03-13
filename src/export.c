@@ -37,6 +37,7 @@
 #include "util/privilege.h"
 #include "util/suid.h"
 #include "util/fork.h"
+#include "util/sessiondir.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
@@ -48,9 +49,10 @@ int main(int argc, char **argv) {
     char *tar_cmd[5];
     struct image_object image;
 
-    singularity_suid_init();
-
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
+    singularity_suid_init(argv);
+
     singularity_registry_init();
     singularity_priv_init();
     singularity_priv_drop();
@@ -59,17 +61,27 @@ int main(int argc, char **argv) {
         singularity_registry_set("IMAGE", argv[1]);
     }
 
+    singularity_sessiondir();
+
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     singularity_image_open(&image, O_RDONLY);
 
-    singularity_runtime_tmpdir(singularity_image_sessiondir(&image));
+    singularity_runtime_tmpdir(singularity_registry_get("SESSIONDIR"));
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
-    tar_cmd[0] = strdup("/usr/bin/tar");
+    if ( is_exec("/usr/bin/tar") == 0 ) {
+        tar_cmd[0] = strdup("/usr/bin/tar");
+    } else if ( is_exec("/bin/tar") == 0 ) {
+        tar_cmd[0] = strdup("/bin/tar");
+    } else {
+        singularity_message(ERROR, "Could not locate the system version of 'tar'\n");
+        ABORT(255);
+    }
+
     tar_cmd[1] = strdup("-cf");
     tar_cmd[2] = strdup("-");
     tar_cmd[3] = strdup(".");

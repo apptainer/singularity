@@ -55,6 +55,8 @@ static struct PRIV_INFO {
     uid_t orig_gid;
     pid_t orig_pid;
     char *home;
+    char *homedir;
+    char *username;
     int dropped_groups;
     int target_mode;  // Set to 1 if we are running in "target mode" (admin specifies UID/GID)
 } uinfo;
@@ -75,6 +77,8 @@ void singularity_priv_init(void) {
     long int target_gid = -1;
     memset(&uinfo, '\0', sizeof(uinfo));
     memset(&sinfo, '\0', sizeof(sinfo));
+    char *home_tmp = singularity_registry_get("HOME");
+    struct passwd *pwent;
 
     singularity_message(DEBUG, "Initializing user info\n");
 
@@ -138,18 +142,54 @@ void singularity_priv_init(void) {
         }
     }
 
+    if ( ( pwent = getpwuid(uinfo.uid) ) == NULL ) {
+        singularity_message(ERROR, "Failed obtaining user information for uid: %i\n", uinfo.uid);
+        ABORT(255);
+    }
+
+    if ( ( uinfo.username = strdup(pwent->pw_name) ) != NULL ) {
+        singularity_message(DEBUG, "Set the calling user's username to: %s\n", uinfo.username);
+    } else {
+        singularity_message(ERROR, "Failed obtaining the calling user's username\n");
+        ABORT(255);
+    }
+
     singularity_message(DEBUG, "Marking uinfo structure as ready\n");
     uinfo.ready = 1;
 
     singularity_message(DEBUG, "Obtaining home directory\n");
-    if ( ( uinfo.home = singularity_registry_get("HOME") ) != NULL ) {
-        singularity_message(VERBOSE2, "Set the home directory source (via envar) to: %s\n", uinfo.home);
-    } else {
-        struct passwd *pw = getpwuid(singularity_priv_getuid());
-        if ( ( uinfo.home = strdup(pw->pw_dir) ) != NULL ) {
-            singularity_message(VERBOSE2, "Set the home directory source (via getpwuid()) to: %s\n", uinfo.home);
+    if ( home_tmp != NULL ) {
+        char *colon = strchr(home_tmp, ':');
+
+        if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
+            singularity_message(ERROR, "User defined binds are not allowed in configuration\n");
+            ABORT(255);
+        }
+
+#ifndef SINGULARITY_NO_NEW_PRIVS
+        singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
+        return(0);
+#endif
+
+        if ( colon == NULL ) {
+            uinfo.home = strdup(home_tmp);
+            uinfo.homedir = uinfo.home;
+            singularity_message(VERBOSE2, "Set home (via SINGULARITY_HOME) to: %s\n", uinfo.home);
         } else {
-            singularity_message(ERROR, "Could not obtain user's home directory\n");
+            *colon = '\0';
+            uinfo.home = strdup(&colon[1]);
+            singularity_message(VERBOSE2, "Set home (via SINGULARITY_HOME) to: %s\n", uinfo.home);
+            uinfo.homedir = strdup(home_tmp);
+            singularity_message(VERBOSE2, "Set the home directory (via SINGULARITY_HOME) to: %s\n", uinfo.homedir);
+        }
+
+    } else {
+        if ( ( uinfo.home = strdup(pwent->pw_dir) ) != NULL ) {
+            singularity_message(VERBOSE2, "Set home (via getpwuid()) to: %s\n", uinfo.home);
+            uinfo.homedir = uinfo.home;
+        } else {
+            singularity_message(ERROR, "Failed obtaining the calling user's home directory\n");
+            ABORT(255);
         }
     }
     
@@ -432,6 +472,22 @@ char *singularity_priv_home(void) {
         ABORT(255);
     }
     return uinfo.home;
+}
+
+char *singularity_priv_homedir(void) {
+    if ( !uinfo.ready ) {
+        singularity_message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.homedir;
+}
+
+char *singularity_priv_getuser(void) {
+    if ( !uinfo.ready ) {
+        singularity_message(ERROR, "Invoked before privilege info initialized!\n");
+        ABORT(255);
+    }
+    return uinfo.username;
 }
 
 uid_t singularity_priv_getuid(void) {

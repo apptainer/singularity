@@ -33,15 +33,42 @@
 
 #include "./include.h"
 
+#ifndef LIBEXECDIR
+#error LIBEXECDIR is not defined
+#endif
+
+
 int bootstrap_init(int argc, char **argv) {
+    char *builddef = singularity_registry_get("BUILDDEF");
 
-    singularity_message(INFO, "Starting bootstrap process\n");
-    if ( bootstrap_keyval_parse(singularity_registry_get("BUILDDEF")) != 0 ) {
-        singularity_message(ERROR, "Failed parsing the bootstrap definition file: %s\n", singularity_registry_get("BUILDDEF"));
+
+    if ( strncmp(builddef, "docker://", 9) == 0 ) {
+        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-dockerhub.sh");
+
+        singularity_message(INFO, "Building from DockerHub container\n");
+        execl(bootstrap, bootstrap, NULL);
+
+    } else if ( is_file(builddef) == 0 ) {
+        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile.sh");
+
+        singularity_message(INFO, "Building from bootstrap definition recipe\n");
+        if ( bootstrap_keyval_parse(builddef) != 0 ) {
+            singularity_message(ERROR, "Failed parsing the bootstrap definition file: %s\n", singularity_registry_get("BUILDDEF"));
+            ABORT(255);
+        }
+        execl(bootstrap, bootstrap, NULL);
+
+    } else if ( builddef == NULL || builddef[0] == '\0' ) {
+        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-null.sh");
+
+        singularity_message(INFO, "Running bootstrap with no recipe\n");
+        execl(bootstrap, bootstrap, NULL);
+
+    } else {
+        singularity_message(ERROR, "Unsupported bootstrap definition format: '%s'\n", builddef);
         ABORT(255);
-    }
 
-    bootstrap_driver();
+    }
 
     return(0);
 }

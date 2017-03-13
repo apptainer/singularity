@@ -47,7 +47,6 @@
 
 static char *container_directory = NULL;
 static char *temp_directory = NULL;
-static int runtime_flags = 0;
 
 char *singularity_runtime_rootfs(char *directory) {
     if ( directory != NULL ) {
@@ -85,12 +84,6 @@ char *singularity_runtime_tmpdir(char *directory) {
     }
 
     return(temp_directory);
-}
-
-int singularity_runtime_flags(unsigned int flags) {
-    runtime_flags |= flags;
-
-    return(runtime_flags);
 }
 
 
