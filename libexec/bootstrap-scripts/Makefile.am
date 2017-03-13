@@ -8,7 +8,7 @@ dist_mods_SCRIPTS = deffile-driver-arch.sh \
                     deffile-driver-docker.sh \
                     deffile-driver-shub.sh \
                     deffile-driver-yum.sh \
-                    deffile-scriptlets.sh \
+                    deffile-sections.sh \
                     environment.sh \
                     post.sh \
                     pre.sh \

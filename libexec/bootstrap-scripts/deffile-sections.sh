@@ -97,6 +97,21 @@ if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
 fi
 
 
+### FILES
+if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
+pwd
+    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | while read origin dest; do
+        if [ -z "${dest:-}" ]; then
+            dest="$origin"
+        fi
+        if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
+            message ERROR "Failed copying file(s) into container\n"
+            exit 255
+        fi
+    done
+fi
+
+
 ### RUN TEST
 if singularity_section_exists "test" "$SINGULARITY_BUILDDEF"; then
     if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
