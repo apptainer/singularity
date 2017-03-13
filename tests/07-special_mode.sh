@@ -45,7 +45,7 @@ export SINGULARITY_MESSAGELEVEL
 . ../libexec/functions
 
 /bin/echo
-/bin/echo "Running config file ownership tests"
+/bin/echo "Running "
 /bin/echo
 
 /bin/echo "Creating temp working space at: $TEMPDIR"
@@ -64,18 +64,25 @@ stest 0 sudo singularity copy "$CONTAINER" -a singularity /
 
 
 /bin/echo
-/bin/echo "Checking configuration file ownership..."
+/bin/echo "Checking NO_NEW_PRIVS"
 
-stest 0 singularity exec "$CONTAINER" true
-stest 0 sudo chown `id -un` "$SINGULARITY_sysconfdir/singularity/singularity.conf"
-stest 1 singularity exec "$CONTAINER" true
-stest 0 sudo chown root.root "$SINGULARITY_sysconfdir/singularity/singularity.conf"
-stest 0 singularity exec "$CONTAINER" true
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 singularity import ${CONTAINER} docker://centos
+stest 0 sudo singularity exec "$CONTAINER" ping localhost -c 1
+stest 1 singularity exec "$CONTAINER" ping localhost -c 1
+stest 0 sudo singularity exec $CONTAINERDIR ping localhost -c 1
+stest 1 singularity exec $CONTAINERDIR ping localhost -c 1
+
+
+/bin/echo
+/bin/echo "Checking target UID mode"
+
+stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep -q `id -un`"
 
 
 stest 0 popd
 stest 0 sudo rm -rf "$TEMPDIR"
 
 /bin/echo
-/bin/echo "05-confownership.sh tests OK"
+/bin/echo "06-importexport.sh tests OK"
 /bin/echo

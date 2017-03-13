@@ -82,6 +82,17 @@ stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 sh -c "sudo singularity import ${CONTAINER} docker://not_a_docker_container/nope_nope_singularity | grep 'ERROR: Container does not contain the valid minimum requirement of /bin/sh'"
 
 
+/bin/echo
+/bin/echo "Checking directory mode"
+
+stest 0 mkdir $CONTAINERDIR
+stest 0 sudo tar -C $CONTAINERDIR -xvf ${CONTAINERDIR}.tar
+stest 0 singularity exec $CONTAINERDIR true
+stest 1 singularity exec $CONTAINERDIR false
+stest 1 singularity exec /tmp true
+stest 1 singularity exec / true
+
+
 stest 0 popd
 stest 0 sudo rm -rf "$TEMPDIR"
 
