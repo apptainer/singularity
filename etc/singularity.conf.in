@@ -174,10 +174,10 @@
 # instead the invoking user is utilized for all access privilege checks.
 @SINGULARITY_USER@ = @SINGULARITY_USER_DEFAULT@
 
-# LOG SYSTEM: [file/syslog/std]
+# LOG SYSTEM: [file/syslog/none]
 # DEFAULT: @LOG_SYSTEM_DEFAULT@
 # Defines the logging system:
 # 	file: to log in the singularity.log file
 # 	syslog: to use the syslog facilities
-# 	std: to use the default log stream (stderr)
+# 	none: to disable the logging option
 @LOG_SYSTEM@ = @LOG_SYSTEM_DEFAULT@

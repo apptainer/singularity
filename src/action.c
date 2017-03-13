@@ -52,10 +52,10 @@ int main(int argc, char **argv) {
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
+    singularity_priv_init();
     singularity_suid_init(argv);
 
     singularity_registry_init();
-    singularity_priv_init();
     singularity_priv_userns();
     singularity_priv_drop();
 

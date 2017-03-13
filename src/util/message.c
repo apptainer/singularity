@@ -38,7 +38,6 @@ int messagelevel = -1;
 
 extern const char *__progname;
 
-int log_file_descriptor;
 FILE *log_file;
 
 static void message_init(void) {
@@ -63,8 +62,7 @@ static void message_init(void) {
         singularity_priv_init();
         singularity_priv_escalate();
         log_file = fopen("singularity.log", "a");
-        log_file_descriptor = fileno(log_file);
-        fchmod(log_file_descriptor, 0644);
+        fchmod(fileno(log_file), 0644);
         singularity_priv_drop();
     }
 }
@@ -138,11 +136,15 @@ void _singularity_message(int level, const char *function, const char *file_in, 
 
         if (strcmp(singularity_config_get_value(LOG_SYSTEM), "syslog") == 0) {
             syslog(syslog_level, "%s", log_message);
-        } else if (strcmp(singularity_config_get_value(LOG_SYSTEM), "std") == 0) {
-            fprintf(stderr, "%s: %s \n", timestamp, log_message);
-        } else {
+        } else if (strcmp(singularity_config_get_value(LOG_SYSTEM), "none") == 0) {
+            // do nothing...
+        } else if (strcmp(singularity_config_get_value(LOG_SYSTEM), "file") == 0) {
             fprintf(log_file, "%s: %s \n", timestamp, log_message);
             fflush(log_file);
+        } else {
+            level = WARNING;
+            prefix = "WARNING";
+            snprintf(message, 512, "%s", "Invalid log system option in singularity.conf.\n");
         }
 
         
