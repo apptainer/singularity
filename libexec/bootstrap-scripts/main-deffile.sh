@@ -44,6 +44,6 @@ eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh
 if [ -n "${BOOTSTRAP:-}" ]; then
     eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh"
 fi
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-scriptlets.sh"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-sections.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 
