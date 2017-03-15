@@ -31,8 +31,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)
-sys.path.append(os.path.abspath(os.path.join(parent_dir, os.path.pardir)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir)))
 
 import argparse
 import pickle

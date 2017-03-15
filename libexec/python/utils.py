@@ -390,6 +390,15 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     return filename
 
 
+def read_json(filename,mode='r'):
+    '''read_json reads in a json file and returns
+    the data structure as dict.
+    '''
+    with open(filename,mode) as filey:
+        data = json.load(filey)
+    return data
+
+
 def read_file(filename,mode="r"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file

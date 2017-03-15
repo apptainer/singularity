@@ -2,7 +2,7 @@
 
 '''
 
-delete.py: wrapper for "get" of a json file for Singularity Hub command line tool.
+delete.py: wrapper for "delete" of a json file for Singularity Hub command line tool.
 
 This function takes input arguments (not environment variables) of the following:
 
@@ -31,13 +31,12 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)
-sys.path.append(os.path.abspath(os.path.join(parent_dir, os.path.pardir)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir)))
 
 import argparse
 import pickle
 from glob import glob
-from helpers.json.main import GET
+from helpers.json.main import DELETE
 from logman import logger
 import os
 import sys
@@ -48,13 +47,13 @@ def get_parser():
 
     parser.add_argument("--key", 
                         dest='key', 
-                        help="key to get from json", 
+                        help="key to delete from json", 
                         type=str,
                         default=None)
 
     parser.add_argument("--file", 
                         dest='file', 
-                        help="Path to json file to retrieve from", 
+                        help="Path to json file to delete from", 
                         type=str,
                         default=None)
 
@@ -73,8 +72,8 @@ def main():
     
     if args.key is not None and args.file is not None:
 
-       DELETE(key=args.key,
-              jsonfile=args.file)
+       success = DELETE(key=args.key,
+                        jsonfile=args.file)
     else:
         logger.error("--key and --file must be defined for DELETE. Exiting")
         sys.exit(1)

@@ -2,7 +2,7 @@
 
 '''
 
-get.py: wrapper for "get" of a json file for Singularity Hub command line tool.
+add.py: wrapper for "add" of a key to a json file for Singularity Hub command line tool.
 
 This function takes input arguments (not environment variables) of the following:
 
@@ -32,13 +32,12 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)
-sys.path.append(os.path.abspath(os.path.join(parent_dir, os.path.pardir)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir)))
 
 import argparse
 import pickle
 from glob import glob
-from helpers.json.main import GET
+from helpers.json.main import ADD
 from logman import logger
 import os
 import sys
@@ -65,6 +64,11 @@ def get_parser():
                         type=str,
                         default=None)
 
+    parser.add_argument('-f', dest="force", 
+                        help="force add (overwrite if exists)", 
+                        default=False, action='store_true')
+
+
     return parser
 
 
@@ -82,7 +86,9 @@ def main():
 
        value = ADD(key=args.key,
                    value=args.value,
-                   jsonfile=args.file)
+                   jsonfile=args.file,
+                   force=args.force)
+
     else:
         logger.error("--key and --file and --value must be defined for ADD. Exiting")
         sys.exit(1)

@@ -23,7 +23,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-sys.path.append('../../')
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
 from utils import (
     read_json,
@@ -41,9 +41,9 @@ def DUMP(jsonfile):
     '''DUMP will return the entire layfile as text, key value pairs
     :param jsonfile_path: the path to the jsonfile
     '''
-    bot.logger.debug("Reading %s to prepare dump to STDOUT",jsonfile)
+    logger.debug("Reading %s to prepare dump to STDOUT",jsonfile)
     if not os.path.exists(jsonfile):
-        bot.logger.error("Cannot find %s, exiting.",jsonfile)
+        logger.error("Cannot find %s, exiting.",jsonfile)
         sys.exit(1)
     
     contents = read_json(jsonfile)
@@ -51,6 +51,7 @@ def DUMP(jsonfile):
     for key,value in contents.items():
         dump = '%s%s:"%s"\n' %(dump,key,value)
     dump = dump.strip('\n')
+    print(dump)
     return dump
 
 
@@ -59,40 +60,42 @@ def GET(key,jsonfile):
     '''GET will return a key from the jsonfile, if it exists. If it doesn't, returns None.
     '''
     key = format_keyname(key)
-    bot.logger.debug("GET %s from %s",jsonfile)
+    logger.debug("GET %s from %s",jsonfile)
     if not os.path.exists(jsonfile):
-        bot.logger.error("Cannot find %s, exiting.",jsonfile)
+        logger.error("Cannot find %s, exiting.",jsonfile)
         sys.exit(1)
     
     contents = read_json(jsonfile)
-    value = None
     if key in contents:
         value = contents[key]
-    bot.logger.debug('%s is %s',key,value)
+        print(value)
+        logger.debug('%s is %s',key,value)
+    else:
+        logger.error("%s is not defined in file. Exiting",key)
+        sys.exit(1)
     return value
 
 
-def ADD(key,value,jsonfile,overwrite=True):
+def ADD(key,value,jsonfile,force=False):
     '''ADD will write or update a key in a json file
     '''
     key = format_keyname(key)
-    bot.logger.debug("ADD %s from %s",jsonfile)
-    if not os.path.exists(jsonfile):
-        bot.logger.error("Cannot find %s, exiting.",jsonfile)
-        sys.exit(1)
-    
-    contents = read_json(jsonfile)
-    if key in contents:
-        bot.logger.debug('Warning, %s is already set. Overwrite is set to %s',key,overwrite)
-        if overwrite == True:
-             contents[key] = value
+    logger.debug("ADD %s from %s",jsonfile)
+    if os.path.exists(jsonfile):    
+        contents = read_json(jsonfile)
+        if key in contents:
+            logger.debug('Warning, %s is already set. Overwrite is set to %s',key,force)
+            if force == True:
+                contents[key] = value
+            else:
+                logger.error('%s found in %s and overwrite set to %s, exiting.',key,jsonfile,force)
+                sys.exit(1)
         else:
-             value = contents[key]
+            contents[key] = value
     else:
-        contents[key] = value
-
-    bot.logger.debug('%s is %s',key,value)
-    write_json(jsonfile,contents)
+        contents = {key:value}
+    logger.debug('%s is %s',key,value)
+    write_json(contents,jsonfile)
     return value
 
 
@@ -100,18 +103,22 @@ def DELETE(key,jsonfile):
     '''DELETE will remove a key from a json file
     '''
     key = format_keyname(key)
-    bot.logger.debug("DELETE %s from %s",jsonfile)
+    logger.debug("DELETE %s from %s",jsonfile)
     if not os.path.exists(jsonfile):
-        bot.logger.error("Cannot find %s, exiting.",jsonfile)
+        logger.error("Cannot find %s, exiting.",jsonfile)
         sys.exit(1)
     
     contents = read_json(jsonfile)
     if key in contents:
         del contents[key]
-        write_json(jsonfile,contents)
+        if len(contents) > 0:
+            write_json(contents,jsonfile)
+        else:
+            logger.debug('%s is empty, deleting.',jsonfile)
+            os.remove(jsonfile)
         return True
     else:    
-        bot.logger.debug('Warning, %s not found in %s',jsonfile)
+        logger.debug('Warning, %s not found in %s',jsonfile)
         return False
 
 

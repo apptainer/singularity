@@ -284,17 +284,20 @@ Included in bootstrap, but not specifically for it, we have a set of utility mod
 The json module is (so far) primarily intended to write a key value store of labels specific to a container. This comes down to `.json` files in the `SINGULARITY_METADATA/labels` folder, with each file mapping to it's source (eg, docker, shub, etc). Given that the calling (C) function has specified the label file (`SINGULARITY_LABELBASE`) The general use would be the following:
 
 
-	# Add a key value to labelfile
-	exec $SINGULARITY_libexecdir/singularity/python/utils/json/add.py $KEY $VALUE $LABELFILE
+	# Add a key value to labelfile. The key must not exist
+	exec $SINGULARITY_libexecdir/singularity/python/utils/json/add.py --key $KEY --value $VALUE --file $LABELFILE
 
-	# Remove a key from labelfile
-	exec $SINGULARITY_libexecdir/singularity/python/utils/json/delete.py $KEY $LABELFILE
+	# If it exists, you can force add
+	exec $SINGULARITY_libexecdir/singularity/python/utils/json/add.py --key $KEY --value $VALUE --file $LABELFILE -f
 
-	# Get a stream / list of all labels (in single file format)
-	exec $SINGULARITY_libexecdir/singularity/python/utils/json/dump.py $LABELFILE
+	# Remove a key from labelfile. If the file is empty after, it is removed
+	exec $SINGULARITY_libexecdir/singularity/python/utils/json/delete.py --key $KEY --file $LABELFILE
 
-	# Get a single key from label file, returns empty if not defined
-	exec $SINGULARITY_libexecdir/singularity/python/utils/json/get.py $KEY
+	# Get a stream / list of all labels (in single file, one per line, separated by :)
+	exec $SINGULARITY_libexecdir/singularity/python/utils/json/dump.py --file $LABELFILE
+
+	# Get a single key from label file, returns empty and exists if not defined
+	exec $SINGULARITY_libexecdir/singularity/python/utils/json/get.py --key $KEY
 
 
 
