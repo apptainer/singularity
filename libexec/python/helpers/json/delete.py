@@ -2,14 +2,14 @@
 
 '''
 
-import.py: python helper for Singularity docker import
+delete.py: wrapper for "get" of a json file for Singularity Hub command line tool.
 
+This function takes input arguments (not environment variables) of the following:
 
-ENVIRONMENTAL VARIABLES that are found for this executable:
+   --key: should be the key to delete from the json file
+   --file: should be the json file to read
 
-    SINGULARITY_CONTAINER
-
-Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -31,38 +31,53 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-sys.path.append('..')
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)
+sys.path.append(os.path.abspath(os.path.join(parent_dir, os.path.pardir)))
 
-from shub.main import IMPORT
-from shell import get_image_uri
-from defaults import getenv
+import argparse
+import pickle
+from glob import glob
+from helpers.json.main import GET
 from logman import logger
 import os
 import sys
 
+def get_parser():
+
+    parser = argparse.ArgumentParser(description="GET key from json")
+
+    parser.add_argument("--key", 
+                        dest='key', 
+                        help="key to get from json", 
+                        type=str,
+                        default=None)
+
+    parser.add_argument("--file", 
+                        dest='file', 
+                        help="Path to json file to retrieve from", 
+                        type=str,
+                        default=None)
+
+    return parser
+
+
 
 def main():
-    '''this function will run a docker import, returning a list of layers 
-    and environmental variables and metadata to the metadata base
-    '''
-    from defaults import LAYERFILE
 
-    logger.info("\n*** STARTING SINGULARITY HUB IMPORT PYTHON  ****")    
-    container = getenv("SINGULARITY_CONTAINER",required=True)
+    parser = get_parser()
+    
+    try:
+        args = parser.parse_args()
+    except:
+        sys.exit(0)
+    
+    if args.key is not None and args.file is not None:
 
-    # What image is the user asking for?
-    image_uri = get_image_uri(container)    
-
-    if image_uri == "shub://":
-
-        additions = IMPORT(image=container,
-                           layerfile=LAYERFILE)
-
+       DELETE(key=args.key,
+              jsonfile=args.file)
     else:
-        logger.error("uri %s is not a currently supported uri for singularity hub import. Exiting.",image_uri)
+        logger.error("--key and --file must be defined for DELETE. Exiting")
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()

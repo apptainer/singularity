@@ -241,6 +241,11 @@ else
     SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
 fi
 
+AC_CHECK_PROG(PYTHON_CHECK,python,yes)
+if test x"$PYTHON_CHECK" != x"yes" ; then
+    AC_MSG_ERROR([Please install python before installing.])
+fi
+
 AC_SUBST(OVERLAY_FS)
 AC_SUBST(SINGULARITY_DEFINES)
 
@@ -346,5 +351,6 @@ AC_CONFIG_FILES([
    libexec/python/Makefile
    libexec/python/docker/Makefile
    libexec/python/shub/Makefile
+
 ])
 AC_OUTPUT

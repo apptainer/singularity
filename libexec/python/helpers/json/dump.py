@@ -2,17 +2,13 @@
 
 '''
 
-add.py: python helper for Singularity Hub add, which is basically
-        a pull to the SINGULARITY_ROOTFS instead of a user specified
-        pull folder
+dump.py: wrapper for dump a a json file for Singularity Hub command line tool.
 
+This function takes input arguments (not environment variables) of the following:
 
-ENVIRONMENTAL VARIABLES that are found for this executable:
+   --file: should be the json file to read
 
-    SINGULARITY_ROOTFS
-    SINGULARITY_CONTAINER
-
-Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -34,39 +30,46 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-sys.path.append('..')
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)
+sys.path.append(os.path.abspath(os.path.join(parent_dir, os.path.pardir)))
 
-from shub.main import ADD
-from shell import get_image_uri
-from defaults import getenv
+import argparse
+import pickle
+from glob import glob
+from helpers.json.main import GET
 from logman import logger
 import os
 import sys
 
+def get_parser():
+
+    parser = argparse.ArgumentParser(description="DUMP json")
+
+    parser.add_argument("--file", 
+                        dest='file', 
+                        help="Path to json file to retrieve from", 
+                        type=str,
+                        default=None)
+
+    return parser
+
 
 def main():
-    '''main will download a shub image to the METADATA_BASE folder
-    '''
-    from defaults import LAYERFILE
 
-    container = getenv("SINGULARITY_CONTAINER",required=True)
+    parser = get_parser()
+    
+    try:
+        args = parser.parse_args()
+    except:
+        sys.exit(0)
+    
+    if args.file is not None:
 
-    logger.info("\n*** STARTING DOCKER ADD PYTHON  ****")
-
-    # What image is the user asking for?
-    image_uri = get_image_uri(container)    
-
-    # ADD will write list of docker layers to metadata_file
-    if image_uri == "shub://":
-
-        additions = ADD(image=container,
-                        layerfile=LAYERFILE)
+       dump = DUMP(args.file)
 
     else:
-        logger.error("uri %s is not a currently supported uri for singularity hub add. Exiting.",image_uri)
+        logger.error("--file must be defined for DUMP. Exiting")
         sys.exit(1)
-
 
 if __name__ == '__main__':
     main()
