@@ -240,23 +240,8 @@ void chomp(char *str) {
 
 void chomp_comments(char *str) {
     if (!str) {return;}
-
-    // If str starts with a comment, there is nothing here
-    if ( str[0] == '#' ) {
-        str[0] = '\0';
-        return;
-    }
-
-    int len;
-    int i;
-
-    len = strlength(str, 4096);
-    i = 0;
-    while ( ( i < len ) && ( str[i] != '#' ) ) {i++;}
-    if ( str[i] == '#' ) {
-        str[i] = '\0';
-    }
-
+    char *rest = str;
+    str = strtok_r(str, "#", &rest);
     chomp(str);
 }
 
