@@ -1,4 +1,4 @@
-SUBDIRS = docker shub
+SUBDIRS = docker shub utils
 
 scriptlibexecdir = $(libexecdir)/singularity/python
 
