@@ -259,7 +259,7 @@ def change_permission(file_path,permission=None):
         try:
             os.chmod(file_path, st.st_mode | permission)
         except:
-            sys.stderr.write("ERROR: Couldn't change permission on ", file_path, "\n")
+            sys.stderr.write("ERROR: Couldn't change permission on %s\n" %file_path)
             sys.exit(1)
     return has_permission(file_path,permission)
 
