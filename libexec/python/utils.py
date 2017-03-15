@@ -333,7 +333,7 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
     # Create the cache folder(s), if don't exist
     create_folders(cache_base)
 
-    sys.stderr.write("Cache folder set to %s\n" %cache_base)
+    sys.stderr.write("# singularity: Cache folder set to %s\n" %cache_base)
     return cache_base
 
 
@@ -363,7 +363,7 @@ def extract_tar(archive,output_folder):
 
     # Just use command line, more succinct.
     command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
-    sys.stderr.write("Extracting %s\n" %(archive))
+    sys.stderr.write("# singularity: Extracting %s\n" %(archive))
 
     retval = run_command(command)
 

@@ -114,15 +114,15 @@ def download_image(manifest,download_folder=None,extract=True):
     '''    
     image_file = get_image_name(manifest)
 
-    sys.stderr.write("Found image %s:%s\n" %(manifest['name'],manifest['branch']))
-    sys.stderr.write("Downloading image... %s\n" %(image_file))
+    sys.stderr.write("# singularity: Found image %s:%s\n" %(manifest['name'],manifest['branch']))
+    sys.stderr.write("# singularity: Downloading image... %s\n" %(image_file))
 
     if download_folder != None:
         image_file = "%s/%s" %(download_folder,image_file)
     url = manifest['image']
     image_file = api_get(url,stream=image_file)
     if extract == True:
-        sys.stderr.write("Decompressing %s\n" %(image_file))
+        sys.stderr.write("# singularity: Decompressing %s\n" %(image_file))
         os.system('gzip -d -f %s' %(image_file))
         image_file = image_file.replace('.gz','')
     return image_file
