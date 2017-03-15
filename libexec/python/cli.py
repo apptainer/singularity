@@ -186,7 +186,7 @@ def run(args):
             image_file = download_image(manifest=manifest,
                                         download_folder=cache_base)
         else:
-            print("Image already exists at %s, skipping download." %image_file)
+            sys.stderr.write("Image already exists at %s , skipping download.\n" %image_file)
         logger.info("Singularity Hub Image Download: %s", image_file)
        
         # If singularity_rootfs is provided, write metadata to it
