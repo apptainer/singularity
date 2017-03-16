@@ -10,7 +10,7 @@ unset BASH_ENV
 PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
 
 # Don't save the shell's HISTFILE
-HISTFILE="/dev/null"
+HISTFILE=""
 
 export PATH HISTFILE
 
