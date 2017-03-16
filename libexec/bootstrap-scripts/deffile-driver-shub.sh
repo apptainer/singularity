@@ -76,7 +76,10 @@ if ! mkdir -p "$SINGULARITY_METADATA_DIR"; then
     ABORT 255
 fi
 
-eval $SINGULARITY_libexecdir/singularity/python/shub/pull.py
+SINGULARITY_CONTAINER="shub://$SINGULARITY_HUB_IMAGE"
+SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity/labels.json"
+export SINGULARITY_CONTAINER SINGULARITY_LABELFILE
+eval $SINGULARITY_libexecdir/singularity/python/import.py
 
 # The python script saves names to files in CONTAINER_DIR, we then pass this image as targz to import
 IMPORT_URI=`cat $SINGULARITY_METADATA_DIR/SINGULARITY_IMAGE`

@@ -46,6 +46,7 @@ fi
 SINGULARITY_CONTAINER="docker://$FROM"
 export SINGULARITY_CONTAINER
 
+export SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity/labels.json"
 eval "$SINGULARITY_libexecdir/singularity/python/import.py"
 RETVAL=$?
 

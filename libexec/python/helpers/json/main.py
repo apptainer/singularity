@@ -80,7 +80,8 @@ def ADD(key,value,jsonfile,force=False):
     '''ADD will write or update a key in a json file
     '''
     key = format_keyname(key)
-    logger.debug("ADD %s from %s",jsonfile)
+    print("Adding label: '%s' = '%s'" %(key,value))
+    logger.debug("ADD %s from %s",key,jsonfile)
     if os.path.exists(jsonfile):    
         contents = read_json(jsonfile)
         if key in contents:
@@ -88,7 +89,7 @@ def ADD(key,value,jsonfile,force=False):
             if force == True:
                 contents[key] = value
             else:
-                logger.error('%s found in %s and overwrite set to %s, exiting.',key,jsonfile,force)
+                logger.error('%s found in %s and overwrite set to %s.',key,jsonfile,force)
                 sys.exit(1)
         else:
             contents[key] = value

@@ -41,6 +41,8 @@ from utils import (
     write_file
 )
 
+from defaults import SHUB_PREFIX
+
 from logman import logger
 import json
 import re
@@ -85,7 +87,7 @@ def PULL(image,download_folder=None,layerfile=None):
 
 
 
-def IMPORT(image,layerfile):
+def IMPORT(image,layerfile,labelfile=None):
     '''IMPORT takes one more step than ADD, returning the image written to a layerfile
     plus metadata written to the metadata base in rootfs.
     :param image: the singularity hub image name
@@ -93,5 +95,7 @@ def IMPORT(image,layerfile):
     manifest = PULL(image,layerfile=layerfile)
 
     # Write metadata to base    
-    manifest['metadata'] = extract_metadata(manifest['manifest'])
+    manifest['metadata'] = extract_metadata(manifest=manifest['manifest'],
+                                            labelfile=labelfile,
+                                            prefix="%s_" %SHUB_PREFIX)
     return manifest

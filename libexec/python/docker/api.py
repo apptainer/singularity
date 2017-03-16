@@ -34,13 +34,14 @@ from utils import (
     write_singularity_infos
 )
 
+from helpers.json.main import ADD
+
 from defaults import (
     API_BASE,
     API_VERSION,
     DOCKER_NUMBER,
     DOCKER_PREFIX,
     ENV_BASE,
-    LABEL_BASE,
     METADATA_BASE,
     RUNSCRIPT_COMMAND_ASIS
 )
@@ -111,7 +112,7 @@ def extract_env(manifest):
     :param manifest: the manifest to use
     '''
     environ = get_config(manifest,'Env')
-    if environ != None:
+    if environ is not None:
         if isinstance(environ,list):
             environ = "\n".join(environ)
         logger.debug("Found Docker container environment!")    
@@ -123,20 +124,23 @@ def extract_env(manifest):
     return environ
 
 
-def extract_labels(manifest):
+def extract_labels(manifest,labelfile=None,prefix=None):
     '''extract_labels will write a file of key value pairs including
     maintainer, and labels.
     :param manifest: the manifest to use
+    :param labelfile: if defined, write to labelfile (json)
+    :param prefix: an optional prefix to add to the names
     '''
+    if prefix is None:
+        prefix = ""
+
     labels = get_config(manifest,'Labels')
-    if labels != None and len(labels) != 0:
-        labels = json.dumps(labels)
+    if labels is not None and len(labels) is not 0:
         logger.debug("Found Docker container labels!")    
-        labels_file = write_singularity_infos(base_dir=LABEL_BASE,
-                                              prefix=DOCKER_PREFIX,
-                                              start_number=DOCKER_NUMBER,
-                                              content=labels,
-                                              extension='txt')
+        if labelfile is not None:
+            for key,value in labels.items():
+                key = "%s%s" %(prefix,key)
+                value = ADD(key,value,labelfile)
     return labels
 
 
@@ -403,7 +407,7 @@ def get_layer(image_id,namespace,repo_name,download_folder=None,registry=None,au
 
     # Download the layer atomically
     finished_download = download_stream_atomically(url=base,
-                                                   file_name=download_base,
+                                                   file_name=download_folder,
                                                    headers=token)
 
 

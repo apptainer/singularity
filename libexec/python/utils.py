@@ -188,14 +188,14 @@ def download_stream_atomically(url,file_name,headers=None):
     try:
         fd, tmp_file = tempfile.mkstemp(prefix=("%s.tmp." % file_name)) # file_name.tmp.XXXXXX
         os.close(fd)
-        response = api_get(base,headers=headers,stream=tmp_file)
+        response = api_get(url,headers=headers,stream=tmp_file)
         if isinstance(response, HTTPError):
             logger.error("Error downloading %s, exiting.", url)
             sys.exit(1)
         os.rename(tmp_file, file_name)
     except:
         download_folder = os.path.dirname(os.path.abspath(file_name))
-        logger.error("Error downloading %s. Do you have permission to write to %s?", base, download_folder)
+        logger.error("Error downloading %s. Do you have permission to write to %s?", url, download_folder)
         try:
             os.remove(tmp_file)
         except:
