@@ -92,11 +92,14 @@ fi
 if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
     message 1 "Adding environment to container\n"
 
-    if [ ! -d "$SINGULARITY_ROOTFS/.singularity/env" ]; then
-        install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/env"
-    fi
+    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity/env/90-builddef.sh"
+fi
 
-    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity/env/99-builddef.sh"
+### LABELS
+if singularity_section_exists "labels" "$SINGULARITY_BUILDDEF"; then
+    message 1 "Adding labels to container\n"
+
+    singularity_section_get "labels" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity/labels/deffile"
 fi
 
 

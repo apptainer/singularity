@@ -42,7 +42,7 @@ SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
 export SINGULARITY_CONTAINER
 
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 

@@ -77,6 +77,7 @@ int bootstrap_keyval_parse(char *path) {
                     // Cool little feature, every key defined in def file is transposed
                     // to environment
                     setenv(uppercase(bootdef_key), bootdef_value, 1);
+                    setenv(strjoin("SINGULARITY_BOOTDEF_", bootdef_key), bootdef_value, 1);
                 }
             }
         }

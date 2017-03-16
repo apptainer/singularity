@@ -40,11 +40,24 @@ fi
 
 
 install -d -m 0755 "$SINGULARITY_ROOTFS"
+install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity"
+install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/env"
+install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/labels"
 
 if [ -f "$SINGULARITY_BUILDDEF" ]; then
     ARGS=`singularity_section_args "pre" "$SINGULARITY_BUILDDEF"`
     singularity_section_get "pre" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x $ARGS || ABORT 255
 fi
+
+# Populate the labels.
+env | egrep "^SINGULARITY_BOOTDEF_" | while read i; do
+    KEY=`echo $i | cut -f1 -d = | sed -e 's/^SINGULARITY_BOOTDEF_//'`
+    VAL=`echo $i | cut -f2- -d =`
+
+    echo "KEY=$KEY"
+    echo "VAL=$VAL"
+
+done
 
 
 
