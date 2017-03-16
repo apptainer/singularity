@@ -86,8 +86,8 @@ def create_runscript(manifest,includecmd=False):
             break
 
     if cmd != None:
-        print("Adding Docker %s as Singularity runscript..." %(command.upper()))
-        print(cmd)
+        logger.debug("Adding Docker %s as Singularity runscript..." %(command.upper()))
+        logger.debug(cmd)
 
         # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
         if isinstance(cmd,list):
