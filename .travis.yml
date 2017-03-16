@@ -45,6 +45,7 @@ script:
   - make test
   - jdk_switcher use oraclejdk8
   - sonar-scanner
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_json
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_base
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker_import
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker_import_user
@@ -55,6 +56,7 @@ script:
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_custom_cache
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_default_cache
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_disable_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_json
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_base
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker_import
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker_import_user
