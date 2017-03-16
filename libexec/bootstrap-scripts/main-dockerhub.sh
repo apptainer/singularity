@@ -39,7 +39,8 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
 fi
 
 SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
-export SINGULARITY_CONTAINER
+SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity/labels.json"
+export SINGULARITY_CONTAINER SINGULARITY_LABELFILE
 
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"

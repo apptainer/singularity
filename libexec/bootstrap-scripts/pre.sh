@@ -49,19 +49,17 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
 fi
 
 # Populate the labels.
-S_UUID=`cat /proc/sys/kernel/random/uuid`
-message 1 "Adding label: 'SINGULARITY_CONTAINER_UUID' = '$S_UUID'\n"
-eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "SINGULARITY_CONTAINER_UUID" --value "$S_UUID" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
+export SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity/labels.json"
 
-message 1 "Adding label: 'SINGULARITY_DEFFILE' = '$SINGULARITY_BUILDDEF'\n"
-eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "SINGULARITY_DEFFILE" --value "$SINGULARITY_BUILDDEF" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
+S_UUID=`cat /proc/sys/kernel/random/uuid`
+eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "SINGULARITY_CONTAINER_UUID" --value "$S_UUID" --file $SINGULARITY_LABELFILE
+
+eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "SINGULARITY_DEFFILE" --value "$SINGULARITY_BUILDDEF" --file $SINGULARITY_LABELFILE
 
 env | egrep "^SINGULARITY_DEFFILE_" | while read i; do
     KEY=`echo $i | cut -f1 -d =`
     VAL=`echo $i | cut -f2- -d =`
-
-    message 1 "Adding label: '$KEY' = '$VAL'\n"
-    eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
+    eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "$KEY" --value "$VAL" --file $SINGULARITY_LABELFILE
 
 done
 

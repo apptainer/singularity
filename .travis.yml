@@ -68,4 +68,4 @@ script:
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_default_cache
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_disable_cache
   - pylint --version
-  - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611
+  - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611,E1101
