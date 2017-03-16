@@ -54,8 +54,9 @@ int bootstrap_keyval_parse(char *path) {
     while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
         char *bootdef_key;
 
-
-        if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
+        if ( line[0] == '%' ) { // We hit a section, stop parsing for keyword tags
+            break;
+        } else if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
             chomp(bootdef_key);
 
             if ( strncmp(bootdef_key, "#", 1) != 0 ) {
