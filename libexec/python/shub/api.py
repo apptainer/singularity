@@ -31,6 +31,7 @@ sys.path.append('..') # parent directory
 from utils import (
     add_http,
     api_get, 
+    download_stream_atomically,
     is_number,
     read_file,
     write_file,
@@ -125,7 +126,11 @@ def download_image(manifest,download_folder=None,extract=True):
     if download_folder != None:
         image_file = "%s/%s" %(download_folder,image_file)
     url = manifest['image']
-    image_file = api_get(url,stream=image_file)
+
+    # Download image file atomically, streaming
+    image_file = download_stream_atomically(url=url,
+                                            file_name=image_file)
+
     if extract == True:
         print("Decompressing %s" %image_file)
         os.system('gzip -d -f %s' %(image_file))
