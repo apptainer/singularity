@@ -97,9 +97,17 @@ fi
 
 ### LABELS
 if singularity_section_exists "labels" "$SINGULARITY_BUILDDEF"; then
-    message 1 "Adding labels to container\n"
+    message 1 "Adding deffile section labels to container\n"
 
-    singularity_section_get "labels" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity/labels/deffile"
+    singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read i; do
+        KEY=`echo $i | cut -f1 -d =`
+        VAL=`echo $i | cut -f2- -d =`
+
+        message 1 "Adding label: '$KEY' = '$VAL'\n"
+        eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
+
+    done
+
 fi
 
 

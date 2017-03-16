@@ -42,7 +42,6 @@ fi
 install -d -m 0755 "$SINGULARITY_ROOTFS"
 install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity"
 install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/env"
-install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/labels"
 
 if [ -f "$SINGULARITY_BUILDDEF" ]; then
     ARGS=`singularity_section_args "pre" "$SINGULARITY_BUILDDEF"`
@@ -50,12 +49,19 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
 fi
 
 # Populate the labels.
-env | egrep "^SINGULARITY_BOOTDEF_" | while read i; do
-    KEY=`echo $i | cut -f1 -d = | sed -e 's/^SINGULARITY_BOOTDEF_//'`
+S_UUID=`cat /proc/sys/kernel/random/uuid`
+message 1 "Adding label: 'SINGULARITY_CONTAINER_UUID' = '$S_UUID'\n"
+eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "SINGULARITY_CONTAINER_UUID" --value "$S_UUID" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
+
+message 1 "Adding label: 'SINGULARITY_DEFFILE' = '$SINGULARITY_BUILDDEF'\n"
+eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "SINGULARITY_DEFFILE" --value "$SINGULARITY_BUILDDEF" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
+
+env | egrep "^SINGULARITY_DEFFILE_" | while read i; do
+    KEY=`echo $i | cut -f1 -d =`
     VAL=`echo $i | cut -f2- -d =`
 
-    echo "KEY=$KEY"
-    echo "VAL=$VAL"
+    message 1 "Adding label: '$KEY' = '$VAL'\n"
+    eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
 
 done
 

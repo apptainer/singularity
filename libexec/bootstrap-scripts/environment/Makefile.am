@@ -10,7 +10,6 @@ tar:
 	sudo install -d -m 0755 newroot/.singularity
 	sudo install -d -m 0755 newroot/.singularity/env
 	sudo install -d -m 0755 newroot/.singularity/actions
-	sudo install -d -m 0755 newroot/.singularity/labels
 	sudo install -d -m 0755 newroot/dev
 	sudo install -d -m 0755 newroot/etc
 	sudo install -d -m 0755 newroot/home
