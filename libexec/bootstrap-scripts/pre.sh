@@ -56,6 +56,8 @@ eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "SIN
 
 eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "SINGULARITY_DEFFILE" --value "$SINGULARITY_BUILDDEF" --file $SINGULARITY_LABELFILE
 
+eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" --key "SINGULARITY_BOOTSTRAP_VERSION" --value "$SINGULARITY_version" --file $SINGULARITY_LABELFILE
+
 env | egrep "^SINGULARITY_DEFFILE_" | while read i; do
     KEY=`echo $i | cut -f1 -d =`
     VAL=`echo $i | cut -f2- -d =`
