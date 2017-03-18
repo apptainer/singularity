@@ -57,29 +57,24 @@ int bootstrap_keyval_parse(char *path) {
         if ( line[0] == '%' ) { // We hit a section, stop parsing for keyword tags
             break;
         } else if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
-            chomp(bootdef_key);
-            char *bootdef_value;
+	  chomp(bootdef_key);
+	  char *bootdef_value;
 
-            if ( ( bootdef_value = strtok(NULL, "\n") ) != NULL ) {
-                chomp_comments(bootdef_value);
-
-                singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
-
-                if ( strcasecmp(bootdef_key, "import") == 0 ) {
-                    bootstrap_keyval_parse(bootdef_value);
-                }
-
-                // Cool little feature, every key defined in def file is transposed
-                // to environment
-                setenv(uppercase(bootdef_key), bootdef_value, 1);
-                setenv(strjoin("SINGULARITY_DEFFILE_", bootdef_key), bootdef_value, 1);
-                }
-
-                // Cool little feature, every key defined in def file is transposed
-                // to environment
-                setenv(uppercase(bootdef_key), bootdef_value, 1);
-            }
-        }
+	  if ( ( bootdef_value = strtok(NULL, "\n") ) != NULL ) {
+	    chomp_comments(bootdef_value);
+	    
+	    singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
+	    
+	    if ( strcasecmp(bootdef_key, "import") == 0 ) {
+	      bootstrap_keyval_parse(bootdef_value);
+	    }
+	    
+	    // Cool little feature, every key defined in def file is transposed
+	    // to environment
+	    setenv(uppercase(bootdef_key), bootdef_value, 1);
+	    setenv(strjoin("SINGULARITY_DEFFILE_", bootdef_key), bootdef_value, 1);
+	  }
+	}
     }
 
     free(line);
