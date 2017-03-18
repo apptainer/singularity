@@ -87,10 +87,7 @@ int _singularity_image_bind(struct image_object *image) {
 #endif
 
     singularity_message(DEBUG, "Calculating image offset\n");
-    if ( ( lo64.lo_offset = singularity_image_offset(image) ) < 0 ) {
-        singularity_message(ERROR, "Could not obtain message offset of image\n");
-        ABORT(255);
-    }
+    lo64.lo_offset = singularity_image_offset(image);
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Finding next available loop device...\n");
