@@ -54,9 +54,9 @@ int bootstrap_keyval_parse(char *path) {
     while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
         char *bootdef_key;
 
-        chomp_comments(line);
-
-        if ( ( line != NULL ) && ( ( bootdef_key = strtok(line, ":") ) != NULL ) ) {
+        if ( line[0] == '%' ) { // We hit a section, stop parsing for keyword tags
+            break;
+        } else if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
             chomp(bootdef_key);
             char *bootdef_value;
 
@@ -69,8 +69,10 @@ int bootstrap_keyval_parse(char *path) {
                     bootstrap_keyval_parse(bootdef_value);
                 }
 
-                if ( strcasecmp(bootdef_key, "bootstrap") == 0 ) {
-                    singularity_registry_set("DRIVER", bootdef_value);
+                // Cool little feature, every key defined in def file is transposed
+                // to environment
+                setenv(uppercase(bootdef_key), bootdef_value, 1);
+                setenv(strjoin("SINGULARITY_DEFFILE_", bootdef_key), bootdef_value, 1);
                 }
 
                 // Cool little feature, every key defined in def file is transposed
@@ -85,4 +87,3 @@ int bootstrap_keyval_parse(char *path) {
 
     return(0);
 }
-

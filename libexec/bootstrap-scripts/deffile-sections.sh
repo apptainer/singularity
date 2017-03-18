@@ -75,7 +75,7 @@ if singularity_section_exists "setup" "$SINGULARITY_BUILDDEF"; then
     singularity_section_get "setup" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x $ARGS || ABORT 255
 fi
 
-if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
+if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" -a ! -L "$SINGULARITY_ROOTFS/bin/sh" ]; then
     message ERROR "Could not locate /bin/sh inside the container\n"
     exit 255
 fi
@@ -92,11 +92,19 @@ fi
 if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
     message 1 "Adding environment to container\n"
 
-    if [ ! -d "$SINGULARITY_ROOTFS/.singularity/env" ]; then
-        install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/env"
-    fi
+    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity/env/90-builddef.sh"
+fi
 
-    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity/env/99-builddef.sh"
+### LABELS
+if singularity_section_exists "labels" "$SINGULARITY_BUILDDEF"; then
+    message 1 "Adding deffile section labels to container\n"
+
+    singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
+        if [ -n "$KEY" -a -n "$VAL" ]; then
+            $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
+            set +x
+        fi
+    done
 fi
 
 
@@ -104,14 +112,16 @@ fi
 if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
     message 1 "Adding files to container\n"
 
-    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | while read origin dest; do
-        if [ -z "${dest:-}" ]; then
-            dest="$origin"
-        fi
-        message 1 "Copying '$origin' to '$dest'\n"
-        if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
-            message ERROR "Failed copying file(s) into container\n"
-            exit 255
+    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
+        if [ -n "${origin:-}" ]; then
+            if [ -z "${dest:-}" ]; then
+                dest="$origin"
+            fi
+            message 1 "Copying '$origin' to '$dest'\n"
+            if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
+                message ERROR "Failed copying file(s) into container\n"
+                exit 255
+            fi
         fi
     done
 fi

@@ -49,7 +49,7 @@ import os
 import tempfile
 
 
-def IMPORT(image,rootfs,auth=None,includecmd=False):
+def IMPORT(image,rootfs,auth=None,includecmd=False,labelfile=None):
     '''run is the main script that will obtain docker layers, runscript information (either entrypoint
     or cmd), and environment, and either return the list of files to extract (in case of add 
     :param image: the docker image to add
@@ -95,7 +95,10 @@ def IMPORT(image,rootfs,auth=None,includecmd=False):
 
     # Extract environment and labels
     extract_env(additions['manifest'])
-    extract_labels(additions['manifest'])
+    if labelfile is not None:
+        extract_labels(manifest=additions['manifest'],
+                       labelfile=labelfile,
+                       prefix="DOCKER_")
 
     # When we finish, clean up images
     logger.info("*** FINISHING DOCKER IMPORT PYTHON PORTION ****\n")
@@ -157,8 +160,7 @@ def ADD(image,auth=None,layerfile=None):
         layers.append(targz) # in case we want a list at the end
 
     # If the user wants us to write the layers to file, do it.
-    if layerfile != None:
-
+    if layerfile is not None:
         logger.debug("Writing Docker layers files to %s", layerfile)
         write_file(layerfile,"\n".join(layers),mode="w")
 

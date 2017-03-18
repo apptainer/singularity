@@ -6,12 +6,13 @@ for script in /.singularity/env/*.sh; do
     fi
 done
 
-if test -n "$\SHELL" -a -x "$SHELL"; then
-    exec "$SHELL" "$@"
-else
-    echo "ERROR: Shell does not exist in container: $SHELL" 1>&2
-    echo "ERROR: Using /bin/sh instead..." 1>&2
+if test -n "$SHELL" ; then
+    exec $SHELL "$@"
+
+    echo "ERROR: Failed running shell as defined by 'SINGULARITY_SHELL'" 1>&2
+    exit 1
 fi
+
 if test -x /bin/sh; then
     SHELL=/bin/sh
     export SHELL
