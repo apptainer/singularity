@@ -20,49 +20,19 @@
 #
 #
 
-## TEMP - Will come from test.sh export ##
-prefix="/usr/local"
-exec_prefix="${prefix}"
-libexecdir="${exec_prefix}/libexec"
-sysconfdir="${prefix}/etc"
-localstatedir="${prefix}/var"
-bindir="${exec_prefix}/bin"
 
-SINGULARITY_libexecdir="$libexecdir"
-SINGULARITY_sysconfdir="$sysconfdir"
-SINGULARITY_localstatedir="$localstatedir"
-SINGULARITY_PATH="$bindir"
-## TEMP ##
+. ./functions
+
+test_init "Checking container writability"
 
 
-STARTDIR=`pwd`
-TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
-CONTAINER="container.img"
-CONTAINERDIR="container_dir"
-SINGULARITY_MESSAGELEVEL=5
-export SINGULARITY_MESSAGELEVEL
 
-. ../libexec/functions
+CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
-/bin/echo
-/bin/echo "Running container writableness tests"
-/bin/echo
-
-/bin/echo "Creating temp working space at: $TEMPDIR"
-stest 0 mkdir -p "$TEMPDIR"
-stest 0 pushd "$TEMPDIR"
-
-/bin/echo
-/bin/echo "Building test container..."
-
-stest 0 sudo singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/../examples/busybox.def"
-echo -ne "#!/bin/sh\n\neval \"\$@\"\n" > singularity
-stest 0 chmod 0644 singularity
-stest 0 sudo singularity copy "$CONTAINER" -a singularity /
-
-/bin/echo
-/bin/echo "Checking writableness..."
+stest 0 singularity create -s 568 "$CONTAINER"
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
 
 stest 0 sudo chown root.root "$CONTAINER"
 stest 0 sudo chmod 0644 "$CONTAINER"
@@ -82,9 +52,6 @@ stest 0 singularity exec -w "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" touch /writetest.fail
 stest 0 sudo singularity exec -w "$CONTAINER" touch /writetest.pass
 
-stest 0 popd
-stest 0 sudo rm -rf "$TEMPDIR"
 
-/bin/echo
-/bin/echo "03-writable.sh tests OK"
-/bin/echo
+test_cleanup
+

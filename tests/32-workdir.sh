@@ -1,7 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2017, Michael W. Bauer. All rights reserved.
-# Copyright (c) 2017, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
 #
 # "Singularity" Copyright (c) 2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -24,27 +23,25 @@
 
 . ./functions
 
-test_init "Import/Export tests"
+test_init "Checking working directory"
 
 
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
-CONTAINERTAR="$SINGULARITY_TESTDIR/container.tar"
 
+# Creating a new container
 stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" docker://busybox
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
 
-stest 0 sh -c "singularity export '$CONTAINER' > '$CONTAINERTAR'"
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
+stest 0 mkdir -p /tmp/foo
+stest 0 touch /tmp/foo/testfile
 
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" "$CONTAINERTAR"
+stest 0 singularity exec "$CONTAINER" test -d /tmp/foo
+stest 0 singularity exec --workdir /tmp/foo "$CONTAINER" test -d /tmp/foo
+stest 1 singularity exec --workdir /tmp/foo --contain "$CONTAINER" test -d /tmp/foo
+stest 1 singularity exec --workdir /tmp/foo --contain "$CONTAINER" test -f /tmp/foo/testfile
 
+stest 0 rm -rf /tmp/foo
 
 test_cleanup
 

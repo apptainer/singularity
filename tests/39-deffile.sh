@@ -1,7 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2017, Michael W. Bauer. All rights reserved.
-# Copyright (c) 2017, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
 #
 # "Singularity" Copyright (c) 2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -24,26 +23,59 @@
 
 . ./functions
 
-test_init "Import/Export tests"
+test_init "Testing custom deffile options"
 
 
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
-CONTAINERTAR="$SINGULARITY_TESTDIR/container.tar"
+DEFFILE="$SINGULARITY_TESTDIR/container.def"
 
-stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" docker://busybox
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
 
-stest 0 sh -c "singularity export '$CONTAINER' > '$CONTAINERTAR'"
+cat <<EOF > "$DEFFILE"
+Bootstrap: docker
+From: busybox
+
+%runscript
+true
+EOF
+
+
 stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
+stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
+stest 0 singularity run "$CONTAINER"
+
+
+cat <<EOF > "$DEFFILE"
+Bootstrap: docker
+From: busybox
+
+%runscript
+false
+EOF
 
 stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" "$CONTAINERTAR"
+stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity run "$CONTAINER"
+
+
+cat <<EOF > "$DEFFILE"
+Bootstrap: docker
+From: busybox
+
+%files
+$DEFFILE /deffile
+
+%post
+touch /testfile
+EOF
+
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
+stest 0 singularity exec "$CONTAINER" true
+stest 0 singularity exec "$CONTAINER" test -f /deffile
+stest 0 singularity exec "$CONTAINER" test -f /testfile
 
 
 test_cleanup

@@ -1,7 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2017, Michael W. Bauer. All rights reserved.
-# Copyright (c) 2017, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
 #
 # "Singularity" Copyright (c) 2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -24,26 +23,19 @@
 
 . ./functions
 
-test_init "Import/Export tests"
+test_init "Testing user binds"
 
 
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
-CONTAINERTAR="$SINGULARITY_TESTDIR/container.tar"
 
+# Creating a new container
 stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" docker://busybox
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
 
-stest 0 sh -c "singularity export '$CONTAINER' > '$CONTAINERTAR'"
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" "$CONTAINERTAR"
+stest 0 touch /tmp/hello_world_test
+stest 0 singularity exec -B /tmp:/opt "$CONTAINER" test -f /opt/hello_world_test
+stest 0 singularity exec -B /tmp:/foo "$CONTAINER" test -f /foo/hello_world_test
 
 
 test_cleanup

@@ -74,5 +74,5 @@ stest 0 sh -c "singularity exec $CONTAINER id -u | grep `id -u`"
 stest 0 sh -c "sudo singularity exec $CONTAINER id -u | grep 0"
 
 
-
 test_cleanup
+

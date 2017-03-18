@@ -21,29 +21,24 @@
 #
 
 
-
 . ./functions
 
-test_init "Import/Export tests"
+test_init "Checking escalation block"
 
 
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
-CONTAINERTAR="$SINGULARITY_TESTDIR/container.tar"
 
 stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" docker://busybox
+stest 0 sudo singularity bootstrap "$CONTAINER" docker://centos:7
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
-stest 0 sh -c "singularity export '$CONTAINER' > '$CONTAINERTAR'"
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" "$CONTAINERTAR"
+# Checking no new privs with capabilities
+stest 0 sudo singularity exec "$CONTAINER" ping localhost -c 1
+stest 1 singularity exec "$CONTAINER" ping localhost -c 1
+stest 0 sudo singularity exec "$CONTAINER" ping localhost -c 1
+stest 1 singularity exec "$CONTAINER" ping localhost -c 1
 
 
 test_cleanup

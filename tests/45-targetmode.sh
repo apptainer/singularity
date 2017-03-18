@@ -21,29 +21,22 @@
 #
 
 
-
 . ./functions
 
-test_init "Import/Export tests"
+test_init "Checking target UID/GID mode"
 
 
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
-CONTAINERTAR="$SINGULARITY_TESTDIR/container.tar"
 
 stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" docker://busybox
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
-stest 0 sh -c "singularity export '$CONTAINER' > '$CONTAINERTAR'"
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" "$CONTAINERTAR"
+stest 0 sh -c "sudo SINGULARITY_TARGET_GID=`id -g` SINGULARITY_TARGET_UID=`id -u` singularity exec $CONTAINER whoami | grep `id -un`"
+stest 1 sh -c "SINGULARITY_TARGET_GID=99 SINGULARITY_TARGET_UID=99 singularity exec $CONTAINER whoami | grep 99"
+stest 1 sh -c "SINGULARITY_TARGET_GID=99 SINGULARITY_TARGET_UID=99 singularity exec $CONTAINER true"
 
 
 test_cleanup
