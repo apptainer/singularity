@@ -35,7 +35,10 @@ stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
 
 stest 0 touch /tmp/hello_world_test
 stest 0 singularity exec -B /tmp:/opt "$CONTAINER" test -f /opt/hello_world_test
-stest 0 singularity exec -B /tmp:/foo "$CONTAINER" test -f /foo/hello_world_test
+
+if [ -n "$SINGULARITY_OVERLAY_FS" ]; then
+    stest 0 singularity exec -B /tmp:/nonexistant "$CONTAINER" test -f /nonexistant/hello_world_test
+fi
 
 
 test_cleanup

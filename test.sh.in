@@ -27,12 +27,15 @@ sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 bindir="@bindir@"
 
+SINGULARITY_OVERLAY_FS="@OVERLAY_FS@"
+SINGULARITY_USER_NS="@USER_NS@"
+
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
 SINGULARITY_PATH="$bindir"
 
-export SINGULARITY_libexecdir SINGULARITY_sysconfdir SINGULARITY_localstatedir SINGULARITY_PATH
+export SINGULARITY_libexecdir SINGULARITY_sysconfdir SINGULARITY_localstatedir SINGULARITY_PATH SINGULARITY_OVERLAY_FS SINGULARITY_USER_NS
 
 
 
