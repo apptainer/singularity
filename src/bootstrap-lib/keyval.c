@@ -68,6 +68,10 @@ int bootstrap_keyval_parse(char *path) {
 	    if ( strcasecmp(bootdef_key, "import") == 0 ) {
 	      bootstrap_keyval_parse(bootdef_value);
 	    }
+
+	    if ( strcasecmp(bootdef_key, "bootstrap") == 0 ) {
+	      singularity_registry_set("DRIVER", bootdef_value);
+	    }
 	    
 	    // Cool little feature, every key defined in def file is transposed
 	    // to environment
