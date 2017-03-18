@@ -31,16 +31,17 @@ sys.path.append('..') # parent directory
 from utils import (
     add_http,
     api_get, 
+    download_stream_atomically,
     is_number,
     read_file,
     write_file,
     write_singularity_infos
 )
 
+from helpers.json.main import ADD
+
 from defaults import (
-    SHUB_API_BASE, 
-    SHUB_PREFIX, 
-    LABEL_BASE
+    SHUB_API_BASE
 )
 
 from logman import logger
@@ -125,7 +126,11 @@ def download_image(manifest,download_folder=None,extract=True):
     if download_folder != None:
         image_file = "%s/%s" %(download_folder,image_file)
     url = manifest['image']
-    image_file = api_get(url,stream=image_file)
+
+    # Download image file atomically, streaming
+    image_file = download_stream_atomically(url=url,
+                                            file_name=image_file)
+
     if extract == True:
         print("Decompressing %s" %image_file)
         os.system('gzip -d -f %s' %(image_file))
@@ -156,20 +161,26 @@ def get_image_name(manifest,extension='img.gz',use_hash=False):
     return image_name
 
 
-def extract_metadata(manifest):
+def extract_metadata(manifest,labelfile=None,prefix=None):
     '''extract_metadata will write a file of metadata from shub
     :param manifest: the manifest to use
     '''
+    if prefix is None:
+        prefix = ""
+    prefix = prefix.upper()
 
-    # The only metadata we don't need to keep is the spec
     metadata = manifest.copy()
-    del metadata['files']
-    del metadata['spec']
-    metadata = json.dumps(metadata)
-    metadata_file = write_singularity_infos(base_dir=LABEL_BASE,
-                                            prefix=SHUB_PREFIX,
-                                            start_number=1,
-                                            content=metadata,
-                                            extension='.json')
-    logger.debug("Saving Singularity Hub metadata to %s",metadata_file)    
+    remove_fields = ['files','spec','metrics']
+    for remove_field in remove_fields:
+        if remove_field in metadata:
+            del metadata[remove_field]
+
+    if labelfile is not None:
+        for key,value in metadata.items():
+            key = "%s%s" %(prefix,key)
+            value = ADD(key=key,
+                        value=value,
+                        jsonfile=labelfile)
+
+        logger.debug("Saving Singularity Hub metadata to %s",labelfile)    
     return metadata

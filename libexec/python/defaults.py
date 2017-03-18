@@ -114,8 +114,7 @@ SHUB_PREFIX = "shub"
 
 _envbase = "%s/env" %(METADATA_BASE)
 ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
-_labelbase = "%s/labels" %(METADATA_BASE)
-LABEL_BASE = getenv("SINGULARITY_LABELBASE", default=_labelbase)
+LABELFILE = getenv("SINGULARITY_LABELFILE")
 
 
 #######################################################################

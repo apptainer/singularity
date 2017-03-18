@@ -35,7 +35,7 @@ void action_ready(char *path) {
 
     singularity_message(DEBUG, "Checking if container is valid at: %s\n", path);
 
-    if ( is_exec(joinpath(path, "/bin/sh")) != 0 ) {
+    if ( is_exec(joinpath(path, "/bin/sh")) != 0 && is_link(joinpath(path, "/bin/sh")) != 0 ) {
         singularity_message(ERROR, "No valid /bin/sh in container\n");
         ABORT(255);
     }
