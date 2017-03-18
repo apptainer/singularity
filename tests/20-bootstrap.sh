@@ -20,6 +20,48 @@
 #
 #
 
+
+
+. ./functions
+
+test_init "Bootstrap tests"
+
+
+
+CONTAINER="$SINGULARITY_TESTDIR/container.img"
+CONTAINERDIR="$SINGULARITY_TESTDIR/container.dir"
+
+stest 0 singularity create -s 568 "$CONTAINER"
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
+
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 sudo singularity bootstrap "$CONTAINER" docker://busybox
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
+
+stest 0 mkdir "$CONTAINERDIR"
+stest 0 sudo singularity bootstrap "$CONTAINERDIR" "../examples/busybox.def"
+stest 0 singularity exec "$CONTAINERDIR" true
+stest 1 singularity exec "$CONTAINERDIR" false
+
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 1 singularity bootstrap "$CONTAINER" "../examples/busybox.def"
+stest 1 sudo singularity bootstrap "$CONTAINER" "/path/to/nofile"
+stest 1 sudo singularity bootstrap "$CONTAINER" docker://something_that_doesnt_exist_ever
+
+stest 0 sudo rm -rf "$CONTAINERDIR"
+
+test_cleanup
+
+
+
+
+
+
+
+
 ## TEMP - Will come from test.sh export ##
 prefix="/usr/local"
 exec_prefix="${prefix}"

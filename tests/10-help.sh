@@ -22,11 +22,30 @@
 
 . ./functions
 
-test_init "Checking environment"
+test_init "Help and usage tests"
 
-stest 0 sudo true
-stest 1 sudo false
-stest 0 which singularity
-stest 0 test -f "$SINGULARITY_sysconfdir/singularity/singularity.conf"
+ALL_COMMANDS="exec run shell test bootstrap copy create expand export import mount"
+
+# Testing singularity internal commands
+stest 0 singularity
+stest 0 singularity --help
+stest 0 singularity --version
+for i in $ALL_COMMANDS; do
+    echo
+    echo "Testing command usage: '$i'"
+    stest 0 singularity --help "$i"
+    stest 0 singularity -h "$i"
+    stest 0 singularity help "$i"
+    stest 0 singularity $i help
+    stest 0 singularity $i -h
+    stest 0 singularity $i --help
+done
+
+/bin/echo
+/bin/echo "Testing error on bad commands"
+
+stest 1 singularity help bogus
+stest 1 singularity bogus help
+
 
 test_cleanup

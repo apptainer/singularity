@@ -32,6 +32,53 @@ SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
 SINGULARITY_PATH="$bindir"
 
+export SINGULARITY_libexecdir SINGULARITY_sysconfdir SINGULARITY_localstatedir SINGULARITY_PATH
+
+
+
+if [ -z "$CLEAN_SHELL" ]; then
+    /bin/echo "Building/Installing Singularity to temporary directory"
+    /bin/echo "Reinvoking in a clean shell"
+    sleep 1
+    exec env -i CLEAN_SHELL=1 PATH="$SINGULARITY_PATH:/bin:/usr/bin:/sbin:/usr/sbin" bash "$0" "$@"
+fi
+
+if [ ! -f "autogen.sh" ]; then
+    /bin/echo "ERROR: Run this from the singularity source root"
+    exit 1
+fi
+
+if [ ! -x "$SINGULARITY_PATH/singularity" ]; then
+    /bin/echo "ERROR: Could not locate singularity program at: $SINGULARITY_PATH/singularity"
+    exit 1
+fi
+
+if [ ! -d "./tests/" ]; then
+    /bin/echo "ERROR: Could not locate singularity test directory"
+    exit 1
+fi
+
+if ! cd tests; then
+    /bin/echo "ERROR: Could not change into the Singularity test directory"
+    exit 1
+fi
+
+for test in *.sh; do
+    if [ -f "$test" ]; then
+        if ! /bin/sh "$test"; then
+            /bin/echo "ERROR: Failed running test: $test"
+            exit 1
+        fi
+    fi
+done
+
+
+exit
+
+
+
+
+
 
 ALL_COMMANDS="exec run shell test bootstrap copy create expand export import mount"
 
