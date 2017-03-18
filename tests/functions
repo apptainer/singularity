@@ -62,7 +62,7 @@ stest() {
     shift
 
     echo "$@" > "$SINGULARITY_TESTDIR/cmd"
-    message 2 " + %-80.80s " "$*"
+    message 2 " + %-100.100s " "$*"
 
     "$@" >$OUTPUT 2>&1
     RETVAL="$?"
