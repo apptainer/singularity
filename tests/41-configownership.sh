@@ -20,62 +20,25 @@
 #
 #
 
-## TEMP - Will come from test.sh export ##
-prefix="/usr/local"
-exec_prefix="${prefix}"
-libexecdir="${exec_prefix}/libexec"
-sysconfdir="${prefix}/etc"
-localstatedir="${prefix}/var"
-bindir="${exec_prefix}/bin"
 
-SINGULARITY_libexecdir="$libexecdir"
-SINGULARITY_sysconfdir="$sysconfdir"
-SINGULARITY_localstatedir="$localstatedir"
-SINGULARITY_PATH="$bindir"
-## TEMP ##
+. ./functions
+
+test_init "Checking escalation block"
 
 
-STARTDIR=`pwd`
-TEMPDIR=`mktemp -d /tmp/singularity-test.XXXXXX`
-CONTAINER="container.img"
-CONTAINERDIR="container_dir"
-SINGULARITY_MESSAGELEVEL=5
-export SINGULARITY_MESSAGELEVEL
 
-. ../libexec/functions
+CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
-/bin/echo
-/bin/echo "Running config file ownership tests"
-/bin/echo
-
-/bin/echo "Creating temp working space at: $TEMPDIR"
-stest 0 mkdir -p "$TEMPDIR"
-stest 0 pushd "$TEMPDIR"
-
-
-/bin/echo
-/bin/echo "Building test container..."
-
-stest 0 sudo singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "$STARTDIR/../examples/busybox.def"
-echo -ne "#!/bin/sh\n\neval \"\$@\"\n" > singularity
-stest 0 chmod 0644 singularity
-stest 0 sudo singularity copy "$CONTAINER" -a singularity /
-
-
-/bin/echo
-/bin/echo "Checking configuration file ownership..."
-
+stest 0 singularity create -s 568 "$CONTAINER"
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
 stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
+
 stest 0 sudo chown `id -un` "$SINGULARITY_sysconfdir/singularity/singularity.conf"
 stest 1 singularity exec "$CONTAINER" true
 stest 0 sudo chown root.root "$SINGULARITY_sysconfdir/singularity/singularity.conf"
 stest 0 singularity exec "$CONTAINER" true
 
 
-stest 0 popd
-stest 0 sudo rm -rf "$TEMPDIR"
+test_cleanup
 
-/bin/echo
-/bin/echo "05-confownership.sh tests OK"
-/bin/echo
