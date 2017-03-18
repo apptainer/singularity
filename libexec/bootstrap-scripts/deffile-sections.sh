@@ -113,14 +113,16 @@ fi
 if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
     message 1 "Adding files to container\n"
 
-    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | while read origin dest; do
-        if [ -z "${dest:-}" ]; then
-            dest="$origin"
-        fi
-        message 1 "Copying '$origin' to '$dest'\n"
-        if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
-            message ERROR "Failed copying file(s) into container\n"
-            exit 255
+    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
+        if [ -n "${origin:-}" ]; then
+            if [ -z "${dest:-}" ]; then
+                dest="$origin"
+            fi
+            message 1 "Copying '$origin' to '$dest'\n"
+            if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
+                message ERROR "Failed copying file(s) into container\n"
+                exit 255
+            fi
         fi
     done
 fi

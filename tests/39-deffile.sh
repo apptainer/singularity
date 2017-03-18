@@ -65,7 +65,11 @@ Bootstrap: docker
 From: busybox
 
 %files
+
+ # Spaces and comments
 $DEFFILE /deffile
+
+../Makefile /makefile
 
 %post
 touch /testfile
@@ -76,6 +80,7 @@ stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 0 singularity exec "$CONTAINER" test -f /deffile
 stest 0 singularity exec "$CONTAINER" test -f /testfile
+stest 0 singularity exec "$CONTAINER" test -f /makefile
 
 
 test_cleanup
