@@ -77,7 +77,7 @@ def create_runscript(manifest,includecmd=False):
     commands = ["Entrypoint","Cmd"]
     if includecmd == True:
         commands.reverse()
-    configs = get_configs(manifest,commands)
+    configs = get_configs(manifest,commands,delim=" ")
     
     # Look for non "None" command
     for command in commands:
@@ -145,17 +145,18 @@ def extract_labels(manifest,labelfile=None,prefix=None):
 
 
 
-def get_configs(manifest,keys):
+def get_configs(manifest,keys,delim=None):
     '''get_configs is a wrapper for get_config to return a dictionary
     with multiple config items.
     :param manifest: the complete manifest
     :param keys: the key to find
+    :param delim: given a list, combine based on this delim
     '''
     configs = dict()
     if not isinstance(keys,list):
         keys = [keys]
     for key in keys:
-        configs[key] = get_config(manifest,key)
+        configs[key] = get_config(manifest,key,delim=delim)
     return configs
 
 
@@ -353,10 +354,11 @@ def get_manifest(repo_name,namespace,repo_tag="latest",registry=None,auth=None,h
     return response
 
 
-def get_config(manifest,spec="Entrypoint"):
+def get_config(manifest,spec="Entrypoint",delim=None):
     '''get_config returns a particular spec (default is Entrypoint) from a manifest obtained with get_manifest.
     :param manifest: the manifest obtained from get_manifest
     :param spec: the key of the spec to return, default is "Entrypoint"
+    :param delim: Given a list, the delim to use to join the entries. Default is newline
     '''
   
     cmd = None
@@ -370,7 +372,9 @@ def get_config(manifest,spec="Entrypoint"):
 
     # Standard is to include commands like ['/bin/sh']
     if isinstance(cmd,list):
-        cmd = "\n".join(cmd)
+        if delim is None:
+            delim = "\n"
+        cmd = delim.join(cmd)
     logger.info("Found Docker command (%s) %s",spec,cmd)
     return cmd
 
