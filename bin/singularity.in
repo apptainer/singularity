@@ -26,18 +26,14 @@ libexecdir="@libexecdir@"
 sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 
-
 SINGULARITY_version="@VERSION@"
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
 
-RETVAL=0
 SINGULARITY_MESSAGELEVEL=1
-NEW_HOME=""
-CHANGE_HOME="NO"
 
-export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL SINGULARITY_MESSAGELEVEL NEW_HOME CHANGE_HOME
+export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir SINGULARITY_version SINGULARITY_MESSAGELEVEL 
 
 # the Modules package always calls 
 unset module

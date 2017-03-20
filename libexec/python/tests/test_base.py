@@ -450,14 +450,14 @@ class TestUtils(TestCase):
                                             prefix=prefix,
                                             start_number=start_number,
                                             content=content)
-        self.assertEqual(info_file,"%s/%s-%s" %(base_dir,prefix,start_number))
+        self.assertEqual(info_file,"%s/%s-%s" %(base_dir,start_number,prefix))
 
         print("Case 3: Adding another equivalent prefix should return next")
         info_file = write_singularity_infos(base_dir=base_dir,
                                             prefix=prefix,
                                             start_number=start_number,
                                             content=content)
-        self.assertEqual(info_file,"%s/%s-%s" %(base_dir,prefix,start_number+1))
+        self.assertEqual(info_file,"%s/%s-%s" %(base_dir,start_number+1,prefix))
         
         print("Case 4: Files have correct content.")
         with open(info_file,'r') as filey:

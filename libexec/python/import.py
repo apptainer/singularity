@@ -70,7 +70,7 @@ def main():
         logger.info("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
 
         from utils import  basic_auth_header
-        from defaults import SINGULARITY_ROOTFS, LAYERFILE
+        from defaults import SINGULARITY_ROOTFS, LAYERFILE, LABELFILE
 
         username = getenv("SINGULARITY_DOCKER_USERNAME") 
         password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
@@ -85,7 +85,8 @@ def main():
 
             IMPORT(auth=auth,
                    image=container,
-                   rootfs=SINGULARITY_ROOTFS)
+                   rootfs=SINGULARITY_ROOTFS,
+                   labelfile=LABELFILE)
 
 
         else:
@@ -111,10 +112,11 @@ def main():
 
         logger.info("\n*** STARTING SINGULARITY HUB IMPORT PYTHON  ****")    
 
-        from defaults import LAYERFILE
+        from defaults import LAYERFILE, LABELFILE
         from shub.main import IMPORT
         IMPORT(image=container,
-               layerfile=LAYERFILE)
+               layerfile=LAYERFILE,
+               labelfile=LABELFILE)
 
     else:
         logger.error("uri %s is not a currently supported uri for docker import. Exiting.",image_uri)

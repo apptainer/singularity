@@ -14,7 +14,7 @@ else
     aclocal
     autoheader
     autoconf
-    automake -ca -Wno-portability
+    automake -ca -Wno-portability --add-missing
 fi
 
 
