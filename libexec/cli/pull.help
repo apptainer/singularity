@@ -13,16 +13,10 @@ SUPPORTED URIs:
 
 EXAMPLES:
 
-    $ singularity pull shub://7
-      Cache folder set to /home/vanessa/.singularity/shub
-      Found image vsoch/singularity-images
-      Downloading image... 61b4721e3583d1c84b524696c08771dd6fa188bc.tar.gz
-    
     $ singularity pull shub://vsoch/singularity-images
-      Cache folder set to /home/vanessa/.singularity/shub
-      Found image vsoch/singularity-images
-      Downloading image... 61b4721e3583d1c84b524696c08771dd6fa188bc.tar.gz
-
+      Found image vsoch/singularity-images:mongo
+      Downloading image... vsoch-singularity-images-mongo.img
+    
 For additional help, please visit our public documentation pages which are
 found at:
 
