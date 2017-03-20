@@ -106,6 +106,11 @@ while true; do
             SINGULARITY_UNSHARE_IPC=1
             export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC
         ;;
+        -e|--cleanenv)
+            shift
+            SINGULARITY_CLEANENV=1
+            export SINGULARITY_CLEANENV
+        ;;
         -p|--pid)
             shift
             SINGULARITY_UNSHARE_PID=1

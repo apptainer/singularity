@@ -95,6 +95,11 @@ while true; do
             export SINGULARITY_WORKDIR
             shift
         ;;
+        -e|--cleanenv)
+            shift
+            SINGULARITY_CLEANENV=1
+            export SINGULARITY_CLEANENV
+        ;;
         -p|--pid)
             shift
             SINGULARITY_UNSHARE_PID=1
