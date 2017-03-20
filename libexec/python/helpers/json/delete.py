@@ -33,7 +33,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir)))
 
-import argparse
+import optparse
 import pickle
 from glob import glob
 from helpers.json.main import DELETE
@@ -43,19 +43,19 @@ import sys
 
 def get_parser():
 
-    parser = argparse.ArgumentParser(description="GET key from json")
+    parser = optparse.OptionParser(description="GET key from json")
 
-    parser.add_argument("--key", 
-                        dest='key', 
-                        help="key to delete from json", 
-                        type=str,
-                        default=None)
+    parser.add_option("--key", 
+                      dest='key', 
+                      help="key to delete from json", 
+                      type=str,
+                      default=None)
 
-    parser.add_argument("--file", 
-                        dest='file', 
-                        help="Path to json file to delete from", 
-                        type=str,
-                        default=None)
+    parser.add_option("--file", 
+                      dest='file', 
+                      help="Path to json file to delete from", 
+                      type=str,
+                      default=None)
 
     return parser
 
@@ -66,7 +66,7 @@ def main():
     parser = get_parser()
     
     try:
-        args = parser.parse_args()
+        (args,options) = parser.parse_args()
     except:
         sys.exit(0)
     
