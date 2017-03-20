@@ -39,12 +39,8 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
 fi
 
 
-# At this point, the container should be valid, and valid i defined by the
-# existance of /bin/sh
-if [ ! -L "$SINGULARITY_ROOTFS/bin/sh" -a ! -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
-    message ERROR "Container does not contain the valid minimum requirement of /bin/sh\n"
-    exit 1
-fi
+message 1 "Finalizing Singularity container\n"
+
 
 test -L "$SINGULARITY_ROOTFS/etc/mtab"  && rm -f "$SINGULARITY_ROOTFS/etc/mtab"
 

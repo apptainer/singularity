@@ -78,51 +78,53 @@ void singularity_priv_init(void) {
     memset(&uinfo, '\0', sizeof(uinfo));
     memset(&sinfo, '\0', sizeof(sinfo));
     char *home_tmp = singularity_registry_get("HOME");
+    char *target_uid_str = singularity_registry_get("TARGET_UID");
+    char *target_gid_str = singularity_registry_get("TARGET_GID");
     struct passwd *pwent;
 
     singularity_message(DEBUG, "Initializing user info\n");
 
-    if ( getuid() == 0 ) {
-        char *target_uid_str = singularity_registry_get("TARGET_UID");
-        char *target_gid_str = singularity_registry_get("TARGET_GID");
-        if ( target_uid_str && !target_gid_str ) {
-            singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
+    if ( target_uid_str && !target_gid_str ) {
+        singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
+        ABORT(255);
+    }
+    if (target_uid_str) {
+        if ( -1 == str2int(target_uid_str, &target_uid) ) {
+            singularity_message(ERROR, "Unable to convert target UID (%s) to integer: %s\n", target_uid_str, strerror(errno));
             ABORT(255);
         }
-        if (target_uid_str) {
-            if ( -1 == str2int(target_uid_str, &target_uid) ) {
-                singularity_message(ERROR, "Unable to convert target UID (%s) to integer: %s\n", target_uid_str, strerror(errno));
-                ABORT(255);
-            }
-            if (target_uid < 500) {
-                singularity_message(ERROR, "Target UID (%ld) must be 500 or greater to avoid system users.\n", target_uid);
-                ABORT(255);
-            }
-            if (target_uid > UINT_MAX) { // Avoid anything greater than the traditional overflow UID.
-                singularity_message(ERROR, "Target UID (%ld) cannot be greater than UINT_MAX.\n", target_uid);
-                ABORT(255);
-            }
-        }
-        if ( !target_uid_str && target_gid_str ) {
-            singularity_message(ERROR, "A target GID is set (%s) but a target UID is not set (SINGULARITY_TARGET_UID).  Both must be specified.\n", target_gid_str);
+        if (target_uid < 500) {
+            singularity_message(ERROR, "Target UID (%ld) must be 500 or greater to avoid system users.\n", target_uid);
             ABORT(255);
         }
-        if (target_gid_str) {
-            if ( -1 == str2int(target_gid_str, &target_gid) ) {
-                singularity_message(ERROR, "Unable to convert target GID (%s) to integer: %s\n", target_gid_str, strerror(errno));
-                ABORT(255);
-            }
-            if (target_gid < 500) {
-                singularity_message(ERROR, "Target GID (%ld) must be 500 or greater to avoid system groups.\n", target_gid);
-                ABORT(255);
-            }
-            if (target_gid > UINT_MAX) { // Avoid anything greater than the traditional overflow GID.
-                singularity_message(ERROR, "Target GID (%ld) cannot be greater than UINT_MAX.\n", target_gid);
-                ABORT(255);
-            }
+        if (target_uid > UINT_MAX) { // Avoid anything greater than the traditional overflow UID.
+            singularity_message(ERROR, "Target UID (%ld) cannot be greater than UINT_MAX.\n", target_uid);
+            ABORT(255);
+        }
+    }
+    if ( !target_uid_str && target_gid_str ) {
+        singularity_message(ERROR, "A target GID is set (%s) but a target UID is not set (SINGULARITY_TARGET_UID).  Both must be specified.\n", target_gid_str);
+        ABORT(255);
+    }
+    if (target_gid_str) {
+        if ( -1 == str2int(target_gid_str, &target_gid) ) {
+            singularity_message(ERROR, "Unable to convert target GID (%s) to integer: %s\n", target_gid_str, strerror(errno));
+            ABORT(255);
+        }
+        if (target_gid < 500) {
+            singularity_message(ERROR, "Target GID (%ld) must be 500 or greater to avoid system groups.\n", target_gid);
+            ABORT(255);
+        }
+        if (target_gid > UINT_MAX) { // Avoid anything greater than the traditional overflow GID.
+            singularity_message(ERROR, "Target GID (%ld) cannot be greater than UINT_MAX.\n", target_gid);
+            ABORT(255);
         }
     }
     if ( (target_uid >= 500) && (target_gid >= 500) ) {
+        if ( getuid() != 0 ) {
+            singularity_message(ERROR, "Unable to use TARGET UID/GID mode when not running as root.\n");
+            ABORT(255);
+        }
         uinfo.target_mode = 1;
         uinfo.uid = target_uid;
         uinfo.gid = target_gid;

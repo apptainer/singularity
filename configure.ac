@@ -215,17 +215,22 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 
 AC_ARG_WITH([userns],
             AS_HELP_STRING([--with-userns], [Enable use of user namespaces]),
-            [SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_USERNS"]
+            [
+                SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_USERNS"
+                USER_NS=1
+            ]
            )
+AC_SUBST(USER_NS)
+
 
 AC_CHECK_FUNCS(setns, [
                       ], [
                           NO_SETNS="-DNO_SETNS"
                       ]
                   )
-
-
 AC_SUBST(NO_SETNS)
+
+
 AC_MSG_CHECKING([for overlayfs])
 KVERS=`uname -r`
 if test -f "/lib/modules/$KVERS/modules.dep"; then
@@ -239,6 +244,11 @@ if test -f "/lib/modules/$KVERS/modules.dep"; then
 else
     AC_MSG_RESULT([maybe])
     SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
+fi
+
+AC_CHECK_PROG(PYTHON_CHECK,python,yes)
+if test x"$PYTHON_CHECK" != x"yes" ; then
+    AC_MSG_ERROR([Please install python before installing.])
 fi
 
 AC_SUBST(OVERLAY_FS)
@@ -359,5 +369,8 @@ AC_CONFIG_FILES([
    libexec/python/Makefile
    libexec/python/docker/Makefile
    libexec/python/shub/Makefile
+   libexec/python/helpers/Makefile
+   libexec/python/helpers/json/Makefile
+
 ])
 AC_OUTPUT

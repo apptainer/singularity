@@ -75,43 +75,70 @@ if singularity_section_exists "setup" "$SINGULARITY_BUILDDEF"; then
     singularity_section_get "setup" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x $ARGS || ABORT 255
 fi
 
+if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" -a ! -L "$SINGULARITY_ROOTFS/bin/sh" ]; then
+    message ERROR "Could not locate /bin/sh inside the container\n"
+    exit 255
+fi
+
 ### RUN POST
 if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
-    if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
-        ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
-        singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
+    message 1 "Running post scriptlet\n"
 
-    else
-        message ERROR "Could not run post scriptlet, /bin/sh not found in container\n"
-        exit 255
-    fi
+    ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
+    singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
 fi
 
 ### ENVIRONMENT
 if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
-    if [ ! -d "$SINGULARITY_ROOTFS/.singularity/env" ]; then
-        install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/env"
-    fi
+    message 1 "Adding environment to container\n"
 
-    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity/env/99-builddef.sh"
+    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity/env/90-builddef.sh"
+fi
+
+### LABELS
+if singularity_section_exists "labels" "$SINGULARITY_BUILDDEF"; then
+    message 1 "Adding deffile section labels to container\n"
+
+    singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
+        if [ -n "$KEY" -a -n "$VAL" ]; then
+            $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
+            set +x
+        fi
+    done
+fi
+
+
+### FILES
+if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
+    message 1 "Adding files to container\n"
+
+    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
+        if [ -n "${origin:-}" ]; then
+            if [ -z "${dest:-}" ]; then
+                dest="$origin"
+            fi
+            message 1 "Copying '$origin' to '$dest'\n"
+            if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
+                message ERROR "Failed copying file(s) into container\n"
+                exit 255
+            fi
+        fi
+    done
 fi
 
 
 ### RUN TEST
 if singularity_section_exists "test" "$SINGULARITY_BUILDDEF"; then
-    if [ -x "$SINGULARITY_ROOTFS/bin/sh" ]; then
-        ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
-        echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
-        echo "" >> "$SINGULARITY_ROOTFS/.test"
-        singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
+    message 1 "Running test scriptlet\n"
 
-        chmod 0755 "$SINGULARITY_ROOTFS/.test"
+    ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
+    echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
+    echo "" >> "$SINGULARITY_ROOTFS/.test"
+    singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
 
-        chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
-    else
-        message ERROR "Could not run test scriptlet, /bin/sh not found in container\n"
-        exit 255
-    fi
+    chmod 0755 "$SINGULARITY_ROOTFS/.test"
+
+    chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
 fi
 
 > "$SINGULARITY_ROOTFS/etc/hosts"

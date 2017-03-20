@@ -45,6 +45,7 @@ script:
   - make test
   - jdk_switcher use oraclejdk8
   - sonar-scanner
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_json
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_base
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker_import
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker_import_user
@@ -55,6 +56,7 @@ script:
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_custom_cache
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_default_cache
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_disable_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_json
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_base
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker_import
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker_import_user
@@ -66,7 +68,4 @@ script:
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_default_cache
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_disable_cache
   - pylint --version
-  - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611
-
-after_failure:
-  - find /tmp -type f -name 'singularity_test_output.*' -print0 | xargs -0 cat
+  - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611,E1101

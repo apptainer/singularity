@@ -238,6 +238,13 @@ void chomp(char *str) {
 
 }
 
+void chomp_comments(char *str) {
+    if (!str) {return;}
+    char *rest = str;
+    str = strtok_r(str, "#", &rest);
+    chomp(str);
+}
+
 int strlength(const char *string, int max_len) {
     int len;
     for (len=0; string[len] && len < max_len; len++) {

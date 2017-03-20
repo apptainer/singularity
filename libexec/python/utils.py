@@ -176,6 +176,34 @@ def api_get(url,data=None,default_header=True,headers=None,stream=None,return_re
     return stream
 
 
+
+def download_stream_atomically(url,file_name,headers=None):
+    '''download stream atomically will stream to a temporary file, and
+    rename only upon successful completion. This is to ensure that
+    errored downloads are not found as complete in the cache
+    :param file_name: the file name to stream to
+    :param url: the url to stream from
+    :param headers: additional headers to add to the get (default None)
+    '''
+    try:
+        fd, tmp_file = tempfile.mkstemp(prefix=("%s.tmp." % file_name)) # file_name.tmp.XXXXXX
+        os.close(fd)
+        response = api_get(url,headers=headers,stream=tmp_file)
+        if isinstance(response, HTTPError):
+            logger.error("Error downloading %s, exiting.", url)
+            sys.exit(1)
+        os.rename(tmp_file, file_name)
+    except:
+        download_folder = os.path.dirname(os.path.abspath(file_name))
+        logger.error("Error downloading %s. Do you have permission to write to %s?", url, download_folder)
+        try:
+            os.remove(tmp_file)
+        except:
+            pass
+        sys.exit(1)
+    return file_name
+
+
 def basic_auth_header(username, password):
     '''basic_auth_header will return a base64 encoded header object to
     generate a token
@@ -342,6 +370,7 @@ def create_folders(path):
             sys.exit(1)
 
 
+
 def extract_tar(archive,output_folder):
     '''extract_tar will extract a tar archive to a specified output folder
     :param archive: the archive file to extract
@@ -363,6 +392,7 @@ def extract_tar(archive,output_folder):
 
     # Should we return a list of extracted files? Current returns empty string
     return retval
+
 
 
 def write_file(filename,content,mode="w"):
@@ -388,6 +418,15 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
         else:
             filey.writelines(json.dumps(json_obj))
     return filename
+
+
+def read_json(filename,mode='r'):
+    '''read_json reads in a json file and returns
+    the data structure as dict.
+    '''
+    with open(filename,mode) as filey:
+        data = json.load(filey)
+    return data
 
 
 def read_file(filename,mode="r"):

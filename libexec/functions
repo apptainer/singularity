@@ -60,9 +60,14 @@ message() {
             printf "WARN: $MESSAGE" "$@" 1>&2
             tput -Txterm sgr0 2>/dev/null
         ;;
-        [1-5])
+        1|INFO)
             if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@"
+            fi
+        ;;
+        [2-5]|VERBOSE|DEBUG)
+            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
+                printf "$MESSAGE" "$@" 1>&2
             fi
         ;;
     esac

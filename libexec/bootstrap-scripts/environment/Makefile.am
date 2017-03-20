@@ -10,7 +10,6 @@ tar:
 	sudo install -d -m 0755 newroot/.singularity
 	sudo install -d -m 0755 newroot/.singularity/env
 	sudo install -d -m 0755 newroot/.singularity/actions
-	sudo install -d -m 0755 newroot/.singularity/labels
 	sudo install -d -m 0755 newroot/dev
 	sudo install -d -m 0755 newroot/etc
 	sudo install -d -m 0755 newroot/home
@@ -20,7 +19,6 @@ tar:
 	sudo install -d -m 0755 newroot/tmp
 	sudo install -d -m 0755 newroot/var
 	sudo install -d -m 0755 newroot/var/tmp
-	sudo install -d -m 0755 newroot/$(labeldir)
 	sudo install -m 0755 /dev/null newroot/etc/hosts
 	sudo install -m 0755 /dev/null newroot/etc/resolv.conf
 	sudo install -m 0755 /dev/null newroot/etc/passwd
@@ -28,7 +26,9 @@ tar:
 	sudo install -m 0755 runscript newroot/.singularity/
 	sudo install -m 0755 run shell exec newroot/.singularity/actions/
 	sudo install -m 0755 01-base.sh newroot/.singularity/env/
+	sudo install -m 0755 99-environment.sh newroot/.singularity/env/
 	sudo ln -sf .singularity/runscript newroot/singularity
+	sudo ln -sf .singularity/env/99-environment.sh newroot/environment
 	cd newroot; tar czf ../environment.tar .
 	sudo rm -rf newroot
 

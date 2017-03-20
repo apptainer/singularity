@@ -61,6 +61,10 @@ int main(int argc, char **argv) {
 
     singularity_sessiondir();
 
+    if ( singularity_registry_get("CLEANENV") != NULL ) {
+        envclean();
+    }
+
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     if ( singularity_registry_get("WRITABLE") == NULL ) {
@@ -97,7 +101,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    setenv("HISTFILE", "/dev/null", 1);
     setenv("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     setenv("SINGULARITY_NAME", singularity_image_name(&image), 1);
     command = singularity_registry_get("COMMAND");
