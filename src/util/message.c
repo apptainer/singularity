@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <syslog.h>
+#include <sys/stat.h>
 #include <libgen.h>
 #include <time.h>
 
@@ -33,6 +34,7 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/config_parser.h"
+#include "util/privilege.h"
 
 int messagelevel = -1;
 

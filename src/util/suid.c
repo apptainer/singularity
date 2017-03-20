@@ -45,7 +45,6 @@ int singularity_suid_init(char **argv) {
 #ifdef SINGULARITY_SUID
     singularity_message(VERBOSE2, "Running SUID program workflow\n");
 
-    // singularity_priv_init();
     char *image_name = singularity_registry_get("IMAGE");
     char *syslog_message[540];
     char *command = singularity_registry_get("COMMAND");
