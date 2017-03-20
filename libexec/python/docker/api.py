@@ -115,6 +115,8 @@ def extract_env(manifest):
     if environ is not None:
         if isinstance(environ,list):
             environ = "\n".join(environ)
+        environ = ["export %s" %x for x in environ.split('\n')]
+        environ = "\n".join(environ)
         logger.debug("Found Docker container environment!")    
         environ_file = write_singularity_infos(base_dir=ENV_BASE,
                                                prefix=DOCKER_PREFIX,
@@ -375,7 +377,7 @@ def get_config(manifest,spec="Entrypoint",delim=None):
         if delim is None:
             delim = "\n"
         cmd = delim.join(cmd)
-    logger.info("Found Docker command (%s) %s",spec,cmd)
+    logger.info("Found Docker command (%s) Fg%s",spec,cmd)
     return cmd
 
 
