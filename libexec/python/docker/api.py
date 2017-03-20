@@ -377,7 +377,8 @@ def get_config(manifest,spec="Entrypoint",delim=None):
         if delim is None:
             delim = "\n"
         cmd = delim.join(cmd)
-    logger.info("Found Docker command (%s) Fg%s",spec,cmd)
+    logger.info("Found Docker command (%s) %s",spec,cmd)
+
     return cmd
 
 
