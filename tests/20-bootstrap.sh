@@ -62,5 +62,7 @@ stest 1 sudo singularity bootstrap "$CONTAINER" docker://something_that_doesnt_e
 
 stest 0 sudo rm -rf "$CONTAINERDIR"
 
-test_cleanup
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 sh -c "sudo singularity bootstrap $CONTAINER ../examples/docker.def | grep busybox:latest "
 
+test_cleanup
