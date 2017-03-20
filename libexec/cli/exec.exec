@@ -75,7 +75,8 @@ while true; do
             SINGULARITY_CONTAIN=1
             SINGULARITY_UNSHARE_PID=1
             SINGULARITY_UNSHARE_IPC=1
-            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC
+            SINGULARITY_CLEANENV=1
+            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC SINGULARITY_CLEANENV
         ;;
         -S|--scratchdir|--scratch-dir|--scratch)
             shift
