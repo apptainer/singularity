@@ -44,7 +44,7 @@ if [ -z "${FROM:-}" ]; then
 fi
 
 SINGULARITY_CONTAINER="docker://$FROM"
-SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity/labels.json"
+SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/singularity.d/labels.json"
 export SINGULARITY_CONTAINER SINGULARITY_LABELFILE
 
 eval "$SINGULARITY_libexecdir/singularity/python/import.py"

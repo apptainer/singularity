@@ -35,7 +35,7 @@ from .api import (
     DockerApiConnection,
     extract_env,
     extract_labels,
-    docker_metadata_tar,
+    extract_metadata_tar,
 )
 
 from logman import logger
@@ -83,7 +83,7 @@ def IMPORT(image,rootfs,auth=None,includecmd=False,labelfile=None):
             sys.exit(1)
                
     # Generate runscript
-    runscript = create_runscript(manifest=additions['manifest'],
+    runscript = create_runscript(manifest=additions['manifestv1'],
                                  includecmd=includecmd)
 
     # Clean up?
@@ -116,32 +116,23 @@ def ADD(image,auth=None,layerfile=None):
 
     # Input Parsing ----------------------------
     # Parse image name, repo name, and namespace
-    client = DockerApiConnection()
-    client.load_image(image)
+    client = DockerApiConnection(image=image,auth=auth)
 
-    docker_image_uri = "Docker image path: %s/%s/%s:%s", %(image['registry'],
-                                                          image["namespace"],
-                                                          image["repo_name"],
-                                                          image["repo_tag"])
-    if image['version'] is not None:
-        docker_image_uri = "%s@%s" %(docker_image_uri,image['version'])
+    docker_image_uri = "Docker image path: %s/%s/%s:%s" %(client.registry,
+                                                          client.namespace,
+                                                          client.repo_name,
+                                                          client.repo_tag)
+    if client.version is not None:
+        docker_image_uri = "%s@%s" %(docker_image_uri,client.version)
     logger.info(docker_image_uri)
 
 
     # IMAGE METADATA -------------------------------------------
     # Use Docker Registry API (version 2.0) to get images ids, manifest
 
-    # Get an image manifest - has image ids to parse, and will be
-    # used later to get Cmd
-    manifest = client.get_manifest(repo_name=image['repo_name'],
-                                   namespace=image['namespace'],
-                                   repo_tag=image['repo_tag'],
-                                   registry=image['registry'],
-                                   version=image['version'],
-                                   auth=auth)
-
     # Get images from manifest using version 2.0 of Docker Registry API
-    images = client.get_images(manifest=manifest)
+    images = client.get_images()
+    manifest = client.manifest
 
     #  DOWNLOAD LAYERS -------------------------------------------
     # Each is a .tar.gz file, obtained from registry with curl
@@ -155,27 +146,27 @@ def ADD(image,auth=None,layerfile=None):
         targz = "%s/%s.tar.gz" %(cache_base,image_id)
         if not os.path.exists(targz):
             targz = client.get_layer(image_id=image_id,
-                                     namespace=image['namespace'],
-                                     repo_name=image['repo_name'],
-                                     registry=image['registry'],
-                                     download_folder=cache_base,
-                                     auth=auth)
+                                     download_folder=cache_base)
 
         layers.append(targz) # in case we want a list at the end
 
     # Add the environment export
-    tar_file = docker_metadata_tar(manifest)
+    tar_file = extract_metadata_tar(manifest,client.assemble_uri())
 
     # If the user wants us to write the layers to file, do it.
     if layerfile is not None:
         logger.debug("Writing Docker layers files to %s", layerfile)
         write_file(layerfile,"\n".join(layers),mode="w")
-        write_file(layerfile,tar_file,mode="a")
+        write_file(layerfile,"\n%s" %tar_file,mode="a")
+
+    # We need version1 of the manifest for CMD/ENTRYPOINT
+    manifestv1 = client.get_manifest(old_version=True)
 
     # Return additions dictionary
     additions = { "layers": layers,
                   "image" : image,
                   "manifest": manifest,
+                  "manifestv1":manifestv1,
                   "cache_base":cache_base,
                   "metadata": tar_file }
 

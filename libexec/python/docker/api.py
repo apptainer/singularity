@@ -26,10 +26,11 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 sys.path.append('..') # parent directory
 
-from __init__ import ApiConnection
+from base import ApiConnection
 
 from utils import (
     add_http,
+    get_cache,
     create_tar,
     write_file, 
     write_singularity_infos
@@ -46,6 +47,7 @@ from defaults import (
     ENV_BASE,
     LABELFILE,
     METADATA_BASE,
+    METADATA_FOLDER_NAME,
     RUNSCRIPT_COMMAND_ASIS
 )
 
@@ -64,20 +66,29 @@ except ImportError:
 class DockerApiConnection(ApiConnection):
 
     def __init__(self,**kwargs):
-        self.image = None
         self.auth = None
         self.token = None
         self.api_base = API_BASE
         self.api_version = API_VERSION
         self.manifest = None
         if 'image' in kwargs:
-            self.load_image(image)
+            self.load_image(kwargs['image'])
         if 'auth' in kwargs:
-            self.auth = auth
+            self.auth = kwargs['auth']
         if 'token' in kwargs:
-            self.token = token
+            self.token = kwargs['token']
         super(DockerApiConnection, self).__init__(**kwargs)
+        self.update_token()
         
+
+    def assemble_uri(self):
+        '''re-assemble the image uri, for components defined.
+        '''
+        image_uri = "%s-%s-%s:%s" %(self.registry,self.namespace,self.repo_name,self.repo_tag)
+        if self.version is not None:
+            image_uri = "%s@%s" %(image_uri,self.version)
+        return image_uri
+
 
     def _init_headers(self):
         # specify wanting version 2 schema, meaning the correct order of digests returned (base to child)
@@ -89,7 +100,6 @@ class DockerApiConnection(ApiConnection):
         '''load_image parses the image uri, and loads the different image parameters into
         the client. The image should be a docker uri (eg docker://) or name of docker image.
         '''
-        image = self.image
         image = parse_image_uri(image=image,uri="docker://")
         self.repo_name = image['repo_name']
         self.repo_tag = image['repo_tag']
@@ -111,13 +121,13 @@ class DockerApiConnection(ApiConnection):
             return None
 
         if response.code != 401 or "Www-Authenticate" not in response.headers:
-            logger.error("Authentication error for registry %s, exiting.", registry)
+            logger.error("Authentication error, exiting.")
             sys.exit(1)
 
         challenge = response.headers["Www-Authenticate"]
-        match = re.match('^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",', challenge)
+        match = re.match('^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?', challenge)
         if not match:
-            logger.error("Unrecognized authentication challenge from registry %s, exiting.", registry)
+            logger.error("Unrecognized authentication challenge, exiting.")
             sys.exit(1)
 
         realm = match.group(1)
@@ -153,7 +163,7 @@ class DockerApiConnection(ApiConnection):
         # Get full image manifest, using version 2.0 of Docker Registry API
         if self.manifest is None:
             if self.repo_name is not None and self.namespace is not None:
-                self.manifest = get_manifest()
+                self.manifest = self.get_manifest()
 
             else:
                 logger.error("No namespace and repo name OR manifest provided, exiting.")
@@ -192,11 +202,13 @@ class DockerApiConnection(ApiConnection):
             sys.exit(1)
 
 
-    def get_manifest(self):
+    def get_manifest(self,old_version=False):
         '''get_manifest should return an image manifest for a particular repo and tag. 
         The image details are extracted when the client is generated.
+        :param old_version: return version 1 (for cmd/entrypoint), default False
         '''
-        if self.registry == None:
+        registry = self.registry
+        if registry == None:
             registry = self.api_base
         registry = add_http(registry) # make sure we have a complete url
 
@@ -207,11 +219,11 @@ class DockerApiConnection(ApiConnection):
             base = "%s/%s" %(base,self.repo_tag)
         logger.info("Obtaining manifest: %s", base)
     
-        active_headers = self.headers
-        if headers is not None:
-            active_headers.update(headers)
+        headers = self.headers
+        if old_version == True:
+            headers['Accept'] = 'application/json' 
 
-        response = self.get(base,headers=active_headers)
+        response = self.get(base,headers=self.headers)
         try:
             response = json.loads(response)
         except:
@@ -219,7 +231,7 @@ class DockerApiConnection(ApiConnection):
             tags = self.get_tags()
             print("\n".join(tags))
             repo_uri = "%s/%s:%s" %(self.namespace,self.repo_name,self.repo_tag)
-            logger.error("Error getting manifest for %s/%s:%s, exiting.", repo_uri)
+            logger.error("Error getting manifest for %s, exiting.", repo_uri)
             sys.exit(1)
 
         return response
@@ -245,13 +257,39 @@ class DockerApiConnection(ApiConnection):
             print("Downloading layer %s" %image_id)
 
         # Download the layer atomically
-        finished_download = self.download_stream_atomically(url=base,
-                                                            file_name=download_folder,
-                                                            headers=token)
-
+        finished_download = self.download_atomically(url=base,
+                                                     file_name=download_folder)
  
         return finished_download
 
+
+    def get_config(self,spec="Entrypoint",delim=None):
+        '''get_config returns a particular spec (default is Entrypoint) 
+        from a VERSION 1 manifest obtained with get_manifest.
+        :param manifest: the manifest obtained from get_manifest
+        :param spec: the key of the spec to return, default is "Entrypoint"
+        :param delim: Given a list, the delim to use to join the entries. Default is newline
+        '''
+        
+        manifest = self.get_manifest(old_version=True)
+
+        cmd = None
+        if "history" in manifest:
+            for entry in manifest['history']:
+                if 'v1Compatibility' in entry:
+                    entry = json.loads(entry['v1Compatibility'])
+                    if "config" in entry:
+                        if spec in entry["config"]:
+                            cmd = entry["config"][spec]
+
+        # Standard is to include commands like ['/bin/sh']
+        if isinstance(cmd,list):
+            if delim is None:
+                delim = "\n"
+            cmd = delim.join(cmd)
+        logger.info("Found Docker command (%s) %s",spec,cmd)
+
+        return cmd
 
 
 # Authentication not required ---------------------------------------------------------------------------------
@@ -337,15 +375,14 @@ def create_runscript(manifest,includecmd=False):
 
 
 
-def extract_metadata_tar(manifest,include_env=True,include_labels=True):
+def extract_metadata_tar(manifest,image_name,include_env=True,include_labels=True):
     '''extract_metadata_tar will write a tarfile with the environment 
     '''
     tar_file = None
     if include_env or include_labels:
         cache_base = get_cache(subfolder="docker")
-        output_file = "%s/%s:%s.env.tar.gz" %(cache_base,
-                                              manifest['name'],
-                                              manifest['tag'])
+        output_file = "%s/metadata-%s.tar.gz" %(cache_base,
+                                                image_name)
 
         if not os.path.exists(output_file):
             files = []
@@ -353,19 +390,22 @@ def extract_metadata_tar(manifest,include_env=True,include_labels=True):
             if include_env:               
                 environ = extract_env(manifest)
                 if environ is not None:
-                    files.append ({'name':'.%s/%s-%s.sh' %(ENV_BASE,
-                                                           DOCKER_NUMBER,
-                                                           DOCKER_PREFIX),
+                    files.append ({'name':'./%s/env/%s-%s.sh' %(METADATA_FOLDER_NAME,
+                                                                DOCKER_NUMBER,
+                                                                DOCKER_PREFIX),
                                    'permission': "0755",
                                    'content': environ })
             if include_labels:
                 labels = extract_labels(manifest)
-                files.append ({'name': ".%s" %labelfile,
-                               'permission': "0755",
-                               'content': json.dumps(labels) })
+                if labels is not None:
+                    if isinstance(labels,dict):
+                        labels = json.dumps(labels)
+                    files.append ({'name': "./%s/labels.json" %METADATA_FOLDER_NAME,
+                                   'permission': "0755",
+                                   'content': labels })
  
-
-            tar_file = create_tar(files,output_file)
+            if len(files) > 0:
+                tar_file = create_tar(files,output_file)
 
     return tar_file
 
@@ -421,6 +461,31 @@ def extract_labels(manifest,labelfile=None,prefix=None):
     return labels
 
 
+def get_config(manifest,spec="Entrypoint",delim=None):
+    '''get_config returns a particular spec (default is Entrypoint) 
+    from a VERSION 1 manifest obtained with get_manifest.
+    :param manifest: the manifest obtained from get_manifest
+    :param spec: the key of the spec to return, default is "Entrypoint"
+    :param delim: Given a list, the delim to use to join the entries. Default is newline
+    '''
+    cmd = None
+    if "history" in manifest:
+        for entry in manifest['history']:
+            if 'v1Compatibility' in entry:
+                entry = json.loads(entry['v1Compatibility'])
+                if "config" in entry:
+                    if spec in entry["config"]:
+                        cmd = entry["config"][spec]
+
+    # Standard is to include commands like ['/bin/sh']
+    if isinstance(cmd,list):
+        if delim is None:
+            delim = "\n"
+        cmd = delim.join(cmd)
+    logger.info("Found Docker command (%s) %s",spec,cmd)
+
+    return cmd
+
 
 def get_configs(manifest,keys,delim=None):
     '''get_configs is a wrapper for get_config to return a dictionary
@@ -435,31 +500,3 @@ def get_configs(manifest,keys,delim=None):
     for key in keys:
         configs[key] = get_config(manifest,key,delim=delim)
     return configs
-
-
-
-
-def get_config(manifest,spec="Entrypoint",delim=None):
-    '''get_config returns a particular spec (default is Entrypoint) from a manifest obtained with get_manifest.
-    :param manifest: the manifest obtained from get_manifest
-    :param spec: the key of the spec to return, default is "Entrypoint"
-    :param delim: Given a list, the delim to use to join the entries. Default is newline
-    '''
-  
-    cmd = None
-    if "history" in manifest:
-        for entry in manifest['history']:
-            if 'v1Compatibility' in entry:
-                entry = json.loads(entry['v1Compatibility'])
-                if "config" in entry:
-                    if spec in entry["config"]:
-                         cmd = entry["config"][spec]
-
-    # Standard is to include commands like ['/bin/sh']
-    if isinstance(cmd,list):
-        if delim is None:
-            delim = "\n"
-        cmd = delim.join(cmd)
-    logger.info("Found Docker command (%s) %s",spec,cmd)
-
-    return cmd

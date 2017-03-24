@@ -51,8 +51,8 @@ class TestImport(TestCase):
         # Variables are obtained from environment
         os.environ["SINGULARITY_CONTAINER"] = "docker://ubuntu:latest" 
         os.environ["SINGULARITY_ROOTFS"] = self.tmpdir
-        os.mkdir('%s/.singularity' %(self.tmpdir))
-        os.mkdir('%s/.singularity/env' %(self.tmpdir))
+        os.mkdir('%s/singularity.d' %(self.tmpdir))
+        os.mkdir('%s/singularity.d/env' %(self.tmpdir))
 
         print("\n---START----------------------------------------")
 

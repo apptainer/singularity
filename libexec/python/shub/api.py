@@ -28,6 +28,11 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 sys.path.append('..') # parent directory
 
+from shell import (
+    remove_image_uri, 
+    get_image_uri
+)
+
 from utils import (
     add_http,
     is_number,
@@ -36,7 +41,7 @@ from utils import (
     write_singularity_infos
 )
 
-from __init__ import ApiConnection
+from base import ApiConnection
 
 from helpers.json.main import ADD
 
@@ -62,7 +67,7 @@ class SingularityApiConnection(ApiConnection):
         self.token = None
         self.api_base = SHUB_API_BASE
         if 'image' in kwargs:
-            self.image = image
+            self.load_image(kwargs['image'])
         if 'token' in kwargs:
             self.token = token
         super(SingularityApiConnection, self).__init__(**kwargs)
@@ -70,7 +75,9 @@ class SingularityApiConnection(ApiConnection):
 
     def load_image(self,image):
         self.image = image
-
+        if not is_number(image):
+            self.image = remove_image_uri(image)
+          
 
     def _get_token(self,domain=None,token_folder=None):
         '''_get_token is not currently in use, as API is open to all. When needed,
@@ -101,20 +108,22 @@ class SingularityApiConnection(ApiConnection):
         return token
 
 
-    def get_manifest(self,registry=None):
+    def get_manifest(self,image=None,registry=None):
         '''get_image will return a json object with image metadata, based on a unique id.
         :param image: the image name, either an id, or a repo name, tag, etc.
         :param registry: the registry (hub) to use, if not defined, default is used
         '''
+        if image == None:
+            image = self.image
         if registry == None:
             registry = self.api_base
         registry = add_http(registry) # make sure we have a complete url
 
         # Numeric images have slightly different endpoint from named
-        if is_number(self.image) == True:
-            base = "%s/containers/%s" %(registry,self.image)
+        if is_number(image) == True:
+            base = "%s/containers/%s" %(registry,image)
         else:
-        base = "%s/container/%s" %(registry,self.image)
+            base = "%s/container/%s" %(registry,image)
 
         # ---------------------------------------------------------------
         # If we eventually have private images, need to authenticate here       
@@ -141,13 +150,13 @@ class SingularityApiConnection(ApiConnection):
         print("Found image %s:%s" %(manifest['name'],manifest['branch']))
         print("Downloading image... %s" %(image_file))
 
-        if download_folder != None:
+        if download_folder is not None:
             image_file = "%s/%s" %(download_folder,image_file)
         url = manifest['image']
 
         # Download image file atomically, streaming
-        image_file = self.download_stream_atomically(url=url,
-                                                     file_name=image_file)
+        image_file = self.download_atomically(url=url,
+                                              file_name=image_file)
 
         if extract == True:
             print("Decompressing %s" %image_file)

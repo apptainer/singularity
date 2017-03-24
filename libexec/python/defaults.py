@@ -74,10 +74,12 @@ RUNSCRIPT_COMMAND_ASIS = convert2boolean(getenv("SINGULARITY_COMMAND_ASIS",
                                          default=False))
 
 SINGULARITY_ROOTFS = getenv("SINGULARITY_ROOTFS")
-_metadata_base = "%s/.singularity" %(SINGULARITY_ROOTFS)
+METADATA_FOLDER_NAME = "singularity.d"
+_metadata_base = "%s/%s" %(SINGULARITY_ROOTFS,METADATA_FOLDER_NAME)
 METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER", 
                                    default=_metadata_base,
                                    required=True)
+
 
 #######################################################################
 # Cache
@@ -114,7 +116,8 @@ SHUB_PREFIX = "shub"
 
 _envbase = "%s/env" %(METADATA_BASE)
 ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
-LABELFILE = getenv("SINGULARITY_LABELFILE")
+_labelfile = "%s/labels.json" %(METADATA_BASE)
+LABELFILE = getenv("SINGULARITY_LABELFILE", default=_labelfile)
 
 
 #######################################################################

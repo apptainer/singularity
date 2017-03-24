@@ -43,8 +43,6 @@ print("*** PYTHON VERSION %s DOCKER IMPORT (USER) TESTING START ***" %(VERSION))
 class TestImport(TestCase):
 
     def setUp(self):
-        self.namespace = 'library'
-        self.repo_name = 'ubuntu'
         self.tmpdir = tempfile.mkdtemp()
         self.contents_file = "%s/hello-kitty" %self.tmpdir
         self.here = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))        
