@@ -2,6 +2,7 @@
 
 # Environment modules if set, cause errors in containers
 unset module
+unset ml
 
 # Bash env has been known to cause issues in containers
 unset BASH_ENV
