@@ -151,13 +151,16 @@ def ADD(image,auth=None,layerfile=None):
         layers.append(targz) # in case we want a list at the end
 
     # Add the environment export
-    tar_file = extract_metadata_tar(manifest,client.assemble_uri())
+    manifestv1 = client.get_manifest(old_version=True)
+    tar_file = extract_metadata_tar(manifestv1,client.assemble_uri())
+    logger.debug('Tar file with Docker env and labels: %s' %(tar_file))
 
     # If the user wants us to write the layers to file, do it.
     if layerfile is not None:
         logger.debug("Writing Docker layers files to %s", layerfile)
         write_file(layerfile,"\n".join(layers),mode="w")
-        write_file(layerfile,"\n%s" %tar_file,mode="a")
+        if tar_file is not None:
+            write_file(layerfile,"\n%s" %tar_file,mode="a")
 
     # We need version1 of the manifest for CMD/ENTRYPOINT
     manifestv1 = client.get_manifest(old_version=True)
