@@ -151,6 +151,22 @@ class TestShell(TestCase):
         self.assertTrue(digest['registry'] == 'meow')
         self.assertTrue(digest['namespace'] == 'mix')
 
+        print("Case 9: Registry with port with tag")
+        image_name = "catdog://meow:0000/mix/%s:%s" %(self.repo_name,self.tag)
+        digest = parse_image_uri(image_name,uri="catdog://")
+        self.assertTrue(digest['registry'] == 'meow:0000')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 10: Registry with port without tag")
+        image_name = "catdog://meow:0000/mix/%s" %(self.repo_name)
+        digest = parse_image_uri(image_name,uri="catdog://")
+        self.assertTrue(digest['registry'] == 'meow:0000')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == 'latest')
+
 
 class TestUtils(TestCase):
 
