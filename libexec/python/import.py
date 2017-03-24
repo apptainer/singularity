@@ -119,7 +119,7 @@ def main():
                labelfile=LABELFILE)
 
     else:
-        logger.error("uri %s is not a currently supported uri for docker import. Exiting.",image_uri)
+        logger.error("uri %s is not a currently supported uri for import. Exiting.",image_uri)
         sys.exit(1)
 
 

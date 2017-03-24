@@ -80,9 +80,17 @@ def parse_image_uri(image,uri=None):
 
     # Be absolutely sure there are not comments
     image = image.split('#')[0]
-
+    
     # Get rid of any uri, and split the tag
     image = image.replace(uri,'')
+
+    # Does the uri have a digest or Github tag (version)?
+    image = image.split('@')
+    version = None
+    if len(image) == 2:
+        version = image[1]
+
+    image = image[0]
     image = image.split(':')
 
     # If there are two parts, we have a tag
@@ -116,6 +124,7 @@ def parse_image_uri(image,uri=None):
     logger.info("Namespace: %s", namespace)
     logger.info("Repo Name: %s", repo_name)
     logger.info("Repo Tag: %s", repo_tag)
+    logger.info("Version: %s", version)
 
     parsed = {'registry':registry,
               'namespace':namespace, 
@@ -127,5 +136,8 @@ def parse_image_uri(image,uri=None):
         if len(value) == 0:
             logger.error("%s found empty, check uri! Exiting.", value)
             sys.exit(1)
+
+    # Version is not required
+    parsed['version'] = version 
 
     return parsed
