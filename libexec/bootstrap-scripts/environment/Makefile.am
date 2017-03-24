@@ -29,6 +29,9 @@ tar:
 	sudo install -m 0755 99-environment.sh newroot/singularity.d/env/
 	sudo ln -sf singularity.d/runscript newroot/singularity
 	sudo ln -sf singularity.d/env/99-environment.sh newroot/environment
+	sudo ln -sf singularity.d/actions/run newroot/.run
+	sudo ln -sf singularity.d/actions/shell newroot/.shell
+	sudo ln -sf singularity.d/actions/exec newroot/.exec
 	cd newroot; tar czf ../environment.tar .
 	sudo rm -rf newroot
 

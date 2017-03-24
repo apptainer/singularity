@@ -73,7 +73,11 @@ int singularity_sessiondir(void) {
         ABORT(255);
     }
 
-    if ( ( singularity_registry_get("NOSESSIONCLEANUP") == NULL ) || ( singularity_registry_get("NOCLEANUP") == NULL ) ) {
+    if ( ( singularity_registry_get("NOSESSIONCLEANUP") != NULL ) || ( singularity_registry_get("NOCLEANUP") != NULL ) ) {
+        singularity_message(DEBUG, "Not spawning a session directory cleanup process\n");
+    } else {
+        singularity_message(DEBUG, "Spawning a session directory cleanup process\n");
+
         // singularity_fork() is currently causing problems with mvapich2, plus
         // it doesn't exec with the binaries real name properly
 //        int child = singularity_fork(); 

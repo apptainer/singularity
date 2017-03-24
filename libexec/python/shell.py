@@ -93,11 +93,21 @@ def parse_image_uri(image,uri=None):
     image = image[0]
     image = image.split(':')
 
-    # If there are two parts, we have a tag
-    if len(image) == 2:
-        repo_tag = image[1]
-        image = image[0]
+    # If there are three parts, we have port and tag
+    if len(image) == 3:
+        repo_tag = image[2]
+        image = "%s:%s" %(image[0],image[1])
 
+    # If there are two parts, we have port or tag
+    elif len(image) == 2:
+        # If there isn't a slash in second part, we have a tag
+        if image[1].find("/") == -1:
+            repo_tag = image[1]
+            image = image[0]
+        # Otherwise we have a port and we merge the path
+        else:
+            image = "%s:%s" %(image[0],image[1])
+            repo_tag = default_tag
     else:
         image = image[0]
         repo_tag = default_tag

@@ -65,6 +65,26 @@ else
     ABORT 1
 fi
 
+# Check for RPM's dbpath not being /var/lib/rpm
+RPM_CMD=`singularity_which rpm`
+if [ -z "${RPM_CMD:-}" ]; then
+    message ERROR "rpm not in PATH!\n"
+    ABORT 1
+fi
+RPM_DBPATH=$(rpm --showrc | grep -E ":\s_dbpath\s" | cut -f2)
+if [ "$RPM_DBPATH" != '%{_var}/lib/rpm' ]; then
+    message ERROR "RPM database is using a weird path: %s\n" "$RPM_DBPATH"
+    message WARNING "You are probably running this bootstrap on Debian or Ubuntu.\n"
+    message WARNING "There is a way to work around this problem:\n"
+    message WARNING "Create a file at path %s/.rpmmacros.\n" "$HOME"
+    message WARNING "Place the following lines into the '.rpmmacros' file:\n"
+    message WARNING "%s\n" '%_var /var'
+    message WARNING "%s\n" '%_dbpath %{_var}/lib/rpm'
+    message WARNING "After creating the file, re-run the bootstrap.\n"
+    message WARNING "More info: https://github.com/singularityware/singularity/issues/241\n"
+    ABORT 1
+fi
+
 if [ -z "${OSVERSION:-}" ]; then
     if [ -f "/etc/redhat-release" ]; then
         OSVERSION=`rpm -qf --qf '%{VERSION}' /etc/redhat-release`

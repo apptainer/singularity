@@ -40,8 +40,7 @@ class TestShell(TestCase):
 
     def setUp(self):
 
-        self.client = ApiConnection()
-        
+        self.client = ApiConnection()        
         print("\n---START----------------------------------------")
 
     def tearDown(self):
