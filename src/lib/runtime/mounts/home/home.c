@@ -80,15 +80,17 @@ int _singularity_runtime_mount_home(void) {
         singularity_message(ERROR, "Failed creating home directory stage\n");
     }
 
-    if ( is_dir(homedir_base) != 0 ) {
-        singularity_message(DEBUG, "Trying to create base home dir within container: %s\n", homedir_base);
+    if ( is_dir(joinpath(container_dir, homedir_base)) != 0 ) {
+        singularity_message(DEBUG, "Creating base home dir within container: %s\n", homedir_base);
         if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
             singularity_priv_escalate();
-            if ( s_mkpath(joinpath(container_dir, homedir_base), 0755) == 0 ) {
-                singularity_priv_drop();
+            int retval = s_mkpath(joinpath(container_dir, homedir_base), 0755);
+            singularity_priv_drop();
+            if ( retval == 0 ) {
                 singularity_message(DEBUG, "Created home directory within the container: %s\n", homedir_base);
             } else {
-                singularity_priv_drop();
+                singularity_message(ERROR, "Could not create directory within container %s: %s\n", joinpath(container_dir, homedir_base), strerror(errno));
+                ABORT(255);
             }
         } else {
             singularity_message(ERROR, "Base home directory does not exist within the container: %s\n", homedir_base);
