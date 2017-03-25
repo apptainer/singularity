@@ -235,7 +235,7 @@ def create_tar(files,output_file):
         for entity in files:
             try:
                 info = tarfile.TarInfo(name=entity['name'])
-                info.mode = int(entity['permission'])
+                info.mode = entity['permission']
                 info.mtime = int(datetime.datetime.now().strftime('%s'))
                 info.uid = info.gid = 0
                 info.uname = info.gname = "root"
