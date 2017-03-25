@@ -59,7 +59,7 @@ class ApiConnection(object):
         self.headers = headers
 
 
-    def update_token(self):
+    def update_token(self,response=None):
         '''empty update_token to be defined by subclasses, if necessary
         '''
         return None

@@ -47,4 +47,3 @@ stest 0 singularity import "$CONTAINER" "$CONTAINERTAR"
 
 
 test_cleanup
-
