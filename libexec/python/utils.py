@@ -42,7 +42,7 @@ try:
 except ImportError:
     from urlparse import urlparse
 
-from six import (
+from io import (
     BytesIO,
     StringIO
 )

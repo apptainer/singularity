@@ -69,7 +69,7 @@ class SingularityApiConnection(ApiConnection):
         if 'image' in kwargs:
             self.load_image(kwargs['image'])
         if 'token' in kwargs:
-            self.token = token
+            self.token = kwargs['token']
         super(SingularityApiConnection, self).__init__(**kwargs)
 
 

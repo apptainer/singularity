@@ -54,7 +54,7 @@ def SIZE(image,contentfile=None):
     '''
     logger.debug("Starting Singularity Hub SIZE, will get size from manifest")
     logger.info("Singularity Hub image: %s", image)
-    client = SingularityApiConnection(image)
+    client = SingularityApiConnection(image=image)
     manifest = client.get_manifest()
     size = extract_metadata(manifest)['size']
     if contentfile is not None:
@@ -69,7 +69,7 @@ def PULL(image,download_folder=None,layerfile=None):
     :param download folder: the folder to pull the image to.
     :param layerfile: if defined, write pulled image to file
     '''
-    client = SingularityApiConnection(image)
+    client = SingularityApiConnection(image=image)
     manifest = client.get_manifest()
     
     if download_folder == None:
