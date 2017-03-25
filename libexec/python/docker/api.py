@@ -389,7 +389,8 @@ def extract_metadata_tar(manifest,image_name,include_env=True,include_labels=Tru
 
             if include_env:               
                 environ = extract_env(manifest)
-                if environ is not None:
+                if environ not in [None,""]:
+                    logger.debug('Adding %s to files for metadata tar',environ)
                     files.append ({'name':'./%s/env/%s-%s.sh' %(METADATA_FOLDER_NAME,
                                                                 DOCKER_NUMBER,
                                                                 DOCKER_PREFIX),
@@ -400,6 +401,7 @@ def extract_metadata_tar(manifest,image_name,include_env=True,include_labels=Tru
                 if labels is not None:
                     if isinstance(labels,dict):
                         labels = json.dumps(labels)
+                    logger.debug('Adding %s labels for metadata tar',labels)
                     files.append ({'name': "./%s/labels.json" %METADATA_FOLDER_NAME,
                                    'permission': "0755",
                                    'content': labels })

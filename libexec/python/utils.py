@@ -228,21 +228,31 @@ def create_tar(files,output_file):
     with name, permission, and content) and write to a tarfile in memory. If output
     file is specified, the tarfile is written to disk.
     '''
-    tar = tarfile.open(output_file, "w:gz")
-    for entity in files:
-        info = tarfile.TarInfo(name=entity['name'])
-        info.mode = int(entity['permission'])
-        info.mtime = int(datetime.datetime.now().strftime('%s'))
-        info.uid = info.gid = 0
-        info.uname = info.gname = "root"
-        # Get size from stringIO write
-        filey = StringIO()
-        info.size = filey.write(entity['content'])
-        # But add BytesIO
-        content = BytesIO(entity['content'].encode('utf8'))
-        tar.addfile(info,content)
-    tar.close()
-    return output_file
+    finished_tar = None
+    error_count = 0
+    if len(files) > 0:
+        tar = tarfile.open(output_file, "w:gz")
+        for entity in files:
+            try:
+                info = tarfile.TarInfo(name=entity['name'])
+                info.mode = int(entity['permission'])
+                info.mtime = int(datetime.datetime.now().strftime('%s'))
+                info.uid = info.gid = 0
+                info.uname = info.gname = "root"
+                # Get size from stringIO write
+                filey = StringIO()
+                info.size = filey.write(entity['content'])
+                # But add BytesIO
+                content = BytesIO(entity['content'].encode('utf8'))
+                tar.addfile(info,content)
+            except:
+                logger.warning('Error generating tar content for %s, skipping' %(entity['content']))
+                error_count +=1
+                pass
+        tar.close()
+        if error_count < len(files):
+            finished_tar = output_file
+    return finished_tar
 
 
 ############################################################################
