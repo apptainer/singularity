@@ -47,16 +47,29 @@ int _singularity_runtime_environment(void) {
         int i;
         int envlen = 0;
 
+        singularity_message(DEBUG, "Counting environment vars\n");
         for(i = 0; env[i] != 0; i++) {
             envlen++;
         }
 
         envclone = (char**) malloc(i * sizeof(char *));
 
+        singularity_message(DEBUG, "Transposing SINGULARITYENV variables ('%d' total)\n", envlen);
         for(i = 0; env[i] != 0; i++) {
+            char *tok, *key, *val;
+        
             envclone[i] = strdup(env[i]);
+
+            key = strtok_r(envclone[i], "=", &tok);
+            val = strtok_r(NULL, "\n", &tok);
+
+            if ( strncmp(key, "SINGULARITYENV_", 15) == 0 ) {
+                singularity_message(DEBUG, "Converting envar '%s' to '%s' = '%s'\n", key, &key[15], val);
+                setenv(&key[15], val, 1);
+            }
         }
 
+        singularity_message(DEBUG, "Cleaning SINGULARITY_* envars\n");
         for(i = 0; i < envlen; i++) {
             char *tok, *key;
         
@@ -65,8 +78,6 @@ int _singularity_runtime_environment(void) {
             if ( strncmp(key, "SINGULARITY_", 12) == 0 ) {
                 singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
                 unsetenv(key);
-            } else {
-                singularity_message(DEBUG, "Leaving environment variable set: %s\n", key);
             }
         }
     }
