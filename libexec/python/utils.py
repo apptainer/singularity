@@ -241,9 +241,12 @@ def create_tar(files,output_file):
                 info.uname = info.gname = "root"
                 # Get size from stringIO write
                 filey = StringIO()
-                info.size = filey.write(entity['content'])
-                # But add BytesIO
-                content = BytesIO(entity['content'].encode('utf8'))
+                try: #python3
+                    info.size = filey.write(entity['content'])
+                    content = BytesIO(entity['content'].encode('utf8'))
+                except: #python2
+                    info.size = int(filey.write(entity['content'].decode('utf-8')))
+                    content = BytesIO(entity['content'].encode('utf8'))
                 tar.addfile(info,content)
             except:
                 logger.warning('Error generating tar content for %s, skipping' %(entity['content']))

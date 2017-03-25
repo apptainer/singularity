@@ -146,7 +146,7 @@ class DockerApiConnection(ApiConnection):
             self.token = token
             self.update_headers(token)
         except:
-            logger.error("Error getting token for repository %s/%s, exiting.", namespace,repo_name)
+            logger.error("Error getting token for repository %s/%s, exiting.", self.namespace,self.repo_name)
             sys.exit(1)
 
 
