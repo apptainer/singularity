@@ -43,6 +43,10 @@ if [ -z "${FROM:-}" ]; then
     exit 1
 fi
 
+if [ -z "${INCLUDECMD:-}" ]; then
+    export SINGULARITY_INCLUDECMD="yes"
+fi
+
 SINGULARITY_CONTAINER="docker://$FROM"
 SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/singularity.d/labels.json"
 export SINGULARITY_CONTAINER SINGULARITY_LABELFILE

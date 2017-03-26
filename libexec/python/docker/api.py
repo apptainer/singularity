@@ -36,9 +36,6 @@ from utils import (
     write_singularity_infos
 )
 
-from helpers.json.main import ADD
-from shell import parse_image_uri
-
 from defaults import (
     API_BASE,
     API_VERSION,
@@ -51,7 +48,11 @@ from defaults import (
     RUNSCRIPT_COMMAND_ASIS
 )
 
+from helpers.json.main import ADD
 from logman import logger
+from shell import parse_image_uri
+from templates import get_template
+
 import json
 import re
 import tempfile
@@ -326,20 +327,13 @@ def read_digests(manifest):
     return digests
     
 
-
-def create_runscript(manifest,includecmd=False):
+def extract_runscript(manifest,includecmd=False):
     '''create_runscript will write a bash script with default "ENTRYPOINT" 
     into the base_dir. If includecmd is True, CMD is used instead. For both.
     if the result is found empty, the other is tried, and then a default used.
     :param manifest: the manifest to use to get the runscript
     :param includecmd: overwrite default command (ENTRYPOINT) default is False
     '''
-    if METADATA_BASE == None:
-        logger.warning('''METADATA_BASE/SINGULARITY_ROOTFS not defined in environment!
-                       Will not write runscript to file, but return to function call.''')
-        runscript = None
-    else:
-        runscript = "%s/runscript" %(METADATA_BASE)
     cmd = None
 
     # Does the user want to use the CMD instead of ENTRYPOINT?
@@ -350,11 +344,11 @@ def create_runscript(manifest,includecmd=False):
     
     # Look for non "None" command
     for command in commands:
-        if configs[command] != None:
+        if configs[command] is not None:
             cmd = configs[command]
             break
 
-    if cmd != None:
+    if cmd is not None:
         logger.debug("Adding Docker %s as Singularity runscript..." %(command.upper()))
         logger.debug(cmd)
 
@@ -365,53 +359,60 @@ def create_runscript(manifest,includecmd=False):
         if not RUNSCRIPT_COMMAND_ASIS:
             cmd = 'exec %s "$@"' %(cmd)
         cmd = "#!/bin/sh\n\n%s" %(cmd)
-        logger.info("Generating runscript at %s",runscript)
-        if runscript != None:
-            output_file = write_file(runscript,cmd)
-            return output_file
-        return runscript
-    print("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
+        return cmd
+
+    logger.debug("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
     return cmd
 
 
 
-def extract_metadata_tar(manifest,image_name,include_env=True,include_labels=True):
-    '''extract_metadata_tar will write a tarfile with the environment 
+def extract_metadata_tar(manifest,image_name,include_env=True,
+                        include_labels=True,runscript=None):
+    '''extract_metadata_tar will write a tarfile with the environment,
+    labels, and runscript. include_env and include_labels should be booleans,
+    and runscript should be None or a string to write to the runscript. 
     '''
     tar_file = None
+    files = []
     if include_env or include_labels:
-        cache_base = get_cache(subfolder="docker",quiet=True)
-        output_file = "%s/metadata-%s.tar.gz" %(cache_base,
-                                                image_name)
 
-        if not os.path.exists(output_file):
-            files = []
+        # Extract and add environment
+        if include_env:               
+            environ = extract_env(manifest)
+            if environ not in [None,""]:
+                logger.debug('Adding Docker environment to metadata tar')
+                template = get_template('tarinfo')
+                template['name'] = './%s/env/%s-%s.sh' %(METADATA_FOLDER_NAME,
+                                                         DOCKER_NUMBER,
+                                                         DOCKER_PREFIX)
+                template['content'] = environ
+                files.append(template)
 
-            if include_env:               
-                environ = extract_env(manifest)
-                if environ not in [None,""]:
-                    logger.debug('Adding %s to files for metadata tar',environ)
-                    files.append ({'name':'./%s/env/%s-%s.sh' %(METADATA_FOLDER_NAME,
-                                                                DOCKER_NUMBER,
-                                                                DOCKER_PREFIX),
-                                   'permission': 493, #755,'0o755'
-                                   'content': environ })
-            if include_labels:
-                labels = extract_labels(manifest)
-                if labels is not None:
-                    if isinstance(labels,dict):
-                        labels = json.dumps(labels)
-                    logger.debug('Adding %s labels for metadata tar',labels)
-                    files.append ({'name': "./%s/labels.json" %METADATA_FOLDER_NAME,
-                                   'permission': 493,
-                                   'content': labels })
- 
-            if len(files) > 0:
-                tar_file = create_tar(files,output_file)
+        # Extract and add labels
+        if include_labels:
+            labels = extract_labels(manifest)
+            if labels is not None:
+                if isinstance(labels,dict):
+                    labels = json.dumps(labels)
+                logger.debug('Adding Docker labels to metadata tar')
+                template = get_template('tarinfo')
+                template['name'] = "./%s/labels.json" %METADATA_FOLDER_NAME
+                template['content'] = labels
+                files.append(template)
 
-        else:
-            logger.warning("metadata file %s already exists, not over-writing." %(output_file))
+        if runscript is not None:
+            logger.debug('Adding Docker runscript to metadata tar')
+            template = get_template('tarinfo')
+            template['name'] = "./%s/runscript" %METADATA_FOLDER_NAME
+            template['content'] = runscript
+            files.append(template)
 
+
+    if len(files) > 0:
+        output_folder = get_cache(subfolder="docker",quiet=True)
+        tar_file = create_tar(files,output_folder)      
+    else:
+        logger.warning("No environment, labels files, or runscript will be included.")
     return tar_file
 
 
@@ -464,6 +465,7 @@ def extract_labels(manifest,labelfile=None,prefix=None):
                 key = "%s%s" %(prefix,key)
                 value = ADD(key,value,labelfile)
     return labels
+
 
 
 def get_config(manifest,spec="Entrypoint",delim=None):

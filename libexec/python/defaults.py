@@ -50,7 +50,7 @@ def getenv(variable_key,required=False,default=None,silent=False):
     if silent:
         logger.debug("%s found",variable_key)
     else:
-        if variable != None:
+        if variable is not None:
             logger.debug("%s found as %s",variable_key,variable)
         else:
             logger.debug("%s not defined (None)",variable_key)
@@ -118,7 +118,8 @@ _envbase = "%s/env" %(METADATA_BASE)
 ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
 _labelfile = "%s/labels.json" %(METADATA_BASE)
 LABELFILE = getenv("SINGULARITY_LABELFILE", default=_labelfile)
-
+INCLUDE_CMD = convert2boolean(getenv("SINGULARITY_INCLUDECMD",
+                              default=False))
 
 #######################################################################
 # Singularity Hub

@@ -27,6 +27,7 @@ from defaults import (
 from logman import logger
 import datetime
 import errno
+import hashlib
 import json
 import os
 import shutil
@@ -222,40 +223,82 @@ def extract_tar(archive,output_folder):
     return run_command(command)
 
 
-
-def create_tar(files,output_file):
+def create_tar(files,output_folder=None):
     '''create_memory_tar will take a list of files (each a dictionary
-    with name, permission, and content) and write to a tarfile in memory. If output
-    file is specified, the tarfile is written to disk.
+    with name, permission, and content) and write the tarfile (a sha256 sum name 
+    is used) to the output_folder. If there is no output folde specified, the
+    tar is written to a temporary folder.
     '''
+    if output_folder is None:
+        output_folder = tempfile.mkdtemp()
+
     finished_tar = None
-    error_count = 0
-    if len(files) > 0:
-        tar = tarfile.open(output_file, "w:gz")
-        for entity in files:
-            try:
-                info = tarfile.TarInfo(name=entity['name'])
-                info.mode = entity['permission']
-                info.mtime = int(datetime.datetime.now().strftime('%s'))
-                info.uid = info.gid = 0
-                info.uname = info.gname = "root"
-                # Get size from stringIO write
-                filey = StringIO()
-                try: #python3
-                    info.size = filey.write(entity['content'])
-                    content = BytesIO(entity['content'].encode('utf8'))
-                except: #python2
-                    info.size = int(filey.write(entity['content'].decode('utf-8')))
-                    content = BytesIO(entity['content'].encode('utf8'))
-                tar.addfile(info,content)
-            except:
-                logger.warning('Error generating tar content for %s, skipping' %(entity['content']))
-                error_count +=1
-                pass
+    additions = []
+    contents = []
+
+    for entity in files:
+        info = tarfile.TarInfo(name=entity['name'])
+        info.mode = entity['mode']
+        info.mtime = int(datetime.datetime.now().strftime('%s'))
+        info.uid = entity["uid"]
+        info.gid = entity["gid"]
+        info.uname = entity["uname"] 
+        info.gname = entity["gname"]
+
+        # Get size from stringIO write
+        filey = StringIO()
+        content = None
+        try: #python3
+            info.size = filey.write(entity['content'])
+            content = BytesIO(entity['content'].encode('utf8'))
+        except: #python2
+            info.size = int(filey.write(entity['content'].decode('utf-8')))
+            content = BytesIO(entity['content'].encode('utf8'))
+        pass
+        
+        if content is not None:
+            addition = {'content':content,
+                        'info':info}
+            additions.append(addition)
+            contents.append(content)
+
+    # Now generate the sha256 name based on content
+    if len(additions) > 0:
+        hashy = get_content_hash(contents)
+        finished_tar = "%s/sha256:%s.tar.gz" %(output_folder, hashy)
+
+        # Warn the user if it already exists
+        if os.path.exists(finished_tar):
+            logger.warning("metadata file %s already exists, will over-write." %(finished_tar))
+
+        # Add all content objects to file
+        tar = tarfile.open(finished_tar, "w:gz")
+        for a in additions:
+            tar.addfile(a["info"],a["content"])
         tar.close()
-        if error_count < len(files):
-            finished_tar = output_file
+
+    else:
+        logger.warning("No contents, environment or labels, for tarfile, will not generate.")
+
     return finished_tar
+
+
+
+############################################################################
+## HASHES ##################################################################
+############################################################################
+
+
+def get_content_hash(contents):
+    '''get_content_hash will return a hash for a list of content (bytes or other)
+    '''
+    hasher = hashlib.sha256()
+    for content in contents:
+        if not isinstance(content,bytes):
+            content = bytes(content)
+        hasher.update(content) 
+    return hasher.hexdigest()
+
 
 
 ############################################################################
