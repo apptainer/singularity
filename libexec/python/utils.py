@@ -294,6 +294,8 @@ def get_content_hash(contents):
     '''
     hasher = hashlib.sha256()
     for content in contents:
+        if isinstance(content,BytesIO):
+            content = content.getvalue()
         if not isinstance(content,bytes):
             content = bytes(content)
         hasher.update(content) 

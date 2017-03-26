@@ -69,23 +69,23 @@ class TestApi(TestCase):
                                      includecmd=True)
         # Commands are always in format exec [] "$@"
         # 'exec echo \'Hello World\' "$@"'
-        self.assertTrue(re.search(default_cmd,runscript) is not None)
+        self.assertTrue(default_cmd in runscript)
 
         print("Case 2: Asking for ENTRYPOINT when none defined")        
         runscript = extract_runscript(manifest=manifest)
-        self.assertTrue(default_cmd in runscript.split('\n'))
+        self.assertTrue(default_cmd in runscript)
 
         client = DockerApiConnection(image="docker://bids/mriqc:0.0.2")        
         manifest = client.get_manifest(old_version=True)
 
         print("Case 3: Asking for ENTRYPOINT when defined")        
         runscript = extract_runscript(manifest=manifest)
-        self.assertTrue('exec /usr/bin/run_mriqc "$@"' in runscript.split('\n'))        
+        self.assertTrue('exec /usr/bin/run_mriqc "$@"' in runscript)        
 
         print("Case 4: Asking for CMD when defined")              
         runscript = extract_runscript(manifest=manifest,
                                       includecmd=True)
-        self.assertTrue('exec --help "$@"' in runscript.split('\n'))        
+        self.assertTrue('exec --help "$@"' in runscript)        
 
         print("Case 5: Asking for ENTRYPOINT when None, should return CMD")    
         from docker.api import get_configs
@@ -95,7 +95,7 @@ class TestApi(TestCase):
         configs = get_configs(manifest,['Cmd','Entrypoint'])
         self.assertEqual(configs['Entrypoint'],None)
         runscript = extract_runscript(manifest=manifest)
-        self.assertTrue(re.search(configs['Cmd'], runscript))
+        self.assertTrue(configs['Cmd'] in runscript)
 
 
     def test_get_token(self):

@@ -66,11 +66,11 @@ def main():
     if image_uri == "docker://":
 
         logger.info("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
-        logger.info("Docker layers and (env,labels,runscript) will be written to: %s", LAYERFILE)
 
         from utils import  basic_auth_header
         from defaults import LAYERFILE
 
+        logger.info("Docker layers and (env,labels,runscript) will be written to: %s", LAYERFILE)
         username = getenv("SINGULARITY_DOCKER_USERNAME") 
         password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
 
