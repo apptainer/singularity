@@ -180,7 +180,8 @@ def extract_metadata(manifest,labelfile=None,prefix=None):
             key = "%s%s" %(prefix,key)
             value = ADD(key=key,
                         value=value,
-                        jsonfile=labelfile)
+                        jsonfile=labelfile,
+                        force=True)
 
         logger.debug("Saving Singularity Hub metadata to %s",labelfile)    
     return metadata

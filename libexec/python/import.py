@@ -96,7 +96,8 @@ def main():
 
                 manifest = ADD(auth=auth,
                                image=container,
-                               layerfile=LAYERFILE)
+                               layerfile=LAYERFILE,
+                               force=True)
  
             else:
                 logger.error('''You must define either SINGULARITY_ROOTFS for a full import,

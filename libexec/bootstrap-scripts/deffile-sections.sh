@@ -101,7 +101,7 @@ if singularity_section_exists "labels" "$SINGULARITY_BUILDDEF"; then
 
     singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
         if [ -n "$KEY" -a -n "$VAL" ]; then
-            $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
+            $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py -f --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity/labels.json"
             set +x
         fi
     done
