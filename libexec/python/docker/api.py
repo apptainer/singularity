@@ -380,7 +380,7 @@ def extract_metadata_tar(manifest,image_name,include_env=True,include_labels=Tru
     '''
     tar_file = None
     if include_env or include_labels:
-        cache_base = get_cache(subfolder="docker")
+        cache_base = get_cache(subfolder="docker",quiet=True)
         output_file = "%s/metadata-%s.tar.gz" %(cache_base,
                                                 image_name)
 
@@ -394,7 +394,7 @@ def extract_metadata_tar(manifest,image_name,include_env=True,include_labels=Tru
                     files.append ({'name':'./%s/env/%s-%s.sh' %(METADATA_FOLDER_NAME,
                                                                 DOCKER_NUMBER,
                                                                 DOCKER_PREFIX),
-                                   'permission': oct(493), #755
+                                   'permission': 493, #755,'0o755'
                                    'content': environ })
             if include_labels:
                 labels = extract_labels(manifest)
@@ -403,11 +403,14 @@ def extract_metadata_tar(manifest,image_name,include_env=True,include_labels=Tru
                         labels = json.dumps(labels)
                     logger.debug('Adding %s labels for metadata tar',labels)
                     files.append ({'name': "./%s/labels.json" %METADATA_FOLDER_NAME,
-                                   'permission': oct(493),
+                                   'permission': 493,
                                    'content': labels })
  
             if len(files) > 0:
                 tar_file = create_tar(files,output_file)
+
+        else:
+            logger.warning("metadata file %s already exists, not over-writing." %(output_file))
 
     return tar_file
 

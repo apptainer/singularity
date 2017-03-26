@@ -263,7 +263,7 @@ def create_tar(files,output_file):
 ############################################################################
 
 
-def get_cache(subfolder=None):
+def get_cache(subfolder=None,quiet=False):
     '''get_cache will return the user's cache for singularity. The path
     returned is generated at the start of the run, and returned optionally
     with a subfolder
@@ -280,7 +280,8 @@ def get_cache(subfolder=None):
     # Create the cache folder(s), if don't exist
     create_folders(cache_base)
 
-    print("Cache folder set to %s" %cache_base)
+    if not quiet:
+        print("Cache folder set to %s" %cache_base)
     return cache_base
 
 
