@@ -29,12 +29,12 @@ test_init "Docker bootstrap tests"
 
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
-DEFFILE="$SINGULARITY_TESTDIR/examples/docker/Singularity"
+DEFFILE="$SINGULARITY_TESTDIR/example.def"
 
-# Make sure the example docker.def is pointing to busybox:latest (nobody mess with the examples! LOL)
+# Make sure the examples/docker/Singularity is pointing to busybox:latest (nobody mess with the examples! LOL)
 stest 0 grep busybox:latest ../examples/docker/Singularity
 
-stest 0 cp ../examples/docker.def "$DEFFILE"
+stest 0 cp ../examples/docker/Singularity "$DEFFILE"
 stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
 
