@@ -29,7 +29,7 @@ test_init "Re-Bootstrap tests"
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
 stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
