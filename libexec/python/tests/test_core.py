@@ -272,31 +272,6 @@ class TestUtils(TestCase):
         self.assertFalse(is_number("44ca6e7c6c35778ab80b34c3fc940c32f1810f39"))
 
 
-    def test_change_permission(self):
-        '''test_change_permissions will make sure that we can change
-        permissions of a file
-        '''
-        print("Testing utils.change_permissions...")
-
-        from utils import change_permissions
-        from stat import ST_MODE
-        tmpfile = '%s/.mooza' %(self.tmpdir)
-        os.system('touch %s' %(tmpfile))
-
-        print("Case 1: Base permissions are 644")
-        permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
-        self.assertTrue(permissions,'664')
-
-        print("Case 2: Permissions are changed to 755")
-        change_permissions(tmpfile,permission=755)  
-        new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
-        self.assertTrue(new_permissions,'755')
-
-        print("Case 2: Permissions are changed back to 644")
-        change_permissions(tmpfile,permission=644)  
-        new_permissions = oct(os.stat(tmpfile)[ST_MODE])[-3:]
-        self.assertTrue(new_permissions,'664')
-
 
     def test_extract_tar(self):
         '''test_extract_tar will test extraction of a tar.gz file
