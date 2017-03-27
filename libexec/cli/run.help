@@ -50,12 +50,17 @@ CONTAINER FORMATS SUPPORTED:
 
 EXAMPLES:
 
+    # Here we see that the runscript prints "Hello world: $@"
     $ singularity exec /tmp/Debian.img cat /singularity
     #!/bin/sh
     echo "Hello world: $@"
+
+    # It runs with our inputs when we run the image
     $ singularity run /tmp/Debian.img one two three
     Hello world: one two three
 
+    # Note that this does the same thing
+    $ ./tmp/Debian.img one two three
 
 For additional help, please visit our public documentation pages which are
 found at:
