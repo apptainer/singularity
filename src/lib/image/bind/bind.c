@@ -82,9 +82,8 @@ int _singularity_image_bind(struct image_object *image) {
     }
 
 
-#ifdef LO_FLAGS_AUTOCLEAR
+    singularity_message(DEBUG, "Setting LO_FLAGS_AUTOCLEAR\n");
     lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
-#endif
 
     singularity_message(DEBUG, "Calculating image offset\n");
     lo64.lo_offset = singularity_image_offset(image);
