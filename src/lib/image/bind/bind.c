@@ -96,8 +96,10 @@ int _singularity_image_bind(struct image_object *image) {
         if ( is_blk(test_loopdev) < 0 ) {
             singularity_message(DEBUG, "Instantiating loop device: %s\n", test_loopdev);
             if ( mknod(test_loopdev, S_IFBLK | 0644, makedev(7, i)) < 0 ) {
-                singularity_message(ERROR, "Could not create %s: %s\n", test_loopdev, strerror(errno));
-                ABORT(255);
+                if ( errno != EEXIST ) {
+                    singularity_message(ERROR, "Could not create %s: %s\n", test_loopdev, strerror(errno));
+                    ABORT(255);
+                }
             }
         }
 
