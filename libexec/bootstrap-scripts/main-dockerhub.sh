@@ -39,11 +39,20 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
 fi
 
 SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
-SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity/labels.json"
-export SINGULARITY_CONTAINER SINGULARITY_LABELFILE
+SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
+export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
 
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+
+for i in `cat "$SINGULARITY_CONTENTS"`; do
+    name=`basename "$i"`
+    message 1 "Exploding layer: $name\n"
+    zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar -xf -) || exit $?
+done
+
+rm -f "$SINGULARITY_CONTENTS"
+
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 
