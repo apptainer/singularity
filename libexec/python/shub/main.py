@@ -28,15 +28,13 @@ sys.path.append('..') # parent directory
 from shell import parse_image_uri
 
 from .api import (
-    download_image, 
     extract_metadata,
-    get_manifest,
-    get_image_name
+    get_image_name,
+    SingularityApiConnection
 )
 
 from utils import (
     add_http,
-    api_get, 
     get_cache,
     write_file
 )
@@ -50,6 +48,20 @@ import os
 import tempfile
 
 
+def SIZE(image,contentfile=None):
+    '''size is intended to be run before an import, to return to the contentfile a list of sizes
+    (one per layer) corresponding with the layers that will be downloaded for image
+    '''
+    logger.debug("Starting Singularity Hub SIZE, will get size from manifest")
+    logger.info("Singularity Hub image: %s", image)
+    client = SingularityApiConnection(image=image)
+    manifest = client.get_manifest()
+    size = extract_metadata(manifest)['size']
+    if contentfile is not None:
+        write_file(contentfile,str(size),mode="w")
+    return size 
+
+
 def PULL(image,download_folder=None,layerfile=None):
     '''PULL will retrieve a Singularity Hub image and download to the local file
     system, to the variable specified by SINGULARITY_PULLFOLDER.
@@ -57,8 +69,9 @@ def PULL(image,download_folder=None,layerfile=None):
     :param download folder: the folder to pull the image to.
     :param layerfile: if defined, write pulled image to file
     '''
+    client = SingularityApiConnection(image=image)
+    manifest = client.get_manifest()
     
-    manifest = get_manifest(image)
     if download_folder == None:
         cache_base = get_cache(subfolder="shub")
     else:
@@ -68,8 +81,8 @@ def PULL(image,download_folder=None,layerfile=None):
     image_name = get_image_name(manifest)
     image_file = "%s/%s" %(cache_base,image_name)
     if not os.path.exists(image_file):
-        image_file = download_image(manifest=manifest,
-                                    download_folder=cache_base)
+        image_file = client.download_image(manifest=manifest,
+                                           download_folder=cache_base)
     else:
         print("Image already exists at %s, skipping download." %image_file)
     logger.info("Singularity Hub Image Download: %s", image_file)

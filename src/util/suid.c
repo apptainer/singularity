@@ -74,7 +74,7 @@ int singularity_suid_init(char **argv) {
 
 
     singularity_message(VERBOSE2, "Checking if singularity.conf allows us to run as suid\n");
-    if ( singularity_config_get_bool(ALLOW_SETUID) <= 0 ) {
+    if ( ( singularity_config_get_bool(ALLOW_SETUID) <= 0  ) || ( singularity_registry_get("NOSUID") != NULL ) ) {
         char *self;
         char *self_tail;
 
@@ -102,15 +102,17 @@ int singularity_suid_init(char **argv) {
             ABORT(255);
         } else {
             singularity_message(ERROR, "Could not locate non-SUID program flow: %s\n", self);
+            ABORT(255);
         }
 
         singularity_message(ERROR, "We never should have gotten here...\n");
         ABORT(255);
     }
 
-    singularity_message(VERBOSE2, "Checking if we were requested to run as NOSUID by user\n");
-    if ( singularity_registry_get("NOSUID") != NULL ) {
-        singularity_abort(1, "NOSUID mode has been requested... Aborting\n");
+    if ( geteuid() != 0 ) {
+        singularity_message(ERROR, "Singularity is not running with appropriate privileges!\n");
+        singularity_message(ERROR, "Check installation path is not mounted with 'nosuid', and/or consult manual.\n");
+        ABORT(255);
     }
 
 #else
@@ -118,7 +120,8 @@ int singularity_suid_init(char **argv) {
 
     singularity_message(DEBUG, "Checking program has appropriate permissions\n");
     if ( is_suid("/proc/self/exe") >= 0 ) {
-        singularity_abort(255, "This program must **NOT** be SUID\n");
+        singularity_message(ERROR, "This program must **NOT** be SUID\n");
+        ABORT(255);
     }
 
 #endif /* SINGULARITY_SUID */

@@ -1,13 +1,13 @@
 #!/bin/sh
 
-for script in /.singularity/env/*.sh; do
+for script in /.singularity.d/env/*.sh; do
     if [ -f "$script" ]; then
         . $script
     fi
 done
 
-if test -x /.singularity/runscript; then
-    exec /.singularity/runscript "$@"
+if test -x /.singularity.d/runscript; then
+    exec /.singularity.d/runscript "$@"
 else
     echo "No Singularity runscript found, executing /bin/sh"
     exec /bin/sh "$@"

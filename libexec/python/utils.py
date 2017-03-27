@@ -25,7 +25,9 @@ from defaults import (
     DISABLE_CACHE
 )
 from logman import logger
+import datetime
 import errno
+import hashlib
 import json
 import os
 import shutil
@@ -37,13 +39,14 @@ import tempfile
 import tarfile
 import base64
 try:
-    from urllib.parse import urlencode, urlparse
-    from urllib.request import urlopen, Request, unquote
-    from urllib.error import HTTPError
+    from urllib.parse import urlparse
 except ImportError:
-    from urllib import urlencode, unquote
     from urlparse import urlparse
-    from urllib2 import urlopen, Request, HTTPError
+
+from io import (
+    BytesIO,
+    StringIO
+)
 
 # Python less than version 3 must import OSError
 if sys.version_info[0] < 3:
@@ -69,141 +72,7 @@ def add_http(url,use_https=True):
 
     return "%s%s" %(scheme,"".join(parsed[1:]).rstrip('/'))
 
-
-def api_get_pagination(url):
-   '''api_pagination is a wrapper for "api_get" that will also handle pagination
-   :param url: the url to retrieve:
-   :param default_header: include default_header (above)
-   :param headers: headers to add (default is None)
-   '''
-   done = False
-   results = []
-   while not done:
-       response = api_get(url=url)
-       try:
-           response = json.loads(response)
-       except:
-           logger.error("Error parsing response for url %s, exiting.", url)        
-           sys.exit(1)
-
-       # If we have a next url
-       if "next" in response:
-           url = response["next"]
-       else:
-           done = True
- 
-       # Add new call to the results
-       results = results + response['results']
-   return results
     
-
-def parse_headers(default_header,headers=None):
-    '''parse_headers will return a completed header object, adding additional headers to some
-    default header
-    :param default_header: include default_header (above)
-    :param headers: headers to add (default is None)
-    '''
-    
-    # default header for all calls
-    header = {'Accept': 'application/json','Content-Type':'application/json; charset=utf-8'}
-
-    if default_header == True:
-        if headers != None:
-            final_headers = header.copy()
-            final_headers.update(headers)
-        else:
-            final_headers = header
-
-    else:
-        final_headers = headers
-        if headers == None:
-            final_headers = dict() 
-
-    return final_headers
-
-
-def api_get(url,data=None,default_header=True,headers=None,stream=None,return_response=False):
-    '''api_get gets a url to the api with appropriate headers, and any optional data
-    :param data: a dictionary of key:value items to add to the data args variable
-    :param url: the url to get
-    :param stream: The name of a file to stream the response to. If defined, will stream
-    default is None (will not stream)
-    :returns response: the requests response object
-    '''
-    headers = parse_headers(default_header=default_header,
-                            headers=headers)
-
-    # Does the user want to stream a response?
-    do_stream = False
-    if stream != None:
-        do_stream = True
-
-    if data != None:
-        args = urlencode(data)
-        request = Request(url=url, 
-                          data=args, 
-                          headers=headers) 
-    else:
-        request = Request(url=url, 
-                          headers=headers) 
-
-    try:
-        response = urlopen(request)
-
-    # If we have an HTTPError, try to follow the response
-    except HTTPError as error:
-        return error
-
-    # Does the call just want to return the response?
-    if return_response == True:
-        return response
-
-    if do_stream == False:
-        return response.read().decode('utf-8')
-       
-    chunk_size = 1 << 20
-    with open(stream, 'wb') as filey:
-        while True:
-            chunk = response.read(chunk_size)
-            if not chunk: 
-                break
-            try:
-                filey.write(chunk)
-            except: #PermissionError
-                logger.error("Cannot write to %s, exiting",stream)
-                sys.exit(1)
-
-    return stream
-
-
-
-def download_stream_atomically(url,file_name,headers=None):
-    '''download stream atomically will stream to a temporary file, and
-    rename only upon successful completion. This is to ensure that
-    errored downloads are not found as complete in the cache
-    :param file_name: the file name to stream to
-    :param url: the url to stream from
-    :param headers: additional headers to add to the get (default None)
-    '''
-    try:
-        fd, tmp_file = tempfile.mkstemp(prefix=("%s.tmp." % file_name)) # file_name.tmp.XXXXXX
-        os.close(fd)
-        response = api_get(url,headers=headers,stream=tmp_file)
-        if isinstance(response, HTTPError):
-            logger.error("Error downloading %s, exiting.", url)
-            sys.exit(1)
-        os.rename(tmp_file, file_name)
-    except:
-        download_folder = os.path.dirname(os.path.abspath(file_name))
-        logger.error("Error downloading %s. Do you have permission to write to %s?", url, download_folder)
-        try:
-            os.remove(tmp_file)
-        except:
-            pass
-        sys.exit(1)
-    return file_name
-
-
 def basic_auth_header(username, password):
     '''basic_auth_header will return a base64 encoded header object to
     generate a token
@@ -328,14 +197,118 @@ def change_permissions(path,permission=None,recursive=True):
                 # Make sure it's a valid file
                 if os.path.isfile(file_path) and not os.path.islink(file_path):
                     change_permission(file_path, permission)
-                
+
+
+
 
 ############################################################################
-## FILE OPERATIONS #########################################################
+## TAR/COMPRESSION #########################################################
 ############################################################################
 
 
-def get_cache(subfolder=None):
+def extract_tar(archive,output_folder):
+    '''extract_tar will extract a tar archive to a specified output folder
+    :param archive: the archive file to extract
+    :param output_folder: the output folder to extract to
+    '''
+    # If extension is .tar.gz, use -xzf
+    args = '-xf'
+    if archive.endswith(".tar.gz"):
+        args = '-xzf'
+
+    # Just use command line, more succinct.
+    command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
+    print("Extracting %s" %(archive))
+
+    return run_command(command)
+
+
+def create_tar(files,output_folder=None):
+    '''create_memory_tar will take a list of files (each a dictionary
+    with name, permission, and content) and write the tarfile (a sha256 sum name 
+    is used) to the output_folder. If there is no output folde specified, the
+    tar is written to a temporary folder.
+    '''
+    if output_folder is None:
+        output_folder = tempfile.mkdtemp()
+
+    finished_tar = None
+    additions = []
+    contents = []
+
+    for entity in files:
+        info = tarfile.TarInfo(name=entity['name'])
+        info.mode = entity['mode']
+        info.mtime = int(datetime.datetime.now().strftime('%s'))
+        info.uid = entity["uid"]
+        info.gid = entity["gid"]
+        info.uname = entity["uname"] 
+        info.gname = entity["gname"]
+
+        # Get size from stringIO write
+        filey = StringIO()
+        content = None
+        try: #python3
+            info.size = filey.write(entity['content'])
+            content = BytesIO(entity['content'].encode('utf8'))
+        except: #python2
+            info.size = int(filey.write(entity['content'].decode('utf-8')))
+            content = BytesIO(entity['content'].encode('utf8'))
+        pass
+        
+        if content is not None:
+            addition = {'content':content,
+                        'info':info}
+            additions.append(addition)
+            contents.append(content)
+
+    # Now generate the sha256 name based on content
+    if len(additions) > 0:
+        hashy = get_content_hash(contents)
+        finished_tar = "%s/sha256:%s.tar.gz" %(output_folder, hashy)
+
+        # Warn the user if it already exists
+        if os.path.exists(finished_tar):
+            logger.debug("metadata file %s already exists, will over-write." %(finished_tar))
+
+        # Add all content objects to file
+        tar = tarfile.open(finished_tar, "w:gz")
+        for a in additions:
+            tar.addfile(a["info"],a["content"])
+        tar.close()
+
+    else:
+        logger.debug("No contents, environment or labels, for tarfile, will not generate.")
+
+    return finished_tar
+
+
+
+############################################################################
+## HASHES ##################################################################
+############################################################################
+
+
+def get_content_hash(contents):
+    '''get_content_hash will return a hash for a list of content (bytes or other)
+    '''
+    hasher = hashlib.sha256()
+    for content in contents:
+        if isinstance(content,BytesIO):
+            content = content.getvalue()
+        if not isinstance(content,bytes):
+            content = bytes(content)
+        hasher.update(content) 
+    return hasher.hexdigest()
+
+
+
+############################################################################
+## FOLDERS #################################################################
+############################################################################
+
+
+def get_cache(subfolder=None,quiet=False):
     '''get_cache will return the user's cache for singularity. The path
     returned is generated at the start of the run, and returned optionally
     with a subfolder
@@ -352,8 +325,10 @@ def get_cache(subfolder=None):
     # Create the cache folder(s), if don't exist
     create_folders(cache_base)
 
-    print("Cache folder set to %s" %cache_base)
+    if not quiet:
+        print("Cache folder set to %s" %cache_base)
     return cache_base
+
 
 
 def create_folders(path):
@@ -371,28 +346,10 @@ def create_folders(path):
 
 
 
-def extract_tar(archive,output_folder):
-    '''extract_tar will extract a tar archive to a specified output folder
-    :param archive: the archive file to extract
-    :param output_folder: the output folder to extract to
-    '''
-    # If extension is .tar.gz, use -xzf
-    args = '-xf'
-    if archive.endswith(".tar.gz"):
-        args = '-xzf'
 
-    # Just use command line, more succinct.
-    command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
-    print("Extracting %s" %(archive))
-
-    retval = run_command(command)
-
-    # Change permissions (default ensures writable)
-    # change_permissions(output_folder)
-
-    # Should we return a list of extracted files? Current returns empty string
-    return retval
-
+############################################################################
+## FILES ###################################################################
+############################################################################
 
 
 def write_file(filename,content,mode="w"):
@@ -466,6 +423,25 @@ def get_fullpath(file_path,required=True):
     return None
 
 
+def get_next_infos(base_dir,prefix,start_number,extension):
+    '''get_next infos will browse some directory and return
+    the next available file
+    '''
+    output_file = None
+    counter = start_number
+    found = False
+
+    while not found:
+        output_file = "%s/%s-%s%s" %(base_dir,
+                                     counter,
+                                     prefix,
+                                     extension)
+        if not os.path.exists(output_file):
+            found = True
+        counter+=1
+    return output_file
+
+
 def write_singularity_infos(base_dir,prefix,start_number,content,extension=None):
     '''write_singularity_infos will write some metadata object
     to a file in some base, starting at some default number. For example,
@@ -482,24 +458,12 @@ def write_singularity_infos(base_dir,prefix,start_number,content,extension=None)
     else:
         extension = ".%s" %(extension)
 
-    output_file = None
-    counter = start_number
-    written = False
-
     # if the base directory doesn't exist, exit with error.
     if not os.path.exists(base_dir):
         logger.warning("Cannot find required metadata directory %s. Exiting!",base_dir)
         sys.exit(1)
 
-    while not written:
-        output_file = "%s/%s-%s%s" %(base_dir,
-                                     counter,
-                                     prefix,
-                                     extension)
-        if not os.path.exists(output_file):
-            write_file(output_file,content)
-            logger.debug("Writing %s",output_file)
-            written = True
-        counter+=1
-
+    # Get the next available number
+    output_file = get_next_infos(base_dir,prefix,start_number,extension)
+    write_file(output_file,content)
     return output_file

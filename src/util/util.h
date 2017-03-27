@@ -39,6 +39,7 @@ char *joinpath(const char * path1, const char * path2);
 char *strjoin(char *str1, char *str2);
 char *uppercase(char *string);
 void chomp_noline(char *str);
+void chomp_comments(char *str);
 void chomp(char *str);
 int strlength(const char *string, int max_len);
 int envclean(void);

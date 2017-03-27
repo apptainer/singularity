@@ -31,7 +31,7 @@ CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
 # Creating a new container
 stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity"
 
 stest 0 touch /tmp/hello_world_test
 stest 0 sudo singularity exec --writable "$CONTAINER" mkdir /opt
@@ -39,6 +39,9 @@ stest 0 singularity exec -B /tmp:/opt "$CONTAINER" test -f /opt/hello_world_test
 
 if [ -n "$SINGULARITY_OVERLAY_FS" ]; then
     stest 0 singularity exec -B /tmp:/nonexistant "$CONTAINER" test -f /nonexistant/hello_world_test
+    stest 0 touch hometest
+    stest 0 singularity exec -H `pwd`:/hello/world/home "$CONTAINER" test -f /hello/world/home/hometest
+    stest 0 rm -f hometest
 fi
 
 
