@@ -32,7 +32,7 @@ CONTAINER="$SINGULARITY_TESTDIR/container.img"
 DEFFILE="$SINGULARITY_TESTDIR/example.def"
 
 # Make sure the example docker.def is pointing to busybox:latest (nobody mess with the examples! LOL)
-stest 0 grep busybox:latest ../examples/docker.def
+stest 0 grep busybox:latest ../examples/docker/Singularity
 
 stest 0 cp ../examples/docker.def "$DEFFILE"
 stest 0 singularity create -F -s 568 "$CONTAINER"
