@@ -51,6 +51,7 @@ case "$SINGULARITY_IMAGE" in
     ;;
     docker://*)
         NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
+
         if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
             SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
         else
@@ -70,15 +71,21 @@ case "$SINGULARITY_IMAGE" in
 
         SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
         SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
+        SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
 
-        export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_SESSIONDIR
+        export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_SESSIONDIR SINGULARITY_CONTENTS
 
         zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
 
+        eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/import.py"; then
-            ABORT 255
-        fi
+        for i in `cat "$SINGULARITY_CONTENTS"`; do
+            name=`basename "$i"`
+            message 1 "Exploding layer: $name\n"
+            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf -) || exit $?
+        done
+
+        rm -f "$SINGULARITY_CONTENTS"
 
     ;;
     shub://*)
