@@ -463,7 +463,7 @@ def extract_labels(manifest,labelfile=None,prefix=None):
         if labelfile is not None:
             for key,value in labels.items():
                 key = "%s%s" %(prefix,key)
-                value = ADD(key,value,labelfile)
+                value = ADD(key,value,labelfile,force=True)
     return labels
 
 

@@ -37,12 +37,16 @@ RUN OPTIONS:
                         read only. This option makes the file system accessible
                         as read/write.
 
-NOTE:
-    If there is a daemon process running inside the container, then
-    subsequent container commands will all run within the same namespaces.
-    This means that the --writable and --contain options will not be
-    honored as the namespaces have already been configured by the
-    'singularity start' command.
+CONTAINER FORMATS SUPPORTED:
+    *.img               This is the native Singularity image format for all
+                        Singularity versions 2.x.
+    *.sqsh              SquashFS format, note the suffix is required!
+    *.tar*              Tar archives are exploded to a temporary directory and
+                        run within that directory (and cleaned up after). 
+                        Compression suffixes as '.gz' and 'bz2' are supported.
+    directory/          Container directories that contain a valid root file
+                        system.
+
 
 EXAMPLES:
 

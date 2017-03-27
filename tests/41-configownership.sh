@@ -23,7 +23,7 @@
 
 . ./functions
 
-test_init "Checking escalation block"
+test_init "Checking configuration file ownership"
 
 
 
