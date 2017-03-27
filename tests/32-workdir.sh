@@ -31,7 +31,7 @@ CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
 # Creating a new container
 stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity"
 
 stest 0 mkdir -p /tmp/foo
 stest 0 touch /tmp/foo/testfile

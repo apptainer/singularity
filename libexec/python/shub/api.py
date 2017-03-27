@@ -28,15 +28,20 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 sys.path.append('..') # parent directory
 
+from shell import (
+    remove_image_uri, 
+    get_image_uri
+)
+
 from utils import (
     add_http,
-    api_get, 
-    download_stream_atomically,
     is_number,
     read_file,
     write_file,
     write_singularity_infos
 )
+
+from base import ApiConnection
 
 from helpers.json.main import ADD
 
@@ -54,88 +59,111 @@ try:
 except:
     from urllib.parse import unquote
 
+# Shub API Class  ----------------------------------------------------------------------------
 
-def authenticate(domain=None,token_folder=None):
-    '''authenticate will authenticate the user with Singularity Hub. This means
-    either obtaining the token from the environment, and then trying to obtain
-    the token file and reading it, and then finally telling the user to get it.
-    :param domain: the domain to direct the user to for the token, default is api_base
-    :param token_folder: the location of the token file, default is $HOME (~/)
-    '''
-    # Attempt 1: Get token from environmental variable
-    token = os.environ.get("SINGULARITY_TOKEN",None)
+class SingularityApiConnection(ApiConnection):
 
-    if token == None:
-        # Is the user specifying a custom home folder?
-        if token_folder == None:
-            token_folder = os.environ["HOME"]
+    def __init__(self,**kwargs):
+        self.token = None
+        self.api_base = SHUB_API_BASE
+        if 'image' in kwargs:
+            self.load_image(kwargs['image'])
+        if 'token' in kwargs:
+            self.token = kwargs['token']
+        super(SingularityApiConnection, self).__init__(**kwargs)
 
-        token_file = "%s/.shub" %(token_folder)
-        if os.path.exists(token_file):
-            token = read_file(token_file)[0].strip('\n')
+
+    def load_image(self,image):
+        self.image = image
+        if not is_number(image):
+            self.image = remove_image_uri(image)
+          
+
+    def _get_token(self,domain=None,token_folder=None):
+        '''_get_token is not currently in use, as API is open to all. When needed,
+        can subclass get_token function.
+        authenticate will authenticate the user with Singularity Hub. This means
+        either obtaining the token from the environment, and then trying to obtain
+        the token file and reading it, and then finally telling the user to get it.
+        :param domain: the domain to direct the user to for the token, default is api_base
+        :param token_folder: the location of the token file, default is $HOME (~/)
+        '''
+        # Attempt 1: Get token from environmental variable
+        token = os.environ.get("SINGULARITY_TOKEN",None)
+
+        if token == None:
+            # Is the user specifying a custom home folder?
+            if token_folder == None:
+                token_folder = os.environ["HOME"]
+
+            token_file = "%s/.shub" %(token_folder)
+            if os.path.exists(token_file):
+                token = read_file(token_file)[0].strip('\n')
+            else:
+                if domain == None:
+                    domain = SHUB_API_BASE
+                print('''Please obtain token from %s/token
+                         and save to .shub in your $HOME folder''' %(domain))
+                sys.exit(1)
+        return token
+
+
+    def get_manifest(self,image=None,registry=None):
+        '''get_image will return a json object with image metadata, based on a unique id.
+        :param image: the image name, either an id, or a repo name, tag, etc.
+        :param registry: the registry (hub) to use, if not defined, default is used
+        '''
+        if image == None:
+            image = self.image
+        if registry == None:
+            registry = self.api_base
+        registry = add_http(registry) # make sure we have a complete url
+
+        # Numeric images have slightly different endpoint from named
+        if is_number(image) == True:
+            base = "%s/containers/%s" %(registry,image)
         else:
-            if domain == None:
-                domain = SHUB_API_BASE
-            print('''Please obtain token from %s/token
-                     and save to .shub in your $HOME folder''' %(domain))
+            base = "%s/container/%s" %(registry,image)
+
+        # ---------------------------------------------------------------
+        # If we eventually have private images, need to authenticate here       
+        # --------------------------------------------------------------- 
+
+        response = self.get(base)
+        try:
+            response = json.loads(response)
+        except:
+            print("Error getting image manifest using url %s" %(base))
             sys.exit(1)
-    return token
+        return response
 
 
+    def download_image(self,manifest,download_folder=None,extract=True):
+        '''download_image will download a singularity image from singularity
+        hub to a download_folder, named based on the image version (commit id)
+        :param manifest: the manifest obtained with get_manifest
+        :param download_folder: the folder to download to, if None, will be pwd
+        :param extract: if True, will extract image to .img and return that.
+        '''    
+        image_file = get_image_name(manifest)
 
-def get_manifest(image,registry=None):
-    '''get_image will return a json object with image metadata, based on a unique id.
-    :param image: the image name, either an id, or a repo name, tag, etc.
-    :param registry: the registry (hub) to use, if not defined, default is used
-    '''
-    if registry == None:
-        registry = SHUB_API_BASE
-    registry = add_http(registry) # make sure we have a complete url
+        print("Found image %s:%s" %(manifest['name'],manifest['branch']))
+        print("Downloading image... %s" %(image_file))
 
-    # Numeric images have slightly different endpoint from named
-    if is_number(image) == True:
-        base = "%s/containers/%s" %(registry,image)
-    else:
-        base = "%s/container/%s" %(registry,image)
+        if download_folder is not None:
+            image_file = "%s/%s" %(download_folder,image_file)
+        url = manifest['image']
 
-    # ---------------------------------------------------------------
-    # If we eventually have private images, need to authenticate here       
-    # --------------------------------------------------------------- 
+        # Download image file atomically, streaming
+        image_file = self.download_atomically(url=url,
+                                              file_name=image_file)
 
-    response = api_get(base)
-    try:
-        response = json.loads(response)
-    except:
-        print("Error getting image manifest using url %s" %(base))
-        sys.exit(1)
-    return response
+        if extract == True:
+            print("Decompressing %s" %image_file)
+            os.system('gzip -d -f %s' %(image_file))
+            image_file = image_file.replace('.gz','')
+        return image_file
 
-
-def download_image(manifest,download_folder=None,extract=True):
-    '''download_image will download a singularity image from singularity
-    hub to a download_folder, named based on the image version (commit id)
-    :param manifest: the manifest obtained with get_manifest
-    :param download_folder: the folder to download to, if None, will be pwd
-    :param extract: if True, will extract image to .img and return that.
-    '''    
-    image_file = get_image_name(manifest)
-
-    print("Found image %s:%s" %(manifest['name'],manifest['branch']))
-    print("Downloading image... %s" %(image_file))
-
-    if download_folder != None:
-        image_file = "%s/%s" %(download_folder,image_file)
-    url = manifest['image']
-
-    # Download image file atomically, streaming
-    image_file = download_stream_atomically(url=url,
-                                            file_name=image_file)
-
-    if extract == True:
-        print("Decompressing %s" %image_file)
-        os.system('gzip -d -f %s' %(image_file))
-        image_file = image_file.replace('.gz','')
-    return image_file
 
 
 # Various Helpers ---------------------------------------------------------------------------------

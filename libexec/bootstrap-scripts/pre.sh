@@ -40,8 +40,8 @@ fi
 
 
 install -d -m 0755 "$SINGULARITY_ROOTFS"
-install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity"
-install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity/env"
+install -d -m 0755 "$SINGULARITY_ROOTFS/singularity.d"
+install -d -m 0755 "$SINGULARITY_ROOTFS/singularity.d/env"
 
 if [ -f "$SINGULARITY_BUILDDEF" ]; then
     ARGS=`singularity_section_args "pre" "$SINGULARITY_BUILDDEF"`
@@ -49,7 +49,7 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
 fi
 
 # Populate the labels.
-export SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity/labels.json"
+export SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/singularity.d/labels.json"
 
 S_UUID=`cat /proc/sys/kernel/random/uuid`
 eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "SINGULARITY_CONTAINER_UUID" --value "$S_UUID" --file $SINGULARITY_LABELFILE

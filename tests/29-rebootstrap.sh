@@ -29,14 +29,14 @@ test_init "Re-Bootstrap tests"
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
 stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox.def"
+stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
-stest 0 singularity exec "$CONTAINER" test -f /.singularity/runscript
-stest 0 sudo singularity exec --writable "$CONTAINER" rm -rf /.singularity/runscript
+stest 0 singularity exec "$CONTAINER" test -f /singularity.d/runscript
+stest 0 sudo singularity exec --writable "$CONTAINER" rm -rf /singularity.d/runscript
 stest 0 sudo singularity bootstrap "$CONTAINER"
-stest 0 singularity exec "$CONTAINER" test -f /.singularity/runscript
+stest 0 singularity exec "$CONTAINER" test -f /singularity.d/runscript
 
 test_cleanup
 

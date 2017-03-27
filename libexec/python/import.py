@@ -8,10 +8,8 @@ import.py: python helper for Singularity import
 ENVIRONMENTAL VARIABLES that are required for this executable:
 
     SINGULARITY_CONTAINER
-
-    one of:
-    SINGULARITY_ROOTFS
     SINGULARITY_CONTENTS
+
 
 Given that SINGULARITY_ROOTFS is defined, a full import is done that includes
 environment, labels, and extraction of layers. If SINGULARITY_ROOTFS is not
@@ -70,8 +68,9 @@ def main():
         logger.info("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
 
         from utils import  basic_auth_header
-        from defaults import SINGULARITY_ROOTFS, LAYERFILE, LABELFILE
+        from defaults import LAYERFILE
 
+        logger.info("Docker layers and (env,labels,runscript) will be written to: %s", LAYERFILE)
         username = getenv("SINGULARITY_DOCKER_USERNAME") 
         password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
 
@@ -79,30 +78,12 @@ def main():
         if username is not None and password is not None:
             auth = basic_auth_header(username, password)
 
-        if SINGULARITY_ROOTFS is not None:
-            logger.info("Root file system found: %s",SINGULARITY_ROOTFS)
-            from docker.main import IMPORT
+        from docker.main import IMPORT
 
-            IMPORT(auth=auth,
-                   image=container,
-                   rootfs=SINGULARITY_ROOTFS,
-                   labelfile=LABELFILE)
-
-
-        else:
-            if LAYERFILE is not None:
-                logger.info("Root file system not found, writing layers to: %s", LAYERFILE)
-                from docker.main import ADD
-
-                manifest = ADD(auth=auth,
-                               image=container,
-                               layerfile=LAYERFILE)
+        manifest = IMPORT(auth=auth,
+                          image=container,
+                          layerfile=LAYERFILE)
  
-            else:
-                logger.error('''You must define either SINGULARITY_ROOTFS for a full import,
-                             or SINGULARITY_CONTENTS for a partial (non sudo) import. Exiting.''')
-                sys.exit(1)
-
 
     ##############################################################################
     # Singularity Hub ############################################################
@@ -119,7 +100,7 @@ def main():
                labelfile=LABELFILE)
 
     else:
-        logger.error("uri %s is not a currently supported uri for docker import. Exiting.",image_uri)
+        logger.error("uri %s is not a currently supported uri for import. Exiting.",image_uri)
         sys.exit(1)
 
 

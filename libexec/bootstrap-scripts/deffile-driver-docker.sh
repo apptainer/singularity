@@ -43,12 +43,23 @@ if [ -z "${FROM:-}" ]; then
     exit 1
 fi
 
+if [ -z "${INCLUDECMD:-}" ]; then
+    export SINGULARITY_INCLUDECMD="yes"
+fi
+
 SINGULARITY_CONTAINER="docker://$FROM"
-SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity/labels.json"
-export SINGULARITY_CONTAINER SINGULARITY_LABELFILE
+SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
+export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
 
-eval "$SINGULARITY_libexecdir/singularity/python/import.py"
-RETVAL=$?
+eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+
+for i in `cat "$SINGULARITY_CONTENTS"`; do
+    name=`basename "$i"`
+    message 1 "Exploding layer: $name\n"
+    zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar -xf -) || exit $?
+done
+
+rm -f "$SINGULARITY_CONTENTS"
 
 
-exit $RETVAL
+exit 0
