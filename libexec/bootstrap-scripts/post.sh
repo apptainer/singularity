@@ -51,10 +51,6 @@ EOF
 
 # Populate the labels.
 SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity.d/labels.json"
-#export SINGULARITY_LABELFILE
-
-S_UUID=`cat /proc/sys/kernel/random/uuid`
-eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "SINGULARITY_CONTAINER_UUID" --value "$S_UUID" --file $SINGULARITY_LABELFILE
 
 eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "SINGULARITY_DEFFILE" --value "$SINGULARITY_BUILDDEF" --file $SINGULARITY_LABELFILE
 

@@ -54,13 +54,16 @@ EXAMPLES:
     Singularity/Debian.img> pwd
     /home/gmk/test
     Singularity/Debian.img> exit
+
     $ singularity shell -C /tmp/Debian.img
     Singularity/Debian.img> pwd
     /home/gmk
     Singularity/Debian.img> ls -l
     total 0
     Singularity/Debian.img> exit
+
     $ sudo singularity shell -w /tmp/Debian.img
+    $ sudo singularity shell --writable /tmp/Debian.img
 
 
 For additional help, please visit our public documentation pages which are

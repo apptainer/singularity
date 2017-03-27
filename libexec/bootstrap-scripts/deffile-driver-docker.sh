@@ -48,8 +48,10 @@ if [ -z "${INCLUDECMD:-}" ]; then
 fi
 
 SINGULARITY_CONTAINER="docker://$FROM"
+SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+
 SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
-export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
+export SINGULARITY_CONTAINER SINGULARITY_CONTENTS SINGULARITY_LABELFILE
 
 eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 
