@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
     if ( singularity_priv_getuid() != 0 ) {
         singularity_priv_drop_perm();
         singularity_message(INFO, "Spawning a new shell in this namespace, to unmount, exit shell\n");
-        setenv("PS1", "Singularity> ", 1);
+        setenv("PS1", "Singularity: \\w> ", 1);
         execl("/bin/sh", "/bin/sh", NULL);
     }
 
