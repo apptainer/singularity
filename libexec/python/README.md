@@ -36,7 +36,7 @@ The location and usage of the cache is also determined by environment variables.
 If the user wants to disable the cache, all this means is that the layers are written to a temporary directory. The python functions do nothing to actually remove images, as they are needed by the calling process. It should be responsibility of the calling process to remove layers given that `SINGULARITY_DISABLE_CACHE` is set to any true/yes value. By default, the cache is not disabled.
 
 **SINGULARITY_CACHE**
-Is the base folder for caching layers and singularity hub images. If not defined, it uses default of `$HOME/singularity.d`, and subfolders for docker layers are `$HOME` If defined, the defined location is used instead. If `DISABLE_CACHE` is set to True, this value is ignored in favor of a temporary directory. For specific subtypes of things to cache, subdirectories are created (by python), including `$SINGULARITY_CACHE/docker` for docker layers and `$SINGULARITY_CACHE/shub` for Singularity Hub images. If the cache is not created, the Python script creates it.
+Is the base folder for caching layers and singularity hub images. If not defined, it uses default of `$HOME/.singularity`, and subfolders for docker layers are `$HOME` If defined, the defined location is used instead. If `DISABLE_CACHE` is set to True, this value is ignored in favor of a temporary directory. For specific subtypes of things to cache, subdirectories are created (by python), including `$SINGULARITY_CACHE/docker` for docker layers and `$SINGULARITY_CACHE/shub` for Singularity Hub images. If the cache is not created, the Python script creates it.
 
 **SINGULARITY_CONTENT**
 The layerfile is important for both docker ADD and IMPORT, as it is the file where .tar.gz layer files are written for the calling process to extract. If `SINGULARITY_CONTENT` is not defined, then it will be generated as 
@@ -127,7 +127,7 @@ However, it might be the case that the user does not want this. For this reason,
 Goes into the variable `METADATA_BASE`, and is the directory location to write the metadata file structure. Specifically, this means folders for environmental variable and layers files. The default looks like this:
 
       `$SINGULARITY_ROOTFS`
-           singularity.d/
+           .singularity.d/
                env/
                labels.json
 
@@ -136,7 +136,7 @@ Goes into the variable `METADATA_BASE`, and is the directory location to write t
 This is the root file system location of the container. There are various checks in all calling functions so the script should never get to this point without having it defined.
 
 
-If the environmental variable `$SINGULARITY_METADATA_FOLDER` is defined, the metadata folder doesn't even need to live in the container. This could be useful if the calling API wants to skip over it's generation, however care should be taken given that the files are some kind of dependency to produce `/environment`. If the variable isn't defined, then the default metadata folder is set to be `$SINGULARITY_ROOTFS/singularity.d`. The variable is required, an extra precaution, but probably not necessary since a default is provided.
+If the environmental variable `$SINGULARITY_METADATA_FOLDER` is defined, the metadata folder doesn't even need to live in the container. This could be useful if the calling API wants to skip over it's generation, however care should be taken given that the files are some kind of dependency to produce `/environment`. If the variable isn't defined, then the default metadata folder is set to be `$SINGULARITY_ROOTFS/.singularity.d`. The variable is required, an extra precaution, but probably not necessary since a default is provided.
 
 
 
@@ -161,7 +161,7 @@ The [docker/add.py](docker/add.py) is akin to an import, but without any environ
  - `SINGULARITY_CONTAINER`: (eg, docker://ubuntu:latest)
  - `SINGULARITY_ROOTFS`: the folder where the container is being built
 
-The `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/singularity.d` MUST exist for the function to run.
+The `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/.singularity.d` MUST exist for the function to run.
 
 An example use case is the following:
 
@@ -175,7 +175,7 @@ An example use case is the following:
       mkdir -p $SINGULARITY_ROOTFS
 
       # For the rootfs, given an add, the metadata folder must exist
-      mkdir -p $SINGULARITY_ROOTFS/singularity.d # see defaults.py
+      mkdir -p $SINGULARITY_ROOTFS/.singularity.d # see defaults.py
       cd libexec/python/tests
       python ../add.py
 

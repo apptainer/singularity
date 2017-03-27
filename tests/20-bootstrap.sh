@@ -36,12 +36,12 @@ stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
-stest 0 singularity exec "$CONTAINER" test -f /singularity.d/runscript
-stest 0 singularity exec "$CONTAINER" test -f /singularity.d/labels.json
-stest 0 singularity exec "$CONTAINER" test -f /singularity.d/env/01-base.sh
-stest 0 singularity exec "$CONTAINER" test -f /singularity.d/actions/shell
-stest 0 singularity exec "$CONTAINER" test -f /singularity.d/actions/exec
-stest 0 singularity exec "$CONTAINER" test -f /singularity.d/actions/run
+stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/runscript
+stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/labels.json
+stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
+stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
+stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
+stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
 stest 0 singularity exec "$CONTAINER" test -L /singularity
 stest 0 singularity exec "$CONTAINER" test -L /environment
 

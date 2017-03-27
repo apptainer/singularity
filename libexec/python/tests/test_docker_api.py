@@ -40,7 +40,7 @@ class TestApi(TestCase):
         self.image = 'docker://ubuntu:latest'
         self.tmpdir = tempfile.mkdtemp()
         os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
-        os.mkdir('%s/singularity.d' %(self.tmpdir))
+        os.mkdir('%s/.singularity.d' %(self.tmpdir))
         from docker.api import DockerApiConnection
         self.client = DockerApiConnection(image=self.image)
 

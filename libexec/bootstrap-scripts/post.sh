@@ -48,3 +48,22 @@ cat > "$SINGULARITY_ROOTFS/etc/mtab" << EOF
 singularity / rootfs rw 0 0
 EOF
 
+
+# Populate the labels.
+SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+#export SINGULARITY_LABELFILE
+
+S_UUID=`cat /proc/sys/kernel/random/uuid`
+eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "SINGULARITY_CONTAINER_UUID" --value "$S_UUID" --file $SINGULARITY_LABELFILE
+
+eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "SINGULARITY_DEFFILE" --value "$SINGULARITY_BUILDDEF" --file $SINGULARITY_LABELFILE
+
+eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "SINGULARITY_BOOTSTRAP_VERSION" --value "$SINGULARITY_version" --file $SINGULARITY_LABELFILE
+
+env | egrep "^SINGULARITY_DEFFILE_" | while read i; do
+    KEY=`echo $i | cut -f1 -d =`
+    VAL=`echo $i | cut -f2- -d =`
+    eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "$KEY" --value "$VAL" --file $SINGULARITY_LABELFILE
+
+done
+

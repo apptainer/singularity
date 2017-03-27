@@ -51,7 +51,7 @@ class TestApi(TestCase):
         self.repo_name = "singularity-images"
         self.tmpdir = tempfile.mkdtemp()
         os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
-        os.mkdir('%s/singularity.d' %(self.tmpdir))
+        os.mkdir('%s/.singularity.d' %(self.tmpdir))
         print("\n---START----------------------------------------")
 
     def tearDown(self):

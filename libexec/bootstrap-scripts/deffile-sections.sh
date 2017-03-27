@@ -92,7 +92,7 @@ fi
 if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
     message 1 "Adding environment to container\n"
 
-    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/singularity.d/env/90-builddef.sh"
+    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-builddef.sh"
 fi
 
 ### LABELS
@@ -101,7 +101,7 @@ if singularity_section_exists "labels" "$SINGULARITY_BUILDDEF"; then
 
     singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
         if [ -n "$KEY" -a -n "$VAL" ]; then
-            $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/singularity.d/labels.json"
+            $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
             set +x
         fi
     done

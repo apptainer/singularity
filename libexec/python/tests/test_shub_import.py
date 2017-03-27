@@ -49,7 +49,7 @@ class TestImport(TestCase):
         # Variables are obtained from environment
         os.environ["SINGULARITY_CONTAINER"] = "shub://vsoch/singularity-images" 
         os.environ["SINGULARITY_ROOTFS"] = self.tmpdir
-        os.mkdir('%s/singularity.d' %(self.tmpdir))
+        os.mkdir('%s/.singularity.d' %(self.tmpdir))
         
         print("\n---START----------------------------------------")
 

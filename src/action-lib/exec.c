@@ -34,9 +34,9 @@
 void action_exec(int argc, char **argv) {
     singularity_message(VERBOSE, "Exec'ing /.exec\n");
 
-    if ( is_exec("/singularity.d/actions/exec") == 0 ) {
-        if ( execv("/singularity.d/actions/exec", argv) < 0 ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv() /singularity.d/actions/exec: %s\n", strerror(errno));
+    if ( is_exec("/.singularity.d/actions/exec") == 0 ) {
+        if ( execv("/.singularity.d/actions/exec", argv) < 0 ) { // Flawfinder: ignore
+            singularity_message(ERROR, "Failed to execv() /.singularity.d/actions/exec: %s\n", strerror(errno));
         }
     }
     if ( is_exec("/.exec") == 0 ) {

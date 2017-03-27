@@ -7,9 +7,9 @@ dist_environment_SCRIPTS = environment.tar
 # output should be commited and updated as necessary and included within the
 # Singularity source tree.
 tar:
-	sudo install -d -m 0755 newroot/singularity.d
-	sudo install -d -m 0755 newroot/singularity.d/env
-	sudo install -d -m 0755 newroot/singularity.d/actions
+	sudo install -d -m 0755 newroot/.singularity.d
+	sudo install -d -m 0755 newroot/.singularity.d/env
+	sudo install -d -m 0755 newroot/.singularity.d/actions
 	sudo install -d -m 0755 newroot/dev
 	sudo install -d -m 0755 newroot/etc
 	sudo install -d -m 0755 newroot/home
@@ -23,15 +23,15 @@ tar:
 	sudo install -m 0755 /dev/null newroot/etc/resolv.conf
 	sudo install -m 0755 /dev/null newroot/etc/passwd
 	sudo install -m 0755 /dev/null newroot/etc/group
-	sudo install -m 0755 runscript newroot/singularity.d/
-	sudo install -m 0755 run shell exec newroot/singularity.d/actions/
-	sudo install -m 0755 01-base.sh newroot/singularity.d/env/
-	sudo install -m 0755 99-environment.sh newroot/singularity.d/env/
-	sudo ln -sf singularity.d/runscript newroot/singularity
-	sudo ln -sf singularity.d/env/99-environment.sh newroot/environment
-	sudo ln -sf singularity.d/actions/run newroot/.run
-	sudo ln -sf singularity.d/actions/shell newroot/.shell
-	sudo ln -sf singularity.d/actions/exec newroot/.exec
+	sudo install -m 0755 runscript newroot/.singularity.d/
+	sudo install -m 0755 run shell exec newroot/.singularity.d/actions/
+	sudo install -m 0755 01-base.sh newroot/.singularity.d/env/
+	sudo install -m 0755 99-environment.sh newroot/.singularity.d/env/
+	sudo ln -sf .singularity.d/runscript newroot/singularity
+	sudo ln -sf .singularity.d/env/99-environment.sh newroot/environment
+	sudo ln -sf .singularity.d/actions/run newroot/.run
+	sudo ln -sf .singularity.d/actions/shell newroot/.shell
+	sudo ln -sf .singularity.d/actions/exec newroot/.exec
 	cd newroot; tar czf ../environment.tar .
 	sudo rm -rf newroot
 

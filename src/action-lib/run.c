@@ -34,10 +34,10 @@
 void action_run(int argc, char **argv) {
     singularity_message(VERBOSE, "Exec'ing /singularity\n");
 
-    if ( is_exec("/singularity.d/actions/run") == 0 ) {
-        singularity_message(DEBUG, "Exec'ing /singularity.d/actions/run\n");
-        if ( execv("/singularity.d/actions/run", argv) < 0 ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv() /singularity.d/actions/run: %s\n", strerror(errno));
+    if ( is_exec("/.singularity.d/actions/run") == 0 ) {
+        singularity_message(DEBUG, "Exec'ing /.singularity.d/actions/run\n");
+        if ( execv("/.singularity.d/actions/run", argv) < 0 ) { // Flawfinder: ignore
+            singularity_message(ERROR, "Failed to execv() /.singularity.d/actions/run: %s\n", strerror(errno));
             ABORT(255);
         }
     } else if ( is_exec("/.run") == 0 ) {
