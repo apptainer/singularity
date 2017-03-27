@@ -269,7 +269,7 @@ def create_tar(files,output_folder=None):
 
         # Warn the user if it already exists
         if os.path.exists(finished_tar):
-            logger.warning("metadata file %s already exists, will over-write." %(finished_tar))
+            logger.debug("metadata file %s already exists, will over-write." %(finished_tar))
 
         # Add all content objects to file
         tar = tarfile.open(finished_tar, "w:gz")
@@ -278,7 +278,7 @@ def create_tar(files,output_folder=None):
         tar.close()
 
     else:
-        logger.warning("No contents, environment or labels, for tarfile, will not generate.")
+        logger.debug("No contents, environment or labels, for tarfile, will not generate.")
 
     return finished_tar
 
