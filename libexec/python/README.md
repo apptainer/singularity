@@ -143,7 +143,9 @@ If the environmental variable `$SINGULARITY_METADATA_FOLDER` is defined, the met
 ### Example Usage
 
 #### Docker
-The Docker commands include `ADD` and `IMPORT`. Import means returning a layerfile with paths (separated by newlines) to a complete list of layers for import, along with metadata written to the directory structure inside the image. Add means only generating the layerfile without metadata. For all Docker commands, by way of needing to use the Docker Registry, the user can optionally specifying a username and password for authentication:
+
+##### Docker Import
+The Docker commands include  `IMPORT`. Import means returning a layerfile with paths (separated by newlines) to a complete list of layers for import, one of those layers being a tarfile with Docker runscript, environment, and labels. For all Docker commands, by way of needing to use the Docker Registry, the user can optionally specifying a username and password for authentication:
 
     export SINGULARITY_DOCKER_USERNAME='mickeymouse' 
     export SINGULARITY_DOCKER_PASSWORD='cheeseftw'
@@ -153,15 +155,14 @@ The user and Singularity calling functions also have some control over the cache
  - `SINGULARITY_DISABLE_CACHE`: will write layers to a temporary directory. Note that since the functions aren't actually doing the import, they do not remove the layers (as was done in previous versions) 
  - `SINGULARITY_CACHE`: Is a specific path to the cache.
 
-
-##### Docker Add
-
-The [docker/add.py](docker/add.py) is akin to an import, but without any environment or metadata variables (e.g., only the .layers file is written). It does not attempt to create an image - it simply writes a list of layers to some layerfile folder. The minimum required environmental variables are:
+Since we now are also (potentially) parsing a runscript, the user has the choice to use `CMD` instead of `ENTRYPOINT` by way of the variable `SINGULARITY_INCLUDECMD` parsed from `Cmd` in the build spec file, and `SINGULARITY_COMMAND_ASIS` to not include `exec` and `$@`. As with ADD, the user can again specify a `SINGULARITY_DOCKER_USERNAME` and `SINGULARITY_DOCKER_PASSWORD` if authentication is needed.  The required environment exports are:
 
  - `SINGULARITY_CONTAINER`: (eg, docker://ubuntu:latest)
- - `SINGULARITY_ROOTFS`: the folder where the container is being built
+ - `SINGULARITY_CONTENTS`: the file to write the list of layers to.
 
-The `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/.singularity.d` MUST exist for the function to run.
+
+The python function previously extracted the layers, but now to support user import without sudo, and consistency across import/shell/bootstrap, the calling function takes care of this. Thus, it is also important that the calling function write metadata to the `labels.json` and any of the user's preferences for the `runscript` after the layers are extracted, in the case that the user wants to overwrite something that came from the Docker dump.
+
 
 An example use case is the following:
 
@@ -171,15 +172,12 @@ An example use case is the following:
 
       # We need, minimally, a docker container and rootfs defined
       export SINGULARITY_CONTAINER="docker://ubuntu:latest"
-      export SINGULARITY_ROOTFS=/tmp/hello-kitty
-      mkdir -p $SINGULARITY_ROOTFS
+      export SINGULARITY_CONTENTS=/tmp/hello-kitty.txt
 
-      # For the rootfs, given an add, the metadata folder must exist
-      mkdir -p $SINGULARITY_ROOTFS/.singularity.d # see defaults.py
       cd libexec/python/tests
-      python ../add.py
+      python ../import.py
 
-After the script runs, the file `/tmp/hello-kitty/.layers` will contain the list of layers to import. Something like:
+After the script runs, the file `/tmp/hello-kitty.txt` will contain the list of layers to import. Something like:
 
 
 	/home/vanessa/.singularity/docker/sha256:a3ed95caeb02ffe68cdd9fd84406680ae93d633cb16422d00e8a7c22955b46d4.tar.gz
@@ -188,46 +186,9 @@ After the script runs, the file `/tmp/hello-kitty/.layers` will contain the list
 	/home/vanessa/.singularity/docker/sha256:946d6c48c2a7d60cb2f4d1c4d3a8131086b412d11a9def59d0bcc0892428dde9.tar.gz
 	/home/vanessa/.singularity/docker/sha256:695f074e24e392178d364af5ea2405dda7ab0035284001b49939afac5106c187.tar.gz
 	/home/vanessa/.singularity/docker/sha256:8aec416115fdbd74102c9090bcfe03bfe8926876642d8846c8b917959ea9b552.tar.gz
+	
+The last of the layers will be the tarfile created by the python with the metadata.
 
-
-Notice that the `.layers` is written inside the metadata folder, which means that it will remain with the image. We have two options here (@gmkurtzer looking for your feedback on this). We can either write it somewhere else (eg, to tmp) or we can keep the file there, overwrite if the process is done again, and (optionally) change the user cache directory so it doesn't live with the image. It might be cleaner to write to tmp to begin with, which we would do as follows:
-
-      export SINGULARITY_CONTAINER="docker://ubuntu:latest"
-      export SINGULARITY_ROOTFS=/tmp/hello-kitty
-      export SINGULARITY_LAYERFILE=/tmp/.layers 
-      mkdir -p $SINGULARITY_ROOTFS
-      python ../add.py
-
-Note that for the above, because this is running an add (that doesn't save any environmental variables) I didn't need to create the metadata folder. This is because it isn't used.
-
-
-##### Docker Import
-Import is the more robust version of add, and works as it did before, meaning we extract layers into the rootfs, and don't need to return or use a layerfile (as with add). Additionally, environment variables and labels are written to the metadata folder. Again, we MUST have the following, otherwise will return error:
-
- - `SINGULARITY_CONTAINER`: (eg, docker://ubuntu:latest)
- - `SINGULARITY_ROOTFS`: the folder where the container is being built
-
-and the default metadata folder (`$SINGULARITY_ROOTFS/singularity.d`) or the user defined `$SINGULARITY_METADATA_BASE` along with the `$SINGULARITY_ENVBASE` and `$SINGULARITY_LABELBASE` must also exist. Since we now are also (potentially) parsing a runscript, the user has the choice to use `CMD` instead of `ENTRYPOINT` by way of the variable `SINGULARITY_DOCKER_INCLUDE_CMD` parsed from `Cmd` in the build spec file, and `SINGULARITY_COMMAND_ASIS` to not include `exec` and `$@`. As with ADD, the user can again specify a `SINGULARITY_DOCKER_USERNAME` and `SINGULARITY_DOCKER_PASSWORD` if authentication is needed. And again, the `SINGULARITY_ROOTFS` and the metadata folder, default value as `$SINGULARITY_ROOTFS/singularity.d` MUST exist for the function to run.
-
-
-An example use case is the following:
-
-      #!/bin/bash
-
-      # This is an example of the base usage for the docker/import.py command
-      # run from within libexec/python/tests
-
-      cd libexec/python/tests
-      # We need, minimally, a docker container and rootfs defined
-      export SINGULARITY_CONTAINER="docker://ubuntu:latest"
-      export SINGULARITY_ROOTFS=/tmp/hello-kitty
-      mkdir -p $SINGULARITY_ROOTFS
-      mkdir -p $SINGULARITY_ROOTFS/singularity.d # see defaults.py
-      mkdir -p $SINGULARITY_ROOTFS/singularity.d/env
-      mkdir -p $SINGULARITY_ROOTFS/singularity.d/labels
-      python ../import.py
-
-After the script runs, the folder `/tmp/hello-kitty` will contain the full image, along with `singularity.d` that contains `env` and `labels`.
 
 
 #### Singularity Hub
@@ -253,26 +214,6 @@ Pull must minimally have a container defined in `SINGULARITY_CONTAINER`
       export SINGULARITY_HUB_PULL_FOLDER=$PWD
       python ../pull.py
 
-
-
-##### IMPORT
-Finally, IMPORT also writes to the `labels` folder, and depending on if `SINGULARITY_ROOTFS` is defined or not, will either just return layers written to `SINGULARITY_CONTENTS` or do an entire extraction.
-
-      #!/bin/bash
-
-      cd libexec/python/tests
-      SINGULARITY_CONTAINER="shub://vsoch/singularity-images"
-      
-      # This would be doing a full import
-      SINGULARITY_ROOTFS=/tmp/hello-kitty
-      mkdir -p $SINGULARITY_ROOTFS
-      mkdir -p $SINGULARITY_ROOTFS/singularity.d # see defaults.py
-      mkdir -p $SINGULARITY_ROOTFS/singularity.d/labels
-      python ../import.py
-
-      # This is just the layerfile writing
-      SINGULARITY_CONTENTS=/tmp/hello-kitty.layers
-      python ../import.py
 
 
 ## Utility Modules
