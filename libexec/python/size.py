@@ -36,8 +36,6 @@ perform publicly and display publicly, and to permit other to do so.
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-
 from shell import (
     get_image_uri,
     remove_image_uri
@@ -54,6 +52,7 @@ def main():
     container = getenv("SINGULARITY_CONTAINER",required=True)
     image_uri = get_image_uri(container)    
     container = remove_image_uri(container)
+    from defaults import LAYERFILE
 
     ##############################################################################
     # Singularity Hub ############################################################
@@ -62,10 +61,25 @@ def main():
     if image_uri == "shub://":
 
         logger.info("\n*** STARTING SINGULARITY HUB SIZE PYTHON  ****")    
-
-        from defaults import LAYERFILE
         from shub.main import SIZE
         SIZE(image=container,
+             contentfile=LAYERFILE)
+
+    elif image_uri == "docker://":
+
+        from sutils import basic_auth_header
+        from docker.main import SIZE
+
+        logger.info("Docker sizes will be written to: %s", LAYERFILE)
+        username = getenv("SINGULARITY_DOCKER_USERNAME") 
+        password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
+
+        auth = None
+        if username is not None and password is not None:
+            auth = basic_auth_header(username, password)
+
+        SIZE(image=container,
+             auth=auth,
              contentfile=LAYERFILE)
 
     else:

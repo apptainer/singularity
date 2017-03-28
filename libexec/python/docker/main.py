@@ -47,6 +47,19 @@ import os
 import tempfile
 
 
+def SIZE(image,auth=None,contentfile=None):
+    '''size is intended to be run before an import, to return to the contentfile a list of sizes
+    (one per layer) corresponding with the layers that will be downloaded for image
+    '''
+    logger.debug("Starting Docker SIZE, will get size from manifest")
+    logger.info("Docker image: %s", image)
+    client = DockerApiConnection(image=image,auth=auth)
+    size = client.get_size()
+    if contentfile is not None:
+        write_file(contentfile,str(size),mode="w")
+    return size 
+
+
 def IMPORT(image,auth=None,layerfile=None):
     '''IMPORT is the main script that will obtain docker layers, runscript information (either entrypoint
     or cmd), and environment, and return a list of tarballs to extract into the image
