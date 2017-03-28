@@ -30,7 +30,7 @@ from defaults import (
     TAG as default_tag
 )
 
-from utils import is_number
+from sutils import is_number
 import json
 import re
 import os

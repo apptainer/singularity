@@ -33,7 +33,7 @@ from .api import (
     SingularityApiConnection
 )
 
-from utils import (
+from sutils import (
     add_http,
     get_cache,
     write_file

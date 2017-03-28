@@ -67,7 +67,7 @@ def main():
 
         logger.info("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
 
-        from utils import  basic_auth_header
+        from sutils import basic_auth_header
         from defaults import LAYERFILE
 
         logger.info("Docker layers and (env,labels,runscript) will be written to: %s", LAYERFILE)

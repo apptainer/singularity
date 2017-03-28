@@ -25,7 +25,7 @@ import sys
 import os
 from defaults import INCLUDE_CMD
 
-from utils import (
+from sutils import (
     extract_tar,
     get_cache, 
     write_file

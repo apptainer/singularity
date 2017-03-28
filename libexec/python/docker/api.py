@@ -28,7 +28,7 @@ sys.path.append('..') # parent directory
 
 from base import ApiConnection
 
-from utils import (
+from sutils import (
     add_http,
     get_cache,
     create_tar,
