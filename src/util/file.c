@@ -79,6 +79,41 @@ char *file_devino(char *path) {
     return(ret);
 }
 
+int chk_perms(char *path, mode_t mode) {
+    struct stat filestat;
+
+    singularity_message(DEBUG, "Checking permissions on: %s\n", path);
+
+    // Stat path
+    if (stat(path, &filestat) < 0) {
+        return(-1);
+    }
+
+    if ( filestat.st_mode & mode ) {
+        singularity_message(WARNING, "Found appropriate permissions on file: %s\n", path);
+        return(0);
+    }
+
+    return(-1);
+}
+
+int chk_mode(char *path, mode_t mode) {
+    struct stat filestat;
+
+    singularity_message(DEBUG, "Checking exact mode on: %s\n", path);
+
+    // Stat path
+    if (stat(path, &filestat) < 0) {
+        return(-1);
+    }
+
+    if ( filestat.st_mode == mode ) {
+        singularity_message(WARNING, "Found appropriate mode on file: %s\n", path);
+        return(0);
+    }
+
+    return(-1);
+}
 
 int is_file(char *path) {
     struct stat filestat;
@@ -246,7 +281,7 @@ int s_mkpath(char *dir, mode_t mode) {
         return(-1);
     }
 
-    if (strlength(dir, 2) == 1 && dir[0] == '/') {
+    if (strcmp(dir, "/") == 0 ) {
         return(0);
     }
 
