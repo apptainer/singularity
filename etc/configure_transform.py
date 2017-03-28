@@ -5,7 +5,7 @@ import re
 import sys
 sys.path.append('../libexec/python')
 
-from utils import (
+from sutils import (
     get_fullpath,
     read_file,
     write_file
