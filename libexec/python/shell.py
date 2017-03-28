@@ -36,7 +36,7 @@ import re
 import os
 
 
-def get_image_uri(image):
+def get_image_uri(image,quiet=False):
     '''get_image_uri will parse a uri sent from Singularity to determine if it's 
     singularity (shub://) or docker (docker://)
     :param image: the complete image uri (example: docker://ubuntu:latest
@@ -46,10 +46,12 @@ def get_image_uri(image):
     match = re.findall('^[A-Za-z0-9-]+[:]//',image)
 
     if len(match) == 0:
-        logger.warning("Could not detect any uri in %s",image)
+        if not quiet:
+            logger.warning("Could not detect any uri in %s",image)
     else:
         image_uri = match[0].lower()
-        logger.debug("Found uri %s",image_uri)
+        if not quiet:
+            logger.debug("Found uri %s",image_uri)
     return image_uri
 
 
@@ -66,7 +68,7 @@ def remove_image_uri(image,image_uri=None):
     return image
 
 
-def parse_image_uri(image,uri=None):
+def parse_image_uri(image,uri=None,quiet=False):
     '''parse_image_uri will return a json structure with a registry, 
     repo name, tag, and namespace, intended for Docker.
     :param image: the string provided on command line for the image name, eg: ubuntu:latest
@@ -130,11 +132,12 @@ def parse_image_uri(image,uri=None):
         namespace = default_namespace
         repo_name = image[0]
 
-    logger.info("Registry: %s", registry)
-    logger.info("Namespace: %s", namespace)
-    logger.info("Repo Name: %s", repo_name)
-    logger.info("Repo Tag: %s", repo_tag)
-    logger.info("Version: %s", version)
+    if not quiet:
+        logger.info("Registry: %s", registry)
+        logger.info("Namespace: %s", namespace)
+        logger.info("Repo Name: %s", repo_name)
+        logger.info("Repo Tag: %s", repo_tag)
+        logger.info("Version: %s", version)
 
     parsed = {'registry':registry,
               'namespace':namespace, 
