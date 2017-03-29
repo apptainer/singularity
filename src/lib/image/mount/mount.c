@@ -51,6 +51,20 @@ int _singularity_image_mount(struct image_object *image, char *mount_point) {
         ABORT(255);
     }
 
+    if ( chk_mode(mount_point, 40755) != 0 ) {
+        int ret;
+        singularity_message(DEBUG, "fixing bad permissions on %s\n", mount_point);
+
+        singularity_priv_escalate();
+        ret = chmod(mount_point, 0755);
+        singularity_priv_drop();
+
+        if ( ret != 0 ) {
+            singularity_message(ERROR, "Bad permission mode (should be 0755) on: %s\n", mount_point);
+            ABORT(255);
+        }
+    }
+
     singularity_message(VERBOSE, "Checking what kind of image we are mounting\n");
     if ( _singularity_image_mount_squashfs_check(image) == 0 ) {
         if ( _singularity_image_mount_squashfs_mount(image, mount_point) < 0 ) {

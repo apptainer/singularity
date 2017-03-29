@@ -73,7 +73,6 @@ int main(int argc, char **argv) {
         singularity_image_open(&image, O_RDWR);
     }
 
-    singularity_runtime_tmpdir(singularity_registry_get("SESSIONDIR"));
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_image_bind(&image);

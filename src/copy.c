@@ -68,7 +68,6 @@ int main(int argc, char **argv) {
 
     singularity_registry_set("WRITABLE", "1");
 
-    singularity_runtime_tmpdir(singularity_registry_get("SESSIONDIR"));
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);

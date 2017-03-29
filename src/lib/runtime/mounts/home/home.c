@@ -44,7 +44,7 @@ int _singularity_runtime_mount_home(void) {
     char *homedir_base = NULL;
     char *homedir = singularity_priv_home();
     char *container_dir = singularity_runtime_rootfs(NULL);
-    char *tmpdir = singularity_runtime_tmpdir(NULL);
+    char *tmpdir = singularity_registry_get("SESSIONDIR");
 
 
     if ( singularity_config_get_bool(MOUNT_HOME) <= 0 ) {
@@ -53,7 +53,7 @@ int _singularity_runtime_mount_home(void) {
     }
 
     if ( tmpdir == NULL ) {
-        singularity_message(ERROR, "internal error - singularity_runtime_tmpdir() not set\n");
+        singularity_message(ERROR, "internal error - tmpdir/sessiondir not set\n");
         ABORT(255);
     }
 

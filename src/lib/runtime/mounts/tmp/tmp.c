@@ -63,7 +63,7 @@ int _singularity_runtime_mount_tmp(void) {
             tmp_source = joinpath(tmpdirpath, "/tmp");
             vartmp_source = joinpath(tmpdirpath, "/var_tmp");
         } else {
-            char *sessiondir = singularity_runtime_tmpdir(NULL);
+            char *sessiondir = singularity_registry_get("SESSIONDIR");
             tmp_source = joinpath(sessiondir, "/tmp");
             vartmp_source = joinpath(sessiondir, "/var_tmp");
         }

@@ -68,7 +68,7 @@ int _singularity_runtime_mount_scratch(void) {
 
     singularity_message(DEBUG, "Checking SINGULARITY_WORKDIR from environment\n");
     if ( ( tmpdir_path = singularity_registry_get("WORKDIR") ) == NULL ) {
-        if ( ( tmpdir_path = singularity_runtime_tmpdir(NULL) ) == NULL ) {
+        if ( ( tmpdir_path = singularity_registry_get("SESSIONDIR") ) == NULL ) {
             singularity_message(ERROR, "Could not identify a suitable temporary directory for scratch\n");
             return(0);
         }
@@ -125,8 +125,11 @@ int _singularity_runtime_mount_scratch(void) {
         free(full_destdir_path);
 
         current = strtok_r(NULL, ",", &outside_token);
-        // Ignore empty directories.
-        while (current && !strlength(current, 1024)) {current = strtok_r(NULL, ",", &outside_token);}
+
+        // Skip empty directories.
+        while ( current && !strlength(current, 1024) ) {
+            current = strtok_r(NULL, ",", &outside_token);
+        }
     }
     return(0);
 }

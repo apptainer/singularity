@@ -46,11 +46,11 @@
 
 
 static char *container_directory = NULL;
-static char *temp_directory = NULL;
 
 char *singularity_runtime_rootfs(char *directory) {
     if ( directory != NULL ) {
         if ( is_dir(directory) == 0 ) {
+            singularity_message(DEBUG, "Setting container_directory = '%s'\n", directory);
             container_directory = strdup(directory);
         } else {
             singularity_message(ERROR, "Container path is not a directory: %s\n", directory);
@@ -70,22 +70,9 @@ char *singularity_runtime_rootfs(char *directory) {
 
     }
 
+    singularity_message(DEBUG, "Returning container_directory: %s\n", container_directory);
     return(container_directory);
 }
-
-char *singularity_runtime_tmpdir(char *directory) {
-    if ( directory != NULL ) {
-        if ( is_dir(directory) == 0 ) {
-            temp_directory = strdup(directory);
-        } else {
-            singularity_message(ERROR, "Session path is not a directory: %s\n", directory);
-            ABORT(255);
-        }
-    }
-
-    return(temp_directory);
-}
-
 
 int singularity_runtime_ns(unsigned int flags) {
     return(_singularity_runtime_ns(flags));
@@ -102,10 +89,6 @@ int singularity_runtime_environment(void) {
 int singularity_runtime_mounts(void) {
     if ( singularity_runtime_rootfs(NULL) == NULL ) {
         singularity_message(ERROR, "The runtime container directory has not been set!\n");
-        ABORT(5);
-    }
-    if ( singularity_runtime_tmpdir(NULL) == NULL ) {
-        singularity_message(ERROR, "The runtime temporary directory has not been set!\n");
         ABORT(5);
     }
 
