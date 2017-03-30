@@ -97,7 +97,6 @@ int _singularity_runtime_mount_userbinds(void) {
             }
 
             if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
-                if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                     char *dir = dirname(strdup(dest));
                     if ( is_dir(joinpath(container_dir, dir)) < 0 ) {
                         singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
@@ -124,12 +123,7 @@ int _singularity_runtime_mount_userbinds(void) {
                         continue;
                     }
                     singularity_message(DEBUG, "Created bind file: %s\n", dest);
-                } else {
-                    singularity_message(WARNING, "Skipping user bind, non existant bind point (file) in container: '%s'\n", dest);
-                    continue;
-                }
             } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
-                if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                     singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
                     if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
                         singularity_priv_escalate();
@@ -141,10 +135,6 @@ int _singularity_runtime_mount_userbinds(void) {
                         }
                         singularity_priv_drop();
                     }
-                } else {
-                    singularity_message(WARNING, "Skipping user bind, non existant bind point (directory) in container: '%s'\n", dest);
-                    continue;
-                }
             }
 
             singularity_priv_escalate();

@@ -146,8 +146,12 @@ def extract_tar(archive,output_folder):
     command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
     print("Extracting %s" %(archive))
 
-    return run_command(command)
+    retval = run_command(command)
 
+    # Change permissions (default ensures writable), needed for Docker images
+    change_permissions(output_folder)
+
+    return retval
 
 def create_tar(files,output_folder=None):
     '''create_memory_tar will take a list of files (each a dictionary
