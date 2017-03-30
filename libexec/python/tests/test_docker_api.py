@@ -80,7 +80,7 @@ class TestApi(TestCase):
 
         print("Case 3: Asking for ENTRYPOINT when defined")        
         runscript = extract_runscript(manifest=manifest)
-        self.assertTrue('exec /usr/bin/run_mriqc "$@"' in runscript)        
+        self.assertTrue('exec /run_mriqc "$@"' in runscript)        
 
         print("Case 4: Asking for CMD when defined")              
         runscript = extract_runscript(manifest=manifest,

@@ -494,12 +494,15 @@ def get_config(manifest,spec="Entrypoint",delim=None):
     '''
     cmd = None
     if "history" in manifest:
+        history = manifest['history']
         for entry in manifest['history']:
             if 'v1Compatibility' in entry:
                 entry = json.loads(entry['v1Compatibility'])
                 if "config" in entry:
                     if spec in entry["config"]:
-                        cmd = entry["config"][spec]
+                        if entry["config"][spec] is not None:
+                            cmd = entry["config"][spec]
+                            break
 
     # Standard is to include commands like ['/bin/sh']
     if isinstance(cmd,list):
