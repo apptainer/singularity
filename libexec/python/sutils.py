@@ -304,7 +304,7 @@ def check_tar_permissions(tar_file,permission=None):
     tar = tarfile.open(tar_file, "r:gz")
 
     # Add all content objects to file
-    fd, tmp_tar = tempfile.mkstemp(prefix=("%s.tmp." % tar_file))
+    fd, tmp_tar = tempfile.mkstemp(prefix=("%s.fixperm." % tar_file))
     os.close(fd)
     fixed_tar = tarfile.open(tmp_tar, "w:gz")
 

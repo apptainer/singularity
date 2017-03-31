@@ -110,7 +110,6 @@ def IMPORT(image,auth=None,layerfile=None):
         if not os.path.exists(targz):
             targz = client.get_layer(image_id=image_id,
                                      download_folder=cache_base)
-            targz = check_tar_permissions(targz)
         layers.append(targz)
 
 

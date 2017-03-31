@@ -31,6 +31,7 @@ from base import ApiConnection
 from sutils import (
     add_http,
     get_cache,
+    check_tar_permissions,
     create_tar,
     write_file, 
     write_singularity_infos
@@ -258,11 +259,16 @@ class DockerApiConnection(ApiConnection):
             # Update user what we are doing
             print("Downloading layer %s" %image_id)
 
-        # Download the layer atomically
-        finished_download = self.download_atomically(url=base,
-                                                     file_name=download_folder)
- 
-        return finished_download
+        # Download the layer atomically, step 1
+        fd, tar_download = tempfile.mkstemp(prefix=("%s.download." % download_folder))
+        os.close(fd)
+        tar_download = self.download_atomically(url=base,
+                                                file_name=tar_download)
+
+        # Fix permissions step 2
+        finished_tar = check_tar_permissions(tar_download)
+        os.rename(finished_tar,download_folder)
+        return download_folder
 
 
     def get_size(self):
