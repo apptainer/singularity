@@ -85,7 +85,6 @@ case "$SINGULARITY_IMAGE" in
             name=`basename "$i"`
             message 1 "Exploding layer: $name\n"
             zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf -) || exit $?
-            chmod -R +w "$SINGULARITY_ROOTFS"
         done
 
         rm -f "$SINGULARITY_CONTENTS"

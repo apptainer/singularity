@@ -26,6 +26,7 @@ import os
 from defaults import INCLUDE_CMD
 
 from sutils import (
+    check_tar_permissions,
     extract_tar,
     get_cache, 
     write_file
@@ -109,7 +110,9 @@ def IMPORT(image,auth=None,layerfile=None):
         if not os.path.exists(targz):
             targz = client.get_layer(image_id=image_id,
                                      download_folder=cache_base)
+            targz = check_tar_permissions(targz)
         layers.append(targz)
+
 
     # Get Docker runscript
     layers.reverse()

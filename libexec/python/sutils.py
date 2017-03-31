@@ -271,7 +271,64 @@ def create_folders(path):
             sys.exit(1)
 
 
+############################################################################
+## PERMISSIONS #############################################################
+############################################################################
 
+
+def has_permission(file_path,permission=None):
+    '''has_writability will check if a file has writability using
+    bitwise operations. file_path can be a tar member
+    :param file_path: the path to the file, or tar member
+    :param permission: the stat permission to check for
+    is False)
+    '''
+    if permission == None:
+        permission = stat.S_IWUSR
+    if isinstance(file_path,tarfile.TarInfo):
+        has_permission = file_path.mode & permission
+    else:
+        st = os.stat(file_path)
+        has_permission = st.st_mode & permission
+    if has_permission > 0:
+        return True
+    return False
+
+
+def check_tar_permissions(tar_file,permission=None):
+    '''check_tar_permissions changes a permission if 
+    any member in a tarfile file does not have it
+    :param file_path the path to the file
+    :param permission: the stat permission to use
+    '''
+    tar = tarfile.open(tar_file, "r:gz")
+
+    # Add all content objects to file
+    fd, tmp_tar = tempfile.mkstemp(prefix=("%s.tmp." % tar_file))
+    os.close(fd)
+    fixed_tar = tarfile.open(tmp_tar, "w:gz")
+
+    if permission == None:
+        permission = stat.S_IWUSR
+
+    # Check permissions for folders, not symlinks
+    for member in tar:  
+        if member.isdir() or member.isfile() and not member.issym():
+            if not has_permission(member,permission):
+                logger.debug("Fixing permission for %s" %(member.name))
+                member.mode = permission | member.mode
+            extracted = tar.extractfile(member)        
+            fixed_tar.addfile(member, extracted)
+        else:    
+            fixed_tar.addfile(member)
+
+    fixed_tar.close()
+    tar.close()
+ 
+    # Rename the fixed tar to be the old name
+    os.rename(tmp_tar, tar_file)
+    return tar_file        
+        
 
 ############################################################################
 ## FILES ###################################################################
