@@ -54,7 +54,7 @@ class TestDefaultCache(TestCase):
         '''test_run_command tests sending a command to commandline
         using subprocess
         '''
-        print("Testing utils.get_cache...")
+        print("Testing get_cache...")
         
         # If there is no cache_base, we should get default
         print("Case 1: No cache base in environment returns default")

@@ -173,7 +173,7 @@ class TestUtils(TestCase):
         '''test_add_http ensures that http is added to a url
         '''
 
-        from utils import add_http
+        from sutils import add_http
         url_http = 'http://registry.docker.io'
         url_https = 'https://registry.docker.io'
 
@@ -222,7 +222,7 @@ class TestUtils(TestCase):
         '''
         print("Testing utils header functions...")
 
-        from utils import basic_auth_header
+        from sutils import basic_auth_header
         
         # Basic auth header
         print("Case 4: basic_auth_header - ask for custom authentication header")
@@ -238,7 +238,7 @@ class TestUtils(TestCase):
         '''
         print("Testing utils.run_command...")
 
-        from utils import run_command
+        from sutils import run_command
         
         # An error should return None
         print("Case 1: Command errors returns None ")
@@ -258,7 +258,7 @@ class TestUtils(TestCase):
         '''
         print("Testing utils.is_number...")
 
-        from utils import is_number
+        from sutils import is_number
 
         print("Case 1: Testing string and float numbers returns True")
         self.assertTrue(is_number("4"))
@@ -279,7 +279,7 @@ class TestUtils(TestCase):
         print("Testing utils.extract_tar...")
 
         # First create a temporary tar file
-        from utils import extract_tar
+        from sutils import extract_tar
         from glob import glob
         import tarfile 
         
@@ -325,7 +325,7 @@ class TestUtils(TestCase):
         '''test_write_read_files will test the functions write_file and read_file
         '''
         print("Testing utils.write_file...")
-        from utils import write_file
+        from sutils import write_file
         import json
         tmpfile = tempfile.mkstemp()[1]
         os.remove(tmpfile)
@@ -333,11 +333,11 @@ class TestUtils(TestCase):
         self.assertTrue(os.path.exists(tmpfile))        
 
         print("Testing utils.read_file...")
-        from utils import read_file
+        from sutils import read_file
         content = read_file(tmpfile)[0]
         self.assertEqual("hello!",content)
 
-        from utils import write_json
+        from sutils import write_json
         print("Testing utils.write_json...")
         print("Case 1: Providing bad json")
         bad_json = {"Wakkawakkawakka'}":[{True},"2",3]}
@@ -360,7 +360,7 @@ class TestUtils(TestCase):
         '''test_clean_path will test the clean_path function
         '''
         print("Testing utils.clean_path...")
-        from utils import clean_path
+        from sutils import clean_path
         ideal_path = '/home/vanessa/Desktop/stuff'
         self.assertEqual(clean_path('/home/vanessa/Desktop/stuff/'),ideal_path)
         self.assertEqual(clean_path('/home/vanessa/Desktop/stuff//'),ideal_path)
@@ -371,7 +371,7 @@ class TestUtils(TestCase):
         '''test_get_fullpath will test the get_fullpath function
         '''
         print("Testing utils.get_fullpath...")
-        from utils import get_fullpath
+        from sutils import get_fullpath
         tmpfile = tempfile.mkstemp()[1]
 
         print("Case 1: File exists, should return full path")
@@ -391,7 +391,7 @@ class TestUtils(TestCase):
         '''test_get_fullpath will test the get_fullpath function
         '''
         print("Testing utils.write_singuarity_infos...")
-        from utils import write_singularity_infos
+        from sutils import write_singularity_infos
         base_dir = '%s/ROOTFS' %(self.tmpdir)
         prefix = 'docker'
         start_number = 0

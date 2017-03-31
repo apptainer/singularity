@@ -26,7 +26,7 @@ import sys
 sys.path.append('..') # directory with singularity, etc.
 
 from unittest import TestCase
-from utils import read_file
+from sutils import read_file
 from glob import glob
 import shutil
 import tempfile

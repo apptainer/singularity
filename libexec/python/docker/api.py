@@ -28,9 +28,10 @@ sys.path.append('..') # parent directory
 
 from base import ApiConnection
 
-from utils import (
+from sutils import (
     add_http,
     get_cache,
+    check_tar_permissions,
     create_tar,
     write_file, 
     write_singularity_infos
@@ -72,14 +73,14 @@ class DockerApiConnection(ApiConnection):
         self.api_base = API_BASE
         self.api_version = API_VERSION
         self.manifest = None
-        if 'image' in kwargs:
-            self.load_image(kwargs['image'])
+
         if 'auth' in kwargs:
             self.auth = kwargs['auth']
         if 'token' in kwargs:
             self.token = kwargs['token']
         super(DockerApiConnection, self).__init__(**kwargs)
-        self.update_token()
+        if 'image' in kwargs:
+            self.load_image(kwargs['image'])
         
 
     def assemble_uri(self):
@@ -107,6 +108,7 @@ class DockerApiConnection(ApiConnection):
         self.namespace = image['namespace']
         self.version = image['version']
         self.registry = image['registry']
+        self.update_token()
 
 
     def update_token(self,response=None,auth=None):
@@ -257,39 +259,60 @@ class DockerApiConnection(ApiConnection):
             # Update user what we are doing
             print("Downloading layer %s" %image_id)
 
-        # Download the layer atomically
-        finished_download = self.download_atomically(url=base,
-                                                     file_name=download_folder)
- 
-        return finished_download
+        # Download the layer atomically, step 1
+        fd, tar_download = tempfile.mkstemp(prefix=("%s.download." % download_folder))
+        os.close(fd)
+        tar_download = self.download_atomically(url=base,
+                                                file_name=tar_download)
+
+        # Fix permissions step 2
+        finished_tar = check_tar_permissions(tar_download)
+        os.rename(finished_tar,download_folder)
+        return download_folder
 
 
-    def get_config(self,spec="Entrypoint",delim=None):
+    def get_size(self):
+        '''get_size will return the image size (must use version 2 manifest)
+        '''
+        manifest = self.get_manifest()
+        size = None
+        if "config" in manifest:
+             if "size" in manifest['config']:
+                size = manifest['config']["size"]
+        return size
+
+
+    def get_config(self,spec="Entrypoint",delim=None,old_version=False):
         '''get_config returns a particular spec (default is Entrypoint) 
         from a VERSION 1 manifest obtained with get_manifest.
         :param manifest: the manifest obtained from get_manifest
         :param spec: the key of the spec to return, default is "Entrypoint"
         :param delim: Given a list, the delim to use to join the entries. Default is newline
         '''
-        
-        manifest = self.get_manifest(old_version=True)
+        manifest = self.get_manifest(old_version=old_version)
 
         cmd = None
-        if "history" in manifest:
-            for entry in manifest['history']:
-                if 'v1Compatibility' in entry:
-                    entry = json.loads(entry['v1Compatibility'])
-                    if "config" in entry:
-                        if spec in entry["config"]:
-                            cmd = entry["config"][spec]
+        # Version1 of the manifest has more detailed metadata
+        if old_version:
+            if "history" in manifest:
+                for entry in manifest['history']:
+                    if 'v1Compatibility' in entry:
+                        entry = json.loads(entry['v1Compatibility'])
+                        if "config" in entry:
+                            if spec in entry["config"]:
+                                cmd = entry["config"][spec]
 
-        # Standard is to include commands like ['/bin/sh']
-        if isinstance(cmd,list):
-            if delim is None:
-                delim = "\n"
-            cmd = delim.join(cmd)
-        logger.info("Found Docker command (%s) %s",spec,cmd)
+            # Standard is to include commands like ['/bin/sh']
+            if isinstance(cmd,list):
+                if delim is None:
+                    delim = "\n"
+                cmd = delim.join(cmd)
+            logger.info("Found Docker config (%s) %s",spec,cmd)
 
+        else:
+            if "config" in manifest:
+                if spec in manifest['config']:
+                    cmd = manifest['config'][spec]
         return cmd
 
 
@@ -477,12 +500,15 @@ def get_config(manifest,spec="Entrypoint",delim=None):
     '''
     cmd = None
     if "history" in manifest:
+        history = manifest['history']
         for entry in manifest['history']:
             if 'v1Compatibility' in entry:
                 entry = json.loads(entry['v1Compatibility'])
                 if "config" in entry:
                     if spec in entry["config"]:
-                        cmd = entry["config"][spec]
+                        if entry["config"][spec] is not None:
+                            cmd = entry["config"][spec]
+                            break
 
     # Standard is to include commands like ['/bin/sh']
     if isinstance(cmd,list):

@@ -220,6 +220,29 @@ Pull must minimally have a container defined in `SINGULARITY_CONTAINER`
 Included in bootstrap, but not specifically for it, we have a set of utility modules, which do things like:
 
  - get, add, delete a key from a json file specified
+ - get the size of a container
+
+### Size
+The size function will return the size of a container. Required environment variables are:
+
+ - `SINGULARITY_CONTAINER`: the path (and uri) to the container (shub:// or docker://)
+ - `SINGULARITY_CONTENTS` =  the layerfile to write the size to
+        
+
+Example usage is as follows:
+
+
+    # Singularity Hub
+    export SINGULARITY_CONTAINER=shub://vsoch/singularity-hello-world
+    export SINGULARITY_CONTENTS=/tmp/hello-kitty.txt
+    # from within tests, for example
+    python ../size.py
+
+    # Docker
+    export SINGULARITY_CONTAINER=docker://ubuntu:latest
+    export SINGULARITY_CONTENTS=/tmp/hello-kitty.txt
+    python ../size.py
+
 
 ### Json
 The json module is (so far) primarily intended to write a key value store of labels specific to a container. This comes down to `.json` files in the `SINGULARITY_METADATA/labels` folder, with each file mapping to it's source (eg, docker, shub, etc). Given that the calling (C) function has specified the label file (`SINGULARITY_LABELBASE`) The general use would be the following:

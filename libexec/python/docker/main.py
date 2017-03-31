@@ -25,7 +25,8 @@ import sys
 import os
 from defaults import INCLUDE_CMD
 
-from utils import (
+from sutils import (
+    check_tar_permissions,
     extract_tar,
     get_cache, 
     write_file
@@ -45,6 +46,19 @@ import shutil
 import re
 import os
 import tempfile
+
+
+def SIZE(image,auth=None,contentfile=None):
+    '''size is intended to be run before an import, to return to the contentfile a list of sizes
+    (one per layer) corresponding with the layers that will be downloaded for image
+    '''
+    logger.debug("Starting Docker SIZE, will get size from manifest")
+    logger.info("Docker image: %s", image)
+    client = DockerApiConnection(image=image,auth=auth)
+    size = client.get_size()
+    if contentfile is not None:
+        write_file(contentfile,str(size),mode="w")
+    return size 
 
 
 def IMPORT(image,auth=None,layerfile=None):
@@ -97,6 +111,7 @@ def IMPORT(image,auth=None,layerfile=None):
             targz = client.get_layer(image_id=image_id,
                                      download_folder=cache_base)
         layers.append(targz)
+
 
     # Get Docker runscript
     layers.reverse()

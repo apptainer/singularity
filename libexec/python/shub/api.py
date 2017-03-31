@@ -33,7 +33,7 @@ from shell import (
     get_image_uri
 )
 
-from utils import (
+from sutils import (
     add_http,
     is_number,
     read_file,

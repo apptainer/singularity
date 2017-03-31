@@ -33,7 +33,7 @@ from .api import (
     SingularityApiConnection
 )
 
-from utils import (
+from sutils import (
     add_http,
     get_cache,
     write_file
@@ -56,7 +56,7 @@ def SIZE(image,contentfile=None):
     logger.info("Singularity Hub image: %s", image)
     client = SingularityApiConnection(image=image)
     manifest = client.get_manifest()
-    size = extract_metadata(manifest)['size']
+    size = json.loads(manifest['metrics'].replace("'",'"'))['size']
     if contentfile is not None:
         write_file(contentfile,str(size),mode="w")
     return size 

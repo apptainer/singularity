@@ -77,7 +77,7 @@ class TestJson(TestCase):
         print('Testing json GET')
 
         print('Case 1: Get exiting key')
-        from utils import write_json
+        from sutils import write_json
         write_json({"PASTA":"rigatoni!"},self.file)        
         self.assertTrue(os.path.exists(self.file))
         
@@ -116,7 +116,7 @@ class TestJson(TestCase):
         '''test_add_delete will test the add and delete functions
         '''
         print('Testing json ADD')
-        from utils import write_json, read_json
+        from sutils import write_json, read_json
 
         print('Case 1: Adding to new file, force not needed')
         self.assertTrue(os.path.exists(self.file)==False)
@@ -207,7 +207,7 @@ class TestJson(TestCase):
         '''test_add_delete will test the add and delete functions
         '''
         print('Testing json DUMP')
-        from utils import write_json, read_json
+        from sutils import write_json, read_json
 
         print('Case 1: Dumping file.')
 
