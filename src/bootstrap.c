@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
     setenv("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
     setenv("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
     setenv("SINGULARITY_MESSAGELEVEL", singularity_registry_get("MESSAGELEVEL"), 1);
-    setenv("SINGULARITY_VERSION", singularity_registry_get("VERSION"), 1);
+    setenv("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
 
     singularity_message(INFO, "Setting envar: 'HOME' = '%s'\n", singularity_priv_home());
     setenv("HOME", singularity_priv_home(), 1);
