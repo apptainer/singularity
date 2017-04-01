@@ -70,7 +70,7 @@ int _singularity_runtime_mount_home(void) {
     }
 
     singularity_message(DEBUG, "Checking if the user owns their home directory: %s\n", homedir);
-    if ( is_owner(homedir, singularity_priv_getuid()) != 0 ) {
+    if ( ( is_dir(homedir) == 0 ) && ( is_owner(homedir, singularity_priv_getuid()) != 0 ) ) {
         singularity_message(VERBOSE, "Not mounting home directory (calling user does not own it): %s\n", homedir);
         return(0);
     }
