@@ -51,7 +51,23 @@ int main(int argc, char **argv) {
     singularity_registry_init();
     singularity_priv_init();
 
-    singularity_registry_set("WRITABLE", "1");
+    singularity_message(INFO, "Sanitizing environment\n");
+    if ( envclean() != 0 ) {
+        singularity_message(ERROR, "Failed sanitizing the environment\n");
+        ABORT(255);
+    }
+
+    setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
+    setenv("SINGULARITY_libexecdir", singularity_registry_get("LIBEXECDIR"), 1);
+    setenv("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
+    setenv("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
+    setenv("SINGULARITY_MESSAGELEVEL", singularity_registry_get("MESSAGELEVEL"), 1);
+    setenv("SINGULARITY_VERSION", singularity_registry_get("VERSION"), 1);
+
+    singularity_message(INFO, "Setting envar: 'HOME' = '%s'\n", singularity_priv_home());
+    setenv("HOME", singularity_priv_home(), 1);
+
+//    singularity_registry_set("WRITABLE", "1");
 
 //    singularity_sessiondir();
 
