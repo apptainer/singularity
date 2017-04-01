@@ -102,6 +102,7 @@ int main(int argc, char **argv) {
 
     setenv("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     setenv("SINGULARITY_NAME", singularity_image_name(&image), 1);
+    setenv("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
     command = singularity_registry_get("COMMAND");
     
     if ( command == NULL ) {

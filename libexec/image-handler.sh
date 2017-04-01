@@ -75,11 +75,10 @@ case "$SINGULARITY_IMAGE" in
 
         export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_SESSIONDIR SINGULARITY_CONTENTS
 
-        message 1 "Importing: base Singularity environment\n"
-        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
-
         eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 
+        message 1 "Importing: base Singularity environment\n"
+        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
          
         for i in `cat "$SINGULARITY_CONTENTS"`; do
             name=`basename "$i"`

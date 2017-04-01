@@ -6,14 +6,17 @@ for script in /.singularity.d/env/*.sh; do
     fi
 done
 
-if test -n "$SHELL" ; then
-    exec $SHELL "$@"
+if test -n "$SINGULARITY_SHELL" -a -x "$SINGULARITY_SHELL"; then
+    exec $SINGULARITY_SHELL "$@"
 
-    echo "ERROR: Failed running shell as defined by 'SINGULARITY_SHELL'" 1>&2
+    echo "ERROR: Failed running shell as defined by '\$SINGULARITY_SHELL'" 1>&2
     exit 1
-fi
 
-if test -x /bin/sh; then
+elif test -x /bin/bash; then
+    SHELL=/bin/bash
+    export SHELL
+    exec /bin/bash --norc "$@"
+elif test -x /bin/sh; then
     SHELL=/bin/sh
     export SHELL
     exec /bin/sh "$@"

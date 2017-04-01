@@ -35,7 +35,7 @@
 #include "util/config_parser.h"
 #include "util/message.h"
 #include "util/privilege.h"
-//#include "lib/sessiondir.h"
+#include "util/registry.h"
 
 #include "../file-bind.h"
 #include "../../runtime.h"
