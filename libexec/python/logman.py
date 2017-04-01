@@ -21,9 +21,70 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-
 import os
 import logging
+
+class Logman:
+
+    def __init__(self,MESSAGELEVEL=None):
+        self.level = get_logging_level()
+        logging.basicConfig(level=self.level)
+        self.logger = logging.getLogger('python')
+
+
+    def is_quiet(self):
+        '''get_level will return the current (SINGULARITY) level
+        '''
+        if self.logger.getEffectiveLevel() < 50:
+            return False
+        return True
+
+
+    def get_mapping(self):
+        '''get_mapping returns a lookup dictionary for how Singularity (C)
+        logging levels (ints) translate to the python logger. The key translates
+        to the environment variable SINGULARITY_MESSAGELEVEL (as an int)
+        This function is primarily for understanding the mapping.
+        '''
+        levels = { 'DEFAULT':  { 'python_effective_level': logging.FATAL,
+                                 'python_level': 'logging.FATAL',
+                                 'singularity_levels': [0] },
+
+                   'ABRT' :    { 'python_effective_level': logging.CRITICAL,
+                                 'python_level': 'logging.CRITICAL',
+                                 'singularity_levels': [-4],
+                                 'flags': ['--quiet','-q'] },
+
+                   'ERROR' :   { 'python_effective_level': logging.ERROR,
+                                 'python_level': 'logging.ERROR',
+                                 'singularity_levels': [-3] },
+
+                   'WARNING' : { 'python_effective_level': logging.WARNING,
+                                 'python_level': 'logging.WARNING',
+                                 'singularity_levels': [-2] },
+                  
+                   'LOG' :     { 'python_effective_level': logging.INFO,
+                                 'python_level': 'logging.INFO',
+                                 'singularity_levels': [-1] },
+
+                  'VERBOSE' :  { 'python_effective_level': logging.DEBUG,
+                                 'python_level': 'logging.DEBUG',
+                                 'singularity_levels': [2] }}
+
+        # LOG is functionally the same as INFO level in python, both are logging.info
+        levels['INFO'] = levels['LOG']
+        levels['LOG']['singularity_levels'] = [1]
+
+        # VERBOSE singularity levels all map to debug
+        levels['VERBOSE1'] = levels['VERBOSE']
+        levels['VERBOSE2'] = levels['VERBOSE']
+        levels['VERBOSE2']['singularity_levels'] = [3]
+        levels['VERBOSE3'] = levels['VERBOSE']
+        levels['VERBOSE3']['singularity_levels'] = [4]
+        return levels
+
+
+    
 
 def get_logging_level():
     '''get_logging_level will configure a logging to standard out based on the user's
@@ -60,12 +121,12 @@ def get_logging_level():
         level = logging.ERROR
 
     #define WARNING -2
-    elif MESSAGELEVEL in [1,-2]:
+    elif MESSAGELEVEL == -2:
         level = logging.WARNING
 
     #define LOG -1
     #define INFO 1
-    elif MESSAGELEVEL == -1:
+    elif MESSAGELEVEL in [1,-1]:
         level = logging.INFO
 
     #define VERBOSE 2
@@ -78,6 +139,5 @@ def get_logging_level():
     #print("Logging level set to %s" %level)
     return level
 
-level = get_logging_level()
-logging.basicConfig(level=level)
-logger = logging.getLogger('python')
+
+bot = Logman()

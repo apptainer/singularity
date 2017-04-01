@@ -42,7 +42,7 @@ from shell import (
 )
 
 from defaults import getenv
-from logman import logger
+from logman import bot
 
 
 def main():
@@ -60,7 +60,7 @@ def main():
 
     if image_uri == "shub://":
 
-        logger.info("\n*** STARTING SINGULARITY HUB SIZE PYTHON  ****")    
+        bot.logger.info("\n*** STARTING SINGULARITY HUB SIZE PYTHON  ****")    
         from shub.main import SIZE
         SIZE(image=container,
              contentfile=LAYERFILE)
@@ -70,7 +70,7 @@ def main():
         from sutils import basic_auth_header
         from docker.main import SIZE
 
-        logger.info("Docker sizes will be written to: %s", LAYERFILE)
+        bot.logger.info("Docker sizes will be written to: %s", LAYERFILE)
         username = getenv("SINGULARITY_DOCKER_USERNAME") 
         password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
 
@@ -83,7 +83,7 @@ def main():
              contentfile=LAYERFILE)
 
     else:
-        logger.error("uri %s is not a currently supported uri for size. Exiting.",image_uri)
+        bot.logger.error("uri %s is not a currently supported uri for size. Exiting.",image_uri)
         sys.exit(1)
 
 

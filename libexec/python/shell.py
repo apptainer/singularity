@@ -22,7 +22,7 @@ perform publicly and display publicly, and to permit other to do so.
 import sys
 import os
 
-from logman import logger
+from logman import bot
 
 from defaults import (
     API_BASE as default_registry,
@@ -47,11 +47,11 @@ def get_image_uri(image,quiet=False):
 
     if len(match) == 0:
         if not quiet:
-            logger.warning("Could not detect any uri in %s",image)
+            bot.logger.warning("Could not detect any uri in %s",image)
     else:
         image_uri = match[0].lower()
         if not quiet:
-            logger.debug("Found uri %s",image_uri)
+            bot.logger.debug("Found uri %s",image_uri)
     return image_uri
 
 
@@ -133,11 +133,11 @@ def parse_image_uri(image,uri=None,quiet=False):
         repo_name = image[0]
 
     if not quiet:
-        logger.info("Registry: %s", registry)
-        logger.info("Namespace: %s", namespace)
-        logger.info("Repo Name: %s", repo_name)
-        logger.info("Repo Tag: %s", repo_tag)
-        logger.info("Version: %s", version)
+        bot.logger.info("Registry: %s", registry)
+        bot.logger.info("Namespace: %s", namespace)
+        bot.logger.info("Repo Name: %s", repo_name)
+        bot.logger.info("Repo Tag: %s", repo_tag)
+        bot.logger.info("Version: %s", version)
 
     parsed = {'registry':registry,
               'namespace':namespace, 
@@ -147,7 +147,7 @@ def parse_image_uri(image,uri=None,quiet=False):
     # No field should be empty
     for fieldname,value in parsed.items():
         if len(value) == 0:
-            logger.error("%s found empty, check uri! Exiting.", value)
+            bot.logger.error("%s found empty, check uri! Exiting.", value)
             sys.exit(1)
 
     # Version is not required

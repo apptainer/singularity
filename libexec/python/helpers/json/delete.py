@@ -37,7 +37,7 @@ import optparse
 import pickle
 from glob import glob
 from helpers.json.main import DELETE
-from logman import logger
+from logman import bot
 import os
 import sys
 
@@ -75,7 +75,7 @@ def main():
        success = DELETE(key=args.key,
                         jsonfile=args.file)
     else:
-        logger.error("--key and --file must be defined for DELETE. Exiting")
+        bot.logger.error("--key and --file must be defined for DELETE. Exiting")
         sys.exit(1)
 
 if __name__ == '__main__':
