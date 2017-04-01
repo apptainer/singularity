@@ -144,7 +144,7 @@ def extract_tar(archive,output_folder):
 
     # Just use command line, more succinct.
     command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
-    if bot.logger.getEffectiveLevel() < 50: # not --quiet
+    if not bot.is_quiet():
         print("Extracting %s" %archive)
 
     return run_command(command)

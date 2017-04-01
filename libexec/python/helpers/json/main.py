@@ -41,9 +41,9 @@ def DUMP(jsonfile):
     '''DUMP will return the entire layfile as text, key value pairs
     :param jsonfile_path: the path to the jsonfile
     '''
-    logger.debug("Reading %s to prepare dump to STDOUT",jsonfile)
+    bot.logger.debug("Reading %s to prepare dump to STDOUT",jsonfile)
     if not os.path.exists(jsonfile):
-        logger.error("Cannot find %s, exiting.",jsonfile)
+        bot.logger.error("Cannot find %s, exiting.",jsonfile)
         sys.exit(1)
     
     contents = read_json(jsonfile)
