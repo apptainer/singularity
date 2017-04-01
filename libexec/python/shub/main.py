@@ -84,7 +84,8 @@ def PULL(image,download_folder=None,layerfile=None):
         image_file = client.download_image(manifest=manifest,
                                            download_folder=cache_base)
     else:
-        print("Image already exists at %s, skipping download." %image_file)
+        if logger.level > 0:
+            print("Image already exists at %s, skipping download." %image_file)
     logger.info("Singularity Hub Image Download: %s", image_file)
 
     manifest = {'image_file': image_file,

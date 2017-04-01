@@ -55,11 +55,11 @@ def get_image_uri(image,quiet=False):
     return image_uri
 
 
-def remove_image_uri(image,image_uri=None):
+def remove_image_uri(image,image_uri=None,quiet=False):
     '''remove_image_uri will return just the image name
     '''
     if image_uri == None:
-        image_uri = get_image_uri(image)
+        image_uri = get_image_uri(image,quiet=quiet)
 
     image = image.replace(' ','')
         

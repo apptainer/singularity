@@ -257,7 +257,7 @@ class DockerApiConnection(ApiConnection):
             download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
 
             # Update user what we are doing
-            print("Downloading layer %s" %image_id)
+            logger.info("Downloading layer %s", image_id)
 
         # Download the layer atomically, step 1
         fd, tar_download = tempfile.mkstemp(prefix=("%s.download." % download_folder))

@@ -80,7 +80,7 @@ def ADD(key,value,jsonfile,force=False):
     '''ADD will write or update a key in a json file
     '''
     key = format_keyname(key)
-    print("Adding label: '%s' = '%s'" %(key,value))
+    logger.info("Adding label: '%s' = '%s'", key, value)
     logger.debug("ADD %s from %s",key,jsonfile)
     if os.path.exists(jsonfile):    
         contents = read_json(jsonfile)

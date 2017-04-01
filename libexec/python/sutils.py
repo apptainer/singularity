@@ -144,7 +144,7 @@ def extract_tar(archive,output_folder):
 
     # Just use command line, more succinct.
     command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
-    print("Extracting %s" %(archive))
+    logger.info("Extracting %s", archive)
 
     return run_command(command)
 
@@ -252,7 +252,7 @@ def get_cache(subfolder=None,quiet=False):
     create_folders(cache_base)
 
     if not quiet:
-        print("Cache folder set to %s" %cache_base)
+        logger.info("Cache folder set to %s", cache_base)
     return cache_base
 
 
