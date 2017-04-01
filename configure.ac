@@ -246,9 +246,30 @@ else
     SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
 fi
 
+
+# ---------------------------------------------------------------------
+# PYTHON
+# ---------------------------------------------------------------------
+
 AC_CHECK_PROG(PYTHON_CHECK,python,yes)
 if test x"$PYTHON_CHECK" != x"yes" ; then
     AC_MSG_ERROR([Please install python before installing.])
+else
+
+    PYTHON_MODULES="base64 datetime glob hashlib io json logging pickle pwd re shutil subprocess stat sys tarfile tempfile"
+    for PYTHON_MODULE in $PYTHON_MODULES; do
+        AC_MSG_CHECKING([for the $PYTHON_MODULE python module])
+	    python_module_result=`python -c "import $PYTHON_MODULE" 2>&1`
+	    if test -z "$python_module_result"; then
+		AC_MSG_RESULT([yes])
+	    else
+		AC_MSG_RESULT([no])
+		AC_MSG_ERROR([cannot import Python module $PYTHON_MODULE.
+                              Please check your Python installation. The error was:
+                              $python_module_result])
+	    fi
+    done
+
 fi
 
 AC_SUBST(OVERLAY_FS)
@@ -291,13 +312,6 @@ AS_IF([test "x$enable_suid" != "xno"], [
 ])
 
 AC_SUBST(BUILD_SUID)
-
-
-#AC_CHECK_DECLS([MS_PRIVATE,MS_REC], [],
-#               [AC_MSG_ERROR([Required mount(2) flags not available])],
-#               [[#include <sys/mount.h>]])
-
-
 
 
 AC_CONFIG_FILES([
@@ -343,8 +357,6 @@ AC_CONFIG_FILES([
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
    src/util/Makefile
-
-
    etc/Makefile
    bin/Makefile
    bin/singularity
