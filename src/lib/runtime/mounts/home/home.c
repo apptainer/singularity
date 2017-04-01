@@ -63,17 +63,25 @@ int _singularity_runtime_mount_home(void) {
         ABORT(255);
     }
 
+    singularity_message(DEBUG, "Checking if home directory is already mounted: %s\n", homedir);
+    if ( check_mounted(homedir) >= 0 ) {
+        singularity_message(VERBOSE, "Not mounting home directory (already mounted in container): %s\n", homedir);
+        return(0);
+    }
+
+    singularity_message(DEBUG, "Checking if the user owns their home directory: %s\n", homedir);
+    if ( is_owner(homedir, singularity_priv_getuid()) != 0 ) {
+        singularity_message(VERBOSE, "Not mounting home directory (calling user does not own it): %s\n", homedir);
+        return(0);
+    }
+
     singularity_message(DEBUG, "Identifying the base directory of homedir: %s\n", homedir);
     if ( ( homedir_base = basedir(homedir) ) == NULL ) {
         singularity_message(ERROR, "Could not identify basedir for home directory path: %s\n", homedir);
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Checking if home directory is already mounted: %s\n", homedir);
-    if ( check_mounted(homedir) >= 0 ) {
-        singularity_message(VERBOSE, "Not mounting home directory (already mounted in container): %s\n", homedir);
-        return(0);
-    }
+    // Done with initial checks...
 
     singularity_message(DEBUG, "Creating directory to stage tmpdir home: %s\n", joinpath(tmpdir, homedir));
     if ( s_mkpath(joinpath(tmpdir, homedir), 0755) < 0 ) {
