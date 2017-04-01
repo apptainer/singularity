@@ -38,12 +38,6 @@ if [ -f "${HOME:-}/.singularity-init" ]; then
     . "${HOME:-}/.singularity-init"
 fi
 
-if [ -n "${SINGULARITY_SHELL:-}" ]; then
-    SHELL="$SINGULARITY_SHELL"
-else
-    SHELL="/bin/sh"
-fi
-
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -57,7 +51,8 @@ while true; do
         ;;
         -s|--shell)
             shift
-            SHELL="${1:-}"
+            SINGULARITY_SHELL="${1:-}"
+            export SINGULARITY_SHELL
             shift
         ;;
         -u|--user)
