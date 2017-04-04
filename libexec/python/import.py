@@ -65,12 +65,12 @@ def main():
 
     if image_uri == "docker://":
 
-        bot.logger.info("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
+        bot.logger.debug("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
 
         from sutils import basic_auth_header
         from defaults import LAYERFILE
 
-        bot.logger.info("Docker layers and (env,labels,runscript) will be written to: %s", LAYERFILE)
+        bot.logger.debug("Docker layers and (env,labels,runscript) will be written to: %s", LAYERFILE)
         username = getenv("SINGULARITY_DOCKER_USERNAME") 
         password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
 
@@ -91,7 +91,7 @@ def main():
 
     elif image_uri == "shub://":
 
-        bot.logger.info("\n*** STARTING SINGULARITY HUB IMPORT PYTHON  ****")    
+        bot.logger.debug("\n*** STARTING SINGULARITY HUB IMPORT PYTHON  ****")    
 
         from defaults import LAYERFILE, LABELFILE
         from shub.main import IMPORT

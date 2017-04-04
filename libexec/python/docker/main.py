@@ -52,8 +52,8 @@ def SIZE(image,auth=None,contentfile=None):
     '''size is intended to be run before an import, to return to the contentfile a list of sizes
     (one per layer) corresponding with the layers that will be downloaded for image
     '''
-    bot.logger.info("Starting Docker SIZE, will get size from manifest")
-    bot.logger.info("Docker image: %s", image)
+    bot.logger.debug("Starting Docker SIZE, will get size from manifest")
+    bot.logger.debug("Docker image: %s", image)
     client = DockerApiConnection(image=image,auth=auth)
     size = client.get_size()
     if contentfile is not None:
@@ -67,14 +67,14 @@ def IMPORT(image,auth=None,layerfile=None):
     :param auth: if needed, an authentication header (default None)
     :param layerfile: The file to write layers to extract into
     '''
-    bot.logger.info("Starting Docker IMPORT, includes environment, runscript, and metadata.")
-    bot.logger.info("Docker image: %s", image)
+    bot.logger.debug("Starting Docker IMPORT, includes environment, runscript, and metadata.")
+    bot.logger.debug("Docker image: %s", image)
 
     # Does the user want to override default of using ENTRYPOINT?
     if INCLUDE_CMD:
-        bot.logger.info("Specified Docker CMD as %runscript.")
+        bot.logger.debug("Specified Docker CMD as %runscript.")
     else:
-        bot.logger.info("Specified Docker ENTRYPOINT as %runscript.")
+        bot.logger.debug("Specified Docker ENTRYPOINT as %runscript.")
 
 
     # Input Parsing ----------------------------
@@ -141,6 +141,6 @@ def IMPORT(image,auth=None,layerfile=None):
                   "cache_base":cache_base,
                   "metadata": tar_file }
 
-    bot.logger.info("*** FINISHING DOCKER IMPORT PYTHON PORTION ****\n")
+    bot.logger.debug("*** FINISHING DOCKER IMPORT PYTHON PORTION ****\n")
 
     return additions

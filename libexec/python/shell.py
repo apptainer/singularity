@@ -133,11 +133,11 @@ def parse_image_uri(image,uri=None,quiet=False):
         repo_name = image[0]
 
     if not quiet:
-        bot.logger.info("Registry: %s", registry)
-        bot.logger.info("Namespace: %s", namespace)
-        bot.logger.info("Repo Name: %s", repo_name)
-        bot.logger.info("Repo Tag: %s", repo_tag)
-        bot.logger.info("Version: %s", version)
+        bot.logger.debug("Registry: %s", registry)
+        bot.logger.debug("Namespace: %s", namespace)
+        bot.logger.debug("Repo Name: %s", repo_name)
+        bot.logger.debug("Repo Tag: %s", repo_tag)
+        bot.logger.debug("Version: %s", version)
 
     parsed = {'registry':registry,
               'namespace':namespace, 

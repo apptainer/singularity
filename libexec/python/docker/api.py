@@ -330,13 +330,13 @@ def read_digests(manifest):
     if 'layers' in manifest:
         layer_key = 'layers'
         digest_key = 'digest'
-        bot.logger.info('Image manifest version 2.2 found.')
+        bot.logger.debug('Image manifest version 2.2 found.')
 
     # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-1.md#example-manifest
     elif 'fsLayers' in manifest:
         layer_key = 'fsLayers'
         digest_key = 'blobSum'
-        bot.logger.info('Image manifest version 2.1 found.')
+        bot.logger.debug('Image manifest version 2.1 found.')
 
     else:
         bot.logger.error('Improperly formed manifest, layers or fsLayers must be present')
@@ -515,7 +515,7 @@ def get_config(manifest,spec="Entrypoint",delim=None):
         if delim is None:
             delim = "\n"
         cmd = delim.join(cmd)
-    bot.logger.info("Found Docker command (%s) %s",spec,cmd)
+    bot.logger.debug("Found Docker command (%s) %s",spec,cmd)
 
     return cmd
 
