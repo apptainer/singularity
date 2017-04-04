@@ -48,7 +48,7 @@ from defaults import (
     SHUB_API_BASE
 )
 
-from logman import bot
+from message import bot
 import json
 import os
 import re

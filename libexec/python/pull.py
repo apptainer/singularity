@@ -41,7 +41,7 @@ from shell import (
     remove_image_uri
 )
 
-from logman import bot
+from message import bot
 import os
 import sys
 

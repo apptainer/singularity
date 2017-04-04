@@ -30,7 +30,7 @@ from sutils import (
     write_json
 )
 
-from logman import bot
+from message import bot
 import json
 import re
 import os

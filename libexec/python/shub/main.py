@@ -41,7 +41,7 @@ from sutils import (
 
 from defaults import SHUB_PREFIX
 
-from logman import bot
+from message import bot
 import json
 import re
 import os

@@ -42,7 +42,7 @@ from shell import (
 )
 
 from defaults import getenv
-from logman import bot
+from message import bot
 
 
 def main():

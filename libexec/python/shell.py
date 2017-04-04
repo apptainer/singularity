@@ -22,7 +22,7 @@ perform publicly and display publicly, and to permit other to do so.
 import sys
 import os
 
-from logman import bot
+from message import bot
 
 from defaults import (
     API_BASE as default_registry,

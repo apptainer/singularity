@@ -50,7 +50,7 @@ from defaults import (
 )
 
 from helpers.json.main import ADD
-from logman import bot
+from message import bot
 from shell import parse_image_uri
 from templates import get_template
 

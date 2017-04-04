@@ -29,7 +29,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from logman import bot
+from message import bot
 import tempfile
 import os
 import pwd

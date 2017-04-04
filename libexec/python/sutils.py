@@ -24,7 +24,7 @@ from defaults import (
     SINGULARITY_CACHE,
     DISABLE_CACHE
 )
-from logman import bot
+from message import bot
 import datetime
 import errno
 import hashlib

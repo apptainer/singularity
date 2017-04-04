@@ -40,7 +40,7 @@ from .api import (
     extract_metadata_tar,
 )
 
-from logman import bot
+from message import bot
 import json
 import shutil
 import re

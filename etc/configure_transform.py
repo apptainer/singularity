@@ -11,7 +11,7 @@ from sutils import (
     write_file
 )
 
-from logman import bot
+from message import bot
 import optparse
 
 

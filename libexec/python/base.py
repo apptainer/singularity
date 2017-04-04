@@ -4,7 +4,7 @@ python: base template for making a connection to an API
 
 '''
 
-from logman import bot
+from message import bot
 import tempfile
 import sys
 import re

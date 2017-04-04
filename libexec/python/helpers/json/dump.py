@@ -36,7 +36,7 @@ import optparse
 import pickle
 from glob import glob
 from helpers.json.main import DUMP
-from logman import bot
+from message import bot
 import os
 import sys
 
