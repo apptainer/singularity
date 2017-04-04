@@ -345,7 +345,7 @@ def read_digests(manifest):
     for layer in manifest[layer_key]:
         if digest_key in layer:
             if layer[digest_key] not in digests:
-                bot.logger.info("Adding digest %s",layer[digest_key])
+                bot.logger.debug("Adding digest %s",layer[digest_key])
                 digests.append(layer[digest_key])
     return digests
     
