@@ -131,7 +131,7 @@ int _singularity_runtime_files_group(void) {
             continue;
         }
 
-        if ( gids[i] < UINT_MAX && gids[i] >= 500 ) {
+        if ( gids[i] < UINT_MAX ) {
             errno = 0;
             struct group *gr = getgrgid(gids[i]);
             if ( gr ) {
