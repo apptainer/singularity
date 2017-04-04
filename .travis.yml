@@ -32,6 +32,14 @@ before_install:
   - export PATH=$PWD/build-wrapper-linux-x86:$PATH
   # Install updated version of pylint
   - sudo pip install pylint
+  # Install last release for legacy testing
+  - cd $TRAVIS_BUILD_DIR/
+  - wget https://github.com/singularityware/singularity/releases/download/2.2.1/singularity-2.2.1.tar.gz
+  - tar xvf singularity-2.2.1.tar.gz
+  - rm singularity-2.2.1.tar.gz
+  - cd singularity-2.2.1
+  - ./configure --prefix=/usr/local/singularity-2.2.1-legacytests
+  - sudo make install 
   - cd $TRAVIS_BUILD_DIR/
 
 install:
