@@ -40,9 +40,8 @@
 #include "util/registry.h"
 
 
-static int enabled = -1;
-
 int _singularity_runtime_ns_pid(void) {
+    int enabled = -1;
 
     if ( singularity_config_get_bool(ALLOW_PID_NS) <= 0 ) {
         singularity_message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
@@ -63,7 +62,7 @@ int _singularity_runtime_ns_pid(void) {
         ABORT(255);
     }
     singularity_priv_drop();
-    enabled = 0;
+    enabled = 1;
 
 #else
 #ifdef NS_CLONE_PID
@@ -75,7 +74,7 @@ int _singularity_runtime_ns_pid(void) {
         ABORT(255);
     }
     singularity_priv_drop();
-    enabled = 0;
+    enabled = 1;
 
 #else
     singularity_message(WARNING, "Skipping PID namespace creation, support not available on host\n");
@@ -84,15 +83,19 @@ int _singularity_runtime_ns_pid(void) {
 #endif
 #endif
 
-    // PID namespace requires a fork to activate!
-    singularity_fork_run();
+    if ( enabled == 1 ) {
+        // PID namespace requires a fork to activate!
+        singularity_fork_run();
 
-    // At this point, we are now PID 1; when we later exec the payload, it will also be PID 1.
-    // Unfortunately, PID 1 in Linux has special signal handling rules (the _only_ signal that
-    // will terminate the process is SIGKILL; all other signals are ignored).  Hence, we fork
-    // one more time.  This makes PID 1 a shim process and the payload process PID 2 (meaning
-    // that the payload gets the "normal" signal handling rules it would expect).
-    singularity_fork_run();
+        // At this point, we are now PID 1; when we later exec the payload, it will also be PID 1.
+        // Unfortunately, PID 1 in Linux has special signal handling rules (the _only_ signal that
+        // will terminate the process is SIGKILL; all other signals are ignored).  Hence, we fork
+        // one more time.  This makes PID 1 a shim process and the payload process PID 2 (meaning
+        // that the payload gets the "normal" signal handling rules it would expect).
+        singularity_fork_run();
+
+        singularity_registry_set("PIDNS_ENABLED", "1");
+    }
 
     return(0);
 }
