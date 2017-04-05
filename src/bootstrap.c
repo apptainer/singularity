@@ -46,7 +46,7 @@
 
 int main(int argc, char **argv) {
     struct image_object image;
-    char *lang = envar_get("LANG", NULL, 128);
+    char *lang = envar_get("LANG", "_-=+:,\.%", 128);
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
