@@ -44,7 +44,7 @@
 #include "util/privilege.h"
 
 
-char *envar(char *name, char *allowed, int len) {
+char *envar_get(char *name, char *allowed, int len) {
     char *ret;
     char *env = getenv(name); // Flawfinder: ignore
     int count;
@@ -104,7 +104,7 @@ int envar_defined(char *name) {
 
 char *envar_path(char *name) {
     singularity_message(DEBUG, "Checking environment variable is valid path: '%s'\n", name);
-    return(envar(name, "/._-=,:", PATH_MAX));
+    return(envar_get(name, "/._-=,:", PATH_MAX));
 }
 
 int envar_set(char *key, char *value, int overwrite) {

@@ -30,7 +30,7 @@
 #define TRUE 1
 #define FALSE 0
 
-char *envar(char *name, char *allowed, int len);
+char *envar_get(char *name, char *allowed, int len);
 char *envar_path(char *name);
 int envar_defined(char *name);
 int envar_set(char *key, char *value, int overwrite);
