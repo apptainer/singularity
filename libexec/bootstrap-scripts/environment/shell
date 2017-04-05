@@ -6,7 +6,7 @@ for script in /.singularity.d/env/*.sh; do
     fi
 done
 
-PS1="Singularity >"
+PS1="Singularity > "
 export PS1
 
 if test -n "$SINGULARITY_SHELL" -a -x "$SINGULARITY_SHELL"; then
