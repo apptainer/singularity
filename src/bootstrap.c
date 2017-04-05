@@ -46,6 +46,7 @@
 
 int main(int argc, char **argv) {
     struct image_object image;
+    char *lang = envar("LANG", NULL, 128);
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
@@ -63,6 +64,7 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
     envar_set("SINGULARITY_MESSAGELEVEL", singularity_registry_get("MESSAGELEVEL"), 1);
     envar_set("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
+    envar_set("LANG", lang, 1);
 
     singularity_message(INFO, "Setting envar: 'HOME' = '%s'\n", singularity_priv_home());
     envar_set("HOME", singularity_priv_home(), 1);
