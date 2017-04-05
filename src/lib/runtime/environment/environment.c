@@ -54,11 +54,15 @@ int _singularity_runtime_environment(void) {
 
     // Clean environment
     if ( singularity_registry_get("CLEANENV") != NULL ) {
+        char *lang = envar_get("LANG", NULL, 128);
+
         singularity_message(DEBUG, "Sanitizing environment\n");
         if ( envclean() != 0 ) {
             singularity_message(ERROR, "Failed sanitizing environment\n");
             ABORT(255);
         }
+
+        envar_set("LANG", lang, 1);
     } else {
         singularity_message(DEBUG, "Cleaning environment\n");
         for(i = 0; i < envlen; i++) {
