@@ -105,6 +105,21 @@ char *envar_path(char *name) {
     return(envar(name, "/._-=,:", PATH_MAX));
 }
 
+int envar_set(char *key, char *value, int overwrite) {
+    if ( key == NULL ) {
+        singularity_message(VERBOSE2, "Not setting envar, null key\n");
+        return(-1);
+    }
+    if ( value == NULL ) {
+        singularity_message(VERBOSE2, "Not setting envar, null value: %s\n", key);
+        return(-1);
+    }
+
+    singularity_message(DEBUG, "Setting environment variable: '%s' = '%s'\n", key, value);
+
+    return(setenv(key, value, overwrite));
+}
+
 int intlen(int input_int) {
     unsigned int len = 1;
     int input = input_int;

@@ -102,7 +102,7 @@ int _singularity_runtime_files_passwd(void) {
     container_file_bind(tmp_file, "/etc/passwd");
 
     // set HOME to the homedir, because it might be different than outside
-    setenv("HOME", homedir, 1);
+    envar_set("HOME", homedir, 1);
 
     return(0);
 }

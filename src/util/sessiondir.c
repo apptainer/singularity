@@ -84,7 +84,7 @@ int singularity_sessiondir(void) {
         int child = fork();
 
         if ( child == 0 ) {
-            setenv("SINGULARITY_CLEANDIR", sessiondir, 1);
+            envar_set("SINGULARITY_CLEANDIR", sessiondir, 1);
             close(sessiondir_fd);
 
             execl(joinpath(LIBEXECDIR, "/singularity/bin/cleanupd"), "singularity: cleanupd", NULL);

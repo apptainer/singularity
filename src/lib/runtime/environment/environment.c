@@ -85,7 +85,7 @@ int _singularity_runtime_environment(void) {
             val = strtok_r(NULL, "\n", &tok);
 
             singularity_message(DEBUG, "Converting envar '%s' to '%s' = '%s'\n", key, &key[15], val);
-            setenv(&key[15], val, 1);
+            envar_set(&key[15], val, 1);
             unsetenv(key);
         }
     }

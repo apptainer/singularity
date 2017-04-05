@@ -57,15 +57,15 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
-    setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
-    setenv("SINGULARITY_libexecdir", singularity_registry_get("LIBEXECDIR"), 1);
-    setenv("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
-    setenv("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
-    setenv("SINGULARITY_MESSAGELEVEL", singularity_registry_get("MESSAGELEVEL"), 1);
-    setenv("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
+    envar_set("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
+    envar_set("SINGULARITY_libexecdir", singularity_registry_get("LIBEXECDIR"), 1);
+    envar_set("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
+    envar_set("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
+    envar_set("SINGULARITY_MESSAGELEVEL", singularity_registry_get("MESSAGELEVEL"), 1);
+    envar_set("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
 
     singularity_message(INFO, "Setting envar: 'HOME' = '%s'\n", singularity_priv_home());
-    setenv("HOME", singularity_priv_home(), 1);
+    envar_set("HOME", singularity_priv_home(), 1);
 
 //    singularity_registry_set("WRITABLE", "1");
 
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
     singularity_message(DEBUG, "Setting SINGULARITY_ROOTFS to: %s\n", singularity_runtime_rootfs(NULL));
-    setenv("SINGULARITY_ROOTFS", singularity_runtime_rootfs(NULL), 1);
+    envar_set("SINGULARITY_ROOTFS", singularity_runtime_rootfs(NULL), 1);
 
     // At this point, the container image is mounted at
     // singularity_runtime_rootfs(NULL), and bootstrap code can be added

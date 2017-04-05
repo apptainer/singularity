@@ -114,10 +114,12 @@ char *singularity_registry_get(char *key) {
     }
 
     if ( hsearch_r(keypair(upperkey, NULL), FIND, &found, &htab) == 0 ) {
+        singularity_message(DEBUG, "Returning NULL on '%s'\n", upperkey);
         return(NULL);
+        singularity_message(DEBUG, "Returning NULL on '%s'\n", upperkey);
     }
     
-    singularity_message(DEBUG, "Retriving value from registry: '%s' = '%s'\n", upperkey, (char *)found->data);
+    singularity_message(DEBUG, "Returning value from registry: '%s' = '%s'\n", upperkey, (char *)found->data);
 
     return(strdup(found->data));
 }
