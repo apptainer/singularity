@@ -71,10 +71,12 @@ char *envar(char *name, char *allowed, int len) {
         if ( isalnum(test_char) > 0 ) {
             success = 1;
         } else {
-            for (c=0; allowed[c] != '\0'; c++) {
-                if ( test_char == allowed[c] ) {
-                    success = 1;
-                    continue;
+            if ( allowed != NULL ) {
+                for (c=0; allowed[c] != '\0'; c++) {
+                    if ( test_char == allowed[c] ) {
+                        success = 1;
+                        continue;
+                    }
                 }
             }
         }
