@@ -114,7 +114,6 @@ def IMPORT(image,auth=None,layerfile=None):
 
 
     # Get Docker runscript
-    layers.reverse()
     runscript = extract_runscript(manifest=manifestv1,
                                   includecmd=INCLUDE_CMD)
 
