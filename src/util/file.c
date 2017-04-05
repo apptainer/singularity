@@ -100,7 +100,7 @@ int chk_perms(char *path, mode_t mode) {
 int chk_mode(char *path, mode_t mode) {
     struct stat filestat;
 
-    singularity_message(DEBUG, "Checking exact mode on: %s\n", path);
+    singularity_message(DEBUG, "Checking exact mode (%o) on: %s\n", mode, path);
 
     // Stat path
     if (stat(path, &filestat) < 0) {
@@ -108,8 +108,10 @@ int chk_mode(char *path, mode_t mode) {
     }
 
     if ( filestat.st_mode == mode ) {
-        singularity_message(WARNING, "Found appropriate mode on file: %s\n", path);
+        singularity_message(DEBUG, "Found appropriate mode on file: %s\n", path);
         return(0);
+    } else {
+        singularity_message(VERBOSE, "Found wrong permission on file %s: %o != %o\n", path, mode, filestat.st_mode);
     }
 
     return(-1);
