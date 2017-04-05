@@ -51,7 +51,7 @@ int _singularity_image_mount(struct image_object *image, char *mount_point) {
         ABORT(255);
     }
 
-    if ( chk_mode(mount_point, 40755) != 0 ) {
+    if ( chk_mode(mount_point, 0040755) != 0 ) {
         int ret;
         singularity_message(DEBUG, "fixing bad permissions on %s\n", mount_point);
 
