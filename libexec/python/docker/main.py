@@ -40,7 +40,7 @@ from .api import (
     extract_metadata_tar,
 )
 
-from logman import logger
+from message import bot
 import json
 import shutil
 import re
@@ -52,8 +52,8 @@ def SIZE(image,auth=None,contentfile=None):
     '''size is intended to be run before an import, to return to the contentfile a list of sizes
     (one per layer) corresponding with the layers that will be downloaded for image
     '''
-    logger.debug("Starting Docker SIZE, will get size from manifest")
-    logger.info("Docker image: %s", image)
+    bot.logger.debug("Starting Docker SIZE, will get size from manifest")
+    bot.logger.debug("Docker image: %s", image)
     client = DockerApiConnection(image=image,auth=auth)
     size = client.get_size()
     if contentfile is not None:
@@ -67,14 +67,14 @@ def IMPORT(image,auth=None,layerfile=None):
     :param auth: if needed, an authentication header (default None)
     :param layerfile: The file to write layers to extract into
     '''
-    logger.debug("Starting Docker IMPORT, includes environment, runscript, and metadata.")
-    logger.info("Docker image: %s", image)
+    bot.logger.debug("Starting Docker IMPORT, includes environment, runscript, and metadata.")
+    bot.logger.debug("Docker image: %s", image)
 
     # Does the user want to override default of using ENTRYPOINT?
     if INCLUDE_CMD:
-        logger.info("Specified Docker CMD as %runscript.")
+        bot.logger.debug("Specified Docker CMD as %runscript.")
     else:
-        logger.info("Specified Docker ENTRYPOINT as %runscript.")
+        bot.logger.debug("Specified Docker ENTRYPOINT as %runscript.")
 
 
     # Input Parsing ----------------------------
@@ -88,7 +88,7 @@ def IMPORT(image,auth=None,layerfile=None):
 
     if client.version is not None:
         docker_image_uri = "%s@%s" %(docker_image_uri,client.version)
-    logger.info(docker_image_uri)
+    bot.logger.info(docker_image_uri)
 
 
     # IMAGE METADATA -------------------------------------------
@@ -114,7 +114,6 @@ def IMPORT(image,auth=None,layerfile=None):
 
 
     # Get Docker runscript
-    layers.reverse()
     runscript = extract_runscript(manifest=manifestv1,
                                   includecmd=INCLUDE_CMD)
 
@@ -123,11 +122,11 @@ def IMPORT(image,auth=None,layerfile=None):
                                     client.assemble_uri(),
                                     runscript=runscript)
 
-    logger.debug('Tar file with Docker env and labels: %s' %(tar_file))
+    bot.logger.debug('Tar file with Docker env and labels: %s' %(tar_file))
 
     # Write all layers to the layerfile
     if layerfile is not None:
-        logger.debug("Writing Docker layers files to %s", layerfile)
+        bot.logger.debug("Writing Docker layers files to %s", layerfile)
         write_file(layerfile,"\n".join(layers),mode="w")
         if tar_file is not None:
             write_file(layerfile,"\n%s" %tar_file,mode="a")
@@ -141,6 +140,6 @@ def IMPORT(image,auth=None,layerfile=None):
                   "cache_base":cache_base,
                   "metadata": tar_file }
 
-    logger.info("*** FINISHING DOCKER IMPORT PYTHON PORTION ****\n")
+    bot.logger.debug("*** FINISHING DOCKER IMPORT PYTHON PORTION ****\n")
 
     return additions

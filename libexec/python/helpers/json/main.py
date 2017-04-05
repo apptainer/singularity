@@ -30,7 +30,7 @@ from sutils import (
     write_json
 )
 
-from logman import logger
+from message import bot
 import json
 import re
 import os
@@ -41,9 +41,9 @@ def DUMP(jsonfile):
     '''DUMP will return the entire layfile as text, key value pairs
     :param jsonfile_path: the path to the jsonfile
     '''
-    logger.debug("Reading %s to prepare dump to STDOUT",jsonfile)
+    bot.logger.debug("Reading %s to prepare dump to STDOUT",jsonfile)
     if not os.path.exists(jsonfile):
-        logger.error("Cannot find %s, exiting.",jsonfile)
+        bot.logger.error("Cannot find %s, exiting.",jsonfile)
         sys.exit(1)
     
     contents = read_json(jsonfile)
@@ -60,18 +60,18 @@ def GET(key,jsonfile):
     '''GET will return a key from the jsonfile, if it exists. If it doesn't, returns None.
     '''
     key = format_keyname(key)
-    logger.debug("GET %s from %s",jsonfile)
+    bot.logger.debug("GET %s from %s",jsonfile)
     if not os.path.exists(jsonfile):
-        logger.error("Cannot find %s, exiting.",jsonfile)
+        bot.logger.error("Cannot find %s, exiting.",jsonfile)
         sys.exit(1)
     
     contents = read_json(jsonfile)
     if key in contents:
         value = contents[key]
         print(value)
-        logger.debug('%s is %s',key,value)
+        bot.logger.debug('%s is %s',key,value)
     else:
-        logger.error("%s is not defined in file. Exiting",key)
+        bot.logger.error("%s is not defined in file. Exiting",key)
         sys.exit(1)
     return value
 
@@ -80,22 +80,22 @@ def ADD(key,value,jsonfile,force=False):
     '''ADD will write or update a key in a json file
     '''
     key = format_keyname(key)
-    print("Adding label: '%s' = '%s'" %(key,value))
-    logger.debug("ADD %s from %s",key,jsonfile)
+    bot.logger.debug("Adding label: '%s' = '%s'", key, value)
+    bot.logger.debug("ADD %s from %s",key,jsonfile)
     if os.path.exists(jsonfile):    
         contents = read_json(jsonfile)
         if key in contents:
-            logger.debug('Warning, %s is already set. Overwrite is set to %s',key,force)
+            bot.logger.debug('Warning, %s is already set. Overwrite is set to %s',key,force)
             if force == True:
                 contents[key] = value
             else:
-                logger.error('%s found in %s and overwrite set to %s.',key,jsonfile,force)
+                bot.logger.error('%s found in %s and overwrite set to %s.',key,jsonfile,force)
                 sys.exit(1)
         else:
             contents[key] = value
     else:
         contents = {key:value}
-    logger.debug('%s is %s',key,value)
+    bot.logger.debug('%s is %s',key,value)
     write_json(contents,jsonfile)
     return value
 
@@ -104,9 +104,9 @@ def DELETE(key,jsonfile):
     '''DELETE will remove a key from a json file
     '''
     key = format_keyname(key)
-    logger.debug("DELETE %s from %s",jsonfile)
+    bot.logger.debug("DELETE %s from %s",jsonfile)
     if not os.path.exists(jsonfile):
-        logger.error("Cannot find %s, exiting.",jsonfile)
+        bot.logger.error("Cannot find %s, exiting.",jsonfile)
         sys.exit(1)
     
     contents = read_json(jsonfile)
@@ -115,11 +115,11 @@ def DELETE(key,jsonfile):
         if len(contents) > 0:
             write_json(contents,jsonfile)
         else:
-            logger.debug('%s is empty, deleting.',jsonfile)
+            bot.logger.debug('%s is empty, deleting.',jsonfile)
             os.remove(jsonfile)
         return True
     else:    
-        logger.debug('Warning, %s not found in %s',jsonfile)
+        bot.logger.debug('Warning, %s not found in %s',jsonfile)
         return False
 
 

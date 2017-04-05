@@ -29,7 +29,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from logman import logger
+from message import bot
 import tempfile
 import os
 import pwd
@@ -44,16 +44,16 @@ def getenv(variable_key,required=False,default=None,silent=False):
     '''
     variable = os.environ.get(variable_key, default)
     if variable == None and required:
-        logger.error("Cannot find environment variable %s, exiting.",variable_key)
+        bot.logger.error("Cannot find environment variable %s, exiting.",variable_key)
         sys.exit(1)
 
     if silent:
-        logger.debug("%s found",variable_key)
+        bot.logger.debug("%s found",variable_key)
     else:
         if variable is not None:
-            logger.debug("%s found as %s",variable_key,variable)
+            bot.logger.debug("%s found as %s",variable_key,variable)
         else:
-            logger.debug("%s not defined (None)",variable_key)
+            bot.logger.debug("%s not defined (None)",variable_key)
 
     return variable 
 

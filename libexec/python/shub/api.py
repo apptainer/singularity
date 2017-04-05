@@ -29,8 +29,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.
 sys.path.append('..') # parent directory
 
 from shell import (
-    remove_image_uri, 
-    get_image_uri
+    remove_image_uri
 )
 
 from sutils import (
@@ -49,7 +48,7 @@ from defaults import (
     SHUB_API_BASE
 )
 
-from logman import logger
+from message import bot
 import json
 import os
 import re
@@ -76,7 +75,7 @@ class SingularityApiConnection(ApiConnection):
     def load_image(self,image):
         self.image = image
         if not is_number(image):
-            self.image = remove_image_uri(image)
+            self.image = remove_image_uri(image,quiet=True)
           
 
     def _get_token(self,domain=None,token_folder=None):
@@ -147,8 +146,9 @@ class SingularityApiConnection(ApiConnection):
         '''    
         image_file = get_image_name(manifest)
 
-        print("Found image %s:%s" %(manifest['name'],manifest['branch']))
-        print("Downloading image... %s" %(image_file))
+        if not bot.is_quiet():
+            print("Found image %s:%s" %(manifest['name'],manifest['branch']))
+            print("Downloading image... %s" %(image_file))
 
         if download_folder is not None:
             image_file = "%s/%s" %(download_folder,image_file)
@@ -159,7 +159,8 @@ class SingularityApiConnection(ApiConnection):
                                               file_name=image_file)
 
         if extract == True:
-            print("Decompressing %s" %image_file)
+            if not bot.is_quiet():
+                print("Decompressing %s" %image_file)
             os.system('gzip -d -f %s' %(image_file))
             image_file = image_file.replace('.gz','')
         return image_file
@@ -182,10 +183,11 @@ def get_image_name(manifest,extension='img.gz',use_hash=False):
         if len(image_name) > 0:
             image_name = image_name[0]
         else:
-            logger.error("Singularity Hub Image not found with expected extension %s, exiting.",extension)
+            bot.logger.error("Singularity Hub Image not found with expected extension %s, exiting.",extension)
             sys.exit(1)
-            
-    logger.info("Singularity Hub Image: %s", image_name)
+          
+    if not bot.is_quiet():
+        print("Singularity Hub Image: %s" %image_name)
     return image_name
 
 
@@ -211,5 +213,5 @@ def extract_metadata(manifest,labelfile=None,prefix=None):
                         jsonfile=labelfile,
                         force=True)
 
-        logger.debug("Saving Singularity Hub metadata to %s",labelfile)    
+        bot.logger.debug("Saving Singularity Hub metadata to %s",labelfile)    
     return metadata

@@ -41,7 +41,7 @@ from sutils import (
 
 from defaults import SHUB_PREFIX
 
-from logman import logger
+from message import bot
 import json
 import re
 import os
@@ -52,8 +52,8 @@ def SIZE(image,contentfile=None):
     '''size is intended to be run before an import, to return to the contentfile a list of sizes
     (one per layer) corresponding with the layers that will be downloaded for image
     '''
-    logger.debug("Starting Singularity Hub SIZE, will get size from manifest")
-    logger.info("Singularity Hub image: %s", image)
+    bot.logger.debug("Starting Singularity Hub SIZE, will get size from manifest")
+    bot.logger.debug("Singularity Hub image: %s", image)
     client = SingularityApiConnection(image=image)
     manifest = client.get_manifest()
     size = json.loads(manifest['metrics'].replace("'",'"'))['size']
@@ -84,8 +84,11 @@ def PULL(image,download_folder=None,layerfile=None):
         image_file = client.download_image(manifest=manifest,
                                            download_folder=cache_base)
     else:
-        print("Image already exists at %s, skipping download." %image_file)
-    logger.info("Singularity Hub Image Download: %s", image_file)
+        if not bot.is_quiet(): # not --quiet
+            print("Image already exists at %s, skipping download." %image_file)
+
+    if not bot.is_quiet(): # not --quiet
+        print("Singularity Hub Image Download: %s" %image_file)
 
     manifest = {'image_file': image_file,
                 'manifest': manifest,
@@ -93,7 +96,7 @@ def PULL(image,download_folder=None,layerfile=None):
                 'image': image }
 
     if layerfile != None:
-        logger.debug("Writing Singularity Hub image path to %s", layerfile)
+        bot.logger.debug("Writing Singularity Hub image path to %s", layerfile)
         write_file(layerfile,image_file,mode="w")
 
     return manifest

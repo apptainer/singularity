@@ -37,7 +37,7 @@ import optparse
 import pickle
 from glob import glob
 from helpers.json.main import GET
-from logman import logger
+from message import bot
 import os
 import sys
 
@@ -75,7 +75,7 @@ def main():
        value = GET(key=args.key,
                    jsonfile=args.file)
     else:
-        logger.error("--key and --file must be defined for GET. Exiting")
+        bot.logger.error("--key and --file must be defined for GET. Exiting")
         sys.exit(1)
 
 if __name__ == '__main__':

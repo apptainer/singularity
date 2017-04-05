@@ -50,7 +50,7 @@ from defaults import (
 )
 
 from helpers.json.main import ADD
-from logman import logger
+from message import bot
 from shell import parse_image_uri
 from templates import get_template
 
@@ -124,13 +124,13 @@ class DockerApiConnection(ApiConnection):
             return None
 
         if response.code != 401 or "Www-Authenticate" not in response.headers:
-            logger.error("Authentication error, exiting.")
+            bot.logger.error("Authentication error, exiting.")
             sys.exit(1)
 
         challenge = response.headers["Www-Authenticate"]
         match = re.match('^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?', challenge)
         if not match:
-            logger.error("Unrecognized authentication challenge, exiting.")
+            bot.logger.error("Unrecognized authentication challenge, exiting.")
             sys.exit(1)
 
         realm = match.group(1)
@@ -149,7 +149,7 @@ class DockerApiConnection(ApiConnection):
             self.token = token
             self.update_headers(token)
         except:
-            logger.error("Error getting token for repository %s/%s, exiting.", self.namespace,self.repo_name)
+            bot.logger.error("Error getting token for repository %s/%s, exiting.", self.namespace,self.repo_name)
             sys.exit(1)
 
 
@@ -169,7 +169,7 @@ class DockerApiConnection(ApiConnection):
                 self.manifest = self.get_manifest()
 
             else:
-                logger.error("No namespace and repo name OR manifest provided, exiting.")
+                bot.logger.error("No namespace and repo name OR manifest provided, exiting.")
                 sys.exit(1)
 
         digests = read_digests(self.manifest)
@@ -190,7 +190,7 @@ class DockerApiConnection(ApiConnection):
         registry = add_http(registry) # make sure we have a complete url
 
         base = "%s/%s/%s/%s/tags/list" %(registry,self.api_version,self.namespace,self.repo_name)
-        logger.info("Obtaining tags: %s", base)
+        bot.logger.debug("Obtaining tags: %s", base)
 
         # We use get_tags for a testing endpoint in update_token
         response = self.get(base)
@@ -201,7 +201,7 @@ class DockerApiConnection(ApiConnection):
             response = json.loads(response)
             return response['tags']
         except:
-            logger.error("Error obtaining tags: %s", base)
+            bot.logger.error("Error obtaining tags: %s", base)
             sys.exit(1)
 
 
@@ -220,7 +220,7 @@ class DockerApiConnection(ApiConnection):
             base = "%s/%s" %(base,self.version)
         else:
             base = "%s/%s" %(base,self.repo_tag)
-        logger.info("Obtaining manifest: %s", base)
+        bot.logger.debug("Obtaining manifest: %s", base)
     
         headers = self.headers
         if old_version == True:
@@ -234,7 +234,7 @@ class DockerApiConnection(ApiConnection):
             tags = self.get_tags()
             print("\n".join(tags))
             repo_uri = "%s/%s:%s" %(self.namespace,self.repo_name,self.repo_tag)
-            logger.error("Error getting manifest for %s, exiting.", repo_uri)
+            bot.logger.error("Error getting manifest for %s, exiting.", repo_uri)
             sys.exit(1)
 
         return response
@@ -251,13 +251,13 @@ class DockerApiConnection(ApiConnection):
 
         # The <name> variable is the namespace/repo_name
         base = "%s/%s/%s/%s/blobs/%s" %(registry,self.api_version,self.namespace,self.repo_name,image_id)
-        logger.info("Downloading layers from %s", base)
+        bot.logger.debug("Downloading layers from %s", base)
     
         if download_folder is not None:
             download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
 
             # Update user what we are doing
-            print("Downloading layer %s" %image_id)
+            bot.logger.info("Downloading layer %s", image_id)
 
         # Download the layer atomically, step 1
         fd, tar_download = tempfile.mkstemp(prefix=("%s.download." % download_folder))
@@ -307,7 +307,7 @@ class DockerApiConnection(ApiConnection):
                 if delim is None:
                     delim = "\n"
                 cmd = delim.join(cmd)
-            logger.info("Found Docker config (%s) %s",spec,cmd)
+            bot.logger.info("Found Docker config (%s) %s",spec,cmd)
 
         else:
             if "config" in manifest:
@@ -330,22 +330,22 @@ def read_digests(manifest):
     if 'layers' in manifest:
         layer_key = 'layers'
         digest_key = 'digest'
-        logger.info('Image manifest version 2.2 found.')
+        bot.logger.debug('Image manifest version 2.2 found.')
 
     # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-1.md#example-manifest
     elif 'fsLayers' in manifest:
         layer_key = 'fsLayers'
         digest_key = 'blobSum'
-        logger.info('Image manifest version 2.1 found.')
+        bot.logger.debug('Image manifest version 2.1 found.')
 
     else:
-        logger.error('Improperly formed manifest, layers or fsLayers must be present')
+        bot.logger.error('Improperly formed manifest, layers or fsLayers must be present')
         sys.exit(1)
 
     for layer in manifest[layer_key]:
         if digest_key in layer:
             if layer[digest_key] not in digests:
-                logger.info("Adding digest %s",layer[digest_key])
+                bot.logger.debug("Adding digest %s",layer[digest_key])
                 digests.append(layer[digest_key])
     return digests
     
@@ -372,8 +372,8 @@ def extract_runscript(manifest,includecmd=False):
             break
 
     if cmd is not None:
-        logger.debug("Adding Docker %s as Singularity runscript..." %(command.upper()))
-        logger.debug(cmd)
+        bot.logger.debug("Adding Docker %s as Singularity runscript..." %(command.upper()))
+        bot.logger.debug(cmd)
 
         # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
         if isinstance(cmd,list):
@@ -384,7 +384,7 @@ def extract_runscript(manifest,includecmd=False):
         cmd = "#!/bin/sh\n\n%s" %(cmd)
         return cmd
 
-    logger.debug("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
+    bot.logger.debug("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
     return cmd
 
 
@@ -403,7 +403,7 @@ def extract_metadata_tar(manifest,image_name,include_env=True,
         if include_env:               
             environ = extract_env(manifest)
             if environ not in [None,""]:
-                logger.debug('Adding Docker environment to metadata tar')
+                bot.logger.debug('Adding Docker environment to metadata tar')
                 template = get_template('tarinfo')
                 template['name'] = './%s/env/%s-%s.sh' %(METADATA_FOLDER_NAME,
                                                          DOCKER_NUMBER,
@@ -417,14 +417,14 @@ def extract_metadata_tar(manifest,image_name,include_env=True,
             if labels is not None:
                 if isinstance(labels,dict):
                     labels = json.dumps(labels)
-                logger.debug('Adding Docker labels to metadata tar')
+                bot.logger.debug('Adding Docker labels to metadata tar')
                 template = get_template('tarinfo')
                 template['name'] = "./%s/labels.json" %METADATA_FOLDER_NAME
                 template['content'] = labels
                 files.append(template)
 
         if runscript is not None:
-            logger.debug('Adding Docker runscript to metadata tar')
+            bot.logger.debug('Adding Docker runscript to metadata tar')
             template = get_template('tarinfo')
             template['name'] = "./%s/runscript" %METADATA_FOLDER_NAME
             template['content'] = runscript
@@ -435,7 +435,7 @@ def extract_metadata_tar(manifest,image_name,include_env=True,
         output_folder = get_cache(subfolder="docker",quiet=True)
         tar_file = create_tar(files,output_folder)      
     else:
-        logger.warning("No environment, labels files, or runscript will be included.")
+        bot.logger.warning("No environment, labels files, or runscript will be included.")
     return tar_file
 
 
@@ -449,7 +449,7 @@ def extract_env(manifest):
             environ = "\n".join(environ)
         environ = ["export %s" %x for x in environ.split('\n')]
         environ = "\n".join(environ)
-        logger.debug("Found Docker container environment!")    
+        bot.logger.debug("Found Docker container environment!")    
     return environ
 
 
@@ -482,7 +482,7 @@ def extract_labels(manifest,labelfile=None,prefix=None):
 
     labels = get_config(manifest,'Labels')
     if labels is not None and len(labels) is not 0:
-        logger.debug("Found Docker container labels!")    
+        bot.logger.debug("Found Docker container labels!")    
         if labelfile is not None:
             for key,value in labels.items():
                 key = "%s%s" %(prefix,key)
@@ -515,7 +515,7 @@ def get_config(manifest,spec="Entrypoint",delim=None):
         if delim is None:
             delim = "\n"
         cmd = delim.join(cmd)
-    logger.info("Found Docker command (%s) %s",spec,cmd)
+    bot.logger.debug("Found Docker command (%s) %s",spec,cmd)
 
     return cmd
 

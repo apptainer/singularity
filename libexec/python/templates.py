@@ -20,7 +20,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-from logman import logger
+from message import bot
 import tempfile
 import os
 import pwd
@@ -42,5 +42,8 @@ def get_template(template_name):
                             "mode": 493}
 
     if template_name in templates:
+        bot.logger.debug("Found template for %s", template_name)
         return templates[template_name]
+    else:
+        bot.logger.warning("Cannot find template %s",template_name)
     return None
