@@ -36,52 +36,64 @@
 
 
 int _singularity_runtime_environment(void) {
-    int retval = 0;
+    char **current_env = environ;
+    char **envclone;
+    int envlen = 0;
+    int i;
 
+
+    // Copy and cache environment
+    singularity_message(DEBUG, "Cloning environment\n");
+    for(envlen = 0; current_env[envlen] != 0; envlen++) { }
+    singularity_message(DEBUG, "Counted %d environment elements\n", envlen);
+    envclone = (char**) malloc(envlen * sizeof(char *));
+    for(i = 0; i < envlen; i++) {
+        envclone[i] = strdup(current_env[i]);
+    }
+
+
+    // Clean environment
     if ( singularity_registry_get("CLEANENV") != NULL ) {
-        retval = envclean();
+        singularity_message(DEBUG, "Sanitizing environment\n");
+        if ( envclean() != 0 ) {
+            singularity_message(ERROR, "Failed sanitizing environment\n");
+            ABORT(255);
+        }
     } else {
-        extern char **environ;
-        char **env = environ;
-        char **envclone;
-        int i;
-        int envlen = 0;
-
-        singularity_message(DEBUG, "Counting environment vars\n");
-        for(i = 0; env[i] != 0; i++) {
-            envlen++;
-        }
-
-        envclone = (char**) malloc(i * sizeof(char *));
-
-        singularity_message(DEBUG, "Transposing SINGULARITYENV variables ('%d' total)\n", envlen);
-        for(i = 0; env[i] != 0; i++) {
-            char *tok, *key, *val;
-        
-            envclone[i] = strdup(env[i]);
-
-            key = strtok_r(envclone[i], "=", &tok);
-            val = strtok_r(NULL, "\n", &tok);
-
-            if ( strncmp(key, "SINGULARITYENV_", 15) == 0 ) {
-                singularity_message(DEBUG, "Converting envar '%s' to '%s' = '%s'\n", key, &key[15], val);
-                setenv(&key[15], val, 1);
-            }
-        }
-
-        singularity_message(DEBUG, "Cleaning SINGULARITY_* envars\n");
+        singularity_message(DEBUG, "Cleaning environment\n");
         for(i = 0; i < envlen; i++) {
-            char *tok, *key;
-        
-            key = strtok_r(envclone[i], "=", &tok);
+            singularity_message(DEBUG, "Evaluating envar to clean: %s\n", envclone[i]);
+            if ( strncmp(envclone[i], "SINGULARITY_", 12) == 0 ) {
+                char *key, *tok;
 
-            if ( strncmp(key, "SINGULARITY_", 12) == 0 ) {
+                key = strtok_r(envclone[i], "=", &tok);
+
                 singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
                 unsetenv(key);
             }
         }
     }
 
-    return(retval);
+
+    // Transpose environment
+    singularity_message(DEBUG, "Transposing environment\n");
+    for(i = 0; i < envlen; i++) {
+        if ( strncmp(envclone[i], "SINGULARITYENV_", 15) == 0 ) {
+            char *tok, *key, *val;
+        
+            key = strtok_r(envclone[i], "=", &tok);
+            val = strtok_r(NULL, "\n", &tok);
+
+            singularity_message(DEBUG, "Converting envar '%s' to '%s' = '%s'\n", key, &key[15], val);
+            setenv(&key[15], val, 1);
+            unsetenv(key);
+        }
+    }
+
+    for(i = 0; i < envlen; i++) {
+        free(envclone[i]);
+    }
+
+    return(0);
 }
 

@@ -61,10 +61,6 @@ int main(int argc, char **argv) {
 
     singularity_sessiondir();
 
-    if ( singularity_registry_get("CLEANENV") != NULL ) {
-        envclean();
-    }
-
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     if ( singularity_registry_get("WRITABLE") == NULL ) {
