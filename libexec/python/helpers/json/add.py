@@ -38,7 +38,7 @@ import optparse
 import pickle
 from glob import glob
 from helpers.json.main import ADD
-from logman import logger
+from message import bot
 import os
 import sys
 
@@ -90,7 +90,7 @@ def main():
                    force=args.force)
 
     else:
-        logger.error("--key and --file and --value must be defined for ADD. Exiting")
+        bot.logger.error("--key and --file and --value must be defined for ADD. Exiting")
         sys.exit(1)
 
 if __name__ == '__main__':

@@ -41,7 +41,7 @@ from shell import (
     remove_image_uri
 )
 
-from logman import logger
+from message import bot
 import os
 import sys
 
@@ -50,7 +50,7 @@ def main():
     '''main is a wrapper for the client to hand the parser to the executable functions
     This makes it possible to set up a parser in test cases
     '''
-    logger.info("\n*** STARTING SINGULARITY PYTHON PULL ****")
+    bot.logger.debug("\n*** STARTING SINGULARITY PYTHON PULL ****")
     from defaults import LAYERFILE, DISABLE_CACHE, getenv
 
     # What image is the user asking for?
@@ -68,7 +68,7 @@ def main():
                        layerfile=LAYERFILE)
 
     else:
-        logger.error("uri %s is not currently supported for pull. Exiting.",image_uri)
+        bot.logger.error("uri %s is not currently supported for pull. Exiting.",image_uri)
         sys.exit(1)
 
 

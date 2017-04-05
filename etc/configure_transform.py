@@ -11,7 +11,7 @@ from sutils import (
     write_file
 )
 
-from logman import logger
+from message import bot
 import optparse
 
 
@@ -44,13 +44,13 @@ def get_parser():
 def main():
     '''parse configuration options and produce configuration output file
     '''
-    logger.info("\n*** STARTING PYTHON CONFIGURATION HELPER ****")
+    bot.logger.info("\n*** STARTING PYTHON CONFIGURATION HELPER ****")
     parser = get_parser()
 
     try:
         (args,options) = parser.parse_args()
     except:
-        logger.error("Input args to %s improperly set, exiting.", os.path.abspath(__file__))
+        bot.logger.error("Input args to %s improperly set, exiting.", os.path.abspath(__file__))
         parser.print_help()
         sys.exit(1)
 
@@ -112,7 +112,7 @@ def configure(args):
     write_file(outfile,data)
     os.rename(outfile, args.outfile)
 
-    logger.info("*** FINISHED PYTHON CONFIGURATION HELPER ****\n")
+    bot.logger.info("*** FINISHED PYTHON CONFIGURATION HELPER ****\n")
 
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@ from defaults import (
     SINGULARITY_CACHE,
     DISABLE_CACHE
 )
-from logman import logger
+from message import bot
 import datetime
 import errno
 import hashlib
@@ -99,10 +99,10 @@ def run_command(cmd):
     :param cmd: the command to send, should be a list for subprocess
     '''
     try:
-        logger.info("Running command %s with subprocess", " ".join(cmd))
+        bot.logger.debug("Running command %s with subprocess", " ".join(cmd))
         process = subprocess.Popen(cmd,stdout=subprocess.PIPE)
     except OSError as error:
-        logger.error("Error with subprocess: %s, returning None",error)
+        bot.logger.error("Error with subprocess: %s, returning None",error)
         return None
 
     output = process.communicate()[0]
@@ -144,7 +144,8 @@ def extract_tar(archive,output_folder):
 
     # Just use command line, more succinct.
     command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
-    print("Extracting %s" %(archive))
+    if not bot.is_quiet():
+        print("Extracting %s" %archive)
 
     return run_command(command)
 
@@ -195,7 +196,7 @@ def create_tar(files,output_folder=None):
 
         # Warn the user if it already exists
         if os.path.exists(finished_tar):
-            logger.debug("metadata file %s already exists, will over-write." %(finished_tar))
+            bot.logger.debug("metadata file %s already exists, will over-write." %(finished_tar))
 
         # Add all content objects to file
         tar = tarfile.open(finished_tar, "w:gz")
@@ -204,7 +205,7 @@ def create_tar(files,output_folder=None):
         tar.close()
 
     else:
-        logger.debug("No contents, environment or labels, for tarfile, will not generate.")
+        bot.logger.debug("No contents, environment or labels, for tarfile, will not generate.")
 
     return finished_tar
 
@@ -252,7 +253,7 @@ def get_cache(subfolder=None,quiet=False):
     create_folders(cache_base)
 
     if not quiet:
-        print("Cache folder set to %s" %cache_base)
+        bot.logger.info("Cache folder set to %s", cache_base)
     return cache_base
 
 
@@ -267,7 +268,7 @@ def create_folders(path):
         if e.errno == errno.EEXIST and os.path.isdir(path):
             pass
         else:
-            logger.error("Error creating path %s, exiting.",path)
+            bot.logger.error("Error creating path %s, exiting.",path)
             sys.exit(1)
 
 
@@ -315,7 +316,7 @@ def check_tar_permissions(tar_file,permission=None):
     for member in tar:  
         if member.isdir() or member.isfile() and not member.issym():
             if not has_permission(member,permission):
-                logger.debug("Fixing permission for %s" %(member.name))
+                bot.logger.debug("Fixing permission for %s" %(member.name))
                 member.mode = permission | member.mode
             extracted = tar.extractfile(member)        
             fixed_tar.addfile(member, extracted)
@@ -339,7 +340,7 @@ def write_file(filename,content,mode="w"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
-    logger.info("Writing file %s with mode %s.",filename,mode)
+    bot.logger.debug("Writing file %s with mode %s.",filename,mode)
     with open(filename,mode) as filey:
         filey.writelines(content)
     return filename
@@ -351,7 +352,7 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     :param filename: the output file to write to
     :param pretty_print: if True, will use nicer formatting   
     '''
-    logger.info("Writing json file %s with mode %s.",filename,mode)
+    bot.logger.debug("Writing json file %s with mode %s.",filename,mode)
     with open(filename,mode) as filey:
         if print_pretty == True:
             filey.writelines(json.dumps(json_obj, indent=4, separators=(',', ': ')))
@@ -373,7 +374,7 @@ def read_file(filename,mode="r"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
-    logger.info("Reading file %s with mode %s.",filename,mode)
+    bot.logger.debug("Reading file %s with mode %s.",filename,mode)
     with open(filename,mode) as filey:
         content = filey.readlines()
     return content
@@ -398,11 +399,11 @@ def get_fullpath(file_path,required=True):
 
     # If file is required, we exit
     if required == True:
-        logger.error("Cannot find file %s, exiting.",file_path)
+        bot.logger.error("Cannot find file %s, exiting.",file_path)
         sys.exit(1)
 
     # If file isn't required and doesn't exist, return None
-    logger.warning("Cannot find file %s",file_path)
+    bot.logger.warning("Cannot find file %s",file_path)
     return None
 
 
@@ -443,7 +444,7 @@ def write_singularity_infos(base_dir,prefix,start_number,content,extension=None)
 
     # if the base directory doesn't exist, exit with error.
     if not os.path.exists(base_dir):
-        logger.warning("Cannot find required metadata directory %s. Exiting!",base_dir)
+        bot.logger.warning("Cannot find required metadata directory %s. Exiting!",base_dir)
         sys.exit(1)
 
     # Get the next available number

@@ -36,7 +36,7 @@ import optparse
 import pickle
 from glob import glob
 from helpers.json.main import DUMP
-from logman import logger
+from message import bot
 import os
 import sys
 
@@ -67,7 +67,7 @@ def main():
        dump = DUMP(args.file)
 
     else:
-        logger.error("--file must be defined for DUMP. Exiting")
+        bot.logger.error("--file must be defined for DUMP. Exiting")
         sys.exit(1)
 
 if __name__ == '__main__':
