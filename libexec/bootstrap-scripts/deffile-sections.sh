@@ -60,12 +60,10 @@ fi
 
 test -d "$SINGULARITY_ROOTFS/proc" || install -d -m 755 "$SINGULARITY_ROOTFS/proc"
 test -d "$SINGULARITY_ROOTFS/sys" || install -d -m 755 "$SINGULARITY_ROOTFS/sys"
-test -d "$SINGULARITY_ROOTFS/dev" || install -d -m 755 "$SINGULARITY_ROOTFS/dev"
 test -d "$SINGULARITY_ROOTFS/tmp" || install -d -m 755 "$SINGULARITY_ROOTFS/tmp"
 
 mount --no-mtab -t proc proc "$SINGULARITY_ROOTFS/proc"
 mount --no-mtab -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
-mount --no-mtab --rbind "/dev" "$SINGULARITY_ROOTFS/dev"
 mount --no-mtab --rbind "/tmp" "$SINGULARITY_ROOTFS/tmp"
 
 cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
