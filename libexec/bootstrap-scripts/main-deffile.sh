@@ -51,11 +51,6 @@ if [ -n "${BOOTSTRAP:-}" ]; then
     fi
 fi
 
-if ! mount -o bind /tmp "$SINGULARITY_ROOTFS/tmp"; then
-    message ERROR "Could not bind mount /tmp into new container\n"
-    exit 1
-fi
-
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-sections.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 
