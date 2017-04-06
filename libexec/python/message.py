@@ -120,7 +120,7 @@ class SingularityMessage:
             prefix = ""
 
         # Add the prefix 
-        message = "%s\%s" %(prefix,message)
+        message = "%s%s" %(prefix,message)
 
         if not message.endswith('\n'):
             message = "%s\n" %message
