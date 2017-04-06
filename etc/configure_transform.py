@@ -44,13 +44,13 @@ def get_parser():
 def main():
     '''parse configuration options and produce configuration output file
     '''
-    bot.logger.info("\n*** STARTING PYTHON CONFIGURATION HELPER ****")
+    bot.info("\n*** STARTING PYTHON CONFIGURATION HELPER ****")
     parser = get_parser()
 
     try:
         (args,options) = parser.parse_args()
     except:
-        bot.logger.error("Input args to %s improperly set, exiting.", os.path.abspath(__file__))
+        bot.error("Input args to %s improperly set, exiting." %os.path.abspath(__file__))
         parser.print_help()
         sys.exit(1)
 
@@ -112,7 +112,7 @@ def configure(args):
     write_file(outfile,data)
     os.rename(outfile, args.outfile)
 
-    bot.logger.info("*** FINISHED PYTHON CONFIGURATION HELPER ****\n")
+    bot.info("*** FINISHED PYTHON CONFIGURATION HELPER ****\n")
 
 
 if __name__ == '__main__':

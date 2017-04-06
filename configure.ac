@@ -256,7 +256,7 @@ if test x"$PYTHON_CHECK" != x"yes" ; then
     AC_MSG_ERROR([Please install python before installing.])
 else
 
-    PYTHON_MODULES="base64 datetime glob hashlib io json logging pickle pwd re shutil subprocess stat sys tarfile tempfile"
+    PYTHON_MODULES="base64 datetime glob hashlib io json pickle pwd re shutil subprocess stat sys tarfile tempfile"
     for PYTHON_MODULE in $PYTHON_MODULES; do
         AC_MSG_CHECKING([for the $PYTHON_MODULE python module])
 	    python_module_result=`python -c "import $PYTHON_MODULE" 2>&1`

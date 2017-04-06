@@ -60,7 +60,7 @@ def main():
 
     if image_uri == "shub://":
 
-        bot.logger.debug("\n*** STARTING SINGULARITY HUB SIZE PYTHON  ****")    
+        bot.debug("\n*** STARTING SINGULARITY HUB SIZE PYTHON  ****")    
         from shub.main import SIZE
         SIZE(image=container,
              contentfile=LAYERFILE)
@@ -70,7 +70,7 @@ def main():
         from sutils import basic_auth_header
         from docker.main import SIZE
 
-        bot.logger.debug("Docker sizes will be written to: %s", LAYERFILE)
+        bot.debug("Docker sizes will be written to: %s" %LAYERFILE)
         username = getenv("SINGULARITY_DOCKER_USERNAME") 
         password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
 
@@ -83,7 +83,7 @@ def main():
              contentfile=LAYERFILE)
 
     else:
-        bot.logger.error("uri %s is not a currently supported uri for size. Exiting.",image_uri)
+        bot.error("uri %s is not a currently supported uri for size. Exiting." %image_uri)
         sys.exit(1)
 
 

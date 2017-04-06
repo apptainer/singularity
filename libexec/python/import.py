@@ -65,12 +65,12 @@ def main():
 
     if image_uri == "docker://":
 
-        bot.logger.debug("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
+        bot.debug("\n*** STARTING DOCKER IMPORT PYTHON  ****")    
 
         from sutils import basic_auth_header
         from defaults import LAYERFILE
 
-        bot.logger.debug("Docker layers and (env,labels,runscript) will be written to: %s", LAYERFILE)
+        bot.debug("Docker layers and (env,labels,runscript) will be written to: %s" %LAYERFILE)
         username = getenv("SINGULARITY_DOCKER_USERNAME") 
         password = getenv("SINGULARITY_DOCKER_PASSWORD",silent=True)
 
@@ -91,7 +91,7 @@ def main():
 
     elif image_uri == "shub://":
 
-        bot.logger.debug("\n*** STARTING SINGULARITY HUB IMPORT PYTHON  ****")    
+        bot.debug("\n*** STARTING SINGULARITY HUB IMPORT PYTHON  ****")    
 
         from defaults import LAYERFILE, LABELFILE
         from shub.main import IMPORT
@@ -100,7 +100,7 @@ def main():
                labelfile=LABELFILE)
 
     else:
-        bot.logger.error("uri %s is not a currently supported uri for import. Exiting.",image_uri)
+        bot.error("uri %s is not a currently supported uri for import. Exiting." %image_uri)
         sys.exit(1)
 
 

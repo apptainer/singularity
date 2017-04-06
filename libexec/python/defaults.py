@@ -44,16 +44,16 @@ def getenv(variable_key,required=False,default=None,silent=False):
     '''
     variable = os.environ.get(variable_key, default)
     if variable == None and required:
-        bot.logger.error("Cannot find environment variable %s, exiting.",variable_key)
+        bot.error("Cannot find environment variable %s, exiting." %variable_key)
         sys.exit(1)
 
     if silent:
-        bot.logger.debug("%s found",variable_key)
+        bot.verbose2("%s found" %variable_key)
     else:
         if variable is not None:
-            bot.logger.debug("%s found as %s",variable_key,variable)
+            bot.verbose2("%s found as %s" %(variable_key,variable))
         else:
-            bot.logger.debug("%s not defined (None)",variable_key)
+            bot.verbose2("%s not defined (None)" %variable_key)
 
     return variable 
 
