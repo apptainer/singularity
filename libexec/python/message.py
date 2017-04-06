@@ -119,6 +119,9 @@ class SingularityMessage:
         else:
             prefix = ""
 
+        # Add the prefix 
+        message = "%s\%s" %(prefix,message)
+
         if not message.endswith('\n'):
             message = "%s\n" %message
 
