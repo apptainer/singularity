@@ -20,9 +20,17 @@ VERBOSE is equivalent to VERBOSE1 (this is mirroring the C code)
 and for each level, calling it corresponds to calling the class'
 function for it. E.g., DEBUG --> bot.debug('This is the message!')
 
-The following levels are to stdout:
+The following levels are to stderr:
 
-5,4,3,2,2,1
+5,4,3,2,1,-1,-2,-3,-4
+
+The following levels are only to stdout
+
+1
+
+The following levels do nothing (quiet)
+
+0
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
@@ -62,7 +70,7 @@ class SingularityMessage:
 
     def __init__(self,MESSAGELEVEL=None):
         self.level = get_logging_level()
-
+        self.history = []
         
     def emitError(self,level):
         '''determine if a level should print to
@@ -109,9 +117,6 @@ class SingularityMessage:
         else:
             prefix = ""
 
-        if not message.endswith('\n'):
-            message = "%s\n" %message
-
         # If the level is quiet, only print to error
         if self.level == QUIET:
             pass
@@ -119,10 +124,22 @@ class SingularityMessage:
         # Otherwise if in range print to stdout and stderr
         elif self.isEnabledFor(level):
             if self.emitError(level):
-                sys.stderr.write(message)
+                sys.stderr.writelines(message)
             else:
-                sys.stdout.write(message)
+                sys.stdout.writelines(message)
 
+        # Add all log messages to history
+        self.history.append(message)
+
+
+    def get_logs(join_newline=True):
+        ''''get_logs will return the complete history, joined by newline
+        (default) or as is.
+        '''
+        if join_newline:
+            return '\n'.join(self.history)
+        return self.history
+        
 
     def abort(self,message):
         self.emit(ABRT,message,'ABRT')        
@@ -140,10 +157,10 @@ class SingularityMessage:
         self.emit(INFO,message)        
 
     def verbose(self,message):
-        self.emit(VERBOSE,message,'VERBOSE')        
+        self.emit(VERBOSE,message,"VERBOSE")        
 
     def verbose1(self,message):
-        return self.verbose(message)
+        self.emit(VERBOSE,message,"VERBOSE1")        
 
     def verbose2(self,message):
         self.emit(VERBOSE2,message,'VERBOSE2')        
