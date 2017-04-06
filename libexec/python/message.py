@@ -71,7 +71,9 @@ class SingularityMessage:
     def __init__(self,MESSAGELEVEL=None):
         self.level = get_logging_level()
         self.history = []
-        
+        self.errorStream = sys.stderr
+        self.outputStream = sys.stdout        
+
     def emitError(self,level):
         '''determine if a level should print to
         stderr, includes all levels but INFO and QUIET'''
@@ -117,6 +119,9 @@ class SingularityMessage:
         else:
             prefix = ""
 
+        if not message.endswith('\n'):
+            message = "%s\n" %message
+
         # If the level is quiet, only print to error
         if self.level == QUIET:
             pass
@@ -124,9 +129,9 @@ class SingularityMessage:
         # Otherwise if in range print to stdout and stderr
         elif self.isEnabledFor(level):
             if self.emitError(level):
-                sys.stderr.writelines(message)
+                self.errorStream.write(message)
             else:
-                sys.stdout.writelines(message)
+                self.outputStream.write(message)
 
         # Add all log messages to history
         self.history.append(message)
