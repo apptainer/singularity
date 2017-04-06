@@ -19,6 +19,9 @@ CONTAINER USAGE COMMANDS:
     shell         Run a Bourne shell within container
     test          Execute any test code defined within container
 
+CONTAINER USAGE OPTIONS:
+    see singularity <command> help
+
 CONTAINER MANAGEMENT COMMANDS (requires root):
     bootstrap     Bootstrap a new Singularity image from scratch
     copy          Copy files from your host into the container
