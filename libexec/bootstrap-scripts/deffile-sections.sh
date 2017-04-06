@@ -69,6 +69,11 @@ mount --no-mtab --rbind "/tmp" "$SINGULARITY_ROOTFS/tmp"
 cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
 cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
+### EXPORT ENVARS
+DEBIAN_FRONTEND=noninteractive
+export DEBIAN_FRONTEND
+
+
 ### RUN SETUP
 if singularity_section_exists "setup" "$SINGULARITY_BUILDDEF"; then
     ARGS=`singularity_section_args "setup" "$SINGULARITY_BUILDDEF"`
