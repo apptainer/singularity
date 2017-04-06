@@ -60,7 +60,7 @@ def GET(key,jsonfile):
     '''GET will return a key from the jsonfile, if it exists. If it doesn't, returns None.
     '''
     key = format_keyname(key)
-    bot.debug("GET %s from %s" %jsonfile)
+    bot.debug("GET %s from %s" %(key,jsonfile))
     if not os.path.exists(jsonfile):
         bot.error("Cannot find %s, exiting." %jsonfile)
         sys.exit(1)
@@ -81,7 +81,7 @@ def ADD(key,value,jsonfile,force=False):
     '''
     key = format_keyname(key)
     bot.debug("Adding label: '%s' = '%s'" %(key, value))
-    bot.debug("ADD %s from %s",key,jsonfile)
+    bot.debug("ADD %s from %s" %(key,jsonfile))
     if os.path.exists(jsonfile):    
         contents = read_json(jsonfile)
         if key in contents:
@@ -104,7 +104,7 @@ def DELETE(key,jsonfile):
     '''DELETE will remove a key from a json file
     '''
     key = format_keyname(key)
-    bot.debug("DELETE %s from %s" %jsonfile)
+    bot.debug("DELETE %s from %s" %(key,jsonfile))
     if not os.path.exists(jsonfile):
         bot.error("Cannot find %s, exiting." %jsonfile)
         sys.exit(1)
@@ -119,7 +119,7 @@ def DELETE(key,jsonfile):
             os.remove(jsonfile)
         return True
     else:    
-        bot.debug('Warning, %s not found in %s' %jsonfile)
+        bot.debug('Warning, %s not found in %s' %(key,jsonfile))
         return False
 
 
