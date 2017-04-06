@@ -109,6 +109,9 @@ class SingularityMessage:
         else:
             prefix = ""
 
+        if not message.endswith('\n'):
+            message = "%s\n" %message
+
         # If the level is quiet, only print to error
         if self.level == QUIET:
             pass
