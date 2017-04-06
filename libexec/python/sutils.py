@@ -99,10 +99,10 @@ def run_command(cmd):
     :param cmd: the command to send, should be a list for subprocess
     '''
     try:
-        bot.debug("Running command %s with subprocess", " ".join(cmd))
+        bot.debug("Running command %s with subprocess" %" ".join(cmd))
         process = subprocess.Popen(cmd,stdout=subprocess.PIPE)
     except OSError as error:
-        bot.error("Error with subprocess: %s, returning None",error)
+        bot.error("Error with subprocess: %s, returning None" %error)
         return None
 
     output = process.communicate()[0]
@@ -253,7 +253,7 @@ def get_cache(subfolder=None,quiet=False):
     create_folders(cache_base)
 
     if not quiet:
-        bot.info("Cache folder set to %s", cache_base)
+        bot.info("Cache folder set to %s" %cache_base)
     return cache_base
 
 
