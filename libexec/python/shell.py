@@ -47,11 +47,11 @@ def get_image_uri(image,quiet=False):
 
     if len(match) == 0:
         if not quiet:
-            bot.logger.warning("Could not detect any uri in %s",image)
+            bot.warning("Could not detect any uri in %s" %image)
     else:
         image_uri = match[0].lower()
         if not quiet:
-            bot.logger.debug("Found uri %s",image_uri)
+            bot.debug("Found uri %s" %image_uri)
     return image_uri
 
 
@@ -133,11 +133,11 @@ def parse_image_uri(image,uri=None,quiet=False):
         repo_name = image[0]
 
     if not quiet:
-        bot.logger.debug("Registry: %s", registry)
-        bot.logger.debug("Namespace: %s", namespace)
-        bot.logger.debug("Repo Name: %s", repo_name)
-        bot.logger.debug("Repo Tag: %s", repo_tag)
-        bot.logger.debug("Version: %s", version)
+        bot.debug("Registry: %s" %registry)
+        bot.debug("Namespace: %s" %namespace)
+        bot.debug("Repo Name: %s" %repo_name)
+        bot.debug("Repo Tag: %s" %repo_tag)
+        bot.debug("Version: %s" %version)
 
     parsed = {'registry':registry,
               'namespace':namespace, 
@@ -147,7 +147,7 @@ def parse_image_uri(image,uri=None,quiet=False):
     # No field should be empty
     for fieldname,value in parsed.items():
         if len(value) == 0:
-            bot.logger.error("%s found empty, check uri! Exiting.", value)
+            bot.error("%s found empty, check uri! Exiting." %value)
             sys.exit(1)
 
     # Version is not required

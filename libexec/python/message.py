@@ -2,6 +2,28 @@
 
 message.py: simple logger for Singularity python helper
 
+The error names (prefix) and integer level are assigned as follows:
+
+ABRT -4
+ERROR -3
+WARNING -2
+LOG -1
+INFO 1
+QUIET 0
+VERBOSE 2
+VERBOSE1 2
+VERBOSE2 3
+VERBOSE3 4
+DEBUG 5
+
+VERBOSE is equivalent to VERBOSE1 (this is mirroring the C code)
+and for each level, calling it corresponds to calling the class'
+function for it. E.g., DEBUG --> bot.debug('This is the message!')
+
+The following levels are to stdout:
+
+5,4,3,2,2,1
+
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
@@ -22,70 +44,119 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import os
-import logging
+import sys
+
+ABRT = -4
+ERROR = -3
+WARNING = -2
+LOG = -1
+INFO = 1
+QUIET = 0
+VERBOSE = VERBOSE1 = 2
+VERBOSE2 = 3
+VERBOSE3 = 4
+DEBUG = 5
+
 
 class SingularityMessage:
 
     def __init__(self,MESSAGELEVEL=None):
         self.level = get_logging_level()
-        logging.basicConfig(level=self.level)
-        self.logger = logging.getLogger('python')
-        formatter = logging.Formatter('%(message)s')
-        self.logger.setFormatter(formatter)
 
+        
+    def emitError(self,level):
+        '''determine if a level should print to
+        stderr, includes all levels but INFO and QUIET'''
+        if level in [ABRT,
+                     ERROR,
+                     WARNING,
+                     LOG,
+                     VERBOSE,
+                     VERBOSE1,
+                     VERBOSE2,
+                     VERBOSE3,
+                     DEBUG ]:
+            return True
+        return False
+
+
+    def emitOutput(self,level):
+        '''determine if a level should print to stdout
+        only includes INFO'''
+        if level in [INFO]:
+            return True
+        return False
+
+
+    def isEnabledFor(self,messageLevel):
+        '''check if a messageLevel is enabled to emit a level
+        '''
+        if messageLevel <= self.level:
+            return True
+        return False
+
+
+    def emit(self,level,message,prefix=None):
+        '''emit is the main function to print the message
+        optionally with a prefix
+        :param level: the level of the message
+        :param message: the message to print
+        :param prefix: a prefix for the message
+        '''
+
+        if prefix is not None:
+            prefix = "%s " %(prefix)
+        else:
+            prefix = ""
+
+        # If the level is quiet, only print to error
+        if self.level == QUIET:
+            pass
+
+        # Otherwise if in range print to stdout and stderr
+        elif self.isEnabledFor(level):
+            if self.emitError(level):
+                sys.stderr.write(message)
+            else:
+                sys.stdout.write(message)
+
+
+    def abort(self,message):
+        self.emit(ABRT,message,'ABRT')        
+
+    def error(self,message):
+        self.emit(ERROR,message,'ERROR')        
+
+    def warning(self,message):
+        self.emit(WARNING,message,'WARNING')        
+
+    def log(self,message):
+        self.emit(LOG,message,'LOG')        
+
+    def info(self,message):
+        self.emit(INFO,message)        
+
+    def verbose(self,message):
+        self.emit(VERBOSE,message,'VERBOSE')        
+
+    def verbose1(self,message):
+        return self.verbose(message)
+
+    def verbose2(self,message):
+        self.emit(VERBOSE2,message,'VERBOSE2')        
+
+    def verbose3(self,message):
+        self.emit(VERBOSE3,message,'VERBOSE3')        
+
+    def debug(self,message):
+        self.emit(DEBUG,message,'DEBUG')        
 
     def is_quiet(self):
-        '''get_level will return the current (SINGULARITY) level
+        '''is_quiet returns true if the level is under 1
         '''
-        if self.logger.getEffectiveLevel() < 50:
+        if self.level < 1:
             return False
         return True
-
-
-    def get_mapping(self):
-        '''get_mapping returns a lookup dictionary for how Singularity (C)
-        logging levels (ints) translate to the python logger. The key translates
-        to the environment variable SINGULARITY_MESSAGELEVEL (as an int)
-        This function is primarily for understanding the mapping.
-        '''
-        levels = { 'DEFAULT':  { 'python_effective_level': logging.FATAL,
-                                 'python_level': 'logging.FATAL',
-                                 'singularity_levels': [0] },
-
-                   'ABRT' :    { 'python_effective_level': logging.CRITICAL,
-                                 'python_level': 'logging.CRITICAL',
-                                 'singularity_levels': [-4],
-                                 'flags': ['--quiet','-q'] },
-
-                   'ERROR' :   { 'python_effective_level': logging.ERROR,
-                                 'python_level': 'logging.ERROR',
-                                 'singularity_levels': [-3] },
-
-                   'WARNING' : { 'python_effective_level': logging.WARNING,
-                                 'python_level': 'logging.WARNING',
-                                 'singularity_levels': [-2] },
-                  
-                   'LOG' :     { 'python_effective_level': logging.INFO,
-                                 'python_level': 'logging.INFO',
-                                 'singularity_levels': [-1] },
-
-                  'VERBOSE' :  { 'python_effective_level': logging.DEBUG,
-                                 'python_level': 'logging.DEBUG',
-                                 'singularity_levels': [2] }}
-
-        # LOG is functionally the same as INFO level in python, both are logging.info
-        levels['INFO'] = levels['LOG']
-        levels['LOG']['singularity_levels'] = [1]
-
-        # VERBOSE singularity levels all map to debug
-        levels['VERBOSE1'] = levels['VERBOSE']
-        levels['VERBOSE2'] = levels['VERBOSE']
-        levels['VERBOSE2']['singularity_levels'] = [3]
-        levels['VERBOSE3'] = levels['VERBOSE']
-        levels['VERBOSE3']['singularity_levels'] = [4]
-        return levels
-
-
     
 
 def get_logging_level():
@@ -95,11 +166,15 @@ def get_logging_level():
     (5) is assumed (all messages). levels from
     https://github.com/singularityware/singularity/blob/master/src/lib/message.h
 
+    
     #define ABRT -4
     #define ERROR -3
     #define WARNING -2
     #define LOG -1
     #define INFO 1
+
+    implied define: QUIET 0
+
     #define VERBOSE 2
     #define VERBOSE1 2
     #define VERBOSE2 3
@@ -107,39 +182,7 @@ def get_logging_level():
     #define DEBUG 5
     '''
 
-    MESSAGELEVEL = int(os.environ.get("SINGULARITY_MESSAGELEVEL",5))
-
-    #print("Environment message level found to be %s" %MESSAGELEVEL)
-
-    if MESSAGELEVEL == 0:
-        level = logging.FATAL
-
-    #define ABRT -4
-    elif MESSAGELEVEL == -4:
-        level = logging.CRITICAL
-
-    #define ERROR -3
-    elif MESSAGELEVEL == -3:
-        level = logging.ERROR
-
-    #define WARNING -2
-    elif MESSAGELEVEL == -2:
-        level = logging.WARNING
-
-    #define LOG -1
-    #define INFO 1
-    elif MESSAGELEVEL in [1,-1]:
-        level = logging.INFO
-
-    #define VERBOSE 2
-    #define VERBOSE1 2
-    #define VERBOSE2 3
-    #define VERBOSE3 4
-    elif MESSAGELEVEL in [2,3,4,5]:
-        level = logging.DEBUG
-
-    #print("Logging level set to %s" %level)
-    return level
-
+    return int(os.environ.get("SINGULARITY_MESSAGELEVEL",5))
+    
 
 bot = SingularityMessage()

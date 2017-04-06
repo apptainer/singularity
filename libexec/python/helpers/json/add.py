@@ -90,7 +90,7 @@ def main():
                    force=args.force)
 
     else:
-        bot.logger.error("--key and --file and --value must be defined for ADD. Exiting")
+        bot.error("--key and --file and --value must be defined for ADD. Exiting")
         sys.exit(1)
 
 if __name__ == '__main__':

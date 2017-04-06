@@ -55,7 +55,7 @@ class ApiConnection(object):
                 headers[key] = value
 
         header_names = ",".join(list(headers.keys()))
-        bot.logger.debug("Headers found: %s",header_names)
+        bot.debug("Headers found: %s" %header_names)
         self.headers = headers
 
 
@@ -73,7 +73,7 @@ class ApiConnection(object):
         default is None (will not stream)
         :returns response: the requests response object, or stream
         '''
-        bot.logger.debug("GET %s", url)
+        bot.debug("GET %s" %url)
 
         # If we use default headers, start with client's
         request_headers = dict()
@@ -136,7 +136,7 @@ class ApiConnection(object):
                 try:
                     filey.write(chunk)
                 except: # PermissionError
-                    bot.logger.error("Cannot write to %s, exiting",stream)
+                    bot.error("Cannot write to %s, exiting" %stream)
                     sys.exit(1)
 
         return stream
@@ -171,12 +171,12 @@ class ApiConnection(object):
             os.close(fd)
             response = self.get(url,headers=headers,stream=tmp_file)
             if isinstance(response, HTTPError):
-                bot.logger.error("Error downloading %s, exiting.", url)
+                bot.error("Error downloading %s, exiting." %url)
                 sys.exit(1)
             os.rename(tmp_file, file_name)
         except:
             download_folder = os.path.dirname(os.path.abspath(file_name))
-            bot.logger.error("Error downloading %s. Do you have permission to write to %s?", url, download_folder)
+            bot.error("Error downloading %s. Do you have permission to write to %s?" %(url, download_folder))
             try:
                 os.remove(tmp_file)
             except:

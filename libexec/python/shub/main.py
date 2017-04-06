@@ -52,8 +52,8 @@ def SIZE(image,contentfile=None):
     '''size is intended to be run before an import, to return to the contentfile a list of sizes
     (one per layer) corresponding with the layers that will be downloaded for image
     '''
-    bot.logger.debug("Starting Singularity Hub SIZE, will get size from manifest")
-    bot.logger.debug("Singularity Hub image: %s", image)
+    bot.debug("Starting Singularity Hub SIZE, will get size from manifest")
+    bot.debug("Singularity Hub image: %s" %image)
     client = SingularityApiConnection(image=image)
     manifest = client.get_manifest()
     size = json.loads(manifest['metrics'].replace("'",'"'))['size']
@@ -96,7 +96,7 @@ def PULL(image,download_folder=None,layerfile=None):
                 'image': image }
 
     if layerfile != None:
-        bot.logger.debug("Writing Singularity Hub image path to %s", layerfile)
+        bot.debug("Writing Singularity Hub image path to %s" %layerfile)
         write_file(layerfile,image_file,mode="w")
 
     return manifest
