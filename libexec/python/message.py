@@ -140,7 +140,7 @@ class SingularityMessage:
         self.history.append(message)
 
 
-    def get_logs(join_newline=True):
+    def get_logs(self,join_newline=True):
         ''''get_logs will return the complete history, joined by newline
         (default) or as is.
         '''

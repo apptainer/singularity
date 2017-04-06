@@ -399,7 +399,7 @@ def get_fullpath(file_path,required=True):
 
     # If file is required, we exit
     if required == True:
-        bot.error("Cannot find file %s, exiting.",file_path)
+        bot.error("Cannot find file %s, exiting." %file_path)
         sys.exit(1)
 
     # If file isn't required and doesn't exist, return None
