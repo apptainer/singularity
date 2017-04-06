@@ -48,12 +48,12 @@ def getenv(variable_key,required=False,default=None,silent=False):
         sys.exit(1)
 
     if silent:
-        bot.debug("%s found" %variable_key)
+        bot.verbose2("%s found" %variable_key)
     else:
         if variable is not None:
-            bot.debug("%s found as %s" %(variable_key,variable))
+            bot.verbose2("%s found as %s" %(variable_key,variable))
         else:
-            bot.debug("%s not defined (None)" %variable_key)
+            bot.verbose2("%s not defined (None)" %variable_key)
 
     return variable 
 

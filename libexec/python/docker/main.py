@@ -53,7 +53,7 @@ def SIZE(image,auth=None,contentfile=None):
     (one per layer) corresponding with the layers that will be downloaded for image
     '''
     bot.debug("Starting Docker SIZE, will get size from manifest")
-    bot.debug("Docker image: %s" %image)
+    bot.verbose("Docker image: %s" %image)
     client = DockerApiConnection(image=image,auth=auth)
     size = client.get_size()
     if contentfile is not None:
@@ -68,13 +68,13 @@ def IMPORT(image,auth=None,layerfile=None):
     :param layerfile: The file to write layers to extract into
     '''
     bot.debug("Starting Docker IMPORT, includes environment, runscript, and metadata.")
-    bot.debug("Docker image: %s" %image)
+    bot.verbose("Docker image: %s" %image)
 
     # Does the user want to override default of using ENTRYPOINT?
     if INCLUDE_CMD:
-        bot.debug("Specified Docker CMD as %runscript.")
+        bot.verbose2("Specified Docker CMD as %runscript.")
     else:
-        bot.debug("Specified Docker ENTRYPOINT as %runscript.")
+        bot.verbose2("Specified Docker ENTRYPOINT as %runscript.")
 
 
     # Input Parsing ----------------------------
@@ -122,11 +122,11 @@ def IMPORT(image,auth=None,layerfile=None):
                                     client.assemble_uri(),
                                     runscript=runscript)
 
-    bot.debug('Tar file with Docker env and labels: %s' %(tar_file))
+    bot.verbose2('Tar file with Docker env and labels: %s' %(tar_file))
 
     # Write all layers to the layerfile
     if layerfile is not None:
-        bot.debug("Writing Docker layers files to %s" %layerfile)
+        bot.verbose3("Writing Docker layers files to %s" %layerfile)
         write_file(layerfile,"\n".join(layers),mode="w")
         if tar_file is not None:
             write_file(layerfile,"\n%s" %tar_file,mode="a")

@@ -213,5 +213,5 @@ def extract_metadata(manifest,labelfile=None,prefix=None):
                         jsonfile=labelfile,
                         force=True)
 
-        bot.debug("Saving Singularity Hub metadata to %s" %labelfile)    
+        bot.verbose("Saving Singularity Hub metadata to %s" %labelfile)    
     return metadata

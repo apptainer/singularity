@@ -190,7 +190,7 @@ class DockerApiConnection(ApiConnection):
         registry = add_http(registry) # make sure we have a complete url
 
         base = "%s/%s/%s/%s/tags/list" %(registry,self.api_version,self.namespace,self.repo_name)
-        bot.debug("Obtaining tags: %s" %base)
+        bot.verbose("Obtaining tags: %s" %base)
 
         # We use get_tags for a testing endpoint in update_token
         response = self.get(base)
@@ -220,7 +220,7 @@ class DockerApiConnection(ApiConnection):
             base = "%s/%s" %(base,self.version)
         else:
             base = "%s/%s" %(base,self.repo_tag)
-        bot.debug("Obtaining manifest: %s" %base)
+        bot.verbose("Obtaining manifest: %s" %base)
     
         headers = self.headers
         if old_version == True:
@@ -251,7 +251,7 @@ class DockerApiConnection(ApiConnection):
 
         # The <name> variable is the namespace/repo_name
         base = "%s/%s/%s/%s/blobs/%s" %(registry,self.api_version,self.namespace,self.repo_name,image_id)
-        bot.debug("Downloading layers from %s" %base)
+        bot.verbose("Downloading layers from %s" %base)
     
         if download_folder is not None:
             download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
@@ -307,7 +307,7 @@ class DockerApiConnection(ApiConnection):
                 if delim is None:
                     delim = "\n"
                 cmd = delim.join(cmd)
-            bot.info("Found Docker config (%s) %s" %(spec,cmd))
+            bot.verbose("Found Docker config (%s) %s" %(spec,cmd))
 
         else:
             if "config" in manifest:
@@ -372,7 +372,7 @@ def extract_runscript(manifest,includecmd=False):
             break
 
     if cmd is not None:
-        bot.debug("Adding Docker %s as Singularity runscript..." %(command.upper()))
+        bot.verbose3("Adding Docker %s as Singularity runscript..." %(command.upper()))
         bot.debug(cmd)
 
         # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
@@ -403,7 +403,7 @@ def extract_metadata_tar(manifest,image_name,include_env=True,
         if include_env:               
             environ = extract_env(manifest)
             if environ not in [None,""]:
-                bot.debug('Adding Docker environment to metadata tar')
+                bot.verbose3('Adding Docker environment to metadata tar')
                 template = get_template('tarinfo')
                 template['name'] = './%s/env/%s-%s.sh' %(METADATA_FOLDER_NAME,
                                                          DOCKER_NUMBER,
@@ -417,14 +417,14 @@ def extract_metadata_tar(manifest,image_name,include_env=True,
             if labels is not None:
                 if isinstance(labels,dict):
                     labels = json.dumps(labels)
-                bot.debug('Adding Docker labels to metadata tar')
+                bot.verbose3('Adding Docker labels to metadata tar')
                 template = get_template('tarinfo')
                 template['name'] = "./%s/labels.json" %METADATA_FOLDER_NAME
                 template['content'] = labels
                 files.append(template)
 
         if runscript is not None:
-            bot.debug('Adding Docker runscript to metadata tar')
+            bot.verbose3('Adding Docker runscript to metadata tar')
             template = get_template('tarinfo')
             template['name'] = "./%s/runscript" %METADATA_FOLDER_NAME
             template['content'] = runscript
@@ -449,7 +449,7 @@ def extract_env(manifest):
             environ = "\n".join(environ)
         environ = ["export %s" %x for x in environ.split('\n')]
         environ = "\n".join(environ)
-        bot.debug("Found Docker container environment!")    
+        bot.verbose3("Found Docker container environment!")    
     return environ
 
 
@@ -482,7 +482,7 @@ def extract_labels(manifest,labelfile=None,prefix=None):
 
     labels = get_config(manifest,'Labels')
     if labels is not None and len(labels) is not 0:
-        bot.debug("Found Docker container labels!")    
+        bot.verbose3("Found Docker container labels!")    
         if labelfile is not None:
             for key,value in labels.items():
                 key = "%s%s" %(prefix,key)
@@ -515,7 +515,7 @@ def get_config(manifest,spec="Entrypoint",delim=None):
         if delim is None:
             delim = "\n"
         cmd = delim.join(cmd)
-    bot.debug("Found Docker command (%s) %s" %(spec,cmd))
+    bot.verbose3("Found Docker command (%s) %s" %(spec,cmd))
 
     return cmd
 

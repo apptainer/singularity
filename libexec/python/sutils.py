@@ -99,7 +99,7 @@ def run_command(cmd):
     :param cmd: the command to send, should be a list for subprocess
     '''
     try:
-        bot.debug("Running command %s with subprocess" %" ".join(cmd))
+        bot.verbose2("Running command %s with subprocess" %" ".join(cmd))
         process = subprocess.Popen(cmd,stdout=subprocess.PIPE)
     except OSError as error:
         bot.error("Error with subprocess: %s, returning None" %error)
@@ -316,7 +316,7 @@ def check_tar_permissions(tar_file,permission=None):
     for member in tar:  
         if member.isdir() or member.isfile() and not member.issym():
             if not has_permission(member,permission):
-                bot.debug("Fixing permission for %s" %(member.name))
+                bot.verbose3("Fixing permission for %s" %(member.name))
                 member.mode = permission | member.mode
             extracted = tar.extractfile(member)        
             fixed_tar.addfile(member, extracted)
@@ -340,7 +340,7 @@ def write_file(filename,content,mode="w"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
-    bot.debug("Writing file %s with mode %s." %(filename,mode))
+    bot.verbose2("Writing file %s with mode %s." %(filename,mode))
     with open(filename,mode) as filey:
         filey.writelines(content)
     return filename
@@ -352,7 +352,7 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     :param filename: the output file to write to
     :param pretty_print: if True, will use nicer formatting   
     '''
-    bot.debug("Writing json file %s with mode %s." %(filename,mode))
+    bot.verbose2("Writing json file %s with mode %s." %(filename,mode))
     with open(filename,mode) as filey:
         if print_pretty == True:
             filey.writelines(json.dumps(json_obj, indent=4, separators=(',', ': ')))
@@ -374,7 +374,7 @@ def read_file(filename,mode="r"):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
-    bot.debug("Reading file %s with mode %s." %(filename,mode))
+    bot.verbose3("Reading file %s with mode %s." %(filename,mode))
     with open(filename,mode) as filey:
         content = filey.readlines()
     return content
