@@ -75,7 +75,7 @@ def main():
        value = GET(key=args.key,
                    jsonfile=args.file)
     else:
-        bot.logger.error("--key and --file must be defined for GET. Exiting")
+        bot.error("--key and --file must be defined for GET. Exiting")
         sys.exit(1)
 
 if __name__ == '__main__':

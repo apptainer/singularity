@@ -75,7 +75,7 @@ def main():
        success = DELETE(key=args.key,
                         jsonfile=args.file)
     else:
-        bot.logger.error("--key and --file must be defined for DELETE. Exiting")
+        bot.error("--key and --file must be defined for DELETE. Exiting")
         sys.exit(1)
 
 if __name__ == '__main__':

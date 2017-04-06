@@ -67,7 +67,7 @@ def main():
        dump = DUMP(args.file)
 
     else:
-        bot.logger.error("--file must be defined for DUMP. Exiting")
+        bot.error("--file must be defined for DUMP. Exiting")
         sys.exit(1)
 
 if __name__ == '__main__':

@@ -183,7 +183,7 @@ def get_image_name(manifest,extension='img.gz',use_hash=False):
         if len(image_name) > 0:
             image_name = image_name[0]
         else:
-            bot.logger.error("Singularity Hub Image not found with expected extension %s, exiting.",extension)
+            bot.error("Singularity Hub Image not found with expected extension %s, exiting." %extension)
             sys.exit(1)
           
     if not bot.is_quiet():
@@ -213,5 +213,5 @@ def extract_metadata(manifest,labelfile=None,prefix=None):
                         jsonfile=labelfile,
                         force=True)
 
-        bot.logger.debug("Saving Singularity Hub metadata to %s",labelfile)    
+        bot.verbose("Saving Singularity Hub metadata to %s" %labelfile)    
     return metadata

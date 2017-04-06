@@ -50,7 +50,7 @@ def main():
     '''main is a wrapper for the client to hand the parser to the executable functions
     This makes it possible to set up a parser in test cases
     '''
-    bot.logger.debug("\n*** STARTING SINGULARITY PYTHON PULL ****")
+    bot.debug("\n*** STARTING SINGULARITY PYTHON PULL ****")
     from defaults import LAYERFILE, DISABLE_CACHE, getenv
 
     # What image is the user asking for?
@@ -68,7 +68,7 @@ def main():
                        layerfile=LAYERFILE)
 
     else:
-        bot.logger.error("uri %s is not currently supported for pull. Exiting.",image_uri)
+        bot.error("uri %s is not currently supported for pull. Exiting." %image_uri)
         sys.exit(1)
 
 
