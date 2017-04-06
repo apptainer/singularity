@@ -30,6 +30,8 @@ class SingularityMessage:
         self.level = get_logging_level()
         logging.basicConfig(level=self.level)
         self.logger = logging.getLogger('python')
+        formatter = logging.Formatter('%(message)s')
+        self.logger.setFormatter(formatter)
 
 
     def is_quiet(self):

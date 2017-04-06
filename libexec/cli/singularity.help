@@ -20,7 +20,10 @@ CONTAINER USAGE COMMANDS:
     test          Execute any test code defined within container
 
 CONTAINER USAGE OPTIONS:
-    -H  --home    Specify $HOME to mount 
+   -H  --home     Specify $HOME to mount 
+   -e  --cleanenv Remove host environment from container
+   -i  --ipc      Run container in a new IPC namespace
+
 
 CONTAINER MANAGEMENT COMMANDS (requires root):
     bootstrap     Bootstrap a new Singularity image from scratch

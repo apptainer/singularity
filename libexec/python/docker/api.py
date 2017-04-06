@@ -432,7 +432,7 @@ def extract_metadata_tar(manifest,image_name,include_env=True,
 
 
     if len(files) > 0:
-        output_folder = get_cache(subfolder="docker",quiet=True)
+        output_folder = get_cache(subfolder="metadata", quiet=True)
         tar_file = create_tar(files,output_folder)      
     else:
         bot.logger.warning("No environment, labels files, or runscript will be included.")
