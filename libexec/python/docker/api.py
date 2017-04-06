@@ -111,7 +111,7 @@ class DockerApiConnection(ApiConnection):
         self.update_token()
 
 
-    def update_token(self,response=None,auth=None):
+    def update_token(self,response=None,auth=None,request=None):
         '''update_token uses HTTP basic authentication to get a token for 
         Docker registry API V2 operations. We get here if a 401 is
         returned for a request. https://docs.docker.com/registry/spec/auth/token/
@@ -128,15 +128,14 @@ class DockerApiConnection(ApiConnection):
             sys.exit(1)
 
         challenge = response.headers["Www-Authenticate"]
-        match = re.match('^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?(error="(.+)")', challenge)
+        match = re.match('^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?', challenge)
         if not match:
             bot.error("Unrecognized authentication challenge, exiting.")
             sys.exit(1)
 
         realm = match.group(1)
         service = match.group(2)
-        scope = match.group(3)
-        error = match.group(4)
+        scope = match.group(3).split(',')[0]
 
         base = "%s?service=%s&scope=%s" %(realm,service,scope)
         headers = dict()
@@ -153,6 +152,10 @@ class DockerApiConnection(ApiConnection):
             bot.error("Error getting token for repository %s/%s, exiting." %(self.namespace,self.repo_name))
             sys.exit(1)
 
+        # Finally, if a request is provided, update the token and return
+        if request is not None:
+            request.headers['Authorization'] = token['Authorization']
+            return request            
 
 
     def get_images(self):

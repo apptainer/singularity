@@ -109,10 +109,9 @@ class ApiConnection(object):
 
         # If we have an HTTPError, try to follow the response
         except HTTPError as error:
-
             # Case 1: we have an http 401 error, and need to refresh token
             if error.code == 401:
-                self.update_token(error)
+                request = self.update_token(response=error,request=request)
                 try:
                     response = urlopen(request)
                 except HTTPError as error:    
