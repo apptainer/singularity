@@ -128,7 +128,7 @@ class DockerApiConnection(ApiConnection):
             sys.exit(1)
 
         challenge = response.headers["Www-Authenticate"]
-        match = re.match('^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?', challenge)
+        match = re.match('^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?(error="(.+)")', challenge)
         if not match:
             bot.error("Unrecognized authentication challenge, exiting.")
             sys.exit(1)
@@ -136,6 +136,7 @@ class DockerApiConnection(ApiConnection):
         realm = match.group(1)
         service = match.group(2)
         scope = match.group(3)
+        error = match.group(4)
 
         base = "%s?service=%s&scope=%s" %(realm,service,scope)
         headers = dict()
