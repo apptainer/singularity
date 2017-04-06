@@ -20,7 +20,7 @@ CONTAINER USAGE COMMANDS:
     test          Execute any test code defined within container
 
 CONTAINER USAGE OPTIONS:
-    see singularity <command> help
+    see singularity help <command>
 
 CONTAINER MANAGEMENT COMMANDS (requires root):
     bootstrap     Bootstrap a new Singularity image from scratch
