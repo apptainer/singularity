@@ -26,7 +26,6 @@ tar:
 	sudo install -m 0755 runscript newroot/.singularity.d/
 	sudo install -m 0755 run shell exec newroot/.singularity.d/actions/
 	sudo install -m 0755 01-base.sh newroot/.singularity.d/env/
-	sudo install -m 0755 99-environment.sh newroot/.singularity.d/env/
 	sudo ln -sf .singularity.d/runscript newroot/singularity
 	sudo ln -sf .singularity.d/env/01-base.sh newroot/environment
 	sudo ln -sf .singularity.d/actions/run newroot/.run
