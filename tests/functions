@@ -56,6 +56,10 @@ test_cleanup() {
     exit 0
 }
 
+exit_cleanup() {
+    return 0
+}
+
 stest() {
     ERROR="${1:-}"
     OUTPUT="$SINGULARITY_TESTDIR/output"
@@ -71,11 +75,13 @@ stest() {
         message 2 "%13s ERROR\n" "(retval=$RETVAL)"
         tail "$OUTPUT"
         echo "Full output in: $OUTPUT"
+        exit_cleanup
         exit 1
     elif [ "$ERROR" != "0" -a "$RETVAL" = "0" ]; then
         message 2 "%13s ERROR\n" "(retval=$RETVAL)"
         tail "$OUTPUT"
         echo "Full output in: $OUTPUT"
+        exit_cleanup
         exit 1
     else
         message 2 "%13s OK\n" "(retval=$RETVAL)"
