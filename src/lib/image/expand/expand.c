@@ -35,48 +35,55 @@
 
 #define BUFFER_SIZE (1024*1024)
 
-
-int _singularity_image_expand(struct image_object *image, unsigned int size) {
-    int i;
-    char *buff = (char *) malloc(BUFFER_SIZE);
+int _singularity_image_expand(struct image_object *image, long int size) {
     FILE *image_fp;
-
-    if ( singularity_image_check(image) != 0 ) {
-        singularity_message(ERROR, "File does not seem to be a valid Singularity image: %s\n", image->path);
-        ABORT(255);
-    }
+    int retval;
 
     if ( image->fd <= 0 ) {
         singularity_message(ERROR, "Can not check image with no FD associated\n");
         ABORT(255);
     }
 
-    if ( ( image_fp = fdopen(dup(image->fd), "r+") ) == NULL ) {
-        singularity_message(ERROR, "Could not fdopen() image file descriptor for %s: %s\n", image->path, strerror(errno));
-        ABORT(255);
-    }
-
-    memset(buff, '\255', BUFFER_SIZE);
-
-    if ( image_fp == NULL ) {
-        singularity_message(ERROR, "Called _singularity_image_expand() with NULL image pointer\n");
+    if ( ( image_fp = fdopen(dup(image->fd), "w") ) == NULL ) {
+        singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
 
     singularity_message(DEBUG, "Jumping to the end of the current image file\n");
     fseek(image_fp, 0L, SEEK_END);
+    long current = ftell(image_fp);
 
-    singularity_message(VERBOSE2, "Expanding image by %dMB\n", size);
-    for(i = 0; i < size; i++ ) {
-        if ( fwrite(buff, 1, BUFFER_SIZE, image_fp) < BUFFER_SIZE ) {
-            singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
-            ABORT(255);
+    singularity_message(VERBOSE2, "Growing image to %ldMB\n", size);
+    while ( 1 ) {
+        retval = posix_fallocate(singularity_image_fd(image), current, size * BUFFER_SIZE);
+
+        if ( retval == EINTR ) {
+            singularity_message(DEBUG, "fallocate was interrupted by a signal, trying again...\n");
+            continue;
+        } else {
+            break;
         }
     }
 
+    if ( retval != 0 ) {
+        switch ( retval ) {
+            case ENOSPC:
+                singularity_message(ERROR, "There is not enough to space to allocate the image\n");
+                break;
+            case EBADF:
+                singularity_message(ERROR, "The image file descriptor is not valid for writing\n");
+                break;
+            case EFBIG:
+                singularity_message(ERROR, "The image size was too big for the filesystem\n");
+                break;
+            case EINVAL:
+                singularity_message(ERROR, "The image size is invalid.\n");
+                break;
+        }
+        ABORT(255);
+    }
+
     fclose(image_fp);
-    free(buff);
 
     return(0);
 }
-

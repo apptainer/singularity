@@ -72,33 +72,28 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-if [ "$UID" != 0 ]; then
-    message ERROR "Calling user must be root!\n"
-    exit 1
-fi
 
 SINGULARITY_IMAGE="${1:-}"
 SINGULARITY_WRITABLE=1
 export SINGULARITY_IMAGE SINGULARITY_WRITABLE
 
 if [ -z "$SINGULARITY_IMAGE" ]; then
-    message ERROR "You must supply a path to an image to create\n"
+    message ERROR "You must supply a path to an image to expand\n"
     exit 1
 fi
 if [ ! -f "$SINGULARITY_IMAGE" ]; then
-    message ERROR "Image file not found.\n"
+    message ERROR "Singularity image file not found: $SINGULARITY_IMAGE\n"
     exit 1
 fi
 
-message 1 "Expanding existing image with a size of ${IMAGE_SIZE}MiB...\n"
-if ! eval "$SINGULARITY_libexecdir/singularity/bin/simage" "expand" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
-    message ERROR "Failed expanding image: $SINGULARITY_IMAGE\n"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/expand-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/expand-suid"
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/expand" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/expand"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/expand\n"
     exit 1
 fi
-
-message 1 "Executing image expand helper\n"
-exec "$SINGULARITY_libexecdir/singularity/bin/simage" "bind" "$SINGULARITY_libexecdir/singularity/bin/helpers/image-expand.sh"
-
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
 exit 255
