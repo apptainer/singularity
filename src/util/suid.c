@@ -30,6 +30,7 @@
 #include "util/file.h"
 #include "util/registry.h"
 #include "util/config_parser.h"
+#include "util/privilege.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
@@ -95,6 +96,8 @@ int singularity_suid_init(char **argv) {
         if ( is_exec(self) == 0 ) {
             singularity_message(VERBOSE, "Invoking non-SUID program flow: %s\n", self);
             argv[0] = strdup(self);
+
+            singularity_priv_drop_perm();
 
             execv(argv[0], argv);
 
