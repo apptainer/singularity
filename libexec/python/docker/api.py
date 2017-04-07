@@ -70,6 +70,7 @@ class DockerApiConnection(ApiConnection):
     def __init__(self,**kwargs):
         self.auth = None
         self.token = None
+        self.token_url = None
         self.api_base = API_BASE
         self.api_version = API_VERSION
         self.manifest = None
@@ -111,38 +112,40 @@ class DockerApiConnection(ApiConnection):
         self.update_token()
 
 
-    def update_token(self,response=None,auth=None,request=None):
+    def update_token(self,response=None,auth=None):
         '''update_token uses HTTP basic authentication to get a token for 
         Docker registry API V2 operations. We get here if a 401 is
         returned for a request. https://docs.docker.com/registry/spec/auth/token/
         '''
+        if self.token_url is None:
 
-        if response == None:
-            response = self.get_tags(return_response=True)
+            if response == None:
+                response = self.get_tags(return_response=True)
 
-        if not isinstance(response, HTTPError):
-            return None
+            if not isinstance(response, HTTPError):
+                return None
 
-        if response.code != 401 or "Www-Authenticate" not in response.headers:
-            bot.error("Authentication error, exiting.")
-            sys.exit(1)
+            if response.code != 401 or "Www-Authenticate" not in response.headers:
+                bot.error("Authentication error, exiting.")
+                sys.exit(1)
 
-        challenge = response.headers["Www-Authenticate"]
-        match = re.match('^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?', challenge)
-        if not match:
-            bot.error("Unrecognized authentication challenge, exiting.")
-            sys.exit(1)
+            challenge = response.headers["Www-Authenticate"]
+            match = re.match('^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?', challenge)
+            if not match:
+                bot.error("Unrecognized authentication challenge, exiting.")
+                sys.exit(1)
 
-        realm = match.group(1)
-        service = match.group(2)
-        scope = match.group(3).split(',')[0]
+            realm = match.group(1)
+            service = match.group(2)
+            scope = match.group(3).split(',')[0]
 
-        base = "%s?service=%s&scope=%s" %(realm,service,scope)
+            self.token_url = "%s?service=%s&expires_in=9000&scope=%s" %(realm,service,scope)
+
         headers = dict()
         if auth is not None:
             headers.update(auth)
 
-        response = self.get(base,default_headers=False,headers=headers)
+        response = self.get(self.token_url,default_headers=False,headers=headers)
         try:
             token = json.loads(response)["token"]
             token = {"Authorization": "Bearer %s" %(token) }
@@ -151,11 +154,6 @@ class DockerApiConnection(ApiConnection):
         except:
             bot.error("Error getting token for repository %s/%s, exiting." %(self.namespace,self.repo_name))
             sys.exit(1)
-
-        # Finally, if a request is provided, update the token and return
-        if request is not None:
-            request.headers['Authorization'] = token['Authorization']
-            return request            
 
 
     def get_images(self):
@@ -264,10 +262,10 @@ class DockerApiConnection(ApiConnection):
             bot.info("Downloading layer %s" %image_id)
 
         # Download the layer atomically, step 1
-        fd, tar_download = tempfile.mkstemp(prefix=("%s.download." % download_folder))
-        os.close(fd)
+        file_name = "%s.%s" %(download_folder,next(tempfile._get_candidate_names()))
         tar_download = self.download_atomically(url=base,
-                                                file_name=tar_download)
+                                                file_name=file_name)
+        bot.debug('Download of raw file (pre permissions fix) is %s' %tar_download)
 
         # Fix permissions step 2
         finished_tar = check_tar_permissions(tar_download)
