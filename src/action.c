@@ -52,10 +52,10 @@ int main(int argc, char **argv) {
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
+    singularity_priv_init();
     singularity_suid_init(argv);
 
     singularity_registry_init();
-    singularity_priv_init();
     singularity_priv_userns();
     singularity_priv_drop();
 
@@ -100,7 +100,9 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
     envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
     command = singularity_registry_get("COMMAND");
-    
+
+    singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
+
     if ( command == NULL ) {
         singularity_message(INFO, "No action command verb was given, invoking 'shell'\n");
         action_shell(argc, argv);
