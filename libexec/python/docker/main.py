@@ -110,6 +110,7 @@ def IMPORT(image,auth=None,layerfile=None):
         if not os.path.exists(targz):
             targz = client.get_layer(image_id=image_id,
                                      download_folder=cache_base)
+            client.update_token()
         layers.append(targz)
 
 

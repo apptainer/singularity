@@ -127,10 +127,6 @@ class TestApi(TestCase):
         print("Case 3: Bad tag should print valid tags and exit")
         client = DockerApiConnection(image="ubuntu:mmm.avocado")        
         
-        with self.assertRaises(SystemExit) as cm:
-            manifest = client.get_manifest()
-        self.assertEqual(cm.exception.code, 1)
-
         # Should work for custom registries
         print("Case 4: Obtain manifest from custom registry")
         client = DockerApiConnection(image="gcr.io/tensorflow/tensorflow")        
@@ -213,7 +209,7 @@ class TestApi(TestCase):
         fake_layer = "sha256:111111111112222222222223333333333"
         with self.assertRaises(SystemExit) as cm:
             layer_file = self.client.get_layer(image_id=fake_layer, 
-                                               download_folder = self.tmpdir)
+                                               download_folder=self.tmpdir)
         self.assertEqual(cm.exception.code, 1)
 
 
