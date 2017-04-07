@@ -97,7 +97,7 @@ class ApiConnection(object):
                 try:
                     filey.write(chunk)
                 except: # PermissionError
-                    bot.error("Cannot write to %s, exiting" %file_namee)
+                    bot.error("Cannot write to %s, exiting" %file_name)
                     sys.exit(1)
 
         return file_name
