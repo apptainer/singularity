@@ -305,11 +305,24 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid create-suid copy-suid expand-suid export-suid import-suid mount-suid"
+    BUILD_SUID="action-suid copy-suid expand-suid export-suid import-suid mount-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
 ])
+
+
+AC_MSG_CHECKING([if mkfs.ext3 is new enough])
+dd if=/dev/zero of=testimage.iso bs=1M count=10 &> /dev/null
+mkfs.ext3 -q -E offset=10 testimage.iso &> /dev/null && mkfs_offset=yes
+rm testimage.iso
+AM_CONDITIONAL([SUID_CREATE], [test "x$mkfs_offset" != "xyes"])
+
+AM_COND_IF([SUID_CREATE], [
+            AS_IF([test -n "$BUILD_SUID"], [BUILD_SUID="$BUILD_SUID create-suid"], [])
+            AC_DEFINE([SUID_CREATE], [], [use SUID for singularity create])
+            AC_MSG_RESULT([no])],
+            [AC_MSG_RESULT([yes])])
 
 AC_SUBST(BUILD_SUID)
 

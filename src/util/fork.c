@@ -338,6 +338,10 @@ int singularity_fork_exec(char **argv) {
         singularity_message(DEBUG, "Waiting on child process\n");
                                 
         waitpid(child, &tmpstatus, 0);
+        if( !WIFEXITED(tmpstatus) ) {
+            singularity_message(ERROR, "Running %s did not properly exit\n", argv[0]);
+            ABORT(255);
+        }
         retval = WEXITSTATUS(tmpstatus);
     }
 
