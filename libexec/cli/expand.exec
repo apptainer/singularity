@@ -50,7 +50,8 @@ while true; do
         ;;
         -s|--size)
             shift
-            IMAGE_SIZE="${1:-}"
+            SINGULARITY_IMAGESIZE="${1:-}"
+            export SINGULARITY_IMAGESIZE
             shift
         ;;
         -*)
