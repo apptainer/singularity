@@ -186,7 +186,17 @@ class ApiConnection(object):
         :param url: the url to stream from
         :param headers: additional headers to add to the get (default None)
         '''
-        tmp_file = "%s.%s" %(file_name,next(tempfile._get_candidate_names()))
-        response = self.stream(url,file_name=tmp_file,headers=headers)
-        os.rename(tmp_file, file_name)
+        try:
+            tmp_file = "%s.%s" %(file_name,next(tempfile._get_candidate_names()))
+            response = self.stream(url,file_name=tmp_file,headers=headers)
+            os.rename(tmp_file, file_name)
+        except:
+             download_folder = os.path.dirname(os.path.abspath(file_name))
+             bot.error("Error downloading %s. Do you have permission to write to %s?" %(url, download_folder))
+             try:
+                 os.remove(tmp_file)
+             except:
+                 pass
+             sys.exit(1)
+
         return file_name
