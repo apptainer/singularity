@@ -36,7 +36,7 @@
 #define BUFFER_SIZE (1024*1024)
 
 int _singularity_image_create(struct image_object *image, long int size) {
-    FILE* image_fp;
+    FILE *image_fp;
     int retval;
 
     if ( image->fd <= 0 ) {
@@ -53,22 +53,19 @@ int _singularity_image_create(struct image_object *image, long int size) {
     fprintf(image_fp, LAUNCH_STRING); // Flawfinder: ignore (LAUNCH_STRING is a constant)
 
     singularity_message(VERBOSE2, "Growing image to %ldMB\n", size);
-    while(1)
-    {
-        retval = posix_fallocate(singularity_image_fd(image), sizeof(LAUNCH_STRING), size*BUFFER_SIZE);
+    while ( 1 ) {
+        retval = posix_fallocate(singularity_image_fd(image), sizeof(LAUNCH_STRING), size * BUFFER_SIZE);
 
-        if(retval == EINTR)
-        {
+        if ( retval == EINTR ) {
             singularity_message(DEBUG, "fallocate was interrupted by a signal, trying again...\n");
             continue;
-        } else
+        } else {
             break;
+        }
     }
 
-    if(retval != 0)
-    {
-        switch(retval)
-        {
+    if ( retval != 0 ) {
+        switch ( retval ) {
             case ENOSPC:
                 singularity_message(ERROR, "There is not enough to space to allocate the image\n");
                 break;
