@@ -255,11 +255,13 @@ class DockerApiConnection(ApiConnection):
         base = "%s/%s/%s/%s/blobs/%s" %(registry,self.api_version,self.namespace,self.repo_name,image_id)
         bot.verbose("Downloading layers from %s" %base)
     
-        if download_folder is not None:
-            download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
+        if download_folder is None:        
+            download_folder = tempfile.mkdtemp()
 
-            # Update user what we are doing
-            bot.info("Downloading layer %s" %image_id)
+        download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
+
+        # Update user what we are doing
+        bot.info("Downloading layer %s" %image_id)
 
         # Download the layer atomically, step 1
         file_name = "%s.%s" %(download_folder,next(tempfile._get_candidate_names()))

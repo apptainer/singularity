@@ -125,6 +125,23 @@ def is_number(image):
 
 
 
+def show_progress(iteration,total,decimals=1,length=100,fill='█'):
+    '''
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+    '''
+    percent = ("{0:.%sf}" %str(decimals)).format(100 * (iteration / float(total)))
+    progress = int(length * iteration // total)
+    bar = fill * progress + '-' * (length - filledLength)
+    print('\rProgress |%s| %s%%' % (bar, percent), end = '\r')
+    if iteration == total: 
+        print()
+
 
 
 ############################################################################
@@ -312,16 +329,22 @@ def check_tar_permissions(tar_file,permission=None):
     if permission == None:
         permission = stat.S_IWUSR
 
-    # Check permissions for folders, not symlinks
+    # Add owner write permission to all, not symlinks
+    bot.verbose3("Fixing permission for %s" %(tar_file))
+    
+    ii=0
+    count = len(tar.members)
+
+    show_progress(ii, count,length=50)
     for member in tar:  
         if member.isdir() or member.isfile() and not member.issym():
-            if not has_permission(member,permission):
-                bot.verbose3("Fixing permission for %s" %(member.name))
-                member.mode = permission | member.mode
+            member.mode = permission | member.mode
             extracted = tar.extractfile(member)        
             fixed_tar.addfile(member, extracted)
         else:    
             fixed_tar.addfile(member)
+        ii += 1
+        show_progress(ii, count,length = 50)
 
     fixed_tar.close()
     tar.close()
