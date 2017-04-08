@@ -44,6 +44,12 @@ while true; do
             fi
             exit
         ;;
+        -n|--name|name)
+            shift
+            SHUB_CONTAINERNAME="${1:-}"
+            export SHUB_CONTAINERNAME
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
