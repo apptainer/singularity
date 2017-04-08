@@ -45,7 +45,7 @@ from base import ApiConnection
 from helpers.json.main import ADD
 
 from defaults import (
-    SHUB_API_BASE,
+    SHUB_API_BASE
 )
 
 from message import bot
