@@ -43,7 +43,7 @@ test_init() {
 
     echo
     echo "################################################################################"
-    echo "$TITLE (testdir: $SINGULARITY_TESTDIR)"
+    echo "$TITLE (script: $0, testdir: $SINGULARITY_TESTDIR)"
     echo
 }
 
