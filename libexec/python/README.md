@@ -107,7 +107,43 @@ Singularity images are imported in entirety (meaning no environmental data to pa
 **SHUB_API_BASE**
 The default base for the Singularity Hub API, which is `https://singularity-hub.org/api`
 
+**SHUB_CONTAINERNAME**
+The user is empowered to define a custom name for the singularity image downloaded. The first preference goes to specifying an `SHUB_CONTAINERNAME`. For example:
 
+```bash
+export SHUB_CONTAINERNAME="meatballs.img"
+singularity pull shub://vsoch/singularity-images
+...
+Done. Container is at: ./meatballs.img
+```
+
+**SHUB_NAMEBYCOMMIT**
+Second preference goes to naming the container by commit. If this variable is found in the environment, regardless of the value, it will be done!
+
+```bash
+unset SHUB_CONTAINERNAME
+export SHUB_NAMEBYCOMMIT=yesplease
+singularity pull shub://vsoch/singularity-images
+Done. Container is at: ./7a75cd7a32192e5d50f267982e0c30aff794076b.img
+```
+
+**SHUB_NAMEBYHASH**
+Finally, we can name the container based on the file hash.
+
+```bash
+unset SHUB_NAMEBYCOMMIT
+export SHUB_NAMEBYHASH=yesplease
+singularity pull shub://vsoch/singularity-images
+Done. Container is at: ./a989bc72cb154d007aa47a5034978328.img
+```
+
+If none of the above are selected, the default is to use the username and reponame
+
+```bash
+unset SHUB_NAMEBYHASH
+singularity pull shub://vsoch/singularity-images
+Done. Container is at: ./vsoch-singularity-images-mongo.img
+```
 
 ### General
 

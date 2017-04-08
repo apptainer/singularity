@@ -143,7 +143,7 @@ class SingularityApiConnection(ApiConnection):
         :param manifest: the manifest obtained with get_manifest
         :param download_folder: the folder to download to, if None, will be pwd
         :param extract: if True, will extract image to .img and return that.
-        '''    
+        '''
         image_file = get_image_name(manifest)
 
         if not bot.is_quiet():
@@ -168,27 +168,36 @@ class SingularityApiConnection(ApiConnection):
 
 
 # Various Helpers ---------------------------------------------------------------------------------
-def get_image_name(manifest,extension='img.gz',use_hash=False):
+def get_image_name(manifest,extension='img.gz'):
     '''get_image_name will return the image name for a manifest
     :param manifest: the image manifest with 'image' as key with download link
     :param use_hash: use the image hash instead of name
     '''
-    if not use_hash:
+    from defaults import SHUB_CONTAINERNAME, SHUB_NAMEBYCOMMIT, SHUB_NAMEBYHASH
+   
+    # First preference goes to a custom name
+    if SHUB_CONTAINERNAME is not None:
+        for replace in [" ",".gz",".img"]:
+            SHUB_CONTAINERNAME = SHUB_CONTAINERNAME.replace(replace,"")
+        image_name = "%s.%s" %(SHUB_CONTAINERNAME,extension)
+
+    # Second preference goes to commit
+    elif SHUB_NAMEBYCOMMIT is not None:
+        image_name = "%s.%s" %(manifest['version'],extension)
+
+    elif SHUB_NAMEBYHASH is not None:
+        image_url = os.path.basename(unquote(manifest['image']))
+        image_name = re.findall(".+[.]%s" %(extension),image_url)[0]
+    
+    # Default uses the image name-branch
+    else:
         image_name = "%s-%s.%s" %(manifest['name'].replace('/','-'),
                                   manifest['branch'].replace('/','-'),
-                                  extension)
-    else:
-        image_url = os.path.basename(unquote(manifest['image']))
-        image_name = re.findall(".+[.]%s" %(extension),image_url)
-        if len(image_name) > 0:
-            image_name = image_name[0]
-        else:
-            bot.error("Singularity Hub Image not found with expected extension %s, exiting." %extension)
-            sys.exit(1)
-          
+                                  extension)          
     if not bot.is_quiet():
         print("Singularity Hub Image: %s" %image_name)
     return image_name
+
 
 
 def extract_metadata(manifest,labelfile=None,prefix=None):

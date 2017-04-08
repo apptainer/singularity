@@ -44,6 +44,29 @@ while true; do
             fi
             exit
         ;;
+        -n|--name|name)
+            shift
+            SHUB_CONTAINERNAME="${1:-}"
+            export SHUB_CONTAINERNAME
+            shift
+        ;;
+        -C|--commit|commit)
+            shift
+            if [ -z "${SHUB_CONTAINERNAME+x}" ]; then
+                SHUB_NAMEBYCOMMIT="yes"
+                unset SHUB_NAMEBYHASH
+                export SHUB_NAMEBYCOMMIT
+            fi 
+        ;;
+        -H|--hash|hash)
+            shift
+            if [ -z "${SHUB_CONTAINERNAME+x}" ]; then
+                if [ -z "${SHUB_NAMEBYCOMMIT+x}" ]; then
+                    SHUB_NAMEBYHASH="yes"
+                    export SHUB_NAMEBYHASH
+                fi
+            fi 
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
