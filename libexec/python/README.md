@@ -111,33 +111,38 @@ The default base for the Singularity Hub API, which is `https://singularity-hub.
 The user is empowered to define a custom name for the singularity image downloaded. The first preference goes to specifying an `SHUB_CONTAINERNAME`. For example:
 
 ```bash
-SHUB_CONTAINERNAME='meatballs.img'
-singularity pull vsoch/singularity-images
+export SHUB_CONTAINERNAME="meatballs.img"
+singularity pull shub://vsoch/singularity-images
+...
+Done. Container is at: ./meatballs.img
 ```
 
 **SHUB_NAMEBYCOMMIT**
 Second preference goes to naming the container by commit. If this variable is found in the environment, regardless of the value, it will be done!
 
 ```bash
-SHUB_CONTAINERNAME=
+unset SHUB_CONTAINERNAME
 SHUB_NAMEBYCOMMIT=yesplease
-singularity pull vsoch/singularity-images
+singularity pull shub://vsoch/singularity-images
+Done. Container is at: ./7a75cd7a32192e5d50f267982e0c30aff794076b.img
 ```
 
 **SHUB_NAMEBYHASH**
 Finally, we can name the container based on the file hash.
 
 ```bash
-SHUB_CONTAINERNAME=
-SHUB_NAMEBYCOMMIT=yesplease
-singularity pull vsoch/singularity-images
+unset SHUB_NAMEBYCOMMIT
+SHUB_NAMEBYHASH=yesplease
+singularity pull shub://vsoch/singularity-images
+Done. Container is at: ./a989bc72cb154d007aa47a5034978328.img
 ```
 
 If none of the above are selected, the default is to use the username and reponame
 
 ```bash
-SHUB_NAMEBYCOMMIT=
-singularity pull vsoch/singularity-images
+unset SHUB_NAMEBYHASH
+singularity pull shub://vsoch/singularity-images
+Done. Container is at: ./vsoch-singularity-images-mongo.img
 ```
 
 ### General

@@ -174,10 +174,11 @@ def get_image_name(manifest,extension='img.gz'):
     :param use_hash: use the image hash instead of name
     '''
     from defaults import SHUB_CONTAINERNAME, SHUB_NAMEBYCOMMIT, SHUB_NAMEBYHASH
-
+   
     # First preference goes to a custom name
     if SHUB_CONTAINERNAME is not None:
-        SHUB_CONTAINERNAME = SHUB_CONTAINERNAME.replace(" ","").strip(".gz").strip('.img')
+        for replace in [" ",".gz",".img"]:
+            SHUB_CONTAINERNAME = SHUB_CONTAINERNAME.replace(replace,"")
         image_name = "%s.%s" %(SHUB_CONTAINERNAME,extension)
 
     # Second preference goes to commit
@@ -186,7 +187,7 @@ def get_image_name(manifest,extension='img.gz'):
 
     elif SHUB_NAMEBYHASH is not None:
         image_url = os.path.basename(unquote(manifest['image']))
-        image_name = re.findall(".+[.]%s" %(extension),image_url)
+        image_name = re.findall(".+[.]%s" %(extension),image_url)[0]
     
     # Default uses the image name-branch
     else:
