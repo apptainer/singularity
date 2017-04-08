@@ -133,10 +133,11 @@ def show_progress(iteration,total,decimals=1,length=100,fill='█'):
     :para, length: character length of bar (Int)
     :param fill: bar fill character (Str)
     '''
-    percent = ("{0:.%sf}" %str(decimals)).format(100 * (iteration / float(total)))
-    progress = int(length * iteration // total)
-    bar = fill * progress + '-' * (length - progress)
-    print('\rProgress |%s| %s%%' % (bar, percent), end = '\r')
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '\r')
+    # Print New Line on Complete
     if iteration == total: 
         print()
 
