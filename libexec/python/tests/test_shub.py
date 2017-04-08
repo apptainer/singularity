@@ -135,13 +135,6 @@ class TestApi(TestCase):
         self.assertEqual('vsoch-singularity-images-master.img.gz',
                          image_name)
 
-        print("Case 2: ask for hash, but with invalid extension")
-        with self.assertRaises(SystemExit) as cm:
-            image_name = get_image_name(manifest,
-                                        extension='.bz2',
-                                        use_hash=True)
-        self.assertEqual(cm.exception.code, 1)
-
 
 
 if __name__ == '__main__':

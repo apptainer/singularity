@@ -127,7 +127,9 @@ INCLUDE_CMD = convert2boolean(getenv("SINGULARITY_INCLUDECMD",
 
 SINGULARITY_PULLFOLDER = getenv("SINGULARITY_PULLFOLDER", default=os.getcwd())
 SHUB_API_BASE = "singularity-hub.org/api"
-
+SHUB_NAMEBYHASH = getenv("SHUB_NAMEBYHASH")
+SHUB_NAMEBYCOMMIT = getenv("SHUB_NAMEBYCOMMIT")
+SHUB_CONTAINERNAME = getenv("SHUB_CONTAINERNAME")
 
 #######################################################################
 # Python Internal API URI Handling
