@@ -9,9 +9,15 @@ SUPPORTED URIs:
     shub: Pull an image using python from Singularity Hub to $PWD
 
 
+PULL OPTIONS:
+    -n/--name   Specify a custom container name
+    
+
 CONTAINER NAME:
 
-    You can customize the container name by setting an environment variables
+    singularity pull --name "meatballs.img" shub://vsoch/singularity-images
+
+    You can also customize the container name by setting an environment variables
     export SHUB_CONTAINERNAME="meatballs.img"
 
     Specify to name based on the Github commit associated with the container
