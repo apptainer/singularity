@@ -122,7 +122,7 @@ Second preference goes to naming the container by commit. If this variable is fo
 
 ```bash
 unset SHUB_CONTAINERNAME
-SHUB_NAMEBYCOMMIT=yesplease
+export SHUB_NAMEBYCOMMIT=yesplease
 singularity pull shub://vsoch/singularity-images
 Done. Container is at: ./7a75cd7a32192e5d50f267982e0c30aff794076b.img
 ```
@@ -132,7 +132,7 @@ Finally, we can name the container based on the file hash.
 
 ```bash
 unset SHUB_NAMEBYCOMMIT
-SHUB_NAMEBYHASH=yesplease
+export SHUB_NAMEBYHASH=yesplease
 singularity pull shub://vsoch/singularity-images
 Done. Container is at: ./a989bc72cb154d007aa47a5034978328.img
 ```
