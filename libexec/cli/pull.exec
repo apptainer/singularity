@@ -104,16 +104,17 @@ export SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS
 
 # Determine if the user wants a custom name, and export
 
-if [ -z "$SHUB_NAMEBYHASH" ]; then 
+
+if [ -n "$SHUB_NAMEBYHASH" ]; then 
     export $SHUB_NAMEBYHASH="yes"
 fi
 
-if [ -z "$SHUB_NAMEBYCOMMIT" ]; then 
+if [ -n "$SHUB_NAMEBYCOMMIT" ]; then 
     export $SHUB_NAMEBYCOMMIT="yes"
     unset SHUB_NAMEBYHASH
 fi
 
-if [ -z "$SHUB_CONTAINERNAME" ]; then 
+if [ -n "$SHUB_CONTAINERNAME" ]; then 
     export $SHUB_CONTAINERNAME
     unset SHUB_NAMEBYCOMMIT SHUB_NAMEBYHASH
 fi
