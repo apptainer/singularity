@@ -52,7 +52,7 @@ while true; do
         ;;
         -C|--commit|commit)
             shift
-            if [ -z "${SHUB_CONTAINERNAME}" ]; then
+            if [ -z "$SHUB_CONTAINERNAME" ]; then
                 SHUB_NAMEBYCOMMIT="yes"
                 unset SHUB_NAMEBYHASH
                 export SHUB_NAMEBYCOMMIT
@@ -61,8 +61,8 @@ while true; do
         ;;
         -H|--hash|hash)
             shift
-            if [ -z "${SHUB_CONTAINERNAME}" ]; then
-                if [ -z "${SHUB_NAMEBYCOMMIT}" ]; then
+            if [ -z "$SHUB_CONTAINERNAME" ]; then
+                if [ -z "$SHUB_NAMEBYCOMMIT" ]; then
                     SHUB_NAMEBYHASH="yes"
                     export SHUB_NAMEBYHASH
                 fi
