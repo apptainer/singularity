@@ -57,7 +57,6 @@ while true; do
                 unset SHUB_NAMEBYHASH
                 export SHUB_NAMEBYCOMMIT
             fi 
-            shift
         ;;
         -H|--hash|hash)
             shift
@@ -67,7 +66,6 @@ while true; do
                     export SHUB_NAMEBYHASH
                 fi
             fi 
-            shift
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
