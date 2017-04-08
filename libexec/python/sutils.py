@@ -126,18 +126,16 @@ def is_number(image):
 
 
 def show_progress(iteration,total,decimals=1,length=100,fill='█'):
-    '''
-    Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
+    '''create a terminal progress bar
+    :param iteration: current iteration (Int)
+    :param total: total iterations (Int)
+    :param decimals: positive number of decimals in percent complete (Int)
+    :para, length: character length of bar (Int)
+    :param fill: bar fill character (Str)
     '''
     percent = ("{0:.%sf}" %str(decimals)).format(100 * (iteration / float(total)))
     progress = int(length * iteration // total)
-    bar = fill * progress + '-' * (length - filledLength)
+    bar = fill * progress + '-' * (length - progress)
     print('\rProgress |%s| %s%%' % (bar, percent), end = '\r')
     if iteration == total: 
         print()
