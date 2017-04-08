@@ -10,12 +10,12 @@ SUPPORTED URIs:
 
 
 PULL OPTIONS:
-    -n/--name   Specify a custom container name
+    -n/--name   Specify a custom container name (first priority)
+    -C/--commit Name container based on Github commit (second priority)
+    -H/--hash   Name container based on file hash (second priority)
     
 
 CONTAINER NAME:
-
-    singularity pull --name "meatballs.img" shub://vsoch/singularity-images
 
     You can also customize the container name by setting an environment variables
     export SHUB_CONTAINERNAME="meatballs.img"
@@ -32,6 +32,10 @@ EXAMPLES:
     $ singularity pull shub://vsoch/singularity-images
       Found image vsoch/singularity-images:mongo
       Downloading image... vsoch-singularity-images-mongo.img
+
+    $ singularity pull --name "meatballs.img" shub://vsoch/singularity-images
+    $ singularity pull --commit shub://vsoch/singularity-images
+    $ singularity pull --hash shub://vsoch/singularity-images
     
 For additional help, please visit our public documentation pages which are
 found at:
