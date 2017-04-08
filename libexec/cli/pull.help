@@ -15,18 +15,6 @@ PULL OPTIONS:
     -H/--hash   Name container based on file hash (second priority)
     
 
-CONTAINER NAME:
-
-    You can also customize the container name by setting an environment variables
-    export SHUB_CONTAINERNAME="meatballs.img"
-
-    Specify to name based on the Github commit associated with the container
-    export SHUB_NAMEBYCOMMIT="yes"
-
-    Specify to name based on the file hash of the container
-    export SHUB_NAMEBYHASH="yes"
-
-
 EXAMPLES:
 
     $ singularity pull shub://vsoch/singularity-images
