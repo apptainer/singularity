@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 '''
 utils.py: python helper for singularity command line tool
 
