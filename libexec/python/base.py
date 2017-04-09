@@ -88,6 +88,13 @@ class ApiConnection(object):
 
         response = self.submit_request(request)
 
+        # Keep user updated with Progress Bar
+        content_size = None
+        if 'Content-Length' in response.headers and response.code not in [400,401]:
+            progress = 0
+            content_size = int(response.headers['Content-Length'])
+            bot.show_progress(progress,content_size,length=50)
+
         chunk_size = 1 << 20
         with open(file_name, 'wb') as filey:
             while True:
@@ -96,9 +103,20 @@ class ApiConnection(object):
                     break
                 try:
                     filey.write(chunk)
-                except: # PermissionError
-                    bot.error("Cannot write to %s, exiting" %file_name)
+                    if content_size is not None:
+                        progress+=chunk_size
+                        bot.show_progress(iteration=progress,
+                                          total=content_size,
+                                          length=50,
+                                          min_level=0,
+                                          carriage_return=False)
+                except Exception as error:
+                    bot.error("Error writing to %s: %s exiting" %(file_name,error))
                     sys.exit(1)
+
+            # Newline to finish download
+            sys.stdout.write('\n')
+
 
         return file_name
 

@@ -124,25 +124,6 @@ def is_number(image):
 
 
 
-def show_progress(iteration,total,length=100):
-    '''create a terminal progress bar
-    :param iteration: current iteration (Int)
-    :param total: total iterations (Int)
-    :para, length: character length of bar (Int)
-    :param fill: bar fill character (Str)
-    '''
-    percent = ("{0:.1f}").format(100 * (iteration / float(total)))
-    progress = int(length * iteration // total)
-    bar = '█' * progress + '-' * (length - progress)
-
-    # Only show progress bar for level verbose
-    if bot.level > 1:
-        sys.stdout.write('\rProgress |%s| %s%s' % (bar, percent, '%')),
-        if iteration == total: 
-            sys.stdout.write('\n')
-        sys.stdout.flush()
-
-
 
 ############################################################################
 ## TAR/COMPRESSION #########################################################
@@ -313,11 +294,12 @@ def has_permission(file_path,permission=None):
     return False
 
 
-def change_tar_permissions(tar_file,permission=None):
+def change_tar_permissions(tar_file,file_permission=None,folder_permission=None):
     '''change_tar_permissions changes a permission if 
     any member in a tarfile file does not have it
     :param file_path the path to the file
-    :param permission: the stat permission to use
+    :param file_permission: stat permission to use for files
+    :param folder_permission: stat permission to use for folders
     '''
     tar = tarfile.open(tar_file, "r:gz")
 
@@ -326,8 +308,15 @@ def change_tar_permissions(tar_file,permission=None):
     os.close(fd)
     fixed_tar = tarfile.open(tmp_tar, "w:gz")
 
-    if permission == None:
-        permission = stat.S_IWUSR
+    # Owner read, write (o+rw)
+    if file_permission == None:
+        file_permission = stat.S_IRUSR | stat.S_IWUSR
+
+    # Owner read, write execute (o+rwx)
+    if folder_permission == None:
+        folder_permission = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  
+
+
 
     # Add owner write permission to all, not symlinks
     bot.verbose("Fixing permission for %s" %(tar_file))
@@ -336,18 +325,26 @@ def change_tar_permissions(tar_file,permission=None):
 
     ii=0
     count = len(members)
-    show_progress(ii,count,length=50)
+    bot.show_progress(ii,count,length=50)
 
     for member in members:  
-        if member.isdir() or member.isfile() and not member.issym():
-            member.mode = permission | member.mode
+
+        # add o+rwx for directories
+        if member.isdir() and not member.issym():
+            member.mode = folder_permission | member.mode
+            extracted = tar.extractfile(member)        
+            fixed_tar.addfile(member, extracted)        
+
+        # add o+rw for plain files
+        elif member.isfile() and not member.issym():
+            member.mode = file_permission | member.mode
             extracted = tar.extractfile(member)        
             fixed_tar.addfile(member, extracted)
         else:    
             fixed_tar.addfile(member)
 
         ii += 1
-        show_progress(ii,count,length=50)
+        bot.show_progress(ii,count,length=50)
 
 
     fixed_tar.close()
