@@ -77,8 +77,7 @@ class SingularityMessage:
         self.outputStream = sys.stdout
 
         # Encodings        
-        self.get_encoding()
-        self.utf8 = ['utf-8','utf8']
+        self.utf8 = ['utf-8','utf8','UTF-8','UTF8']
 
         self.coffee = '\u26FE'
         self.star = '\u2605'
@@ -86,14 +85,6 @@ class SingularityMessage:
         self.sun =  '\u2600'
         self.skull = '\u2620'
         self.radioactive = '\u2622'
-
-    def get_encoding(self):
-        '''get_encoding attempts to find the encoding of the
-        stdout. If None, assumes is not utf-8
-        '''
-        self.encoding = sys.stdout.encoding
-        if self.encoding is not None:
-            self.encoding = self.encoding.lower()
 
 
     def emitError(self,level):
@@ -163,12 +154,12 @@ class SingularityMessage:
 
 
     def write(self,stream,message):
-        '''write will write a message to a stream, making sure
-        to fix the encoding if it errors
+        '''write will write a message to a stream, 
+        first checking the encoding
         '''
-        try:
+        if stream.encoding in self.utf8:
             stream.write(message)
-        except:
+        else:
             stream.write(message.encode('utf-8'))
 
 
@@ -191,7 +182,7 @@ class SingularityMessage:
         percent = 100 * (iteration / float(total))
         progress = int(length * iteration // total)
 
-        if suffix is None or self.encoding not in self.utf8:
+        if suffix is None or sys.stdout.encoding not in self.utf8:
             suffix = ''
 
         # Download sizes can be imperfect, setting carriage_return to False
@@ -216,12 +207,12 @@ class SingularityMessage:
         self.emit(ABRT,message,'ABRT')        
 
     def error(self,message):
-        if self.encoding in self.utf8:
+        if sys.stderr.encoding in self.utf8:
             message = "%s %s" %(message,self.skull)
         self.emit(ERROR,message,'ERROR')        
 
     def warning(self,message):
-        if self.encoding in self.utf8:
+        if sys.stderr.encoding in self.utf8:
             message = "%s %s" %(message,self.radioactive)
         self.emit(WARNING,message,'WARNING')        
 
