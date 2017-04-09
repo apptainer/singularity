@@ -132,9 +132,12 @@ def show_progress(iteration,total,length=100,fill='█'):
     percent = ("{0:.1f}").format(100 * (iteration / float(total)))
     progress = int(length * iteration // total)
     bar = fill * progress + '-' * (length - progress)
-    bot.verbose('\rProgress |%s| %s%%\r' % (bar, percent))
-    if iteration == total: 
-        bot.verbose()
+
+    # Only show progress bar for level verbose
+    if bot.level > 1:
+        print('\rProgress |%s| %s%%' % (bar, percent), end="\r")
+        if iteration == total: 
+            print()
 
 
 
