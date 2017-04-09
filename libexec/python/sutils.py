@@ -135,9 +135,9 @@ def show_progress(iteration,total,length=100,fill='█'):
     percent = ("{0:.1f}").format(100 * (iteration / float(total)))
     progress = int(length * iteration // total)
     bar = fill * progress + '-' * (length - progress)
-    print('\rProgress |%s| %s%%' % (bar, percent), end = '\r')
+    bot.verbose('\rProgress |%s| %s%%' % (bar, percent), end = '\r')
     if iteration == total: 
-        print()
+        bot.verbose()
 
 
 
@@ -310,8 +310,8 @@ def has_permission(file_path,permission=None):
     return False
 
 
-def check_tar_permissions(tar_file,permission=None):
-    '''check_tar_permissions changes a permission if 
+def change_tar_permissions(tar_file,permission=None):
+    '''change_tar_permissions changes a permission if 
     any member in a tarfile file does not have it
     :param file_path the path to the file
     :param permission: the stat permission to use
@@ -327,13 +327,14 @@ def check_tar_permissions(tar_file,permission=None):
         permission = stat.S_IWUSR
 
     # Add owner write permission to all, not symlinks
-    bot.verbose3("Fixing permission for %s" %(tar_file))
+    bot.verbose("Fixing permission for %s" %(tar_file))
     
-    ii=0
     members = tar.getmembers()
-    count = len(members)
 
-    show_progress(ii, count,length=50)
+    ii=0
+    count = len(members)
+    show_progress(ii,count,length=50)
+
     for member in members:  
         if member.isdir() or member.isfile() and not member.issym():
             member.mode = permission | member.mode
@@ -341,8 +342,10 @@ def check_tar_permissions(tar_file,permission=None):
             fixed_tar.addfile(member, extracted)
         else:    
             fixed_tar.addfile(member)
+
         ii += 1
-        show_progress(ii, count,length = 50)
+        show_progress(ii,count,length=50)
+
 
     fixed_tar.close()
     tar.close()
