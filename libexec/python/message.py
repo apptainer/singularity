@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 '''
 
 message.py: simple logger for Singularity python helper
