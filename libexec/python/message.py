@@ -141,12 +141,22 @@ class SingularityMessage:
         # Otherwise if in range print to stdout and stderr
         elif self.isEnabledFor(level):
             if self.emitError(level):
-                self.errorStream.write(message)
+                self.write(self.errorStream,message)
             else:
-                self.outputStream.write(message)
+                self.write(self.outputStream,message)
 
         # Add all log messages to history
         self.history.append(message)
+
+
+    def write(self,stream,message):
+        '''write will write a message to a stream, making sure
+        to fix the encoding if it errors
+        '''
+        try:
+            stream.write(message)
+        except:
+            stream.write(message.encode('utf-8'))
 
 
     def get_logs(self,join_newline=True):
