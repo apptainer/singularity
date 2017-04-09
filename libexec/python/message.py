@@ -182,7 +182,7 @@ class SingularityMessage:
         percent = 100 * (iteration / float(total))
         progress = int(length * iteration // total)
 
-        if suffix is None or self.encoding in ['utf-8']:
+        if suffix is None or self.encoding not in self.utf8:
             suffix = ''
 
         # Download sizes can be imperfect, setting carriage_return to False
