@@ -74,7 +74,11 @@ class SingularityMessage:
         self.level = get_logging_level()
         self.history = []
         self.errorStream = sys.stderr
-        self.outputStream = sys.stdout        
+        self.outputStream = sys.stdout
+
+        # Encodings        
+        self.encoding = sys.stdout.encoding.lower()
+        self.utf8 = ['utf-8','utf8']
 
         self.coffee = '\u26FE'
         self.star = '\u2605'
@@ -178,7 +182,7 @@ class SingularityMessage:
         percent = 100 * (iteration / float(total))
         progress = int(length * iteration // total)
 
-        if suffix is None:
+        if suffix is None or self.encoding in ['utf-8']:
             suffix = ''
 
         # Download sizes can be imperfect, setting carriage_return to False
@@ -203,11 +207,13 @@ class SingularityMessage:
         self.emit(ABRT,message,'ABRT')        
 
     def error(self,message):
-        message = "%s %s" %(message,self.skull)
+        if self.encoding in self.utf8:
+            message = "%s %s" %(message,self.skull)
         self.emit(ERROR,message,'ERROR')        
 
     def warning(self,message):
-        message = "%s %s" %(message,self.radioactive)
+        if self.encoding in self.utf8:
+            message = "%s %s" %(message,self.radioactive)
         self.emit(WARNING,message,'WARNING')        
 
     def log(self,message):
