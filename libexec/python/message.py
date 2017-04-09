@@ -76,6 +76,13 @@ class SingularityMessage:
         self.errorStream = sys.stderr
         self.outputStream = sys.stdout        
 
+        self.coffee = u"\u26FE"
+        self.star = u"\u2605"
+        self.whitestar = u"\u2606"
+        self.sun =  u"\u2600"
+        self.skull = u"\u2620"
+        self.warning = u"\u2622"
+
     def emitError(self,level):
         '''determine if a level should print to
         stderr, includes all levels but INFO and QUIET'''
@@ -152,7 +159,7 @@ class SingularityMessage:
         
 
 
-    def show_progress(self,iteration,total,length=100,min_level=1,carriage_return=True):
+    def show_progress(self,iteration,total,length=100,min_level=0,carriage_return=True,suffix=None):
         '''create a terminal progress bar, default bar shows for verbose+
         :param iteration: current iteration (Int)
         :param total: total iterations (Int)
@@ -161,17 +168,21 @@ class SingularityMessage:
         percent = 100 * (iteration / float(total))
         progress = int(length * iteration // total)
 
+        if suffix is None:
+            suffix = ''
+
         # Download sizes can be imperfect, setting carriage_return to False
         # and writing newline with caller cleans up the UI
         if percent >= 100:
-            progress = percent = 100
+            percent = 100
+            progress = length
 
         bar = '█' * progress + '-' * (length - progress)
 
         # Only show progress bar for level > min_level
         if self.level > min_level:
             percent = ("{0:.1f}").format(percent)
-            sys.stdout.write('\rProgress |%s| %s%s' % (bar, percent, '%')),
+            sys.stdout.write('\rProgress |%s| %s%s %s  ' % (bar, percent, '%', suffix)),
             if iteration == total and carriage_return: 
                 sys.stdout.write('\n')
             sys.stdout.flush()
@@ -182,9 +193,11 @@ class SingularityMessage:
         self.emit(ABRT,message,'ABRT')        
 
     def error(self,message):
+        message = "%s %s" %(message,self.skull)
         self.emit(ERROR,message,'ERROR')        
 
     def warning(self,message):
+        message = "%s %s" %(message,self.warning)
         self.emit(WARNING,message,'WARNING')        
 
     def log(self,message):

@@ -93,7 +93,7 @@ class ApiConnection(object):
         if 'Content-Length' in response.headers and response.code not in [400,401]:
             progress = 0
             content_size = int(response.headers['Content-Length'])
-            bot.show_progress(progress,content_size,length=50)
+            bot.show_progress(progress,content_size,length=50,suffix=bot.coffee)
 
         chunk_size = 1 << 20
         with open(file_name, 'wb') as filey:
@@ -102,14 +102,15 @@ class ApiConnection(object):
                 if not chunk: 
                     break
                 try:
+
                     filey.write(chunk)
                     if content_size is not None:
                         progress+=chunk_size
                         bot.show_progress(iteration=progress,
                                           total=content_size,
                                           length=50,
-                                          min_level=0,
-                                          carriage_return=False)
+                                          carriage_return=False,
+                                          suffix=bot.coffee)
                 except Exception as error:
                     bot.error("Error writing to %s: %s exiting" %(file_name,error))
                     sys.exit(1)
