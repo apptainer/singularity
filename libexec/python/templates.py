@@ -21,10 +21,6 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 from message import bot
-import tempfile
-import os
-import pwd
-import sys
 
 
 def get_template(template_name):

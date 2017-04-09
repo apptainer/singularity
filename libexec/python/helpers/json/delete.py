@@ -34,12 +34,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir)))
 
 import optparse
-import pickle
-from glob import glob
 from helpers.json.main import DELETE
 from message import bot
-import os
-import sys
 
 def get_parser():
 

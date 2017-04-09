@@ -46,8 +46,6 @@ from shell import (
 
 from defaults import getenv
 from message import bot
-import os
-import sys
 
 
 def main():

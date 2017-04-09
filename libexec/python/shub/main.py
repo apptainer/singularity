@@ -34,7 +34,6 @@ from .api import (
 )
 
 from sutils import (
-    add_http,
     get_cache,
     write_file
 )
@@ -45,7 +44,6 @@ from message import bot
 import json
 import re
 import os
-import tempfile
 
 
 def SIZE(image,contentfile=None):

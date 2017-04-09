@@ -21,31 +21,21 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
-import sys
 import os
 from defaults import INCLUDE_CMD
 
 from sutils import (
-    check_tar_permissions,
-    extract_tar,
     get_cache, 
     write_file
 )
 
 from .api import (
     DockerApiConnection,
-    extract_env,
-    extract_labels,
     extract_runscript,
     extract_metadata_tar,
 )
 
 from message import bot
-import json
-import shutil
-import re
-import os
-import tempfile
 
 
 def SIZE(image,auth=None,contentfile=None):

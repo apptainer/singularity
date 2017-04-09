@@ -34,7 +34,6 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import sys
-import os
 
 from shell import (
     get_image_uri,

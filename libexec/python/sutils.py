@@ -22,7 +22,6 @@ perform publicly and display publicly, and to permit other to do so.
 
 from defaults import (
     SINGULARITY_CACHE,
-    DISABLE_CACHE
 )
 from message import bot
 import datetime
@@ -30,10 +29,8 @@ import errno
 import hashlib
 import json
 import os
-import shutil
 import subprocess
 import stat
-from stat import ST_MODE
 import sys
 import tempfile
 import tarfile

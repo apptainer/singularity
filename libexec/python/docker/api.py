@@ -31,9 +31,8 @@ from base import ApiConnection
 from sutils import (
     add_http,
     get_cache,
-    check_tar_permissions,
+    change_tar_permissions,
     create_tar,
-    write_file, 
     write_singularity_infos
 )
 
@@ -44,7 +43,6 @@ from defaults import (
     DOCKER_PREFIX,
     ENV_BASE,
     LABELFILE,
-    METADATA_BASE,
     METADATA_FOLDER_NAME,
     RUNSCRIPT_COMMAND_ASIS
 )
@@ -271,7 +269,7 @@ class DockerApiConnection(ApiConnection):
 
         # Fix permissions step 2
         try:
-            finished_tar = check_tar_permissions(tar_download)
+            finished_tar = change_tar_permissions(tar_download)
             os.rename(finished_tar,download_folder)
         except:
             bot.error("Cannot untar layer %s, was there a problem with download?" %tar_download)

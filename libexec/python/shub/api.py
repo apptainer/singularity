@@ -35,9 +35,7 @@ from shell import (
 from sutils import (
     add_http,
     is_number,
-    read_file,
-    write_file,
-    write_singularity_infos
+    read_file
 )
 
 from base import ApiConnection
@@ -50,7 +48,6 @@ from defaults import (
 
 from message import bot
 import json
-import os
 import re
 
 try:

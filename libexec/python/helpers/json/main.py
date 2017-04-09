@@ -33,8 +33,6 @@ from sutils import (
 from message import bot
 import json
 import re
-import os
-import tempfile
 
 
 def DUMP(jsonfile):
