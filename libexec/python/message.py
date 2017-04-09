@@ -81,7 +81,7 @@ class SingularityMessage:
         self.whitestar = u"\u2606"
         self.sun =  u"\u2600"
         self.skull = u"\u2620"
-        self.warning = u"\u2622"
+        self.radioactive = u"\u2622"
 
     def emitError(self,level):
         '''determine if a level should print to
@@ -207,7 +207,7 @@ class SingularityMessage:
         self.emit(ERROR,message,'ERROR')        
 
     def warning(self,message):
-        message = "%s %s" %(message,self.warning)
+        message = "%s %s" %(message,self.radioactive)
         self.emit(WARNING,message,'WARNING')        
 
     def log(self,message):
