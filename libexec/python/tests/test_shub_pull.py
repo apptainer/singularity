@@ -71,7 +71,6 @@ class TestImport(TestCase):
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
-        print(result['message'])
         self.assertEqual(result['return_code'],0)
 
 
