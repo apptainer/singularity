@@ -125,19 +125,17 @@ def is_number(image):
 
 
 
-def show_progress(iteration,total,decimals=1,length=100,fill='█'):
+def show_progress(iteration,total,length=100,fill='█'):
     '''create a terminal progress bar
     :param iteration: current iteration (Int)
     :param total: total iterations (Int)
-    :param decimals: positive number of decimals in percent complete (Int)
     :para, length: character length of bar (Int)
     :param fill: bar fill character (Str)
     '''
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '\r')
-    # Print New Line on Complete
+    percent = ("{0:.1f}").format(100 * (iteration / float(total)))
+    progress = int(length * iteration // total)
+    bar = fill * progress + '-' * (length - progress)
+    print('\rProgress |%s| %s%%' % (bar, percent), end = '\r')
     if iteration == total: 
         print()
 
@@ -332,10 +330,11 @@ def check_tar_permissions(tar_file,permission=None):
     bot.verbose3("Fixing permission for %s" %(tar_file))
     
     ii=0
-    count = len(tar.members)
+    members = tar.getmembers()
+    count = len(members)
 
     show_progress(ii, count,length=50)
-    for member in tar:  
+    for member in members:  
         if member.isdir() or member.isfile() and not member.issym():
             member.mode = permission | member.mode
             extracted = tar.extractfile(member)        
