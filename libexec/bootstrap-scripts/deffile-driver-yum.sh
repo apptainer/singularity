@@ -130,7 +130,11 @@ echo "logfile=/var/log/yum.log" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "syslog_device=/dev/null" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "exactarch=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "obsoletes=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
-echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+if [ -n "${GPG:-}" ]; then
+	echo "gpgcheck=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+else
+	echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+fi
 echo "plugins=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "reposdir=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "deltarpm=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
@@ -145,7 +149,11 @@ if [ -n "${MIRROR_META:-}" ]; then
     echo "metalink=$MIRROR_META" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 fi
 echo "enabled=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
-echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+if [ -n "${GPG:-}" ]; then
+	echo "gpgcheck=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+else
+	echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+fi
 
 
 if [ -n "${MIRROR_UPDATES:-}" ] || [ -n "${MIRROR_UPDATES_META:-}" ]; then
@@ -158,11 +166,51 @@ if [ -n "${MIRROR_UPDATES_META:-}" ]; then
     echo "metalink=$MIRROR_UPDATES_META" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 fi
 echo "enabled=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
-echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+if [ -n "${GPG:-}" ]; then
+	echo "gpgcheck=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+else
+	echo "gpgcheck=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+fi
 fi
 
 echo "" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 
+
+# If GPG is specified, then we need to import a key from somewhere.
+if [ -n "${GPG:-}" ]; then
+  message 1 "We have a GPG key!  Preparing RPM database.\n"
+  if ! eval rpm --root $SINGULARITY_ROOTFS --initdb; then
+    message ERROR "Failed to create rpmdb!"
+    ABORT 255
+  fi
+
+  # RPM will import from the web, if curl is installed, so check for it.
+  if [ ${GPG:0:8} = 'https://' ]; then
+    if CURL_CMD=`singularity_which curl`; then
+      message 1 "Found curl at: $CURL_CMD\n"
+    else
+      message ERROR "curl not in PATH!\n"
+      ABORT 1
+    fi
+  fi
+
+  # Before importing, check for (and fail on) HTTP URLs.
+  # Then let RPM handle everything for us!
+  if [ ${GPG:0:7} = 'http://' ]; then
+    message ERROR "It is unsafe to fetch a GPG key with an HTTP URL.\n"
+    ABORT 255
+  else
+    if ! eval $RPM_CMD --root $SINGULARITY_ROOTFS --import $GPG; then
+      message ERROR "Failed to import downloaded GPG key.\n"
+      ABORT 255
+    fi
+    message 1 "GPG key import complete!\n"
+  fi
+else
+  message 1 "Skipping GPG key import.\n"
+fi
+
+# Do the install!
 if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS --releasever=${OSVERSION} -y install /etc/redhat-release coreutils ${INCLUDE:-}"; then
     message ERROR "Bootstrap failed... exiting\n"
     ABORT 255
