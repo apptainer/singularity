@@ -21,7 +21,7 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 from defaults import (
-    SINGULARITY_CACHE,
+    SINGULARITY_CACHE
 )
 from message import bot
 import datetime
