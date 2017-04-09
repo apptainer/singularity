@@ -124,7 +124,7 @@ def is_number(image):
 
 
 
-def show_progress(iteration,total,length=100,fill='█'):
+def show_progress(iteration,total,length=100):
     '''create a terminal progress bar
     :param iteration: current iteration (Int)
     :param total: total iterations (Int)
@@ -133,13 +133,14 @@ def show_progress(iteration,total,length=100,fill='█'):
     '''
     percent = ("{0:.1f}").format(100 * (iteration / float(total)))
     progress = int(length * iteration // total)
-    bar = fill * progress + '-' * (length - progress)
+    bar = '█' * progress + '-' * (length - progress)
 
     # Only show progress bar for level verbose
     if bot.level > 1:
-        print('\rProgress |%s| %s%%' % (bar, percent), end="\r")
+        sys.stdout.write('\rProgress |%s| %s%s' % (bar, percent, '%')),
         if iteration == total: 
-            print()
+            sys.stdout.write('\n')
+        sys.stdout.flush()
 
 
 
