@@ -76,12 +76,12 @@ class SingularityMessage:
         self.errorStream = sys.stderr
         self.outputStream = sys.stdout        
 
-        self.coffee = u"\u26FE"
-        self.star = u"\u2605"
-        self.whitestar = u"\u2606"
-        self.sun =  u"\u2600"
-        self.skull = u"\u2620"
-        self.radioactive = u"\u2622"
+        self.coffee = '\u26FE'
+        self.star = '\u2605'
+        self.whitestar = '\u2606'
+        self.sun =  '\u2600'
+        self.skull = '\u2620'
+        self.radioactive = '\u2622'
 
     def emitError(self,level):
         '''determine if a level should print to
