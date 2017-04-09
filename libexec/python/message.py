@@ -77,7 +77,7 @@ class SingularityMessage:
         self.outputStream = sys.stdout
 
         # Encodings        
-        self.encoding = sys.stdout.encoding.lower()
+        self.get_encoding()
         self.utf8 = ['utf-8','utf8']
 
         self.coffee = '\u26FE'
@@ -86,6 +86,15 @@ class SingularityMessage:
         self.sun =  '\u2600'
         self.skull = '\u2620'
         self.radioactive = '\u2622'
+
+    def get_encoding(self):
+        '''get_encoding attempts to find the encoding of the
+        stdout. If None, assumes is not utf-8
+        '''
+        self.encoding = sys.stdout.encoding
+        if self.encoding is not None:
+            self.encoding = self.encoding.lower()
+
 
     def emitError(self,level):
         '''determine if a level should print to
