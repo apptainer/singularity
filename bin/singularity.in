@@ -25,15 +25,17 @@ exec_prefix="@exec_prefix@"
 libexecdir="@libexecdir@"
 sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
+bindir="@bindir@"
 
 SINGULARITY_version="@VERSION@"
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
+SINGULARITY_bindir="$bindir"
 
 SINGULARITY_MESSAGELEVEL=1
 
-export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir SINGULARITY_version SINGULARITY_MESSAGELEVEL 
+export SINGULARITY_bindir SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir SINGULARITY_version SINGULARITY_MESSAGELEVEL 
 
 # the Modules package always calls 
 unset module
