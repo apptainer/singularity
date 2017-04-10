@@ -93,7 +93,7 @@ class ApiConnection(object):
         if 'Content-Length' in response.headers and response.code not in [400,401]:
             progress = 0
             content_size = int(response.headers['Content-Length'])
-            bot.show_progress(progress,content_size,length=50,suffix=bot.coffee)
+            bot.show_progress(progress,content_size,length=40,suffix="downloading layer")
 
         chunk_size = 1 << 20
         with open(file_name, 'wb') as filey:
@@ -108,9 +108,9 @@ class ApiConnection(object):
                         progress+=chunk_size
                         bot.show_progress(iteration=progress,
                                           total=content_size,
-                                          length=50,
+                                          length=40,
                                           carriage_return=False,
-                                          suffix=bot.coffee)
+                                          suffix="downloading layer")
                 except Exception as error:
                     bot.error("Error writing to %s: %s exiting" %(file_name,error))
                     sys.exit(1)
@@ -210,12 +210,12 @@ class ApiConnection(object):
             response = self.stream(url,file_name=tmp_file,headers=headers)
             os.rename(tmp_file, file_name)
         except:
-             download_folder = os.path.dirname(os.path.abspath(file_name))
-             bot.error("Error downloading %s. Do you have permission to write to %s?" %(url, download_folder))
-             try:
-                 os.remove(tmp_file)
-             except:
-                 pass
-             sys.exit(1)
+            download_folder = os.path.dirname(os.path.abspath(file_name))
+            bot.error("Error downloading %s. Do you have permission to write to %s?" %(url, download_folder))
+            try:
+                os.remove(tmp_file)
+            except:
+                pass
+            sys.exit(1)
 
         return file_name

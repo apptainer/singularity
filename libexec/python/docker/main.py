@@ -32,7 +32,7 @@ from sutils import (
 from .api import (
     DockerApiConnection,
     extract_runscript,
-    extract_metadata_tar,
+    extract_metadata_tar
 )
 
 from message import bot
