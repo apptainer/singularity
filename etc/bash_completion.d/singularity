@@ -139,9 +139,7 @@ _singularity() {
 
         import|export)
             if [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--help --file --command" -- ${cur}) )
-            elif [[ ${prev} == --command ]]; then
-                return 0
+                COMPREPLY=( $(compgen -W "--help" -- ${cur}) )
             elif [ $container_idx -lt $COMP_CWORD ]; then
                 return 0
             else

@@ -50,7 +50,7 @@ SUID_FILES="
     $SINGULARITY_libexecdir/singularity/bin/mount-suid
 "
 
-stest 0 sh -c "test -f $SINGULARITY_sysconfdir/singularity/bin/singularity.conf"
+stest 0 sh -c "test -f $SINGULARITY_sysconfdir/singularity/singularity.conf"
 
 for i in $SUID_FILES; do
     stest 0 test -u "$i"
