@@ -18,8 +18,6 @@
  * 
  */
 
-
-#include <stdio.h>
 #include <stdlib.h>
 #include <linux/loop.h>
 #include <unistd.h>
@@ -51,7 +49,7 @@ int _singularity_image_bind(struct image_object *image) {
     struct loop_info64 lo64 = {0};
     long int max_loop_devs;
     const char *max_loop_devs_string = singularity_config_get_value(MAX_LOOP_DEVS);
-    FILE *loop_fp = NULL;
+    int loop_fd = -1;
     int i;
 
     singularity_message(DEBUG, "Entered singularity_image_bind()\n");
@@ -103,21 +101,21 @@ int _singularity_image_bind(struct image_object *image) {
             }
         }
 
-        if ( ( loop_fp = fopen(test_loopdev, "r+") ) == NULL ) { // Flawfinder: ignore
+        if ( ( loop_fd = open(test_loopdev, O_RDWR) ) < 0 ) { // Flawfinder: ignore
             singularity_message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
             continue;
         }
 
-        if ( ioctl(fileno(loop_fp), LOOP_SET_FD, image->fd)== 0 ) {
+        if ( ioctl(loop_fd, LOOP_SET_FD, image->fd)== 0 ) {
             image->loopdev = strdup(test_loopdev);
             break;
         } else {
             if ( errno == 16 ) {
-                fclose(loop_fp);
+                close(loop_fd);
                 continue;
             } else {
                 singularity_message(WARNING, "Could not associate image to loop %s: %s\n", test_loopdev, strerror(errno));
-                fclose(loop_fp);
+                close(loop_fd);
                 continue;
             }
         }
@@ -132,17 +130,15 @@ int _singularity_image_bind(struct image_object *image) {
     singularity_message(VERBOSE, "Found available loop device: %s\n", image->loopdev);
 
     singularity_message(DEBUG, "Setting loop device flags\n");
-    if ( ioctl(fileno(loop_fp), LOOP_SET_STATUS64, &lo64) < 0 ) {
+    if ( ioctl(loop_fd, LOOP_SET_STATUS64, &lo64) < 0 ) {
         singularity_message(ERROR, "Failed to set loop flags on loop device: %s\n", strerror(errno));
-        (void)ioctl(fileno(loop_fp), LOOP_CLR_FD, 0);
+        (void)ioctl(loop_fd, LOOP_CLR_FD, 0);
         ABORT(255);
     }
 
     singularity_priv_drop();
 
     singularity_message(VERBOSE, "Using loop device: %s\n", image->loopdev);
-
-//    fclose(loop_fp);
 
     return(0);
 }
