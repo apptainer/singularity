@@ -119,7 +119,7 @@ int _singularity_image_bind(struct image_object *image) {
             image->loopdev = strdup(test_loopdev);
             break;
         } else {
-            if ( errno == 16 ) {
+            if ( errno == EBUSY ) {
                 close(loop_fd);
                 continue;
             } else {
