@@ -325,7 +325,7 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None)
 
     ii=0
     count = len(members)
-    bot.show_progress(ii,count,length=40,suffix="changing permissions")
+    bot.show_progress(ii,count,length=40,suffix="preparing layer")
 
     for member in members:  
 
@@ -344,7 +344,7 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None)
             fixed_tar.addfile(member)
 
         ii += 1
-        bot.show_progress(ii,count,length=40,suffix="changing permissions")
+        bot.show_progress(ii,count,length=40,suffix="preparing layer")
 
 
     fixed_tar.close()
