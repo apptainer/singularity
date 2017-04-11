@@ -184,11 +184,15 @@ class SingularityMessage:
 
         if symbol is None:
             symbol = '='
-        bar = symbol * progress + '>' + '-' * (length - progress - 1)
+
+        if progress < length:
+            bar = symbol * progress + '>' + '-' * (length - progress - 1)
+        else:
+            bar = symbol * progress + '-' * (length - progress)
 
         # Only show progress bar for level > min_level
         if self.level > min_level:
-            percent = ("{0:.1f}").format(percent)
+            percent = "%5s" %("{0:.1f}").format(percent)
             sys.stdout.write('\rProgress |%s| %s%s %s  ' % (bar, percent, '%', suffix)),
             if iteration == total and carriage_return: 
                 sys.stdout.write('\n')
