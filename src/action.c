@@ -48,7 +48,7 @@
 int main(int argc, char **argv) {
     struct image_object image;
     char *command;
-    char *dir = get_current_dir_name();
+    char *dir;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -58,6 +58,10 @@ int main(int argc, char **argv) {
     singularity_registry_init();
     singularity_priv_userns();
     singularity_priv_drop();
+
+    if ( ( dir = singularity_registry_get("TARGET_PWD") ) == NULL ) {
+        dir = get_current_dir_name();
+    }
 
     singularity_sessiondir();
 
@@ -95,6 +99,8 @@ int main(int argc, char **argv) {
             }
         }
     }
+
+    free(dir);
 
     envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
