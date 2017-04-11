@@ -64,7 +64,7 @@ int _singularity_image_open(struct image_object *image, int open_flags) {
     }
 
     if ( fcntl(image->fd, F_SETFD, FD_CLOEXEC) != 0 ) {
-        singularity_message(ERROR, "Could not set file descritor flag to close on exit: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not set file descriptor flag to close on exit: %s\n", strerror(errno));
         ABORT(255);
     }
 
@@ -88,7 +88,7 @@ int _singularity_image_open(struct image_object *image, int open_flags) {
 
             fd_path = (char *) malloc(PATH_MAX+21);
             
-            singularity_message(DEBUG, "Obtaining full path to image file descritor (%d)\n", image->fd);
+            singularity_message(DEBUG, "Obtaining full path to image file descriptor (%d)\n", image->fd);
             
             if ( snprintf(fd_path, PATH_MAX+20, "/proc/self/fd/%d", image->fd) > 0 ) {
                 singularity_message(DEBUG, "Checking image path from file descriptor source: %s\n", fd_path);

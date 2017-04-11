@@ -150,7 +150,7 @@ int _singularity_image_bind(struct image_object *image) {
     singularity_message(VERBOSE, "Using loop device: %s\n", image->loopdev);
 
     if ( fcntl(loop_fd, F_SETFD, FD_CLOEXEC) != 0 ) {
-        singularity_message(ERROR, "Could not set file descritor flag to close on exit: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not set file descriptor flag to close on exit: %s\n", strerror(errno));
         ABORT(255);
     }
 
