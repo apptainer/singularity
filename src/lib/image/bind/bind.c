@@ -51,6 +51,7 @@ int _singularity_image_bind(struct image_object *image) {
     const char *max_loop_devs_string = singularity_config_get_value(MAX_LOOP_DEVS);
     int loop_fd = -1;
     int i;
+    int mount_flags;
 
     singularity_message(DEBUG, "Entered singularity_image_bind()\n");
 
@@ -79,6 +80,14 @@ int _singularity_image_bind(struct image_object *image) {
         return(0);
     }
 
+    if ( singularity_registry_get("WRITABLE") == NULL ) {
+        singularity_message(DEBUG, "Setting mount to: O_RDONLY\n");
+        mount_flags = O_RDONLY;
+    } else {
+        singularity_message(DEBUG, "Setting mount to: O_RDWR\n");
+        mount_flags = O_RDWR;
+    }
+
 
     singularity_message(DEBUG, "Setting LO_FLAGS_AUTOCLEAR\n");
     lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
@@ -101,7 +110,7 @@ int _singularity_image_bind(struct image_object *image) {
             }
         }
 
-        if ( ( loop_fd = open(test_loopdev, O_RDWR) ) < 0 ) { // Flawfinder: ignore
+        if ( ( loop_fd = open(test_loopdev, mount_flags) ) < 0 ) { // Flawfinder: ignore
             singularity_message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
             continue;
         }
@@ -139,6 +148,11 @@ int _singularity_image_bind(struct image_object *image) {
     singularity_priv_drop();
 
     singularity_message(VERBOSE, "Using loop device: %s\n", image->loopdev);
+
+    if ( fcntl(loop_fd, F_SETFD, FD_CLOEXEC) != 0 ) {
+        singularity_message(ERROR, "Could not set file descritor flag to close on exit: %s\n", strerror(errno));
+        ABORT(255);
+    }
 
     return(0);
 }
