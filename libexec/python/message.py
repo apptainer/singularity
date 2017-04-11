@@ -163,7 +163,8 @@ class SingularityMessage:
         
 
 
-    def show_progress(self,iteration,total,length=100,min_level=0,carriage_return=True,suffix=None):
+    def show_progress(self,iteration,total,length=100,min_level=0,
+                      carriage_return=True,suffix=None,symbol=None):
         '''create a terminal progress bar, default bar shows for verbose+
         :param iteration: current iteration (Int)
         :param total: total iterations (Int)
@@ -181,7 +182,9 @@ class SingularityMessage:
             percent = 100
             progress = length
 
-        bar = '█' * progress + '-' * (length - progress)
+        if symbol is None:
+            symbol = '='
+        bar = symbol * progress + '>' + '-' * (length - progress - 1)
 
         # Only show progress bar for level > min_level
         if self.level > min_level:
