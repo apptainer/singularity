@@ -294,7 +294,8 @@ def has_permission(file_path,permission=None):
     return False
 
 
-def change_tar_permissions(tar_file,file_permission=None,folder_permission=None):
+def change_tar_permissions(tar_file,file_permission=None,folder_permission=None,
+                           prefix=None,suffix=None):
     '''change_tar_permissions changes a permission if 
     any member in a tarfile file does not have it
     :param file_path the path to the file
@@ -316,8 +317,6 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None)
     if folder_permission == None:
         folder_permission = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  
 
-
-
     # Add owner write permission to all, not symlinks
     bot.verbose("Fixing permission for %s" %(tar_file))
     
@@ -325,7 +324,7 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None)
 
     ii=0
     count = len(members)
-    bot.show_progress(ii,count,length=40,suffix="preparing layer")
+    bot.show_progress(ii,count,length=40,prefix=prefix,suffix=suffix)
 
     for member in members:  
 
@@ -344,7 +343,7 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None)
             fixed_tar.addfile(member)
 
         ii += 1
-        bot.show_progress(ii,count,length=40,suffix="preparing layer")
+        bot.show_progress(ii,count,length=40,prefix=prefix,suffix=suffix)
 
 
     fixed_tar.close()
