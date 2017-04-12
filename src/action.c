@@ -48,7 +48,8 @@
 int main(int argc, char **argv) {
     struct image_object image;
     char *command;
-    char *dir = get_current_dir_name();
+    char *pwd = get_current_dir_name();
+    char *dir;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -58,6 +59,7 @@ int main(int argc, char **argv) {
     singularity_registry_init();
     singularity_priv_userns();
     singularity_priv_drop();
+
 
     singularity_sessiondir();
 
@@ -85,7 +87,14 @@ int main(int argc, char **argv) {
 
     singularity_priv_drop_perm();
 
-    if ( chdir(dir) != 0 ) {
+    if ( ( dir = singularity_registry_get("TARGET_PWD") ) != NULL ) {
+        singularity_message(VERBOSE, "Launching container from the current directory: %s\n", dir);
+        if ( chdir(dir) != 0 ) {
+            singularity_message(ERROR, "Could not change directory into %s: %s\n", dir, strerror(errno));
+            ABORT(255);
+        }
+        free(dir);
+    } else if ( chdir(pwd) != 0 ) {
         singularity_message(VERBOSE, "Current directory is not available within container, landing in home\n");
         if ( chdir(singularity_priv_home()) != 0 ) {
             singularity_message(WARNING, "Could not change directory to current dir or home, landing in /\n");
@@ -95,6 +104,8 @@ int main(int argc, char **argv) {
             }
         }
     }
+
+    free(pwd);
 
     envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);

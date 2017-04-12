@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 
     singularity_message(DEBUG, "Opening cleandir_lock file descriptor\n");
     if ( ( cleandir_lock_fd = open(cleandir_lock, O_CREAT | O_RDWR, 0755) ) < 0 ) {
-        singularity_message(ERROR, "Could not obtain file descritor for cleanup lock process %s: %s\n", cleandir_lock, strerror(errno));
+        singularity_message(ERROR, "Could not obtain file descriptor for cleanup lock process %s: %s\n", cleandir_lock, strerror(errno));
         ABORT(255);
     }
 

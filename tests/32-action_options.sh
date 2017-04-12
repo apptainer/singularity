@@ -23,7 +23,7 @@
 
 . ./functions
 
-test_init "Checking working directory"
+test_init "Testing action options"
 
 
 
@@ -32,16 +32,23 @@ CONTAINER="$SINGULARITY_TESTDIR/container.img"
 # Creating a new container
 stest 0 singularity create -s 568 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
 
-stest 0 mkdir -p /tmp/foo
-stest 0 touch /tmp/foo/testfile
+# Checking if Singularity properly handles custom shells
+stest 0 singularity shell -s /bin/true "$CONTAINER"
+stest 1 singularity shell -s /bin/false "$CONTAINER"
 
-stest 0 singularity exec "$CONTAINER" test -d /tmp/foo
-stest 0 singularity exec --workdir /tmp/foo "$CONTAINER" test -d /tmp/foo
-stest 1 singularity exec --workdir /tmp/foo --contain "$CONTAINER" test -d /tmp/foo
-stest 1 singularity exec --workdir /tmp/foo --contain "$CONTAINER" test -f /tmp/foo/testfile
+# Testing --workdir
+stest 0 touch "$SINGULARITY_TESTDIR/testfile"
+stest 0 singularity exec --workdir "$SINGULARITY_TESTDIR" "$CONTAINER" test -f "$SINGULARITY_TESTDIR/testfile"
+stest 1 singularity exec --workdir "$SINGULARITY_TESTDIR" --contain "$CONTAINER" test -f "$SINGULARITY_TESTDIR/testfile"
 
-stest 0 rm -rf /tmp/foo
+# Testing --pwd
+stest 0 singularity exec --pwd /etc "$CONTAINER" true
+stest 1 singularity exec --pwd /non-existant-dir "$CONTAINER" true
+stest 0 sh -c "singularity exec --pwd /etc '$CONTAINER' pwd | egrep '^/etc'"
+
+
 
 test_cleanup
-

@@ -12,7 +12,7 @@ MirrorURL: http://archive.ubuntu.com/ubuntu/
 Include: bash
 
 %post
-    apt-get -y install wget
+    apt-get -y install wget apt-transport-https
     sed -i 's/main/main restricted universe/g' /etc/apt/sources.list
     echo 'deb http://download.openfoam.org/ubuntu trusty main' >> /etc/apt/sources.list
     wget -O - http://dl.openfoam.org/gpg.key | apt-key add -
