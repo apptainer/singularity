@@ -179,8 +179,6 @@ class SingularityMessage:
         if prefix is None:
             prefix = "Progress"
 
-        prefix = "%10s" %prefix
-
         # Download sizes can be imperfect, setting carriage_return to False
         # and writing newline with caller cleans up the UI
         if percent >= 100:
@@ -198,7 +196,7 @@ class SingularityMessage:
         # Only show progress bar for level > min_level
         if self.level > min_level:
             percent = "%5s" %("{0:.1f}").format(percent)
-            sys.stdout.write('\rProgress |%s| %s%s %s  ' % (bar, percent, '%', suffix)),
+            sys.stdout.write('\r%s |%s| %s%s %s  ' % (prefix, bar, percent, '%', suffix)),
             if iteration == total and carriage_return: 
                 sys.stdout.write('\n')
             sys.stdout.flush()
