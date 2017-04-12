@@ -343,7 +343,7 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None,
             fixed_tar.addfile(member)
 
         ii += 1
-        bot.show_progress(ii,count,length=40,suffix="preparing layer")
+        bot.show_progress(ii,count,length=40,prefix=prefix,suffix=suffix)
 
 
     fixed_tar.close()

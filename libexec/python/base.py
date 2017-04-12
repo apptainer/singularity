@@ -118,7 +118,8 @@ class ApiConnection(object):
                                           total=content_size,
                                           length=40,
                                           carriage_return=False,
-                                          suffix=suffix)
+                                          suffix=suffix,
+                                          prefix=prefix)
                 except Exception as error:
                     bot.error("Error writing to %s: %s exiting" %(file_name,error))
                     sys.exit(1)
