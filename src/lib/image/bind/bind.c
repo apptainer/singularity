@@ -81,10 +81,10 @@ int _singularity_image_bind(struct image_object *image) {
     }
 
     if ( singularity_registry_get("WRITABLE") == NULL ) {
-        singularity_message(DEBUG, "Setting mount to: O_RDONLY\n");
+        singularity_message(DEBUG, "Setting loopdev open to: O_RDONLY\n");
         mount_flags = O_RDONLY;
     } else {
-        singularity_message(DEBUG, "Setting mount to: O_RDWR\n");
+        singularity_message(DEBUG, "Setting loopdev open to: O_RDWR\n");
         mount_flags = O_RDWR;
     }
 
