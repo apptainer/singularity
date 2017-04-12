@@ -73,9 +73,6 @@ stest 1 sh -c "echo false | singularity exec '$CONTAINER' /bin/sh"
 stest 0 sh -c "singularity exec $CONTAINER id -u | grep `id -u`"
 stest 0 sh -c "sudo singularity exec $CONTAINER id -u | grep 0"
 
-# Checking if Singularity properly handles custom shells
-stest 0 singularity shell -s /bin/true "$CONTAINER"
-stest 1 singularity shell -s /bin/false "$CONTAINER"
 
 test_cleanup
 
