@@ -240,7 +240,7 @@ class DockerApiConnection(ApiConnection):
         return response
 
 
-    def get_layer(self,image_id,download_folder=None):
+    def get_layer(self,image_id,download_folder=None,prefix=None):
         '''get_layer will download an image layer (.tar.gz) to a specified download folder.
         :param download_folder: if specified, download to folder. Otherwise return response with raw data (not recommended)
         '''
@@ -266,12 +266,14 @@ class DockerApiConnection(ApiConnection):
         suffix = "layer %s" %image_id.strip('sha:256')[0:8] # layer f8b845f4
         tar_download = self.download_atomically(url=base,
                                                 file_name=file_name,
+                                                prefix=prefix,
                                                 suffix=suffix)
         bot.debug('Download of raw file (pre permissions fix) is %s' %tar_download)
 
         # Fix permissions step 2
         try:
-            finished_tar = change_tar_permissions(tar_download)
+            prefix = prefix.replace('Download',' Prepare')
+            finished_tar = change_tar_permissions(tar_download,suffix=suffix,prefix=prefix)
             os.rename(finished_tar,download_folder)
         except:
             bot.error("Cannot untar layer %s, was there a problem with download?" %tar_download)
