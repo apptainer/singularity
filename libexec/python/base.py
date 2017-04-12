@@ -66,8 +66,7 @@ class ApiConnection(object):
 
 
 
-    def stream(self,url,file_name,data=None,headers=None,default_headers=True,
-               prefix=None,suffix=None):
+    def stream(self,url,file_name,data=None,headers=None,default_headers=True,suffix=None):
         '''stream is a get that will stream to file_name
         :param data: a dictionary of key:value items to add to the data args variable
         :param url: the url to get
@@ -77,9 +76,6 @@ class ApiConnection(object):
 
         if suffix is None:
             suffix = "downloading layer"
-
-        if prefix is None:
-            prefix = "Download"
 
         # If we use default headers, start with client's
         request_headers = dict()
@@ -100,8 +96,7 @@ class ApiConnection(object):
         if 'Content-Length' in response.headers and response.code not in [400,401]:
             progress = 0
             content_size = int(response.headers['Content-Length'])
-            bot.show_progress(progress,content_size,length=40,
-                              prefix=prefix,suffix=suffix)
+            bot.show_progress(progress,content_size,length=40,suffix=suffix)
 
         chunk_size = 1 << 20
         with open(file_name, 'wb') as filey:
@@ -118,8 +113,7 @@ class ApiConnection(object):
                                           total=content_size,
                                           length=40,
                                           carriage_return=False,
-                                          suffix=suffix,
-                                          prefix=prefix)
+                                          suffix=suffix)
                 except Exception as error:
                     bot.error("Error writing to %s: %s exiting" %(file_name,error))
                     sys.exit(1)
@@ -206,7 +200,7 @@ class ApiConnection(object):
         return request
 
 
-    def download_atomically(self,url,file_name,headers=None,prefix=None,suffix=None):
+    def download_atomically(self,url,file_name,headers=None,suffix=None):
         '''download stream atomically will stream to a temporary file, and
         rename only upon successful completion. This is to ensure that
         errored downloads are not found as complete in the cache
@@ -216,8 +210,7 @@ class ApiConnection(object):
         '''
         try:
             tmp_file = "%s.%s" %(file_name,next(tempfile._get_candidate_names()))
-            response = self.stream(url,file_name=tmp_file,headers=headers,
-                                   prefix=prefix,suffix=suffix)
+            response = self.stream(url,file_name=tmp_file,headers=headers,suffix=suffix)
             os.rename(tmp_file, file_name)
         except:
             download_folder = os.path.dirname(os.path.abspath(file_name))
