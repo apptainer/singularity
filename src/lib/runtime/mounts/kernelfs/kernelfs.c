@@ -46,7 +46,7 @@ int _singularity_runtime_mount_kernelfs(void) {
     singularity_message(DEBUG, "Checking configuration file for 'mount proc'\n");
     if ( singularity_config_get_bool(MOUNT_PROC) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/proc")) == 0 ) {
-            if ( ( singularity_registry_get("PIDNS_ENABLED") != NULL ) || ( singularity_priv_userns_enabled() == 1 ) ) {
+            if ( ( singularity_registry_get("PIDNS_ENABLED") == NULL ) || ( singularity_priv_userns_enabled() == 1 ) ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting /proc\n");
                 if ( mount("/proc", joinpath(container_dir, "/proc"), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0 ) {
