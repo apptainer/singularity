@@ -259,12 +259,14 @@ class DockerApiConnection(ApiConnection):
         download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
 
         # Update user what we are doing
-        bot.info("Downloading layer %s" %image_id)
+        bot.debug("Downloading layer %s" %image_id)
 
         # Download the layer atomically, step 1
         file_name = "%s.%s" %(download_folder,next(tempfile._get_candidate_names()))
+        suffix = "layer %s" %image_id.strip('sha:256')[0:8] # layer f8b845f4
         tar_download = self.download_atomically(url=base,
-                                                file_name=file_name)
+                                                file_name=file_name,
+                                                suffix=suffix)
         bot.debug('Download of raw file (pre permissions fix) is %s' %tar_download)
 
         # Fix permissions step 2

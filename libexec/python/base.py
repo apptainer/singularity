@@ -96,7 +96,8 @@ class ApiConnection(object):
         if 'Content-Length' in response.headers and response.code not in [400,401]:
             progress = 0
             content_size = int(response.headers['Content-Length'])
-            bot.show_progress(progress,content_size,length=40,suffix=suffix)
+            bot.show_progress(progress,content_size,length=40,
+                              prefix="Download",suffix=suffix)
 
         chunk_size = 1 << 20
         with open(file_name, 'wb') as filey:
