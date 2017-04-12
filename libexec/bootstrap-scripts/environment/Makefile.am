@@ -1,6 +1,8 @@
 environmentdir = $(libexecdir)/singularity/bootstrap-scripts/
 
-dist_environment_SCRIPTS = environment.tar
+CLEANFILES = environment.tar
+
+dist_environment_DATA = environment.tar
 
 .PHONY: environment.tar
 
