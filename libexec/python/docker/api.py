@@ -240,7 +240,7 @@ class DockerApiConnection(ApiConnection):
         return response
 
 
-    def get_layer(self,image_id,download_folder=None,prefix=None):
+    def get_layer(self,image_id,download_folder=None):
         '''get_layer will download an image layer (.tar.gz) to a specified download folder.
         :param download_folder: if specified, download to folder. Otherwise return response with raw data (not recommended)
         '''
@@ -259,22 +259,17 @@ class DockerApiConnection(ApiConnection):
         download_folder = "%s/%s.tar.gz" %(download_folder,image_id)
 
         # Update user what we are doing
-        bot.debug("Downloading layer %s" %image_id)
+        bot.info("Downloading layer %s" %image_id)
 
         # Download the layer atomically, step 1
         file_name = "%s.%s" %(download_folder,next(tempfile._get_candidate_names()))
-        suffix = "layer %s" %image_id.strip('sha:256')[0:8] # layer f8b845f4
         tar_download = self.download_atomically(url=base,
-                                                file_name=file_name,
-                                                prefix=prefix,
-                                                suffix=suffix)
+                                                file_name=file_name)
         bot.debug('Download of raw file (pre permissions fix) is %s' %tar_download)
 
         # Fix permissions step 2
         try:
-            if prefix is not None:
-                prefix = prefix.replace('Download','Prepare ')
-            finished_tar = change_tar_permissions(tar_download,suffix=suffix,prefix=prefix)
+            finished_tar = change_tar_permissions(tar_download)
             os.rename(finished_tar,download_folder)
         except:
             bot.error("Cannot untar layer %s, was there a problem with download?" %tar_download)
