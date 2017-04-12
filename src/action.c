@@ -47,8 +47,8 @@
 
 int main(int argc, char **argv) {
     struct image_object image;
-    char *command;
     char *pwd = get_current_dir_name();
+    char *command;
     char *dir;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
@@ -110,6 +110,7 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
     envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
+
     command = singularity_registry_get("COMMAND");
 
     singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
