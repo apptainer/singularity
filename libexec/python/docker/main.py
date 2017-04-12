@@ -98,7 +98,7 @@ def IMPORT(image,auth=None,layerfile=None):
 
         image_id = images[ii]
         targz = "%s/%s.tar.gz" %(cache_base,image_id)
-        prefix = "[%s/%s]" %(ii+1,len(images)) + " Download"  
+        prefix = "[" + str(ii+i) + "/" + str(len(images)) + "] Download"  
         if not os.path.exists(targz):
             targz = client.get_layer(image_id=image_id,
                                      download_folder=cache_base,
