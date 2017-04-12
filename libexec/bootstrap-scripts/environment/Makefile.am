@@ -2,36 +2,34 @@ environmentdir = $(libexecdir)/singularity/bootstrap-scripts/
 
 dist_environment_SCRIPTS = environment.tar
 
-# This isn't to be run via the build because it requires sudoi such that the
-# permissions inside the tarball are correct. The resulting environment.tar
-# output should be commited and updated as necessary and included within the
-# Singularity source tree.
-tar:
-	sudo install -d -m 0755 newroot/.singularity.d
-	sudo install -d -m 0755 newroot/.singularity.d/env
-	sudo install -d -m 0755 newroot/.singularity.d/actions
-	sudo install -d -m 0755 newroot/dev
-	sudo install -d -m 0755 newroot/etc
-	sudo install -d -m 0755 newroot/home
-	sudo install -d -m 0755 newroot/proc
-	sudo install -d -m 0755 newroot/root
-	sudo install -d -m 0755 newroot/sys
-	sudo install -d -m 0755 newroot/tmp
-	sudo install -d -m 0755 newroot/var
-	sudo install -d -m 0755 newroot/var/tmp
-	sudo install -m 0755 /dev/null newroot/etc/hosts
-	sudo install -m 0755 /dev/null newroot/etc/resolv.conf
-	sudo install -m 0755 /dev/null newroot/etc/passwd
-	sudo install -m 0755 /dev/null newroot/etc/group
-	sudo install -m 0755 runscript newroot/.singularity.d/
-	sudo install -m 0755 run shell exec newroot/.singularity.d/actions/
-	sudo install -m 0755 01-base.sh newroot/.singularity.d/env/
-	sudo ln -sf .singularity.d/runscript newroot/singularity
-	sudo ln -sf .singularity.d/env/01-base.sh newroot/environment
-	sudo ln -sf .singularity.d/actions/run newroot/.run
-	sudo ln -sf .singularity.d/actions/shell newroot/.shell
-	sudo ln -sf .singularity.d/actions/exec newroot/.exec
-	cd newroot; tar czf ../environment.tar .
-	sudo rm -rf newroot
+.PHONY: environment.tar
+
+environment.tar:
+	install -d -m 0755 newroot/.singularity.d
+	install -d -m 0755 newroot/.singularity.d/env
+	install -d -m 0755 newroot/.singularity.d/actions
+	install -d -m 0755 newroot/dev
+	install -d -m 0755 newroot/etc
+	install -d -m 0755 newroot/home
+	install -d -m 0755 newroot/proc
+	install -d -m 0755 newroot/root
+	install -d -m 0755 newroot/sys
+	install -d -m 0755 newroot/tmp
+	install -d -m 0755 newroot/var
+	install -d -m 0755 newroot/var/tmp
+	install -m 0755 /dev/null newroot/etc/hosts
+	install -m 0755 /dev/null newroot/etc/resolv.conf
+	install -m 0755 /dev/null newroot/etc/passwd
+	install -m 0755 /dev/null newroot/etc/group
+	install -m 0755 runscript newroot/.singularity.d/
+	install -m 0755 run shell exec newroot/.singularity.d/actions/
+	install -m 0755 01-base.sh newroot/.singularity.d/env/
+	ln -sf .singularity.d/runscript newroot/singularity
+	ln -sf .singularity.d/env/01-base.sh newroot/environment
+	ln -sf .singularity.d/actions/run newroot/.run
+	ln -sf .singularity.d/actions/shell newroot/.shell
+	ln -sf .singularity.d/actions/exec newroot/.exec
+	cd newroot; tar czf ../environment.tar . --owner=0 --group=0
+	rm -rf newroot
 
 MAINTAINERCLEANFILES = Makefile.in
