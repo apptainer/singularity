@@ -198,8 +198,7 @@ class SingularityMessage:
         # Only show progress bar for level > min_level
         if self.level > min_level:
             percent = "%5s" %("{0:.1f}").format(percent)
-            output = '\r%s |%s| %s%s %s  ' % (prefix, bar, percent, '%', suffix)
-            sys.stdout.write(output),
+            sys.stdout.write('\rProgress |%s| %s%s %s  ' % (bar, percent, '%', suffix)),
             if iteration == total and carriage_return: 
                 sys.stdout.write('\n')
             sys.stdout.flush()
