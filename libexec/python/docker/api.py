@@ -272,7 +272,7 @@ class DockerApiConnection(ApiConnection):
 
         # Fix permissions step 2
         try:
-            prefix = prefix.replace('Download','Prepare')
+            prefix = prefix.replace('Download','Prepare ')
             finished_tar = change_tar_permissions(tar_download,suffix=suffix,prefix=prefix)
             os.rename(finished_tar,download_folder)
         except:
