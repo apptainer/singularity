@@ -335,14 +335,8 @@ int envclean(void) {
 
         key = strtok_r(envclone[i], "=", &tok);
 
-        if ( strcmp(key, "LANG") == 0 ) {
-            // Skipping
-        } else if ( strcmp(key, "TERM") == 0 ) {
-            // Skipping
-        } else {
-            singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
-            unsetenv(key);
-        }
+        singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
+        unsetenv(key);
     }
 
     return(retval);
