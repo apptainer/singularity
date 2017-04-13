@@ -54,7 +54,6 @@ int _singularity_runtime_environment(void) {
 
     // Clean environment
     if ( singularity_registry_get("CLEANENV") != NULL ) {
-        char *lang = envar_get("LANG", "_-=+:,.%", 128);
         char *term = envar_get("TERM", "_-.", 128);
 
         singularity_message(DEBUG, "Sanitizing environment\n");
@@ -63,7 +62,7 @@ int _singularity_runtime_environment(void) {
             ABORT(255);
         }
 
-        envar_set("LANG", lang, 1);
+        envar_set("LANG", "C", 1);
         envar_set("TERM", term, 1);
     } else {
         singularity_message(DEBUG, "Cleaning environment\n");
