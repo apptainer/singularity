@@ -314,6 +314,20 @@ AS_IF([test "x$enable_suid" != "xno"], [
 AC_SUBST(BUILD_SUID)
 
 
+AC_MSG_CHECKING([for git version])
+if BRANCH=`git rev-parse --abbrev-ref HEAD 2>/dev/null`; then
+    if HASH=`git rev-parse --short HEAD 2>/dev/null`; then
+        GIT_VERSION="$BRANCH/$HASH"
+    else
+        GIT_VERSION="$BRANCH"
+    fi
+else
+    GIT_VERSION="n/a"
+fi
+AC_MSG_RESULT([$GIT_VERSION])
+AC_SUBST(GIT_VERSION)
+
+
 AC_CONFIG_FILES([
    Makefile
    singularity.spec
