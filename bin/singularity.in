@@ -27,7 +27,7 @@ sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 bindir="@bindir@"
 
-SINGULARITY_version="@VERSION@"
+SINGULARITY_version="@VERSION@ (@GIT_VERSION@)"
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
