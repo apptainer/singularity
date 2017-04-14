@@ -104,19 +104,17 @@ char *singularity_registry_get(char *key) {
     int i = 0;
     int len = strlength(key, MAX_KEY_LEN);
 
-    upperkey = (char *) malloc(len);
+    upperkey = (char *) malloc(len + 1);
 
     singularity_registry_init();
 
-    while ( i <= len ) {
+    for ( i = 0; i < len; ++i )
         upperkey[i] = toupper(key[i]);
-        i++;
-    }
+    upperkey[len] = '\0';
 
     if ( hsearch_r(keypair(upperkey, NULL), FIND, &found, &htab) == 0 ) {
         singularity_message(DEBUG, "Returning NULL on '%s'\n", upperkey);
         return(NULL);
-        singularity_message(DEBUG, "Returning NULL on '%s'\n", upperkey);
     }
     
     singularity_message(DEBUG, "Returning value from registry: '%s' = '%s'\n", upperkey, (char *)found->data);
@@ -131,14 +129,13 @@ int singularity_registry_set(char *key, char *value) {
     int i = 0;
     int len = strlength(key, MAX_KEY_LEN);
 
-    upperkey = (char *) malloc(len);
+    upperkey = (char *) malloc(len + 1);
 
     singularity_registry_init();
 
-    while ( i <= len ) {
+    for ( i = 0; i < len; ++i )
         upperkey[i] = toupper(key[i]);
-        i++;
-    }
+    upperkey[len] = '\0';
 
     singularity_message(VERBOSE2, "Adding value to registry: '%s' = '%s'\n", upperkey, value);
 
