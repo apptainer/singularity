@@ -322,7 +322,7 @@ if BRANCH=`git rev-parse --abbrev-ref HEAD 2>/dev/null`; then
         GIT_VERSION="$BRANCH"
     fi
 else
-    GIT_VERSION="n/a"
+    GIT_VERSION="dist"
 fi
 AC_MSG_RESULT([$GIT_VERSION])
 AC_SUBST(GIT_VERSION)
