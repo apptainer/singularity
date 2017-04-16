@@ -27,7 +27,7 @@ fi
 
 ## Load functions
 if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
-    . "$SINGULARITY_libexecdir/singularity/functions"
+    . $SINGULARITY_libexecdir/singularity/functions
 else
     echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
@@ -50,16 +50,19 @@ EOF
 
 
 # Populate the labels.
-SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+# NOTE: We have to be careful to quote stuff that we know isn't quoted.
+SINGULARITY_LABELFILE=$(printf "%q" "$SINGULARITY_ROOTFS/.singularity.d/labels.json")
+SINGULARITY_ADD_SCRIPT=$(printf "%q" "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py")
 
-eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "SINGULARITY_DEFFILE" --value "$SINGULARITY_BUILDDEF" --file $SINGULARITY_LABELFILE
 
-eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "SINGULARITY_BOOTSTRAP_VERSION" --value "$SINGULARITY_version" --file $SINGULARITY_LABELFILE
+eval $SINGULARITY_ADD_SCRIPT -f --key SINGULARITY_DEFFILE --value $(printf "%q" "$SINGULARITY_BUILDDEF") --file $SINGULARITY_LABELFILE
+
+eval $SINGULARITY_ADD_SCRIPT -f --key SINGULARITY_BOOTSTRAP_VERSION --value $(printf "%q" "$SINGULARITY_version") --file $SINGULARITY_LABELFILE
 
 env | egrep "^SINGULARITY_DEFFILE_" | while read i; do
     KEY=`echo $i | cut -f1 -d =`
     VAL=`echo $i | cut -f2- -d =`
-    eval "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py" -f --key "$KEY" --value "$VAL" --file $SINGULARITY_LABELFILE
+    eval $SINGULARITY_ADD_SCRIPT -f --key $(printf "%q" "$KEY") --value $(printf "%q" "$VAL") --file $SINGULARITY_LABELFILE
 
 done
 
