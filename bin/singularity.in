@@ -27,7 +27,7 @@ sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 bindir="@bindir@"
 
-SINGULARITY_version="@VERSION@ (@GIT_VERSION@)"
+SINGULARITY_version="@VERSION@@GIT_VERSION@"
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
@@ -117,6 +117,8 @@ while true; do
         ;;
     esac
 done
+
+message 2 "Singularity version: $SINGULARITY_version\n"
 
 SINGULARITY_COMMAND="${1:-}"
 export SINGULARITY_COMMAND
