@@ -47,6 +47,8 @@ else
     exit 1
 fi
 
+message 5 "Starting argument loop\n"
+
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -73,38 +75,38 @@ while true; do
         ;;
         -d|--debug)
             SINGULARITY_MESSAGELEVEL=5
-            message 4 "enabling debugging\n"
+            message 4 "Enabling debugging\n"
             shift
         ;;
         -x|--shdebug)
             SHELL_DEBUG=1
             export SHELL_DEBUG
-            message 4 "enabling shell debugging\n"
+            message 4 "Enabling shell debugging\n"
             shift
         ;;
         -v|--verbose)
             SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 1`
-            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
+            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vv)
             SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 2`
-            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
+            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vvv)
             SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 3`
-            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
+            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vvvv)
             SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 4`
-            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
+            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vvvv)
             SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 4`
-            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
+            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -*)
@@ -112,7 +114,7 @@ while true; do
             exit 1
         ;;
         *)
-            message 4 "ending argument loop\n"
+            message 5 "Ending argument loop\n"
             break
         ;;
     esac
@@ -122,13 +124,14 @@ message 2 "Singularity version: $SINGULARITY_version\n"
 
 SINGULARITY_COMMAND="${1:-}"
 export SINGULARITY_COMMAND
+shift
+
 
 if [ -z "$SINGULARITY_COMMAND" ]; then
     cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
     exit 0
 fi
 
-shift
 
 if [ -x "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec" ]; then
     message 2 "Exec'ing: $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec $@\n"
