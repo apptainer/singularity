@@ -163,7 +163,7 @@ class SingularityMessage:
         
 
 
-    def show_progress(self,iteration,total,length=100,min_level=0,
+    def show_progress(self,iteration,total,length=40,min_level=0,prefix=None,
                       carriage_return=True,suffix=None,symbol=None):
         '''create a terminal progress bar, default bar shows for verbose+
         :param iteration: current iteration (Int)
@@ -175,6 +175,9 @@ class SingularityMessage:
 
         if suffix is None:
             suffix = ''
+
+        if prefix is None:
+            prefix = 'Progress'
 
         # Download sizes can be imperfect, setting carriage_return to False
         # and writing newline with caller cleans up the UI
@@ -193,7 +196,8 @@ class SingularityMessage:
         # Only show progress bar for level > min_level
         if self.level > min_level:
             percent = "%5s" %("{0:.1f}").format(percent)
-            sys.stdout.write('\rProgress |%s| %s%s %s  ' % (bar, percent, '%', suffix)),
+            output = '\r' + prefix +  " |%s| %s%s %s" % (bar, percent, '%', suffix)            
+            sys.stdout.write(output),
             if iteration == total and carriage_return: 
                 sys.stdout.write('\n')
             sys.stdout.flush()

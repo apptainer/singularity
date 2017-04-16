@@ -294,7 +294,8 @@ def has_permission(file_path,permission=None):
     return False
 
 
-def change_tar_permissions(tar_file,file_permission=None,folder_permission=None):
+def change_tar_permissions(tar_file,file_permission=None,folder_permission=None,
+                           suffix=None,prefix=None):
     '''change_tar_permissions changes a permission if 
     any member in a tarfile file does not have it
     :param file_path the path to the file
@@ -325,8 +326,8 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None)
 
     ii=0
     count = len(members)
-    bot.show_progress(ii,count,length=40,suffix="preparing layer")
-
+    bot.show_progress(ii,count,length=35,prefix=prefix,suffix=suffix)
+    
     for member in members:  
 
         # add o+rwx for directories
@@ -344,7 +345,7 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None)
             fixed_tar.addfile(member)
 
         ii += 1
-        bot.show_progress(ii,count,length=40,suffix="preparing layer")
+        bot.show_progress(ii,count,length=35,prefix=prefix,suffix=suffix)
 
 
     fixed_tar.close()

@@ -4,7 +4,7 @@
 
 api.py: Singularity Hub helper functions for python
 
-Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -55,6 +55,7 @@ try:
 except:
     from urllib.parse import unquote
 
+
 # Shub API Class  ----------------------------------------------------------------------------
 
 class SingularityApiConnection(ApiConnection):
@@ -74,34 +75,6 @@ class SingularityApiConnection(ApiConnection):
         if not is_number(image):
             self.image = remove_image_uri(image,quiet=True)
           
-
-    def _get_token(self,domain=None,token_folder=None):
-        '''_get_token is not currently in use, as API is open to all. When needed,
-        can subclass get_token function.
-        authenticate will authenticate the user with Singularity Hub. This means
-        either obtaining the token from the environment, and then trying to obtain
-        the token file and reading it, and then finally telling the user to get it.
-        :param domain: the domain to direct the user to for the token, default is api_base
-        :param token_folder: the location of the token file, default is $HOME (~/)
-        '''
-        # Attempt 1: Get token from environmental variable
-        token = os.environ.get("SINGULARITY_TOKEN",None)
-
-        if token == None:
-            # Is the user specifying a custom home folder?
-            if token_folder == None:
-                token_folder = os.environ["HOME"]
-
-            token_file = "%s/.shub" %(token_folder)
-            if os.path.exists(token_file):
-                token = read_file(token_file)[0].strip('\n')
-            else:
-                if domain == None:
-                    domain = SHUB_API_BASE
-                print('''Please obtain token from %s/token
-                         and save to .shub in your $HOME folder''' %(domain))
-                sys.exit(1)
-        return token
 
 
     def get_manifest(self,image=None,registry=None):
@@ -144,7 +117,9 @@ class SingularityApiConnection(ApiConnection):
         image_file = get_image_name(manifest)
 
         if not bot.is_quiet():
-            print("Found image %s:%s" %(manifest['name'],manifest['branch']))
+            print("Found image %s:%s" %(manifest['name'],
+                                        manifest['branch']))
+
             print("Downloading image... %s" %(image_file))
 
         if download_folder is not None:
@@ -171,7 +146,9 @@ def get_image_name(manifest,extension='img.gz'):
     :param manifest: the image manifest with 'image' as key with download link
     :param use_hash: use the image hash instead of name
     '''
-    from defaults import SHUB_CONTAINERNAME, SHUB_NAMEBYCOMMIT, SHUB_NAMEBYHASH
+    from defaults import ( SHUB_CONTAINERNAME, 
+                           SHUB_NAMEBYCOMMIT, 
+                           SHUB_NAMEBYHASH )
    
     # First preference goes to a custom name
     if SHUB_CONTAINERNAME is not None:
