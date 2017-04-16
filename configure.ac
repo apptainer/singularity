@@ -317,7 +317,7 @@ AC_SUBST(BUILD_SUID)
 AC_MSG_CHECKING([for git version])
 if BRANCH=`git rev-parse --abbrev-ref HEAD 2>/dev/null`; then
     if HASH=`git rev-parse --short HEAD 2>/dev/null`; then
-        GIT_VERSION="-$BRANCH/$HASH"
+        GIT_VERSION="-$BRANCH.g$HASH"
     else
         GIT_VERSION="-$BRANCH"
     fi
