@@ -52,13 +52,11 @@ case "$SINGULARITY_IMAGE" in
     docker://*)
         NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
 
-        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
-        else
-            SINGULARITY_CACHEDIR_LOCAL="/tmp"
+        if [ -z "${SINGULARITY_LOCALCACHEDIR:-}" ]; then
+            SINGULARITY_LOCALCACHEDIR="/tmp"
         fi
 
-        if ! SINGULARITY_SESSIONDIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/.singularity-runtime.XXXXXXXX`; then
+        if ! SINGULARITY_SESSIONDIR=`mktemp -d $SINGULARITY_LOCALCACHEDIR/.singularity-runtime.XXXXXXXX`; then
             message ERROR "Failed to create cleandir\n"
             ABORT 255
         fi
