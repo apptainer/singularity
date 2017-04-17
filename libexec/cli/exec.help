@@ -14,6 +14,7 @@ EXEC OPTIONS:
                         filesystems on your host (e.g. $HOME and /tmp).
     -C/--containall     Contain not only file systems, but also PID and IPC 
     -e/--cleanenv       Clean environment before running container
+    -g/--gpu            Enable experimental GPU support
     -H/--home <spec>    A home directory specification.  spec can either be a
                         src path or src:dest pair.  src is the source path
                         of the home directory outside the container and dest
