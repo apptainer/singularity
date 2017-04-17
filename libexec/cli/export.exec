@@ -45,18 +45,6 @@ while true; do
             fi
             exit
         ;;
-        -f|--file)
-            shift
-            SINGULARITY_EXPORT_FILE="${1:-}"
-            export SINGULARITY_EXPORT_FILE
-            shift
-        ;;
-        --command)
-            shift
-            SINGULARITY_EXPORT_COMMAND="${1:-}"
-            export SINGULARITY_EXPORT_COMMAND
-            shift
-        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
