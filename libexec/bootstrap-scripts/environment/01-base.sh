@@ -22,7 +22,7 @@
 
 if test -z "$SINGULARITY_INIT"; then
     PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
-    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64"
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/lib64:/.singularity.d/libs"
     SINGULARITY_INIT=1
     export PATH SINGULARITY_INIT LD_LIBRARY_PATH
 fi

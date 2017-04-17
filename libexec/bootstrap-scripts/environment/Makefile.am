@@ -11,6 +11,7 @@ environment.tar:
 	install -d -m 0755 newroot/.singularity.d
 	install -d -m 0755 newroot/.singularity.d/env
 	install -d -m 0755 newroot/.singularity.d/actions
+	install -d -m 0755 newroot/.singularity.d/libs
 	install -d -m 0755 newroot/dev
 	install -d -m 0755 newroot/etc
 	install -d -m 0755 newroot/home
