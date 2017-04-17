@@ -38,20 +38,19 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
-
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
-
-if [ -n "${BOOTSTRAP:-}" ]; then
-    if [ -x "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh" ]; then
-        eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh"
-    else
-        message ERROR "'Bootstrap' type not supported: $BOOTSTRAP\n"
-        exit 1
-    fi
+if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
+    message ERROR "Singularity bootstrap definition file not defined!\n"
+    exit 1
 fi
 
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-sections.sh"
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-post.sh"
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
+if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
+    message ERROR "Singularity bootstrap definition file not found!\n"
+    exit 1
+fi
 
+
+if [ ! -d "$SINGULARITY_ROOTFS/.singularity.d" ]; then
+    mkdir -p "$SINGULARITY_ROOTFS/.singularity.d"
+fi
+
+cp "$SINGULARITY_BUILDDEF" "$SINGULARITY_ROOTFS/.singularity.d/deffile"
