@@ -49,8 +49,8 @@ if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 
-if [ ! -d "$SINGULARITY_ROOTFS/.singularity.d" ]; then
-    mkdir -p "$SINGULARITY_ROOTFS/.singularity.d"
+if [ ! -d "$SINGULARITY_ROOTFS/.singularity.d/bootstrap" ]; then
+    mkdir -p "$SINGULARITY_ROOTFS/.singularity.d/bootstrap"
 fi
 
-cp "$SINGULARITY_BUILDDEF" "$SINGULARITY_ROOTFS/.singularity.d/deffile"
+cp "$SINGULARITY_BUILDDEF" "$SINGULARITY_ROOTFS/.singularity.d/bootstrap/Singularity"
