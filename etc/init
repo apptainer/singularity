@@ -18,3 +18,21 @@ HISTFILE=""
 
 export PATH HISTFILE
 
+# This is an experimental snippet which is activated if the
+# environment variable SINGULARITY_INCLUDEGPU is set.
+if [ -n "${SINGULARITY_INCLUDEGPU:-}" ]; then
+    for i in `ldconfig -p | grep -E 'libnv|libcuda'`; do
+        if [ -f "$i" ]; then 
+            N=`basename "$i"`
+            message 2 "Including GPU lib: $N\n"
+            if [ -z "${SINGULARITY_BINDPATH:-}" ]; then
+                SINGULARITY_BINDPATH="$i:/.singularity.d/libs/$N"
+            else
+                SINGULARITY_BINDPATH="$i:/.singularity.d/libs/$N,$SINGULARITY_BINDPATH"
+            fi
+        fi
+    done
+    if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
+        export SINGULARITY_BINDPATH
+    fi
+fi
