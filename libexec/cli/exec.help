@@ -14,12 +14,12 @@ EXEC OPTIONS:
                         filesystems on your host (e.g. $HOME and /tmp).
     -C/--containall     Contain not only file systems, but also PID and IPC 
     -e/--cleanenv       Clean environment before running container
-    -g/--gpu            Enable experimental GPU support
     -H/--home <spec>    A home directory specification.  spec can either be a
                         src path or src:dest pair.  src is the source path
                         of the home directory outside the container and dest
                         overrides the home directory within the container
     -i/--ipc            Run container in a new IPC namespace
+    -n/--nv             Enable experimental Nvidia support
     -p/--pid            Run container in a new PID namespace
     --pwd               Initial working directory for payload process inside 
                         the container

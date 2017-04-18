@@ -117,10 +117,10 @@ while true; do
             export SINGULARITY_TARGET_PWD
             shift
         ;;
-        -g|--gpu)
+        -n|--nv)
             shift
-            SINGULARITY_INCLUDEGPU=1
-            export SINGULARITY_INCLUDEGPU
+            SINGULARITY_INCLUDENV=1
+            export SINGULARITY_INCLUDENV
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
