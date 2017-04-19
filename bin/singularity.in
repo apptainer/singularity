@@ -134,7 +134,7 @@ fi
 
 
 if [ -x "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec" ]; then
-    message 2 "Exec'ing: $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec $@\n"
+    message 2 "Exec'ing: $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec\n"
     exec $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec "$@"
 else
     message ERROR "Unknown command '$SINGULARITY_COMMAND'\n"
