@@ -104,11 +104,6 @@ while true; do
             message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
-        -vvvv)
-            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 4`
-            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
-            shift
-        ;;
         -*)
             message ERROR "Unknown argument: $1\n"
             exit 1
