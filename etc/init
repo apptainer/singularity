@@ -17,23 +17,3 @@ SINGULARITYENV_PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
 HISTFILE=""
 
 export PATH HISTFILE
-
-# This is an experimental snippet which is activated if the
-# environment variable SINGULARITY_INCLUDEGPU is set.
-if [ -n "${SINGULARITY_INCLUDENV:-}" ]; then
-    for i in `ldconfig -p | grep -E 'libnv|libcuda'`; do
-        if [ -f "$i" ]; then 
-            N=`basename "$i"`
-            message 2 "Including GPU lib: $N\n"
-            if [ -z "${SINGULARITY_BINDPATH:-}" ]; then
-                SINGULARITY_BINDPATH="$i:/.singularity.d/libs/$N"
-            else
-                SINGULARITY_BINDPATH="$i:/.singularity.d/libs/$N,$SINGULARITY_BINDPATH"
-            fi
-        fi
-    done
-    if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
-        SINGULARITYENV_LD_LIBRARY_PATH="/.singularity.d/libs"
-        export SINGULARITY_BINDPATH SINGULARITYENV_LD_LIBRARY_PATH
-    fi
-fi
