@@ -18,32 +18,10 @@
  * 
 */
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
+#ifndef __SINGULARITY_RUNTIME_FILES_LIBS_H_
+#define __SINGULARITY_RUNTIME_FILES_LIBS_H_
 
-#include "util/file.h"
-#include "util/util.h"
-#include "util/message.h"
-#include "util/privilege.h"
-#include "./passwd/passwd.h"
-#include "./group/group.h"
-#include "./resolvconf/resolvconf.h"
+extern int _singularity_runtime_files_libs(void);
 
-
-int _singularity_runtime_files(void) {
-    int retval = 0;
-
-    singularity_message(VERBOSE, "Running file components\n");
-    retval += _singularity_runtime_files_passwd();
-    retval += _singularity_runtime_files_group();
-    retval += _singularity_runtime_files_resolvconf();
-    retval += _singularity_runtime_files_libs();
-
-    return(retval);
-}
+#endif /* __SINGULARITY_RUNTIME_FILES_LIBS_H */
 
