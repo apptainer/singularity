@@ -19,7 +19,6 @@
 # 
 # 
 
-
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -45,6 +44,11 @@ while true; do
             fi
             exit
         ;;
+        -f|--file)
+             shift
+             SINGULARITY_EXPORT_FILE="${1:-}"
+             shift
+         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -69,17 +73,25 @@ SINGULARITY_IMAGE="${1:-}"
 export SINGULARITY_IMAGE
 shift
 
-
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/export-suid"
-elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/export"
+if [ -n "${SINGULARITY_EXPORT_FILE:-}" ]; then
+	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
+		exec "$SINGULARITY_libexecdir/singularity/bin/export-suid" > "$SINGULARITY_EXPORT_FILE"
+	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
+		exec "$SINGULARITY_libexecdir/singularity/bin/export" > "$SINGULARITY_EXPORT_FILE" 
+	else
+	    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
+	    exit 1
+	fi
 else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
-    exit 1
+	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
+    	    exec "$SINGULARITY_libexecdir/singularity/bin/export-suid"
+	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
+    	    exec "$SINGULARITY_libexecdir/singularity/bin/export"
+	else
+    	message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
+    	exit 1
+	fi
 fi
-
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
 exit 255
-

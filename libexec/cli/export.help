@@ -10,9 +10,11 @@ EXAMPLES:
     $ singularity export /tmp/Debian.img | gzip -9 > /tmp/Debian.tar.gz
     $ singularity export -f Debian.tar /tmp/Debian.img
 
+ 
+EXPORT OPTIONS:
+    -f/--file       Output to a file instead of a pipe
 
 For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-
