@@ -56,16 +56,16 @@ int _singularity_runtime_files_libs(void) {
         char *current = strtok_r(strdup(includelibs_string), ",", &tok);
         char *ld_lib_path = envar_path("SINGULARITYENV_LD_LIBRARY_PATH");
 
-
         singularity_message(DEBUG, "Parsing SINGULARITY_CONTAINLIBS for user-specified libraries to include.\n");
 
         free(includelibs_string);
 
+        singularity_message(DEBUG, "Checking if libdir in container exists: %s\n", libdir_contained);
         if ( is_dir(libdir_contained) != 0 ) {
             singularity_message(WARNING, "Library bind directory not present in container, update container\n");
-            ABORT(255);
         }
 
+        singularity_message(DEBUG, "Creating session libdir at: %s\n", libdir);
         if ( s_mkpath(libdir, 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating temp lib directory at: %s\n", libdir);
             ABORT(255);
@@ -75,7 +75,15 @@ int _singularity_runtime_files_libs(void) {
             char *dest = NULL;
             char *source = NULL;
 
-            singularity_message(DEBUG, "Evaluating passed library path: %s\n", current);
+            singularity_message(DEBUG, "Evaluating requested library path: %s\n", current);
+
+            dest = joinpath(libdir, basename(current));
+
+            if ( is_file(dest) == 0 ) {
+                singularity_message(VERBOSE3, "Staged library exists, skipping: %s\n", current);
+                current = strtok_r(NULL, ",", &tok);
+                continue;
+            }
 
             if ( is_link(current) == 0 ) {
                 char *link_name;
@@ -101,9 +109,11 @@ int _singularity_runtime_files_libs(void) {
             } else if (is_file(current) == 0 ) {
                 source = strdup(current);
                 singularity_message(VERBOSE3, "Found library source: %s\n", source);
+            } else {
+                singularity_message(WARNING, "Could not find library: %s\n", current);
+                current = strtok_r(NULL, ",", &tok);
+                continue;
             }
-
-            dest = joinpath(libdir, basename(current));
 
             singularity_message(DEBUG, "Binding library source here: %s -> %s\n", source, dest);
 
