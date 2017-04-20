@@ -82,15 +82,15 @@ if [ -n $SINGULARITY_EXPORT_FILE ]; then
 	    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
 	    exit 1
 	fi
-fi
-
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/export-suid"
-elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/export"
 else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
-    exit 1
+	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
+    	    exec "$SINGULARITY_libexecdir/singularity/bin/export-suid"
+	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
+    	    exec "$SINGULARITY_libexecdir/singularity/bin/export"
+	else
+    	message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
+    	exit 1
+	fi
 fi
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
