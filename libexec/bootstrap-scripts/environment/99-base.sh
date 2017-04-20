@@ -20,5 +20,11 @@
 # 
 
 
-PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
-export PATH
+if [ -z "$LD_LIBRARY_PATH" ]; then
+    LD_LIBRARY_PATH="/.singularity.d/libs"
+else
+    LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/.singularity.d/libs"
+fi
+
+PS1="Singularity> "
+export LD_LIBRARY_PATH PS1

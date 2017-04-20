@@ -54,7 +54,6 @@ int _singularity_runtime_files_libs(void) {
     if ( ( includelibs_string = singularity_registry_get("CONTAINLIBS") ) != NULL ) {
         char *tok = NULL;
         char *current = strtok_r(strdup(includelibs_string), ",", &tok);
-        char *ld_lib_path = envar_path("SINGULARITYENV_LD_LIBRARY_PATH");
 
         singularity_message(DEBUG, "Parsing SINGULARITY_CONTAINLIBS for user-specified libraries to include.\n");
 
@@ -143,11 +142,6 @@ int _singularity_runtime_files_libs(void) {
         }
         singularity_priv_drop();
 
-        if ( ld_lib_path == NULL ) {
-            envar_set("SINGULARITYENV_LD_LIBRARY_PATH", "/.singularity.d/libs", 1);
-        } else {
-            envar_set("SINGULARITYENV_LD_LIBRARY_PATH", strjoin("/.singularity.d/libs:", ld_lib_path), 1);
-        }
     }
 
 
