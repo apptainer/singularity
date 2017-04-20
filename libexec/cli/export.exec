@@ -33,6 +33,8 @@ else
     exit 1
 fi
 
+SINGULARITY_EXPORT_FILE=""
+
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -73,11 +75,11 @@ SINGULARITY_IMAGE="${1:-}"
 export SINGULARITY_IMAGE
 shift
 
-if [ -n $SINGULARITY_EXPORT_FILE ]; then
+if [ -n "$SINGULARITY_EXPORT_FILE" ]; then
 	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
-	    exec "$SINGULARITY_libexecdir/singularity/bin/export-suid" > "$SINGULARITY_EXPORT_FILE"
+		exec "$SINGULARITY_libexecdir/singularity/bin/export-suid" > "$SINGULARITY_EXPORT_FILE"
 	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
-	    exec "$SINGULARITY_libexecdir/singularity/bin/export" > "$SINGULARITY_EXPORT_FILE" 
+		exec "$SINGULARITY_libexecdir/singularity/bin/export" > "$SINGULARITY_EXPORT_FILE" 
 	else
 	    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
 	    exit 1
