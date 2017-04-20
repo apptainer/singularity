@@ -36,6 +36,18 @@ stest 0 singularity import "$CONTAINER" docker://busybox
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
+stest 0 sh -c "singularity export -f '$CONTAINERTAR' '$CONTAINER'"
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
+
+stest 0 sh -c "singularity export --false '$CONTAINERTAR' '$CONTAINER'"
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
+
 stest 0 sh -c "singularity export '$CONTAINER' > '$CONTAINERTAR'"
 stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
