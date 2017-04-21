@@ -60,6 +60,15 @@ int rootfs_dir_init(char *source, char *mount_dir) {
         read_write = 1;
     }
 
+    // chdir into the source directory because otherwise at least some kernel
+    //  versions (for example on Centos7.3) will not notice that the 
+    //  filesystem is in use and will not prevent unmounting it.
+    singularity_message(DEBUG, "Changing working directory to %s\n", source_dir);
+    if ( chdir(source_dir) < 0 ) {
+        singularity_message(ERROR, "Could not change directory to %s: %s\n", source_dir, strerror(errno));
+        ABORT(255);
+    }
+
     return(0);
 }
 
