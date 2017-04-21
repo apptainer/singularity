@@ -17,6 +17,7 @@
  * perform publicly and display publicly, and to permit other to do so. 
  * 
  */
+#define _GNU_SOURCE
 
 #include <ctype.h>
 #include <stdio.h>
@@ -41,7 +42,8 @@
 
 #define NULLONE ((char*)1)
 
-int config_initialized = 0;
+static int config_initialized = 0;
+static struct hsearch_data config_table;
 
 // Return a new, empty hash entry appropriate for adding to the config hash.
 //
@@ -65,9 +67,9 @@ static void add_entry(char *key, char *value) {
     ENTRY search_item;
     search_item.key = key;
     search_item.data = NULL;
-    ENTRY * old_entry = hsearch(search_item, FIND);
+    ENTRY * old_entry = NULL;
 
-    if (old_entry) {
+    if (hsearch_r(search_item, FIND, &old_entry, &config_table)) {
         char **hash_value = old_entry->data;
         int idx = 0;
         while ( (hash_value[idx] != NULL) && (hash_value[idx] != NULLONE) ) {idx++;}
@@ -88,8 +90,7 @@ static void add_entry(char *key, char *value) {
         return;
     }
     ENTRY *new_entry = new_hash_entry(key, value);
-    new_entry = hsearch(*new_entry, ENTER);
-    if (!new_entry) {
+    if (!hsearch_r(*new_entry, ENTER, &new_entry, &config_table)) {
         singularity_message(ERROR, "Internal error - unable to initialize configuration entry %s=%s.\n", key, value);
         ABORT(255);
     }
@@ -195,13 +196,16 @@ int singularity_config_parse(char *config_path) {
  * Returns non-zero on error.
  */
 int singularity_config_init(char *config_path) {
-    if (config_initialized == 1) {
+    if (config_initialized) {
         return 0;
     }
-    hcreate(60);
+    config_initialized = 1;
+
+    hcreate_r(60, &config_table);
     int retval = singularity_config_parse(config_path);
-    if (!retval) {
-        config_initialized = 1;
+    if (retval) {  // Error case.
+        hdestroy_r(&config_table);
+        config_initialized = 0;
     }
     return retval;
 }
@@ -221,8 +225,8 @@ const char *_singularity_config_get_value_impl(const char *key, const char *defa
     ENTRY search_item;
     search_item.key = (char*)key;
     search_item.data = NULL;
-    ENTRY * old_entry = hsearch(search_item, FIND);
-    if (!old_entry) {
+    ENTRY * old_entry = NULL;
+    if (!hsearch_r(search_item, FIND, &old_entry, &config_table)) {  // hsearch_r returns 0 on error.
         singularity_message(DEBUG, "No configuration entry found for '%s'; returning default value '%s'\n", key, default_value);
         return default_value;
     }
@@ -253,8 +257,8 @@ const char **_singularity_config_get_value_multi_impl(const char *key, const cha
     ENTRY search_item;
     search_item.key = (char*)key;
     search_item.data = NULL;
-    ENTRY * old_entry = hsearch(search_item, FIND);
-    if (!old_entry) {
+    ENTRY * old_entry = NULL;
+    if (!hsearch_r(search_item, FIND, &old_entry, &config_table)) {
         singularity_message(DEBUG, "No configuration entry found for '%s'; returning default value '%s'\n", key, default_value);
         return _default_entry;
     }

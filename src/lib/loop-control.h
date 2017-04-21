@@ -22,6 +22,7 @@
 #ifndef __SINGULARITY_LOOP_CONTROL_
 #define __SINGULARITY_LOOP_CONTROL_
 
+    char *singularity_loop_bind_with_offset(FILE *image_fp, int image_offset);
     char *singularity_loop_bind(FILE *image_fp);
     int singularity_loop_free(char *loop_dev);
 

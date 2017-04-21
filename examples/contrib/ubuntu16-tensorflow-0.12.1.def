@@ -1,0 +1,66 @@
+# Defines a Singularity container with TensorFlow pre-installed
+#
+
+BootStrap: docker
+From: ubuntu:16.04
+
+
+%runscript
+    # When executed, the container will run Python with the TensorFlow module
+
+    exec /usr/bin/python "$@"
+
+
+%post
+    # Runs within the container during Bootstrap
+
+    # Set up some required environment defaults
+    export LC_ALL=C
+    export PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
+
+    # Install the necessary packages (from repo)
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        curl \
+        git \
+        libcurl3-dev \
+        libfreetype6-dev \
+        libpng12-dev \
+        libzmq3-dev \
+        python-pip \
+        pkg-config \
+        python-dev \
+        rsync \
+        software-properties-common \
+        unzip \
+        zip \
+        zlib1g-dev
+    apt-get clean
+
+    # Update to the latest pip (newer than repo)
+    pip install --no-cache-dir --upgrade pip
+    
+    # Install other commonly-needed packages
+    pip install --no-cache-dir --upgrade \
+        future \
+        matplotlib \
+        scipy \
+        sklearn
+
+    # TensorFlow package versions as listed here:
+    #   https://www.tensorflow.org/get_started/os_setup#test_the_tensorflow_installation
+    #
+    # Ubuntu/Linux 64-bit, CPU only, Python 2.7
+    export TF_BINARY_URL=https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.12.1-cp27-none-linux_x86_64.whl
+    pip install --no-cache-dir --ignore-installed --upgrade $TF_BINARY_URL
+
+
+%test
+    # Sanity check that the container is operating
+
+    # Ensure that TensorFlow can be imported
+    /usr/bin/python -c "import tensorflow as tf"
+
+    # Runs in less than 30 minutes on low-end CPU
+    /usr/bin/python -m tensorflow.models.image.mnist.convolutional
+

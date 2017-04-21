@@ -27,6 +27,7 @@ sys.path.append('..') # directory with singularity, etc.
 
 from unittest import TestCase
 from utils import read_file
+from glob import glob
 import shutil
 import tempfile
 
@@ -38,7 +39,9 @@ class TestApi(TestCase):
 
 
     def setUp(self):
-        self.image_id = 8
+        self.image_id = 60 # https://singularity-hub.org/collections/12/
+        self.user_name = "vsoch"
+        self.repo_name = "singularity-images"
         self.tmpdir = tempfile.mkdtemp()
         print("\n---START----------------------------------------")
 
@@ -54,8 +57,8 @@ class TestApi(TestCase):
         from shub.api import get_manifest
         print("Case 1: Testing retrieval of singularity-hub manifest")
         manifest = get_manifest(self.image_id)
-        keys = ['files', 'name', 'image', 'collection', 
-                'id', 'version', 'spec']
+        keys = ['files', 'version', 'collection', 'branch', 
+                'name', 'id', 'metrics', 'spec', 'image']
         [self.assertTrue(x in manifest) for x in keys]
         self.assertTrue(manifest['id']==self.image_id)
 
@@ -67,32 +70,62 @@ class TestApi(TestCase):
         '''
         from shub.api import download_image, get_manifest
         print("Case 1: Specifying a directory downloads to it")
-        manifest = get_manifest(image_id=self.image_id)
+        manifest = get_manifest(image=self.image_id)
         image = download_image(manifest,
                                download_folder=self.tmpdir)
         self.assertEqual(os.path.dirname(image),self.tmpdir)
+        
+        print("Case 2: Image should be named based on commit.")
+        image_name = os.path.splitext(os.path.basename(image))[0]
+        self.assertEqual(image_name,manifest['version'])
         os.remove(image)
 
-        print("Case 2: Not specifying a directory downloads to PWD")
+        print("Case 3: Not specifying a directory downloads to PWD")
         os.chdir(self.tmpdir)
         image = download_image(manifest)
         self.assertEqual(os.getcwd(),self.tmpdir)
+        self.assertTrue(image in glob("*"))
         os.remove(image)
 
-        print("Case 3: Image should not be extracted.")
+        print("Case 4: Image should not be extracted.")
         image = download_image(manifest,extract=False)
         self.assertTrue(image.endswith('.img.gz'))        
+
+    def test_uri(self):
+        '''test_uri will make sure that the endpoint returns the equivalent
+        image for all different uri options
+        '''
+        from shub.api import get_image_name, get_manifest
+        manifest = get_manifest(image=self.image_id)
+        image_name = get_image_name(manifest)
+                
+        print("Case 1: ask for image and ask for master branch (tag)")
+        manifest = get_manifest(image="%s/%s:master" %(self.user_name,self.repo_name))
+        self.assertEqual(image_name,get_image_name(manifest))
+
+        print("Case 2: ask for different tag (mongo)")
+        manifest = get_manifest(image="%s/%s:mongo" %(self.user_name,self.repo_name))
+        mongo = get_image_name(manifest)
+        self.assertFalse(image_name == mongo)
+
+        print("Case 3: ask for image without tag (should be latest across tags, mongo)")
+        manifest = get_manifest(image="%s/%s" %(self.user_name,self.repo_name))
+        self.assertEqual(mongo,get_image_name(manifest))
+
+        print("Case 4: ask for latest tag (should be latest across tags, mongo)")
+        manifest = get_manifest(image="%s/%s:latest" %(self.user_name,self.repo_name))
+        self.assertEqual(mongo,get_image_name(manifest))
 
 
     def test_get_image_name(self):
         '''test_get_image_name will return the image name from the manifest
         '''
         from shub.api import get_image_name, get_manifest
-        manifest = get_manifest(image_id=self.image_id)
-        
+        manifest = get_manifest(image=self.image_id)
+                
         print("Case 1: return an image name using the commit id")
         image_name = get_image_name(manifest)
-        self.assertEqual('f57e631a0434c31f0b4fa5276a314a6d8a672a55.img.gz',
+        self.assertEqual('6d3715a982865863ff20e8783014522edf1240e4.img.gz',
                          image_name)
 
         print("Case 2: ask for invalid extension")
@@ -105,7 +138,7 @@ class TestApi(TestCase):
         image_name = get_image_name(manifest,
                                     use_commit=False)
         print(image_name)
-        self.assertEqual('be4b9ba8fc22525d2ee2b27846513d42.img.gz',image_name)
+        self.assertEqual('9e46ba8be1e10b1a2812844ac8072259.img.gz',image_name)
 
 
 if __name__ == '__main__':

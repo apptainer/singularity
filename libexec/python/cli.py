@@ -39,11 +39,14 @@ from docker.api import (
     get_manifest 
 )
 
+from shell import parse_image_uri
+
 from utils import (
     basic_auth_header,
     change_permissions, 
     extract_tar, 
     get_cache, 
+    is_number,
     write_file
 )
 
@@ -73,7 +76,14 @@ def get_parser():
     # ID of the Singularity Hub container
     parser.add_option("--shub", 
                       dest='shub', 
-                      help="unique id of the Singularity Hub image", 
+                      help="unique id or name of the Singularity Hub image", 
+                      type=str, 
+                      default=None)
+
+    # Download folder in case of pull, will be used in preference over cache
+    parser.add_option("--pull-folder", 
+                      dest='pull_folder', 
+                      help="Folder to pull image to (only for shub endpoint)", 
                       type=str, 
                       default=None)
 
@@ -161,11 +171,13 @@ def run(args):
 
     # Does the user want to download a Singularity image?
     if args.shub != None:
-        image_id = int(args.shub)
-        manifest = get_shub_manifest(image_id)
-
-        cache_base = get_cache(subfolder="shub", 
-                               disable_cache = args.disable_cache)
+        image = args.shub
+        manifest = get_shub_manifest(image)
+        if args.pull_folder == None:
+            cache_base = get_cache(subfolder="shub", 
+                                   disable_cache = args.disable_cache)
+        else:
+            cache_base = args.pull_folder
 
         # The image name is the md5 hash, download if it's not there
         image_name = get_image_name(manifest)
@@ -196,29 +208,10 @@ def run(args):
         # Input Parsing ----------------------------
         # Parse image name, repo name, and namespace
 
-        # First split the docker image name by /
-        image = image.split('/')
-
-        # If there are two parts, we have namespace with repo (and maybe tab)
-        if len(image) == 2:
-            namespace = image[0]
-            image = image[1]
-
-        # Otherwise, we must be using library namespace
-        else:
-            namespace = "library"
-            image = image[0]
-
-        # Now split the docker image name by :
-        image = image.split(':')
-        if len(image) == 2:
-            repo_name = image[0]
-            repo_tag = image[1]
-
-        # Otherwise, assume latest of an image
-        else:
-            repo_name = image[0]
-            repo_tag = "latest"
+        image = parse_image_uri(image=image,uri="docker://")
+        namespace = image['namespace']
+        repo_name = image['repo_name']
+        repo_tag = image['repo_tag']
 
         # Tell the user the namespace, repo name and tag
         logger.info("Docker image path: %s/%s:%s", namespace,repo_name,repo_tag)
@@ -236,11 +229,7 @@ def run(args):
                                 auth=auth)
 
         # Get images from manifest using version 2.0 of Docker Registry API
-        images = get_images(repo_name=repo_name,
-                            namespace=namespace,
-                            registry=args.registry,
-                            auth=auth)
-        
+        images = get_images(manifest=manifest)
        
         #  DOWNLOAD LAYERS -------------------------------------------
         # Each is a .tar.gz file, obtained from registry with curl
