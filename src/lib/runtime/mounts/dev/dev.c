@@ -49,6 +49,11 @@ int _singularity_runtime_mount_dev(void) {
         if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
             int ret;
 
+            if ( singularity_registry_get("OVERLAYFS_ENABLED") == NULL ) {
+                singularity_message(WARNING, "Not mounting devices as /dev directory does not exist within container\n");
+                return(-1);
+            }
+
             singularity_priv_escalate();
             ret = s_mkpath(joinpath(container_dir, "/dev"), 0755);
             singularity_priv_drop();
