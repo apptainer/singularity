@@ -59,7 +59,9 @@
 
 # MOUNT DEV: [yes/no/minimal]
 # DEFAULT: @MOUNT_DEV_DEFAULT@
-# Should we automatically bind mount /dev within the container?
+# Should we automatically bind mount /dev within the container? If 'minimal'
+# is chosen, then only 'null', 'zero', 'random', 'urandom', and 'shm' will
+# be included (the same effect as the --contain options)
 @MOUNT_DEV@ = @MOUNT_DEV_DEFAULT@
 
 
