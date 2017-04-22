@@ -1,13 +1,33 @@
-# Singularity - Enabling Mobility of Compute
+[![Build Status](https://travis-ci.org/singularityware/singularity.svg?branch=master)](https://travis-ci.org/singularityware/singularity)
+
+- [Guidelines for Contributing](.github/CONTRIBUTING)
+- [Pull Request Template](.github/PULL_REQUEST_TEMPLATE)
+- [Documentation](http://singularity.lbl.gov/)
+
+
+# Singularity - Enabling users to have full control of their environment.
+
+[![Join the chat at https://gitter.im/singularityware/singularity](https://badges.gitter.im/singularityware/singularity.svg)](https://gitter.im/singularityware/singularity?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+Starting a Singularity container "swaps" out the host operating system
+environment for one the user controls!
+
+Let's say you are running Ubuntu on your workstation or server, but you
+have an application which only runs on Red Hat Enterprise Linux 6.3.
+Singularity can instantly virtualize the operating system, without
+having root access, and allow you to run that application in its native
+environment!
+
+# About
 
 Singularity is a container platform focused on supporting "Mobility of
-Compute".
+Compute" 
 
 Mobility of Compute encapsulates the development to compute model where
-developers can work in an envrionment of their choosing and creation and
+developers can work in an environment of their choosing and creation and
 when the developer needs additional compute resources, this environment
 can easily be copied and executed on other platforms. Additionally as
-the primary use case for Singularity is targetted towards computational
+the primary use case for Singularity is targeted towards computational
 portability, many of the barriers to entry of other container solutions
 do not apply to Singularity making it an ideal solution for users (both
 computational and non-computational) and HPC centers.
@@ -27,8 +47,8 @@ container image (and not on the metadata server!).
 ## Mobility of Compute
 With Singularity, developers who like to be able to easily control their
 own environment will love Singularity's flexibility. Singularity does not
-provide a pathway for escalation of privledge (as do other container
-platforms which are thus not applicable for multi-tennant resources) so
+provide a pathway for escalation of privilege (as do other container
+platforms which are thus not applicable for multi-tenant resources) so
 you must be able to become root on the host system (or virtual machine)
 in order to modify the container.
 
@@ -55,7 +75,7 @@ only mode (so it can be easily launched in parallel). The -w option
 used above tells Singularity to mount the image in read/write mode such
 that root can now make changes to the container.*
 
-Additionally relevent file systems on your host are automatically shared
+Additionally relevant file systems on your host are automatically shared
 within the context of your container. This can be demonstrated as
 follows:
 
@@ -78,7 +98,7 @@ easily as you would on your development system or virtual machine.
 ## Portability of Singularity container images
 Singularity images are highly portable between Linux distributions (as
 long as the binary format is the same). You can generate your image on
-Debian or Centos, and run it on Mint or Slackware.
+Debian or CentOS, and run it on Mint or Slackware.
 
 Within a particular container one can include their programs, data,
 scripts and pipelines and thus portable to any other architecture
@@ -89,35 +109,30 @@ Generally when bootstrapping an image from scratch you must build it from
 a compatible host. This is because you must use the distribution specific
 tools it comes with (e.g. Red Hat does not provide Debian's debootstrap).
 But once the image has been bootstrapped and includes the necessary bits
-to be self hosting (e.g. YUM on Centos and apt-get on Debian/Ubuntu) then
+to be self hosting (e.g. YUM on CentOS and apt-get on Debian/Ubuntu) then
 the process of managing the container can be implemented from within the
 container.
 
 The process of building a bootstrap starts with a definition
-specification. The defition file describes how you want the operating
+specification. The definition file describes how you want the operating
 system to be built, what should go inside it and any additional
 modifications necessary.
 
-Here is an example of a very simple bootstrap definition file for Centos:
+Here is an example of a very simple bootstrap definition file for CentOS:
 
-    RELEASE=7
-     
-    MirrorURL "http://mirror.centos.org/centos-${RELEASE}/${RELEASE}/os/\$basearch/"
-     
-    Bootstrap
-     
-    InstallPkgs procps-ng vim-minimal
-     
-    Cleanup
+    BootStrap: yum
+    OSVersion: 7
+    MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+    Include: yum
 
 Once you have created your bootstrap definition, you can build your
 Singularity container image by first creating a blank image, and then
-bootstrapping using your defintion file:
+bootstrapping using your definition file:
 
-    [gmk@centos7-x64 demo]$ sudo singularity image create /tmp/Centos-7.img
+    [gmk@centos7-x64 demo]$ sudo singularity create /tmp/Centos-7.img
     [gmk@centos7-x64 demo]$ sudo singularity bootstrap /tmp/Centos-7.img centos.def
 
-From there we can immeadiatly start using the container:
+From there we can immediately start using the container:
 
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img cat /etc/redhat-release 
     CentOS Linux release 7.2.1511 (Core) 
@@ -127,10 +142,10 @@ From there we can immeadiatly start using the container:
     hello world
     [gmk@centos7-x64 demo]$ 
 
-And if I do this same process again, while changing the **VERSION**
-variable in the bootstrap defition to **6** (where previously it was
+And if I do this same process again, while changing the **OSVersion**
+variable in the bootstrap definition to **6** (where previously it was
 automatically ascertained by querying the RPM database), we can
-essentially build a Centos-6 image in exactly the same manner as
+essentially build a CentOS-6 image in exactly the same manner as
 above. Doing so reveals this:
 
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img cat /etc/redhat-release 
@@ -140,10 +155,14 @@ above. Doing so reveals this:
     [gmk@centos7-x64 demo]$ 
 
 And as expected, the Python version we now see is what comes from by 
-default in Centos-6.
+default in CentOS-6.
+
+# Cite as:
+Kurtzer, Gregory M.. (2016). Singularity 2.1.2 - Linux application and environment
+containers for science. 10.5281/zenodo.60736
+
+http://dx.doi.org/10.5281/zenodo.60736
+
 
 # Webpage
-We are working on documentation and web pages now, but checkout the work
-in progress here:
-
-http://gmkurtzer.github.io/singularity
+We have full documentation at [http://singularity.lbl.gov/](http://singularity.lbl.gov/), and [welcome contributions](http://www.github.com/singularityware/singularityware.github.io).
