@@ -33,6 +33,7 @@
 #include "./passwd/passwd.h"
 #include "./group/group.h"
 #include "./resolvconf/resolvconf.h"
+#include "./libs/libs.h"
 
 
 int _singularity_runtime_files(void) {
