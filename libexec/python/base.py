@@ -7,7 +7,10 @@ Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 '''
 
 from message import bot
+import multiprocessing
+import itertools
 import tempfile
+import time
 import sys
 import re
 import os
@@ -22,8 +25,69 @@ except ImportError:
     from urlparse import urlparse
     from urllib2 import urlopen, Request, HTTPError
 
-if sys.version_info[0] < 3:
-    from exceptions import OSError
+
+
+class MultiProcess(object):
+
+    def __init__(self, workers=None):
+
+        if workers is None:
+            workers = 3
+        self.workers = workers
+
+    def start(self):
+        bot.debug("Starting multiprocess")
+        self.start_time = time.time()
+
+    def end(self):
+        self.end_time = time.time()
+        self.runtime = self.runtime = self.end_time - self.start_time
+        bot.debug("Starting multiprocess, runtime: %s sec" %(self.runtime))
+
+    def run(self,func,tasks):
+        '''run will send a list of tasks, a tuple with arguments, through a function.
+        the arguments should be ordered correctly.
+        :param func: the function to run with multiprocessing.pool
+        :param tasks: a list of tasks, each a tuple of arguments to process
+        '''
+ 
+        # Keep track of some progres for the user
+        progress = 1
+        total = len(tasks)
+        results = []
+
+        try:
+            prefix = "[%s/%s]" %(progress,total)
+            bot.show_progress(0,total,length=35,prefix=prefix)
+            pool = multiprocessing.Pool(processes=self.workers,initializer=mute)
+            for result in pool.imap_unordered(multi_wrapper,multi_package(func,tasks)):
+                self.start()
+                results.append(result)
+                suffix = os.path.basename(result).strip('sha256:')[0:6]
+                bot.show_progress(progress,total,length=35,
+                                  prefix=prefix,suffix=suffix)
+                progress+=1
+                prefix = "[%s/%s]" %(progress,total)
+                self.end()
+            pool.close()
+            pool.join()
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            bot.error(e)
+
+        return results
+
+def mute():
+    sys.stdout = open(os.devnull, 'w')    
+
+# Supporting functions for MultiProcess
+def multi_wrapper(func_args):
+    function, args = func_args
+    return function(*args)
+
+def multi_package(func, args):
+    return zip(itertools.repeat(func), args)
 
 
 
@@ -68,8 +132,7 @@ class ApiConnection(object):
 
 
 
-    def stream(self,url,file_name,data=None,headers=None,default_headers=True,
-               prefix=None,suffix=None):
+    def stream(self,url,file_name,data=None,headers=None,default_headers=True):
         '''stream is a get that will stream to file_name
         :param data: a dictionary of key:value items to add to the data args variable
         :param url: the url to get
@@ -91,14 +154,6 @@ class ApiConnection(object):
 
         response = self.submit_request(request)
 
-        # Keep user updated with Progress Bar
-        content_size = None
-        if 'Content-Length' in response.headers and response.code not in [400,401]:
-            progress = 0
-            content_size = int(response.headers['Content-Length'])
-            bot.show_progress(progress,content_size,length=35,
-                              prefix=prefix,suffix=suffix)
-
         chunk_size = 1 << 20
         with open(file_name, 'wb') as filey:
             while True:
@@ -106,16 +161,7 @@ class ApiConnection(object):
                 if not chunk: 
                     break
                 try:
-
                     filey.write(chunk)
-                    if content_size is not None:
-                        progress+=chunk_size
-                        bot.show_progress(iteration=progress,
-                                          total=content_size,
-                                          length=35,
-                                          prefix=prefix,
-                                          carriage_return=False,
-                                          suffix=suffix)
                 except Exception as error:
                     bot.error("Error writing to %s: %s exiting" %(file_name,error))
                     sys.exit(1)
@@ -202,7 +248,7 @@ class ApiConnection(object):
         return request
 
 
-    def download_atomically(self,url,file_name,headers=None,suffix=None,prefix=None):
+    def download_atomically(self,url,file_name,headers=None):
         '''download stream atomically will stream to a temporary file, and
         rename only upon successful completion. This is to ensure that
         errored downloads are not found as complete in the cache
@@ -212,7 +258,7 @@ class ApiConnection(object):
         '''
         try:
             tmp_file = "%s.%s" %(file_name,next(tempfile._get_candidate_names()))
-            response = self.stream(url,file_name=tmp_file,headers=headers,prefix=prefix,suffix=suffix)
+            response = self.stream(url,file_name=tmp_file,headers=headers)
             os.rename(tmp_file, file_name)
         except:
             download_folder = os.path.dirname(os.path.abspath(file_name))

@@ -250,6 +250,7 @@ class DockerApiConnection(ApiConnection):
             registry = self.api_base
         registry = add_http(registry) # make sure we have a complete url
 
+
         # The <name> variable is the namespace/repo_name
         base = "%s/%s/%s/%s/blobs/%s" %(registry,self.api_version,self.namespace,self.repo_name,image_id)
         bot.verbose("Downloading layers from %s" %base)
@@ -266,18 +267,14 @@ class DockerApiConnection(ApiConnection):
         file_name = "%s.%s" %(download_folder,next(tempfile._get_candidate_names()))
         suffix = "layer %s" %image_id.strip('sha:256')[0:4] # layer f8b845f4
         tar_download = self.download_atomically(url=base,
-                                                file_name=file_name,
-                                                prefix=prefix,
-                                                suffix=suffix)
+                                                file_name=file_name)
         bot.debug('Download of raw file (pre permissions fix) is %s' %tar_download)
 
         # Step 2: Fix Permissions
         try:
             if prefix is not None:
                 prefix = prefix.replace('Download','Prepare ')
-            finished_tar = change_tar_permissions(tar_download,
-                                                  suffix=suffix,
-                                                  prefix=prefix)
+            finished_tar = change_tar_permissions(tar_download)
             os.rename(finished_tar,download_folder)
         except:
             bot.error("Cannot untar layer %s, was there a problem with download?" %tar_download)
@@ -364,6 +361,17 @@ def read_digests(manifest):
                 digests.append(layer[digest_key])
     return digests
     
+
+def download_layer(client,image_id,cache_base,prefix):
+    '''download_layer is a function (external to the client) to download a layer
+    and update the client's token after. This is intended to be used by the multiprocessing
+    function.'''
+    targz = client.get_layer(image_id=image_id,
+                             download_folder=cache_base,
+                             prefix=prefix)
+    client.update_token()
+    return targz
+
 
 def extract_runscript(manifest,includecmd=False):
     '''create_runscript will write a bash script with default "ENTRYPOINT" 
