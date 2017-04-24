@@ -60,7 +60,7 @@ class MultiProcess(object):
             prefix = "[%s/%s]" %(progress,total)
             bot.show_progress(0,total,length=35,prefix=prefix)
             pool = multiprocessing.Pool(processes=self.workers,initializer=mute)
-            for result in pool.imap_unordered(multi_wrapper,multi_package(func,tasks)):
+            for result in pool.imap(multi_wrapper,multi_package(func,tasks)):
                 self.start()
                 results.append(result)
                 suffix = os.path.basename(result).strip('sha256:')[0:6]
