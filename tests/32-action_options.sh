@@ -28,6 +28,7 @@ test_init "Testing action options"
 
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
+TESTDIR="$SINGULARITY_TESTDIR/home_test"
 
 # Creating a new container
 stest 0 singularity create -s 568 "$CONTAINER"
@@ -49,6 +50,14 @@ stest 0 singularity exec --pwd /etc "$CONTAINER" true
 stest 1 singularity exec --pwd /non-existant-dir "$CONTAINER" true
 stest 0 sh -c "singularity exec --pwd /etc '$CONTAINER' pwd | egrep '^/etc'"
 
+# Testing --home
+stest 0 mkdir -p "$TESTDIR"
+stest 0 touch "$TESTDIR/testfile"
+stest 0 singularity exec --home "$TESTDIR" "$CONTAINER" test -f "$TESTDIR/testfile"
+stest 0 singularity exec --home "$TESTDIR:/blah" "$CONTAINER" test -f "$TESTDIR/testfile"
+stest 0 singularity exec --home "$TESTDIR:/blah" "$CONTAINER" test -f "/blah/testfile"
+stest 1 singularity exec --contain --home "$TESTDIR:/blah" "$CONTAINER" test -f "/blah/testfile"
+stest 0 sh -c "echo 'cd; test -f testfile' | singularity exec --home '$TESTDIR' '$CONTAINER' /bin/sh"
 
 
 test_cleanup
