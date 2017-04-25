@@ -6,9 +6,12 @@
 
 # ALLOW SETUID: [BOOL]
 # DEFAULT: @ALLOW_SETUID_DEFAULT@
-# Should we allow users to utilize the setuid binary for launching singularity?
-# The majority of features require this to be set to yes, but newer Fedora and
-# Ubuntu kernels can provide limited functionality in unprivileged mode.
+# Should we allow users to utilize the setuid program flow within Singularity?
+# note1: This is the default mode, and to utilize all features, this option
+# will need to be enabled.
+# note2: If this option is disabled, it will rely on the user namespace
+# exclusively which has not been integrated equally between the different
+# Linux distributions.
 @ALLOW_SETUID@ = @ALLOW_SETUID_DEFAULT@
 
 
@@ -114,8 +117,7 @@
 # ENABLE OVERLAY: [BOOL]
 # DEFAULT: @ENABLE_OVERLAY_DEFAULT@
 # Enabling this option will make it possible to specify bind paths to locations
-# that do not currently exist within the container. note: this only works when
-# using the standard SUID mode (not user-namespaces)).
+# that do not currently exist within the container.
 @ENABLE_OVERLAY@ = @ENABLE_OVERLAY_DEFAULT@
 
 
