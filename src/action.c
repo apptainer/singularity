@@ -47,6 +47,7 @@
 
 int main(int argc, char **argv) {
     struct image_object image;
+    char *pwd = get_current_dir_name();
     char *target_pwd = NULL;
     char *command = NULL;
 
@@ -87,6 +88,7 @@ int main(int argc, char **argv) {
     singularity_priv_drop_perm();
 
     if ( singularity_registry_get("CONTAIN") != NULL ) {
+        singularity_message(DEBUG, "Attempting to chdir to home: %s\n", singularity_priv_home());
         if ( chdir(singularity_priv_home()) != 0 ) {
             singularity_message(WARNING, "Could not chdir to home: %s\n", singularity_priv_home());
             if ( chdir("/") != 0 ) {
@@ -95,13 +97,15 @@ int main(int argc, char **argv) {
             }
         }
     } else if ( ( target_pwd = singularity_registry_get("TARGET_PWD") ) != NULL ) {
+        singularity_message(DEBUG, "Attempting to chdir to TARGET_PWD: %s\n", target_pwd);
         if ( chdir(target_pwd) != 0 ) {
             singularity_message(ERROR, "Could not change directory to: %s\n", target_pwd);
             ABORT(255);
         }
-    } else if ( ( target_pwd = get_current_dir_name() ) != NULL ) {
-        if ( chdir(target_pwd) != 0 ) {
-            singularity_message(VERBOSE, "Could not chdir to current dir: %s\n", target_pwd);
+    } else if ( pwd != NULL ) {
+        singularity_message(DEBUG, "Attempting to chdir to CWD: %s\n", pwd);
+        if ( chdir(pwd) != 0 ) {
+            singularity_message(VERBOSE, "Could not chdir to current dir: %s\n", pwd);
             if ( chdir(singularity_priv_home()) != 0 ) {
                 singularity_message(WARNING, "Could not chdir to home: %s\n", singularity_priv_home());
                 if ( chdir("/") != 0 ) {
