@@ -163,20 +163,10 @@ void singularity_priv_init(void) {
     if ( home_tmp != NULL ) {
         char *colon = strchr(home_tmp, ':');
 
-        if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
-            singularity_message(ERROR, "User defined binds are not allowed in configuration\n");
-            ABORT(255);
-        }
-
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return(0);
-#endif
-
         if ( colon == NULL ) {
             uinfo.home = strdup(home_tmp);
             uinfo.homedir = uinfo.home;
-            singularity_message(VERBOSE2, "Set home (via SINGULARITY_HOME) to: %s\n", uinfo.home);
+            singularity_message(VERBOSE2, "Set home and homedir (via SINGULARITY_HOME) to: %s\n", uinfo.home);
         } else {
             *colon = '\0';
             uinfo.home = strdup(&colon[1]);
@@ -473,7 +463,7 @@ char *singularity_priv_home(void) {
         singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
-    return uinfo.home;
+    return(strdup(uinfo.home));
 }
 
 char *singularity_priv_homedir(void) {
@@ -481,7 +471,7 @@ char *singularity_priv_homedir(void) {
         singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
-    return uinfo.homedir;
+    return(strdup(uinfo.homedir));
 }
 
 char *singularity_priv_getuser(void) {
