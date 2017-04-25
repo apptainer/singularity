@@ -47,8 +47,8 @@
 
 int main(int argc, char **argv) {
     struct image_object image;
-    char *pwd;
-    char *command;
+    char *target_pwd = NULL;
+    char *command = NULL;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -63,12 +63,6 @@ int main(int argc, char **argv) {
     singularity_sessiondir();
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
-    if ( ( pwd = singularity_registry_get("TARGET_PWD") ) == NULL ) {
-        if ( ( pwd = get_current_dir_name() ) == NULL ) {
-            singularity_message(ERROR, "Could not identify working directory\n");
-            ABORT(255);
-        }
-    }
 
     if ( singularity_registry_get("WRITABLE") == NULL ) {
         singularity_image_open(&image, O_RDONLY);
@@ -92,9 +86,22 @@ int main(int argc, char **argv) {
 
     singularity_priv_drop_perm();
 
-    if ( singularity_registry_get("CONTAIN") == NULL ) {
-        if ( chdir(pwd) != 0 ) {
-            singularity_message(VERBOSE, "Could not chdir to pwd: %s\n", pwd);
+    if ( singularity_registry_get("CONTAIN") != NULL ) {
+        if ( chdir(singularity_priv_home()) != 0 ) {
+            singularity_message(WARNING, "Could not chdir to home: %s\n", singularity_priv_home());
+            if ( chdir("/") != 0 ) {
+                singularity_message(ERROR, "Could not change directory within container.\n");
+                ABORT(255);
+            }
+        }
+    } else if ( ( target_pwd = singularity_registry_get("TARGET_PWD") ) != NULL ) {
+        if ( chdir(target_pwd) != 0 ) {
+            singularity_message(ERROR, "Could not change directory to: %s\n", target_pwd);
+            ABORT(255);
+        }
+    } else if ( ( target_pwd = get_current_dir_name() ) != NULL ) {
+        if ( chdir(target_pwd) != 0 ) {
+            singularity_message(VERBOSE, "Could not chdir to current dir: %s\n", target_pwd);
             if ( chdir(singularity_priv_home()) != 0 ) {
                 singularity_message(WARNING, "Could not chdir to home: %s\n", singularity_priv_home());
                 if ( chdir("/") != 0 ) {
@@ -104,16 +111,11 @@ int main(int argc, char **argv) {
             }
         }
     } else {
-        if ( chdir(singularity_priv_home()) != 0 ) {
-            singularity_message(WARNING, "Could not chdir to home: %s\n", singularity_priv_home());
-            if ( chdir("/") != 0 ) {
-                singularity_message(ERROR, "Could not change directory within container.\n");
-                ABORT(255);
-            }
-        }
+        singularity_message(ERROR, "Could not obtain current directory.\n");
+        ABORT(255);
     }
 
-    free(pwd);
+    free(target_pwd);
 
     envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
