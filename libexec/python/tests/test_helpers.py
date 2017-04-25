@@ -60,7 +60,7 @@ class TestJson(TestCase):
         print('Testing Docker Size')
         from sutils import read_file
 
-        os.environ['SINGULARITY_CONTAINER'] = "docker://ubuntu:latest"
+        os.environ['SINGULARITY_CONTAINER'] = "docker://ubuntu:14.04"
         os.environ['SINGULARITY_CONTENTS'] =  self.file
         
         script_path = "%s/size.py" %(self.here)
@@ -75,7 +75,7 @@ class TestJson(TestCase):
                   'return_code':t[1]}
         self.assertEqual(result['return_code'],0)
         result = read_file(self.file)[0]
-        self.assertEqual('3621',result)
+        self.assertEqual('3619',result)
 
 
     def test_shub_size(self):
