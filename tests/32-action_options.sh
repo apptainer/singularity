@@ -58,6 +58,7 @@ stest 0 singularity exec --home "$TESTDIR:/blah" "$CONTAINER" test -f "$TESTDIR/
 stest 0 singularity exec --home "$TESTDIR:/blah" "$CONTAINER" test -f "/blah/testfile"
 stest 1 singularity exec --contain --home "$TESTDIR:/blah" "$CONTAINER" test -f "/blah/testfile"
 stest 0 sh -c "echo 'cd; test -f testfile' | singularity exec --home '$TESTDIR' '$CONTAINER' /bin/sh"
+stest 1 singularity exec --home "/tmp" "$CONTAINER" true
 
 
 test_cleanup
