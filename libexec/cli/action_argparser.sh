@@ -20,6 +20,8 @@
 # 
 
 
+message 2 "Evaluating args: '$*'\n"
+
 while true; do
     case ${1:-} in
         -h|--help|help)
