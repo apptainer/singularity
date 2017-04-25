@@ -180,5 +180,7 @@ int _singularity_runtime_mount_home(void) {
     }
     singularity_priv_drop();
 
+    envar_set("HOME", homedir, 1);
+
     return(0);
 }

@@ -99,7 +99,7 @@ fi
 if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
     message 1 "Adding environment to container\n"
 
-    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-builddef.sh"
+    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
 fi
 
 ### LABELS

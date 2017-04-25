@@ -90,13 +90,4 @@
 #define MAX_LOOP_DEVS "max loop devices"
 #define MAX_LOOP_DEVS_DEFAULT "256"
 
-/*
-#define SINGULARITY_USER "singularity user"
-#define SINGULARITY_USER_DEFAULT "singularity"
-
-#define PROTECTED_IMAGE_MODE "protected image mode"
-#define PROTECTED_IMAGE_MODE_DEFAULT "none"
-
-*/
-
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_
