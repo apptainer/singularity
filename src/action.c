@@ -47,9 +47,8 @@
 
 int main(int argc, char **argv) {
     struct image_object image;
-    char *pwd = get_current_dir_name();
+    char *pwd;
     char *command;
-    char *dir;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -64,6 +63,12 @@ int main(int argc, char **argv) {
     singularity_sessiondir();
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
+    if ( ( pwd = singularity_registry_get("TARGET_PWD") ) == NULL ) {
+        if ( ( pwd = get_current_dir_name() ) == NULL ) {
+            singularity_message(ERROR, "Could not identify working directory\n");
+            ABORT(255);
+        }
+    }
 
     if ( singularity_registry_get("WRITABLE") == NULL ) {
         singularity_image_open(&image, O_RDONLY);
@@ -87,19 +92,22 @@ int main(int argc, char **argv) {
 
     singularity_priv_drop_perm();
 
-    if ( ( dir = singularity_registry_get("TARGET_PWD") ) != NULL ) {
-        singularity_message(VERBOSE, "Launching container from the current directory: %s\n", dir);
-        if ( chdir(dir) != 0 ) {
-            singularity_message(ERROR, "Could not change directory into %s: %s\n", dir, strerror(errno));
-            ABORT(255);
+    if ( singularity_registry_get("CONTAIN") == NULL ) {
+        if ( chdir(pwd) != 0 ) {
+            singularity_message(VERBOSE, "Could not chdir to pwd: %s\n", pwd);
+            if ( chdir(singularity_priv_home()) != 0 ) {
+                singularity_message(WARNING, "Could not chdir to home: %s\n", singularity_priv_home());
+                if ( chdir("/") != 0 ) {
+                    singularity_message(ERROR, "Could not change directory within container.\n");
+                    ABORT(255);
+                }
+            }
         }
-        free(dir);
-    } else if ( chdir(pwd) != 0 ) {
-        singularity_message(VERBOSE, "Current directory is not available within container, landing in home\n");
+    } else {
         if ( chdir(singularity_priv_home()) != 0 ) {
-            singularity_message(WARNING, "Could not change directory to current dir or home, landing in /\n");
+            singularity_message(WARNING, "Could not chdir to home: %s\n", singularity_priv_home());
             if ( chdir("/") != 0 ) {
-                singularity_message(ERROR, "Something is very very weird, couldn't change directory to /\n");
+                singularity_message(ERROR, "Could not change directory within container.\n");
                 ABORT(255);
             }
         }
