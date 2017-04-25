@@ -54,11 +54,11 @@ stest 0 sh -c "singularity exec --pwd /etc '$CONTAINER' pwd | egrep '^/etc'"
 stest 0 mkdir -p "$TESTDIR"
 stest 0 touch "$TESTDIR/testfile"
 stest 0 singularity exec --home "$TESTDIR" "$CONTAINER" test -f "$TESTDIR/testfile"
-stest 0 singularity exec --home "$TESTDIR:/blah" "$CONTAINER" test -f "$TESTDIR/testfile"
-stest 0 singularity exec --home "$TESTDIR:/blah" "$CONTAINER" test -f "/blah/testfile"
+stest 0 singularity exec --home "$TESTDIR:/home" "$CONTAINER" test -f "/home/testfile"
 stest 1 singularity exec --contain --home "$TESTDIR:/blah" "$CONTAINER" test -f "/blah/testfile"
 stest 0 sh -c "echo 'cd; test -f testfile' | singularity exec --home '$TESTDIR' '$CONTAINER' /bin/sh"
 stest 1 singularity exec --home "/tmp" "$CONTAINER" true
+stest 1 singularity exec --home "/tmp:/home" "$CONTAINER" true
 
 
 test_cleanup
