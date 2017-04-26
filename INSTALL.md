@@ -12,8 +12,6 @@ $ sudo yum groupinstall "Development Tools"
 ## To compile and install Singularity from source:
 
 ```
-$ mkdir ~/git
-$ cd ~/git
 $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
 $ ./autogen.sh
@@ -28,8 +26,6 @@ will result in a non-functioning or semi-functioning installation.
 ## To build an RPM of Singularity
 
 ```
-$ mkdir ~/git
-$ cd ~/git
 $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
 $ ./autogen.sh
