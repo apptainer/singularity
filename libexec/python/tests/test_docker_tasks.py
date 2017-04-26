@@ -44,7 +44,7 @@ class TestApi(TestCase):
         from docker.api import DockerApiConnection
 
         print('Testing creation of runscript')
-        from docker.api import extract_runscript
+        from docker.tasks import extract_runscript
 
         manifest = self.client.get_manifest(old_version=True)
 
@@ -73,7 +73,7 @@ class TestApi(TestCase):
         self.assertTrue('exec --help "$@"' in runscript)        
 
         print("Case 5: Asking for ENTRYPOINT when None, should return CMD")    
-        from docker.api import get_configs
+        from docker.tasks import get_configs
         client = DockerApiConnection(image="tensorflow/tensorflow:1.0.0")        
         manifest = client.get_manifest(old_version=True)
 
@@ -88,7 +88,7 @@ class TestApi(TestCase):
         '''
         from docker.api import DockerApiConnection
 
-        from docker.api import get_config
+        from docker.tasks import get_config
 
         # Default should return entrypoint
         print("Case 1: Ask for default command (Entrypoint)")
