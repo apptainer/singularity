@@ -109,11 +109,10 @@ def IMPORT(image,auth=None,layerfile=None):
         targz = "%s/%s.tar.gz" %(cache_base,image_id)
         if not os.path.exists(targz):
             tasks.append((client,image_id,cache_base))
-        else:
-            layers.append(targz)
+        layers.append(targz)
 
     if len(tasks) > 0:
-        layers = layers + download_client.run(func=download_layer,
+        download_layers = download_client.run(func=download_layer,
                                               func2=change_permissions,
                                               tasks=tasks)
 
