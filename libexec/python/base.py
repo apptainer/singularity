@@ -7,6 +7,7 @@ Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 '''
 
 from message import bot
+from defaults import SINGULARITY_WORKERS
 import multiprocessing
 import itertools
 import tempfile
@@ -33,8 +34,7 @@ class MultiProcess(object):
     def __init__(self, workers=None):
 
         if workers is None:
-            # In testing we found odd # to work better
-            workers = multiprocessing.cpu_count()*2-1
+            workers = SINGULARITY_WORKERS
         self.workers = workers
         bot.debug("Using %s workers for multiprocess." %(self.workers))
 

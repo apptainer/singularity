@@ -146,6 +146,9 @@ Done. Container is at: ./vsoch-singularity-images-mongo.img
 ```
 
 ### General
+**SINGULARITY_PYTHREADS**
+The Python modules use threads (workers) to download layer files for Docker, and change permissions. By default, we will use 9 workers, unless the environment variable `SINGULARITY_PYTHREADS` is defined.
+
 
 **SINGULARITY_COMMAND_ASIS**
 By default, we want to make sure the container running process gets passed forward as the current process, so we want to prefix whatever the Docker command or entrypoint is with `exec`. We also want to make sure that following arguments get passed, so we append `"$@"`. Thus, some entrypoint or cmd might look like this:

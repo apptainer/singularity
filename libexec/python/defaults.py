@@ -138,6 +138,8 @@ SHUB_CONTAINERNAME = getenv("SHUB_CONTAINERNAME")
 _layerfile = "%s/.layers" %(METADATA_BASE)
 LAYERFILE = getenv("SINGULARITY_CONTENTS", default=_layerfile)
 
+SINGULARITY_WORKERS = int(getenv("SINGULARITY_PYTHREADS",default=9))
+
 #URI_IMAGE = "img://"
 #URI_TAR = "tar://"
 #URI_TARGC = "targz://"
