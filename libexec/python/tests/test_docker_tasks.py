@@ -104,25 +104,6 @@ class TestApi(TestCase):
         self.assertEqual(entrypoint,'/bin/bash')
 
 
-    def test_get_layer(self):
-        '''test_get_layer will download docker layers
-        '''
-        from docker.api import DockerApiConnection
-
-        images = self.client.get_images()
-        
-        print("Case 1: Download an existing layer, should succeed")
-        layer_file = self.client.get_layer(image_id=images[0], 
-                                           download_folder = self.tmpdir)
-        self.assertTrue(os.path.exists(layer_file))
-
-        print("Case 2: Download a non existing layer, should fail")
-        fake_layer = "sha256:111111111112222222222223333333333"
-        with self.assertRaises(SystemExit) as cm:
-            layer_file = self.client.get_layer(image_id=fake_layer, 
-                                               download_folder=self.tmpdir)
-        self.assertEqual(cm.exception.code, 1)
-
 
 if __name__ == '__main__':
     unittest.main()

@@ -273,13 +273,13 @@ class DockerApiConnection(ApiConnection):
         bot.debug('Download of raw file (pre permissions fix) is %s' %tar_download)
 
         # Step 2: Fix Permissions?
+        if change_perms:
+            tar_download = change_tar_permissions(tar_download)
+
+        if return_tmp is True:
+            return tar_download
+
         try:
-            if change_perms:
-                tar_download = change_tar_permissions(tar_download)
-
-            if return_tmp is True:
-                return tar_download
-
             os.rename(tar_download,download_folder)
         except:
             bot.error("Cannot untar layer %s, was there a problem with download?" %tar_download)

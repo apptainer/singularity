@@ -139,13 +139,6 @@ class TestApi(TestCase):
                                            download_folder = self.tmpdir)
         self.assertTrue(os.path.exists(layer_file))
 
-        print("Case 2: Download a non existing layer, should fail")
-        fake_layer = "sha256:111111111112222222222223333333333"
-        with self.assertRaises(SystemExit) as cm:
-            layer_file = self.client.get_layer(image_id=fake_layer, 
-                                               download_folder=self.tmpdir)
-        self.assertEqual(cm.exception.code, 1)
-
 
 if __name__ == '__main__':
     unittest.main()
