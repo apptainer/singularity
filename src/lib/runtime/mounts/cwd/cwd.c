@@ -127,18 +127,21 @@ int _singularity_runtime_mount_cwd(void) {
     return(0);
 #endif  
 
-    singularity_priv_escalate();
-    singularity_message(DEBUG, "Creating current working directory inside container\n");
-    r = s_mkpath(joinpath(container_dir, cwd_path), 0755);
-    singularity_priv_drop();
-    if ( r < 0 ) {
-        singularity_message(VERBOSE, "Could not create directory for current directory, skipping CWD mount\n");
-        free(cwd_path);
-        return(0);
+    singularity_message(DEBUG, "Creating current directory within container: %s\n", joinpath(container_dir, cwd_path));
+    if ( s_mkpath(joinpath(container_dir, cwd_path), 0755) != 0 ) {
+        singularity_priv_escalate();
+        singularity_message(DEBUG, "Creating current directory (privileged) within container: %s\n", joinpath(container_dir, cwd_path));
+        r = s_mkpath(joinpath(container_dir, cwd_path), 0755);
+        singularity_priv_drop();
+        if ( r < 0 ) {
+            singularity_message(VERBOSE, "Could not create directory for current directory, skipping CWD mount\n");
+            free(cwd_path);
+            return(0);
+        }
     }
 
-    singularity_priv_escalate();
     singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", cwd_path, container_dir, cwd_path);
+    singularity_priv_escalate();
     r = mount(cwd_path, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL);
     if ( singularity_priv_userns_enabled() != 1 ) {
         r = mount(NULL, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL);

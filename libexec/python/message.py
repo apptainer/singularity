@@ -75,7 +75,6 @@ class SingularityMessage:
         self.history = []
         self.errorStream = sys.stderr
         self.outputStream = sys.stdout
-        self.utf8 = ['UTF-8','utf-8','UTF8','utf8']
 
     def emitError(self,level):
         '''determine if a level should print to
@@ -147,10 +146,9 @@ class SingularityMessage:
         '''write will write a message to a stream, 
         first checking the encoding
         '''
-        if stream.encoding in self.utf8:
-            stream.write(message)
-        else:
-            stream.write(message.encode('utf-8'))
+        if isinstance(message,bytes):
+            message = message.decode('utf-8')
+        stream.write(message)
 
 
     def get_logs(self,join_newline=True):
@@ -189,7 +187,7 @@ class SingularityMessage:
             symbol = '='
 
         if progress < length:
-            bar = symbol * progress + '>' + '-' * (length - progress - 1)
+            bar = symbol * progress + '|' + '-' * (length - progress - 1)
         else:
             bar = symbol * progress + '-' * (length - progress)
 

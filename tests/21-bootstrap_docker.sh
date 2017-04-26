@@ -39,19 +39,19 @@ stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
 
 stest 0 sed -i -e 's@busybox:latest@ubuntu:latest@' "$DEFFILE"
-stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 singularity create -F -s 768 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
 stest 0 sed -i -e 's@ubuntu:latest@centos:latest@' "$DEFFILE"
-stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 singularity create -F -s 768 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
 stest 0 sed -i -e 's@centos:latest@dock0/arch:latest@' "$DEFFILE"
-stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 singularity create -F -s 768 "$CONTAINER"
 stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false

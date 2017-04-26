@@ -38,16 +38,23 @@
 #include "../mount-util.h"
 #include "../../runtime.h"
 
-static int mount_dev(char *dev);
+static int bind_dev(char *tmpdir, char *dev);
 
 
 int _singularity_runtime_mount_dev(void) {
     char *container_dir = singularity_runtime_rootfs(NULL);
 
     if ( ( singularity_registry_get("CONTAIN") != NULL ) || ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) ) {
+        char *sessiondir = singularity_registry_get("SESSIONDIR");
+        char *devdir = joinpath(sessiondir, "/dev");
 
         if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
             int ret;
+
+            if ( singularity_registry_get("OVERLAYFS_ENABLED") == NULL ) {
+                singularity_message(WARNING, "Not mounting devices as /dev directory does not exist within container\n");
+                return(-1);
+            }
 
             singularity_priv_escalate();
             ret = s_mkpath(joinpath(container_dir, "/dev"), 0755);
@@ -59,32 +66,38 @@ int _singularity_runtime_mount_dev(void) {
             }
         }
 
-        mount_dev("/dev/null");
-        mount_dev("/dev/zero");
-        mount_dev("/dev/random");
-        mount_dev("/dev/urandom");
-
-
-        if ( is_dir(joinpath(container_dir, "/dev/shm")) < 0 ) {
-            int ret;
-
-            singularity_priv_escalate();
-            ret = s_mkpath(joinpath(container_dir, "/dev/shm"), 0755);
-            singularity_priv_drop();
-
-            if ( ret < 0 ) {
-                singularity_message(WARNING, "Could not create /dev/shm inside container, returning...\n");
-                return(-1);
-            }
-        }
-
-        singularity_message(DEBUG, "Mounting tmpfs for /dev/shm\n");
-        singularity_priv_escalate();
-        if ( mount("/dev/shm", joinpath(container_dir, "/dev/shm"), "tmpfs", MS_NOSUID, "") < 0 ){
-            singularity_message(ERROR, "Failed to mount /dev/shm: %s\n", strerror(errno));
+        singularity_message(DEBUG, "Creating temporary staged /dev\n");
+        if ( s_mkpath(devdir, 0755) != 0 ) {
+            singularity_message(ERROR, "Failed creating the session device directory %s: %s\n", devdir, strerror(errno));
             ABORT(255);
         }
+
+        singularity_message(DEBUG, "Creating temporary staged /dev/shm\n");
+        if ( s_mkpath(joinpath(devdir, "/shm"), 0755) != 0 ) {
+            singularity_message(ERROR, "Failed creating temporary /dev/shm %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
+            ABORT(255);
+        }
+
+        bind_dev(sessiondir, "/dev/null");
+        bind_dev(sessiondir, "/dev/zero");
+        bind_dev(sessiondir, "/dev/random");
+        bind_dev(sessiondir, "/dev/urandom");
+
+        singularity_priv_escalate();
+        singularity_message(DEBUG, "Mounting tmpfs for staged /dev/shm\n");
+        if ( mount("/dev/shm", joinpath(devdir, "/shm"), "tmpfs", MS_NOSUID, "") < 0 ){
+            singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
+            ABORT(255);
+        }
+        singularity_message(DEBUG, "Mounting minimal staged /dev into container\n");
+        if ( mount(devdir, joinpath(container_dir, "/dev"), NULL, MS_BIND, NULL) < 0 ) {
+            singularity_message(WARNING, "Could not stage dev tree: '%s' -> '%s': %s\n", devdir, joinpath(container_dir, "/dev"), strerror(errno));
+            return(-1);
+        }
         singularity_priv_drop();
+
+        free(sessiondir);
+        free(devdir);
 
         return(0);
     }
@@ -113,13 +126,14 @@ int _singularity_runtime_mount_dev(void) {
 
     singularity_message(VERBOSE, "Not mounting /dev inside the container\n");
 
+    free(container_dir);
+
     return(0);
 }
 
 
-static int mount_dev(char *dev) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
-    char *path = joinpath(container_dir, dev);
+static int bind_dev(char *tmpdir, char *dev) {
+    char *path = joinpath(tmpdir, dev);
 
     if ( ( is_chr(dev) == 0 ) || ( is_blk(dev) == 0 ) ) {
         if ( is_file(path) != 0 ) {
@@ -147,6 +161,8 @@ static int mount_dev(char *dev) {
         return(-1);
     }
     singularity_priv_drop();
+
+    free(path);
 
     return(0);
 }

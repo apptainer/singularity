@@ -24,6 +24,8 @@ perform publicly and display publicly, and to permit other to do so.
 import os
 from defaults import INCLUDE_CMD
 
+from base import MultiProcess
+
 from sutils import (
     get_cache, 
     write_file
@@ -31,6 +33,11 @@ from sutils import (
 
 from .api import (
     DockerApiConnection,
+)
+
+from .tasks import (
+    change_permissions,
+    download_layer,
     extract_runscript,
     extract_metadata_tar
 )
@@ -92,19 +99,22 @@ def IMPORT(image,auth=None,layerfile=None):
        
     # Get the cache (or temporary one) for docker
     cache_base = get_cache(subfolder="docker")
+    download_client = MultiProcess()
 
+    # Generate a queue of tasks to run with MultiProcess
     layers = []
+    tasks = []
     for ii in range(len(images)):
         image_id = images[ii]
         targz = "%s/%s.tar.gz" %(cache_base,image_id)
-        prefix = "[%s/%s] Download" %((ii+1),len(images))
         if not os.path.exists(targz):
-            targz = client.get_layer(image_id=image_id,
-                                     download_folder=cache_base,
-                                     prefix=prefix)
-            client.update_token()
+            tasks.append((client,image_id,cache_base))
         layers.append(targz)
 
+    if len(tasks) > 0:
+        download_layers = download_client.run(func=download_layer,
+                                              func2=change_permissions,
+                                              tasks=tasks)
 
     # Get Docker runscript
     runscript = extract_runscript(manifest=manifestv1,
