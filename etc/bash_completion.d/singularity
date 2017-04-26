@@ -77,7 +77,9 @@ _singularity() {
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
-            elif [[ ${cur} == -* ]] ; then
+            elif [[ ${cur} == d* ]] ; then
+                COMPREPLY=( $(compgen -W "docker://" -- ${cur}) )
+	    elif [[ ${cur} == -* ]] ; then
                 COMPREPLY=( $(compgen -W "--help --bind --scratch --home --pwd --contain --containall --ipc --pid --user --workdir --writable" -- ${cur}) )
             else
                 _filedir
