@@ -1,8 +1,9 @@
 [![Build Status](https://travis-ci.org/singularityware/singularity.svg?branch=master)](https://travis-ci.org/singularityware/singularity)
 
-- [Guidelines for Contributing](.github/CONTRIBUTING)
-- [Pull Request Template](.github/PULL_REQUEST_TEMPLATE)
+- [Guidelines for Contributing](CONTRIBUTING.md)
+- [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Documentation](http://singularity.lbl.gov/)
+- [Project License](LICENSE.md)
 
 
 # Singularity - Enabling users to have full control of their environment.
