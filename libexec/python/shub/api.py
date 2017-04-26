@@ -129,7 +129,7 @@ class SingularityApiConnection(ApiConnection):
         # Download image file atomically, streaming
         image_file = self.download_atomically(url=url,
                                               file_name=image_file,
-                                              suffix="downloading image")
+                                              show_progress=True)
 
         if extract == True:
             if not bot.is_quiet():

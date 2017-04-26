@@ -189,7 +189,7 @@ class SingularityMessage:
             symbol = '='
 
         if progress < length:
-            bar = symbol * progress + '>' + '-' * (length - progress - 1)
+            bar = symbol * progress + '|' + '-' * (length - progress - 1)
         else:
             bar = symbol * progress + '-' * (length - progress)
 
