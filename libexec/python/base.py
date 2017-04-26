@@ -11,6 +11,7 @@ import multiprocessing
 import itertools
 import tempfile
 import time
+import signal
 import sys
 import re
 import os
@@ -70,7 +71,7 @@ class MultiProcess(object):
         try:
             prefix = "[%s/%s]" %(progress,total)
             bot.show_progress(0,total,length=35,prefix=prefix)
-            pool = multiprocessing.Pool(processes=self.workers)
+            pool = multiprocessing.Pool(self.workers,init_worker)
 
             self.start()
             for task in tasks:
@@ -99,7 +100,10 @@ class MultiProcess(object):
             pool.join()
 
         except (KeyboardInterrupt, SystemExit):
-            raise
+            bot.error("Keyboard interrupt detected, terminating workers!")
+            pool.terminate()
+            sys.exit(1)
+
         except Exception as e:
             bot.error(e)
 
@@ -107,6 +111,9 @@ class MultiProcess(object):
 
 
 # Supporting functions for MultiProcess
+def init_worker():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
 def multi_wrapper(func_args):
     function, args = func_args
     return function(*args)
@@ -264,7 +271,8 @@ class ApiConnection(object):
             if error.code == 401:
                 self.update_token(response=error)
                 try:
-                    request = self.prepare_request(request.get_full_url(),headers=self.headers)
+                    request = self.prepare_request(request.get_full_url(),
+                                                   headers=self.headers)
                     response = urlopen(request)
                 except HTTPError as error:    
                     bot.debug('Http Error with code %s' %error.code)

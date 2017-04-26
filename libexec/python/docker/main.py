@@ -27,7 +27,6 @@ from defaults import INCLUDE_CMD
 from base import MultiProcess
 
 from sutils import (
-    change_tar_permissions,
     get_cache, 
     write_file
 )
@@ -37,6 +36,7 @@ from .api import (
 )
 
 from .tasks import (
+    change_permissions,
     download_layer,
     extract_runscript,
     extract_metadata_tar
@@ -107,15 +107,14 @@ def IMPORT(image,auth=None,layerfile=None):
     for ii in range(len(images)):
         image_id = images[ii]
         targz = "%s/%s.tar.gz" %(cache_base,image_id)
-        prefix = "[%s/%s] Download" %((ii+1),len(images))
         if not os.path.exists(targz):
-            tasks.append((client,image_id,cache_base,prefix))
+            tasks.append((client,image_id,cache_base))
         else:
             layers.append(targz)
 
     if len(tasks) > 0:
         layers = layers + download_client.run(func=download_layer,
-                                              func2=change_tar_permissions,
+                                              func2=change_permissions,
                                               tasks=tasks)
 
     # Get Docker runscript

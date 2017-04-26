@@ -240,12 +240,14 @@ class DockerApiConnection(ApiConnection):
         return response
 
 
-    def get_layer(self,image_id,download_folder=None,prefix=None,change_perms=False):
+    def get_layer(self,image_id,download_folder=None,change_perms=False,return_tmp=False):
         '''get_layer will download an image layer (.tar.gz) to a specified download folder.
         :param download_folder: if specified, download to folder.
         Otherwise return response with raw data (not recommended)
         :param change_perms: change permissions additionally (default False to support 
         multiprocessing)
+        :param return_tmp: If true, return the temporary file name (and don't rename to the file's final
+        name). Default is False, should be True for multiprocessing that requires extra permission changes
         '''
         registry = self.registry
         if registry == None:
@@ -266,17 +268,22 @@ class DockerApiConnection(ApiConnection):
 
         # Step 1: Download the layer atomically
         file_name = "%s.%s" %(download_folder,next(tempfile._get_candidate_names()))
-        suffix = "layer %s" %image_id.strip('sha:256')[0:4] # layer f8b845f4
         tar_download = self.download_atomically(url=base,
                                                 file_name=file_name)
         bot.debug('Download of raw file (pre permissions fix) is %s' %tar_download)
 
         # Step 2: Fix Permissions?
-        if change_perms:
-            if prefix is not None:
-                prefix = prefix.replace('Download','Prepare ')
-            tar_download = change_tar_permissions(tar_download)
-        os.rename(tar_download,download_folder)
+        try:
+            if change_perms:
+                tar_download = change_tar_permissions(tar_download)
+
+            if return_tmp is True:
+                return tar_download
+
+            os.rename(tar_download,download_folder)
+        except:
+            bot.error("Cannot untar layer %s, was there a problem with download?" %tar_download)
+            sys.exit(1)
         return download_folder
 
 

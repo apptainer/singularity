@@ -16,6 +16,7 @@ from sutils import (
     add_http,
     get_cache,
     create_tar,
+    change_tar_permissions,
     write_singularity_infos
 )
 
@@ -37,15 +38,32 @@ import re
 
     
 
-def download_layer(client,image_id,cache_base,prefix):
+def download_layer(client,image_id,cache_base):
     '''download_layer is a function (external to the client) to download a layer
     and update the client's token after. This is intended to be used by the multiprocessing
-    function.'''
+    function. If return_tmp is True, the temporary file is returned (intended to be renamed 
+    later)'''
     targz = client.get_layer(image_id=image_id,
                              download_folder=cache_base,
-                             prefix=prefix)
+                             return_tmp=True)
     client.update_token()
     return targz
+
+
+def change_permissions(tar_file,file_permission=None,folder_permission=None):
+    '''change_permissions is a wrapper for change_tar_permissions, intended for use
+    as a function for multiprocessing. To ensure atomic download and permission changes,
+    the input file here is expected to have a temporary extension. This wrapper simply
+    calls the function to change_tar_permissions, and then renames to the final file
+    '''
+    fixed_tar = change_tar_permissions(tar_file,
+                                       file_permission=file_permission,
+                                       folder_permission=folder_permission)
+
+    final_tar = "%s.tar.gz" %fixed_tar.split('.tar.gz')[0]
+    os.rename(fixed_tar, final_tar)
+    return final_tar
+
 
 
 def extract_runscript(manifest,includecmd=False):
