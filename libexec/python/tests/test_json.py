@@ -87,7 +87,7 @@ class TestJson(TestCase):
         else:
             testing_command = ["python3",script_path,'--key','PASTA','--file',self.file]
 
-        output = Popen(testing_command,stderr=STDOUT,stdout=PIPE)
+        output = Popen(testing_command,stderr=PIPE,stdout=PIPE)
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
@@ -104,7 +104,7 @@ class TestJson(TestCase):
         else:
             testing_command = ["python3",script_path,'--key','LASAGNA','--file',self.file]
 
-        output = Popen(testing_command,stderr=STDOUT,stdout=PIPE)
+        output = Popen(testing_command,stderr=PIPE,stdout=PIPE)
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
@@ -127,7 +127,7 @@ class TestJson(TestCase):
         else:
             testing_command = ["python3",script_path,'--key','LEGO','--value','RED','--file',self.file]
 
-        output = Popen(testing_command,stderr=STDOUT,stdout=PIPE)
+        output = Popen(testing_command,stderr=PIPE,stdout=PIPE)
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
@@ -140,7 +140,7 @@ class TestJson(TestCase):
         self.assertTrue(contents['LEGO'] == 'RED')
         
         print('Case 2: Adding to existing key without force should error.')
-        output = Popen(testing_command,stderr=STDOUT,stdout=PIPE)
+        output = Popen(testing_command,stderr=PIPE,stdout=PIPE)
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
@@ -152,7 +152,7 @@ class TestJson(TestCase):
         else:
             testing_command = ["python3",script_path,'--key','LEGO','--value','BLUE','--file',self.file,'-f']
 
-        output = Popen(testing_command,stderr=STDOUT,stdout=PIPE)
+        output = Popen(testing_command,stderr=PIPE,stdout=PIPE)
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
@@ -168,7 +168,7 @@ class TestJson(TestCase):
         else:
             testing_command = ["python3",script_path,'--key','PASTA','--value','rigatoni!','--file',self.file]
 
-        output = Popen(testing_command,stderr=STDOUT,stdout=PIPE)
+        output = Popen(testing_command,stderr=PIPE,stdout=PIPE)
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
@@ -180,7 +180,7 @@ class TestJson(TestCase):
         else:
             testing_command = ["python3",script_path,'--key','LEGO','--file',self.file]
 
-        output = Popen(testing_command,stderr=STDOUT,stdout=PIPE)
+        output = Popen(testing_command,stderr=PIPE,stdout=PIPE)
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
@@ -196,7 +196,7 @@ class TestJson(TestCase):
         else:
             testing_command = ["python3",script_path,'--key','PASTA','--file',self.file]
 
-        output = Popen(testing_command,stderr=STDOUT,stdout=PIPE)
+        output = Popen(testing_command,stderr=PIPE,stdout=PIPE)
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
@@ -223,7 +223,7 @@ class TestJson(TestCase):
         else:
             testing_command = ["python3",script_path,'--file',self.file]
 
-        output = Popen(testing_command,stderr=STDOUT,stdout=PIPE)
+        output = Popen(testing_command,stderr=PIPE,stdout=PIPE)
         t = output.communicate()[0],output.returncode
         result = {'message':t[0],
                   'return_code':t[1]}
