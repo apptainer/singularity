@@ -73,14 +73,14 @@ stest() {
 
     if [ "$ERROR" = "0" -a "$RETVAL" != "0" ]; then
         message 2 "%13s ERROR\n" "(retval=$RETVAL)"
-        tail "$OUTPUT"
-        echo "Full output in: $OUTPUT"
+        cat "$OUTPUT"
+        echo "Full output in: $SINGULARITY_TESTDIR"
         exit_cleanup
         exit 1
     elif [ "$ERROR" != "0" -a "$RETVAL" = "0" ]; then
         message 2 "%13s ERROR\n" "(retval=$RETVAL)"
-        tail "$OUTPUT"
-        echo "Full output in: $OUTPUT"
+        cat "$OUTPUT"
+        echo "Full output in: $SINGULARITY_TESTDIR"
         exit_cleanup
         exit 1
     else
