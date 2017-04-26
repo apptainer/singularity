@@ -2,8 +2,8 @@
 
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
-- [Documentation](http://singularity.lbl.gov/)
 - [Project License](LICENSE.md)
+- [Documentation](http://singularity.lbl.gov/)
 
 
 # Singularity - Enabling users to have full control of their environment.
