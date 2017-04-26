@@ -32,8 +32,10 @@ class MultiProcess(object):
     def __init__(self, workers=None):
 
         if workers is None:
-            workers = 3
+            # In testing we found odd # to work better
+            workers = multiprocessing.cpu_count()*2-1
         self.workers = workers
+        bot.debug("Using %s workers for multiprocess." %(self.workers))
 
     def start(self):
         bot.debug("Starting multiprocess")
@@ -42,44 +44,67 @@ class MultiProcess(object):
     def end(self):
         self.end_time = time.time()
         self.runtime = self.runtime = self.end_time - self.start_time
-        bot.debug("Starting multiprocess, runtime: %s sec" %(self.runtime))
+        bot.debug("Ending multiprocess, runtime: %s sec" %(self.runtime))
 
-    def run(self,func,tasks):
+
+    def run(self,func,tasks,func2=None):
         '''run will send a list of tasks, a tuple with arguments, through a function.
         the arguments should be ordered correctly.
         :param func: the function to run with multiprocessing.pool
         :param tasks: a list of tasks, each a tuple of arguments to process
+        :param func2: filter function to run result from func through (optional)
         '''
  
-        # Keep track of some progres for the user
+        # Keep track of some progress for the user
         progress = 1
         total = len(tasks)
+
+        # If two functions are run per task, double total jobs
+        if func2 is not None:
+            total = total * 2
+
+        finished = []
+        level1 = []
         results = []
 
         try:
             prefix = "[%s/%s]" %(progress,total)
             bot.show_progress(0,total,length=35,prefix=prefix)
-            pool = multiprocessing.Pool(processes=self.workers,initializer=mute)
-            for result in pool.imap(multi_wrapper,multi_package(func,tasks)):
-                self.start()
+            pool = multiprocessing.Pool(processes=self.workers)
+
+            self.start()
+            for task in tasks:
+                result = pool.apply_async(multi_wrapper,
+                                          multi_package(func,[task]))
                 results.append(result)
-                suffix = os.path.basename(result).strip('sha256:')[0:6]
-                bot.show_progress(progress,total,length=35,
-                                  prefix=prefix,suffix=suffix)
+                level1.append(result._job)
+
+            while len(results) > 0:
+                result = results.pop()
+                result.wait()
+                bot.show_progress(progress,total,length=35,prefix=prefix)
                 progress+=1
                 prefix = "[%s/%s]" %(progress,total)
-                self.end()
+
+                # Pass the result through a second function?
+                if func2 is not None and result._job in level1:
+                    result = pool.apply_async(multi_wrapper,
+                                              multi_package(func2,[(result.get(),)]))
+                    results.append(result)
+                else:
+                    finished.append(result.get())
+
+            self.end()
             pool.close()
             pool.join()
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
             bot.error(e)
 
-        return results
+        return finished
 
-def mute():
-    sys.stdout = open(os.devnull, 'w')    
 
 # Supporting functions for MultiProcess
 def multi_wrapper(func_args):
@@ -132,10 +157,12 @@ class ApiConnection(object):
 
 
 
-    def stream(self,url,file_name,data=None,headers=None,default_headers=True):
+    def stream(self,url,file_name,data=None,headers=None,default_headers=True,
+               show_progress=False):
         '''stream is a get that will stream to file_name
         :param data: a dictionary of key:value items to add to the data args variable
         :param url: the url to get
+        :param show_progress: if True, show a progress bar with the bot
         :returns response: the requests response object, or stream        
         '''
         bot.debug("GET (stream) %s" %url)
@@ -154,6 +181,15 @@ class ApiConnection(object):
 
         response = self.submit_request(request)
 
+
+        # Keep user updated with Progress Bar?
+        if show_progress:
+            content_size = None
+            if 'Content-Length' in response.headers and response.code not in [400,401]:
+                progress = 0
+                content_size = int(response.headers['Content-Length'])
+                bot.show_progress(progress,content_size,length=35)
+
         chunk_size = 1 << 20
         with open(file_name, 'wb') as filey:
             while True:
@@ -162,13 +198,20 @@ class ApiConnection(object):
                     break
                 try:
                     filey.write(chunk)
+                    if show_progress:
+                        if content_size is not None:
+                            progress+=chunk_size
+                            bot.show_progress(iteration=progress,
+                                              total=content_size,
+                                              length=35,
+                                              carriage_return=False)
                 except Exception as error:
                     bot.error("Error writing to %s: %s exiting" %(file_name,error))
                     sys.exit(1)
 
             # Newline to finish download
-            sys.stdout.write('\n')
-
+            if show_progress:
+                sys.stdout.write('\n')
 
         return file_name
 
@@ -248,7 +291,7 @@ class ApiConnection(object):
         return request
 
 
-    def download_atomically(self,url,file_name,headers=None):
+    def download_atomically(self,url,file_name,headers=None,show_progress=False):
         '''download stream atomically will stream to a temporary file, and
         rename only upon successful completion. This is to ensure that
         errored downloads are not found as complete in the cache
@@ -258,7 +301,8 @@ class ApiConnection(object):
         '''
         try:
             tmp_file = "%s.%s" %(file_name,next(tempfile._get_candidate_names()))
-            response = self.stream(url,file_name=tmp_file,headers=headers)
+            response = self.stream(url,file_name=tmp_file,headers=headers,
+                                   show_progress=show_progress)
             os.rename(tmp_file, file_name)
         except:
             download_folder = os.path.dirname(os.path.abspath(file_name))

@@ -240,16 +240,17 @@ class DockerApiConnection(ApiConnection):
         return response
 
 
-    def get_layer(self,image_id,download_folder=None,prefix=None):
+    def get_layer(self,image_id,download_folder=None,prefix=None,change_perms=False):
         '''get_layer will download an image layer (.tar.gz) to a specified download folder.
-        :param download_folder: if specified, download to folder. 
+        :param download_folder: if specified, download to folder.
         Otherwise return response with raw data (not recommended)
+        :param change_perms: change permissions additionally (default False to support 
+        multiprocessing)
         '''
         registry = self.registry
         if registry == None:
             registry = self.api_base
         registry = add_http(registry) # make sure we have a complete url
-
 
         # The <name> variable is the namespace/repo_name
         base = "%s/%s/%s/%s/blobs/%s" %(registry,self.api_version,self.namespace,self.repo_name,image_id)
@@ -270,15 +271,12 @@ class DockerApiConnection(ApiConnection):
                                                 file_name=file_name)
         bot.debug('Download of raw file (pre permissions fix) is %s' %tar_download)
 
-        # Step 2: Fix Permissions
-        try:
+        # Step 2: Fix Permissions?
+        if change_perms:
             if prefix is not None:
                 prefix = prefix.replace('Download','Prepare ')
-            finished_tar = change_tar_permissions(tar_download)
-            os.rename(finished_tar,download_folder)
-        except:
-            bot.error("Cannot untar layer %s, was there a problem with download?" %tar_download)
-            sys.exit(1)
+            tar_download = change_tar_permissions(tar_download)
+        os.rename(tar_download,download_folder)
         return download_folder
 
 
@@ -328,7 +326,7 @@ class DockerApiConnection(ApiConnection):
         return cmd
 
 
-# Authentication not required ---------------------------------------------------------------------------------
+# API Helper functions
 
 def read_digests(manifest):
     '''read_layers will return a list of layers from a manifest. The function is
@@ -360,199 +358,4 @@ def read_digests(manifest):
                 bot.debug("Adding digest %s" %layer[digest_key])
                 digests.append(layer[digest_key])
     return digests
-    
 
-def download_layer(client,image_id,cache_base,prefix):
-    '''download_layer is a function (external to the client) to download a layer
-    and update the client's token after. This is intended to be used by the multiprocessing
-    function.'''
-    targz = client.get_layer(image_id=image_id,
-                             download_folder=cache_base,
-                             prefix=prefix)
-    client.update_token()
-    return targz
-
-
-def extract_runscript(manifest,includecmd=False):
-    '''create_runscript will write a bash script with default "ENTRYPOINT" 
-    into the base_dir. If includecmd is True, CMD is used instead. For both.
-    if the result is found empty, the other is tried, and then a default used.
-    :param manifest: the manifest to use to get the runscript
-    :param includecmd: overwrite default command (ENTRYPOINT) default is False
-    '''
-    cmd = None
-
-    # Does the user want to use the CMD instead of ENTRYPOINT?
-    commands = ["Entrypoint","Cmd"]
-    if includecmd == True:
-        commands.reverse()
-    configs = get_configs(manifest,commands,delim=" ")
-    
-    # Look for non "None" command
-    for command in commands:
-        if configs[command] is not None:
-            cmd = configs[command]
-            break
-
-    if cmd is not None:
-        bot.verbose3("Adding Docker %s as Singularity runscript..." %(command.upper()))
-        bot.debug(cmd)
-
-        # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
-        if isinstance(cmd,list):
-            cmd = " ".join(cmd)
-
-        if not RUNSCRIPT_COMMAND_ASIS:
-            cmd = 'exec %s "$@"' %(cmd)
-        cmd = "#!/bin/sh\n\n%s" %(cmd)
-        return cmd
-
-    bot.debug("No Docker CMD or ENTRYPOINT found, skipping runscript generation.")
-    return cmd
-
-
-
-def extract_metadata_tar(manifest,image_name,include_env=True,
-                        include_labels=True,runscript=None):
-    '''extract_metadata_tar will write a tarfile with the environment,
-    labels, and runscript. include_env and include_labels should be booleans,
-    and runscript should be None or a string to write to the runscript. 
-    '''
-    tar_file = None
-    files = []
-    if include_env or include_labels:
-
-        # Extract and add environment
-        if include_env:               
-            environ = extract_env(manifest)
-            if environ not in [None,""]:
-                bot.verbose3('Adding Docker environment to metadata tar')
-                template = get_template('tarinfo')
-                template['name'] = './%s/env/%s-%s.sh' %(METADATA_FOLDER_NAME,
-                                                         DOCKER_NUMBER,
-                                                         DOCKER_PREFIX)
-                template['content'] = environ
-                files.append(template)
-
-        # Extract and add labels
-        if include_labels:
-            labels = extract_labels(manifest)
-            if labels is not None:
-                if isinstance(labels,dict):
-                    labels = json.dumps(labels)
-                bot.verbose3('Adding Docker labels to metadata tar')
-                template = get_template('tarinfo')
-                template['name'] = "./%s/labels.json" %METADATA_FOLDER_NAME
-                template['content'] = labels
-                files.append(template)
-
-        if runscript is not None:
-            bot.verbose3('Adding Docker runscript to metadata tar')
-            template = get_template('tarinfo')
-            template['name'] = "./%s/runscript" %METADATA_FOLDER_NAME
-            template['content'] = runscript
-            files.append(template)
-
-
-    if len(files) > 0:
-        output_folder = get_cache(subfolder="metadata", quiet=True)
-        tar_file = create_tar(files,output_folder)      
-    else:
-        bot.warning("No environment, labels files, or runscript will be included.")
-    return tar_file
-
-
-def extract_env(manifest):
-    '''extract the environment from the manifest, or return None. Used by
-    functions env_extract_image, and env_extract_tar
-    '''
-    environ = get_config(manifest,'Env')
-    if environ is not None:
-        if isinstance(environ,list):
-            environ = "\n".join(environ)
-        environ = ["export %s" %x for x in environ.split('\n')]
-        environ = "\n".join(environ)
-        bot.verbose3("Found Docker container environment!")    
-    return environ
-
-
-def env_extract_image(manifest):
-    '''env_extract_image will write a file of key value pairs of the environment
-    to export. The manner to export must be determined by the calling process
-    depending on the OS type.
-    :param manifest: the manifest to use
-    '''
-    environ = extract_env(manifest)
-    if environ is not None:
-        environ_file = write_singularity_infos(base_dir=ENV_BASE,
-                                               prefix=DOCKER_PREFIX,
-                                               start_number=DOCKER_NUMBER,
-                                               content=environ,
-                                               extension='sh')
-    return environ
-
-
-
-def extract_labels(manifest,labelfile=None,prefix=None):
-    '''extract_labels will write a file of key value pairs including
-    maintainer, and labels.
-    :param manifest: the manifest to use
-    :param labelfile: if defined, write to labelfile (json)
-    :param prefix: an optional prefix to add to the names
-    '''
-    if prefix is None:
-        prefix = ""
-
-    labels = get_config(manifest,'Labels')
-    if labels is not None and len(labels) is not 0:
-        bot.verbose3("Found Docker container labels!")    
-        if labelfile is not None:
-            for key,value in labels.items():
-                key = "%s%s" %(prefix,key)
-                value = ADD(key,value,labelfile,force=True)
-    return labels
-
-
-
-def get_config(manifest,spec="Entrypoint",delim=None):
-    '''get_config returns a particular spec (default is Entrypoint) 
-    from a VERSION 1 manifest obtained with get_manifest.
-    :param manifest: the manifest obtained from get_manifest
-    :param spec: the key of the spec to return, default is "Entrypoint"
-    :param delim: Given a list, the delim to use to join the entries. Default is newline
-    '''
-    cmd = None
-    if "history" in manifest:
-        history = manifest['history']
-        for entry in manifest['history']:
-            if 'v1Compatibility' in entry:
-                entry = json.loads(entry['v1Compatibility'])
-                if "config" in entry:
-                    if spec in entry["config"]:
-                        if entry["config"][spec] is not None:
-                            cmd = entry["config"][spec]
-                            break
-
-    # Standard is to include commands like ['/bin/sh']
-    if isinstance(cmd,list):
-        if delim is None:
-            delim = "\n"
-        cmd = delim.join(cmd)
-    bot.verbose3("Found Docker command (%s) %s" %(spec,cmd))
-
-    return cmd
-
-
-def get_configs(manifest,keys,delim=None):
-    '''get_configs is a wrapper for get_config to return a dictionary
-    with multiple config items.
-    :param manifest: the complete manifest
-    :param keys: the key to find
-    :param delim: given a list, combine based on this delim
-    '''
-    configs = dict()
-    if not isinstance(keys,list):
-        keys = [keys]
-    for key in keys:
-        configs[key] = get_config(manifest,key,delim=delim)
-    return configs

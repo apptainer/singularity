@@ -27,12 +27,16 @@ from defaults import INCLUDE_CMD
 from base import MultiProcess
 
 from sutils import (
+    change_tar_permissions,
     get_cache, 
     write_file
 )
 
 from .api import (
     DockerApiConnection,
+)
+
+from .tasks import (
     download_layer,
     extract_runscript,
     extract_metadata_tar
@@ -95,7 +99,7 @@ def IMPORT(image,auth=None,layerfile=None):
        
     # Get the cache (or temporary one) for docker
     cache_base = get_cache(subfolder="docker")
-    download_client = MultiProcess(workers=3)
+    download_client = MultiProcess()
 
     # Generate a queue of tasks to run with MultiProcess
     layers = []
@@ -111,6 +115,7 @@ def IMPORT(image,auth=None,layerfile=None):
 
     if len(tasks) > 0:
         layers = layers + download_client.run(func=download_layer,
+                                              func2=change_tar_permissions,
                                               tasks=tasks)
 
     # Get Docker runscript
