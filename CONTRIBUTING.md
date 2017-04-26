@@ -1,4 +1,4 @@
-# Contributor's agreement
+# Contributor's Agreement
 
 You are under no obligation whatsoever to provide any bug fixes, patches,
 or upgrades to the features, functionality or performance of the source
