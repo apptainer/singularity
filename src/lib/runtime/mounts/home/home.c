@@ -129,7 +129,7 @@ int _singularity_runtime_mount_home(void) {
             ABORT(255);
         }
 
-        if ( contain == 1 ) {
+        if ( contain != 1 ) {
             singularity_priv_escalate();
             singularity_message(VERBOSE, "Mounting home directory source to stage: %s -> %s\n", home_source, joinpath(tmpdir, home_dest));
             if ( mount(home_source, joinpath(tmpdir, home_dest), NULL, MS_BIND | MS_REC, NULL) < 0 ) {
