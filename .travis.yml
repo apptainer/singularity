@@ -1,7 +1,6 @@
 language: cpp
 
 addons:
-  sonarqube: true
   apt:
     packages:
       - flawfinder
