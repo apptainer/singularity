@@ -303,11 +303,6 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None)
     '''
     tar = tarfile.open(tar_file, "r:gz")
 
-    # Add all content objects to file
-    fd, tmp_tar = tempfile.mkstemp(prefix=("%s.fixperm." % tar_file))
-    os.close(fd)
-    fixed_tar = tarfile.open(tmp_tar, "w:gz")
-
     # Owner read, write (o+rw)
     if file_permission == None:
         file_permission = stat.S_IRUSR | stat.S_IWUSR
@@ -317,32 +312,43 @@ def change_tar_permissions(tar_file,file_permission=None,folder_permission=None)
         folder_permission = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR  
 
 
-    # Add owner write permission to all, not symlinks
-    bot.verbose("Fixing permission for %s" %(tar_file))
-    
+    # Add owner write permission to all, not symlinks      
     members = tar.getmembers()
-    
-    for member in members:  
-
-        # add o+rwx for directories
-        if member.isdir() and not member.issym():
-            member.mode = folder_permission | member.mode
-            extracted = tar.extractfile(member)        
-            fixed_tar.addfile(member, extracted)        
-
-        # add o+rw for plain files
-        elif member.isfile() and not member.issym():
-            member.mode = file_permission | member.mode
-            extracted = tar.extractfile(member)        
-            fixed_tar.addfile(member, extracted)
-        else:    
-            fixed_tar.addfile(member)
-
-    fixed_tar.close()
-    tar.close()
+  
+    if len(members) > 0: 
  
-    # Rename the fixed tar to be the old name
-    os.rename(tmp_tar, tar_file)
+        bot.verbose("Fixing permission for %s" %(tar_file))
+
+        # Add all content objects to file
+        fd, tmp_tar = tempfile.mkstemp(prefix=("%s.fixperm." % tar_file))
+        os.close(fd)
+        fixed_tar = tarfile.open(tmp_tar, "w:gz")
+
+        for member in members:  
+
+            # add o+rwx for directories
+            if member.isdir() and not member.issym():
+                member.mode = folder_permission | member.mode
+                extracted = tar.extractfile(member)        
+                fixed_tar.addfile(member, extracted)        
+
+            # add o+rw for plain files
+            elif member.isfile() and not member.issym():
+                member.mode = file_permission | member.mode
+                extracted = tar.extractfile(member)        
+                fixed_tar.addfile(member, extracted)
+            else:    
+                fixed_tar.addfile(member)
+
+        fixed_tar.close()
+        tar.close()
+ 
+        # Rename the fixed tar to be the old name
+        os.rename(tmp_tar, tar_file)
+    else:
+        tar.close()
+        bot.warning("Tar file %s is empty, skipping." %(tar_file))
+
     return tar_file        
         
 
