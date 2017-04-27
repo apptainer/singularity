@@ -45,6 +45,7 @@ int _singularity_runtime_mount_home(void) {
     char *home_dest = singularity_priv_home();
     char *home_source = singularity_priv_homedir();
     char *container_dir = singularity_runtime_rootfs(NULL);
+    int contain = 0;
 
 
     if ( singularity_config_get_bool(MOUNT_HOME) <= 0 ) {
@@ -58,6 +59,11 @@ int _singularity_runtime_mount_home(void) {
         ABORT(255);
     }
 
+    singularity_message(DEBUG, "Checking if SINGULARITY_CONTAIN is set\n");
+    if ( singularity_registry_get("CONTAIN") != NULL ) {
+        contain = 1;
+    }
+
     singularity_message(DEBUG, "Checking if home directories are being influenced by user\n");
     if ( singularity_registry_get("HOME") != NULL ) {
 #ifndef SINGULARITY_NO_NEW_PRIVS
@@ -69,6 +75,8 @@ int _singularity_runtime_mount_home(void) {
             singularity_message(ERROR, "Not mounting user requested home: User bind control is disallowed\n");
             ABORT(255);
         }
+        singularity_message(DEBUG, "SINGULARITY_HOME was set, not containing\n");
+        contain = 0;
     }
 
     singularity_message(DEBUG, "Checking ownership of home directory source: %s\n", home_source);
@@ -90,7 +98,7 @@ int _singularity_runtime_mount_home(void) {
     }
 
     singularity_message(DEBUG, "Checking if overlay is enabled\n");
-    if ( ( singularity_registry_get("CONTAIN") != NULL ) || ( singularity_registry_get("OVERLAYFS_ENABLED") == NULL ) ) {
+    if ( ( contain == 1 ) || ( singularity_registry_get("OVERLAYFS_ENABLED") == NULL ) ) {
         char *tmpdir;
         char *homedir_base;
 
@@ -121,7 +129,7 @@ int _singularity_runtime_mount_home(void) {
             ABORT(255);
         }
 
-        if ( singularity_registry_get("CONTAIN") == NULL ) {
+        if ( contain == 1 ) {
             singularity_priv_escalate();
             singularity_message(VERBOSE, "Mounting home directory source to stage: %s -> %s\n", home_source, joinpath(tmpdir, home_dest));
             if ( mount(home_source, joinpath(tmpdir, home_dest), NULL, MS_BIND | MS_REC, NULL) < 0 ) {
