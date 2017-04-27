@@ -48,12 +48,14 @@ all your interactions with the project members and users.
    changes in your PR so that the docs can be updated, or better, submit a
    sister PR to update the docs directly.
 8. If necessary, update the README.md, and check the `*.help` scripts under
-   [libexec/cli](libexec/cli) that provide the command line helper output. 
-9. Is there enough documentation in your code so a human can understand how it
-   works? This includes description of environmental variables, exposed ports,
-   useful file locations and container parameters.
+   [libexec/cli](libexec/cli) that provide the command line helper output. If
+   you make changes to the internal Python API, make sure to check those
+   changes into the [libexec/python/README.md](libexec/python/README.md) as
+   well.
+9. Is the code human understandable? This can be accomplished via a clear code
+   style as well as documentation and/or comments.
 10. The pull request will be reviewed by others, and the final merge must be
-   done by the Singularity project lead, @gmkurtzer.
+   done by the Singularity project lead, @gmkurtzer (or approved by him).
 
 
 # Code of Conduct
