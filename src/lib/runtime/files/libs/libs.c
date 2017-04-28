@@ -97,7 +97,11 @@ int _singularity_runtime_files_libs(void) {
                     if ( link_name[0] == '/' ) {
                         source = strdup(link_name);
                     } else {
-                        source = joinpath(dirname(strdup(current)), basename(strdup(link_name)));
+                        if ( link_name[0] == '/' ) {
+                            source = strdup(link_name);
+                        } else {
+                            source = joinpath(dirname(strdup(current)), link_name);
+                        }
                     }
                 } else {
                     singularity_message(WARNING, "Failed reading library link for %s: %s\n", current, strerror(errno));
@@ -130,7 +134,19 @@ int _singularity_runtime_files_libs(void) {
             }
             singularity_priv_drop();
 
+            free(source);
+            free(dest);
             current = strtok_r(NULL, ",", &tok);
+        }
+
+        if ( is_dir(libdir_contained) != 0 ) {
+            singularity_message(DEBUG, "Attempting to create contained libdir\n");
+            singularity_priv_escalate();
+            if ( s_mkpath(libdir_contained, 0755) != 0 ) {
+                singularity_message(ERROR, "Failed creating directory %s :%s\n", libdir_contained, strerror(errno));
+                ABORT(255);
+            }
+            singularity_priv_drop();
         }
 
         singularity_priv_escalate();
