@@ -140,6 +140,7 @@ int _singularity_runtime_files_libs(void) {
         }
 
         if ( is_dir(libdir_contained) != 0 ) {
+            char *ld_path;
             singularity_message(DEBUG, "Attempting to create contained libdir\n");
             singularity_priv_escalate();
             if ( s_mkpath(libdir_contained, 0755) != 0 ) {
@@ -147,6 +148,14 @@ int _singularity_runtime_files_libs(void) {
                 ABORT(255);
             }
             singularity_priv_drop();
+            ld_path = envar_path("LD_LIBRARY_PATH");
+            if ( ld_path == NULL ) {
+                singularity_message(DEBUG, "Setting LD_LIBRARY_PATH to '/.singularity.d/libs'\n");
+                envar_set("LD_LIBRARY_PATH", "/.singularity.d/libs", 1);
+            } else {
+                singularity_message(DEBUG, "Prepending '/.singularity.d/libs' to LD_LIBRARY_PATH\n");
+                envar_set("LD_LIBRARY_PATH", strjoin("/.singularity.d/libs:", ld_path), 1);
+            }
         }
 
         singularity_priv_escalate();
