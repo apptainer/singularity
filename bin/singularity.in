@@ -76,6 +76,8 @@ while true; do
         ;;
         -d|--debug)
             SINGULARITY_MESSAGELEVEL=5
+            SINGULARITY_NOSESSIONCLEANUP=1
+            export SINGULARITY_NOSESSIONCLEANUP
             message 4 "Enabling debugging\n"
             shift
         ;;
