@@ -66,7 +66,7 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     va_start (args, format);
 
     if (vsnprintf(message, 512, format, args) >= 512) {
-        memcpy(message+497, "(TRUNCATED...)", 14);
+        memcpy(message+496, "(TRUNCATED...)\n", 15);
         message[511] = '\0';
     }
 
