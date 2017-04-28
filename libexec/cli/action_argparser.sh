@@ -109,7 +109,7 @@ while true; do
         ;;
         -n|--nv)
             shift
-            for i in `ldconfig -p | grep -E "/libnv|/libcuda"`; do
+            for i in `ldconfig -p | grep -E "/libnv|/libcuda|/libEGL|/libGL|/libnvcu|/libvdpau|/libOpenCL|/libOpenGL"`; do
                 if [ -f "$i" ]; then
                     message 2 "Found NV library: $i\n"
                     if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
