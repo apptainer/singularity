@@ -81,7 +81,16 @@ case "$SINGULARITY_IMAGE" in
         for i in `cat "$SINGULARITY_CONTENTS"`; do
             name=`basename "$i"`
             message 1 "Exploding layer: $name\n"
-            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf -) || exit $?
+            ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -) || exit $? ) | while read file; do
+                if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
+                    # Skipping symlinks
+                    true
+                elif [ -f "$SINGULARITY_ROOTFS/$file" ]; then
+                    chmod u+w "$SINGULARITY_ROOTFS/$file"
+                elif [ -d "$SINGULARITY_ROOTFS/$file" ]; then
+                    chmod u+wx "$SINGULARITY_ROOTFS/${file%/}"
+                fi
+            done
         done
 
         rm -f "$SINGULARITY_CONTENTS"
