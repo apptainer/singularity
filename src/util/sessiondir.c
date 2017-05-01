@@ -87,7 +87,7 @@ int singularity_sessiondir(void) {
             envar_set("SINGULARITY_CLEANDIR", sessiondir, 1);
             close(sessiondir_fd);
 
-            execl(joinpath(LIBEXECDIR, "/singularity/bin/cleanupd"), "singularity: cleanupd", NULL);
+            execl(joinpath(LIBEXECDIR, "/singularity/bin/cleanupd"), "singularity: cleanupd", NULL); // Flawfinder: ignore (on top of old smokey...)
 
         } else if ( child > 0 ) {
             int tmpstatus;

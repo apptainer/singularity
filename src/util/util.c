@@ -278,7 +278,7 @@ char *random_string(int length) {
 
     ret = (char *) malloc(length);
  
-    srand(time(NULL) * pid);
+    srand(time(NULL) * pid); // Flawfinder: ignore (complete mathmetical randomness is not required)
     for (i = 0; i < length; ++i) {
         ret[i] = characters[rand() % (sizeof(characters) - 1)];
     }

@@ -49,7 +49,7 @@ int singularity_suid_init(char **argv) {
     singularity_message(VERBOSE2, "Checking program has appropriate permissions\n");
     if ( ( is_owner("/proc/self/exe", 0) < 0 ) || ( is_suid("/proc/self/exe") < 0 ) ) {
         char *path = (char*) malloc(PATH_MAX);
-        int len = readlink("/proc/self/exe", path, PATH_MAX - 1);
+        int len = readlink("/proc/self/exe", path, PATH_MAX - 1); // Flawfinder: ignore (TOCTOU not an issue here)
         if ( len <= 0 ) {
             singularity_abort(255, "Could not obtain link target of self\n");
         }
@@ -81,7 +81,7 @@ int singularity_suid_init(char **argv) {
 
         self = (char *) malloc(PATH_MAX);
         
-        if ( readlink("/proc/self/exe", self, PATH_MAX) <= 0 ) {
+        if ( readlink("/proc/self/exe", self, PATH_MAX) <= 0 ) { // Flawfinder: ignore (TOCTOU not an issue here)
             singularity_message(ERROR, "Could not dereference our own program name\n");
             ABORT(255);
         }
@@ -99,7 +99,7 @@ int singularity_suid_init(char **argv) {
 
             singularity_priv_drop_perm();
 
-            execv(argv[0], argv);
+            execv(argv[0], argv); // Flawfinder: ignore (all covered with sand)
 
             singularity_message(ERROR, "Failed exec'ing non-SUID program flow: %s\n", strerror(errno));
             ABORT(255);

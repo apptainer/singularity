@@ -90,7 +90,7 @@ int _singularity_runtime_files_libs(void) {
 
                 link_name = (char *) malloc(PATH_MAX);
 
-                len = readlink(current, link_name, PATH_MAX-1);
+                len = readlink(current, link_name, PATH_MAX-1); // Flawfinder: ignore
                 if ( ( len > 0 ) && ( len <= PATH_MAX) ) {
                     link_name[len] = '\0';
                     singularity_message(VERBOSE3, "Found library link source: %s -> %s\n", current, link_name);

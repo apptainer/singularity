@@ -56,7 +56,7 @@ int _singularity_image_mount(struct image_object *image, char *mount_point) {
         singularity_message(DEBUG, "fixing bad permissions on %s\n", mount_point);
 
         singularity_priv_escalate();
-        ret = chmod(mount_point, 0755);
+        ret = chmod(mount_point, 0755); // Flawfinder: ignore (TOCTOU preferred to opening attack surface with priviledged file descriptor)
         singularity_priv_drop();
 
         if ( ret != 0 ) {

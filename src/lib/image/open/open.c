@@ -97,7 +97,7 @@ int _singularity_image_open(struct image_object *image, int open_flags) {
                 ABORT(255);
             }
 
-            if ( readlink(fd_path, image_path, PATH_MAX-1) > 0 ) {
+            if ( readlink(fd_path, image_path, PATH_MAX-1) > 0 ) { // Flawfinder: ignore (TOCTOU not an issue within /proc)
                 char *current = strtok_r(strdup(limit_container_paths), ",", &path_token);
 
                 chomp(current);
