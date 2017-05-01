@@ -1,7 +1,7 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
- * “Singularity” Copyright (c) 2016, The Regents of the University of California,
+ * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
@@ -123,12 +123,10 @@ static int setup_container_environment(spank_t spank)
     return 0;
 }
 
-static int setup_container_cwd()
-{
-    char *target_pwd = envar_path("SINGULARITY_TARGET_PWD");
+static int setup_container_cwd() {
+    singularity_message(DEBUG, "Trying to change directory to where we started\n");
+    char *target_pwd = singularity_registry_get("TARGET_PWD");
 
-    singularity_message(DEBUG, "Trying to change directory to where we "
-                        "started\n");
     if (!target_pwd || (chdir(target_pwd) < 0)) {
         singularity_message(ERROR, "Failed to change into correct directory "
                             "(%s) inside container.",
@@ -168,9 +166,10 @@ static int setup_container(spank_t spank)
          return rc;
     }
 
-    if ((image = envar_path("SINGULARITY_IMAGE")) == NULL) {
-        singularity_message(ERROR, "SINGULARITY_IMAGE not defined!\n");
-        return -1;
+
+    char *image;
+    if ( ( image = singularity_registry_get("IMAGE") ) == NULL ) {
+        singularity_message(ERROR, "SINGULARITY_CONTAINER not defined!\n");
     }
 
     if ((rc = singularity_rootfs_init(image)) != 0) {  /* return rc; */ }

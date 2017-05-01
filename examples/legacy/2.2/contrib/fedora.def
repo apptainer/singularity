@@ -1,0 +1,19 @@
+BootStrap: yum
+OSVersion: 25
+MetaLink: https://mirrors.fedoraproject.org/metalink?repo=fedora-%{OSVERSION}&arch=$basearch
+# if you want a complete basic image, add @Core
+Include: dnf
+
+# If you want the updates (available at the bootstrap date) to be installed
+# inside the container during the bootstrap instead of the General Availability
+# point release then uncomment the following line
+#UpdateMetaLink: https://mirrors.fedoraproject.org/metalink?repo=updates-released-f%{OSVERSION}&arch=$basearch
+
+
+%runscript
+    echo "This is what happens when you run the container..."
+
+
+%post
+    echo "Hello from inside the container"
+    dnf -y install vim-minimal
