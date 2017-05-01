@@ -54,6 +54,18 @@ stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity"
 stest 1 sudo singularity bootstrap "$CONTAINER" "/path/to/nofile"
 
+
+cp "../examples/docker/Singularity" "$SINGULARITY_TESTDIR/Singularity"
+cat <<EOF >> "$SINGULARITY_TESTDIR/Singularity"
+%test
+echo "test123"
+EOF
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 sh -c "sudo singularity bootstrap '$CONTAINER' '$SINGULARITY_TESTDIR/Singularity' | grep 'test123'"
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 1 sh -c "sudo singularity bootstrap --notest '$CONTAINER' '$SINGULARITY_TESTDIR/Singularity' | grep 'test123'"
+
+
 stest 0 sudo rm -rf "$CONTAINERDIR"
 
 

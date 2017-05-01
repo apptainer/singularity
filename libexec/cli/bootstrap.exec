@@ -45,6 +45,11 @@ while true; do
             fi
             exit
         ;;
+        -T|--notest)
+            shift
+            SINGULARITY_NOTEST=1
+            export SINGULARITY_NOTEST
+        ;;
         -f|--force)
             shift
             SINGULARITY_REBOOTSTRAP=1

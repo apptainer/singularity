@@ -135,17 +135,19 @@ fi
 
 
 ### RUN TEST
-if singularity_section_exists "test" "$SINGULARITY_BUILDDEF"; then
-    message 1 "Running test scriptlet\n"
+if [ -z "${SINGULARITY_NOTEST:-}" ]; then
+    if singularity_section_exists "test" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Running test scriptlet\n"
 
-    ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
-    echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
-    echo "" >> "$SINGULARITY_ROOTFS/.test"
-    singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
+        ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
+        echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
+        echo "" >> "$SINGULARITY_ROOTFS/.test"
+        singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
 
-    chmod 0755 "$SINGULARITY_ROOTFS/.test"
+        chmod 0755 "$SINGULARITY_ROOTFS/.test"
 
-    chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
+        chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
+    fi
 fi
 
 > "$SINGULARITY_ROOTFS/etc/hosts"
