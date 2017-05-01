@@ -86,9 +86,9 @@ case "$SINGULARITY_IMAGE" in
                     # Skipping symlinks
                     true
                 elif [ -f "$SINGULARITY_ROOTFS/$file" ]; then
-                    chmod u+w "$SINGULARITY_ROOTFS/$file"
+                    chmod u+rw "$SINGULARITY_ROOTFS/$file"
                 elif [ -d "$SINGULARITY_ROOTFS/$file" ]; then
-                    chmod u+wx "$SINGULARITY_ROOTFS/${file%/}"
+                    chmod u+rwx "$SINGULARITY_ROOTFS/${file%/}"
                 fi
             done
         done
