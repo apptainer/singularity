@@ -59,6 +59,7 @@ note: This command must be executed as root.
 
 
 CREATE OPTIONS:
+    -T|--notest     Bootstrap without running tests in %test section
     -f/--force      Force a rebootstrap of an OS (note: this does not delete
                     what is currently in the image, just causes the core to
                     be reinstalled)
