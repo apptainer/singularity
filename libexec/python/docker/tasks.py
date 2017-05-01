@@ -44,8 +44,7 @@ def download_layer(client,image_id,cache_base):
     function. If return_tmp is True, the temporary file is returned (intended to be renamed 
     later)'''
     targz = client.get_layer(image_id=image_id,
-                             download_folder=cache_base,
-                             return_tmp=True)
+                             download_folder=cache_base)
     client.update_token()
     return targz
 

@@ -36,7 +36,6 @@ from .api import (
 )
 
 from .tasks import (
-    change_permissions,
     download_layer,
     extract_runscript,
     extract_metadata_tar
@@ -113,7 +112,6 @@ def IMPORT(image,auth=None,layerfile=None):
 
     if len(tasks) > 0:
         download_layers = download_client.run(func=download_layer,
-                                              func2=change_permissions,
                                               tasks=tasks)
 
     # Get Docker runscript
