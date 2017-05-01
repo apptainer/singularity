@@ -329,7 +329,7 @@ int _writable(const char *fpath, const struct stat *sb, int typeflag, struct FTW
         return(0);
     }
 
-    if ( ( retval = chmod(fpath, 0700) ) < 0 ) { 
+    if ( ( retval = chmod(fpath, 0700) ) < 0 ) { // Flawfinder: ignore
         singularity_message(WARNING, "Failed changing permission of file: %s\n", fpath);
     }
 

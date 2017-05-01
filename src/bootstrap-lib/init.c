@@ -46,7 +46,7 @@ int bootstrap_init(int argc, char **argv) {
         char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-dockerhub.sh");
 
         singularity_message(INFO, "Building from DockerHub container\n");
-        execl(bootstrap, bootstrap, NULL);
+        execl(bootstrap, bootstrap, NULL); // Flawfinder: ignore (this is necessary)
 
     } else if ( is_file(builddef) == 0 ) {
         char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile.sh");
@@ -56,13 +56,13 @@ int bootstrap_init(int argc, char **argv) {
             singularity_message(ERROR, "Failed parsing the bootstrap definition file: %s\n", singularity_registry_get("BUILDDEF"));
             ABORT(255);
         }
-        execl(bootstrap, bootstrap, NULL);
+        execl(bootstrap, bootstrap, NULL); // Flawfinder: ignore (this is necessary)
 
     } else if ( builddef == NULL || builddef[0] == '\0' ) {
         char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-null.sh");
 
         singularity_message(INFO, "Running bootstrap with no recipe\n");
-        execl(bootstrap, bootstrap, NULL);
+        execl(bootstrap, bootstrap, NULL); // Flawfinder: ignore (this is necessary)
 
     } else {
         singularity_message(ERROR, "Unsupported bootstrap definition format: '%s'\n", builddef);
