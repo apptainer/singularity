@@ -145,6 +145,13 @@ singularity pull shub://vsoch/singularity-images
 Done. Container is at: ./vsoch-singularity-images-mongo.img
 ```
 
+### Plugins
+Singularity plugins are custom environment variables that can be set to turn bootstrap (and other building) customizations on and off. Currently, we just have one plugin that will, when turned on, have the Python API backend change permissions for the tarballs.
+
+**SINGULARITY_FIX_PERMS**
+If set to `True/true/1/yes`, the Python back end will parse through the tar files from Docker in memory, and fix permissions. This sets the variable `PLUGIN_FIXPERMS` in the script, and is by default False.
+
+
 ### General
 **SINGULARITY_PYTHREADS**
 The Python modules use threads (workers) to download layer files for Docker, and change permissions. By default, we will use 9 workers, unless the environment variable `SINGULARITY_PYTHREADS` is defined.
