@@ -25,6 +25,7 @@ from defaults import (
     DOCKER_PREFIX,
     ENV_BASE,
     LABELFILE,
+    PLUGIN_FIXPERMS,
     METADATA_FOLDER_NAME,
     RUNSCRIPT_COMMAND_ASIS
 )
@@ -44,7 +45,9 @@ def download_layer(client,image_id,cache_base):
     function. If return_tmp is True, the temporary file is returned (intended to be renamed 
     later)'''
     targz = client.get_layer(image_id=image_id,
-                             download_folder=cache_base)
+                             download_folder=cache_base,
+                             return_tmp=PLUGIN_FIXPERMS) # return tmp when we need to 
+                                                         # fix permissions
     client.update_token()
     return targz
 

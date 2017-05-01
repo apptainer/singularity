@@ -22,7 +22,10 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 import os
-from defaults import INCLUDE_CMD
+from defaults import (
+    INCLUDE_CMD,
+    PLUGIN_FIXPERMS
+)
 
 from base import MultiProcess
 
@@ -37,6 +40,7 @@ from .api import (
 
 from .tasks import (
     download_layer,
+    change_permissions,
     extract_runscript,
     extract_metadata_tar
 )
@@ -110,8 +114,14 @@ def IMPORT(image,auth=None,layerfile=None):
             tasks.append((client,image_id,cache_base))
         layers.append(targz)
 
+    # Does the user want to change permissions of tar?
+    func2 = None
+    if PLUGIN_FIXPERMS:
+        func2 = change_permissions
+
     if len(tasks) > 0:
         download_layers = download_client.run(func=download_layer,
+                                              func2=func2,
                                               tasks=tasks)
 
     # Get Docker runscript
