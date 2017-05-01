@@ -25,6 +25,10 @@
 test_init "Running Flawfinder"
 
 stest 0 which flawfinder
-stest 1 sh -c "flawfinder -S --minlevel=3 ../src | grep -E '^Hits = '"
+stest 0 sh -c "flawfinder -SQ --minlevel=3 ../src > '$SINGULARITY_TESTDIR/ff.out'"
+if ! grep -q 'No hits found.' "$SINGULARITY_TESTDIR/ff.out"; then
+    cat "$SINGULARITY_TESTDIR/ff.out"
+    exit 1
+fi
 
 test_cleanup
