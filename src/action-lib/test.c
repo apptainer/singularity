@@ -35,7 +35,7 @@ void action_test(int argc, char **argv) {
     singularity_message(VERBOSE, "Exec'ing /.test\n");
 
     if ( is_exec("/.test") == 0 ) {
-        if ( execl("/bin/sh", "test:", "-e", "-x", "/.test", NULL) < 0 ) { // Flawfinder: ignore
+        if ( execl("/bin/sh", "/bin/sh", "-e", "-x", "/.test", NULL) < 0 ) { // Flawfinder: ignore
             singularity_message(ERROR, "Failed to execv() /.test: %s\n", strerror(errno));
         }
     } else {
