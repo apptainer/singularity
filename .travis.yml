@@ -22,12 +22,12 @@ compiler:
 before_install:
   # so that adjusted PATH propagates into sudo
   - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
-  # Seems sonarqube plugin misses the CPP pieces?
-  - mkdir -p      $TRAVIS_BUILD_DIR/3rdparty
-  - cd $TRAVIS_BUILD_DIR/3rdparty
-  - wget https://sonarqube.com/static/cpp/build-wrapper-linux-x86.zip
-  - unzip build-wrapper-linux-x86.zip
-  - export PATH=$PWD/build-wrapper-linux-x86:$PATH
+#  # Seems sonarqube plugin misses the CPP pieces?
+#  - mkdir -p $TRAVIS_BUILD_DIR/3rdparty
+#  - cd $TRAVIS_BUILD_DIR/3rdparty
+#  - wget https://sonarqube.com/static/cpp/build-wrapper-linux-x86.zip
+#  - unzip build-wrapper-linux-x86.zip
+#  - export PATH=$PWD/build-wrapper-linux-x86:$PATH
   # Install updated version of pylint
   - sudo pip install pylint
   # Install last release for legacy testing
