@@ -82,12 +82,15 @@ METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER",
 
 
 #######################################################################
-# Plugins
+# Plugins and Formatting
 #######################################################################
 
 PLUGIN_FIXPERMS = convert2boolean(getenv("SINGULARITY_FIX_PERMS",
                                   default=False))
 
+COLORIZE = getenv("SINGULARITY_COLORIZE", default=None)
+if COLORIZE is not None:
+    COLORIZE = convert2boolean(COLORIZE)
 
 #######################################################################
 # Cache

@@ -145,6 +145,13 @@ singularity pull shub://vsoch/singularity-images
 Done. Container is at: ./vsoch-singularity-images-mongo.img
 ```
 
+### Formatting
+Formatting refers to the user interface for the command line tool.
+
+**SINGULARITY_COLORIZE**
+By default, debug messages (and other types) use ascii escape sequences to various commands with colors. This helps to distinguish them, and makes the user interface a bit more pleasant. If the output is not going to a terminal, or if the terminal does not support the ascii escape sequences, this variable is set to False. The user can always override this by setting this variable.
+
+
 ### Plugins
 Singularity plugins are custom environment variables that can be set to turn bootstrap (and other building) customizations on and off. Currently, we just have one plugin that will, when turned on, have the Python API backend change permissions for the tarballs.
 

@@ -75,6 +75,7 @@ class SingularityMessage:
         self.history = []
         self.errorStream = sys.stderr
         self.outputStream = sys.stdout
+        self.colorize = self.useColor()
         self.colors = {ABRT:"\033[31m",
                        ERROR: "\033[91m",
                        WARNING:"\033[93m",
@@ -82,6 +83,36 @@ class SingularityMessage:
                        INFO:"\033[94m",
                        DEBUG:"\033[36m",
                        'OFF':"\033[0m"}
+
+
+    # Colors --------------------------------------------
+
+    def useColor(self):
+        '''useColor will determine if color should be added
+        to a print. Will check if being run in a terminal, and
+        if has support for asci'''
+        COLORIZE = get_user_color_preference()
+        if COLORIZE is not None:
+            return COLORIZE
+        streams = [self.errorStream,self.outputStream]
+        for stream in streams:
+            if not hasattr(stream, 'isatty'):
+                return False
+            if not stream.isatty():
+                return False
+        return True
+
+
+    def addColor(self,level,text):
+        '''addColor to the prompt (usually prefix) if terminal
+        supports, and specified to do so'''
+        if self.colorize:
+            if level in self.colors:
+                text = "%s%s%s" %(self.colors[level],
+                                  text,
+                                  self.colors["OFF"])
+        return text
+
 
     def emitError(self,level):
         '''determine if a level should print to
@@ -114,13 +145,6 @@ class SingularityMessage:
             return True
         return False
 
-    def colorize(self,level,text):
-        if level in self.colors:
-            text = "%s%s%s" %(self.colors[level],
-                              text,
-                              self.colors["OFF"])
-        return text
-
 
     def emit(self,level,message,prefix=None):
         '''emit is the main function to print the message
@@ -131,10 +155,10 @@ class SingularityMessage:
         '''
 
         if prefix is not None:
-            prefix = self.colorize(level,"%s " %(prefix))
+            prefix = self.addColor(level,"%s " %(prefix))
         else:
             prefix = ""
-            message = self.colorize(level,message)
+            message = self.addColor(level,message)
 
         # Add the prefix 
         message = "%s%s" %(prefix,message)
@@ -191,7 +215,8 @@ class SingularityMessage:
 
         if prefix is None:
             prefix = 'Progress'
-        prefix = "\033[1m" + prefix + "\033[0m"
+        if self.colorize:
+            prefix = "\033[1m" + prefix + "\033[0m"
 
         # Download sizes can be imperfect, setting carriage_return to False
         # and writing newline with caller cleans up the UI
@@ -200,12 +225,21 @@ class SingularityMessage:
             progress = length
 
         if symbol is None:
-            symbol = ' '
+            if self.colorize:
+                symbol = ' '
+            else:
+                symbol = "="
 
         if progress < length:
-            bar = "\033[42m" + symbol * progress + "\033[0m" + '|' + '-' * (length - progress - 1)
+            if self.colorize:
+                bar = "\033[42m" + symbol * progress + "\033[0m" + '|' + '-' * (length - progress - 1)
+            else:
+                bar = symbol * progress + '|' + '-' * (length - progress - 1)
         else:
-            bar = "\033[42m" + symbol * progress + "\033[0m" + '-' * (length - progress)
+            if self.colorize:
+                bar = "\033[42m" + symbol * progress + "\033[0m" + '-' * (length - progress)
+            else:
+                bar = symbol * progress + '-' * (length - progress)
 
         # Only show progress bar for level > min_level
         if self.level > min_level:
@@ -281,5 +315,22 @@ def get_logging_level():
 
     return int(os.environ.get("SINGULARITY_MESSAGELEVEL",5))
     
+    variable = os.environ.get(variable_key, default)
+
+
+def get_user_color_preference():
+    COLORIZE = os.environ.get('SINGULARITY_COLORIZE',None)
+    if COLORIZE is not None:
+        COLORIZE = convert2boolean(COLORIZE)
+    return COLORIZE
+
+
+def convert2boolean(arg):
+  '''convert2boolean is used for environmental variables that must be
+  returned as boolean'''
+  if not isinstance(arg,bool):
+      return arg.lower() in ("yes", "true", "t", "1","y")
+  return arg
+
 
 bot = SingularityMessage()
