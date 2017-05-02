@@ -75,6 +75,13 @@ class SingularityMessage:
         self.history = []
         self.errorStream = sys.stderr
         self.outputStream = sys.stdout
+        self.colors = {ABRT:"\033[31m",
+                       ERROR: "\033[91m",
+                       WARNING:"\033[93m",
+                       LOG:"\033[95m",
+                       INFO:"\033[94m",
+                       DEBUG:"\033[36m",
+                       'OFF':"\033[0m"}
 
     def emitError(self,level):
         '''determine if a level should print to
@@ -107,6 +114,13 @@ class SingularityMessage:
             return True
         return False
 
+    def colorize(self,level,text):
+        if level in self.colors:
+            text = "%s%s%s" %(self.colors[level],
+                              text,
+                              self.colors["OFF"])
+        return text
+
 
     def emit(self,level,message,prefix=None):
         '''emit is the main function to print the message
@@ -117,9 +131,10 @@ class SingularityMessage:
         '''
 
         if prefix is not None:
-            prefix = "%s " %(prefix)
+            prefix = self.colorize(level,"%s " %(prefix))
         else:
             prefix = ""
+            message = self.colorize(level,message)
 
         # Add the prefix 
         message = "%s%s" %(prefix,message)
@@ -176,6 +191,7 @@ class SingularityMessage:
 
         if prefix is None:
             prefix = 'Progress'
+        prefix = "\033[1m" + prefix + "\033[0m"
 
         # Download sizes can be imperfect, setting carriage_return to False
         # and writing newline with caller cleans up the UI
@@ -184,12 +200,12 @@ class SingularityMessage:
             progress = length
 
         if symbol is None:
-            symbol = '='
+            symbol = ' '
 
         if progress < length:
-            bar = symbol * progress + '|' + '-' * (length - progress - 1)
+            bar = "\033[42m" + symbol * progress + "\033[0m" + '|' + '-' * (length - progress - 1)
         else:
-            bar = symbol * progress + '-' * (length - progress)
+            bar = "\033[42m" + symbol * progress + "\033[0m" + '-' * (length - progress)
 
         # Only show progress bar for level > min_level
         if self.level > min_level:
