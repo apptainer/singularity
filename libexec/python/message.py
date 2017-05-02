@@ -315,8 +315,6 @@ def get_logging_level():
 
     return int(os.environ.get("SINGULARITY_MESSAGELEVEL",5))
     
-    variable = os.environ.get(variable_key, default)
-
 
 def get_user_color_preference():
     COLORIZE = os.environ.get('SINGULARITY_COLORIZE',None)
