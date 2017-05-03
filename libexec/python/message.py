@@ -214,8 +214,6 @@ class SingularityMessage:
 
         if prefix is None:
             prefix = 'Progress'
-        if self.colorize:
-            prefix = "\033[1m" + prefix + "\033[0m"
 
         # Download sizes can be imperfect, setting carriage_return to False
         # and writing newline with caller cleans up the UI
