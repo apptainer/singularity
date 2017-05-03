@@ -75,7 +75,7 @@ case "$SINGULARITY_IMAGE" in
 
         eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 
-        message 1 "Building container runtime...\n"
+        message 1 "Creating container runtime...\n"
         message 2 "Importing: base Singularity environment\n"
         zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
          
