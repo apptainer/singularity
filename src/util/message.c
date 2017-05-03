@@ -153,13 +153,13 @@ void _singularity_message(int level, const char *function, const char *file_in, 
         }
 
         if ( level == INFO && messagelevel == INFO ) {
-            printf("%s" ANSI_COLOR_RESET, message);
+            printf("%s" ANSI_COLOR_RESET, message); // Flawfinder: ignore (false alarm, format is constant)
         } else if ( level == INFO ) {
-            printf("%s%s" ANSI_COLOR_RESET, header_string, message);
+            printf("%s%s" ANSI_COLOR_RESET, header_string, message); // Flawfinder: ignore (false alarm, format is constant)
         } else if ( level == LOG && messagelevel <= INFO ) {
             // Don't print anything...
         } else {
-            fprintf(stderr, "%s%s" ANSI_COLOR_RESET, header_string, message);
+            fprintf(stderr, "%s%s" ANSI_COLOR_RESET, header_string, message); // Flawfinder: ignore (false alarm, format is constant)
         }
 
         fflush(stdout);
