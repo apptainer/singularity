@@ -76,13 +76,12 @@ class SingularityMessage:
         self.errorStream = sys.stderr
         self.outputStream = sys.stdout
         self.colorize = self.useColor()
-        self.colors = {ABRT:"\033[31m",
-                       ERROR: "\033[91m",
-                       WARNING:"\033[93m",
-                       LOG:"\033[95m",
-                       INFO:"\033[94m",
-                       DEBUG:"\033[36m",
-                       'OFF':"\033[0m"}
+        self.colors = {ABRT:"\033[31m",    # dark red
+                       ERROR: "\033[91m",  # red
+                       WARNING:"\033[93m", # dark yellow
+                       LOG:"\033[95m",     # purple
+                       DEBUG:"\033[36m",   # cyan
+                       'OFF':"\033[0m"}    # end sequence
 
 
     # Colors --------------------------------------------
@@ -225,21 +224,12 @@ class SingularityMessage:
             progress = length
 
         if symbol is None:
-            if self.colorize:
-                symbol = ' '
-            else:
-                symbol = "="
+            symbol = "="
 
         if progress < length:
-            if self.colorize:
-                bar = "\033[42m" + symbol * progress + "\033[0m" + '|' + '-' * (length - progress - 1)
-            else:
-                bar = symbol * progress + '|' + '-' * (length - progress - 1)
+            bar = symbol * progress + '|' + '-' * (length - progress - 1)
         else:
-            if self.colorize:
-                bar = "\033[42m" + symbol * progress + "\033[0m" + '-' * (length - progress)
-            else:
-                bar = symbol * progress + '-' * (length - progress)
+            bar = symbol * progress + '-' * (length - progress)
 
         # Only show progress bar for level > min_level
         if self.level > min_level:
