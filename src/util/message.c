@@ -62,6 +62,7 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     int syslog_level = LOG_NOTICE;
     char message[512]; // Flawfinder: ignore (messages are truncated to 512 chars)
     char *prefix = NULL;
+    char *color = NULL;
     va_list args;
     va_start (args, format);
 
@@ -83,27 +84,34 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     switch (level) {
         case ABRT:
             prefix = "ABORT";
+            color = ANSI_COLOR_RED;
             syslog_level = LOG_ALERT;
             break;
         case ERROR:
             prefix = "ERROR";
+            color = ANSI_COLOR_LIGHTRED;
             syslog_level = LOG_ERR;
             break;
-        case  WARNING:
+        case WARNING:
             prefix = "WARNING";
+            color = ANSI_COLOR_YELLOW;
             syslog_level = LOG_WARNING;
             break;
         case LOG:
             prefix = "LOG";
+            color = ANSI_COLOR_BLUE;
             break;
         case DEBUG:
             prefix = "DEBUG";
+            color = "";
             break;
         case INFO:
             prefix = "INFO";
+            color = "";
             break;
         default:
             prefix = "VERBOSE";
+            color = "";
             break;
     }
 
@@ -120,7 +128,7 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     }
 
     if ( level <= messagelevel ) {
-        char header_string[95];
+        char header_string[100];
 
         if ( messagelevel >= DEBUG ) {
             char debug_string[25];
@@ -137,21 +145,21 @@ void _singularity_message(int level, const char *function, const char *file_in, 
             debug_string[24] = '\0';
             snprintf(tmp_header_string, 86, "%-18s %s", debug_string, location_string); // Flawfinder: ignore
             tmp_header_string[85] = '\0';
-            snprintf(header_string, 95, "%-7s %-60s ", prefix, tmp_header_string); // Flawfinder: ignore
-            header_string[94] = '\0';
+            snprintf(header_string, 100, "%s%-7s %-60s ", color, prefix, tmp_header_string); // Flawfinder: ignore
+//            header_string[94] = '\0';
         } else {
-            snprintf(header_string, 10, "%-7s: ", prefix); // Flawfinder: ignore
-            header_string[9] = '\0';
+            snprintf(header_string, 15, "%s%-7s: ", color, prefix); // Flawfinder: ignore
+//            header_string[9] = '\0';
         }
 
         if ( level == INFO && messagelevel == INFO ) {
-            printf("%s", message);
+            printf("%s" ANSI_COLOR_RESET, message);
         } else if ( level == INFO ) {
-            printf("%s%s", header_string, message);
+            printf("%s%s" ANSI_COLOR_RESET, header_string, message);
         } else if ( level == LOG && messagelevel <= INFO ) {
             // Don't print anything...
         } else {
-            fprintf(stderr, "%s%s", header_string, message);
+            fprintf(stderr, "%s%s" ANSI_COLOR_RESET, header_string, message);
         }
 
         fflush(stdout);
