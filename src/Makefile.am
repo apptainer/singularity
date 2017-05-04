@@ -1,4 +1,4 @@
-SUBDIRS = lib action-lib bootstrap-lib util
+SUBDIRS = lib action-lib bootstrap-lib util slurm
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile

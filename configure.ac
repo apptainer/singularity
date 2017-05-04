@@ -332,6 +332,7 @@ AC_CONFIG_FILES([
    Makefile
    singularity.spec
    test.sh
+   src/slurm/Makefile
    src/Makefile
    src/lib/Makefile
    src/lib/runtime/Makefile
