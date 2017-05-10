@@ -21,9 +21,10 @@ CREATE OPTIONS:
                     be reinstalled)
     -s|--section    Only run a given section within the bootstrap (setup,
                     post, files, environment, test, labels, none)
+       --nobase     Skip the generation of the base OS
 
 
-DEFFILE BOOTSTRAP EXAMPLES:
+DEFFILE BASEOS EXAMPLES:
 
     Docker:
         BootStrap: docker
