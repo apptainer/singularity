@@ -8,51 +8,7 @@ a container:
     BootStrap: docker
     From: library/ubuntu:14.04.1
 
-This by default will use the `ENTRYPOINT` as the runscript, unless you tell
-it to use Cmd instead:
-
-
-    BootStrap: docker
-    From: tensorflow/tensorflow:latest
-    IncludeCmd: yes
-
-
-and to override all Docker, you can write a %runscript section:
-
-    BootStrap: docker
-    From: ubuntu:latest
-
-    %runscript
-   
-    exec echo "Hello Moto!"
-
-
-You can add files, and define a list of labels for your container:
-
-
-    BootStrap: docker
-    From: ubuntu:latest
-
-    %labels
-    HELLO MOTO
-    KEY VALUE
-
-    %files
-    /path/on/host/file.txt /path/on/container/file.txt 
-    relative_file.txt /path/on/container/relative_file.txt
-
-
-Here is a non-Docker example:
-
-
-    BootStrap: debian
-    OSVersion: stable
-    MirrorURL: http://us.archive.ubuntu.com/ubuntu/
-
-
-This simple bootstrap has within it all of the necessary bits of information
-to bootstrap a minimal Ubuntu container image.
-
+For more documentation on definition file recipes, look below.
 
 note: This command must be executed as root.
 
@@ -66,11 +22,57 @@ CREATE OPTIONS:
     -s|--section    Only run a given section within the bootstrap (setup,
                     post, files, environment, test, labels, none)
 
+
+DEFFILE BOOTSTRAP EXAMPLES:
+
+    Docker:
+        BootStrap: docker
+        From: tensorflow/tensorflow:latest
+        IncludeCmd: yes #Include the CMD/ENTRYPOINT as the Singularity Runscript
+
+    YUM/RHEL:
+        BootStrap: yum
+        OSVersion: 7
+        MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+        Include: yum #This is important to include inside the base container
+
+    Debian/Ubuntu:
+        BootStrap: debootstrap
+        OSVersion: trusty
+        MirrorURL: http://us.archive.ubuntu.com/ubuntu/
+
+
+DEFFILE SECTION EXAMPLES:
+
+    %setup
+        echo "This is a scriptlet that will be executed on the host, as root, after"
+        echo "the container has been bootstrapped. To install things into the container"
+        echo "reference the file system location with \$SINGULARITY_BUILDROOT"
+
+    %post
+        echo "This scriptlet section will be executed from within the container after"
+        echo "the bootstrap/base has been created and setup"
+
+    %test
+        echo "Define any test commands that should be executed after container has been"
+        echo "built. This scriptlet will be executed from within the running container"
+        echo "as the root user. Pay attention to the exit/return value of this scriptlet"
+        echo "as any non-zero exit code will be assumed as failure"
+        exit 0
+
+    %labels
+        HELLO MOTO
+        KEY VALUE
+
+    %files
+        /path/on/host/file.txt /path/on/container/file.txt 
+        relative_file.txt /path/on/container/relative_file.txt
+
+
 EXAMPLES:
 
     $ singularity create /tmp/Debian.img
     $ sudo singularity bootstrap /tmp/Debian.img debian.def
-
 
 
 For additional help, please visit our public documentation pages which are
