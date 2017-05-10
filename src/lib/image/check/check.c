@@ -52,9 +52,14 @@ int _singularity_image_check(struct image_object *image) {
         ABORT(255);
     }
     
-    if ( ! S_ISREG(filestat.st_mode) ) {
-        singularity_message(VERBOSE2, "Image is not a file, returning retval=1: %s\n", image->path);
+    if ( S_ISDIR(filestat.st_mode) ) {
+        singularity_message(VERBOSE2, "Image is a directory, returning retval=1: %s\n", image->path);
         return(1);
+    }
+
+    if ( ! S_ISREG(filestat.st_mode) ) {
+        singularity_message(ERROR, "Image is not a file or directory: %s\n", image->path);
+        ABORT(255);
     }
 
     if ( ( image_fp = fdopen(dup(image->fd), "r") ) == NULL ) {

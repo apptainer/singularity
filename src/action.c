@@ -73,6 +73,7 @@ int main(int argc, char **argv) {
 
     singularity_runtime_ns(SR_NS_ALL);
 
+    singularity_image_check(&image);
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
