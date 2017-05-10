@@ -55,6 +55,12 @@ while true; do
             SINGULARITY_REBOOTSTRAP=1
             export SINGULARITY_REBOOTSTRAP
         ;;
+        -s|--section)
+            shift
+            SINGULARITY_BUILDSECTION="$1"
+            export SINGULARITY_BUILDSECTION
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: $1\n"
             exit 1

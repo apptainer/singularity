@@ -75,6 +75,7 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
     envar_set("SINGULARITY_MESSAGELEVEL", singularity_registry_get("MESSAGELEVEL"), 1);
     envar_set("SINGULARITY_NOTEST", singularity_registry_get("NOTEST"), 1);
+    envar_set("SINGULARITY_BUILDSECTION", singularity_registry_get("BUILDSECTION"), 1);
     envar_set("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
     envar_set("HOME", singularity_priv_home(), 1);
     envar_set("LANG", "C", 1);

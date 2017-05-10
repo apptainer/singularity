@@ -75,79 +75,101 @@ cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 DEBIAN_FRONTEND=noninteractive
 export DEBIAN_FRONTEND
 
-
 ### RUN SETUP
-if singularity_section_exists "setup" "$SINGULARITY_BUILDDEF"; then
-    ARGS=`singularity_section_args "setup" "$SINGULARITY_BUILDDEF"`
-    singularity_section_get "setup" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x $ARGS || ABORT 255
-fi
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "setup" ]; then
+    if singularity_section_exists "setup" "$SINGULARITY_BUILDDEF"; then
+        ARGS=`singularity_section_args "setup" "$SINGULARITY_BUILDDEF"`
+        singularity_section_get "setup" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x $ARGS || ABORT 255
+    fi
 
-if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" -a ! -L "$SINGULARITY_ROOTFS/bin/sh" ]; then
-    message ERROR "Could not locate /bin/sh inside the container\n"
-    exit 255
+    if [ ! -x "$SINGULARITY_ROOTFS/bin/sh" -a ! -L "$SINGULARITY_ROOTFS/bin/sh" ]; then
+        message ERROR "Could not locate /bin/sh inside the container\n"
+        exit 255
+    fi
+else
+    message 2 "Skipping setup section\n"
 fi
 
 ### RUN POST
-if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
-    message 1 "Running post scriptlet\n"
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "post" ]; then
+    if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Running post scriptlet\n"
 
-    ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
-    singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
+        ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
+        singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
+    fi
+else
+    message 2 "Skipping post section\n"
 fi
 
 ### ENVIRONMENT
-if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
-    message 1 "Adding environment to container\n"
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "environment" ]; then
+    if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding environment to container\n"
 
-    singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
+        singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
+    fi
+else
+    message 2 "Skipping environment section\n"
 fi
 
 ### LABELS
-if singularity_section_exists "labels" "$SINGULARITY_BUILDDEF"; then
-    message 1 "Adding deffile section labels to container\n"
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "labels" ]; then
+    if singularity_section_exists "labels" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding deffile section labels to container\n"
 
-    singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
-        if [ -n "$KEY" -a -n "$VAL" ]; then
-            $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
-            set +x
-        fi
-    done
+        singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
+            if [ -n "$KEY" -a -n "$VAL" ]; then
+                $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+            fi
+        done
+    fi
+else
+    message 2 "Skipping labels section\n"
 fi
 
 
 ### FILES
-if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
-    message 1 "Adding files to container\n"
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "files" ]; then
+    if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding files to container\n"
 
-    singularity_section_get "files" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
-        if [ -n "${origin:-}" ]; then
-            if [ -z "${dest:-}" ]; then
-                dest="$origin"
+        singularity_section_get "files" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
+            if [ -n "${origin:-}" ]; then
+                if [ -z "${dest:-}" ]; then
+                    dest="$origin"
+                fi
+                message 1 "Copying '$origin' to '$dest'\n"
+                if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
+                    message ERROR "Failed copying file(s) into container\n"
+                    exit 255
+                fi
             fi
-            message 1 "Copying '$origin' to '$dest'\n"
-            if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
-                message ERROR "Failed copying file(s) into container\n"
-                exit 255
-            fi
-        fi
-    done
+        done
+    fi
+else
+    message 2 "Skipping files section\n"
 fi
 
 
 ### RUN TEST
-if [ -z "${SINGULARITY_NOTEST:-}" ]; then
-    if singularity_section_exists "test" "$SINGULARITY_BUILDDEF"; then
-        message 1 "Running test scriptlet\n"
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "test" ]; then
+    if [ -z "${SINGULARITY_NOTEST:-}" ]; then
+        if singularity_section_exists "test" "$SINGULARITY_BUILDDEF"; then
+            message 1 "Running test scriptlet\n"
 
-        ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
-        echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
-        echo "" >> "$SINGULARITY_ROOTFS/.test"
-        singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
+            ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
+            echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
+            echo "" >> "$SINGULARITY_ROOTFS/.test"
+            singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
 
-        chmod 0755 "$SINGULARITY_ROOTFS/.test"
+            chmod 0755 "$SINGULARITY_ROOTFS/.test"
 
-        chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
+            chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
+        fi
     fi
+else
+    message 2 "Skipping test section\n"
 fi
 
 > "$SINGULARITY_ROOTFS/etc/hosts"
