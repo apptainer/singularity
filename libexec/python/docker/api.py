@@ -193,7 +193,8 @@ class DockerApiConnection(ApiConnection):
         bot.verbose("Obtaining tags: %s" %base)
 
         # We use get_tags for a testing endpoint in update_token
-        response = self.get(base)
+        response = self.get(base,
+                            return_response=return_response)
         if return_response:
             return response
 

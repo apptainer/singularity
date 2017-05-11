@@ -4,7 +4,7 @@
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Project License](LICENSE.md)
 - [Documentation](http://singularity.lbl.gov/)
-
+- [Citation](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0177459)
 
 # Singularity - Enabling users to have full control of their environment.
 
