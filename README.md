@@ -156,12 +156,21 @@ above. Doing so reveals this:
 And as expected, the Python version we now see is what comes from by 
 default in CentOS-6.
 
+
 # Cite as:
+
+```
+Kurtzer GM, Sochat V, Bauer MW (2017) Singularity: Scientific containers for mobility of compute. PLoS ONE 12(5): e0177459. https://doi.org/10.1371/journal.pone.0177459
+```
+
+We also have a Zenodo citation:
+
+```
 Kurtzer, Gregory M.. (2016). Singularity 2.1.2 - Linux application and environment
 containers for science. 10.5281/zenodo.60736
 
 http://dx.doi.org/10.5281/zenodo.60736
-
+```
 
 # Webpage
 We have full documentation at [http://singularity.lbl.gov/](http://singularity.lbl.gov/), and [welcome contributions](http://www.github.com/singularityware/singularityware.github.io).
