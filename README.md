@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/singularityware/singularity.svg?branch=master)](https://travis-ci.org/singularityware/singularity)
 
-- [Guidelines for Contributing](CONTRIBUTING.md)
-- [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
+- [Guidelines for Contributing](.github/CONTRIBUTING)
+- [Pull Request Template](.github/PULL_REQUEST_TEMPLATE)
 - [Project License](LICENSE.md)
 - [Documentation](http://singularity.lbl.gov/)
 - [Citation](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0177459)
