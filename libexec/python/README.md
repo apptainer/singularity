@@ -297,6 +297,35 @@ Example usage is as follows:
     python ../size.py
 
 
+The size is obtained via reading the (version 2.0) manifest size of each layer, and adding them together. For example, I could use the API internally in Python as follows:
+
+```
+cd libexec/python
+ipython
+
+from docker.api import DockerApiConnection
+client=DockerApiConnection(image='ubuntu')
+DEBUG Headers found: Accept,Content-Type
+VERBOSE Registry: index.docker.io
+VERBOSE Namespace: library
+VERBOSE Repo Name: ubuntu
+VERBOSE Repo Tag: latest
+VERBOSE Version: None
+VERBOSE Obtaining tags: https://index.docker.io/v2/library/ubuntu/tags/list
+DEBUG GET https://index.docker.io/v2/library/ubuntu/tags/list
+DEBUG Http Error with code 401
+DEBUG GET https://auth.docker.io/token?service=registry.docker.io&expires_in=9000&scope=repository:library/ubuntu:pull
+DEBUG Headers found: Accept,Authorization,Content-Type
+
+client.get_size()
+VERBOSE Obtaining manifest: https://index.docker.io/v2/library/ubuntu/manifests/latest
+DEBUG GET https://index.docker.io/v2/library/ubuntu/manifests/latest
+Out[3]: 46795242
+```
+
+Given that the container does not have a version 2.0 manifest (not sure if this is possible, but it could be) or if the manifest is malformed in any way, a size of None is returned.
+
+
 ### Json
 The json module is (so far) primarily intended to write a key value store of labels specific to a container. This comes down to `.json` files in the `SINGULARITY_METADATA/labels` folder, with each file mapping to it's source (eg, docker, shub, etc). Given that the calling (C) function has specified the label file (`SINGULARITY_LABELBASE`) The general use would be the following:
 

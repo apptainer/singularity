@@ -292,9 +292,11 @@ class DockerApiConnection(ApiConnection):
         '''
         manifest = self.get_manifest()
         size = None
-        if "config" in manifest:
-             if "size" in manifest['config']:
-                size = manifest['config']["size"]
+        if "layers" in manifest:
+            size = 0
+            for layer in manifest["layers"]:
+                if "size" in layer:
+                    size += layer['size']
         return size
 
 
