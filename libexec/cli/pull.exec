@@ -46,13 +46,13 @@ while true; do
         ;;
         -n|--name|name)
             shift
-            SHUB_CONTAINERNAME="${1:-}"
-            export SHUB_CONTAINERNAME
+            SINGULARITY_IMAGE="${1:-}"
+            export SINGULARITY_IMAGE
             shift
         ;;
         -C|--commit|commit)
             shift
-            if [ -z "${SHUB_CONTAINERNAME+x}" ]; then
+            if [ -z "${SINGULARITY_IMAGE+x}" ]; then
                 SHUB_NAMEBYCOMMIT="yes"
                 unset SHUB_NAMEBYHASH
                 export SHUB_NAMEBYCOMMIT
@@ -60,12 +60,22 @@ while true; do
         ;;
         -H|--hash|hash)
             shift
-            if [ -z "${SHUB_CONTAINERNAME+x}" ]; then
+            if [ -z "${SINGULARITY_IMAGE+x}" ]; then
                 if [ -z "${SHUB_NAMEBYCOMMIT+x}" ]; then
                     SHUB_NAMEBYHASH="yes"
                     export SHUB_NAMEBYHASH
                 fi
             fi 
+        ;;
+        -s|--size)
+            shift
+            SINGULARITY_IMAGESIZE="${1:-}"
+            export SINGULARITY_IMAGESIZE
+            shift
+        ;;
+        -F|--force)
+            shift
+            OVERWRITE=1
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -100,17 +110,81 @@ shift
 export SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS
 
 case "$SINGULARITY_CONTAINER" in
-    *://*)
-        eval $SINGULARITY_libexecdir/singularity/python/pull.py
+    docker://*)
+        if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+            SINGULARITY_IMAGE=`basename "$SINGULARITY_CONTAINER.img" | sed -e 's/:/-/g'`
+            export SINGULARITY_IMAGE
+        fi
+
+        if [ -f "$SINGULARITY_IMAGE" ]; then
+            if [ -n "${OVERWRITE:-}" ]; then
+                message 2 "Removing existing file\n"
+                rm -f "$SINGULARITY_IMAGE"
+            else
+                message ERROR "Image file exists, not overwriting.\n"
+                exit 1
+            fi
+        fi
+
+        if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/import-suid" ]; then
+            IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import-suid"
+        elif [ -x "$SINGULARITY_libexecdir/singularity/bin/import" ]; then
+            IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import"
+        else
+            message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/import\n"
+            exit 1
+        fi
+
+        if ! eval_abort $SINGULARITY_libexecdir/singularity/python/size.py; then
+            message ERROR "Could not obtain the container size\n"
+        fi
+
+        if [ -z "${SINGULARITY_IMAGESIZE:-}" ]; then
+            IMAGESIZE=`cat "$SINGULARITY_CONTENTS"`
+            SINGULARITY_IMAGESIZE=`echo "($IMAGESIZE * 1.1)/1024" | bc`
+            export SINGULARITY_IMAGESIZE
+        fi
+        SINGULARITY_WRITABLE=1
+        export SINGULARITY_WRITABLE
+
+        if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
+            eval_abort "$SINGULARITY_libexecdir/singularity/bin/create-suid"
+        elif [ -x "$SINGULARITY_libexecdir/singularity/bin/create" ]; then
+            eval_abort "$SINGULARITY_libexecdir/singularity/bin/create"
+        else
+            message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
+            exit 1
+        fi
+
+        cat /dev/null > "$SINGULARITY_CONTENTS"
+
+        eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+        message 1 "Importing: base Singularity environment\n"
+        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | eval_abort "$IMPORT_BIN" || exit $?
+
+        for i in `cat "$SINGULARITY_CONTENTS"`; do
+            message 1 "Importing: $i\n"
+            zcat "$i" | eval_abort "$IMPORT_BIN" || exit $?
+        done
+
+    ;;
+    shub://*)
+        if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+            SHUB_CONTAINERNAME="$SINGULARITY_IMAGE"
+            export SHUB_CONTAINERNAME
+        fi
+
+        eval_abort $SINGULARITY_libexecdir/singularity/python/pull.py
         RETVAL=$?
+
+        SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
     ;;
     *)
-        message ERROR "pull is only supported for URIs\n"
+        message ERROR "pull is only supported for docker and shub URIs\n"
         exit 255
     ;;
 esac
 
-SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
 rm -f "$SINGULARITY_CONTENTS"
 
 if [ $RETVAL -eq 0 -a -f "$SINGULARITY_IMAGE" ]; then
