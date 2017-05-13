@@ -141,7 +141,7 @@ case "$SINGULARITY_CONTAINER" in
 
         if [ -z "${SINGULARITY_IMAGESIZE:-}" ]; then
             IMAGESIZE=`cat "$SINGULARITY_CONTENTS"`
-            SINGULARITY_IMAGESIZE=`echo "($IMAGESIZE * 1.1)/1024" | bc`
+            SINGULARITY_IMAGESIZE=`echo "($IMAGESIZE * 1.1)/(1024*1024)" | bc`
             export SINGULARITY_IMAGESIZE
         fi
         SINGULARITY_WRITABLE=1
