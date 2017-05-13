@@ -135,15 +135,15 @@ case "$SINGULARITY_CONTAINER" in
             exit 1
         fi
 
-        if ! eval_abort $SINGULARITY_libexecdir/singularity/python/size.py; then
-            message ERROR "Could not obtain the container size\n"
-        fi
-
-        if [ -z "${SINGULARITY_IMAGESIZE:-}" ]; then
-            IMAGESIZE=`cat "$SINGULARITY_CONTENTS"`
-            SINGULARITY_IMAGESIZE=`echo "($IMAGESIZE * 1.1)/(1024*1024)" | bc`
-            export SINGULARITY_IMAGESIZE
-        fi
+#        if ! eval_abort $SINGULARITY_libexecdir/singularity/python/size.py; then
+#            message ERROR "Could not obtain the container size\n"
+#        fi
+#
+#        if [ -z "${SINGULARITY_IMAGESIZE:-}" ]; then
+#            IMAGESIZE=`cat "$SINGULARITY_CONTENTS"`
+#            SINGULARITY_IMAGESIZE=`echo "($IMAGESIZE * 1.1)/(1024*1024)" | bc`
+#            export SINGULARITY_IMAGESIZE
+#        fi
         SINGULARITY_WRITABLE=1
         export SINGULARITY_WRITABLE
 
