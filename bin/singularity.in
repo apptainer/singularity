@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # "Singularity" Copyright (c) 2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -25,19 +25,17 @@ exec_prefix="@exec_prefix@"
 libexecdir="@libexecdir@"
 sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
-
+bindir="@bindir@"
 
 SINGULARITY_version="@VERSION@"
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
+SINGULARITY_bindir="$bindir"
 
-RETVAL=0
-MESSAGELEVEL=1
-NEW_HOME=""
-CHANGE_HOME="NO"
+SINGULARITY_MESSAGELEVEL=1
 
-export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL NEW_HOME CHANGE_HOME
+export SINGULARITY_bindir SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir SINGULARITY_version SINGULARITY_MESSAGELEVEL 
 
 # the Modules package always calls 
 unset module
@@ -66,7 +64,7 @@ while true; do
             exit
         ;;
         -q|--quiet)
-            MESSAGELEVEL=0
+            SINGULARITY_MESSAGELEVEL=0
             shift 
         ;;
         --version)
@@ -74,7 +72,7 @@ while true; do
             exit
         ;;
         -d|--debug)
-            MESSAGELEVEL=5
+            SINGULARITY_MESSAGELEVEL=5
             message 4 "enabling debugging\n"
             shift
         ;;
@@ -85,28 +83,28 @@ while true; do
             shift
         ;;
         -v|--verbose)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 1`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 1`
+            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vv)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 2`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 2`
+            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vvv)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 3`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 3`
+            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vvvv)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 4`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 4`
+            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vvvv)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 4`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 4`
+            message 2 "increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -*)

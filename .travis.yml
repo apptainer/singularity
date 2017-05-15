@@ -32,6 +32,14 @@ before_install:
   - export PATH=$PWD/build-wrapper-linux-x86:$PATH
   # Install updated version of pylint
   - sudo pip install pylint
+  # Install last release for legacy testing
+  - cd $TRAVIS_BUILD_DIR/
+  - wget https://github.com/singularityware/singularity/releases/download/2.2.1/singularity-2.2.1.tar.gz
+  - tar xvf singularity-2.2.1.tar.gz
+  - rm singularity-2.2.1.tar.gz
+  - cd singularity-2.2.1
+  - ./configure --prefix=/usr/local/singularity-2.2.1-legacytests
+  - sudo make install 
   - cd $TRAVIS_BUILD_DIR/
 
 install:
@@ -45,11 +53,29 @@ script:
   - make test
   - jdk_switcher use oraclejdk8
   - sonar-scanner
-  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_client
-  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_json
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_helpers
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_base
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_core
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker_import
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_docker_api
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_shub_import
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_shub_pull
   - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_shub
-  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_client
-  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_custom_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_default_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python2 -m unittest tests.test_disable_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_json
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_helpers
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_base
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_core
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker_import
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_docker_api
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_shub_import
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_shub_pull
   - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_shub
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_custom_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_default_cache
+  - cd $TRAVIS_BUILD_DIR/libexec/python && python3 -m unittest tests.test_disable_cache
   - pylint --version
-  - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611
+  - cd $TRAVIS_BUILD_DIR/libexec/python && pylint $PWD --errors-only --ignore tests  --disable=E0401,E0611,E1101

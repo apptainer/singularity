@@ -12,49 +12,16 @@
 @ALLOW_SETUID@ = @ALLOW_SETUID_DEFAULT@
 
 
+# MAX LOOP DEVICES: [INT]
+# DEFAULT: @MAX_LOOP_DEVS_DEFAULT@
+# How many loop devices should be allocated on this host by Singularity?
+@MAX_LOOP_DEVS@ = @MAX_LOOP_DEVS_DEFAULT@
+
+
 # ALLOW PID NS: [BOOL]
 # DEFAULT: @ALLOW_PID_NS_DEFAULT@
 # Should we allow users to request the PID namespace?
 @ALLOW_PID_NS@ = @ALLOW_PID_NS_DEFAULT@
-
-
-# ALLOW USER IMAGE: [BOOL]
-# DEFAULT: @ALLOW_USER_IMAGE_DEFAULT@
-# Should we allow users to run images they can access according to normal
-# filesystem privileges?  If set to 'no', then the image can only be executed
-# through 'protected image mode' (see below).
-#
-# Note that if 'allow user image' is no and 'protected image mode' is none,
-# then no image file may be used.
-@ALLOW_USER_IMAGE@ = @ALLOW_USER_IMAGE_DEFAULT@
-
-
-# PROTECTED IMAGE MODE: [STRING]
-# DEFAULT: @PROTECTED_IMAGE_MODE_DEFAULT@
-# The 'protected image mode' allows users to launch singularity with images
-# that they cannot access according to filesystem privileges.
-# There are three allowed modes:
-# - none: Protected image mode is disabled.  The typical filesystem rules
-#         are applied.
-# - group: The image file must be readable by the user 'singularity' AND the
-#          invoking user must be in the same group as the image file.
-# - user: The image file must be readable by the user 'singularity'.
-# In both 'group' and 'user' cases, the image must be either owned by the
-# singularity user or be owned by the singularity user's primary group.
-#
-# The name of the user 'singularity' can be controlled via the
-# 'singularity user' option below.
-@PROTECTED_IMAGE_MODE@ = @PROTECTED_IMAGE_MODE_DEFAULT@
-
-
-# ENABLE OVERLAY: [BOOL]
-# DEFAULT: @ENABLE_OVERLAY_DEFAULT@
-# Enabling this option will make it possible to specify bind paths to locations
-# that do not currently exist within the container. Some limitations still exist
-# when running in completely non-privileged mode. (note: this option is only
-# supported on hosts that support overlay file systems).
-# note: currently disabled because RHEL7 kernel crashes with it... :(
-@ENABLE_OVERLAY@ = @ENABLE_OVERLAY_DEFAULT@
 
 
 # CONFIG PASSWD: [BOOL]
@@ -145,6 +112,14 @@
 @USER_BIND_CONTROL@ = @USER_BIND_CONTROL_DEFAULT@
 
 
+# ENABLE OVERLAY: [BOOL]
+# DEFAULT: @ENABLE_OVERLAY_DEFAULT@
+# Enabling this option will make it possible to specify bind paths to locations
+# that do not currently exist within the container. note: this only works when
+# using the standard SUID mode (not user-namespaces)).
+@ENABLE_OVERLAY@ = @ENABLE_OVERLAY_DEFAULT@
+
+
 # MOUNT SLAVE: [BOOL]
 # DEFAULT: @MOUNT_SLAVE_DEFAULT@
 # Should we automatically propagate file-system changes from the host?
@@ -159,6 +134,24 @@
 # and other necessary file systems for the container. Note, this location
 # absolutely must be local on this host.
 @CONTAINER_DIR@ = @CONTAINER_DIR_DEFAULT@
+
+
+# LIMIT CONTAINER OWNERS: [STRING]
+# DEFAULT: @LIMIT_CONTAINER_OWNERS_DEFAULT@
+# Only allow containers to be used that are owned by a given user. If this
+# configuration is undefined (commented or set to NULL), all containers are
+# allowed to be used. This feature only applies when Singularity is running in
+# SUID mode and the user is non-root.
+#@LIMIT_CONTAINER_OWNERS@ = gmk, singularity, nobody
+
+# LIMIT CONTAINER PATHS: [STRING]
+# DEFAULT: @LIMIT_CONTAINER_PATHS_DEFAULT@
+# Only allow containers to be used that are located within an allowed path
+# prefix. If this configuration is undefined (commented or set to NULL),
+# containers will be allowed to run from anywhere on the file system. This
+# feature only applies when Singularity is running in SUID mode and the user is
+# non-root.
+#@LIMIT_CONTAINER_PATHS@ = /scratch, /tmp, /global
 
 
 # SESSIONDIR PREFIX: [STRING]
