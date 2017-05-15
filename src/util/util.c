@@ -102,7 +102,7 @@ int envar_defined(char *name) {
 
 char *envar_path(char *name) {
     singularity_message(DEBUG, "Checking environment variable is valid path: '%s'\n", name);
-    return(envar(name, "/._-=,:", PATH_MAX));
+    return(envar(name, "/._-+=,:", PATH_MAX));
 }
 
 
