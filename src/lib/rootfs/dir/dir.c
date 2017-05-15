@@ -38,7 +38,7 @@
 static char *source_dir = NULL;
 static char *mount_point = NULL;
 static int read_write = 0;
-
+static int source_dir_fd = -1;
 
 int rootfs_dir_init(char *source, char *mount_dir) {
     singularity_message(DEBUG, "Inializing container rootfs dir subsystem\n");
@@ -58,6 +58,16 @@ int rootfs_dir_init(char *source, char *mount_dir) {
 
     if ( envar_defined("SINGULARITY_WRITABLE") == TRUE ) {
         read_write = 1;
+    }
+
+    // keep open a file descriptor to the source directory because otherwise at
+    //  least some kernel versions (for example on Centos7.3) will not notice
+    //  that the filesystem is in use and will not prevent unmounting it.
+    singularity_message(DEBUG, "Opening source directory %s\n", source_dir);
+    source_dir_fd = open(source_dir, O_RDONLY|O_CLOEXEC);
+    if ( source_dir_fd < 0 ) {
+        singularity_message(ERROR, "Could not open %s: %s\n", source_dir, strerror(errno));
+        ABORT(255);
     }
 
     return(0);
