@@ -80,6 +80,12 @@ while true; do
             export SINGULARITY_HOME
             shift
         ;;
+        -T|--temp)
+            shift
+            SINGULARITY_TEMP="$1"
+            export SINGULARITY_TEMP
+            shift
+        ;;
         -W|--wdir|--workdir|--workingdir)
             shift
             SINGULARITY_WORKDIR="$1"

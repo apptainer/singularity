@@ -75,6 +75,8 @@ _singularity() {
                 _filedir
             elif [[ ${cur} == -H || ${cur} == --home ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
+            elif [[ ${cur} == -T || ${cur} == --temp ]]; then
+                COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then

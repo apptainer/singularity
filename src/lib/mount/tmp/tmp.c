@@ -48,7 +48,24 @@ int singularity_mount_tmp(void) {
         return(0);
     }
 
-    if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
+    if ( ( tmp_source = envar_path("SINGULARITY_TEMP") ) != NULL ) {
+        char *colon;
+        if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
+            singularity_message(ERROR, "User bind control is disabled by system administrator\n");
+            ABORT(5);
+        }
+
+        colon = strchr(tmp_source, ':');
+        if ( colon != NULL ) {
+            *colon = '\0';
+            tmp_source = strdup(tmp_source);
+            *colon = ':';
+        }
+
+        vartmp_source = strdup("/var/tmp");
+
+        singularity_message(VERBOSE2, "Set the tmp directory source (via envar) to: %s\n", tmp_source);
+    } else if ( envar_defined("SINGULARITY_CONTAIN") == TRUE ) {
         char *tmpdirpath;
         if ( ( tmpdirpath = envar_path("SINGULARITY_WORKDIR") ) != NULL ) {
             if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
