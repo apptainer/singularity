@@ -89,8 +89,9 @@ int _singularity_runtime_mount_dev(void) {
             singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
             ABORT(255);
         }
+
         singularity_message(DEBUG, "Mounting minimal staged /dev into container\n");
-        if ( mount(devdir, joinpath(container_dir, "/dev"), NULL, MS_BIND, NULL) < 0 ) {
+        if ( mount(devdir, joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_REC, NULL) < 0 ) {
             singularity_message(WARNING, "Could not stage dev tree: '%s' -> '%s': %s\n", devdir, joinpath(container_dir, "/dev"), strerror(errno));
             return(-1);
         }
