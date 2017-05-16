@@ -113,8 +113,9 @@
 # DEFAULT: @MOUNT_TMP_DEFAULT@
 # Should we automatically bind mount /tmp and /var/tmp into the container? If
 # the --contain option is used, both tmp locations will be created in the
-# session directory or can be specified via the  SINGULARITY_WORKDIR
-# environment variable (or the --workingdir command line option).
+# session directory or can be specified via the SINGULARITY_TEMP or
+# SINGULARITY_WORKDIR environment variable (or the --workingdir command line
+# option).
 @MOUNT_TMP@ = @MOUNT_TMP_DEFAULT@
 
 
