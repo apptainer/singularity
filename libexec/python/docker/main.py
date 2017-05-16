@@ -81,13 +81,7 @@ def IMPORT(image,auth=None,layerfile=None):
     # Parse image name, repo name, and namespace
     client = DockerApiConnection(image=image,auth=auth)
 
-    docker_image_uri = "Docker image path: %s/%s/%s:%s" %(client.registry,
-                                                          client.namespace,
-                                                          client.repo_name,
-                                                          client.repo_tag)
-
-    if client.version is not None:
-        docker_image_uri = "%s@%s" %(docker_image_uri,client.version)
+    docker_image_uri = "Docker image path: %s" %client.assemble_uri("/")
     bot.info(docker_image_uri)
 
 
