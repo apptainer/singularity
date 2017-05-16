@@ -82,12 +82,20 @@ class DockerApiConnection(ApiConnection):
             self.load_image(kwargs['image'])
         
 
-    def assemble_uri(self):
+    def assemble_uri(self,sep=None):
         '''re-assemble the image uri, for components defined.
         '''
-        image_uri = "%s-%s-%s:%s" %(self.registry,self.namespace,self.repo_name,self.repo_tag)
+        if sep is None:
+            sep = "-"
+        image_uri = "%s%s%s%s%s" %(self.registry,sep,
+                                   self.namespace,sep,
+                                   self.repo_name)
+
         if self.version is not None:
             image_uri = "%s@%s" %(image_uri,self.version)
+        else:
+            image_uri = "%s:%s" %(image_uri,self.repo_tag)
+
         return image_uri
 
 
@@ -292,9 +300,11 @@ class DockerApiConnection(ApiConnection):
         '''
         manifest = self.get_manifest()
         size = None
-        if "config" in manifest:
-             if "size" in manifest['config']:
-                size = manifest['config']["size"]
+        if "layers" in manifest:
+            size = 0
+            for layer in manifest["layers"]:
+                if "size" in layer:
+                    size += layer['size']
         return size
 
 
