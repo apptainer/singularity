@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -39,11 +40,17 @@ int check_mounted(char *mountpoint) {
     FILE *mounts;
     char *line = (char *)malloc(MAX_LINE_LEN);
     char *rootfs_dir = singularity_runtime_rootfs(NULL);
+    unsigned int mountpoint_len = strlength(mountpoint, PATH_MAX);
 
     singularity_message(DEBUG, "Opening /proc/mounts\n");
     if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open /proc/mounts: %s\n", strerror(errno));
         ABORT(255);
+    }
+
+    if ( mountpoint[mountpoint_len-1] == '/' ) {
+        singularity_message(WARNING, "Removing trailing slash from string: %s\n", mountpoint);
+        mountpoint[mountpoint_len-1] = '\0';
     }
 
     singularity_message(DEBUG, "Iterating through /proc/mounts\n");
