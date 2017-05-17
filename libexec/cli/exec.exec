@@ -60,6 +60,11 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     exit 0
 fi
 
+if [ -z "${1:-}" ]; then
+    head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    exit 1
+fi
+
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
 fi
