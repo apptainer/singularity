@@ -10,10 +10,10 @@ unset ml
 # Bash env has been known to cause issues in containers
 unset BASH_ENV
 
-# Some distributions don't have /bin and /sbin in PATH anymore
-SINGULARITYENV_PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
+# Provide a sane path within the container
+SINGULARITYENV_PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 
 # Don't save the shell's HISTFILE
-HISTFILE=""
+SINGULARITYENV_HISTFILE=""
 
-export PATH HISTFILE
+export SINGULARITYENV_PATH SINGULARITYENV_HISTFILE
