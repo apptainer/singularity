@@ -66,6 +66,7 @@ int _singularity_runtime_environment(void) {
         envar_set("LANG", "C", 1);
         envar_set("TERM", term, 1);
         envar_set("HOME", home, 1);
+        envar_set("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
     } else {
         singularity_message(DEBUG, "Cleaning environment\n");
         for(i = 0; i < envlen; i++) {
