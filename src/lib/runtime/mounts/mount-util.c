@@ -49,7 +49,7 @@ int check_mounted(char *mountpoint) {
     }
 
     if ( mountpoint[mountpoint_len-1] == '/' ) {
-        singularity_message(WARNING, "Removing trailing slash from string: %s\n", mountpoint);
+        singularity_message(DEBUG, "Removing trailing slash from string: %s\n", mountpoint);
         mountpoint[mountpoint_len-1] = '\0';
     }
 
