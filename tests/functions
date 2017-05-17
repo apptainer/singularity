@@ -65,6 +65,7 @@ stest() {
     OUTPUT="$SINGULARITY_TESTDIR/output"
     shift
 
+    pwd > "$SINGULARITY_TESTDIR/pwd"
     echo "$@" > "$SINGULARITY_TESTDIR/cmd"
     message 2 " + %-90.90s " "$*"
 
