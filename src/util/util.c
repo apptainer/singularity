@@ -112,9 +112,10 @@ int envar_set(char *key, char *value, int overwrite) {
         singularity_message(VERBOSE2, "Not setting envar, null key\n");
         return(-1);
     }
+
     if ( value == NULL ) {
-        singularity_message(VERBOSE2, "Not setting envar, null value: %s\n", key);
-        return(-1);
+        singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
+        return(unsetenv(key));
     }
 
     singularity_message(DEBUG, "Setting environment variable: '%s' = '%s'\n", key, value);
