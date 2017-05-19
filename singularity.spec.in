@@ -27,9 +27,8 @@ BuildRequires: /usr/include/slurm/spank.h
 %endif
 
 %description
-Singularity provides functionality to build the smallest most minimal
-possible containers, and running those containers as single application
-environments.
+Singularity provides functionality to make portable
+containers that can be used across host environments.
 
 %package devel
 Summary: Development libraries for Singularity
