@@ -56,12 +56,12 @@ case "$SINGULARITY_IMAGE" in
             SINGULARITY_LOCALCACHEDIR="/tmp"
         fi
 
-        if ! SINGULARITY_SESSIONDIR=`mktemp -d $SINGULARITY_LOCALCACHEDIR/.singularity-runtime.XXXXXXXX`; then
-            message ERROR "Failed to create cleandir\n"
+        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_LOCALCACHEDIR/.singularity-runtime.XXXXXXXX`; then
+            message ERROR "Failed to create temporary directory\n"
             ABORT 255
         fi
 
-        SINGULARITY_ROOTFS="$SINGULARITY_SESSIONDIR/container/$NAME"
+        SINGULARITY_ROOTFS="$SINGULARITY_TMPDIR/$NAME"
         if ! mkdir -p "$SINGULARITY_ROOTFS"; then
             message ERROR "Failed to create named SINGULARITY_ROOTFS=$SINGULARITY_ROOTFS\n"
             ABORT 255
@@ -69,9 +69,10 @@ case "$SINGULARITY_IMAGE" in
 
         SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
         SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
+        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
         SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
 
-        export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_SESSIONDIR SINGULARITY_CONTENTS
+        export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_CONTENTS SINGULARITY_CLEANUPDIR
 
         eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 

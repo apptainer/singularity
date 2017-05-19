@@ -37,6 +37,7 @@
 #include "util/privilege.h"
 #include "util/suid.h"
 #include "util/sessiondir.h"
+#include "util/cleanupd.h"
 
 #include "./action-lib/include.h"
 
@@ -63,6 +64,7 @@ int main(int argc, char **argv) {
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_sessiondir();
+    singularity_cleanupd();
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
