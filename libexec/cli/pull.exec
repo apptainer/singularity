@@ -103,7 +103,10 @@ SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
 if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
     SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
 else
-    SINGULARITY_PULLFOLDER="."
+    # Only set the pull folder to be $PWD if not set by user
+    if [ ! -n "${SINGULARITY_PULLFOLDER:-}" ]; then
+        SINGULARITY_PULLFOLDER="."
+    fi
 fi
 shift
 
