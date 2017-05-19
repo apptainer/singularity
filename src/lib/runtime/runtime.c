@@ -44,6 +44,9 @@
 #include "./overlayfs/overlayfs.h"
 #include "./environment/environment.h"
 
+#ifndef LOCALSTATEDIR
+#error LOCALSTATEDIR not defined
+#endif
 
 static char *container_directory = NULL;
 
@@ -57,16 +60,15 @@ char *singularity_runtime_rootfs(char *directory) {
             ABORT(255);
         }
     } else if ( container_directory == NULL ) {
-        container_directory = joinpath((singularity_config_get_value(CONTAINER_DIR)), "/source");
+        container_directory = joinpath(LOCALSTATEDIR, "/singularity/mnt/container");
 
-        singularity_message(DEBUG, "Setting container directory to: %s\n", container_directory);
-        singularity_priv_escalate();
-        singularity_message(DEBUG, "Creating top level source mount directory to: %s\n", container_directory);
-        if ( s_mkpath(container_directory, 0755) < 0 ) {
-            singularity_message(ERROR, "Could not create source mount directory %s: %s\n", container_directory, strerror(errno));
+        singularity_message(VERBOSE, "Set container directory to: %s\n", container_directory);
+
+        singularity_message(DEBUG, "Checking for container directory\n");
+        if ( is_dir(container_directory) != 0 ) {
+            singularity_message(ERROR, "Container directory does not exist: %s\n", container_directory);
             ABORT(255);
         }
-        singularity_priv_drop();
 
     }
 

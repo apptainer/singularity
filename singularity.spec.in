@@ -87,6 +87,9 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_localstatedir}/lib/singularity
 %dir %{_localstatedir}/lib/singularity/mnt
+%dir %{_localstatedir}/lib/singularity/mnt/session
+%dir %{_localstatedir}/lib/singularity/mnt/container
+%dir %{_localstatedir}/lib/singularity/mnt/overlay
 
 %{_bindir}/singularity
 %{_bindir}/run-singularity
@@ -106,7 +109,6 @@ rm -rf $RPM_BUILD_ROOT
 # Binaries
 %{_libexecdir}/singularity/bin/action
 %{_libexecdir}/singularity/bin/bootstrap
-%{_libexecdir}/singularity/bin/cleanupd
 %{_libexecdir}/singularity/bin/copy
 %{_libexecdir}/singularity/bin/create
 %{_libexecdir}/singularity/bin/expand

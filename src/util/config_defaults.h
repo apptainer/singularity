@@ -75,11 +75,8 @@
 #define MOUNT_SLAVE "mount slave"
 #define MOUNT_SLAVE_DEFAULT 1
 
-#define CONTAINER_DIR "container dir"
-#define CONTAINER_DIR_DEFAULT "/var/lib/singularity/mnt"
-
-#define SESSIONDIR_PREFIX "sessiondir prefix"
-#define SESSIONDIR_PREFIX_DEFAULT "/tmp/.singularity-session-"
+#define SESSIONDIR_MAXSIZE "sessiondir max size"
+#define SESSIONDIR_MAXSIZE_DEFAULT "16"
 
 #define LIMIT_CONTAINER_OWNERS "limit container owners"
 #define LIMIT_CONTAINER_OWNERS_DEFAULT "NULL"

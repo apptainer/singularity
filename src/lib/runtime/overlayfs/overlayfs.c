@@ -42,9 +42,7 @@
 
 int _singularity_runtime_overlayfs(void) {
     char *rootfs_source = singularity_runtime_rootfs(NULL);
-    char *container_dir = strdup(singularity_config_get_value(CONTAINER_DIR));
-    char *mount_final   = joinpath(container_dir, "/final");
-    int overlay_enabled = 0;
+    char *container_dir = joinpath(LOCALSTATEDIR, "/singularity/mnt");
 
     singularity_message(DEBUG, "Checking if overlayfs should be used\n");
     if ( singularity_config_get_bool(ENABLE_OVERLAY) <= 0 ) {
@@ -58,20 +56,22 @@ int _singularity_runtime_overlayfs(void) {
         char *overlay_mount = joinpath(container_dir, "/overlay");
         char *overlay_upper = joinpath(container_dir, "/overlay/upper");
         char *overlay_work  = joinpath(container_dir, "/overlay/work");
+        char *overlay_final = joinpath(container_dir, "/overlay/final");
         int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
         char *overlay_options = (char *) malloc(overlay_options_len);
 
         singularity_message(DEBUG, "OverlayFS enabled by host build\n");
 
+        singularity_message(DEBUG, "Setting up overlay mount options\n");
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work); // Flawfinder: ignore
 
-        singularity_priv_escalate();
-        singularity_message(DEBUG, "Creating top level overlay mount directory: %s\n", overlay_mount);
-        if ( s_mkpath(overlay_mount, 0755) < 0 ) {
-            singularity_message(ERROR, "Could not create overlay_mount directory %s: %s\n", overlay_mount, strerror(errno));
+        singularity_message(DEBUG, "Checking for existance of overlay directory: %s\n", overlay_mount);
+        if ( is_dir(overlay_mount) < 0 ) {
+            singularity_message(ERROR, "Overlay mount directory does not exist: %s\n", overlay_mount);
             ABORT(255);
         }
 
+        singularity_priv_escalate();
         singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
         if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID, "size=1m") < 0 ){
             singularity_message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
@@ -90,15 +90,15 @@ int _singularity_runtime_overlayfs(void) {
             ABORT(255);
         }
 
-        singularity_message(DEBUG, "Creating mount_final directory: %s\n", mount_final);
-        if ( s_mkpath(mount_final, 0755) < 0 ) {
-            singularity_message(ERROR, "Failed creating mount_final directory %s: %s\n", mount_final, strerror(errno));
+        singularity_message(DEBUG, "Creating overlay_final directory: %s\n", overlay_final);
+        if ( s_mkpath(overlay_final, 0755) < 0 ) {
+            singularity_message(ERROR, "Failed creating overlay_final directory %s: %s\n", overlay_final, strerror(errno));
             ABORT(255);
         }
 
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
-        if ( mount("overlay", mount_final, "overlay", MS_NOSUID, overlay_options) < 0 ){
-            singularity_message(ERROR, "Could not mount overlayFS: %s\n", strerror(errno));
+        if ( mount("OverlayFS", overlay_final, "overlay", MS_NOSUID, overlay_options) < 0 ){
+            singularity_message(ERROR, "Could not mount Singularity overlay: %s\n", strerror(errno));
             ABORT(255); 
         }
         singularity_priv_drop();
@@ -107,32 +107,15 @@ int _singularity_runtime_overlayfs(void) {
         free(overlay_upper);
         free(overlay_options);
 
-        overlay_enabled = 1;
         singularity_registry_set("OVERLAYFS_ENABLED", "1");
+
+        singularity_message(VERBOSE2, "Updating the containerdir to: %s\n", overlay_final);
+        singularity_runtime_rootfs(overlay_final);
+
 #else
         singularity_message(VERBOSE, "OverlayFS not supported by host build\n");
 #endif
     }
-
-    if ( overlay_enabled != 1 ) {
-        singularity_priv_escalate();
-        singularity_message(DEBUG, "Creating mount_final directory: %s\n", mount_final);
-        if ( s_mkpath(mount_final, 0755) < 0 ) {
-            singularity_message(ERROR, "Failed creating mount_final directory %s: %s\n", mount_final, strerror(errno));
-            ABORT(255);
-        }
-
-        singularity_message(VERBOSE3, "Binding the ROOTFS_SOURCE to OVERLAY_FINAL (%s->%s)\n", rootfs_source, mount_final);
-        if ( mount(rootfs_source, mount_final, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
-            singularity_message(ERROR, "There was an error binding the container to path %s: %s\n", mount_final, strerror(errno));
-            ABORT(255);
-        }
-        singularity_priv_drop();
-    }
-
-    // If we got here, then we now set the runtime containerdir to our new mount point
-    singularity_message(VERBOSE2, "Updating the containerdir to: %s\n", mount_final);
-    singularity_runtime_rootfs(mount_final);
 
     return(0);
 }

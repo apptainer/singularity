@@ -19,7 +19,9 @@ install-perms:
 	@echo
 
 install-data-hook:
-	install -d -m 0755 $(DESTDIR)$(localstatedir)/lib/singularity/mnt
+	install -d -m 0755 $(DESTDIR)$(localstatedir)/singularity/mnt/container
+	install -d -m 0755 $(DESTDIR)$(localstatedir)/singularity/mnt/session
+	install -d -m 0755 $(DESTDIR)$(localstatedir)/singularity/mnt/overlay
 
 
 ACLOCAL_AMFLAGS = -I m4

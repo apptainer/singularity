@@ -132,12 +132,12 @@
 @MOUNT_SLAVE@ = @MOUNT_SLAVE_DEFAULT@
 
 
-# CONTAINER DIR: [STRING]
-# DEFAULT: @CONTAINER_DIR_DEFAULT@
-# This path specifies the location to use for mounting the container, overlays
-# and other necessary file systems for the container. Note, this location
-# absolutely must be local to this host.
-@CONTAINER_DIR@ = @CONTAINER_DIR_DEFAULT@
+# SESSIONDIR MAXSIZE: [STRING]
+# DEFAULT: @SESSIONDIR_MAXSIZE_DEFAULT@
+# This specifies how large the default sessiondir should be (in MB) and it will
+# only affect users who use the "--contain" options and don't also specify a
+# location to do default read/writes to (e.g. "--workdir" or "--home").
+@SESSIONDIR_MAXSIZE@ = @SESSIONDIR_MAXSIZE_DEFAULT@
 
 
 # LIMIT CONTAINER OWNERS: [STRING]
@@ -157,13 +157,5 @@
 # feature only applies when Singularity is running in SUID mode and the user is
 # non-root.
 #@LIMIT_CONTAINER_PATHS@ = /scratch, /tmp, /global
-
-
-# SESSIONDIR PREFIX: [STRING]
-# DEFAULT: @SESSIONDIR_PREFIX_DEFAULT@
-# This specifies the prefix for the session directory. Appended to this string
-# is an identification string unique to each user and container. Note, this
-# location absolutely must be local on this host!
-#@SESSIONDIR_PREFIX@ = /var/lib/singularity/sessions/
 
 

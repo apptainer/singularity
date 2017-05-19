@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
     singularity_priv_userns();
     singularity_priv_drop();
 
+    singularity_runtime_ns(SR_NS_ALL);
 
     singularity_sessiondir();
 
@@ -70,8 +71,6 @@ int main(int argc, char **argv) {
     } else {
         singularity_image_open(&image, O_RDWR);
     }
-
-    singularity_runtime_ns(SR_NS_ALL);
 
     singularity_image_check(&image);
     singularity_image_bind(&image);

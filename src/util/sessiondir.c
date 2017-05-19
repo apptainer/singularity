@@ -30,6 +30,7 @@
 #include <sys/wait.h>
 #include <stdio.h>
 #include <sys/file.h>
+#include <sys/mount.h>
 
 #include "util/message.h"
 #include "util/util.h"
@@ -37,68 +38,61 @@
 #include "util/registry.h"
 #include "util/config_parser.h"
 #include "util/fork.h"
+#include "util/privilege.h"
+
+#ifndef LOCALSTATEDIR
+#error LOCALSTATEDIR not defined
+#endif
 
 
 int singularity_sessiondir(void) {
-    char *tmpdir = NULL;
     char *sessiondir = NULL;
-    int sessiondir_fd;
+    char *sessiondir_size_str = NULL;
+    long int sessiondir_size = 0;
+    int sessiondir_size_str_len;
+    int sessiondir_size_str_usd;
 
-    if ( ( sessiondir = singularity_registry_get("SESSIONDIR") ) != NULL ) {
-        singularity_message(DEBUG, "Got SINGULARITY_SESSIONDIR: %s\n", tmpdir);
-    } else if ( ( tmpdir = strdup(singularity_config_get_value(SESSIONDIR_PREFIX)) ) != NULL ) {
-        sessiondir = strjoin(tmpdir, random_string(10));
-        singularity_message(DEBUG, "Got sessiondir from configuration: '%s'\n", sessiondir);
-        singularity_registry_set("SESSIONDIR", sessiondir);
-    } else {
-        singularity_message(ERROR, "Could not obtain session directory for process\n");
+    singularity_message(DEBUG, "Setting sessiondir\n");
+    sessiondir = joinpath(LOCALSTATEDIR, "/singularity/mnt/session");
+    singularity_message(VERBOSE, "Using session directory: %s\n", sessiondir);
+
+    singularity_message(DEBUG, "Checking for session directory: %s\n", sessiondir);
+    if ( is_dir(sessiondir) != 0 ) {
+        singularity_message(ERROR, "Session directory does not exist: %s\n", sessiondir);
         ABORT(255);
     }
 
-    singularity_message(VERBOSE, "Creating session directory: %s\n", sessiondir);
-    if ( s_mkpath(sessiondir, 0755) < 0 ) {
-        singularity_message(ERROR, "Failed creating session directory %s: %s\n", sessiondir, strerror(errno));
+    singularity_message(DEBUG, "Obtaining the default sessiondir size\n");
+    if ( str2int(singularity_config_get_value(SESSIONDIR_MAXSIZE), &sessiondir_size) < 0 ) {
+        singularity_message(ERROR, "Failed converting sessiondir size to integer, check config file\n");
+        ABORT(255);
+    }
+    singularity_message(DEBUG, "Converted sessiondir size to: %ld\n", sessiondir_size);
+
+    singularity_message(DEBUG, "Creating the sessiondir size mount option length\n");
+    sessiondir_size_str_len = intlen(sessiondir_size) + 7;
+
+    singularity_message(DEBUG, "Got size length of: %d\n", sessiondir_size_str_len);
+    sessiondir_size_str = (char *) malloc(sessiondir_size_str_len);
+
+    singularity_message(DEBUG, "Creating the sessiondir size mount option string\n");
+    sessiondir_size_str_usd = snprintf(sessiondir_size_str, sessiondir_size_str_len, "size=%ldm", sessiondir_size);
+
+    singularity_message(DEBUG, "Checking to make sure the string was allocated correctly\n");
+    if ( sessiondir_size_str_usd + 1 !=  sessiondir_size_str_len ) {
+        singularity_message(ERROR, "Failed to allocate string for sessiondir size string (%s): %d + 1 != %d\n", sessiondir_size_str, sessiondir_size_str_usd, sessiondir_size_str_len);
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Opening sessiondir file descriptor\n");
-    if ( ( sessiondir_fd = open(sessiondir, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Could not obtain file descriptor for session directory %s: %s\n", sessiondir, strerror(errno));
+    singularity_priv_escalate();
+    singularity_message(DEBUG, "Mounting sessiondir tmpfs: %s\n", sessiondir);
+    if ( mount("tmpfs", sessiondir, "tmpfs", MS_NOSUID, sessiondir_size_str) < 0 ){
+        singularity_message(ERROR, "Failed to mount sessiondir tmpfs %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }
+    singularity_priv_drop();
 
-    singularity_message(DEBUG, "Setting shared flock() on session directory\n");
-    if ( flock(sessiondir_fd, LOCK_SH | LOCK_NB) < 0 ) {
-        singularity_message(ERROR, "Could not obtain shared lock on %s: %s\n", sessiondir, strerror(errno));
-        ABORT(255);
-    }
-
-    if ( ( singularity_registry_get("NOSESSIONCLEANUP") != NULL ) || ( singularity_registry_get("NOCLEANUP") != NULL ) ) {
-        singularity_message(DEBUG, "Not spawning a session directory cleanup process\n");
-    } else {
-        singularity_message(DEBUG, "Spawning a session directory cleanup process\n");
-
-        // singularity_fork() is currently causing problems with mvapich2, plus
-        // it doesn't exec with the binaries real name properly
-//        int child = singularity_fork(); 
-        int child = fork();
-
-        if ( child == 0 ) {
-            envar_set("SINGULARITY_CLEANDIR", sessiondir, 1);
-            close(sessiondir_fd);
-
-            execl(joinpath(LIBEXECDIR, "/singularity/bin/cleanupd"), "singularity: cleanupd", NULL); // Flawfinder: ignore (on top of old smokey...)
-
-        } else if ( child > 0 ) {
-            int tmpstatus;
-
-            waitpid(child, &tmpstatus, 0);
-            if ( WEXITSTATUS(tmpstatus) != 0 ) {
-                singularity_message(ERROR, "Failed to spawn cleanup daemon process\n");
-                ABORT(255);
-            }
-        }
-    }
+    singularity_registry_set("SESSIONDIR", sessiondir);
 
     return(0);
 }
