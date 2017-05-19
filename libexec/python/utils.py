@@ -259,7 +259,7 @@ def change_permission(file_path,permission=None):
         try:
             os.chmod(file_path, st.st_mode | permission)
         except:
-            print("ERROR: Couldn't change permission on ", file_path)
+            sys.stderr.write("ERROR: Couldn't change permission on %s\n" %file_path)
             sys.exit(1)
     return has_permission(file_path,permission)
 
@@ -333,7 +333,7 @@ def get_cache(cache_base=None,subfolder=None,disable_cache=False):
     # Create the cache folder(s), if don't exist
     create_folders(cache_base)
 
-    print("Cache folder set to %s" %cache_base)
+    sys.stderr.write("# singularity: Cache folder set to %s\n" %cache_base)
     return cache_base
 
 
@@ -363,7 +363,7 @@ def extract_tar(archive,output_folder):
 
     # Just use command line, more succinct.
     command = ["tar", args, archive, "-C", output_folder, "--exclude=dev/*"]
-    print("Extracting %s" %(archive))
+    sys.stderr.write("# singularity: Extracting %s\n" %(archive))
 
     retval = run_command(command)
 
