@@ -171,7 +171,7 @@ case "$SINGULARITY_CONTAINER" in
 
     ;;
     shub://*)
-        if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+        if [ -n "${SINGULARITY_IMAGE:-}" ]; then
             SHUB_CONTAINERNAME="$SINGULARITY_IMAGE"
             export SHUB_CONTAINERNAME
         fi
