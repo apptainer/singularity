@@ -139,14 +139,12 @@ case "$SINGULARITY_CONTAINER" in
             eval_abort $SINGULARITY_libexecdir/singularity/python/size.py
 
             IMAGESIZE=`cat "$SINGULARITY_CONTENTS"`
-            if [ -z "$IMAGESIZE" ]; then
-                message WARNING "Could not obtain the container size, using defaults\n"
-            elif [ "$IMAGESIZE" -eq "$IMAGESIZE" ] 2>/dev/null; then
+            if [ "$IMAGESIZE" -eq "$IMAGESIZE" ] 2>/dev/null; then
                 # Confirm we have a number
                 SINGULARITY_IMAGESIZE=`echo "($IMAGESIZE * 5)/(1024*1024)" | bc`
                 export SINGULARITY_IMAGESIZE
             else
-                message ERROR "Invalid size returned for container size\n"
+                message WARNING "Could not obtain the container size, using defaults\n"
             fi
         fi
         SINGULARITY_WRITABLE=1
