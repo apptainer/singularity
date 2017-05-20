@@ -144,7 +144,8 @@ case "$SINGULARITY_CONTAINER" in
                 SINGULARITY_IMAGESIZE=`echo "($IMAGESIZE * 5)/(1024*1024)" | bc`
                 export SINGULARITY_IMAGESIZE
             else
-                message WARNING "Could not obtain the container size, using defaults\n"
+                message ERROR "Could not obtain the container size, try using --size\n"
+                ABORT 255
             fi
         fi
         SINGULARITY_WRITABLE=1
