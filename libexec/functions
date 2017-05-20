@@ -57,7 +57,7 @@ message() {
         ;;
         w|warn|warning|W|WARN|WARNING)
             tput -Txterm setaf 3 2>/dev/null
-            printf "WARN: $MESSAGE" "$@" 1>&2
+            printf "WARNING: $MESSAGE" "$@" 1>&2
             tput -Txterm sgr0 2>/dev/null
         ;;
         1|INFO)
