@@ -85,11 +85,11 @@ rm -rf $RPM_BUILD_ROOT
 %doc examples AUTHORS.md CONTRIBUTING.md COPYRIGHT.md INSTALL.md LICENSE-LBNL.md LICENSE.md README.md
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
-%dir %{_localstatedir}/lib/singularity
-%dir %{_localstatedir}/lib/singularity/mnt
-%dir %{_localstatedir}/lib/singularity/mnt/session
-%dir %{_localstatedir}/lib/singularity/mnt/container
-%dir %{_localstatedir}/lib/singularity/mnt/overlay
+%dir %{_localstatedir}/singularity
+%dir %{_localstatedir}/singularity/mnt
+%dir %{_localstatedir}/singularity/mnt/session
+%dir %{_localstatedir}/singularity/mnt/container
+%dir %{_localstatedir}/singularity/mnt/overlay
 
 %{_bindir}/singularity
 %{_bindir}/run-singularity
@@ -110,6 +110,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/action
 %{_libexecdir}/singularity/bin/bootstrap
 %{_libexecdir}/singularity/bin/copy
+%{_libexecdir}/singularity/bin/cleanupd
 %{_libexecdir}/singularity/bin/create
 %{_libexecdir}/singularity/bin/expand
 %{_libexecdir}/singularity/bin/export

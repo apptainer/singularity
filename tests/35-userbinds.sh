@@ -41,6 +41,7 @@ if [ -n "$SINGULARITY_OVERLAY_FS" ]; then
     stest 0 singularity exec -B /tmp:/nonexistant "$CONTAINER" test -f /nonexistant/hello_world_test
 fi
 
+stest 0 rm -f /tmp/hello_world_test
 
 test_cleanup
 
