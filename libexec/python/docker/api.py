@@ -100,7 +100,8 @@ class DockerApiConnection(ApiConnection):
 
 
     def _init_headers(self):
-        # specify wanting version 2 schema, meaning the correct order of digests returned (base to child)
+        # specify wanting version 2 schema, meaning the correct order of digests 
+        # returned (base to child)
         return {"Accept":'application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json',
                'Content-Type':'application/json; charset=utf-8'}
 
@@ -129,6 +130,7 @@ class DockerApiConnection(ApiConnection):
                 response = self.get_tags(return_response=True)
 
             if not isinstance(response, HTTPError):
+                bot.verbose3('Response on obtaining token is None.')
                 return None
 
             if response.code != 401 or "Www-Authenticate" not in response.headers:
@@ -148,17 +150,26 @@ class DockerApiConnection(ApiConnection):
             self.token_url = "%s?service=%s&expires_in=9000&scope=%s" %(realm,service,scope)
 
         headers = dict()
+        # First priority comes to auth supplied directly to function
         if auth is not None:
             headers.update(auth)
 
-        response = self.get(self.token_url,default_headers=False,headers=headers)
+        # Second priority is default if supplied at init
+        elif self.auth is not None:
+            headers.update(self.auth)
+
+        response = self.get(self.token_url,
+                            default_headers=False,
+                            headers=headers)
+
         try:
             token = json.loads(response)["token"]
             token = {"Authorization": "Bearer %s" %(token) }
             self.token = token
             self.update_headers(token)
         except:
-            bot.error("Error getting token for repository %s/%s, exiting." %(self.namespace,self.repo_name))
+            bot.error("Error getting token for repository %s/%s, exiting." %(self.namespace,
+                                                                             self.repo_name))
             sys.exit(1)
 
 
@@ -201,7 +212,9 @@ class DockerApiConnection(ApiConnection):
         bot.verbose("Obtaining tags: %s" %base)
 
         # We use get_tags for a testing endpoint in update_token
-        response = self.get(base)
+        response = self.get(base,
+                            return_response=return_response)
+
         if return_response:
             return response
 
@@ -235,8 +248,10 @@ class DockerApiConnection(ApiConnection):
             headers['Accept'] = 'application/json' 
 
         response = self.get(base,headers=self.headers)
+
         try:
             response = json.loads(response)
+
         except:
             # If the call fails, give the user a list of acceptable tags
             tags = self.get_tags()
