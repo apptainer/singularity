@@ -1,0 +1,29 @@
+USAGE: singularity [...] inspect [exec options...] <container path>
+
+This command will show you the runscipt for the image.
+
+INSPECT OPTIONS:
+    -l/--labels      Show the labels associated with the image (2.3+)
+
+
+EXAMPLES:
+    
+    $ singularity inspect ubuntu.img
+    #!/bin/sh
+
+    exec /bin/bash "$@"
+
+    $ singuarity inspect --labels ubuntu.img
+    {
+        "SINGULARITY_DEFFILE_BOOTSTRAP": "docker",
+        "SINGULARITY_DEFFILE": "Singularity",
+        "SINGULARITY_DEFFILE_FROM": "ubuntu:latest",
+        "SINGULARITY_BOOTSTRAP_VERSION": "2.2.99"
+    }
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+

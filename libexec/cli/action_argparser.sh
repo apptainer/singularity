@@ -33,6 +33,11 @@ while true; do
             fi
             exit
         ;;
+        -l|--labels)
+            SINGULARITY_INSPECT_SCRIPT="/.singularity.d/labels.json"
+            export SINGULARITY_INSPECT_SCRIPT
+            shift
+        ;;
         -s|--shell)
             shift
             SINGULARITY_SHELL="${1:-}"
