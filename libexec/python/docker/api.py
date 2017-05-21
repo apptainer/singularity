@@ -22,6 +22,7 @@ perform publicly and display publicly, and to permit other to do so.
 '''
         
 import sys
+import math
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 sys.path.append('..') # parent directory
@@ -310,8 +311,11 @@ class DockerApiConnection(ApiConnection):
         return download_folder
 
 
-    def get_size(self):
+    def get_size(self,add_padding=True,round_up=True,return_mb=True):
         '''get_size will return the image size (must use version 2 manifest)
+        :add_padding: if true, return reported size * 5
+        :round_up: if true, round up to nearest integer
+        :return_mb: if true, defaults bytes are converted to MB
         '''
         manifest = self.get_manifest()
         size = None
@@ -320,6 +324,17 @@ class DockerApiConnection(ApiConnection):
             for layer in manifest["layers"]:
                 if "size" in layer:
                     size += layer['size']
+            
+            if add_padding is True:
+                size = size * 5
+
+            if return_mb is True:
+                size = size / (1024*1024) # 1MB = 1024*1024 bytes
+
+            if round_up is True:
+                size = math.ceil(size)
+            size = int(size)
+
         return size
 
 
