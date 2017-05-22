@@ -1,9 +1,6 @@
 USAGE: singularity [...] shell [shell options...] <container path>
 
-Obtain a shell (/bin/sh) within the container image.
-
-note: When invoking a shell within a container, the container image is
-by default writable.
+Obtain an interactive shell (/bin/sh) within the container image.
 
 
 SHELL OPTIONS:
