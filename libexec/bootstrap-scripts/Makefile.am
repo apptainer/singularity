@@ -7,6 +7,7 @@ dist_mods_SCRIPTS = deffile-driver-arch.sh \
                     deffile-driver-debootstrap.sh \
                     deffile-driver-docker.sh \
                     deffile-driver-yum.sh \
+                    deffile-driver-zypper.sh \
                     deffile-sections.sh \
                     deffile-post.sh \
                     environment.sh \
