@@ -71,12 +71,12 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
-    singularity_runtime_ns(SR_NS_MNT);
-
-    singularity_image_bind(&image);
-    singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
-
     if ( argc > 1 ) {
+        singularity_runtime_ns(SR_NS_MNT);
+
+        singularity_image_bind(&image);
+        singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
+
         singularity_priv_drop_perm();
 
         singularity_message(VERBOSE, "Running command: %s\n", argv[1]);
@@ -85,7 +85,20 @@ int main(int argc, char **argv) {
 
         singularity_message(ERROR, "Exec failed: %s: %s\n", argv[1], strerror(errno));
         ABORT(255);
+    } else if ( singularity_registry_get("NONEWSHELL") != NULL ) {
+        if ( singularity_priv_getuid() != 0 ) {
+            singularity_message(ERROR, "Can not mount image in current shell as non-root\n");
+            ABORT(255);
+        }
+
+        singularity_image_bind(&image);
+        singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
     } else {
+        singularity_runtime_ns(SR_NS_MNT);
+
+        singularity_image_bind(&image);
+        singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
+
         singularity_priv_drop_perm();
 
         singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), singularity_registry_get("MOUNTPOINT"));

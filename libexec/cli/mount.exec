@@ -47,9 +47,14 @@ while true; do
             exit
         ;;
         -w|--writable)
-            shift
             SINGULARITY_WRITABLE=1
             export SINGULARITY_WRITABLE
+            shift
+        ;;
+        -s|--shell)
+            SINGULARITY_NONEWSHELL=1
+            export SINGULARITY_NONEWSHELL
+            shift
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
