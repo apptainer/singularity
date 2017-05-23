@@ -1,7 +1,7 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
- * “Singularity” Copyright (c) 2016, The Regents of the University of California,
+ * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
@@ -16,60 +16,73 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so. 
  * 
- */
+*/
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/mount.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/param.h>
-#include <errno.h> 
-#include <signal.h>
-#include <sched.h>
-#include <string.h>
-#include <fcntl.h>  
-#include <grp.h>
+#include <sys/mount.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <libgen.h>
 #include <linux/limits.h>
 
-#include "config.h"
-#include "lib/config_parser.h"
-#include "lib/singularity.h"
 #include "util/file.h"
 #include "util/util.h"
+#include "util/registry.h"
+#include "util/message.h"
+#include "util/config_parser.h"
+#include "util/privilege.h"
+
+#include "../image.h"
+#include "./image/image.h"
+#include "./dir/dir.h"
+#include "./squashfs/squashfs.h"
 
 
-int singularity_image_mount(int argc, char ** argv) {
-    char *containerimage;
 
-    if ( argv[1] == NULL ) {
-        fprintf(stderr, "USAGE: SINGULARITY_IMAGE=[image] %s [command...]\n", argv[0]);
-        return(1);
-    }
+int _singularity_image_mount(struct image_object *image, char *mount_point) {
 
-    singularity_message(VERBOSE, "Obtaining container name from environment variable\n");
-    if ( ( containerimage = envar_path("SINGULARITY_IMAGE") ) == NULL ) {
-        singularity_message(ERROR, "SINGULARITY_IMAGE not defined!\n");
+    if ( mount_point == NULL ) {
+        singularity_message(ERROR, "Mount point location must exist\n");
         ABORT(255);
     }
 
-    singularity_priv_init();
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-    singularity_sessiondir_init(containerimage);
-    singularity_ns_user_unshare();
-    singularity_ns_mnt_unshare();
+    if ( chk_mode(mount_point, 0040755) != 0 ) {
+        int ret;
+        singularity_message(DEBUG, "fixing bad permissions on %s\n", mount_point);
 
-    singularity_rootfs_init(containerimage);
-    singularity_rootfs_mount();
+        singularity_priv_escalate();
+        ret = chmod(mount_point, 0755); // Flawfinder: ignore (TOCTOU preferred to opening attack surface with priviledged file descriptor)
+        singularity_priv_drop();
 
-    free(containerimage);
+        if ( ret != 0 ) {
+            singularity_message(ERROR, "Bad permission mode (should be 0755) on: %s\n", mount_point);
+            ABORT(255);
+        }
+    }
 
-    singularity_message(VERBOSE, "Setting SINGULARITY_ROOTFS to '%s'\n", singularity_rootfs_dir());
-    setenv("SINGULARITY_ROOTFS", singularity_rootfs_dir(), 1);
+    singularity_message(VERBOSE, "Checking what kind of image we are mounting\n");
+    if ( _singularity_image_mount_squashfs_check(image) == 0 ) {
+        if ( _singularity_image_mount_squashfs_mount(image, mount_point) < 0 ) {
+            singularity_message(ERROR, "Failed mounting image, aborting...\n");
+            ABORT(255);
+        }
+    } else if ( _singularity_image_mount_dir_check(image) == 0 ) {
+        if ( _singularity_image_mount_dir_mount(image, mount_point) < 0 ) {
+            singularity_message(ERROR, "Failed mounting image, aborting...\n");
+            ABORT(255);
+        }
+    } else {
+        singularity_message(VERBOSE, "Attempting to mount as singularity image\n");
+        if ( _singularity_image_mount_image_mount(image, mount_point) < 0 ) {
+            singularity_message(ERROR, "Failed mounting image, aborting...\n");
+            ABORT(255);
+        }
+    }
 
-    //return(singularity_fork_exec(&argv[1])); //Will actually return 0 to indicated successful execution of function
-    return(0); //Returns 0, simage binary will handle running &argv[1]
+    return(0);
 }

@@ -3,21 +3,19 @@ USAGE: singularity [...] export [export options...] <container path>
 Export will dump a tar stream of the container image contents to standard
 out (stdout). 
 
-note: This command must be executed as root.
 
 EXPORT OPTIONS:
     -f/--file       Output to a file instead of a pipe
-       --command    Replace the tar command (DEFAULT: 'tar cf - .')
+
 
 EXAMPLES:
 
-    $ sudo singularity export /tmp/Debian.img > /tmp/Debian.tar
-    $ sudo singularity export /tmp/Debian.img | gzip -9 > /tmp/Debian.tar.gz
-    $ sudo singularity export -f Debian.tar /tmp/Debian.img
+    $ singularity export /tmp/Debian.img > /tmp/Debian.tar
+    $ singularity export /tmp/Debian.img | gzip -9 > /tmp/Debian.tar.gz
+    $ singularity export -f Debian.tar /tmp/Debian.img
 
-
+ 
 For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-

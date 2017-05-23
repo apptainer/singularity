@@ -1,0 +1,29 @@
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+# 
+# "Singularity" Copyright (c) 2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+
+# SINGULARITY BOOTSTRAP: TENSORFLOW
+# Installation proceedure copied from:
+# https://www.tensorflow.org/versions/r0.10/get_started/os_setup.html#pip-installation
+
+
+BootStrap: debootstrap
+OSVersion: stable
+MirrorURL: http://ftp.us.debian.org/debian/
+
+
+%runscript
+    exec /usr/bin/python
+
+
+%post
+    apt-get update
+    apt-get -y install vim python-pip python-dev
+    pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.10.0-cp27-none-linux_x86_64.whl
+
+
+%test
+    # This runs usually less then 30 minutes depending on your host type
+    python -m tensorflow.models.image.mnist.convolutional
