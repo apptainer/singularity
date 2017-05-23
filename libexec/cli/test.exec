@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -21,46 +21,75 @@
 
 
 ## Basic sanity
-if [ -z "$libexecdir" ]; then
+if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
     exit 1
 fi
 
 ## Load functions
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
 else
-    echo "Error loading functions: $libexecdir/singularity/functions"
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
 fi
 
-load_mod cache
-load_mod sexec
+## Init Singularity environment
+if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/init"
+fi
+if [ -f "${HOME:-}/.singularity-init" ]; then
+    . "${HOME:-}/.singularity-init"
+fi
 
-if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) test [container name]"
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        -*)
+            message ERROR "Unknown option: ${1:-}\n"
+            exit 1
+        ;;
+        *)
+            break;
+        ;;
+    esac
+done
+
+SINGULARITY_CONTAIN=1
+export SINGULARITY_CONTAIN
+
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+    SINGULARITY_IMAGE="${1:-}"
+    export SINGULARITY_IMAGE
+    shift
+fi
+
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    else
+        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
+    fi
+    exit 0
+fi
+
+
+if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
+    . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
+fi
+
+if [ -x "$SINGULARITY_libexecdir/singularity/sexec" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
+else
+    message ERROR "Could not locate the Singularity Exec module: $SEXEC\n"
     exit 1
 fi
-
-SAPPNAME="$1"
-
-if ! cache_sappname2uuid "$SAPPNAME" "SAPPUUID"; then
-    message ERROR "Singularity container is not installed: $SAPPNAME\n"
-    exit 255
-fi
-
-if ! cache_sappdir "$SAPPUUID" "SAPPDIR"; then
-    message ERROR "Could not identify cache directory for $SAPPUUID\n"
-    exit 255
-fi
-
-SINGULARITY_COMMAND="test"
-CONTAINERPATH="$SAPPDIR/c"
-export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
-shift
-
-message 2 "Starting a test in '$SAPPNAME'\n"
-
-message 2 "Exec'ing Sexec\n"
-sexec_exec "$@" <&0
 

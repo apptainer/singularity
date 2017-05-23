@@ -1,0 +1,25 @@
+Source: singularity
+Section: admin
+Priority: optional
+Maintainer: Dave Love <fx@gnu.org>
+Build-Depends: debhelper (>= 9), dh-autoreconf
+Standards-Version: 3.9.8
+Homepage: http://gmkurtzer.github.io/singularity
+Vcs-Git: https://github.com/gmkurtzer/singularity.git
+Vcs-Browser: https://github.com/gmkurtzer/singularity
+
+# "singularity" is a packaged game (but the contents don't clash)
+Package: singularity-container
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: container platform focused on supporting "Mobility of Compute"
+ Mobility of Compute encapsulates the development to compute model
+ where developers can work in an environment of their choosing and
+ creation and when the developer needs additional compute resources,
+ this environment can easily be copied and executed on other platforms.
+ Additionally as the primary use case for Singularity is targeted
+ towards computational portability, many of the barriers to entry of
+ other container solutions do not apply to Singularity making it an
+ ideal solution for users (both computational and non-computational)
+ and HPC centers.
+

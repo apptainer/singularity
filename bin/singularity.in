@@ -2,13 +2,13 @@
 # 
 # Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
 # 
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# "Singularity" Copyright (c) 2016, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -20,62 +20,49 @@
 # 
 
 
-
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 libexecdir="@libexecdir@"
-version="@VERSION@"
+sysconfdir="@sysconfdir@"
+localstatedir="@localstatedir@"
+
+
+SINGULARITY_version="@VERSION@"
+SINGULARITY_libexecdir="$libexecdir"
+SINGULARITY_sysconfdir="$sysconfdir"
+SINGULARITY_localstatedir="$localstatedir"
 
 RETVAL=0
 MESSAGELEVEL=1
-DEBUG=""
+NEW_HOME=""
+CHANGE_HOME="NO"
 
-export prefix exec_prefix libexecdir RETVAL MESSAGELEVEL DEBUG
+export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL NEW_HOME CHANGE_HOME
 
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
+# the Modules package always calls 
+unset module
+
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
 else
-    echo "Error loading functions: $libexecdir/singularity/functions"
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
 fi
 
-usage() {
-    echo "USAGE: $0 (options) [command] (command options)"
-    echo
-    echo "GLOBAL OPTIONS:"
-    echo "    -h --help     Display this usage summary"
-    echo "       --version  Show application version"
-    echo "    -v --verbose  Increase verbosity +1"
-    echo "    -d --debug    Show debugging information"
-    echo "    -q --quiet    Only print errors"
-    echo
-    echo "COMMANDS:"
-
-    ls $libexecdir/singularity/cli/*.summary | sed -e 's/.summary//' | sort | while read i; do
-        if [ -f "$i.summary" ]; then
-            NAME=`basename "$i"`
-            SUMMARY=`cat "$i.summary"`
-            printf "    %-10s %s\n" "$NAME" "$SUMMARY"
-        fi
-    done
-
-    echo
-    echo "For any additional help or support visit the Singularity"
-    echo "website: http://gmkurtzer.github.io/singularity"
-    echo
-}
-
-# Initial argument processing. Iterate through arguments until argument
-# is not recognized as an argument, which must mean it is a command. So
-# exit the arg processing and continue to command section.
-set -f
-eval set -- `parse_opts "$@"`
-set +f
-
 while true; do
-    case $1 in
-        -h|--help)
-            usage
+    case ${1:-} in
+        -h|--help|help)
+            if [ -z "${2:-}" ]; then
+                C="singularity"
+            else
+                C="${2:-}"
+            fi
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$C.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$C.help"
+            else
+                message ERROR "No help exists for command: '$C'\n"
+                exit 1
+            fi
             exit
         ;;
         -q|--quiet)
@@ -83,18 +70,42 @@ while true; do
             shift 
         ;;
         --version)
-            message 1 "$version\n"
+            message 1 "$SINGULARITY_version\n"
             exit
         ;;
         -d|--debug)
             MESSAGELEVEL=5
-            DEBUG=1
             message 4 "enabling debugging\n"
-            #set -x
+            shift
+        ;;
+        -x|--shdebug)
+            SHELL_DEBUG=1
+            export SHELL_DEBUG
+            message 4 "enabling shell debugging\n"
             shift
         ;;
         -v|--verbose)
             MESSAGELEVEL=`expr $MESSAGELEVEL + 1`
+            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            shift
+        ;;
+        -vv)
+            MESSAGELEVEL=`expr $MESSAGELEVEL + 2`
+            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            shift
+        ;;
+        -vvv)
+            MESSAGELEVEL=`expr $MESSAGELEVEL + 3`
+            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            shift
+        ;;
+        -vvvv)
+            MESSAGELEVEL=`expr $MESSAGELEVEL + 4`
+            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            shift
+        ;;
+        -vvvv)
+            MESSAGELEVEL=`expr $MESSAGELEVEL + 4`
             message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
             shift
         ;;
@@ -109,19 +120,21 @@ while true; do
     esac
 done
 
-COMMAND="$1"
+SINGULARITY_COMMAND="${1:-}"
+export SINGULARITY_COMMAND
 
-if [ -z "$COMMAND" ]; then
-    usage
+if [ -z "$SINGULARITY_COMMAND" ]; then
+    cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
     exit 0
 fi
 
 shift
 
-if [ -x "$libexecdir/singularity/cli/$COMMAND.exec" ]; then
-    exec $libexecdir/singularity/cli/$COMMAND.exec "$@"
+if [ -x "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec" ]; then
+    message 2 "Exec'ing: $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec $@\n"
+    exec $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec "$@"
 else
-    message ERROR "Unknown command '$COMMAND'\n"
+    message ERROR "Unknown command '$SINGULARITY_COMMAND'\n"
     exit 1
 fi
 

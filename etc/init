@@ -1,0 +1,16 @@
+# This will be sourced before launching a Singularity container.
+
+# Environment modules if set, cause errors in containers
+unset module
+
+# Bash env has been known to cause issues in containers
+unset BASH_ENV
+
+# Some distributions don't have /bin and /sbin in PATH anymore
+PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin"
+
+# Don't save the shell's HISTFILE
+HISTFILE="/dev/null"
+
+export PATH HISTFILE
+

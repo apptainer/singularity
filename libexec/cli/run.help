@@ -1,32 +1,56 @@
-USAGE: singularity (options) run [container name] (options)
+USAGE: singularity [...] run [run options...] <container path> [...]
 
-Execute a Singularity container and pass any arguments to the runtime
-environment.
+This command will launch a Singularity container and execute a runscript
+if one is defined for that container. The runscript is a file at
+'/singularity'. If this file is present (and executable) then this
+command will execute that file within the container automatically. All
+arguments following the container name will be passed directly to the
+runscript.
 
-It is important to know that while the application itself runs within
-a contianed environment it is not limited to that environment (unless you
-request full containment). All paths relative to your current working
-directory can be accessible to the applications within your container
-environment (relative paths are any paths that does not begin with a slash
-'/').
 
-You can reference the container by name, UUID or if installed with the
-'runkey' option.
+RUN OPTIONS:
+    -B/--bind <spec>    A user-bind path specification.  spec can either be a
+                        path or a src:dest pair, specifying the bind mount to
+                        perform (can be called multiple times)
+    -c/--contain        This option disables the automatic sharing of writable
+                        filesystems on your host (e.g. $HOME and /tmp).
+    -C/--containall     Contain not only file systems, but also PID and IPC
+    -H/--home <spec>    A home directory specification.  spec can either be a
+                        src path or src:dest pair.  src is the source path
+                        of the home directory outside the container and dest
+                        overrides the home directory within the container
+    -i/--ipc            Run container in a new IPC namespace
+    -p/--pid            Run container in a new PID namespace
+    --pwd               Initial working directory for payload process inside
+                        the container
+    -S/--scratch <path> Include a scratch directory within the container that 
+                        is linked to a temporary dir (use -W to force location)
+    -u/--user           Try to run completely unprivileged (only works on very
+                        new kernels/distros)
+    -W/--workdir        Working directory to be used for /tmp, /var/tmp and
+                        $HOME (if -c/--contain was also used)
+    -w/--writable       By default all Singularity containers are available as
+                        read only. This option makes the file system accessible
+                        as read/write.
 
-OPTIONS:
-    -C/--contain    Contain the environment and do not make any part of
-                    the host file system available (this
-                    option invalidates the above --dir option)
-    -s/--check      Do a file check within the container before running
-                    inside the container.
-    -c/--cmd='..'   Override the internaly defined command and run the
-                    given command instead
-    -d/--dir='..'   Link a scratch or working directory path into container
-                    (you can also export the environment variable
-                    SINGULARITY_SCRATCH="..." for this feature)
+NOTE:
+    If there is a daemon process running inside the container, then
+    subsequent container commands will all run within the same namespaces.
+    This means that the --writable and --contain options will not be
+    honored as the namespaces have already been configured by the
+    'singularity start' command.
+
+EXAMPLES:
+
+    $ singularity exec /tmp/Debian.img cat /singularity
+    #!/bin/sh
+    echo "Hello world: $@"
+    $ singularity run /tmp/Debian.img one two three
+    Hello world: one two three
+
 
 For additional help, please visit our public documentation pages which are
 found at:
 
-    http://gmkurtzer.github.io/singularity
+    http://singularity.lbl.gov/
 

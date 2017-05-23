@@ -1,12 +1,63 @@
-USAGE: singularity (options) shell [container name]
+USAGE: singularity [...] shell [shell options...] <container path>
 
-Obtain a shell within the container context for debugging.
+Obtain a shell (/bin/sh) within the container image.
 
-Note: You should also include the specfile directive "DebugOS: 1" to have
-many of the standard shell programs installed into your container.
+note: When invoking a shell within a container, the container image is
+by default writable.
+
+
+SHELL OPTIONS:
+    -B/--bind <spec>    A user-bind path specification.  spec can either be a
+                        path or a src:dest pair, specifying the bind mount to
+                        perform (can be called multiple times)
+    -c/--contain        This option disables the automatic sharing of writable
+                        filesystems on your host (e.g. $HOME and /tmp).
+    -C/--containall     Contain not only file systems, but also PID and IPC
+    -H/--home <spec>    A home directory specification.  spec can either be a
+                        src path or src:dest pair.  src is the source path
+                        of the home directory outside the container and dest
+                        overrides the home directory within the container
+    -i/--ipc            Run container in a new IPC namespace
+    -p/--pid            Run container in a new PID namespace (creates child)
+    --pwd               Initial working directory for payload process inside
+                        the container
+    -S/--scratch <path> Include a scratch directory within the container that
+                        is linked to a temporary dir (use -W to force location)
+    -s/--shell <shell>  Path to program to use for interactive shell
+    -u/--user           Try to run completely unprivileged (only works on very
+                        new kernels/distros)
+    -W/--workdir        Working directory to be used for /tmp, /var/tmp and
+                        $HOME (if -c/--contain was also used)
+    -w/--writable       By default all Singularity containers are available as
+                        read only. This option makes the file system accessible
+                        as read/write.
+
+
+NOTE:
+    If there is a daemon process running inside the container, then 
+    subsequent container commands will all run within the same namespaces.
+    This means that the --writable and --contain options will not be
+    honored as the namespaces have already been configured by the
+    'singularity start' command.
+
+
+EXAMPLES:
+
+    $ singularity shell /tmp/Debian.img
+    Singularity/Debian.img> pwd
+    /home/gmk/test
+    Singularity/Debian.img> exit
+    $ singularity shell -C /tmp/Debian.img
+    Singularity/Debian.img> pwd
+    /home/gmk
+    Singularity/Debian.img> ls -l
+    total 0
+    Singularity/Debian.img> exit
+    $ sudo singularity shell -w /tmp/Debian.img
+
 
 For additional help, please visit our public documentation pages which are
 found at:
 
-    http://gmkurtzer.github.io/singularity
+    http://singularity.lbl.gov/
 

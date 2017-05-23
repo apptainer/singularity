@@ -1,7 +1,6 @@
 modsdir = $(libexecdir)/singularity/mods
 
-dist_mods_SCRIPTS = build.smod install.smod cache.smod sappfile.smod sexec.smod \
-	interpreter.dep ldd.dep perlmods.dep pymods.dep ompi.dep r.dep x11.dep
+dist_mods_SCRIPTS = linux_build.smod linux_build_redhat.smod linux_build_debian.smod linux_build_busybox.smod linux_build_arch.smod
 
 MAINTAINERCLEANFILES = Makefile.in
 

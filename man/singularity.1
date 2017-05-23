@@ -1,0 +1,42 @@
+.TH SINGULARITY 1
+.SH NAME
+Singularity \- Linux Application Containers
+.SH SYNOPSIS
+.B singularity
+[global options...]
+.B <command>
+[command options...]
+.B ...
+.SH DESCRIPTION
+Singularity provides an application virtualization layer enabling mobility of
+compute via both application and environment portability. With Singularity
+one is capable of building a root file system and running that root file
+system on any other Linux system where Singularity is installed.
+.SH OPTIONS
+.IP "-h/--help/help"
+Print usage summary
+.IP "--version"
+Print Singularity version
+.IP "-v/--verbose"
+For each pass of verbose, increase verbosity
+.IP "-d/--debug"
+Print LOTS of debugging output (including user and process information)
+.SH FILES
+.I ${sysconfdir}/singularity/singularity.conf
+.RS
+The system wide configuration file. This file must be root owned for
+Singularity to parse it.
+.SH EXAMPLES
+.IP "$ singularity help"
+Will print a generalized usage summary and available commands.
+.IP "$ singularity help <command>"
+Additional help for any of the Singularity commands can be seen by appending
+the command name to the above command.
+.SH DOCUMENTATION
+Full documentation can be found on the Singularity web site at:
+.B http://singularity.lbl.gov/
+.SH BUGS
+Please submit bug reports to the GitHub issue tracker at
+.B https://github.com/singularityware/singularity/issues/new
+.SH AUTHOR
+Gregory M. Kurtzer <gmkurtzer@lbl.gov>

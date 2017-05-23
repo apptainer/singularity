@@ -1,0 +1,37 @@
+BootStrap: debootstrap
+OSVersion: trusty
+MirrorURL: http://us.archive.ubuntu.com/ubuntu/
+
+%runscript
+
+%post
+	sed -i 's/$/ universe/' /etc/apt/sources.list
+	locale-gen "en_US.UTF-8"
+	dpkg-reconfigure locales
+	export LANGUAGE="en_US.UTF-8"
+	echo 'LANGUAGE="en_US.UTF-8"' >> /etc/default/locale
+	echo 'LC_ALL="en_US.UTF-8"' >> /etc/default/locale
+	mkdir /Software
+	apt-get update
+	apt-get install -y build-essential cmake curl ed git libsm6 libxrender1 libfontconfig1 lsb-release nettle-dev python-setuptools ruby software-properties-common vim wget zlib1g-dev apt-transport-https libgtk-3-0 bzip2 gfortran gettext libcairo2-dev libgit2-dev
+	apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 51716619E084DAB9
+	echo "deb https://cloud.r-project.org/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list
+	apt-get update
+	apt-get install -y r-base-dev
+    # can add command to install desired R packages here
+	apt-get clean
+	cd /Software
+	wget http://repo.continuum.io/archive/Anaconda3-4.1.1-Linux-x86_64.sh
+	bash Anaconda3-4.1.1-Linux-x86_64.sh -b -p /Software/anaconda3
+	rm Anaconda3-4.1.1-Linux-x86_64.sh
+	export PATH="/Software/anaconda3/bin:$PATH"
+	conda update conda
+	conda update anaconda
+	git clone git://github.com/JuliaLang/julia.git julia-0.5
+	cd julia-0.5
+	git checkout release-0.5
+	make MARCH=x86-64
+	cd ..
+	export PATH="/Software/julia-0.5/bin:$PATH"
+    # can add command to install desired julia packages here, remember to pre-compile!
+	sed -i 's|PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin|PATH="/Software/julia-0.5:/Software/anaconda3/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"|' /environment

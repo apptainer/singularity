@@ -1,31 +1,79 @@
-Summary: The Singularity of a container
+%{!?_rel:%{expand:%%global _rel 0.1}}
+
+# This allows us to pick up the default value from the configure
+%define with_slurm @with_slurm@
+%if "%{with_slurm}" == "yes"
+%define slurm 1
+%else
+%define slurm 0
+%endif
+
+Summary: Application and environment virtualization
 Name: singularity
 Version: @PACKAGE_VERSION@
-Release: 0.1%{?dist}
-License: US Dept. of Energy (BSD-like)
+Release: %{_rel}%{?dist}
+# https://spdx.org/licenses/BSD-3-Clause-LBNL.html
+License: BSD-3-Clause-LBNL
 Group: System Environment/Base
-URL: http://warewulf.lbl.gov/
+URL: http://singularity.lbl.gov/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
-Requires: strace
+
+%if %slurm
+# NOTE: doing a direct file dependency because experience has shown there are a few
+# site-local RPMs that have random pieces missing.
+BuildRequires: /usr/include/slurm/spank.h
+%endif
 
 %description
 Singularity provides functionality to build the smallest most minimal
-possible containers, and running those containers as singlet application
+possible containers, and running those containers as single application
 environments.
+
+%package devel
+Summary: Development libraries for Singularity
+Group: System Environment/Development
+
+%description devel
+Development files for Singularity
+
+%if %slurm
+%package slurm
+Summary: Singularity plugin for SLURM
+Group: System Environment/Libraries
+Requires: singularity = %{version}-%{release}
+
+%description slurm
+The Singularity plugin for SLURM allows jobs to be started within
+a container.  This provides a simpler interface to the user (they
+don't have to be aware of the singularity executable) and doesn't
+require a setuid binary.
+%endif
+
 
 %prep
 %setup
 
 
 %build
-%configure 
+if [ ! -f configure ]; then
+  ./autogen.sh
+fi
+
+%configure \
+%if %slurm
+  --with-slurm
+%else
+  --without-slurm
+%endif
+
 %{__make} %{?mflags}
 
 
 %install
 %{__make} install DESTDIR=$RPM_BUILD_ROOT %{?mflags_install}
+rm -f $RPM_BUILD_ROOT/%{_libdir}/singularity/lib*.la
 
 
 %clean
@@ -34,17 +82,41 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-, root, root)
-%doc AUTHORS COPYING ChangeLog INSTALL NEWS README
+%doc examples AUTHORS COPYING ChangeLog INSTALL LICENSE NEWS README.md
+%attr(0755, root, root) %dir %{_sysconfdir}/singularity
+%attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_libexecdir}/singularity
-%attr(4755, root, root) %{_libexecdir}/singularity/sexec
-%{_libexecdir}/singularity/functions
-%{_libexecdir}/singularity/ftrace
-%{_libexecdir}/singularity/ftype
-%{_libexecdir}/singularity/mods
+%dir %{_localstatedir}/lib/singularity
+%dir %{_localstatedir}/lib/singularity/mnt
+%attr(4755, root, root) %{_libexecdir}/singularity/sexec-suid
+%{_libexecdir}/singularity/bootstrap
 %{_libexecdir}/singularity/cli
+%{_libexecdir}/singularity/defaults
+%{_libexecdir}/singularity/helpers
+%{_libexecdir}/singularity/python
+%{_libexecdir}/singularity/get-section
+%{_libexecdir}/singularity/image-handler.sh
+%{_libexecdir}/singularity/sexec
+%{_libexecdir}/singularity/simage
+%{_libexecdir}/singularity/functions
 %{_bindir}/singularity
-%{_bindir}/sapprun
+%{_bindir}/run-singularity
+%{_mandir}/man1/*
+%{_libdir}/singularity/lib*.so.*
+%{_sysconfdir}/bash_completion.d/singularity
 
 
+%files devel
+%defattr(-, root, root)
+%{_libdir}/singularity/lib*.so
+%{_libdir}/singularity/lib*.a
+%{_includedir}/singularity/*.h
+
+
+%if %slurm
+%files slurm
+%defattr(-, root, root)
+%{_libdir}/slurm/singularity.so
+%endif
 
 %changelog

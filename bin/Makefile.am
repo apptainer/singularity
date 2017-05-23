@@ -1,5 +1,5 @@
 
-dist_bin_SCRIPTS = singularity sapprun
+dist_bin_SCRIPTS = singularity run-singularity
 
 MAINTAINERCLEANFILES = Makefile.in
 

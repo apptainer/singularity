@@ -1,0 +1,58 @@
+# Contributor: "Tru Huynh <tru@pasteur.fr>"
+# Maintainer: "Tru Huynh <tru@pasteur.fr>"
+pkgname=singularity
+pkgver=2
+pkgrel=0
+pkgdesc="Singularity: Application containers for Linux"
+url="http://singularity.lbl.gov"
+arch="x86_64"
+license="LNL"
+depends=""
+depends_dev="autoconf automake gcc make libtool linux-headers"
+makedepends="$depends_dev"
+install=""
+subpackages="$pkgname-doc $pkgname-examples"
+source="${pkgname}-${pkgver}.zip::https://github.com/gmkurtzer/singularity/archive/master.zip"
+options="suid"
+builddir=$srcdir/singularity-master
+build() {
+        cd "$builddir"      
+        ./autogen.sh
+        ./configure \
+                --build=$CBUILD \
+                --host=$CHOST \
+                --prefix=/usr \
+                --sysconfdir=/etc \
+                --mandir=/usr/share/man \
+                --localstatedir=/var \
+                || return 1
+        make || return 1
+}
+
+package() {
+        cd "$builddir"
+        make DESTDIR="$pkgdir" install || return 1
+}
+
+doc() {
+	arch="noarch"
+        cd "$builddir"
+        mkdir -p "$subpkgdir"/usr/share/doc/"$pkgname" || return 1
+	# Doc files
+	_docs="AUTHORS COPYING ChangeLog INSTALL NEWS README.md"
+	for _doc in $_docs; do
+		install -Dm644 "$srcdir"/$pkgname-master/$_doc \
+			"$subpkgdir"/usr/share/doc/$pkgname/$_doc || return 1
+	done
+}
+
+examples() {
+	arch="noarch"
+        # Put the examples into a seperate package
+        cd "$builddir"
+        mkdir -p "$subpkgdir"/usr/share/doc/"$pkgname"/examples || return 1
+        mv "$builddir"/examples/* "$subpkgdir"/usr/share/doc/"$pkgname"/examples || return 1
+}
+md5sums="23030140f8945148b83bdb0eadd0ed40  singularity-2.zip"
+sha256sums="1b027788abc2e5ba3aae1b5786d97373857cb70b526d37c34ade02c4e6b380f3  singularity-2.zip"
+sha512sums="fb148069f59afd205b90ae4189b01e1b7cbe3f0c755b032c00cb4841e491cf46b5ed586bc5a1898018c6b717de10f5a65f4a1106b1e5c237750794c41b0cc6b0  singularity-2.zip"

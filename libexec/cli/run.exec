@@ -6,9 +6,9 @@
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
-# If you have questions about your rights to use or distribute this software,
-# please contact Berkeley Lab's Innovation & Partnerships Office at
-# IPO@lbl.gov.
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
@@ -21,52 +21,102 @@
 
 
 ## Basic sanity
-if [ -z "$libexecdir" ]; then
+if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
     exit 1
 fi
 
 ## Load functions
-if [ -f "$libexecdir/singularity/functions" ]; then
-    . "$libexecdir/singularity/functions"
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
 else
-    echo "Error loading functions: $libexecdir/singularity/functions"
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
 fi
 
-load_mod cache
-load_mod sexec
-
-set -f
-eval set -- `parse_opts "$@"`
-set +f
+## Init Singularity environment
+if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/init"
+fi
+if [ -f "${HOME:-}/.singularity-init" ]; then
+    . "${HOME:-}/.singularity-init"
+fi
 
 while true; do
-    case $1 in
-        -C|--contain)
+    case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        -u|--user)
+            SINGULARITY_NOSUID=1
+            export SINGULARITY_NOSUID
+            shift
+        ;;
+        -w|--writable)
+            shift
+            SINGULARITY_WRITABLE=1
+            export SINGULARITY_WRITABLE
+        ;;
+        -H|--home)
+            shift
+            SINGULARITY_HOME="$1"
+            export SINGULARITY_HOME
+            shift
+        ;; 
+        -W|--wdir|--workdir|--workingdir)
+            shift
+            SINGULARITY_WORKDIR="$1"
+            export SINGULARITY_WORKDIR
+            shift
+        ;;
+        -S|--scratchdir|--scratch-dir|--scratch)
+            shift
+            SINGULARITY_SCRATCHDIR="$1,${SINGULARITY_SCRATCHDIR:-}"
+            export SINGULARITY_SCRATCHDIR
+            shift
+        ;;
+        -B|--bind)
+            shift
+            SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
+            export SINGULARITY_BINDPATH
+            shift
+        ;;
+        -c|--contain)
+            shift
             SINGULARITY_CONTAIN=1
             export SINGULARITY_CONTAIN
-            shift
         ;;
-        -s|--check)
-            FILE_CHECK=1
-            export FILE_CHECK
+        -C|--containall|--CONTAIN)
             shift
+            SINGULARITY_CONTAIN=1
+            SINGULARITY_UNSHARE_PID=1
+            SINGULARITY_UNSHARE_IPC=1
+            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC
         ;;
-        -d|--dir)
+        -p|--pid)
             shift
-            SINGULARITY_SCRATCH="$1"
-            export SINGULARITY_SCRATCH
-            shift
+            SINGULARITY_UNSHARE_PID=1
+            export SINGULARITY_UNSHARE_PID
         ;;
-        -c|--cmd)
+        -i|--ipc)
             shift
-            SINGULARITY_ALTERNATECOMMAND="$1"
-            export SINGULARITY_ALTERNATECOMMAND
+            SINGULARITY_UNSHARE_IPC=1
+            export SINGULARITY_UNSHARE_IPC
+        ;;
+        --pwd)
+            shift
+            SINGULARITY_TARGET_PWD="$1"
+            export SINGULARITY_TARGET_PWD
             shift
         ;;
         -*)
-            echo "ERROR: Unknown option: $1"
+            message ERROR "Unknown option: ${1:-}\n"
             exit 1
         ;;
         *)
@@ -75,66 +125,30 @@ while true; do
     esac
 done
 
-if [ -z "$1" ]; then
-    echo "USAGE: singularity (options) run [container name] (options)\n"
-    exit 1
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+    SINGULARITY_IMAGE="${1:-}"
+    export SINGULARITY_IMAGE
+    shift
 fi
 
-if cache_runkey_sappdir "$1" "SAPPDIR"; then
-    SAPPNAME="$1"
-
-    if [ -z "$SAPPDIR" ]; then
-        message ERROR "Could not identify cache directory for runkey '$1'\n"
-        exit 255
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    else
+        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
     fi
+    exit 0
+fi
 
-elif cache_sappnameexists "$1"; then
-    SAPPNAME="$1"
 
-    if ! cache_sappname2uuid "$SAPPNAME" "SAPPUUID"; then
-        message ERROR "Singularity container is not installed: $SAPPNAME\n"
-        exit 255
-    fi
+if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
+    . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
+fi
 
-    if ! cache_sappdir "$SAPPUUID" "SAPPDIR"; then
-        message ERROR "Could not identify cache directory for $SAPPUUID\n"
-        exit 255
-    fi
-
-elif test -f "$1" && sappfile_issapp "$1"; then
-    SAPPUUID=`sappfile_uuid "$1"`
-    SAPPNAME=`sappfile_name "$1"`
-    if ! cache_sappuuidexists "$SAPPUUID"; then
-        message 2 "Installing SAPPFILE into: $CACHEDIR\n"
-        if ! cache_sappinstall "$1"; then
-            exit 255
-        fi
-    fi
-
-    cache_sappdir "$SAPPUUID" "SAPPDIR"
-
-    if [ -z "$SAPPDIR" ]; then
-        message ERROR "Could not identify cache directory for $SAPPUUID\n"
-        exit 255
-    fi
+if [ -x "$SINGULARITY_libexecdir/singularity/sexec" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
 else
-    message ERROR "Could not resolve container reference: $1\n"
+    message ERROR "Could not locate the Singularity Exec module: $SEXEC\n"
     exit 1
 fi
-
-SINGULARITY_COMMAND="run"
-CONTAINERPATH="$SAPPDIR/c"
-export SAPPNAME SINGULARITY_COMMAND CONTAINERPATH
-shift
-
-message 2 "Running '$SAPPNAME' ($@)\n"
-
-if [ -n "$FILE_CHECK" ]; then
-    if ! cache_sappfilecheck "$SAPPNAME"; then
-        message ERROR "Not executing container...\n"
-        exit 1
-    fi
-fi
-
-sexec_exec "$@" <&0
 

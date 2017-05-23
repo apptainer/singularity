@@ -1,0 +1,35 @@
+USAGE: singularity [global options...] <command> [command options...] ...
+
+GLOBAL OPTIONS:
+    -d --debug    Print debugging information
+    -h --help     Display usage summary
+    -q --quiet    Only print errors
+       --version  Show application version
+    -v --verbose  Increase verbosity +1
+    -x --sh-debug Print shell wrapper debugging information
+
+GENERAL COMMANDS:
+    help          Show additional help for a command
+
+CONTAINER USAGE COMMANDS:
+    exec          Execute a command within container
+    run           Launch a runscript within container
+    shell         Run a Bourne shell within container
+    test          Execute any test code defined within container
+
+CONTAINER MANAGEMENT COMMANDS (requires root):
+    bootstrap     Bootstrap a new Singularity image from scratch
+    copy          Copy files from your host into the container
+    create        Create a new container image
+    expand        Grow the container image
+    export        Export the contents of a container via a tar pipe
+    import        Import/add container contents via a tar pipe
+    mount         Mount a Singularity container image
+
+CONTAINER REGISTRY COMMANDS:
+    pull          pull a Singularity Hub container
+
+
+For any additional help or support visit the Singularity
+website: http://singularity.lbl.gov/
+

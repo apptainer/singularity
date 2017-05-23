@@ -1,0 +1,17 @@
+RELEASE=23
+
+if [ -n "${1:-}" ]; then
+    RELEASE="$1"
+fi
+echo "Setting RELEASE=$RELEASE"
+
+DistType "redhat"
+MirrorURL "http://download.fedoraproject.org/pub/fedora/linux/releases/$RELEASE/Everything/\$basearch/os/"
+
+Setup
+Bootstrap
+
+InstallPkgs dnf
+
+Cleanup
+

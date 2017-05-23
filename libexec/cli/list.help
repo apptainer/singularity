@@ -1,9 +1,0 @@
-USAGE: singularity (options) list
-
-List all of the installed Singularity containers
-
-For additional help, please visit our public documentation pages which are
-found at:
-
-    http://gmkurtzer.github.io/singularity
-

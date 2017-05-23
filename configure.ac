@@ -1,8 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[1.0],[gmkurtzer@lbl.gov])
-AC_CONFIG_SRCDIR([.])
-AC_CONFIG_HEADERS([src/config.h])
-AC_CONFIG_MACRO_DIR([.])
+AC_INIT([singularity],[2.2.99],[gmkurtzer@lbl.gov])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -21,15 +18,32 @@ case $target_cpu in
         SINGULARITY_ARCH=i386
     ;;
     *)
-        AC_MSG_ERROR([Architecture $target_cpu not supported])
+        SINGULARITY_ARCH="$target_cpu"
     ;;
 esac
 AC_SUBST(SINGULARITY_ARCH)
 
+# This should be used per autogen.sh output, but we hit this automake bug:
+# https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1232579.html
+#AM_INIT_AUTOMAKE([foreign subdir-objects])
+
+AM_INIT_AUTOMAKE([foreign subdir-objects]) ## SEE ABOVE BEFORE CHANGING
+AC_CONFIG_SRCDIR([src])
+AC_CONFIG_HEADERS([src/config.h])
+AC_CONFIG_MACRO_DIR([m4])
+AC_GNU_SOURCE
 AC_PROG_INSTALL
-AM_INIT_AUTOMAKE
 AC_PROG_LIBTOOL
 AC_PROG_CC
+AM_INIT_AUTOMAKE
+AM_PROG_CC_C_O
+AC_ENABLE_SHARED
+AC_PROG_LIBTOOL(libtool)
+
+# Setting rpath if necessary
+if test "$libdir" = "\${exec_prefix}/lib"; then
+    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir)"
+fi
 
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
@@ -38,7 +52,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                    [[unshare(CLONE_NEWPID);]])],
                       [
                           AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_NEWPID"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWPID"
                       ], [
                           AC_MSG_RESULT([no])
                       ]
@@ -52,7 +66,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                    [[unshare(CLONE_PID);]])],
                       [
                           AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_PID"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_PID"
                       ], [
                           AC_MSG_RESULT([no])
                       ]
@@ -66,21 +80,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                    [[unshare(CLONE_FS);]])],
                       [
                           AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_FS"
-                      ], [
-                          AC_MSG_RESULT([no])
-                      ]
-                  )
-
-
-AC_MSG_CHECKING([for namespace: CLONE_FILES])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
-                                     #include <sched.h>
-                                   ]],
-                                   [[unshare(CLONE_FILES);]])],
-                      [
-                          AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_FILES"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_FS"
                       ], [
                           AC_MSG_RESULT([no])
                       ]
@@ -94,7 +94,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                    [[unshare(CLONE_NEWNS);]])],
                       [
                           AC_MSG_RESULT([yes])
-                          NAMESPACE_DEFINES="$NAMESPACE_DEFINES -DNS_CLONE_NEWNS"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWNS"
                       ], [
                           AC_MSG_RESULT([no])
                           echo
@@ -102,30 +102,253 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                           echo
                           echo "This host does not support the CLONE_NEWNS (mount) namespace flag! You"
                           echo "really really really don't want to run Singularity containers without a"
-                          echo "Separate mount name namespace! It is possible, but not a great idea."
+                          echo "Separate mount name namespace!"
                           echo
-                          echo "Pausing for 5 second so you can digest the severity of this..."
-                          echo
-                          sleep 5
+                          exit 255
                       ]
                   )
 
 
-AC_SUBST(NAMESPACE_DEFINES)
+AC_MSG_CHECKING([for namespace: CLONE_NEWUSER])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+                                     #include <sched.h>
+                                   ]],
+                                   [[unshare(CLONE_NEWUSER);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWUSER"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
 
-AC_CHECK_DECLS([MS_PRIVATE,MS_REC], [],
-               [AC_MSG_ERROR([Required mount(2) flags not available])],
-               [[#include <sys/mount.h>]])
+
+AC_MSG_CHECKING([for namespace: CLONE_NEWIPC])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+                                     #include <sched.h>
+                                   ]],
+                                   [[unshare(CLONE_NEWIPC);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWIPC"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
+
+AC_MSG_CHECKING([for feature: NO_NEW_PRIVS])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/prctl.h>
+                                   ]],
+                                   [[prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
+                                     prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_NO_NEW_PRIVS"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
+
+AC_MSG_CHECKING([for feature: MS_SLAVE])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/mount.h>
+                                   ]],
+                                   [[#ifndef MS_SLAVE
+                                     #error failed
+                                     #endif
+                                   ]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_MS_SLAVE"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
+AC_MSG_CHECKING([for feature: MS_REC])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/mount.h>
+                                   ]],
+                                   [[#ifndef MS_REC
+                                     #error failed
+                                     #endif
+                                   ]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                      ], [
+                          AC_MSG_RESULT([no])
+                          echo
+                          echo "ERROR!!!!!!"
+                          echo
+                          echo "This host does not support the MS_REC mount option!"
+                          echo
+                          exit 255
+                      ]
+                  )
+
+
+AC_MSG_CHECKING([for feature: MS_PRIVATE])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/mount.h>
+                                   ]],
+                                   [[#ifndef MS_PRIVATE
+                                     #error failed
+                                     #endif
+                                   ]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                      ], [
+                          AC_MSG_RESULT([no])
+                          echo
+                          echo "ERROR!!!!!!"
+                          echo
+                          echo "This host does not support the MS_PRIVATE mount option!"
+                          echo
+                          exit 255
+                      ]
+                  )
+
+
+
+AC_ARG_WITH([userns],
+            AS_HELP_STRING([--with-userns], [Enable use of user namespaces]),
+            [SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_USERNS"]
+           )
+
+AC_CHECK_FUNCS(setns, [
+                      ], [
+                          NO_SETNS="-DNO_SETNS"
+                      ]
+                  )
+
+
+AC_SUBST(NO_SETNS)
+AC_MSG_CHECKING([for overlayfs])
+KVERS=`uname -r`
+if test -f "/lib/modules/$KVERS/modules.dep"; then
+    if grep -q 'overlay.ko' "/lib/modules/$KVERS/modules.dep"; then
+        AC_MSG_RESULT([yes])
+        SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
+        OVERLAY_FS=1
+    else
+        AC_MSG_RESULT([no])
+    fi
+else
+    AC_MSG_RESULT([maybe])
+    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
+fi
+
+AC_SUBST(OVERLAY_FS)
+AC_SUBST(SINGULARITY_DEFINES)
+
+AC_MSG_CHECKING([--with-slurm])
+AC_ARG_WITH([slurm],
+            AS_HELP_STRING([--with-slurm], [Enable build of slurm integration]),
+           )
+AS_IF([test "x$with_slurm" == "xyes"],
+    [
+        AC_MSG_RESULT([yes])
+        AC_CHECK_HEADER([slurm/spank.h],
+            [AC_MSG_RESULT([yes])
+                with_slurm="yes"
+            ],
+            [
+                AC_MSG_ERROR([SLURM support requested, but slurm/spank.h header not found.])
+            ])
+    ],
+    [
+        AC_MSG_RESULT([no])
+        with_slurm="no"
+    ]
+)
+AM_CONDITIONAL([WITH_SLURM], [test "$with_slurm" = "yes"])
+AC_SUBST(with_slurm)
+
+
+AC_MSG_CHECKING([if suid should be enabled])
+AC_ARG_ENABLE([suid],
+    AS_HELP_STRING([--disable-suid], [Disable build for SUID (only works for new kernels)]))
+
+AS_IF([test "x$enable_suid" != "xno"], [
+    AC_MSG_RESULT([yes])
+    BUILD_SUID="sexec-suid"
+], [
+    AC_MSG_RESULT([no])
+    BUILD_SUID=""
+])
+
+AC_SUBST(BUILD_SUID)
+
+
+#AC_CHECK_DECLS([MS_PRIVATE,MS_REC], [],
+#               [AC_MSG_ERROR([Required mount(2) flags not available])],
+#               [[#include <sys/mount.h>]])
+
+
 
 
 AC_CONFIG_FILES([
    Makefile
    singularity.spec
+   test.sh
    src/Makefile
+   src/lib/Makefile
+   src/lib/ns/Makefile
+   src/lib/ns/ipc/Makefile
+   src/lib/ns/mnt/Makefile
+   src/lib/ns/pid/Makefile
+   src/lib/ns/user/Makefile
+   src/lib/rootfs/Makefile
+   src/lib/rootfs/image/Makefile
+   src/lib/rootfs/dir/Makefile
+   src/lib/rootfs/squashfs/Makefile
+   src/lib/action/Makefile
+   src/lib/action/exec/Makefile
+   src/lib/action/shell/Makefile
+   src/lib/action/start/Makefile
+   src/lib/action/stop/Makefile
+   src/lib/action/test/Makefile
+   src/lib/action/run/Makefile
+   src/lib/file/Makefile
+   src/lib/file/group/Makefile
+   src/lib/file/passwd/Makefile
+   src/lib/file/resolvconf/Makefile
+   src/lib/file/entrypoint/Makefile
+   src/lib/mount/Makefile
+   src/lib/mount/cwd/Makefile
+   src/lib/mount/dev/Makefile
+   src/lib/mount/binds/Makefile
+   src/lib/mount/home/Makefile
+   src/lib/mount/hostfs/Makefile
+   src/lib/mount/kernelfs/Makefile
+   src/lib/mount/tmp/Makefile
+   src/lib/mount/userbinds/Makefile
+   src/lib/mount/scratch/Makefile
+   src/lib/image/Makefile
+   src/lib/image/mount/Makefile
+   src/lib/image/bind/Makefile
+   src/lib/image/create/Makefile
+   src/lib/image/expand/Makefile
+   src/lib/image/bootstrap/Makefile
+   src/lib/image/bootstrap/docker/Makefile
+   src/util/Makefile
+   src/slurm/Makefile
+   etc/Makefile
    bin/Makefile
    bin/singularity
+   man/Makefile
    libexec/Makefile
-   libexec/mods/Makefile
+   libexec/bootstrap/Makefile
+   libexec/bootstrap/modules-v1/Makefile
+   libexec/bootstrap/modules-v2/Makefile
    libexec/cli/Makefile
+   libexec/defaults/Makefile
+   libexec/helpers/Makefile
+   libexec/python/Makefile
+   libexec/python/docker/Makefile
+   libexec/python/shub/Makefile
 ])
 AC_OUTPUT
