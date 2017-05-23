@@ -51,7 +51,7 @@ if [ -n "${SINGULARITY_INSPECT_LABELS:-}" ]; then
         cat "$SINGULARITY_MOUNTPOINT/.singularity.d/labels.json"
         echo
     else
-        message ERROR "This container does not have any labels defined\n"
+        echo '{ "SINGULARITY_LABELS": "undefined" }'
     fi
 fi
 
