@@ -32,7 +32,7 @@ CONTAINER MANAGEMENT COMMANDS:
     mount         Mount a Singularity container image
 
 CONTAINER REGISTRY COMMANDS:
-    pull          pull a Singularity Hub container to $PWD
+    pull          pull a Singularity/Docker container to $PWD
 
 
 For any additional help or support visit the Singularity
