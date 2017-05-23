@@ -113,6 +113,7 @@ else
     message 2 "Skipping environment section\n"
 fi
 
+
 ### LABELS
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "labels" ]; then
     if singularity_section_exists "labels" "$SINGULARITY_BUILDDEF"; then
@@ -126,6 +127,21 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "l
     fi
 else
     message 2 "Skipping labels section\n"
+fi
+
+### RUNSCRIPT
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "runscript" ]; then
+    if singularity_section_exists "runscript" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding runscript\n"
+
+        echo -n "#!/bin/sh " > "$SINGULARITY_ROOTFS/.singularity.d/runscript"
+        singularity_section_args "runscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
+        echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
+        singularity_section_get "runscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
+
+    fi
+else
+    message 2 "Skipping test section\n"
 fi
 
 
@@ -159,24 +175,29 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "t
             message 1 "Running test scriptlet\n"
 
             ARGS=`singularity_section_args "test" "$SINGULARITY_BUILDDEF"`
-            echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.test"
-            echo "" >> "$SINGULARITY_ROOTFS/.test"
-            singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.test"
+            echo "#!/bin/sh" > "$SINGULARITY_ROOTFS/.singularity.d/test"
+            echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/test"
+            singularity_section_get "test" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/test"
 
-            chmod 0755 "$SINGULARITY_ROOTFS/.test"
+            chmod 0755 "$SINGULARITY_ROOTFS/.singularity.d/test"
 
-            chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.test" "$@" || ABORT 255
+            chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.singularity.d/test" "$@" || ABORT 255
         fi
     fi
 else
     message 2 "Skipping test section\n"
 fi
 
+
+
 > "$SINGULARITY_ROOTFS/etc/hosts"
 > "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 
 # If we have a runscript, whether docker, user defined, change permissions
-if [ -s "$SINGULARITY_ROOTFS/singularity" ]; then
-    chmod 0755 "$SINGULARITY_ROOTFS/singularity"
+if [ -s "$SINGULARITY_ROOTFS/.singularity.d/runscript" ]; then
+    chmod 0755 "$SINGULARITY_ROOTFS/.singularity.d/runscript"
 fi
+
+# Copy the runscript into the container
+install -m 644 "$SINGULARITY_BUILDDEF" "$SINGULARITY_ROOTFS/.singularity.d/Singularity"
