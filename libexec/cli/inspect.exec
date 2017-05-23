@@ -46,26 +46,31 @@ while true; do
             exit
         ;;
         -l|--label|--labels)
+            SELECTED=1
             SINGULARITY_INSPECT_LABELS=1
             export SINGULARITY_INSPECT_LABELS
             shift;
         ;;
         -d|--deffile)
+            SELECTED=1
             SINGULARITY_INSPECT_DEFFILE=1
             export SINGULARITY_INSPECT_DEFFILE
             shift;
         ;;
         -r|--run|--runscript)
+            SELECTED=1
             SINGULARITY_INSPECT_RUNSCRIPT=1
             export SINGULARITY_INSPECT_RUNSCRIPT
             shift;
         ;;
         -t|--test)
+            SELECTED=1
             SINGULARITY_INSPECT_TEST=1
             export SINGULARITY_INSPECT_TEST
             shift;
         ;;
         -e|--environment)
+            SELECTED=1
             SINGULARITY_INSPECT_ENVIRONMENT=1
             export SINGULARITY_INSPECT_ENVIRONMENT
             shift;
@@ -80,6 +85,10 @@ while true; do
     esac
 done
 
+if [ -z "${SELECTED:-}" ]; then
+    SINGULARITY_INSPECT_LABELS=1
+    export SINGULARITY_INSPECT_LABELS
+fi
 
 SINGULARITY_IMAGE="${1:-}"
 SINGULARITY_MOUNTPOINT="/mnt"
