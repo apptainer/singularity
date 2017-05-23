@@ -1,7 +1,6 @@
 #!/bin/bash
 # 
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -35,51 +34,69 @@ else
     exit 1
 fi
 
-if [ -f "${HOME:-}/.singularity-init" ]; then
-    . "${HOME:-}/.singularity-init"
-fi
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        -l|--label|--labels)
+            SINGULARITY_INSPECT_LABELS=1
+            export SINGULARITY_INSPECT_LABELS
+            shift;
+        ;;
+        -d|--deffile)
+            SINGULARITY_INSPECT_DEFFILE=1
+            export SINGULARITY_INSPECT_DEFFILE
+            shift;
+        ;;
+        -r|--run|--runscript)
+            SINGULARITY_INSPECT_RUNSCRIPT=1
+            export SINGULARITY_INSPECT_RUNSCRIPT
+            shift;
+        ;;
+        -t|--test)
+            SINGULARITY_INSPECT_TEST=1
+            export SINGULARITY_INSPECT_TEST
+            shift;
+        ;;
+        -e|--environment)
+            SINGULARITY_INSPECT_ENVIRONMENT=1
+            export SINGULARITY_INSPECT_ENVIRONMENT
+            shift;
+        ;;
+        -*)
+            message ERROR "Unknown option: ${1:-}\n"
+            exit 1
+        ;;
+        *)
+            break;
+        ;;
+    esac
+done
 
-# Default inspect is labels, unless client asks for runscript
-SINGULARITY_INSPECT_SCRIPT="/singularity"
-export SINGULARITY_INSPECT_SCRIPT
-if [ -f "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh" ]; then
-    . "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh"
+
+SINGULARITY_IMAGE="${1:-}"
+SINGULARITY_MOUNTPOINT="/mnt"
+export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
+shift
+
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    RETVAL=$?
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    RETVAL=$?
 else
-    message ERROR "Could not find the action argument parser\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
     exit 1
 fi
 
+echo
 
-if [ -z "${SINGULARITY_IMAGE:-}" ]; then
-    SINGULARITY_IMAGE="${1:-}"
-    export SINGULARITY_IMAGE
-    shift
-fi
-
-
-if [ -z "${SINGULARITY_IMAGE:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-    else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
-    fi
-    exit 0
-fi
-
-if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
-    . "$SINGULARITY_sysconfdir/singularity/init"
-fi
-
-
-if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
-    . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
-fi
-
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/action-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/action-suid" cat "${SINGULARITY_INSPECT_SCRIPT}" <&0
-elif [ -x "$SINGULARITY_libexecdir/singularity/bin/action" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/action" cat  "${SINGULARITY_INSPECT_SCRIPT}" <&0
-else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/action\n"
-    exit 1
-fi
+exit $RETVAL

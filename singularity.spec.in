@@ -125,6 +125,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bootstrap-scripts
 %{_libexecdir}/singularity/cli
 %{_libexecdir}/singularity/python
+%{_libexecdir}/singularity/helpers
 
 
 
