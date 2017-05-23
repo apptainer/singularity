@@ -3,7 +3,7 @@ USAGE: singularity [...] inspect [exec options...] <container path>
 This command will show you the runscipt for the image.
 
 INSPECT OPTIONS:
-    -l/--labels      Show the labels associated with the image (2.3+)
+    -l/--labels      Show the labels associated with the image (default)
     -d/--deffile     Show the bootstrap definition file which was used
                      to generate this image
     -r/--runscript   Show the runscript for this image
