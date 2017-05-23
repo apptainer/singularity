@@ -81,7 +81,7 @@ if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/mount"
 else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
     exit 1
 fi
 
