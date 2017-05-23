@@ -148,6 +148,17 @@ _singularity() {
             return 0
         ;;
 
+        inspect)
+            if [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W "--help --deffile --labels --runfile --test --environment" -- ${cur}) )
+            elif [ $container_idx -lt $COMP_CWORD ]; then
+                return 0
+            else
+                _filedir
+            fi
+            return 0
+        ;;
+
     esac
 }
 
