@@ -4,6 +4,11 @@ This command will show you the runscipt for the image.
 
 INSPECT OPTIONS:
     -l/--labels      Show the labels associated with the image (2.3+)
+    -d/--deffile     Show the bootstrap definition file which was used
+                     to generate this image
+    -r/--runscript   Show the runscript for this image
+    -t/--test        Show the test script for this image
+    -e/--environment Show the environment settings for this container
 
 
 EXAMPLES:
