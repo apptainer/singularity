@@ -71,30 +71,30 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
-    if ( ( argc > 1 ) || ( singularity_priv_getuid() != 0 ) ) {
-        singularity_runtime_ns(SR_NS_MNT);
-    }
+    singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
 
     if ( argc > 1 ) {
         singularity_priv_drop_perm();
+
         singularity_message(VERBOSE, "Running command: %s\n", argv[1]);
         singularity_message(DEBUG, "Calling exec...\n");
         execvp(argv[1], &argv[1]); // Flawfinder: ignore (Yes flawfinder, we are exec'ing)
 
         singularity_message(ERROR, "Exec failed: %s: %s\n", argv[1], strerror(errno));
         ABORT(255);
-    }
-
-    singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), singularity_registry_get("MOUNTPOINT"));
-
-    if ( singularity_priv_getuid() != 0 ) {
+    } else {
         singularity_priv_drop_perm();
-        singularity_message(INFO, "Spawning a new shell in this namespace, to unmount, exit shell\n");
+
+        singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), singularity_registry_get("MOUNTPOINT"));
         envar_set("PS1", "Singularity: \\w> ", 1);
+
         execl("/bin/sh", "/bin/sh", NULL); // Flawfinder: ignore (Yes flawfinder, this is what we want, sheesh, so demanding!)
+
+        singularity_message(ERROR, "Exec of /bin/sh failed: %s\n", strerror(errno));
+        ABORT(255);
     }
 
     return(0);
