@@ -1,0 +1,91 @@
+#!/bin/bash
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+#
+# Copyright (c) 2016-2017, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+#
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
+#
+# NOTICE.  This Software was developed under funding from the U.S. Department of
+# Energy and the U.S. Government consequently retains certain rights. As such,
+# the U.S. Government has been granted for itself and others acting on its
+# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+# to reproduce, distribute copies to the public, prepare derivative works, and
+# perform publicly and display publicly, and to permit other to do so.
+#
+#
+
+SINGULARITY_MESSAGELEVEL=5
+
+. ../libexec/functions
+
+
+alias singularity="$SINGULARITY_PATH/singularity"
+
+test_init() {
+    if [ -z "${1:-}" ]; then
+        echo "Called test_init without a title"
+        exit 1
+    fi
+
+    TITLE="$1"
+    shift
+
+    if [ -n "${SINGULARITY_TESTDIR:-}" ]; then
+        test_cleanup
+    fi
+
+    SINGULARITY_TESTDIR=`mktemp -d /tmp/stest.XXXXXX`
+
+    echo
+    echo "################################################################################"
+    echo "$TITLE (script: $0, testdir: $SINGULARITY_TESTDIR)"
+    echo
+}
+
+test_cleanup() {
+
+    if [ -d "$SINGULARITY_TESTDIR" ]; then
+        rm -rf "$SINGULARITY_TESTDIR"
+    fi
+
+    exit 0
+}
+
+exit_cleanup() {
+    return 0
+}
+
+stest() {
+    ERROR="${1:-}"
+    OUTPUT="$SINGULARITY_TESTDIR/output"
+    shift
+
+    pwd > "$SINGULARITY_TESTDIR/pwd"
+    echo "$@" > "$SINGULARITY_TESTDIR/cmd"
+    message 2 " + %-90.90s " "$*"
+
+    "$@" >$OUTPUT 2>&1
+    RETVAL="$?"
+
+    if [ "$ERROR" = "0" -a "$RETVAL" != "0" ]; then
+        message 2 "%13s ERROR\n" "(retval=$RETVAL)"
+        cat "$OUTPUT"
+        echo "Full output in: $SINGULARITY_TESTDIR"
+        exit_cleanup
+        exit 1
+    elif [ "$ERROR" != "0" -a "$RETVAL" = "0" ]; then
+        message 2 "%13s ERROR\n" "(retval=$RETVAL)"
+        cat "$OUTPUT"
+        echo "Full output in: $SINGULARITY_TESTDIR"
+        exit_cleanup
+        exit 1
+    else
+        message 2 "%13s OK\n" "(retval=$RETVAL)"
+    fi
+}
+

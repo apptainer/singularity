@@ -2,7 +2,7 @@
 
 test_shub.py: Singularity Hub testing functions for Singularity in Python
 
-Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
 through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -26,23 +26,32 @@ import sys
 sys.path.append('..') # directory with singularity, etc.
 
 from unittest import TestCase
-from utils import read_file
+from sutils import read_file
 from glob import glob
 import shutil
 import tempfile
 
 VERSION = sys.version_info[0]
 
-print("*** PYTHON VERSION %s CLIENT TESTING START ***" %(VERSION))
+print("*** PYTHON VERSION %s SINGULARITY HUB API TESTING START ***" %(VERSION))
 
 class TestApi(TestCase):
 
 
     def setUp(self):
+        from shub.api import SingularityApiConnection
+        self.image = "shub://vsoch/singularity-images"
+        self.client = SingularityApiConnection(image=self.image)
+
+        # Asking for image based on number
         self.image_id = 60 # https://singularity-hub.org/collections/12/
+        self.nclient = SingularityApiConnection(image=self.image_id)
+
         self.user_name = "vsoch"
         self.repo_name = "singularity-images"
         self.tmpdir = tempfile.mkdtemp()
+        os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
+        os.mkdir('%s/.singularity.d' %(self.tmpdir))
         print("\n---START----------------------------------------")
 
     def tearDown(self):
@@ -54,91 +63,78 @@ class TestApi(TestCase):
     def test_get_manifest(self):
         '''test_get_manifest should return the shub manifest
         '''
-        from shub.api import get_manifest
         print("Case 1: Testing retrieval of singularity-hub manifest")
-        manifest = get_manifest(self.image_id)
+        manifest = self.nclient.get_manifest()
         keys = ['files', 'version', 'collection', 'branch', 
                 'name', 'id', 'metrics', 'spec', 'image']
         [self.assertTrue(x in manifest) for x in keys]
         self.assertTrue(manifest['id']==self.image_id)
 
+        manifest = self.client.get_manifest()
+        keys = ['files', 'version', 'collection', 'branch', 
+                'name', 'id', 'metrics', 'spec', 'image']
+        [self.assertTrue(x in manifest) for x in keys]
 
 
     def test_download_image(self):
         '''test_download_image will ensure that an image is downloaded to an
         appropriate location (tmpdir) or cache
         '''
-        from shub.api import download_image, get_manifest
         print("Case 1: Specifying a directory downloads to it")
-        manifest = get_manifest(image=self.image_id)
-        image = download_image(manifest,
-                               download_folder=self.tmpdir)
+        manifest = self.client.get_manifest()
+        image = self.client.download_image(manifest=manifest,
+                                           download_folder=self.tmpdir)
         self.assertEqual(os.path.dirname(image),self.tmpdir)
-        
-        print("Case 2: Image should be named based on commit.")
-        image_name = os.path.splitext(os.path.basename(image))[0]
-        self.assertEqual(image_name,manifest['version'])
-        os.remove(image)
-
-        print("Case 3: Not specifying a directory downloads to PWD")
+       
+        print("Case 2: Not specifying a directory downloads to PWD")
         os.chdir(self.tmpdir)
-        image = download_image(manifest)
+        image = self.client.download_image(manifest)
         self.assertEqual(os.getcwd(),self.tmpdir)
         self.assertTrue(image in glob("*"))
         os.remove(image)
 
-        print("Case 4: Image should not be extracted.")
-        image = download_image(manifest,extract=False)
+        print("Case 3: Image should not be extracted.")
+        image = self.client.download_image(manifest,extract=False)
         self.assertTrue(image.endswith('.img.gz'))        
 
     def test_uri(self):
         '''test_uri will make sure that the endpoint returns the equivalent
         image for all different uri options
         '''
-        from shub.api import get_image_name, get_manifest
-        manifest = get_manifest(image=self.image_id)
+        from shub.api import get_image_name
+        manifest = self.client.get_manifest()
         image_name = get_image_name(manifest)
                 
         print("Case 1: ask for image and ask for master branch (tag)")
-        manifest = get_manifest(image="%s/%s:master" %(self.user_name,self.repo_name))
+        manifest = self.client.get_manifest(image="%s/%s:master" %(self.user_name,self.repo_name))
+        image_name = get_image_name(manifest)
         self.assertEqual(image_name,get_image_name(manifest))
 
         print("Case 2: ask for different tag (mongo)")
-        manifest = get_manifest(image="%s/%s:mongo" %(self.user_name,self.repo_name))
+        manifest = self.client.get_manifest(image="%s/%s:mongo" %(self.user_name,self.repo_name))
         mongo = get_image_name(manifest)
         self.assertFalse(image_name == mongo)
 
         print("Case 3: ask for image without tag (should be latest across tags, mongo)")
-        manifest = get_manifest(image="%s/%s" %(self.user_name,self.repo_name))
+        manifest = self.client.get_manifest(image="%s/%s" %(self.user_name,self.repo_name))
         self.assertEqual(mongo,get_image_name(manifest))
 
         print("Case 4: ask for latest tag (should be latest across tags, mongo)")
-        manifest = get_manifest(image="%s/%s:latest" %(self.user_name,self.repo_name))
+        manifest = self.client.get_manifest(image="%s/%s:latest" %(self.user_name,self.repo_name))
         self.assertEqual(mongo,get_image_name(manifest))
 
 
     def test_get_image_name(self):
         '''test_get_image_name will return the image name from the manifest
         '''
-        from shub.api import get_image_name, get_manifest
-        manifest = get_manifest(image=self.image_id)
+        from shub.api import get_image_name
+        manifest = self.client.get_manifest(image=self.image_id)
                 
-        print("Case 1: return an image name using the commit id")
+        print("Case 1: return an image name corresponding to repo")
         image_name = get_image_name(manifest)
-        self.assertEqual('6d3715a982865863ff20e8783014522edf1240e4.img.gz',
+        self.assertEqual('vsoch-singularity-images-master.img.gz',
                          image_name)
 
-        print("Case 2: ask for invalid extension")
-        with self.assertRaises(SystemExit) as cm:
-            image_name = get_image_name(manifest,
-                                        extension='.bz2')
-        self.assertEqual(cm.exception.code, 1)
-
-        print("Case 3: don't use commit (use md5 sum on generation)")
-        image_name = get_image_name(manifest,
-                                    use_commit=False)
-        print(image_name)
-        self.assertEqual('9e46ba8be1e10b1a2812844ac8072259.img.gz',image_name)
 
 
 if __name__ == '__main__':

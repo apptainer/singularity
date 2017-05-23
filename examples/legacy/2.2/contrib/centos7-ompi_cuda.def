@@ -1,0 +1,187 @@
+# Copyright (c) 2017, Paulo Souza. All rights reserved.
+#
+# This definition file needs a 2GB image file.
+#
+# What is included:
+# - Infiniband drivers
+# - CUDA 7.5 runtime
+# - CUDA-aware OpenMPI
+# - Linux perf tool
+# - Dstat tool
+#
+# We do recommend a CentOS 7.3 host to build this image.
+#
+# How to build the image:
+# sudo singularity create -s 2000 centos7-ompi_cuda.img
+# sudo singularity bootstrap centos7-ompi_cuda.img centos7-ompi_cuda.def
+#
+# After image creation you do not need sudo to use the image.
+#
+
+BootStrap: yum
+OSVersion: 7
+MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+Include: yum
+
+# If you want the updates (available at the bootstrap date) to be installed
+# inside the container during the bootstrap instead of the General Availability
+# point release (7.x) then uncomment the following line
+#UpdateURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/updates/$basearch/
+# runscript:
+
+%runscript
+    export LD_LIBRARY_PATH=/liboverride:$LD_LIBRARY_PATH:/libfallback
+    export LD_RUN_PATH=/liboverride:$LD_RUN_PATH:/libfallback
+    eval "$@"
+# post:
+
+%post
+    export ctnlicense=/LICENSE
+    mkdir -p /app /liboverride /libfallback /prj /localscratch /localflash /opt $ctnlicense
+    alias install_pkg="yum -y install"
+    # Reference: https://www.liquidweb.com/kb/enable-epel-repository/
+    install_pkg epel-release
+    yum -y update
+    alias clean_pkg='echo "clean not needed."'
+# dev-tools:
+    yum -y install gcc
+    yum -y install gcc-c++
+    yum -y install gcc-gfortran
+    yum -y install python-devel
+    install_pkg make
+    install_pkg cmake
+    install_pkg autoconf
+# basic-tools:
+    install_pkg vim
+    install_pkg curl hostname 
+    install_pkg wget
+    install_pkg unzip
+    install_pkg tar
+    install_pkg gzip
+    install_pkg bc
+    install_pkg less
+    install_pkg util-linux
+    install_pkg strace
+    install_pkg which perl-Digest-SHA man
+# perf-tools:
+    yum install -y flex flex-devel
+    yum install -y bison bison-devel
+    yum install -y elfutils-libelf-devel elfutils-libelf
+    yum install -y systemtap-sdt-devel
+    yum install -y audit-libs audit-libs-devel audit-libs-python
+    yum install -y openssl-devel openssl openssl-libs
+    yum install -y slang slang-devel slang-slsh
+    yum install -y perl perl-ExtUtils-Embed
+    yum install -y xz-devel
+    yum install -y numactl numactl-devel numactl-libs
+    yum install -y cpuid
+    yum install -y elfutils elfutils-devel elfutils-libelf elfutils-libelf-devel elfutils-libs
+    yum install -y libunwind libunwind-devel
+    yum install -y binutils binutils-devel
+    yum install -y e2fsprogs
+    #install_pkg dstat    
+    #install_pkg perf
+    echo '2ca34f40067b0c914dbe474bd4ce44dbaec068d684d870c93953480062ce0e42ae32d70392ed572b1cf683ef06683f73c9d98e883405fb75ccbf614a732ce009  -' > dstat.zip.sha512
+    curl -sSL "https://github.com/dagwieers/dstat/archive/0.7.3.zip" | tee dstat.zip | sha512sum -c dstat.zip.sha512
+    unzip dstat.zip && rm -d dstat.zip*
+    cat dstat-*/COPYING > $ctnlicense/dstat.COPYING
+    cd dstat-*
+    make install
+    cd - 
+    rm -rf dstat-*
+    echo '5aee3e0b77ff9895ee7e214552c14124f90defa72f15811db81a89e7e09c66ee643a3d1c90a97358b049c863ebe8a811355d758729ca6012bc52e822e54cc044  -' > perf.zip.sha512
+    curl -sSL "https://github.com/torvalds/linux/archive/v4.10.zip" | tee perf.zip | sha512sum -c perf.zip.sha512
+    unzip perf.zip && rm -f perf.zip*
+    cat linux-*/COPYING > $ctnlicense/perf.COPYING
+    cd linux-*/tools/perf
+    make
+    mv perf /usr/bin/
+    cd -
+    rm -rf linux-*
+    echo '600a0161d7eca085594191b133cb25ec6bb6db41d0857cfac7f6b3bdf45647961f329c4cd423fd3dacb34fd09183b762c0b70bcd7b06a878666c8a241c3a7e53  -' > pmu-tools.zip.sha512
+    curl -sSL "https://github.com/andikleen/pmu-tools/archive/r105.zip" | tee pmu-tools.zip | sha512sum -c pmu-tools.zip.sha512
+    unzip pmu-tools.zip -d /app && rm -rf pmu-tools.zip*
+    cat /app/pmu-tools*/COPYING > $ctnlicense/pmu-tools.COPYING
+    echo '739dc803dd90b34e7b0a817eeb32d9a737a6809e8f2ad6bcfca16505d4934c1ac62b6fec1e90f59cbf6aabf8d38852c980115c9c47758c9fb3b0539dc2f6abb2  -' > likwid.tgz.sha512
+    curl -sSL "http://ftp.fau.de/pub/likwid/likwid-stable.tar.gz" |tee likwid.tgz|sha512sum -c likwid.tgz.sha512
+    tar -zxvf likwid.tgz && rm -f likwid.tgz*
+    cd likwid-*
+    cat COPYING > $ctnlicense/likwid.COPYING
+    make
+    make install
+    cd -
+    rm -rf likwid-*
+    # perf reference: http://www.tecmint.com/perf-performance-monitoring-and-analysis-tool-for-linux/
+    # Additionally, keep in mind that some perf commands may be restricted to
+    # `root by default, which can be disabled (until the system is rebooted) by doing:
+    # echo 0 > /proc/sys/kernel/perf_event_paranoid
+    # If you need to disable paranoid mode permanently, update the following setting in /etc/sysctl.conf file.
+    # kernel.perf_event_paranoid = 0
+    # /proc/sys/kernel/kptr_restrict
+    # sudo sysctl -w kernel.perf_event_paranoid=0
+# infiniband:
+    # Infiniband + RDMA Reference:
+    # https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Networking_Guide/sec-InfiniBand_and_RDMA_related_software_packages.html    
+    yum -y install rdma
+    yum -y install libibverbs-devel libsysfs-devel # required by custom openmpi
+    yum -y install infinipath-psm libcxgb3 libcxgb4 libipathverbs libmthca libmlx4 libmlx5 libnes libocrdma
+    yum -y install librdmacm librdmacm-utils ibacm
+    yum -y install libibverbs-utils
+    yum -y install infiniband-diags ibutils
+    yum -y install perftest qperf
+    #required by OpenMPI
+    yum install -y numactl numactl-devel numactl-libs
+    yum install -y environment-modules hwloc hwloc-libs hwloc-devel libfabric libpsm2 libfabric-devel
+# cuda75:
+    echo '40315500010e078d7cfb71534ac8d0a52c5da9dfbe24ecb6fd7c7d1dcef60ae0db309a51925e395c13af390327f5a9f4682516d9d4994beaa3684b69d459b96b  -' > cuda-repo.rpm.sha512
+    curl -sSL "http://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-repo-rhel7-7.5-18.x86_64.rpm" |\
+        tee cuda-repo.rpm | sha512sum -c  cuda-repo.rpm.sha512
+    rpm -i  cuda-repo.rpm && rm -f  cuda-repo.rpm*
+    yum -y update
+    export cuda_ver=7-5
+    export CUDA_VERSION=7.5.18
+    install_pkg cuda-minimal-build-$cuda_ver
+    install_pkg cuda-command-line-tools-$cuda_ver
+    ln -s /usr/local/cuda-*/ /usr/local/cuda
+    export CUDA_PATH=/usr/local/cuda
+    export CUDA_HOME=$CUDA_PATH
+    export CUDA_INC=$CUDA_PATH/include
+    export CUDADIR=$CUDA_PATH
+    export CUDA_ROOT=$CUDA_PATH
+    env | grep "^CUDA.*="|sed -e "s/^/export /" >> /environment
+    echo 'export PATH=$CUDA_PATH/bin:$PATH' >> /environment
+    echo 'export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$LD_LIBRARY_PATH' >> /environment
+    export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$LD_LIBRARY_PATH
+    cat /usr/local/cuda/doc/EULA.txt > $ctnlicense/CUDA.EULA.txt
+# cuda-aware-mpi:
+    echo '970e48d19b544a401511a1fe2c6ff9655593607ef5db8cfcb3a913e34d2362d58fe537c356642bd98d2f2355daf3556d7ca37e1b90c14ceabbaae73840716cdb  -' > openmpi.tgz.sha512    
+    curl -sSL "https://www.open-mpi.org/software/ompi/v2.0/downloads/openmpi-2.0.2.tar.gz" | \
+      tee openmpi.tgz | sha512sum -c openmpi.tgz.sha512
+    tar -zxvf openmpi.tgz && rm -f openmpi.tgz*
+    cd openmpi-*
+    cat LICENSE > $ctnlicense/OpenMPI.LICENSE
+    ./configure --prefix=/app/openmpi --with-verbs --with-cuda \
+        CFLAGS=-I$CUDA_PATH/include CPPFLAGS=-I$CUDA_PATH/include \
+        CXXFLAGS=-I$CUDA_PATH/include LDFLAGS=-L$CUDA_PATH/lib64
+    make
+    make install
+    cd -
+    rm -rf openmpi-*
+    export PATH=/app/openmpi/bin:$PATH
+    export LD_LIBRARY_PATH=/app/openmpi/lib:$LD_LIBRARY_PATH
+    export LD_RUN_PATH=/app/openmpi/lib:$LD_RUN_PATH
+    echo 'export PATH=/app/openmpi/bin:$PATH' >> /environment
+    echo 'export LD_LIBRARY_PATH=/app/openmpi/lib:$LD_LIBRARY_PATH' >> /environment
+    echo 'export LD_RUN_PATH=/app/openmpi/lib:$LD_RUN_PATH' >> /environment
+    echo '74561a004160e064b44848044c9595b337337b60d8f23c87608cbbceee52e8737f4770c2d8fc003f9e0478ea13e6451e29fd13796b45803ccd56f765e6fe058c  -' > osu-micro-benchmarks.tgz.sha512
+    curl -sSL "http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.3.2.tar.gz" | \
+        tee osu-micro-benchmarks.tgz | sha512sum -c osu-micro-benchmarks.tgz.sha512
+    tar -zxvf osu-micro-benchmarks.tgz && rm -f osu-micro-benchmarks.tgz*
+    cd osu-micro-benchmarks-*
+    cat COPYRIGHT > $ctnlicense/OSU.COPYRIGHT
+    ./configure --prefix=/app/openmpi CC=/app/openmpi/bin/mpicc CXX=/app/openmpi/bin/mpicxx
+    make
+    make install
+    cd -
+    rm -rf osu-micro-benchmarks-*
+    ln -s /app/openmpi/libexec/osu-micro-benchmarks/mpi/*/osu_* /app/openmpi/bin/

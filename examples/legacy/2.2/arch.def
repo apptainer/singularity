@@ -1,0 +1,93 @@
+# Copyright (c) 2016, Maciej Sieczka. All rights reserved
+#
+# Minimal installation process is defined in mods/linux_build_arch.smod. A
+# couple extra actions are called from here using RunCmd and InstallPkgs
+# Singularity bootstrap keywords. Adjust them as needed.
+# https://wiki.archlinux.org/index.php/Installation_Guide may come in handy.
+
+DistType "arch"
+
+# "Setup" keyword doesn't do anything anymore, at least as of Singularity
+# 2.1.2. Undocumented "PreSetup" replaced it and is called at each
+# `singularity bootstrap' run.
+# Setup
+
+Bootstrap
+
+# Set time zone. Use whatever you prefer instead of UTC.
+RunCmd ln -s /usr/share/zoneinfo/UTC /etc/localtime
+
+# WARNING: Make sure you prefix the STDOUT redirection target (ie. that guy
+# after `>' or `>>`) with $SINGULARITY_BUILD_ROOT in RunCmd calls, as below.
+# Otherwise such command will write to host's filesystem, at least as of
+# Singularity 2.1.2! This is a known issue, going to be fixed. See
+# https://github.com/gmkurtzer/singularity/issues/200.
+
+# Set locale. Use whatever you prefer instead of en_US.
+RunCmd echo 'en_US.UTF-8 UTF-8' > "$SINGULARITY_BUILD_ROOT"/etc/locale.gen
+# Add more locales as needed, eg:
+# RunCmd echo 'pl_PL.UTF-8 UTF-8' >> "$SINGULARITY_BUILD_ROOT"/etc/locale.gen
+RunCmd locale-gen
+RunCmd echo 'LANG=en_US.UTF-8' > "$SINGULARITY_BUILD_ROOT"/etc/locale.conf
+# Mind that Singularity's shell will use host's locale no matter what anyway,
+# as of version 2.1.2. This may change in a future release.
+
+# Set the package mirror server(s). This is only for the output image's
+# mirrorlist. `pacstrap' can only use your hosts's package mirrors.
+RunCmd echo 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch' > "$SINGULARITY_BUILD_ROOT"/etc/pacman.d/mirrorlist
+# Add any number of fail-over servers, eg:
+RunCmd echo 'Server = https://archlinux.honkgong.info/$repo/os/$arch' >> "$SINGULARITY_BUILD_ROOT"/etc/pacman.d/mirrorlist
+
+# I need VIM and Bash completion. Specify your extra packages as needed.
+InstallPkgs vim bash-completion
+
+# Remove the packages downloaded to image's Pacman cache dir during
+# InstallPkgs. BTW, `pacstrap', used in Bootstrap step, uses host's package
+# cache rather than the image's.
+RunCmd paccache -r -k0
+
+Cleanup
+=======
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+#
+# "Singularity" Copyright (c) 2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+#
+
+# Minimal installation process is defined in
+# libexec/bootstrap/modules-v2/dist-arch.sh. A couple extra actions are called
+# from here in '%post' section. Adjust them as needed.
+# https://wiki.archlinux.org/index.php/Installation_Guide may come in handy.
+
+BootStrap: arch
+
+%runscript
+    echo "This is what happens when you run the container..."
+
+%post
+    echo "Hello from inside the container"
+
+    # Set time zone. Use whatever you prefer instead of UTC.
+    ln -s /usr/share/zoneinfo/UTC /etc/localtime
+
+    # Set locale. Use whatever you prefer instead of en_US.
+    echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
+    # Add more locales as needed, eg:
+    # echo 'pl_PL.UTF-8 UTF-8' >> /etc/locale.gen
+    locale-gen
+    echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+    # Mind that Singularity's shell will use host's locale no matter what
+    # anyway, as of version 2.1.2. This may change in a future release.
+
+    # Set the package mirror server(s). This is only for the output image's
+    # mirrorlist. `pacstrap' can only use your hosts's package mirrors.
+    echo 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch' > /etc/pacman.d/mirrorlist
+    # Add any number of fail-over servers, eg:
+    echo 'Server = https://archlinux.honkgong.info/$repo/os/$arch' >> /etc/pacman.d/mirrorlist
+
+    # I need VIM and Bash completion. Specify your extra packages as needed.
+    pacman -Sy --noconfirm vim bash-completion
+
+    # Remove the packages downloaded to image's Pacman cache dir.
+    paccache -r -k0

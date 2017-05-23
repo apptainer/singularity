@@ -7,10 +7,10 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 	dh $@  --with autoreconf
 
 override_dh_installdocs:
-	dh_installdocs README.md AUTHORS
+	dh_installdocs README.md AUTHORS.md
 
 override_dh_fixperms:
 	dh_fixperms
-	chown root.root debian/singularity-container/usr/lib/*/singularity/sexec
-	chmod 4755 debian/singularity-container/usr/lib/*/singularity/sexec-suid
+	chown root.root debian/singularity-container/usr/lib/*/singularity/bin/*
+	chmod 4755 debian/singularity-container/usr/lib/*/singularity/bin/*-suid
 	chmod 644 debian/singularity-container/usr/lib/*/singularity/cli/*.help

@@ -9,8 +9,8 @@ CREATE OPTIONS:
 
 EXAMPLES:
 
-    $ sudo singularity create /tmp/Debian.img
-    $ sudo singularity create -s 4096 /tmp/Debian.img
+    $ singularity create /tmp/Debian.img
+    $ singularity create -s 4096 /tmp/Debian.img
 
 For additional help, please visit our public documentation pages which are
 found at:
