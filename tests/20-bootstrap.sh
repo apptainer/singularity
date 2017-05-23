@@ -42,8 +42,8 @@ stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
 stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
 stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
 stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
+stest 0 singularity exec "$CONTAINER" test -L /.singularity.d/environment
 stest 0 singularity exec "$CONTAINER" test -L /singularity
-stest 0 singularity exec "$CONTAINER" test -L /environment
 
 stest 0 mkdir "$CONTAINERDIR"
 stest 0 sudo singularity bootstrap "$CONTAINERDIR" "../examples/busybox/Singularity"
