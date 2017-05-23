@@ -117,14 +117,12 @@ echo "[main]" >> "$SINGULARITY_ROOTFS/$ZYPP_CONF"
 echo 'cachedir=/var/cache/zypp-bootstrap' >> "$SINGULARITY_ROOTFS/$ZYPP_CONF"
 echo "" >> "$SINGULARITY_ROOTFS/$ZYPP_CONF"
 
-export RELEASE_PACKAGE=`zypper wp /etc/os-release | tail -1 | awk '{print $3}'`
-
 # Import zypper repos
 $INSTALL_CMD --root $SINGULARITY_ROOTFS ar $MIRROR repo-oss
 $INSTALL_CMD --root $SINGULARITY_ROOTFS --gpg-auto-import-keys refresh
 
 # Do the install!
-if ! eval "$INSTALL_CMD -c $SINGULARITY_ROOTFS/$ZYPP_CONF --root $SINGULARITY_ROOTFS --releasever=${OSVERSION} -y install --auto-agree-with-licenses $RELEASE_PACKAGE coreutils ${INCLUDE:-}"; then
+if ! eval "$INSTALL_CMD -c $SINGULARITY_ROOTFS/$ZYPP_CONF --root $SINGULARITY_ROOTFS --releasever=${OSVERSION} -n install --auto-agree-with-licenses aaa_base ${INCLUDE:-}"; then
     message ERROR "Bootstrap failed... exiting\n"
     ABORT 255
 fi

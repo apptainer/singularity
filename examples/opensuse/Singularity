@@ -9,4 +9,4 @@ Include: zypper
 
 %post
     echo "Hello from inside the container"
-    yum -y install bc
+    zypper -n install bc
