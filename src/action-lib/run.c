@@ -32,7 +32,7 @@
 
 
 void action_run(int argc, char **argv) {
-    singularity_message(VERBOSE, "Exec'ing /singularity\n");
+    singularity_message(VERBOSE, "Starting runscript\n");
 
     if ( is_exec("/.singularity.d/actions/run") == 0 ) {
         singularity_message(DEBUG, "Exec'ing /.singularity.d/actions/run\n");
