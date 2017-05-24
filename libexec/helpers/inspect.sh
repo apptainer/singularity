@@ -47,55 +47,51 @@ fi
 
 if [ -n "${SINGULARITY_INSPECT_LABELS:-}" ]; then
     if [ -f "$SINGULARITY_MOUNTPOINT/.singularity.d/labels.json" ]; then
-        message 1 "## LABELS:\n"
+        echo
         cat "$SINGULARITY_MOUNTPOINT/.singularity.d/labels.json"
         echo
     else
-        echo '{ "SINGULARITY_LABELS": "undefined" }'
+        echo '{ "SINGULARITY_LABELS": null }'
     fi
 fi
 
 if [ -n "${SINGULARITY_INSPECT_DEFFILE:-}" ]; then
     if [ -f "$SINGULARITY_MOUNTPOINT/.singularity.d/Singularity" ]; then
-        message 1 "## BOOTSTRAP DEFINITION FILE:\n"
+        echo
         cat "$SINGULARITY_MOUNTPOINT/.singularity.d/Singularity"
         echo
     else
         message ERROR "This container does not include the bootstrap definition\n"
     fi
-
 fi
 
 if [ -n "${SINGULARITY_INSPECT_RUNSCRIPT:-}" ]; then
     if [ -f "$SINGULARITY_MOUNTPOINT/.singularity.d/runscript" ]; then
-        message 1 "## RUNSCRIPT:\n"
+        echo
         cat "$SINGULARITY_MOUNTPOINT/.singularity.d/runscript"
         echo
     else
         message ERROR "This container does not have any runscript defined\n"
     fi
-
 fi
 
 if [ -n "${SINGULARITY_INSPECT_TEST:-}" ]; then
     if [ -f "$SINGULARITY_MOUNTPOINT/.singularity.d/test" ]; then
-        message 1 "## TEST:\n"
+        echo
         cat "$SINGULARITY_MOUNTPOINT/.singularity.d/test"
         echo
     else
         message ERROR "This container does not have any tests defined\n"
     fi
-
 fi
 
 if [ -n "${SINGULARITY_INSPECT_ENVIRONMENT:-}" ]; then
     if [ -f "$SINGULARITY_MOUNTPOINT/.singularity.d/environment" ]; then
-        message 1 "## ENVIRONMENT:\n"
+        echo
         cat "$SINGULARITY_MOUNTPOINT/.singularity.d/environment"
         echo
     else
         message ERROR "This container does not have any custom environment defined\n"
     fi
-
 fi
 
