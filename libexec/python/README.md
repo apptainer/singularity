@@ -327,7 +327,41 @@ Given that the container does not have a version 2.0 manifest (not sure if this 
 
 
 ### Json
-The json module is (so far) primarily intended to write a key value store of labels specific to a container. This comes down to `.json` files in the `SINGULARITY_METADATA/labels` folder, with each file mapping to it's source (eg, docker, shub, etc). Given that the calling (C) function has specified the label file (`SINGULARITY_LABELBASE`) The general use would be the following:
+The json module serves two functions. First, it writes a key value store of labels specific to a container using supporting functions [add](helpers/json/add.py), [helpers/json/delete.py](helpers/json/delete.py) and [helpers/json/get.py](helpers/json/get.py). Second, it servers to return a [JSON API](http://jsonapi.org/) manifest with one or more metrics of interest.
+
+#### Inspect
+Inspect will return (print to the screen, or stdout) a json data structure with the fields asked for by the user, specifically which can be in the set defined in [inspect.help](../cli/inspect.help).
+
+```
+-l/--labels      Show the labels associated with the image (default)
+-d/--deffile     Show the bootstrap definition file which was used
+                 to generate this image
+-r/--runscript   Show the runscript for this image
+-t/--test        Show the test script for this image
+-e/--environment Show the environment settings for this container
+```
+
+The bash client handles parsing these command line arguments into the following environment variables that are exported, and found by python:
+
+```
+SINGULARITY_MOUNTPOINT
+SINGULARITY_INSPECT_LABELS
+SINGULARITY_INSPECT_DEFFILE
+SINGULARITY_INSPECT_RUNSCRIPT
+SINGULARITY_INSPECT_TEST
+SINGULARITY_INSPECT_ENVIRONMENT
+```
+
+Essentially, if any of the above for `SINGULARITY_INSPECT_*` are found to be defined, this is interpreted as "yes/True." Otherwise, if the environment variable is not defined, python finds it as `None` and doesn't do anything. In this manner, we can call the executable as follows (e.g., from [inspect.sh](../helpers/inspect.sh)).
+
+```
+eval_abort "$SINGULARITY_libexecdir/singularity/python/helpers/json/inspect.py"
+```
+and the python will look for the environmental variables specified above. This is different from the other json functions (below) that expect different parameters to be passed into the script call.
+
+
+#### Json Functions
+The functions `get`, `dump`, and `add` are primarily used to write and read `.json` files in the `SINGULARITY_METADATA/labels` folder, with each file mapping to it's source (eg, docker, shub, etc). Given that the calling (C) function has specified the label file (`SINGULARITY_LABELBASE`) The general use would be the following:
 
 
 	# Add a key value to labelfile. The key must not exist

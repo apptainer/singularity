@@ -9,7 +9,7 @@ INSPECT OPTIONS:
     -r/--runscript   Show the runscript for this image
     -t/--test        Show the test script for this image
     -e/--environment Show the environment settings for this container
-
+    -j/--json        Print structured json instead of sections
 
 EXAMPLES:
     
@@ -31,4 +31,3 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-

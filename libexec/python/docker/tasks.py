@@ -17,6 +17,7 @@ from sutils import (
     get_cache,
     create_tar,
     change_tar_permissions,
+    print_json,
     write_singularity_infos
 )
 
@@ -134,7 +135,7 @@ def extract_metadata_tar(manifest,image_name,include_env=True,
             labels = extract_labels(manifest)
             if labels is not None:
                 if isinstance(labels,dict):
-                    labels = json.dumps(labels, indent=4, separators=(',', ': '))
+                    labels = print_json(labels)
                 bot.verbose3('Adding Docker labels to metadata tar')
                 template = get_template('tarinfo')
                 template['name'] = "./%s/labels.json" %METADATA_FOLDER_NAME

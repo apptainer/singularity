@@ -45,6 +45,11 @@ while true; do
             fi
             exit
         ;;
+        -j|--json)
+            SINGULARITY_PRINT_STRUCTURED=1
+            export SINGULARITY_PRINT_STRUCTURED
+            shift;
+        ;;
         -l|--label|--labels)
             SELECTED=1
             SINGULARITY_INSPECT_LABELS=1
@@ -104,6 +109,6 @@ else
     exit 1
 fi
 
-message ERROR "We never should have gotten here. Call the authorities, run away!\n"
+message ERROR "We never should have gotten here. Grab your latkes, call the authorities, run away!\n"
 
 exit 1
