@@ -204,7 +204,6 @@ def INSPECT(inspect_labels=None,inspect_def=None,inspect_runscript=None,inspect_
     if pretty_print:
         bot.verbose2("Structured printing specified.")
         for dtype,content in data.items():      
-            bot.info('\n##%s' %(dtype))
             if content is not None:
                 if isinstance(content,dict):
                     print_json(content,print_console=True)
