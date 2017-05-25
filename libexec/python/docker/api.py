@@ -31,9 +31,10 @@ from base import ApiConnection
 
 from sutils import (
     add_http,
-    get_cache,
     change_tar_permissions,
     create_tar,
+    get_cache,
+    read_json,
     write_singularity_infos
 )
 
@@ -45,7 +46,9 @@ from defaults import (
     ENV_BASE,
     LABELFILE,
     METADATA_FOLDER_NAME,
-    RUNSCRIPT_COMMAND_ASIS
+    RUNSCRIPT_COMMAND_ASIS,
+    USERHOME
+
 )
 
 from helpers.json.main import ADD
@@ -70,6 +73,7 @@ class DockerApiConnection(ApiConnection):
         self.auth = None
         self.token = None
         self.token_url = None
+        self.registry = None
         self.api_base = API_BASE
         self.api_version = API_VERSION
         self.manifest = None
@@ -120,6 +124,32 @@ class DockerApiConnection(ApiConnection):
         self.update_token()
 
 
+    def basic_auth(self):
+        '''basic auth will look for a docker config.json in the user's home 
+        directory ($HOME/.docker/config.json) and update the auth object with this value, if it exists.
+        '''
+        auth = None
+        docker_config = "%s/.docker/config.json" %USERHOME
+        if os.path.exists(docker_config):
+            config = read_json(docker_config)
+            if "auths" in config:
+                registry = self.get_registry(add_version=False)
+
+                registry_v2 = "%s/v2/" %registry # Our default
+                registry_v1 = "%s/v1/" %registry
+
+                if registry_v2 in config['auths']:
+                    bot.verbose3("Found docker auth: registry v2.0")
+                    token = config['auths'][registry_v2]
+                    auth = {"Authorization": "Basic %s" %token}
+
+                elif registry_v1 in config['auths']:
+                    bot.verbose3("Found docker auth: registry v1.0")
+                    token = config['auths'][registry_v1]
+                    auth = {"Authorization": "Basic %s" %token}
+        return auth
+
+
     def update_token(self,response=None,auth=None):
         '''update_token uses HTTP basic authentication to get a token for 
         Docker registry API V2 operations. We get here if a 401 is
@@ -151,6 +181,7 @@ class DockerApiConnection(ApiConnection):
             self.token_url = "%s?service=%s&expires_in=9000&scope=%s" %(realm,service,scope)
 
         headers = dict()
+
         # First priority comes to auth supplied directly to function
         if auth is not None:
             headers.update(auth)
@@ -158,6 +189,12 @@ class DockerApiConnection(ApiConnection):
         # Second priority is default if supplied at init
         elif self.auth is not None:
             headers.update(self.auth)
+
+        # Third priority is trying to read from local docker config
+        else:
+            auth = self.basic_auth()
+            if auth is not None:
+                headers.update(auth)
 
         response = self.get(self.token_url,
                             default_headers=False,
@@ -172,6 +209,25 @@ class DockerApiConnection(ApiConnection):
             bot.error("Error getting token for repository %s/%s, exiting." %(self.namespace,
                                                                              self.repo_name))
             sys.exit(1)
+
+
+    def get_registry(self,add_https=True,add_version=True):
+        '''registry will return the registry of the client, if defined. If not, the default
+        is returned with https.
+        :param add_https: add https to the url (default is True)
+        :param add_version: if True, add the api version (default True)
+        '''
+        registry = self.registry
+        if registry is None:
+            registry = self.api_base
+
+        if add_https:       
+            registry = add_http(registry) # make sure we have a complete url
+
+        if add_version:
+            registry = "%s/%s" %(registry,self.api_version)
+
+        return registry
 
 
     def get_images(self):
@@ -203,13 +259,9 @@ class DockerApiConnection(ApiConnection):
         :param registry: the docker registry to use (default will use index.docker.io)
         :param auth: authorization header (default None)
         '''
-        registry = self.registry
-        if registry == None:
-            registry = self.api_base
-        
-        registry = add_http(registry) # make sure we have a complete url
+        registry = self.get_registry()
 
-        base = "%s/%s/%s/%s/tags/list" %(registry,self.api_version,self.namespace,self.repo_name)
+        base = "%s/%s/%s/tags/list" %(registry,self.namespace,self.repo_name)
         bot.verbose("Obtaining tags: %s" %base)
 
         # We use get_tags for a testing endpoint in update_token
@@ -232,12 +284,9 @@ class DockerApiConnection(ApiConnection):
         The image details are extracted when the client is generated.
         :param old_version: return version 1 (for cmd/entrypoint), default False
         '''
-        registry = self.registry
-        if registry == None:
-            registry = self.api_base
-        registry = add_http(registry) # make sure we have a complete url
+        registry = self.get_registry()
 
-        base = "%s/%s/%s/%s/manifests" %(registry,self.api_version,self.namespace,self.repo_name)
+        base = "%s/%s/%s/manifests" %(registry,self.namespace,self.repo_name)
         if self.version is not None:
             base = "%s/%s" %(base,self.version)
         else:
@@ -273,13 +322,10 @@ class DockerApiConnection(ApiConnection):
         :param return_tmp: If true, return the temporary file name (and don't rename to the file's final
         name). Default is False, should be True for multiprocessing that requires extra permission changes
         '''
-        registry = self.registry
-        if registry == None:
-            registry = self.api_base
-        registry = add_http(registry) # make sure we have a complete url
+        registry = self.get_registry()
 
         # The <name> variable is the namespace/repo_name
-        base = "%s/%s/%s/%s/blobs/%s" %(registry,self.api_version,self.namespace,self.repo_name,image_id)
+        base = "%s/%s/%s/blobs/%s" %(registry,self.namespace,self.repo_name,image_id)
         bot.verbose("Downloading layers from %s" %base)
     
         if download_folder is None:        
