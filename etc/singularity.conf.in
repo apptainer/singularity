@@ -106,7 +106,8 @@
 #bind path = /etc/singularity/default-nsswitch.conf:/etc/nsswitch.conf
 #bind path = /opt
 #bind path = /scratch
-@BIND_PATH@ = @BIND_PATH_DEFAULT@
+bind path = /etc/localtime
+bind path = /etc/hosts
 
 
 # USER BIND CONTROL: [BOOL]

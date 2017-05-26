@@ -67,7 +67,7 @@
 #define MOUNT_HOSTFS_DEFAULT 0
 
 #define BIND_PATH "bind path"
-#define BIND_PATH_DEFAULT "/etc/hosts"
+#define BIND_PATH_DEFAULT ""
 
 #define USER_BIND_CONTROL "user bind control"
 #define USER_BIND_CONTROL_DEFAULT 1
