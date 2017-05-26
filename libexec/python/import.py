@@ -74,7 +74,7 @@ def main():
 
         auth = None
         if username is not None and password is not None:
-            auth = basic_auth_header(username, password)            
+            auth = basic_auth_header(username, password)
 
         from docker.main import IMPORT
 
