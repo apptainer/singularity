@@ -190,25 +190,36 @@ class DockerApiConnection(ApiConnection):
         elif self.auth is not None:
             headers.update(self.auth)
 
-        # Third priority is trying to read from local docker config
-        else:
-            auth = self.basic_auth()
-            if auth is not None:
-                headers.update(auth)
+        try:
+            self.retrieve_token(headers)
+        except:
+            bot.error("Error getting token for repository %s/%s, exiting." %(self.namespace,
+                                                                             self.repo_name))
+            sys.exit(1)
+
+
+    def retrieve_token(self,headers,retry=True):
+        '''retrieve_token will make the call to retrieve a token, and recursively
+        call itself to retry just once looking for a local token file'''
 
         response = self.get(self.token_url,
                             default_headers=False,
                             headers=headers)
-
+ 
         try:
             token = json.loads(response)["token"]
             token = {"Authorization": "Bearer %s" %(token) }
             self.token = token
             self.update_headers(token)
-        except:
-            bot.error("Error getting token for repository %s/%s, exiting." %(self.namespace,
-                                                                             self.repo_name))
-            sys.exit(1)
+
+        except HTTPError:
+            if retry is True:
+                auth = self.basic_auth()
+                if auth is not None:
+                    headers.update(auth)
+                    self.retrieve_token(headers,retry=False)
+ 
+            raise
 
 
     def get_registry(self,add_https=True,add_version=True):

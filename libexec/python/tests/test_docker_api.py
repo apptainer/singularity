@@ -60,19 +60,19 @@ class TestApi(TestCase):
         from docker.api import DockerApiConnection
 
         print("Case 1: Ask for default registry")
-        registry = self.get_registry()
-        self.assertEqual(registry,"https://index.docker.io/v2/")
+        registry = self.client.get_registry()
+        self.assertEqual(registry,"https://index.docker.io/v2")
 
         print("Case 2: Remove https")
-        registry = self.get_registry(add_https=False)
-        self.assertEqual(registry,"index.docker.io/v2/")
+        registry = self.client.get_registry(add_https=False)
+        self.assertEqual(registry,"index.docker.io/v2")
 
         print("Case 3: Remove version")
-        registry = self.get_registry(add_version=False)
+        registry = self.client.get_registry(add_version=False)
         self.assertEqual(registry,"https://index.docker.io")
 
         print("Case 4: Remove everything")
-        registry = self.get_registry(add_version=False,add_https=False)
+        registry = self.client.get_registry(add_version=False,add_https=False)
         self.assertEqual(registry,"index.docker.io")
 
 
