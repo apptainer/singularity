@@ -24,7 +24,7 @@ EXAMPLES:
 
     You can then import:
 
-    $ gunzip -c debian.tar.gz | singularity import /tmp/Debian
+    $ gunzip -c debian.tar.gz | singularity import /tmp/Debian.img
     $ singularity import /tmp/Debian.img debian.tar.gz
     $ singularity import /tmp/Debian.img docker://ubuntu:latest
 

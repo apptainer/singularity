@@ -1,14 +1,14 @@
 USAGE: singularity [...] inspect [exec options...] <container path>
 
-This command will show you the runscipt for the image.
+This command will show you labels, environment variables, and scripts associated with the image.
 
 INSPECT OPTIONS:
     -l/--labels      Show the labels associated with the image (default)
-    -d/--deffile     Show the bootstrap definition file which was used
-                     to generate this image
-    -r/--runscript   Show the runscript for this image
-    -t/--test        Show the test script for this image
-    -e/--environment Show the environment settings for this container
+    -d/--deffile     Show the bootstrap definition file that was used
+                     to generate the image
+    -r/--runscript   Show the runscript for the image
+    -t/--test        Show the test script for the image
+    -e/--environment Show the environment settings for the image
     -j/--json        Print structured json instead of sections
 
 EXAMPLES:
