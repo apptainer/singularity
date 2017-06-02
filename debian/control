@@ -4,9 +4,9 @@ Priority: optional
 Maintainer: Dave Love <fx@gnu.org>
 Build-Depends: debhelper (>= 9), dh-autoreconf
 Standards-Version: 3.9.8
-Homepage: http://gmkurtzer.github.io/singularity
-Vcs-Git: https://github.com/gmkurtzer/singularity.git
-Vcs-Browser: https://github.com/gmkurtzer/singularity
+Homepage: https://github.com/singularityware/singularity
+Vcs-Git: https://github.com/singularityware/singularity.git
+Vcs-Browser: https://github.com/singularityware/singularity
 
 # "singularity" is a packaged game (but the contents don't clash)
 Package: singularity-container
