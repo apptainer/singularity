@@ -37,7 +37,7 @@ all your interactions with the project members and users.
    to test your PR locally.
 4. For any new functionality, please write a test to be added to Continuous
    Integration (Travis) to test it (tests can be found in the `tests/`
-   directory.
+   directory).
 5. The project's default copyright and header have been included in any new
    source files.
 6. Make sure you have implemented a local `make test` and all tests succeed
