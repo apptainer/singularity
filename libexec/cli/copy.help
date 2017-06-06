@@ -1,16 +1,17 @@
 USAGE: singularity [...] copy <container path> [cp options...] <source> <dest>
 
 This command will allow you to easily install files into your container
-from your host. It is a Singularity wrapper for /bin/cp and thus you can
-also pass any 'cp' arguments to it.
-
-note: This command must be executed as root.
+from your host. It is a Singularity wrapper for /bin/cp and thus you can,
+and should, pass any 'cp' arguments to it.
 
 EXAMPLES:
 
-    $ sudo singularity copy /tmp/Debian.img script.sh /usr/bin/
-    $ sudo singularity copy /tmp/Debian.img -r dir /etc/
+    $ singularity copy /tmp/Debian.img -p script.sh /usr/bin/
+    $ singularity copy /tmp/Debian.img -r dir /etc/
 
+We strongly recommend using the -p or --preserve option to keep the mode
+and ownership of the file constant. You should look at "man cp" to see other
+arguments that might be useful
 
 For additional help, please visit our public documentation pages which are
 found at:

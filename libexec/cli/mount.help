@@ -4,12 +4,19 @@ Start a shell with a standard loop mount on the container image.  The
 mount is in the container namespace, i.e. not visible outside that
 shell.
 
-Note: This command must be executed as root.
+MOUNT OPTIONS:
+    -w/--writable       By default all Singularity containers are available as
+                        read only. This option makes the file system accessible
+                        as read/write.
+    -s/--shell          Do not run mount in a new namespace (requires root)
 
 EXAMPLES:
 
-    $ sudo singularity mount /tmp/Debian.img /mnt
-    /tmp/Debian.img:/mnt> exit
+    $ singularity create /tmp/new.img
+    $ singularity mount /tmp/new.img /mnt
+    Singularity> ls /mnt
+    lost+found
+    Singularity> exit
     $
 
 For additional help, please visit our public documentation pages which are

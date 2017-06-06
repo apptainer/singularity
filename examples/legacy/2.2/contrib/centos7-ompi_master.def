@@ -1,0 +1,31 @@
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+# 
+# "Singularity" Copyright (c) 2016, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+
+
+BootStrap: yum
+OSVersion: 7
+MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+Include: yum
+
+%post
+    echo "Installing Development Tools YUM group"
+    yum -y groupinstall "Development Tools"
+    echo "Installing OpenMPI into container..."
+    mkdir /tmp/git
+    cd /tmp/git
+    git clone https://github.com/open-mpi/ompi.git
+    cd ompi
+    ./autogen.pl
+    ./configure --prefix=/usr/local
+    make
+    make install
+    /usr/local/bin/mpicc examples/ring_c.c -o /usr/bin/mpi_ring
+    cd /
+    rm -rf /tmp/git
+    exit 0
+
+%test
+    /usr/local/bin/mpirun --allow-run-as-root /usr/bin/mpi_ring

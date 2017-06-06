@@ -1,7 +1,9 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
+ * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
- * “Singularity” Copyright (c) 2016, The Regents of the University of California,
+ * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
@@ -22,7 +24,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "../lib/message.h"
+#include "util/message.h"
 
 #ifndef __UTIL_H_
 #define __UTIL_H_
@@ -30,17 +32,21 @@
 #define TRUE 1
 #define FALSE 0
 
-char *envar(char *name, char *allowed, int len);
+char *envar_get(char *name, char *allowed, int len);
 char *envar_path(char *name);
 int envar_defined(char *name);
+int envar_set(char *key, char *value, int overwrite);
 int intlen(int input);
 char *int2str(int num);
 char *joinpath(const char * path1, const char * path2);
 char *strjoin(char *str1, char *str2);
+char *uppercase(char *string);
 void chomp_noline(char *str);
+void chomp_comments(char *str);
 void chomp(char *str);
 int strlength(const char *string, int max_len);
-//char *random_string(int length);
+int envclean(void);
+char *random_string(int length);
 
 // Given a const char * string containing a base-10 integer,
 // try to convert to an C integer.
@@ -54,7 +60,6 @@ int strlength(const char *string, int max_len);
 int str2int(const char *input_str, long int *output_num);
 
 struct passwd;
-char *get_homedir(struct passwd *pw);
 
 #define ABORT(a) do {singularity_message(ABRT, "Retval = %d\n", a); exit(a);} while (0)
 

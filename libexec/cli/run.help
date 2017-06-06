@@ -9,45 +9,62 @@ runscript.
 
 
 RUN OPTIONS:
-    -B/--bind <spec>    A user-bind path specification.  spec can either be a
-                        path or a src:dest pair, specifying the bind mount to
-                        perform (can be called multiple times)
-    -c/--contain        This option disables the automatic sharing of writable
-                        filesystems on your host (e.g. $HOME and /tmp).
+    -B/--bind <spec>    A user-bind path specification.  spec has the format
+                        src[:dest[:opts]], where src and dest are outside and
+                        inside paths.  If dest is not given, it is set equal
+                        to src.  Mount options ('opts') may be specified as
+                        'ro' (read-only) or 'rw' (read/write, which is the 
+                        default). This option can be called multiple times.
+    -c/--contain        This option disables the sharing of filesystems on 
+                        your host (e.g. /dev, $HOME and /tmp).
     -C/--containall     Contain not only file systems, but also PID and IPC
+    -e/--cleanenv       Clean environment before running container
     -H/--home <spec>    A home directory specification.  spec can either be a
                         src path or src:dest pair.  src is the source path
                         of the home directory outside the container and dest
                         overrides the home directory within the container
     -i/--ipc            Run container in a new IPC namespace
+    -n/--nv             Enable experimental Nvidia support
     -p/--pid            Run container in a new PID namespace
     --pwd               Initial working directory for payload process inside
                         the container
     -S/--scratch <path> Include a scratch directory within the container that 
                         is linked to a temporary dir (use -W to force location)
-    -u/--user           Try to run completely unprivileged (only works on very
-                        new kernels/distros)
+    -u/--user           Run container in a new user namespace (this allows
+                        Singularity to run completely unprivileged on recent
+                        kernels and doesn't support all features)
     -W/--workdir        Working directory to be used for /tmp, /var/tmp and
                         $HOME (if -c/--contain was also used)
     -w/--writable       By default all Singularity containers are available as
                         read only. This option makes the file system accessible
                         as read/write.
 
-NOTE:
-    If there is a daemon process running inside the container, then
-    subsequent container commands will all run within the same namespaces.
-    This means that the --writable and --contain options will not be
-    honored as the namespaces have already been configured by the
-    'singularity start' command.
+CONTAINER FORMATS SUPPORTED:
+    *.img               This is the native Singularity image format for all
+                        Singularity versions 2.x.
+    *.sqsh              SquashFS format, note the suffix is required!
+    *.tar*              Tar archives are exploded to a temporary directory and
+                        run within that directory (and cleaned up after). The
+                        contents of the archive is a root file system with root
+                        being in the current directory. Compression suffixes as
+                        '.gz' and '.bz2' are supported.
+    directory/          Container directories that contain a valid root file
+                        system.
+
 
 EXAMPLES:
 
+    # Here we see that the runscript prints "Hello world: $@"
     $ singularity exec /tmp/Debian.img cat /singularity
     #!/bin/sh
     echo "Hello world: $@"
+
+    # It runs with our inputs when we run the image
     $ singularity run /tmp/Debian.img one two three
     Hello world: one two three
 
+    # Note that this does the same thing
+    $ ./tmp/Debian.img one two three
 
 For additional help, please visit our public documentation pages which are
 found at:

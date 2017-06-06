@@ -1,8 +1,10 @@
 #!/bin/bash
 # 
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
@@ -45,10 +47,26 @@ while true; do
             fi
             exit
         ;;
+        -T|--notest)
+            shift
+            SINGULARITY_NOTEST=1
+            export SINGULARITY_NOTEST
+        ;;
         -f|--force)
             shift
             SINGULARITY_REBOOTSTRAP=1
             export SINGULARITY_REBOOTSTRAP
+        ;;
+        -s|--section)
+            shift
+            SINGULARITY_BUILDSECTION="$1"
+            export SINGULARITY_BUILDSECTION
+            shift
+        ;;
+        --nobase)
+            shift
+            SINGULARITY_BUILDNOBASE=1
+            export SINGULARITY_BUILDNOBASE
         ;;
         -*)
             message ERROR "Unknown option: $1\n"
@@ -72,11 +90,19 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-DEFINITION="${2:-}"
+SINGULARITY_BUILDDEF="${2:-}"
 SINGULARITY_WRITABLE=1
-SINGULARITY_NOIMAGELOCK=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK SINGULARITY_libexecdir
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_BUILDDEF SINGUARITY_libexecdir
 shift
 shift
 
-exec "$SINGULARITY_libexecdir/singularity/simage" "bootstrap" "$SINGULARITY_IMAGE" "$DEFINITION" "$@"
+
+if [ -x "$SINGULARITY_libexecdir/singularity/bin/bootstrap" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/bootstrap"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/bootstrap\n"
+    exit 1
+fi
+
+message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+exit 255

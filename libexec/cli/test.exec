@@ -1,8 +1,10 @@
 #!/bin/bash
 # 
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
@@ -34,10 +36,6 @@ else
     exit 1
 fi
 
-## Init Singularity environment
-if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
-    . "$SINGULARITY_sysconfdir/singularity/init"
-fi
 if [ -f "${HOME:-}/.singularity-init" ]; then
     . "${HOME:-}/.singularity-init"
 fi
@@ -63,8 +61,6 @@ while true; do
     esac
 done
 
-SINGULARITY_CONTAIN=1
-export SINGULARITY_CONTAIN
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     SINGULARITY_IMAGE="${1:-}"
@@ -81,15 +77,22 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     exit 0
 fi
 
+if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/init"
+fi
+
 
 if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
     . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
 fi
 
-if [ -x "$SINGULARITY_libexecdir/singularity/sexec" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/sexec" "$@" <&0
+
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/action-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/action-suid" "$@" <&0
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/action" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/action" "$@" <&0
 else
-    message ERROR "Could not locate the Singularity Exec module: $SEXEC\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/action\n"
     exit 1
 fi
 

@@ -1,8 +1,10 @@
 #!/bin/bash
 # 
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
@@ -35,7 +37,6 @@ else
 fi
 
 PATH=/sbin:/usr/sbin:${PATH:-}
-IMAGE_SIZE="768"
 
 while true; do
     case ${1:-} in
@@ -50,7 +51,8 @@ while true; do
         ;;
         -s|--size)
             shift
-            IMAGE_SIZE="${1:-}"
+            SINGULARITY_IMAGESIZE="${1:-}"
+            export SINGULARITY_IMAGESIZE
             shift
         ;;
         -F|--force)
@@ -76,10 +78,6 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-if [ "$UID" != 0 ]; then
-    message ERROR "Calling user must be root!\n"
-    exit 1
-fi
 
 SINGULARITY_IMAGE="${1:-}"
 SINGULARITY_WRITABLE=1
@@ -99,15 +97,14 @@ if [ -f "$SINGULARITY_IMAGE" ]; then
     fi
 fi
 
-message 1 "Creating a new image with a maximum size of ${IMAGE_SIZE}MiB...\n"
-if ! eval "$SINGULARITY_libexecdir/singularity/simage" "create" "$SINGULARITY_IMAGE" "$IMAGE_SIZE"; then
-    message ERROR "Failed creating image: $SINGULARITY_IMAGE\n"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/create-suid"
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/create" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/create"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
     exit 1
 fi
-
-message 1 "Executing image create helper\n"
-exec "$SINGULARITY_libexecdir/singularity/simage" "bind" "$SINGULARITY_libexecdir/singularity/helpers/image-create.sh"
-
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
 exit 255

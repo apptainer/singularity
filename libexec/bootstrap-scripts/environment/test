@@ -1,0 +1,14 @@
+#!/bin/sh
+
+for script in /.singularity.d/env/*.sh; do
+    if [ -f "$script" ]; then
+        . $script
+    fi
+done
+
+if test -x /.singularity.d/test; then
+    exec /.singularity.d/test "$@"
+else
+    echo "No Singularity container test found, executing /bin/sh"
+    exec /bin/sh "$@"
+fi

@@ -1,8 +1,10 @@
 #!/bin/bash
 # 
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
@@ -66,14 +68,42 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-SINGULARITY_NOIMAGELOCK=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
 shift
+export SINGULARITY_IMAGE SINGULARITY_ROOTFS
+
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/import-suid" ]; then
+    IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import-suid"
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/import" ]; then
+    IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/import\n"
+    exit 1
+fi
 
 
-exec "$SINGULARITY_libexecdir/singularity/simage" "mount" "$SINGULARITY_libexecdir/singularity/helpers/image-import.sh" "$@"
+if [ -n "${1:-}" ]; then
+    case $1 in
+        docker://*)
+            SINGULARITY_CONTAINER="$1"
+            SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
+            export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
+            eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+            message 1 "Importing: base Singularity environment\n"
+            zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | eval "$IMPORT_BIN" || exit $?
 
+            for i in `cat "$SINGULARITY_CONTENTS"`; do
+                message 1 "Importing: $i\n"
+                zcat "$i" | eval "$IMPORT_BIN" || exit $?
+            done
 
-message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
-exit 255
+            rm -f "$SINGULARITY_CONTENTS"
+        ;;
+        *://*)
+            message ERROR "Unsupported URI: $1\n"
+            exit 1
+        ;;
+    esac
+else
+    exec "$IMPORT_BIN"
+fi
+

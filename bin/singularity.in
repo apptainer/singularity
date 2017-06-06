@@ -1,10 +1,12 @@
 #!/bin/bash
 # 
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
-# "Singularity" Copyright (c) 2016, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+# Copyright (c) 2016, The Regents of the University of California, through
+# Lawrence Berkeley National Laboratory (subject to receipt of any required
+# approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
 # This software is licensed under a customized 3-clause BSD license.  Please
 # consult LICENSE file distributed with the sources of this project regarding
@@ -25,19 +27,18 @@ exec_prefix="@exec_prefix@"
 libexecdir="@libexecdir@"
 sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
+bindir="@bindir@"
 
-
-SINGULARITY_version="@VERSION@"
+SINGULARITY_version="@VERSION@@GIT_VERSION@"
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
+SINGULARITY_bindir="$bindir"
 
-RETVAL=0
-MESSAGELEVEL=1
-NEW_HOME=""
-CHANGE_HOME="NO"
+SINGULARITY_MESSAGELEVEL=1
+PATH="/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin"
 
-export SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir RETVAL MESSAGELEVEL NEW_HOME CHANGE_HOME
+export SINGULARITY_bindir SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir SINGULARITY_version SINGULARITY_MESSAGELEVEL PATH
 
 # the Modules package always calls 
 unset module
@@ -48,6 +49,8 @@ else
     echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
 fi
+
+message 5 "Starting argument loop\n"
 
 while true; do
     case ${1:-} in
@@ -66,7 +69,7 @@ while true; do
             exit
         ;;
         -q|--quiet)
-            MESSAGELEVEL=0
+            SINGULARITY_MESSAGELEVEL=0
             shift 
         ;;
         --version)
@@ -74,39 +77,34 @@ while true; do
             exit
         ;;
         -d|--debug)
-            MESSAGELEVEL=5
-            message 4 "enabling debugging\n"
+            SINGULARITY_MESSAGELEVEL=5
+            message 4 "Enabling debugging\n"
             shift
         ;;
         -x|--shdebug)
             SHELL_DEBUG=1
             export SHELL_DEBUG
-            message 4 "enabling shell debugging\n"
+            message 4 "Enabling shell debugging\n"
             shift
         ;;
         -v|--verbose)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 1`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 1`
+            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vv)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 2`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 2`
+            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vvv)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 3`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 3`
+            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -vvvv)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 4`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
-            shift
-        ;;
-        -vvvv)
-            MESSAGELEVEL=`expr $MESSAGELEVEL + 4`
-            message 2 "increasing verbosity level ($MESSAGELEVEL)\n"
+            SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 4`
+            message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
             shift
         ;;
         -*)
@@ -114,24 +112,27 @@ while true; do
             exit 1
         ;;
         *)
-            message 4 "ending argument loop\n"
+            message 5 "Ending argument loop\n"
             break
         ;;
     esac
 done
 
+message 2 "Singularity version: $SINGULARITY_version\n"
+
 SINGULARITY_COMMAND="${1:-}"
 export SINGULARITY_COMMAND
+shift
+
 
 if [ -z "$SINGULARITY_COMMAND" ]; then
     cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
     exit 0
 fi
 
-shift
 
 if [ -x "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec" ]; then
-    message 2 "Exec'ing: $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec $@\n"
+    message 2 "Exec'ing: $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec\n"
     exec $SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec "$@"
 else
     message ERROR "Unknown command '$SINGULARITY_COMMAND'\n"

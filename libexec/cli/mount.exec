@@ -1,8 +1,10 @@
 #!/bin/bash
 # 
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
@@ -46,6 +48,16 @@ while true; do
             fi
             exit
         ;;
+        -w|--writable)
+            SINGULARITY_WRITABLE=1
+            export SINGULARITY_WRITABLE
+            shift
+        ;;
+        -s|--shell)
+            SINGULARITY_NONEWSHELL=1
+            export SINGULARITY_NONEWSHELL
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -56,7 +68,7 @@ while true; do
     esac
 done
 
-if [ -z "${1:-}" ]; then
+if [ -z "${2:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then 
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -65,15 +77,21 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-if [ "${UID:-}" != 0 ]; then
-    message ERROR "Calling user must be root!\n"
+
+SINGULARITY_IMAGE="${1:-}"
+SINGULARITY_MOUNTPOINT="${2:-}"
+export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
+shift
+
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid"
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
     exit 1
 fi
 
-SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-SINGULARITY_NOIMAGELOCK=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
-shift
+message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+exit 255
 
-exec "$SINGULARITY_libexecdir/singularity/simage" "mount" "$SINGULARITY_libexecdir/singularity/helpers/image-mount.sh"

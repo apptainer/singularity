@@ -1,8 +1,8 @@
 #!/bin/bash
 # 
-# Copyright (c) 2016, Vanessa Sochat. All rights reserved. 
+# Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
 # 
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
@@ -44,6 +44,39 @@ while true; do
             fi
             exit
         ;;
+        -n|--name|name)
+            shift
+            SINGULARITY_IMAGE="${1:-}"
+            export SINGULARITY_IMAGE
+            shift
+        ;;
+        -C|--commit|commit)
+            shift
+            if [ -z "${SINGULARITY_IMAGE+x}" ]; then
+                SHUB_NAMEBYCOMMIT="yes"
+                unset SHUB_NAMEBYHASH
+                export SHUB_NAMEBYCOMMIT
+            fi 
+        ;;
+        -H|--hash|hash)
+            shift
+            if [ -z "${SINGULARITY_IMAGE+x}" ]; then
+                if [ -z "${SHUB_NAMEBYCOMMIT+x}" ]; then
+                    SHUB_NAMEBYHASH="yes"
+                    export SHUB_NAMEBYHASH
+                fi
+            fi 
+        ;;
+        -s|--size)
+            shift
+            SINGULARITY_IMAGESIZE="${1:-}"
+            export SINGULARITY_IMAGESIZE
+            shift
+        ;;
+        -F|--force)
+            shift
+            OVERWRITE=1
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -64,43 +97,106 @@ if [ -z "${1:-}" ]; then
 fi
 
 
-SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-SINGULARITY_NOIMAGELOCK=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_NOIMAGELOCK
+RETVAL=0
+SINGULARITY_CONTAINER="${1:-}"
+SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
+if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+    SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
+else
+    # Only set the pull folder to be $PWD if not set by user
+    if [ ! -n "${SINGULARITY_PULLFOLDER:-}" ]; then
+        SINGULARITY_PULLFOLDER="."
+    fi
+fi
 shift
 
+export SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS
 
-IMPORT_URI="${SINGULARITY_IMAGE:-}"
-
-# We can currently only pull from singularity hub (shub://)
-if [ -z "$IMPORT_URI" ]; then
-    message ERROR "Currently pull is only supported for Singularity Hub, and not pipes.\n"
-    exit 255
-fi
-
-case "$IMPORT_URI" in
+case "$SINGULARITY_CONTAINER" in
     docker://*)
-        message ERROR "pull is only supported for shub://, use import, shell, or bootstrap for docker://\n"
-        exit 255
+        if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+            SINGULARITY_IMAGE=`basename "$SINGULARITY_CONTAINER.img" | sed -e 's/:/-/g'`
+            export SINGULARITY_IMAGE
+        fi
+
+        if [ -f "$SINGULARITY_IMAGE" ]; then
+            if [ -n "${OVERWRITE:-}" ]; then
+                message 2 "Removing existing file\n"
+                rm -f "$SINGULARITY_IMAGE"
+            else
+                message ERROR "Image file exists, not overwriting.\n"
+                exit 1
+            fi
+        fi
+
+        if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/import-suid" ]; then
+            IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import-suid"
+        elif [ -x "$SINGULARITY_libexecdir/singularity/bin/import" ]; then
+            IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import"
+        else
+            message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/import\n"
+            exit 1
+        fi
+
+        if [ -z "${SINGULARITY_IMAGESIZE:-}" ]; then
+            eval_abort $SINGULARITY_libexecdir/singularity/python/size.py
+
+            SINGULARITY_IMAGESIZE=`cat "$SINGULARITY_CONTENTS"`
+            if [ "$SINGULARITY_IMAGESIZE" -eq "$SINGULARITY_IMAGESIZE" ] 2>/dev/null; then
+                export SINGULARITY_IMAGESIZE
+            else
+                message ERROR "Could not obtain the container size, try using --size\n"
+                ABORT 255
+            fi
+        fi
+        SINGULARITY_WRITABLE=1
+        export SINGULARITY_WRITABLE
+
+        if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
+            eval_abort "$SINGULARITY_libexecdir/singularity/bin/create-suid"
+        elif [ -x "$SINGULARITY_libexecdir/singularity/bin/create" ]; then
+            eval_abort "$SINGULARITY_libexecdir/singularity/bin/create"
+        else
+            message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
+            exit 1
+        fi
+
+        cat /dev/null > "$SINGULARITY_CONTENTS"
+
+        eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+        message 1 "Importing: base Singularity environment\n"
+        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | eval_abort "$IMPORT_BIN" || exit $?
+
+        for i in `cat "$SINGULARITY_CONTENTS"`; do
+            message 1 "Importing: $i\n"
+            zcat "$i" | eval_abort "$IMPORT_BIN" || exit $?
+        done
+
     ;;
     shub://*)
-        IMAGE_SHUB_ID=`echo "$IMPORT_URI" | sed -e 's@^shub://@@'`
-        exec $SINGULARITY_libexecdir/singularity/python/cli.py --shub $IMAGE_SHUB_ID --pull-folder $PWD
+        if [ -n "${SINGULARITY_IMAGE:-}" ]; then
+            SHUB_CONTAINERNAME="$SINGULARITY_IMAGE"
+            export SHUB_CONTAINERNAME
+        fi
+
+        eval_abort $SINGULARITY_libexecdir/singularity/python/pull.py
+        RETVAL=$?
+
+        SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
     ;;
-    http://*|https://*)
-        message ERROR "pull is only supported for shub://\n"
-        exit 255
-    ;;
-    file://*)
-        message ERROR "pull is only supported for shub://\n"
-        exit 255
-    ;;
-    *://*)
-        message ERROR "pull is only supported for shub://\n"
+    *)
+        message ERROR "pull is only supported for docker and shub URIs\n"
         exit 255
     ;;
 esac
 
-message ERROR "Beep boop, we should never get here!\n"
-exit 255
+rm -f "$SINGULARITY_CONTENTS"
+
+if [ $RETVAL -eq 0 -a -f "$SINGULARITY_IMAGE" ]; then
+    chmod +x "$SINGULARITY_IMAGE"
+    echo "Done. Container is at: $SINGULARITY_IMAGE"
+else
+    message ERROR "pulling container failed!\n"
+fi
+
+exit $RETVAL
