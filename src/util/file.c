@@ -99,7 +99,7 @@ int chk_perms(char *path, mode_t mode) {
     return(-1);
 }
 
-int chk_mode(char *path, mode_t mode) {
+int chk_mode(char *path, mode_t mode, mode_t mask) {
     struct stat filestat;
 
     singularity_message(DEBUG, "Checking exact mode (%o) on: %s\n", mode, path);
@@ -109,7 +109,7 @@ int chk_mode(char *path, mode_t mode) {
         return(-1);
     }
 
-    if ( filestat.st_mode == mode ) {
+    if ( ( filestat.st_mode | mask )  == ( mode | mask ) ) {
         singularity_message(DEBUG, "Found appropriate mode on file: %s\n", path);
         return(0);
     } else {
