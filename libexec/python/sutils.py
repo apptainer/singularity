@@ -37,10 +37,7 @@ import sys
 import tempfile
 import tarfile
 import base64
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+import re
 
 from io import (
     BytesIO,
@@ -66,10 +63,11 @@ def add_http(url,use_https=True):
     if use_https == False:
         scheme="http://"
 
-    parsed = urlparse(url)
-    # Returns tuple with(scheme,netloc,path,params,query,fragment)
+    # remove scheme from url
+    # urlparse is buggy in Python 2.6 https://bugs.python.org/issue754016, use regex instead
+    parsed = re.sub('.*//', '', url)
 
-    return "%s%s" %(scheme,"".join(parsed[1:]).rstrip('/'))
+    return "%s%s" %(scheme, parsed.rstrip('/'))
 
     
 def basic_auth_header(username, password):
