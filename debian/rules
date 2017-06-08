@@ -3,8 +3,23 @@
 #DH_VERBOSE=1
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
+PKGDIR=$(CURDIR)/debian/singularity-container
+SINGULARITY_CACHEDIR=$(PKGDIR)/var/singularity/cache
+
 %:
 	dh $@  --with autoreconf
+
+override_dh_auto_build:
+	mkdir -p $(SINGULARITY_CACHEDIR)
+	dh_auto_build
+
+override_dh_auto_test:
+	echo "skip tests"
+
+override_dh_auto_install:
+	dh_auto_install
+	: # move bash completions into now new standard location
+	mv $(PKGDIR)/etc/bash_completion.d $(PKGDIR)/usr/share/bash-completion/completions
 
 override_dh_installdocs:
 	dh_installdocs README.md AUTHORS.md
