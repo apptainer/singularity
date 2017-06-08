@@ -23,8 +23,6 @@ environment.tar:
 	install -d -m 0755 newroot/var/tmp
 	install -m 0755 /dev/null newroot/etc/hosts
 	install -m 0755 /dev/null newroot/etc/resolv.conf
-	install -m 0755 /dev/null newroot/etc/passwd
-	install -m 0755 /dev/null newroot/etc/group
 	install -m 0755 runscript newroot/.singularity.d/
 	install -m 0755 exec newroot/.singularity.d/actions/
 	install -m 0755 run newroot/.singularity.d/actions/
