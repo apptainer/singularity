@@ -9,16 +9,19 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 bindir = $(libexecdir)/singularity/bin
 
-bin_PROGRAMS = action bootstrap copy cleanupd create expand export get-section import mount $(BUILD_SUID)
-EXTRA_PROGRAMS = action-suid create-suid expand-suid export-suid import-suid mount-suid
+bin_PROGRAMS = action start bootstrap copy cleanupd create expand export get-section import mount sinit $(BUILD_SUID)
+EXTRA_PROGRAMS = action-suid start-suid create-suid expand-suid export-suid import-suid mount-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
 cleanupd_CPPFLAGS = $(AM_CPPFLAGS)
 
-
 action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 action_CPPFLAGS = $(AM_CPPFLAGS)
+
+start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c
+start_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
+start_CPPFLAGS = $(AM_CPPFLAGS)
 
 bootstrap_SOURCES = bootstrap.c util/util.c util/file.c util/registry.c util/sessiondir.c
 bootstrap_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
@@ -49,6 +52,10 @@ mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util
 mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
 mount_CPPFLAGS = $(AM_CPPFLAGS)
 
+sinit_SOURCES = sinit.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c
+sinit_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
+sinit_CPPFLAGS = $(AM_CPPFLAGS)
+
 get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)
 
@@ -57,6 +64,11 @@ action_suid_SOURCES = $(action_SOURCES)
 action_suid_LDADD = $(action_LDADD)
 action_suid_LDFLAGS = -static
 action_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
+
+start_suid_SOURCES = $(start_SOURCES)
+start_suid_LDADD = $(start_LDADD)
+start_suid_LDFLAGS = -static
+start_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 import_suid_SOURCES = $(import_SOURCES)
 import_suid_LDADD = $(import_LDADD)
