@@ -345,6 +345,7 @@ AC_CONFIG_FILES([
    src/lib/runtime/files/passwd/Makefile
    src/lib/runtime/files/resolvconf/Makefile
    src/lib/runtime/files/libs/Makefile
+   src/lib/runtime/files/trace2sing/Makefile
    src/lib/runtime/mounts/Makefile
    src/lib/runtime/mounts/cwd/Makefile
    src/lib/runtime/mounts/dev/Makefile

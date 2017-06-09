@@ -146,6 +146,8 @@ int main(int argc, char **argv) {
         action_run(argc, argv);
     } else if ( strcmp(command, "test") == 0 ) {
         action_test(argc, argv);
+    } else if ( strcmp(command, "trace") == 0 ) {
+        action_trace(argc, argv);
     } else {
         singularity_message(ERROR, "Unknown action command verb was given\n");
         ABORT(255);

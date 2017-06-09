@@ -20,15 +20,40 @@
  * 
 */
 
-#ifndef __ACTION_LIB_H_
-#define __ACTION_LIB_H_
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <limits.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <grp.h>
+#include <pwd.h>
 
-extern void action_ready(char *path);
-extern int action_shell(int argc, char **argv);
-extern int action_exec(int argc, char **argv);
-extern int action_run(int argc, char **argv);
-extern int action_test(int argc, char **argv);
-extern int action_trace(int argc, char **argv);
+#include "util/file.h"
+#include "util/util.h"
+#include "util/config_parser.h"
+#include "util/message.h"
+#include "util/privilege.h"
+#include "util/registry.h"
 
-#endif /* __ACTION_LIB_H */
+#include "../file-bind.h"
+#include "../../runtime.h"
 
+#ifndef BINDIR
+#error BINDIR is not defined
+#endif
+
+int _singularity_runtime_files_trace2sing(void) {
+    char *srcfile = BINDIR "/trace2sing";
+    char *dstfile = "/.singularity.d/actions/trace";
+
+    if ( singularity_registry_get("TRACE") != NULL ) {
+        singularity_message(DEBUG, "Binding trace2sing into container\n");
+        container_file_bind(srcfile, dstfile);
+    }
+
+    return(0);
+}

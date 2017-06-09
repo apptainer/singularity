@@ -20,15 +20,10 @@
  * 
 */
 
-#ifndef __ACTION_LIB_H_
-#define __ACTION_LIB_H_
+#ifndef __SINGULARITY_RUNTIME_FILES_TRACE2SING_H_
+#define __SINGULARITY_RUNTIME_FILES_TRACE2SING_H_
 
-extern void action_ready(char *path);
-extern int action_shell(int argc, char **argv);
-extern int action_exec(int argc, char **argv);
-extern int action_run(int argc, char **argv);
-extern int action_test(int argc, char **argv);
-extern int action_trace(int argc, char **argv);
+extern int _singularity_runtime_files_trace2sing(void);
 
-#endif /* __ACTION_LIB_H */
+#endif /* __SINGULARITY_RUNTIME_FILES_TRACE2SING_H */
 

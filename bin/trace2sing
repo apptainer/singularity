@@ -1,0 +1,495 @@
+#!/bin/sh
+#
+# Copyright (c) 2017 Cedric Clerget - HPC Center of Franche-Comte University
+#
+# http://github.com/mesocentrefc/trace2sing
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation v2.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+LC_ALL="C"
+export LC_ALL
+
+current=$(pwd)
+saved=$current
+
+dump=$(mktemp -d)
+fifo=$(mktemp -u)
+pid=0
+
+if [ -z "$TRACE2SING_OUTPUT" ]; then
+    output="singrun.img"
+else
+    output="$TRACE2SING_OUTPUT"
+fi
+
+pfatal () {
+    echo $1 >&2
+    if [ -e "/proc/$pid/exe" ]; then
+        kill -9 $pid
+    fi
+    if [ -e "$fifo" ]; then
+        rm -f $fifo
+    fi
+    if [ -e "$dump" ]; then
+        rm -rf $dump
+    fi
+    exit 1
+}
+
+if [ $# -lt 1 ]; then
+    pfatal "usage: $0 command [arguments]"
+fi
+
+trap 'pfatal "Execution was interrupted"' INT
+
+relmkdir () {
+    rdir=$(readlink -f $1)
+    dir=$1
+    if [ "$rdir" != "$dir" ]; then
+        echo "$dir" | awk "$awk_script" | while read path; do
+            if [ ! -e $dump/$path ]; then
+                if [ -L $path ]; then
+                    relmkdir $(readlink -f $path)
+                    cp -a $path $dump$path 2> /dev/null
+                else
+                    mkdir $dump$path 2> /dev/null
+                fi
+            fi
+        done
+    else
+        if [ "$dir" != "${dir#/}" ]; then
+            d="$dump$dir"
+        else
+            d="$dump/$dir"
+        fi
+        mkdir -p $d 2> /dev/null
+    fi
+}
+
+copy () {
+    relmkdir $(dirname $1)
+    if [ "$1" != "${1#/}" ]; then
+        filename="$dump$1"
+    else
+        filename="$dump/$1"
+    fi
+    cp -a $1 $filename 2> /dev/null
+
+    # take shebang script into account
+    # as it's executed by kernel ... no trace
+    line=$(sed -n '1{s/^#![[:blank:]]*//p;q}' $1 2> /dev/null)
+    if [ ! -z "$line" ]; then
+        duplicate ${line% *}
+    fi
+}
+
+duplink () {
+    copy $(readlink -f $1)
+    copy $1
+    target=$(readlink $1)
+    if [ "$target" != "${target#/}" ]; then
+        linkval=$target
+    else
+        linkval="$(dirname $1)/$target"
+    fi
+    copy $linkval
+    if [ -L $linkval ]; then
+        duplicate $linkval
+    fi
+}
+
+duplicate () {
+    if [ -e $1 ]; then
+        if [ -d $1 ]; then
+            relmkdir $1
+        elif [ -f $1 ]; then
+            if [ -L $1 ]; then
+                duplink $1
+            else
+                file=$(readlink -f $1)
+                if [ "$1" != "$file" ]; then
+                    copy $file
+                fi
+                copy $1
+            fi
+        fi
+    fi
+}
+
+if [ -z $(which perl) ]; then
+    pfatal "[ERROR]: perl is missing, you must install it first"
+fi
+
+if [ -z $(which strace) ]; then
+    pfatal "[ERROR]: strace is missing, you must install it first"
+fi
+
+# -y option greatly simplify processing of file descriptors
+strace -y -o /dev/null /bin/true 2> /dev/null
+if [ $? != 0 ]; then
+    version=$(strace -V)
+    pfatal "[ERROR]: strace version >= 4.7 is required, current: $version"
+fi
+
+rm -rf $dump
+mkdir -p $dump
+
+mkfifo -m 0600 $fifo
+
+awk_script=$(cat <<'AWK'
+{
+    n = split($0, test, "/");
+    for(i=2; i<=n; i++) {
+        for (j=2; j<=i; j++) {
+            printf "/%s",test[j];
+        }
+        printf "\n";
+    }
+}
+AWK
+)
+
+perl_script=$dump/t2s.pl
+
+# Parse and remove duplicate files
+cat > $perl_script << 'PERL'
+use strict;
+use warnings;
+
+my $fifo = $ARGV[0];
+my $current = $ARGV[1];
+my $dumpdir = $ARGV[2];
+
+my $fifo_fh;
+open($fifo_fh, "<", $fifo) or die "fifo \"$fifo\" doesn't exist.";
+
+open(my $envfile, '>', "$dumpdir/environment");
+foreach (sort keys %ENV) {
+    if (!($_ =~ /^(DISPLAY|SHELL|SSH)/)) {
+        print $envfile "export $_=\"$ENV{$_}\"\n";
+    }
+}
+print $envfile "export SHELL=\"/bin/sh\"\n";
+close $envfile;
+
+my %pids;
+my %files;
+
+while (<$fifo_fh>) {
+    if ($_ =~ /([0-9]+)(.*)?\b(open|openat|execve|chdir|fchdir|oldstat|stat|stat64)\b\((.*)/) {
+        my $pid = $1;
+        my $syscall = $3;
+        if (!$pids{$pid}) {
+            $pids{$pid} = $current;
+        }
+        if ($4 =~ /(.*)\)\s*=\s*([^-][0-9]+)/) {
+            my $content = $1;
+            my $filename = "";
+            if ($syscall eq "execve") {
+                if ($1 =~ /"PWD=([^"]*)"/) {
+                    $pids{$pid} = $1;
+                } elsif ($1 =~ /"OLDPWD=([^"]*)"/) {
+                    $pids{$pid} = $1;
+                }
+                if ($content =~ /^"([^"]*)"/) {
+                    $filename = $1
+                }
+                $current = $pids{$pid};
+            } elsif ($syscall eq "chdir") {
+                if ($content =~ /^"(.*)"/) {
+                    my $first = substr $1, 0, 1;
+                    if ($first eq "/") {
+                        $pids{$pid} = $1;
+                    } else {
+                        $pids{$pid} = $pids{$pid} . "/" . $1;
+                    }
+                    $current = $pids{$pid};
+                }
+            } elsif ($syscall eq "fchdir") {
+                if ($content =~ /^[0-9]+<(.*)>/) {
+                    my $first = substr $1, 0, 1;
+                    if ($first eq "/") {
+                        $pids{$pid} = $1;
+                    } else {
+                        $pids{$pid} = $pids{$pid} . "/" . $1;
+                    }
+                    $current = $pids{$pid};
+                }
+            } else {
+                if ($syscall eq "openat") {
+                    if ($content =~ /^[0-9]+<(.*)>/) {
+                        $filename = $1;
+                    }
+                } elsif ($content =~ /^"([^"]*)"/) {
+                    $filename = $1;
+                }
+            }
+            if ($filename ne "") {
+                if (!($filename =~ /^(\/dev|\/proc|\/run|\/sys)/)) {
+                    if (!$files{$filename}) {
+                        $files{$filename} = 1;
+                        print $pids{$pid} . "#" . $filename . "\n";
+                    }
+                }
+            }
+        } else {
+            my $content = $4;
+            my $filename = "";
+            if ($syscall eq "execve") {
+                if ($content =~ /"PWD=([^"]*)"/) {
+                    $pids{$pid} = $1;
+                } elsif ($content =~ /"OLDPWD=([^"]*)"/) {
+                    $pids{$pid} = $1;
+                }
+                if ($content =~ /^"([^"]*)"/) {
+                    $filename = $1;
+                }
+                $current = $pids{$pid};
+            } elsif ($syscall eq "open") {
+                if ($content =~ /resumed(.*)=\s*([^-][0-9]+)(<(.*)>)?/) {
+                    $filename = $4;
+                }
+            } elsif ($syscall eq "chdir") {
+                if ($content =~ /^"([^"]*)"/) {
+                    my $first = substr $1, 0, 1;
+                    if ($first eq "/") {
+                        $pids{$pid} = $1;
+                    } else {
+                        $pids{$pid} = $pids{$pid} . "/" . $1;
+                    }
+                    $current = $pids{$pid};
+                }
+            } elsif ($syscall =~ /^(oldstat|stat|stat64)$/) {
+                if ($content =~ /^"([^"]*)"/) {
+                    $filename = $1;
+                }
+            }
+            if ($filename ne "") {
+                if (!($filename =~ /^(\/dev|\/proc|\/run|\/sys)/)) {
+                    if (!$files{$filename}) {
+                        $files{$filename} = 1;
+                        print $pids{$pid} . "#" . $filename . "\n";
+                    }
+                }
+            }
+        }
+
+    }
+}
+close $fifo_fh;
+exit(0);
+PERL
+
+perl $perl_script $fifo $saved $dump | while read line; do
+    current=${line%#*}
+    filepath=${line#*#}
+
+    if [ "$filepath" != "${filepath#/}" ]; then
+        duplicate $filepath
+    else
+        duplicate $current"/"$filepath
+    fi
+done &
+
+pid=$!
+
+cmdline=""
+for arg in "$@"; do
+    if [ "$arg" != "${arg% *}" ]; then
+        if [ "$arg" != "${arg%\'}" ]; then
+            carg="\"$arg\""
+        else
+            carg="'$arg'"
+        fi
+    else
+        carg="$arg"
+    fi
+    if [ "$cmdline" != "" ]; then
+        cmdline="$cmdline $carg"
+    else
+        cmdline="$cmdline$carg"
+    fi
+done;
+
+echo "Tracing execution of '$cmdline'"
+
+strace -qq -v -f -y \
+       -e trace=open,execve,chdir,fchdir,openat,oldstat,stat,stat64 \
+       -s 256 \
+       -e abbrev=none \
+       -o $fifo \
+       /bin/sh -c "$cmdline"
+
+status=$?
+
+if [ $status = 0 ]; then
+    echo "Generating self-extracting $output archive ... please wait"
+fi
+
+wait $pid
+
+cd $saved
+rm -f $fifo
+rm -f $perl_script
+
+if [ $status != 0 ]; then
+    pfatal "[ERROR]: Failed to execute $cmdline"
+fi
+
+cd $dump
+install -d -m 0755 "dev"
+install -d -m 0755 "bin"
+install -d -m 0755 "boot"
+install -d -m 0755 "home"
+install -d -m 0755 "etc"
+install -d -m 0750 "root"
+install -d -m 0755 "proc"
+install -d -m 0755 "sys"
+install -d -m 0755 "run"
+install -d -m 1777 "tmp"
+install -d -m 1777 "var/tmp"
+install -d -m 0755 "realhome"
+
+if [ -z "$(which strings)" ]; then
+    loader=$(grep -m 1 -o -a -E "\/[0-9\/\.a-zA-Z_-]?+" /bin/sh)
+else
+    loader=$(strings /bin/sh|head -n 1)
+fi
+
+duplicate $loader
+duplicate $HOME
+duplicate $saved
+
+cat > .run << EOF
+#!/bin/sh
+. /environment
+cd $saved
+$cmdline
+EOF
+chmod 0755 .run
+
+cat > .exec << EOF
+#!/bin/sh
+. /environment
+exec "\$@"
+EOF
+chmod 0755 .exec
+
+cat > .shell << EOF
+#!/bin/sh
+. /environment
+exec \$SHELL "\$@"
+EOF
+chmod 0755 .shell
+
+echo -n "" > etc/resolv.conf
+echo -n "" > etc/hosts
+echo -n "" > etc/passwd
+echo -n "" > etc/group
+echo -n "" > etc/localtime
+
+cat > $saved/$output <<"EOF"
+#!/bin/sh
+#
+# Generated by trace2sing: http://github.com/mesocentrefc/trace2sing
+#
+
+extract_archive () {
+    sed '0,/^#EOF#$/d' $0
+}
+
+launch () {
+    saved=$(pwd)
+    cmd=$1
+    directory=$(mktemp -d)
+    root="$directory/singrun_rootfs"
+    mkdir $root
+    extract_archive | tar -xzf - -C $root
+    env|sed -n 's/^SENV_\(.*\)=\(.*\)$/export \1="\2"/p' >> $root/environment
+    if [ "$cmd" = "exec" ]; then
+        shift 2
+        args="$@"
+        singularity $cmd -w $root $args
+    else
+        cd $directory
+        singularity $cmd -w -H $HOME:/realhome $root
+    fi
+    code=$?
+    cd $saved
+    rm -rf $directory
+    exit $code
+}
+
+usage () {
+    echo "$0 usage:"
+    echo " -x or [--extract]     : to extract file tree in singrun_rootfs directory"
+    echo " -s or [--shell]       : to launch a shell into container"
+    echo " -e or [--exec] args   : to execute a command into container"
+    echo " -l or [--list]        : to list container files tree"
+    echo " -d or [--display-env] : display exported environment variables"
+    exit 1
+}
+
+if [ "$#" -gt 0 ]; then
+    case $1 in
+        -x|--extract)
+            echo "Extracting file tree into singrun_rootfs directory"
+            if [ -d "singrun_rootfs" ]; then
+                echo "There is already a directory singrun_rootfs"
+                exit 1
+            else
+                mkdir singrun_rootfs
+                extract_archive | tar -xzf - -C singrun_rootfs
+                exit $?
+            fi
+            ;;
+        -l|--list)
+            echo "List file tree"
+            extract_archive | tar -ztvf -
+            exit $?
+            ;;
+        -d|--display-env)
+            echo "Extracting environment variables"
+            dir=$(mktemp -d -p .)
+            extract_archive | tar -zxvf - -C $dir ./environment > /dev/null
+            cat $dir/environment
+            rm -rf $dir
+            exit $?
+            ;;
+        -s|--shell)
+            echo "Run shell into container"
+            launch "shell"
+            ;;
+        -e|--exec)
+            echo "Execute command into container"
+            launch "exec" "$@"
+            ;;
+        *|-h|--help)
+            usage
+            ;;
+    esac
+fi
+
+launch "run"
+exit 0
+#EOF#
+EOF
+
+tar -czf - . >> $saved/$output
+
+chmod 0755 $saved/$output
+
+cd $saved
+
+rm -rf $dump

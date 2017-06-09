@@ -33,35 +33,29 @@
 #include "util/message.h"
 
 
-void action_exec(int argc, char **argv) {
+void action_trace(int argc, char **argv) {
 
     if ( argc <= 1 ) {
         singularity_message(ERROR, "No program name to trace\n");
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Checking for: /.singularity.d/actions/exec\n");
-    if ( is_exec("/.singularity.d/actions/exec") == 0 ) {
-        singularity_message(VERBOSE, "Exec'ing /.singularity.d/actions/exec\n");
-        if ( execv("/.singularity.d/actions/exec", argv) < 0 ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv() /.singularity.d/actions/exec: %s\n", strerror(errno));
+    singularity_message(DEBUG, "Checking for: /.singularity.d/actions/trace\n");
+    if ( is_exec("/.singularity.d/actions/trace") == 0 ) {
+        singularity_message(VERBOSE, "Exec'ing /.singularity.d/actions/trace\n");
+        if ( execv("/.singularity.d/actions/trace", argv) < 0 ) { // Flawfinder: ignore
+            singularity_message(ERROR, "Failed to execv() /.singularity.d/actions/trace: %s\n", strerror(errno));
         }
     }
 
-    singularity_message(DEBUG, "Checking for: /.exec\n");
-    if ( is_exec("/.exec") == 0 ) {
-        singularity_message(VERBOSE, "Exec'ing /.exec\n");
-        if ( execv("/.exec", argv) < 0 ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv() /.exec: %s\n", strerror(errno));
+    singularity_message(DEBUG, "Checking for: /.trace\n");
+    if ( is_exec("/.trace") == 0 ) {
+        singularity_message(VERBOSE, "Exec'ing /.trace\n");
+        if ( execv("/.trace", argv) < 0 ) { // Flawfinder: ignore
+            singularity_message(ERROR, "Failed to execv() /.trace: %s\n", strerror(errno));
         }
     }
 
-    singularity_message(WARNING, "Container does not have an exec helper script, calling '%s' directly\n", argv[1]);
-    if ( execvp(argv[1], &argv[1]) < 0 ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Failed to execvp() %s: %s\n", argv[1], strerror(errno));
-        ABORT(255);
-    }
-
-    singularity_message(ERROR, "We should never get here... Grrrrrr!\n");
+    singularity_message(ERROR, "Container doesn't have trace script\n");
     ABORT(255);
 }

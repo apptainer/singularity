@@ -18,6 +18,8 @@ CONTAINER USAGE COMMANDS:
     run           Launch a runscript within container
     shell         Run a Bourne shell within container
     test          Execute any test code defined within container
+    trace         Trace execution within container or host machine
+                  to create minimal container
 
 CONTAINER USAGE OPTIONS:
     see singularity help <command>

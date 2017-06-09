@@ -36,6 +36,7 @@
 #include "./group/group.h"
 #include "./resolvconf/resolvconf.h"
 #include "./libs/libs.h"
+#include "./trace2sing/trace2sing.h"
 
 
 int _singularity_runtime_files(void) {
@@ -46,6 +47,7 @@ int _singularity_runtime_files(void) {
     retval += _singularity_runtime_files_group();
     retval += _singularity_runtime_files_resolvconf();
     retval += _singularity_runtime_files_libs();
+    retval += _singularity_runtime_files_trace2sing();
 
     return(retval);
 }
