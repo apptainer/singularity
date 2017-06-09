@@ -406,3 +406,25 @@ int singularity_fork_exec(unsigned int flags, char **argv) {
     return(retval);
 }
 
+int singularity_fork_daemonize() {
+    int tmpstatus;
+    int retval = 0;
+    int i = 0;
+    pid_t child;
+
+    child = singularity_fork();
+
+    if ( child == 0 ) {
+        return(0);
+    } else if ( child > 0 ) {
+        singularity_message(DEBUG, "Successfully spawned daemon, terminating");
+
+        /* In the future, code will go here to execute action.c workflow for startscript */
+        exit(0);
+    }
+    
+    singularity_message(ERROR, "Reached unreachable code. How did you get here?\n");
+    ABORT(255);
+
+    return(0);
+}    
