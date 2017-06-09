@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     char *command = NULL;
 
     char **exec_arg = malloc(sizeof(char *) * 2);
-    exec_arg[0] = ; //path to sinit binary
+    exec_arg[0] = joinpath(LIBEXECDIR, "/singularity/bin/sinit"); //path to sinit binary
     exec_arg[1] = '\0';
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
