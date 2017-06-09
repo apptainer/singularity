@@ -131,6 +131,16 @@ while true; do
             else
                 export SINGULARITY_CONTAINLIBS
             fi
+            if NVIDIA_SMI=`which nvidia-smi`; then
+                if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
+                    SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${NVIDIA_SMI}"
+                else
+                    SINGULARITY_BINDPATH="${NVIDIA_SMI}"
+                fi
+                export SINGULARITY_BINDPATH
+            else
+                message WARN "Could not find the Nvidia SMI binary to bind into container\n"
+            fi
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
