@@ -51,14 +51,29 @@
 
 
 int main(int argc, char **argv) {
-    struct image_object image;
-    char *pwd = get_current_dir_name();
-    char *target_pwd = NULL;
-    char *command = NULL;
-
+    int i;
+    
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-
     singularity_registry_init();
 
+    /* Fork into sinit daemon inside PID NS */
     singularity_fork_daemonize();
+
+    /* After this point, we are running as PID 1 inside PID NS */
+    singularity_message(DEBUG, "Preparing sinit daemon\n");
+    
+    /* Close all open fd's that may be present */
+    singularity_message(DEBUG, "Closing open fd's\n");
+    for( i = sysconf(_SC_OPEN_MAX); i >= 0; i-- ) {
+        close(i);
+    }
+    
+    singularity_message(LOG, "Successfully closed fd's, entering daemon loop\n");
+
+    while(1) {
+        singularity_message(LOG, "Logging from inside daemon\n");
+        sleep(60);
+    }
+    
+    return(0);
 }
