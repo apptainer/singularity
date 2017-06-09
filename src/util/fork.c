@@ -412,7 +412,7 @@ int singularity_fork_daemonize() {
     int i = 0;
     pid_t child;
 
-    child = singularity_fork();
+    child = fork();
 
     if ( child == 0 ) {
         return(0);
