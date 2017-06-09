@@ -51,6 +51,21 @@ if [ $# -lt 1 ]; then
     pfatal "usage: $0 command [arguments]"
 fi
 
+if [ -z $(which perl) ]; then
+    pfatal "[ERROR]: perl is missing, you must install it first"
+fi
+
+if [ -z $(which strace) ]; then
+    pfatal "[ERROR]: strace is missing, you must install it first"
+fi
+
+# -y option greatly simplify processing of file descriptors
+strace -y -o /dev/null /bin/true 2> /dev/null
+if [ $? != 0 ]; then
+    version=$(strace -V)
+    pfatal "[ERROR]: strace version >= 4.7 is required, current: $version"
+fi
+
 trap 'pfatal "Execution was interrupted"' INT
 
 relmkdir () {
@@ -126,21 +141,6 @@ duplicate () {
         fi
     fi
 }
-
-if [ -z $(which perl) ]; then
-    pfatal "[ERROR]: perl is missing, you must install it first"
-fi
-
-if [ -z $(which strace) ]; then
-    pfatal "[ERROR]: strace is missing, you must install it first"
-fi
-
-# -y option greatly simplify processing of file descriptors
-strace -y -o /dev/null /bin/true 2> /dev/null
-if [ $? != 0 ]; then
-    version=$(strace -V)
-    pfatal "[ERROR]: strace version >= 4.7 is required, current: $version"
-fi
 
 rm -rf $dump
 mkdir -p $dump
