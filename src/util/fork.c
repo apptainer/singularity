@@ -417,7 +417,7 @@ int singularity_fork_daemonize() {
     if ( child == 0 ) {
         return(0);
     } else if ( child > 0 ) {
-        singularity_message(DEBUG, "Successfully spawned daemon, terminating");
+        singularity_message(DEBUG, "Successfully spawned daemon, terminating\n");
 
         /* In the future, code will go here to execute action.c workflow for startscript */
         exit(0);
