@@ -73,6 +73,7 @@ int main(int argc, char **argv) {
     while(1) {
         singularity_message(LOG, "Logging from inside daemon\n");
         sleep(60);
+        break;
     }
     
     return(0);
