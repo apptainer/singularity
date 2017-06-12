@@ -69,6 +69,7 @@ int main(int argc, char **argv) {
     singularity_priv_drop();
 
     singularity_registry_set("UNSHARE_PID", "1");
+    singularity_cleanupd();
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_sessiondir();
