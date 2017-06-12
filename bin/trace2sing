@@ -305,7 +305,7 @@ done;
 echo "Tracing execution of '$cmdline'"
 
 strace -qq -v -f -y \
-       -e trace=open,execve,chdir,fchdir,openat,oldstat,stat,stat64 \
+       -e trace=$syscalls \
        -s 256 \
        -e abbrev=none \
        -o $fifo \
