@@ -59,6 +59,10 @@ if [ -z $(which strace) ]; then
     pfatal "[ERROR]: strace is missing, you must install it first"
 fi
 
+if [ -z $(which sed) ]; then
+    pfatal "[ERROR]: sed is missing, you must install it first"
+fi
+
 # -y option greatly simplify processing of file descriptors
 strace -y -o /dev/null /bin/true 2> /dev/null
 if [ $? != 0 ]; then
@@ -66,14 +70,33 @@ if [ $? != 0 ]; then
     pfatal "[ERROR]: strace version >= 4.7 is required, current: $version"
 fi
 
+syscalls=open,execve,chdir,fchdir,openat,oldstat,stat,stat64
+
+strace -e trace=execveat -o /dev/null /bin/true 2> /dev/null
+if [ $? = 0 ]; then
+    syscalls="$syscalls,execveat"
+fi
+
 trap 'pfatal "Execution was interrupted"' INT
+
+split_path () {
+    path=${1%*/}
+    split=""
+    if [ "$path" != "${path#/}" ]; then
+        while [ "$path" != "" ]; do
+            split="$path $split"
+            path=${path%/*}
+        done
+    fi
+    echo $split
+}
 
 relmkdir () {
     rdir=$(readlink -f $1)
     dir=$1
     if [ "$rdir" != "$dir" ]; then
-        echo "$dir" | awk "$awk_script" | while read path; do
-            if [ ! -e $dump/$path ]; then
+        for path in $(split_path $dir); do
+            if [ ! -e $dump$path ]; then
                 if [ -L $path ]; then
                     relmkdir $(readlink -f $path)
                     cp -a $path $dump$path 2> /dev/null
@@ -147,19 +170,6 @@ mkdir -p $dump
 
 mkfifo -m 0600 $fifo
 
-awk_script=$(cat <<'AWK'
-{
-    n = split($0, test, "/");
-    for(i=2; i<=n; i++) {
-        for (j=2; j<=i; j++) {
-            printf "/%s",test[j];
-        }
-        printf "\n";
-    }
-}
-AWK
-)
-
 perl_script=$dump/t2s.pl
 
 # Parse and remove duplicate files
@@ -187,23 +197,29 @@ my %pids;
 my %files;
 
 while (<$fifo_fh>) {
-    if ($_ =~ /([0-9]+)(.*)?\b(open|openat|execve|chdir|fchdir|oldstat|stat|stat64)\b\((.*)/) {
+    if ($_ =~ /([0-9]+)(.*)?\b(open|openat|execve|execveat|chdir|fchdir|oldstat|stat|stat64)\b\((.*)/) {
         my $pid = $1;
         my $syscall = $3;
         if (!$pids{$pid}) {
             $pids{$pid} = $current;
         }
-        if ($4 =~ /(.*)\)\s*=\s*([^-][0-9]+)/) {
+        if ($4 =~ /(.*)(\)\s*=\s*([^-][0-9]+)|<unfinished)/) {
             my $content = $1;
             my $filename = "";
-            if ($syscall eq "execve") {
-                if ($1 =~ /"PWD=([^"]*)"/) {
+            if ($syscall eq "execve" || $syscall eq "execveat") {
+                if ($content =~ /"PWD=([^"]*)"/) {
                     $pids{$pid} = $1;
-                } elsif ($1 =~ /"OLDPWD=([^"]*)"/) {
+                } elsif ($content =~ /"OLDPWD=([^"]*)"/) {
                     $pids{$pid} = $1;
                 }
                 if ($content =~ /^"([^"]*)"/) {
-                    $filename = $1
+                    $filename = $1;
+                } elsif ($content =~ /^([0-9]+<(.*)>|AT_FDCWD)(.*)"(.*)"/) {
+                    if ($1 eq "AT_FDCWD") {
+                        $filename = $pids{$pid} . "/" . $4;
+                    } else {
+                        $filename = $2 . "/" . $4;
+                    }
                 }
                 $current = $pids{$pid};
             } elsif ($syscall eq "chdir") {
@@ -228,8 +244,12 @@ while (<$fifo_fh>) {
                 }
             } else {
                 if ($syscall eq "openat") {
-                    if ($content =~ /^[0-9]+<(.*)>/) {
-                        $filename = $1;
+                    if ($content =~ /^([0-9]+<(.*)>|AT_FDCWD)(.*)"(.*)"/) {
+                        if ($1 eq "AT_FDCWD") {
+                            $filename = $pids{$pid} . "/" . $4;
+                        } else {
+                            $filename = $2 . "/" . $4;
+                        }
                     }
                 } elsif ($content =~ /^"([^"]*)"/) {
                     $filename = $1;
@@ -243,50 +263,10 @@ while (<$fifo_fh>) {
                     }
                 }
             }
-        } else {
-            my $content = $4;
-            my $filename = "";
-            if ($syscall eq "execve") {
-                if ($content =~ /"PWD=([^"]*)"/) {
-                    $pids{$pid} = $1;
-                } elsif ($content =~ /"OLDPWD=([^"]*)"/) {
-                    $pids{$pid} = $1;
-                }
-                if ($content =~ /^"([^"]*)"/) {
-                    $filename = $1;
-                }
-                $current = $pids{$pid};
-            } elsif ($syscall eq "open") {
-                if ($content =~ /resumed(.*)=\s*([^-][0-9]+)(<(.*)>)?/) {
-                    $filename = $4;
-                }
-            } elsif ($syscall eq "chdir") {
-                if ($content =~ /^"([^"]*)"/) {
-                    my $first = substr $1, 0, 1;
-                    if ($first eq "/") {
-                        $pids{$pid} = $1;
-                    } else {
-                        $pids{$pid} = $pids{$pid} . "/" . $1;
-                    }
-                    $current = $pids{$pid};
-                }
-            } elsif ($syscall =~ /^(oldstat|stat|stat64)$/) {
-                if ($content =~ /^"([^"]*)"/) {
-                    $filename = $1;
-                }
-            }
-            if ($filename ne "") {
-                if (!($filename =~ /^(\/dev|\/proc|\/run|\/sys)/)) {
-                    if (!$files{$filename}) {
-                        $files{$filename} = 1;
-                        print $pids{$pid} . "#" . $filename . "\n";
-                    }
-                }
-            }
         }
-
     }
 }
+
 close $fifo_fh;
 exit(0);
 PERL
