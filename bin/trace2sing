@@ -70,7 +70,8 @@ if [ $? != 0 ]; then
     pfatal "[ERROR]: strace version >= 4.7 is required, current: $version"
 fi
 
-syscalls=open,execve,chdir,fchdir,openat,oldstat,stat,stat64
+# syscalls to trace
+syscalls="open,execve,chdir,fchdir,openat,oldstat,stat,stat64"
 
 strace -e trace=execveat -o /dev/null /bin/true 2> /dev/null
 if [ $? = 0 ]; then
