@@ -20,12 +20,12 @@
 LC_ALL="C"
 export LC_ALL
 
-current=$(pwd)
-saved=$current
+current="$(pwd)"
 
-dump=$(mktemp -d)
-fifo=$(mktemp -u)
-pid=0
+dump="$(mktemp -d)"
+fifo="$(mktemp -u)"
+perl_script="$dump/t2s.pl"
+pid="0"
 
 if [ -z "$TRACE2SING_OUTPUT" ]; then
     output="singrun.img"
@@ -34,15 +34,18 @@ else
 fi
 
 pfatal () {
-    echo $1 >&2
+    echo "$1" >&2
     if [ -e "/proc/$pid/exe" ]; then
-        kill -9 $pid
+        kill -9 "$pid"
     fi
     if [ -e "$fifo" ]; then
-        rm -f $fifo
+        rm -f "$fifo"
     fi
     if [ -e "$dump" ]; then
-        rm -rf $dump
+        rm -rf "$dump"
+    fi
+    if [ -e "$perl_script" ]; then
+        rm -f "$perl_script"
     fi
     exit 1
 }
@@ -51,22 +54,22 @@ if [ $# -lt 1 ]; then
     pfatal "usage: $0 command [arguments]"
 fi
 
-if [ -z $(which perl) ]; then
+if [ -z "$(which perl)" ]; then
     pfatal "[ERROR]: perl is missing, you must install it first"
 fi
 
-if [ -z $(which strace) ]; then
+if [ -z "$(which strace)" ]; then
     pfatal "[ERROR]: strace is missing, you must install it first"
 fi
 
-if [ -z $(which sed) ]; then
+if [ -z "$(which sed)" ]; then
     pfatal "[ERROR]: sed is missing, you must install it first"
 fi
 
 # -y option greatly simplify processing of file descriptors
 strace -y -o /dev/null /bin/true 2> /dev/null
 if [ $? != 0 ]; then
-    version=$(strace -V)
+    version="$(strace -V)"
     pfatal "[ERROR]: strace version >= 4.7 is required, current: $version"
 fi
 
@@ -81,28 +84,28 @@ fi
 trap 'pfatal "Execution was interrupted"' INT
 
 split_path () {
-    path=${1%*/}
+    path="${1%*/}"
     split=""
     if [ "$path" != "${path#/}" ]; then
         while [ "$path" != "" ]; do
             split="$path $split"
-            path=${path%/*}
+            path="${path%/*}"
         done
     fi
-    echo $split
+    echo "$split"
 }
 
 relmkdir () {
-    rdir=$(readlink -f $1)
-    dir=$1
+    rdir="$(readlink -f $1)"
+    dir="$1"
     if [ "$rdir" != "$dir" ]; then
-        for path in $(split_path $dir); do
-            if [ ! -e $dump$path ]; then
-                if [ -L $path ]; then
-                    relmkdir $(readlink -f $path)
-                    cp -a $path $dump$path 2> /dev/null
+        for path in "$(split_path $dir)"; do
+            if [ ! -e "$dump$path" ]; then
+                if [ -L "$path" ]; then
+                    relmkdir "$(readlink -f $path)"
+                    cp -a "$path" "$dump$path" 2> /dev/null
                 else
-                    mkdir $dump$path 2> /dev/null
+                    mkdir "$dump$path" 2> /dev/null
                 fi
             fi
         done
@@ -112,69 +115,64 @@ relmkdir () {
         else
             d="$dump/$dir"
         fi
-        mkdir -p $d 2> /dev/null
+        mkdir -p "$d" 2> /dev/null
     fi
 }
 
 copy () {
-    relmkdir $(dirname $1)
+    relmkdir "$(dirname $1)"
     if [ "$1" != "${1#/}" ]; then
         filename="$dump$1"
     else
         filename="$dump/$1"
     fi
-    cp -a $1 $filename 2> /dev/null
+    cp -a "$1" "$filename" 2> /dev/null
 
     # take shebang script into account
     # as it's executed by kernel ... no trace
-    line=$(sed -n '1{s/^#![[:blank:]]*//p;q}' $1 2> /dev/null)
+    line="$(sed -n '1{s/^#![[:blank:]]*//p;q}' $1 2> /dev/null)"
     if [ ! -z "$line" ]; then
-        duplicate ${line% *}
+        duplicate "${line% *}"
     fi
 }
 
 duplink () {
-    copy $(readlink -f $1)
-    copy $1
-    target=$(readlink $1)
+    copy "$(readlink -f $1)"
+    copy "$1"
+    target="$(readlink $1)"
     if [ "$target" != "${target#/}" ]; then
-        linkval=$target
+        linkval="$target"
     else
         linkval="$(dirname $1)/$target"
     fi
-    copy $linkval
-    if [ -L $linkval ]; then
-        duplicate $linkval
+    copy "$linkval"
+    if [ -L "$linkval" ]; then
+        duplicate "$linkval"
     fi
 }
 
 duplicate () {
-    if [ -e $1 ]; then
-        if [ -d $1 ]; then
-            relmkdir $1
-        elif [ -f $1 ]; then
-            if [ -L $1 ]; then
-                duplink $1
+    if [ -e "$1" ]; then
+        if [ -d "$1" ]; then
+            relmkdir "$1"
+        elif [ -f "$1" ]; then
+            if [ -L "$1" ]; then
+                duplink "$1"
             else
-                file=$(readlink -f $1)
+                file="$(readlink -f $1)"
                 if [ "$1" != "$file" ]; then
-                    copy $file
+                    copy "$file"
                 fi
-                copy $1
+                copy "$1"
             fi
         fi
     fi
 }
 
-rm -rf $dump
-mkdir -p $dump
-
-mkfifo -m 0600 $fifo
-
-perl_script=$dump/t2s.pl
+mkfifo -m 0600 "$fifo"
 
 # Parse and remove duplicate files
-cat > $perl_script << 'PERL'
+cat > "$perl_script" << 'PERL'
 use strict;
 use warnings;
 
@@ -272,18 +270,18 @@ close $fifo_fh;
 exit(0);
 PERL
 
-perl $perl_script $fifo $saved $dump | while read line; do
-    current=${line%#*}
-    filepath=${line#*#}
+perl "$perl_script" "$fifo" "$current" "$dump" | while read line; do
+    current="${line%#*}"
+    filepath="${line#*#}"
 
     if [ "$filepath" != "${filepath#/}" ]; then
-        duplicate $filepath
+        duplicate "$filepath"
     else
-        duplicate $current"/"$filepath
+        duplicate "$current/$filepath"
     fi
 done &
 
-pid=$!
+pid="$!"
 
 cmdline=""
 for arg in "$@"; do
@@ -299,7 +297,7 @@ for arg in "$@"; do
     if [ "$cmdline" != "" ]; then
         cmdline="$cmdline $carg"
     else
-        cmdline="$cmdline$carg"
+        cmdline="$carg"
     fi
 done;
 
@@ -309,7 +307,7 @@ strace -qq -v -f -y \
        -e trace=$syscalls \
        -s 256 \
        -e abbrev=none \
-       -o $fifo \
+       -o "$fifo" \
        /bin/sh -c "$cmdline"
 
 status=$?
@@ -318,69 +316,67 @@ if [ $status = 0 ]; then
     echo "Generating self-extracting $output archive ... please wait"
 fi
 
-wait $pid
+wait "$pid"
 
-cd $saved
-rm -f $fifo
-rm -f $perl_script
+rm -f "$fifo"
+rm -f "$perl_script"
 
 if [ $status != 0 ]; then
     pfatal "[ERROR]: Failed to execute $cmdline"
 fi
 
-cd $dump
-install -d -m 0755 "dev"
-install -d -m 0755 "bin"
-install -d -m 0755 "boot"
-install -d -m 0755 "home"
-install -d -m 0755 "etc"
-install -d -m 0750 "root"
-install -d -m 0755 "proc"
-install -d -m 0755 "sys"
-install -d -m 0755 "run"
-install -d -m 1777 "tmp"
-install -d -m 1777 "var/tmp"
-install -d -m 0755 "realhome"
+install -d -m 0755 "$dump/dev"
+install -d -m 0755 "$dump/bin"
+install -d -m 0755 "$dump/boot"
+install -d -m 0755 "$dump/home"
+install -d -m 0755 "$dump/etc"
+install -d -m 0750 "$dump/root"
+install -d -m 0755 "$dump/proc"
+install -d -m 0755 "$dump/sys"
+install -d -m 0755 "$dump/run"
+install -d -m 1777 "$dump/tmp"
+install -d -m 1777 "$dump/var/tmp"
+install -d -m 0755 "$dump/realhome"
 
 if [ -z "$(which strings)" ]; then
-    loader=$(grep -m 1 -o -a -E "\/[0-9\/\.a-zA-Z_-]?+" /bin/sh)
+    loader="$(grep -m 1 -o -a -E "\/[0-9\/\.a-zA-Z_-]?+" /bin/sh)"
 else
-    loader=$(strings /bin/sh|head -n 1)
+    loader="$(strings /bin/sh|head -n 1)"
 fi
 
-duplicate $loader
-duplicate $HOME
-duplicate $saved
+duplicate "$loader"
+duplicate "$HOME"
+duplicate "$current"
 
-cat > .run << EOF
+cat > "$dump/.run" << EOF
 #!/bin/sh
 . /environment
-cd $saved
+cd $current
 $cmdline
 EOF
-chmod 0755 .run
+chmod 0755 "$dump/.run"
 
-cat > .exec << EOF
+cat > "$dump/.exec" << EOF
 #!/bin/sh
 . /environment
 exec "\$@"
 EOF
-chmod 0755 .exec
+chmod 0755 "$dump/.exec"
 
-cat > .shell << EOF
+cat > "$dump/.shell" << EOF
 #!/bin/sh
 . /environment
 exec \$SHELL "\$@"
 EOF
-chmod 0755 .shell
+chmod 0755 "$dump/.shell"
 
-echo -n "" > etc/resolv.conf
-echo -n "" > etc/hosts
-echo -n "" > etc/passwd
-echo -n "" > etc/group
-echo -n "" > etc/localtime
+echo -n "" > "$dump/etc/resolv.conf"
+echo -n "" > "$dump/etc/hosts"
+echo -n "" > "$dump/etc/passwd"
+echo -n "" > "$dump/etc/group"
+echo -n "" > "$dump/etc/localtime"
 
-cat > $saved/$output <<"EOF"
+cat > "$current/$output" <<"EOF"
 #!/bin/sh
 #
 # Generated by trace2sing: http://github.com/mesocentrefc/trace2sing
@@ -391,7 +387,7 @@ extract_archive () {
 }
 
 launch () {
-    saved=$(pwd)
+    current=$(pwd)
     cmd=$1
     directory=$(mktemp -d)
     root="$directory/singrun_rootfs"
@@ -407,7 +403,7 @@ launch () {
         singularity $cmd -w -H $HOME:/realhome $root
     fi
     code=$?
-    cd $saved
+    cd $current
     rm -rf $directory
     exit $code
 }
@@ -467,10 +463,10 @@ exit 0
 #EOF#
 EOF
 
-tar -czf - . >> $saved/$output
+cd "$dump"
+tar -czf - . >> "$current/$output"
+cd "$current"
 
-chmod 0755 $saved/$output
+chmod 0755 "$current/$output"
 
-cd $saved
-
-rm -rf $dump
+rm -rf "$dump"
