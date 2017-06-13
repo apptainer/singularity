@@ -28,6 +28,9 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -49,12 +52,15 @@
 #endif
 
 
-
 int main(int argc, char **argv) {
-    int i;
+    int i, host_pid;
+    ssize_t bufsize = 2048;
+    char *daemon_file;
+    char *host_pid_str = malloc(bufsize);
     
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
+    daemon_registry_path(argv[1]);
 
     /* Fork into sinit daemon inside PID NS */
     singularity_fork_daemonize();
@@ -69,6 +75,17 @@ int main(int argc, char **argv) {
     }
     
     singularity_message(LOG, "Successfully closed fd's, entering daemon loop\n");
+
+    /* Calling readlink on /proc/self returns the PID of the thread in the host PID NS */
+    if ( readlink("/proc/self", host_pid_str, bufsize) == -1 ) {
+        singularity_message(LOG, "Unable to open /proc/self: %s\n", strerror(errno));
+    } else {
+        singularity_message(LOG, "PID in host namespace: %d\n", host_pid_str);
+        host_pid = atoi(host_pid_str);
+    }
+
+    daemon_file = singularity_registry_get("DAEMON_FILE");
+    fileput(daemon_file, host_pid_str);
 
     while(1) {
         singularity_message(LOG, "Logging from inside daemon\n");
