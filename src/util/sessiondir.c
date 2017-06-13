@@ -46,6 +46,10 @@
 
 
 int singularity_sessiondir(void) {
+    /* If a daemon already exists, skip this function */
+    if( singularity_registry_get("DAEMON") == 1 )
+        return(0);
+    
     char *sessiondir = NULL;
     char *sessiondir_size_str = NULL;
     long int sessiondir_size = 0;
