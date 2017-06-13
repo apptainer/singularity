@@ -55,21 +55,24 @@ int main(int argc, char **argv) {
     char *target_pwd = NULL;
     char *command = NULL;
 
-    char **exec_arg = malloc(sizeof(char *) * 2);
+    char **exec_arg = malloc(sizeof(char *) * 3);
     exec_arg[0] = joinpath(LIBEXECDIR, "/singularity/bin/sinit"); //path to sinit binary
-    exec_arg[1] = '\0';
+    exec_arg[2] = '\0';
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     singularity_priv_init();
     singularity_suid_init(argv);
 
+    exec_arg[1] = int2str(singularity_priv_getuid());
+    
     singularity_registry_init();
     singularity_priv_userns();
     singularity_priv_drop();
 
     singularity_registry_set("UNSHARE_PID", "1");
     singularity_cleanupd();
+    
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_sessiondir();
