@@ -1,7 +1,9 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
+ * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
- * “Singularity” Copyright (c) 2016, The Regents of the University of California,
+ * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
@@ -27,55 +29,63 @@
 #include <string.h>
 #include <fcntl.h>  
 
-#include "lib/message.h"
-#include "lib/singularity.h"
+#include "util/message.h"
 #include "util/file.h"
 #include "util/util.h"
 
+#include "../image.h"
 
-#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
 #define BUFFER_SIZE (1024*1024)
 
-int singularity_image_expand(char *image, int size) {
+int _singularity_image_expand(struct image_object *image, long int size) {
     FILE *image_fp;
-    char *buff = (char *) malloc(BUFFER_SIZE);
-    memset(buff, '\255', BUFFER_SIZE);
-    long position;
-    int i;
+    int retval;
 
-    singularity_message(VERBOSE, "Expanding sparse image at: %s\n", image);
+    if ( image->fd <= 0 ) {
+        singularity_message(ERROR, "Can not check image with no FD associated\n");
+        ABORT(255);
+    }
 
-    singularity_message(DEBUG, "Opening image 'r+'\n");
-    if ( ( image_fp = fopen(image, "r+") ) == NULL ) { // Flawfinder: ignore
-        fprintf(stderr, "ERROR: Could not open image for writing %s: %s\n", image, strerror(errno));
-        free(buff);
-        return(-1);
+    if ( ( image_fp = fdopen(dup(image->fd), "w") ) == NULL ) {
+        singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
+        ABORT(255);
     }
 
     singularity_message(DEBUG, "Jumping to the end of the current image file\n");
     fseek(image_fp, 0L, SEEK_END);
-    position = ftell(image_fp);
+    long current = ftell(image_fp);
 
-    singularity_message(DEBUG, "Removing the footer from image\n");
-    if ( ftruncate(fileno(image_fp), position-1) < 0 ) {
-        fprintf(stderr, "ERROR: Failed truncating the marker bit off of image %s: %s\n", image, strerror(errno));
-        free(buff);
-        fclose(image_fp);
-        return(-1);
-    }
-    singularity_message(VERBOSE2, "Expanding image by %dMB\n", size);
-    for(i = 0; i < size; i++ ) {
-        if ( fwrite(buff, 1, BUFFER_SIZE, image_fp) < BUFFER_SIZE ) {
-            singularity_message(ERROR, "Failed allocating space to image: %s\n", strerror(errno));
-            ABORT(255);
+    singularity_message(VERBOSE2, "Growing image to %ldMB\n", size);
+    while ( 1 ) {
+        retval = posix_fallocate(singularity_image_fd(image), current, size * BUFFER_SIZE);
+
+        if ( retval == EINTR ) {
+            singularity_message(DEBUG, "fallocate was interrupted by a signal, trying again...\n");
+            continue;
+        } else {
+            break;
         }
     }
-    fprintf(image_fp, "0");
-    fclose(image_fp);
-    free(buff);
 
-    singularity_message(DEBUG, "Returning image_expand(%s, %d) = 0\n", image, size);
+    if ( retval != 0 ) {
+        switch ( retval ) {
+            case ENOSPC:
+                singularity_message(ERROR, "There is not enough to space to allocate the image\n");
+                break;
+            case EBADF:
+                singularity_message(ERROR, "The image file descriptor is not valid for writing\n");
+                break;
+            case EFBIG:
+                singularity_message(ERROR, "The image size was too big for the filesystem\n");
+                break;
+            case EINVAL:
+                singularity_message(ERROR, "The image size is invalid.\n");
+                break;
+        }
+        ABORT(255);
+    }
+
+    fclose(image_fp);
 
     return(0);
 }
-

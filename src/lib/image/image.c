@@ -1,7 +1,9 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
+ * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
- * “Singularity” Copyright (c) 2016, The Regents of the University of California,
+ * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
@@ -26,69 +28,86 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <libgen.h>
 
 #include "util/file.h"
 #include "util/util.h"
-#include "lib/message.h"
-#include "lib/singularity.h"
+#include "util/message.h"
+
+#include "./image.h"
+#include "./open/open.h"
+#include "./bind/bind.h"
+#include "./create/create.h"
+#include "./check/check.h"
+#include "./expand/expand.h"
+#include "./mount/mount.h"
+#include "./offset/offset.h"
 
 
-#define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
-#define MAX_LINE_LEN 2048
+// extern int singularity_image_expand(char *image, unsigned int size)
+//
+// extern int singularity_image_mount(char *mountpoint, unsigned int flags);
 
 
-int singularity_image_check(FILE *image_fp) {
-    char *line;
 
-    if ( image_fp == NULL ) {
-        singularity_message(ERROR, "Called singularity_image_check() with NULL image pointer\n");
+struct image_object singularity_image_init(char *path) {
+    struct image_object image;
+
+    if ( path == NULL ) {
+        singularity_message(ERROR, "No container image path defined\n");
         ABORT(255);
     }
 
-    singularity_message(VERBOSE3, "Checking file is a Singularity image\n");
-    rewind(image_fp);
+    image.path = strdup(path);
+    image.name = basename(strdup(path));
+    image.fd = -1;
+    image.loopdev = NULL;
+    image.id = NULL;
 
-    line = (char *)malloc(MAX_LINE_LEN);
-
-    // Get the first line from the config
-    if ( fgets(line, MAX_LINE_LEN, image_fp) == NULL ) {
-        singularity_message(ERROR, "Unable to read the first line of image: %s\n", strerror(errno));
-        ABORT(255);
-    }
-
-    singularity_message(DEBUG, "Checking if first line matches key\n");
-    if ( strcmp(line, LAUNCH_STRING) == 0 ) {
-        free(line);
-        singularity_message(VERBOSE2, "File is a valid Singularity image\n");
-    } else {
-        free(line);
-        singularity_message(VERBOSE, "File is not a valid Singularity image\n");
-        return(-1);
-    }
-
-    return(0);
+    return(image);
 }
 
-
-int singularity_image_offset(FILE *image_fp) {
-    int ret = 0;
-    int i = 0;
-
-    singularity_message(VERBOSE, "Calculating image offset\n");
-    rewind(image_fp);
-
-    for (i=0; i < 64; i++) {
-        int c = fgetc(image_fp); // Flawfinder: ignore
-        if ( c == EOF ) {
-            break;
-        } else if ( c == '\n' ) {
-            ret = i + 1;
-            singularity_message(VERBOSE2, "Found image at an offset of %d bytes\n", ret);
-            break;
-        }
-    }
-
-    singularity_message(DEBUG, "Returning image_offset(image_fp) = %d\n", ret);
-
-    return(ret);
+int singularity_image_fd(struct image_object *image) {
+    return(image->fd);
 }
+
+char *singularity_image_loopdev(struct image_object *image) {
+    return(image->loopdev);
+}
+
+char *singularity_image_name(struct image_object *image) {
+    return(image->name);
+}
+
+char *singularity_image_path(struct image_object *image) {
+    return(image->path);
+}
+
+int singularity_image_open(struct image_object *image, int open_flags) {
+    return(_singularity_image_open(image, open_flags));
+}
+
+int singularity_image_create(struct image_object *image, long int size) {
+    return(_singularity_image_create(image, size));
+}
+
+int singularity_image_expand(struct image_object *image, unsigned int size) {
+    return(_singularity_image_expand(image, size));
+}
+
+int singularity_image_check(struct image_object *image) {
+    return(_singularity_image_check(image));
+}
+
+int singularity_image_offset(struct image_object *image) {
+    return(_singularity_image_offset(image));
+}
+
+int singularity_image_bind(struct image_object *image) {
+    return(_singularity_image_bind(image));
+}
+
+int singularity_image_mount(struct image_object *image, char *mount_point) {
+    return(_singularity_image_mount(image, mount_point));
+}
+

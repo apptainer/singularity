@@ -1,8 +1,10 @@
 #!/bin/bash
 #
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+#
+# Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 #
@@ -26,9 +28,9 @@ if [ -z "${SINGULARITY_libexecdir:-}" ]; then
     exit 2
 fi
 
-if [ -z "${MESSAGELEVEL:-}" ]; then
-    echo "Warning: MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
-    MESSAGELEVEL=5
+if [ -z "${SINGULARITY_MESSAGELEVEL:-}" ]; then
+    echo "Warning: SINGULARITY_MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
+    SINGULARITY_MESSAGELEVEL=5
 fi
 
 if [ -z "${USER:-}" ]; then
@@ -55,14 +57,24 @@ message() {
             printf "ERROR: $MESSAGE" "$@" 1>&2
             tput -Txterm sgr0 2>/dev/null
         ;;
-        w|warn|warning|W|WARN|WARNING)
-            tput -Txterm setaf 3 2>/dev/null
-            printf "WARN: $MESSAGE" "$@" 1>&2
+        a|ABORT)
+            tput -Txterm setaf 1 2>/dev/null
+            printf "ABORT: $MESSAGE" "$@" 1>&2
             tput -Txterm sgr0 2>/dev/null
         ;;
-        [1-5])
-            if [ "$LEVEL" -le "$MESSAGELEVEL" ]; then
+        w|warn|warning|W|WARN|WARNING)
+            tput -Txterm setaf 3 2>/dev/null
+            printf "WARNING: $MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
+        1|INFO)
+            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@"
+            fi
+        ;;
+        [2-5]|VERBOSE|DEBUG)
+            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
+                printf "$MESSAGE" "$@" 1>&2
             fi
         ;;
     esac
@@ -125,7 +137,7 @@ singularity_section_args() {
 singularity_section_get() {
     SECTION="${1:-}"
     FILE="${2:-}"
-    if [ ! -x "$SINGULARITY_libexecdir/singularity/get-section" ]; then
+    if [ ! -x "$SINGULARITY_libexecdir/singularity/bin/get-section" ]; then
         message ERROR "Could not locate get-section program\n"
         exit 255
     fi
@@ -135,7 +147,7 @@ singularity_section_get() {
         exit 1
     fi
 
-    eval "$SINGULARITY_libexecdir/singularity/get-section" "$SECTION" "$FILE"
+    eval "$SINGULARITY_libexecdir/singularity/bin/get-section" "$SECTION" "$FILE"
 
     return 0
 }
@@ -146,7 +158,7 @@ ABORT() {
     if [ -z "$RETVAL" ]; then
         RETVAL=1
     fi
-    message ERROR "Aborting with RETVAL=$RETVAL\n"
+    message ABORT "Aborting with RETVAL=$RETVAL\n"
     exit $RETVAL
 }
 
@@ -176,6 +188,14 @@ cmd() {
     return $RETVAL
 }
 
+eval_abort() {
+    eval "$@"
+    RETVAL=$?
+    if [ $RETVAL -ne 0 ]; then
+        exit $RETVAL
+    fi
+    return 0
+}
 
 stest() {
     ERROR="${1:-}"

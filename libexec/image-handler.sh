@@ -1,8 +1,10 @@
 #!/bin/bash
 # 
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
@@ -51,60 +53,81 @@ case "$SINGULARITY_IMAGE" in
     ;;
     docker://*)
         NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
-        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
-        else
-            SINGULARITY_CACHEDIR_LOCAL="/tmp"
+
+        if [ -z "${SINGULARITY_LOCALCACHEDIR:-}" ]; then
+            SINGULARITY_LOCALCACHEDIR="/tmp"
         fi
-        if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
-            message ERROR "Failed to create container_dir\n"
+
+        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_LOCALCACHEDIR/.singularity-runtime.XXXXXXXX`; then
+            message ERROR "Failed to create temporary directory\n"
             ABORT 255
         fi
 
-        CONTAINER_DIR="$BASE_CONTAINER_DIR/$NAME"
-        if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Failed to create named container_dir\n"
+        SINGULARITY_ROOTFS="$SINGULARITY_TMPDIR/$NAME"
+        if ! mkdir -p "$SINGULARITY_ROOTFS"; then
+            message ERROR "Failed to create named SINGULARITY_ROOTFS=$SINGULARITY_ROOTFS\n"
             ABORT 255
         fi
 
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/cli.py --rootfs '$CONTAINER_DIR' --docker '$NAME'"; then
-            ABORT $?
-        fi
-        MESSAGELEVEL=0 SINGULARITY_ROOTFS="$CONTAINER_DIR" eval "$SINGULARITY_libexecdir/singularity/bootstrap/main.sh"
+        SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
+        SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
+        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
+        SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
 
-        chmod -R +w "$CONTAINER_DIR"
+        export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_CONTENTS SINGULARITY_CLEANUPDIR
 
-        SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_RUNDIR="$CONTAINER_DIR"
-        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+        eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+
+        message 1 "Creating container runtime...\n"
+        message 2 "Importing: base Singularity environment\n"
+        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
+         
+        for i in `cat "$SINGULARITY_CONTENTS"`; do
+            name=`basename "$i"`
+            message 2 "Exploding layer: $name\n"
+            ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -) || exit $? ) | while read file; do
+                if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
+                    # Skipping symlinks
+                    true
+                elif [ -f "$SINGULARITY_ROOTFS/$file" ]; then
+                    chmod u+rw "$SINGULARITY_ROOTFS/$file"
+                elif [ -d "$SINGULARITY_ROOTFS/$file" ]; then
+                    chmod u+rwx "$SINGULARITY_ROOTFS/${file%/}"
+                fi
+            done
+        done
+
+        rm -f "$SINGULARITY_CONTENTS"
+
     ;;
     shub://*)
-        NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^shub://@@'`
+        SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
 
         if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR_LOCAL="$SINGULARITY_CACHEDIR"
+            SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
         else
-            SINGULARITY_CACHEDIR_LOCAL="/tmp"
-        fi
-        if ! BASE_CONTAINER_DIR=`mktemp -d $SINGULARITY_CACHEDIR_LOCAL/singularity-container_dir.XXXXXXXX`; then
-            message ERROR "Failed to create container_dir\n"
-            ABORT 255
+            SINGULARITY_PULLFOLDER="."
         fi
 
-        CONTAINER_DIR="$BASE_CONTAINER_DIR/$NAME"
-        if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Failed to create named container_dir\n"
+        SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
+        export SINGULARITY_PULLFOLDER SINGULARITY_CONTAINER SINGULARITY_CONTENTS
+
+        if ! eval "$SINGULARITY_libexecdir/singularity/python/pull.py"; then
             ABORT 255
         fi
-
-        eval $SINGULARITY_libexecdir/singularity/python/cli.py --shub $NAME --rootfs $CONTAINER_DIR
 
         # The python script saves names to files in CONTAINER_DIR
-        SINGULARITY_RUNDIR=`cat $CONTAINER_DIR/SINGULARITY_RUNDIR`
-        SINGULARITY_IMAGE=`cat $CONTAINER_DIR/SINGULARITY_IMAGE`
-        chmod -R +w "$SINGULARITY_RUNDIR"
-        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+        SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
+        export SINGULARITY_IMAGE
 
+        rm -f "$SINGULARITY_CONTENTS"
+
+        if [ -f "$SINGULARITY_IMAGE" ]; then
+            chmod +x "$SINGULARITY_IMAGE"
+        else
+            message ERROR "Could not locate downloaded image\n"
+            ABORT 255
+        fi
     ;;
 esac
 
@@ -137,8 +160,8 @@ case "$SINGULARITY_IMAGE" in
         chmod -R +w "$CONTAINER_DIR"
 
         SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
     ;;
     *.cpio)
         NAME=`basename "$SINGULARITY_IMAGE"`
@@ -168,8 +191,8 @@ case "$SINGULARITY_IMAGE" in
         chmod -R +w "$CONTAINER_DIR"
 
         SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
     ;;
     *.tar)
         NAME=`basename "$SINGULARITY_IMAGE"`
@@ -199,8 +222,8 @@ case "$SINGULARITY_IMAGE" in
         chmod -R +w "$CONTAINER_DIR"
 
         SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
     ;;
     *.tgz|*.tar.gz)
         NAME=`basename "$SINGULARITY_IMAGE"`
@@ -231,8 +254,8 @@ case "$SINGULARITY_IMAGE" in
         chmod -R +w "$CONTAINER_DIR"
 
         SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
     ;;
     *.tbz|*.tar.bz)
         NAME=`basename "$SINGULARITY_IMAGE"`
@@ -262,8 +285,8 @@ case "$SINGULARITY_IMAGE" in
         chmod -R +w "$CONTAINER_DIR"
 
         SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_RUNDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_RUNDIR SINGULARITY_IMAGE
+        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
+        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
     ;;
 esac
 

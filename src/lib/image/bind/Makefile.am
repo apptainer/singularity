@@ -1,4 +1,4 @@
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in 
 DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ *.la
 
@@ -6,5 +6,7 @@ AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-noinst_LTLIBRARIES = libimagebind.la
-libimagebind_la_SOURCES = bind.c
+noinst_LTLIBRARIES = libinternal.la
+libinternal_la_SOURCES = bind.c
+
+EXTRA_DIST = bind.h

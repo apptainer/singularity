@@ -1,17 +1,39 @@
 #!/usr/bin/env python
+# 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+# 
+# Copyright (c) 2016, The Regents of the University of California, through
+# Lawrence Berkeley National Laboratory (subject to receipt of any required
+# approvals from the U.S. Dept. of Energy).  All rights reserved.
+# 
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
+# 
+# NOTICE.  This Software was developed under funding from the U.S. Department of
+# Energy and the U.S. Government consequently retains certain rights. As such,
+# the U.S. Government has been granted for itself and others acting on its
+# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+# to reproduce, distribute copies to the public, prepare derivative works, and
+# perform publicly and display publicly, and to permit other to do so. 
+# 
+# 
+
 
 import os
 import re
 import sys
 sys.path.append('../libexec/python')
 
-from utils import (
+from sutils import (
     get_fullpath,
     read_file,
     write_file
 )
 
-from logman import logger
+from message import bot
 import optparse
 
 
@@ -44,13 +66,13 @@ def get_parser():
 def main():
     '''parse configuration options and produce configuration output file
     '''
-    logger.info("\n*** STARTING PYTHON CONFIGURATION HELPER ****")
+    bot.info("\n*** STARTING PYTHON CONFIGURATION HELPER ****")
     parser = get_parser()
 
     try:
         (args,options) = parser.parse_args()
     except:
-        logger.error("Input args to %s improperly set, exiting.", os.path.abspath(__file__))
+        bot.error("Input args to %s improperly set, exiting." %os.path.abspath(__file__))
         parser.print_help()
         sys.exit(1)
 
@@ -112,7 +134,7 @@ def configure(args):
     write_file(outfile,data)
     os.rename(outfile, args.outfile)
 
-    logger.info("*** FINISHED PYTHON CONFIGURATION HELPER ****\n")
+    bot.info("*** FINISHED PYTHON CONFIGURATION HELPER ****\n")
 
 
 if __name__ == '__main__':

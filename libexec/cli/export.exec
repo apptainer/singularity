@@ -1,8 +1,10 @@
 #!/bin/bash
 # 
-# Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
-# “Singularity” Copyright (c) 2016, The Regents of the University of California,
+# Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
@@ -18,7 +20,6 @@
 # perform publicly and display publicly, and to permit other to do so. 
 # 
 # 
-
 
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
@@ -46,17 +47,10 @@ while true; do
             exit
         ;;
         -f|--file)
-            shift
-            SINGULARITY_EXPORT_FILE="${1:-}"
-            export SINGULARITY_EXPORT_FILE
-            shift
-        ;;
-        --command)
-            shift
-            SINGULARITY_EXPORT_COMMAND="${1:-}"
-            export SINGULARITY_EXPORT_COMMAND
-            shift
-        ;;
+             shift
+             SINGULARITY_EXPORT_FILE="${1:-}"
+             shift
+         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -81,9 +75,25 @@ SINGULARITY_IMAGE="${1:-}"
 export SINGULARITY_IMAGE
 shift
 
-
-exec "$SINGULARITY_libexecdir/singularity/simage" "mount" "$SINGULARITY_libexecdir/singularity/helpers/image-export.sh" "$@"
-
+if [ -n "${SINGULARITY_EXPORT_FILE:-}" ]; then
+	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
+		exec "$SINGULARITY_libexecdir/singularity/bin/export-suid" > "$SINGULARITY_EXPORT_FILE"
+	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
+		exec "$SINGULARITY_libexecdir/singularity/bin/export" > "$SINGULARITY_EXPORT_FILE" 
+	else
+	    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
+	    exit 1
+	fi
+else
+	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
+    	    exec "$SINGULARITY_libexecdir/singularity/bin/export-suid"
+	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
+    	    exec "$SINGULARITY_libexecdir/singularity/bin/export"
+	else
+    	message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
+    	exit 1
+	fi
+fi
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
 exit 255

@@ -1,7 +1,9 @@
 /* 
- * Copyright (c) 2015-2016, Gregory M. Kurtzer. All rights reserved.
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
+ * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
- * “Singularity” Copyright (c) 2016, The Regents of the University of California,
+ * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
  * 
@@ -21,6 +23,8 @@
 
 char *file_id(char *path);
 char *file_devino(char *path);
+int chk_perms(char *path, mode_t mode);
+int chk_mode(char *path, mode_t mode);
 int is_file(char *path);
 int is_fifo(char *path);
 int is_link(char *path);
