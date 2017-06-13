@@ -98,12 +98,20 @@ class SingularityApiConnection(ApiConnection):
         # If we eventually have private images, need to authenticate here       
         # --------------------------------------------------------------- 
 
-        response = self.get(base)
+        # If the Hub returns 404, the image name is likely wrong
+        response = self.get(base,return_response=True)
+        if response.code == 404:
+            bot.error("Cannot find image %s. Is your capitalization correct?" %image)
+            sys.exit(1)
+
         try:
+            response = response.read().decode('utf-8')
             response = json.loads(response)
+
         except:
             print("Error getting image manifest using url %s" %(base))
             sys.exit(1)
+
         return response
 
 
