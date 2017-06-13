@@ -76,7 +76,7 @@ while true; do
         ;;
         -B|--bind)
             shift
-            SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
+            SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH:-},${1:-}"
             export SINGULARITY_BINDPATH
             shift
         ;;
