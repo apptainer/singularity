@@ -53,6 +53,29 @@ class TestApi(TestCase):
 
 
 
+    def test_get_registry(self):
+        '''test_get_registry will verify that the function returns the api base
+        with https (default) and verison (default)
+        '''
+        from docker.api import DockerApiConnection
+
+        print("Case 1: Ask for default registry")
+        registry = self.client.get_registry()
+        self.assertEqual(registry,"https://index.docker.io/v2")
+
+        print("Case 2: Remove https")
+        registry = self.client.get_registry(add_https=False)
+        self.assertEqual(registry,"index.docker.io/v2")
+
+        print("Case 3: Remove version")
+        registry = self.client.get_registry(add_version=False)
+        self.assertEqual(registry,"https://index.docker.io")
+
+        print("Case 4: Remove everything")
+        registry = self.client.get_registry(add_version=False,add_https=False)
+        self.assertEqual(registry,"index.docker.io")
+
+
     def test_get_token(self):
         '''test_get_token will obtain a token from the Docker registry for a namepspace
         and repo. 

@@ -96,14 +96,14 @@ if COLORIZE is not None:
 # Cache
 #######################################################################
 
+USERHOME = pwd.getpwuid(os.getuid())[5]
 DISABLE_CACHE = convert2boolean(getenv("SINGULARITY_DISABLE_CACHE",
                                 default=False))
 
 if DISABLE_CACHE == True:
     SINGULARITY_CACHE = tempfile.mkdtemp()
 else:
-    userhome = pwd.getpwuid(os.getuid())[5]
-    _cache = os.path.join(userhome,".singularity") 
+    _cache = os.path.join(USERHOME,".singularity") 
     SINGULARITY_CACHE = getenv("SINGULARITY_CACHEDIR", default=_cache)
 
 if not os.path.exists(SINGULARITY_CACHE):
