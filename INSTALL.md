@@ -9,7 +9,22 @@ Hat compatible system (apply similar to Debian derivitives):
 $ sudo yum groupinstall "Development Tools"
 ```
 
-## To compile and install Singularity from source:
+
+## To compile and install Singularity from a released tarball:
+Assuming a 2.3 released tarball...
+```
+$ wget "https://github.com/singularityware/singularity/releases/download/2.3/singularity-2.3.tar.gz"
+$ tar -xvzf singularity-2.3.tar.gz
+$ cd singularity-2.3
+$ ./configure --prefix=/path/to/singularity
+$ make
+$ sudo make install
+```
+
+note: The `sudo` is very important for the `make install`. Failure to do this
+will result in a non-functioning or semi-functioning installation.
+
+## To compile and install Singularity from a Git clone:
 
 ```
 $ git clone https://github.com/singularityware/singularity.git
@@ -23,7 +38,7 @@ $ sudo make install
 note: The `sudo` is very important for the `make install`. Failure to do this
 will result in a non-functioning or semi-functioning installation.
 
-## To build an RPM of Singularity
+## To build an RPM of Singularity from a Git clone:
 
 ```
 $ git clone https://github.com/singularityware/singularity.git
