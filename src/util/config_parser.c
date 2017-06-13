@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -140,7 +142,7 @@ int singularity_config_parse(char *config_path) {
                 chomp(fname_glob);
                 singularity_message(DEBUG, "Parsing '%%include %s' directive.\n", fname_glob);
                 glob_t glob_results;
-                int err = glob(fname_glob, GLOB_TILDE, log_glob_error, &glob_results);
+                int err = glob(fname_glob, 0, log_glob_error, &glob_results);
                 if (err == GLOB_NOSPACE) {
                     singularity_message(ERROR, "Failed to evaluate '%%include %s' due to running out of memory.\n", fname_glob);
                     ABORT(255);

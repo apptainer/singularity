@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -56,6 +58,14 @@ static void message_init(void) {
 
 }
 
+
+int singularity_message_level(void) {
+    if ( messagelevel == -1 ) {
+        message_init();
+    }
+
+    return(messagelevel);
+}
 
 void _singularity_message(int level, const char *function, const char *file_in, int line, char *format, ...) {
     const char *file = file_in;

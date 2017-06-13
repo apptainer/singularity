@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -51,7 +53,7 @@ int _singularity_image_mount(struct image_object *image, char *mount_point) {
         ABORT(255);
     }
 
-    if ( chk_mode(mount_point, 0040755) != 0 ) {
+    if ( chk_mode(mount_point, 0040755, 0007000) != 0 ) {
         int ret;
         singularity_message(DEBUG, "fixing bad permissions on %s\n", mount_point);
 

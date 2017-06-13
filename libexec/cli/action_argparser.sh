@@ -1,5 +1,7 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
@@ -74,7 +76,7 @@ while true; do
         ;;
         -B|--bind)
             shift
-            SINGULARITY_BINDPATH="${1:-},${SINGULARITY_BINDPATH:-}"
+            SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH:-},${1:-}"
             export SINGULARITY_BINDPATH
             shift
         ;;
@@ -128,6 +130,16 @@ while true; do
                 message WARN "Could not find any Nvidia libraries on this host!\n";
             else
                 export SINGULARITY_CONTAINLIBS
+            fi
+            if NVIDIA_SMI=`which nvidia-smi`; then
+                if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
+                    SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${NVIDIA_SMI}"
+                else
+                    SINGULARITY_BINDPATH="${NVIDIA_SMI}"
+                fi
+                export SINGULARITY_BINDPATH
+            else
+                message WARN "Could not find the Nvidia SMI binary to bind into container\n"
             fi
         ;;
         -*)

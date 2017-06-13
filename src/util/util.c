@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -104,7 +106,7 @@ int envar_defined(char *name) {
 
 char *envar_path(char *name) {
     singularity_message(DEBUG, "Checking environment variable is valid path: '%s'\n", name);
-    return(envar_get(name, "/._+-=,:", PATH_MAX));
+    return(envar_get(name, "/._+-=,:@", PATH_MAX));
 }
 
 int envar_set(char *key, char *value, int overwrite) {

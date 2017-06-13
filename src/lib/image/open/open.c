@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -62,11 +64,8 @@ int _singularity_image_open(struct image_object *image, int open_flags) {
         singularity_message(ERROR, "Could not open image %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
-
-    if ( fcntl(image->fd, F_SETFD, FD_CLOEXEC) != 0 ) {
-        singularity_message(ERROR, "Could not set file descriptor flag to close on exit: %s\n", strerror(errno));
-        ABORT(255);
-    }
+    // Do not CLOEXEC the image file descriptor, as we want to make sure we are
+    // holding onto it when we are running contained processes.
 
     if ( fstat(image->fd, &imagestat) < 0 ) {
         singularity_message(ERROR, "Failed calling fstat() on %s (fd: %d): %s\n", image->path, image->fd, strerror(errno));

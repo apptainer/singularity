@@ -1,10 +1,12 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
-# "Singularity" Copyright (c) 2016, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+# Copyright (c) 2016, The Regents of the University of California, through
+# Lawrence Berkeley National Laboratory (subject to receipt of any required
+# approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
 # This software is licensed under a customized 3-clause BSD license.  Please
 # consult LICENSE file distributed with the sources of this project regarding
