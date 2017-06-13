@@ -39,25 +39,30 @@
 
 
 void daemon_registry_init(void) {
-    char *host_uid, *image_devino, *daemon_path;
+    daemon_registry_path(singularity_priv_getuid());
+    
+    if( is_file(singularity_registry_get("DAEMON_FILE")) ) {
+        singularity_registry_set("DAEMON", "1");
+    }
+}
+
+void daemon_registry_path(char *host_uid) {
+    char *image_devino, *daemon_path;
     
     /* Build string with daemon file location */
     image_name = singularity_registry_get("IMAGE");
-    host_uid = int2str(singularity_priv_getuid());
     image_devino = file_devino(image_name);
     
     daemon_path_len = strlength("/tmp/.singularity-daemon-") + strlength(host_uid) +
-        strlength(image_devino) + strlength(image_name);
-    daemon_path = (char *)malloc((daemon_path_len + 3) * sizeof(char)); //+3 for "/", "-", "\0"
-    snprintf(daemon_path, daemon_path_len + 3, "/tmp/.singularity-daemon-%s/%s-%s",
+        strlength(image_devino) + strlength(image_name) + 3; //+3 for "/", "-", "\0"
+    
+    daemon_path = (char *)malloc((daemon_path_len) * sizeof(char)); 
+    snprintf(daemon_path, daemon_path_len, "/tmp/.singularity-daemon-%s/%s-%s",
              host_uid, image_devino, image_name);
 
-    if( is_file(daemon_path) ) {
-        singularity_registry_set("DAEMON", "1");
-        singularity_registry_set("DAEMON_INFO_FILE", daemon_path);
-    }
-
-    free(host_uid);
+    /* Store daemon_file string in registry as DAEMON_FILE */
+    singularity_registry_set("DAEMON_FILE", daemon_path);
+    
     free(image_name);
     free(dev_ino);
     free(daemon_path);
