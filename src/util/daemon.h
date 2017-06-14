@@ -12,7 +12,7 @@
 #ifndef __DAEMON_H_
 #define __DAEMON_H_
 
-    void daemon_registry_init(void);
-    void daemon_registry_path(char *host_uid);
+    void daemon_join(void);
+    void daemon_path(char *host_uid);
 
 #endif
