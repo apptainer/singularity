@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -35,6 +36,7 @@
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
+#include "util/daemon.h"
 #include "util/registry.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
@@ -60,7 +62,7 @@ int main(int argc, char **argv) {
     
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
-    daemon_registry_path(argv[1]);
+    daemon_path(argv[1]);
 
     /* Fork into sinit daemon inside PID NS */
     singularity_fork_daemonize();
@@ -80,11 +82,17 @@ int main(int argc, char **argv) {
     if ( readlink("/proc/self", host_pid_str, bufsize) == -1 ) {
         singularity_message(LOG, "Unable to open /proc/self: %s\n", strerror(errno));
     } else {
-        singularity_message(LOG, "PID in host namespace: %d\n", host_pid_str);
+        singularity_message(LOG, "PID in host namespace: %s\n", host_pid_str);
         host_pid = atoi(host_pid_str);
     }
 
+    /* Get pathname of daemon information file */
     daemon_file = singularity_registry_get("DAEMON_FILE");
+
+    /* Check if /tmp/.singularity-daemon-[UID]/ directory exists, if not create it */
+    if( is_dir(dirname(singularity_registry_get("DAEMON_FILE"))) == -1 )
+        s_mkpath(dirname(singularity_registry_get("DAEMON_FILE")), 0755);
+    
     fileput(daemon_file, host_pid_str);
 
     while(1) {
