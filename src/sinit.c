@@ -73,9 +73,10 @@ int main(int argc, char **argv) {
 
     /* Calling readlink on /proc/self returns the PID of the thread in the host PID NS */
     if ( readlink("/proc/self", host_pid_str, bufsize) == -1 ) {
-        singularity_message(LOG, "Unable to open /proc/self: %s\n", strerror(errno));
+        singularity_message(ERROR, "Unable to open /proc/self: %s\n", strerror(errno));
+        ABORT(255);
     } else {
-        singularity_message(LOG, "PID in host namespace: %s\n", host_pid_str);
+        singularity_message(DEBUG, "PID in host namespace, from /proc/self: %s\n", host_pid_str);
         host_pid = atoi(host_pid_str);
     }
 
@@ -90,10 +91,13 @@ int main(int argc, char **argv) {
     i = filelock(daemon_file, daemon_file_fd);
 
     if( i == 0 ) {
-        /* Successfully obtained lock */
-        /* Write [PID] to daemon file */
-        fileput(daemon_file, host_pid_str);
-    } else if( lock_result == EALREADY ) {
+        singularity_message(DEBUG, "Successfully obtained excluse lock on %s\n", daemon_file);
+        
+        /* Successfully obtained lock, write [PID] to open fd */
+        if( write(*daemon_file_fd, host_pid_str, strlength(host_pid_str, 2048) + 1) == -1 ) {
+            singularity_message(ERROR, "Unable to write to %s: %s\n", daemon_file, strerror(errno));
+        }
+    } else if( i == EALREADY ) {
         /* Another daemon controls this file already */
         singularity_message(ERROR, "Daemon already exists: %s\n", strerror(errno));
         ABORT(255);
