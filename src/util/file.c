@@ -497,7 +497,7 @@ int filelock(const char *const filepath, int *const fdptr) {
 
     /* Open the file. */
     do {
-        fd = open(filepath, O_RDWR | O_CREAT, 0600);
+        fd = open(filepath, O_RDWR | O_CREAT, 0644);
     } while (fd == -1 && errno == EINTR);
     if (fd == -1) {
         if (errno == EALREADY)
