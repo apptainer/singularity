@@ -47,7 +47,7 @@ char *trigger = NULL;
 
 int singularity_cleanupd(void) {
     /* If a daemon already exists, skip this function */
-    if( singularity_registry_get("DAEMON") == 1 )
+    if( singularity_registry_get("DAEMON")  )
         return(0);
 
     char *cleanup_dir = singularity_registry_get("CLEANUPDIR");
