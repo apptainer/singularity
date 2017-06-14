@@ -52,7 +52,7 @@ mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util
 mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
 mount_CPPFLAGS = $(AM_CPPFLAGS)
 
-sinit_SOURCES = sinit.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c
+sinit_SOURCES = sinit.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c
 sinit_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 sinit_CPPFLAGS = $(AM_CPPFLAGS)
 
