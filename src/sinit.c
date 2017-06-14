@@ -56,6 +56,7 @@
 
 int main(int argc, char **argv) {
     int i, host_pid;
+    int *daemon_file_fd = malloc(sizeof(int));
     ssize_t bufsize = 2048;
     char *daemon_file;
     char *host_pid_str = malloc(bufsize);
@@ -69,14 +70,6 @@ int main(int argc, char **argv) {
 
     /* After this point, we are running as PID 1 inside PID NS */
     singularity_message(DEBUG, "Preparing sinit daemon\n");
-    
-    /* Close all open fd's that may be present */
-    singularity_message(DEBUG, "Closing open fd's\n");
-    for( i = sysconf(_SC_OPEN_MAX); i >= 0; i-- ) {
-        close(i);
-    }
-    
-    singularity_message(LOG, "Successfully closed fd's, entering daemon loop\n");
 
     /* Calling readlink on /proc/self returns the PID of the thread in the host PID NS */
     if ( readlink("/proc/self", host_pid_str, bufsize) == -1 ) {
@@ -92,9 +85,32 @@ int main(int argc, char **argv) {
     /* Check if /tmp/.singularity-daemon-[UID]/ directory exists, if not create it */
     if( is_dir(dirname(singularity_registry_get("DAEMON_FILE"))) == -1 )
         s_mkpath(dirname(singularity_registry_get("DAEMON_FILE")), 0755);
-    
-    fileput(daemon_file, host_pid_str);
 
+    /* Attempt to open lock on daemon file */
+    i = filelock(daemon_file, daemon_file_fd);
+
+    if( i == 0 ) {
+        /* Successfully obtained lock */
+        /* Write [PID] to daemon file */
+        fileput(daemon_file, host_pid_str);
+    } else if( lock_result == EALREADY ) {
+        /* Another daemon controls this file already */
+        singularity_message(ERROR, "Daemon already exists: %s\n", strerror(errno));
+        ABORT(255);
+    } else {
+        singularity_message(ERROR, "Cannot lock %s: %s\n", daemon_file, strerror(errno));
+        ABORT(255);
+    }
+    
+    /* Close all open fd's that may be present besides daemon info file fd */
+    singularity_message(DEBUG, "Closing open fd's\n");
+    for( i = sysconf(_SC_OPEN_MAX); i >= 0; i-- ) {
+        if( i != *daemon_file_fd )
+            close(i);
+    }
+    
+    singularity_message(LOG, "Successfully closed fd's, entering daemon loop\n");
+    
     while(1) {
         singularity_message(LOG, "Logging from inside daemon\n");
         sleep(60);
