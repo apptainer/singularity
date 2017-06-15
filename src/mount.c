@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
-    if ( is_owner(singularity_registry_get("MOUNTPOINT"), singularity_priv_getuid()) != 0 ) {
+    if ( ( singularity_priv_getuid() != 0 ) && ( is_owner(singularity_registry_get("MOUNTPOINT"), singularity_priv_getuid()) != 0 ) ) {
         singularity_message(ERROR, "You must own the mountpoint directory!\n");
         ABORT(255);
     }
