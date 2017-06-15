@@ -34,8 +34,10 @@ from shell import (
 
 from sutils import (
     add_http,
+    clean_up,
     is_number,
-    read_file
+    read_file,
+    run_command
 )
 
 from base import ApiConnection
@@ -142,9 +144,15 @@ class SingularityApiConnection(ApiConnection):
         if extract == True:
             if not bot.is_quiet():
                 print("Decompressing %s" %image_file)
-            os.system('gzip -d -f %s' %(image_file))
-            image_file = image_file.replace('.gz','')
-        return image_file
+            output = run_command(['gzip','-d','-f',image_file])
+            final_image = image_file.replace('.gz','')
+
+            # Any error in extraction (return code not 0) will return None
+            if output is None:
+                bot.error('Error extracting image, cleaning up.')
+                clean_up([image_file,final_image])
+
+        return final_image
 
 
 
