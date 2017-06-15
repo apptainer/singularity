@@ -89,7 +89,6 @@ int main(int argc, char **argv) {
     singularity_runtime_mounts();
     singularity_runtime_files();
     
-    action_ready(singularity_runtime_rootfs(NULL));
     singularity_runtime_enter();
     
     singularity_runtime_environment();
