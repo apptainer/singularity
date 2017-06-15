@@ -74,3 +74,31 @@ int _singularity_runtime_ns_pid(void) {
 
     return(0);
 }
+
+int _singularity_runtime_ns_pid_join(void) {
+    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+    int pid_fd;
+
+    /* Attempt to open /proc/[PID]/ns/pid */
+    pid_fd = openat(ns_fd, "pid", O_RDONLY);
+
+    if( pid_fd == -1 ) {
+        /* Daemons should always have a ns/pid file. If it doesn't exist, something is wrong */
+        singularity_message(ERROR, "Could not open PID NS fd: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    
+    singularity_priv_escalate();
+    singularity_message(DEBUG, "Attempting to join PID namespace\n");
+    if ( setns(pid_fd, 0) < 0 ) {
+        singularity_message(ERROR, "Could not join PID namespace: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    singularity_priv_drop();
+
+    /* Enable PID NS by forking into a child */
+    singularity_fork_run();
+    singularity_registry_set("PIDNS_ENABLED", "1");
+    
+    return(0);
+}
