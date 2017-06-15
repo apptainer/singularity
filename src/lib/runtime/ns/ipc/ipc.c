@@ -74,6 +74,29 @@ int _singularity_runtime_ns_ipc(void) {
     return(0);
 }
 
+int _singularity_runtime_ns_ipc_join(void) {
+    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+    int ipc_fd;
+
+    /* Attempt to open /proc/[PID]/ns/pid */
+    ipc_fd = openat(ns_fd, "ipc", O_RDONLY);
+
+    if( ipc_fd == -1 ) {
+        /* If no IPC file exists, continue without IPC NS */
+        singularity_message(WARNING, "Skipping IPC namespace creation, support not available on host\n");
+        return(0);
+    }
+    
+    singularity_priv_escalate();
+    singularity_message(DEBUG, "Attempting to join IPC namespace\n");
+    if ( setns(ipc_fd, 0) < 0 ) {
+        singularity_message(ERROR, "Could not join IPC namespace: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    singularity_priv_drop();
+
+    return(0);
+}
 
 /*
 int singularity_ns_ipc_enabled(void) {
