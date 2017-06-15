@@ -71,9 +71,7 @@ SINGULARITY_IMAGE="${1:-}"
 export SINGULARITY_IMAGE
 shift
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/copy-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/copy-suid" "$@"
-elif [ -x "$SINGULARITY_libexecdir/singularity/bin/copy" ]; then
+if [ -x "$SINGULARITY_libexecdir/singularity/bin/copy" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/copy" "$@"
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/copy\n"
