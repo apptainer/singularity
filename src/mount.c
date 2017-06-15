@@ -69,7 +69,17 @@ int main(int argc, char **argv) {
     }
 
     if ( singularity_image_check(&image) != 0 ) {
-        singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
+        singularity_message(ERROR, "Mount is only allowed on Singularity image files\n");
+        ABORT(255);
+    }
+
+    if ( is_dir(singularity_registry_get("MOUNTPOINT")) != 0 ) {
+        singularity_message(ERROR, "Mount point is not a directory\n");
+        ABORT(255);
+    }
+
+    if ( is_owner(singularity_registry_get("MOUNTPOINT"), singularity_priv_getuid()) != 0 ) {
+        singularity_message(ERROR, "You must own the mountpoint directory!\n");
         ABORT(255);
     }
 
