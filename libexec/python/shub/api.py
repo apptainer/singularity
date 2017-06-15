@@ -145,14 +145,14 @@ class SingularityApiConnection(ApiConnection):
             if not bot.is_quiet():
                 print("Decompressing %s" %image_file)
             output = run_command(['gzip','-d','-f',image_file])
-            final_image = image_file.replace('.gz','')
+            image_file = image_file.replace('.gz','')
 
             # Any error in extraction (return code not 0) will return None
             if output is None:
                 bot.error('Error extracting image, cleaning up.')
-                clean_up([image_file,final_image])
+                clean_up([image_file,"%s.gz" %image_file])
 
-        return final_image
+        return image_file
 
 
 
