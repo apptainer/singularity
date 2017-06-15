@@ -33,6 +33,7 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/registry.h"
+#include "util/fork.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 #include "util/config_parser.h"
@@ -74,6 +75,7 @@ int main(int argc, char **argv) {
     singularity_cleanupd();
     
     singularity_runtime_ns(SR_NS_ALL);
+    singularity_fork_daemonize();
 
     singularity_sessiondir();
     

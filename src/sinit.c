@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     daemon_path(argv[1]);
 
     /* Fork into sinit daemon inside PID NS */
-    singularity_fork_daemonize();
+    //singularity_fork_daemonize();
 
     /* After this point, we are running as PID 1 inside PID NS */
     singularity_message(DEBUG, "Preparing sinit daemon\n");
@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
 
     i = 0;
     while(1) {
-        if( i++ == 2 )
+        if( i++ == 10 )
             break;
         singularity_message(LOG, "Logging from inside daemon\n");
         sleep(60);
