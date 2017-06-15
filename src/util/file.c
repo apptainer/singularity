@@ -486,6 +486,8 @@ int filelock(const char *const filepath, int *const fdptr) {
     int used = 0; /* Bits 0 to 2: stdin, stdout, stderr */
     int fd;
 
+    singularity_message(DEBUG, "Called filelock(%s)\n", filepath);
+    
     /* In case the caller is interested in the descriptor,
      * initialize it to -1 (invalid). */
     if (fdptr)

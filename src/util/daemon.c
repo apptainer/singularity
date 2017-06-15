@@ -34,6 +34,7 @@
 #include "util/util.h"
 #include "util/daemon.h"
 #include "util/registry.h"
+#include "util/message.c"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 #include "util/privilege.h"
@@ -41,40 +42,46 @@
 
 void daemon_join(void) {
     char *pid_str, *ns_path, *proc_path, *uid_str, *ns_fd_str;
-    int lock_result, ns_fd;
+        int lock_result, ns_fd;
     int *lock_fd = malloc(sizeof(int));
 
     uid_str = int2str(singularity_priv_getuid());
     daemon_path(uid_str);
     free(uid_str);
-    
-    if( is_file(singularity_registry_get("DAEMON_FILE")) ) {
-        /* Check if there is a lock on daemon file */
-        lock_result = filelock(singularity_registry_get("DAEMON_FILE"), lock_fd);
+    char *daemon_file = singularity_registry_get("DAEMON_FILE");
+   
+    /* Check if there is a lock on daemon file */
+    singularity_message(DEBUG, "Checking for lock on %s\n", daemon_file);
+    lock_result = filelock(daemon_file, lock_fd);
 
-        if( lock_result == 0 ) {
-            /* Successfully obtained lock, no daemon controls this file. */
-            close(*lock_fd);
-            return;
-        } else if( lock_result == EALREADY ) {
-            /* EALREADY is set when another process has a lock on the file. */
-            pid_str = filecat(singularity_registry_get("DAEMON_FILE"));
-            proc_path = joinpath("/proc/", pid_str);
-            ns_path = joinpath(proc_path, "/ns");
+    if( lock_result == 0 ) {
+        /* Successfully obtained lock, no daemon controls this file. */
+        singularity_message(DEBUG,"No lock currently on daemon file, running normally\n");
+        close(*lock_fd);
+        return;
+    } else if( lock_result == EALREADY ) {
+        /* EALREADY is set when another process has a lock on the file. */
+        singularity_message(DEBUG, "Another process has lock on daemon file\n");
+            
+        pid_str = filecat(daemon_file);
+        proc_path = joinpath("/proc/", pid_str);
+        ns_path = joinpath(proc_path, "/ns");
 
-            free(proc_path);
-            free(pid_str);
+        free(proc_path);
+        free(pid_str);
 
-            /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
-            ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC);
-            ns_fd_str = int2str(ns_fd);
+        /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
+        ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC);
+        ns_fd_str = int2str(ns_fd);
 
-            /* Set DAEMON_NS_FD to /proc/[PID]/ns FD in registry */
-            singularity_registry_set("DAEMON_NS_FD", ns_fd_str);
+        /* Set DAEMON_NS_FD to /proc/[PID]/ns FD in registry */
+        singularity_registry_set("DAEMON_NS_FD", ns_fd_str);
 
-            /* Set DAEMON as 1 in registry, to signal that we want to join the running daemon */
-            singularity_registry_set("DAEMON", "1");
-        }
+        /* Set DAEMON as 1 in registry, to signal that we want to join the running daemon */
+        singularity_registry_set("DAEMON", "1");
+    } else {
+        singularity_message(ERROR, "Unable to obtain lock on file: %s\n", strerror(errno));
+        ABORT(255);
     }
 }
 
