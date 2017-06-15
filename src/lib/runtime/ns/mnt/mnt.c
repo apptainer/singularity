@@ -34,6 +34,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
+#include "util/registry.h"
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
@@ -86,6 +87,29 @@ int _singularity_runtime_ns_mnt(void) {
     singularity_priv_drop();
     enabled = 0;
     return(0);
+}
+
+int _singularity_runtime_ns_mnt_join(void) {
+    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+    int mnt_fd;
+
+    /* Attempt to open /proc/[MNT]/ns/mnt */
+    mnt_fd = openat(ns_fd, "mnt", O_RDONLY);
+
+    if( mnt_fd == -1 ) {
+        singularity_message(ERROR, "Could not open MNT NS fd: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    
+    singularity_priv_escalate();
+    singularity_message(DEBUG, "Attempting to join MNT namespace\n");
+    if ( setns(mnt_fd, 0) < 0 ) {
+        singularity_message(ERROR, "Could not join MNT namespace: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    singularity_priv_drop();
+
+    return(0);    
 }
 
 /*
