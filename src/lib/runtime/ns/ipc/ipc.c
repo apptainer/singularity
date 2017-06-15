@@ -94,7 +94,9 @@ int _singularity_runtime_ns_ipc_join(void) {
         ABORT(255);
     }
     singularity_priv_drop();
+    singularity_message(DEBUG, "Successfully joined IPC namespace\n");
 
+    close(ipc_fd);
     return(0);
 }
 

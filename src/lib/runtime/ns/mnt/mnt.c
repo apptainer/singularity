@@ -107,9 +107,10 @@ int _singularity_runtime_ns_mnt_join(void) {
         singularity_message(ERROR, "Could not join mount namespace: %s\n", strerror(errno));
         ABORT(255);
     }
-    singularity_message(DEBUG, "Successfully joined mount namespace\n");
     singularity_priv_drop();
+    singularity_message(DEBUG, "Successfully joined mount namespace\n");
 
+    close(ns_fd);
     return(0);    
 }
 

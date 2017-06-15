@@ -95,7 +95,10 @@ int _singularity_runtime_ns_pid_join(void) {
         ABORT(255);
     }
     singularity_priv_drop();
-
+    singularity_message(DEBUG, "Successfully joined PID namespace\n");
+    
+    close(pid_fd);
+    
     /* Enable PID NS by forking into a child */
     singularity_fork_run();
     singularity_registry_set("PIDNS_ENABLED", "1");
