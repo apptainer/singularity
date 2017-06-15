@@ -97,16 +97,17 @@ int _singularity_runtime_ns_mnt_join(void) {
     mnt_fd = openat(ns_fd, "mnt", O_RDONLY);
 
     if( mnt_fd == -1 ) {
-        singularity_message(ERROR, "Could not open MNT NS fd: %s\n", strerror(errno));
+        singularity_message(ERROR, "Could not open mount NS fd: %s\n", strerror(errno));
         ABORT(255);
     }
     
     singularity_priv_escalate();
-    singularity_message(DEBUG, "Attempting to join MNT namespace\n");
-    if ( setns(mnt_fd, 0) < 0 ) {
-        singularity_message(ERROR, "Could not join MNT namespace: %s\n", strerror(errno));
+    singularity_message(DEBUG, "Attempting to join mount namespace\n");
+    if ( setns(mnt_fd, CLONE_NEWNS) < 0 ) {
+        singularity_message(ERROR, "Could not join mount namespace: %s\n", strerror(errno));
         ABORT(255);
     }
+    singularity_message(DEBUG, "Successfully joined mount namespace\n");
     singularity_priv_drop();
 
     return(0);    

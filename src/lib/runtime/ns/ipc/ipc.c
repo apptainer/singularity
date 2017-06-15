@@ -89,7 +89,7 @@ int _singularity_runtime_ns_ipc_join(void) {
     
     singularity_priv_escalate();
     singularity_message(DEBUG, "Attempting to join IPC namespace\n");
-    if ( setns(ipc_fd, 0) < 0 ) {
+    if ( setns(ipc_fd, CLONE_NEWIPC) < 0 ) {
         singularity_message(ERROR, "Could not join IPC namespace: %s\n", strerror(errno));
         ABORT(255);
     }

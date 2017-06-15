@@ -90,7 +90,7 @@ int _singularity_runtime_ns_pid_join(void) {
     
     singularity_priv_escalate();
     singularity_message(DEBUG, "Attempting to join PID namespace\n");
-    if ( setns(pid_fd, 0) < 0 ) {
+    if ( setns(pid_fd, CLONE_NEWPID) < 0 ) {
         singularity_message(ERROR, "Could not join PID namespace: %s\n", strerror(errno));
         ABORT(255);
     }
