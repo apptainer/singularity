@@ -61,13 +61,11 @@ int main(int argc, char **argv) {
     singularity_suid_init(argv);
 
     singularity_registry_init();
-    daemon_join();
     
     singularity_priv_userns();
     singularity_priv_drop();
 
-    singularity_cleanupd();
-
+    daemon_join();
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_sessiondir();
