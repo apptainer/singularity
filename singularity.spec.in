@@ -122,7 +122,6 @@ rm -rf $RPM_BUILD_ROOT
 #SUID programs
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/action-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/create-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/bin/copy-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/expand-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/export-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/import-suid
