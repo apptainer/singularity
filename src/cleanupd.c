@@ -76,6 +76,8 @@ int main(int argc, char **argv) {
             singularity_message(ERROR, "Could not remove directory %s: %s\n", cleanup_dir, strerror(errno));
             ABORT(255);
         }
+        close(trigger_fd);
+        unlink(trigger);
     }
 
     return(retval);
