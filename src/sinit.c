@@ -55,10 +55,10 @@
 
 
 int main(int argc, char **argv) {
-    int i, host_pid;
+    int i;
     int *daemon_file_fd = malloc(sizeof(int));
     ssize_t bufsize = 2048;
-    char *daemon_file;
+    char *daemon_file, *str_to_write;
     char *host_pid_str = malloc(bufsize);
     
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
@@ -77,11 +77,14 @@ int main(int argc, char **argv) {
         ABORT(255);
     } else {
         singularity_message(DEBUG, "PID in host namespace, from /proc/self: %s\n", host_pid_str);
-        host_pid = atoi(host_pid_str);
     }
 
     /* Get pathname of daemon information file */
     daemon_file = singularity_registry_get("DAEMON_FILE");
+
+    /* Combine strings into str_to_write */
+    str_to_write = malloc(bufsize);
+    snprintf(str_to_write, bufsize, "%s\n%s\n", host_pid_str, argv[2]);
 
     /* Check if /tmp/.singularity-daemon-[UID]/ directory exists, if not create it */
     if( is_dir(dirname(singularity_registry_get("DAEMON_FILE"))) == -1 )
@@ -94,7 +97,7 @@ int main(int argc, char **argv) {
         singularity_message(DEBUG, "Successfully obtained excluse lock on %s\n", daemon_file);
         
         /* Successfully obtained lock, write [PID] to open fd */
-        if( write(*daemon_file_fd, host_pid_str, strlength(host_pid_str, 2048) + 1) == -1 ) {
+        if( write(*daemon_file_fd, str_to_write, strlength(str_to_write, bufsize) + 1) == -1 ) {
             singularity_message(ERROR, "Unable to write to %s: %s\n", daemon_file, strerror(errno));
         }
     } else if( i == EALREADY ) {
