@@ -118,10 +118,7 @@ int main(int argc, char **argv) {
     
     singularity_message(LOG, "Successfully closed fd's, entering daemon loop\n");
 
-    i = 0;
     while(1) {
-        if( i++ == 10 )
-            break;
         singularity_message(LOG, "Logging from inside daemon\n");
         sleep(60);
     }
