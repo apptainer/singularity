@@ -41,7 +41,7 @@
 #include "config_parser.h"
 
 #define MAX_LINE_LEN (PATH_MAX + 128)
-
+#define MAX_CONFIG_ENTRIES 64
 #define NULLONE ((char*)1)
 
 static int config_initialized = 0;
@@ -52,11 +52,11 @@ static struct hsearch_data config_table;
 // By default, each hash bucket can have 7 values.  We set currently-empty
 // entries
 static ENTRY *new_hash_entry(char *key, char *value) {
-    char **hash_value = (char**)malloc(sizeof(char*)*8);
+    char **hash_value = (char**) malloc(sizeof(char*) * MAX_CONFIG_ENTRIES+1);
     int idx;
     hash_value[0] = value;
-    for (idx=1; idx<7; idx++) {hash_value[idx] = (char*)1;}
-    hash_value[7] = NULL;
+    for (idx=1; idx < MAX_CONFIG_ENTRIES; idx++) {hash_value[idx] = (char*)1;}
+    hash_value[MAX_CONFIG_ENTRIES] = NULL;
 
     ENTRY *hash_entry = (ENTRY*)malloc(sizeof(ENTRY));
     memset(hash_entry, '\0', sizeof(ENTRY));
@@ -75,6 +75,10 @@ static void add_entry(char *key, char *value) {
         char **hash_value = old_entry->data;
         int idx = 0;
         while ( (hash_value[idx] != NULL) && (hash_value[idx] != NULLONE) ) {idx++;}
+        if ( idx >= MAX_CONFIG_ENTRIES ) {
+            singularity_message(ERROR, "Maximum of %d allowed configuration entries for: %s\n", MAX_CONFIG_ENTRIES, key);
+            ABORT(255);
+        }
         if (hash_value[idx] == NULLONE) {
             hash_value[idx] = value;
             return;
