@@ -41,8 +41,8 @@
 
 
 void daemon_join(void) {
-    char *pid_str, *ns_path, *proc_path, *uid_str, *ns_fd_str;
-        int lock_result, ns_fd;
+    char *pid_str, *file_str, *ns_path, *proc_path, *uid_str, *ns_fd_str;
+    int lock_result, ns_fd;
     int *lock_fd = malloc(sizeof(int));
 
     uid_str = int2str(singularity_priv_getuid());
@@ -63,12 +63,14 @@ void daemon_join(void) {
         /* EALREADY is set when another process has a lock on the file. */
         singularity_message(DEBUG, "Another process has lock on daemon file\n");
             
-        pid_str = filecat(daemon_file);
+        file_str = filecat(daemon_file);
+        pid_str = strtok(file_str, "\n");
+          
         proc_path = joinpath("/proc/", pid_str);
         ns_path = joinpath(proc_path, "/ns");
-
+        
         free(proc_path);
-        free(pid_str);
+        free(file_str);
 
         /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
         ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC);
@@ -106,4 +108,15 @@ void daemon_path(char *host_uid) {
     free(image_name);
     free(image_devino);
     free(daemon_path);
+}
+
+void daemon_rootfs(void) {
+    char *file_str = filecat(singularity_registry_get("DAEMON_FILE"));
+
+    char *rootfs_str = strtok(file_str, "\n");
+    rootfs_str = strtok(NULL, "\n");
+
+    singularity_runtime_rootfs(rootfs_str);
+
+    free(file_str);
 }

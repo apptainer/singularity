@@ -14,5 +14,6 @@
 
     void daemon_join(void);
     void daemon_path(char *host_uid);
+    void daemon_rootfs(void);
 
 #endif
