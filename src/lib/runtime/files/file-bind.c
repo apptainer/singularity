@@ -56,8 +56,8 @@ int container_file_bind(char *source, char *dest_path) {
     }
 
     if ( is_file(dest) < 0 ) {
-        singularity_message(WARNING, "Bind file destination does not exist in container: %s\n", dest);
-        return(1);
+        singularity_message(VERBOSE, "Skipping bind file, destination does not exist in container: %s\n", dest_path);
+        return(0);
     }
 
     singularity_priv_escalate();
