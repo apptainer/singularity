@@ -76,6 +76,10 @@ while true; do
             message 1 "$SINGULARITY_version\n"
             exit
         ;;
+        -s|--silent)
+            SINGULARITY_MESSAGELEVEL=-3
+            shift
+        ;;
         -d|--debug)
             SINGULARITY_MESSAGELEVEL=5
             message 4 "Enabling debugging\n"
