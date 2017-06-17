@@ -34,7 +34,7 @@
 #include "util/util.h"
 #include "util/message.h"
 
-int messagelevel = -1;
+int messagelevel = -99;
 
 extern const char *__progname;
 
@@ -48,9 +48,7 @@ static void message_init(void) {
         singularity_message(DEBUG, "SINGULARITY_MESSAGELEVEL undefined, setting level 5 (debug)\n");
     } else {
         messagelevel = atoi(messagelevel_string); // Flawfinder: ignore
-        if ( messagelevel < 0 ) {
-            messagelevel = 0;
-        } else if ( messagelevel > 9 ) {
+        if ( messagelevel > 9 ) {
             messagelevel = 9;
         }
         singularity_message(VERBOSE, "Set messagelevel to: %d\n", messagelevel);
@@ -75,7 +73,7 @@ void _singularity_message(int level, const char *function, const char *file_in, 
 
     va_end (args);
 
-    if ( messagelevel == -1 ) {
+    if ( messagelevel == -99 ) {
         message_init();
     }
 
