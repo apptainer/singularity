@@ -41,6 +41,8 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
 fi
 
 
+umask 0
+
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"

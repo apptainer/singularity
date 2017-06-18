@@ -41,6 +41,8 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
 fi
 
 
+umask 0
+
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 
