@@ -40,6 +40,7 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+umask 0002
 
 install -d -m 0755 "$SINGULARITY_ROOTFS"
 install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity.d"

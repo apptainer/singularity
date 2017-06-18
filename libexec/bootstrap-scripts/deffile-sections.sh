@@ -51,6 +51,8 @@ if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 
+umask 0002
+
 # First priority goes to runscript defined in build file
 runscript_command=$(singularity_section_get "runscript" "$SINGULARITY_BUILDDEF")
 

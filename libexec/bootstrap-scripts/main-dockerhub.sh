@@ -40,7 +40,6 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
-umask 0
 
 SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
 SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`

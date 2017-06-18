@@ -43,6 +43,7 @@ fi
 
 message 1 "Finalizing Singularity container\n"
 
+umask 0002
 
 test -L "$SINGULARITY_ROOTFS/etc/mtab"  && rm -f "$SINGULARITY_ROOTFS/etc/mtab"
 
