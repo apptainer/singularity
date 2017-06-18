@@ -334,7 +334,8 @@ int envclean(void) {
     }
 
     for(i = 0; i < envlen; i++) {
-        char *tok, *key;
+        char *tok = NULL;
+        char *key = NULL;
 
         key = strtok_r(envclone[i], "=", &tok);
 
