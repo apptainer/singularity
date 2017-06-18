@@ -84,9 +84,6 @@ int _singularity_image_create(struct image_object *image, long int size) {
         ABORT(255);
     }
 
-    singularity_message(VERBOSE2, "Making image executable\n");
-    fchmod(fileno(image_fp), 0755);
-
     fclose(image_fp);
 
     return(0);
