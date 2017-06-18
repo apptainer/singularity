@@ -147,15 +147,15 @@ void singularity_priv_init(void) {
     }
 
     if ( ( pwent = getpwuid(uinfo.uid) ) == NULL ) {
-        singularity_message(ERROR, "Failed obtaining user information for uid: %i\n", uinfo.uid);
-        ABORT(255);
-    }
-
-    if ( ( uinfo.username = strdup(pwent->pw_name) ) != NULL ) {
-        singularity_message(DEBUG, "Set the calling user's username to: %s\n", uinfo.username);
+        singularity_message(VERBOSE, "Failed obtaining user information for uid: %i\n", uinfo.uid);
+        uinfo.username = strdup("NULL");
     } else {
-        singularity_message(ERROR, "Failed obtaining the calling user's username\n");
-        ABORT(255);
+        if ( ( uinfo.username = strdup(pwent->pw_name) ) != NULL ) {
+            singularity_message(DEBUG, "Set the calling user's username to: %s\n", uinfo.username);
+        } else {
+            singularity_message(ERROR, "Failed obtaining the calling user's username\n");
+            ABORT(255);
+        }
     }
 
     singularity_message(DEBUG, "Marking uinfo structure as ready\n");
@@ -177,7 +177,7 @@ void singularity_priv_init(void) {
             singularity_message(VERBOSE2, "Set the home directory (via SINGULARITY_HOME) to: %s\n", uinfo.homedir);
         }
 
-    } else {
+    } else if ( pwent != NULL ) {
         if ( ( uinfo.home = strdup(pwent->pw_dir) ) != NULL ) {
             singularity_message(VERBOSE2, "Set home (via getpwuid()) to: %s\n", uinfo.home);
             uinfo.homedir = uinfo.home;
@@ -185,6 +185,9 @@ void singularity_priv_init(void) {
             singularity_message(ERROR, "Failed obtaining the calling user's home directory\n");
             ABORT(255);
         }
+    } else {
+        uinfo.home = strdup("/");
+        uinfo.homedir = uinfo.home;
     }
     
     return;

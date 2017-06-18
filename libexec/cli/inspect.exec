@@ -97,20 +97,23 @@ if [ -z "${SELECTED:-}" ]; then
     export SINGULARITY_INSPECT_LABELS
 fi
 
+RETVAL=0
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_MOUNTPOINT="/mnt"
+SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-inspect.XXXXXXXX`
 export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 shift
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    RETVAL=$?
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    RETVAL=$?
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
     exit 1
 fi
 
-message ERROR "We never should have gotten here. Grab your latkes, call the authorities, run away!\n"
+rmdir "$SINGULARITY_MOUNTPOINT"
 
-exit 1
+exit $RETVAL

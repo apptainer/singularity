@@ -22,6 +22,8 @@ install-data-hook:
 	install -d -m 0755 $(DESTDIR)$(localstatedir)/singularity/mnt/container
 	install -d -m 0755 $(DESTDIR)$(localstatedir)/singularity/mnt/session
 	install -d -m 0755 $(DESTDIR)$(localstatedir)/singularity/mnt/overlay
+	test -f $(DESTDIR)$(libexecdir)/singularity/sexec-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/sexec-suid || :
+	test -f $(DESTDIR)$(libexecdir)/singularity/bin/copy-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/bin/copy-suid || :
 
 
 ACLOCAL_AMFLAGS = -I m4

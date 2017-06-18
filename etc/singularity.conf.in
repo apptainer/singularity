@@ -26,7 +26,8 @@
 # DEFAULT: @ALLOW_PID_NS_DEFAULT@
 # Should we allow users to request the PID namespace? Note that for some HPC
 # resources, the PID namespace may confuse the resource manager and break how
-# some MPI implementations utilize shared memory.
+# some MPI implementations utilize shared memory. (note, on some older
+# systems, the PID namespace is always used)
 @ALLOW_PID_NS@ = @ALLOW_PID_NS_DEFAULT@
 
 
