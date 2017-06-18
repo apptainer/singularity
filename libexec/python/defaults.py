@@ -106,9 +106,6 @@ else:
     _cache = os.path.join(userhome,".singularity") 
     SINGULARITY_CACHE = getenv("SINGULARITY_CACHEDIR", default=_cache)
 
-if not os.path.exists(SINGULARITY_CACHE):
-    os.mkdir(SINGULARITY_CACHE)
-
 
 #######################################################################
 # Docker
