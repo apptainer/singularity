@@ -70,7 +70,7 @@ int bootstrap_keyval_parse(char *path) {
                 singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
 
                 if ( envar_defined(strjoin("SINGULARITY_DEFFILE_", uppercase(bootdef_key))) == 0 ) {
-                    singularity_message(ERROR, "Duplicate bootstrap entry found: '%s'\n", bootdef_key);
+                    singularity_message(ERROR, "Duplicate bootstrap definition key found: '%s'\n", bootdef_key);
                     ABORT(255);
                 }
 
