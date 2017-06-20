@@ -68,7 +68,7 @@ while true; do
     esac
 done
 
-if [ -z "${2:-}" ]; then
+if [ -z "${1:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then 
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -79,8 +79,7 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_MOUNTPOINT="${2:-}"
-export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
+export SINGULARITY_IMAGE
 shift
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
