@@ -53,11 +53,6 @@ while true; do
             export SINGULARITY_WRITABLE
             shift
         ;;
-        -s|--shell)
-            SINGULARITY_NONEWSHELL=1
-            export SINGULARITY_NONEWSHELL
-            shift
-        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -83,9 +78,9 @@ export SINGULARITY_IMAGE
 shift
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid"
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid" "$@"
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/mount"
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount" "$@"
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
     exit 1
