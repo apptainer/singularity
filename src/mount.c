@@ -56,10 +56,6 @@ int main(int argc, char **argv) {
     singularity_registry_init();
     singularity_priv_drop();
 
-    if ( argc == 3 ) {
-        singularity_registry_set("IMAGE", argv[1]);
-    }
-
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     if ( singularity_registry_get("WRITABLE") == NULL ) {
