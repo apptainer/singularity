@@ -1,3 +1,16 @@
+singularity (2.3-1) unstable; urgency=low
+
+  * Lots of backend library changes to accommodate a more flexible API
+  * Restructured Python backend
+  * Updated bootstrap backend to make it much more reliable
+  * Direct support for the awesome, the fantastic, Singularity-Hub!
+  * Ability to run additional commands without root privileges (e.g. create,
+    import, copy, export, etc..).
+  * Added ability to pull images from Singularity Hub and Docker
+  * Containers now have labels, and are inspect'able
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Wed, 31 May 2017 18:19:46 -0700
+
 singularity (2.2-1) unstable; urgency=low
 
   * New upstream release

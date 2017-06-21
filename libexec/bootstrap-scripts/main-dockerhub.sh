@@ -1,5 +1,7 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
@@ -37,6 +39,7 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     message ERROR "Singularity root file system not defined\n"
     exit 1
 fi
+
 
 SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
 SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`

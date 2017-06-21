@@ -1,5 +1,7 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
@@ -50,6 +52,8 @@ if [ -z "${MIRRORURL:-}" ]; then
     MIRRORURL="https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64"
 fi
 
+
+umask 0002
 
 mkdir -p -m 0755 "$SINGULARITY_ROOTFS/bin"
 mkdir -p -m 0755 "$SINGULARITY_ROOTFS/etc"

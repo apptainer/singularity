@@ -3,7 +3,8 @@ USAGE: singularity [global options...] <command> [command options...] ...
 GLOBAL OPTIONS:
     -d --debug    Print debugging information
     -h --help     Display usage summary
-    -q --quiet    Only print errors
+    -s --silent   Only print errors
+    -q --quiet    Suppress all normal output
        --version  Show application version
     -v --verbose  Increase verbosity +1
     -x --sh-debug Print shell wrapper debugging information
@@ -32,7 +33,7 @@ CONTAINER MANAGEMENT COMMANDS:
     mount         Mount a Singularity container image
 
 CONTAINER REGISTRY COMMANDS:
-    pull          pull a Singularity Hub container to $PWD
+    pull          pull a Singularity/Docker container to $PWD
 
 
 For any additional help or support visit the Singularity

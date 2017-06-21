@@ -75,8 +75,8 @@ class TestJson(TestCase):
         result = {'message':t[0],
                   'return_code':t[1]}
         self.assertEqual(result['return_code'],0)
-        result = read_file(self.file)[0]
-        self.assertEqual('52584016',result)
+        result = int(read_file(self.file)[0])
+        self.assertTrue(250 <= result <= 251)
 
 
     def test_shub_size(self):

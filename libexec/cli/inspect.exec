@@ -1,0 +1,119 @@
+#!/bin/bash
+# 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+# 
+# Copyright (c) 2016-2017, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+# 
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
+# 
+# NOTICE.  This Software was developed under funding from the U.S. Department of
+# Energy and the U.S. Government consequently retains certain rights. As such,
+# the U.S. Government has been granted for itself and others acting on its
+# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+# to reproduce, distribute copies to the public, prepare derivative works, and
+# perform publicly and display publicly, and to permit other to do so. 
+# 
+# 
+
+
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
+
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        -j|--json)
+            SINGULARITY_PRINT_STRUCTURED=1
+            export SINGULARITY_PRINT_STRUCTURED
+            shift;
+        ;;
+        -l|--label|--labels)
+            SELECTED=1
+            SINGULARITY_INSPECT_LABELS=1
+            export SINGULARITY_INSPECT_LABELS
+            shift;
+        ;;
+        -d|--deffile)
+            SELECTED=1
+            SINGULARITY_INSPECT_DEFFILE=1
+            export SINGULARITY_INSPECT_DEFFILE
+            shift;
+        ;;
+        -r|--run|--runscript)
+            SELECTED=1
+            SINGULARITY_INSPECT_RUNSCRIPT=1
+            export SINGULARITY_INSPECT_RUNSCRIPT
+            shift;
+        ;;
+        -t|--test)
+            SELECTED=1
+            SINGULARITY_INSPECT_TEST=1
+            export SINGULARITY_INSPECT_TEST
+            shift;
+        ;;
+        -e|--environment)
+            SELECTED=1
+            SINGULARITY_INSPECT_ENVIRONMENT=1
+            export SINGULARITY_INSPECT_ENVIRONMENT
+            shift;
+        ;;
+        -*)
+            message ERROR "Unknown option: ${1:-}\n"
+            exit 1
+        ;;
+        *)
+            break;
+        ;;
+    esac
+done
+
+if [ -z "${SELECTED:-}" ]; then
+    SINGULARITY_INSPECT_LABELS=1
+    export SINGULARITY_INSPECT_LABELS
+fi
+
+RETVAL=0
+SINGULARITY_IMAGE="${1:-}"
+SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-inspect.XXXXXXXX`
+export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
+shift
+
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    RETVAL=$?
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    RETVAL=$?
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
+    exit 1
+fi
+
+rmdir "$SINGULARITY_MOUNTPOINT"
+
+exit $RETVAL

@@ -9,14 +9,7 @@ overheads of the container filesystem.
 
 SUPPORTED URIs:
 
-    http/https: Pull an image using curl over HTTPD
     docker:     Pull an image from the Docker repository
-    shub:       Pull an image from Singularity Hub
-    file:       Use a local file (same as just passing local path)
-
-SUPPORTED FILE TYPES:
-
-    .tar, .tar.gz, .tgz, .tar.bz2
 
 EXAMPLES:
 
@@ -26,10 +19,7 @@ EXAMPLES:
 
     You can then import:
 
-    $ gunzip -c debian.tar.gz | singularity import /tmp/Debian
-    $ singularity import /tmp/Debian.img debian.tar.gz
-    $ singularity import /tmp/Debian.img file://debian.tar.gz
-    $ singularity import /tmp/Debian.img http://foo.com/debian.tar.gz
+    $ gunzip -c debian.tar.gz | singularity import /tmp/Debian.img
     $ singularity import /tmp/Debian.img docker://ubuntu:latest
 
 For additional help, please visit our public documentation pages which are

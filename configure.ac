@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.2.99],[gmkurtzer@lbl.gov])
+AC_INIT([singularity],[2.3],[gmkurtzer@lbl.gov])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -256,7 +256,7 @@ if test x"$PYTHON_CHECK" != x"yes" ; then
     AC_MSG_ERROR([Please install python before installing.])
 else
 
-    PYTHON_MODULES="base64 datetime glob hashlib io json pickle pwd re shutil subprocess stat sys tarfile tempfile"
+    PYTHON_MODULES="base64 datetime glob hashlib io itertools json math multiprocessing pickle pwd re shutil signal subprocess stat sys tarfile tempfile time"
     for PYTHON_MODULE in $PYTHON_MODULES; do
         AC_MSG_CHECKING([for the $PYTHON_MODULE python module])
 	    python_module_result=`python -c "import $PYTHON_MODULE" 2>&1`
@@ -305,7 +305,7 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid create-suid copy-suid expand-suid export-suid import-suid mount-suid"
+    BUILD_SUID="action-suid create-suid expand-suid export-suid import-suid mount-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
@@ -381,6 +381,7 @@ AC_CONFIG_FILES([
    libexec/bootstrap-scripts/Makefile
    libexec/bootstrap-scripts/environment/Makefile
    libexec/cli/Makefile
+   libexec/helpers/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile
    libexec/python/shub/Makefile

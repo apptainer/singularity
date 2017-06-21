@@ -1,5 +1,7 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
@@ -55,6 +57,7 @@ export SINGULARITY_CONTAINER SINGULARITY_CONTENTS SINGULARITY_LABELFILE
 
 eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 
+umask 0002
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
     message 1 "Exploding layer: $name\n"

@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -54,8 +56,8 @@ int container_file_bind(char *source, char *dest_path) {
     }
 
     if ( is_file(dest) < 0 ) {
-        singularity_message(WARNING, "Bind file destination does not exist in container: %s\n", dest);
-        return(1);
+        singularity_message(VERBOSE, "Skipping bind file, destination does not exist in container: %s\n", dest_path);
+        return(0);
     }
 
     singularity_priv_escalate();

@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -61,10 +63,11 @@ int main(int argc, char **argv) {
     singularity_priv_userns();
     singularity_priv_drop();
 
+    singularity_cleanupd();
+
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_sessiondir();
-    singularity_cleanupd();
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
@@ -137,6 +140,8 @@ int main(int argc, char **argv) {
     } else if ( strcmp(command, "shell") == 0 ) {
         action_shell(argc, argv);
     } else if ( strcmp(command, "exec") == 0 ) {
+        action_exec(argc, argv);
+    } else if ( strcmp(command, "inspect") == 0 ) {
         action_exec(argc, argv);
     } else if ( strcmp(command, "run") == 0 ) {
         action_run(argc, argv);

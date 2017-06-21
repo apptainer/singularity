@@ -36,18 +36,18 @@ exit_cleanup() {
 
 stest 0 mkdir "$TMPMNT"
 stest 0 singularity create -s 5 "$CONTAINER"
-stest 0 sudo singularity mount "$CONTAINER" "$TMPMNT"
+stest 0 sudo singularity mount -s "$CONTAINER" "$TMPMNT"
 stest 1 sudo dd if=/dev/zero of="$TMPMNT/file1" bs=1 count=5
 stest 0 sudo umount "$TMPMNT"
 
-stest 0 sudo singularity mount -w "$CONTAINER" "$TMPMNT"
+stest 0 sudo singularity mount -s -w "$CONTAINER" "$TMPMNT"
 stest 0 sudo dd if=/dev/zero of="$TMPMNT/file1" bs=1M count=3
 stest 1 sudo dd if=/dev/zero of="$TMPMNT/file2" bs=1M count=3
 stest 0 sudo rm -f "$TMPMNT/file2"
 stest 0 sudo umount "$TMPMNT"
 
 stest 0 singularity expand -s 5 "$CONTAINER"
-stest 0 sudo singularity mount -w "$CONTAINER" "$TMPMNT"
+stest 0 sudo singularity mount -s -w "$CONTAINER" "$TMPMNT"
 stest 0 sudo dd if=/dev/zero of="$TMPMNT/file2" bs=1M count=3
 stest 0 sudo umount "$TMPMNT"
 

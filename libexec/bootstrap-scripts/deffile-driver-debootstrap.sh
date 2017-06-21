@@ -1,5 +1,7 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
@@ -45,6 +47,7 @@ fi
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
+umask 0002
 
 if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     message ERROR "debootstrap is not in PATH... Perhaps 'apt-get install' it?\n"

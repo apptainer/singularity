@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -77,6 +79,9 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_NOTEST", singularity_registry_get("NOTEST"), 1);
     envar_set("SINGULARITY_BUILDSECTION", singularity_registry_get("BUILDSECTION"), 1);
     envar_set("SINGULARITY_BUILDNOBASE", singularity_registry_get("BUILDNOBASE"), 1);
+    envar_set("SINGULARITY_DOCKER_PASSWORD", singularity_registry_get("DOCKER_PASSWORD"), 1);
+    envar_set("SINGULARITY_DOCKER_USERNAME", singularity_registry_get("DOCKER_USERNAME"), 1);
+    envar_set("SINGULARITY_CACHEDIR", singularity_registry_get("CACHEDIR"), 1);
     envar_set("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
     envar_set("HOME", singularity_priv_home(), 1);
     envar_set("LANG", "C", 1);

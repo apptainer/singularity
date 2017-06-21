@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -32,15 +34,21 @@
 
 
 void action_test(int argc, char **argv) {
-    singularity_message(VERBOSE, "Exec'ing /.test\n");
+    singularity_message(VERBOSE, "Starting test code\n");
 
-    if ( is_exec("/.test") == 0 ) {
-        if ( execl("/bin/sh", "/bin/sh", "-e", "-x", "/.test", NULL) < 0 ) { // Flawfinder: ignore
-            singularity_message(ERROR, "Failed to execv() /.test: %s\n", strerror(errno));
+    if ( is_exec("/.singularity.d/actions/test") == 0 ) {
+        singularity_message(DEBUG, "Exec'ing /.singularity.d/actions/test\n");
+        if ( execv("/.singularity.d/actions/test", argv) < 0 ) { // Flawfinder: ignore
+            singularity_message(ERROR, "Failed to execv() /.singularity.d/actions/test: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    } else if ( is_exec("/.test") == 0 ) {
+        if ( execv("/.test", argv) < 0 ) { // Flawfinder: ignore
+            singularity_message(ERROR, "Failed to execv() /.test, continuing to /bin/sh: %s\n", strerror(errno));
         }
     } else {
-        singularity_message(INFO, "No test code provided in this container\n");
-        exit(0);
+        singularity_message(ERROR, "No test driver found inside container\n");
+        ABORT(255);
     }
 
     singularity_message(ERROR, "We should never get here... Grrrrrr!\n");

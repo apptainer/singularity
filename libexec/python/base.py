@@ -243,7 +243,8 @@ class ApiConnection(object):
                                        data=data,
                                        url=url)
 
-        response = self.submit_request(request,return_response=return_response)
+        response = self.submit_request(request,
+                                       return_response=return_response)
         
         if return_response == True:
             return response

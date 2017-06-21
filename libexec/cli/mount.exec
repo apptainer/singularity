@@ -1,5 +1,7 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
@@ -47,9 +49,14 @@ while true; do
             exit
         ;;
         -w|--writable)
-            shift
             SINGULARITY_WRITABLE=1
             export SINGULARITY_WRITABLE
+            shift
+        ;;
+        -s|--shell)
+            SINGULARITY_NONEWSHELL=1
+            export SINGULARITY_NONEWSHELL
+            shift
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -81,7 +88,7 @@ if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/mount"
 else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
     exit 1
 fi
 

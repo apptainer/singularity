@@ -106,9 +106,6 @@ else:
     _cache = os.path.join(userhome,".singularity") 
     SINGULARITY_CACHE = getenv("SINGULARITY_CACHEDIR", default=_cache)
 
-if not os.path.exists(SINGULARITY_CACHE):
-    os.mkdir(SINGULARITY_CACHE)
-
 
 #######################################################################
 # Docker
@@ -125,9 +122,20 @@ DOCKER_NUMBER = 10 # number to start docker files at in ENV_DIR
 DOCKER_PREFIX = "docker"
 SHUB_PREFIX = "shub"
 
+# Defaults for environment, runscript, labels
 _envbase = "%s/env" %(METADATA_BASE)
-ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
+_runscript = "%s/singularity" %(SINGULARITY_ROOTFS)
+_environment = "%s/environment" %(METADATA_BASE)
 _labelfile = "%s/labels.json" %(METADATA_BASE)
+_deffile = "%s/Singularity" %(METADATA_BASE)
+_testfile = "%s/test" %(METADATA_BASE)
+
+
+ENVIRONMENT = getenv("SINGULARITY_ENVIRONMENT", default=_environment)
+RUNSCRIPT = getenv("SINGULARITY_RUNSCRIPT", default=_runscript)
+TESTFILE = getenv("SINGULARITY_TESTFILE", default=_testfile)
+DEFFILE = getenv("SINGULARITY_DEFFILE", default=_deffile)
+ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
 LABELFILE = getenv("SINGULARITY_LABELFILE", default=_labelfile)
 INCLUDE_CMD = convert2boolean(getenv("SINGULARITY_INCLUDECMD",
                               default=False))

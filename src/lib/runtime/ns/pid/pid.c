@@ -1,4 +1,6 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -43,6 +45,9 @@
 int _singularity_runtime_ns_pid(void) {
     int enabled = -1;
 
+
+#ifdef SINGULARITY_NO_NEW_PRIVS
+    // Use PID namespace when NO_NEW_PRIVS is not supported
     if ( singularity_config_get_bool(ALLOW_PID_NS) <= 0 ) {
         singularity_message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
         return(0);
@@ -52,6 +57,7 @@ int _singularity_runtime_ns_pid(void) {
         singularity_message(VERBOSE2, "Not virtualizing PID namespace on user request\n");
         return(0);
     }
+#endif
 
 #ifdef NS_CLONE_NEWPID
     singularity_message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");

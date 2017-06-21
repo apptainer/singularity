@@ -7,7 +7,7 @@ should use one of run, exec, or shell.
 SUPPORTED URIs:
 
     shub: Pull an image using python from Singularity Hub to $PWD
-
+    docker: Pull a docker image using python to $PWD
 
 PULL OPTIONS:
     -n/--name   Specify a custom container name (first priority)
@@ -16,6 +16,8 @@ PULL OPTIONS:
     
 
 EXAMPLES:
+
+    $ singularity pull docker://ubuntu:latest
 
     $ singularity pull shub://vsoch/singularity-images
       Found image vsoch/singularity-images:mongo

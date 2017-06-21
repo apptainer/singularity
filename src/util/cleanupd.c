@@ -65,8 +65,14 @@ int singularity_cleanupd(void) {
     }
 
     if ( trigger == NULL ) {
-        char *sessiondir = singularity_registry_get("SESSIONDIR");
-        trigger = strjoin(sessiondir, "/cleanup_trigger");
+        char *rand = NULL;
+
+        if ( ( rand = random_string(8) ) == NULL ) {
+            singularity_message(ERROR, "Failed obtaining a random string for temporary cleanup trigger\n");
+            ABORT(255);
+        }
+
+        trigger = strjoin("/tmp/.singularity-cleanuptrigger.", rand);
         singularity_message(DEBUG, "Creating new cleanup trigger file: %s\n", trigger);
 
         singularity_message(DEBUG, "Opening cleanup trigger file: %s\n", trigger);

@@ -37,10 +37,7 @@ import sys
 import tempfile
 import tarfile
 import base64
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+import re
 
 from io import (
     BytesIO,
@@ -66,10 +63,11 @@ def add_http(url,use_https=True):
     if use_https == False:
         scheme="http://"
 
-    parsed = urlparse(url)
-    # Returns tuple with(scheme,netloc,path,params,query,fragment)
+    # remove scheme from url
+    # urlparse is buggy in Python 2.6 https://bugs.python.org/issue754016, use regex instead
+    parsed = re.sub('.*//', '', url)
 
-    return "%s%s" %(scheme,"".join(parsed[1:]).rstrip('/'))
+    return "%s%s" %(scheme, parsed.rstrip('/'))
 
     
 def basic_auth_header(username, password):
@@ -123,7 +121,16 @@ def is_number(image):
         return False
 
 
+def clean_up(files):
+    '''clean up will delete a list of files, only if they exist
+    '''
+    if not isinstance(files,list):
+        files = [files]
 
+    for f in files:
+        if os.path.exists(f):
+            bot.verbose3("Cleaning up %s" %f)
+            os.remove(f)
 
 ############################################################################
 ## TAR/COMPRESSION #########################################################
@@ -376,7 +383,7 @@ def write_json(json_obj,filename,mode="w",print_pretty=True):
     bot.verbose2("Writing json file %s with mode %s." %(filename,mode))
     with open(filename,mode) as filey:
         if print_pretty == True:
-            filey.writelines(json.dumps(json_obj, indent=4, separators=(',', ': ')))
+            filey.writelines(print_json(json_obj))
         else:
             filey.writelines(json.dumps(json_obj))
     return filename
@@ -391,14 +398,28 @@ def read_json(filename,mode='r'):
     return data
 
 
-def read_file(filename,mode="r"):
+def read_file(filename,mode="r",readlines=True):
     '''write_file will open a file, "filename" and write content, "content"
     and properly close the file
     '''
     bot.verbose3("Reading file %s with mode %s." %(filename,mode))
     with open(filename,mode) as filey:
-        content = filey.readlines()
+        if readlines:
+            content = filey.readlines()
+        else:
+            content = filey.read()
     return content
+
+
+def print_json(content,print_console=False):
+    '''print_json is intended to pretty print a json
+    :param content: the dictionary to print
+    :param print_console: if False, return the dump as string (default)
+    '''
+    if print_console:
+        print(json.dumps(content, indent=4, separators=(',', ': ')))
+    else:
+        return json.dumps(content, indent=4, separators=(',', ': '))
 
 
 def clean_path(path):

@@ -1,3 +1,26 @@
+# 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+# 
+# Copyright (c) 2016, The Regents of the University of California, through
+# Lawrence Berkeley National Laboratory (subject to receipt of any required
+# approvals from the U.S. Dept. of Energy).  All rights reserved.
+# 
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
+# 
+# NOTICE.  This Software was developed under funding from the U.S. Department of
+# Energy and the U.S. Government consequently retains certain rights. As such,
+# the U.S. Government has been granted for itself and others acting on its
+# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
+# to reproduce, distribute copies to the public, prepare derivative works, and
+# perform publicly and display publicly, and to permit other to do so. 
+# 
+# 
+
+
 %{!?_rel:%{expand:%%global _rel 0.1}}
 
 # This allows us to pick up the default value from the configure
@@ -27,9 +50,8 @@ BuildRequires: /usr/include/slurm/spank.h
 %endif
 
 %description
-Singularity provides functionality to build the smallest most minimal
-possible containers, and running those containers as single application
-environments.
+Singularity provides functionality to make portable
+containers that can be used across host environments.
 
 %package devel
 Summary: Development libraries for Singularity
@@ -100,7 +122,6 @@ rm -rf $RPM_BUILD_ROOT
 #SUID programs
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/action-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/create-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/bin/copy-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/expand-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/export-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/import-suid
@@ -126,6 +147,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bootstrap-scripts
 %{_libexecdir}/singularity/cli
 %{_libexecdir}/singularity/python
+%{_libexecdir}/singularity/helpers
 
 
 
