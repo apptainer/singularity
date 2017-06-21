@@ -83,6 +83,7 @@ int main(int argc, char **argv) {
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
     image_test = singularity_image_init(singularity_registry_get("IMAGE"));
+    singularity_image_open(&image_test, O_RDWR);
 
     if ( singularity_image_check(&image_test) != 0 ) {
         singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
