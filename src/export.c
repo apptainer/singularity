@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     singularity_image_bind(&image);
 
-    if ( image_test.loopdev == NULL ) {
+    if ( image.loopdev == NULL ) {
         singularity_message(ERROR, "Bind failed to connect to image!\n");
         ABORT(255);
     }
