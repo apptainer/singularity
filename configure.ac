@@ -362,6 +362,9 @@ AC_CONFIG_FILES([
    src/lib/image/Makefile
    src/lib/image/bind/Makefile
    src/lib/image/check/Makefile
+   src/lib/image/check/image/Makefile
+   src/lib/image/check/squashfs/Makefile
+   src/lib/image/check/dir/Makefile
    src/lib/image/create/Makefile
    src/lib/image/expand/Makefile
    src/lib/image/mount/Makefile

@@ -70,7 +70,9 @@ int main(int argc, char **argv) {
 
     singularity_image_open(&image, O_RDWR);
 
-    if ( singularity_image_check(&image) != 0 ) {
+    singularity_image_check(&image);
+
+    if ( image.type != SINGULARITY ) {
         singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
         ABORT(255);
     }
@@ -90,13 +92,13 @@ int main(int argc, char **argv) {
 
     // Check to make sure the image hasn't been swapped out by a race
     image_test = singularity_image_init(singularity_registry_get("IMAGE"));
-
-    singularity_image_open(&image_test, O_RDWR);
-
-    if ( singularity_image_check(&image_test) != 0 ) {
+    singularity_image_open(&image_test, O_RDONLY);
+    singularity_image_check(&image_test);
+    if ( image_test.type != SINGULARITY ) {
         singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
         ABORT(255);
     }
+
 
     if ( is_exec("/usr/bin/tar") == 0 ) {
         tar_cmd[0] = strdup("/usr/bin/tar");

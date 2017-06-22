@@ -64,7 +64,9 @@ int main(int argc, char **argv) {
         singularity_image_open(&image, O_RDWR);
     }
 
-    if ( singularity_image_check(&image) != 0 ) {
+    singularity_image_check(&image);
+
+    if ( image.type != SINGULARITY ) {
         singularity_message(ERROR, "Mount is only allowed on Singularity image files\n");
         ABORT(255);
     }

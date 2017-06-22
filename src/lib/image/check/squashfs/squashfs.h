@@ -21,9 +21,9 @@
  */
 
 
-#ifndef __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_
-#define __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_
+#ifndef __SINGULARITY_IMAGE_CHECK_SQUASHFS_H_
+#define __SINGULARITY_IMAGE_CHECK_SQUASHFS_H_
 
-extern int _singularity_image_mount_squashfs_mount(struct image_object *image, char *mount_point);
+extern int _singularity_image_check_squashfs(struct image_object *image);
 
-#endif /* __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_ */
+#endif /* __SINGULARITY_IMAGE_CHECK_SQUASHFS_H_ */

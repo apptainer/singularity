@@ -20,10 +20,28 @@
  * 
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h> 
+#include <string.h>
+#include <fcntl.h>  
 
-#ifndef __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_
-#define __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_
+#include "util/message.h"
+#include "util/util.h"
+#include "util/file.h"
 
-extern int _singularity_image_mount_squashfs_mount(struct image_object *image, char *mount_point);
+#include "../../image.h"
 
-#endif /* __SINGULARITY_IMAGE_MOUNT_SQUASHFS_H_ */
+int _singularity_image_check_dir(struct image_object *image) {
+
+    singularity_message(DEBUG, "Checking if image is a directory\n");
+    if ( is_dir(image->path) != 0 ) {
+        singularity_message(VERBOSE2, "Source path is not a directory: %s\n", image->path);
+        return(-1);
+    }
+
+    return(0);
+}

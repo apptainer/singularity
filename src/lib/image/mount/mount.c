@@ -67,19 +67,26 @@ int _singularity_image_mount(struct image_object *image, char *mount_point) {
         }
     }
 
+    if ( image->type < 0 ) {
+        singularity_image_check(image);
+    }
+
     singularity_message(VERBOSE, "Checking what kind of image we are mounting\n");
-    if ( singularity_image_check(image) == 0 ) {
+
+    if ( image->type == SINGULARITY ) {
         singularity_message(VERBOSE, "Attempting to mount as singularity image\n");
         if ( _singularity_image_mount_image_mount(image, mount_point) < 0 ) {
             singularity_message(ERROR, "Failed mounting Singularity image, aborting...\n");
             ABORT(255);
         }
-    } else if ( _singularity_image_mount_squashfs_check(image) == 0 ) {
+    } else if ( image->type == SQUASHFS ) {
+        singularity_message(VERBOSE, "Attempting to mount as squashfs image\n");
         if ( _singularity_image_mount_squashfs_mount(image, mount_point) < 0 ) {
             singularity_message(ERROR, "Failed mounting squashFS image, aborting...\n");
             ABORT(255);
         }
-    } else if ( _singularity_image_mount_dir_check(image) == 0 ) {
+    } else if ( image->type == DIRECTORY ) {
+        singularity_message(VERBOSE, "Attempting to mount as directory image\n");
         if ( _singularity_image_mount_dir_mount(image, mount_point) < 0 ) {
             singularity_message(ERROR, "Failed mounting directory, aborting...\n");
             ABORT(255);
