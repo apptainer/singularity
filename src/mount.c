@@ -71,6 +71,11 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+    if ( is_owner(singularity_runtime_rootfs(NULL), 0) != 0 ) {
+            singularity_message(ERROR, "Root must own container mount directory: %s\n", singularity_runtime_rootfs(NULL));
+            ABORT(255);
+    }
+
     if ( argc > 1 ) {
         singularity_runtime_ns(SR_NS_MNT);
 
@@ -92,11 +97,6 @@ int main(int argc, char **argv) {
 
         singularity_image_bind(&image);
         singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
-
-        if ( is_owner(singularity_runtime_rootfs(NULL), 0) != 0 ) {
-            singularity_message(ERROR, "Root must own container mount directory: %s\n", singularity_runtime_rootfs(NULL));
-            ABORT(255);
-        }
 
         singularity_priv_escalate();
         if ( mount(singularity_runtime_rootfs(NULL), singularity_runtime_rootfs(NULL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
