@@ -30,6 +30,7 @@ CONTAINER MANAGEMENT COMMANDS:
     expand        Grow the container image
     export        Export the contents of a container via a tar pipe
     import        Import/add container contents via a tar pipe
+    inspect       Show container's metadata
     mount         Mount a Singularity container image
 
 CONTAINER REGISTRY COMMANDS:
