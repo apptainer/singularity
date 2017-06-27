@@ -39,19 +39,6 @@
 #include "../mount.h"
 
 
-int _singularity_image_mount_dir_check(struct image_object *image) {
-
-    singularity_message(DEBUG, "Checking if image is a directory\n");
-    if ( is_dir(image->path) != 0 ) {
-        singularity_message(VERBOSE2, "Source path is not a directory: %s\n", image->path);
-        return(-1);
-    }
-
-    return(0);
-}
-
-
-
 int _singularity_image_mount_dir_mount(struct image_object *image, char *mount_point) {
 
     if ( strcmp(image->path, "/") == 0 ) {

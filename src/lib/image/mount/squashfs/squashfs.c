@@ -41,18 +41,6 @@
 #include "../mount.h"
 
 
-int _singularity_image_mount_squashfs_check(struct image_object *image) {
-    char *image_name = strdup(image->name);
-    int len = strlength(image_name, 1024);
-
-    if ( strcmp(&image_name[len-5], ".sqsh") != 0 ) {
-        singularity_message(DEBUG, "Image does not appear to be of type '.sqsh': %s\n", image->path);
-        return(-1);
-    }
-
-    return(0);
-}
-
 int _singularity_image_mount_squashfs_mount(struct image_object *image, char *mount_point) {
 
     if ( image->loopdev == NULL ) {

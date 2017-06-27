@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
     int retval = 0;
     char *tar_cmd[4];
     struct image_object image;
+    struct image_object image_test;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -69,7 +70,9 @@ int main(int argc, char **argv) {
 
     singularity_image_open(&image, O_RDWR);
 
-    if ( singularity_image_check(&image) != 0 ) {
+    singularity_image_check(&image);
+
+    if ( image.type != SINGULARITY ) {
         singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
         ABORT(255);
     }
@@ -79,7 +82,23 @@ int main(int argc, char **argv) {
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);
+
+    if ( image.loopdev == NULL ) {
+        singularity_message(ERROR, "Bind failed to connect to image!\n");
+        ABORT(255);
+    }
+
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+
+    // Check to make sure the image hasn't been swapped out by a race
+    image_test = singularity_image_init(singularity_registry_get("IMAGE"));
+    singularity_image_open(&image_test, O_RDONLY);
+    singularity_image_check(&image_test);
+    if ( image_test.type != SINGULARITY ) {
+        singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
+        ABORT(255);
+    }
+
 
     if ( is_exec("/usr/bin/tar") == 0 ) {
         tar_cmd[0] = strdup("/usr/bin/tar");

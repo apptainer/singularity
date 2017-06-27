@@ -60,6 +60,7 @@ struct image_object singularity_image_init(char *path) {
 
     image.path = strdup(path);
     image.name = basename(strdup(path));
+    image.type = -1;
     image.fd = -1;
     image.loopdev = NULL;
     image.id = NULL;

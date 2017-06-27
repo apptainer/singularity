@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/mount.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -55,11 +56,6 @@ int main(int argc, char **argv) {
     singularity_registry_init();
     singularity_priv_drop();
 
-    if ( argc == 3 ) {
-        singularity_registry_set("IMAGE", argv[1]);
-        singularity_registry_set("MOUNTPOINT", argv[2]);
-    }
-
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     if ( singularity_registry_get("WRITABLE") == NULL ) {
@@ -68,28 +64,27 @@ int main(int argc, char **argv) {
         singularity_image_open(&image, O_RDWR);
     }
 
-    if ( singularity_image_check(&image) != 0 ) {
+    singularity_image_check(&image);
+
+    if ( image.type != SINGULARITY ) {
         singularity_message(ERROR, "Mount is only allowed on Singularity image files\n");
         ABORT(255);
     }
 
-    if ( is_dir(singularity_registry_get("MOUNTPOINT")) != 0 ) {
-        singularity_message(ERROR, "Mount point is not a directory\n");
-        ABORT(255);
-    }
-
-    if ( ( singularity_priv_getuid() != 0 ) && ( is_owner(singularity_registry_get("MOUNTPOINT"), singularity_priv_getuid()) != 0 ) ) {
-        singularity_message(ERROR, "You must own the mountpoint directory!\n");
-        ABORT(255);
+    if ( is_owner(singularity_runtime_rootfs(NULL), 0) != 0 ) {
+            singularity_message(ERROR, "Root must own container mount directory: %s\n", singularity_runtime_rootfs(NULL));
+            ABORT(255);
     }
 
     if ( argc > 1 ) {
         singularity_runtime_ns(SR_NS_MNT);
 
         singularity_image_bind(&image);
-        singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
+        singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
         singularity_priv_drop_perm();
+
+        envar_set("SINGULARITY_MOUNTPOINT", singularity_runtime_rootfs(NULL), 1);
 
         singularity_message(VERBOSE, "Running command: %s\n", argv[1]);
         singularity_message(DEBUG, "Calling exec...\n");
@@ -97,24 +92,22 @@ int main(int argc, char **argv) {
 
         singularity_message(ERROR, "Exec failed: %s: %s\n", argv[1], strerror(errno));
         ABORT(255);
-    } else if ( singularity_registry_get("NONEWSHELL") != NULL ) {
-        if ( singularity_priv_getuid() != 0 ) {
-            singularity_message(ERROR, "Can not mount image in current shell as non-root\n");
-            ABORT(255);
-        }
-
-        singularity_image_bind(&image);
-        singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
     } else {
         singularity_runtime_ns(SR_NS_MNT);
 
         singularity_image_bind(&image);
-        singularity_image_mount(&image, singularity_registry_get("MOUNTPOINT"));
+        singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+
+        singularity_priv_escalate();
+        if ( mount(singularity_runtime_rootfs(NULL), singularity_runtime_rootfs(NULL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+            singularity_message(ERROR, "There was an error binding mounted container to %s: %s\n", singularity_runtime_rootfs(NULL), strerror(errno));
+            ABORT(255);
+        }
 
         singularity_priv_drop_perm();
 
-        singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), singularity_registry_get("MOUNTPOINT"));
-        envar_set("PS1", "Singularity: \\w> ", 1);
+        singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), singularity_runtime_rootfs(NULL));
+        envar_set("PS1", "Singularity> ", 1);
 
         execl("/bin/sh", "/bin/sh", NULL); // Flawfinder: ignore (Yes flawfinder, this is what we want, sheesh, so demanding!)
 

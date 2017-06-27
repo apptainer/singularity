@@ -24,6 +24,10 @@
 #ifndef __SINGULARITY_IMAGE_H_
 #define __SINGULARITY_IMAGE_H_
 
+#define SINGULARITY 1
+#define SQUASHFS    2
+#define DIRECTORY   3
+
 struct image_object {
 //    char *sessiondir;
     char *path;
@@ -31,6 +35,7 @@ struct image_object {
     char *loopdev;
     char *id;
     int fd;
+    int type;
 //    int sessiondir_fd;
 };
 
