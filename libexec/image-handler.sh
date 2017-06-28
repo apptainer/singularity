@@ -55,7 +55,7 @@ case "$SINGULARITY_IMAGE" in
         NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
 
         if [ -z "${SINGULARITY_LOCALCACHEDIR:-}" ]; then
-            SINGULARITY_LOCALCACHEDIR="/tmp"
+            SINGULARITY_LOCALCACHEDIR="${TMPDIR:-/tmp}"
         fi
 
         if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_LOCALCACHEDIR/.singularity-runtime.XXXXXXXX`; then
@@ -72,7 +72,7 @@ case "$SINGULARITY_IMAGE" in
         SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
         SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
         SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
-        SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
+        SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`
 
         export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_CONTENTS SINGULARITY_CLEANUPDIR
 
@@ -101,7 +101,7 @@ case "$SINGULARITY_IMAGE" in
 
     ;;
     shub://*)
-        SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
+        SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`
 
         if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
             SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
@@ -135,7 +135,7 @@ case "$SINGULARITY_IMAGE" in
     *.cpioz|*.vnfs)
         NAME=`basename "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
+            SINGULARITY_CACHEDIR="${TMPDIR:-/tmp}"
         fi
         if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
             message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
@@ -166,7 +166,7 @@ case "$SINGULARITY_IMAGE" in
     *.cpio)
         NAME=`basename "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
+            SINGULARITY_CACHEDIR="${TMPDIR:-/tmp}"
         fi
         if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
             message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
@@ -197,7 +197,7 @@ case "$SINGULARITY_IMAGE" in
     *.tar)
         NAME=`basename "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
+            SINGULARITY_CACHEDIR="${TMPDIR:-/tmp}"
         fi
         if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
             message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
@@ -228,7 +228,7 @@ case "$SINGULARITY_IMAGE" in
     *.tgz|*.tar.gz)
         NAME=`basename "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
+            SINGULARITY_CACHEDIR="${TMPDIR:-/tmp}"
         fi
         if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
             message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
@@ -260,7 +260,7 @@ case "$SINGULARITY_IMAGE" in
     *.tbz|*.tar.bz)
         NAME=`basename "$SINGULARITY_IMAGE"`
         if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
+            SINGULARITY_CACHEDIR="${TMPDIR:-/tmp}"
         fi
         if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
             message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"

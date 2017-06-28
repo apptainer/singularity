@@ -99,7 +99,7 @@ fi
 
 RETVAL=0
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-inspect.XXXXXXXX`
+SINGULARITY_MOUNTPOINT=`mktemp -d ${TMPDIR:-/tmp}/.singularity-inspect.XXXXXXXX`
 export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 shift
 

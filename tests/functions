@@ -39,7 +39,7 @@ test_init() {
         test_cleanup
     fi
 
-    SINGULARITY_TESTDIR=`mktemp -d /tmp/stest.XXXXXX`
+    SINGULARITY_TESTDIR=`mktemp -d ${TMPDIR:-/tmp}/stest.XXXXXX`
 
     echo
     echo "################################################################################"

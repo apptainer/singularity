@@ -42,7 +42,7 @@ fi
 
 
 SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
-SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
+SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`
 export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
 
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
