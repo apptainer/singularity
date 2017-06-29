@@ -359,7 +359,7 @@ int copy_file(char * source, char * dest) {
     singularity_message(DEBUG, "Called copy_file(%s, %s)\n", source, dest);
 
     if ( is_file(source) < 0 ) {
-        singularity_message(ERROR, "Could not copy from non-existant source: %s\n", source);
+        singularity_message(ERROR, "Could not copy from non-existent source: %s\n", source);
         return(-1);
     }
 
