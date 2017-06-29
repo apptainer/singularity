@@ -38,7 +38,7 @@ stest 0 sudo singularity exec --writable "$CONTAINER" mkdir /opt
 stest 0 singularity exec -B /tmp:/opt "$CONTAINER" test -f /opt/hello_world_test
 
 if [ -n "$SINGULARITY_OVERLAY_FS" ]; then
-    stest 0 singularity exec -B /tmp:/nonexistant "$CONTAINER" test -f /nonexistant/hello_world_test
+    stest 0 singularity exec -B /tmp:/nonexistent "$CONTAINER" test -f /nonexistent/hello_world_test
 fi
 
 stest 0 rm -f /tmp/hello_world_test
