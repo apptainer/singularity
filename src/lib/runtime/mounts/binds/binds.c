@@ -52,6 +52,9 @@ int _singularity_runtime_mount_binds(void) {
 
     singularity_message(DEBUG, "Checking configuration file for 'bind path'\n");
     const char **tmp_config_string_list = singularity_config_get_value_multi(BIND_PATH);
+    if ( strlength(*tmp_config_string_list, 1) == 0 ) {
+        return(0);
+    }
     while ( *tmp_config_string_list != NULL ) {
         tmp_config_string = strdup(*tmp_config_string_list);
         tmp_config_string_list++;

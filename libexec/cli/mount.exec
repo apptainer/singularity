@@ -53,11 +53,6 @@ while true; do
             export SINGULARITY_WRITABLE
             shift
         ;;
-        -s|--shell)
-            SINGULARITY_NONEWSHELL=1
-            export SINGULARITY_NONEWSHELL
-            shift
-        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -68,7 +63,7 @@ while true; do
     esac
 done
 
-if [ -z "${2:-}" ]; then
+if [ -z "${1:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then 
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -79,14 +74,13 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_MOUNTPOINT="${2:-}"
-export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
+export SINGULARITY_IMAGE
 shift
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid"
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid" "$@"
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/mount"
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount" "$@"
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
     exit 1

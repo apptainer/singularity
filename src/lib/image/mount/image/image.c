@@ -42,10 +42,6 @@
 #include "../mount.h"
 
 
-int _singularity_image_mount_image_check(struct image_object *image) {
-    return(singularity_image_check(image));
-}
-
 
 int _singularity_image_mount_image_mount(struct image_object *image, char *mount_point) {
     int opts = MS_NOSUID;

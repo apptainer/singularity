@@ -75,7 +75,7 @@ int _singularity_runtime_overlayfs(void) {
 
         singularity_priv_escalate();
         singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
-        if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID, "size=1m") < 0 ){
+        if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID | MS_NODEV, "size=1m") < 0 ){
             singularity_message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
             ABORT(255);
         }
@@ -99,7 +99,7 @@ int _singularity_runtime_overlayfs(void) {
         }
 
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
-        if ( mount("OverlayFS", overlay_final, "overlay", MS_NOSUID, overlay_options) < 0 ){
+        if ( mount("OverlayFS", overlay_final, "overlay", MS_NOSUID | MS_NODEV, overlay_options) < 0 ){
             singularity_message(ERROR, "Could not mount Singularity overlay: %s\n", strerror(errno));
             ABORT(255); 
         }
