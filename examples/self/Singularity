@@ -1,4 +1,5 @@
 Bootstrap: self
+Exclude: /var/lib/docker /home/vanessa /opt/*
 
 %runscript
     echo "This is what happens when you run the container..."

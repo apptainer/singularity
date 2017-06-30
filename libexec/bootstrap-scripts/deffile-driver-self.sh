@@ -58,16 +58,26 @@ fi
 
 # By default, we clone from root unless specified otherwise
 
-if [ -z "${SINGULARITY_CLONEFROM:-}" ]; then
-    SINGULARITY_CLONEFROM='/'
+if [ -z "$FROM:-}" ]; then
+    FROM='/'
 fi
 
+message 1 "Cloning from $FROM\m"
 message 1 "Preparing contents to bootstrap image by self clone with base $SINGULARITY_CLONEFROM\n"
 SINGULARITY_DUMP=`mktemp /tmp/.singularity-layers.XXXXXXXX.tgz`
 export SINGULARITY_CLONEFROM SINGULARITY_DUMP
 
+# The user can specify custom exclusions
+
+if [ -z "${EXCLUDE:-}" ]; then
+    EXCLUDE=''
+else
+    message 1 "Custom exclusions: $EXCLUDE\n"
+fi
+CUSTOM_EXCLUSIONS=$(echo "$EXCLUDE" | sed 's/[^ ]* */--exclude &/g')
+
 # Extract the host into a container
-tar --one-file-system -czSf --exclude $SINGULARITY_CLONEFROM --exclude $HOME --exclude $SINGULARITY_libexecdir --exclude ${TMPDIR-/tmp} --exclude $SINGULARITY_libexecdir/singularity $SINGULARITY_DUMP $SINGULARITY_CLONEFROM
+tar --one-file-system -czSf -C $SINGULARITY_DUMP --exclude $SINGULARITY_DUMP --exclude $HOME --exclude $SINGULARITY_libexecdir --exclude ${TMPDIR-/tmp} --exclude $SINGULARITY_libexecdir/singularity $CUSTOM_EXCLUSIONS --exclude /usr/src $SINGULARITY_CLONEFROM
 
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
