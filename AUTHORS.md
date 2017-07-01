@@ -25,3 +25,4 @@
     - Eduardo Arango <carlos.arango.gutierrez@correounivalle.edu.co>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Cedric Clerget <cedric.clerget@univ-fcomte.fr>
+    - Mark Egan-Fuller <markeganfuller@googlemail.com>

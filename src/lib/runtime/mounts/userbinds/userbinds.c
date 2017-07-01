@@ -127,7 +127,7 @@ int _singularity_runtime_mount_userbinds(void) {
                     }
                     singularity_message(DEBUG, "Created bind file: %s\n", dest);
                 } else {
-                    singularity_message(WARNING, "Skipping user bind, non existant bind point (file) in container: '%s'\n", dest);
+                    singularity_message(WARNING, "Skipping user bind, non existent bind point (file) in container: '%s'\n", dest);
                     continue;
                 }
             } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
@@ -144,7 +144,7 @@ int _singularity_runtime_mount_userbinds(void) {
                         singularity_priv_drop();
                     }
                 } else {
-                    singularity_message(WARNING, "Skipping user bind, non existant bind point (directory) in container: '%s'\n", dest);
+                    singularity_message(WARNING, "Skipping user bind, non existent bind point (directory) in container: '%s'\n", dest);
                     continue;
                 }
             }
