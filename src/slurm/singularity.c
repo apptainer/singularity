@@ -22,6 +22,7 @@
 
 #define _GNU_SOURCE 1
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -29,9 +30,9 @@
 #include <string.h>
 
 #include "config.h"
-#include "lib/singularity.h"
 #include "util/util.h"
 #include "util/file.h"
+#include "util/registry.h"
 
 #include "slurm/spank.h"
 
@@ -169,7 +170,6 @@ static int setup_container(spank_t spank)
     }
 
 
-    char *image;
     if ( ( image = singularity_registry_get("IMAGE") ) == NULL ) {
         singularity_message(ERROR, "SINGULARITY_CONTAINER not defined!\n");
     }
