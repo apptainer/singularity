@@ -41,8 +41,13 @@ int main(int argc, char **argv) {
     char *cleanup_dir = envar_path("SINGULARITY_CLEANUPDIR");
     char *trigger = envar_path("SINGULARITY_CLEANUPTRIGGER");
     int trigger_fd;
+    int daemon_options = 0;
 
     singularity_message(DEBUG, "Starting cleanup process\n");
+
+    if ( singularity_message_level() > 1 ) {
+        daemon_options = 1;
+    }
 
     if ( ( cleanup_dir == NULL ) || ( trigger == NULL ) ) {
         singularity_message(ERROR, "Environment is not properly setup\n");
@@ -63,7 +68,7 @@ int main(int argc, char **argv) {
     singularity_message(DEBUG, "Checking to see if we need to daemonize\n");
     if ( flock(trigger_fd, LOCK_EX | LOCK_NB) != 0 ) {
         singularity_message(VERBOSE, "Daemonizing cleandir cleanup process\n");
-        if ( daemon(0, 0) != 0 ) {
+        if ( daemon(daemon_options, daemon_options) != 0 ) {
             singularity_message(ERROR, "Failed daemonizing cleanup process: %s\n", strerror(errno));
             ABORT(255);
         }

@@ -43,4 +43,6 @@ fi
 
 message 1 "Adding base Singularity environment to container\n"
 
+umask 0002
+
 zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | ( cd $SINGULARITY_ROOTFS; tar -xf - >/dev/null)

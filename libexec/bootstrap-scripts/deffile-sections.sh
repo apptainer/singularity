@@ -51,6 +51,8 @@ if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 
+umask 0002
+
 # First priority goes to runscript defined in build file
 runscript_command=$(singularity_section_get "runscript" "$SINGULARITY_BUILDDEF")
 
@@ -92,6 +94,45 @@ else
     message 2 "Skipping setup section\n"
 fi
 
+
+### FILES
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "files" ]; then
+    if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding files to container\n"
+
+        singularity_section_get "files" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
+            if [ -n "${origin:-}" ]; then
+                if [ -z "${dest:-}" ]; then
+                    dest="$origin"
+                fi
+                message 1 "Copying '$origin' to '$dest'\n"
+                if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
+                    message ERROR "Failed copying file(s) into container\n"
+                    exit 255
+                fi
+            fi
+        done
+    fi
+else
+    message 2 "Skipping files section\n"
+fi
+
+
+### ENVIRONMENT
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "environment" ]; then
+    if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding environment to container\n"
+
+        singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
+
+        # Sourcing the environment
+        . "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
+    fi
+else
+    message 2 "Skipping environment section\n"
+fi
+
+
 ### RUN POST
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "post" ]; then
     if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
@@ -102,17 +143,6 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "p
     fi
 else
     message 2 "Skipping post section\n"
-fi
-
-### ENVIRONMENT
-if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "environment" ]; then
-    if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
-        message 1 "Adding environment to container\n"
-
-        singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
-    fi
-else
-    message 2 "Skipping environment section\n"
 fi
 
 
@@ -144,29 +174,6 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "r
     fi
 else
     message 2 "Skipping test section\n"
-fi
-
-
-### FILES
-if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "files" ]; then
-    if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
-        message 1 "Adding files to container\n"
-
-        singularity_section_get "files" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
-            if [ -n "${origin:-}" ]; then
-                if [ -z "${dest:-}" ]; then
-                    dest="$origin"
-                fi
-                message 1 "Copying '$origin' to '$dest'\n"
-                if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
-                    message ERROR "Failed copying file(s) into container\n"
-                    exit 255
-                fi
-            fi
-        done
-    fi
-else
-    message 2 "Skipping files section\n"
 fi
 
 
