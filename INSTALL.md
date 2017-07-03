@@ -30,7 +30,22 @@ will result in a non-functioning or semi-functioning installation.
 ```
 $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
-$ git checkout 2.3.1
+$ git checkout tags/2.3.1 -b 2.3.1
+$ ./autogen.sh
+$ ./configure --prefix=/path/to/singularity
+$ make
+$ sudo make install
+```
+
+note: The `sudo` is very important for the `make install`. Failure to do this
+will result in a non-functioning or semi-functioning installation.
+
+## To compile and install Singularity from an existing Git clone:
+
+```
+$ cd singularity
+$ git fetch --tags origin
+$ git checkout tags/2.3.1 -b 2.3.1
 $ ./autogen.sh
 $ ./configure --prefix=/path/to/singularity
 $ make
@@ -45,7 +60,7 @@ will result in a non-functioning or semi-functioning installation.
 ```
 $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
-$ git checkout 2.3.1
+$ git checkout tags/2.3.1 -b 2.3.1
 $ ./autogen.sh
 $ ./configure
 $ make dist
