@@ -72,7 +72,10 @@ case "$SINGULARITY_IMAGE" in
         SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
         SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
         SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
-        SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`
+        if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
+            message ERROR "Failed to create temporary directory\n"
+            ABORT 255
+        fi
 
         export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_CONTENTS SINGULARITY_CLEANUPDIR
 
@@ -101,7 +104,10 @@ case "$SINGULARITY_IMAGE" in
 
     ;;
     shub://*)
-        SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`
+        if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
+            message ERROR "Failed to create temporary directory\n"
+            ABORT 255
+        fi
 
         if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
             SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
