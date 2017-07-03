@@ -26,6 +26,7 @@ CONTAINER USAGE OPTIONS:
 CONTAINER MANAGEMENT COMMANDS:
     bootstrap     Bootstrap a new Singularity image from scratch [root]
     copy          Copy files from your host into the container
+    check         Perform container security checks
     create        Create a new container image
     expand        Grow the container image
     export        Export the contents of a container via a tar pipe
