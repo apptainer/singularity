@@ -17,7 +17,7 @@ $ version=2.3.1
 $ wget "https://github.com/singularityware/singularity/releases/download/${version}/singularity-${version}.tar.gz"
 $ tar -xvzf singularity-${version}.tar.gz
 $ cd singularity-${version}
-$ ./configure --prefix=/path/to/singularity
+$ ./configure --prefix=/usr/local
 $ make
 $ sudo make install
 ```
@@ -32,7 +32,7 @@ $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
 $ git checkout tags/2.3.1 -b 2.3.1
 $ ./autogen.sh
-$ ./configure --prefix=/path/to/singularity
+$ ./configure --prefix=/usr/local
 $ make
 $ sudo make install
 ```
@@ -47,7 +47,7 @@ $ cd singularity
 $ git fetch --tags origin
 $ git checkout tags/2.3.1 -b 2.3.1
 $ ./autogen.sh
-$ ./configure --prefix=/path/to/singularity
+$ ./configure --prefix=/usr/local
 $ make
 $ sudo make install
 ```
