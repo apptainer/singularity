@@ -342,7 +342,11 @@ pid_t singularity_fork_ns(int flags) {
 
     // Fork child
     singularity_message(VERBOSE2, "Forking child process\n");
+
+    /* clone(CLONE_NEWPID) requires privilege, so escalate while cloning */
+    singularity_priv_escalate();
     child_pid = fork_ns(flags);
+    singularity_priv_drop();
 
     if ( child_pid == 0 ) {
         singularity_message(VERBOSE2, "Hello from child process\n");
@@ -477,7 +481,7 @@ pid_t singularity_fork_ns(int flags) {
         return(child_pid);
 
     } else {
-        singularity_message(ERROR, "Failed to fork child process\n");
+        singularity_message(ERROR, "Failed to fork child process: %s\n", strerror(errno));
         ABORT(255);
     }
 }

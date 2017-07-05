@@ -63,6 +63,7 @@ int _singularity_runtime_ns_pid(void) {
     singularity_message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
     singularity_priv_escalate();
     singularity_message(DEBUG, "Virtualizing PID namespace\n");
+
     if ( unshare(CLONE_NEWPID) < 0 ) {
         if ( errno == EINVAL ) {
             singularity_registry_set("NS_CLONE", "1");
