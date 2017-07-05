@@ -64,8 +64,13 @@ int _singularity_runtime_ns_pid(void) {
     singularity_priv_escalate();
     singularity_message(DEBUG, "Virtualizing PID namespace\n");
     if ( unshare(CLONE_NEWPID) < 0 ) {
-        singularity_message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
-        ABORT(255);
+        if ( errno == EINVAL ) {
+            singularity_registry_set("NS_CLONE", "1");
+            singularity_message(DEBUG, "unshare(CLONE_NEWPID) unavailable, falling back to clone instead\n");
+        } else {
+            singularity_message(ERROR, "Could not virtualize PID namespace: %s\n", strerror(errno));
+            ABORT(255);
+        }
     }
     singularity_priv_drop();
     enabled = 1;
@@ -91,8 +96,11 @@ int _singularity_runtime_ns_pid(void) {
 
     if ( enabled == 1 ) {
         // PID namespace requires a fork to activate!
-        singularity_fork_run();
-
+        if ( singularity_registry_get("NS_CLONE") ) {
+            singularity_fork_run_ns(CLONE_NEWPID);
+        } else {
+            singularity_fork_run();
+        }
         singularity_registry_set("PIDNS_ENABLED", "1");
     }
 
