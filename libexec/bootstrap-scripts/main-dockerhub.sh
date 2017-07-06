@@ -40,8 +40,12 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+
 SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
-SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
+if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
+    message ERROR "Failed to create temporary directory\n"
+    ABORT 255
+fi
 export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
 
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"

@@ -54,7 +54,6 @@ class TestCustomCache(TestCase):
         print("Testing get_cache with environment set")
         from defaults import SINGULARITY_CACHE
         self.assertEqual(self.custom_cache,SINGULARITY_CACHE)   
-        self.assertTrue(os.path.exists(SINGULARITY_CACHE))
 
 
 if __name__ == '__main__':

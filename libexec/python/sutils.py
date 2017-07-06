@@ -121,7 +121,16 @@ def is_number(image):
         return False
 
 
+def clean_up(files):
+    '''clean up will delete a list of files, only if they exist
+    '''
+    if not isinstance(files,list):
+        files = [files]
 
+    for f in files:
+        if os.path.exists(f):
+            bot.verbose3("Cleaning up %s" %f)
+            os.remove(f)
 
 ############################################################################
 ## TAR/COMPRESSION #########################################################

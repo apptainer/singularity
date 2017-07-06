@@ -47,6 +47,8 @@ fi
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
+umask 0002
+
 install -d -m 0755 "$SINGULARITY_ROOTFS/dev"
 
 cp -a /dev/null         "$SINGULARITY_ROOTFS/dev/null"      2>/dev/null || > "$SINGULARITY_ROOTFS/dev/null"

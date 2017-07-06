@@ -56,7 +56,7 @@ def main():
     pull_folder = getenv("SINGULARITY_PULLFOLDER", required=True)
     
     image_uri = get_image_uri(container)
-    container = remove_image_uri(container)
+    container = remove_image_uri(container,quiet=True)
     
     if image_uri == "shub://":
 

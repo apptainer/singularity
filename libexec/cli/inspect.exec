@@ -99,7 +99,10 @@ fi
 
 RETVAL=0
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-inspect.XXXXXXXX`
+if ! SINGULARITY_MOUNTPOINT=`mktemp -d ${TMPDIR:-/tmp}/.singularity-inspect.XXXXXXXX`; then
+    message ERROR "Failed to create temporary directory\n"
+    ABORT 255
+fi
 export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 shift
 
