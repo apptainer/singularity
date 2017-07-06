@@ -99,7 +99,10 @@ fi
 
 RETVAL=0
 SINGULARITY_CONTAINER="${1:-}"
-SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
+if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
+    message ERROR "Failed to create temporary directory\n"
+    ABORT 255
+fi
 if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
     SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
 else
