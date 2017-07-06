@@ -70,7 +70,7 @@ int _singularity_runtime_mount_binds(void) {
         singularity_message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
 
         if ( ( is_file(source) < 0 ) && ( is_dir(source) < 0 ) ) {
-            singularity_message(WARNING, "Non existant 'bind path' source: '%s'\n", source);
+            singularity_message(WARNING, "Non existent 'bind path' source: '%s'\n", source);
             continue;
         }
 
@@ -111,7 +111,7 @@ int _singularity_runtime_mount_binds(void) {
                 }
                 singularity_message(DEBUG, "Created bind file: %s\n", dest);
             } else {
-                singularity_message(WARNING, "Non existant bind point (file) in container: '%s'\n", dest);
+                singularity_message(WARNING, "Non existent bind point (file) in container: '%s'\n", dest);
                 continue;
             }
         } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
@@ -125,7 +125,7 @@ int _singularity_runtime_mount_binds(void) {
                 }
                 singularity_priv_drop();
             } else {
-                singularity_message(WARNING, "Non existant bind point (directory) in container: '%s'\n", dest);
+                singularity_message(WARNING, "Non existent bind point (directory) in container: '%s'\n", dest);
                 continue;
             }
         }

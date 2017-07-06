@@ -52,7 +52,10 @@ fi
 SINGULARITY_CONTAINER="docker://$FROM"
 SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity.d/labels.json"
 
-SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
+if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
+    message ERROR "Failed to create temporary directory\n"
+    ABORT 255
+fi
 export SINGULARITY_CONTAINER SINGULARITY_CONTENTS SINGULARITY_LABELFILE
 
 eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
