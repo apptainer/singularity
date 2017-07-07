@@ -79,8 +79,8 @@ void daemon_join(void) {
         /* Set DAEMON_NS_FD to /proc/[PID]/ns FD in registry */
         singularity_registry_set("DAEMON_NS_FD", ns_fd_str);
 
-        /* Set DAEMON as 1 in registry, to signal that we want to join the running daemon */
-        singularity_registry_set("DAEMON", "1");
+        /* Set DAEMON_JOIN as 1 in registry, to signal that we want to join the running daemon */
+        singularity_registry_set("DAEMON_JOIN", "1");
     } else {
         singularity_message(ERROR, "Unable to obtain lock on file: %s\n", strerror(errno));
         ABORT(255);
