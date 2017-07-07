@@ -116,18 +116,19 @@ while true; do
         ;;
         -n|--nv)
             shift
-            for lib in $(cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -v "^#"); do
-                for i in $(ldconfig -p | grep "${lib}"); do
-                    if [ -f "$i" ]; then
-                        message 2 "Found NV library: $i\n"
-                        if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
-                            SINGULARITY_CONTAINLIBS="$i"
-                        else
-                            SINGULARITY_CONTAINLIBS="$SINGULARITY_CONTAINLIBS,$i"
-                        fi
+            SINGULARITY_NVLIBLIST=$(mktemp singularity-nvliblist.XXXXXXXX)
+            cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -v "^#" > $SINGULARITY_NVLIBLIST
+            for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
+                if [ -f "$i" ]; then
+                    message 2 "Found NV library: $i\n"
+                    if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
+                        SINGULARITY_CONTAINLIBS="$i"
+                     else
+                        SINGULARITY_CONTAINLIBS="$SINGULARITY_CONTAINLIBS,$i"
                     fi
-                done
+                fi
             done
+            rm $SINGULARITY_NVLIBLIST
             if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
                 message WARN "Could not find any Nvidia libraries on this host!\n";
             else
