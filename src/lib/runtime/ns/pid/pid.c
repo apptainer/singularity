@@ -68,7 +68,12 @@ int _singularity_runtime_ns_pid(void) {
 #endif
 
     singularity_message(DEBUG, "Virtualizing PID namespace\n");
-    singularity_fork_run(CLONE_NEWPID);
+
+    if ( singularity_registry_get("DAEMON") ) {
+        singularity_fork_daemonize();
+    } else {
+        singularity_fork_run(CLONE_NEWPID);
+    }
 
     singularity_registry_set("PIDNS_ENABLED", "1");
 
@@ -100,7 +105,7 @@ int _singularity_runtime_ns_pid_join(void) {
     close(pid_fd);
     
     /* Enable PID NS by forking into a child */
-    singularity_fork_run();
+    singularity_fork_run(0);
     singularity_registry_set("PIDNS_ENABLED", "1");
     
     return(0);
