@@ -412,7 +412,7 @@ int singularity_fork_daemonize() {
     int i = 0;
     pid_t child;
 
-    child = fork();
+    child = singularity_fork(CLONE_NEWPID);
 
     if ( child == 0 ) {
         return(0);
