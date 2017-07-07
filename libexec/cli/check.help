@@ -1,0 +1,31 @@
+USAGE: singularity [...] check [exec options...] <container path>
+
+This command will run security checks for an image.
+
+CHECK OPTIONS:
+    -l/--low       Specify low threshold (all checks, default) 
+    -m/--med       Perform medium and high checks
+    -h/--high      Perform only checks at level high
+    -t/--tag       one or more tags to filter checks. If multiple,
+                      specified, designate logic with + (and) | (or)                      
+                      default tag, if none specified, is `security`
+EXAMPLES:
+
+    # Perform all security checks, these are the same
+    $ singularity check ubuntu.img
+    $ singularity check --tag security ubuntu.img
+
+    # Perform high level security checks
+    $ singularity check ubuntu.img
+
+    # All security checks for tag security AND debootstrap
+    $ singularity check --tag "security+debootstrap" ubuntu.img
+
+    # All security checks for tag security OR debootstrap
+    $ singularity check --tag "security|debootstrap" ubuntu.img
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    https://singularityware.github.io

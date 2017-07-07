@@ -295,6 +295,38 @@ parse_opts() {
 }
 
 
+# Given a script and an assigned level and tag, determine if it should be
+# executed to perform the check
+# [LEVEL] [SCRIPT] [TAGS]
+
+execute_check() {
+    CHECKLEVEL="${1:-}"
+    CHECKSCRIPT="${2:-}"
+    shift
+    shift
+    CHECKTAGS="${@}"  # haven't implemented this yet
+
+    RETVAL=0                # Don't run
+    RUNCHECK_LEVEL=3        # Perform all checks
+    case "$CHECKLEVEL" in
+        l|low|L|LOW)
+            RUNCHECK_LEVEL=3
+        ;;
+        m|med|M|MED)
+            RUNCHECK_LEVEL=2
+        ;;
+        h|high|H|HIGH)
+            RUNCHECK_LEVEL=1
+        ;;
+    esac
+
+    if [ "$RUNCHECK_LEVEL" -le "$SINGULARITY_CHECKLEVEL" ]; then
+       printf "$CHECKSCRIPT tags[${CHECKTAGS}] level[$CHECKLEVEL] indicated to run\n"
+       RETVAL=1
+    fi
+
+    return $RETVAL
+}
 
 
 if [ -n "${SHELL_DEBUG:-}" ]; then
