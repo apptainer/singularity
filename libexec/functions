@@ -72,6 +72,16 @@ message() {
                 printf "$MESSAGE" "$@"
             fi
         ;;
+        p|P|CHECKPASS|PASS)
+            tput -Txterm setaf 6 2>/dev/null
+            printf "PASS: $MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
+        f|F|CHECKFAIL|FAIL)
+            tput -Txterm setaf 3 2>/dev/null
+            printf "FAIL: $MESSAGE\n" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
         [2-5]|VERBOSE|DEBUG)
             if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@" 1>&2
@@ -295,6 +305,11 @@ parse_opts() {
 }
 
 
+##############################################################################
+# CHECK FUNCTIONS
+##############################################################################
+
+
 # Given a script and an assigned level and tag, determine if it should be
 # executed to perform the check
 # [LEVEL] [SCRIPT] [TAGS]
@@ -321,13 +336,35 @@ execute_check() {
     esac
 
     if [ "$RUNCHECK_LEVEL" -le "$SINGULARITY_CHECKLEVEL" ]; then
-       printf "$CHECKSCRIPT tags[${CHECKTAGS}] level[$CHECKLEVEL] indicated to run\n"
-       RETVAL=1
+       scheck 0 /bin/sh $CHECKSCRIPT
+       printf "$CHECKSCRIPT tags[${CHECKTAGS}] level[$CHECKLEVEL] \n"
     fi
 
     return $RETVAL
 }
 
+
+scheck() {
+    ERROR="${1:-}"
+    TMPFILE=`mktemp`
+    shift
+    message 2 " + %-80.80s " "$*"
+    "$@" >$TMPFILE 2>&1
+    CODE="$?"
+    if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
+        message FAIL "(retval=$CODE)"
+        tail "$TMPFILE"
+        echo "Check output in: $TMPFILE"
+    elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
+        message FAIL "(retval=$CODE)"
+        tail "$TMPFILE"
+        echo "Check output in: $TMPFILE"
+    else
+        message PASS "(retval=$CODE)"
+    fi
+    rm -f "$TMPFILE"
+    return $CODE
+}
 
 if [ -n "${SHELL_DEBUG:-}" ]; then
     set -x
