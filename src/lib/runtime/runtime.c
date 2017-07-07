@@ -81,7 +81,7 @@ char *singularity_runtime_rootfs(char *directory) {
 
 int singularity_runtime_ns(unsigned int flags) {
     /* If a daemon already exists, join existing namespaces instead of creating */
-    if ( singularity_registry_get("DAEMON") )
+    if ( singularity_registry_get("DAEMON_JOIN") )
         return(_singularity_runtime_ns_join(flags));
     
     return(_singularity_runtime_ns(flags));
