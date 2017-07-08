@@ -67,7 +67,10 @@ int main(int argc, char **argv) {
 
     daemon_join();
     singularity_runtime_ns(SR_NS_ALL);
-    daemon_rootfs();
+
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        daemon_rootfs();
+    }
     
     singularity_sessiondir();
     singularity_cleanupd();
