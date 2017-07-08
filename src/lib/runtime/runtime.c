@@ -89,7 +89,7 @@ int singularity_runtime_ns(unsigned int flags) {
 
 int singularity_runtime_overlayfs(void) {
     /* If a daemon already exists, skip this function */
-    if( singularity_registry_get("DAEMON") )
+    if( singularity_registry_get("DAEMON_JOIN") )
         return(0);
 
     return(_singularity_runtime_overlayfs());
@@ -101,7 +101,7 @@ int singularity_runtime_environment(void) {
 
 int singularity_runtime_mounts(void) {
     /* If a daemon already exists, skip this function */
-    if( singularity_registry_get("DAEMON") )
+    if( singularity_registry_get("DAEMON_JOIN") )
         return(0);
 
     if ( singularity_runtime_rootfs(NULL) == NULL ) {
@@ -114,7 +114,7 @@ int singularity_runtime_mounts(void) {
 
 int singularity_runtime_files(void) {
     /* If a daemon already exists, skip this function */
-    if( singularity_registry_get("DAEMON") )
+    if( singularity_registry_get("DAEMON_JOIN") )
         return(0);
 
     if ( singularity_runtime_rootfs(NULL) == NULL ) {

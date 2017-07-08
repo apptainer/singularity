@@ -82,6 +82,9 @@ void daemon_join(void) {
 
         /* Set DAEMON_JOIN as 1 in registry, to signal that we want to join the running daemon */
         singularity_registry_set("DAEMON_JOIN", "1");
+    } else if ( lock_result == ENOENT ) {
+        singularity_message(DEBUG, "Daemon file does not exist, running normally\n");
+        return;
     } else {
         singularity_message(ERROR, "Unable to obtain lock on file: %s\n", strerror(errno));
         ABORT(255);
