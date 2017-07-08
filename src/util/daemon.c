@@ -58,6 +58,7 @@ void daemon_join(void) {
         /* Successfully obtained lock, no daemon controls this file. */
         singularity_message(DEBUG,"No lock currently on daemon file, running normally\n");
         close(*lock_fd);
+        s_rmdir(dirname(daemon_file));
         return;
     } else if( lock_result == EALREADY ) {
         /* EALREADY is set when another process has a lock on the file. */
