@@ -132,9 +132,16 @@ class SingularityApiConnection(ApiConnection):
 
             print("Downloading image... %s" %(image_file))
 
+        url = manifest['image']
+
+        if url is None:
+            bot.error("%s is not ready for download" %(image_file))
+            bot.error("please try when build is complete, or specify tag.")
+            sys.exit(1)
+
         if download_folder is not None:
             image_file = "%s/%s" %(download_folder,image_file)
-        url = manifest['image']
+
 
         # Download image file atomically, streaming
         image_file = self.download_atomically(url=url,
