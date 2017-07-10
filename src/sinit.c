@@ -112,8 +112,9 @@ int main(int argc, char **argv) {
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i >= 0; i-- ) {
-        if( i != *daemon_file_fd )
+        if( i != *daemon_file_fd ) {
             close(i);
+        }
     }
     
     singularity_message(LOG, "Successfully closed fd's, entering daemon loop\n");
