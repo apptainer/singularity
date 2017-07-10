@@ -49,18 +49,18 @@ void daemon_join(void) {
     daemon_path(uid_str);
     free(uid_str);
     char *daemon_file = singularity_registry_get("DAEMON_FILE");
-   
+    
     /* Check if there is a lock on daemon file */
     singularity_message(DEBUG, "Checking for lock on %s\n", daemon_file);
     lock_result = filelock(daemon_file, lock_fd);
 
-    if( lock_result == 0 ) {
+    if ( lock_result == 0 ) {
         /* Successfully obtained lock, no daemon controls this file. */
         singularity_message(DEBUG,"No lock currently on daemon file, running normally\n");
         close(*lock_fd);
         s_rmdir(dirname(daemon_file));
         return;
-    } else if( lock_result == EALREADY ) {
+    } else if ( lock_result == EALREADY ) {
         /* EALREADY is set when another process has a lock on the file. */
         singularity_message(DEBUG, "Another process has lock on daemon file\n");
             
@@ -74,7 +74,12 @@ void daemon_join(void) {
         free(file_str);
 
         /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
-        ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC);
+        if ( (ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC)) == -1 ) {
+            singularity_message(WARNING, "Unable to open ns directory of PID in daemon file: %s\n",
+                                strerror(errno));
+            return;
+        }
+        
         ns_fd_str = int2str(ns_fd);
 
         /* Set DAEMON_NS_FD to /proc/[PID]/ns FD in registry */
