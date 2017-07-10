@@ -27,6 +27,7 @@
     // pipes and signal handlers so that signals are correctly passed around
     // between children and parents.
     pid_t singularity_fork(void);
+    pid_t singularity_fork_ns(int flags);
 
 
     // SINGLARITY_FORK_RUN()
@@ -37,6 +38,7 @@
     // Similar to singularity_fork() above, this will maintain the proper
     // communication channels for signal handling.
     void singularity_fork_run(void);
+    void singularity_fork_run_ns(int flags);
 
 
     // SINGULARITY_FORK_EXEC
