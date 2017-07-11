@@ -199,15 +199,8 @@ static int fork_ns(unsigned int flags) {
     if ( sigsetjmp(state.env, 1) ) {
         return 0;
     }
-
-    struct rlimit stack_limit;
-
-    if ( -1 == getrlimit(RLIMIT_STACK, &stack_limit) ) {
-        singularity_message(ERROR, "Unable to get current stack limit: %s\n", strerror(errno));
-        ABORT(255);
-    }
     
-    int stack_size = stack_limit.rlim_cur;
+    int stack_size = 1024*1024;
     void *child_stack_ptr = malloc(stack_size);
     if ( child_stack_ptr == 0 ) {
         errno = ENOMEM;
