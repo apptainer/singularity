@@ -300,13 +300,24 @@ void install_sigchld_signal_handle() {
 }
 
 pid_t singularity_fork(unsigned int flags) {
+    int priv_fork = 0;
     prepare_fork();
+
+    if ( geteuid() == 0 ) {
+        priv_fork = 1;
+    }
 
     singularity_message(VERBOSE2, "Forking child process\n");
     
-    singularity_priv_escalate();
+    if ( priv_fork == 0 ) {
+        singularity_priv_escalate();
+    }
+    
     child_pid = fork_ns(flags);
-    singularity_priv_drop();
+
+    if ( priv_fork == 0 ) {
+        singularity_priv_drop();
+    }
     
     if ( child_pid == 0 ) {
         singularity_message(VERBOSE2, "Hello from child process\n");
