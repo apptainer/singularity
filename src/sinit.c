@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     singularity_message(DEBUG, "Preparing sinit daemon\n");
 
     /* Calling readlink on /proc/self returns the PID of the thread in the host PID NS */
-    if ( readlink("/proc/self", host_pid_str, bufsize) == -1 ) {
+    if ( readlink("/proc/self", host_pid_str, bufsize) == -1 ) { //Flawfinder: ignore
         singularity_message(ERROR, "Unable to open /proc/self: %s\n", strerror(errno));
         ABORT(255);
     } else {

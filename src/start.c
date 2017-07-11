@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 
     exec_arg[2] = strdup(singularity_runtime_rootfs(NULL));
     
-    if ( execv(exec_arg[0], exec_arg) < 0 ) {
+    if ( execv(exec_arg[0], exec_arg) < 0 ) { //Flawfinder: ignore
         singularity_message(ERROR, "Failed to exec sinit: %s\n", strerror(errno));
         ABORT(255);
     }
