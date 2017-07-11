@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
     }
 
     singularity_priv_escalate();
-    retval = singularity_fork_exec(cp_cmd);
+    retval = singularity_fork_exec(0, cp_cmd);
     singularity_priv_drop();
 
     if ( retval != 0 ) {

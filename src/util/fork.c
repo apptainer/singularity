@@ -370,7 +370,6 @@ void singularity_fork_run(unsigned int flags) {
 }
 
 int singularity_fork_exec(unsigned int flags, char **argv) {
-    int tmpstatus;
     int retval;
     int i = 0;
     pid_t child;
