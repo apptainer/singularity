@@ -407,14 +407,12 @@ int singularity_fork_exec(unsigned int flags, char **argv) {
 }
 
 int singularity_fork_daemonize() {
-    int tmpstatus;
-    int retval = 0;
-    int i = 0;
     pid_t child;
 
     child = singularity_fork(CLONE_NEWPID);
 
     if ( child == 0 ) {
+        install_generic_signal_handle();
         return(0);
     } else if ( child > 0 ) {
         singularity_message(DEBUG, "Successfully spawned daemon, terminating\n");
