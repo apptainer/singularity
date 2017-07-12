@@ -129,7 +129,7 @@ int _singularity_runtime_files_libs(void) {
 
             singularity_priv_escalate();
             singularity_message(VERBOSE, "Binding file '%s' to '%s'\n", source, dest);
-            if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+            if ( mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
                     singularity_priv_drop();
                     singularity_message(ERROR, "There was an error binding %s to %s: %s\n", source, dest, strerror(errno));
                     ABORT(255);
@@ -162,7 +162,7 @@ int _singularity_runtime_files_libs(void) {
 
         singularity_priv_escalate();
         singularity_message(VERBOSE, "Binding libdir '%s' to '%s'\n", libdir, libdir_contained);
-        if ( mount(libdir, libdir_contained, NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+        if ( mount(libdir, libdir_contained, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
                 singularity_priv_drop();
                 singularity_message(ERROR, "There was an error binding %s to %s: %s\n", libdir, libdir_contained, strerror(errno));
                 ABORT(255);

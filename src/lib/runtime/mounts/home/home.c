@@ -134,7 +134,7 @@ int _singularity_runtime_mount_home(void) {
         if ( contain != 1 ) {
             singularity_priv_escalate();
             singularity_message(VERBOSE, "Mounting home directory source to stage: %s -> %s\n", home_source, joinpath(tmpdir, home_dest));
-            if ( mount(home_source, joinpath(tmpdir, home_dest), NULL, MS_BIND | MS_REC, NULL) < 0 ) {
+            if ( mount(home_source, joinpath(tmpdir, home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
                 singularity_message(ERROR, "Failed to mount home directory %s -> %s: %s\n", home_source, joinpath(tmpdir, home_dest), strerror(errno));
                 ABORT(255);
             }
@@ -181,7 +181,7 @@ int _singularity_runtime_mount_home(void) {
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Mounting home directory source into container: %s -> %s\n", homemount_source, homemount_dest);
-    if ( mount(homemount_source, homemount_dest, NULL, MS_BIND | MS_REC, NULL) < 0 ) {
+    if ( mount(homemount_source, homemount_dest, NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
         singularity_message(ERROR, "Failed to mount home directory %s -> %s: %s\n", homemount_source, homemount_dest, strerror(errno));
         ABORT(255);
     }
