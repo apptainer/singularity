@@ -40,13 +40,13 @@
 #include "util/privilege.h"
 
 
-void daemon_join(void) {
+void singularity_daemon_join(void) {
     char *pid_str, *file_str, *ns_path, *proc_path, *uid_str, *ns_fd_str;
     int lock_result, ns_fd;
     int *lock_fd = malloc(sizeof(int));
 
     uid_str = int2str(singularity_priv_getuid());
-    daemon_path(uid_str);
+    singularity_daemon_path(uid_str);
     free(uid_str);
     char *daemon_file = singularity_registry_get("DAEMON_FILE");
     
@@ -96,7 +96,7 @@ void daemon_join(void) {
     }
 }
 
-void daemon_path(char *host_uid) {
+void singularity_daemon_path(char *host_uid) {
     char *image_devino, *daemon_path, *image_name;
     int daemon_path_len;
     
@@ -119,7 +119,8 @@ void daemon_path(char *host_uid) {
     free(daemon_path);
 }
 
-void daemon_rootfs(void) {
+/* This should become unnecessary after we make the rootfs path static */
+void singularity_daemon_rootfs(void) {
     char *file_str = filecat(singularity_registry_get("DAEMON_FILE"));
 
     char *rootfs_str = strtok(file_str, "\n");

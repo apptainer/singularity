@@ -65,11 +65,11 @@ int main(int argc, char **argv) {
     singularity_priv_userns();
     singularity_priv_drop();
 
-    daemon_join();
+    singularity_daemon_join();
     singularity_runtime_ns(SR_NS_ALL);
 
     if ( singularity_registry_get("DAEMON_JOIN") ) {
-        daemon_rootfs();
+        singularity_daemon_rootfs();
     }
     
     singularity_sessiondir();

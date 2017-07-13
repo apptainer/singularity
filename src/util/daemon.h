@@ -9,11 +9,11 @@
  * 
  */
 
-#ifndef __DAEMON_H_
-#define __DAEMON_H_
+#ifndef __SINGULARITY_DAEMON_H_
+#define __SINGULARITY_DAEMON_H_
 
-    void daemon_join(void);
-    void daemon_path(char *host_uid);
-    void daemon_rootfs(void);
+    void singularity_daemon_join(void);
+    void singularity_daemon_path(char *host_uid);
+    void singularity_daemon_rootfs(void);
 
 #endif

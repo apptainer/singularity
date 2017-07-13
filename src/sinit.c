@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
-    daemon_path(argv[1]);
+    singularity_daemon_path(argv[1]);
 
     /* Fork into sinit daemon inside PID NS */
     //singularity_fork_daemonize();
@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
         singularity_message(ERROR, "Cannot lock %s: %s\n", daemon_file, strerror(errno));
         ABORT(255);
     }
-    
+
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i >= 0; i-- ) {
