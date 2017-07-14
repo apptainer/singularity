@@ -286,17 +286,21 @@ int s_mkpath(char *dir, mode_t mode) {
     }
 
     if (strcmp(dir, "/") == 0 ) {
+        singularity_message(DEBUG, "Directory is '/', returning '0'\n");
         return(0);
     }
 
     if ( is_dir(dir) == 0 ) {
-        // Directory already exists, stop...
+        singularity_message(DEBUG, "Directory exists, returning '0': %s\n", dir);
         return(0);
     }
 
-    if ( s_mkpath(dirname(strdupa(dir)), mode) < 0 ) {
-        // Return if priors failed
-        return(-1);
+    if ( is_dir(dirname(strdupa(dir))) < 0 ) {
+        singularity_message(DEBUG, "Creating parent directory: %s\n", dirname(strdupa(dir)));
+        if ( s_mkpath(dirname(strdupa(dir)), mode) < 0 ) {
+            singularity_message(VERBOSE, "Failed to create parent directory %s\n", dir);
+            return(-1);
+        }
     }
 
     singularity_message(DEBUG, "Creating directory: %s\n", dir);
@@ -305,7 +309,7 @@ int s_mkpath(char *dir, mode_t mode) {
     umask(mask); // Flawfinder: ignore
 
     if ( ret < 0 ) {
-        if ( is_dir(dir) < 0 ) { // It is possible that the directory was created between above check and mkdir()
+        if ( errno != EEXIST ) {
             singularity_message(DEBUG, "Opps, could not create directory %s: (%d) %s\n", dir, errno, strerror(errno));
             return(-1);
         }
