@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 
     /* Combine strings into str_to_write */
     str_to_write = malloc(bufsize);
-    snprintf(str_to_write, bufsize, "%s\n%s\n", host_pid_str, argv[2]);
+    snprintf(str_to_write, bufsize, "%s\n%s\n%s\n", host_pid_str, argv[2], singularity_registry_get("DAEMON_NAME"));
 
     /* Check if /tmp/.singularity-daemon-[UID]/ directory exists, if not create it */
     if( is_dir(dirname(singularity_registry_get("DAEMON_FILE"))) == -1 )
@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
     singularity_message(LOG, "Successfully closed fd's, entering daemon loop\n");
 
     while(1) {
-        singularity_message(LOG, "Logging from inside daemon\n");
+        //singularity_message(LOG, "Logging from inside daemon\n");
         sleep(60);
     }
     
