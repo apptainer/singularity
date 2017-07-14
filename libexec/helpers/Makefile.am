@@ -1,6 +1,8 @@
+SUBDIRS = checks
+
 helpersdir = $(libexecdir)/singularity/helpers
 
-dist_helpers_SCRIPTS = inspect.sh
+dist_helpers_SCRIPTS = check.sh inspect.sh
 
 MAINTAINERCLEANFILES = Makefile.in
 
