@@ -53,6 +53,12 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     shift
 fi
 
+if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
+    SINGULARITY_DAEMON_NAME="${1:-${SINGULARITY_IMAGE}}"
+    export SINGULARITY_DAEMON_NAME
+    shift
+fi
+
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"

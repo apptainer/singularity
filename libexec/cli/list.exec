@@ -78,6 +78,7 @@ SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
 for i in $SESSION_GLOB; do
     if [ -f "$i" ]; then
         DAEMON_PID=`head -n 1 "$i"`
+        DAEMON_NAME=`sed '3q;d' "$i"`
         FILE_NAME=`basename "$i"`
         FILE_ARRAY=(${FILE_NAME//-/ })
         IMAGE_NAME=${FILE_ARRAY[1]}
@@ -86,7 +87,7 @@ for i in $SESSION_GLOB; do
 
         echo "${IMAGE_NAME} Daemon:"
         echo "     Daemon PID:   $DAEMON_PID"
-        echo "     Image Name:   ${IMAGE_NAME}"
+        echo "     Daemon Name:  ${DAEMON_NAME}"
         echo "     Image inode:  ${IMAGE_INODE}"
         echo ""
     fi
