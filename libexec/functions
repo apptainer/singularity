@@ -354,7 +354,7 @@ execute_check() {
     if [ "$RUNCHECK_LEVEL" -le "$SINGULARITY_CHECKLEVEL" ]; then
        message NOTIFY "START ${CHECKSCRIPT##*/} tags[${CHECKTAGS}] level[$CHECKLEVEL]\n"
        scheck 0 $CHECKSCRIPT # script must have interpreter specified
-       printf " $CHECKSCRIPT tags[${CHECKTAGS}] level[$CHECKLEVEL] \n\n"
+       printf " $CHECKSCRIPT \n\n"
     fi
 
     return $RETVAL
