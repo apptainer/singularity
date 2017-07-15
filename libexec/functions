@@ -319,7 +319,7 @@ parse_opts() {
 # executed to perform the check
 # [LEVEL] [SCRIPT] [TAGS]
 
-execute_check() {
+exec_check() {
     CHECKSUCCESS="${1:-}"
     CHECKLEVEL="${2:-}"
     CHECKSCRIPT="${3:-}"

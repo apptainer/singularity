@@ -48,10 +48,12 @@ message DEFAULT "Checking tags $SINGULARITY_CHECKTAGS"
 
 #        [SUCCESS] [LEVEL]  [SCRIPT] [TAGS]
                                                                        
-execute_check 0 LOW "bash $SINGULARITY_libexecdir/singularity/helpers/checks/1-hello-world.sh" security default
-execute_check 0 LOW  "python $SINGULARITY_libexecdir/singularity/helpers/checks/2-cache-content.py" default clean
-execute_check 0 HIGH  "python $SINGULARITY_libexecdir/singularity/helpers/checks/3-cve.py" security
-execute_check 0 LOW  "python $SINGULARITY_libexecdir/singularity/helpers/checks/4-docker.py" docker
+exec_check 0 LOW  "python $SINGULARITY_libexecdir/singularity/helpers/checks/1-bash-hiddens.py" security clean bootstrap
+exec_check 0 LOW  "bash $SINGULARITY_libexecdir/singularity/helpers/checks/1-hello-world.sh" testing
+exec_check 0 LOW  "python $SINGULARITY_libexecdir/singularity/helpers/checks/1-cache-content.py" default clean bootstrap
+exec_check 0 HIGH "python $SINGULARITY_libexecdir/singularity/helpers/checks/3-cve.py" security
+exec_check 0 LOW  "python $SINGULARITY_libexecdir/singularity/helpers/checks/1-docker.py" docker
+
 
 
 ##################################################################################

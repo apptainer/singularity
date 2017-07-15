@@ -19,7 +19,10 @@ if os.geteuid() != 0:
     sys.exit(returncode)    
 
 # Apt-get cache
-skip = ['.profile','.bashrc','.tcshc','.cshrc']
+skip = ['.profile','.bashrc','.tcshc',
+        '.cshrc', '.bash_history',
+        '.bash_profile']
+
 root = [x for x in os.listdir('root') if x not in skip]
  
 # The user should not put content in root!
