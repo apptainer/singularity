@@ -8,6 +8,7 @@ a container:
     BootStrap: docker
     From: library/ubuntu:14.04.1
 
+Optionally, you can perform container checks with --checks.
 For more documentation on definition file recipes, look below.
 
 note: This command must be executed as root.
@@ -23,6 +24,15 @@ CREATE OPTIONS:
                     post, files, environment, test, labels, none)
        --nobase     Skip the generation of the base OS
 
+
+CHECKS OPTIONS:
+    -c|--checks    enable checks
+    -t|--tag       specify a check tag (not default)
+    -l/--low       Specify low threshold (all checks, default) 
+    -m/--med       Perform medium and high checks
+    -h/--high      Perform only checks at level high
+
+See singularity check --help for available tags
 
 DEFFILE BASEOS EXAMPLES:
 

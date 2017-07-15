@@ -54,6 +54,12 @@ if [ -n "${BOOTSTRAP:-}" -a -z "${SINGULARITY_BUILDNOBASE:-}" ]; then
 fi
 
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-sections.sh"
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-post.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 
+# If checks specified, export variable
+if [ "${SINGULARITY_CHECKS:-}" = "no" ]; then
+    message 1 "Skipping checks\n"
+else
+    message 1 "Running checks\n"
+    eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/checks.sh"
+fi

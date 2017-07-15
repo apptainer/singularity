@@ -19,12 +19,12 @@ if os.geteuid() != 0:
     sys.exit(returncode)    
 
 # Apt-get cache
-skip = ['.profile','.bashrc']
+skip = ['.profile','.bashrc','.tcshc','.cshrc']
 root = [x for x in os.listdir('root') if x not in skip]
  
 # The user should not put content in root!
 if len(root) > 0:
-    print("PROBLEM:  You should not put content in roots home.")
+    print("PROBLEM:  You should not save content in roots home.")
     print("RESOLVE:  Install to /opt or /usr/local")
     print("\n".join(root))
     returncode = 1

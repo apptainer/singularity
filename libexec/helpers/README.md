@@ -5,21 +5,15 @@ Broadly, a check is a script that is run over a mounted filesystem, primary with
 
  - the user calls `singularity check container.img` to invoke [check.exec](../cli/check.exec)
  - specification of `--low` (3), `--med` (2), or `--high` (1) sets the level to perform. The level is a filter, meaning that a level of 3 will include 3,2,1, and a level of 1 (high) will only call checks of high priority.
- - specification of `--tag/--tags` will allow the user (or execution script) to specify a kind of check. This is primarily to allow for extending the checks to do other types of things. For example, for this initial batch, these are all considered `security` checks. However, we can also take multiple tags. A script might have tag `security` but also tag `debootstrap` to specify it should only perform checks with one or both these tags. The [check.help](../cli/check.help) displays examples of how the user makes this specification:
+ - specification of `-t/--tag` will allow the user (or execution script) to specify a kind of check. This is primarily to allow for extending the checks to do other types of things. For example, for this initial batch, these are all considered `default` checks. The [check.help](../cli/check.help) displays examples of how the user specifies a tag:
 
 ```
-# Perform all security checks, these are the same
-$ singularity check ubuntu.img
-$ singularity check --tag security ubuntu.img
+    # Perform all default checks, these are the same
+    $ singularity check ubuntu.img
+    $ singularity check --tag default ubuntu.img
 
-# Perform high level security checks
-$ singularity check --high ubuntu.img
-
-# All security checks for tag security AND debootstrap
-$ singularity check --tag "security+debootstrap" ubuntu.img
-
-# All security checks for tag security OR debootstrap
-$ singularity check --tag "security|debootstrap" ubuntu.img
+    # Perform checks with tag "clean"
+    $ singularity check --tag clean ubuntu.img
 ```
  
 ### Adding a Check

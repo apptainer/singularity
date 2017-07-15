@@ -67,7 +67,7 @@ while true; do
             SINGULARITY_CHECKLEVEL=1      # level 1 only
             shift;                        # HIGH
         ;;
-        -t|--tag|--tags)
+        -t|--tag)
             shift;
             SINGULARITY_CHECKTAGS="${1:-}"         
             echo $SINGULARITY_CHECKTAGS

@@ -32,7 +32,7 @@ fi
 
 
 SINGULARITY_ROOTFS=${SINGULARITY_MOUNTPOINT}
-export SINGULARITY_MOUNTPOINT SINGULARITY_CHECK \
+export SINGULARITY_MOUNTPOINT SINGULARITY_CHECKLEVEL \
        SINGULARITY_ROOTFS SINGULARITY_CHECKTAGS
 
 message DEFAULT "Checking tags $SINGULARITY_CHECKTAGS"
@@ -69,5 +69,3 @@ execute_check 0 LOW  "python $SINGULARITY_libexecdir/singularity/helpers/checks/
 # 6) remove any non required users via userdel?
 # 7) maybe reuse|have a peak at cloud-init ?
 # 8) maybe http://libguestfs.org/virt-sysprep.1.html#operations would be a better start
-
-return 0
