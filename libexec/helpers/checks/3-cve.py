@@ -18,6 +18,8 @@ except ImportError:
 os_base,os_name,os_version = platform.linux_distribution()
 os_base = os_base.lower()
 os_names = "|".join([x.lower() for x in os_name.split('/')])
+base = os.environ["SINGULARITY_ROOTFS"]
+os.chdir(base)
 
 ########################################################################################
 # Common Vulnerabilities Database, High Risk

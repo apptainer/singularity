@@ -10,6 +10,9 @@ import platform
 import sys
 import os
 
+base = os.environ["SINGULARITY_ROOTFS"]
+os.chdir(base)
+
 os_base,os_name,os_version = platform.linux_distribution()
 os_base = os_base.lower()
 
@@ -19,7 +22,7 @@ returncode = 0
 if os_base in ["debian","ubuntu"]:
 
     skip = ['partial','lock']
-    count = len([x for x in os.listdir("/var/cache/apt/archives/")
+    count = len([x for x in os.listdir("var/cache/apt/archives/")
                 if x not in skip])
 
     # The apt cache should be cleaned
@@ -30,7 +33,7 @@ if os_base in ["debian","ubuntu"]:
 
     # The cache should only have apt debconf ldconfig
     skip = ["apt", "debconf", "ldconfig"]
-    cache_dirs = [x for x in os.listdir("/var/cache") 
+    cache_dirs = [x for x in os.listdir("var/cache") 
                   if x not in skip]
     if len(cache_dirs) > 3:
         to_remove = "\n".join(["rm -rf /var/cache/%s" %x for x in cache_dirs])
