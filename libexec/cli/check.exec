@@ -37,8 +37,12 @@ else
     exit 1
 fi
 
-# If no arguments, default SINGULARITY_CHECKLEVEL is highest (3)
+# If no arguments
+# default SINGULARITY_CHECKLEVEL is highest (3)
+# define check tags to be default
+
 SINGULARITY_CHECKLEVEL=3  # LOW
+SINGULARITY_CHECKTAGS="default"
 
 while true; do
     case ${1:-} in
@@ -64,8 +68,9 @@ while true; do
             shift;                        # HIGH
         ;;
         -t|--tag|--tags)
-            SINGULARITY_CHECKTAGS="${1:-}"            
-            export SINGULARITY_CHECKTAGS
+            shift;
+            SINGULARITY_CHECKTAGS="${1:-}"         
+            echo $SINGULARITY_CHECKTAGS
             shift;
         ;;
         -*)
@@ -85,15 +90,8 @@ SINGULARITY_IMAGE="${1:-}"
 # bootstrap since we will have the SINGULARITY_ROOTFS
 
 SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-check.XXXXXXXX`
-export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT SINGULARITY_CHECKLEVEL
+export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT SINGULARITY_CHECKLEVEL SINGULARITY_CHECKTAGS
 shift
-
-# @GMK - when I echo $SINGULARITY_MOUNTPOINT here is looks as I'd expect, eg
-# /tmp/.singularity-check.mpDwvhmm
-
-# but when I echo at the start of check.sh, it is /usr/local/var/singularity/mnt/container
-# what gives? From the code below, it looks like the mountpoint is totally disregarded
-# Note that this flow is in inspect.sh too, so if there is a bug here, might be there too!
 
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then

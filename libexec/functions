@@ -326,9 +326,18 @@ execute_check() {
     shift
     shift
     shift
-    CHECKTAGS="${@}"  # haven't implemented this yet
+    CHECKTAGS="${@}"
 
-    RETVAL=0                # Don't run
+    # The default case is that we don't run
+    RETVAL=0  
+
+    # Don't perform check if tag not indicated
+    PERFORM_CHECK=1
+    has_tag "$CHECKTAGS" "$SINGULARITY_CHECKTAGS" || PERFORM_CHECK=0
+    if [ $PERFORM_CHECK -eq 0 ]; then
+        return $RETVAL
+    fi
+ 
     RUNCHECK_LEVEL=3        # Perform all checks
     case "$CHECKLEVEL" in
         l|low|L|LOW)
@@ -349,6 +358,19 @@ execute_check() {
     fi
 
     return $RETVAL
+}
+
+
+has_tag() {
+
+    taglist="$1"
+    tag="$2"
+    if test "${taglist#*$tag}" != "$taglist"
+    then
+        return 0 # has tag, perform test
+    else
+        return 1 # no tag, skip test
+    fi
 }
 
 
