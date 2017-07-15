@@ -73,12 +73,17 @@ message() {
             fi
         ;;
         p|P|CHECKPASS|PASS)
-            tput -Txterm setaf 6 2>/dev/null
+            tput -Txterm setaf 2 2>/dev/null
             printf "PASS: $MESSAGE" "$@" 1>&2
             tput -Txterm sgr0 2>/dev/null
         ;;
+        NOTIFY|notify)
+            tput -Txterm setaf 6 2>/dev/null
+            printf "$MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
         f|F|CHECKFAIL|FAIL)
-            tput -Txterm setaf 3 2>/dev/null
+            tput -Txterm setaf 1 2>/dev/null
             printf "FAIL: $MESSAGE\n" "$@" 1>&2
             tput -Txterm sgr0 2>/dev/null
         ;;
@@ -315,8 +320,10 @@ parse_opts() {
 # [LEVEL] [SCRIPT] [TAGS]
 
 execute_check() {
-    CHECKLEVEL="${1:-}"
-    CHECKSCRIPT="${2:-}"
+    CHECKSUCCESS="${1:-}"
+    CHECKLEVEL="${2:-}"
+    CHECKSCRIPT="${3:-}"
+    shift
     shift
     shift
     CHECKTAGS="${@}"  # haven't implemented this yet
@@ -336,8 +343,9 @@ execute_check() {
     esac
 
     if [ "$RUNCHECK_LEVEL" -le "$SINGULARITY_CHECKLEVEL" ]; then
-       scheck 0 /bin/sh $CHECKSCRIPT
-       printf "$CHECKSCRIPT tags[${CHECKTAGS}] level[$CHECKLEVEL] \n"
+       message NOTIFY "START ${CHECKSCRIPT##*/} tags[${CHECKTAGS}] level[$CHECKLEVEL]\n"
+       scheck 0 $CHECKSCRIPT # script must have interpreter specified
+       printf "$CHECKSCRIPT tags[${CHECKTAGS}] level[$CHECKLEVEL] \n\n"
     fi
 
     return $RETVAL
@@ -346,23 +354,17 @@ execute_check() {
 
 scheck() {
     ERROR="${1:-}"
-    TMPFILE=`mktemp`
     shift
     message 2 " + %-80.80s " "$*"
-    "$@" >$TMPFILE 2>&1
+    "$@"
     CODE="$?"
     if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
         message FAIL "(retval=$CODE)"
-        tail "$TMPFILE"
-        echo "Check output in: $TMPFILE"
     elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
         message FAIL "(retval=$CODE)"
-        tail "$TMPFILE"
-        echo "Check output in: $TMPFILE"
     else
         message PASS "(retval=$CODE)"
     fi
-    rm -f "$TMPFILE"
     return $CODE
 }
 

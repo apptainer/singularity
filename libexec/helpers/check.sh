@@ -38,12 +38,10 @@ export SINGULARITY_MOUNTPOINT SINGULARITY_CHECK SINGULARITY_ROOTFS
 # CHECK SCRIPTS
 ##################################################################################
 
-#             [LEVEL]    [SCRIPT]                                                              [TAGS]
-execute_check HIGH       "$SINGULARITY_libexecdir/singularity/helpers/checks/1-hello-world.sh" security
-execute_check MED        "$SINGULARITY_libexecdir/singularity/helpers/checks/2-hello-world.sh" security
-execute_check LOW        "$SINGULARITY_libexecdir/singularity/helpers/checks/3-hello-world.sh" security
-
-
+#        [SUCCESS] [LEVEL]  [SCRIPT]                                                                         [TAGS]
+execute_check    0    HIGH  "bash $SINGULARITY_libexecdir/singularity/helpers/checks/1-hello-world.sh"       security
+execute_check    0     LOW  "python $SINGULARITY_libexecdir/singularity/helpers/checks/2-cache-content.py"   clean
+execute_check    0    HIGH  "python $SINGULARITY_libexecdir/singularity/helpers/checks/3-cve.py"             security
 
 
 

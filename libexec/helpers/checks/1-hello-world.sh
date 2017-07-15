@@ -5,4 +5,4 @@
 # Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 
 echo "Hello World, security level 1"
-return 0
+exit 0
