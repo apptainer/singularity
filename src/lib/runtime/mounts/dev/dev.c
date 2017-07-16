@@ -94,7 +94,10 @@ int _singularity_runtime_mount_dev(void) {
 
         singularity_message(DEBUG, "Mounting minimal staged /dev into container\n");
         if ( mount(devdir, joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_REC, NULL) < 0 ) {
+            singularity_priv_drop();
             singularity_message(WARNING, "Could not stage dev tree: '%s' -> '%s': %s\n", devdir, joinpath(container_dir, "/dev"), strerror(errno));
+            free(sessiondir);
+            free(devdir);
             return(-1);
         }
         singularity_priv_drop();
@@ -160,7 +163,9 @@ static int bind_dev(char *tmpdir, char *dev) {
     singularity_priv_escalate();
     singularity_message(DEBUG, "Mounting device %s at %s\n", dev, path);
     if ( mount(dev, path, NULL, MS_BIND, NULL) < 0 ) {
+        singularity_priv_drop();
         singularity_message(WARNING, "Could not mount %s: %s\n", dev, strerror(errno));
+        free(path);
         return(-1);
     }
     singularity_priv_drop();

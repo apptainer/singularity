@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
         singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
         singularity_priv_escalate();
-        if ( mount(singularity_runtime_rootfs(NULL), singularity_runtime_rootfs(NULL), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+        if ( mount(singularity_runtime_rootfs(NULL), singularity_runtime_rootfs(NULL), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "There was an error binding mounted container to %s: %s\n", singularity_runtime_rootfs(NULL), strerror(errno));
             ABORT(255);
         }

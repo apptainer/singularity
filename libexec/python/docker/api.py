@@ -103,15 +103,31 @@ class DockerApiConnection(ApiConnection):
         # specify wanting version 2 schema
         # meaning the correct order of digests
         # returned (base to child)
+
         return {"Accept": 'application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json',  # noqa
                'Content-Type': 'application/json; charset=utf-8'}  # noqa
+
+    def check_errors(self, response, exit=True):
+        '''take a response with errors key,
+        iterate through errors in expected format and exit upon completion
+        '''
+        if "errors" in response:
+            for error in response['errors']:
+                bot.error("%s: %s" % (error['code'],
+                                      error['message']))
+                if error['code'] == "UNAUTHORIZED":
+                    msg = "Check image existence, capitalization, and permissions."
+                    bot.error(msg)
+            if exit:
+                sys.exit(1)
+        return response
 
     def load_image(self, image):
         '''load_image parses the image uri, and loads the
         different image parameters into the client.
         The image should be a docker uri (eg docker://)
-        or name of docker image.
-        '''
+        or name of docker image'''
+        
         image = parse_image_uri(image=image, uri="docker://")
         self.repo_name = image['repo_name']
         self.repo_tag = image['repo_tag']
@@ -282,7 +298,8 @@ class DockerApiConnection(ApiConnection):
             bot.error("Error getting manifest for %s, exiting." % repo_uri)
             sys.exit(1)
 
-        return response
+        # If we have errors, don't continue
+        return self.check_errors(response)
 
     def get_layer(self,
                   image_id,
