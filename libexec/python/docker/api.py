@@ -175,7 +175,7 @@ class DockerApiConnection(ApiConnection):
             self.token = token
             self.update_headers(token)
 
-        except:
+        except Exception:
             msg = "Error getting token for repository "
             msg += "%s/%s, exiting." % (self.namespace,
                                         self.repo_name)
@@ -233,7 +233,7 @@ class DockerApiConnection(ApiConnection):
         try:
             response = json.loads(response)
             return response['tags']
-        except:
+        except Exception:
             bot.error("Error obtaining tags: %s" % base)
             sys.exit(1)
 
@@ -270,7 +270,7 @@ class DockerApiConnection(ApiConnection):
         try:
             response = json.loads(response)
 
-        except:
+        except Exception:
 
             # If the call fails, give the user a list of acceptable tags
             tags = self.get_tags()
@@ -341,7 +341,7 @@ class DockerApiConnection(ApiConnection):
 
         try:
             os.rename(tar_download, download_folder)
-        except:
+        except Exception:
             msg = "Cannot untar layer %s," % tar_download
             msg += " was there a problem with download?"
             bot.error(msg)

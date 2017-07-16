@@ -335,14 +335,15 @@ class ApiConnection(object):
                                    show_progress=show_progress)
             os.rename(tmp_file, file_name)
 
-        except:
+        except Exception:
+
             download_folder = os.path.dirname(os.path.abspath(file_name))
             msg = "Error downloading %s. " % (url)
             msg += "Do you have permission to write to %s?" % (download_folder)
             bot.error(message)
             try:
                 os.remove(tmp_file)
-            except:
+            except Exception:
                 pass
             sys.exit(1)
 

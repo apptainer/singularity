@@ -57,7 +57,7 @@ def main():
 
     try:
         (args, options) = parser.parse_args()
-    except:
+    except Exception:
         sys.exit(0)
 
     if args.file is not None:
@@ -67,6 +67,7 @@ def main():
     else:
         bot.error("--file must be defined for DUMP. Exiting")
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

@@ -76,7 +76,7 @@ def main():
 
     try:
         (args, options) = parser.parse_args()
-    except:
+    except Exception:
         sys.exit(0)
 
     if args.key is not None and args.file is not None:
@@ -90,6 +90,7 @@ def main():
     else:
         bot.error("--key and --file and --value must be defined for ADD.")
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()

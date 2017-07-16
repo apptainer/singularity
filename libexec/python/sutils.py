@@ -185,7 +185,7 @@ def create_tar(files, output_folder=None):
         try:  # python3
             info.size = filey.write(entity['content'])
             content = BytesIO(entity['content'].encode('utf8'))
-        except:  # python2
+        except Exception:  # python2
             info.size = int(filey.write(entity['content'].decode('utf-8')))
             content = BytesIO(entity['content'].encode('utf8'))
         pass

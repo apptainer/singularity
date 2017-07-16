@@ -55,7 +55,7 @@ import re
 
 try:
     from urllib import unquote
-except:
+except Exception:
     from urllib.parse import unquote
 
 
@@ -115,7 +115,7 @@ class SingularityApiConnection(ApiConnection):
             response = response.read().decode('utf-8')
             response = json.loads(response)
 
-        except:
+        except Exception:
             print("Error getting image manifest using url %s" % base)
             sys.exit(1)
 
