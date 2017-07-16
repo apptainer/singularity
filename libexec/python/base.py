@@ -340,7 +340,7 @@ class ApiConnection(object):
             download_folder = os.path.dirname(os.path.abspath(file_name))
             msg = "Error downloading %s. " % (url)
             msg += "Do you have permission to write to %s?" % (download_folder)
-            bot.error(message)
+            bot.error(msg)
             try:
                 os.remove(tmp_file)
             except Exception:
