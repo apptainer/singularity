@@ -135,5 +135,6 @@ class TestApi(TestCase):
         self.assertEqual('vsoch-singularity-images-master.img.gz',
                          image_name)
 
+
 if __name__ == '__main__':
     unittest.main()

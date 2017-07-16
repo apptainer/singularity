@@ -143,5 +143,6 @@ def configure(args):
 
     bot.info("*** FINISHED PYTHON CONFIGURATION HELPER ****\n")
 
+
 if __name__ == '__main__':
     main()
