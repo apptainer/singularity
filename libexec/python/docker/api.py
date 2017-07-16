@@ -116,7 +116,7 @@ class DockerApiConnection(ApiConnection):
                 bot.error("%s: %s" % (error['code'],
                                       error['message']))
                 if error['code'] == "UNAUTHORIZED":
-                    msg = "Check image existence, capitalization, and permissions."
+                    msg = "Check existence, naming, and permissions"
                     bot.error(msg)
             if exit:
                 sys.exit(1)
@@ -127,7 +127,7 @@ class DockerApiConnection(ApiConnection):
         different image parameters into the client.
         The image should be a docker uri (eg docker://)
         or name of docker image'''
-        
+
         image = parse_image_uri(image=image, uri="docker://")
         self.repo_name = image['repo_name']
         self.repo_tag = image['repo_tag']
