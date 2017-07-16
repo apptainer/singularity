@@ -88,7 +88,7 @@ class TestJson(TestCase):
         print('Testing Singularity Hub Size')
         from sutils import read_file
 
-        shub_cont "shub://vsoch/singularity-hello-world"
+        shub_cont = "shub://vsoch/singularity-hello-world"
         os.environ['SINGULARITY_CONTAINER'] = shub_cont
         os.environ['SINGULARITY_CONTENTS'] = self.file
 
