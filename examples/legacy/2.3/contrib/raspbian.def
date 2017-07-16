@@ -1,0 +1,10 @@
+BootStrap: debootstrap
+OSVersion: stable
+MirrorURL: http://ftp.acc.umu.se/mirror/raspbian/raspbian/
+
+%post
+
+    apt-get update
+    apt-get -y install gcc vim apache2
+    apt-get clean
+    exit 0
