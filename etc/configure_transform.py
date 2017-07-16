@@ -44,7 +44,7 @@ def get_parser():
     parser = optparse.OptionParser(description=description)
 
     # Configuration defaults header
-    help "configuration defaults header file (../src/lib/config_defaults.h)"
+    help = "configuration defaults header file (../src/lib/config_defaults.h)"
     parser.add_option("--defaults",
                       dest='defaults',
                       help=help,
