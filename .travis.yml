@@ -41,8 +41,4 @@ install:
   - sudo make install
 
 script:
-  # This will run pep8 on *.py in all subfolders
-  # (I ignore "E402: module level import not at top of file"
-  # because of use case sys.path.append('..'); import <module>)
-  - find . -name \*.py -not -path "./singularity-2.2.1/*" -exec pep8 --ignore=E402 {} +
   - make test
