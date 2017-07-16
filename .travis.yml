@@ -24,6 +24,7 @@ before_install:
   - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
   # Install updated version of pylint
   - sudo pip install pylint
+  - sudo pip install pep8
   # Install last release for legacy testing
   - cd $TRAVIS_BUILD_DIR/
   - wget https://github.com/singularityware/singularity/releases/download/2.2.1/singularity-2.2.1.tar.gz
@@ -40,4 +41,8 @@ install:
   - sudo make install
 
 script:
+  # This will run pep8 on *.py in all subfolders
+  # (I ignore "E402: module level import not at top of file"
+  # because of use case sys.path.append('..'); import <module>)
+  - find . -name \*.py -exec pep8 --ignore=E402 {} +
   - make test
