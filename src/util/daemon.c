@@ -130,3 +130,30 @@ void singularity_daemon_rootfs(void) {
 
     free(file_str);
 }
+
+void daemon_init_join(void) {
+    
+}
+
+void daemon_init_start(void) {
+
+}
+
+void singularity_daemon_init(void) {
+    char *daemon_path = (char *)malloc(2048 * sizeof(char));
+
+    int uid = singularity_priv_getuid();
+    char *dev_ino = file_devino(singularity_registry_get("IMAGE"));
+    char *name = singularity_registry_get("DAEMON_NAME");
+    
+    snprintf(daemon_path, 2048, "/tmp/.singularity-daemon-%d/%s-%s", uid, dev_ino, name);
+    singularity_registry_set("DAEMON_FILE", daemon_path);
+    
+    if ( singularity_registry_get("DAEMON") ) {
+        daemon_init_start();
+        return;
+    } else {
+        daemon_init_join();
+        return;
+    }
+}
