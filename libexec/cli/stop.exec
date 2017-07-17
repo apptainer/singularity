@@ -109,7 +109,7 @@ for i in $SESSION_GLOB; do
         SINGULARITY_IMAGE_=`basename "$SINGULARITY_IMAGE"`
         
         if [ "${IMAGE_NAME}" == "${SINGULARITY_IMAGE_}" ]; then
-           echo "Sending SIGQUIT to ${DAEMON_PID}"
+           echo "Sending SIGKILL to ${DAEMON_PID}"
            kill -n 9 ${DAEMON_PID}
            rm $i
         fi
