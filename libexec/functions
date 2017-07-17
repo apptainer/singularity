@@ -72,6 +72,21 @@ message() {
                 printf "$MESSAGE" "$@"
             fi
         ;;
+        p|P|CHECKPASS|PASS)
+            tput -Txterm setaf 2 2>/dev/null
+            printf "PASS: $MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
+        NOTIFY|notify)
+            tput -Txterm setaf 6 2>/dev/null
+            printf "$MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
+        f|F|CHECKFAIL|FAIL)
+            tput -Txterm setaf 1 2>/dev/null
+            printf "FAIL: $MESSAGE\n" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
         [2-5]|VERBOSE|DEBUG)
             if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@" 1>&2
@@ -295,7 +310,90 @@ parse_opts() {
 }
 
 
+##############################################################################
+# CHECK FUNCTIONS
+##############################################################################
 
+
+# Given a script and an assigned level and tag, determine if it should be
+# executed to perform the check
+# [LEVEL] [SCRIPT] [TAGS]
+
+exec_check() {
+    CHECKSUCCESS="${1:-}"
+    CHECKLEVEL="${2:-}"
+    CHECKSCRIPT="${3:-}"
+    shift
+    shift
+    shift
+    CHECKTAGS="${@}"
+
+    # The default case is that we don't run
+    RETVAL=0  
+
+    # Don't perform check if tag not indicated
+    PERFORM_CHECK=1
+
+    # if not "all," check if user wants check performed
+    if [ "$SINGULARITY_CHECKTAGS" != "all" ]; then
+        has_tag "$CHECKTAGS" "$SINGULARITY_CHECKTAGS" || PERFORM_CHECK=0
+    fi
+
+    if [ $PERFORM_CHECK -eq 0 ]; then
+        return $RETVAL
+    fi
+ 
+    RUNCHECK_LEVEL=3        # Perform all checks
+    case "$CHECKLEVEL" in
+        l|low|L|LOW)
+            RUNCHECK_LEVEL=3
+        ;;
+        m|med|M|MED)
+            RUNCHECK_LEVEL=2
+        ;;
+        h|high|H|HIGH)
+            RUNCHECK_LEVEL=1
+        ;;
+    esac
+
+    if [ "$RUNCHECK_LEVEL" -le "$SINGULARITY_CHECKLEVEL" ]; then
+       message NOTIFY "START ${CHECKSCRIPT##*/} tags[${CHECKTAGS}] level[$CHECKLEVEL]\n"
+       scheck 0 $CHECKSCRIPT # script must have interpreter specified
+       printf " $CHECKSCRIPT \n"
+    fi
+
+    return $RETVAL
+}
+
+
+has_tag() {
+
+    taglist="$1"
+    tag="$2"
+    if test "${taglist#*$tag}" != "$taglist"
+    then
+        return 0 # has tag, perform test
+    else
+        return 1 # no tag, skip test
+    fi
+}
+
+
+scheck() {
+    ERROR="${1:-}"
+    shift
+    message 2 " + %-80.80s " "$*"
+    "$@"
+    CODE="$?"
+    if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
+        message FAIL "(retval=$CODE)"
+    elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
+        message FAIL "(retval=$CODE)"
+    else
+        message PASS "(retval=$CODE)"
+    fi
+    return $CODE
+}
 
 if [ -n "${SHELL_DEBUG:-}" ]; then
     set -x

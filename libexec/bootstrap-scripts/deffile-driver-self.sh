@@ -40,39 +40,52 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
-
-SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
-if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
-    message ERROR "Failed to create temporary directory\n"
-    ABORT 255
+if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
+    exit
 fi
-export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
+
+
+########## BEGIN BOOTSTRAP SCRIPT ##########
+
+umask 0002
+
+
+if ! GUNZIP_PATH=`singularity_which gunzip`; then
+    message ERROR "gunzip is not in PATH... Perhaps 'apt-get install' it?\n"
+    exit 1
+fi
+
+
+# By default, we clone from root unless specified otherwise
+
+if [ -z "${FROM:-}" ]; then
+    FROM='/'
+fi
+
+message 1 "Cloning from $FROM\m"
+message 1 "Preparing contents to bootstrap image by self clone with base $FROM\n"
+SINGULARITY_DUMP=`mktemp /tmp/.singularity-layers.XXXXXXXX.tgz`
+export SINGULARITY_DUMP
+
+# The user can specify custom exclusions
+
+if [ -z "${EXCLUDE:-}" ]; then
+    EXCLUDE=''
+else
+    message 1 "Custom exclusions: $EXCLUDE\n"
+fi
+CUSTOM_EXCLUSIONS=$(echo "$EXCLUDE" | sed 's/[^ ]* */--exclude &/g')
+
+# Extract the host into a container
+tar --one-file-system -czvSf $SINGULARITY_DUMP --exclude $SINGULARITY_DUMP --exclude $HOME --exclude $SINGULARITY_libexecdir --exclude ${TMPDIR-/tmp} --exclude $SINGULARITY_libexecdir/singularity $CUSTOM_EXCLUSIONS --exclude /usr/src $FROM
 
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
-eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 
-for i in `cat "$SINGULARITY_CONTENTS"`; do
-    name=`basename "$i"`
-    message 1 "Exploding layer: $name\n"
-    zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf -) || exit $?
-done
+message 1 "Extracting self into new image\n"
 
-rm -f "$SINGULARITY_CONTENTS"
+cd $SINGULARITY_ROOTFS && gunzip -dc $SINGULARITY_DUMP
 
-# If checktags not defined, default to docker
-if [ -z "${SINGULARITY_CHECKTAGS:-}" ]; then
-    SINGULARITY_CHECKTAGS=docker
-    export SINGULARITY_CHECKTAGS
-fi
-
+rm -f "$SINGULARITY_DUMP"
 
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
-
-# If checks specified, export variable
-if [ "${SINGULARITY_CHECKS:-}" = "no" ]; then
-    message 1 "Skipping checks\n"
-else
-    message 1 "Running checks\n"
-    eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/checks.sh"
-fi
