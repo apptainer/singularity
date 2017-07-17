@@ -412,7 +412,6 @@ int singularity_fork_daemonize() {
     child = singularity_fork(CLONE_NEWPID);
 
     if ( child == 0 ) {
-        install_generic_signal_handle();
         return(0);
     } else if ( child > 0 ) {
         singularity_message(DEBUG, "Successfully spawned daemon, terminating\n");
