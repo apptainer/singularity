@@ -333,7 +333,12 @@ exec_check() {
 
     # Don't perform check if tag not indicated
     PERFORM_CHECK=1
-    has_tag "$CHECKTAGS" "$SINGULARITY_CHECKTAGS" || PERFORM_CHECK=0
+
+    # if not "all," check if user wants check performed
+    if [ "$SINGULARITY_CHECKTAGS" != "all" ]; then
+        has_tag "$CHECKTAGS" "$SINGULARITY_CHECKTAGS" || PERFORM_CHECK=0
+    fi
+
     if [ $PERFORM_CHECK -eq 0 ]; then
         return $RETVAL
     fi
