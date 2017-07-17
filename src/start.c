@@ -52,9 +52,6 @@
 
 int main(int argc, char **argv) {
     struct image_object image;
-    char *pwd = get_current_dir_name();
-    char *target_pwd = NULL;
-    char *command = NULL;
 
     char **exec_arg = malloc(sizeof(char *) * 4);
     exec_arg[0] = joinpath(LIBEXECDIR, "/singularity/bin/sinit"); //path to sinit binary
@@ -73,11 +70,11 @@ int main(int argc, char **argv) {
 
     singularity_registry_set("UNSHARE_PID", "1");
     singularity_registry_set("DAEMON", "1");
-    singularity_cleanupd();
-    
+        
     singularity_runtime_ns(SR_NS_ALL);
     
     singularity_sessiondir();
+    singularity_cleanupd();
     
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
