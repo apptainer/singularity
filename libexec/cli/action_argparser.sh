@@ -56,6 +56,14 @@ while true; do
             SINGULARITY_WRITABLE=1
             export SINGULARITY_WRITABLE
         ;;
+        -j|--join)
+            shift
+            SINGULARITY_DAEMON_JOIN=1
+            export SINGULARITY_DAEMON_JOIN
+            SINGULARITY_DAEMON_NAME="${1:-}"
+            export SINGULARITY_DAEMON_NAME
+            shift
+        ;;
         -H|--home)
             shift
             SINGULARITY_HOME="$1"
