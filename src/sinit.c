@@ -42,64 +42,26 @@
 
 
 int main(int argc, char **argv) {
+    char *daemon_fd_str;
+    int daemon_fd;
     int i;
-    int *daemon_file_fd = malloc(sizeof(int));
-    ssize_t bufsize = 2048;
-    char *daemon_file, *str_to_write;
-    char *host_pid_str = malloc(bufsize);
     
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_priv_init();
     singularity_registry_init();
-    singularity_daemon_path(argv[1]);
-
-    /* Fork into sinit daemon inside PID NS */
-    //singularity_fork_daemonize();
 
     /* After this point, we are running as PID 1 inside PID NS */
     singularity_message(DEBUG, "Preparing sinit daemon\n");
+    singularity_registry_set("ROOTFS", argv[2]);
+    singularity_daemon_init();
 
-    /* Calling readlink on /proc/self returns the PID of the thread in the host PID NS */
-    if ( readlink("/proc/self", host_pid_str, bufsize) == -1 ) { //Flawfinder: ignore
-        singularity_message(ERROR, "Unable to open /proc/self: %s\n", strerror(errno));
-        ABORT(255);
-    } else {
-        singularity_message(DEBUG, "PID in host namespace, from /proc/self: %s\n", host_pid_str);
-    }
-
-    /* Get pathname of daemon information file */
-    daemon_file = singularity_registry_get("DAEMON_FILE");
-
-    /* Combine strings into str_to_write */
-    str_to_write = malloc(bufsize);
-    snprintf(str_to_write, bufsize, "%s\n%s\n%s\n", host_pid_str, argv[2], singularity_registry_get("DAEMON_NAME"));
-
-    /* Check if /tmp/.singularity-daemon-[UID]/ directory exists, if not create it */
-    if( is_dir(dirname(singularity_registry_get("DAEMON_FILE"))) == -1 )
-        s_mkpath(dirname(singularity_registry_get("DAEMON_FILE")), 0755);
-
-    /* Attempt to open lock on daemon file */
-    i = filelock(daemon_file, daemon_file_fd);
-
-    if( i == 0 ) {
-        singularity_message(DEBUG, "Successfully obtained excluse lock on %s\n", daemon_file);
-        
-        /* Successfully obtained lock, write [PID] to open fd */
-        if( write(*daemon_file_fd, str_to_write, strlength(str_to_write, bufsize) + 1) == -1 ) {
-            singularity_message(ERROR, "Unable to write to %s: %s\n", daemon_file, strerror(errno));
-        }
-    } else if( i == EALREADY ) {
-        /* Another daemon controls this file already */
-        singularity_message(ERROR, "Daemon already exists: %s\n", strerror(errno));
-        ABORT(255);
-    } else {
-        singularity_message(ERROR, "Cannot lock %s: %s\n", daemon_file, strerror(errno));
-        ABORT(255);
-    }
+    daemon_fd_str = singularity_registry_get("DAEMON_FD");
+    daemon_fd = atoi(daemon_fd_str);
 
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i >= 0; i-- ) {
-        if( i != *daemon_file_fd ) {
+        if( i != daemon_fd ) {
             close(i);
         }
     }
