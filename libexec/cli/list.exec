@@ -51,11 +51,6 @@ while true; do
 done
 
 
-
-####
-# This entire file is a template for functionality that needs to be written
-# still!
-
 # This is a configurable option, needs to be set accordingly!
 SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
 
@@ -64,18 +59,23 @@ SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
 
 for i in $SESSION_GLOB; do
     if [ -f "$i" ]; then
-        DAEMON_PID=`head -n 1 "$i"`
-        DAEMON_NAME=`sed '3q;d' "$i"`
+        if [ ! -s "$i" ]; then
+            rm "$i"
+            continue
+        fi
         FILE_NAME=`basename "$i"`
-        FILE_ARRAY=(${FILE_NAME//-/ })
-        IMAGE_NAME=${FILE_ARRAY[1]}
-        IMAGE_INODE=${FILE_ARRAY[0]}
+        INODE=${FILE_NAME%-*}
+        DAEMON_NAME=${FILE_NAME##*-}
+        . "$i"
         
-
-        echo "${IMAGE_NAME} Daemon:"
-        echo "     Daemon PID:   $DAEMON_PID"
+        if [ "${INODE}" != "${_INODE:-}" ]; then
+            _INODE=${INODE}
+            echo "${DAEMON_IMAGE} Daemon:"
+        fi
+        
+        echo "     Daemon PID:   ${DAEMON_PID}"
         echo "     Daemon Name:  ${DAEMON_NAME}"
-        echo "     Image inode:  ${IMAGE_INODE}"
+        echo "     Image inode:  ${DAEMON_ROOTFS}"
         echo ""
     fi
 done

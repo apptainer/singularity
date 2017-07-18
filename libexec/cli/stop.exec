@@ -39,7 +39,13 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     shift
 fi
 
-if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
+    SINGULARITY_DAEMON_NAME="${1:-}"
+    export SINGULARITY_DAEMON_NAME
+    shift
+fi
+
+if [ -z "${SINGULARITY_IMAGE:-}" ] || [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -75,11 +81,6 @@ while true; do
 done
 
 
-
-####
-# This entire file is a template for functionality that needs to be written
-# still!
-
 # This is a configurable option, needs to be set accordingly!
 SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
 
@@ -88,16 +89,24 @@ SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
 
 for i in $SESSION_GLOB; do
     if [ -f "$i" ]; then
-        DAEMON_PID=`head -n 1 "$i"`
+        if [ ! -s "$i" ]; then
+            rm "$i"
+            continue
+        fi
         FILE_NAME=`basename "$i"`
-        FILE_ARRAY=(${FILE_NAME//-/ })
-        IMAGE_NAME=${FILE_ARRAY[1]}
-        SINGULARITY_IMAGE_=`basename "$SINGULARITY_IMAGE"`
-        
-        if [ "${IMAGE_NAME}" == "${SINGULARITY_IMAGE_}" ]; then
+        SINGULARITY_IMAGE_=`readlink -f "$SINGULARITY_IMAGE"`
+        INODE=${FILE_NAME%-*}
+        DAEMON_NAME=${FILE_NAME##*-}
+        . "$i"
+
+        if [ "${DAEMON_IMAGE}" == "${SINGULARITY_IMAGE_}" ] &&
+               [ "${DAEMON_NAME}" == "${SINGULARITY_DAEMON_NAME}" ]; then
            echo "Sending SIGKILL to ${DAEMON_PID}"
            kill -n 9 ${DAEMON_PID}
            rm $i
+           exit 0
         fi
     fi
 done
+
+message ERROR "No such daemon exists: ${DAEMON_NAME} at ${DAEMON_IMAGE}\n"
