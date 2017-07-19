@@ -3,7 +3,7 @@ SUBDIRS = bin etc libexec man src
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure ltmain.sh depcomp install-sh missing config.* *.m4 singularity-*.tar.gz singularity-*.rpm m4/* test.sh
 DISTCLEANFILES = Makefile test.sh
 CLEANFILES = 
-EXTRA_DIST = singularity.spec examples debian AUTHORS.md CONTRIBUTING.md COPYRIGHT.md INSTALL.md LICENSE-LBNL.md LICENSE.md README.md
+EXTRA_DIST = singularity.spec examples debian AUTHORS.md CONTRIBUTING.md COPYRIGHT.md INSTALL.md LICENSE-LBNL.md LICENSE.md README.md tests
 
 maintainer-clean-local:
 	rm -rf m4
