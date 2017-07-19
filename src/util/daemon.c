@@ -96,7 +96,7 @@ void daemon_init_join(void) {
         daemon_file_parse();
                 
         ns_path = (char *)malloc(2048 * sizeof(char *));
-        sprintf(ns_path, "/proc/%s/ns", singularity_registry_get("DAEMON_PID"));
+        sprintf(ns_path, "/proc/%s/ns", singularity_registry_get("DAEMON_PID")); //Flawfinder: ignore
 
         /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
         if ( (ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC)) == -1 ) {
@@ -144,7 +144,7 @@ void daemon_init_start(void) {
             singularity_message(DEBUG, "PID in host namespace: %s\n", daemon_pid);
         }
 
-        if ( !(daemon_image = realpath(singularity_registry_get("IMAGE"), NULL)) ) {
+        if ( !(daemon_image = realpath(singularity_registry_get("IMAGE"), NULL)) ) { //Flawfinder: ignore
             singularity_message(DEBUG, "ERROR: %s\n", strerror(errno));
         }
         
