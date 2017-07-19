@@ -3,7 +3,7 @@ USAGE: singularity [...] start [start options...] <container path> <daemon name>
 Start a daemon from the container image with the given daemon name.
 
 
-SHELL OPTIONS:
+START OPTIONS:
     -B/--bind <spec>    A user-bind path specification.  spec has the format
                         src[:dest[:opts]], where src and dest are outside and
                         inside paths.  If dest is not given, it is set equal
