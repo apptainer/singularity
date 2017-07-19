@@ -72,6 +72,12 @@ for i in $SESSION_GLOB; do
             _INODE=${INODE}
             echo "${DAEMON_IMAGE} Daemon:"
         fi
+
+        if [ "${USERID}" == "*" ]; then
+            DIR=`dirname "$i"`
+            DAEMON_UID=${DIR##*-}
+            echo "     Owner UID:    ${DIR##*-}"
+        fi
         
         echo "     Daemon PID:   ${DAEMON_PID}"
         echo "     Daemon Name:  ${DAEMON_NAME}"
