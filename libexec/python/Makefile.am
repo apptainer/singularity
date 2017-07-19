@@ -1,4 +1,5 @@
 SUBDIRS = docker shub helpers
+EXTRA_DIST = tests
 
 scriptlibexecdir = $(libexecdir)/singularity/python
 
