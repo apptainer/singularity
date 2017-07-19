@@ -7,6 +7,6 @@ dist_cliexec_SCRIPTS = bootstrap.exec check.exec copy.exec create.exec exec.exec
 
 dist_cliexec_DATA = singularity.help bootstrap.help check.help copy.help create.help \
                     exec.help expand.help export.help import.help inspect.help mount.help \
-                    pull.help run.help shell.help test.help
+                    pull.help run.help shell.help test.help start.help
 
 MAINTAINERCLEANFILES = Makefile.in
