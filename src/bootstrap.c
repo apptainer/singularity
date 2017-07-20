@@ -65,6 +65,8 @@ int main(int argc, char **argv) {
 
     singularity_image_open(&image, O_RDWR);
 
+    singularity_image_check(&image);
+
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_bind(&image);

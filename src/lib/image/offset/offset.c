@@ -51,8 +51,8 @@ int _singularity_image_offset(struct image_object *image) {
         ABORT(255);
     }
 
-    if ( image->type == SQUASHFS ) {
-        singularity_message(DEBUG, "File is a SquashFS image, returning zero offset\n");
+    if ( image->type != SINGULARITY ) {
+        singularity_message(DEBUG, "File is not a Singularity image, returning zero offset\n");
         return(0);
     }
 
