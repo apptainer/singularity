@@ -1,0 +1,32 @@
+USAGE: singularity [...] list [list options...]
+
+List all running singularity daemons
+
+LIST OPTIONS:
+    -a/--all               If running as root, list daemons from all users
+    -u/--user <username>   If running as root, list daemons from <username>
+
+EXAMPLES:
+
+    $ singularity list
+    /home/mibauer/singularity/sdaemon/test.img  [2056.132716]  Daemons:
+         Daemon PID:   11963
+         Daemon Name:  test
+         
+    $ sudo singularity list --all
+    /home/mibauer/singularity/sdaemon/test.img  [2056.132716]  Daemons:
+         Owner UID:    0
+         Daemon PID:   16219
+         Daemon Name:  test
+
+         Owner UID:    1000
+         Daemon PID:   11963
+         Daemon Name:  test
+
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+

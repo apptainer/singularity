@@ -34,12 +34,28 @@ if ! USERID=`id --real --user`; then
     exit 255
 fi
 
-if [ "$USERID" = 0 ]; then
-    USERID="*"
-fi
 
 while true; do
     case ${1:-} in
+        -a|--all)
+            if [ "$USERID" = 0 ]; then
+                USERID="*"
+                shift
+            else
+                message ERROR "Must be root to list all\n"
+                exit 1
+            fi
+        ;;
+        -u|--user)
+            if [ "$USERID" = 0 ]; then
+                shift
+                USERID=${1:-}
+                shift
+            else
+                message ERROR "Must be root to list with -u/--user option\n"
+                exit 1
+            fi
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -70,7 +86,7 @@ for i in $SESSION_GLOB; do
         
         if [ "${INODE}" != "${_INODE:-}" ]; then
             _INODE=${INODE}
-            echo "${DAEMON_IMAGE} Daemon:"
+            echo "${DAEMON_IMAGE}  [${INODE}]  Daemons:"
         fi
 
         if [ "${USERID}" == "*" ]; then
@@ -81,7 +97,6 @@ for i in $SESSION_GLOB; do
         
         echo "     Daemon PID:   ${DAEMON_PID}"
         echo "     Daemon Name:  ${DAEMON_NAME}"
-        echo "     Image inode:  ${DAEMON_ROOTFS}"
         echo ""
     fi
 done
