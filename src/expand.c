@@ -75,6 +75,8 @@ int main(int argc, char **argv) {
     singularity_message(INFO, "Opening image file: %s\n", image.name);
     singularity_image_open(&image, O_RDWR);
 
+    singularity_image_check(&image);
+
     singularity_message(INFO, "Expanding image by %ldMiB\n", size);
     singularity_image_expand(&image, size);
 
