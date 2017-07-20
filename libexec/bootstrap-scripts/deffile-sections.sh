@@ -77,7 +77,8 @@ cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 ### EXPORT ENVARS
 DEBIAN_FRONTEND=noninteractive
-export DEBIAN_FRONTEND
+SINGULARITY_ENVIRONMENT="/.singularity.d/env/91-environment.sh"
+export DEBIAN_FRONTEND SINGULARITY_ENVIRONMENT
 
 ### RUN SETUP
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "setup" ]; then
@@ -137,7 +138,7 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "post" ]; then
     if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
         message 1 "Running post scriptlet\n"
-
+        
         ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
         singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
     fi

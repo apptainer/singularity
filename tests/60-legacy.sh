@@ -45,7 +45,7 @@ stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/env/01-
 stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
 stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
 stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -L /.singularity.d/environment
+stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -L /environment
 stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -L /singularity
 stest 0 $LEGACYDIR/singularity exec "$CONTAINER" env | grep -cw FOO=bar > /dev/null
 
