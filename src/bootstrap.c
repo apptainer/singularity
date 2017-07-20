@@ -83,7 +83,6 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_DOCKER_USERNAME", singularity_registry_get("DOCKER_USERNAME"), 1);
     envar_set("SINGULARITY_CACHEDIR", singularity_registry_get("CACHEDIR"), 1);
     envar_set("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
-    envar_set("SINGULARITY_ENVIRONMENT", "/.singularity.d/env/91-environment.sh", 1);
     envar_set("HOME", singularity_priv_home(), 1);
     envar_set("LANG", "C", 1);
 
