@@ -65,7 +65,7 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
-    if ( strncmp(section, "post", 1) == 0 ){
+    if ( strncmp(section, "post", 4) == 0 ){
         singularity_message(DEBUG, "Creating $SINGULARITY_ENVIRONMENT variable for user to echo env vars to 91-environment.sh");
         printf("export SINGULARITY_ENVIRONMENT=/.singularity.d/env/91-environment.sh\n");
     }
