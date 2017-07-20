@@ -40,23 +40,21 @@
 int main(int argc, char **argv) {
     struct image_object image;
 
-    char **exec_arg = malloc(sizeof(char *) * 4);
+    char **exec_arg = malloc(sizeof(char *) * 3);
     exec_arg[0] = joinpath(LIBEXECDIR, "/singularity/bin/sinit"); //path to sinit binary
-    exec_arg[3] = '\0';
+    exec_arg[2] = '\0';
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     singularity_priv_init();
     singularity_suid_init(argv);
 
-    exec_arg[1] = int2str(singularity_priv_getuid());
-    
     singularity_registry_init();
     singularity_priv_userns();
     singularity_priv_drop();
 
     singularity_registry_set("UNSHARE_PID", "1");
-    singularity_registry_set("DAEMON", "1");
+    singularity_registry_set("UNSHARE_IPC", "1");
         
     singularity_runtime_ns(SR_NS_ALL);
     
@@ -81,7 +79,7 @@ int main(int argc, char **argv) {
     singularity_runtime_mounts();
     singularity_runtime_files();
 
-    exec_arg[2] = strdup(singularity_runtime_rootfs(NULL));
+    exec_arg[1] = strdup(singularity_runtime_rootfs(NULL));
     
     if ( execv(exec_arg[0], exec_arg) < 0 ) { //Flawfinder: ignore
         singularity_message(ERROR, "Failed to exec sinit: %s\n", strerror(errno));

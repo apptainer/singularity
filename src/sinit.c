@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
     /* After this point, we are running as PID 1 inside PID NS */
     singularity_message(DEBUG, "Preparing sinit daemon\n");
-    singularity_registry_set("ROOTFS", argv[2]);
+    singularity_registry_set("ROOTFS", argv[1]);
     singularity_daemon_init();
 
     daemon_fd_str = singularity_registry_get("DAEMON_FD");
