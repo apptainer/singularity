@@ -65,11 +65,6 @@ int main(int argc, char ** argv) {
         ABORT(255);
     }
 
-    if ( strncmp(section, "post", 4) == 0 ){
-        singularity_message(DEBUG, "Creating $SINGULARITY_ENVIRONMENT variable for user to echo env vars to 91-environment.sh");
-        printf("export SINGULARITY_ENVIRONMENT=/.singularity.d/env/91-environment.sh\n");
-    }
-
     singularity_message(DEBUG, "Iterating through file looking for sections matching: %%%s\n", section);
     while ( fgets(line, MAX_LINE_LEN, input) != NULL ) {
         if ( strncmp(line, strjoin("%", section), strlength(section, 128) + 1) == 0 ) {
