@@ -22,12 +22,12 @@
 
 . ./functions
 
-test_init "Running Flawfinder"
-
 if ! which flawfinder 2>/dev/null; then
     echo "Not testing with flawfinder, not installed"
     exit 0
 fi
+
+test_init "Running Flawfinder"
 
 stest 0 sh -c "flawfinder -SQ --minlevel=3 ../src > '$SINGULARITY_TESTDIR/ff.out'"
 if ! grep -q 'No hits found.' "$SINGULARITY_TESTDIR/ff.out"; then
