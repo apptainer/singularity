@@ -42,14 +42,17 @@ void daemon_file_parse(void) {
 
 void daemon_file_write(int fd, char *key, char *val) {
     int retval = 0;
+    errno = 0;
+    
     singularity_message(DEBUG, "Called daemon_file_write(%d, %s, %s)\n", fd, key, val);
     retval += write(fd, key, strlength(key, 2048));
     retval += write(fd, "=", 1);
     retval += write(fd, val, strlength(val, 2048));
     retval += write(fd, "\n", 1);
 
-    if ( retval != 0 ) {
+    if ( errno != 0 ) {
         singularity_message(ERROR, "Unable to write to daemon file: %s\n", strerror(errno));
+        ABORT(255);
     }
 }
 
