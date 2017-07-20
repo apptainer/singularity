@@ -48,7 +48,7 @@ if [ -z "$CLEAN_SHELL" ]; then
     exec env -i CLEAN_SHELL=1 PATH="$SINGULARITY_PATH:/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin" bash "$0" "$@"
 fi
 
-if [ ! -f "autogen.sh" ]; then
+if [ ! -d "tests" ]; then
     /bin/echo "ERROR: Run this from the singularity source root"
     exit 1
 fi

@@ -72,8 +72,8 @@ int main(int argc, char **argv) {
     }
 
     if ( is_owner(singularity_runtime_rootfs(NULL), 0) != 0 ) {
-            singularity_message(ERROR, "Root must own container mount directory: %s\n", singularity_runtime_rootfs(NULL));
-            ABORT(255);
+        singularity_message(ERROR, "Root must own container mount directory: %s\n", singularity_runtime_rootfs(NULL));
+        ABORT(255);
     }
 
     if ( argc > 1 ) {
