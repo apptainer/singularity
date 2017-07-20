@@ -11,8 +11,7 @@
 #ifndef __SINGULARITY_DAEMON_H_
 #define __SINGULARITY_DAEMON_H_
 
-    void singularity_daemon_join(void);
     void singularity_daemon_path(void);
-    void singularity_daemon_rootfs(void);
-
+    void singularity_daemon_init(void);
+    
 #endif

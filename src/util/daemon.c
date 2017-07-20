@@ -41,11 +41,16 @@ void daemon_file_parse(void) {
 }
 
 void daemon_file_write(int fd, char *key, char *val) {
+    int retval = 0;
     singularity_message(DEBUG, "Called daemon_file_write(%d, %s, %s)\n", fd, key, val);
-    write(fd, key, strlength(key, 2048));
-    write(fd, "=", 1);
-    write(fd, val, strlength(val, 2048));
-    write(fd, "\n", 1);
+    retval += write(fd, key, strlength(key, 2048));
+    retval += write(fd, "=", 1);
+    retval += write(fd, val, strlength(val, 2048));
+    retval += write(fd, "\n", 1);
+
+    if ( retval != 0 ) {
+        singularity_message(ERROR, "Unable to write to daemon file: %s\n", strerror(errno));
+    }
 }
 
 void singularity_daemon_path(void) {
@@ -72,7 +77,7 @@ void singularity_daemon_rootfs(void) {
 }
 
 void daemon_init_join(void) {
-    char *pid_str, *ns_path, *proc_path, *ns_fd_str;
+    char *ns_path, *ns_fd_str;
     int lock_result, ns_fd;
     int *lock_fd = malloc(sizeof(int));
     char *daemon_file = singularity_registry_get("DAEMON_FILE");
@@ -150,7 +155,9 @@ void daemon_init_start(void) {
         
         /* Successfully obtained lock, write to daemon fd */
         lseek(daemon_fd, 0, SEEK_SET);
-        ftruncate(daemon_fd, 0);
+        if ( ftruncate(daemon_fd, 0) == -1 ) {
+            singularity_message(ERROR, "Unable to truncate %d: %s\n", daemon_fd, strerror(errno));
+        }
 
         daemon_file_write(daemon_fd, "DAEMON_PID", daemon_pid);
         daemon_file_write(daemon_fd, "DAEMON_IMAGE", daemon_image);
