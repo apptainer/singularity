@@ -37,6 +37,15 @@ fi
 
 while true; do
     case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
         -a|--all)
             if [ "$USERID" = 0 ]; then
                 USERID="*"
@@ -70,8 +79,6 @@ done
 # This is a configurable option, needs to be set accordingly!
 SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
 
-
-# Show status here...
 
 for i in $SESSION_GLOB; do
     if [ -f "$i" ]; then
