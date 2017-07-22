@@ -117,7 +117,7 @@ while true; do
         -n|--nv)
             shift
             SINGULARITY_NVLIBLIST=$(mktemp singularity-nvliblist.XXXXXXXX)
-            cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -v "^#" > $SINGULARITY_NVLIBLIST
+            cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" > $SINGULARITY_NVLIBLIST
             for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
                 if [ -f "$i" ]; then
                     message 2 "Found NV library: $i\n"
