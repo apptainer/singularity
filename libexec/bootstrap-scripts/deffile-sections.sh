@@ -293,6 +293,24 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
 fi
 
 
+
+### APPLABELS
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appfiles" ]; then
+    if singularity_section_exists "applabels" "$SINGULARITY_BUILDDEF"; then
+        APPNAMES=(`singularity_section_args "applabels" "$SINGULARITY_BUILDDEF"`)
+        message 2 "Adding labels to ${APPNAMES}\n"
+
+        for APPNAME in "${APPNAMES[@]}"; do
+            singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
+            singularity_section_get "'applabels ${APPNAME}'" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
+                if [ -n "$KEY" -a -n "$VAL" ]; then
+                    $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/apps/${APPNAME}/labels.json"
+                fi
+            done
+        done
+     fi
+fi
+
 > "$SINGULARITY_ROOTFS/etc/hosts"
 > "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
