@@ -266,6 +266,33 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
 fi
 
 
+### APPFILES
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appfiles" ]; then
+    if singularity_section_exists "appfiles" "$SINGULARITY_BUILDDEF"; then
+        APPNAMES=(`singularity_section_args "appfiles" "$SINGULARITY_BUILDDEF"`)
+        message 2 "Adding files to ${APPNAMES}\n"
+
+        for APPNAME in "${APPNAMES[@]}"; do
+            singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
+            singularity_section_get "'appfiles ${APPNAME}'" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
+                if [ -n "${origin:-}" ]; then
+                    if [ -z "${dest:-}" ]; then
+                        dest="$origin"
+                    fi
+                    # files must be relative to app
+                    dest="apps/${APPNAME}"
+                    message 1 "Copying '$origin' to '$dest'\n"
+                    if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
+                        message ERROR "Failed copying file(s) for app ${APPNAME} into container\n"
+                        exit 255
+                    fi
+                fi
+            done
+        done
+    fi
+fi
+
+
 > "$SINGULARITY_ROOTFS/etc/hosts"
 > "$SINGULARITY_ROOTFS/etc/resolv.conf"
 

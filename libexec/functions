@@ -197,7 +197,6 @@ singularity_app_install_get() {
     fi
 
     # To install application, much change to its base and back so paths are relative
-    #SINGULARITY_PWD=$PWD
     SECTION="'appinstall ${APPNAME}'"
     printf "cd /apps/${APPNAME}\n"
     eval $SINGULARITY_libexecdir/singularity/bin/get-section "$SECTION" "$FILE"
