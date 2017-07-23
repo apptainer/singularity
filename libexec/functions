@@ -120,13 +120,19 @@ singularity_keys_get() {
     return 0
 }
 
+
+##############################################################################
+# SECTIONS
+##############################################################################
+
+
 singularity_section_exists() {
     SECTION="${1:-}"
     FILE="${2:-}"
     TOGGLE=""
     if [ ! -f "$FILE" ]; then
         message ERROR "File not found ($FILE)\n"
-        exit 1
+        exit 1        
     fi
     if ! egrep -i -q -- "^%$SECTION\W*" "$FILE"; then
         return 1
@@ -134,6 +140,7 @@ singularity_section_exists() {
 
     return 0
 }
+
 
 singularity_section_args() {
     SECTION="${1:-}"
@@ -165,6 +172,57 @@ singularity_section_get() {
     eval "$SINGULARITY_libexecdir/singularity/bin/get-section" "$SECTION" "$FILE"
 
     return 0
+}
+
+
+
+
+##############################################################################
+# APPS
+##############################################################################
+
+
+singularity_app_install_get() {
+    APPNAME="${1:-}"
+    FILE="${2:-}"
+    SINGULARITY_ROOTFS="${3:-}"
+
+    if [ ! -x "$SINGULARITY_libexecdir/singularity/bin/get-section" ]; then
+        message ERROR "Could not locate get-section program\n"
+        exit 255
+    fi
+
+    if [ ! -f "$FILE" ]; then
+        message ERROR "File not found ($FILE)\n"
+        exit 1
+    fi
+
+    # To install application, much change to its base and back so paths are relative
+    SINGULARITY_PWD=$PWD
+    APPSCRIPT=(eval "$SINGULARITY_libexecdir/singularity/bin/get-section" "'appinstall $APPNAME'" "$FILE")
+    APPSCRIPT="cd ${SINGULARITY_ROOTFS}/apps/${APPNAME}\n ${APPSCRIPT}\n cd ${SINGULARITY_PWD}"
+    printf $APPSCRIPT
+    return 0
+}
+
+
+singularity_app_init() {
+
+    APPNAME="${1:-}"
+    APPROOT="${2:-}"
+
+    APPBASE="${APPROOT}/apps/${APPNAME}"
+    if [ ! -d "${APPBASE}" ]; then
+        mkdir -p ${APPBASE}
+        message 2 "Creating ${APPBASE}...\n"
+    fi
+
+    APPDATA="${APPROOT}/data/${APPNAME}"
+    if [ ! -d "${APPDATA}" ]; then
+        mkdir -p ${APPDATA}
+        message 2 "Creating ${APPDATA}...\n"
+    fi
+
 }
 
 
@@ -310,8 +368,9 @@ parse_opts() {
 }
 
 
+
 ##############################################################################
-# CHECK FUNCTIONS
+# CHECKS
 ##############################################################################
 
 

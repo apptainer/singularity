@@ -43,6 +43,8 @@ fi
 if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
     message ERROR "Singularity bootstrap definition file not defined!\n"
     exit 1
+else
+    SINGULARITY_BUILDDEF_ABSOLUTE=`realpath $SINGULARITY_BUILDDEF`
 fi
 
 if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
@@ -80,7 +82,15 @@ DEBIAN_FRONTEND=noninteractive
 SINGULARITY_ENVIRONMENT="/.singularity.d/env/91-environment.sh"
 export DEBIAN_FRONTEND SINGULARITY_ENVIRONMENT
 
-### RUN SETUP
+
+##########################################################################################
+#
+# MAIN SECTIONS
+#
+##########################################################################################
+
+
+### SETUP
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "setup" ]; then
     if singularity_section_exists "setup" "$SINGULARITY_BUILDDEF"; then
         ARGS=`singularity_section_args "setup" "$SINGULARITY_BUILDDEF"`
@@ -174,7 +184,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "r
 
     fi
 else
-    message 2 "Skipping test section\n"
+    message 2 "Skipping runscript section\n"
 fi
 
 
@@ -198,6 +208,64 @@ else
     message 2 "Skipping test section\n"
 fi
 
+
+##########################################################################################
+#
+# APP SECTIONS
+#
+##########################################################################################
+
+### APPINSTALL
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appinstall" ]; then
+    if singularity_section_exists "appinstall" "$SINGULARITY_BUILDDEF"; then
+        APPNAMES=(`singularity_section_args "appinstall" "$SINGULARITY_BUILDDEF"`)
+        message 2 "Found applications ${APPNAMES} to install\n"
+        
+        for APPNAME in "${APPNAMES[@]}"; do
+            singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
+            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF_ABSOLUTE" "${SINGULARITY_ROOTFS}" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e || ABORT 255
+        done
+    fi
+else
+    message 2 "No applications detected for install\n"
+fi
+
+
+### APPHELP
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apphelp" ]; then
+    if singularity_section_exists "apphelp" "$SINGULARITY_BUILDDEF"; then
+        APPNAMES=(`singularity_section_args "apphelp" "$SINGULARITY_BUILDDEF"`)
+        message 2 "Found applications ${APPNAMES} with help sections\n"
+        
+        for APPNAME in "${APPNAMES[@]}"; do
+            singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
+            APPHELP=$(singularity_section_get "'apphelp ${APPNAME}'" "$SINGULARITY_BUILDDEF")
+
+            if [ ! -z "$APPHELP" ]; then
+                echo "$APPHELP" > "$SINGULARITY_ROOTFS/apps/${APPNAME}/runscript.help"    
+            fi
+        done
+    fi
+fi
+
+
+### APPRUNSCRIPT
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apprun" ]; then
+    if singularity_section_exists "apprun" "$SINGULARITY_BUILDDEF"; then
+        APPNAMES=(`singularity_section_args "apprun" "$SINGULARITY_BUILDDEF"`)
+        message 2 "Found applications ${APPNAMES} with runscript definitions\n"
+        
+        for APPNAME in "${APPNAMES[@]}"; do
+            singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
+            APPRUN=$(singularity_section_get "'apprun ${APPNAME}'" "$SINGULARITY_BUILDDEF")
+
+            if [ ! -z "$APPRUN" ]; then
+                echo "$APPRUN" > "$SINGULARITY_ROOTFS/apps/${APPNAME}/runscript.exec"
+                chmod 0755 "$SINGULARITY_ROOTFS/apps/${APPNAME}/runscript.exec"  
+            fi
+        done
+    fi
+fi
 
 
 > "$SINGULARITY_ROOTFS/etc/hosts"

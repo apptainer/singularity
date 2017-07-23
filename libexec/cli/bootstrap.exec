@@ -127,5 +127,5 @@ else
     exit 1
 fi
 
-message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+message ERROR "We should never have gotten here... Ahhh!!!!\n"
 exit 255
