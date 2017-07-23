@@ -220,6 +220,8 @@ singularity_app_init() {
     APPDATA="${APPROOT}/data/${APPNAME}"
     if [ ! -d "${APPDATA}" ]; then
         mkdir -p ${APPDATA}
+        mkdir -p "${APPDATA}/input"
+        mkdir -p "${APPDATA}/output"
         message 2 "Creating ${APPDATA}...\n"
     fi
 
