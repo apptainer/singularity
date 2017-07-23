@@ -74,15 +74,6 @@ static int setup_container_environment(spank_t spank)
 
      setenv("SINGULARITY_MESSAGELEVEL", "1", 0); //Don't overwrite if exists
 
-     if (ESPANK_SUCCESS != spank_get_item(spank, S_JOB_ARGV, &argc, &argv)) { 
-         slurm_error("spank/%s: Failed to get job's argc/argv", plugin_name);
-         return -1;
-     } else {
-         for (i = 0; i < argc; i++) { 
-             singularity_message(DEBUG, "(ARGV): %s\n", argv[i]); 
-         } 
-     }
-
     if (ESPANK_SUCCESS != spank_get_item(spank, S_JOB_UID, &job_uid)) {
         slurm_error("spank/%s: Failed to get job's target UID", plugin_name);
         return -1;
