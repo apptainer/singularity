@@ -233,7 +233,7 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apphelp" ]; then
     if singularity_section_exists "apphelp" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "apphelp" "$SINGULARITY_BUILDDEF"`)
-        message 2 "Found applications ${APPNAMES} with help sections\n"
+        message 1 "Found applications ${APPNAMES} with help sections\n"
         
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
@@ -251,7 +251,7 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apprun" ]; then
     if singularity_section_exists "apprun" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "apprun" "$SINGULARITY_BUILDDEF"`)
-        message 2 "Found applications ${APPNAMES} with runscript definitions\n"
+        message 1 "Found applications ${APPNAMES} with runscript definitions\n"
         
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
@@ -270,7 +270,7 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appfiles" ]; then
     if singularity_section_exists "appfiles" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "appfiles" "$SINGULARITY_BUILDDEF"`)
-        message 2 "Adding files to ${APPNAMES}\n"
+        message 1 "Adding files to ${APPNAMES}\n"
 
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
@@ -292,6 +292,20 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
     fi
 fi
 
+
+### APPENVIRONMENT
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appenv" ]; then
+    if singularity_section_exists "appenv" "$SINGULARITY_BUILDDEF"; then
+        APPNAMES=(`singularity_section_args "appenv" "$SINGULARITY_BUILDDEF"`)
+        message 1 "Adding custom environment to ${APPNAMES}\n"
+
+        for APPNAME in "${APPNAMES[@]}"; do
+            singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
+            singularity_section_get "'appenv ${APPNAME}'" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/apps/${APPNAME}/environment"
+            . "$SINGULARITY_ROOTFS/apps/${APPNAME}/environment"
+        done
+    fi
+fi
 
 
 ### APPLABELS
