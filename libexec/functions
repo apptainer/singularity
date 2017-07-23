@@ -132,7 +132,7 @@ singularity_section_exists() {
     TOGGLE=""
     if [ ! -f "$FILE" ]; then
         message ERROR "File not found ($FILE)\n"
-        exit 1        
+        exit 1
     fi
     if ! egrep -i -q -- "^%$SECTION\W*" "$FILE"; then
         return 1
