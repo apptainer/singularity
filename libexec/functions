@@ -211,7 +211,7 @@ singularity_app_init() {
 
     APPBASE="${APPROOT}/apps/${APPNAME}"
     if [ ! -d "${APPBASE}" ]; then
-        mkdir -p ${APPBASE}
+        mkdir -p "${APPBASE}/.singularity.d"
         message 2 "Creating ${APPBASE}...\n"
     fi
 
