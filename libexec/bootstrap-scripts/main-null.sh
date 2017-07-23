@@ -40,8 +40,14 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
-eval "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
-
+# If checks specified, export variable
+if [ "${SINGULARITY_CHECKS:-}" = "no" ]; then
+    message 1 "Skipping checks\n"
+else
+    message 1 "Running checks\n"
+    eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/checks.sh"
+fi

@@ -1,0 +1,94 @@
+#!/bin/bash
+# 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+# Copyright (c) 2017, Vanessa Sochat. All rights reserved.
+# 
+# 
+
+
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
+
+# If no arguments
+# default SINGULARITY_CHECKLEVEL is highest (3)
+# define check tags to be default
+
+SINGULARITY_CHECKLEVEL=3  # LOW
+SINGULARITY_CHECKTAGS="default"
+
+while true; do
+    case ${1:-} in
+        --help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        -l|--low)                          # levels 3,2,1
+            SINGULARITY_CHECKLEVEL=3       # LOW
+            shift;
+        ;;
+        -m|--med|--medium)                 # levels 2,1
+            SINGULARITY_CHECKLEVEL=2       # MED
+            shift;
+        ;;
+        -h|--high)
+            SINGULARITY_CHECKLEVEL=1      # level 1 only
+            shift;                        # HIGH
+        ;;
+        -t|--tag)
+            shift;
+            SINGULARITY_CHECKTAGS="${1:-}"         
+            echo $SINGULARITY_CHECKTAGS
+            shift;
+        ;;
+        -*)
+            message ERROR "Unknown option: ${1:-}\n"
+            exit 1
+        ;;
+        *)
+            break;
+        ;;
+    esac
+done
+
+RETVAL=0
+SINGULARITY_IMAGE="${1:-}"
+
+# We will inspect the image by mounting it, and this should also work for
+# bootstrap since we will have the SINGULARITY_ROOTFS
+
+SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-check.XXXXXXXX`
+export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT SINGULARITY_CHECKLEVEL SINGULARITY_CHECKTAGS
+shift
+
+
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/check.sh"
+    RETVAL=$?
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/check.sh"
+    RETVAL=$?
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
+    exit 1
+fi
+
+rmdir "$SINGULARITY_MOUNTPOINT"
+
+exit $RETVAL

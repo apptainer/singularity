@@ -60,5 +60,19 @@ done
 
 rm -f "$SINGULARITY_CONTENTS"
 
+# If checktags not defined, default to docker
+if [ -z "${SINGULARITY_CHECKTAGS:-}" ]; then
+    SINGULARITY_CHECKTAGS=docker
+    export SINGULARITY_CHECKTAGS
+fi
+
+
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 
+# If checks specified, export variable
+if [ "${SINGULARITY_CHECKS:-}" = "no" ]; then
+    message 1 "Skipping checks\n"
+else
+    message 1 "Running checks\n"
+    eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/checks.sh"
+fi

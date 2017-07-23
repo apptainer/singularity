@@ -46,12 +46,13 @@ int _singularity_image_create(struct image_object *image, long int size) {
         ABORT(255);
     }
 
+    singularity_message(DEBUG, "Creating a file stream pointer based on file descriptor %i\n", image->fd);
     if ( ( image_fp = fdopen(dup(image->fd), "w") ) == NULL ) {
         singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
 
-    singularity_message(VERBOSE2, "Writing image header\n");
+    singularity_message(VERBOSE2, "Writing image header: %s\n", LAUNCH_STRING);
     fprintf(image_fp, LAUNCH_STRING); // Flawfinder: ignore (LAUNCH_STRING is a constant)
 
     singularity_message(VERBOSE2, "Growing image to %ldMB\n", size);
@@ -85,6 +86,9 @@ int _singularity_image_create(struct image_object *image, long int size) {
     }
 
     fclose(image_fp);
+
+    singularity_message(DEBUG, "Setting image type as 'SINGULARITY'\n");
+    image->type = SINGULARITY;
 
     return(0);
 }

@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Opening STDIN for tar stream\n");
-    retval = singularity_fork_exec(tar_cmd);
+    retval = singularity_fork_exec(0, tar_cmd);
     singularity_priv_drop();
 
     if ( retval != 0 ) {

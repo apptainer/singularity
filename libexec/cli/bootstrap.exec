@@ -36,6 +36,10 @@ else
     exit 1
 fi
 
+SINGULARITY_CHECKS="no"
+SINGULARITY_CHECKTAGS=bootstrap
+SINGULARITY_CHECKLEVEL=3
+
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -68,6 +72,27 @@ while true; do
             SINGULARITY_BUILDNOBASE=1
             export SINGULARITY_BUILDNOBASE
         ;;
+        -c|--check|--checks)
+            SINGULARITY_CHECKS="yes"
+            shift;
+        ;;
+        -l|--low)                          # levels 3,2,1
+            SINGULARITY_CHECKLEVEL=3       # LOW
+            shift;
+        ;;
+        -m|--med|--medium)                 # levels 2,1
+            SINGULARITY_CHECKLEVEL=2       # MED
+            shift;
+        ;;
+        -h|--high)
+            SINGULARITY_CHECKLEVEL=1      # level 1 only
+            shift;                        # HIGH
+        ;;
+        -t|--tag)
+            shift;
+            SINGULARITY_CHECKTAGS="${1:-}"         
+            shift;
+        ;;
         -*)
             message ERROR "Unknown option: $1\n"
             exit 1
@@ -87,15 +112,13 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-
-
 SINGULARITY_IMAGE="${1:-}"
 SINGULARITY_BUILDDEF="${2:-}"
 SINGULARITY_WRITABLE=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_BUILDDEF SINGUARITY_libexecdir
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE SINGULARITY_BUILDDEF SINGUARITY_libexecdir \
+       SINGULARITY_CHECKS SINGULARITY_CHECKTAGS SINGULARITY_CHECKLEVEL
 shift
 shift
-
 
 if [ -x "$SINGULARITY_libexecdir/singularity/bin/bootstrap" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/bootstrap"

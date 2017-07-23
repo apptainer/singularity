@@ -31,7 +31,7 @@ environment.tar:
 	install -m 0755 01-base.sh newroot/.singularity.d/env/
 	install -m 0755 90-environment.sh newroot/.singularity.d/env/
 	install -m 0755 99-base.sh newroot/.singularity.d/env/
-	ln -sf env/90-environment.sh newroot/.singularity.d/environment
+	ln -sf .singularity.d/env/90-environment.sh newroot/environment
 	ln -sf .singularity.d/runscript newroot/singularity
 	ln -sf .singularity.d/actions/exec newroot/.exec
 	ln -sf .singularity.d/actions/run newroot/.run

@@ -51,7 +51,7 @@ int _singularity_image_offset(struct image_object *image) {
         ABORT(255);
     }
 
-    if ( singularity_image_check(image) != 0 ) {
+    if ( image->type != SINGULARITY ) {
         singularity_message(DEBUG, "File is not a Singularity image, returning zero offset\n");
         return(0);
     }
