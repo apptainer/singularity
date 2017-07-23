@@ -43,8 +43,6 @@ fi
 if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
     message ERROR "Singularity bootstrap definition file not defined!\n"
     exit 1
-else
-    SINGULARITY_BUILDDEF_ABSOLUTE=`realpath $SINGULARITY_BUILDDEF`
 fi
 
 if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
@@ -219,11 +217,11 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appinstall" ]; then
     if singularity_section_exists "appinstall" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "appinstall" "$SINGULARITY_BUILDDEF"`)
-        message 2 "Found applications ${APPNAMES} to install\n"
+        message 1 "Found applications ${APPNAMES} to install\n"
         
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF_ABSOLUTE" "${SINGULARITY_ROOTFS}" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e || ABORT 255
+            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e || ABORT 255
         done
     fi
 else
