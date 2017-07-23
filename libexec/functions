@@ -199,9 +199,9 @@ singularity_app_install_get() {
 
     # To install application, much change to its base and back so paths are relative
     SINGULARITY_PWD=$PWD
-    APPSCRIPT=(eval "$SINGULARITY_libexecdir/singularity/bin/get-section" "'appinstall $APPNAME'" "$FILE")
-    APPSCRIPT="cd ${SINGULARITY_ROOTFS}/apps/${APPNAME}\n ${APPSCRIPT}\n cd ${SINGULARITY_PWD}"
-    printf $APPSCRIPT
+    SECTION="'appinstall ${APPNAME}'"
+    eval $SINGULARITY_libexecdir/singularity/bin/get-section "$SECTION" "$FILE"
+    #printf "cd ${SINGULARITY_ROOTFS}/apps/${APPNAME}\n ${APPSCRIPT}\n cd ${SINGULARITY_PWD}"
     return 0
 }
 
