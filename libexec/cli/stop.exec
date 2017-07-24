@@ -8,6 +8,7 @@
 #
 # 
 
+
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -22,38 +23,7 @@ else
     exit 1
 fi
 
-if [ -f "${HOME:-}/.singularity-init" ]; then
-    . "${HOME:-}/.singularity-init"
-fi
-
-if [ -f "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh" ]; then
-    . "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh"
-else
-    message ERROR "Could not find the action argument parser\n"
-    exit 1
-fi
-
-if [ -z "${SINGULARITY_IMAGE:-}" ]; then
-    SINGULARITY_IMAGE="${1:-}"
-    export SINGULARITY_IMAGE
-    shift
-fi
-
-if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
-    SINGULARITY_DAEMON_NAME="${1:-}"
-    export SINGULARITY_DAEMON_NAME
-    shift
-fi
-
-if [ -z "${SINGULARITY_IMAGE:-}" ] || [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-    else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
-    fi
-    exit 0
-fi
-
+## Init Singularity environment
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
 fi
@@ -64,49 +34,106 @@ if ! USERID=`id --real --user`; then
     exit 255
 fi
 
-if [ "$USERID" = 0 ]; then
-    USERID="*"
-fi
 
 while true; do
     case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        -a|--all)
+            shift
+            KILL_ALL="1"
+        ;;
+        -u|--user)
+            if [ "$USERID" = 0 ]; then
+                shift
+                USERID=${1:-}
+                shift
+            else
+                message ERROR "Must be root to kill with -u/--user option\n"
+                exit 1
+            fi
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
-        ;;
+            ;;
         *)
             break;
-        ;;
+            ;;
     esac
 done
 
-
-# This is a configurable option, needs to be set accordingly!
 SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
 
-
-# Show status here...
-
-for i in $SESSION_GLOB; do
-    if [ -f "$i" ]; then
-        if [ ! -s "$i" ]; then
-            rm "$i"
-            continue
-        fi
-        FILE_NAME=`basename "$i"`
-        SINGULARITY_IMAGE_=`readlink -f "$SINGULARITY_IMAGE"`
-        INODE=${FILE_NAME%-*}
-        DAEMON_NAME=${FILE_NAME##*-}
-        . "$i"
-
-        if [ "${DAEMON_IMAGE}" == "${SINGULARITY_IMAGE_}" ] &&
-               [ "${DAEMON_NAME}" == "${SINGULARITY_DAEMON_NAME}" ]; then
-           echo "Sending SIGKILL to ${DAEMON_PID}"
-           kill -n 9 ${DAEMON_PID}
-           rm $i
-           exit 0
-        fi
+if [ -z "${KILL_ALL:-}" ]; then
+    if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+        SINGULARITY_IMAGE="${1:-}"
+        export SINGULARITY_IMAGE
+        shift
     fi
-done
 
-message ERROR "No such daemon exists: ${DAEMON_NAME} at ${DAEMON_IMAGE}\n"
+    if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
+        SINGULARITY_DAEMON_NAME="${1:-}"
+        export SINGULARITY_DAEMON_NAME
+        shift
+    fi
+
+    if [ -z "${SINGULARITY_IMAGE:-}" ] || [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
+        if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+            head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+        else
+            message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
+        fi
+        exit 0
+    fi
+
+    for i in $SESSION_GLOB; do
+        if [ -f "$i" ]; then
+            if [ ! -s "$i" ]; then
+                rm "$i"
+                continue
+            fi
+            FILE_NAME=`basename "$i"`
+            SINGULARITY_IMAGE_=`readlink -f "$SINGULARITY_IMAGE"`
+            INODE=${FILE_NAME%-*}
+            DAEMON_NAME=${FILE_NAME##*-}
+            . "$i"
+            
+            if [ "${DAEMON_IMAGE}" == "${SINGULARITY_IMAGE_}" ] &&
+                   [ "${DAEMON_NAME}" == "${SINGULARITY_DAEMON_NAME}" ]; then
+                echo "Stopping ${DAEMON_NAME} daemon (PID=${DAEMON_PID})"
+                kill -n 9 ${DAEMON_PID}
+                rm $i
+                exit 0
+            fi
+        fi
+    done
+
+    message ERROR "No such daemon exists: ${SINGULARITY_DAEMON_NAME} at ${SINGULARITY_IMAGE}\n"
+    
+else
+    
+    for i in $SESSION_GLOB; do
+        if [ -f "$i" ]; then
+            if [ ! -s "$i" ]; then
+                rm "$i"
+                continue
+            fi
+            FILE_NAME=`basename "$i"`
+            DAEMON_NAME=${FILE_NAME##*-}
+            . "$i"
+            
+            echo "Stopping ${DAEMON_NAME} daemon (PID=${DAEMON_PID})"
+            kill -n 9 ${DAEMON_PID}
+            rm $i
+        fi
+    done
+    
+fi
