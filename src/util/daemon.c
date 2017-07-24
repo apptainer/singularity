@@ -94,8 +94,9 @@ void daemon_init_join(void) {
         /* Successfully obtained lock, no daemon controls this file. */
         singularity_message(ERROR, "Unable to join daemon: %s daemon does not exist\n",
                             daemon_name);
-        ABORT(255);
+        unlink(daemon_file);
         close(*lock_fd);
+        ABORT(255);
         return;
     } else if ( lock_result == EALREADY ) {
         /* EALREADY is set when another process has a lock on the file. */
