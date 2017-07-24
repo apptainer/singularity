@@ -12,7 +12,6 @@ START OPTIONS:
                         default). This option can be called multiple times.
     -c/--contain        This option disables the sharing of filesystems on 
                         your host (e.g. /dev, $HOME and /tmp).
-    -C/--containall     Contain not only file systems, but also PID and IPC
     -e/--cleanenv       Clean environment before running container
     -H/--home <spec>    A home directory specification.  spec can either be a
                         src path or src:dest pair.  src is the source path

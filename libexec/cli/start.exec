@@ -27,12 +27,114 @@ if [ -f "${HOME:-}/.singularity-init" ]; then
     . "${HOME:-}/.singularity-init"
 fi
 
-if [ -f "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh" ]; then
-    . "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh"
-else
-    message ERROR "Could not find the action argument parser\n"
-    exit 1
-fi
+
+message 2 "Evaluating args: '$*'\n"
+
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        -s|--shell)
+            shift
+            SINGULARITY_SHELL="${1:-}"
+            export SINGULARITY_SHELL
+            shift
+        ;;
+        -u|--user)
+            SINGULARITY_NOSUID=1
+            export SINGULARITY_NOSUID
+            shift
+        ;;
+        -w|--writable)
+            shift
+            SINGULARITY_WRITABLE=1
+            export SINGULARITY_WRITABLE
+        ;;
+        -H|--home)
+            shift
+            SINGULARITY_HOME="$1"
+            export SINGULARITY_HOME
+            shift
+        ;;
+        -W|--wdir|--workdir|--workingdir)
+            shift
+            SINGULARITY_WORKDIR="$1"
+            export SINGULARITY_WORKDIR
+            shift
+        ;;
+        -S|--scratchdir|--scratch-dir|--scratch)
+            shift
+            SINGULARITY_SCRATCHDIR="$1,${SINGULARITY_SCRATCHDIR:-}"
+            export SINGULARITY_SCRATCHDIR
+            shift
+        ;;
+        -B|--bind)
+            shift
+            SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH:-},${1:-}"
+            export SINGULARITY_BINDPATH
+            shift
+        ;;
+        -c|--contain)
+            shift
+            SINGULARITY_CONTAIN=1
+            export SINGULARITY_CONTAIN
+        ;;
+        -e|--cleanenv)
+            shift
+            SINGULARITY_CLEANENV=1
+            export SINGULARITY_CLEANENV
+        ;;
+        --pwd)
+            shift
+            SINGULARITY_TARGET_PWD="$1"
+            export SINGULARITY_TARGET_PWD
+            shift
+        ;;
+        -n|--nv)
+            shift
+            for i in `ldconfig -p | grep -E "/libnv|/libcuda|/libEGL|/libGL|/libnvcu|/libvdpau|/libOpenCL|/libOpenGL"`; do
+                if [ -f "$i" ]; then
+                    message 2 "Found NV library: $i\n"
+                    if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
+                        SINGULARITY_CONTAINLIBS="$i"
+                    else
+                        SINGULARITY_CONTAINLIBS="$SINGULARITY_CONTAINLIBS,$i"
+                    fi
+                fi
+            done
+            if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
+                message WARN "Could not find any Nvidia libraries on this host!\n";
+            else
+                export SINGULARITY_CONTAINLIBS
+            fi
+            if NVIDIA_SMI=`which nvidia-smi`; then
+                if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
+                    SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${NVIDIA_SMI}"
+                else
+                    SINGULARITY_BINDPATH="${NVIDIA_SMI}"
+                fi
+                export SINGULARITY_BINDPATH
+            else
+                message WARN "Could not find the Nvidia SMI binary to bind into container\n"
+            fi
+        ;;
+        -*)
+            message ERROR "Unknown option: ${1:-}\n"
+            exit 1
+        ;;
+        *)
+            break;
+        ;;
+    esac
+done
+
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     SINGULARITY_IMAGE="${1:-}"
