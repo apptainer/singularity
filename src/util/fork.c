@@ -293,22 +293,22 @@ void install_sigchld_signal_handle() {
 }
 
 pid_t singularity_fork(unsigned int flags) {
-    int priv_fork = 0;
+    int priv_fork = 1;
     prepare_fork();
 
-    if ( geteuid() == 0 ) {
-        priv_fork = 1;
+    if ( flags == 0 || geteuid() == 0 ) {
+        priv_fork = 0;
     }
 
     singularity_message(VERBOSE2, "Forking child process\n");
     
-    if ( priv_fork == 0 ) {
+    if ( priv_fork == 1 ) {
         singularity_priv_escalate();
     }
     
     child_pid = fork_ns(flags);
 
-    if ( priv_fork == 0 ) {
+    if ( priv_fork == 1 ) {
         singularity_priv_drop();
     }
     
