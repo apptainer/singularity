@@ -37,10 +37,6 @@ if [ ! -f "${FROM:-}" ]; then
     exit 1
 fi
 
-if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    exit
-fi
-
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
