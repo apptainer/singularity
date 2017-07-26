@@ -28,3 +28,4 @@
     - Cedric Clerget <cedric.clerget@univ-fcomte.fr>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
+    - Petr Votava <votava.petr@gene.com>
