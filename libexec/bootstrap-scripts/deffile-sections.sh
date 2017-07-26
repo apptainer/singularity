@@ -240,7 +240,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             APPHELP=$(singularity_section_get "'apphelp ${APPNAME}'" "$SINGULARITY_BUILDDEF")
 
             if [ ! -z "$APPHELP" ]; then
-                echo "$APPHELP" > "$SINGULARITY_ROOTFS/apps/${APPNAME}/.singularity.d/runscript.help"    
+                echo "$APPHELP" > "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/.singularity.d/runscript.help"    
             fi
         done
     fi
@@ -258,8 +258,8 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             APPRUN=$(singularity_section_get "'apprun ${APPNAME}'" "$SINGULARITY_BUILDDEF")
 
             if [ ! -z "$APPRUN" ]; then
-                echo "$APPRUN" > "$SINGULARITY_ROOTFS/apps/${APPNAME}/.singularity.d/runscript"
-                chmod 0755 "$SINGULARITY_ROOTFS/apps/${APPNAME}/.singularity.d/runscript"  
+                echo "$APPRUN" > "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/.singularity.d/runscript"
+                chmod 0755 "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/.singularity.d/runscript"  
             fi
         done
     fi
@@ -280,7 +280,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
                         dest="$origin"
                     fi
                     # files must be relative to app
-                    dest="apps/${APPNAME}"
+                    dest="scif/apps/${APPNAME}"
                     message 1 "Copying '$origin' to '$dest'\n"
                     if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
                         message ERROR "Failed copying file(s) for app ${APPNAME} into container\n"
@@ -301,8 +301,8 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
 
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_section_get "'appenv ${APPNAME}'" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/apps/${APPNAME}/environment"
-            . "$SINGULARITY_ROOTFS/apps/${APPNAME}/environment"
+            singularity_section_get "'appenv ${APPNAME}'" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/environment"
+            . "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/environment"
         done
     fi
 fi
@@ -318,7 +318,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             singularity_section_get "'applabels ${APPNAME}'" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
                 if [ -n "$KEY" -a -n "$VAL" ]; then
-                    $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/apps/${APPNAME}/.singularity.d/labels.json"
+                    $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/.singularity.d/labels.json"
                 fi
             done
         done

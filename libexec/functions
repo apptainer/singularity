@@ -198,7 +198,7 @@ singularity_app_install_get() {
 
     # To install application, much change to its base and back so paths are relative
     SECTION="'appinstall ${APPNAME}'"
-    printf "cd /apps/${APPNAME}\n"
+    printf "cd /scif/apps/${APPNAME}\n"
     eval $SINGULARITY_libexecdir/singularity/bin/get-section "$SECTION" "$FILE"
     return 0
 }
@@ -209,13 +209,13 @@ singularity_app_init() {
     APPNAME="${1:-}"
     APPROOT="${2:-}"
 
-    APPBASE="${APPROOT}/apps/${APPNAME}"
+    APPBASE="${APPROOT}/scif/apps/${APPNAME}"
     if [ ! -d "${APPBASE}" ]; then
         mkdir -p "${APPBASE}/.singularity.d"
         message 2 "Creating ${APPBASE}...\n"
     fi
 
-    APPDATA="${APPROOT}/data/${APPNAME}"
+    APPDATA="${APPROOT}/scif/data/${APPNAME}"
     if [ ! -d "${APPDATA}" ]; then
         mkdir -p ${APPDATA}
         mkdir -p "${APPDATA}/input"
