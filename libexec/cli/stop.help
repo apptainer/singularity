@@ -1,0 +1,21 @@
+USAGE: singularity [...] stop [list options...] <container path> <instance name>
+
+Stop a named instance of the given container image.
+
+LIST OPTIONS:
+    -a/--all               If running as root, stop the specified instance
+                           of all users
+    -u/--user <username>   If running as root, stop the specified instance
+                           of <username>
+
+EXAMPLES:
+
+    $ singularity stop /tmp/my-sql.img mysql
+    Stopping /tmp/my-sql.img mysql
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+
