@@ -1,27 +1,27 @@
 USAGE: singularity [...] list [list options...]
 
-List all running singularity daemons
+List all running named instances
 
 LIST OPTIONS:
-    -a/--all               If running as root, list daemons from all users
-    -u/--user <username>   If running as root, list daemons from <username>
+    -a/--all               If running as root, list instances from all users
+    -u/--user <username>   If running as root, list instances from <username>
 
 EXAMPLES:
 
     $ singularity list
-    /home/mibauer/singularity/sdaemon/test.img  [2056.132716]  Daemons:
-         Daemon PID:   11963
-         Daemon Name:  test
+    /home/mibauer/singularity/sinstance/test.img  [2056.132716]  Instances:
+         Instance PID:   11963
+         Instance Name:  test
          
     $ sudo singularity list --all
-    /home/mibauer/singularity/sdaemon/test.img  [2056.132716]  Daemons:
-         Owner UID:    0
-         Daemon PID:   16219
-         Daemon Name:  test
+    /home/mibauer/singularity/sinstance/test.img  [2056.132716]  Instances:
+         Owner UID:      0
+         Instance PID:   16219
+         Instance Name:  test
 
-         Owner UID:    1000
-         Daemon PID:   11963
-         Daemon Name:  test
+         Owner UID:      1000
+         Instance PID:   11963
+         Instance Name:  test
 
 
 

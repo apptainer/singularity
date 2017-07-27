@@ -93,7 +93,7 @@ for i in $SESSION_GLOB; do
         
         if [ "${INODE}" != "${_INODE:-}" ]; then
             _INODE=${INODE}
-            echo "${DAEMON_IMAGE}  [${INODE}]  Daemons:"
+            echo "${DAEMON_IMAGE}  [${INODE}]  Instance:"
         fi
 
         if [ "${USERID}" == "*" ]; then
@@ -102,8 +102,8 @@ for i in $SESSION_GLOB; do
             echo "     Owner UID:    ${DIR##*-}"
         fi
         
-        echo "     Daemon PID:   ${DAEMON_PID}"
-        echo "     Daemon Name:  ${DAEMON_NAME}"
+        echo "     Instance PID:   ${DAEMON_PID}"
+        echo "     Instance Name:  ${DAEMON_NAME}"
         echo ""
     fi
 done
