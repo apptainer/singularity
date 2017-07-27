@@ -9,11 +9,10 @@ LIST OPTIONS:
 EXAMPLES:
 
     $ singularity stop-all
-    Stopping /tmp/my-sql.img mysql1  
-    Stopping /tmp/my-sql.img mysql2
-    Stopping /tmp/my-sql.img mysql3
-    Stopping /tmp/my-sql.img mysql4
-
+    Stopping mysql1 instance of /tmp/my-sql.img (PID=28636)
+    Stopping mysql2 instance of /tmp/my-sql.img (PID=28637)
+    Stopping mysql3 instance of /tmp/my-sql.img (PID=28638)
+    Stopping mysql4 instance of /tmp/my-sql.img (PID=28639)
 
 For additional help, please visit our public documentation pages which are
 found at:

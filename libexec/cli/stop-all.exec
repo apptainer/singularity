@@ -87,7 +87,7 @@ for i in $SESSION_GLOB; do
         DAEMON_NAME=${FILE_NAME##*-}
         . "$i"
 
-        echo "Stopping ${DAEMON_NAME} instance of ${SINGULARITY_IMAGE_} (PID=${DAEMON_PID})"
+        echo "Stopping ${DAEMON_NAME} instance of ${DAEMON_IMAGE} (PID=${DAEMON_PID})"
         kill -n 9 ${DAEMON_PID}
         rm $i
     fi
