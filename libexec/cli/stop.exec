@@ -51,7 +51,7 @@ while true; do
                 shift
                 USERID="*"
             else
-                message ERROR "Must be root to kill with -a/--all option\n"
+                message ERROR "Must be root to stop with -a/--all option\n"
                 exit 1
             fi
         ;;
@@ -61,7 +61,7 @@ while true; do
                 USERID=${1:-}
                 shift
             else
-                message ERROR "Must be root to kill with -u/--user option\n"
+                message ERROR "Must be root to stop with -u/--user option\n"
                 exit 1
             fi
         ;;
@@ -112,7 +112,7 @@ for i in $SESSION_GLOB; do
         
         if [ "${DAEMON_IMAGE}" == "${SINGULARITY_IMAGE_}" ] &&
                [ "${DAEMON_NAME}" == "${SINGULARITY_DAEMON_NAME}" ]; then
-            echo "Stopping ${DAEMON_NAME} daemon (PID=${DAEMON_PID})"
+            echo "Stopping ${DAEMON_NAME} instance of ${SINGULARITY_IMAGE_} (PID=${DAEMON_PID})"
             kill -n 9 ${DAEMON_PID}
             rm $i
             exit 0
@@ -120,4 +120,4 @@ for i in $SESSION_GLOB; do
     fi
 done
 
-message ERROR "No such daemon exists: ${SINGULARITY_DAEMON_NAME} at ${SINGULARITY_IMAGE}\n"
+message ERROR "No such instance of ${SINGULARITY_IMAGE} exists named ${SINGULARITY_DAEMON_NAME}\n"

@@ -51,7 +51,7 @@ while true; do
                 shift
                 USERID="*"
             else
-                message ERROR "Must be root to kill with -a/--all option\n"
+                message ERROR "Must be root to stop with -a/--all option\n"
                 exit 1
             fi
         ;;
@@ -61,7 +61,7 @@ while true; do
                 USERID=${1:-}
                 shift
             else
-                message ERROR "Must be root to kill with -u/--user option\n"
+                message ERROR "Must be root to stop with -u/--user option\n"
                 exit 1
             fi
         ;;
@@ -86,8 +86,8 @@ for i in $SESSION_GLOB; do
         FILE_NAME=`basename "$i"`
         DAEMON_NAME=${FILE_NAME##*-}
         . "$i"
-        
-        echo "Stopping ${DAEMON_NAME} daemon (PID=${DAEMON_PID})"
+
+        echo "Stopping ${DAEMON_NAME} instance of ${SINGULARITY_IMAGE_} (PID=${DAEMON_PID})"
         kill -n 9 ${DAEMON_PID}
         rm $i
     fi
