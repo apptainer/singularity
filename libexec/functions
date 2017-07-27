@@ -175,6 +175,16 @@ singularity_section_get() {
 }
 
 
+singularity_calculate_size() {
+    FOLDER="${1:-}"
+    if [ ! -d "${FOLDER}" ]; then
+        message ERROR "Folder not found ($FOLDER)\n"
+    fi
+
+    eval du -sm ${FOLDER} | cut -f1 # MB
+
+    return 0
+}
 
 
 ##############################################################################
@@ -200,6 +210,41 @@ singularity_app_install_get() {
     SECTION="'appinstall ${APPNAME}'"
     printf "cd /scif/apps/${APPNAME}\n"
     eval $SINGULARITY_libexecdir/singularity/bin/get-section "$SECTION" "$FILE"
+    return 0
+}
+
+
+singularity_app_save() {
+    APPNAME="${1:-}"
+    FILE="${2:-}"
+    OUTPUT_FILE="${3:-}"
+    
+    if [ ! -x "$SINGULARITY_libexecdir/singularity/bin/get-section" ]; then
+        message ERROR "Could not locate get-section program\n"
+        exit 255
+    fi
+
+    if [ ! -f "$FILE" ]; then
+        message ERROR "File not found ($FILE)\n"
+        exit 1
+    fi
+
+    SECTION_FOUND="No"
+    while read line
+    do
+        if [[ "$line" == "%appinstall $APPNAME" ]]; then # start of section
+            echo "$line" >> $OUTPUT_FILE
+            SECTION_FOUND="Yes"
+        elif [[ "$line" == %* ]]; then                   # end of section
+            if [[ "$SECTION_FOUND" == "Yes" ]]; then
+                return 0
+            fi
+        else
+            if [[ "$SECTION_FOUND" == "Yes" ]]; then
+                echo "$line" >> $OUTPUT_FILE             # line in section
+            fi
+        fi
+    done < "$FILE"
     return 0
 }
 

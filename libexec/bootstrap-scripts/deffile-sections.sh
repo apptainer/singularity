@@ -81,6 +81,9 @@ SINGULARITY_ENVIRONMENT="/.singularity.d/env/91-environment.sh"
 export DEBIAN_FRONTEND SINGULARITY_ENVIRONMENT
 
 
+# Script helper paths
+ADD_LABEL=$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py
+
 ##########################################################################################
 #
 # MAIN SECTIONS
@@ -162,7 +165,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "l
 
         singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
             if [ -n "$KEY" -a -n "$VAL" ]; then
-                $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+                $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
             fi
         done
     fi
@@ -220,8 +223,19 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
         message 1 "Found applications ${APPNAMES} to install\n"
         
         for APPNAME in "${APPNAMES[@]}"; do
+
+            APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
+            singularity_app_save "${APPNAME}" "$SINGULARITY_BUILDDEF" "${APPBASE}/.singularity.d/Singularity"
             singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e || ABORT 255
+
+            # Calculate size of app, add as label
+            APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
+            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/.singularity.d/labels.json"
+
+            # Add the application name
+            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/.singularity.d/labels.json"
+
         done
     fi
 else
@@ -318,7 +332,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             singularity_section_get "'applabels ${APPNAME}'" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
                 if [ -n "$KEY" -a -n "$VAL" ]; then
-                    $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/.singularity.d/labels.json"
+                    $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/.singularity.d/labels.json"
                 fi
             done
         done
