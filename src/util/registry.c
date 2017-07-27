@@ -121,7 +121,7 @@ char *singularity_registry_get(char *key) {
     
     singularity_message(DEBUG, "Returning value from registry: '%s' = '%s'\n", upperkey, (char *)found->data);
 
-    return(strdup(found->data));
+    return(found->data ? (strdup(found->data)) : NULL);
 }
 
 
@@ -143,7 +143,7 @@ int singularity_registry_set(char *key, char *value) {
 
     if ( hsearch_r(keypair(upperkey, value), FIND, &prev, &htab) != 0 ) {
         singularity_message(VERBOSE2, "Found prior value for '%s', overriding with '%s'\n", key, value);
-        prev->data = strdup(value);
+        prev->data = value ? strdup(value) : NULL;
     } else {
         if ( hsearch_r(keypair(upperkey, value), ENTER, &prev, &htab) == 0 ) {
             singularity_message(ERROR, "Internal error - Unable to set registry entry ('%s' = '%s'): %s\n", key, value, strerror(errno));

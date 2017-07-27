@@ -64,8 +64,6 @@ int main(int argc, char **argv) {
         singularity_registry_set("IMAGE", argv[1]);
     }
 
-    singularity_sessiondir();
-
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     singularity_image_open(&image, O_RDWR);
