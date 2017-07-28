@@ -33,7 +33,11 @@ CONTAINER MANAGEMENT COMMANDS:
     inspect       Display a container's metadata
     import        Import/add container contents via a tar pipe
     inspect       Show container's metadata
+    list          List all running named instances 
     mount         Mount a Singularity container image
+    start         Start a named instance of the given container image
+    stop          Stop the named instance of the given container image
+    stop-all      Stop all running container instances
 
 CONTAINER REGISTRY COMMANDS:
     pull          pull a Singularity/Docker container to $PWD
