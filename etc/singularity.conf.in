@@ -161,3 +161,9 @@ bind path = /etc/hosts
 #@LIMIT_CONTAINER_PATHS@ = /scratch, /tmp, /global
 
 
+# CACHE BASE: [STRING]
+# DEFAULT: @CACHE_BASE_DEFAULT@
+# Set the explicit default cache base to override the use of the user's
+# home. If this configuration is undefined (commented or set to NULL),
+# containers are cached in /home/.singularity.
+#@DEFAULT_CACHE_BASE@ = /tmp

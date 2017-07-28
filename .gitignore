@@ -52,6 +52,7 @@ src/import-suid
 src/mount
 src/mount-suid
 src/get-section
+src/get-config
 src/stamp-h1
 src/include/stamp-h1
 src/.dirstamp
