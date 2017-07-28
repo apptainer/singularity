@@ -149,6 +149,11 @@ int _singularity_runtime_mount_userbinds(void) {
                 }
             }
 
+            // This is a hack, to gain and leak a file desctiptor on the
+            // source for the duration of the process so automounts don't
+            // close on us.
+            (void) open(source, O_RDONLY);
+
             singularity_priv_escalate();
             singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
             if ( mount(source, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
