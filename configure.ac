@@ -391,6 +391,7 @@ AC_CONFIG_FILES([
    libexec/python/shub/Makefile
    libexec/python/helpers/Makefile
    libexec/python/helpers/json/Makefile
+   libexec/python/helpers/printer/Makefile
 
 ])
 AC_OUTPUT

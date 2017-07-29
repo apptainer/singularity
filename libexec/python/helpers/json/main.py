@@ -268,4 +268,6 @@ def format_keyname(key):
     '''format keyname will ensure that all keys
     are uppcase, with no special characters
     '''
+    if key.startswith('org.label-schema'):
+        return re.sub('[^A-Za-z0-9-.]+', '_', key).lower()
     return re.sub('[^A-Za-z0-9]+', '_', key).upper()

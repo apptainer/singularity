@@ -1,4 +1,4 @@
-SUBDIRS = json
+SUBDIRS = json printer
 
 scriptlibexecdir = $(libexecdir)/singularity/python/helpers
 

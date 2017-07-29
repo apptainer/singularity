@@ -58,14 +58,25 @@ SINGULARITY_LABELFILE=$(printf "%q" "$SINGULARITY_ROOTFS/.singularity.d/labels.j
 SINGULARITY_ADD_SCRIPT=$(printf "%q" "$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py")
 
 
-eval $SINGULARITY_ADD_SCRIPT -f --key SINGULARITY_DEFFILE --value $(printf "%q" "$SINGULARITY_BUILDDEF") --file $SINGULARITY_LABELFILE
+##########################################################################################
+#
+# LABEL SCHEMA: http://label-schema.org/rc1/
+# 
+##########################################################################################
 
-eval $SINGULARITY_ADD_SCRIPT -f --key SINGULARITY_BOOTSTRAP_VERSION --value $(printf "%q" "$SINGULARITY_version") --file $SINGULARITY_LABELFILE
+
+eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.schema-version" --value "1.0" --file $SINGULARITY_LABELFILE
+eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-date" --value $(date --rfc-3339=seconds | sed 's/ /T/') --file $SINGULARITY_LABELFILE
+
+if [ -f "${SINGULARITY_ROOTFS}/.singularity.d/runscript.help" ]; then
+    eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage" --value "/.singularity.d/runscript.help" --file $SINGULARITY_LABELFILE
+fi
+
+eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage.singularity.deffile" --value $(printf "%q" "$SINGULARITY_BUILDDEF") --file $SINGULARITY_LABELFILE
+eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage.singularity.version" --value $(printf "%q" "$SINGULARITY_version") --file $SINGULARITY_LABELFILE
 
 env | egrep "^SINGULARITY_DEFFILE_" | while read i; do
     KEY=`echo $i | cut -f1 -d =`
     VAL=`echo $i | cut -f2- -d =`
-    eval $SINGULARITY_ADD_SCRIPT -f --key $(printf "%q" "$KEY") --value $(printf "%q" "$VAL") --file $SINGULARITY_LABELFILE
-
+    eval $SINGULARITY_ADD_SCRIPT -f --key $(printf "org.label-schema.usage.singularity.deffile.%q" "$KEY") --value $(printf "%q" "$VAL") --file $SINGULARITY_LABELFILE
 done
-
