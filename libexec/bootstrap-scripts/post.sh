@@ -77,6 +77,7 @@ eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage.singularity.versio
 
 env | egrep "^SINGULARITY_DEFFILE_" | while read i; do
     KEY=`echo $i | cut -f1 -d =`
+    KEY=$(replace_string "$KEY" "SINGULARITY_DEFFILE_" "")
     VAL=`echo $i | cut -f2- -d =`
     eval $SINGULARITY_ADD_SCRIPT -f --key $(printf "org.label-schema.usage.singularity.deffile.%q" "$KEY") --value $(printf "%q" "$VAL") --file $SINGULARITY_LABELFILE
 done
