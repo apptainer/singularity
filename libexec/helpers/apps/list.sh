@@ -42,7 +42,7 @@ APPSBASE="${SINGULARITY_MOUNTPOINT}/scif/apps"
 if [ -d ${APPSBASE} ]; then
     ls --color=auto -1hs "${APPSBASE}"
 else
-    message 1 "No installed apps."
+    message 1 "No installed apps.\n"
 fi
 
 return 0
