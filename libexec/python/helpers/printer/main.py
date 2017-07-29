@@ -41,7 +41,7 @@ import re
 def HELP(filepath, pretty_print=False):
     '''HELP will print a help file to the console for a user,
     if the file exists. If pretty print is True, the file will be
-    parsed into json. 
+    parsed into json.
     :param filepath: the file path to show
     :param pretty_print: if False, return all JSON API spec
     '''
@@ -53,7 +53,7 @@ def HELP(filepath, pretty_print=False):
 
         if pretty_print:
             bot.verbose2("Structured printing specified.")
-            text = {"org.label-schema.usage.singularity.runscript.help": text}    
+            text = {"org.label-schema.usage.singularity.runscript.help": text}
             print_json(text, print_console=True)
         else:
             bot.info(text)

@@ -30,29 +30,29 @@ from helpers.printer.main import HELP
 from defaults import getenv
 from message import bot
 
+
 def get_parser():
 
     parser = optparse.OptionParser(description="HELP printer")
 
-    parser.add_option("--file", 
-                      dest='file', 
-                      help="Path to json file to retrieve from", 
+    parser.add_option("--file",
+                      dest='file',
+                      help="Path to json file to retrieve from",
                       type=str,
                       default=None)
 
     return parser
 
 
-
 def main():
 
     parser = get_parser()
-    
+
     try:
-        (args,options) = parser.parse_args()
-    except:
+        (args, options) = parser.parse_args()
+    except Exception:
         sys.exit(0)
-    
+
     structured = getenv("SINGULARITY_PRINT_STRUCTURED", None)
 
     if args.file is None:
