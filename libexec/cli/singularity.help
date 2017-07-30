@@ -39,7 +39,7 @@ CONTAINER REGISTRY COMMANDS:
 
 CONTAINER APPS COMMANDS
     apps          list available apps in a container
-    app           run an application in a container
+    apprun           run an application in a container
 
 For any additional help or support visit the Singularity
 website: http://singularity.lbl.gov/
