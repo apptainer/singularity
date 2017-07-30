@@ -72,7 +72,6 @@ while true; do
 
             # help for an image
             elif [ -f "$C" ]; then
-                echo $C
                 exec $SINGULARITY_libexecdir/singularity/cli/help.exec "$C"
 
             else
