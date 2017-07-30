@@ -39,35 +39,13 @@ RUN OPTIONS:
                         read only. This option makes the file system accessible
                         as read/write.
 
-CONTAINER FORMATS SUPPORTED:
-    *.img               This is the native Singularity image format for all
-                        Singularity versions 2.x.
-    *.sqsh              SquashFS format, note the suffix is required!
-    *.tar*              Tar archives are exploded to a temporary directory and
-                        run within that directory (and cleaned up after). The
-                        contents of the archive is a root file system with root
-                        being in the current directory. Compression suffixes as
-                        '.gz' and '.bz2' are supported.
-    directory/          Container directories that contain a valid root file
-                        system.
-
-
 EXAMPLES:
 
-    # Here we see that the runscript prints "Hello world: $@"
-    $ singularity exec /tmp/Debian.img cat /singularity
-    #!/bin/sh
-    echo "Hello world: $@"
+    $ singularity apprun foo.img bar
+    FOOBAR
 
-    # It runs with our inputs when we run the image
-    $ singularity run /tmp/Debian.img one two three
-    Hello world: one two three
-
-    # Note that this does the same thing
-    $ ./tmp/Debian.img one two three
 
 For additional help, please visit our public documentation pages which are
 found at:
 
-    http://singularity.lbl.gov/
-
+    https://singularityware.github.io
