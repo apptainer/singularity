@@ -32,4 +32,6 @@ fi
 SINGULARITY_ROOTFS=${SINGULARITY_MOUNTPOINT}
 export SINGULARITY_MOUNTPOINT SINGULARITY_ROOTFS
 
-eval_abort "$SINGULARITY_libexecdir/singularity/python/helpers/printer/help.py" --file "${SINGULARITY_MOUNTPOINT}/.singularity.d/runscript.help"
+if [ -f "${SINGULARITY_MOUNTPOINT}/.singularity.d/runscript.help" ]; then
+    eval_abort cat "${SINGULARITY_MOUNTPOINT}/.singularity.d/runscript.help"
+fi

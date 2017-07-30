@@ -35,6 +35,7 @@ from sutils import (
 
 from defaults import (
     ENVIRONMENT,
+    HELPFILE,
     LABELFILE,
     RUNSCRIPT,
     TESTFILE,
@@ -140,6 +141,7 @@ def INSPECT(inspect_labels=None,
             inspect_def=None,
             inspect_runscript=None,
             inspect_test=None,
+            inspect_help=None,
             inspect_env=None,
             pretty_print=True):
     '''INSPECT will print a "manifest" for an image, with one or more
@@ -155,6 +157,7 @@ def INSPECT(inspect_labels=None,
     :param inspect_def: if not None, will include definition file
     :param inspect_test: if not None, will include test
     :param inspect_env: if not None, will include environment
+    :param inspect_help: if not None, include helpfile
     :param pretty_print: if False, return all JSON API spec
     '''
 
@@ -172,6 +175,18 @@ def INSPECT(inspect_labels=None,
             errors["labels"] = generate_error(404,
                                               detail=error_detail,
                                               title="Labels Undefined")
+
+    # Helpfile
+    if inspect_help:
+        bot.verbose2("Inspection of helpfile selected.")
+        if os.path.exists(HELPFILE):
+            data["help"] = read_file(HELPFILE, readlines=False)
+        else:
+            data["help"] = None
+            error_detail = "This container does not have a helpfile"
+            errors["help"] = generate_error(404,
+                                            detail=error_detail,
+                                            title="Help Undefined")
 
     # Definition File
     if inspect_def:
