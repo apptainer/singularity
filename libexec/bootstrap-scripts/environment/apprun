@@ -13,8 +13,6 @@ APPBASE="/scif/apps/${APPNAME}"
 
 if [ -d "${APPBASE}" ]; then
 
-    echo "$APPNAME folder exists"
-
     # If it exists, source app environment
     if [ -f "${APPBASE}/scif/environment" ]; then
         . "${APPBASE}/scif/environment"
