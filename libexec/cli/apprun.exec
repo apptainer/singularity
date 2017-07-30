@@ -63,16 +63,6 @@ if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
     . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
 fi
 
-# STOPPED HERE - look at action and see how to plug a particular app into it. We will likely need to:
-# mount image:
-# check if app exists
-#     if it does, check for runscript
-#     if runscript --> run runscript
-#     no runscript --> shell into image
-# if app doesn't exist
-#     alert user no app exists, don't run
-
-
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/action-suid" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/action-suid" "$@" <&0
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/action" ]; then
