@@ -47,7 +47,7 @@ _singularity() {
     # In this case, no command is present.
     if [ $cmd_idx -eq $COMP_CWORD ]; then
         if [[ ${cur} == -* ]] ; then
-            opts="--help --verbose --debug --quiet --shdebug"
+            opts="--help --verbose --debug --quiet --sh-debug"
             COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
             return 0
         else
