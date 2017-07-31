@@ -80,20 +80,25 @@ class TestApi(TestCase):
         appropriate location (tmpdir) or cache
         '''
         print("Case 1: Specifying a directory downloads to it")
+        image_name = "tacos.img"
         manifest = self.client.get_manifest()
         image = self.client.download_image(manifest=manifest,
+                                           image_name=image_name,
                                            download_folder=self.tmpdir)
         self.assertEqual(os.path.dirname(image), self.tmpdir)
 
         print("Case 2: Not specifying a directory downloads to PWD")
         os.chdir(self.tmpdir)
-        image = self.client.download_image(manifest)
+        image = self.client.download_image(manifest,
+                                           image_name=image_name)
         self.assertEqual(os.getcwd(), self.tmpdir)
         self.assertTrue(image in glob("*"))
         os.remove(image)
 
         print("Case 3: Image should not be extracted.")
-        image = self.client.download_image(manifest, extract=False)
+        image = self.client.download_image(manifest,
+                                           image_name=image_name,
+                                           extract=False)
         self.assertTrue(image.endswith('.img.gz'))
 
     def test_uri(self):
