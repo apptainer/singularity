@@ -123,7 +123,7 @@ class SingularityApiConnection(ApiConnection):
 
     def download_image(self,
                        manifest,
-                       image_name,
+                       image_name=None,
                        download_folder=None,
                        extract=True):
         '''download_image will download a singularity image from singularity
@@ -132,6 +132,9 @@ class SingularityApiConnection(ApiConnection):
         :param download_folder: the folder to download to, if None, will be pwd
         :param extract: if True, will extract image to .img and return that.
         '''
+        if image_name is None:
+            image_name = get_image_name(manifest)
+
         if not bot.is_quiet():
             print("Found image %s:%s" % (manifest['name'],
                                          manifest['branch']))
@@ -144,6 +147,9 @@ class SingularityApiConnection(ApiConnection):
             bot.error("%s is not ready for download" % image_name)
             bot.error("please try when build completed or specify tag.")
             sys.exit(1)
+
+        if not image_name.endswith('.gz'):
+            image_name = "%s.gz" % image_name
 
         if download_folder is not None:
             image_name = "%s/%s" % (download_folder, image_name)

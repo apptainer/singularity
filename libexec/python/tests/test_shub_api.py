@@ -92,6 +92,7 @@ class TestApi(TestCase):
         image = self.client.download_image(manifest,
                                            image_name=image_name)
         self.assertEqual(os.getcwd(), self.tmpdir)
+        print(image)
         self.assertTrue(image in glob("*"))
         os.remove(image)
 
