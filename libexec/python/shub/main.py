@@ -76,14 +76,24 @@ def PULL(image, download_folder=None, layerfile=None):
     if download_folder is None:
         cache_base = get_cache(subfolder="shub")
     else:
-        cache_base = download_folder
+        cache_base = os.path.abspath(download_folder)
 
     # The image name is the md5 hash, download if it's not there
     image_name = get_image_name(manifest)
+
+    # Did the user specify an absolute path?
+    custom_folder = os.path.dirname(image_name)
+    if custom_folder not in [None, ""]:
+        cache_base = custom_folder
+        image_name = os.path.basename(image_name)
+
     image_file = "%s/%s" % (cache_base, image_name)
+
+    bot.debug('Pulling to %s' % image_file)
     if not os.path.exists(image_file):
         image_file = client.download_image(manifest=manifest,
-                                           download_folder=cache_base)
+                                           download_folder=cache_base,
+                                           image_name=image_name)
     else:
         if not bot.is_quiet():  # not --quiet
             print("Image already exists at %s, skipping download" % image_file)

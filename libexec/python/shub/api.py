@@ -121,34 +121,36 @@ class SingularityApiConnection(ApiConnection):
 
         return response
 
-    def download_image(self, manifest, download_folder=None, extract=True):
+    def download_image(self,
+                       manifest,
+                       image_name,
+                       download_folder=None,
+                       extract=True):
         '''download_image will download a singularity image from singularity
         hub to a download_folder, named based on the image version (commit id)
         :param manifest: the manifest obtained with get_manifest
         :param download_folder: the folder to download to, if None, will be pwd
         :param extract: if True, will extract image to .img and return that.
         '''
-        image_file = get_image_name(manifest)
-
         if not bot.is_quiet():
             print("Found image %s:%s" % (manifest['name'],
                                          manifest['branch']))
 
-            print("Downloading image... %s" % image_file)
+            print("Downloading image... %s" % image_name)
 
         url = manifest['image']
 
         if url is None:
-            bot.error("%s is not ready for download" % image_file)
+            bot.error("%s is not ready for download" % image_name)
             bot.error("please try when build completed or specify tag.")
             sys.exit(1)
 
         if download_folder is not None:
-            image_file = "%s/%s" % (download_folder, image_file)
+            image_name = "%s/%s" % (download_folder, image_name)
 
         # Download image file atomically, streaming
         image_file = self.download_atomically(url=url,
-                                              file_name=image_file,
+                                              file_name=image_name,
                                               show_progress=True)
 
         if extract is True:
