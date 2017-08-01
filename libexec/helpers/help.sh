@@ -34,4 +34,6 @@ export SINGULARITY_MOUNTPOINT SINGULARITY_ROOTFS
 
 if [ -f "${SINGULARITY_MOUNTPOINT}/.singularity.d/runscript.help" ]; then
     eval_abort cat "${SINGULARITY_MOUNTPOINT}/.singularity.d/runscript.help"
+else
+    echo "No runscript help is defined for this image."
 fi
