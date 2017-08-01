@@ -98,6 +98,9 @@ Is not obtained from the environment, but is a hard coded default (`"/bin/bash"`
 **TAG**
 Is the default tag, `latest`.
 
+**DISABLE_HTTPS**
+If you export the variable `SINGULARITY_NOHTTPS` you can force the software to not use https when interacting with a Docker registry. This use case is typically for use of a local registry.
+
 
 #### Singularity Hub
 
