@@ -209,5 +209,18 @@ if [ -s "$SINGULARITY_ROOTFS/.singularity.d/runscript" ]; then
     chmod 0755 "$SINGULARITY_ROOTFS/.singularity.d/runscript"
 fi
 
-# Copy the runscript into the container
+# Copy the definition file into the container.  If one already exists, archive.
+if [ -f "$SINGULARITY_ROOTFS/.singularity.d/Singularity" ]; then
+    message 1 "Found an existing definition file\n"
+    message 1 "Adding a bootstrap_history directory\n"
+    mkdir -p "$SINGULARITY_ROOTFS/.singularity.d/bootstrap_history"
+    ct=0
+    while true; do 
+        if [ ! -f "$SINGULARITY_ROOTFS/.singularity.d/bootstrap_history/Singularity${ct}" ]; then
+            mv "$SINGULARITY_ROOTFS/.singularity.d/Singularity" "$SINGULARITY_ROOTFS/.singularity.d/bootstrap_history/Singularity${ct}"
+            break
+        fi
+        ct=`expr $ct + 1`
+    done
+fi
 install -m 644 "$SINGULARITY_BUILDDEF" "$SINGULARITY_ROOTFS/.singularity.d/Singularity"
