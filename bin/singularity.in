@@ -85,7 +85,7 @@ while true; do
             message 4 "Enabling debugging\n"
             shift
         ;;
-        -x|--shdebug)
+        -x|--sh-debug)
             SHELL_DEBUG=1
             export SHELL_DEBUG
             message 4 "Enabling shell debugging\n"
