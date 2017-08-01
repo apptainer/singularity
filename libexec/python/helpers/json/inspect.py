@@ -36,6 +36,7 @@ def main():
     runscript = getenv("SINGULARITY_INSPECT_RUNSCRIPT", None)
     test = getenv("SINGULARITY_INSPECT_TEST", None)
     environment = getenv("SINGULARITY_INSPECT_ENVIRONMENT", None)
+    helpfile = getenv("SINGULARITY_INSPECT_HELP", None)
     structured = getenv("SINGULARITY_PRINT_STRUCTURED", None)
 
     pretty_print = True
@@ -46,6 +47,7 @@ def main():
             inspect_def=deffile,
             inspect_runscript=runscript,
             inspect_test=test,
+            inspect_help=helpfile,
             inspect_env=environment,
             pretty_print=pretty_print)
 

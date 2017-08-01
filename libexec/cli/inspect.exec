@@ -64,6 +64,12 @@ while true; do
             export SINGULARITY_INSPECT_DEFFILE
             shift;
         ;;
+        -hf|--helpfile)
+            SELECTED=1
+            SINGULARITY_INSPECT_HELP=1
+            export SINGULARITY_INSPECT_HELP
+            shift;
+        ;;
         -r|--run|--runscript)
             SELECTED=1
             SINGULARITY_INSPECT_RUNSCRIPT=1

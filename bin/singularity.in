@@ -55,13 +55,25 @@ message 5 "Starting argument loop\n"
 while true; do
     case ${1:-} in
         -h|--help|help)
+
+            # singularity help
+
             if [ -z "${2:-}" ]; then
                 C="singularity"
+
+            # singularity image or command help
             else
                 C="${2:-}"
             fi
+
+            # help for a command
             if [ -e "$SINGULARITY_libexecdir/singularity/cli/$C.help" ]; then
                 cat "$SINGULARITY_libexecdir/singularity/cli/$C.help"
+
+            # help for an image
+            elif [ -f "$C" ]; then
+                exec $SINGULARITY_libexecdir/singularity/cli/help.exec "$C"
+
             else
                 message ERROR "No help exists for command: '$C'\n"
                 exit 1
