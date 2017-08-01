@@ -78,6 +78,8 @@ _singularity() {
 
     case "${cmd}" in
         help)
+            COMPREPLY=( $(compgen -W "$cmds" -- ${cur}) )
+            _filedir
             return 0
         ;;
 
