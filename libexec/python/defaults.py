@@ -142,6 +142,8 @@ ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
 LABELFILE = getenv("SINGULARITY_LABELFILE", default=_labelfile)
 INCLUDE_CMD = convert2boolean(getenv("SINGULARITY_INCLUDECMD",
                               default=False))
+DISABLE_HTTPS = convert2boolean(getenv("SINGULARITY_NOHTTPS",
+                                default=False))
 
 #######################################################################
 # Singularity Hub
