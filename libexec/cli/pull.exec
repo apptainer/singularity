@@ -46,8 +46,8 @@ while true; do
         ;;
         -n|--name|name)
             shift
-            SINGULARITY_IMAGE="${1:-}"
-            export SINGULARITY_IMAGE
+            SHUB_CONTAINERNAME="${1:-}"
+            export SHUB_CONTAINERNAME
             shift
         ;;
         -C|--commit|commit)
@@ -177,11 +177,7 @@ case "$SINGULARITY_CONTAINER" in
 
     ;;
     shub://*)
-        if [ -n "${SINGULARITY_IMAGE:-}" ]; then
-            SHUB_CONTAINERNAME="$SINGULARITY_IMAGE"
-            export SHUB_CONTAINERNAME
-        fi
-
+        
         eval_abort $SINGULARITY_libexecdir/singularity/python/pull.py
         RETVAL=$?
 
