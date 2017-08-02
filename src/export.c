@@ -48,7 +48,7 @@
 
 int main(int argc, char **argv) {
     int retval = 0;
-    char *tar_cmd[5];
+    char *tar_cmd[7];
     struct image_object image;
     struct image_object image_test;
 
@@ -63,8 +63,6 @@ int main(int argc, char **argv) {
     if ( argc == 2 ) {
         singularity_registry_set("IMAGE", argv[1]);
     }
-
-    singularity_sessiondir();
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
@@ -106,10 +104,12 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
-    tar_cmd[1] = strdup("-cf");
-    tar_cmd[2] = strdup("-");
-    tar_cmd[3] = strdup(".");
-    tar_cmd[4] = NULL;
+    tar_cmd[1] = strdup("--exclude=*//*");
+    tar_cmd[2] = strdup("--exclude=*../*");
+    tar_cmd[3] = strdup("-cf");
+    tar_cmd[4] = strdup("-");
+    tar_cmd[5] = strdup(".");
+    tar_cmd[6] = NULL;
 
     if ( chdir(singularity_runtime_rootfs(NULL)) != 0 ) {
         singularity_message(ERROR, "Could not change to working directory: %s\n", singularity_runtime_rootfs(NULL));

@@ -107,6 +107,10 @@ int _singularity_runtime_mount_hostfs(void) {
             singularity_message(DEBUG, "Skipping /sys based file system: %s,%s,%s\n", source, mountpoint, filesystem);
             continue;
         }
+        if ( strncmp(mountpoint, "/boot", 5) == 0 ) {
+            singularity_message(DEBUG, "Skipping /boot based file system: %s,%s,%s\n", source, mountpoint, filesystem);
+            continue;
+        }
         if ( strncmp(mountpoint, "/proc", 5) == 0 ) {
             singularity_message(DEBUG, "Skipping /proc based file system: %s,%s,%s\n", source, mountpoint, filesystem);
             continue;
