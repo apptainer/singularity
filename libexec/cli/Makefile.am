@@ -1,8 +1,7 @@
 cliexecdir = $(libexecdir)/singularity/cli
 
 dist_cliexec_SCRIPTS = apps.exec apprun.exec bootstrap.exec check.exec copy.exec create.exec \
-                       exec.exec expand.exec export.exec help.exec import.exec inspect.exec
-
+                       exec.exec expand.exec export.exec help.exec import.exec inspect.exec \
                        mount.exec pull.exec run.exec shell.exec test.exec \
                        selftest.exec action_argparser.sh
 
