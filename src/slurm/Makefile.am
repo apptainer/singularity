@@ -1,10 +1,12 @@
+AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 plugindir = $(libdir)/slurm
 
+
 if WITH_SLURM
 plugin_LTLIBRARIES = singularity_spank.la
-singularity_spank_la_SOURCES = singularity.c
-singularity_spank_la_LIBADD = ../lib/libsingularity_internal.la
+singularity_spank_la_SOURCES = singularity.c ../util/sessiondir.c ../action-lib/ready.c ../util/cleanupd.c
+singularity_spank_la_LIBADD = ../lib/image/libsingularity-image.la ../lib/runtime/libsingularity-runtime.la
 singularity_spank_la_LDFLAGS = -module -no-undefined -avoid-version -export-symbols-regex '^slurm_spank_|^plugin_'
 endif
 

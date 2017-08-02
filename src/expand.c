@@ -100,14 +100,14 @@ int main(int argc, char **argv) {
 
     singularity_priv_escalate();
     singularity_message(INFO, "Checking file system\n");
-    if ( singularity_fork_exec(e2fsck_cmd) != 0 ) {
+    if ( singularity_fork_exec(0, e2fsck_cmd) != 0 ) {
         singularity_message(ERROR, "Failed running %s\n", e2fsck_cmd[0]);
         ABORT(255);
     }
     singularity_priv_drop();
     singularity_priv_escalate();
     singularity_message(INFO, "Resizing file system\n");
-    if ( singularity_fork_exec(resize2fs_cmd) != 0 ) {
+    if ( singularity_fork_exec(0, resize2fs_cmd) != 0 ) {
         singularity_message(ERROR, "Failed running '%s' '%s'\n", resize2fs_cmd[0], resize2fs_cmd[1]);
         ABORT(255);
     }

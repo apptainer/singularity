@@ -25,15 +25,15 @@ Note that the sysadmin may provide a default image that will be utilized if the 
 required singularity.so default_image=/cvmfs/cernvm-prod.cern.ch/cvm3
 ```
 
-Finally, a user may select their image through the `--image` optional argument:
+Finally, a user may select their image through the `--singularity-image` optional argument:
 
 ```
-srun --image=/cvmfs/cms.cern.ch/rootfs/x86_64/centos7/latest ls -lh /
+srun --singularity-image=/cvmfs/cms.cern.ch/rootfs/x86_64/centos7/latest ls -lh /
 ```
 
 Within a batch file, you would append this header:
 
 ```
-#SBATCH --image=/cvmfs/cms.cern.ch/rootfs/x86_64/centos7/latest
+#SBATCH --singularity-image=/cvmfs/cms.cern.ch/rootfs/x86_64/centos7/latest
 ```
 

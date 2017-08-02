@@ -116,22 +116,25 @@ while true; do
         ;;
         -n|--nv)
             shift
-            for i in `ldconfig -p | grep -E "/libnv|/libcuda|/libEGL|/libGL|/libnvcu|/libvdpau|/libOpenCL|/libOpenGL"`; do
+            SINGULARITY_NVLIBLIST=$(mktemp singularity-nvliblist.XXXXXXXX)
+            cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" > $SINGULARITY_NVLIBLIST
+            for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
                 if [ -f "$i" ]; then
                     message 2 "Found NV library: $i\n"
                     if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
                         SINGULARITY_CONTAINLIBS="$i"
-                    else
+                     else
                         SINGULARITY_CONTAINLIBS="$SINGULARITY_CONTAINLIBS,$i"
                     fi
                 fi
             done
+            rm $SINGULARITY_NVLIBLIST
             if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
                 message WARN "Could not find any Nvidia libraries on this host!\n";
             else
                 export SINGULARITY_CONTAINLIBS
             fi
-            if NVIDIA_SMI=`which nvidia-smi`; then
+            if NVIDIA_SMI=$(which nvidia-smi); then
                 if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
                     SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${NVIDIA_SMI}"
                 else

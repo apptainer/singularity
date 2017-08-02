@@ -51,6 +51,7 @@
     #define ANSI_COLOR_LIGHTCYAN    "\x1b[96m"
     #define ANSI_COLOR_RESET        "\x1b[0m"
 
+    int singularity_message_level(void);
     void _singularity_message(int level, const char *function, const char *file, int line, char *format, ...) __attribute__ ((__format__(printf, 5, 6))); // Flawfinder: ignore
 
     #define singularity_message(a,b...) _singularity_message(a, __func__, __FILE__, __LINE__, b)
