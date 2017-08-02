@@ -1,0 +1,30 @@
+#!/bin/sh
+
+APPNAME=${1:-}
+
+# Source container main environment
+for script in /.singularity.d/env/*.sh; do
+    if [ -f "$script" ]; then
+        . "$script"
+    fi
+done
+
+APPBASE="/scif/apps/${APPNAME}"
+
+if [ -d "${APPBASE}" ]; then
+
+    # If it exists, source app environment
+    if [ -f "${APPBASE}/scif/environment" ]; then
+        . "${APPBASE}/scif/environment"
+    fi
+
+    # If it has a runscript, use it
+    if test -x ${APPBASE}/scif/runscript; then
+        exec ${APPBASE}/scif/runscript "$@"
+    else
+        echo "No Singularity runscript found, executing /bin/sh into ${APPNAME}"
+        cd ${APPBASE}
+        exec /bin/sh
+    fi
+
+fi

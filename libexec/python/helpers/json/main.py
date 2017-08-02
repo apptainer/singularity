@@ -86,7 +86,7 @@ def GET(key, jsonfile):
     return value
 
 
-def ADD(key, value, jsonfile, force=False):
+def ADD(key, value, jsonfile, force=False, quiet=False):
     '''ADD will write or update a key in a json file
     '''
     key = format_keyname(key)
@@ -97,7 +97,8 @@ def ADD(key, value, jsonfile, force=False):
         if key in contents:
             msg = 'Warning, %s is already set. ' % key
             msg += 'Overwrite is set to %s' % force
-            bot.debug(msg)
+            if not quiet:
+                bot.debug(msg)
             if force is True:
                 contents[key] = value
             else:

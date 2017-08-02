@@ -1,4 +1,4 @@
-SUBDIRS = checks
+SUBDIRS = apps checks
 
 helpersdir = $(libexecdir)/singularity/helpers
 

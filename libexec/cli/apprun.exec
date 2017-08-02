@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+# Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
 # https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
@@ -10,11 +11,6 @@
 # at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
 # of Singularity, including this file, may be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE.md file.
-#
-# This file also contains content that is covered under the LBNL/DOE/UC modified
-# 3-clause BSD license and is subject to the license terms in the LICENSE-LBNL.md
-# file found in the top-level directory of this distribution and at
-# https://github.com/singularityware/singularity/blob/master/LICENSE-LBNL.md.
 
 
 
@@ -32,28 +28,24 @@ else
     exit 1
 fi
 
-while true; do
-    case ${1:-} in
-        -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
-        ;;
-        -*)
-            message ERROR "Unknown option: $1\n"
-            exit 1
-        ;;
-        *)
-            break;
-        ;;
-    esac
-done
+if [ -f "${HOME:-}/.singularity-init" ]; then
+    . "${HOME:-}/.singularity-init"
+fi
 
-if [ -z "${1:-}" ]; then
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh"
+else
+    message ERROR "Could not find the action argument parser\n"
+    exit 1
+fi
+
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+    SINGULARITY_IMAGE="${1:-}"
+    export SINGULARITY_IMAGE
+    shift
+fi
+
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -62,19 +54,21 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-
-SINGULARITY_IMAGE="${1:-}"
-export SINGULARITY_IMAGE
-shift
-
-if [ -x "$SINGULARITY_libexecdir/singularity/bin/copy" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/copy" "$@"
-else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/copy\n"
-    exit 1
+if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/init"
 fi
 
 
-message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
-exit 255
+if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
+    . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
+fi
+
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/action-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/action-suid" "$@" <&0
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/action" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/action" "$@" <&0
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/action\n"
+    exit 1
+fi
 

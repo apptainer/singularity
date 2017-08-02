@@ -149,8 +149,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/python
 %{_libexecdir}/singularity/helpers
 %{_libexecdir}/singularity/python/helpers
-%{_libexecdir}/singularity/python/helpers/json
-%{_libexecdir}/singularity/python/helpers/printer
+%{_libexecdir}/singularity/helpers/checks
+%{_libexecdir}/singularity/helpers/apps
+
 
 %files devel
 %defattr(-, root, root)

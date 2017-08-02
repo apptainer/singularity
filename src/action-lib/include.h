@@ -27,6 +27,7 @@ extern void action_ready(char *path);
 extern int action_shell(int argc, char **argv);
 extern int action_exec(int argc, char **argv);
 extern int action_run(int argc, char **argv);
+extern int action_apprun(int argc, char **argv);
 extern int action_test(int argc, char **argv);
 
 #endif /* __ACTION_LIB_H */
