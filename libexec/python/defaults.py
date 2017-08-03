@@ -146,6 +146,7 @@ INCLUDE_CMD = convert2boolean(getenv("SINGULARITY_INCLUDECMD",
                               default=False))
 DISABLE_HTTPS = convert2boolean(getenv("SINGULARITY_NOHTTPS",
                                 default=False))
+HTTP_REGISTRIES = getenv("SINGULARITY_HTTP_REGISTRIES", default="").split(" ")
 
 #######################################################################
 # Singularity Hub

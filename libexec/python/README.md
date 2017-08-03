@@ -101,6 +101,9 @@ Is the default tag, `latest`.
 **DISABLE_HTTPS**
 If you export the variable `SINGULARITY_NOHTTPS` you can force the software to not use https when interacting with a Docker registry. This use case is typically for use of a local registry.
 
+**HTTP_REGISTRIES**
+If you specify a space separated list of registries in the `SINGULARITY_HTTP_REGISTRIES` variable these are invoked with HTTP instead of HTTPS.
+
 
 #### Singularity Hub
 

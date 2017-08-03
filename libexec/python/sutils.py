@@ -24,7 +24,8 @@ perform publicly and display publicly, and to permit other to do so.
 
 from defaults import (
     SINGULARITY_CACHE,
-    DISABLE_HTTPS
+    DISABLE_HTTPS,
+    HTTP_REGISTRIES
 )
 from message import bot
 import datetime
@@ -60,14 +61,14 @@ def add_http(url, use_https=True):
     :param url: the url to add the prefix to
     :param use_https: should we default to https? default is True
     '''
-    scheme = "https://"
-    if use_https is False or DISABLE_HTTPS is True:
-        scheme = "http://"
-
     # remove scheme from url
     # urlparse is buggy in Python 2.6
     # https://bugs.python.org/issue754016, use regex instead
     parsed = re.sub('.*//', '', url)
+
+    scheme = "https://"
+    if use_https is False or DISABLE_HTTPS is True or parsed in HTTP_REGISTRIES:
+        scheme = "http://"
 
     return "%s%s" % (scheme, parsed.rstrip('/'))
 
