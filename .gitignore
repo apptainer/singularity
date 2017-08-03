@@ -38,6 +38,7 @@ src/action-suid
 src/add
 src/add-suid
 src/bootstrap
+src/builddef
 src/cleanupd
 src/create
 src/create-suid

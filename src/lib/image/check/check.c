@@ -46,12 +46,12 @@ int _singularity_image_check(struct image_object *image) {
 
     singularity_message(VERBOSE, "Checking what kind of image we are mounting\n");
 
-    if ( _singularity_image_check_image(image) == 0 ) {
+    if ( _singularity_image_check_dir(image) == 0 ) {
+        image->type = DIRECTORY;
+    } else if ( _singularity_image_check_image(image) == 0 ) {
         image->type = SINGULARITY;
     } else if ( _singularity_image_check_squashfs(image) == 0 ) {
         image->type = SQUASHFS;
-    } else if ( _singularity_image_check_dir(image) == 0 ) {
-        image->type = DIRECTORY;
     } else {
         singularity_message(ERROR, "Unknown image format/type.\n");
         ABORT(255);

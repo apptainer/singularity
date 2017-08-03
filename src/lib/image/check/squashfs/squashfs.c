@@ -36,13 +36,38 @@
 #include "../../image.h"
 
 int _singularity_image_check_squashfs(struct image_object *image) {
-    char *image_name = strdup(image->name);
-    int len = strlength(image_name, 1024);
+    FILE *image_fp;
+    char *line;
 
-    if ( strcmp(&image_name[len-5], ".sqsh") != 0 ) {
-        singularity_message(DEBUG, "Image does not appear to be of type '.sqsh': %s\n", image->path);
+    if ( ( image_fp = fdopen(dup(image->fd), "r") ) == NULL ) {
+        singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
+        ABORT(255);
+    }
+
+    singularity_message(VERBOSE3, "Checking that file pointer is a Singularity image\n");
+    rewind(image_fp);
+
+    line = (char *)malloc(5);
+
+    // Get the first line from the config
+    if ( fgets(line, 5, image_fp) == NULL ) {
+        singularity_message(ERROR, "Unable to read the first 4 bytes of image: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    singularity_message(DEBUG, "found bytes of image: %s\n", line);
+
+    singularity_message(DEBUG, "Checking if first line matches key\n");
+    if ( strcmp(line, "hsqs") == 0 ) {
+        free(line);
+        singularity_message(VERBOSE2, "File is a valid SquashFS image\n");
+    } else {
+        free(line);
+        singularity_message(VERBOSE, "File is not a valid SquashFS image\n");
         return(-1);
     }
+
+    fclose(image_fp);
 
     return(0);
 }
