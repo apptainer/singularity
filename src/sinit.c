@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/wait.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -43,8 +44,8 @@
 
 int main(int argc, char **argv) {
     char *daemon_fd_str;
-    int daemon_fd;
-    int i;
+    int daemon_fd, i, waitstatus;
+    pid_t pid;
     
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_priv_init();
@@ -69,8 +70,8 @@ int main(int argc, char **argv) {
     singularity_message(LOG, "Successfully closed fd's, entering daemon loop\n");
 
     while(1) {
-        //singularity_message(LOG, "Logging from inside daemon\n");
-        sleep(60);
+        pid = wait(&waitstatus);
+        singularity_message(LOG, "Child (PID=%d) exited with status: %d\n", pid, waitstatus);
     }
     
     return(0);
