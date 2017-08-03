@@ -174,7 +174,24 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "r
 
     fi
 else
-    message 2 "Skipping test section\n"
+    message 2 "Skipping runscript section\n"
+fi
+
+
+### HELP FOR RUNSCRIPT
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "help" ]; then
+    if singularity_section_exists "help" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding runscript help\n"
+        singularity_section_args "help" "$SINGULARITY_BUILDDEF" > "$SINGULARITY_ROOTFS/.singularity.d/runscript.help"
+        echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript.help"
+        singularity_section_get "help" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript.help"
+        # Add label for the file
+        HELPLABEL="org.label-schema.usage.singularity.runscript.help"
+        HELPFILE="/.singularity.d/runscript.help"
+        $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$HELPLABEL" --value "$HELPFILE" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+    fi
+else
+    message 2 "Skipping runscript help section\n"
 fi
 
 
