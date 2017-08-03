@@ -45,6 +45,36 @@ if test "$libdir" = "\${exec_prefix}/lib"; then
     LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir)"
 fi
 
+AC_MSG_CHECKING([if security check is enabled])
+AC_ARG_ENABLE([security_check],
+  [AS_HELP_STRING([--disable-security-check],
+    [disable security check (WARNING: set this option expose your host to privileges escalation)])])
+
+AS_IF([test "x$enable_security_check" != "xno"], [
+    AC_MSG_RESULT([yes])
+    SECURITY_CHECK=1
+], [
+    AC_MSG_RESULT([no])
+    SECURITY_CHECK=0
+])
+
+AC_MSG_CHECKING([for feature: CAPBSET_DROP])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/prctl.h>
+                                     #include <linux/capability.h>
+                                   ]],
+                                   [[prctl(PR_CAPBSET_READ, CAP_CHOWN, 0, 0, 0);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_CAPBSET_DROP"
+                          CAPBSET_DROP=1
+                      ], [
+                          AC_MSG_RESULT([no])
+                          CAPBSET_DROP=0
+                      ]
+                  )
+
+
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                                      #include <sched.h>
@@ -55,6 +85,21 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                           SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWPID"
                       ], [
                           AC_MSG_RESULT([no])
+                          if test "$CAPBSET_DROP" -eq 0; then
+                              echo
+                              echo "SECURITY WARNING!!!!!!"
+                              echo
+                              echo "This host does not support the CLONE_NEWPID (pid) namespace flag and"
+                              echo "can't drop process capabilities, running Singularity could expose your host"
+                              echo "to privileges escalation !"
+                              echo
+                              if test "$SECURITY_CHECK" -eq 1; then
+                                  echo "If you really want to compile Singularity with missing security features,"
+                                  echo "add --disable-security-check to configure"
+                                  echo
+                                  exit 255
+                              fi
+                          fi
                       ]
                   )
 
@@ -150,7 +195,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                           AC_MSG_RESULT([no])
                       ]
                   )
-
 
 AC_MSG_CHECKING([for feature: MS_SLAVE])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -393,4 +437,14 @@ AC_CONFIG_FILES([
    libexec/python/helpers/json/Makefile
 
 ])
+
 AC_OUTPUT
+
+if test "$CAPBSET_DROP" -eq 0; then
+    echo
+    echo "SECURITY WARNING!!!!!!"
+    echo
+    echo "Your host lack of security features (kernel too old),"
+    echo "running Singularity could expose your host to privileges escalation"
+    echo
+fi

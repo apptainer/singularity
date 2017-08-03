@@ -63,8 +63,8 @@ int _singularity_runtime_mount_tmp(void) {
                 ABORT(5);
             }
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-            singularity_message(WARNING, "Not mounting workdir: host does not support PR_SET_NO_NEW_PRIVS\n");
+#ifndef SINGULARITY_CAPBSET_DROP 
+            singularity_message(WARNING, "Not mounting workdir: host can't drop process capabilities\n");
             ABORT(255);
 #endif
 

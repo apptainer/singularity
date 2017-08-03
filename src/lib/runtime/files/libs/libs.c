@@ -57,8 +57,8 @@ int _singularity_runtime_files_libs(void) {
         char *tok = NULL;
         char *current = strtok_r(strdup(includelibs_string), ",", &tok);
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting libs: host does not support PR_SET_NO_NEW_PRIVS\n");
+#ifndef SINGULARITY_CAPBSET_DROP 
+        singularity_message(WARNING, "Not mounting libs: host can't drop process capabilities\n");
         return(0);
 #endif
 

@@ -54,8 +54,8 @@ int _singularity_runtime_mount_userbinds(void) {
             return(0);
         }
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Ignoring user bind request: host does not support PR_SET_NO_NEW_PRIVS\n");
+#ifndef SINGULARITY_CAPBSET_DROP 
+        singularity_message(WARNING, "Ignoring user bind request: host can't drop process capabilities\n");
         return(0);
 #endif
 
