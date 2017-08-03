@@ -67,7 +67,8 @@ def add_http(url, use_https=True):
     parsed = re.sub('.*//', '', url)
 
     scheme = "https://"
-    if use_https is False or DISABLE_HTTPS is True or parsed in HTTP_REGISTRIES:
+    if use_https is False or DISABLE_HTTPS is True \
+      or parsed in HTTP_REGISTRIES:
         scheme = "http://"
 
     return "%s%s" % (scheme, parsed.rstrip('/'))
