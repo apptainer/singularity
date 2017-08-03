@@ -77,7 +77,7 @@ done
 
 
 # This is a configurable option, needs to be set accordingly!
-SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
+SESSION_GLOB="/var/tmp/.singularity-daemon-${USERID}/*"
 
 
 for i in $SESSION_GLOB; do
@@ -93,7 +93,7 @@ for i in $SESSION_GLOB; do
         
         if [ "${INODE}" != "${_INODE:-}" ]; then
             _INODE=${INODE}
-            echo "${DAEMON_IMAGE}  [${INODE}]  Instance:"
+            echo "${DAEMON_IMAGE}  [${INODE}]  Instance(s):"
         fi
 
         if [ "${USERID}" == "*" ]; then

@@ -75,7 +75,7 @@ while true; do
     esac
 done
 
-SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
+SESSION_GLOB="/var/tmp/.singularity-daemon-${USERID}/*"
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     SINGULARITY_IMAGE="${1:-}"

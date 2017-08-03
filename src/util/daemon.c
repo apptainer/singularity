@@ -63,7 +63,7 @@ void singularity_daemon_path(void) {
     char *dev_ino = file_devino(singularity_registry_get("IMAGE"));
     char *name = singularity_registry_get("DAEMON_NAME");
     
-    snprintf(daemon_path, 2048, "/tmp/.singularity-daemon-%d/%s-%s", uid, dev_ino, name);
+    snprintf(daemon_path, 2048, "/var/tmp/.singularity-daemon-%d/%s-%s", uid, dev_ino, name);
     singularity_registry_set("DAEMON_FILE", daemon_path);
 }
 
@@ -134,7 +134,7 @@ void daemon_init_start(void) {
     int daemon_fd;
     int lock;
     
-    /* Check if /tmp/.singularity-daemon-[UID]/ directory exists, if not create it */
+    /* Check if /var/tmp/.singularity-daemon-[UID]/ directory exists, if not create it */
     if ( is_dir(dirname(daemon_file_dir)) == -1 ) {
         s_mkpath(daemon_file_dir, 0755);
     }

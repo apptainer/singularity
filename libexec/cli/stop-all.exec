@@ -75,7 +75,7 @@ while true; do
     esac
 done
 
-SESSION_GLOB="/tmp/.singularity-daemon-${USERID}/*"
+SESSION_GLOB="/var/tmp/.singularity-daemon-${USERID}/*"
 
 for i in $SESSION_GLOB; do
     if [ -f "$i" ]; then
