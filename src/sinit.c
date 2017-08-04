@@ -59,6 +59,19 @@ int main(int argc, char **argv) {
     daemon_fd_str = singularity_registry_get("DAEMON_FD");
     daemon_fd = atoi(daemon_fd_str);
 
+    pid = singularity_fork(0);
+    if ( pid == 0 ) {
+        while(1) {
+            pause();
+        }
+        exit(0);
+    } else if ( pid > 0 ) {
+        
+    } else {
+        singularity_message(ERROR, "Unable to fork: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i >= 0; i-- ) {

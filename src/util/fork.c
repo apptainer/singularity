@@ -412,18 +412,6 @@ int singularity_fork_daemonize() {
     child = singularity_fork(CLONE_NEWPID);
 
     if ( child == 0 ) {
-        child = singularity_fork();
-        if ( child == 0 ) {
-            while(1) {
-                pause();
-            }
-            exit(0);
-        } else if ( child > 0 ) {
-            return(0);
-        } else {
-            singularity_message(ERROR, "Unable to fork: %s\n", strerror(errno));
-            ABORT(255);
-        }
         return(0);
     } else if ( child > 0 ) {
         singularity_message(DEBUG, "Successfully spawned daemon, terminating\n");
