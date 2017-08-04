@@ -231,13 +231,13 @@ if [ -f "$SINGULARITY_ROOTFS/.singularity.d/Singularity" ]; then
     message 1 "Found an existing definition file\n"
     message 1 "Adding a bootstrap_history directory\n"
     mkdir -p "$SINGULARITY_ROOTFS/.singularity.d/bootstrap_history"
-    ct=0
+    count=0
     while true; do 
-        if [ ! -f "$SINGULARITY_ROOTFS/.singularity.d/bootstrap_history/Singularity${ct}" ]; then
-            mv "$SINGULARITY_ROOTFS/.singularity.d/Singularity" "$SINGULARITY_ROOTFS/.singularity.d/bootstrap_history/Singularity${ct}"
+        if [ ! -f "$SINGULARITY_ROOTFS/.singularity.d/bootstrap_history/Singularity${count}" ]; then
+            mv "$SINGULARITY_ROOTFS/.singularity.d/Singularity" "$SINGULARITY_ROOTFS/.singularity.d/bootstrap_history/Singularity${count}"
             break
         fi
-        ct=`expr $ct + 1`
+        count=`expr $count + 1`
     done
 fi
 install -m 644 "$SINGULARITY_BUILDDEF" "$SINGULARITY_ROOTFS/.singularity.d/Singularity"

@@ -35,9 +35,7 @@ fi
 if [ -z "${FROM:-}" ]; then
     message ERROR "Required Definition tag 'From:' not defined.\n"
     exit 1
-fi
-
-if [ ! -f "${FROM:-}" ]; then
+else if [ ! -f "${FROM:-}" ]; then
     message ERROR "${FROM} does not exist\n"
     exit 1
 fi
