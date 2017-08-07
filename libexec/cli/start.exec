@@ -23,11 +23,6 @@ else
     exit 1
 fi
 
-## Init Singularity environment
-if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
-    . "$SINGULARITY_sysconfdir/singularity/init"
-fi
-
 if [ -f "${HOME:-}/.singularity-init" ]; then
     . "${HOME:-}/.singularity-init"
 fi
