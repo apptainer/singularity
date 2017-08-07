@@ -67,11 +67,7 @@ while true; do
 done
 
 
-HOST=`hostname`
-HOME=`getent passwd ${USERID} | cut -d: -f6`
-
-# This is a configurable option, needs to be set accordingly!
-SESSION_GLOB="${HOME}/.singularity/daemon/${HOST}/*"
+SESSION_GLOB=`singularity_daemon_glob`
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     SINGULARITY_IMAGE="${1:-}"

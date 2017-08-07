@@ -155,12 +155,7 @@ fi
 SINGULARITY_DAEMON_START=1
 export SINGULARITY_DAEMON_START
 
-HOST=`hostname`
-HOME=`getent passwd ${USERID} | cut -d: -f6`
-DEVINO=`stat --format=%d.%i ${SINGULARITY_IMAGE}`
-
-# This is a configurable option, needs to be set accordingly!
-SINGULARITY_DAEMON_FILE="${HOME}/.singularity/daemon/${HOST}/${DEVINO}-${SINGULARITY_DAEMON_NAME}"
+SINGULARITY_DAEMON_FILE=`singularity_daemon_file`
 export SINGULARITY_DAEMON_FILE
 
 if [ -z "${SINGULARITY_IMAGE:-}" ] || [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
