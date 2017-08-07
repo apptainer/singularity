@@ -40,6 +40,11 @@ if [ -f "${HOME:-}/.singularity-init" ]; then
     . "${HOME:-}/.singularity-init"
 fi
 
+if ! USERID=`id --real --user`; then
+    message ERROR "Could not ascertain user ID\n"
+    exit 255
+fi
+
 if [ -f "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh" ]; then
     . "$SINGULARITY_libexecdir/singularity/cli/action_argparser.sh"
 else
@@ -60,6 +65,16 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
         message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
     fi
     exit 0
+fi
+
+if [ -n "${SINGULARITY_DAEMON_JOIN:-}" ]; then
+    HOST=`hostname`
+    HOME=`getent passwd ${USERID} | cut -d: -f6`
+    DEVINO=`stat --format=%d.%i ${SINGULARITY_IMAGE}`
+
+    # This is a configurable option, needs to be set accordingly!
+    SINGULARITY_DAEMON_FILE="${HOME}/.singularity/daemon/${HOST}/${DEVINO}-${SINGULARITY_DAEMON_NAME}"
+    export SINGULARITY_DAEMON_FILE
 fi
 
 if [ -z "${1:-}" ]; then

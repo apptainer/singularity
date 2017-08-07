@@ -56,17 +56,6 @@ void daemon_file_write(int fd, char *key, char *val) {
     }
 }
 
-void singularity_daemon_path(void) {
-    char *daemon_path = (char *)malloc(2048 * sizeof(char));
-
-    int uid = singularity_priv_getuid();
-    char *dev_ino = file_devino(singularity_registry_get("IMAGE"));
-    char *name = singularity_registry_get("DAEMON_NAME");
-    
-    snprintf(daemon_path, 2048, "/var/tmp/.singularity-daemon-%d/%s-%s", uid, dev_ino, name);
-    singularity_registry_set("DAEMON_FILE", daemon_path);
-}
-
 /* This should become unnecessary after we make the rootfs path static */
 void singularity_daemon_rootfs(void) {
     char *file_str = filecat(singularity_registry_get("DAEMON_FILE"));
@@ -179,8 +168,6 @@ void daemon_init_start(void) {
 }
 
 void singularity_daemon_init(void) {
-    singularity_daemon_path();
-    
     if ( singularity_registry_get("DAEMON_START") ) {
         daemon_init_start();
         return;

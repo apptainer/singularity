@@ -23,10 +23,19 @@ else
     exit 1
 fi
 
+## Init Singularity environment
+if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/init"
+fi
+
 if [ -f "${HOME:-}/.singularity-init" ]; then
     . "${HOME:-}/.singularity-init"
 fi
 
+if ! USERID=`id --real --user`; then
+    message ERROR "Could not ascertain user ID\n"
+    exit 255
+fi
 
 message 2 "Evaluating args: '$*'\n"
 
@@ -150,6 +159,14 @@ fi
 
 SINGULARITY_DAEMON_START=1
 export SINGULARITY_DAEMON_START
+
+HOST=`hostname`
+HOME=`getent passwd ${USERID} | cut -d: -f6`
+DEVINO=`stat --format=%d.%i ${SINGULARITY_IMAGE}`
+
+# This is a configurable option, needs to be set accordingly!
+SINGULARITY_DAEMON_FILE="${HOME}/.singularity/daemon/${HOST}/${DEVINO}-${SINGULARITY_DAEMON_NAME}"
+export SINGULARITY_DAEMON_FILE
 
 if [ -z "${SINGULARITY_IMAGE:-}" ] || [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
