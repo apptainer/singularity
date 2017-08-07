@@ -46,15 +46,6 @@ while true; do
             fi
             exit
         ;;
-        -a|--all)
-            if [ "$USERID" = 0 ]; then
-                USERID="*"
-                shift
-            else
-                message ERROR "Must be root to list all\n"
-                exit 1
-            fi
-        ;;
         -u|--user)
             if [ "$USERID" = 0 ]; then
                 shift
@@ -76,9 +67,11 @@ while true; do
 done
 
 
-# This is a configurable option, needs to be set accordingly!
-SESSION_GLOB="/var/tmp/.singularity-daemon-${USERID}/*"
+HOST=`hostname`
+HOME=`getent passwd ${USERID} | cut -d: -f6`
 
+# This is a configurable option, needs to be set accordingly!
+SESSION_GLOB="${HOME}/.singularity/daemon/${HOST}/*"
 
 for i in $SESSION_GLOB; do
     if [ -f "$i" ]; then
@@ -107,4 +100,3 @@ for i in $SESSION_GLOB; do
         echo ""
     fi
 done
-

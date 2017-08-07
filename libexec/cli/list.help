@@ -3,7 +3,6 @@ USAGE: singularity [...] list [list options...]
 List all running named instances
 
 LIST OPTIONS:
-    -a/--all               If running as root, list instances from all users
     -u/--user <username>   If running as root, list instances from <username>
 
 EXAMPLES:
@@ -13,13 +12,11 @@ EXAMPLES:
          Instance PID:   11963
          Instance Name:  test
          
-    $ sudo singularity list --all
+    $ sudo singularity list -u mibauer
     /home/mibauer/singularity/sinstance/test.img  [2056.132716]  Instances:
-         Owner UID:      0
          Instance PID:   16219
          Instance Name:  test
-
-         Owner UID:      1000
+         
          Instance PID:   11963
          Instance Name:  test
 

@@ -3,7 +3,6 @@ USAGE: singularity [...] stop [list options...] <container path> <instance name>
 Stop all running container instances.
 
 LIST OPTIONS:
-    -a/--all               If running as root, stop all running instances of all users
     -u/--user <username>   If running as root, stop all running instances of <username>
 
 EXAMPLES:

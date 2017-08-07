@@ -46,15 +46,6 @@ while true; do
             fi
             exit
         ;;
-        -a|--all)
-            if [ "$USERID" = 0 ]; then
-                shift
-                USERID="*"
-            else
-                message ERROR "Must be root to stop with -a/--all option\n"
-                exit 1
-            fi
-        ;;
         -u|--user)
             if [ "$USERID" = 0 ]; then
                 shift
@@ -75,7 +66,12 @@ while true; do
     esac
 done
 
-SESSION_GLOB="/var/tmp/.singularity-daemon-${USERID}/*"
+
+HOST=`hostname`
+HOME=`getent passwd ${USERID} | cut -d: -f6`
+
+# This is a configurable option, needs to be set accordingly!
+SESSION_GLOB="${HOME}/.singularity/daemon/${HOST}/*"
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     SINGULARITY_IMAGE="${1:-}"
