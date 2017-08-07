@@ -2,12 +2,13 @@ USAGE: singularity [...] bootstrap <container path> <definition file>
 
 The bootstrap command is useful for creating a new bootstrap or modifying an
 existing one using a definition file that describes how to build the
-container. The quickest, easiest Bootstrap is dumping DOcker layers into
+container. The quickest, easiest Bootstrap is dumping Docker layers into
 a container:
 
     BootStrap: docker
     From: library/ubuntu:14.04.1
 
+Optionally, you can perform container checks with --checks.
 For more documentation on definition file recipes, look below.
 
 note: This command must be executed as root.
@@ -24,23 +25,35 @@ CREATE OPTIONS:
        --nobase     Skip the generation of the base OS
 
 
+CHECKS OPTIONS:
+    -c|--checks    enable checks
+    -t|--tag       specify a check tag (not default)
+    -l/--low       Specify low threshold (all checks, default) 
+    -m/--med       Perform medium and high checks
+    -h/--high      Perform only checks at level high
+
+See singularity check --help for available tags
+
 DEFFILE BASEOS EXAMPLES:
 
     Docker:
-        BootStrap: docker
+        Bootstrap: docker
         From: tensorflow/tensorflow:latest
-        IncludeCmd: yes #Include the CMD/ENTRYPOINT as the Singularity Runscript
+        IncludeCmd: yes # Use the CMD as runscript instead of ENTRYPOINT
 
     YUM/RHEL:
-        BootStrap: yum
+        Bootstrap: yum
         OSVersion: 7
         MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
         Include: yum #This is important to include inside the base container
 
     Debian/Ubuntu:
-        BootStrap: debootstrap
+        Bootstrap: debootstrap
         OSVersion: trusty
         MirrorURL: http://us.archive.ubuntu.com/ubuntu/
+
+    Self:
+        Bootstrap: self
 
 
 DEFFILE SECTION EXAMPLES:

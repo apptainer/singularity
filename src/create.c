@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
 
     singularity_priv_escalate();
     singularity_message(INFO, "Creating file system within image\n");
-    singularity_fork_exec(mkfs_cmd);
+    singularity_fork_exec(0, mkfs_cmd);
     singularity_priv_drop();
 
     singularity_message(INFO, "Image is done: %s\n", image.path);

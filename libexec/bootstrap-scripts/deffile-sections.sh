@@ -51,6 +51,8 @@ if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 
+umask 0002
+
 # First priority goes to runscript defined in build file
 runscript_command=$(singularity_section_get "runscript" "$SINGULARITY_BUILDDEF")
 
@@ -75,7 +77,8 @@ cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 ### EXPORT ENVARS
 DEBIAN_FRONTEND=noninteractive
-export DEBIAN_FRONTEND
+SINGULARITY_ENVIRONMENT="/.singularity.d/env/91-environment.sh"
+export DEBIAN_FRONTEND SINGULARITY_ENVIRONMENT
 
 ### RUN SETUP
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "setup" ]; then
@@ -92,17 +95,29 @@ else
     message 2 "Skipping setup section\n"
 fi
 
-### RUN POST
-if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "post" ]; then
-    if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
-        message 1 "Running post scriptlet\n"
 
-        ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
-        singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
+### FILES
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "files" ]; then
+    if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding files to container\n"
+
+        singularity_section_get "files" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
+            if [ -n "${origin:-}" ]; then
+                if [ -z "${dest:-}" ]; then
+                    dest="$origin"
+                fi
+                message 1 "Copying '$origin' to '$dest'\n"
+                if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
+                    message ERROR "Failed copying file(s) into container\n"
+                    exit 255
+                fi
+            fi
+        done
     fi
 else
-    message 2 "Skipping post section\n"
+    message 2 "Skipping files section\n"
 fi
+
 
 ### ENVIRONMENT
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "environment" ]; then
@@ -110,9 +125,25 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "e
         message 1 "Adding environment to container\n"
 
         singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
+
+        # Sourcing the environment
+        . "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
     fi
 else
     message 2 "Skipping environment section\n"
+fi
+
+
+### RUN POST
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "post" ]; then
+    if singularity_section_exists "post" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Running post scriptlet\n"
+        
+        ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
+        singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
+    fi
+else
+    message 2 "Skipping post section\n"
 fi
 
 
@@ -143,30 +174,24 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "r
 
     fi
 else
-    message 2 "Skipping test section\n"
+    message 2 "Skipping runscript section\n"
 fi
 
 
-### FILES
-if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "files" ]; then
-    if singularity_section_exists "files" "$SINGULARITY_BUILDDEF"; then
-        message 1 "Adding files to container\n"
-
-        singularity_section_get "files" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
-            if [ -n "${origin:-}" ]; then
-                if [ -z "${dest:-}" ]; then
-                    dest="$origin"
-                fi
-                message 1 "Copying '$origin' to '$dest'\n"
-                if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
-                    message ERROR "Failed copying file(s) into container\n"
-                    exit 255
-                fi
-            fi
-        done
+### HELP FOR RUNSCRIPT
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "help" ]; then
+    if singularity_section_exists "help" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding runscript help\n"
+        singularity_section_args "help" "$SINGULARITY_BUILDDEF" > "$SINGULARITY_ROOTFS/.singularity.d/runscript.help"
+        echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript.help"
+        singularity_section_get "help" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript.help"
+        # Add label for the file
+        HELPLABEL="org.label-schema.usage.singularity.runscript.help"
+        HELPFILE="/.singularity.d/runscript.help"
+        $SINGULARITY_libexecdir/singularity/python/helpers/json/add.py --key "$HELPLABEL" --value "$HELPFILE" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
     fi
 else
-    message 2 "Skipping files section\n"
+    message 2 "Skipping runscript help section\n"
 fi
 
 

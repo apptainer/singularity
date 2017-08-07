@@ -53,6 +53,8 @@ if [ -z "${MIRRORURL:-}" ]; then
 fi
 
 
+umask 0002
+
 mkdir -p -m 0755 "$SINGULARITY_ROOTFS/bin"
 mkdir -p -m 0755 "$SINGULARITY_ROOTFS/etc"
 

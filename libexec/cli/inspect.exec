@@ -64,6 +64,12 @@ while true; do
             export SINGULARITY_INSPECT_DEFFILE
             shift;
         ;;
+        -hf|--helpfile)
+            SELECTED=1
+            SINGULARITY_INSPECT_HELP=1
+            export SINGULARITY_INSPECT_HELP
+            shift;
+        ;;
         -r|--run|--runscript)
             SELECTED=1
             SINGULARITY_INSPECT_RUNSCRIPT=1
@@ -99,7 +105,10 @@ fi
 
 RETVAL=0
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-inspect.XXXXXXXX`
+if ! SINGULARITY_MOUNTPOINT=`mktemp -d ${TMPDIR:-/tmp}/.singularity-inspect.XXXXXXXX`; then
+    message ERROR "Failed to create temporary directory\n"
+    ABORT 255
+fi
 export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 shift
 
