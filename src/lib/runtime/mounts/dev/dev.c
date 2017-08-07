@@ -80,15 +80,35 @@ int _singularity_runtime_mount_dev(void) {
             ABORT(255);
         }
 
+        singularity_message(DEBUG, "Creating staged /dev/pts\n");
+        if ( s_mkpath(joinpath(devdir, "/pts"), 0755) != 0 ) {
+            singularity_message(ERROR, "Failed creating /dev/pts %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
+            ABORT(255);
+        }
+
         bind_dev(sessiondir, "/dev/null");
         bind_dev(sessiondir, "/dev/zero");
         bind_dev(sessiondir, "/dev/random");
         bind_dev(sessiondir, "/dev/urandom");
+        bind_dev(sessiondir, "/dev/tty");
 
         singularity_priv_escalate();
         singularity_message(DEBUG, "Mounting tmpfs for staged /dev/shm\n");
         if ( mount("/dev/shm", joinpath(devdir, "/shm"), "tmpfs", MS_NOSUID, "") < 0 ){
             singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
+            ABORT(255);
+        }
+
+        singularity_message(DEBUG, "Mounting devpts for staged /dev/pts\n");
+        if ( mount("devpts", joinpath(devdir, "/pts"), "devpts", MS_NOSUID|MS_NOEXEC, "ptmxmode=0666") < 0 ){
+            singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
+            ABORT(255);
+        }
+
+        singularity_message(DEBUG, "Creating staged /dev/ptmx symlink\n");
+        if ( symlink("/dev/pts/ptmx", joinpath(devdir, "/ptmx")) < 0)
+        {
+            singularity_message(ERROR, "Failed to create /dev/ptmx symlink: %s\n", strerror(errno));
             ABORT(255);
         }
 
