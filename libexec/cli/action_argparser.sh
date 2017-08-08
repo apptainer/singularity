@@ -69,6 +69,12 @@ while true; do
             export SINGULARITY_SCRATCHDIR
             shift
         ;;
+        app|--app|-a)
+            shift
+            SINGULARITY_APPNAME="${1:-}"
+            export SINGULARITY_APPNAME
+            shift
+        ;;
         -B|--bind)
             shift
             SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH:-},${1:-}"

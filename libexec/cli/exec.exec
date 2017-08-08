@@ -62,6 +62,14 @@ if [ -z "${1:-}" ]; then
     exit 1
 fi
 
+# Does the user want to target an application? 
+# exec --> appexec
+if [ ! -z "${SINGULARITY_APPNAME:-}" ]; then
+    SINGULARITY_COMMAND="app${SINGULARITY_COMMAND}"
+    export SINGULARITY_APPNAME SINGULARITY_COMMAND
+fi
+
+
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
 fi

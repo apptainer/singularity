@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# We have changed so $PWD is the app folder
+for script in /.singularity.d/env/*.sh; do
+    if [ -f "$script" ]; then
+        . "$script"
+    fi
+done
+
+# If it exists, source app environment
+if [ -f "scif/environment" ]; then
+    . "scif/environment"
+fi
+
+if test -x "scif/test"; then
+    exec scif/test "$@"
+else
+    echo "No test found for app in $PWD, executing /bin/sh"
+    exec /bin/sh "$@"
+fi

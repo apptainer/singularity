@@ -38,6 +38,12 @@ while true; do
             fi
             exit
         ;;
+        app|--app|-a)
+            shift
+            SINGULARITY_APPNAME="${1:-}"
+            export SINGULARITY_APPNAME
+            shift
+        ;;
         -j|--json)
             SINGULARITY_PRINT_STRUCTURED=1
             export SINGULARITY_PRINT_STRUCTURED

@@ -333,8 +333,8 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
 
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_section_get "'appenv ${APPNAME}'" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/environment"
-            . "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/environment"
+            singularity_section_get "'appenv ${APPNAME}'" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/environment"
+            . "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/environment"
         done
     fi
 fi

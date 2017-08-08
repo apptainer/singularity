@@ -140,6 +140,7 @@ def DELETE(key, jsonfile):
 
 def INSPECT(inspect_labels=None,
             inspect_def=None,
+            inspect_app=None,
             inspect_runscript=None,
             inspect_test=None,
             inspect_help=None,
@@ -161,6 +162,20 @@ def INSPECT(inspect_labels=None,
     :param inspect_help: if not None, include helpfile
     :param pretty_print: if False, return all JSON API spec
     '''
+    from defaults import ( LABELFILE, HELPFILE, RUNSCRIPT,
+                           TESTFILE, ENVIRONMENT )
+
+    if inspect_app is not None:
+        LABELBASE = "scif/apps/%s/scif/labels.json" % inspect_app
+        LABELFILE = LABELFILE.replace('.singularity.d/labels.json', LABELBASE)
+        HELPBASE = "scif/apps/%s/scif/runscript.help" % inspect_app
+        HELPFILE = HELPFILE.replace('.singularity.d/runscript.help', LABELBASE)
+        RUNBASE = "scif/apps/%s/scif/runscript" % inspect_app
+        RUNSCRIPT = RUNSCRIPT.replace(".singularity.d/runscript", RUNBASE)
+        TESTBASE = "scif/apps/%s/scif/test" % inspect_app
+        TESTFILE = TESTFILE.replace(".singularity.d/test", TESTBASE)
+        ENVBASE = "scif/apps/%s/scif/environment" % inspect_app
+        ENVIRONMENT = ENVIRONMENT.replace(".singularity.d/environment", ENVBASE)
 
     data = dict()
     errors = dict()
