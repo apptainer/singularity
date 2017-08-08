@@ -4,6 +4,7 @@ This command will allow you to execute any program within the given
 container image.
 
 EXEC OPTIONS:
+    -a/--app            Exec a command relevant to an application directory
     -B/--bind <spec>    A user-bind path specification.  spec has the format
                         src[:dest[:opts]], where src and dest are outside and
                         inside paths.  If dest is not given, it is set equal
