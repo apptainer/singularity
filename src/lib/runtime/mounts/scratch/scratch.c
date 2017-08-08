@@ -63,8 +63,8 @@ int _singularity_runtime_mount_scratch(void) {
         return(0);
     }
 
-#ifndef SINGULARITY_CAPBSET_DROP 
-    singularity_message(WARNING, "Not mounting scratch: host can't drop process capabilities\n");
+#ifndef SINGULARITY_NO_NEW_PRIVS
+    singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
     return(0);
 #endif  
 

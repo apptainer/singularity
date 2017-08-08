@@ -36,10 +36,6 @@
 #include <limits.h>
 #include <sched.h>
 
-#ifdef SINGULARITY_CAPBSET_DROP
-#include <linux/capability.h>
-#endif // SINGULARITY_CAPBSET_DROP
-
 #include "config.h"
 
 #include "util/file.h"
@@ -401,22 +397,6 @@ void singularity_priv_drop_perm(void) {
 
     singularity_message(DEBUG, "Escalating permissison so we can properly drop permission\n");
     singularity_priv_escalate();
-
-#ifdef SINGULARITY_CAPBSET_DROP
-    // Prevent the following processes to gain capabilities
-    // Act as PR_SET_NO_NEW_PRIVS on systems which don't support it
-    singularity_message(DEBUG, "Dropping bounding set process capabilities\n");
-    int cap_index;
-
-    for ( cap_index = 0; cap_index <= CAP_LAST_CAP; cap_index++) {
-        if ( prctl(PR_CAPBSET_DROP, cap_index, 0, 0, 0) != 0 ) {
-            singularity_message(ERROR, "Could not drop capabilities: %s\n", strerror(errno));
-            ABORT(255);
-        }
-    }
-#else  // SINGULARITY_CAPBSET_DROP
-    singularity_message(VERBOSE2, "Not dropping bounding set process capabilities due to lack of compile-time support.\n");
-#endif
 
     singularity_message(DEBUG, "Resetting supplementary groups\n");
     if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {

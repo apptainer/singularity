@@ -123,8 +123,8 @@ int _singularity_runtime_mount_cwd(void) {
         return(0);
     }
 
-#ifndef SINGULARITY_CAPBSET_DROP 
-    singularity_message(WARNING, "Not mounting current directory: host can't drop process capabilities\n");
+#ifndef SINGULARITY_NO_NEW_PRIVS
+    singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
     free(cwd_path);
     return(0);
 #endif  
