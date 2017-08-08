@@ -10,6 +10,8 @@ INSPECT OPTIONS:
     -t/--test        Show the test script for the image
     -e/--environment Show the environment settings for the image
     -j/--json        Print structured json instead of sections
+    -hf/--helpfile   Inspect the runscript helpfile, if exists
+
 
 EXAMPLES:
     

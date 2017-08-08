@@ -149,8 +149,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/python
 %{_libexecdir}/singularity/helpers
 
-
-
 %files devel
 %defattr(-, root, root)
 %{_libdir}/singularity/lib*.so

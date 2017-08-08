@@ -46,8 +46,8 @@ while true; do
         ;;
         -n|--name|name)
             shift
-            SINGULARITY_IMAGE="${1:-}"
-            export SINGULARITY_IMAGE
+            SHUB_CONTAINERNAME="${1:-}"
+            export SHUB_CONTAINERNAME
             shift
         ;;
         -C|--commit|commit)
@@ -103,6 +103,8 @@ if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`
     message ERROR "Failed to create temporary directory\n"
     ABORT 255
 fi
+
+# If cache is set, set pull folder to it (first priority)
 if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
     SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
 else
@@ -118,7 +120,16 @@ export SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS
 case "$SINGULARITY_CONTAINER" in
     docker://*)
         if [ -z "${SINGULARITY_IMAGE:-}" ]; then
-            SINGULARITY_IMAGE=`basename "$SINGULARITY_CONTAINER.img" | sed -e 's/:/-/g'`
+
+            # If name given, use that
+            if [ -n "${SHUB_CONTAINERNAME:-}" ]; then
+                SINGULARITY_IMAGE=`basename "$SHUB_CONTAINERNAME.img" | sed -e 's/.img//g'`".img"   
+            else
+                SINGULARITY_IMAGE=`basename "$SINGULARITY_CONTAINER.img" | sed -e 's/:/-/g'`
+            fi
+
+            SINGULARITY_IMAGE="$SINGULARITY_PULLFOLDER/$SINGULARITY_IMAGE"
+            message 3 "Singularity Image: $SINGULARITY_IMAGE"
             export SINGULARITY_IMAGE
         fi
 
@@ -177,11 +188,7 @@ case "$SINGULARITY_CONTAINER" in
 
     ;;
     shub://*)
-        if [ -n "${SINGULARITY_IMAGE:-}" ]; then
-            SHUB_CONTAINERNAME="$SINGULARITY_IMAGE"
-            export SHUB_CONTAINERNAME
-        fi
-
+        
         eval_abort $SINGULARITY_libexecdir/singularity/python/pull.py
         RETVAL=$?
 
