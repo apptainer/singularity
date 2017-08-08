@@ -162,8 +162,8 @@ def INSPECT(inspect_labels=None,
     :param inspect_help: if not None, include helpfile
     :param pretty_print: if False, return all JSON API spec
     '''
-    from defaults import ( LABELFILE, HELPFILE, RUNSCRIPT,
-                           TESTFILE, ENVIRONMENT )
+    from defaults import (LABELFILE, HELPFILE, RUNSCRIPT,
+                          TESTFILE, ENVIRONMENT)
 
     if inspect_app is not None:
         LABELBASE = "scif/apps/%s/scif/labels.json" % inspect_app
@@ -175,7 +175,8 @@ def INSPECT(inspect_labels=None,
         TESTBASE = "scif/apps/%s/scif/test" % inspect_app
         TESTFILE = TESTFILE.replace(".singularity.d/test", TESTBASE)
         ENVBASE = "scif/apps/%s/scif/environment" % inspect_app
-        ENVIRONMENT = ENVIRONMENT.replace(".singularity.d/environment", ENVBASE)
+        ENVIRONMENT = ENVIRONMENT.replace(".singularity.d/environment",
+                                          ENVBASE)
 
     data = dict()
     errors = dict()
