@@ -293,22 +293,22 @@ void install_sigchld_signal_handle() {
 }
 
 pid_t singularity_fork(unsigned int flags) {
-    int priv_fork = 0;
+    int priv_fork = 1;
     prepare_fork();
 
-    if ( geteuid() == 0 ) {
-        priv_fork = 1;
+    if ( flags == 0 || geteuid() == 0 ) {
+        priv_fork = 0;
     }
 
     singularity_message(VERBOSE2, "Forking child process\n");
     
-    if ( priv_fork == 0 ) {
+    if ( priv_fork == 1 ) {
         singularity_priv_escalate();
     }
     
     child_pid = fork_ns(flags);
 
-    if ( priv_fork == 0 ) {
+    if ( priv_fork == 1 ) {
         singularity_priv_drop();
     }
     
@@ -374,7 +374,7 @@ void singularity_fork_run(unsigned int flags) {
 }
 
 int singularity_fork_exec(unsigned int flags, char **argv) {
-    int retval;
+    int retval = 1;
     int i = 0;
     pid_t child;
 
@@ -406,3 +406,22 @@ int singularity_fork_exec(unsigned int flags, char **argv) {
     return(retval);
 }
 
+int singularity_fork_daemonize() {
+    pid_t child;
+
+    child = singularity_fork(CLONE_NEWPID);
+
+    if ( child == 0 ) {
+        return(0);
+    } else if ( child > 0 ) {
+        singularity_message(DEBUG, "Successfully spawned daemon, terminating\n");
+
+        /* In the future, code will go here to execute action.c workflow for startscript */
+        exit(0);
+    }
+    
+    singularity_message(ERROR, "Reached unreachable code. How did you get here?\n");
+    ABORT(255);
+
+    return(0);
+}    
