@@ -65,8 +65,29 @@ stest 0 sh -c "sudo singularity bootstrap '$CONTAINER' '$SINGULARITY_TESTDIR/Sin
 stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 sh -c "sudo singularity bootstrap --notest '$CONTAINER' '$SINGULARITY_TESTDIR/Singularity' | grep 'test123'"
 
-
 stest 0 sudo rm -rf "$CONTAINERDIR"
 
+
+################################################################################
+# bootstrap minsize testing
+
+MINSIZE_CONTAINERDIR="$SINGULARITY_TESTDIR/minsize"
+MINSIZE_DEFFILE="$MINSIZE_CONTAINERDIR/minsize.def"
+MINSIZE_IMGFILE="$MINSIZE_CONTAINERDIR/minsize.img"
+
+stest 0 mkdir -p $MINSIZE_CONTAINERDIR
+
+cat > $MINSIZE_DEFFILE <<EOF
+Bootstrap:docker
+From:alpine:latest
+Minsize:1024
+EOF
+
+stest 0 singularity create -F -s 512 "$MINSIZE_IMGFILE"
+stest 1 sudo singularity bootstrap "$MINSIZE_IMGFILE" "$MINSIZE_DEFFILE"
+stest 0 rm "$MINSIZE_IMGFILE"
+stest 0 singularity create -F -s 1024 "$MINSIZE_IMGFILE"
+stest 0 sudo singularity bootstrap "$MINSIZE_IMGFILE" "$MINSIZE_DEFFILE"
+stest 0 rm -rf "$MINSIZE_CONTAINERDIR"
 
 test_cleanup
