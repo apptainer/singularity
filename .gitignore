@@ -35,6 +35,8 @@ test.sh
 
 src/action
 src/action-suid
+src/start
+src/start-suid
 src/add
 src/add-suid
 src/bootstrap
@@ -51,6 +53,7 @@ src/import
 src/import-suid
 src/mount
 src/mount-suid
+src/sinit
 src/get-section
 src/stamp-h1
 src/include/stamp-h1

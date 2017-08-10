@@ -32,6 +32,7 @@
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
+#include "util/daemon.h"
 #include "util/registry.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
@@ -69,36 +70,42 @@ int main(int argc, char **argv) {
     singularity_suid_init(argv);
 
     singularity_registry_init();
+    
     singularity_priv_userns();
     singularity_priv_drop();
 
-    singularity_cleanupd();
-
+    singularity_daemon_init();
     singularity_runtime_ns(SR_NS_ALL);
 
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_runtime_rootfs(singularity_registry_get("DAEMON_ROOTFS"));
+    }
+    
     singularity_sessiondir();
-
+    singularity_cleanupd();
+    
     image = singularity_image_init(singularity_registry_get("IMAGE"));
-
+    
     if ( singularity_registry_get("WRITABLE") == NULL ) {
         singularity_image_open(&image, O_RDONLY);
     } else {
         singularity_image_open(&image, O_RDWR);
     }
-
+    
     singularity_image_check(&image);
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
-
+    
     action_ready(singularity_runtime_rootfs(NULL));
-
+        
     singularity_runtime_overlayfs();
     singularity_runtime_mounts();
     singularity_runtime_files();
+    
     singularity_runtime_enter();
-
+    
     singularity_runtime_environment();
-
+    
     singularity_priv_drop_perm();
 
     if ( singularity_registry_get("CONTAIN") != NULL ) {

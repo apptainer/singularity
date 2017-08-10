@@ -45,4 +45,9 @@
     int singularity_fork_exec(unsigned int flags, char **argv);
 
 
+    // SINGULARITY_FORK_DAEMONIZE
+    // Fork and exec sinit
+    void singularity_fork_daemonize(void);
+
+
 #endif /* __SINGULARITY_FORK_H_ */

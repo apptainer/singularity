@@ -63,3 +63,21 @@ int _singularity_runtime_ns(unsigned int flags) {
     return(retval);
 }
 
+int _singularity_runtime_ns_join(unsigned int flags) {
+    int retval = 0;
+
+    if ( flags & SR_NS_PID ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_pid_join()\n");
+        retval += _singularity_runtime_ns_pid_join();
+    }
+    if ( flags & SR_NS_IPC ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_ipc_join()\n");
+        retval += _singularity_runtime_ns_ipc_join();
+    }
+    if ( flags & SR_NS_MNT ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_mnt_join()\n");
+        retval += _singularity_runtime_ns_mnt_join();
+    }
+
+    return(retval);
+}

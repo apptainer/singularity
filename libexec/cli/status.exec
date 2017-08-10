@@ -80,4 +80,3 @@ for i in $SESSION_GLOB; do
         echo "$IMAGE_NAME $DAEMON_PID"
     fi
 done
-
