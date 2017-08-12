@@ -130,6 +130,7 @@ _envbase = "%s/env" % (METADATA_BASE)
 _runscript = "%s/singularity" % (SINGULARITY_ROOTFS)
 _environment = "%s/environment" % (METADATA_BASE)
 _labelfile = "%s/labels.json" % (METADATA_BASE)
+_helpfile = "%s/runscript.help" % (METADATA_BASE)
 _deffile = "%s/Singularity" % (METADATA_BASE)
 _testfile = "%s/test" % (METADATA_BASE)
 
@@ -138,10 +139,13 @@ ENVIRONMENT = getenv("SINGULARITY_ENVIRONMENT", default=_environment)
 RUNSCRIPT = getenv("SINGULARITY_RUNSCRIPT", default=_runscript)
 TESTFILE = getenv("SINGULARITY_TESTFILE", default=_testfile)
 DEFFILE = getenv("SINGULARITY_DEFFILE", default=_deffile)
+HELPFILE = getenv("SINGULARITY_HELPFILE", default=_helpfile)
 ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
 LABELFILE = getenv("SINGULARITY_LABELFILE", default=_labelfile)
 INCLUDE_CMD = convert2boolean(getenv("SINGULARITY_INCLUDECMD",
                               default=False))
+DISABLE_HTTPS = convert2boolean(getenv("SINGULARITY_NOHTTPS",
+                                default=False))
 
 #######################################################################
 # Singularity Hub
