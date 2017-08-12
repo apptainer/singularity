@@ -149,18 +149,18 @@ class TestShell(TestCase):
         self.assertTrue(digest['namespace'] == 'mix')
 
         print("Case 8: Custom uri should use it.")
-        image_name = "catdog://meow/mix/%s:%s" % (self.repo_name,
+        image_name = "catdog://meow/mix/tenders/%s:%s" % (self.repo_name,
                                                   self.tag)
         digest = parse_image_uri(image_name, uri="catdog://")
         self.assertTrue(digest['registry'] == 'meow')
-        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['namespace'] == 'mix/tenders')
 
         print("Case 9: Digest version should be parsed")
-        image_name = ("catdog://meow/mix/%s:%s@sha:256xxxxxxxxxxxxxxx"
+        image_name = ("catdog://meow/mix/original/choice/%s:%s@sha:256xxxxxxxxxxxxxxx"
                       % (self.repo_name, self.tag))
         digest = parse_image_uri(image_name, uri="catdog://")
         self.assertTrue(digest['registry'] == 'meow')
-        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['namespace'] == 'mix/original/choice')
         self.assertTrue(digest['version'] == 'sha:256xxxxxxxxxxxxxxx')
 
 

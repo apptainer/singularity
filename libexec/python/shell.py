@@ -120,9 +120,9 @@ def parse_image_uri(image, uri=None, quiet=False):
     # Now look for registry, namespace, repo
     image = image.split('/')
 
-    if len(image) == 3:
+    if len(image) > 2:
         registry = image[0]
-        namespace = image[1]
+        namespace = "/".join(image[1:-1])
         repo_name = image[2]
 
     elif len(image) == 2:
