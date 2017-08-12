@@ -123,7 +123,7 @@ def parse_image_uri(image, uri=None, quiet=False):
     if len(image) > 2:
         registry = image[0]
         namespace = "/".join(image[1:-1])
-        repo_name = image[2]
+        repo_name = image[-1]
 
     elif len(image) == 2:
         registry = default_registry
