@@ -156,7 +156,7 @@ class TestShell(TestCase):
         self.assertTrue(digest['namespace'] == 'mix/tenders')
 
         print("Case 9: Digest version should be parsed")
-        image_name = ("catdog://meow/mix/original/choice/%s:%s@sha:256xxxxxxxxxxxxxxx" # noqa
+        image_name = ("catdog://meow/mix/original/choice/%s:%s@sha:256xxxxxxxxxxxxxxx"  # noqa
                       % (self.repo_name, self.tag))
         digest = parse_image_uri(image_name, uri="catdog://")
         self.assertTrue(digest['registry'] == 'meow')
