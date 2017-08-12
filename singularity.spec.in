@@ -135,7 +135,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/create
 %{_libexecdir}/singularity/bin/expand
 %{_libexecdir}/singularity/bin/export
-%{_libexecdir}/singularity/bin/get-config
 %{_libexecdir}/singularity/bin/get-section
 %{_libexecdir}/singularity/bin/import
 %{_libexecdir}/singularity/bin/mount

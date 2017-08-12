@@ -10,7 +10,7 @@ if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`
 fi
 
 # Does the admin want a custom cache?
-# CACHE_BASE=$("$SINGULARITY_libexecdir/singularity/bin/get-config" CACHE_BASE)
+CACHE_BASE=`$SINGULARITY_libexecdir/singularity/bin/get-config SESSIONDIR_MAXSIZE`
 
 if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
     SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
