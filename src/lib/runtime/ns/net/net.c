@@ -16,6 +16,8 @@
 #include <sys/types.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sched.h>
@@ -32,6 +34,9 @@
 static int enabled = -1;
 
 int _singularity_runtime_ns_net(void) {
+    int sockfd;
+    struct ifreq req;
+    
     if ( singularity_registry_get("UNSHARE_NET") == NULL ) {
         singularity_message(VERBOSE2, "Not virtualizing network namespace on user request\n");
         return(0);
@@ -53,6 +58,26 @@ int _singularity_runtime_ns_net(void) {
     return(0);
 #endif
 
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    if ( sockfd < 0 ) {
+        singularity_message(ERROR, "Unable to open AF_INET socket: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    
+    memset(&req, 0, sizeof(req));
+    strncpy(req.ifr_name, "lo", IFNAMSIZ);
+
+    req.ifr_flags |= IFF_UP;
+
+    singularity_priv_escalate();
+    singularity_message(DEBUG, "Bringing up network loopback interface\n");
+    if ( ioctl(sockfd, SIOCSIFFLAGS, &req) < 0 ) {
+        singularity_message(ERROR, "Failed to set flags on interface: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    singularity_priv_drop();
+    
     return(0);
 }
 
@@ -64,7 +89,7 @@ int _singularity_runtime_ns_net_join(void) {
     net_fd = openat(ns_fd, "net", O_RDONLY);
 
     if( net_fd == -1 ) {
-        /* If no NET file exists, continue without NET NS */
+        /* If no net file exists, continue without NET NS */
         singularity_message(WARNING, "Skipping NET namespace creation, support not available on host\n");
         return(0);
     }
