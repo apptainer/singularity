@@ -141,7 +141,7 @@ int singularity_registry_set(char *key, char *value) {
 
     singularity_message(VERBOSE2, "Adding value to registry: '%s' = '%s'\n", upperkey, value);
 
-    if ( hsearch_r(keypair(upperkey, value), ENTER, &prev, &htab) == 0 ) {
+    if ( hsearch_r(keypair(upperkey, value), FIND, &prev, &htab) != 0 ) {
         singularity_message(VERBOSE2, "Found prior value for '%s', overriding with '%s'\n", key, value);
         prev->data = strdup(value);
     } else {
