@@ -10,6 +10,8 @@ EXTRA_DIST = cleanupd.c \
 			 cleanupd.h \
 			 config_parser.c \
 			 config_parser.h \
+			 crypt.c \
+			 crypt.h \
 			 daemon.c \
 			 daemon.h \
 			 file.c \

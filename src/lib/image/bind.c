@@ -20,6 +20,7 @@
  * 
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <linux/loop.h>
 #include <unistd.h>

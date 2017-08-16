@@ -1,0 +1,21 @@
+NAME="sign"
+SECTION="management"
+SUMMARY="Sign a group of data objects in container"
+USAGE: singularity [...] sign <container path>
+
+print_help() {
+cat<<EOF
+Compute a sha384 hash of a container image and cryptographically sign the
+manifest.
+
+
+EXAMPLES:
+
+    $ singularity sign /tmp/Debian.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    https://singularityware.github.io
+EOF
+}
