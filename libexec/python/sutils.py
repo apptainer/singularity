@@ -23,7 +23,8 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 from defaults import (
-    SINGULARITY_CACHE
+    SINGULARITY_CACHE,
+    DISABLE_HTTPS
 )
 from message import bot
 import datetime
@@ -60,7 +61,7 @@ def add_http(url, use_https=True):
     :param use_https: should we default to https? default is True
     '''
     scheme = "https://"
-    if use_https is False:
+    if use_https is False or DISABLE_HTTPS is True:
         scheme = "http://"
 
     # remove scheme from url

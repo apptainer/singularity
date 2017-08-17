@@ -138,6 +138,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/get-section
 %{_libexecdir}/singularity/bin/import
 %{_libexecdir}/singularity/bin/mount
+%{_libexecdir}/singularity/bin/sinit
+%{_libexecdir}/singularity/bin/start
+%{_libexecdir}/singularity/bin/start-suid
 
 # Scripts
 %{_libexecdir}/singularity/functions
@@ -148,8 +151,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli
 %{_libexecdir}/singularity/python
 %{_libexecdir}/singularity/helpers
-
-
 
 %files devel
 %defattr(-, root, root)

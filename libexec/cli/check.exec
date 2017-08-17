@@ -67,6 +67,15 @@ while true; do
     esac
 done
 
+if [ -z "${1:-}" ]; then
+    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    else
+        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
+    fi
+    exit 0
+fi
+
 RETVAL=0
 SINGULARITY_IMAGE="${1:-}"
 

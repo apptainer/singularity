@@ -1,0 +1,29 @@
+USAGE: singularity [...] list [list options...]
+
+List all running named instances
+
+LIST OPTIONS:
+    -u/--user <username>   If running as root, list instances from <username>
+
+EXAMPLES:
+
+    $ singularity list
+    /home/mibauer/singularity/sinstance/test.img  [2056.132716]  Instances:
+         Instance PID:   11963
+         Instance Name:  test
+         
+    $ sudo singularity list -u mibauer
+    /home/mibauer/singularity/sinstance/test.img  [2056.132716]  Instances:
+         Instance PID:   16219
+         Instance Name:  test
+         
+         Instance PID:   11963
+         Instance Name:  test
+
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+

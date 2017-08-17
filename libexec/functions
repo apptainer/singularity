@@ -167,6 +167,36 @@ singularity_section_get() {
     return 0
 }
 
+singularity_daemon_glob() {
+    if ! USERID=`id --real --user`; then
+        message ERROR "Could not ascertain user ID\n"
+        exit 255
+    fi
+
+    HOST=`hostname`
+    HOME=`getent passwd ${USERID} | cut -d: -f6`
+
+    # This is a configurable option, needs to be set accordingly!
+    SINGULARITY_DAEMON_GLOB="${HOME}/.singularity/daemon/${HOST}/*"
+    echo $SINGULARITY_DAEMON_GLOB
+    return 0
+}
+
+singularity_daemon_file() {
+    if ! USERID=`id --real --user`; then
+        message ERROR "Could not ascertain user ID\n"
+        exit 255
+    fi
+    
+    HOST=`hostname`
+    HOME=`getent passwd ${USERID} | cut -d: -f6`
+    DEVINO=`stat --format=%d.%i ${SINGULARITY_IMAGE}`
+
+    # This is a configurable option, needs to be set accordingly!
+    SINGULARITY_DAEMON_FILE="${HOME}/.singularity/daemon/${HOST}/${DEVINO}-${SINGULARITY_DAEMON_NAME}"
+    echo $SINGULARITY_DAEMON_FILE
+    return 0
+}
 
 ABORT() {
     RETVAL="${1:-}"
@@ -309,6 +339,13 @@ parse_opts() {
     echo "$NEWOPTS" | sed -e 's/\\/\\\\/g'
 }
 
+
+replace_string() {
+   ORIGINAL="${1:-}"
+   MATCH="${2:-}"
+   REPLACE="${3:-}"
+   echo $ORIGINAL | sed -e s/${MATCH}/${REPLACE}/g
+}
 
 ##############################################################################
 # CHECK FUNCTIONS

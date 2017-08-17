@@ -8,6 +8,7 @@ dist_environment_DATA = environment.tar
 .PHONY: environment.tar
 
 environment.tar:
+	install -d -m 0755 newroot
 	install -d -m 0755 newroot/.singularity.d
 	install -d -m 0755 newroot/.singularity.d/env
 	install -d -m 0755 newroot/.singularity.d/actions

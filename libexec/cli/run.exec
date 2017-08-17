@@ -62,6 +62,11 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     exit 0
 fi
 
+if [ -n "${SINGULARITY_DAEMON_JOIN:-}" ]; then
+    SINGULARITY_DAEMON_FILE=`singularity_daemon_file`
+    export SINGULARITY_DAEMON_FILE
+fi
+
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
 fi

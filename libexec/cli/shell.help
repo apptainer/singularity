@@ -19,6 +19,8 @@ SHELL OPTIONS:
                         of the home directory outside the container and dest
                         overrides the home directory within the container
     -i/--ipc            Run container in a new IPC namespace
+    -j/--join           Join a running named instance of the given container 
+                        image
     -n/--nv             Enable experimental Nvidia support
     -p/--pid            Run container in a new PID namespace (creates child)
     --pwd               Initial working directory for payload process inside
