@@ -65,10 +65,6 @@ int main(int argc, char **argv) {
 
     singularity_cleanupd();
 
-    singularity_runtime_ns(SR_NS_ALL);
-
-    singularity_sessiondir();
-
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     if ( singularity_registry_get("WRITABLE") == NULL ) {
@@ -79,6 +75,11 @@ int main(int argc, char **argv) {
 
     singularity_image_check(&image);
     singularity_image_bind(&image);
+
+    singularity_runtime_ns(SR_NS_ALL);
+
+    singularity_sessiondir();
+
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
     action_ready(singularity_runtime_rootfs(NULL));
