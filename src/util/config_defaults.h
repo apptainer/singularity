@@ -89,4 +89,7 @@
 #define MAX_LOOP_DEVS "max loop devices"
 #define MAX_LOOP_DEVS_DEFAULT "256"
 
+#define AUTOFS_BUG_PATH "autofs bug path"
+#define AUTOFS_BUG_PATH_DEFAULT ""
+
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_

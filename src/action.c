@@ -76,6 +76,8 @@ int main(int argc, char **argv) {
     singularity_image_check(&image);
     singularity_image_bind(&image);
 
+    singularity_runtime_autofs();
+
     singularity_runtime_ns(SR_NS_ALL);
 
     singularity_sessiondir();

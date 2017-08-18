@@ -45,6 +45,7 @@
 #include "./enter/enter.h"
 #include "./overlayfs/overlayfs.h"
 #include "./environment/environment.h"
+#include "./autofs/autofs.h"
 
 #ifndef LOCALSTATEDIR
 #error LOCALSTATEDIR not defined
@@ -117,3 +118,6 @@ int singularity_runtime_enter(void) {
     return(_singularity_runtime_enter());
 }
 
+int singularity_runtime_autofs(void) {
+    return(_singularity_runtime_autofs());
+}
