@@ -27,9 +27,7 @@
 
 #include "../image.h"
 
-#define IMAGE_HASH_PREFIX "IMAGE: "
-
-static char vb[VERIFBLOCK_SIZE];
+extern char verifblock[VERIFBLOCK_SIZE];
 
 int _singularity_image_sign(struct image_object *image) {
     FILE *image_fp;
@@ -51,30 +49,31 @@ int _singularity_image_sign(struct image_object *image) {
 
     singularity_message(DEBUG, "Reading verification block for signature...\n");
     fseek(image_fp, image->vboff, SEEK_SET);
-    retval = read(image->fd, vb, VERIFBLOCK_SIZE);
+    for ( ; ; ) {
+        retval = read(image->fd, verifblock, VERIFBLOCK_SIZE);
+        if (retval < 0 && errno == EINTR)
+            continue;
+        break;
+    }
     if ( retval != VERIFBLOCK_SIZE ) {
         singularity_message(ERROR, "Could not read the signing verification block\n");
         ABORT(255);
     }
-    if( vb[0] == 'S' && vb[VERIFBLOCK_SIZE-1] == 'E' )
-        singularity_message(DEBUG, "Block is empty creating signature...\n");
-    else
-        singularity_message(DEBUG, "Overwriting previous signature...\n");
 
     map = mmap_file(0, image->size, image->fd);
 
     singularity_message(DEBUG, "Computing hash from '%c' for %ld bytes\n", map[0], image->size);
     compute_hash(map, image->size, hash);
     strcpy(hashstr, IMAGE_HASH_PREFIX);
-    for(int i = 0, pos = strlen(IMAGE_HASH_PREFIX); i < HASH_LEN; i++, pos = i*2+strlen(IMAGE_HASH_PREFIX)){
+    for (int i = 0, pos = strlen(IMAGE_HASH_PREFIX); i < HASH_LEN; i++, pos = i*2+strlen(IMAGE_HASH_PREFIX)) {
         sprintf(&hashstr[pos], "%02hhx", hash[i]);
     }
     munmap_file(map, image->size);
 
-    sign_verifblock(hashstr, vb);
+    sign_verifblock(hashstr, verifblock);
     singularity_message(DEBUG, "Writing verification block to image's end\n");
     fseek(image_fp, image->vboff, SEEK_SET);
-    if (fputs(vb, image_fp) == EOF) {
+    if (fputs(verifblock, image_fp) == EOF) {
         singularity_message(ERROR, "Could not write VB to image file\n");
         ABORT(255);
     }

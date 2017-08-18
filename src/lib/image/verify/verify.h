@@ -11,15 +11,9 @@
  * except according to the terms contained in the LICENSE.md file.
  */
 
-#ifndef __SINGULARITY_UTIL_CRYPT_H_
-#define __SINGULARITY_UTIL_CRYPT_H_
+#ifndef __SINGULARITY_IMAGE_VERIFY_H_
+#define __SINGULARITY_IMAGE_VERIFY_H_
 
-#include <openssl/sha.h>
+extern int _singularity_image_verify(struct image_object *image);
 
-#define HASH_LEN SHA384_DIGEST_LENGTH
-
-unsigned char *compute_hash(const unsigned char *data, size_t size, unsigned char *result);
-int sign_verifblock(char *verifstr, char *verifblock);
-int verify_verifblock(char *verifblock);
-
-#endif /* __SINGULARITY_UTIL_CRYPT_H_ */
+#endif /* __SINGULARITY_IMAGE_VERIFY_H_ */

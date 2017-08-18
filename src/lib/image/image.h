@@ -30,6 +30,7 @@
 #define BUFFER_SIZE (1024*1024)
 #define VERIFBLOCK_SIZE 4096
 #define VERIFBLOCK_MAGIC "-----BEGIN PGP SIGNED MESSAGE-----"
+#define IMAGE_HASH_PREFIX "IMAGE_HASH: "
 
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
 
@@ -57,5 +58,6 @@ void singularity_limit_container_paths(struct image_object *object);
 void singularity_limit_container_owners(struct image_object *object);
 
 extern int singularity_image_sign(struct image_object *image);
+extern int singularity_image_verify(struct image_object *image);
 
 #endif

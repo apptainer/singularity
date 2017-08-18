@@ -9,7 +9,7 @@ AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATE
 
 lexecdir = $(libexecdir)/singularity/bin
 
-lexec_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start sign $(BUILD_SUID)
+lexec_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start sign verify $(BUILD_SUID)
 EXTRA_PROGRAMS = action-suid mount-suid start-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
@@ -19,7 +19,6 @@ action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la -lcrypto
 action_CPPFLAGS = $(AM_CPPFLAGS)
 
-<<<<<<< HEAD
 builddef_SOURCES = builddef.c util/util.c util/file.c util/registry.c util/sessiondir.c
 builddef_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
 builddef_CPPFLAGS = $(AM_CPPFLAGS)
@@ -36,6 +35,10 @@ prepheader_CPPFLAGS = $(AM_CPPFLAGS)
 sign_SOURCES = sign.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/crypt.c
 sign_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto
 sign_CPPFLAGS = $(AM_CPPFLAGS)
+
+verify_SOURCES = verify.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/crypt.c
+verify_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto
+verify_CPPFLAGS = $(AM_CPPFLAGS)
 
 get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)

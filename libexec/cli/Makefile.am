@@ -24,7 +24,8 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
                     shell.exec \
                     test.exec \
                     selftest.exec \
-		    sign.exec
+		    sign.exec \
+		    verify.exec
 
 dist_cliexec_DATA = apps.info \
                     bootstrap.info \
@@ -49,6 +50,7 @@ dist_cliexec_DATA = apps.info \
                     selftest.info \
                     shell.info \
 		    sign.info \
-                    test.info
+                    test.info \
+		    verify.info
 
 MAINTAINERCLEANFILES = Makefile.in

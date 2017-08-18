@@ -1,0 +1,21 @@
+NAME="verify"
+SECTION="management"
+SUMMARY="Verify the crypto signature of group of data objects in container"
+USAGE: singularity [...] verify <container path>
+
+print_help() {
+cat<<EOF
+Verify a sha384 hash cryptographically signed used to checksum an image.
+
+
+EXAMPLES:
+
+    $ singularity verify /tmp/Debian.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    https://singularityware.github.io
+EOF
+}
+
