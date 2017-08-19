@@ -104,7 +104,7 @@ class DockerApiConnection(ApiConnection):
         # meaning the correct order of digests
         # returned (base to child)
 
-        return {"Accept": 'application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json',  # noqa
+        return {"Accept": 'application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json,application/json',  # noqa
                'Content-Type': 'application/json; charset=utf-8'}  # noqa
 
     def check_errors(self, response, exit=True):
