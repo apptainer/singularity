@@ -54,8 +54,17 @@ int main(int argc, char **argv) {
     char *pwd = get_current_dir_name();
     char *target_pwd = NULL;
     char *command = NULL;
+    char *appname = NULL;
+    char *appbase = NULL;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+
+    appname = singularity_registry_get("APPNAME");
+    if ( appname != NULL ) {
+        appbase = joinpath("/scif/apps/", appname);
+        singularity_message(VERBOSE, "Found command specific to app %s\n", appname);
+        singularity_message(VERBOSE2, "Application base will be looked for at %s\n", appbase);
+    }
 
     singularity_priv_init();
     singularity_suid_init(argv);
@@ -144,6 +153,8 @@ int main(int argc, char **argv) {
     if ( command == NULL ) {
         singularity_message(INFO, "No action command verb was given, invoking 'shell'\n");
         action_shell(argc, argv);
+
+    // Primary Commands
     } else if ( strcmp(command, "shell") == 0 ) {
         action_shell(argc, argv);
     } else if ( strcmp(command, "exec") == 0 ) {
@@ -154,6 +165,29 @@ int main(int argc, char **argv) {
         action_run(argc, argv);
     } else if ( strcmp(command, "test") == 0 ) {
         action_test(argc, argv);
+
+    // Application Commands
+    } else if ( strcmp(command, "appshell") == 0 ) {
+        if ( chdir(appbase) != 0 ) {
+            singularity_message(WARNING, "Could not chdir to app, invoking base shell.\n");            
+            action_shell(argc, argv); 
+        }
+        action_appshell(argc, argv); 
+    } else if ( strcmp(command, "appexec") == 0 ) {
+        if ( chdir(appbase) != 0 ) {
+            singularity_message(WARNING, "Could not chdir to app, invoking exec to container.\n");   
+            action_exec(argc, argv); 
+        }
+        action_appexec(argc, argv);
+    } else if ( strcmp(command, "apptest") == 0 ) {
+        if ( chdir(appbase) != 0 ) {
+            singularity_message(WARNING, "Could not chdir to app, invoking test to container.\n");   
+            action_test(argc, argv); 
+        }
+        action_apptest(argc, argv);  
+    } else if ( strcmp(command, "apprun") == 0 ) {
+        action_apprun(argc, argv);
+ 
     } else {
         singularity_message(ERROR, "Unknown action command verb was given\n");
         ABORT(255);

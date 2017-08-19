@@ -67,6 +67,10 @@ def get_parser():
                       help="force add (overwrite if exists)",
                       default=False, action='store_true')
 
+    parser.add_option('--quiet', dest="quiet",
+                      help="do not display debug",
+                      default=False, action='store_true')
+
     return parser
 
 
@@ -85,7 +89,8 @@ def main():
             value = ADD(key=args.key,
                         value=args.value,
                         jsonfile=args.file,
-                        force=args.force)
+                        force=args.force,
+                        quiet=args.quiet)
 
     else:
         bot.error("--key and --file and --value must be defined for ADD.")
