@@ -1,12 +1,6 @@
-USAGE: singularity [...] run [run options...] <container path> [...]
+USAGE: singularity [...] apprun [run options...] <container path> <app> [...]
 
-This command will launch a Singularity container and execute a runscript
-if one is defined for that container. The runscript is a file at
-'/singularity'. If this file is present (and executable) then this
-command will execute that file within the container automatically. All
-arguments following the container name will be passed directly to the
-runscript.
-
+Execute the runscript for an application <app>.
 
 RUN OPTIONS:
     -B/--bind <spec>    A user-bind path specification.  spec has the format
