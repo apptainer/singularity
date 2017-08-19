@@ -7,6 +7,7 @@ dist_mods_SCRIPTS = checks.sh \
                     deffile-driver-busybox.sh \
                     deffile-driver-debootstrap.sh \
                     deffile-driver-docker.sh \
+                    deffile-driver-localimage.sh \
                     deffile-driver-self.sh \
                     deffile-driver-yum.sh \
                     deffile-driver-zypper.sh \

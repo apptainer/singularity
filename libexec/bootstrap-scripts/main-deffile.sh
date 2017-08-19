@@ -53,8 +53,24 @@ if [ -n "${BOOTSTRAP:-}" -a -z "${SINGULARITY_BUILDNOBASE:-}" ]; then
     fi
 fi
 
+# take a snapshot of the environment for later comparison
+if [ ${BOOTSTRAP:-} = "localimage" ]; then
+    SINGULARITY_STARTING_ENVIRONMENT=$(eval_abort env -i ${SINGULARITY_libexecdir}/singularity/helpers/record-env.sh ${SINGULARITY_ROOTFS})
+    SINGULARITY_STARTING_ENVSHA1=$(eval_abort sha1sum ${SINGULARITY_ROOTFS}/.singularity.d/env/*.sh | sha1sum)
+    export SINGULARITY_STARTING_ENVIRONMENT SINGULARITY_STARTING_ENVSHA1
+fi 
+
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-sections.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
+
+# take another snapshot and compare to see what changed
+if [ ${BOOTSTRAP:-} = "localimage" ]; then
+    SINGULARITY_ENDING_ENVIRONMENT=$(eval_abort env -i ${SINGULARITY_libexecdir}/singularity/helpers/record-env.sh ${SINGULARITY_ROOTFS})
+    SINGULARITY_ENDING_ENVSHA1=$(eval_abort sha1sum ${SINGULARITY_ROOTFS}/.singularity.d/env/*.sh | sha1sum)
+    export SINGULARITY_ENDING_ENVIRONMENT SINGULARITY_ENDING_ENVSHA1
+    compare_envs
+    rm $SINGULARITY_STARTING_ENVIRONMENT $SINGULARITY_ENDING_ENVIRONMENT
+fi 
 
 # If checks specified, export variable
 if [ "${SINGULARITY_CHECKS:-}" = "no" ]; then

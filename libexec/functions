@@ -340,12 +340,38 @@ parse_opts() {
 }
 
 
+compare_envs() {
+    # during bootstrap, if we are bootstrapping from a local image, compare the
+    # environment in the new image to that in the old image and alert the user
+    # of any changes
+    REMOVED=$(comm -23 ${SINGULARITY_STARTING_ENVIRONMENT} ${SINGULARITY_ENDING_ENVIRONMENT})
+    ADDED=$(comm -13 ${SINGULARITY_STARTING_ENVIRONMENT} ${SINGULARITY_ENDING_ENVIRONMENT})
+     
+    if [ -n "${REMOVED:-}" -o -n "${ADDED:-}" ]; then
+        message 1 "Environment variables were added, removed, and/or changed during bootstrap.\n"
+    elif [ "${SINGULARITY_STARTING_ENVSHA1:-}" != "${SINGULARITY_ENDING_ENVSHA1:-}" ]; then
+        message 1 "The environment of ${SINGULARITY_IMAGE} may differ from the environment of ${FROM}\n"
+        message 1 "${FROM} sha1 sum of environment is ${SINGULARITY_STARTING_ENVSHA1}\n"
+        message 1 "${SINGULARITY_IMAGE} sha1 sum of environment is ${SINGULARITY_ENDING_ENVSHA1}\n"
+    fi
+    if [ -n "${REMOVED:-}" ]; then
+        message 1 "Variables unique to original image (${FROM})\n"
+        message 1 "$REMOVED\n"
+    fi
+    if [ -n "${ADDED:-}" ]; then
+        message 1 "Variables unique to new image (${SINGULARITY_IMAGE})\n"
+        message 1 "$ADDED\n"
+    fi
+}
+
+
 replace_string() {
    ORIGINAL="${1:-}"
    MATCH="${2:-}"
    REPLACE="${3:-}"
    echo $ORIGINAL | sed -e s/${MATCH}/${REPLACE}/g
 }
+
 
 ##############################################################################
 # CHECK FUNCTIONS
