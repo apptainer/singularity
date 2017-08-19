@@ -2,7 +2,7 @@ SUBDIRS = environment
 
 modsdir = $(libexecdir)/singularity/bootstrap-scripts
 
-dist_mods_SCRIPTS = checks.sh \
+dist_mods_SCRIPTS = functions hecks.sh \
                     deffile-driver-arch.sh \
                     deffile-driver-busybox.sh \
                     deffile-driver-debootstrap.sh \
