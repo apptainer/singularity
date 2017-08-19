@@ -363,6 +363,15 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
      fi
 fi
 
+
+
+##########################################################################################
+#
+# Finalizing
+#
+##########################################################################################
+
+
 > "$SINGULARITY_ROOTFS/etc/hosts"
 > "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
