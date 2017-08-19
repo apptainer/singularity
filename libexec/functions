@@ -116,60 +116,6 @@ singularity_keys_get() {
     return 0
 }
 
-
-##############################################################################
-# SECTIONS
-##############################################################################
-
-
-singularity_section_exists() {
-    SECTION="${1:-}"
-    FILE="${2:-}"
-    TOGGLE=""
-    if [ ! -f "$FILE" ]; then
-        message ERROR "File not found ($FILE)\n"
-        exit 1
-    fi
-    if ! egrep -i -q -- "^%$SECTION\W*" "$FILE"; then
-        return 1
-    fi
-
-    return 0
-}
-
-
-singularity_section_args() {
-    SECTION="${1:-}"
-    FILE="${2:-}"
-    TOGGLE=""
-    if [ ! -f "$FILE" ]; then
-        message ERROR "File not found ($FILE)\n"
-        exit 1
-    fi
-
-    egrep -i -- "^%$SECTION\W*" "$FILE" | sed -e "s@%$SECTION\s*@@i"
-
-    return 0
-}
-
-singularity_section_get() {
-    SECTION="${1:-}"
-    FILE="${2:-}"
-    if [ ! -x "$SINGULARITY_libexecdir/singularity/bin/get-section" ]; then
-        message ERROR "Could not locate get-section program\n"
-        exit 255
-    fi
-
-    if [ ! -f "$FILE" ]; then
-        message ERROR "File not found ($FILE)\n"
-        exit 1
-    fi
-
-    eval "$SINGULARITY_libexecdir/singularity/bin/get-section" "$SECTION" "$FILE"
-
-    return 0
-}
-
 singularity_daemon_glob() {
     if ! USERID=`id --real --user`; then
         message ERROR "Could not ascertain user ID\n"
