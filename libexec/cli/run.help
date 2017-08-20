@@ -9,6 +9,7 @@ runscript.
 
 
 RUN OPTIONS:
+    -a/--app            Run an app's runscript instead of the default one
     -B/--bind <spec>    A user-bind path specification.  spec has the format
                         src[:dest[:opts]], where src and dest are outside and
                         inside paths.  If dest is not given, it is set equal

@@ -59,13 +59,6 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     exit 0
 fi
 
-# Does the user want to target an application? 
-# shell --> appshell
-if [ ! -z "${SINGULARITY_APPNAME:-}" ]; then
-    SINGULARITY_COMMAND="app${SINGULARITY_COMMAND}"
-    export SINGULARITY_APPNAME SINGULARITY_COMMAND
-fi
-
 
 if [ -n "${SINGULARITY_DAEMON_JOIN:-}" ]; then
     SINGULARITY_DAEMON_FILE=`singularity_daemon_file`

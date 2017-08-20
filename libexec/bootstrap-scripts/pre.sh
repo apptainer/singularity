@@ -25,6 +25,13 @@ else
     echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
     exit 1
 fi
+if [ -f "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/bootstrap-scripts/functions"
+    exit 1
+fi
+
 
 if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     message ERROR "Singularity root file system not defined\n"

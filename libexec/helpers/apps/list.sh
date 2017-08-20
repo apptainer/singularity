@@ -38,11 +38,11 @@ if [ ! -d "${SINGULARITY_MOUNTPOINT}/.singularity.d" ]; then
 fi
 
 
-APPSBASE="${SINGULARITY_MOUNTPOINT}/scif/apps"
-if [ -d ${APPSBASE} ]; then
-    ls --color=auto -1hs "${APPSBASE}"
-else
-    message 1 "No installed apps.\n"
-fi
+for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do
+    if [ -d "$app/scif" ]; then
+        APPNAME=`basename $app`
+        echo "$APPNAME"
+    fi
+done
 
-return 0
+exit 0

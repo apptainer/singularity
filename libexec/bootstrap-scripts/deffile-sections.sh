@@ -245,9 +245,11 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
         for APPNAME in "${APPNAMES[@]}"; do
 
             APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
+            SINGULARITY_APPROOT="/scif/apps/${APPNAME}"
+            export SINGULARITY_APPROOT
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             singularity_app_save "${APPNAME}" "$SINGULARITY_BUILDDEF" "${APPBASE}/scif/Singularity"
-            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e || ABORT 255
+            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -xe || ABORT 255
 
             APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
             $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json"

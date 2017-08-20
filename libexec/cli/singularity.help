@@ -18,9 +18,7 @@ CONTAINER USAGE COMMANDS:
     run           Launch a runscript within container
     shell         Run a Bourne shell within container
     test          Execute any test code defined within container
-
-CONTAINER USAGE OPTIONS:
-    see singularity help <command>
+    apps          list available apps in a container
 
 CONTAINER MANAGEMENT COMMANDS:
     bootstrap     Bootstrap a new Singularity image from scratch [root]
@@ -41,9 +39,9 @@ CONTAINER MANAGEMENT COMMANDS:
 CONTAINER REGISTRY COMMANDS:
     pull          pull a Singularity/Docker container to $PWD
 
-CONTAINER APPS COMMANDS
-    apps          list available apps in a container
-    apprun           run an application in a container
+
+CONTAINER USAGE OPTIONS:
+    see singularity help <command>
 
 For any additional help or support visit the Singularity
 website: http://singularity.lbl.gov/
