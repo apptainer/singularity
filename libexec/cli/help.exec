@@ -66,4 +66,7 @@ elif [ -f "${1}" ]; then
     rmdir "$SINGULARITY_MOUNTPOINT"
 
     exit $RETVAL
+else
+    echo "No help provided for: ${1}"
+    exit 1
 fi
