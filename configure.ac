@@ -386,6 +386,7 @@ AC_CONFIG_FILES([
    libexec/cli/Makefile
    libexec/handlers/Makefile
    libexec/helpers/Makefile
+   libexec/helpers/apps/Makefile
    libexec/helpers/checks/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile

@@ -4,6 +4,7 @@ Obtain an interactive shell (/bin/sh) within the container image.
 
 
 SHELL OPTIONS:
+    -a/--app            Include an installed container app in the environment
     -B/--bind <spec>    A user-bind path specification.  spec has the format
                         src[:dest[:opts]], where src and dest are outside and
                         inside paths.  If dest is not given, it is set equal

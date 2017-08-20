@@ -136,6 +136,7 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
     envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
+    envar_set("SINGULARITY_APPNAME", singularity_registry_get("APPNAME"), 1);
 
     command = singularity_registry_get("COMMAND");
 
@@ -144,6 +145,8 @@ int main(int argc, char **argv) {
     if ( command == NULL ) {
         singularity_message(INFO, "No action command verb was given, invoking 'shell'\n");
         action_shell(argc, argv);
+
+    // Primary Commands
     } else if ( strcmp(command, "shell") == 0 ) {
         action_shell(argc, argv);
     } else if ( strcmp(command, "exec") == 0 ) {

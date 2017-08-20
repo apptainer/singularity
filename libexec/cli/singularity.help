@@ -10,18 +10,15 @@ GLOBAL OPTIONS:
     -x --sh-debug Print shell wrapper debugging information
 
 GENERAL COMMANDS:
-    help          Show additional help for a command
-    selftest      Run some self tests to make sure Singularity is
-                    installed and operating properly
+    help          Show additional help for a command or container
+    selftest      Run some self tests for singularity install
 
 CONTAINER USAGE COMMANDS:
     exec          Execute a command within container
     run           Launch a runscript within container
     shell         Run a Bourne shell within container
     test          Execute any test code defined within container
-
-CONTAINER USAGE OPTIONS:
-    see singularity help <command>
+    apps          list available apps in a container
 
 CONTAINER MANAGEMENT COMMANDS:
     bootstrap     Bootstrap a new Singularity image from scratch [root]
@@ -42,6 +39,9 @@ CONTAINER MANAGEMENT COMMANDS:
 CONTAINER REGISTRY COMMANDS:
     pull          pull a Singularity/Docker container to $PWD
 
+
+CONTAINER USAGE OPTIONS:
+    see singularity help <command>
 
 For any additional help or support visit the Singularity
 website: http://singularity.lbl.gov/
