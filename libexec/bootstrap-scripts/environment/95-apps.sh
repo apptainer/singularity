@@ -25,9 +25,9 @@ if test -n "${SINGULARITY_APPNAME:-}"; then
     if test -d "/scif/apps/${SINGULARITY_APPNAME:-}/"; then
         SINGULARITY_APPROOT="/scif/apps/${SINGULARITY_APPNAME:-}"
         export SINGULARITY_APPROOT
+        PATH="/scif/apps/${SINGULARITY_APPNAME:-}:$PATH"
         if test -d "/scif/apps/${SINGULARITY_APPNAME:-}/bin"; then
             PATH="/scif/apps/${SINGULARITY_APPNAME:-}/bin:$PATH"
-            export PATH
         fi
         if test -d "/scif/apps/${SINGULARITY_APPNAME:-}/lib"; then
             LD_LIBRARY_PATH="/scif/apps/${SINGULARITY_APPNAME:-}/lib:$LD_LIBRARY_PATH"
@@ -36,6 +36,10 @@ if test -n "${SINGULARITY_APPNAME:-}"; then
         if test -f "/scif/apps/${SINGULARITY_APPNAME:-}/scif/environment"; then
             . "/scif/apps/${SINGULARITY_APPNAME:-}/scif/environment"
         fi
+        export PATH
+    else
+        echo "Could not locate the container application: ${SINGULARITY_APPNAME}"
+        exit 1
     fi
 fi
 
