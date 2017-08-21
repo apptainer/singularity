@@ -60,7 +60,7 @@
 #define MOUNT_DEV_DEFAULT "yes"
 
 #define MOUNT_DEVPTS "mount devpts"
-#define MOUNT_DEVPTS_DEFAULT "no"
+#define MOUNT_DEVPTS_DEFAULT "yes"
 
 #define MOUNT_HOME "mount home"
 #define MOUNT_HOME_DEFAULT 1
