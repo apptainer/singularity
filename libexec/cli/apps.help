@@ -1,0 +1,17 @@
+USAGE: singularity [...] apps <container path>
+
+List applications (apps) installed in a container, located at
+    /scif/apps. See http://containers-ftw.org/SCI-F/
+
+EXAMPLES:
+    
+    $ singularity apps ubuntu.img
+    total 8.0K
+    4.0 bar
+    4.0 foo
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/

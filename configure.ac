@@ -305,7 +305,7 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid create-suid expand-suid export-suid import-suid mount-suid"
+    BUILD_SUID="action-suid start-suid create-suid expand-suid export-suid import-suid mount-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
@@ -384,7 +384,9 @@ AC_CONFIG_FILES([
    libexec/bootstrap-scripts/Makefile
    libexec/bootstrap-scripts/environment/Makefile
    libexec/cli/Makefile
+   libexec/handlers/Makefile
    libexec/helpers/Makefile
+   libexec/helpers/apps/Makefile
    libexec/helpers/checks/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile

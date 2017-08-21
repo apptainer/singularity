@@ -24,6 +24,7 @@
 #define __SINGULARITY_RUNTIME_NS_H_
 
 extern int _singularity_runtime_ns(unsigned int flags);
+extern int _singularity_runtime_ns_join(unsigned int flags);
 
 #endif /* __SINGULARITY_RUNTIME_NS_H */
 

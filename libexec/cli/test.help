@@ -1,8 +1,8 @@
 USAGE: singularity [...] test [exec options...] <container path>
 
-Run any defined tests for this particular container. Tests will be run
-contained (e.g. no persistent writable directories will be available inside
-of container) and will be executed as the calling user.
+Run defined tests for this particular container. Tests will be run
+contained (e.g. no persistent writable directories will be available 
+inside of container) and will be executed as the calling user.    
 
 NOTE:
     If there is a daemon process running inside the container, then 
