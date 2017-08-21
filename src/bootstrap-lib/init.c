@@ -50,6 +50,18 @@ int bootstrap_init(int argc, char **argv) {
         singularity_message(INFO, "Building from DockerHub container\n");
         execl(bootstrap, bootstrap, NULL); // Flawfinder: ignore (this is necessary)
 
+    } else if ( strncmp(builddef, "self", 4) == 0 ) {
+
+        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile.sh");
+        singularity_message(INFO, "Self clone with bootstrap definition recipe\n");
+
+        if ( bootstrap_keyval_parse(builddef) != 0 ) {
+            singularity_message(ERROR, "Failed parsing the bootstrap definition file: %s\n", singularity_registry_get("BUILDDEF"));
+            ABORT(255);
+        }
+        execl(bootstrap, bootstrap, NULL); // Flawfinder: ignore (this is necessary)
+
+
     } else if ( is_file(builddef) == 0 ) {
         char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile.sh");
 

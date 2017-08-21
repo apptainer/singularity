@@ -2,24 +2,20 @@
 #
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
-# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
 #
-# Copyright (c) 2016-2017, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
 #
-# This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software.
-#
-# NOTICE.  This Software was developed under funding from the U.S. Department of
-# Energy and the U.S. Government consequently retains certain rights. As such,
-# the U.S. Government has been granted for itself and others acting on its
-# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
-# to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so.
-#
-#
+# This file also contains content that is covered under the LBNL/DOE/UC modified
+# 3-clause BSD license and is subject to the license terms in the LICENSE-LBNL.md
+# file found in the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/LICENSE-LBNL.md.
+
 
 set -u
 
@@ -72,6 +68,21 @@ message() {
                 printf "$MESSAGE" "$@"
             fi
         ;;
+        p|P|CHECKPASS|PASS)
+            tput -Txterm setaf 2 2>/dev/null
+            printf "PASS: $MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
+        NOTIFY|notify)
+            tput -Txterm setaf 6 2>/dev/null
+            printf "$MESSAGE" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
+        f|F|CHECKFAIL|FAIL)
+            tput -Txterm setaf 1 2>/dev/null
+            printf "FAIL: $MESSAGE\n" "$@" 1>&2
+            tput -Txterm sgr0 2>/dev/null
+        ;;
         [2-5]|VERBOSE|DEBUG)
             if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@" 1>&2
@@ -105,53 +116,47 @@ singularity_keys_get() {
     return 0
 }
 
-singularity_section_exists() {
-    SECTION="${1:-}"
-    FILE="${2:-}"
-    TOGGLE=""
-    if [ ! -f "$FILE" ]; then
-        message ERROR "File not found ($FILE)\n"
-        exit 1
-    fi
-    if ! egrep -i -q -- "^%$SECTION\W*" "$FILE"; then
-        return 1
-    fi
-
-    return 0
-}
-
-singularity_section_args() {
-    SECTION="${1:-}"
-    FILE="${2:-}"
-    TOGGLE=""
-    if [ ! -f "$FILE" ]; then
-        message ERROR "File not found ($FILE)\n"
-        exit 1
-    fi
-
-    egrep -i -- "^%$SECTION\W*" "$FILE" | sed -e "s@%$SECTION\s*@@i"
-
-    return 0
-}
-
-singularity_section_get() {
-    SECTION="${1:-}"
-    FILE="${2:-}"
-    if [ ! -x "$SINGULARITY_libexecdir/singularity/bin/get-section" ]; then
-        message ERROR "Could not locate get-section program\n"
+singularity_daemon_glob() {
+    if ! USERID=`id --real --user`; then
+        message ERROR "Could not ascertain user ID\n"
         exit 255
     fi
 
-    if [ ! -f "$FILE" ]; then
-        message ERROR "File not found ($FILE)\n"
-        exit 1
-    fi
+    HOST=`hostname`
+    HOME=`getent passwd ${USERID} | cut -d: -f6`
 
-    eval "$SINGULARITY_libexecdir/singularity/bin/get-section" "$SECTION" "$FILE"
-
+    # This is a configurable option, needs to be set accordingly!
+    SINGULARITY_DAEMON_GLOB="${HOME}/.singularity/daemon/${HOST}/*"
+    echo $SINGULARITY_DAEMON_GLOB
     return 0
 }
 
+singularity_daemon_file() {
+    if ! USERID=`id --real --user`; then
+        message ERROR "Could not ascertain user ID\n"
+        exit 255
+    fi
+    
+    HOST=`hostname`
+    HOME=`getent passwd ${USERID} | cut -d: -f6`
+    DEVINO=`stat --format=%d.%i ${SINGULARITY_IMAGE}`
+
+    # This is a configurable option, needs to be set accordingly!
+    SINGULARITY_DAEMON_FILE="${HOME}/.singularity/daemon/${HOST}/${DEVINO}-${SINGULARITY_DAEMON_NAME}"
+    echo $SINGULARITY_DAEMON_FILE
+    return 0
+}
+
+singularity_calculate_size() {
+    FOLDER="${1:-}"
+    if [ ! -d "${FOLDER}" ]; then
+        message ERROR "Folder not found ($FOLDER)\n"
+    fi
+
+    eval du -sm ${FOLDER} | cut -f1 # MB
+
+    return 0
+}
 
 ABORT() {
     RETVAL="${1:-}"
@@ -295,7 +300,123 @@ parse_opts() {
 }
 
 
+compare_envs() {
+    # during bootstrap, if we are bootstrapping from a local image, compare the
+    # environment in the new image to that in the old image and alert the user
+    # of any changes
+    REMOVED=$(comm -23 ${SINGULARITY_STARTING_ENVIRONMENT} ${SINGULARITY_ENDING_ENVIRONMENT})
+    ADDED=$(comm -13 ${SINGULARITY_STARTING_ENVIRONMENT} ${SINGULARITY_ENDING_ENVIRONMENT})
+     
+    if [ -n "${REMOVED:-}" -o -n "${ADDED:-}" ]; then
+        message 1 "Environment variables were added, removed, and/or changed during bootstrap.\n"
+    elif [ "${SINGULARITY_STARTING_ENVSHA1:-}" != "${SINGULARITY_ENDING_ENVSHA1:-}" ]; then
+        message 1 "The environment of ${SINGULARITY_IMAGE} may differ from the environment of ${FROM}\n"
+        message 1 "${FROM} sha1 sum of environment is ${SINGULARITY_STARTING_ENVSHA1}\n"
+        message 1 "${SINGULARITY_IMAGE} sha1 sum of environment is ${SINGULARITY_ENDING_ENVSHA1}\n"
+    fi
+    if [ -n "${REMOVED:-}" ]; then
+        message 1 "Variables unique to original image (${FROM})\n"
+        message 1 "$REMOVED\n"
+    fi
+    if [ -n "${ADDED:-}" ]; then
+        message 1 "Variables unique to new image (${SINGULARITY_IMAGE})\n"
+        message 1 "$ADDED\n"
+    fi
+}
 
+
+replace_string() {
+   ORIGINAL="${1:-}"
+   MATCH="${2:-}"
+   REPLACE="${3:-}"
+   echo $ORIGINAL | sed -e s/${MATCH}/${REPLACE}/g
+}
+
+
+##############################################################################
+# CHECKS
+##############################################################################
+
+
+# Given a script and an assigned level and tag, determine if it should be
+# executed to perform the check
+# [LEVEL] [SCRIPT] [TAGS]
+
+exec_check() {
+    CHECKSUCCESS="${1:-}"
+    CHECKLEVEL="${2:-}"
+    CHECKSCRIPT="${3:-}"
+    shift
+    shift
+    shift
+    CHECKTAGS="${@}"
+
+    # The default case is that we don't run
+    RETVAL=0  
+
+    # Don't perform check if tag not indicated
+    PERFORM_CHECK=1
+
+    # if not "all," check if user wants check performed
+    if [ "$SINGULARITY_CHECKTAGS" != "all" ]; then
+        has_tag "$CHECKTAGS" "$SINGULARITY_CHECKTAGS" || PERFORM_CHECK=0
+    fi
+
+    if [ $PERFORM_CHECK -eq 0 ]; then
+        return $RETVAL
+    fi
+ 
+    RUNCHECK_LEVEL=3        # Perform all checks
+    case "$CHECKLEVEL" in
+        l|low|L|LOW)
+            RUNCHECK_LEVEL=3
+        ;;
+        m|med|M|MED)
+            RUNCHECK_LEVEL=2
+        ;;
+        h|high|H|HIGH)
+            RUNCHECK_LEVEL=1
+        ;;
+    esac
+
+    if [ "$RUNCHECK_LEVEL" -le "$SINGULARITY_CHECKLEVEL" ]; then
+       message NOTIFY "START ${CHECKSCRIPT##*/} tags[${CHECKTAGS}] level[$CHECKLEVEL]\n"
+       scheck 0 $CHECKSCRIPT # script must have interpreter specified
+       printf " $CHECKSCRIPT \n"
+    fi
+
+    return $RETVAL
+}
+
+
+has_tag() {
+
+    taglist="$1"
+    tag="$2"
+    if test "${taglist#*$tag}" != "$taglist"
+    then
+        return 0 # has tag, perform test
+    else
+        return 1 # no tag, skip test
+    fi
+}
+
+
+scheck() {
+    ERROR="${1:-}"
+    shift
+    message 2 " + %-80.80s " "$*"
+    "$@"
+    CODE="$?"
+    if [ "$ERROR" = "0" -a "$CODE" != "0" ]; then
+        message FAIL "(retval=$CODE)"
+    elif [ "$ERROR" != "0" -a "$CODE" = "0" ]; then
+        message FAIL "(retval=$CODE)"
+    else
+        message PASS "(retval=$CODE)"
+    fi
+    return $CODE
+}
 
 if [ -n "${SHELL_DEBUG:-}" ]; then
     set -x

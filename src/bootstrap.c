@@ -77,10 +77,15 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_libexecdir", singularity_registry_get("LIBEXECDIR"), 1);
     envar_set("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
     envar_set("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
+    envar_set("SINGULARITY_CHECKS", singularity_registry_get("CHECKS"), 1);
+    envar_set("SINGULARITY_CHECKLEVEL", singularity_registry_get("CHECKLEVEL"), 1);
+    envar_set("SINGULARITY_CHECKTAGS", singularity_registry_get("CHECKTAGS"), 1);
     envar_set("SINGULARITY_MESSAGELEVEL", singularity_registry_get("MESSAGELEVEL"), 1);
     envar_set("SINGULARITY_NOTEST", singularity_registry_get("NOTEST"), 1);
     envar_set("SINGULARITY_BUILDSECTION", singularity_registry_get("BUILDSECTION"), 1);
     envar_set("SINGULARITY_BUILDNOBASE", singularity_registry_get("BUILDNOBASE"), 1);
+    envar_set("SINGULARITY_DOCKER_PASSWORD", singularity_registry_get("DOCKER_PASSWORD"), 1);
+    envar_set("SINGULARITY_DOCKER_USERNAME", singularity_registry_get("DOCKER_USERNAME"), 1);
     envar_set("SINGULARITY_CACHEDIR", singularity_registry_get("CACHEDIR"), 1);
     envar_set("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
     envar_set("HOME", singularity_priv_home(), 1);

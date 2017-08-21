@@ -64,8 +64,6 @@ int main(int argc, char **argv) {
         singularity_registry_set("IMAGE", argv[1]);
     }
 
-    singularity_sessiondir();
-
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
     singularity_image_open(&image, O_RDWR);
@@ -126,7 +124,7 @@ int main(int argc, char **argv) {
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Opening STDIN for tar stream\n");
-    retval = singularity_fork_exec(tar_cmd);
+    retval = singularity_fork_exec(0, tar_cmd);
     singularity_priv_drop();
 
     if ( retval != 0 ) {

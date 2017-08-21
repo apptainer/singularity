@@ -32,6 +32,7 @@
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
+#include "util/daemon.h"
 #include "util/registry.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
@@ -60,10 +61,9 @@ int main(int argc, char **argv) {
     singularity_suid_init(argv);
 
     singularity_registry_init();
+    
     singularity_priv_userns();
     singularity_priv_drop();
-
-    singularity_cleanupd();
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
@@ -78,21 +78,28 @@ int main(int argc, char **argv) {
 
     singularity_runtime_autofs();
 
+    singularity_daemon_init();
     singularity_runtime_ns(SR_NS_ALL);
 
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_runtime_rootfs(singularity_registry_get("DAEMON_ROOTFS"));
+    }
+    
     singularity_sessiondir();
-
+    singularity_cleanupd();
+    
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
-
+    
     action_ready(singularity_runtime_rootfs(NULL));
-
+        
     singularity_runtime_overlayfs();
     singularity_runtime_mounts();
     singularity_runtime_files();
+    
     singularity_runtime_enter();
-
+    
     singularity_runtime_environment();
-
+    
     singularity_priv_drop_perm();
 
     if ( singularity_registry_get("CONTAIN") != NULL ) {
@@ -132,6 +139,7 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
     envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
+    envar_set("SINGULARITY_APPNAME", singularity_registry_get("APPNAME"), 1);
 
     command = singularity_registry_get("COMMAND");
 
@@ -140,6 +148,8 @@ int main(int argc, char **argv) {
     if ( command == NULL ) {
         singularity_message(INFO, "No action command verb was given, invoking 'shell'\n");
         action_shell(argc, argv);
+
+    // Primary Commands
     } else if ( strcmp(command, "shell") == 0 ) {
         action_shell(argc, argv);
     } else if ( strcmp(command, "exec") == 0 ) {

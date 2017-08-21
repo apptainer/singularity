@@ -113,11 +113,13 @@ int _singularity_runtime_overlayfs(void) {
 
         singularity_message(VERBOSE2, "Updating the containerdir to: %s\n", overlay_final);
         singularity_runtime_rootfs(overlay_final);
-
+        return(0);
+    }
 #else
         singularity_message(VERBOSE, "OverlayFS not supported by host build\n");
-#endif
     }
+#endif
+    singularity_registry_set("OVERLAYFS_ENABLED", NULL);
 
     return(0);
 }

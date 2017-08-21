@@ -14,6 +14,7 @@
     - Amanda Duffy <aduffy@lenovo.com>
     - Ángel Bejarano <abejarano@ontropos.com>
     - Bernard Li <bernardli@lbl.gov>
+    - Dave Godlove <davidgodlove@gmail.com>
     - Dave Love <d.love@liverpool.ac.uk>
     - Felix Abecassis <fabecassis@nvidia.com>
     - Jarrod Johnson <jjohnson2@lenovo.com>
@@ -25,4 +26,8 @@
     - Eduardo Arango <carlos.arango.gutierrez@correounivalle.edu.co>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Cedric Clerget <cedric.clerget@univ-fcomte.fr>
+    - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
+    - Petr Votava <votava.petr@gene.com>
+    - George Hartzell <hartzell@alerce.com>
+    - Dave Dykstra <dwd@fnal.gov>

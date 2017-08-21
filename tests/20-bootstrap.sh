@@ -42,7 +42,7 @@ stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
 stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
 stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
 stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
-stest 0 singularity exec "$CONTAINER" test -L /.singularity.d/environment
+stest 0 singularity exec "$CONTAINER" test -L /environment
 stest 0 singularity exec "$CONTAINER" test -L /singularity
 
 stest 0 mkdir "$CONTAINERDIR"
@@ -68,5 +68,14 @@ stest 1 sh -c "sudo singularity bootstrap --notest '$CONTAINER' '$SINGULARITY_TE
 
 stest 0 sudo rm -rf "$CONTAINERDIR"
 
+CONTAINER2="$SINGULARITY_TESTDIR/container2.img"
+stest 0 singularity create -s 568 "$CONTAINER2"
+cat <<EOF >> "$SINGULARITY_TESTDIR/Singularity2"
+Bootstrap: localimage
+From: $CONTAINER
+EOF
+stest 0 sudo singularity bootstrap "$CONTAINER2" "$SINGULARITY_TESTDIR/Singularity2"
+stest 0 singularity exec "$CONTAINER2" true
+stest 1 singularity exec "$CONTAINER2" false
 
 test_cleanup

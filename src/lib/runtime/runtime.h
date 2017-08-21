@@ -34,6 +34,7 @@ extern int singularity_runtime_ns(unsigned int flags);
 #define SR_NS_PID 1
 #define SR_NS_IPC 2
 #define SR_NS_MNT 4
+#define SR_NS_NET 8
 #define SR_NS_ALL 255
 
 // Setup/initialize the overlayFS
