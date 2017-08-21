@@ -99,8 +99,9 @@ while true; do
             SINGULARITY_CONTAIN=1
             SINGULARITY_UNSHARE_PID=1
             SINGULARITY_UNSHARE_IPC=1
+            SINGULARITY_UNSHARE_NET=1
             SINGULARITY_CLEANENV=1
-            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC SINGULARITY_CLEANENV
+            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC SINGULARITY_CLEANENV SINGULARITY_UNSHARE_NET
         ;;
         -e|--cleanenv)
             shift
@@ -117,13 +118,18 @@ while true; do
             SINGULARITY_UNSHARE_IPC=1
             export SINGULARITY_UNSHARE_IPC
         ;;
+        -n|--net)
+            shift
+            SINGULARITY_UNSHARE_NET=1
+            export SINGULARITY_UNSHARE_NET
+        ;;
         --pwd)
             shift
             SINGULARITY_TARGET_PWD="$1"
             export SINGULARITY_TARGET_PWD
             shift
         ;;
-        -n|--nv)
+        --nv)
             shift
             SINGULARITY_NVLIBLIST=$(mktemp singularity-nvliblist.XXXXXXXX)
             cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" > $SINGULARITY_NVLIBLIST
