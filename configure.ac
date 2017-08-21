@@ -136,6 +136,18 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                       ]
                   )
 
+AC_MSG_CHECKING([for namespace: CLONE_NEWNET])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+                                     #include <sched.h>
+                                   ]],
+                                   [[unshare(CLONE_NEWNET);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWNET"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
 
 AC_MSG_CHECKING([for feature: NO_NEW_PRIVS])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -339,6 +351,7 @@ AC_CONFIG_FILES([
    src/lib/runtime/ns/Makefile
    src/lib/runtime/ns/ipc/Makefile
    src/lib/runtime/ns/mnt/Makefile
+   src/lib/runtime/ns/net/Makefile
    src/lib/runtime/ns/pid/Makefile
    src/lib/runtime/files/Makefile
    src/lib/runtime/files/group/Makefile
@@ -384,7 +397,9 @@ AC_CONFIG_FILES([
    libexec/bootstrap-scripts/Makefile
    libexec/bootstrap-scripts/environment/Makefile
    libexec/cli/Makefile
+   libexec/handlers/Makefile
    libexec/helpers/Makefile
+   libexec/helpers/apps/Makefile
    libexec/helpers/checks/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile

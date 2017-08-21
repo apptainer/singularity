@@ -9,6 +9,7 @@ runscript.
 
 
 RUN OPTIONS:
+    -a/--app            Run an app's runscript instead of the default one
     -B/--bind <spec>    A user-bind path specification.  spec has the format
                         src[:dest[:opts]], where src and dest are outside and
                         inside paths.  If dest is not given, it is set equal
@@ -24,7 +25,9 @@ RUN OPTIONS:
                         of the home directory outside the container and dest
                         overrides the home directory within the container
     -i/--ipc            Run container in a new IPC namespace
-    -n/--nv             Enable experimental Nvidia support
+    -n/--net            Run container in a new network namespace (loopback is
+                        only network device active)
+    --nv                Enable experimental Nvidia support
     -p/--pid            Run container in a new PID namespace
     --pwd               Initial working directory for payload process inside
                         the container

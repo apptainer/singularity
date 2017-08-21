@@ -55,6 +55,10 @@ DEFFILE BASEOS EXAMPLES:
     Self:
         Bootstrap: self
 
+    Local Image:
+        Bootstrap: localimage
+        From: /home/dave/starter.img 
+
 
 DEFFILE SECTION EXAMPLES:
 

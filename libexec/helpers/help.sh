@@ -32,7 +32,13 @@ fi
 SINGULARITY_ROOTFS=${SINGULARITY_MOUNTPOINT}
 export SINGULARITY_MOUNTPOINT SINGULARITY_ROOTFS
 
-if [ -f "${SINGULARITY_MOUNTPOINT}/.singularity.d/runscript.help" ]; then
+if [ -n "${SINGULARITY_APPNAME:-}" ]; then
+    if [ -f "${SINGULARITY_MOUNTPOINT}/scif/apps/${SINGULARITY_APPNAME}/scif/runscript.help" ]; then
+        eval_abort cat "${SINGULARITY_MOUNTPOINT}/scif/apps/${SINGULARITY_APPNAME}/scif/runscript.help"
+    else
+        echo "No runscript help is defined for this application."
+    fi
+elif [ -f "${SINGULARITY_MOUNTPOINT}/.singularity.d/runscript.help" ]; then
     eval_abort cat "${SINGULARITY_MOUNTPOINT}/.singularity.d/runscript.help"
 else
     echo "No runscript help is defined for this image."
