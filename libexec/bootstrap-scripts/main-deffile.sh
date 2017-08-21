@@ -42,7 +42,10 @@ eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh
 
 if [ -n "${BOOTSTRAP:-}" -a -z "${SINGULARITY_BUILDNOBASE:-}" ]; then
     if [ -x "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh" ]; then
-        eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh"
+        if [ ! -f "${SINGULARITY_ROOTFS}/.coredone" ]; then
+            eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh"
+            touch "${SINGULARITY_ROOTFS}/.coredone"
+        fi
     else
         message ERROR "'Bootstrap' type not supported: $BOOTSTRAP\n"
         exit 1
