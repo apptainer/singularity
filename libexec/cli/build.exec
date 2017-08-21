@@ -82,9 +82,11 @@ fi
 if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
     SINGULARITY_ROOTFS="$SINGULARITY_CONTAINER_OUTPUT"
     SINGULARITY_IMAGE="$SINGULARITY_CONTAINER_OUTPUT"
-    if ! mkdir -p "$SINGULARITY_ROOTFS"; then
-        message ERROR "Could not create sandbox!\n";
-        exit 1
+    if [ ! -d "$SINGULARITY_ROOTFS" ]; then
+        if ! mkdir -p "$SINGULARITY_ROOTFS"; then
+            message ERROR "Could not create sandbox!\n";
+            exit 1
+        fi
     fi
 else
     SINGULARITY_ROOTFS=`mktemp -d ${SINGULARITY_TMPDIR:-/tmp}/.singularity_build.XXXXXX`
