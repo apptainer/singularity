@@ -11,12 +11,13 @@ $ sudo yum groupinstall "Development Tools"
 
 
 ## To compile and install Singularity from a released tarball:
-Assuming a 2.3 released tarball...
+Assuming a 2.3.1 released tarball...
 ```
-$ wget "https://github.com/singularityware/singularity/releases/download/2.3/singularity-2.3.tar.gz"
-$ tar -xvzf singularity-2.3.tar.gz
-$ cd singularity-2.3
-$ ./configure --prefix=/path/to/singularity
+$ version=2.3.1
+$ wget "https://github.com/singularityware/singularity/releases/download/${version}/singularity-${version}.tar.gz"
+$ tar -xvzf singularity-${version}.tar.gz
+$ cd singularity-${version}
+$ ./configure --prefix=/usr/local
 $ make
 $ sudo make install
 ```
@@ -29,8 +30,24 @@ will result in a non-functioning or semi-functioning installation.
 ```
 $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
+$ git checkout tags/2.3.1 -b 2.3.1
 $ ./autogen.sh
-$ ./configure --prefix=/path/to/singularity
+$ ./configure --prefix=/usr/local
+$ make
+$ sudo make install
+```
+
+note: The `sudo` is very important for the `make install`. Failure to do this
+will result in a non-functioning or semi-functioning installation.
+
+## To compile and install Singularity from an existing Git clone:
+
+```
+$ cd singularity
+$ git fetch --tags origin
+$ git checkout tags/2.3.1 -b 2.3.1
+$ ./autogen.sh
+$ ./configure --prefix=/usr/local
 $ make
 $ sudo make install
 ```
@@ -43,6 +60,7 @@ will result in a non-functioning or semi-functioning installation.
 ```
 $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
+$ git checkout tags/2.3.1 -b 2.3.1
 $ ./autogen.sh
 $ ./configure
 $ make dist
