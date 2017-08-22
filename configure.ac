@@ -372,6 +372,7 @@ AC_CONFIG_FILES([
    src/lib/runtime/enter/chroot/Makefile
    src/lib/runtime/environment/Makefile
    src/lib/runtime/overlayfs/Makefile
+   src/lib/runtime/autofs/Makefile
    src/lib/image/Makefile
    src/lib/image/bind/Makefile
    src/lib/image/check/Makefile

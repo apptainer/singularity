@@ -159,3 +159,11 @@ bind path = /etc/hosts
 # feature only applies when Singularity is running in SUID mode and the user is
 # non-root.
 #@LIMIT_CONTAINER_PATHS@ = /scratch, /tmp, /global
+
+
+# AUTOFS BUG PATH: [STRING]
+# DEFAULT: Undefined
+# Define list of autofs directories which produces "Too many levels of symbolink links"
+# errors when accessed from container (typically bind mounts)
+#autofs bug path = /nfs
+#autofs bug path = /cifs-share
