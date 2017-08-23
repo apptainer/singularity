@@ -126,7 +126,7 @@ class SingularityApiConnection(ApiConnection):
 
         download_image will download a singularity image from singularity
         hub to a download_folder, named based on the image version (commit id)
-        
+
         Parameters
         ==========
         :param manifest: the manifest obtained with get_manifest
@@ -197,6 +197,7 @@ def get_image_name(manifest, extension='img.gz'):
         for replace in [" ", ".gz", ".img"]:
             SHUB_CONTAINERNAME = SHUB_CONTAINERNAME.replace(replace, "")
         image_name = "%s.%s" % (SHUB_CONTAINERNAME, extension)
+        default_naming = False
 
     # Second preference goes to commit
     elif SHUB_NAMEBYCOMMIT is not None and manifest['version'] is not None:
@@ -219,7 +220,7 @@ def get_image_name(manifest, extension='img.gz'):
         # sregistry images store collection/name separately
         name = manifest['name']
         source = "Hub"
-        if 'collection' in manifest:
+        if 'frozen' in manifest:
             source = "Registry"
             name = '%s-%s' % (manifest['collection'], name)
         image_name = "%s-%s.%s" % (name.replace('/', '-'),
@@ -238,6 +239,10 @@ def extract_metadata(manifest, labelfile=None, prefix=None):
         prefix = ""
     prefix = prefix.upper()
 
+    source = 'Hub'
+    if 'frozen' in manifest:
+        source = 'Registry'
+
     metadata = manifest.copy()
     remove_fields = ['files', 'spec', 'metrics']
     for remove_field in remove_fields:
@@ -252,5 +257,6 @@ def extract_metadata(manifest, labelfile=None, prefix=None):
                         jsonfile=labelfile,
                         force=True)
 
-        bot.verbose("Saving Singularity Hub metadata to %s" % labelfile)
+        bot.verbose("Saving Singularity %s metadata to %s" % (source,
+                                                              labelfile))
     return metadata
