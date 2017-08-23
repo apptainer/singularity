@@ -115,8 +115,8 @@ else:
 #######################################################################
 
 # API
-API_BASE = "index.docker.io"  # registry
-API_VERSION = "v2"
+DOCKER_API_BASE = "index.docker.io"  # registry
+DOCKER_API_VERSION = "v2"
 NAMESPACE = "library"
 TAG = "latest"
 
@@ -152,7 +152,7 @@ DISABLE_HTTPS = convert2boolean(getenv("SINGULARITY_NOHTTPS",
 #######################################################################
 
 SINGULARITY_PULLFOLDER = getenv("SINGULARITY_PULLFOLDER", default=os.getcwd())
-SHUB_API_BASE = "singularity-hub.org/api"
+SHUB_API_BASE = "singularity-hub.org"
 SHUB_NAMEBYHASH = getenv("SHUB_NAMEBYHASH")
 SHUB_NAMEBYCOMMIT = getenv("SHUB_NAMEBYCOMMIT")
 SHUB_CONTAINERNAME = getenv("SHUB_CONTAINERNAME")
