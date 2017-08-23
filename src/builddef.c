@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
     struct image_object image;
     FILE *bootdef_fp;
     char *line;
-    char *path;
+    char *builddef;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_registry_init();
@@ -77,15 +77,15 @@ int main(int argc, char **argv) {
     singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
-    path = singularity_registry_get("BUILDDEF");
+    builddef = singularity_registry_get("BUILDDEF");
 
-    if ( is_file(path) != 0 ) {
-        singularity_message(ERROR, "Bootstrap definition file not found: %s\n", path);
+    if ( is_file(builddef) != 0 ) {
+        singularity_message(ERROR, "Bootstrap definition file not found: %s\n", builddef);
         ABORT(255);
     }
 
-    if ( ( bootdef_fp = fopen(path, "r") ) == NULL ) {
-        singularity_message(ERROR, "Could not open bootstrap definition file %s: %s\n", path, strerror(errno));
+    if ( ( bootdef_fp = fopen(builddef, "r") ) == NULL ) {
+        singularity_message(ERROR, "Could not open bootstrap definition file %s: %s\n", builddef, strerror(errno));
         ABORT(255);
     }
 
