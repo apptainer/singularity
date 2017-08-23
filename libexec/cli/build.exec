@@ -36,6 +36,7 @@ else
     exit 1
 fi
 
+
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -71,6 +72,7 @@ if [ -z "${2:-}" ]; then
 fi
 
 
+USERID=`id -ru`
 SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
 
@@ -100,14 +102,20 @@ if [ -n "${1:-}" ]; then
         message 1 "Print using container recipe deffile: $1\n"
         case $1 in
             *.def|*Singularity)
+                if [ "$USERID" != "0" ]; then
+                    echo "You must be the root user to run this command"
+                    exit 1
+                fi
                 SINGULARITY_BUILDDEF="$1"
                 export SINGULARITY_BUILDDEF
                 eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
             ;;
-            *.tar*)
+            *.tar.gz)
+                echo "Coming soon!"
+                exit 1
             ;;
             *)
-                message ERROR "Unsupported URI: $1\n"
+                message ERROR "Unsupported file type: $1\n"
                 exit 1
             ;;
         esac
@@ -141,7 +149,11 @@ else
     exec "$IMPORT_BIN"
 fi
 
-chmod u+rw -R "$SINGULARITY_ROOTFS"
+if [ "$USERID" != "0" ]; then
+    # This is required as some files in a container are not readable by owner and
+    # thus fail to build when not root.
+    chmod u+rw -R "$SINGULARITY_ROOTFS"
+fi
 
 if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
     if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend -all-root > /dev/null; then
