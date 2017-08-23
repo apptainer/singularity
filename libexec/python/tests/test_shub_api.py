@@ -129,11 +129,11 @@ class TestApi(TestCase):
         '''test_get_image_name will return the image name from the manifest
         '''
         from shub.api import get_image_name
-        manifest = self.client.get_manifest(image=self.image_id)
+        manifest = self.client.get_manifest()
 
         print("Case 1: return an image name corresponding to repo")
         image_name = get_image_name(manifest)
-        self.assertEqual('vsoch-singularity-images-master.img.gz',
+        self.assertEqual('vsoch-singularity-images-mongo.img.gz',
                          image_name)
 
 
