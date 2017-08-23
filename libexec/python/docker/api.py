@@ -39,8 +39,8 @@ from sutils import (
 )
 
 from defaults import (
-    API_BASE,
-    API_VERSION,
+    DOCKER_API_BASE,
+    DOCKER_API_VERSION,
     DOCKER_NUMBER,
     DOCKER_PREFIX,
     ENV_BASE,
@@ -71,8 +71,8 @@ class DockerApiConnection(ApiConnection):
         self.auth = None
         self.token = None
         self.token_url = None
-        self.api_base = API_BASE
-        self.api_version = API_VERSION
+        self.api_base = DOCKER_API_BASE
+        self.api_version = DOCKER_API_VERSION
         self.manifest = None
 
         if 'auth' in kwargs:
