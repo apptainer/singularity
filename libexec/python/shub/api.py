@@ -83,10 +83,15 @@ class SingularityApiConnection(ApiConnection):
     def get_manifest(self):
         '''get_image will return a json object with image metadata
         based on a unique id.
+
+        Parameters
+        ==========
         :param image: the image name, either an id
                       or a repo name, tag, etc.
-        :param registry: the registry (hub) to use
-                         if not defined, default is used
+
+        Returns
+        =======
+        manifest: a json manifest from the registry
         '''
         # make sure we have a complete url
         registry = add_http(self.image['registry'])

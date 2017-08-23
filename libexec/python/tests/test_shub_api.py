@@ -40,12 +40,9 @@ class TestApi(TestCase):
 
     def setUp(self):
         from shub.api import SingularityApiConnection
+        self.connect = SingularityApiConnection
         self.image = "shub://vsoch/singularity-images"
         self.client = SingularityApiConnection(image=self.image)
-
-        # Asking for image based on number
-        self.image_id = 60  # https://singularity-hub.org/collections/12/
-        self.nclient = SingularityApiConnection(image=self.image_id)
 
         self.user_name = "vsoch"
         self.repo_name = "singularity-images"
@@ -63,12 +60,6 @@ class TestApi(TestCase):
         '''test_get_manifest should return the shub manifest
         '''
         print("Case 1: Testing retrieval of singularity-hub manifest")
-        manifest = self.nclient.get_manifest()
-        keys = ['files', 'version', 'collection', 'branch',
-                'name', 'id', 'metrics', 'spec', 'image']
-        [self.assertTrue(x in manifest) for x in keys]
-        self.assertTrue(manifest['id'] == self.image_id)
-
         manifest = self.client.get_manifest()
         keys = ['files', 'version', 'collection', 'branch',
                 'name', 'id', 'metrics', 'spec', 'image']
@@ -112,22 +103,26 @@ class TestApi(TestCase):
 
         fullname = "%s/%s" % (self.user_name, self.repo_name)
         print("Case 1: ask for image and ask for master branch (tag)")
-        manifest = self.client.get_manifest(image="%s:master" % fullname)
+        client = self.connect(image="%s:master" % fullname)
+        manifest = client.get_manifest()
         image_name = get_image_name(manifest)
         self.assertEqual(image_name, get_image_name(manifest))
 
         print("Case 2: ask for different tag (mongo)")
-        manifest = self.client.get_manifest(image="%s:mongo" % fullname)
+        client = self.connect(image="%s:mongo" % fullname)
+        manifest = client.get_manifest()
         mongo = get_image_name(manifest)
         self.assertFalse(image_name == mongo)
 
         print("Case 3: image without tag (should be latest across tags)")
-        manifest = self.client.get_manifest(image="%s" % fullname)
+        client = self.connect(image="%s" % fullname)
+        manifest = client.get_manifest()
         self.assertEqual(mongo, get_image_name(manifest))
 
         print("Case 4: ask for latest tag (should be latest across tags)")
-        manifest = self.client.get_manifest(image="%s/%s:latest"
-                                            % (self.user_name, self.repo_name))
+        client = self.connect(image="%s/%s:latest"
+                              % (self.user_name, self.repo_name))
+        manifest = client.get_manifest()
         self.assertEqual(mongo, get_image_name(manifest))
 
     def test_get_image_name(self):
