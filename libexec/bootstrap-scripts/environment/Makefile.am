@@ -1,7 +1,7 @@
 environmentdir = $(libexecdir)/singularity/bootstrap-scripts/
 
 CLEANFILES = environment.tar
-EXTRA_DIST = 01-base.sh 90-environment.sh 99-base.sh apprun apptest exec run runscript shell test
+EXTRA_DIST = 01-base.sh 90-environment.sh 95-apps.sh 99-base.sh exec run runscript shell test
 
 dist_environment_DATA = environment.tar
 
