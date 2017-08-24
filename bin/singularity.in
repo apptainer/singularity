@@ -56,6 +56,9 @@ while true; do
     case ${1:-} in
         -h|--help|help)
 
+            shift
+            exec $SINGULARITY_libexecdir/singularity/cli/help.exec "$@"
+
             # singularity help
 
             if [ -z "${2:-}" ]; then

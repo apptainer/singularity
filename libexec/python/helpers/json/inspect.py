@@ -12,6 +12,7 @@ SINGULARITY_INSPECT_DEFFILE
 SINGULARITY_INSPECT_RUNSCRIPT
 SINGULARITY_INSPECT_TEST
 SINGULARITY_INSPECT_ENVIRONMENT
+SINGULARITY_APPNAME
 
 Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 
@@ -38,12 +39,14 @@ def main():
     environment = getenv("SINGULARITY_INSPECT_ENVIRONMENT", None)
     helpfile = getenv("SINGULARITY_INSPECT_HELP", None)
     structured = getenv("SINGULARITY_PRINT_STRUCTURED", None)
+    app = getenv("SINGULARITY_APPNAME", None)
 
     pretty_print = True
     if structured is not None:
         pretty_print = False
 
-    INSPECT(inspect_labels=labels,
+    INSPECT(inspect_app=app,
+            inspect_labels=labels,
             inspect_def=deffile,
             inspect_runscript=runscript,
             inspect_test=test,

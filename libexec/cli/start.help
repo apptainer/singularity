@@ -17,7 +17,7 @@ START OPTIONS:
                         src path or src:dest pair.  src is the source path
                         of the home directory outside the container and dest
                         overrides the home directory within the container
-    -n/--nv             Enable experimental Nvidia support
+    --nv                Enable experimental Nvidia support
     --pwd               Initial working directory for payload process inside
                         the container
     -S/--scratch <path> Include a scratch directory within the container that
