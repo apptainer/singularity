@@ -26,12 +26,11 @@ import os
 from message import bot
 
 from defaults import (
-    API_BASE as default_registry,
-    NAMESPACE as default_namespace,
-    TAG as default_tag
+    DOCKER_API_BASE,
+    NAMESPACE,
+    TAG
 )
 
-from sutils import is_number
 import json
 import re
 import os
@@ -70,7 +69,13 @@ def remove_image_uri(image, image_uri=None, quiet=False):
     return image
 
 
-def parse_image_uri(image, uri=None, quiet=False):
+def parse_image_uri(image,
+                    uri=None,
+                    quiet=False,
+                    default_registry=None,
+                    default_namespace=None,
+                    default_tag=None):
+
     '''parse_image_uri will return a json structure with a registry,
     repo name, tag, and namespace, intended for Docker.
     :param image: the string provided on command line for
@@ -82,6 +87,16 @@ def parse_image_uri(image, uri=None, quiet=False):
 
     if uri is None:
         uri = ""
+
+    # Default to most common use case, Docker
+    if default_registry is None:
+        default_registry = DOCKER_API_BASE
+
+    if default_namespace is None:
+        default_namespace = NAMESPACE
+
+    if default_tag is None:
+        default_tag = TAG
 
     # Be absolutely sure there are not comments
     image = image.split('#')[0]

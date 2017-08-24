@@ -30,13 +30,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
 sys.path.append('..')  # noqa
 
 from shell import (
-    remove_image_uri
+    parse_image_uri,
+    remove_image_uri,
 )
 
 from sutils import (
     add_http,
     clean_up,
-    is_number,
     read_file,
     run_command
 )
@@ -66,39 +66,39 @@ class SingularityApiConnection(ApiConnection):
     def __init__(self, **kwargs):
         self.token = None
         self.api_base = SHUB_API_BASE
+
         if 'image' in kwargs:
             self.load_image(kwargs['image'])
+
         if 'token' in kwargs:
             self.token = kwargs['token']
         super(SingularityApiConnection, self).__init__(**kwargs)
 
     def load_image(self, image):
-        self.image = image
-        if not is_number(image):
-            self.image = remove_image_uri(image, quiet=True)
+        self.image = parse_image_uri(image=image,
+                                     uri='shub://',
+                                     default_registry=SHUB_API_BASE,
+                                     quiet=True)
 
-    def get_manifest(self, image=None, registry=None):
+    def get_manifest(self):
         '''get_image will return a json object with image metadata
         based on a unique id.
+
+        Parameters
+        ==========
         :param image: the image name, either an id
                       or a repo name, tag, etc.
-        :param registry: the registry (hub) to use
-                         if not defined, default is used
+
+        Returns
+        =======
+        manifest: a json manifest from the registry
         '''
-        if image is None:
-            image = self.image
-        if registry is None:
-            registry = self.api_base
-
         # make sure we have a complete url
-        registry = add_http(registry)
-
-        # Numeric images have slightly different endpoint from named
-        if is_number(image) is True:
-            base = "%s/containers/%s" % (registry, image)
-        else:
-            base = "%s/container/%s" % (registry, image)
-
+        registry = add_http(self.image['registry'])
+        base = "%s/api/container/%s/%s:%s" % (registry,
+                                              self.image['namespace'],
+                                              self.image['repo_name'],
+                                              self.image['repo_tag'])
         # ------------------------------------------------------
         # If we need to authenticate, will do it here
         # ------------------------------------------------------
@@ -126,11 +126,22 @@ class SingularityApiConnection(ApiConnection):
                        image_name=None,
                        download_folder=None,
                        extract=True):
-        '''download_image will download a singularity image from singularity
+
+        '''
+
+        download_image will download a singularity image from singularity
         hub to a download_folder, named based on the image version (commit id)
+
+        Parameters
+        ==========
         :param manifest: the manifest obtained with get_manifest
         :param download_folder: the folder to download to, if None, will be pwd
         :param extract: if True, will extract image to .img and return that.
+
+        Returns
+        =======
+        image_file: the full path to the downloaded image
+
         '''
         if image_name is None:
             image_name = get_image_name(manifest)
@@ -185,26 +196,43 @@ def get_image_name(manifest, extension='img.gz'):
                           SHUB_NAMEBYHASH)
 
     # First preference goes to a custom name
+    default_naming = True
+
     if SHUB_CONTAINERNAME is not None:
         for replace in [" ", ".gz", ".img"]:
             SHUB_CONTAINERNAME = SHUB_CONTAINERNAME.replace(replace, "")
         image_name = "%s.%s" % (SHUB_CONTAINERNAME, extension)
+        default_naming = False
 
     # Second preference goes to commit
-    elif SHUB_NAMEBYCOMMIT is not None:
+    elif SHUB_NAMEBYCOMMIT is not None and manifest['version'] is not None:
         image_name = "%s.%s" % (manifest['version'], extension)
+        default_naming = False
 
     elif SHUB_NAMEBYHASH is not None:
         image_url = os.path.basename(unquote(manifest['image']))
         image_name = re.findall(".+[.]%s" % (extension), image_url)[0]
+        default_naming = False
 
     # Default uses the image name-branch
-    else:
-        image_name = "%s-%s.%s" % (manifest['name'].replace('/', '-'),
-                                   manifest['branch'].replace('/', '-'),
+    if default_naming is True:
+
+        # Tag is derived from branch for Shub, tag from sregistry
+        tag_source = 'branch'
+        if tag_source not in manifest:
+            tag_source = 'tag'
+
+        # sregistry images store collection/name separately
+        name = manifest['name']
+        source = "Hub"
+        if 'frozen' in manifest:
+            source = "Registry"
+            name = '%s-%s' % (manifest['collection'], name)
+        image_name = "%s-%s.%s" % (name.replace('/', '-'),
+                                   manifest[tag_source].replace('/', '-'),
                                    extension)
     if not bot.is_quiet():
-        print("Singularity Hub Image: %s" % image_name)
+        print("Singularity %s Image: %s" % (source, image_name))
     return image_name
 
 
@@ -215,6 +243,10 @@ def extract_metadata(manifest, labelfile=None, prefix=None):
     if prefix is None:
         prefix = ""
     prefix = prefix.upper()
+
+    source = 'Hub'
+    if 'frozen' in manifest:
+        source = 'Registry'
 
     metadata = manifest.copy()
     remove_fields = ['files', 'spec', 'metrics']
@@ -230,5 +262,6 @@ def extract_metadata(manifest, labelfile=None, prefix=None):
                         jsonfile=labelfile,
                         force=True)
 
-        bot.verbose("Saving Singularity Hub metadata to %s" % labelfile)
+        bot.verbose("Saving Singularity %s metadata to %s" % (source,
+                                                              labelfile))
     return metadata
