@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
 
     char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile.sh");
 
-    execl(bootstrap, bootstrap, NULL);
+    execl(bootstrap, bootstrap, NULL); //Flawfinder: ignore (Yes, yes, we know, and this is required)
 
     singularity_message(ERROR, "Exec of bootstrap code failed: %s\n", strerror(errno));
     ABORT(255);
