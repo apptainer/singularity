@@ -117,6 +117,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
 
+%{_libexecdir}/singularity/cli/apps.*
 %{_libexecdir}/singularity/cli/bootstrap.*
 %{_libexecdir}/singularity/cli/copy.*
 %{_libexecdir}/singularity/cli/create.*
