@@ -1,5 +1,7 @@
-  - ./autogen.sh
-  - ./configure --prefix=/usr/local
-  - sudo make install
-  - make test
+#!/bin/bash
 
+set -ex
+./autogen.sh
+./configure --prefix=/usr/local
+sudo make install
+make test

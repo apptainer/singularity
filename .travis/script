@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -ex
+if [ "$OS_TYPE" != centos ]; then
+    .travis/install_test
+    exit
+fi
