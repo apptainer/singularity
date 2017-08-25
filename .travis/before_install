@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -ex
+if [ "$OS_TYPE" != centos ]; then
+    # default is ubuntu
+    # install packages
+    sudo apt-get install -y flawfinder python-pip gcc
+    # so that adjusted PATH propagates into sudo
+    sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
+    # Install updated version of pylint
+    sudo pip install pylint
+    exit
+fi
