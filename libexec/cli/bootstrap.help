@@ -36,6 +36,10 @@ See singularity check --help for available tags
 
 DEFFILE BASEOS EXAMPLES:
 
+    Singularity Hub:
+        Bootstrap: shub
+        From: singularityhub/busybox
+
     Docker:
         Bootstrap: docker
         From: tensorflow/tensorflow:latest
@@ -85,6 +89,10 @@ DEFFILE SECTION EXAMPLES:
     %files
         /path/on/host/file.txt /path/on/container/file.txt 
         relative_file.txt /path/on/container/relative_file.txt
+        
+    %environment
+        export PATH=/opt/good/stuff:$PATH
+        export FOO=bar
 
 
 EXAMPLES:
