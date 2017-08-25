@@ -1,5 +1,6 @@
 #!/bin/bash -ex
 
+sudo yum install -y rpm-build
 ./autogen.sh
 ./configure
 make dist
