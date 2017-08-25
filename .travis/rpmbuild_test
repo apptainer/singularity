@@ -10,5 +10,5 @@ make dist
 rpmbuild -ta *.tar.gz
 rpm -iv ~/rpmbuild/RPMS/*/*.rpm
 sed -i 's,^prefix=.*,prefix=/usr,' test.sh
-useradd -a testuser
+useradd testuser
 su testuser -c "make test"
