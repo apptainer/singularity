@@ -65,6 +65,16 @@ stest 0 sh -c "sudo singularity bootstrap '$CONTAINER' '$SINGULARITY_TESTDIR/Sin
 stest 0 singularity create -F -s 568 "$CONTAINER"
 stest 1 sh -c "sudo singularity bootstrap --notest '$CONTAINER' '$SINGULARITY_TESTDIR/Singularity' | grep 'test123'"
 
+cp "../examples/shub/Singularity" "$SINGULARITY_TESTDIR/Singularity"
+cat <<EOF >> "$SINGULARITY_TESTDIR/Singularity"
+%test
+echo "test123"
+EOF
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 0 sh -c "sudo singularity bootstrap '$CONTAINER' '$SINGULARITY_TESTDIR/Singularity' | grep 'test123'"
+stest 0 singularity create -F -s 568 "$CONTAINER"
+stest 1 sh -c "sudo singularity bootstrap --notest '$CONTAINER' '$SINGULARITY_TESTDIR/Singularity' | grep 'test123'"
+
 
 stest 0 sudo rm -rf "$CONTAINERDIR"
 
