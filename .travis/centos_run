@@ -1,0 +1,18 @@
+#!/bin/bash -ex
+
+# This script starts docker and (on el7) systemd and runs a test
+
+if [ "$OS_VERSION" = "6" ]; then
+    sudo docker run --privileged --rm=true -v `pwd`:/app:rw centos:{OS_VERSION} /bin/bash -exc "cd /app;.travis/rpmbuild_test"
+    exit
+fi
+
+
+docker run --privileged -d -ti -e "container=docker"  -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/app-ce:rw  centos:${OS_VERSION}   /usr/sbin/init
+DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
+docker logs $DOCKER_CONTAINER_ID
+docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -exc "cd /app;.travis/rpmbuild_test;
+  echo -ne \"------\nEND TESTS\n\";"
+docker ps -a
+docker stop $DOCKER_CONTAINER_ID
+docker rm -v $DOCKER_CONTAINER_ID

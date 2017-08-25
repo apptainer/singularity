@@ -1,6 +1,5 @@
-#!/bin/bash
+#!/bin/bash -ex
 
-set -ex
 ./autogen.sh
 ./configure --prefix=/usr/local
 sudo make install
