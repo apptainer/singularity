@@ -8,3 +8,7 @@ yum install -y libtool rpm-build make
 ./configure
 make dist
 rpmbuild -ta *.tar.gz
+rpm -iv ~/rpmbuild/RPMS/*/*.rpm
+sed -i 's,^prefix=.*,prefix=/usr,' test.sh
+useradd -a testuser
+su testuser -c "make test"
