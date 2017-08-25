@@ -3,7 +3,7 @@
 # this script runs as root under docker 
 # OS_VERSION is in $1
 
-yum install -y libtool rpm-build make
+yum install -y libtool rpm-build make sudo
 ./autogen.sh
 ./configure
 make dist
@@ -11,4 +11,5 @@ rpmbuild -ta *.tar.gz
 rpm -iv ~/rpmbuild/RPMS/*/*.rpm
 sed -i 's,^prefix=.*,prefix=/usr,' test.sh
 useradd testuser
+echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
 su testuser -c "make test"
