@@ -1,8 +1,9 @@
 #!/bin/bash -ex
 
-# this script runs as root under docker
+# this script runs as root under docker 
+# OS_VERSION is in $1
 
-yum install -y libtool rpm-build
+yum install -y libtool rpm-build make
 ./autogen.sh
 ./configure
 make dist
