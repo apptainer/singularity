@@ -3,6 +3,7 @@
 # this script runs as root under docker 
 # OS_VERSION is in $1
 
+# build and install
 yum install -y libtool rpm-build make
 ./autogen.sh
 ./configure
@@ -10,7 +11,8 @@ make dist
 rpmbuild -ta *.tar.gz
 rpm -iv ~/rpmbuild/RPMS/*/*.rpm
 
-yum install -y libtool sudo which
+# run the test suite
+yum install -y libtool sudo which e2fsprogs
 sed -i 's,^prefix=.*,prefix=/usr,' test.sh
 sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
 sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
