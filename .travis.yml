@@ -11,6 +11,8 @@ matrix:
   include:
     - os: linux
     - os: linux
+      env: OS_TYPE=centos OS_VERSION=6
+    - os: linux
       env: OS_TYPE=centos OS_VERSION=7
 
 services:
