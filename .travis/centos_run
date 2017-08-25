@@ -8,7 +8,7 @@ if [ "$OS_VERSION" = "6" ]; then
 fi
 
 
-docker run --privileged -d -ti -e "container=docker"  -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/app-ce:rw  centos:${OS_VERSION}   /usr/sbin/init
+docker run --privileged -d -ti -e "container=docker"  -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/app:rw  centos:${OS_VERSION}   /usr/sbin/init
 DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
 docker logs $DOCKER_CONTAINER_ID
 docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -exc "cd /app;.travis/rpmbuild_test;
