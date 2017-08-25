@@ -3,7 +3,7 @@
 # This script starts docker and (on el7) systemd and runs a test
 
 if [ "$OS_VERSION" = "6" ]; then
-    sudo docker run --privileged --rm=true -v `pwd`:/app:rw centos:{OS_VERSION} /bin/bash -exc "cd /app;.travis/rpmbuild_test"
+    sudo docker run --privileged --rm=true -v `pwd`:/app:rw centos:${OS_VERSION} /bin/bash -exc "cd /app;.travis/rpmbuild_test"
     exit
 fi
 
