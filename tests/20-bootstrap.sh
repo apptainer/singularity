@@ -32,7 +32,7 @@ CONTAINER="$SINGULARITY_TESTDIR/container.img"
 CONTAINERDIR="$SINGULARITY_TESTDIR/container.dir"
 
 stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity"
+stest 0 sudo singularity -vvv bootstrap "$CONTAINER" "../examples/busybox/Singularity"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
