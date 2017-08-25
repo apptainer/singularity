@@ -1,7 +1,8 @@
 #!/bin/bash -ex
 
-PATH=$PATH:/sbin:/usr/sbin
-sudo yum install -y rpm-build
+# this script runs as root under docker
+
+yum install -y rpm-build
 ./autogen.sh
 ./configure
 make dist
