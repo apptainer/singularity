@@ -2,7 +2,7 @@
 
 # this script runs as root under docker
 
-yum install -y rpm-build
+yum install -y libtool rpm-build
 ./autogen.sh
 ./configure
 make dist
