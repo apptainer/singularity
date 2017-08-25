@@ -3,12 +3,14 @@
 # this script runs as root under docker 
 # OS_VERSION is in $1
 
-yum install -y libtool rpm-build make sudo
+yum install -y libtool rpm-build make
 ./autogen.sh
 ./configure
 make dist
 rpmbuild -ta *.tar.gz
 rpm -iv ~/rpmbuild/RPMS/*/*.rpm
+
+yum install -y libtool sudo which
 sed -i 's,^prefix=.*,prefix=/usr,' test.sh
 useradd testuser
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
