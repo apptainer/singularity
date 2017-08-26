@@ -64,6 +64,10 @@ while true; do
             SINGULARITY_WRITABLE=1
             shift
         ;;
+        -f|--force)
+            SINGULARITY_OVERWRITE=1
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -88,8 +92,12 @@ SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
 
 if [ -f "$SINGULARITY_CONTAINER_OUTPUT" ]; then
-    message ERROR "Container already exists: $SINGULARITY_CONTAINER_OUTPUT\n"
-    exit 1
+    if [ -n "${SINGULARITY_OVERWRITE:-}" ]; then
+        rm -f "$SINGULARITY_CONTAINER_OUTPUT"
+    else
+        message ERROR "Container already exists: $SINGULARITY_CONTAINER_OUTPUT\n"
+        exit 1
+    fi
 fi
 
 if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
@@ -116,8 +124,11 @@ export SINGULARITY_IMAGE SINGULARITY_ROOTFS SINGULARITY_IMAGE
 
 if [ -n "${1:-}" ]; then
     if [ -f "$1" ]; then
-        message 1 "Print using container recipe deffile: $1\n"
+        message 1 "Using container recipe deffile: $1\n"
         case $1 in
+            *.tar.gz)
+                tar xzf "$1" -C "${SINGULARITY_ROOTFS}"
+            ;;
             *.def|*Singularity)
                 if [ "$USERID" != "0" ]; then
                     echo "You must be the root user to run this command"
@@ -127,15 +138,16 @@ if [ -n "${1:-}" ]; then
                 export SINGULARITY_BUILDDEF
                 eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
             ;;
-            *.tar.gz)
-                echo "Coming soon!"
-                exit 1
-            ;;
             *)
                 message ERROR "Unsupported file type: $1\n"
                 exit 1
             ;;
         esac
+    elif [ -d "$1" ]; then
+        message 1 "Building image from sandbox: $1\n"
+        rmdir "${SINGULARITY_ROOTFS}"
+        SINGULARITY_ROOTFS="$1"
+        SINGULARITY_NOCLEANUP=1
     else
         case $1 in
             docker://*)
@@ -189,7 +201,10 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
             exit 1
         fi
     fi
-    rm -rf "$SINGULARITY_ROOTFS"
+    if [ -z "${SINGULARITY_NOCLEANUP:-}" ]; then
+        message 1 "Cleaning up...\n";
+        rm -rf "$SINGULARITY_ROOTFS"
+    fi
 fi
 
 message 1 "Singularity container built: $SINGULARITY_CONTAINER_OUTPUT\n"
