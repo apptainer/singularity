@@ -333,6 +333,33 @@ replace_string() {
 }
 
 
+is_deffile() {
+# check if a file looks like, walks like, and quacks like a def file
+    FILE2CHECK=$1
+    grep -qiE "^bootstrap|^%setup|^%post|^%test|%labels|%files|%runscript|^%environment" "$FILE2CHECK"
+    return $?
+}
+
+
+is_image() {
+# check if a file looks like, walks like, and quacks like an image file
+    SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-imagecheck.XXXXXXXX`
+    SINGULARITY_IMAGE=$1
+    export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
+
+    if [ -z "${SINGULARITY_NOSUID:-}" ]; then
+        eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh .
+        RETVAL=$?
+    else
+        eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh . 
+        RETVAL=$?
+    fi
+
+    rmdir "$SINGULARITY_MOUNTPOINT"
+    return $RETVAL
+}
+
+
 ##############################################################################
 # CHECKS
 ##############################################################################
