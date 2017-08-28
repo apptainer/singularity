@@ -116,66 +116,65 @@ if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
         fi
     fi
 else
-    SINGULARITY_ROOTFS=`mktemp -d ${SINGULARITY_TMPDIR:-/tmp}/.singularity_build.XXXXXX`
+    if ! SINGULARITY_ROOTFS=`mktemp -d ${SINGULARITY_TMPDIR:-/tmp}/.singularity-build.XXXXXX`; then
+        message ERROR "Failed to create temporary directory\n"
+        ABORT 255
+    fi
     SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
 fi
 
-export SINGULARITY_IMAGE SINGULARITY_ROOTFS SINGULARITY_IMAGE
+export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 
-if [ -n "${1:-}" ]; then
-    if [ -f "$1" ]; then
-        message 1 "Using container recipe deffile: $1\n"
-        case $1 in
-            *.tar.gz)
-                tar xzf "$1" -C "${SINGULARITY_ROOTFS}"
-            ;;
-            *.def|*Singularity)
-                if [ "$USERID" != "0" ]; then
-                    echo "You must be the root user to run this command"
-                    exit 1
-                fi
-                SINGULARITY_BUILDDEF="$1"
-                export SINGULARITY_BUILDDEF
-                eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
-            ;;
-            *)
-                message ERROR "Unsupported file type: $1\n"
+if [ -f "$1" ]; then
+    message 1 "Using container recipe deffile: $1\n"
+    case $1 in
+        *.tar.gz)
+            tar xzf "$1" -C "${SINGULARITY_ROOTFS}"
+        ;;
+        *.def|*Singularity)
+            if [ "$USERID" != "0" ]; then
+                echo "You must be the root user to run this command"
                 exit 1
-            ;;
-        esac
-    elif [ -d "$1" ]; then
-        message 1 "Building image from sandbox: $1\n"
-        rmdir "${SINGULARITY_ROOTFS}"
-        SINGULARITY_ROOTFS="$1"
-        SINGULARITY_NOCLEANUP=1
-    else
-        case $1 in
-            docker://*)
-                SINGULARITY_CONTAINER="$1"
-                if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
-                    message ERROR "Failed to create temporary directory\n"
-                    ABORT 255
-                fi
-                export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
-                eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
-                message 1 "Importing: base Singularity environment\n"
-                zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd "$SINGULARITY_ROOTFS"; tar xf - ) || exit $?
-    
-                for i in `cat "$SINGULARITY_CONTENTS"`; do
-                    message 1 "Importing: $i\n"
-                    zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
-                done
-    
-                rm -f "$SINGULARITY_CONTENTS"
-            ;;
-            *)
-                message ERROR "Unsupported location: $1\n"
-                exit 1
-            ;;
-        esac
-    fi
+            fi
+            SINGULARITY_BUILDDEF="$1"
+            export SINGULARITY_BUILDDEF
+            eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
+        ;;
+        *)
+            message ERROR "Unsupported file type: $1\n"
+            exit 1
+        ;;
+    esac
+elif [ -d "$1" ]; then
+    message 1 "Building image from sandbox: $1\n"
+    rmdir "${SINGULARITY_ROOTFS}"
+    SINGULARITY_ROOTFS="$1"
+    SINGULARITY_NOCLEANUP=1
 else
-    exec "$IMPORT_BIN"
+    case $1 in
+        docker://*)
+            SINGULARITY_CONTAINER="$1"
+            if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
+                message ERROR "Failed to create temporary directory\n"
+                ABORT 255
+            fi
+            export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
+            eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+            message 1 "Importing: base Singularity environment\n"
+            zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd "$SINGULARITY_ROOTFS"; tar xf - ) || exit $?
+
+            for i in `cat "$SINGULARITY_CONTENTS"`; do
+                message 1 "Importing: $i\n"
+                zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
+            done
+
+            rm -f "$SINGULARITY_CONTENTS"
+        ;;
+        *)
+            message ERROR "Unsupported location: $1\n"
+            exit 1
+        ;;
+    esac
 fi
 
 if [ "$USERID" != "0" ]; then
@@ -190,7 +189,15 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         IMAGE_SIZE=`echo "(${CONTAINER_SIZE:-768} * 1.25)/1" | bc`
 
         message 1 "Creating empty Singularity writable container\n"
-        eval_abort singularity --quiet create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
+        if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
+            exec "$SINGULARITY_libexecdir/singularity/bin/create-suid"
+        elif [ -x "$SINGULARITY_libexecdir/singularity/bin/create" ]; then
+            exec "$SINGULARITY_libexecdir/singularity/bin/create"
+        else
+            message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
+            exit 1
+        fi
+        #eval_abort singularity --quiet create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
 
         message 1 "Building Singularity image...\n"
         echo "cd $SINGULARITY_ROOTFS; rsync -aH . \$SINGULARITY_MOUNTPOINT" | eval_abort singularity mount --writable ${SINGULARITY_CONTAINER_OUTPUT} /bin/sh
@@ -205,6 +212,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         message 1 "Cleaning up...\n";
         rm -rf "$SINGULARITY_ROOTFS"
     fi
+    chmod a+x "$SINGULARITY_CONTAINER_OUTPUT"
 fi
 
 message 1 "Singularity container built: $SINGULARITY_CONTAINER_OUTPUT\n"
