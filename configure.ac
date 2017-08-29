@@ -317,7 +317,7 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid start-suid create-suid expand-suid export-suid import-suid mount-suid"
+    BUILD_SUID="action-suid start-suid mount-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
@@ -386,6 +386,11 @@ AC_CONFIG_FILES([
    src/lib/image/mount/squashfs/Makefile
    src/lib/image/offset/Makefile
    src/lib/image/open/Makefile
+
+   src/lib/image/squashfs/Makefile
+   src/lib/image/dir/Makefile
+   src/lib/image/ext3/Makefile
+
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
    src/util/Makefile

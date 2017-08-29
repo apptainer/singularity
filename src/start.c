@@ -63,14 +63,14 @@ int main(int argc, char **argv) {
     
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    if ( singularity_registry_get("WRITABLE") == NULL ) {
-        singularity_image_open(&image, O_RDONLY);
-    } else {
-        singularity_image_open(&image, O_RDWR);
-    }
-
-    singularity_image_check(&image);
-    singularity_image_bind(&image);
+//    if ( singularity_registry_get("WRITABLE") == NULL ) {
+//        singularity_image_open(&image, O_RDONLY);
+//    } else {
+//        singularity_image_open(&image, O_RDWR);
+//    }
+//
+//    singularity_image_check(&image);
+//    singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
     action_ready(singularity_runtime_rootfs(NULL));

@@ -63,13 +63,13 @@ int main(int argc, char **argv) {
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    singularity_image_open(&image, O_RDWR);
-
-    singularity_image_check(&image);
+//    singularity_image_open(&image, O_RDWR);
+//
+//    singularity_image_check(&image);
 
     singularity_runtime_ns(SR_NS_MNT);
 
-    singularity_image_bind(&image);
+//    singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
     envar_set("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
