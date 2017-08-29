@@ -338,12 +338,7 @@ is_deffile() {
     FILE2CHECK=$1
     grep -qiE "^bootstrap|^%setup|^%post|^%test|%labels|%files|%runscript|^%environment" "$FILE2CHECK"
     RETVAL=$?
-    if [ "${RETVAL}" = "0" ]; then
-        echo TRUE #this will make it easier to embed in if statement
-    else
-        echo FALSE #this will make it easier to embed in if statement
-    fi
-    exit $RETVAL
+    return $RETVAL
 }
 
 
@@ -354,21 +349,14 @@ is_image() {
     export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 
     if [ -z "${SINGULARITY_NOSUID:-}" ]; then
-        eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh . > /dev/null 2>&1
+        eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh . >/dev/null 2>&1
         RETVAL=$?
     else
-        eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh . > /dev/null 2>&1
+        eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh . >/dev/null 2>&1
         RETVAL=$?
     fi
 
     rmdir "$SINGULARITY_MOUNTPOINT"
-
-    if [ "${RETVAL}" = "0" ]; then
-        echo TRUE #this will make it easier to embed in if statement
-    else
-        echo FALSE #this will make it easier to embed in if statement
-    fi
-
     return $RETVAL
 }
 
@@ -378,12 +366,7 @@ is_tar() {
     FILE2CHECK=$1
     echo $FILE2CHECK | grep -qi ".tar" # this is honestly a very silly check, please improve if able!
     RETVAL=$?
-    if [ "${RETVAL}" = "0" ]; then
-        echo TRUE #this will make it easier to embed in if statement
-    else
-        echo FALSE #this will make it easier to embed in if statement
-    fi
-    exit $RETVAL
+    return $RETVAL
 }
 
 

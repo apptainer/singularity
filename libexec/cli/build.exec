@@ -126,8 +126,14 @@ fi
 export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 
 if [ -f "$1" ]; then
-    
-    if [ `is_deffile ${1}` = "TRUE" ]; then 
+    if eval "is_image ${1}"; then
+        message 1 "Building from local image: $1\n"
+        cmd="${SINGULARITY_libexecdir}/singularity/bin/export ${1} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
+        if ! eval $cmd; then
+            message ERROR "Failed to export contents of ${1} to ${SINGULARITY_ROOTFS}\n"
+            ABORT 255
+        fi
+    elif eval "is_deffile ${1}"; then 
         message 1 "Using container recipe deffile: $1\n"
         if [ "$USERID" != "0" ]; then
             message ERROR "You must be the root user to run this command\n"
@@ -136,17 +142,18 @@ if [ -f "$1" ]; then
         SINGULARITY_BUILDDEF="$1"
         export SINGULARITY_BUILDDEF
         eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
-    elif [ `is_image ${1}` = "TRUE" ]; then
-        message 1 "Building from local image: $1\n"
-        exit
-    elif [ `is_tar ${1}` = "TRUE" ]; then
+    elif eval "is_tar ${1}"; then
         message 1 "Building from local tar file: $1\n"
-        tar xzf "$1" -C "${SINGULARITY_ROOTFS}"
+        cmd="tar xzf ${1} -C ${SINGULARITY_ROOTFS}"
+        if ! eval $cmd; then
+            message ERROR "Failed to export contents of ${1} to ${SINGULARITY_ROOTFS}\n"
+            ABORT 255
+        fi
     else
+        is_image ${1}
         message ERROR "Unsupported file type: $1\n"
         exit 1
     fi
-
 elif [ -d "$1" ]; then
     message 1 "Building image from sandbox: $1\n"
     rmdir "${SINGULARITY_ROOTFS}"
