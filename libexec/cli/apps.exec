@@ -27,6 +27,24 @@ else
     exit 1
 fi
 
+
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        *)
+            break
+        ;;
+    esac
+done
+
 RETVAL=0
 SINGULARITY_IMAGE="${1:-}"
 if ! SINGULARITY_MOUNTPOINT=`mktemp -d ${TMPDIR:-/tmp}/.singularity-inspect.XXXXXXXX`; then
