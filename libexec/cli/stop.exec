@@ -59,10 +59,10 @@ while true; do
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
-            ;;
+        ;;
         *)
-            break;
-            ;;
+            break
+        ;;
     esac
 done
 
