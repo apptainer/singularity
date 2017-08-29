@@ -336,8 +336,33 @@ replace_string() {
 is_deffile() {
 # check if a file looks like, walks like, and quacks like a def file
     FILE2CHECK=$1
-    grep -qiE "^bootstrap|^%setup|^%post|^%test|%labels|%files|%runscript|^%environment" "$FILE2CHECK"
+    
+    # first make a guess based on naming convention
+    case ${FILE2CHECK:-} in
+        *.img)
+            return 1
+            ;;
+        *.tar*)
+            return 1
+            ;;
+        *.def)
+            return 0
+            ;;
+        Singularity) 
+            return 0
+            ;;
+        *)
+            ;;
+        esac
+
+    # name is ambiguous.  is it a text file with def file words in it?
+    if ! `file $FILE2CHECK | grep -q ASCII`; then
+        return 1
+    fi
+        
+    grep -qiE "^bootstrap:|^%setup|^%post|^%test|^%labels|^%files|^%runscript|^%environment" "$FILE2CHECK"
     RETVAL=$?
+
     return $RETVAL
 }
 
@@ -368,6 +393,11 @@ is_image() {
 is_tar() {
 # check if a file looks like, walks like,... oh you get the idea
     FILE2CHECK=$1
+    
+    if ! `file $FILE2CHECK | grep -q compressed`; then
+        return 1
+    fi
+
     echo $FILE2CHECK | grep -qi ".tar" # this is honestly a very silly check, please improve if able!
     RETVAL=$?
     return $RETVAL
