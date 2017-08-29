@@ -15,28 +15,21 @@ GENERAL COMMANDS:
 
 CONTAINER USAGE COMMANDS:
     exec          Execute a command within container
+    list          List all running named instances 
     run           Launch a runscript within container
     shell         Run a Bourne shell within container
-    test          Execute any test code defined within container
-    apps          list available apps in a container
-
-CONTAINER MANAGEMENT COMMANDS:
-    bootstrap     Bootstrap a new Singularity image from scratch [root]
-    copy          Copy files from your host into the container
-    check         Perform container security checks
-    create        Create a new container image
-    expand        Grow the container image
-    export        Export the contents of a container via a tar pipe
-    inspect       Display a container's metadata
-    import        Import/add container contents via a tar pipe
-    inspect       Show container's metadata
-    list          List all running named instances 
-    mount         Mount a Singularity container image
     start         Start a named instance of the given container image
     stop          Stop the named instance of the given container image
     stop-all      Stop all running container instances
+    test          Execute any test code defined within container
 
-CONTAINER REGISTRY COMMANDS:
+CONTAINER IMAGE MANAGEMENT COMMANDS:
+    apps          list available apps within a container
+    build         Build a new Singularity container
+    check         Perform container lint checks
+    image         Various image related commands
+    inspect       Display a container's metadata
+    mount         Mount a Singularity container image
     pull          pull a Singularity/Docker container to $PWD
 
 
