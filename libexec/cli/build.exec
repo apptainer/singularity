@@ -65,7 +65,7 @@ while true; do
             shift
         ;;
         -f|--force)
-            SINGULARITY_OVERWRITE=1
+            SINGULARITY_FORCE=1
             shift
         ;;
         -*)
@@ -92,7 +92,7 @@ SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
 
 if [ -f "$SINGULARITY_CONTAINER_OUTPUT" ]; then
-    if [ -n "${SINGULARITY_OVERWRITE:-}" ]; then
+    if [ -n "${SINGULARITY_FORCE:-}" ]; then
         rm -f "$SINGULARITY_CONTAINER_OUTPUT"
     else
         message ERROR "Container already exists: $SINGULARITY_CONTAINER_OUTPUT\n"
@@ -101,13 +101,17 @@ if [ -f "$SINGULARITY_CONTAINER_OUTPUT" ]; then
 fi
 
 if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
-    SINGULARITY_ROOTFS="$SINGULARITY_CONTAINER_OUTPUT"
-    SINGULARITY_IMAGE="$SINGULARITY_CONTAINER_OUTPUT"
-    SINGULARITY_ROOTFS_DIRNAME=`dirname "$SINGULARITY_ROOTFS"`
-    SINGULARITY_ROOTFS_DIRNAME_OWNER=`stat -c '%u' $SINGULARITY_ROOTFS_DIRNAME`
-    if [ "$USERID" == "0" -a "$USERID" != "$SINGULARITY_ROOTFS_DIRNAME_OWNER" ]; then
-        echo "You should not run this command within a directory not owned by root"
-        exit 1
+    if [ "$USERID" == "0" ]; then
+        SINGULARITY_ROOTFS="$SINGULARITY_CONTAINER_OUTPUT"
+        SINGULARITY_IMAGE="$SINGULARITY_CONTAINER_OUTPUT"
+        SINGULARITY_ROOTFS_DIRNAME=`dirname "$SINGULARITY_ROOTFS"`
+        SINGULARITY_ROOTFS_DIRNAME_OWNER=`stat -c '%u' $SINGULARITY_ROOTFS_DIRNAME`
+        if [ "$USERID" != "$SINGULARITY_ROOTFS_DIRNAME_OWNER" ]; then
+            echo "You should not run this command within a directory not owned by root"
+            if [ -z "${SINGULARITY_FORCE:-}" ]; then
+                exit 1
+            fi
+        fi
     fi
     if [ ! -d "$SINGULARITY_ROOTFS" ]; then
         if ! mkdir -p "$SINGULARITY_ROOTFS"; then
@@ -188,19 +192,15 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         CONTAINER_SIZE=`du -sm ${SINGULARITY_ROOTFS} | cut -f 1`
         IMAGE_SIZE=`echo "(${CONTAINER_SIZE:-768} * 1.25)/1" | bc`
 
-        message 1 "Creating empty Singularity writable container\n"
-        if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
-            exec "$SINGULARITY_libexecdir/singularity/bin/create-suid"
-        elif [ -x "$SINGULARITY_libexecdir/singularity/bin/create" ]; then
-            exec "$SINGULARITY_libexecdir/singularity/bin/create"
-        else
-            message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
-            exit 1
+        if [ "$IMAGE_SIZE" -lt 10 ]; then
+            IMAGE_SIZE=10
         fi
-        #eval_abort singularity --quiet create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
+
+        message 1 "Creating empty Singularity writable container\n"
+        eval_abort singularity create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
 
         message 1 "Building Singularity image...\n"
-        echo "cd $SINGULARITY_ROOTFS; rsync -aH . \$SINGULARITY_MOUNTPOINT" | eval_abort singularity mount --writable ${SINGULARITY_CONTAINER_OUTPUT} /bin/sh
+        tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
     else
         message 1 "Building Singularity image...\n"
         if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend -all-root > /dev/null; then
