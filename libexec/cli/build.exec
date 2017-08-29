@@ -64,7 +64,7 @@ while true; do
             SINGULARITY_WRITABLE=1
             shift
         ;;
-        -f|--force)
+        -F|--force) # capitol F for consistency with bootstrap
             SINGULARITY_OVERWRITE=1
             shift
         ;;
@@ -125,44 +125,46 @@ fi
 
 export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 
-if [ -f "$1" ]; then
-    if eval "is_image ${1}"; then
-        message 1 "Building from local image: $1\n"
-        cmd="${SINGULARITY_libexecdir}/singularity/bin/export ${1} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
+SINGULARITY_BUILDDEF="$1"
+export SINGULARITY_BUILDDEF
+if [ -f "$SINGULARITY_BUILDDEF" ]; then
+    if eval "is_image ${SINGULARITY_BUILDDEF}"; then
+        message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
+        cmd="${SINGULARITY_libexecdir}/singularity/bin/export ${SINGULARITY_BUILDDEF} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
         if ! eval $cmd; then
-            message ERROR "Failed to export contents of ${1} to ${SINGULARITY_ROOTFS}\n"
+            message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
-    elif eval "is_deffile ${1}"; then 
-        message 1 "Using container recipe deffile: $1\n"
+    elif eval "is_deffile ${SINGULARITY_BUILDDEF}"; then 
+        message 1 "Using container recipe deffile: $SINGULARITY_BUILDDEF\n"
         if [ "$USERID" != "0" ]; then
-            message ERROR "You must be the root user to run this command\n"
+            message ERROR "You must be the root user to build from a definition file\n"
             exit 1
         fi
-        SINGULARITY_BUILDDEF="$1"
+        SINGULARITY_BUILDDEF="$SINGULARITY_BUILDDEF"
         export SINGULARITY_BUILDDEF
         eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
-    elif eval "is_tar ${1}"; then
-        message 1 "Building from local tar file: $1\n"
-        cmd="tar xzf ${1} -C ${SINGULARITY_ROOTFS}"
+    elif eval "is_tar ${SINGULARITY_BUILDDEF}"; then
+        message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
+        cmd="tar xzf ${SINGULARITY_BUILDDEF} -C ${SINGULARITY_ROOTFS}"
         if ! eval $cmd; then
-            message ERROR "Failed to export contents of ${1} to ${SINGULARITY_ROOTFS}\n"
+            message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
     else
-        is_image ${1}
-        message ERROR "Unsupported file type: $1\n"
+        is_image ${SINGULARITY_BUILDDEF}
+        message ERROR "Unsupported file type: $SINGULARITY_BUILDDEF\n"
         exit 1
     fi
-elif [ -d "$1" ]; then
-    message 1 "Building image from sandbox: $1\n"
+elif [ -d "$SINGULARITY_BUILDDEF" ]; then
+    message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
     rmdir "${SINGULARITY_ROOTFS}"
-    SINGULARITY_ROOTFS="$1"
+    SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
     SINGULARITY_NOCLEANUP=1
 else
-    case $1 in
+    case $SINGULARITY_BUILDDEF in
         docker://*)
-            SINGULARITY_CONTAINER="$1"
+            SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
             if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
                 message ERROR "Failed to create temporary directory\n"
                 ABORT 255
@@ -180,7 +182,7 @@ else
             rm -f "$SINGULARITY_CONTENTS"
         ;;
         *)
-            message ERROR "Unsupported location: $1\n"
+            message ERROR "Unsupported location: $SINGULARITY_BUILDDEF\n"
             exit 1
         ;;
     esac
