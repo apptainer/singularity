@@ -54,6 +54,7 @@ char *singularity_image_bind(struct image_object *image) {
     const char *max_loop_devs_string = singularity_config_get_value(MAX_LOOP_DEVS);
     char *loop_dev = NULL;
     int loop_fd = -1;
+    int loop_mount_opts;
     int i;
 
     singularity_message(DEBUG, "Entered singularity_image_bind()\n");
@@ -71,6 +72,12 @@ char *singularity_image_bind(struct image_object *image) {
         ABORT(255);
     }
 
+    if ( singularity_registry_get("WRITABLE") == NULL ) {
+        loop_mount_opts = O_RDONLY;
+    } else {
+        loop_mount_opts = O_RDWR;
+    }
+
     singularity_priv_escalate();
     singularity_message(DEBUG, "Finding next available loop device...\n");
     for( i=0; i < max_loop_devs; i++ ) {
@@ -86,7 +93,7 @@ char *singularity_image_bind(struct image_object *image) {
             }
         }
 
-        if ( ( loop_fd = open(test_loopdev, O_RDONLY) ) < 0 ) { // Flawfinder: ignore
+        if ( ( loop_fd = open(test_loopdev, loop_mount_opts) ) < 0 ) { // Flawfinder: ignore
             singularity_message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
             continue;
         }
