@@ -18,7 +18,6 @@
 
 
 
-
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -33,9 +32,6 @@ else
     exit 1
 fi
 
-PATH=/sbin:/usr/sbin:${PATH:-}
-IMAGE_SIZE="512"
-
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -47,12 +43,11 @@ while true; do
             fi
             exit
         ;;
-        -s|--size)
-            shift
-            SINGULARITY_IMAGESIZE="${1:-}"
-            export SINGULARITY_IMAGESIZE
-            shift
-        ;;
+        -f|--file)
+             shift
+             SINGULARITY_EXPORT_FILE="${1:-}"
+             shift
+         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -74,26 +69,18 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE
+export SINGULARITY_IMAGE
+shift
 
-if [ -z "$SINGULARITY_IMAGE" ]; then
-    message ERROR "You must supply a path to an image to expand\n"
-    exit 1
-fi
-if [ ! -f "$SINGULARITY_IMAGE" ]; then
-    message ERROR "Singularity image file not found: $SINGULARITY_IMAGE\n"
-    exit 1
-fi
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/expand-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/expand-suid"
-elif [ -x "$SINGULARITY_libexecdir/singularity/bin/expand" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/expand"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/image.sh"
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/image.sh"
 else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/expand\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
     exit 1
 fi
 
-message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
-exit 255
+message ERROR "We should never have gotten here..."
+exit 1

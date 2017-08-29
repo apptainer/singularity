@@ -18,6 +18,7 @@
 
 
 
+
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
     echo "Could not identify the Singularity libexecdir."
@@ -32,6 +33,9 @@ else
     exit 1
 fi
 
+PATH=/sbin:/usr/sbin:${PATH:-}
+IMAGE_SIZE="512"
+
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -43,11 +47,12 @@ while true; do
             fi
             exit
         ;;
-        -f|--file)
-             shift
-             SINGULARITY_EXPORT_FILE="${1:-}"
-             shift
-         ;;
+        -s|--size)
+            shift
+            SINGULARITY_IMAGESIZE="${1:-}"
+            export SINGULARITY_IMAGESIZE
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -69,28 +74,32 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-export SINGULARITY_IMAGE
-shift
+SINGULARITY_WRITABLE=1
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE
 
-if [ -n "${SINGULARITY_EXPORT_FILE:-}" ]; then
-	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
-		exec "$SINGULARITY_libexecdir/singularity/bin/export-suid" > "$SINGULARITY_EXPORT_FILE"
-	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
-		exec "$SINGULARITY_libexecdir/singularity/bin/export" > "$SINGULARITY_EXPORT_FILE" 
-	else
-	    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
-	    exit 1
-	fi
-else
-	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
-    	    exec "$SINGULARITY_libexecdir/singularity/bin/export-suid"
-	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
-    	    exec "$SINGULARITY_libexecdir/singularity/bin/export"
-	else
-    	message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
-    	exit 1
-	fi
+if [ -z "$SINGULARITY_IMAGE" ]; then
+    message ERROR "You must supply a path to an image to expand\n"
+    exit 1
+fi
+if [ ! -f "$SINGULARITY_IMAGE" ]; then
+    message ERROR "Singularity image file not found: $SINGULARITY_IMAGE\n"
+    exit 1
 fi
 
-message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
-exit 255
+if ! dd if=/dev/zero bs=1M count=${SINGULARITY_IMAGESIZE:-768} status=none >> "$SINGULARITY_IMAGE"; then
+    message ERROR "Failed expanding image!\n"
+    exit 1
+fi
+
+message 1 "Checking image's file system\n"
+if ! /sbin/e2fsck -fy "$SINGULARITY_IMAGE"; then
+    exit 1
+fi
+
+message 1 "Resizing image's file system\n"
+if ! /sbin/resize2fs "$SINGULARITY_IMAGE"; then
+    exit 1
+fi
+
+message 1 "Image is done: $SINGULARITY_IMAGE\n"
+exit 0
