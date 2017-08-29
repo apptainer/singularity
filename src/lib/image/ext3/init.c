@@ -28,6 +28,7 @@
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>  
+#include <linux/limits.h>
 
 #include "util/message.h"
 #include "util/util.h"
@@ -44,6 +45,8 @@ int _singularity_image_ext3_init(struct image_object *image) {
     int image_fd;
     char *line;
     FILE *image_fp;
+    char *image_name = image->name;
+    int image_name_len = strlength(image_name, PATH_MAX);
     int open_flags = O_RDONLY;
 
     if ( singularity_registry_get("WRITABLE") != NULL ) {
@@ -61,6 +64,7 @@ int _singularity_image_ext3_init(struct image_object *image) {
         singularity_message(ERROR, "Could not associate file pointer from file descriptor on image %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
+
 
     singularity_message(VERBOSE3, "Checking that file pointer is a Singularity image\n");
     rewind(image_fp);
@@ -87,9 +91,13 @@ int _singularity_image_ext3_init(struct image_object *image) {
         singularity_message(VERBOSE2, "File is a valid Singularity image\n");
     } else {
         free(line);
-        close(image_fd);
-        singularity_message(VERBOSE, "File is not a valid Singularity image\n");
-        return(-1);
+        if ( strncmp(&image_name[image_name_len - 4], ".img", 4) == 0 ) {
+            singularity_message(VERBOSE, "Image has no header, trusting suffix\n");
+        } else {
+            close(image_fd);
+            singularity_message(VERBOSE, "File is not a valid Singularity image\n");
+            return(-1);
+        }
     }
 
     image->fd = image_fd;

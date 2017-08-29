@@ -58,12 +58,12 @@ struct image_object singularity_image_init(char *path) {
     image.offset = 0;
 
 
-    if ( _singularity_image_dir_init(&image) == 0 ) {
+    if ( _singularity_image_squashfs_init(&image) == 0 ) {
+        image.type = SQUASHFS;
+    } else if ( _singularity_image_dir_init(&image) == 0 ) {
         image.type = DIRECTORY;
     } else if ( _singularity_image_ext3_init(&image) == 0 ) {
         image.type = EXT3;
-    } else if ( _singularity_image_squashfs_init(&image) == 0 ) {
-        image.type = SQUASHFS;
     } else {
         singularity_message(ERROR, "Unknown image format/type.\n");
         ABORT(255);
