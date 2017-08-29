@@ -64,7 +64,7 @@ while true; do
             SINGULARITY_WRITABLE=1
             shift
         ;;
-        -f|--force)
+        -F|--force)
             SINGULARITY_FORCE=1
             shift
         ;;
@@ -197,7 +197,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         fi
 
         message 1 "Creating empty Singularity writable container\n"
-        eval_abort singularity create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
+        eval_abort singularity image.create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
 
         message 1 "Building Singularity image...\n"
         tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
