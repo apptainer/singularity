@@ -32,6 +32,8 @@ else
     exit 1
 fi
 
+PATH=/sbin:/usr/sbin:${PATH:-}
+
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -43,12 +45,22 @@ while true; do
             fi
             exit
         ;;
+        -s|--size)
+            shift
+            SINGULARITY_IMAGESIZE="${1:-}"
+            export SINGULARITY_IMAGESIZE
+            shift
+        ;;
+        -F|--force)
+            shift
+            OVERWRITE=1
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
         ;;
         *)
-            break;
+            break
         ;;
     esac
 done
@@ -64,45 +76,33 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-shift
-export SINGULARITY_IMAGE SINGULARITY_ROOTFS
+SINGULARITY_WRITABLE=1
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/import-suid" ]; then
-    IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import-suid"
-elif [ -x "$SINGULARITY_libexecdir/singularity/bin/import" ]; then
-    IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import"
-else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/import\n"
+if [ -z "$SINGULARITY_IMAGE" ]; then
+    message ERROR "You must supply a path to an image to create\n"
+    exit 1
+fi
+if [ -f "$SINGULARITY_IMAGE" ]; then
+    if [ -n "${OVERWRITE:-}" ]; then
+        message 2 "Removing existing file\n"
+        rm -f "$SINGULARITY_IMAGE"
+    else
+        message ERROR "Image file exists, not overwriting.\n"
+        exit 1
+    fi
+fi
+
+message 1 "Creating empty ${SINGULARITY_IMAGESIZE:-768}MiB image file: $SINGULARITY_IMAGE\n"
+if ! dd if=/dev/zero of="$SINGULARITY_IMAGE" bs=1M count=${SINGULARITY_IMAGESIZE:-768} status=none; then
+    message ERROR "Failed creating image!\n"
     exit 1
 fi
 
-
-if [ -n "${1:-}" ]; then
-    case $1 in
-        docker://*)
-            SINGULARITY_CONTAINER="$1"
-            if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
-                message ERROR "Failed to create temporary directory\n"
-                ABORT 255
-            fi
-            export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
-            eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
-            message 1 "Importing: base Singularity environment\n"
-            zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | eval "$IMPORT_BIN" || exit $?
-
-            for i in `cat "$SINGULARITY_CONTENTS"`; do
-                message 1 "Importing: $i\n"
-                zcat "$i" | eval "$IMPORT_BIN" || exit $?
-            done
-
-            rm -f "$SINGULARITY_CONTENTS"
-        ;;
-        *://*)
-            message ERROR "Unsupported URI: $1\n"
-            exit 1
-        ;;
-    esac
-else
-    exec "$IMPORT_BIN"
+message 1 "Formatting image with ext3 file system\n"
+if ! /sbin/mkfs.ext3 -q -F "$SINGULARITY_IMAGE"; then
+    exit 1
 fi
 
+message 1 "Image is done: $SINGULARITY_IMAGE\n"
+exit 0

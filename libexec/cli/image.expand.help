@@ -1,4 +1,4 @@
-USAGE: singularity [...] expand [expand options...] <container path>
+USAGE: singularity [...] image.expand [expand options...] <container path>
 
 
 Grow the Singularity disk image by the given amount.

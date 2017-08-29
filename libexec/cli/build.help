@@ -41,7 +41,7 @@ CREATE OPTIONS:
 
 WIP...
     -T|--notest     Bootstrap without running tests in %test section
-    -f|--force      Force a rebootstrap of an OS (note: this does not delete
+    -F|--force      Force a rebootstrap of an OS (note: this does not delete
                     what is currently in the image, just causes the core to
                     be reinstalled)
     -s|--section    Only run a given section within the bootstrap (setup,

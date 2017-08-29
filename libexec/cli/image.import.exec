@@ -43,17 +43,12 @@ while true; do
             fi
             exit
         ;;
-        -f|--file)
-             shift
-             SINGULARITY_EXPORT_FILE="${1:-}"
-             shift
-         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
         ;;
         *)
-            break;
+            break
         ;;
     esac
 done
@@ -69,28 +64,19 @@ fi
 
 
 SINGULARITY_IMAGE="${1:-}"
-export SINGULARITY_IMAGE
+SINGULARITY_WRITABLE=1
 shift
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE
 
-if [ -n "${SINGULARITY_EXPORT_FILE:-}" ]; then
-	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
-		exec "$SINGULARITY_libexecdir/singularity/bin/export-suid" > "$SINGULARITY_EXPORT_FILE"
-	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
-		exec "$SINGULARITY_libexecdir/singularity/bin/export" > "$SINGULARITY_EXPORT_FILE" 
-	else
-	    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
-	    exit 1
-	fi
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/image.sh"
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/image.sh"
 else
-	if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/export-suid" ]; then
-    	    exec "$SINGULARITY_libexecdir/singularity/bin/export-suid"
-	elif [ -x "$SINGULARITY_libexecdir/singularity/bin/export" ]; then
-    	    exec "$SINGULARITY_libexecdir/singularity/bin/export"
-	else
-    	message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/export\n"
-    	exit 1
-	fi
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
+    exit 1
 fi
 
-message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
-exit 255
+message ERROR "We should never have gotten here..."
+exit 1
+

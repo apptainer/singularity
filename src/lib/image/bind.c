@@ -54,8 +54,8 @@ char *singularity_image_bind(struct image_object *image) {
     const char *max_loop_devs_string = singularity_config_get_value(MAX_LOOP_DEVS);
     char *loop_dev = NULL;
     int loop_fd = -1;
+    int loop_mount_opts;
     int i;
-    int mount_flags;
 
     singularity_message(DEBUG, "Entered singularity_image_bind()\n");
 
@@ -68,30 +68,15 @@ char *singularity_image_bind(struct image_object *image) {
 
     singularity_message(DEBUG, "Checking if this image has been properly opened\n");
     if ( image->fd <= 0 ) {
-        singularity_message(ERROR, "Internal - Called _singularity_image_bind() on an unopen image FD\n");
+        singularity_message(ERROR, "Image file descriptor not assigned!\n");
         ABORT(255);
     }
 
-    singularity_message(DEBUG, "Checking if image is valid file\n");
-    if ( is_file(image->path) != 0 ) {
-        singularity_message(VERBOSE, "Skipping image bind, container is not a file\n");
-        return(NULL);
-    }
-
     if ( singularity_registry_get("WRITABLE") == NULL ) {
-        singularity_message(DEBUG, "Setting loopdev open to: O_RDONLY\n");
-        mount_flags = O_RDONLY;
+        loop_mount_opts = O_RDONLY;
     } else {
-        singularity_message(DEBUG, "Setting loopdev open to: O_RDWR\n");
-        mount_flags = O_RDWR;
+        loop_mount_opts = O_RDWR;
     }
-
-
-    singularity_message(DEBUG, "Setting LO_FLAGS_AUTOCLEAR\n");
-    lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
-
-    singularity_message(DEBUG, "Using image offset: %d\n", image->offset);
-    lo64.lo_offset = image->offset;
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Finding next available loop device...\n");
@@ -108,7 +93,7 @@ char *singularity_image_bind(struct image_object *image) {
             }
         }
 
-        if ( ( loop_fd = open(test_loopdev, mount_flags) ) < 0 ) { // Flawfinder: ignore
+        if ( ( loop_fd = open(test_loopdev, loop_mount_opts) ) < 0 ) { // Flawfinder: ignore
             singularity_message(VERBOSE, "Could not open loop device %s: %s\n", test_loopdev, strerror(errno));
             continue;
         }
@@ -128,6 +113,7 @@ char *singularity_image_bind(struct image_object *image) {
         }
 
     }
+    singularity_priv_drop();
 
     if ( loop_dev == NULL ) {
         singularity_message(ERROR, "No more available loop devices, try increasing '%s' in singularity.conf\n", MAX_LOOP_DEVS);
@@ -136,13 +122,19 @@ char *singularity_image_bind(struct image_object *image) {
 
     singularity_message(VERBOSE, "Found available loop device: %s\n", loop_dev);
 
+    singularity_message(DEBUG, "Setting LO_FLAGS_AUTOCLEAR\n");
+    lo64.lo_flags = LO_FLAGS_AUTOCLEAR;
+
+    singularity_message(DEBUG, "Using image offset: %d\n", image->offset);
+    lo64.lo_offset = image->offset;
+
+    singularity_priv_escalate();
     singularity_message(DEBUG, "Setting loop device flags\n");
     if ( ioctl(loop_fd, LOOP_SET_STATUS64, &lo64) < 0 ) {
         singularity_message(ERROR, "Failed to set loop flags on loop device: %s\n", strerror(errno));
         (void)ioctl(loop_fd, LOOP_CLR_FD, 0);
         ABORT(255);
     }
-
     singularity_priv_drop();
 
     singularity_message(VERBOSE, "Using loop device: %s\n", loop_dev);

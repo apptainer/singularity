@@ -27,7 +27,7 @@ CONTAINER IMAGE MANAGEMENT COMMANDS:
     apps          list available apps within a container
     build         Build a new Singularity container
     check         Perform container lint checks
-    image         Various image related commands
+    image         Image management utilities
     inspect       Display a container's metadata
     mount         Mount a Singularity container image
     pull          pull a Singularity/Docker container to $PWD

@@ -90,7 +90,7 @@ while true; do
             exit 1
         ;;
         *)
-            break;
+            break
         ;;
     esac
 done
