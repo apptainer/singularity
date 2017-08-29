@@ -126,25 +126,27 @@ fi
 export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 
 if [ -f "$1" ]; then
-    case $1 in
-        *.tar.gz)
-            tar xzf "$1" -C "${SINGULARITY_ROOTFS}"
-        ;;
-        *.def|*Singularity)
-            message 1 "Using container recipe deffile: $1\n"
-            if [ "$USERID" != "0" ]; then
-                echo "You must be the root user to run this command"
-                exit 1
-            fi
-            SINGULARITY_BUILDDEF="$1"
-            export SINGULARITY_BUILDDEF
-            eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
-        ;;
-        *)
-            message ERROR "Unsupported file type: $1\n"
+    
+    if [ `is_deffile ${1}` = "TRUE" ]; then 
+        message 1 "Using container recipe deffile: $1\n"
+        if [ "$USERID" != "0" ]; then
+            message ERROR "You must be the root user to run this command\n"
             exit 1
-        ;;
-    esac
+        fi
+        SINGULARITY_BUILDDEF="$1"
+        export SINGULARITY_BUILDDEF
+        eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
+    elif [ `is_image ${1}` = "TRUE" ]; then
+        message 1 "Building from local image: $1\n"
+        exit
+    elif [ `is_tar ${1}` = "TRUE" ]; then
+        message 1 "Building from local tar file: $1\n"
+        tar xzf "$1" -C "${SINGULARITY_ROOTFS}"
+    else
+        message ERROR "Unsupported file type: $1\n"
+        exit 1
+    fi
+
 elif [ -d "$1" ]; then
     message 1 "Building image from sandbox: $1\n"
     rmdir "${SINGULARITY_ROOTFS}"
