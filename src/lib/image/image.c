@@ -55,7 +55,6 @@ struct image_object singularity_image_init(char *path) {
     image.type = -1;
     image.fd = -1;
     image.loopdev = NULL;
-    image.id = NULL;
     image.offset = 0;
 
 
