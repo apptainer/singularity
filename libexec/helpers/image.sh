@@ -32,11 +32,6 @@ if [ ! -d "${SINGULARITY_MOUNTPOINT}" ]; then
     ABORT 255
 fi
 
-if [ ! -d "${SINGULARITY_MOUNTPOINT}/.singularity.d" ]; then
-    message ERROR "The Singularity metadata directory does not exist in image\n"
-    ABORT 255
-fi
-
 if ! which tar >/dev/null; then
     message ERROR "Could not find the program: tar\n"
     ABORT 255
