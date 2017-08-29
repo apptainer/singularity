@@ -344,7 +344,9 @@ is_deffile() {
 
 is_image() {
 # check if a file looks like, walks like, and quacks like an image file
+    #echo SINGULARITY_MOUNTPOINT=$SINGULARITY_MOUNTPOINT
     SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-imagecheck.XXXXXXXX`
+    RESET_IMAGE=`echo ${SINGULARITY_IMAGE}`
     SINGULARITY_IMAGE=$1
     export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 
@@ -357,6 +359,8 @@ is_image() {
     fi
 
     rmdir "$SINGULARITY_MOUNTPOINT"
+    SINGULARITY_IMAGE=$RESET_IMAGE
+    export SINGULARITY_IMAGE
     return $RETVAL
 }
 
