@@ -24,19 +24,18 @@
 #ifndef __SINGULARITY_IMAGE_H_
 #define __SINGULARITY_IMAGE_H_
 
-#define SINGULARITY 1
-#define SQUASHFS    2
+#define SQUASHFS    1
+#define EXT3        2
 #define DIRECTORY   3
 
 struct image_object {
-//    char *sessiondir;
     char *path;
     char *name;
     char *loopdev;
     char *id;
+    int offset;
     int fd;
     int type;
-//    int sessiondir_fd;
 };
 
 
@@ -53,8 +52,6 @@ extern int singularity_image_open(struct image_object *object, int open_flags);
 
 extern int singularity_image_check(struct image_object *image);
 extern int singularity_image_offset(struct image_object *image);
-
-extern int singularity_image_bind(struct image_object *image);
 
 extern int singularity_image_create(struct image_object *image, long int size);
 extern int singularity_image_expand(struct image_object *image, unsigned int size);

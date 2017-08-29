@@ -23,7 +23,7 @@
 #ifndef __SINGULARITY_IMAGE_BIND_H_
 #define __SINGULARITY_IMAGE_BIND_H_
 
-extern int _singularity_image_bind(struct image_object *image);
+extern char *singularity_image_bind(struct image_object *image);
 
 #endif /* __SINGULARITY_IMAGE_BIND_H */
 
