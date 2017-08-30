@@ -106,9 +106,9 @@ if [ -f "$SINGULARITY_CONTAINER_OUTPUT" ]; then
 fi
 
 if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
+    SINGULARITY_ROOTFS="$SINGULARITY_CONTAINER_OUTPUT"
+    SINGULARITY_IMAGE="$SINGULARITY_CONTAINER_OUTPUT"
     if [ "$USERID" == "0" ]; then
-        SINGULARITY_ROOTFS="$SINGULARITY_CONTAINER_OUTPUT"
-        SINGULARITY_IMAGE="$SINGULARITY_CONTAINER_OUTPUT"
         SINGULARITY_ROOTFS_DIRNAME=`dirname "$SINGULARITY_ROOTFS"`
         SINGULARITY_ROOTFS_DIRNAME_OWNER=`stat -c '%u' $SINGULARITY_ROOTFS_DIRNAME`
         if [ "$USERID" != "$SINGULARITY_ROOTFS_DIRNAME_OWNER" ]; then
@@ -118,8 +118,8 @@ if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
             fi
         fi
     fi
-    if [ ! -d "$SINGULARITY_ROOTFS" ]; then
-        if ! mkdir -p "$SINGULARITY_ROOTFS"; then
+    if [ ! -d "${SINGULARITY_ROOTFS:-}" ]; then
+        if ! mkdir -p "${SINGULARITY_ROOTFS:-}"; then
             message ERROR "Could not create sandbox!\n";
             exit 1
         fi
@@ -212,6 +212,14 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
             message ERROR "Failed squashing image, left template directory at: $SINGULARITY_CONTAINER_OUTPUT\n"
             exit 1
         fi
+
+
+
+
+
+
+
+
     fi
     if [ -z "${SINGULARITY_NOCLEANUP:-}" ]; then
         message 1 "Cleaning up...\n";
