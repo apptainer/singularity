@@ -58,11 +58,15 @@ struct image_object singularity_image_init(char *path) {
     image.offset = 0;
 
 
+    singularity_message(DEBUG, "Calling image_init for each file system module\n");
     if ( _singularity_image_dir_init(&image) == 0 ) {
+        singularity_message(DEBUG, "got image_init type for directory\n");
         image.type = DIRECTORY;
     } else if ( _singularity_image_squashfs_init(&image) == 0 ) {
+        singularity_message(DEBUG, "got image_init type for squashfs\n");
         image.type = SQUASHFS;
     } else if ( _singularity_image_ext3_init(&image) == 0 ) {
+        singularity_message(DEBUG, "got image_init type for ext3\n");
         image.type = EXT3;
     } else {
         singularity_message(ERROR, "Unknown image format/type.\n");
@@ -98,11 +102,15 @@ int singularity_image_mount(struct image_object *image, char *mount_point) {
     if ( singularity_registry_get("DAEMON_JOIN") )
         return(0);
 
+    singularity_message(DEBUG, "Figuring out which mount module to use...\n");
     if ( image->type == SQUASHFS ) {
+        singularity_message(DEBUG, "Calling squashfs_mount\n");
         return(_singularity_image_squashfs_mount(image, mount_point));
     } else if ( image->type == DIRECTORY ) {
+        singularity_message(DEBUG, "Calling dir_mount\n");
         return(_singularity_image_dir_mount(image, mount_point));
     } else if ( image->type == EXT3 ) {
+        singularity_message(DEBUG, "Calling ext3_mount\n");
         return(_singularity_image_ext3_mount(image, mount_point));
     } else {
         singularity_message(ERROR, "Can not mount file system of unknown type\n");
