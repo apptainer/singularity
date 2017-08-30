@@ -257,10 +257,10 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         fi
 
         message 1 "Creating empty Singularity writable container\n"
-        eval_abort singularity image.create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
+        eval_abort ${SINGULARITY_home}/singularity image.create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
 
         message 1 "Building Singularity image...\n"
-        tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
+        tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_home}/singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
     else
         message 1 "Building Singularity image...\n"
         if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend -all-root > /dev/null; then
