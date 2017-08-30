@@ -29,6 +29,7 @@
 #include <string.h>
 #include <fcntl.h>  
 
+
 #include "util/message.h"
 #include "util/util.h"
 #include "util/file.h"
@@ -50,7 +51,7 @@ int _singularity_image_dir_init(struct image_object *image) {
         ABORT(255);
     }
 
-    if ( S_ISDIR(filestat.st_mode) != 0 ) {
+    if ( S_ISDIR(st.st_mode) == 0 ) {
         singularity_message(DEBUG, "This is not a directory based image\n");
         close(fd);
         return(-1);
