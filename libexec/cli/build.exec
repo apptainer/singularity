@@ -137,13 +137,18 @@ export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 SINGULARITY_BUILDDEF="$1"
 export SINGULARITY_BUILDDEF
 if [ -f "$SINGULARITY_BUILDDEF" ]; then
+
     if eval "is_image ${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
-        cmd="${SINGULARITY_libexecdir}/singularity/bin/export ${SINGULARITY_BUILDDEF} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
+        if [ "$USERID" != "0" ]; then
+            message WARNING "You are not root! Some files may not be exported from  ${SINGULARITY_BUILDDEF} due to permission errors.\n"
+        fi
+        cmd="${SINGULARITY_home}/singularity image.export ${SINGULARITY_BUILDDEF} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
         if ! eval $cmd; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
+
     elif eval "is_deffile ${SINGULARITY_BUILDDEF}"; then 
         message 1 "Using container recipe deffile: $SINGULARITY_BUILDDEF\n"
         if [ "$USERID" != "0" ]; then
@@ -153,6 +158,7 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
         SINGULARITY_BUILDDEF="$SINGULARITY_BUILDDEF"
         export SINGULARITY_BUILDDEF
         eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
+
     elif eval "is_tar ${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
         cmd="tar xzf ${SINGULARITY_BUILDDEF} -C ${SINGULARITY_ROOTFS}"
@@ -160,11 +166,12 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
+
     else
-        is_image ${SINGULARITY_BUILDDEF}
         message ERROR "Unsupported file type: $SINGULARITY_BUILDDEF\n"
         exit 1
     fi
+
 elif [ -d "$SINGULARITY_BUILDDEF" ]; then
     message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
     rmdir "${SINGULARITY_ROOTFS}"
@@ -191,6 +198,10 @@ else
             rm -f "$SINGULARITY_CONTENTS"
         ;;
         shub://*)
+            if [ "$USERID" != "0" ]; then
+                message WARNING "You are not root! Some files may not be exported from  ${SINGULARITY_BUILDDEF} due to permission errors.\n"
+            fi
+ 
             SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
             if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
                 message ERROR "Failed to create temporary directory\n"
@@ -211,6 +222,17 @@ else
 
             # relying on pull.py for error checking here
             ${SINGULARITY_libexecdir}/singularity/python/pull.py
+            # switch $SINGULARITY_CONTAINER from remote to local 
+            SINGULARITY_CONTAINER=`cat $SINGULARITY_CONTENTS`
+            rm -r $SINGULARITY_CONTENTS
+
+            cmd="${SINGULARITY_home}/singularity image.export ${SINGULARITY_CONTAINER} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
+            if ! eval $cmd; then
+                message ERROR "Failed to export contents of ${SINGULARITY_CONTAINER} to ${SINGULARITY_ROOTFS}\n"
+                rm $SINGULARITY_CONTAINER
+                ABORT 255
+        fi
+        rm $SINGULARITY_CONTAINER
         ;;
         *)
             message ERROR "Unsupported location: $SINGULARITY_BUILDDEF\n"

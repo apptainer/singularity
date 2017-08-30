@@ -28,17 +28,19 @@ libexecdir="@libexecdir@"
 sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 bindir="@bindir@"
+home=`dirname  "$0"`
 
 SINGULARITY_version="@VERSION@@GIT_VERSION@"
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
 SINGULARITY_bindir="$bindir"
+SINGULARITY_home="$home"
 
 SINGULARITY_MESSAGELEVEL=1
 PATH="/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin"
 
-export SINGULARITY_bindir SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir SINGULARITY_version SINGULARITY_MESSAGELEVEL PATH
+export SINGULARITY_bindir SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir SINGULARITY_version SINGULARITY_MESSAGELEVEL PATH SINGULARITY_home
 
 # the Modules package always calls 
 unset module
