@@ -33,8 +33,6 @@ CONTAINERIMG="$SINGULARITY_TESTDIR/container.img"
 CONTAINERDIR="$SINGULARITY_TESTDIR/container.dir"
 
 
-which singularity
-
 stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
@@ -93,5 +91,9 @@ stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
 stest 0 singularity exec "$CONTAINER" test -L /environment
 stest 0 singularity exec "$CONTAINER" test -L /singularity
 
+
+stest 0 sudo rm -rf "${CONTAINER}"
+stest 0 sudo rm -rf "${CONTAINERDIR}"
+stest 0 sudo rm -rf "${CONTAINERIMG}"
 
 test_cleanup

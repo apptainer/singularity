@@ -29,33 +29,12 @@ test_init "Import/Export tests"
 
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
-CONTAINERTAR="$SINGULARITY_TESTDIR/container.tar"
 
-stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" docker://busybox
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-
-stest 0 sh -c "singularity export -f '$CONTAINERTAR' '$CONTAINER'"
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-
-stest 0 sh -c "singularity export --file '$CONTAINERTAR' '$CONTAINER'"
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-
-stest 0 sh -c "singularity export '$CONTAINER' > '$CONTAINERTAR'"
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sh -c "singularity import '$CONTAINER' < '$CONTAINERTAR'"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 singularity import "$CONTAINER" "$CONTAINERTAR"
-
+stest 0 touch "$SINGULARITY_TESTDIR/hello_world"
+stest 0 singularity image.create -s 32 "$CONTAINER"
+stest 0 sh -c "tar cf - -C $SINGULARITY_TESTDIR hello_world | sudo singularity image.import $CONTAINER"
+stest 0 /bin/rm "$SINGULARITY_TESTDIR/hello_world"
+stest 0 sh -c "singularity image.export $CONTAINER | tar xf - -C $SINGULARITY_TESTDIR"
+stest 0 test -f "$SINGULARITY_TESTDIR/hello_world"
 
 test_cleanup
