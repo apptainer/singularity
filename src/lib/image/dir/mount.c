@@ -53,7 +53,6 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
         singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
         return 1;
     }
-    // TODO: Make container read/only if requested
     singularity_priv_drop();
 
     return(0);

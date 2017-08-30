@@ -36,17 +36,28 @@
 #include "../image.h"
 
 int _singularity_image_dir_init(struct image_object *image) {
-    singularity_message(DEBUG, "Checking if image is a directory\n");
-    if ( is_dir(image->path) != 0 ) {
-        singularity_message(VERBOSE2, "Source path is not a directory: %s\n", image->path);
-        return(-1);
-    }
+    int fd = -1;
+    struct stat st;
 
     singularity_message(DEBUG, "Opening file descriptor to directory: %s\n", image->path);
-    if ( ( image->fd = open(image->path, O_RDONLY, 0755) ) < 0 ) {
+    if ( ( fd = open(image->path, O_RDONLY, 0755) ) < 0 ) {
         singularity_message(ERROR, "Could not open image %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
+
+    if ( fstat(fd, &st) != 0 ) {
+        singularity_message(ERROR, "Could not stat file descriptor: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    if ( S_ISDIR(filestat.st_mode) != 0 ) {
+        singularity_message(DEBUG, "This is not a directory based image\n");
+        close(fd);
+        return(-1);
+    }
+
+    // If we got here, we assume things are a directory
+    image->fd = fd;
 
     return(0);
 }

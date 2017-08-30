@@ -58,19 +58,6 @@ int main(int argc, char **argv) {
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-//    if ( singularity_registry_get("WRITABLE") == NULL ) {
-//        singularity_image_open(&image, O_RDONLY);
-//    } else {
-//        singularity_image_open(&image, O_RDWR);
-//    }
-//
-//    singularity_image_check(&image);
-
-    if ( image.type != EXT3 ) {
-        singularity_message(ERROR, "Mount is only allowed on Singularity image files\n");
-        ABORT(255);
-    }
-
     if ( is_owner(singularity_runtime_rootfs(NULL), 0) != 0 ) {
         singularity_message(ERROR, "Root must own container mount directory: %s\n", singularity_runtime_rootfs(NULL));
         ABORT(255);
@@ -79,7 +66,6 @@ int main(int argc, char **argv) {
     if ( argc > 1 ) {
         singularity_runtime_ns(SR_NS_MNT);
 
-//        singularity_image_bind(&image);
         singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
         singularity_priv_drop_perm();
@@ -95,7 +81,6 @@ int main(int argc, char **argv) {
     } else {
         singularity_runtime_ns(SR_NS_MNT);
 
-//        singularity_image_bind(&image);
         singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
         singularity_priv_escalate();

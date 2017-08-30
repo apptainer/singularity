@@ -36,6 +36,11 @@ else
     exit 1
 fi
 
+if ! which mksquashfs > /dev/null 2>&1; then
+    message ERROR "You must install squashfs-tools to build images\n"
+    ABORT 255
+fi
+
 USERID=`id -ru`
 
 while true; do
