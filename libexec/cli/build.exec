@@ -250,7 +250,7 @@ fi
 if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
     if [ -n "${SINGULARITY_WRITABLE:-}" ]; then
         CONTAINER_SIZE=`du -sm ${SINGULARITY_ROOTFS} | cut -f 1`
-        IMAGE_SIZE=`echo "(${CONTAINER_SIZE:-768} * 1.25)/1" | bc`
+        let "IMAGE_SIZE=(${CONTAINER_SIZE:-768} * 125)/100"
 
         if [ "$IMAGE_SIZE" -lt 10 ]; then
             IMAGE_SIZE=10
