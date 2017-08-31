@@ -24,7 +24,7 @@
 #ifndef __SINGULARITY_IMAGE_DIR_H_
 #define __SINGULARITY_IMAGE_DIR_H_
 
-extern int _singularity_image_dir_init(struct image_object *image);
+extern int _singularity_image_dir_init(struct image_object *image, int open_flags);
 extern int _singularity_image_dir_mount(struct image_object *image, char *mount_point);
 
 #endif /* __SINGULARITY_IMAGE_DIR_H_ */

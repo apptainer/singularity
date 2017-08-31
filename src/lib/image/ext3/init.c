@@ -41,18 +41,12 @@
 #define MAX_LINE_LEN    2048
 
 
-int _singularity_image_ext3_init(struct image_object *image) {
+int _singularity_image_ext3_init(struct image_object *image, int open_flags) {
     int image_fd;
     char *line;
     FILE *image_fp;
     char *image_name = image->name;
     int image_name_len = strlength(image_name, PATH_MAX);
-    int open_flags = O_RDONLY;
-
-    if ( singularity_registry_get("WRITABLE") != NULL ) {
-        singularity_message(DEBUG, "Setting the open flags to O_RDWR\n");
-        open_flags = O_RDWR;
-    }
 
     singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
     if ( ( image_fd = open(image->path, open_flags, 0755) ) < 0 ) {

@@ -36,7 +36,7 @@
 
 #include "../image.h"
 
-int _singularity_image_dir_init(struct image_object *image) {
+int _singularity_image_dir_init(struct image_object *image, int open_flags) {
     int fd = -1;
     struct stat st;
 
