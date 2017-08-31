@@ -64,18 +64,18 @@ int main(int argc, char **argv) {
         image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
     }
 
-    if ( is_owner(singularity_runtime_rootfs(NULL), 0) != 0 ) {
-        singularity_message(ERROR, "Root must own container mount directory: %s\n", singularity_runtime_rootfs(NULL));
+    if ( is_owner(CONTAINER_MOUNTDIR, 0) != 0 ) {
+        singularity_message(ERROR, "Root must own container mount directory: %s\n", CONTAINER_MOUNTDIR);
         ABORT(255);
     }
 
     singularity_runtime_ns(SR_NS_MNT);
 
-    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+    singularity_image_mount(&image, CONTAINER_MOUNTDIR);
 
     singularity_priv_drop_perm();
 
-    envar_set("SINGULARITY_MOUNTPOINT", singularity_runtime_rootfs(NULL), 1);
+    envar_set("SINGULARITY_MOUNTPOINT", CONTAINER_MOUNTDIR, 1);
 
     if ( argc > 1 ) {
 
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 
     } else {
 
-        singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), singularity_runtime_rootfs(NULL));
+        singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), CONTAINER_MOUNTDIR);
         envar_set("PS1", "Singularity> ", 1);
 
         execl("/bin/sh", "/bin/sh", NULL); // Flawfinder: ignore (Yes flawfinder, this is what we want, sheesh, so demanding!)

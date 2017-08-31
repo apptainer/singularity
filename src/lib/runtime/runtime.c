@@ -51,34 +51,6 @@
 #error LOCALSTATEDIR not defined
 #endif
 
-static char *container_directory = NULL;
-
-char *singularity_runtime_rootfs(char *directory) {
-    if ( directory != NULL ) {
-        if ( is_dir(directory) == 0 ) {
-            singularity_message(DEBUG, "Setting container_directory = '%s'\n", directory);
-            container_directory = strdup(directory);
-        } else {
-            singularity_message(ERROR, "Container path is not a directory: %s\n", directory);
-            ABORT(255);
-        }
-    } else if ( container_directory == NULL ) {
-        container_directory = joinpath(LOCALSTATEDIR, "/singularity/mnt/container");
-
-        singularity_message(VERBOSE, "Set container directory to: %s\n", container_directory);
-
-        singularity_message(DEBUG, "Checking for container directory\n");
-        if ( is_dir(container_directory) != 0 ) {
-            singularity_message(ERROR, "Container directory does not exist: %s\n", container_directory);
-            ABORT(255);
-        }
-
-    }
-
-    singularity_message(DEBUG, "Returning container_directory: %s\n", container_directory);
-    return(strdup(container_directory));
-}
-
 int singularity_runtime_ns(unsigned int flags) {
     /* If a daemon already exists, join existing namespaces instead of creating */
     if ( singularity_registry_get("DAEMON_JOIN") )
@@ -104,11 +76,6 @@ int singularity_runtime_mounts(void) {
     if( singularity_registry_get("DAEMON_JOIN") )
         return(0);
 
-    if ( singularity_runtime_rootfs(NULL) == NULL ) {
-        singularity_message(ERROR, "The runtime container directory has not been set!\n");
-        ABORT(5);
-    }
-
     return(_singularity_runtime_mounts());
 }
 
@@ -117,19 +84,10 @@ int singularity_runtime_files(void) {
     if( singularity_registry_get("DAEMON_JOIN") )
         return(0);
 
-    if ( singularity_runtime_rootfs(NULL) == NULL ) {
-        singularity_message(ERROR, "The runtime container directory has not been set!\n");
-        ABORT(5);
-    }
-
     return(_singularity_runtime_files());
 }
 
 int singularity_runtime_enter(void) {
-    if ( singularity_runtime_rootfs(NULL) == NULL ) {
-        singularity_message(ERROR, "The runtime container directory has not been set!\n");
-        ABORT(5);
-    }
 
     return(_singularity_runtime_enter());
 }

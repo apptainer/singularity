@@ -32,6 +32,7 @@
 #include <libgen.h>
 #include <linux/limits.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/registry.h"
@@ -46,6 +47,14 @@
 
 int _singularity_runtime_overlayfs(void) {
 
+    singularity_priv_escalate();
+    singularity_message(DEBUG, "Creating overlay_final directory: %s\n", CONTAINER_FINALDIR);
+    if ( s_mkpath(CONTAINER_FINALDIR, 0755) < 0 ) {
+        singularity_message(ERROR, "Failed creating overlay_final directory %s: %s\n", CONTAINER_FINALDIR, strerror(errno));
+        ABORT(255);
+    }
+    singularity_priv_drop();
+
     singularity_message(DEBUG, "Checking if overlayfs should be used\n");
     if ( singularity_config_get_bool(ENABLE_OVERLAY) <= 0 ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS via configuration\n");
@@ -55,13 +64,12 @@ int _singularity_runtime_overlayfs(void) {
         singularity_message(VERBOSE3, "Not enabling overlayFS, image mounted writablable\n");
     } else {
 #ifdef SINGULARITY_OVERLAYFS
-        char *sessiondir = singularity_registry_get("SESSIONDIR");
-        char *rootfs_source = singularity_runtime_rootfs(NULL);
+        char *rootfs_source = CONTAINER_MOUNTDIR;
+        char *overlay_final = CONTAINER_FINALDIR;
         char *container_dir = joinpath(LOCALSTATEDIR, "/singularity/mnt");
         char *overlay_mount = joinpath(container_dir, "/overlay");
         char *overlay_upper = joinpath(container_dir, "/overlay/upper");
         char *overlay_work  = joinpath(container_dir, "/overlay/work");
-        char *overlay_final = joinpath(sessiondir, "/container");
         int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
         char *overlay_options = (char *) malloc(overlay_options_len);
         char *overlay_path = NULL;
@@ -115,12 +123,6 @@ int _singularity_runtime_overlayfs(void) {
             ABORT(255);
         }
 
-        singularity_message(DEBUG, "Creating overlay_final directory: %s\n", overlay_final);
-        if ( s_mkpath(overlay_final, 0755) < 0 ) {
-            singularity_message(ERROR, "Failed creating overlay_final directory %s: %s\n", overlay_final, strerror(errno));
-            ABORT(255);
-        }
-
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
         if ( mount("OverlayFS", overlay_final, "overlay", MS_NOSUID | MS_NODEV, overlay_options) < 0 ){
             singularity_message(ERROR, "Could not mount Singularity overlay: %s\n", strerror(errno));
@@ -130,16 +132,10 @@ int _singularity_runtime_overlayfs(void) {
 
         singularity_registry_set("OVERLAYFS_ENABLED", "1");
 
-        singularity_message(VERBOSE2, "Updating the containerdir to: %s\n", overlay_final);
-        singularity_runtime_rootfs(overlay_final);
-
         free(overlay_mount);
         free(overlay_upper);
         free(overlay_work);
-        free(overlay_final);
         free(overlay_options);
-        free(rootfs_source);
-        free(container_dir);
 
         return(0);
     }
@@ -147,7 +143,16 @@ int _singularity_runtime_overlayfs(void) {
         singularity_message(VERBOSE, "OverlayFS not supported by host build\n");
     }
 #endif
-    singularity_registry_set("OVERLAYFS_ENABLED", NULL);
+
+
+    // If we got here, assume we are not overlaying, so we must bind to final directory
+    singularity_priv_escalate();
+    singularity_message(DEBUG, "Binding container directory to final home %s->%s\n", CONTAINER_MOUNTDIR, CONTAINER_FINALDIR);
+    if ( mount(CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV, NULL) < 0 ) {
+        singularity_message(ERROR, "Could not bind mount container to final home %s->%s: %s\n", CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, strerror(errno));
+        return 1;
+    }
+    singularity_priv_drop();
 
     return(0);
 }
