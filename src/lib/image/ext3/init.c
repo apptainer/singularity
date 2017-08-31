@@ -73,8 +73,8 @@ int _singularity_image_ext3_init(struct image_object *image) {
 
     // Get the first line from the config
     if ( fgets(line, MAX_LINE_LEN, image_fp) == NULL ) {
-        singularity_message(ERROR, "Unable to read the first line of image: %s\n", strerror(errno));
-        ABORT(255);
+        singularity_message(DEBUG, "Unable to read the first line of image\n");
+        return(-1);
     }
 
     fclose(image_fp);

@@ -59,8 +59,8 @@ int _singularity_image_squashfs_init(struct image_object *image) {
 
     // Get the first line from the config
     if ( fgets(line, 5, image_fp) == NULL ) {
-        singularity_message(ERROR, "Unable to read the first 4 bytes of image: %s\n", strerror(errno));
-        ABORT(255);
+        singularity_message(DEBUG, "Could not read the top of the image\n");
+        return(-1);
     }
 
     fclose(image_fp);

@@ -69,7 +69,7 @@ struct image_object singularity_image_init(char *path) {
         singularity_message(DEBUG, "got image_init type for ext3\n");
         image.type = EXT3;
     } else {
-        singularity_message(ERROR, "Unknown image format/type.\n");
+        singularity_message(ERROR, "Unknown image format/type: %s\n", path);
         ABORT(255);
     }
 
