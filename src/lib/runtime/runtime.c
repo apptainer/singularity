@@ -76,7 +76,7 @@ char *singularity_runtime_rootfs(char *directory) {
     }
 
     singularity_message(DEBUG, "Returning container_directory: %s\n", container_directory);
-    return(container_directory);
+    return(strdup(container_directory));
 }
 
 int singularity_runtime_ns(unsigned int flags) {
