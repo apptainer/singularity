@@ -75,16 +75,14 @@ int main(int argc, char **argv) {
     singularity_sessiondir();
     singularity_cleanupd();
     
-    image = singularity_image_init(singularity_registry_get("IMAGE"));
+    if ( singularity_registry_get("WRITABLE") != NULL ) {
+        singularity_message(VERBOSE3, "Instantiating writable container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
+    } else {
+        singularity_message(VERBOSE3, "Instantiating read only container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
+    }
     
-//    if ( singularity_registry_get("WRITABLE") == NULL ) {
-//        singularity_image_open(&image, O_RDONLY);
-//    } else {
-//        singularity_image_open(&image, O_RDWR);
-//    }
-    
-//    singularity_image_check(&image);
-//    singularity_image_bind(&image);
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
     
     action_ready(singularity_runtime_rootfs(NULL));
