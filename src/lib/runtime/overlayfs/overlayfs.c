@@ -39,12 +39,12 @@
 #include "util/config_parser.h"
 #include "util/privilege.h"
 
+#include "lib/image/image.h"
+
 #include "../runtime.h"
 
 
 int _singularity_runtime_overlayfs(void) {
-    char *rootfs_source = singularity_runtime_rootfs(NULL);
-    char *container_dir = joinpath(LOCALSTATEDIR, "/singularity/mnt");
 
     singularity_message(DEBUG, "Checking if overlayfs should be used\n");
     if ( singularity_config_get_bool(ENABLE_OVERLAY) <= 0 ) {
@@ -55,12 +55,16 @@ int _singularity_runtime_overlayfs(void) {
         singularity_message(VERBOSE3, "Not enabling overlayFS, image mounted writablable\n");
     } else {
 #ifdef SINGULARITY_OVERLAYFS
+        char *sessiondir = singularity_registry_get("SESSIONDIR");
+        char *rootfs_source = singularity_runtime_rootfs(NULL);
+        char *container_dir = joinpath(LOCALSTATEDIR, "/singularity/mnt");
         char *overlay_mount = joinpath(container_dir, "/overlay");
         char *overlay_upper = joinpath(container_dir, "/overlay/upper");
         char *overlay_work  = joinpath(container_dir, "/overlay/work");
-        char *overlay_final = joinpath(container_dir, "/overlay/final");
+        char *overlay_final = joinpath(sessiondir, "/container");
         int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
         char *overlay_options = (char *) malloc(overlay_options_len);
+        char *overlay_path = NULL;
 
         singularity_message(DEBUG, "OverlayFS enabled by host build\n");
 
@@ -73,13 +77,32 @@ int _singularity_runtime_overlayfs(void) {
             ABORT(255);
         }
 
-        singularity_priv_escalate();
-        singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
-        if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID | MS_NODEV, "size=1m") < 0 ){
-            singularity_message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
-            ABORT(255);
+        if ( ( overlay_path = singularity_registry_get("OVERLAYIMAGE") ) != NULL ) {
+            struct image_object image;
+
+            image = singularity_image_init(singularity_registry_get("OVERLAYIMAGE"), O_RDWR);
+
+            if ( singularity_image_type(&image) != EXT3 ) {
+                singularity_message(ERROR, "Persistent overlay must be a writable Singularity image\n");
+                ABORT(255);
+            }
+
+            if ( singularity_image_mount(&image, overlay_mount) != 0 ) {
+                singularity_message(ERROR, "Could not mount persistent overlay file: %s\n", singularity_image_name(&image));
+                ABORT(255);
+            }
+
+        } else {
+            singularity_priv_escalate();
+            singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
+            if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID | MS_NODEV, "size=1m") < 0 ){
+                singularity_message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
+                ABORT(255);
+            }
+            singularity_priv_drop();
         }
 
+        singularity_priv_escalate();
         singularity_message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
         if ( s_mkpath(overlay_upper, 0755) < 0 ) {
             singularity_message(ERROR, "Failed creating upper overlay directory %s: %s\n", overlay_upper, strerror(errno));
@@ -105,14 +128,19 @@ int _singularity_runtime_overlayfs(void) {
         }
         singularity_priv_drop();
 
-        free(overlay_mount);
-        free(overlay_upper);
-        free(overlay_options);
-
         singularity_registry_set("OVERLAYFS_ENABLED", "1");
 
         singularity_message(VERBOSE2, "Updating the containerdir to: %s\n", overlay_final);
         singularity_runtime_rootfs(overlay_final);
+
+        free(overlay_mount);
+        free(overlay_upper);
+        free(overlay_work);
+        free(overlay_final);
+        free(overlay_options);
+        free(rootfs_source);
+        free(container_dir);
+
         return(0);
     }
 #else
