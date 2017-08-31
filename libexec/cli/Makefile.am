@@ -7,6 +7,7 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
                     exec.exec \
                     help.exec \
                     image.exec \
+                    image.bootstrap.exec \
                     image.create.exec \
                     image.expand.exec \
                     image.export.exec \
