@@ -30,6 +30,17 @@ while true; do
             fi
             exit
         ;;
+        -o|--overlay)
+            shift
+            SINGULARITY_OVERLAYIMAGE="${1:-}"
+            export SINGULARITY_OVERLAYIMAGE
+            shift
+
+            if [ ! -e "${SINGULARITY_OVERLAYIMAGE:-}" ]; then
+                message ERROR "Overlay image must be a file or directory!\n"
+                ABORT 255
+            fi
+        ;;
         -l|--labels)
             SINGULARITY_INSPECT_SCRIPT="/.singularity.d/labels.json"
             export SINGULARITY_INSPECT_SCRIPT
