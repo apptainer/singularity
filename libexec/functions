@@ -375,10 +375,10 @@ is_image() {
     export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 
     if [ -z "${SINGULARITY_NOSUID:-}" ]; then
-        eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh . >/dev/null 2>&1
+        eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" true >/dev/null 2>&1
         RETVAL=$?
     else
-        eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh . >/dev/null 2>&1
+        eval "$SINGULARITY_libexecdir/singularity/bin/mount" true >/dev/null 2>&1
         RETVAL=$?
     fi
 

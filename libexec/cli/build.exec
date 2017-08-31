@@ -61,6 +61,9 @@ while true; do
             SINGULARITY_SANDBOX=1
             shift
         ;;
+        -e|--exists)
+            SINGULARITY_BTSTRP_2EXISTING=1
+        ;;
         -w|--writable)
             if [ "$USERID" != "0" ]; then
                 message ERROR "Writable images must be created as root\n"
@@ -99,6 +102,8 @@ shift
 if [ -f "$SINGULARITY_CONTAINER_OUTPUT" ]; then
     if [ -n "${SINGULARITY_FORCE:-}" ]; then
         rm -f "$SINGULARITY_CONTAINER_OUTPUT"
+    elif [ -n ${SINGULARITY_BTSTRP_2EXISTING:-} ]; then
+        message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
     else
         message ERROR "Container already exists: $SINGULARITY_CONTAINER_OUTPUT\n"
         exit 1
@@ -136,20 +141,19 @@ export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 
 SINGULARITY_BUILDDEF="$1"
 export SINGULARITY_BUILDDEF
-if [ -f "$SINGULARITY_BUILDDEF" ]; then
+if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
 
-    if eval "is_image ${SINGULARITY_BUILDDEF}"; then
+    if eval is_image "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
         if [ "$USERID" != "0" ]; then
             message WARNING "You are not root! Some files may not be exported from  ${SINGULARITY_BUILDDEF} due to permission errors.\n"
         fi
-        cmd="${SINGULARITY_home}/singularity image.export ${SINGULARITY_BUILDDEF} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
-        if ! eval $cmd; then
+        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" | (cd "${SINGULARITY_ROOTFS}" && tar xBf - -C "${SINGULARITY_ROOTFS}"); then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
 
-    elif eval "is_deffile ${SINGULARITY_BUILDDEF}"; then 
+    elif eval is_deffile "${SINGULARITY_BUILDDEF}"; then 
         message 1 "Using container recipe deffile: $SINGULARITY_BUILDDEF\n"
         if [ "$USERID" != "0" ]; then
             message ERROR "You must be the root user to build from a definition file\n"
@@ -159,10 +163,9 @@ if [ -f "$SINGULARITY_BUILDDEF" ]; then
         export SINGULARITY_BUILDDEF
         eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
 
-    elif eval "is_tar ${SINGULARITY_BUILDDEF}"; then
+    elif eval is_tar "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
-        cmd="tar xzf ${SINGULARITY_BUILDDEF} -C ${SINGULARITY_ROOTFS}"
-        if ! eval $cmd; then
+        if ! eval tar xzf "${SINGULARITY_BUILDDEF}" -C "${SINGULARITY_ROOTFS}"; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
@@ -226,7 +229,7 @@ else
             SINGULARITY_CONTAINER=`cat $SINGULARITY_CONTENTS`
             rm -r $SINGULARITY_CONTENTS
 
-            cmd="${SINGULARITY_home}/singularity image.export ${SINGULARITY_CONTAINER} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
+            cmd="${SINGULARITY_bindir}/singularity image.export ${SINGULARITY_CONTAINER} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
             if ! eval $cmd; then
                 message ERROR "Failed to export contents of ${SINGULARITY_CONTAINER} to ${SINGULARITY_ROOTFS}\n"
                 rm $SINGULARITY_CONTAINER
@@ -249,32 +252,26 @@ fi
 
 if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
     if [ -n "${SINGULARITY_WRITABLE:-}" ]; then
-        CONTAINER_SIZE=`du -sm ${SINGULARITY_ROOTFS} | cut -f 1`
-        let "IMAGE_SIZE=(${CONTAINER_SIZE:-768} * 125)/100"
 
-        if [ "$IMAGE_SIZE" -lt 10 ]; then
-            IMAGE_SIZE=10
+        if [ -z "${SINGULARITY_BTSTRP_2EXISTING}" ]; then
+            CONTAINER_SIZE=`du -sm ${SINGULARITY_ROOTFS} | cut -f 1`
+            # using the let builtin instead of bc which is not guaranteed 
+            let "IMAGE_SIZE=(${CONTAINER_SIZE:-768} * 125)/100"
+            if [ "$IMAGE_SIZE" -lt 10 ]; then
+                IMAGE_SIZE=10
+            fi
+            message 1 "Creating empty Singularity writable container ${CONTAINER_SIZE}MB\n"
+            eval_abort ${SINGULARITY_bindir}/singularity image.create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
         fi
 
-        message 1 "Creating empty Singularity writable container\n"
-        eval_abort ${SINGULARITY_home}/singularity image.create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
-
         message 1 "Building Singularity image...\n"
-        tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_home}/singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
+        tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_bindir}/singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
     else
         message 1 "Building Singularity image...\n"
         if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend -all-root > /dev/null; then
             message ERROR "Failed squashing image, left template directory at: $SINGULARITY_CONTAINER_OUTPUT\n"
             exit 1
         fi
-
-
-
-
-
-
-
-
     fi
     if [ -z "${SINGULARITY_NOCLEANUP:-}" ]; then
         message 1 "Cleaning up...\n";

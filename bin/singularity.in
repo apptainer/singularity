@@ -35,12 +35,11 @@ SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
 SINGULARITY_localstatedir="$localstatedir"
 SINGULARITY_bindir="$bindir"
-SINGULARITY_home="$home"
 
 SINGULARITY_MESSAGELEVEL=1
 PATH="/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin"
 
-export SINGULARITY_bindir SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir SINGULARITY_version SINGULARITY_MESSAGELEVEL PATH SINGULARITY_home
+export SINGULARITY_bindir SINGULARITY_sysconfdir SINGULARITY_libexecdir SINGULARITY_localstatedir SINGULARITY_version SINGULARITY_MESSAGELEVEL PATH
 
 # the Modules package always calls 
 unset module
