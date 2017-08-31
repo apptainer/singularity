@@ -63,14 +63,15 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+    singularity_runtime_ns(SR_NS_MNT);
+
+    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+
+    singularity_priv_drop_perm();
+
+    envar_set("SINGULARITY_MOUNTPOINT", singularity_runtime_rootfs(NULL), 1);
+
     if ( argc > 1 ) {
-        singularity_runtime_ns(SR_NS_MNT);
-
-        singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
-
-        singularity_priv_drop_perm();
-
-        envar_set("SINGULARITY_MOUNTPOINT", singularity_runtime_rootfs(NULL), 1);
 
         singularity_message(VERBOSE, "Running command: %s\n", argv[1]);
         singularity_message(DEBUG, "Calling exec...\n");
@@ -78,18 +79,8 @@ int main(int argc, char **argv) {
 
         singularity_message(ERROR, "Exec failed: %s: %s\n", argv[1], strerror(errno));
         ABORT(255);
+
     } else {
-        singularity_runtime_ns(SR_NS_MNT);
-
-        singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
-
-        singularity_priv_escalate();
-        if ( mount(singularity_runtime_rootfs(NULL), singularity_runtime_rootfs(NULL), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
-            singularity_message(ERROR, "There was an error binding mounted container to %s: %s\n", singularity_runtime_rootfs(NULL), strerror(errno));
-            ABORT(255);
-        }
-
-        singularity_priv_drop_perm();
 
         singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), singularity_runtime_rootfs(NULL));
         envar_set("PS1", "Singularity> ", 1);
