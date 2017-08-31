@@ -273,6 +273,12 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
             exit 1
         fi
     fi
+
+# =============================================================================
+# This space intentionally left blank
+# (for Yanick to fill with header goodness)
+# =============================================================================
+
     if [ -z "${SINGULARITY_NOCLEANUP:-}" ]; then
         message 1 "Cleaning up...\n";
         rm -rf "$SINGULARITY_ROOTFS"
