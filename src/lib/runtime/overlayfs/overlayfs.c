@@ -66,10 +66,9 @@ int _singularity_runtime_overlayfs(void) {
 #ifdef SINGULARITY_OVERLAYFS
         char *rootfs_source = CONTAINER_MOUNTDIR;
         char *overlay_final = CONTAINER_FINALDIR;
-        char *container_dir = joinpath(LOCALSTATEDIR, "/singularity/mnt");
-        char *overlay_mount = joinpath(container_dir, "/overlay");
-        char *overlay_upper = joinpath(container_dir, "/overlay/upper");
-        char *overlay_work  = joinpath(container_dir, "/overlay/work");
+        char *overlay_mount = CONTAINER_OVERLAY;
+        char *overlay_upper = joinpath(overlay_mount, "/upper");
+        char *overlay_work  = joinpath(overlay_mount, "/work");
         int overlay_options_len = strlength(rootfs_source, PATH_MAX) + strlength(overlay_upper, PATH_MAX) + strlength(overlay_work, PATH_MAX) + 50;
         char *overlay_options = (char *) malloc(overlay_options_len);
         char *overlay_path = NULL;
@@ -142,7 +141,6 @@ int _singularity_runtime_overlayfs(void) {
 
         singularity_registry_set("OVERLAYFS_ENABLED", "1");
 
-        free(overlay_mount);
         free(overlay_upper);
         free(overlay_work);
         free(overlay_options);

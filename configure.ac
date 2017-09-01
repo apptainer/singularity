@@ -341,6 +341,13 @@ AC_SUBST(GIT_VERSION)
 
 AC_DEFINE(CONTAINER_MOUNTDIR, LOCALSTATEDIR "/singularity/mnt/container", "container mount location")
 AC_DEFINE(CONTAINER_FINALDIR, LOCALSTATEDIR "/singularity/mnt/final", "location of container post overlay")
+AC_DEFINE(CONTAINER_OVERLAY, LOCALSTATEDIR "/singularity/mnt/overlay", "location of container post overlay")
+AC_DEFINE(SESSIONDIR, LOCALSTATEDIR "/singularity/mnt/session", "location of session directory")
+
+AC_SUBST(CONTAINER_MOUNTDIR, "$localstatedir/singularity/mnt/container")
+AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
+AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
+AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
 
 
 AC_CONFIG_FILES([
