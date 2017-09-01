@@ -223,6 +223,12 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             message ERROR "You must be the root user to build from a definition file\n"
             exit 1
         fi
+        if [ -n ${SINGULARITY_BTSTRP_2EXISTING:-} ]; then # we are bootstrapping to an existing image and need to populate the rootfs
+            if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER_OUTPUT}" | (cd "${SINGULARITY_ROOTFS}" && tar xBf - -C "${SINGULARITY_ROOTFS}"); then
+                message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
+                ABORT 255
+            fi
+        fi
         export SINGULARITY_BUILDDEF
         eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
 
