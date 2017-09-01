@@ -73,9 +73,11 @@ int main(int argc, char **argv) {
 
     singularity_image_mount(&image, CONTAINER_MOUNTDIR);
 
+    singularity_runtime_overlayfs();
+
     singularity_priv_drop_perm();
 
-    envar_set("SINGULARITY_MOUNTPOINT", CONTAINER_MOUNTDIR, 1);
+    envar_set("SINGULARITY_MOUNTPOINT", CONTAINER_FINALDIR, 1);
 
     if ( argc > 1 ) {
 
@@ -88,7 +90,7 @@ int main(int argc, char **argv) {
 
     } else {
 
-        singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), CONTAINER_MOUNTDIR);
+        singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), CONTAINER_FINALDIR);
         envar_set("PS1", "Singularity> ", 1);
 
         execl("/bin/sh", "/bin/sh", NULL); // Flawfinder: ignore (Yes flawfinder, this is what we want, sheesh, so demanding!)
