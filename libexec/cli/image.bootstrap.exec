@@ -43,11 +43,6 @@ while true; do
             fi
             exit
         ;;
-        -f|--force)
-            shift
-            SINGULARITY_REBOOTSTRAP=1
-            export SINGULARITY_REBOOTSTRAP
-        ;;
         -T|--notest)
             shift
             SINGULARITY_NOTEST=1
@@ -96,14 +91,8 @@ message WARNING "The bootstrap command is deprecated and will be removed in a fu
 message WARNING "Use the build command like so:\n"
 message WARNING "singularity build ${SINGULARITY_IMAGE} ${SINGULARITY_BUILDDEF}\n"
 
-if [ -f "${SINGULARITY_IMAGE:-}" ]; then
-message WARNING "Image ${SINGULARITY_IMAGE} already exits.\n"
-message WARNING "Starting in Singularity 2.4 it is no longer necessary to create an image prior to bootstrap.\n"
-message WARNING "${SINGULARITY_IMAGE} will be overwritten during bootstrap.\n"
-fi
-
-if [ -x "${SINGULARITY_home}/singularity" ]; then
-    ${SINGULARITY_home}/singularity build -w -F ${SINGULARITY_IMAGE} ${SINGULARITY_BUILDDEF}
+if [ -x "${SINGULARITY_bindir}/singularity" ]; then
+    ${SINGULARITY_bindir}/singularity build -e -w  ${SINGULARITY_IMAGE} ${SINGULARITY_BUILDDEF}
     exit 0
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_home/singularity\n"

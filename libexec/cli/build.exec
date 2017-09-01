@@ -100,6 +100,17 @@ fi
 SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
 
+if [ -n ${SINGULARITY_BTSTRP_2EXISTING:-} ]; then
+    if [ ! -f ${SINGULARITY_CONTAINER_OUTPUT:-} ]; then
+        message ERROR "Could not open image $SINGULARITY_CONTAINER_OUTPUT: No such file or directory\n"
+        exit 1
+    fi
+    if ! eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
+        message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an image file\n"
+        exit 1
+    fi
+fi
+
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
     if [ -n ${SINGULARITY_BTSTRP_2EXISTING:-} ]; then
         message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
@@ -243,7 +254,7 @@ fi
 if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
     if [ -n "${SINGULARITY_WRITABLE:-}" ]; then
 
-        if [ -z "${SINGULARITY_BTSTRP_2EXISTING}" ]; then
+        if [ -z "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
             CONTAINER_SIZE=`du -sm ${SINGULARITY_ROOTFS} | cut -f 1`
             # using the let builtin instead of bc which is not guaranteed 
             let "IMAGE_SIZE=(${CONTAINER_SIZE:-768} * 125)/100"
