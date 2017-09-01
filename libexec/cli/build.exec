@@ -100,8 +100,8 @@ fi
 SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
 
-if [ -n ${SINGULARITY_BTSTRP_2EXISTING:-} ]; then
-    if [ ! -f ${SINGULARITY_CONTAINER_OUTPUT:-} ]; then
+if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
+    if [ ! -f "${SINGULARITY_CONTAINER_OUTPUT:-}" ]; then
         message ERROR "Could not open image $SINGULARITY_CONTAINER_OUTPUT: No such file or directory\n"
         exit 1
     fi
@@ -112,7 +112,7 @@ if [ -n ${SINGULARITY_BTSTRP_2EXISTING:-} ]; then
 fi
 
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
-    if [ -n ${SINGULARITY_BTSTRP_2EXISTING:-} ]; then
+    if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
         message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
     elif [ -n "${SINGULARITY_FORCE:-}" ]; then
         rm -f "$SINGULARITY_CONTAINER_OUTPUT"
@@ -223,7 +223,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             message ERROR "You must be the root user to build from a definition file\n"
             exit 1
         fi
-        if [ -n ${SINGULARITY_BTSTRP_2EXISTING:-} ]; then # we are bootstrapping to an existing image and need to populate the rootfs
+        if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then # we are bootstrapping to an existing image and need to populate the rootfs
             if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER_OUTPUT}" | (cd "${SINGULARITY_ROOTFS}" && tar xBf - -C "${SINGULARITY_ROOTFS}"); then
                 message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
                 ABORT 255
