@@ -101,13 +101,23 @@ int _singularity_runtime_overlayfs(void) {
             }
 
         } else {
+            char *size = NULL;
+
+            if ( singularity_priv_getuid() == 0 ) {
+                size = strdup("");
+            } else {
+                size = strdup("size=1m");
+            }
+
             singularity_priv_escalate();
             singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
-            if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID | MS_NODEV, "size=1m") < 0 ){
+            if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID | MS_NODEV, size) < 0 ){
                 singularity_message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
                 ABORT(255);
             }
             singularity_priv_drop();
+
+            free(size);
         }
 
         singularity_priv_escalate();
