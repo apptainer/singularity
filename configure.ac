@@ -339,6 +339,9 @@ fi
 AC_MSG_RESULT([$GIT_VERSION])
 AC_SUBST(GIT_VERSION)
 
+AC_DEFINE(CONTAINER_MOUNTDIR, LOCALSTATEDIR "/singularity/mnt/container", "container mount location")
+AC_DEFINE(CONTAINER_FINALDIR, LOCALSTATEDIR "/singularity/mnt/final", "location of container post overlay")
+
 
 AC_CONFIG_FILES([
    Makefile
