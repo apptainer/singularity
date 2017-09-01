@@ -63,6 +63,7 @@ while true; do
         ;;
         -e|--exists)
             SINGULARITY_BTSTRP_2EXISTING=1
+            shift
         ;;
         -w|--writable)
             if [ "$USERID" != "0" ]; then
