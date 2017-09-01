@@ -2,12 +2,12 @@ cliexecdir = $(libexecdir)/singularity/cli
 
 dist_cliexec_SCRIPTS = action_argparser.sh \
                     apps.exec \
+                    bootstrap.exec \
                     build.exec \
                     check.exec \
                     exec.exec \
                     help.exec \
                     image.exec \
-                    image.bootstrap.exec \
                     image.create.exec \
                     image.expand.exec \
                     image.export.exec \
