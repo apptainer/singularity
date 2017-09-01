@@ -56,18 +56,6 @@ void daemon_file_write(int fd, char *key, char *val) {
     }
 }
 
-/* This should become unnecessary after we make the rootfs path static */
-void singularity_daemon_rootfs(void) {
-    char *file_str = filecat(singularity_registry_get("DAEMON_FILE"));
-
-    char *rootfs_str = strtok(file_str, "\n");
-    rootfs_str = strtok(NULL, "\n");
-
-    singularity_runtime_rootfs(rootfs_str);
-
-    free(file_str);
-}
-
 void daemon_init_join(void) {
     char *ns_path, *ns_fd_str;
     int lock_result, ns_fd;

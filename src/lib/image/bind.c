@@ -72,7 +72,7 @@ char *singularity_image_bind(struct image_object *image) {
         ABORT(255);
     }
 
-    if ( singularity_registry_get("WRITABLE") == NULL ) {
+    if ( image->writable <= 0 ) {
         loop_mount_opts = O_RDONLY;
     } else {
         loop_mount_opts = O_RDWR;

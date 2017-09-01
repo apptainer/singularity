@@ -42,7 +42,7 @@
 #include "./ext3/include.h"
 
 
-struct image_object singularity_image_init(char *path) {
+struct image_object singularity_image_init(char *path, int open_flags) {
     struct image_object image;
 
     if ( path == NULL ) {
@@ -57,19 +57,24 @@ struct image_object singularity_image_init(char *path) {
     image.loopdev = NULL;
     image.offset = 0;
 
+    if ( open_flags & ( O_RDWR | O_WRONLY ) ) {
+        image.writable = 1;
+    } else {
+        image.writable = 0;
+    }
 
     singularity_message(DEBUG, "Calling image_init for each file system module\n");
-    if ( _singularity_image_dir_init(&image) == 0 ) {
+    if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for directory\n");
         image.type = DIRECTORY;
-    } else if ( _singularity_image_squashfs_init(&image) == 0 ) {
+    } else if ( _singularity_image_squashfs_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for squashfs\n");
         image.type = SQUASHFS;
-    } else if ( _singularity_image_ext3_init(&image) == 0 ) {
+    } else if ( _singularity_image_ext3_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for ext3\n");
         image.type = EXT3;
     } else {
-        singularity_message(ERROR, "Unknown image format/type.\n");
+        singularity_message(ERROR, "Unknown image format/type: %s\n", path);
         ABORT(255);
     }
 
@@ -94,6 +99,14 @@ char *singularity_image_path(struct image_object *image) {
 
 int singularity_image_offset(struct image_object *image) {
     return(image->offset);
+}
+
+int singularity_image_type(struct image_object *image) {
+    return(image->type);
+}
+
+int singularity_image_writable(struct image_object *image) {
+    return(image->writable);
 }
 
 int singularity_image_mount(struct image_object *image, char *mount_point) {

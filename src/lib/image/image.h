@@ -35,14 +35,17 @@ struct image_object {
     int offset;
     int fd;
     int type;
+    int writable;
 };
 
-extern struct image_object singularity_image_init(char *path);
+extern struct image_object singularity_image_init(char *path, int open_flags);
 int singularity_image_fd(struct image_object *object);
 char *singularity_image_loopdev(struct image_object *object);
 char *singularity_image_name(struct image_object *object);
 char *singularity_image_path(struct image_object *object);
 char *singularity_image_bind(struct image_object *object);
+int singularity_image_writable(struct image_object *object);
+int singularity_image_type(struct image_object *object);
 extern int singularity_image_mount(struct image_object *image, char *mount_point);
 
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"

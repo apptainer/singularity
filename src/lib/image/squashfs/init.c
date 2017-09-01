@@ -35,14 +35,14 @@
 
 #include "../image.h"
 
-int _singularity_image_squashfs_init(struct image_object *image) {
+int _singularity_image_squashfs_init(struct image_object *image, int open_flags) {
     int image_fd;
     FILE *image_fp;
     char *line;
 
 
     singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
-    if ( ( image_fd = open(image->path, O_RDONLY, 0755) ) < 0 ) {
+    if ( ( image_fd = open(image->path, open_flags, 0755) ) < 0 ) {
         singularity_message(ERROR, "Could not open image %s: %s\n", image->path, strerror(errno));
         ABORT(255);
     }
@@ -59,8 +59,8 @@ int _singularity_image_squashfs_init(struct image_object *image) {
 
     // Get the first line from the config
     if ( fgets(line, 5, image_fp) == NULL ) {
-        singularity_message(ERROR, "Unable to read the first 4 bytes of image: %s\n", strerror(errno));
-        ABORT(255);
+        singularity_message(DEBUG, "Could not read the top of the image\n");
+        return(-1);
     }
 
     fclose(image_fp);

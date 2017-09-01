@@ -39,10 +39,7 @@
 
 int main(int argc, char **argv) {
     struct image_object image;
-
-    char **exec_arg = malloc(sizeof(char *) * 3);
-    exec_arg[0] = joinpath(LIBEXECDIR, "/singularity/bin/sinit"); //path to sinit binary
-    exec_arg[2] = '\0';
+    char *sinit_bin = joinpath(LIBEXECDIR, "/singularity/bin/sinit"); //path to sinit binary
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -60,28 +57,24 @@ int main(int argc, char **argv) {
     
     singularity_sessiondir();
     singularity_cleanupd();
-    
-    image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-//    if ( singularity_registry_get("WRITABLE") == NULL ) {
-//        singularity_image_open(&image, O_RDONLY);
-//    } else {
-//        singularity_image_open(&image, O_RDWR);
-//    }
-//
-//    singularity_image_check(&image);
-//    singularity_image_bind(&image);
-    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+    if ( singularity_registry_get("WRITABLE") != NULL ) {
+        singularity_message(VERBOSE3, "Instantiating writable container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
+    } else {
+        singularity_message(VERBOSE3, "Instantiating read only container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
+    }
 
-    action_ready(singularity_runtime_rootfs(NULL));
+    singularity_image_mount(&image, CONTAINER_MOUNTDIR);
+
+    action_ready();
 
     singularity_runtime_overlayfs();
     singularity_runtime_mounts();
     singularity_runtime_files();
 
-    exec_arg[1] = strdup(singularity_runtime_rootfs(NULL));
-    
-    if ( execv(exec_arg[0], exec_arg) < 0 ) { //Flawfinder: ignore
+    if ( execl(sinit_bin, sinit_bin, NULL) < 0 ) { //Flawfinder: ignore
         singularity_message(ERROR, "Failed to exec sinit: %s\n", strerror(errno));
         ABORT(255);
     }

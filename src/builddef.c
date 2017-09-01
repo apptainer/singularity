@@ -66,16 +66,17 @@ int main(int argc, char **argv) {
 
     singularity_registry_set("WRITABLE", "1");
 
-    image = singularity_image_init(singularity_registry_get("IMAGE"));
-
-//    singularity_image_open(&image, O_RDWR);
-//
-//    singularity_image_check(&image);
+    if ( singularity_registry_get("WRITABLE") != NULL ) {
+        singularity_message(VERBOSE3, "Instantiating writable container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
+    } else {
+        singularity_message(VERBOSE3, "Instantiating read only container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
+    }
 
     singularity_runtime_ns(SR_NS_MNT);
 
-//    singularity_image_bind(&image);
-    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+    singularity_image_mount(&image, CONTAINER_MOUNTDIR);
 
     builddef = singularity_registry_get("BUILDDEF");
 
@@ -133,7 +134,7 @@ int main(int argc, char **argv) {
     fclose(bootdef_fp);
 
     envar_set("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
-    envar_set("SINGULARITY_ROOTFS", singularity_runtime_rootfs(NULL), 1);
+    envar_set("SINGULARITY_ROOTFS", CONTAINER_MOUNTDIR, 1);
     envar_set("SINGULARITY_libexecdir", singularity_registry_get("LIBEXECDIR"), 1);
     envar_set("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
     envar_set("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);

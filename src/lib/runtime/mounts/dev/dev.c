@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -44,7 +45,7 @@ static int bind_dev(char *tmpdir, char *dev);
 
 
 int _singularity_runtime_mount_dev(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
 
     if ( ( singularity_registry_get("CONTAIN") != NULL ) || ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) ) {
         char *sessiondir = singularity_registry_get("SESSIONDIR");
@@ -125,8 +126,6 @@ int _singularity_runtime_mount_dev(void) {
     }
 
     singularity_message(VERBOSE, "Not mounting /dev inside the container\n");
-
-    free(container_dir);
 
     return(0);
 }

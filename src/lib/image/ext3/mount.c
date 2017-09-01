@@ -56,9 +56,10 @@ int _singularity_image_ext3_mount(struct image_object *image, char *mount_point)
         opts |= MS_NODEV;
     }
 
-    if ( singularity_registry_get("WRITABLE") == NULL ) {
+    if ( image->writable <= 0 ) {
         singularity_message(DEBUG, "Adding MS_RDONLY to mount options\n");
         opts |= MS_RDONLY;
+
     }
 
     singularity_priv_escalate();
