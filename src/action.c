@@ -66,11 +66,9 @@ int main(int argc, char **argv) {
     singularity_priv_drop();
 
     singularity_daemon_init();
-    singularity_runtime_ns(SR_NS_ALL);
 
-    singularity_sessiondir();
     singularity_cleanupd();
-    
+
     if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
         if ( singularity_registry_get("WRITABLE") != NULL ) {
             singularity_message(VERBOSE3, "Instantiating writable container image object\n");
@@ -80,15 +78,21 @@ int main(int argc, char **argv) {
             image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
         }
 
+        singularity_runtime_ns(SR_NS_ALL);
+        singularity_sessiondir();
+
         singularity_image_mount(&image, CONTAINER_MOUNTDIR);
+
+        action_ready();
+
+        singularity_runtime_overlayfs();
+        singularity_runtime_mounts();
+        singularity_runtime_files();
+    } else {
+        singularity_runtime_ns(SR_NS_ALL);
+        singularity_sessiondir();
     }
-        
-    action_ready();
-        
-    singularity_runtime_overlayfs();
-    singularity_runtime_mounts();
-    singularity_runtime_files();
-    
+
     singularity_runtime_enter();
     
     singularity_runtime_environment();
@@ -129,14 +133,18 @@ int main(int argc, char **argv) {
 
     free(target_pwd);
 
-    envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
-    envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
-    envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
-    envar_set("SINGULARITY_APPNAME", singularity_registry_get("APPNAME"), 1);
-
     command = singularity_registry_get("COMMAND");
 
-    singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
+    // don't use image object if DAEMON_JOIN is NULL because image object
+    // is not instanciated
+    if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
+        envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
+        envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
+        envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
+        envar_set("SINGULARITY_APPNAME", singularity_registry_get("APPNAME"), 1);
+
+        singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
+    }
 
     if ( command == NULL ) {
         singularity_message(INFO, "No action command verb was given, invoking 'shell'\n");
