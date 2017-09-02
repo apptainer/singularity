@@ -72,6 +72,15 @@
 @MOUNT_DEV@ = @MOUNT_DEV_DEFAULT@
 
 
+# MOUNT DEVPTS: [BOOL]
+# DEFAULT: yes
+# Should we mount a new instance of devpts if there is a 'minimal'
+# /dev, or -C is passed?  Note, this requires that your kernel was
+# configured with CONFIG_DEVPTS_MULTIPLE_INSTANCES=y, or that you're
+# running kernel 4.7 or newer.
+@MOUNT_DEVPTS@ = @MOUNT_DEVPTS_DEFAULT@
+
+
 # MOUNT HOME: [BOOL]
 # DEFAULT: @MOUNT_HOME_DEFAULT@
 # Should we automatically determine the calling user's home directory and
