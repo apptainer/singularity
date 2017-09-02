@@ -24,10 +24,13 @@ BUILD SPEC TARGET:
         recipe:     This is a recipe for building a container from scratch
                     (examples below)
         directory:  A directory structure containing a (ch)root file system
+        image:      A local image on your machine (will convert to squashfs if
+                    it is legacy or writable format)
         tar:        An archive file which contains the above directory format
 
     Targets can also be remote and defined by a URI of the following formats:
 
+        shub://     Build from a Singularity registry (Singularity Hub default)
         docker://   This points to a Docker registry (Docker Hub default)
         http(s)://  You can reference a recipe or tar via a HTTP URL
         host://     This will use ssh/rsync to build a container from a remote
@@ -37,9 +40,11 @@ CREATE OPTIONS:
     -s/--sandbox    Build a sandbox rather then a read only compressed image
     -w/--writable   Build a writable image (warning: deprecated due to sparse
                     file image corruption issues)
+    -e/--exists     Build to an existing image without overwriting (mimics
+                    behavior of legacy command bootstrap)
 
 
-WIP...
+WIP... (Have not been fully tested but *should* work)
     -T|--notest     Bootstrap without running tests in %test section
     -F|--force      Force a rebootstrap of an OS (note: this does not delete
                     what is currently in the image, just causes the core to
@@ -59,6 +64,9 @@ CHECKS OPTIONS:
 See singularity check --help for available tags
 
 DEFFILE BASEOS EXAMPLES:
+    Singularity Hub:
+        Bootstrap: shub
+        From: singularityhub/centos
 
     Docker:
         Bootstrap: docker
