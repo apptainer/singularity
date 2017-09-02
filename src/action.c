@@ -66,29 +66,30 @@ int main(int argc, char **argv) {
     singularity_priv_drop();
 
     singularity_daemon_init();
-    singularity_runtime_ns(SR_NS_ALL);
 
-    singularity_sessiondir();
     singularity_cleanupd();
-    
-    if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
-        if ( singularity_registry_get("WRITABLE") != NULL ) {
-            singularity_message(VERBOSE3, "Instantiating writable container image object\n");
-            image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
-        } else {
-            singularity_message(VERBOSE3, "Instantiating read only container image object\n");
-            image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
-        }
 
-        singularity_image_mount(&image, CONTAINER_MOUNTDIR);
+    if ( singularity_registry_get("WRITABLE") != NULL ) {
+        singularity_message(VERBOSE3, "Instantiating writable container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
+    } else {
+        singularity_message(VERBOSE3, "Instantiating read only container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
     }
-        
-    action_ready();
-        
-    singularity_runtime_overlayfs();
-    singularity_runtime_mounts();
-    singularity_runtime_files();
-    
+
+    singularity_runtime_ns(SR_NS_ALL);
+    singularity_sessiondir();
+
+    if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
+        singularity_image_mount(&image, CONTAINER_MOUNTDIR);
+
+        action_ready();
+
+        singularity_runtime_overlayfs();
+        singularity_runtime_mounts();
+        singularity_runtime_files();
+    }
+
     singularity_runtime_enter();
     
     singularity_runtime_environment();
@@ -129,12 +130,12 @@ int main(int argc, char **argv) {
 
     free(target_pwd);
 
+    command = singularity_registry_get("COMMAND");
+
     envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
     envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
     envar_set("SINGULARITY_APPNAME", singularity_registry_get("APPNAME"), 1);
-
-    command = singularity_registry_get("COMMAND");
 
     singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
 

@@ -52,10 +52,7 @@ int main(int argc, char **argv) {
 
     singularity_registry_set("UNSHARE_PID", "1");
     singularity_registry_set("UNSHARE_IPC", "1");
-        
-    singularity_runtime_ns(SR_NS_ALL);
-    
-    singularity_sessiondir();
+
     singularity_cleanupd();
 
     if ( singularity_registry_get("WRITABLE") != NULL ) {
@@ -65,6 +62,10 @@ int main(int argc, char **argv) {
         singularity_message(VERBOSE3, "Instantiating read only container image object\n");
         image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
     }
+        
+    singularity_runtime_ns(SR_NS_ALL);
+    
+    singularity_sessiondir();
 
     singularity_image_mount(&image, CONTAINER_MOUNTDIR);
 
