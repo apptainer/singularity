@@ -73,7 +73,7 @@
 
 
 # MOUNT DEVPTS: [BOOL]
-# DEFAULT: yes
+# DEFAULT: @MOUNT_DEVPTS_DEFAULT@
 # Should we mount a new instance of devpts if there is a 'minimal'
 # /dev, or -C is passed?  Note, this requires that your kernel was
 # configured with CONFIG_DEVPTS_MULTIPLE_INSTANCES=y, or that you're
