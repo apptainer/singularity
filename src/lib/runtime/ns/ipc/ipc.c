@@ -82,9 +82,8 @@ int _singularity_runtime_ns_ipc_join(void) {
     ipc_fd = openat(ns_fd, "ipc", O_RDONLY);
 
     if( ipc_fd == -1 ) {
-        /* If no IPC file exists, continue without IPC NS */
-        singularity_message(WARNING, "Skipping IPC namespace creation, support not available on host\n");
-        return(0);
+        singularity_message(ERROR, "Could not open IPC NS fd: %s\n", strerror(errno));
+        ABORT(255);
     }
     
     singularity_priv_escalate();

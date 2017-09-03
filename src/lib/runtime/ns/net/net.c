@@ -89,9 +89,8 @@ int _singularity_runtime_ns_net_join(void) {
     net_fd = openat(ns_fd, "net", O_RDONLY);
 
     if( net_fd == -1 ) {
-        /* If no net file exists, continue without NET NS */
-        singularity_message(VERBOSE, "Skipping NET namespace for this instance\n");
-        return(0);
+        singularity_message(ERROR, "Could not open NET NS fd: %s\n", strerror(errno));
+        ABORT(255);
     }
     
     singularity_priv_escalate();
