@@ -45,17 +45,6 @@ while true; do
             fi
             exit
         ;;
-        -s|--shell)
-            shift
-            SINGULARITY_SHELL="${1:-}"
-            export SINGULARITY_SHELL
-            shift
-        ;;
-        -u|--user)
-            SINGULARITY_NOSUID=1
-            export SINGULARITY_NOSUID
-            shift
-        ;;
         -w|--writable)
             shift
             SINGULARITY_WRITABLE=1
@@ -128,6 +117,11 @@ while true; do
             else
                 message WARN "Could not find the Nvidia SMI binary to bind into container\n"
             fi
+        ;;
+        -n|--net)
+            shift
+            SINGULARITY_UNSHARE_NET=1
+            export SINGULARITY_UNSHARE_NET
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
