@@ -110,10 +110,9 @@ int singularity_image_writable(struct image_object *image) {
 }
 
 int singularity_image_mount(struct image_object *image, char *mount_point) {
-    // If a daemon already exists, skip this function
-    // GMK: This should be done via the caller
-    if ( singularity_registry_get("DAEMON_JOIN") )
-        return(0);
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+    }
 
     singularity_message(DEBUG, "Figuring out which mount module to use...\n");
     if ( image->type == SQUASHFS ) {

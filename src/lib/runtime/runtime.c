@@ -53,16 +53,17 @@
 
 int singularity_runtime_ns(unsigned int flags) {
     /* If a daemon already exists, join existing namespaces instead of creating */
-    if ( singularity_registry_get("DAEMON_JOIN") )
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
         return(_singularity_runtime_ns_join(flags));
+    }
     
     return(_singularity_runtime_ns(flags));
 }
 
 int singularity_runtime_overlayfs(void) {
-    /* If a daemon already exists, skip this function */
-    if( singularity_registry_get("DAEMON_JOIN") )
-        return(0);
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+    }
 
     return(_singularity_runtime_overlayfs());
 }
@@ -72,23 +73,22 @@ int singularity_runtime_environment(void) {
 }
 
 int singularity_runtime_mounts(void) {
-    /* If a daemon already exists, skip this function */
-    if( singularity_registry_get("DAEMON_JOIN") )
-        return(0);
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+    }
 
     return(_singularity_runtime_mounts());
 }
 
 int singularity_runtime_files(void) {
-    /* If a daemon already exists, skip this function */
-    if( singularity_registry_get("DAEMON_JOIN") )
-        return(0);
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+    }
 
     return(_singularity_runtime_files());
 }
 
 int singularity_runtime_enter(void) {
-
     return(_singularity_runtime_enter());
 }
 

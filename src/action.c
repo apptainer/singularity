@@ -67,8 +67,6 @@ int main(int argc, char **argv) {
 
     singularity_daemon_init();
 
-    singularity_cleanupd();
-
     if ( singularity_registry_get("WRITABLE") != NULL ) {
         singularity_message(VERBOSE3, "Instantiating writable container image object\n");
         image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
@@ -78,9 +76,12 @@ int main(int argc, char **argv) {
     }
 
     singularity_runtime_ns(SR_NS_ALL);
-    singularity_sessiondir();
 
     if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
+        singularity_cleanupd();
+
+        singularity_sessiondir();
+
         singularity_image_mount(&image, CONTAINER_MOUNTDIR);
 
         action_ready();
