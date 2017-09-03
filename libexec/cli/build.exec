@@ -163,7 +163,7 @@ case $SINGULARITY_BUILDDEF in
         export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
         eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
         message 1 "Importing: base Singularity environment\n"
-        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd "$SINGULARITY_ROOTFS"; tar xf - ) || exit $?
+        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
 
         for i in `cat "$SINGULARITY_CONTENTS"`; do
             message 1 "Importing: $i\n"
@@ -209,7 +209,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
         if [ "$USERID" != "0" ]; then
             message WARNING "You are not root! Some files may not be exported from  ${SINGULARITY_BUILDDEF} due to permission errors.\n"
         fi
-        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" | (cd "${SINGULARITY_ROOTFS}" && tar xBf - -C "${SINGULARITY_ROOTFS}"); then
+        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
@@ -224,7 +224,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             exit 1
         fi
         if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then # we are bootstrapping to an existing image and need to populate the rootfs
-            if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER_OUTPUT}" | (cd "${SINGULARITY_ROOTFS}" && tar xBf - -C "${SINGULARITY_ROOTFS}"); then
+            if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER_OUTPUT}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
                 message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
                 ABORT 255
             fi
