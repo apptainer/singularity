@@ -90,7 +90,7 @@ int _singularity_runtime_ns_net_join(void) {
 
     if( net_fd == -1 ) {
         /* If no net file exists, continue without NET NS */
-        singularity_message(WARNING, "Skipping NET namespace creation, support not available on host\n");
+        singularity_message(VERBOSE, "Skipping NET namespace for this instance\n");
         return(0);
     }
     
