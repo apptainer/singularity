@@ -2,6 +2,7 @@ cliexecdir = $(libexecdir)/singularity/cli
 
 dist_cliexec_SCRIPTS = action_argparser.sh \
                     apps.exec \
+                    bootstrap.exec \
                     build.exec \
                     check.exec \
                     exec.exec \
@@ -25,6 +26,7 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
 
 dist_cliexec_DATA = singularity.help \
                     apps.help \
+                    bootstrap.help \
                     build.help \
                     check.help \
                     exec.help \

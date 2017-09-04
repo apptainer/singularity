@@ -25,6 +25,7 @@ CONTAINER USAGE COMMANDS:
 
 CONTAINER IMAGE MANAGEMENT COMMANDS:
     apps          list available apps within a container
+    bootstrap     *deprecated* use build instead
     build         Build a new Singularity container
     check         Perform container lint checks
     image         Image management utilities
