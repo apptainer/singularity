@@ -41,6 +41,12 @@
 
 #include "./bootstrap-lib/include.h"
 
+#ifndef LIBEXECDIR
+#error LIBEXECDIR not defined
+#endif
+#ifndef BINDIR
+#error BINDIR not defined
+#endif
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
 #endif
@@ -135,8 +141,8 @@ int main(int argc, char **argv) {
 
     envar_set("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
     envar_set("SINGULARITY_ROOTFS", CONTAINER_MOUNTDIR, 1);
-    envar_set("SINGULARITY_libexecdir", singularity_registry_get("LIBEXECDIR"), 1);
-    envar_set("SINGULARITY_bindir", singularity_registry_get("BINDIR"), 1);
+    envar_set("SINGULARITY_libexecdir", LIBEXECDIR, 1);
+    envar_set("SINGULARITY_bindir", BINDIR, 1);
     envar_set("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
     envar_set("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
     envar_set("SINGULARITY_CHECKS", singularity_registry_get("CHECKS"), 1);
