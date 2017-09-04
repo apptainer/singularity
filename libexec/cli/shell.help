@@ -1,6 +1,6 @@
 USAGE: singularity [...] shell [shell options...] <container path>
 
-Obtain an interactive shell (/bin/sh) within the container image.
+Obtain an interactive shell (/bin/bash) within the container image.
 
 
 SHELL OPTIONS:

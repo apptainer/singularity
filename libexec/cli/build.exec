@@ -61,6 +61,10 @@ while true; do
             SINGULARITY_SANDBOX=1
             shift
         ;;
+        -e|--exists)
+            SINGULARITY_BTSTRP_2EXISTING=1
+            shift
+        ;;
         -w|--writable)
             if [ "$USERID" != "0" ]; then
                 message ERROR "Writable images must be created as root\n"
@@ -96,8 +100,21 @@ fi
 SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
 
-if [ -f "$SINGULARITY_CONTAINER_OUTPUT" ]; then
-    if [ -n "${SINGULARITY_FORCE:-}" ]; then
+if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
+    if [ ! -f "${SINGULARITY_CONTAINER_OUTPUT:-}" ]; then
+        message ERROR "Could not open image $SINGULARITY_CONTAINER_OUTPUT: No such file or directory\n"
+        exit 1
+    fi
+    if ! eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
+        message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an image file\n"
+        exit 1
+    fi
+fi
+
+if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
+    if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
+        message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
+    elif [ -n "${SINGULARITY_FORCE:-}" ]; then
         rm -f "$SINGULARITY_CONTAINER_OUTPUT"
     else
         message ERROR "Container already exists: $SINGULARITY_CONTAINER_OUTPUT\n"
@@ -112,7 +129,7 @@ if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
         SINGULARITY_ROOTFS_DIRNAME=`dirname "$SINGULARITY_ROOTFS"`
         SINGULARITY_ROOTFS_DIRNAME_OWNER=`stat -c '%u' $SINGULARITY_ROOTFS_DIRNAME`
         if [ "$USERID" != "$SINGULARITY_ROOTFS_DIRNAME_OWNER" ]; then
-            echo "You should not run this command within a directory not owned by root"
+            message WARNING "You should only run this command within a root-owned directory\n"
             if [ -z "${SINGULARITY_FORCE:-}" ]; then
                 exit 1
             fi
@@ -134,56 +151,104 @@ fi
 
 export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 
-if [ -f "$1" ]; then
-    message 1 "Using container recipe deffile: $1\n"
-    case $1 in
-        *.tar.gz)
-            tar xzf "$1" -C "${SINGULARITY_ROOTFS}"
-        ;;
-        *.def|*Singularity)
-            if [ "$USERID" != "0" ]; then
-                echo "You must be the root user to run this command"
-                exit 1
+SINGULARITY_BUILDDEF="${1:-}"
+
+case $SINGULARITY_BUILDDEF in
+    docker://*)
+        SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
+        if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
+            message ERROR "Failed to create temporary directory\n"
+            ABORT 255
+        fi
+        export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
+        eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+        message 1 "Importing: base Singularity environment\n"
+        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
+
+        for i in `cat "$SINGULARITY_CONTENTS"`; do
+            message 1 "Importing: $i\n"
+            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
+        done
+
+        rm -f "$SINGULARITY_CONTENTS"
+    ;;
+    
+    shub://*)
+        SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
+        if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
+            message ERROR "Failed to create temporary directory\n"
+            ABORT 255
+        fi
+
+        # If cache is set, set pull folder to it (first priority)
+        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+            SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
+        else
+            # Only set the pull folder to be $PWD if not set by user
+            if [ ! -n "${SINGULARITY_PULLFOLDER:-}" ]; then
+                SINGULARITY_PULLFOLDER="."
             fi
-            SINGULARITY_BUILDDEF="$1"
-            export SINGULARITY_BUILDDEF
-            eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
-        ;;
-        *)
-            message ERROR "Unsupported file type: $1\n"
+        fi
+
+        export SINGULARITY_CONTENTS SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER
+
+        # relying on pull.py for error checking here
+        ${SINGULARITY_libexecdir}/singularity/python/pull.py
+
+        # switch $SINGULARITY_CONTAINER from remote to local 
+        SINGULARITY_BUILDDEF=`cat $SINGULARITY_CONTENTS`
+        SINGULARITY_CLEANUP=1
+        rm -f "$SINGULARITY_CONTENTS"
+    ;;
+esac
+
+if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
+
+    if eval is_image "${SINGULARITY_BUILDDEF}"; then
+        message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
+        if [ "$USERID" != "0" ]; then
+            message WARNING "You are not root! Some files may not be exported from  ${SINGULARITY_BUILDDEF} due to permission errors.\n"
+        fi
+        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+            message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
+            ABORT 255
+        fi
+        if [ -n "${SINGULARITY_CLEANUP:-}" ]; then
+            rm -f "$SINGULARITY_BUILDDEF"
+        fi
+
+    elif eval is_deffile "${SINGULARITY_BUILDDEF}"; then 
+        message 1 "Using container recipe deffile: $SINGULARITY_BUILDDEF\n"
+        if [ "$USERID" != "0" ]; then
+            message ERROR "You must be the root user to build from a definition file\n"
             exit 1
-        ;;
-    esac
-elif [ -d "$1" ]; then
-    message 1 "Building image from sandbox: $1\n"
-    rmdir "${SINGULARITY_ROOTFS}"
-    SINGULARITY_ROOTFS="$1"
-    SINGULARITY_NOCLEANUP=1
-else
-    case $1 in
-        docker://*)
-            SINGULARITY_CONTAINER="$1"
-            if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
-                message ERROR "Failed to create temporary directory\n"
+        fi
+        if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then # we are bootstrapping to an existing image and need to populate the rootfs
+            if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER_OUTPUT}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+                message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
                 ABORT 255
             fi
-            export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
-            eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
-            message 1 "Importing: base Singularity environment\n"
-            zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd "$SINGULARITY_ROOTFS"; tar xf - ) || exit $?
+        fi
+        export SINGULARITY_BUILDDEF
+        eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
 
-            for i in `cat "$SINGULARITY_CONTENTS"`; do
-                message 1 "Importing: $i\n"
-                zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
-            done
+    elif eval is_tar "${SINGULARITY_BUILDDEF}"; then
+        message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
+        if ! eval tar xzf "${SINGULARITY_BUILDDEF}" -C "${SINGULARITY_ROOTFS}"; then
+            message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
+            ABORT 255
+        fi
 
-            rm -f "$SINGULARITY_CONTENTS"
-        ;;
-        *)
-            message ERROR "Unsupported location: $1\n"
-            exit 1
-        ;;
-    esac
+    else
+        message ERROR "Unsupported file type: $SINGULARITY_BUILDDEF\n"
+        exit 1
+    fi
+
+elif [ -d "$SINGULARITY_BUILDDEF" ]; then
+    message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
+    rmdir "${SINGULARITY_ROOTFS}"
+    SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
+    SINGULARITY_NOCLEANUP=1
 fi
 
 if [ "$USERID" != "0" ]; then
@@ -194,33 +259,33 @@ fi
 
 if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
     if [ -n "${SINGULARITY_WRITABLE:-}" ]; then
-        CONTAINER_SIZE=`du -sm ${SINGULARITY_ROOTFS} | cut -f 1`
-        IMAGE_SIZE=`echo "(${CONTAINER_SIZE:-768} * 1.25)/1" | bc`
 
-        if [ "$IMAGE_SIZE" -lt 10 ]; then
-            IMAGE_SIZE=10
+        if [ -z "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
+            CONTAINER_SIZE=`du -sm ${SINGULARITY_ROOTFS} | cut -f 1`
+            # using the let builtin instead of bc which is not guaranteed 
+            let "IMAGE_SIZE=(${CONTAINER_SIZE:-768} * 125)/100"
+            if [ "$IMAGE_SIZE" -lt 10 ]; then
+                IMAGE_SIZE=10
+            fi
+            message 1 "Creating empty Singularity writable container ${CONTAINER_SIZE}MB\n"
+            eval_abort ${SINGULARITY_bindir}/singularity image.create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
         fi
 
-        message 1 "Creating empty Singularity writable container\n"
-        eval_abort singularity image.create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
-
         message 1 "Building Singularity image...\n"
-        tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
+        tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_bindir}/singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
     else
         message 1 "Building Singularity image...\n"
         if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend -all-root > /dev/null; then
             message ERROR "Failed squashing image, left template directory at: $SINGULARITY_CONTAINER_OUTPUT\n"
             exit 1
         fi
-
-
-
-
-
-
-
-
     fi
+
+# =============================================================================
+# This space intentionally left blank
+# (for Yanick to fill with header goodness)
+# =============================================================================
+
     if [ -z "${SINGULARITY_NOCLEANUP:-}" ]; then
         message 1 "Cleaning up...\n";
         rm -rf "$SINGULARITY_ROOTFS"
