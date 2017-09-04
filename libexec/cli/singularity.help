@@ -31,7 +31,7 @@ CONTAINER MANAGEMENT COMMANDS:
 
 COMMAND CLASSES:
     instance      Persistent instance management commands
-    image         Image management utilities
+    image         Image file management utilities
 
 
 CONTAINER USAGE OPTIONS:
