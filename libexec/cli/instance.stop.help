@@ -1,4 +1,4 @@
-USAGE: singularity [...] stop [list options...] <container path> <instance name>
+USAGE: singularity [...] instance.stop [...] <container path> <instance name>
 
 Stop a named instance of the given container image.
 
@@ -8,7 +8,7 @@ LIST OPTIONS:
 
 EXAMPLES:
 
-    $ singularity stop my-sql.img mysql
+    $ singularity instance.stop my-sql.img mysql
     Stopping mysql instance of my-sql.img (PID=23845)
 
 

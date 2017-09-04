@@ -7,6 +7,11 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
                     check.exec \
                     exec.exec \
                     help.exec \
+                    instance.exec \
+                    instance.list.exec \
+                    instance.start.exec \
+                    instance.stop.exec \
+                    instance.stop-all.exec \
                     image.exec \
                     image.create.exec \
                     image.expand.exec \
@@ -18,11 +23,7 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
                     run.exec \
                     shell.exec \
                     test.exec \
-                    selftest.exec \
-                    start.exec \
-                    list.exec \
-                    stop.exec \
-                    stop-all.exec
+                    selftest.exec
 
 dist_cliexec_DATA = singularity.help \
                     apps.help \
@@ -30,6 +31,11 @@ dist_cliexec_DATA = singularity.help \
                     build.help \
                     check.help \
                     exec.help \
+                    instance.help \
+                    instance.list.help \
+                    instance.start.help \
+                    instance.stop.help \
+                    instance.stop-all.help \
                     image.help \
                     image.create.help \
                     image.expand.help \
@@ -40,10 +46,6 @@ dist_cliexec_DATA = singularity.help \
                     pull.help \
                     run.help \
                     shell.help \
-                    test.help \
-                    start.help \
-                    list.help \
-                    stop.help \
-                    stop-all.help
+                    test.help
 
 MAINTAINERCLEANFILES = Makefile.in

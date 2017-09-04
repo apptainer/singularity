@@ -18,20 +18,20 @@ CONTAINER USAGE COMMANDS:
     list          List all running named instances 
     run           Launch a runscript within container
     shell         Run a Bourne shell within container
-    start         Start a named instance of the given container image
-    stop          Stop the named instance of the given container image
-    stop-all      Stop all running container instances
     test          Execute any test code defined within container
 
-CONTAINER IMAGE MANAGEMENT COMMANDS:
+CONTAINER MANAGEMENT COMMANDS:
     apps          list available apps within a container
     bootstrap     *deprecated* use build instead
     build         Build a new Singularity container
     check         Perform container lint checks
-    image         Image management utilities
     inspect       Display a container's metadata
     mount         Mount a Singularity container image
     pull          pull a Singularity/Docker container to $PWD
+
+COMMAND CLASSES:
+    instance      Persistent instance management commands
+    image         Image management utilities
 
 
 CONTAINER USAGE OPTIONS:

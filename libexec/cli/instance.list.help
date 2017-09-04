@@ -1,4 +1,4 @@
-USAGE: singularity [...] list [list options...]
+USAGE: singularity [...] instance.list [list options...]
 
 List all running named instances
 
@@ -7,12 +7,12 @@ LIST OPTIONS:
 
 EXAMPLES:
 
-    $ singularity list
+    $ singularity instance.list
     /home/mibauer/singularity/sinstance/test.img  [2056.132716]  Instances:
          Instance PID:   11963
          Instance Name:  test
          
-    $ sudo singularity list -u mibauer
+    $ sudo singularity instance.list -u mibauer
     /home/mibauer/singularity/sinstance/test.img  [2056.132716]  Instances:
          Instance PID:   16219
          Instance Name:  test

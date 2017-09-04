@@ -1,4 +1,4 @@
-USAGE: singularity [...] stop [list options...] <container path> <instance name>
+USAGE: singularity [...] instance.stop [...] <container path> <instance name>
 
 Stop all running container instances.
 
@@ -7,7 +7,7 @@ LIST OPTIONS:
 
 EXAMPLES:
 
-    $ singularity stop-all
+    $ singularity instance.stop-all
     Stopping mysql1 instance of /tmp/my-sql.img (PID=28636)
     Stopping mysql2 instance of /tmp/my-sql.img (PID=28637)
     Stopping mysql3 instance of /tmp/my-sql.img (PID=28638)
