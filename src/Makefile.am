@@ -9,7 +9,7 @@ AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATE
 
 bindir = $(libexecdir)/singularity/bin
 
-bin_PROGRAMS = action builddef cleanupd get-section mount start sinit $(BUILD_SUID)
+bin_PROGRAMS = action builddef cleanupd get-section image mount start sinit $(BUILD_SUID)
 EXTRA_PROGRAMS = action-suid mount-suid start-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
@@ -38,6 +38,10 @@ sinit_CPPFLAGS = $(AM_CPPFLAGS)
 
 get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)
+
+image_SOURCES = image.c util/util.c util/message.c util/config_parser.c util/file.c
+image_LDADD = lib/image/libsingularity-image.la
+image_CPPFLAGS = $(AM_CPPFLAGS)
 
 action_suid_SOURCES = $(action_SOURCES)
 action_suid_LDADD = $(action_LDADD)
