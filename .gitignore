@@ -39,7 +39,7 @@ src/start
 src/start-suid
 src/builddef
 src/cleanupd
-src/image
+src/image-type
 src/mount
 src/mount-suid
 src/sinit
