@@ -38,6 +38,8 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/setns.h"
+
 
 static int enabled = -1;
 

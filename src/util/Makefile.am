@@ -28,4 +28,6 @@ EXTRA_DIST = cleanupd.c \
 			 suid.h \
 			 util.c \
 			 util.h \
+			 setns.c \
+			 setns.h \
 			 config_defaults.h
