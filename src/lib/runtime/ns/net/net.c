@@ -29,6 +29,7 @@
 #include "util/privilege.h"
 #include "util/fork.h"
 #include "util/registry.h"
+#include "util/setns.h"
 
 
 static int enabled = -1;

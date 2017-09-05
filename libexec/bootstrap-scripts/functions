@@ -149,6 +149,10 @@ singularity_app_init() {
         message 2 "Creating ${APPDATA}...\n"
     fi
 
+    APPMETA="${APPBASE}/scif"
+    if [ ! -d "${APPMETA}" ]; then
+        mkdir -p ${APPMETA}
+    fi
 }
 
 
