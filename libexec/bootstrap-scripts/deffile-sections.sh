@@ -79,7 +79,7 @@ cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 ### EXPORT ENVARS
 DEBIAN_FRONTEND=noninteractive
-
+export DEBIAN_FRONTEND
 
 # Script helper paths
 ADD_LABEL=$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py
