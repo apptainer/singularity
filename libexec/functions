@@ -369,22 +369,14 @@ is_deffile() {
 
 is_image() {
 # check if a file looks like, walks like, and quacks like an image file
-    SINGULARITY_MOUNTPOINT=`mktemp -d /tmp/.singularity-imagecheck.XXXXXXXX`
-    RESET_IMAGE=`echo ${SINGULARITY_IMAGE}`
-    SINGULARITY_IMAGE=$1
-    export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 
-    if [ -z "${SINGULARITY_NOSUID:-}" ]; then
-        eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" true >/dev/null 2>&1
-        RETVAL=$?
-    else
-        eval "$SINGULARITY_libexecdir/singularity/bin/mount" true >/dev/null 2>&1
-        RETVAL=$?
+    if [ -z "${1:-}" ]; then
+        return 1
     fi
 
-    rmdir "$SINGULARITY_MOUNTPOINT"
-    SINGULARITY_IMAGE=$RESET_IMAGE
-    export SINGULARITY_IMAGE
+    eval "$SINGULARITY_libexecdir/singularity/bin/image-type" "$1" 2>/dev/null
+    RETVAL=$?
+
     return $RETVAL
 }
 
