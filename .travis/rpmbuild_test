@@ -11,6 +11,11 @@ make dist
 rpmbuild -ta *.tar.gz
 rpm -iv ~/rpmbuild/RPMS/*/*.rpm
 
+if [ "$OS_VERSION" = 6 ]; then
+    # the test suite has not yet been ported to centos6 python, skip it
+    exit
+fi
+
 # run the test suite
 yum install -y libtool sudo which e2fsprogs
 sed -i 's,^prefix=.*,prefix=/usr,' test.sh
