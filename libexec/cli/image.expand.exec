@@ -86,6 +86,14 @@ if [ ! -f "$SINGULARITY_IMAGE" ]; then
     exit 1
 fi
 
+IMAGE_TYPE=`eval "$SINGULARITY_libexecdir/singularity/bin/image-type" "${SINGULARITY_IMAGE}"`
+
+if [ "$IMAGE_TYPE" != "EXT3" ]; then
+    message ERROR "This is not a writable Singularity image format\n"
+    ABORT 255
+fi
+
+message 1 "Expanding image by ${SINGULARITY_IMAGESIZE:-768}MB\n"
 if ! dd if=/dev/zero bs=1M count=${SINGULARITY_IMAGESIZE:-768} status=none >> "$SINGULARITY_IMAGE"; then
     message ERROR "Failed expanding image!\n"
     exit 1
