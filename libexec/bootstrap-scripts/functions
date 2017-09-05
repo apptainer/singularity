@@ -137,9 +137,14 @@ singularity_app_init() {
     APPROOT="${2:-}"
 
     APPBASE="${APPROOT}/scif/apps/${APPNAME}"
+    APPMETA="${APPBASE}/scif"
+
     if [ ! -d "${APPBASE}" ]; then
         mkdir -p "${APPBASE}/scif"
         mkdir -p "${APPBASE}/bin"
+        mkdir -p "${APPBASE}/lib"
+        mkdir -p "${APPMETA}"
+        mkdir -p "${APPMETA}/env"
         message 2 "Creating ${APPBASE}...\n"
     fi
 
@@ -151,11 +156,6 @@ singularity_app_init() {
         message 2 "Creating ${APPDATA}...\n"
     fi
 
-    APPMETA="${APPBASE}/scif"
-    if [ ! -d "${APPMETA}" ]; then
-        mkdir -p ${APPMETA}
-    fi
-
     # App specific variables should be exposed at run, shell, exec
     echo "
     SINGULARITY_APPNAME=$APPNAME
@@ -165,6 +165,6 @@ singularity_app_init() {
     SINGULARITY_APPINPUT=\"/scif/data/${APPNAME}/input\"
     SINGULARITY_APPOUTPUT=\"/scif/data/${APPNAME}/output\"
     export SINGULARITY_APPDATA SINGULARITY_APPNAME SINGULARITY_APPBASE SINGULARITY_APPMETA SINGULARITY_APPINPUT SINGULARITY_APPOUTPUT
-    " > ${APPMETA}/01-base.sh
+    " > "${APPMETA}/env/01-base.sh"
 
 }

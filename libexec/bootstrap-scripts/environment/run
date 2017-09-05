@@ -8,13 +8,6 @@ done
 
 if test -n "${SINGULARITY_APPNAME:-}"; then
 
-    if [ -f "/scif/apps/${SINGULARITY_APPNAME:-}/scif/01-base.sh" ]; then
-        . "/scif/apps/${SINGULARITY_APPNAME:-}/scif/01-base.sh"
-    fi
-    if [ -f "/scif/apps/${SINGULARITY_APPNAME:-}/scif/90-environment.sh" ]; then
-        . "/scif/apps/${SINGULARITY_APPNAME:-}/scif/90-environment.sh"
-    fi
-
     if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript"; then
         exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript" "$@"
     else
