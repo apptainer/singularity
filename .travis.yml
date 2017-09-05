@@ -10,9 +10,8 @@ sudo: true
 matrix:
   include:
     - os: linux
-# skipping centos6 for now because of setns failures
-#    - os: linux
-#      env: OS_TYPE=centos OS_VERSION=6
+    - os: linux
+      env: OS_TYPE=centos OS_VERSION=6
     - os: linux
       env: OS_TYPE=centos OS_VERSION=7
 
