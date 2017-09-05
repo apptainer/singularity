@@ -1,7 +1,8 @@
 #!/bin/bash -ex
 
 # this script runs as root under docker 
-# OS_VERSION is in $1
+
+OS_VERSION="$1"
 
 # build and install
 yum install -y libtool rpm-build make
