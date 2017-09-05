@@ -374,7 +374,7 @@ is_image() {
         return 1
     fi
 
-    eval "$SINGULARITY_libexecdir/singularity/bin/image-type" "$1" 2>/dev/null
+    eval "$SINGULARITY_libexecdir/singularity/bin/image-type" "$1" >/dev/null 2>&1
     RETVAL=$?
 
     return $RETVAL
