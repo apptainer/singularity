@@ -24,7 +24,7 @@
 
 . ./functions
 
-test_init "Bootstrap tests"
+test_init "Build tests"
 
 
 
@@ -32,68 +32,85 @@ CONTAINER="$SINGULARITY_TESTDIR/container"
 CONTAINERIMG="$SINGULARITY_TESTDIR/container.img"
 CONTAINERDIR="$SINGULARITY_TESTDIR/container.dir"
 
+_check_container() {
+    container=$1
+    stest 0 singularity exec "$CONTAINERIMG" true
+    stest 1 singularity exec "$CONTAINERIMG" false
+    stest 0 singularity exec "$container" test -f /.singularity.d/runscript
+    stest 0 singularity exec "$container" test -f /.singularity.d/labels.json
+    stest 0 singularity exec "$container" test -f /.singularity.d/env/01-base.sh
+    stest 0 singularity exec "$container" test -f /.singularity.d/actions/shell
+    stest 0 singularity exec "$container" test -f /.singularity.d/actions/exec
+    stest 0 singularity exec "$container" test -f /.singularity.d/actions/run
+    stest 0 singularity exec "$container" test -L /environment
+    stest 0 singularity exec "$container" test -L /singularity
+}
 
 stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
+_container_check $CONTAINER
+# stest 0 singularity exec "$CONTAINER" true
+# stest 1 singularity exec "$CONTAINER" false
 
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/runscript
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/labels.json
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
-stest 0 singularity exec "$CONTAINER" test -L /environment
-stest 0 singularity exec "$CONTAINER" test -L /singularity
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/runscript
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/labels.json
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
+# stest 0 singularity exec "$CONTAINER" test -L /environment
+# stest 0 singularity exec "$CONTAINER" test -L /singularity
 
 
 # This should fail as root does not own the parent directory
 stest 1 sudo singularity build --sandbox "$CONTAINERDIR" "../examples/busybox/Singularity"
 # Force fixes that
 stest 0 sudo singularity -x build --force --sandbox "$CONTAINERDIR" "../examples/busybox/Singularity"
-stest 0 singularity exec "$CONTAINERDIR" true
-stest 1 singularity exec "$CONTAINERDIR" false
-
-stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/runscript
-stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/labels.json
-stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/env/01-base.sh
-stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/actions/shell
-stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/actions/exec
-stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/actions/run
-stest 0 singularity exec "$CONTAINERDIR" test -L /environment
-stest 0 singularity exec "$CONTAINERDIR" test -L /singularity
+_container_check $CONTAINER
+# stest 0 singularity exec "$CONTAINERDIR" true
+# stest 1 singularity exec "$CONTAINERDIR" false
+# 
+# stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/runscript
+# stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/labels.json
+# stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/env/01-base.sh
+# stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/actions/shell
+# stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/actions/exec
+# stest 0 singularity exec "$CONTAINERDIR" test -f /.singularity.d/actions/run
+# stest 0 singularity exec "$CONTAINERDIR" test -L /environment
+# stest 0 singularity exec "$CONTAINERDIR" test -L /singularity
 
 
 stest 0 sudo singularity build --writable "$CONTAINERIMG" "../examples/busybox/Singularity"
-stest 0 singularity exec "$CONTAINERIMG" true
-stest 1 singularity exec "$CONTAINERIMG" false
-
-stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/runscript
-stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/labels.json
-stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/env/01-base.sh
-stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/actions/shell
-stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/actions/exec
-stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/actions/run
-stest 0 singularity exec "$CONTAINERIMG" test -L /environment
-stest 0 singularity exec "$CONTAINERIMG" test -L /singularity
+_container_check $CONTAINER
+# stest 0 singularity exec "$CONTAINERIMG" true
+# stest 1 singularity exec "$CONTAINERIMG" false
+# 
+# stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/runscript
+# stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/labels.json
+# stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/env/01-base.sh
+# stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/actions/shell
+# stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/actions/exec
+# stest 0 singularity exec "$CONTAINERIMG" test -f /.singularity.d/actions/run
+# stest 0 singularity exec "$CONTAINERIMG" test -L /environment
+# stest 0 singularity exec "$CONTAINERIMG" test -L /singularity
 
 
 stest 0 singularity build -F "$CONTAINER" docker://busybox
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/runscript
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/labels.json
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
-stest 0 singularity exec "$CONTAINER" test -L /environment
-stest 0 singularity exec "$CONTAINER" test -L /singularity
-
-
-stest 0 sudo rm -rf "${CONTAINER}"
-stest 0 sudo rm -rf "${CONTAINERDIR}"
-stest 0 sudo rm -rf "${CONTAINERIMG}"
+_container_check $CONTAINER
+# stest 0 singularity exec "$CONTAINER" true
+# stest 1 singularity exec "$CONTAINER" false
+# 
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/runscript
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/labels.json
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
+# stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
+# stest 0 singularity exec "$CONTAINER" test -L /environment
+# stest 0 singularity exec "$CONTAINER" test -L /singularity
+# 
+# 
+# stest 0 sudo rm -rf "${CONTAINER}"
+# stest 0 sudo rm -rf "${CONTAINERDIR}"
+# stest 0 sudo rm -rf "${CONTAINERIMG}"
 
 test_cleanup
