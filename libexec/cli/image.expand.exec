@@ -86,10 +86,15 @@ if [ ! -f "$SINGULARITY_IMAGE" ]; then
     exit 1
 fi
 
-IMAGE_TYPE=`eval "$SINGULARITY_libexecdir/singularity/bin/image-type" "${SINGULARITY_IMAGE}"`
+IMAGE_TYPE=`eval "$SINGULARITY_libexecdir/singularity/bin/image-type" "${SINGULARITY_IMAGE}" 2>/dev/null`
 
 if [ "$IMAGE_TYPE" != "EXT3" ]; then
     message ERROR "This is not a writable Singularity image format\n"
+    ABORT 255
+fi
+
+if ! touch "$SINGULARITY_IMAGE" >/dev/null 2>&1; then
+    message ERROR "Inappropriate permission to modify: $SINGULARITY_IMAGE\n"
     ABORT 255
 fi
 
