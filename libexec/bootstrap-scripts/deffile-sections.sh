@@ -167,7 +167,12 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "l
 
         singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
             if [ -n "$KEY" -a -n "$VAL" ]; then
-                $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+                if [ "${SINGULARITY_DEFFILE_BOOTSTRAP:-}" = "shub" -o "${SINGULARITY_DEFFILE_BOOTSTRAP:-}" = "localimage" ]; then
+                    $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json" -f "False"
+                else
+                    $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+                
+                fi
             fi
         done
     fi
