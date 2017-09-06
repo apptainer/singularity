@@ -91,4 +91,3 @@ stest() {
         message 2 "%13s OK\n" "(retval=$RETVAL)"
     fi
 }
-
