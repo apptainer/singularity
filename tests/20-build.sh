@@ -62,11 +62,10 @@ sudo mv "$CONTAINER" "$CONTAINER2"
 stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2"
 container_check
 
-# # from definition file to image 
-# rm -rf "$CONTAINER"
-# stest 0 sudo singularity build --writable "$CONTAINER" "../examples/busybox/Singularity"
-# return 0
-# container_check
+# from definition file to image 
+rm -rf "$CONTAINER"
+stest 0 sudo singularity build --writable "$CONTAINER" "../examples/busybox/Singularity"
+container_check
 
 # from image to squasfs
 sudo mv "$CONTAINER" "$CONTAINER2"
@@ -93,20 +92,37 @@ sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "../examples/docker/Singularity"
 container_check
 
-# # from squashfs to squashfs (via def file)
-# cat >"${SINGULARITY_TESTDIR}/Singularity" <<EOF
-# Bootstrap: localimage
-# From: $CONTAINER2
-# EOF
-# sudo mv "$CONTAINER" "$CONTAINER2"
-# stest 0 sudo singularity build -F "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
-# container_check
+# from shub to squashfs (via def file)
+sudo rm "$CONTAINER"
+stest 0 sudo singularity build "$CONTAINER" "../examples/shub/Singularity"
+container_check
 
-# # from def file to existing image 
-# sudo rm "$CONTAINER"
-# stest 0 singularity image.create -F "$CONTAINER"
-# stest 0 singularity build --exists "$CONTAINER" "..examples/busybox/Singularity"
-# container_check
+# from squashfs to squashfs (via def file)
+cat >"${SINGULARITY_TESTDIR}/Singularity" <<EOF
+Bootstrap: localimage
+From: $CONTAINER2
+EOF
+sudo mv "$CONTAINER" "$CONTAINER2"
+stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+container_check
+
+# from localimage to squashfs (via def file)
+sudo rm "$CONTAINER" "$CONTAINER2"
+stest 0 sudo singularity build --writable "$CONTAINER2" "../examples/busybox/Singularity"
+stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+container_check
+
+# from sandbox to squashfs (via def file)
+sudo rm "$CONTAINER" "$CONTAINER2"
+stest 0 sudo singularity -x build --force --sandbox "$CONTAINER2" "../examples/busybox/Singularity"
+stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+container_check
+
+# from def file to existing image 
+sudo rm "$CONTAINER"
+stest 0 singularity image.create "$CONTAINER"
+stest 0 singularity build --exists "$CONTAINER" "..examples/busybox/Singularity"
+container_check
 
 # from tar to squashfs
 singularity image.export "$CONTAINER" >"$CONTAINER2".tar
@@ -125,5 +141,6 @@ stest 0 sudo rm -rf "${CONTAINER}"
 stest 0 sudo rm -rf "${CONTAINER2}"
 stest 0 sudo rm -rf "${CONTAINER2}".tar
 stest 0 sudo rm -rf "${CONTAINER2}".tar.gz
+stest 0 sudo rm -rf "${SINGULARITY_TESTDIR}/Singularity"
 
 test_cleanup
