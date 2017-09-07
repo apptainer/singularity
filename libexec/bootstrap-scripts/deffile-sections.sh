@@ -294,6 +294,12 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
                 chmod 0755 "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/runscript"  
             fi
 
+            # Make sure we have metadata
+            APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
+            APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
+            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json"
+            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json"
+
         done
     fi
 fi
@@ -346,12 +352,9 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             singularity_app_save "${APPNAME}" "$SINGULARITY_BUILDDEF" "${APPBASE}/scif/Singularity"
             singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -xe || ABORT 255
 
-
-            # Make sure we have metadata
-            APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
             APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
-            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json"
-            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json"
+            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json" --quiet -f
+            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json" --quiet -f
 
         done
     fi
