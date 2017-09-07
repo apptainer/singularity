@@ -42,6 +42,7 @@
 #include "./mnt/mnt.h"
 #include "./pid/pid.h"
 #include "./net/net.h"
+#include "./uts/uts.h"
 #include "../runtime.h"
 
 
@@ -64,7 +65,10 @@ int _singularity_runtime_ns(unsigned int flags) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_net()\n");
         retval += _singularity_runtime_ns_net();
     }
-
+    if ( flags & SR_NS_UTS ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_uts()\n");
+        retval += _singularity_runtime_ns_uts();
+    }
 
     return(retval);
 }
@@ -87,6 +91,10 @@ int _singularity_runtime_ns_join(unsigned int flags) {
     if ( flags & SR_NS_NET ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_net_join()\n");
         retval += _singularity_runtime_ns_net_join();
+    }
+    if ( flags & SR_NS_UTS ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_uts_join()\n");
+        retval += _singularity_runtime_ns_uts_join();
     }
 
     return(retval);
