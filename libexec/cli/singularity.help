@@ -21,15 +21,15 @@ CONTAINER USAGE COMMANDS:
     test          Execute any test code defined within container
 
 CONTAINER MANAGEMENT COMMANDS:
-    apps          list available apps within a container
-    bootstrap     *deprecated* use build instead
+    apps          List available apps within a container
+    bootstrap     *Deprecated* use build instead
     build         Build a new Singularity container
     check         Perform container lint checks
     inspect       Display a container's metadata
     mount         Mount a Singularity container image
-    pull          pull a Singularity/Docker container to $PWD
+    pull          Pull a Singularity/Docker container to $PWD
 
-COMMAND CLASSES:
+COMMAND GROUPS:
     instance      Persistent instance management commands
     image         Image file management utilities
 
