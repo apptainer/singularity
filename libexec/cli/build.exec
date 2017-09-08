@@ -77,6 +77,17 @@ while true; do
             SINGULARITY_FORCE=1
             shift
         ;;
+        -T|--notest)
+            shift
+            SINGULARITY_NOTEST=1
+            export SINGULARITY_NOTEST
+        ;;
+        -s|--section)
+            shift
+            SINGULARITY_BUILDSECTION="$1"
+            export SINGULARITY_BUILDSECTION
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
