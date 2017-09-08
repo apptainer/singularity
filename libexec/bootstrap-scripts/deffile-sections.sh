@@ -79,7 +79,8 @@ cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 ### EXPORT ENVARS
 DEBIAN_FRONTEND=noninteractive
-export DEBIAN_FRONTEND
+SINGULARITY_ENVIRONMENT="/.singularity.d/env/91-environment.sh"
+export DEBIAN_FRONTEND SINGULARITY_ENVIRONMENT
 
 # Script helper paths
 ADD_LABEL=$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py
