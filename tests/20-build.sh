@@ -92,10 +92,10 @@ sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "../examples/docker/Singularity"
 container_check
 
-# from shub to squashfs (via def file)
-sudo rm "$CONTAINER"
-stest 0 sudo singularity build "$CONTAINER" "../examples/shub/Singularity"
-container_check
+# # from shub to squashfs (via def file)
+# sudo rm "$CONTAINER"
+# stest 0 sudo singularity build "$CONTAINER" "../examples/shub/Singularity"
+# container_check
 
 # from squashfs to squashfs (via def file)
 cat >"${SINGULARITY_TESTDIR}/Singularity" <<EOF
@@ -107,13 +107,13 @@ stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
 container_check
 
 # from localimage to squashfs (via def file)
-sudo rm "$CONTAINER" "$CONTAINER2"
+sudo rm -rf "$CONTAINER" "$CONTAINER2"
 stest 0 sudo singularity build --writable "$CONTAINER2" "../examples/busybox/Singularity"
 stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
 container_check
 
 # from sandbox to squashfs (via def file)
-sudo rm "$CONTAINER" "$CONTAINER2"
+sudo rm -rf "$CONTAINER" "$CONTAINER2"
 stest 0 sudo singularity -x build --force --sandbox "$CONTAINER2" "../examples/busybox/Singularity"
 stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
 container_check
