@@ -1,9 +1,9 @@
 USAGE: singularity [...] image.<command> [...] <image path>
 
-This is a command "class" that support management of various container
-image functions.
+This is a command "group" that support management of various container image 
+functions. 
 
-IMAGE CLASS COMMANDS:
+IMAGE GROUP COMMANDS:
 
     image.create    Create an image
     image.import    Import data into an image
