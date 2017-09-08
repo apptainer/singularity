@@ -32,6 +32,18 @@ else
     exit 1
 fi
 
+if [ -n "${1:-}" ]; then
+    if [ -x "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.$1.exec" ]; then
+        SINGULARITY_COMMAND="$SINGULARITY_COMMAND.$1"
+        export SINGULARITY_COMMAND
+        shift
+        exec "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.exec" "$@"
+    else
+        message ERROR "Unknown subcommand: $SINGULARITY_COMMAND.$1\n"
+        ABORT 255
+    fi
+fi
+
 if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
     cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
 else
