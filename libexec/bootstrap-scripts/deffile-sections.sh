@@ -246,11 +246,12 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             get_section "appfiles ${APPNAME}" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
                 if [ -n "${origin:-}" ]; then
                     if [ -z "${dest:-}" ]; then
-                        dest="$origin"
+                        # files must be relative to app
+                        dest="scif/apps/${APPNAME}"
+                    else
+                        dest="scif/apps/${APPNAME}/$dest"
                     fi
-                    # files must be relative to app
-                    dest="scif/apps/${APPNAME}"
-                    message 1 "Copying '$origin' to '$dest'\n"
+                    message 1 "+ $origin to $dest\n"
                     if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
                         message ERROR "Failed copying file(s) for app ${APPNAME} into container\n"
                         exit 255
@@ -267,7 +268,6 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
     if singularity_section_exists "apphelp" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "apphelp" "$SINGULARITY_BUILDDEF"`)
         message 1 "Found applications ${APPNAMES} with help sections\n"
-        
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             APPHELP=$(get_section "apphelp ${APPNAME}" "$SINGULARITY_BUILDDEF")
