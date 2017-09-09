@@ -267,7 +267,8 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apphelp" ]; then
     if singularity_section_exists "apphelp" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "apphelp" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Found applications ${APPNAMES} with help sections\n"
+        message 1 "${APPNAME} has help section\n"
+
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             APPHELP=$(get_section "apphelp ${APPNAME}" "$SINGULARITY_BUILDDEF")
@@ -284,7 +285,7 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apprun" ]; then
     if singularity_section_exists "apprun" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "apprun" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Found applications ${APPNAMES} with runscript definitions\n"
+        message 1 "${APPNAME} has runscript definition\n"
         
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
@@ -325,9 +326,9 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appfiles" ]; then
     if singularity_section_exists "applabels" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "applabels" "$SINGULARITY_BUILDDEF"`)
-        message 2 "Adding labels to ${APPNAMES}\n"
 
         for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "Adding labels to ${APPNAME}\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             get_section "applabels ${APPNAME}" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
                 if [ -n "$KEY" -a -n "$VAL" ]; then
@@ -342,16 +343,15 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appinstall" ]; then
     if singularity_section_exists "appinstall" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "appinstall" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Found applications ${APPNAMES} to install\n"
         
         for APPNAME in "${APPNAMES[@]}"; do
-
+            message 1 "Installing ${APPNAME}\n"
             APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
             SINGULARITY_APPROOT="/scif/apps/${APPNAME}"
             export SINGULARITY_APPROOT
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             singularity_app_save "${APPNAME}" "$SINGULARITY_BUILDDEF" "${APPBASE}/scif/Singularity"
-            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_APPROOT" /bin/sh -xe || ABORT 255
+            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -xe || ABORT 255
 
             APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
             $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json" --quiet -f
