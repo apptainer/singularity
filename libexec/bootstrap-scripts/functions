@@ -68,6 +68,51 @@ singularity_section_get() {
 }
 
 
+get_section() {
+
+    SECTION="$1"
+    RECIPE="$2"
+    FOUND="no"
+
+    while read line
+    do
+
+ 
+        if echo $line | grep --quiet -e "^%$SECTION$"; then
+
+            # If not found, continue
+            if [[ "$FOUND" == "no" ]]; then
+                FOUND="yes"
+            else
+                return 0
+            fi
+
+        # We didn't match this line but...
+        else
+            # It's the start of a new section
+            if echo $line | grep --quiet -e "^%"; then
+
+                # We already found it, we're done
+                if [[ "$FOUND" == "yes" ]]; then
+                    return 0
+                fi
+
+            else
+                # We already found it, still in section
+                if [[ "$FOUND" == "yes" ]]; then
+                    if [ ! -z "${line}" ]; then
+                        echo $line
+                    fi 
+
+                fi            
+            fi
+        fi
+
+    done < $RECIPE
+
+}
+
+
 
 ##############################################################################
 # APPS

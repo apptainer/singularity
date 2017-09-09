@@ -239,11 +239,11 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appfiles" ]; then
     if singularity_section_exists "appfiles" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "appfiles" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Adding files to ${APPNAMES}\n"
 
         for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "Adding files to ${APPNAME}\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_section_get "'appfiles ${APPNAME}'" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
+            get_section "appfiles ${APPNAME}" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
                 if [ -n "${origin:-}" ]; then
                     if [ -z "${dest:-}" ]; then
                         dest="$origin"
@@ -270,7 +270,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
         
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            APPHELP=$(singularity_section_get "'apphelp ${APPNAME}'" "$SINGULARITY_BUILDDEF")
+            APPHELP=$(get_section "apphelp ${APPNAME}" "$SINGULARITY_BUILDDEF")
 
             if [ ! -z "$APPHELP" ]; then
                 echo "$APPHELP" > "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/runscript.help"    
@@ -288,7 +288,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
         
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            APPRUN=$(singularity_section_get "'apprun ${APPNAME}'" "$SINGULARITY_BUILDDEF")
+            APPRUN=$(get_section "apprun ${APPNAME}" "$SINGULARITY_BUILDDEF")
 
             if [ ! -z "$APPRUN" ]; then
                 echo "$APPRUN" > "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/runscript"
@@ -314,7 +314,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
 
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_section_get "'appenv ${APPNAME}'" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
+            get_section "appenv ${APPNAME}" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
             . "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
         done
     fi
@@ -329,7 +329,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
 
         for APPNAME in "${APPNAMES[@]}"; do
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_section_get "'applabels ${APPNAME}'" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
+            get_section "applabels ${APPNAME}" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
                 if [ -n "$KEY" -a -n "$VAL" ]; then
                     $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/labels.json"
                 fi
