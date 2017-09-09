@@ -267,9 +267,9 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apphelp" ]; then
     if singularity_section_exists "apphelp" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "apphelp" "$SINGULARITY_BUILDDEF"`)
-        message 1 "${APPNAME} has help section\n"
 
         for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "${APPNAME} has help section\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             APPHELP=$(get_section "apphelp ${APPNAME}" "$SINGULARITY_BUILDDEF")
 
@@ -285,9 +285,9 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apprun" ]; then
     if singularity_section_exists "apprun" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "apprun" "$SINGULARITY_BUILDDEF"`)
-        message 1 "${APPNAME} has runscript definition\n"
         
         for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "${APPNAME} has runscript definition\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             APPRUN=$(get_section "apprun ${APPNAME}" "$SINGULARITY_BUILDDEF")
 
@@ -311,9 +311,9 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appenv" ]; then
     if singularity_section_exists "appenv" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "appenv" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Adding custom environment to ${APPNAMES}\n"
 
         for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "Adding custom environment to ${APPNAME}\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             get_section "appenv ${APPNAME}" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
             . "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
