@@ -32,6 +32,21 @@ else
     exit 1
 fi
 
+
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+    esac
+done
+
 if [ -n "${1:-}" ]; then
     if [ -x "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.$1.exec" ]; then
         SINGULARITY_COMMAND="$SINGULARITY_COMMAND.$1"
@@ -42,11 +57,11 @@ if [ -n "${1:-}" ]; then
         message ERROR "Unknown subcommand: $SINGULARITY_COMMAND.$1\n"
         ABORT 255
     fi
-fi
-
-if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-    cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
 else
-    message ERROR "No help exists for this command\n"
-    exit 1
+    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+        cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    else
+        message ERROR "No help exists for this command\n"
+        exit 1
+    fi
 fi
