@@ -122,7 +122,7 @@ def IMPORT(image, auth=None, layerfile=None):
                                   includecmd=INCLUDE_CMD)
 
     # Add the environment export
-    tar_file = extract_metadata_tar(manifestv1,
+    tar_file = extract_metadata_tar(client.manifestv1,
                                     client.assemble_uri(),
                                     runscript=runscript)
 
@@ -139,7 +139,7 @@ def IMPORT(image, auth=None, layerfile=None):
     additions = {"layers": layers,
                  "image": image,
                  "manifest": client.manifest,
-                 "manifestv1": manifestv1,
+                 "manifestv1": client.manifestv1,
                  "cache_base": cache_base,
                  "metadata": tar_file}
 
