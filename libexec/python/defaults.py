@@ -128,7 +128,7 @@ SHUB_PREFIX = "shub"
 # Defaults for environment, runscript, labels
 _envbase = "%s/env" % (METADATA_BASE)
 _runscript = "%s/singularity" % (SINGULARITY_ROOTFS)
-_environment = "%s/environment" % (METADATA_BASE)
+_environment = "%s/90-environment.sh" % (_envbase)
 _labelfile = "%s/labels.json" % (METADATA_BASE)
 _helpfile = "%s/runscript.help" % (METADATA_BASE)
 _deffile = "%s/Singularity" % (METADATA_BASE)

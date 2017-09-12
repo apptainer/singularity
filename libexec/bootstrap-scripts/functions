@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+# Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
 # https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
@@ -67,6 +68,51 @@ singularity_section_get() {
 }
 
 
+get_section() {
+
+    SECTION="$1"
+    RECIPE="$2"
+    FOUND="no"
+
+    while read line
+    do
+
+ 
+        if echo $line | grep --quiet -e "^%$SECTION$"; then
+
+            # If not found, continue
+            if [[ "$FOUND" == "no" ]]; then
+                FOUND="yes"
+            else
+                return 0
+            fi
+
+        # We didn't match this line but...
+        else
+            # It's the start of a new section
+            if echo $line | grep --quiet -e "^%"; then
+
+                # We already found it, we're done
+                if [[ "$FOUND" == "yes" ]]; then
+                    return 0
+                fi
+
+            else
+                # We already found it, still in section
+                if [[ "$FOUND" == "yes" ]]; then
+                    if [ ! -z "${line}" ]; then
+                        echo $line
+                    fi 
+
+                fi            
+            fi
+        fi
+
+    done < $RECIPE
+
+}
+
+
 
 ##############################################################################
 # APPS
@@ -77,20 +123,15 @@ singularity_app_install_get() {
     APPNAME="${1:-}"
     FILE="${2:-}"
 
-    if [ ! -x "$SINGULARITY_libexecdir/singularity/bin/get-section" ]; then
-        message ERROR "Could not locate get-section program\n"
-        exit 255
-    fi
-
     if [ ! -f "$FILE" ]; then
         message ERROR "File not found ($FILE)\n"
         exit 1
     fi
 
     # To install application, much change to its base and back so paths are relative
-    SECTION="'appinstall ${APPNAME}'"
+    SECTION="appinstall ${APPNAME}"
     printf "cd /scif/apps/${APPNAME}\n"
-    eval $SINGULARITY_libexecdir/singularity/bin/get-section "$SECTION" "$FILE"
+    get_section "$SECTION" "$FILE"
     return 0
 }
 
@@ -136,8 +177,14 @@ singularity_app_init() {
     APPROOT="${2:-}"
 
     APPBASE="${APPROOT}/scif/apps/${APPNAME}"
+    APPMETA="${APPBASE}/scif"
+
     if [ ! -d "${APPBASE}" ]; then
         mkdir -p "${APPBASE}/scif"
+        mkdir -p "${APPBASE}/bin"
+        mkdir -p "${APPBASE}/lib"
+        mkdir -p "${APPMETA}"
+        mkdir -p "${APPMETA}/env"
         message 2 "Creating ${APPBASE}...\n"
     fi
 
@@ -149,10 +196,15 @@ singularity_app_init() {
         message 2 "Creating ${APPDATA}...\n"
     fi
 
-    APPMETA="${APPBASE}/scif"
-    if [ ! -d "${APPMETA}" ]; then
-        mkdir -p ${APPMETA}
-    fi
+    # App specific variables should be exposed at run, shell, exec
+    echo "
+    SINGULARITY_APPNAME=$APPNAME
+    SINGULARITY_APPBASE=\"/scif/apps/${APPNAME}\"
+    SINGULARITY_APPMETA=\"/scif/apps/${APPNAME}/scif\"
+    SINGULARITY_APPDATA=\"/scif/data/${APPNAME}\"
+    SINGULARITY_APPINPUT=\"/scif/data/${APPNAME}/input\"
+    SINGULARITY_APPOUTPUT=\"/scif/data/${APPNAME}/output\"
+    export SINGULARITY_APPDATA SINGULARITY_APPNAME SINGULARITY_APPBASE SINGULARITY_APPMETA SINGULARITY_APPINPUT SINGULARITY_APPOUTPUT
+    " > "${APPMETA}/env/01-base.sh"
+
 }
-
-
