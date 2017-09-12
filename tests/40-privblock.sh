@@ -36,9 +36,6 @@ stest 1 singularity exec "$CONTAINER" false
 # Checking no new privs with capabilities
 stest 0 sudo singularity exec "$CONTAINER" ping localhost -c 1
 stest 1 singularity exec "$CONTAINER" ping localhost -c 1
-stest 0 sudo singularity exec "$CONTAINER" ping localhost -c 1
-stest 1 singularity exec "$CONTAINER" ping localhost -c 1
-
 
 test_cleanup
 

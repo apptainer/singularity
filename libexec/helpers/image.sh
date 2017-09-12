@@ -38,7 +38,7 @@ fi
 
 
 case "$SINGULARITY_COMMAND" in
-    image.import) 
+    image.import)
         exec tar xf - -C "$SINGULARITY_MOUNTPOINT"
     ;;
     image.export)

@@ -42,6 +42,7 @@
 #include "util/util.h"
 #include "util/registry.h"
 #include "util/privilege.h"
+#include "util/capability.h"
 #include "util/message.h"
 #include "util/config_parser.h"
 
@@ -398,6 +399,8 @@ void singularity_priv_drop_perm(void) {
     singularity_message(DEBUG, "Escalating permissison so we can properly drop permission\n");
     singularity_priv_escalate();
 
+    singularity_capability_drop_all();
+
     singularity_message(DEBUG, "Resetting supplementary groups\n");
     if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
         singularity_message(ERROR, "Could not reset supplementary group list (perm): %s\n", strerror(errno));
@@ -456,7 +459,7 @@ int singularity_priv_userns_enabled(void) {
 
 /* Return 0 if program is SUID, -1 if not SUID */
 int singularity_priv_is_suid(void) {
-    if ( ( is_suid("/proc/self/exe") == 0 ) && ( is_owner("/proc/self/exe", 0)  == 0) ) {
+    if ( singularity_registry_get("SUID_WRAPPER") != NULL ) {
         return(0);
     } else {
         return(-1);

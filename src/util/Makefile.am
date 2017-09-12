@@ -6,7 +6,9 @@ AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
 
-EXTRA_DIST = cleanupd.c \
+EXTRA_DIST = capability.c \
+			 capability.h \
+			 cleanupd.c \
 			 cleanupd.h \
 			 config_parser.c \
 			 config_parser.h \

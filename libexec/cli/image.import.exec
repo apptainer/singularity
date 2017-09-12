@@ -68,8 +68,8 @@ SINGULARITY_WRITABLE=1
 shift
 export SINGULARITY_IMAGE SINGULARITY_WRITABLE
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/image.sh" "$@"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/image.sh" "$@"
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/image.sh" "$@"
 

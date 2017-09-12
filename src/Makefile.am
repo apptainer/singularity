@@ -9,55 +9,48 @@ AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATE
 
 bindir = $(libexecdir)/singularity/bin
 
-bin_PROGRAMS = action builddef cleanupd get-section image-type mount start sinit $(BUILD_SUID)
-EXTRA_PROGRAMS = action-suid mount-suid start-suid
+bin_PROGRAMS = action builddef cleanupd get-section image-type mount start sinit wrapper $(BUILD_SUID)
+EXTRA_PROGRAMS = wrapper-suid
 
-cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
+cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c
 cleanupd_CPPFLAGS = $(AM_CPPFLAGS)
 
-action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/daemon.c
+action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/daemon.c util/capability.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 action_CPPFLAGS = $(AM_CPPFLAGS)
 
-builddef_SOURCES = builddef.c util/util.c util/file.c util/registry.c util/sessiondir.c
+builddef_SOURCES = builddef.c util/util.c util/file.c util/registry.c util/sessiondir.c util/capability.c
 builddef_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la
 builddef_CPPFLAGS = $(AM_CPPFLAGS)
 builddef_LDFLAGS = -static
 
-start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c
+start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/capability.c
 start_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 start_CPPFLAGS = $(AM_CPPFLAGS)
 
-mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c
+mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/capability.c
 mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
 mount_CPPFLAGS = $(AM_CPPFLAGS)
 
-sinit_SOURCES = sinit.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c
+sinit_SOURCES = sinit.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/capability.c
 sinit_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 sinit_CPPFLAGS = $(AM_CPPFLAGS)
 
-get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
+get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)
 
 image_type_SOURCES = image-type.c util/util.c util/message.c util/config_parser.c util/file.c
 image_type_LDADD = lib/image/libsingularity-image.la
 image_type_CPPFLAGS = $(AM_CPPFLAGS)
 
-action_suid_SOURCES = $(action_SOURCES)
-action_suid_LDADD = $(action_LDADD)
-action_suid_LDFLAGS = -static
-action_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
+wrapper_SOURCES = wrapper.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/capability.c
+wrapper_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
+wrapper_CPPFLAGS = $(AM_CPPFLAGS)
 
-start_suid_SOURCES = $(start_SOURCES)
-start_suid_LDADD = $(start_LDADD)
-start_suid_LDFLAGS = -static
-start_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
-
-mount_suid_SOURCES = $(mount_SOURCES)
-mount_suid_LDADD = $(mount_LDADD)
-mount_suid_LDFLAGS = -static
-mount_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
-
+wrapper_suid_SOURCES = $(wrapper_SOURCES)
+wrapper_suid_LDADD = $(wrapper_LDADD)
+wrapper_suid_LDFLAGS = -static
+wrapper_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 install-exec-hook: make_suid
 

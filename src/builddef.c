@@ -36,6 +36,7 @@
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 #include "util/config_parser.h"
+#include "util/capability.h"
 #include "util/privilege.h"
 #include "util/sessiondir.h"
 
@@ -82,7 +83,7 @@ int main(int argc, char **argv) {
 
     singularity_runtime_ns(SR_NS_MNT);
 
-    singularity_image_mount(&image, CONTAINER_MOUNTDIR);
+    singularity_image_mount(&image, CONTAINER_FINALDIR);
 
     builddef = singularity_registry_get("BUILDDEF");
 
@@ -140,7 +141,7 @@ int main(int argc, char **argv) {
     fclose(bootdef_fp);
 
     envar_set("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
-    envar_set("SINGULARITY_ROOTFS", CONTAINER_MOUNTDIR, 1);
+    envar_set("SINGULARITY_ROOTFS", CONTAINER_FINALDIR, 1);
     envar_set("SINGULARITY_libexecdir", LIBEXECDIR, 1);
     envar_set("SINGULARITY_bindir", BINDIR, 1);
     envar_set("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
@@ -161,6 +162,8 @@ int main(int argc, char **argv) {
     envar_set("LANG", "C", 1);
 
     char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile.sh");
+
+    singularity_capability_init();
 
     execl(bootstrap, bootstrap, NULL); //Flawfinder: ignore (Yes, yes, we know, and this is required)
 

@@ -224,6 +224,15 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                   )
 
 
+AC_CHECK_HEADER([linux/securebits.h], [
+                    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SECUREBITS"
+                ])
+
+
+AC_CHECK_HEADER([linux/capability.h], [], [
+                    AC_MSG_ERROR([linux/capability.h header not found, requires kernel headers installation.])
+                ])
+
 
 AC_ARG_WITH([userns],
             AS_HELP_STRING([--with-userns], [Enable use of user namespaces]),
@@ -317,7 +326,7 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid start-suid mount-suid"
+    BUILD_SUID="wrapper-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""

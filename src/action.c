@@ -149,8 +149,6 @@ int main(int argc, char **argv) {
         action_shell(argc, argv);
     } else if ( strcmp(command, "exec") == 0 ) {
         action_exec(argc, argv);
-    } else if ( strcmp(command, "inspect") == 0 ) {
-        action_exec(argc, argv);
     } else if ( strcmp(command, "run") == 0 ) {
         action_run(argc, argv);
     } else if ( strcmp(command, "test") == 0 ) {
