@@ -1,7 +1,7 @@
 USAGE: singularity [...] build <container path> <BUILD SPEC TARGET>
 
 The build command compiles a container per a recipe (definition file) or based
-on an archive or location.
+on a URI, location, or archive.
 
 CONTAINER PATH:
     When Singularity builds the container, the output format can be one of
@@ -12,28 +12,25 @@ CONTAINER PATH:
         writable:   Legacy writable image format
     
     note: A common workflow is to use the "sandbox" mode for development of the
-    container, and then build it as an SIMG when done. This format can not be
-    modified, and thus the container distributed by this format can be signed
-    and trusted.
+    container, and then build it as a default Singularity image  when done. 
+    This format can not be modified.
 
 BUILD SPEC TARGET:
-    The build spec target is a recipe, template, archive, or docker container
-    that can be used to create a Singularity container. Several different
+    The build spec target is a definition, local image, archive, or URI that
+    can be used to create a Singularity container. Several different
     local target formats exist:
 
-        recipe:     This is a recipe for building a container from scratch
-                    (examples below)
+        def file  : This is a recipe for building a container (examples below)
         directory:  A directory structure containing a (ch)root file system
         image:      A local image on your machine (will convert to squashfs if
                     it is legacy or writable format)
-        tar:        An archive file which contains the above directory format
+        tar/tar.gz: An archive file which contains the above directory format
+                    (must have .tar in the filename!)
 
     Targets can also be remote and defined by a URI of the following formats:
 
         shub://     Build from a Singularity registry (Singularity Hub default)
         docker://   This points to a Docker registry (Docker Hub default)
-        http(s)://  You can reference a recipe or tar via a HTTP URL
-        host://     This will use ssh/rsync to build a container from a remote
 
 
 CREATE OPTIONS:
@@ -42,16 +39,12 @@ CREATE OPTIONS:
                     file image corruption issues)
     -e/--exists     Build to an existing image without overwriting (mimics
                     behavior of legacy command bootstrap)
-
-
-WIP... (Have not been fully tested but *should* work)
+    -F|--force      Force a rebootstrap of a base OS (note: this does not 
+                    delete what is currently in the image, just causes the core 
+                    to be reinstalled)
     -T|--notest     Bootstrap without running tests in %test section
-    -F|--force      Force a rebootstrap of an OS (note: this does not delete
-                    what is currently in the image, just causes the core to
-                    be reinstalled)
     -s|--section    Only run a given section within the bootstrap (setup,
                     post, files, environment, test, labels, none)
-       --nobase     Skip the generation of the base OS
 
 
 CHECKS OPTIONS:
@@ -63,7 +56,7 @@ CHECKS OPTIONS:
 
 See singularity check --help for available tags
 
-DEFFILE BASEOS EXAMPLES:
+DEF FILE BASEOS EXAMPLES:
     Singularity Hub:
         Bootstrap: shub
         From: singularityhub/centos
@@ -117,6 +110,11 @@ DEFFILE SECTION EXAMPLES:
     %files
         /path/on/host/file.txt /path/on/container/file.txt 
         relative_file.txt /path/on/container/relative_file.txt
+
+    %environment 
+        export LUKE=goodguy
+        export VADER=badguy
+        export HAN=someguy
 
 
 EXAMPLES:

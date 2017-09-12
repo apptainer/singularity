@@ -29,7 +29,6 @@ CREATE OPTIONS:
     -T|--notest     Bootstrap without running tests in %test section
     -s|--section    Only run a given section within the bootstrap (setup,
                     post, files, environment, test, labels, none)
-       --nobase     Skip the generation of the base OS
 
 
 CHECKS OPTIONS:

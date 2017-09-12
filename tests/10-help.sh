@@ -35,14 +35,14 @@ ALL_COMMANDS="
     image.export
     image.import
     inspect
-    list
     mount
     pull
     run
     shell
-    start
-    stop-all
-    stop
+    instance.start
+    instance.list
+    instance.stop
+    instance.stop-all
 "
 
 # Testing singularity internal commands

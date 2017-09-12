@@ -33,6 +33,15 @@ else
 fi
 
 if [ -n "${1:-}" ]; then
+    if [ "${1:-}" = "help" -o "${1:-}" = "-h" -o "${1:-}" = "--help" ]; then
+        if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+            cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+        else
+            message ERROR "No help exists for this command\n"
+            exit 1
+        fi
+        exit
+    fi
     if [ -x "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.$1.exec" ]; then
         SINGULARITY_COMMAND="$SINGULARITY_COMMAND.$1"
         export SINGULARITY_COMMAND
