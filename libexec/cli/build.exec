@@ -248,7 +248,10 @@ elif [ -d "$SINGULARITY_BUILDDEF" ]; then
     message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
     rmdir "${SINGULARITY_ROOTFS}"
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
-    SINGULARITY_NOCLEANUP=1
+
+else
+    message ERROR "Unsupported or non-existent build spec target $SINGULARITY_BUILDDEF\n"
+    ABORT 255    SINGULARITY_NOCLEANUP=1
 fi
 
 if [ "$USERID" != "0" ]; then
