@@ -28,6 +28,7 @@ ALL_COMMANDS="
     apps
     build
     check
+    create
     exec
     image
     image.create
