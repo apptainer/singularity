@@ -121,7 +121,7 @@ container_check
 # from def file to existing image 
 sudo rm "$CONTAINER"
 stest 0 singularity image.create "$CONTAINER"
-stest 0 singularity build --exists "$CONTAINER" "..examples/busybox/Singularity"
+stest 0 singularity build --exists "$CONTAINER" "../examples/busybox/Singularity"
 container_check
 
 # from tar to squashfs
