@@ -20,6 +20,7 @@
  * 
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -40,13 +41,35 @@
 #define BUFFER_SIZE     (1024*1024)
 #define MAX_LINE_LEN    2048
 
+#define EXTFS_MAGIC "\123\357"
+
+#define COMPAT_HASJOURNAL 0x4
+
+#define INCOMPAT_FILETYPE 0x2
+#define INCOMPAT_RECOVER 0x4
+#define INCOMPAT_METABG 0x10
+
+#define ROCOMPAT_SPARSESUPER 0x1
+#define ROCOMPAT_LARGEFILE 0x2
+#define ROCOMPAT_BTREEDIR 0x4
+
+struct extfs_info {
+	unsigned char	magic[2];
+	uint16_t	state;
+	uint32_t	dummy[8];
+	uint32_t	feat_compat;
+	uint32_t	feat_incompat;
+	uint32_t	feat_rocompat;
+};
+
 
 int _singularity_image_ext3_init(struct image_object *image, int open_flags) {
     int image_fd;
-    char *line;
+    int ret;
+    int magicoff = 1080;
     FILE *image_fp;
-    char *image_name = image->name;
-    int image_name_len = strlength(image_name, PATH_MAX);
+    static char buf[2048];
+    struct extfs_info *einfo;
 
     singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
     if ( ( image_fd = open(image->path, open_flags, 0755) ) < 0 ) {
@@ -63,35 +86,43 @@ int _singularity_image_ext3_init(struct image_object *image, int open_flags) {
     singularity_message(VERBOSE3, "Checking that file pointer is a Singularity image\n");
     rewind(image_fp);
 
-    line = (char *)malloc(MAX_LINE_LEN);
-
     // Get the first line from the config
-    if ( fgets(line, MAX_LINE_LEN, image_fp) == NULL ) {
-        singularity_message(DEBUG, "Unable to read the first line of image\n");
+    ret = fread(buf, 1, sizeof(buf), image_fp);
+    fclose(image_fp);
+    if ( ret != sizeof(buf) ) {
+        singularity_message(DEBUG, "Could not read the top of the image\n");
         return(-1);
     }
 
-    fclose(image_fp);
+    /* if LAUNCH_STRING is present, figure out EXTFS magic offset */
+    if ( strstr(buf, "singularity") != NULL ) {
+        magicoff += strlen(buf);
+        image->offset = strlen(buf);
+    }
 
-    singularity_message(DEBUG, "First line of image(fd=%d): %s\n", image->fd, line);
-
-    singularity_message(DEBUG, "Checking if first line matches key\n");
-    if ( strcmp(line, LAUNCH_STRING) == 0 ) {
-        // Get the image offset
-        image->offset = strlength(line, MAX_LINE_LEN);
-        singularity_message(DEBUG, "Got image offset: %d\n", image->offset);
-
-        free(line);
-        singularity_message(VERBOSE2, "File is a valid Singularity image\n");
-    } else {
-        free(line);
-        if ( strncmp(&image_name[image_name_len - 4], ".img", 4) == 0 ) {
-            singularity_message(VERBOSE, "Image has no header, trusting suffix\n");
-        } else {
-            close(image_fd);
-            singularity_message(VERBOSE, "File is not a valid Singularity image\n");
-            return(-1);
-        }
+    einfo = (struct extfs_info *)&buf[magicoff];
+    if ( memcmp(einfo->magic, EXTFS_MAGIC, 2 ) != 0 ) {
+        close(image_fd);
+        singularity_message(VERBOSE, "File is not a valid EXT3 image\n");
+        return(-1);
+    }
+    /* Check for features supported by EXT3 */
+    if ( !(einfo->feat_compat & COMPAT_HASJOURNAL) ) {
+        close(image_fd);
+        singularity_message(VERBOSE, "File is not a valid EXT3 image\n");
+        return(-1);
+    }
+    /* check for unsupported incompat ext3 features */
+    if ( einfo->feat_incompat & ~(INCOMPAT_FILETYPE|INCOMPAT_RECOVER|INCOMPAT_METABG) ) {
+        close(image_fd);
+        singularity_message(VERBOSE, "File is not a valid EXT3 image\n");
+        return(-1);
+    }
+    /* check for unsupported rocompat ext3 features */
+    if ( einfo->feat_rocompat & ~(ROCOMPAT_SPARSESUPER|ROCOMPAT_LARGEFILE|ROCOMPAT_BTREEDIR) ) {
+        close(image_fd);
+        singularity_message(VERBOSE, "File is not a valid EXT3 image\n");
+        return(-1);
     }
 
     image->fd = image_fd;
