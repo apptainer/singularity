@@ -8,6 +8,7 @@
     - Krishna Muriki <kmuriki@lbl.gov>
     - Michael Bauer <bauerm@umich.edu>
     - Vanessa Sochat <vsochat@stanford.edu>
+    - Yannick Cote <yhcote@gmail.com>
 
 #Contributors:
 
