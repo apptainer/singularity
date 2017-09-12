@@ -266,7 +266,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
 
     elif eval is_tar "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
-        if ! eval tar xzf "${SINGULARITY_BUILDDEF}" -C "${SINGULARITY_ROOTFS}"; then
+        if ! eval tar xf "${SINGULARITY_BUILDDEF}" -C "${SINGULARITY_ROOTFS}"; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
@@ -280,7 +280,10 @@ elif [ -d "$SINGULARITY_BUILDDEF" ]; then
     message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
     rmdir "${SINGULARITY_ROOTFS}"
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
-    SINGULARITY_NOCLEANUP=1
+
+else
+    message ERROR "Unsupported or non-existent build spec target $SINGULARITY_BUILDDEF\n"
+    ABORT 255    SINGULARITY_NOCLEANUP=1
 fi
 
 if [ "$USERID" != "0" ]; then
