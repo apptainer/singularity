@@ -42,6 +42,7 @@ src/cleanupd
 src/image-type
 src/mount
 src/mount-suid
+src/prepheader
 src/sinit
 src/get-section
 src/stamp-h1
