@@ -40,6 +40,7 @@ int _singularity_image_squashfs_init(struct image_object *image, int open_flags)
     int ret;
     FILE *image_fp;
     static char buf[1024];
+    char *p;
 
 
     singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
@@ -67,17 +68,10 @@ int _singularity_image_squashfs_init(struct image_object *image, int open_flags)
     singularity_message(DEBUG, "Checking for magic in the top of the file\n");
 
     /* if LAUNCH_STRING is present, figure out squashfs magic offset */
-    if ( strstr(buf, "singularity") != NULL ) {
-        if ( strncmp(buf+strlen(LAUNCH_STRING), "hsqs", 4) == 0 ) {
-            singularity_message(VERBOSE2, "File is a valid SquashFS image\n");
-            image->offset = strlen(LAUNCH_STRING);
-        } else {
-            close(image_fd);
-            singularity_message(VERBOSE, "File is not a valid SquashFS image\n");
-            return(-1);
-        }
-    } else if ( strncmp(buf, "hsqs", 4) == 0 ) {
-            singularity_message(VERBOSE2, "File is a valid SquashFS image\n");
+    p = strstr(buf, "hsqs");
+    if ( p != NULL ) {
+        singularity_message(VERBOSE2, "File is a valid SquashFS image\n");
+        image->offset = p - buf;
     } else {
         close(image_fd);
         singularity_message(VERBOSE, "File is not a valid SquashFS image\n");
