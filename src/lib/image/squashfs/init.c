@@ -37,8 +37,9 @@
 
 int _singularity_image_squashfs_init(struct image_object *image, int open_flags) {
     int image_fd;
+    int ret;
     FILE *image_fp;
-    char *line;
+    static char buf[1024];
 
 
     singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
@@ -55,24 +56,29 @@ int _singularity_image_squashfs_init(struct image_object *image, int open_flags)
     singularity_message(VERBOSE3, "Checking that file pointer is a Singularity image\n");
     rewind(image_fp);
 
-    line = (char *)malloc(5);
-
     // Get the first line from the config
-    if ( fgets(line, 5, image_fp) == NULL ) {
+    ret = fread(buf, 1, sizeof(buf), image_fp);
+    fclose(image_fp);
+    if ( ret != sizeof(buf) ) {
         singularity_message(DEBUG, "Could not read the top of the image\n");
         return(-1);
     }
 
-    fclose(image_fp);
+    singularity_message(DEBUG, "Checking for magic in the top of the file\n");
 
-    singularity_message(DEBUG, "found bytes of image: %s\n", line);
-
-    singularity_message(DEBUG, "Checking if first line matches key\n");
-    if ( strcmp(line, "hsqs") == 0 ) {
-        free(line);
-        singularity_message(VERBOSE2, "File is a valid SquashFS image\n");
+    /* if LAUNCH_STRING is present, figure out squashfs magic offset */
+    if ( strstr(buf, "singularity") != NULL ) {
+        if ( strncmp(buf+strlen(LAUNCH_STRING), "hsqs", 4) == 0 ) {
+            singularity_message(VERBOSE2, "File is a valid SquashFS image\n");
+            image->offset = strlen(LAUNCH_STRING);
+        } else {
+            close(image_fd);
+            singularity_message(VERBOSE, "File is not a valid SquashFS image\n");
+            return(-1);
+        }
+    } else if ( strncmp(buf, "hsqs", 4) == 0 ) {
+            singularity_message(VERBOSE2, "File is a valid SquashFS image\n");
     } else {
-        free(line);
         close(image_fd);
         singularity_message(VERBOSE, "File is not a valid SquashFS image\n");
         return(-1);
