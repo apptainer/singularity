@@ -77,6 +77,38 @@ while true; do
             SINGULARITY_FORCE=1
             shift
         ;;
+        -T|--notest)
+            shift
+            SINGULARITY_NOTEST=1
+            export SINGULARITY_NOTEST
+        ;;
+        -s|--section)
+            shift
+            SINGULARITY_BUILDSECTION="$1"
+            export SINGULARITY_BUILDSECTION
+            shift
+        ;;
+        -c|--check|--checks)
+            SINGULARITY_CHECKS="yes"
+            shift;
+        ;;
+        -l|--low)                          # levels 3,2,1
+            SINGULARITY_CHECKLEVEL=3       # LOW
+            shift;
+        ;;
+        -m|--med|--medium)                 # levels 2,1
+            SINGULARITY_CHECKLEVEL=2       # MED
+            shift;
+        ;;
+        -h|--high)
+            SINGULARITY_CHECKLEVEL=1      # level 1 only
+            shift;                        # HIGH
+        ;;
+        -t|--tag)
+            shift;
+            SINGULARITY_CHECKTAGS="${1:-}"
+            shift;
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
