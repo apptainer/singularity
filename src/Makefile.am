@@ -7,9 +7,10 @@ AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-bindir = $(libexecdir)/singularity/bin
+lexecdir = $(libexecdir)/singularity/bin
 
-bin_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start sinit $(BUILD_SUID)
+lexec_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start sinit $(BUILD_SUID)
+
 EXTRA_PROGRAMS = action-suid mount-suid start-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
@@ -63,7 +64,7 @@ mount_suid_LDFLAGS = -static
 mount_suid_CPPFLAGS = -DSINGULARITY_SUID $(AM_CPPFLAGS)
 
 
-install-exec-hook: make_suid
+install-data-hook: make_suid
 
 make_suid:
 	@if test `id -ru` = "0"; then \
