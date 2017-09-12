@@ -5,6 +5,7 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
                     bootstrap.exec \
                     build.exec \
                     check.exec \
+                    create.exec \
                     exec.exec \
                     help.exec \
                     instance.exec \
@@ -30,6 +31,7 @@ dist_cliexec_DATA = singularity.help \
                     bootstrap.help \
                     build.help \
                     check.help \
+                    create.help \
                     exec.help \
                     instance.help \
                     instance.list.help \
