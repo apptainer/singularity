@@ -299,7 +299,7 @@ class DockerApiConnection(ApiConnection):
             base = "%s/%s" % (base, self.repo_tag)
         bot.verbose("Obtaining manifest: %s" % base)
 
-        headers = self.headers
+        headers = self.headers.copy()
         if old_version is True:
             headers['Accept'] = 'application/json'
 
@@ -346,8 +346,8 @@ class DockerApiConnection(ApiConnection):
         if "manifests" in self.manifest:
             for entry in self.manifest['manifests']:
                 if entry['platform']['architecture'] == DOCKER_ARCHITECTURE:
-                    if entry['platform']['architecture'] == DOCKER_OS:
-                        digest = entry[digest_key]
+                    if entry['platform']['os'] == DOCKER_OS:
+                        digest = entry['digest']
                         bot.debug('Image manifest version 2.2 list found.')
                         bot.debug('Obtaining architecture: %s, OS: %s'
                                   % (DOCKER_ARCHITECTURE, DOCKER_OS))
@@ -430,11 +430,11 @@ class DockerApiConnection(ApiConnection):
         :round_up: if true, round up to nearest integer
         :return_mb: if true, defaults bytes are converted to MB
         '''
-        manifest = self.get_manifest()
+        self.update_manifests()
         size = None
-        if "layers" in manifest:
+        if "layers" in self.manifest:
             size = 0
-            for layer in manifest["layers"]:
+            for layer in self.manifest["layers"]:
                 if "size" in layer:
                     size += layer['size']
 
