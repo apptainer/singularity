@@ -23,7 +23,7 @@
 #ifndef __ACTION_LIB_H_
 #define __ACTION_LIB_H_
 
-extern void action_ready(char *path);
+extern void action_ready(void);
 extern int action_shell(int argc, char **argv);
 extern int action_exec(int argc, char **argv);
 extern int action_run(int argc, char **argv);

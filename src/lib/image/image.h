@@ -24,41 +24,28 @@
 #ifndef __SINGULARITY_IMAGE_H_
 #define __SINGULARITY_IMAGE_H_
 
-#define SINGULARITY 1
-#define SQUASHFS    2
+#define SQUASHFS    1
+#define EXT3        2
 #define DIRECTORY   3
 
 struct image_object {
-//    char *sessiondir;
     char *path;
     char *name;
     char *loopdev;
-    char *id;
+    int offset;
     int fd;
     int type;
-//    int sessiondir_fd;
+    int writable;
 };
 
-
-extern struct image_object singularity_image_init(char *path);
-
-// Helper functions for accessing the image_object
+extern struct image_object singularity_image_init(char *path, int open_flags);
 int singularity_image_fd(struct image_object *object);
 char *singularity_image_loopdev(struct image_object *object);
-char *singularity_image_sessiondir(struct image_object *object);
 char *singularity_image_name(struct image_object *object);
 char *singularity_image_path(struct image_object *object);
-
-extern int singularity_image_open(struct image_object *object, int open_flags);
-
-extern int singularity_image_check(struct image_object *image);
-extern int singularity_image_offset(struct image_object *image);
-
-extern int singularity_image_bind(struct image_object *image);
-
-extern int singularity_image_create(struct image_object *image, long int size);
-extern int singularity_image_expand(struct image_object *image, unsigned int size);
-
+char *singularity_image_bind(struct image_object *object);
+int singularity_image_writable(struct image_object *object);
+int singularity_image_type(struct image_object *object);
 extern int singularity_image_mount(struct image_object *image, char *mount_point);
 
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"

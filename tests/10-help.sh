@@ -24,7 +24,27 @@
 
 test_init "Help and usage tests"
 
-ALL_COMMANDS="exec run shell test bootstrap copy create expand export import mount"
+ALL_COMMANDS="
+    apps
+    build
+    check
+    create
+    exec
+    image
+    image.create
+    image.expand
+    image.export
+    image.import
+    inspect
+    mount
+    pull
+    run
+    shell
+    instance.start
+    instance.list
+    instance.stop
+    instance.stop-all
+"
 
 # Testing singularity internal commands
 stest 0 singularity

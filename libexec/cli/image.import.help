@@ -1,0 +1,16 @@
+USAGE: singularity [...] image.import <container path>
+
+Import will recieve a tar stream via STDIN and will dump that into an
+image file.
+
+EXAMPLES:
+
+    $ singularity image.import /tmp/Debian.img < /tmp/Debian.tar
+    $ gzip -9 > Debian.tar.gz | singularity image.import /tmp/Debian.img
+    $ tar -cvf - -C data_dir/ . | singularity image.import /tmp/data.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+

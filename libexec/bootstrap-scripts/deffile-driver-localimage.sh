@@ -35,7 +35,7 @@ fi
 if [ -z "${FROM:-}" ]; then
     message ERROR "Required Definition tag 'From:' not defined.\n"
     exit 1
-elif [ ! -f "${FROM:-}" ]; then
+elif [ ! -e "${FROM:-}" ]; then
     message ERROR "${FROM} does not exist\n"
     exit 1
 fi
@@ -46,9 +46,7 @@ fi
 umask 0002
 
 message 1 "Exporting contents of ${FROM} to ${SINGULARITY_IMAGE}\n"
-
-cmd="${SINGULARITY_libexecdir}/singularity/bin/export ${FROM} | (cd ${SINGULARITY_ROOTFS} && tar xBf -)"
-if ! eval $cmd; then
+if ! eval "${SINGULARITY_bindir}"/singularity image.export "${FROM}" | (cd "${SINGULARITY_ROOTFS}" && tar xBf - -C "${SINGULARITY_ROOTFS}"); then
     message ERROR "Failed to export contents of ${FROM} to ${SINGULARITY_ROOTFS}\n"
     ABORT 255
 fi

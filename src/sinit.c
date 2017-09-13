@@ -44,8 +44,7 @@
 
 int main(int argc, char **argv) {
     char *daemon_fd_str;
-    int daemon_fd, i, waitstatus;
-    pid_t pid;
+    int daemon_fd, i;
     
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
     singularity_priv_init();
@@ -53,25 +52,18 @@ int main(int argc, char **argv) {
 
     /* After this point, we are running as PID 1 inside PID NS */
     singularity_message(DEBUG, "Preparing sinit daemon\n");
-    singularity_registry_set("ROOTFS", argv[1]);
+    singularity_registry_set("ROOTFS", CONTAINER_FINALDIR);
     singularity_daemon_init();
 
     daemon_fd_str = singularity_registry_get("DAEMON_FD");
     daemon_fd = atoi(daemon_fd_str);
 
-    pid = singularity_fork(0);
-    if ( pid == 0 ) {
-        while(1) {
-            pause();
-        }
-        exit(0);
-    } else if ( pid > 0 ) {
-        
-    } else {
-        singularity_message(ERROR, "Unable to fork: %s\n", strerror(errno));
-        ABORT(255);
+    if (chdir("/") < 0 ) {
+        singularity_message(ERROR, "Can't change directory to /\n");
     }
-    
+    setsid();
+    umask(0);
+ 
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i >= 0; i-- ) {
@@ -83,8 +75,7 @@ int main(int argc, char **argv) {
     singularity_message(LOG, "Successfully closed fd's, entering daemon loop\n");
 
     while(1) {
-        pid = wait(&waitstatus);
-        singularity_message(LOG, "Child (PID=%d) exited with status: %d\n", pid, waitstatus);
+        pause();
     }
     
     return(0);

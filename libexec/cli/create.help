@@ -1,4 +1,16 @@
-USAGE: singularity [...] create [create options...] <container path>
+USAGE: singularity [...] image.create [create options...] <container path>
+
+******************************************************************************
+WARNING: The create command is deprecated and will be removed in a later 
+version of Singularity.  create now uses image.create to build to create a 
+writable container via the following syntax:
+
+$ singularity image.create container.img
+
+It is no longer necessary to create and bootstrap an image in 2 seperate
+commands.  You should use the build command to create and bootstrap your 
+image in a single step. 
+******************************************************************************
 
 Create a new Singularity formatted blank image.
 
@@ -9,8 +21,8 @@ CREATE OPTIONS:
 
 EXAMPLES:
 
-    $ singularity create /tmp/Debian.img
-    $ singularity create -s 4096 /tmp/Debian.img
+    $ singularity image.create /tmp/Debian.img
+    $ singularity image.create -s 4096 /tmp/Debian.img
 
 For additional help, please visit our public documentation pages which are
 found at:

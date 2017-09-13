@@ -19,9 +19,10 @@ install-perms:
 	@echo
 
 install-data-hook:
-	install -d -m 0755 $(DESTDIR)$(localstatedir)/singularity/mnt/container
-	install -d -m 0755 $(DESTDIR)$(localstatedir)/singularity/mnt/session
-	install -d -m 0755 $(DESTDIR)$(localstatedir)/singularity/mnt/overlay
+	install -d -m 0755 $(DESTDIR)$(CONTAINER_MOUNTDIR)
+	install -d -m 0755 $(DESTDIR)$(CONTAINER_FINALDIR)
+	install -d -m 0755 $(DESTDIR)$(CONTAINER_OVERLAY)
+	install -d -m 0755 $(DESTDIR)$(SESSIONDIR)
 	test -f $(DESTDIR)$(libexecdir)/singularity/sexec-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/sexec-suid || :
 	test -f $(DESTDIR)$(libexecdir)/singularity/bin/copy-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/bin/copy-suid || :
 
