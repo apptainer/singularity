@@ -65,19 +65,6 @@ int main(int argc, char **argv) {
     singularity_priv_userns();
     singularity_priv_drop();
 
-    image = singularity_image_init(singularity_registry_get("IMAGE"));
-
-    if ( singularity_registry_get("WRITABLE") == NULL ) {
-        singularity_image_open(&image, O_RDONLY);
-    } else {
-        singularity_image_open(&image, O_RDWR);
-    }
-
-    singularity_image_check(&image);
-    singularity_image_bind(&image);
-
-    singularity_runtime_autofs();
-
     singularity_daemon_init();
 
     if ( singularity_registry_get("WRITABLE") != NULL ) {
