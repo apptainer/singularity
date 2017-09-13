@@ -73,7 +73,7 @@ while true; do
             SINGULARITY_WRITABLE=1
             shift
         ;;
-        -F|--force)
+        -f|-F|--force)
             SINGULARITY_FORCE=1
             shift
         ;;
@@ -185,6 +185,7 @@ export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 
 SINGULARITY_BUILDDEF="${1:-}"
 
+
 case $SINGULARITY_BUILDDEF in
     docker://*)
         SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
@@ -202,9 +203,10 @@ case $SINGULARITY_BUILDDEF in
             zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
         done
 
+        SINGULARITY_BUILDDEF="$SINGULARITY_ROOTFS"
         rm -f "$SINGULARITY_CONTENTS"
     ;;
-    
+
     shub://*)
         SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
         if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
@@ -232,14 +234,15 @@ case $SINGULARITY_BUILDDEF in
         SINGULARITY_CLEANUP=1
         rm -f "$SINGULARITY_CONTENTS"
     ;;
+
 esac
 
-if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
 
+if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
     if eval is_image "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
         if [ "$USERID" != "0" ]; then
-            message WARNING "You are not root! Some files may not be exported from  ${SINGULARITY_BUILDDEF} due to permission errors.\n"
+            message WARNING "You are not root! Some files may not be exported from ${SINGULARITY_BUILDDEF} due to permission errors.\n"
         fi
         if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
@@ -266,7 +269,10 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
 
     elif eval is_tar "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
-        if ! eval tar xzf "${SINGULARITY_BUILDDEF}" -C "${SINGULARITY_ROOTFS}"; then
+        if [ "$USERID" != "0" ]; then
+            message WARNING "You are not root! Some files may not be exported from ${SINGULARITY_BUILDDEF} due to permission errors.\n"
+        fi
+        if ! eval tar xf "${SINGULARITY_BUILDDEF}" -C "${SINGULARITY_ROOTFS}"; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
@@ -278,10 +284,13 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
 
 elif [ -d "$SINGULARITY_BUILDDEF" ]; then
     message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
-    rmdir "${SINGULARITY_ROOTFS}"
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
-    SINGULARITY_NOCLEANUP=1
+
+else
+    message ERROR "Unknown container build definition format: $SINGULARITY_BUILDDEF\n"
+    ABORT 255
 fi
+
 
 if [ "$USERID" != "0" ]; then
     # This is required as some files in a container are not readable by owner and

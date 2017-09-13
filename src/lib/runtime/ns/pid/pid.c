@@ -40,6 +40,7 @@
 #include "util/privilege.h"
 #include "util/fork.h"
 #include "util/registry.h"
+#include "util/setns.h"
 
 
 int _singularity_runtime_ns_pid(void) {

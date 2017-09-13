@@ -39,7 +39,7 @@ CREATE OPTIONS:
                     file image corruption issues)
     -e/--exists     Build to an existing image without overwriting (mimics
                     behavior of legacy command bootstrap)
-    -F|--force      Force a rebootstrap of a base OS (note: this does not 
+    -f|-F|--force   Force a rebootstrap of a base OS (note: this does not 
                     delete what is currently in the image, just causes the core 
                     to be reinstalled)
     -T|--notest     Bootstrap without running tests in %test section
