@@ -186,6 +186,58 @@ export SINGULARITY_IMAGE SINGULARITY_ROOTFS
 SINGULARITY_BUILDDEF="${1:-}"
 
 
+case $SINGULARITY_BUILDDEF in
+    docker://*)
+        SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
+        if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
+            message ERROR "Failed to create temporary directory\n"
+            ABORT 255
+        fi
+        export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
+        eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+        message 1 "Importing: base Singularity environment\n"
+        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
+
+        for i in `cat "$SINGULARITY_CONTENTS"`; do
+            message 1 "Importing: $i\n"
+            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
+        done
+
+        SINGULARITY_BUILDDEF="$SINGULARITY_ROOTFS"
+        rm -f "$SINGULARITY_CONTENTS"
+    ;;
+
+    shub://*)
+        SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
+        if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
+            message ERROR "Failed to create temporary directory\n"
+            ABORT 255
+        fi
+
+        # If cache is set, set pull folder to it (first priority)
+        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+            SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
+        else
+            # Only set the pull folder to be $PWD if not set by user
+            if [ ! -n "${SINGULARITY_PULLFOLDER:-}" ]; then
+                SINGULARITY_PULLFOLDER="."
+            fi
+        fi
+
+        export SINGULARITY_CONTENTS SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER
+
+        # relying on pull.py for error checking here
+        ${SINGULARITY_libexecdir}/singularity/python/pull.py
+
+        # switch $SINGULARITY_CONTAINER from remote to local 
+        SINGULARITY_BUILDDEF=`cat $SINGULARITY_CONTENTS`
+        SINGULARITY_CLEANUP=1
+        rm -f "$SINGULARITY_CONTENTS"
+    ;;
+
+esac
+
+
 if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
     if eval is_image "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
@@ -232,63 +284,13 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
 
 elif [ -d "$SINGULARITY_BUILDDEF" ]; then
     message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
-    rmdir "${SINGULARITY_ROOTFS}"
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
+
 else
-    case $SINGULARITY_BUILDDEF in
-        docker://*)
-            SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
-            if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layers.XXXXXXXX`; then
-                message ERROR "Failed to create temporary directory\n"
-                ABORT 255
-            fi
-            export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
-            eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
-            message 1 "Importing: base Singularity environment\n"
-            zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
-    
-            for i in `cat "$SINGULARITY_CONTENTS"`; do
-                message 1 "Importing: $i\n"
-                zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
-            done
-
-            rm -f "$SINGULARITY_CONTENTS"
-        ;;
-    
-        shub://*)
-            SINGULARITY_CONTAINER="$SINGULARITY_BUILDDEF"
-            if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
-                message ERROR "Failed to create temporary directory\n"
-                ABORT 255
-            fi
-
-            # If cache is set, set pull folder to it (first priority)
-            if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
-                SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
-            else
-                # Only set the pull folder to be $PWD if not set by user
-                if [ ! -n "${SINGULARITY_PULLFOLDER:-}" ]; then
-                    SINGULARITY_PULLFOLDER="."
-                fi
-            fi
-
-            export SINGULARITY_CONTENTS SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER
-
-            # relying on pull.py for error checking here
-            ${SINGULARITY_libexecdir}/singularity/python/pull.py
-
-            # switch $SINGULARITY_CONTAINER from remote to local 
-            SINGULARITY_BUILDDEF=`cat $SINGULARITY_CONTENTS`
-            SINGULARITY_CLEANUP=1
-            rm -f "$SINGULARITY_CONTENTS"
-        ;;
-
-        *)
-            message ERROR "Unknown build specification format: $SINGULARITY_BUILDDEF\n"
-            ABORT 255
-        ;;
-    esac
+    message ERROR "Unknown container build definition format: $SINGULARITY_BUILDDEF\n"
+    ABORT 255
 fi
+
 
 if [ "$USERID" != "0" ]; then
     # This is required as some files in a container are not readable by owner and

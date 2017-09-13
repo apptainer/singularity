@@ -111,18 +111,6 @@ def run_command(cmd):
     return output
 
 
-def is_number(image):
-    '''is_number determines if the user is providing a singularity hub
-    number (meaning the id of an image to download) vs a full name)
-    :param image: the image name, after the uri is removed (shub://)
-    '''
-    try:
-        float(image)
-        return True
-    except ValueError:
-        return False
-
-
 def clean_up(files):
     '''clean up will delete a list of files, only if they exist
     '''
