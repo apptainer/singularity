@@ -342,7 +342,7 @@ class DockerApiConnection(ApiConnection):
             bot.debug('MANIFEST (Metadata): not found, making initial call.')
             self.manifestv1 = self.get_manifest(old_version=True)
 
-        # https://docs.docker.com/registry/spec/manifest-v2-2/#manifest-list  #noqa
+        # https://docs.docker.com/registry/spec/manifest-v2-2/#manifest-list
         if "manifests" in self.manifest:
             for entry in self.manifest['manifests']:
                 if entry['platform']['architecture'] == DOCKER_ARCHITECTURE:
