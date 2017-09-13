@@ -55,6 +55,9 @@ src/get-section
 src/stamp-h1
 src/include/stamp-h1
 src/.dirstamp
+src/sinit
+src/start
+src/start-suid
 
 src/.deps/
 src/.libs/
