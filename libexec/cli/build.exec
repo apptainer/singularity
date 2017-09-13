@@ -195,7 +195,7 @@ case $SINGULARITY_BUILDDEF in
         export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
         eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
         message 1 "Importing: base Singularity environment\n"
-        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
+        zcat "$SINGULARITY_libexecdir"/singularity/bootstrap-scripts/environment.tar | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
 
         for i in `cat "$SINGULARITY_CONTENTS"`; do
             message 1 "Importing: $i\n"
