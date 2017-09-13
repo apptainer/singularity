@@ -10,8 +10,8 @@ START OPTIONS:
                         to src.  Mount options ('opts') may be specified as
                         'ro' (read-only) or 'rw' (read/write, which is the
                         default). This option can be called multiple times.
-    -c/--contain        This option disables the sharing of filesystems on 
-                        your host (e.g. /dev, $HOME and /tmp).
+    -c/--contain        Use minimal /dev and empty other directories (e.g. /tmp
+                        and $HOME) instead of sharing filesystems on your host
     -e/--cleanenv       Clean environment before running container
     -H/--home <spec>    A home directory specification.  spec can either be a
                         src path or src:dest pair.  src is the source path

@@ -58,11 +58,6 @@ while true; do
             export SINGULARITY_BUILDSECTION
             shift
         ;;
-        --nobase)
-            shift
-            SINGULARITY_BUILDNOBASE=1
-            export SINGULARITY_BUILDNOBASE
-        ;;
         -c|--check|--checks)
             SINGULARITY_CHECKS="yes"
             shift;

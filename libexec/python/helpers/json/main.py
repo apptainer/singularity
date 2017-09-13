@@ -174,9 +174,8 @@ def INSPECT(inspect_labels=None,
         RUNSCRIPT = RUNSCRIPT.replace(".singularity.d/runscript", RUNBASE)
         TESTBASE = "scif/apps/%s/scif/test" % inspect_app
         TESTFILE = TESTFILE.replace(".singularity.d/test", TESTBASE)
-        ENVBASE = "scif/apps/%s/scif/environment" % inspect_app
-        ENVIRONMENT = ENVIRONMENT.replace(".singularity.d/environment",
-                                          ENVBASE)
+        ENVBASE = "scif/apps/%s/scif/" % inspect_app
+        ENVIRONMENT = ENVIRONMENT.replace(".singularity.d/", ENVBASE)
 
     data = dict()
     errors = dict()

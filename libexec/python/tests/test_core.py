@@ -255,25 +255,6 @@ class TestUtils(TestCase):
             hello = hello.decode('utf-8')
         self.assertEqual(hello, 'hello\n')
 
-    def test_is_number(self):
-        '''test_is_number should return True for any string or
-        number that turns to a number, and False for everything else
-        '''
-        print("Testing utils.is_number...")
-
-        from sutils import is_number
-
-        print("Case 1: Testing string and float numbers returns True")
-        self.assertTrue(is_number("4"))
-        self.assertTrue(is_number(4))
-        self.assertTrue(is_number("2.0"))
-        self.assertTrue(is_number(2.0))
-
-        print("Case 2: Testing repo names, tags, commits, returns False")
-        self.assertFalse(is_number("vsoch/singularity-images"))
-        self.assertFalse(is_number("vsoch/singularity-images:latest"))
-        self.assertFalse(is_number("44ca6e7c6c35778ab80b34c3fc940c32f1810f39"))
-
     def test_extract_tar(self):
         '''test_extract_tar will test extraction of a tar.gz file
         '''

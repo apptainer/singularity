@@ -1,0 +1,37 @@
+Bootstrap: docker
+From: ubuntu:14.04
+
+%setup
+    echo "SETUP"
+
+%appinstall foo
+
+    echo "INSTALLING FOO"
+    touch filefoo.exec
+
+%appinstall bar
+
+    echo "INSTALLING BAR"
+    touch filebar.exec
+
+%apphelp foo
+This is the help for foo!
+
+%applabels foo
+HELLOTHISIS foo
+
+%applabels bar
+HELLOTHISIS bar
+
+%appenv foo
+HELLOTHISIS=foo
+export HELLOTHISIS
+
+%apprun foo
+echo "RUNNING FOO"
+
+%runscript
+    echo "RUNSCRIPT"
+
+%post
+echo "POST"

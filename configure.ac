@@ -252,6 +252,17 @@ AC_CHECK_FUNCS(setns, [
 AC_SUBST(NO_SETNS)
 
 
+AC_MSG_CHECKING([for setns syscall support])
+if test -d "/proc/self/ns"; then
+    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SETNS_SYSCALL"
+    SETNS_SYSCALL=1
+    AC_MSG_RESULT([yes])
+else
+    AC_MSG_RESULT([no])
+fi
+AC_SUBST(SETNS_SYSCALL)
+
+
 AC_MSG_CHECKING([for overlayfs])
 KVERS=`uname -r`
 if test -f "/lib/modules/$KVERS/modules.dep"; then
@@ -391,6 +402,7 @@ AC_CONFIG_FILES([
    src/lib/runtime/enter/chroot/Makefile
    src/lib/runtime/environment/Makefile
    src/lib/runtime/overlayfs/Makefile
+   src/lib/runtime/autofs/Makefile
    src/lib/image/Makefile
    src/lib/image/squashfs/Makefile
    src/lib/image/dir/Makefile
