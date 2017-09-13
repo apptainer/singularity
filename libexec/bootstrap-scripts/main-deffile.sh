@@ -59,7 +59,7 @@ if [ "${BOOTSTRAP:-}" = "localimage" ]; then
     export SINGULARITY_STARTING_ENVIRONMENT SINGULARITY_STARTING_ENVSHA1
 fi 
 
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-sections.sh"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/main-deffile-stage2.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 
 # take another snapshot and compare to see what changed

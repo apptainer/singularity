@@ -81,6 +81,8 @@ REQUIRES=`echo "${INCLUDE:-}" | sed -e 's/\s/,/g'`
 # systemd, for instance.)  There are a few more we could exclude
 # to save a few MB.  I see 182M cleaned with this, v. 241M with
 # the default debootstrap.
-if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH '$OSVERSION' '$SINGULARITY_ROOTFS' '$MIRRORURL'"; then
+
+$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH "$OSVERSION" "$SINGULARITY_ROOTFS" "$MIRRORURL"
+if [ $? != 0 ]; then
     ABORT 255
 fi

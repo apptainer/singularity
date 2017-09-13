@@ -65,6 +65,16 @@ int main(int argc, char **argv) {
     singularity_registry_init();
     singularity_priv_init();
 
+    if ( singularity_registry_get("STAGE2") != NULL ) {
+        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/deffile-sections.sh");
+        singularity_capability_init_minimal();
+        execl(bootstrap, bootstrap, NULL);
+        singularity_message(ERROR, "Exec of bootstrap stage2 failed\n");
+        ABORT(255);
+    }
+
+    singularity_capability_init();
+
     singularity_message(INFO, "Sanitizing environment\n");
     if ( envclean() != 0 ) {
         singularity_message(ERROR, "Failed sanitizing the environment\n");
@@ -161,13 +171,11 @@ int main(int argc, char **argv) {
     envar_set("HOME", singularity_priv_home(), 1);
     envar_set("LANG", "C", 1);
 
-    char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile.sh");
-
-    singularity_capability_init();
+    char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile-stage1.sh");
 
     execl(bootstrap, bootstrap, NULL); //Flawfinder: ignore (Yes, yes, we know, and this is required)
 
-    singularity_message(ERROR, "Exec of bootstrap code failed: %s\n", strerror(errno));
+    singularity_message(ERROR, "Exec of bootstrap stage1 failed: %s\n", strerror(errno));
     ABORT(255);
 
     return(0);

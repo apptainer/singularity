@@ -36,12 +36,14 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/capability.h"
 
 #include "../image.h"
 #include "../bind.h"
 
 
 int _singularity_image_squashfs_mount(struct image_object *image, char *mount_point) {
+    int mntflags = MS_NOSUID | MS_RDONLY | MS_NODEV;
     char *loop_dev = NULL;
 
     if ( ( loop_dev = singularity_image_bind(image) ) == NULL ) {
@@ -49,9 +51,14 @@ int _singularity_image_squashfs_mount(struct image_object *image, char *mount_po
         ABORT(255);
     }
 
+    if ( singularity_capability_keep_privs() ) {
+        singularity_message(DEBUG, "keep-privs option set, removing MS_NOSUID mount flags\n");
+        mntflags &= ~(1 << MS_NOSUID);
+    }
+
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Mounting squashfs image: %s -> %s\n", loop_dev, mount_point);
-    if ( mount(loop_dev, mount_point, "squashfs", MS_NOSUID|MS_RDONLY|MS_NODEV, "errors=remount-ro") < 0 ) {
+    if ( mount(loop_dev, mount_point, "squashfs", mntflags, "errors=remount-ro") < 0 ) {
         singularity_message(ERROR, "Failed to mount squashfs image in (read only): %s\n", strerror(errno));
         ABORT(255);
     }

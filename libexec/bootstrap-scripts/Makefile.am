@@ -17,6 +17,8 @@ dist_mods_SCRIPTS = functions checks.sh \
                     post.sh \
                     pre.sh \
                     main-deffile.sh \
+                    main-deffile-stage1.sh \
+                    main-deffile-stage2.sh \
                     main-dockerhub.sh \
                     main-null.sh
 

@@ -62,21 +62,23 @@ int main(int argc, char **argv) {
     char *command;
     char *libexec_bin = joinpath(LIBEXECDIR, "/singularity/bin/");
 
+    singularity_registry_init();
+
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     singularity_capability_init();
 
     singularity_suid_init(argv);
 
-    singularity_registry_init();
-
     command = singularity_registry_get("COMMAND");
 
     for ( index = 0; cmd_wrapper[index].command != NULL; index++) {
         if ( strcmp(command, cmd_wrapper[index].command) == 0 ) {
             envar_set("SINGULARITY_SUID_WRAPPER", "1", 1);
-            argv[0] = joinpath(libexec_bin, cmd_wrapper[index].binary);
+
+            argv[0] = strjoin(libexec_bin, cmd_wrapper[index].binary);
             execve(argv[0], argv, environ);
+
             singularity_message(ERROR, "Failed to execute %s binary\n", cmd_wrapper[index].binary);
             ABORT(255);
         }

@@ -213,7 +213,7 @@ class DockerApiConnection(ApiConnection):
         # Get full image manifest, using version 2.0 of Docker Registry API
         if self.manifest is None:
             if self.repo_name is not None and self.namespace is not None:
-                self.manifest = self.get_manifest()
+                self.manifest = self.get_manifest(old_version=True)
 
             else:
                 bot.error("No namespace or sufficient metadata to get one.")

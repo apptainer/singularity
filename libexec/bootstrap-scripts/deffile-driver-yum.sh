@@ -207,7 +207,9 @@ else
 fi
 
 # Do the install!
-if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS --releasever=${OSVERSION} -y install /etc/redhat-release coreutils ${INCLUDE:-}"; then
+$INSTALL_CMD --noplugins -c "$SINGULARITY_ROOTFS/$YUM_CONF" --installroot $SINGULARITY_ROOTFS --releasever="${OSVERSION}" -y install /etc/redhat-release coreutils ${INCLUDE:-}
+
+if [ $? != 0 ]; then
     message ERROR "Bootstrap failed... exiting\n"
     ABORT 255
 fi

@@ -42,6 +42,10 @@ RUN OPTIONS:
     -w/--writable       By default all Singularity containers are available as
                         read only. This option makes the file system accessible
                         as read/write.
+    --keep-privs        Lets root user to keep all privileges
+    --no-privs          Drop all privileges, for root user only as privilieges
+                        are always dropped for users
+
 
 CONTAINER FORMATS SUPPORTED:
     *.img               This is the native Singularity image format for all

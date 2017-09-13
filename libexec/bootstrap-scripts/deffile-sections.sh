@@ -53,8 +53,6 @@ if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 
-umask 0002
-
 # First priority goes to runscript defined in build file
 runscript_command=$(singularity_section_get "runscript" "$SINGULARITY_BUILDDEF")
 
@@ -63,19 +61,6 @@ if [ ! -z "$runscript_command" ]; then
     echo "User defined %runscript found! Taking priority."
     echo "$runscript_command" > "$SINGULARITY_ROOTFS/singularity"    
 fi
-
-test -d "$SINGULARITY_ROOTFS/proc" || install -d -m 755 "$SINGULARITY_ROOTFS/proc"
-test -d "$SINGULARITY_ROOTFS/sys" || install -d -m 755 "$SINGULARITY_ROOTFS/sys"
-test -d "$SINGULARITY_ROOTFS/tmp" || install -d -m 755 "$SINGULARITY_ROOTFS/tmp"
-test -d "$SINGULARITY_ROOTFS/dev" || install -d -m 755 "$SINGULARITY_ROOTFS/dev"
-
-mount --no-mtab -t proc proc "$SINGULARITY_ROOTFS/proc"
-mount --no-mtab -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
-mount --no-mtab --rbind "/tmp" "$SINGULARITY_ROOTFS/tmp"
-mount --no-mtab --rbind "/dev" "$SINGULARITY_ROOTFS/dev"
-
-cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
-cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 ### EXPORT ENVARS
 DEBIAN_FRONTEND=noninteractive

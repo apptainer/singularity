@@ -171,6 +171,24 @@ while true; do
                 message WARN "Could not find the Nvidia SMI binary to bind into container\n"
             fi
         ;;
+        --keep-privs)
+            if [ "$(id -ru)" = "0" ]; then
+                SINGULARITY_KEEP_PRIVS=1
+                export SINGULARITY_KEEP_PRIVS
+                message 4 "Requesting keep privileges\n"
+            else
+                message WARNING "Keeping privileges is for root only\n"
+            fi
+            shift
+        ;;
+        --no-privs)
+            if [ "$(id -ru)" = "0" ]; then
+                SINGULARITY_NO_PRIVS=1
+                export SINGULARITY_NO_PRIVS
+                message 4 "Requesting no privileges\n"
+            fi
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1

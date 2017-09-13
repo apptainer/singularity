@@ -15,7 +15,6 @@ GENERAL COMMANDS:
 
 CONTAINER USAGE COMMANDS:
     exec          Execute a command within container
-    list          List all running named instances 
     run           Launch a runscript within container
     shell         Run a Bourne shell within container
     test          Execute any test code defined within container

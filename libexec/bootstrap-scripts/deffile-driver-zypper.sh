@@ -118,7 +118,8 @@ $INSTALL_CMD --root $SINGULARITY_ROOTFS ar $MIRROR repo-oss
 $INSTALL_CMD --root $SINGULARITY_ROOTFS --gpg-auto-import-keys refresh
 
 # Do the install!
-if ! eval "$INSTALL_CMD -c $SINGULARITY_ROOTFS/$ZYPP_CONF --root $SINGULARITY_ROOTFS --releasever=${OSVERSION} -n install --auto-agree-with-licenses aaa_base ${INCLUDE:-}"; then
+$INSTALL_CMD -c "$SINGULARITY_ROOTFS/$ZYPP_CONF" --root $SINGULARITY_ROOTFS --releasever="${OSVERSION}" -n install --auto-agree-with-licenses aaa_base ${INCLUDE:-}
+if [ $? != 0 ]; then
     message ERROR "Bootstrap failed... exiting\n"
     ABORT 255
 fi

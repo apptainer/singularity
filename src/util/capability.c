@@ -41,6 +41,14 @@
 
 #define NO_CAP  CAP_LAST_CAP + 1
 
+/*
+    if uid != 0 -> no capabilities
+    if uid = 0 -> default capabilities
+    if uid = 0 and keep_privs -> all capabilities
+    if uid = 0 and no_privs -> no capabilities
+    if uid = 0 and build stage 2 -> minimal capabilities
+*/
+
 static __u32 default_capabilities[] = {
     CAP_SETUID,
     CAP_SETGID,
@@ -70,6 +78,20 @@ static __u32 no_capabilities[] = {
     NO_CAP
 };
 
+int singularity_capability_keep_privs(void) {
+    if ( getuid() == 0 && singularity_registry_get("KEEP_PRIVS") != NULL ) {
+        return(1);
+    }
+    return(0);
+}
+
+int singularity_capability_no_privs(void) {
+    if ( getuid() == 0 && singularity_registry_get("NO_PRIVS") != NULL ) {
+        return(1);
+    }
+    return(0);
+}
+
 void singularity_capability_set_securebits(void) {
     if ( prctl(PR_SET_SECUREBITS, SECBIT_KEEP_CAPS|
                                   SECBIT_KEEP_CAPS_LOCKED|
@@ -82,12 +104,12 @@ void singularity_capability_set_securebits(void) {
     }
 }
 
-void singularity_capability_keep(__u32 *capabilities) {
+void singularity_capability_set(__u32 *capabilities) {
     int caps_index;
     int keep_index;
     int keep_cap;
 
-    singularity_message(DEBUG, "Entering in a restricted capabilities set\n");
+    singularity_message(DEBUG, "Entering in a restricted capability set\n");
 
     for ( caps_index = 0; caps_index <= CAP_LAST_CAP; caps_index++ ) {
         keep_cap = -1;
@@ -107,15 +129,19 @@ void singularity_capability_keep(__u32 *capabilities) {
 }
 
 void singularity_capability_init(void) {
-    singularity_capability_keep(default_capabilities);
+    if ( ! singularity_capability_keep_privs() ) {
+        singularity_capability_set(default_capabilities);
+    }
 }
 
 void singularity_capability_init_minimal(void) {
-    singularity_capability_keep(minimal_capabilities);
+    singularity_capability_set(minimal_capabilities);
 }
 
 void singularity_capability_drop_all(void) {
-    singularity_message(DEBUG, "Drop all capabilities\n");
-    singularity_capability_set_securebits();
-    singularity_capability_keep(no_capabilities);
+    if ( singularity_capability_no_privs() || ( ! singularity_capability_keep_privs() && getuid() != 0 ) ) {
+        singularity_message(DEBUG, "Drop all capabilities\n");
+        singularity_capability_set_securebits();
+        singularity_capability_set(no_capabilities);
+    }
 }

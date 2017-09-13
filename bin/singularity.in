@@ -107,6 +107,24 @@ while true; do
             message 4 "Enabling shell debugging\n"
             shift
         ;;
+        -k|--keep-privs)
+            if [ "$(id --real --user)" = "0" ]; then
+                SINGULARITY_KEEP_PRIVS=1
+                export SINGULARITY_KEEP_PRIVS
+                message 4 "Requesting keep privileges\n"
+            else
+                message WARNING "Keeping privileges is for root only\n"
+            fi
+            shift
+        ;;
+        -n|--no-privs)
+            if [ "$(id --real --user)" = "0" ]; then
+                SINGULARITY_NO_PRIVS=1
+                export SINGULARITY_NO_PRIVS
+                message 4 "Requesting no privileges\n"
+            fi
+            shift
+        ;;
         -v|--verbose)
             SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 1`
             message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
