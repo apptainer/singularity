@@ -7,7 +7,7 @@ AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
 AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
 
-lexecdir = $(libexecdir)/singularity/bin
+bindir = $(libexecdir)/singularity/bin
 
 bin_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start sinit wrapper $(BUILD_SUID)
 EXTRA_PROGRAMS = wrapper-suid

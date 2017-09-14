@@ -25,6 +25,10 @@ install-data-hook:
 	install -d -m 0755 $(DESTDIR)$(SESSIONDIR)
 	test -f $(DESTDIR)$(libexecdir)/singularity/sexec-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/sexec-suid || :
 	test -f $(DESTDIR)$(libexecdir)/singularity/bin/copy-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/bin/copy-suid || :
-
+	test -f $(DESTDIR)$(libexecdir)/singularity/bin/action-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/bin/action-suid || :
+	test -f $(DESTDIR)$(libexecdir)/singularity/bin/start-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/bin/start-suid || :
+	test -f $(DESTDIR)$(libexecdir)/singularity/bin/mount-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/bin/mount-suid || :
+	test -f $(DESTDIR)$(libexecdir)/singularity/bin/import-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/bin/import-suid || :
+	test -f $(DESTDIR)$(libexecdir)/singularity/bin/export-suid && rm -f $(DESTDIR)$(libexecdir)/singularity/bin/export-suid || :
 
 ACLOCAL_AMFLAGS = -I m4
