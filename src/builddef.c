@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     if ( singularity_registry_get("STAGE2") != NULL ) {
         char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/deffile-sections.sh");
         singularity_capability_init_minimal();
-        execl(bootstrap, bootstrap, NULL);
+        execl(bootstrap, bootstrap, NULL); //Flawfinder: ignore (Yes, yes, we know, and this is required)
         singularity_message(ERROR, "Exec of bootstrap stage2 failed\n");
         ABORT(255);
     }
