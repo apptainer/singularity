@@ -34,8 +34,12 @@ stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
 # Checking no new privs with capabilities
-stest 0 sudo singularity exec "$CONTAINER" ping localhost -c 1
+stest 1 sudo singularity exec "$CONTAINER" ping localhost -c 1
+stest 0 sudo singularity exec --keep-privs "$CONTAINER" ping localhost -c 1
 stest 1 singularity exec "$CONTAINER" ping localhost -c 1
+
+stest 0 sudo singularity exec "$CONATINER" mount -oremount,suid /
+stest 1 sudo singularity exec --no-privs "$CONATINER" mount -oremount,suid /
 
 test_cleanup
 

@@ -72,6 +72,11 @@ int main(int argc, char **argv) {
 
     command = singularity_registry_get("COMMAND");
 
+    if ( command == NULL ) {
+        singularity_message(ERROR, "no command passed\n");
+        ABORT(255);
+    }
+
     for ( index = 0; cmd_wrapper[index].command != NULL; index++) {
         if ( strcmp(command, cmd_wrapper[index].command) == 0 ) {
             envar_set("SINGULARITY_SUID_WRAPPER", "1", 1);

@@ -60,6 +60,9 @@ elif [ -f "${HELP_ASK}" ]; then
     shift
 
     if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
+        if [ -z "${SINGULARITY_COMMAND:-}" ]; then
+            export SINGULARITY_COMMAND="mount"
+        fi
         eval "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/help.sh"
         RETVAL=$?
     elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
