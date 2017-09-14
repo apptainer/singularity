@@ -38,8 +38,11 @@ stest 1 sudo singularity exec "$CONTAINER" ping localhost -c 1
 stest 0 sudo singularity exec --keep-privs "$CONTAINER" ping localhost -c 1
 stest 1 singularity exec "$CONTAINER" ping localhost -c 1
 
-stest 0 sudo singularity exec "$CONATINER" mount -oremount,suid /
-stest 1 sudo singularity exec --no-privs "$CONATINER" mount -oremount,suid /
+stest 0 sudo singularity exec "$CONTAINER" mknod -m 600 /test-null c 1 3
+stest 1 sudo singularity exec --no-privs "$CONTAINER" mknod -m 600 /test-null c 1 3
+
+stest 0 sudo singularity exec "$CONTAINER" mount -B /etc /mnt
+stest 1 sudo singularity exec --no-privs "$CONTAINER" mount -B /etc /mnt
 
 test_cleanup
 
