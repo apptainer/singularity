@@ -101,6 +101,16 @@ sudo mv "$CONTAINER" "$CONTAINER2"
 stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
 container_check
 
+# with labels
+cat >>"${SINGULARITY_TESTDIR}/Singularity" <<EOF
+%labels
+    FOO bar
+EOF
+sudo mv "$CONTAINER" "$CONTAINER2"
+stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+container_check
+stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/labels.json
+
 # from localimage to squashfs (via def file)
 sudo rm -rf "$CONTAINER" "$CONTAINER2"
 stest 0 sudo singularity build --writable "$CONTAINER2" "../examples/busybox/Singularity"
