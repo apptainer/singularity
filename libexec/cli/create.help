@@ -2,8 +2,8 @@ USAGE: singularity [...] image.create [create options...] <container path>
 
 ******************************************************************************
 WARNING: The create command is deprecated and will be removed in a later 
-version of Singularity.  create now uses image.create to build to create a 
-writable container via the following syntax:
+version of Singularity.  create now uses image.create to create a writable 
+container via the following syntax:
 
 $ singularity image.create container.img
 
