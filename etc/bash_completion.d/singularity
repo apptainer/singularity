@@ -95,7 +95,7 @@ _singularity() {
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--app --bind --contain --containall --cleanenv --home --ipc --join --net --nv --overlay --pid --pwd --scratch --user --workdir --writable --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--bind --contain --containall --cleanenv --home --ipc --join --net --nv --overlay --pid --pwd --scratch --user --workdir --writable --help" -- ${cur}) )
             else
                 _filedir 
             fi
@@ -129,7 +129,18 @@ _singularity() {
             return 0
         ;;
 
-        test|mount)
+        test)
+            if [[ ${cur} == -a || ${cur} == --app ]]; then
+                _filedir
+            elif [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W "--app --help" -- ${cur}) )
+            else
+                _filedir
+            fi
+            return 0
+        ;; 
+
+        mount)
             if [[ ${cur} == -* ]] ; then
                 COMPREPLY=( $(compgen -W "--writable --overlay --help" -- ${cur}) )
             else
@@ -138,11 +149,6 @@ _singularity() {
             _filedir
             return 0
         ;; 
-
-        copy)
-            _filedir
-            return 0
-        ;;
 
         create)
             if [[ ${cur} == -s || ${cur} == --size ]]; then
@@ -169,6 +175,123 @@ _singularity() {
             return 0
         ;;
 
+        check)
+            if [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W "--low --med --high --tag" -- ${cur}) )
+            elif [ $container_idx -lt $COMP_CWORD ]; then
+                return 0
+            else
+                _filedir
+            fi
+            return 0
+        ;;
+
+        pull)
+            if [[ ${cur} == -n || ${cur} == --name ]]; then
+                _filedir
+            elif [[ ${cur} == -C || ${cur} == --commit ]]; then
+                _filedir
+            elif [[ ${cur} == -H || ${cur} == --hash ]]; then
+                _filedir
+            elif [[ ${cur} == -s || ${cur} == --size ]]; then
+                _filedir
+            elif [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W "--name --commit --hash --size --help" -- ${cur}) )
+            else
+                _filedir 
+            fi
+            return 0
+        ;;
+
+        instance.start)
+            if [[ ${cur} == -B || ${cur} == --bind ]]; then
+                #TODO: Not really a path, but this should be a bind spec...
+                _filedir
+            elif [[ ${cur} == -S || ${cur} == --scratch* || ${cur} == --pwd ]]; then
+                _filedir
+            elif [[ ${cur} == -H || ${cur} == --home ]]; then
+                COMPREPLY=( $(compgen -f -- ${cur}) )
+            elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
+                COMPREPLY=( $(compgen -f -- ${cur}) )
+            elif [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W "--bind --contain --cleanenv --home --net --nv --pwd --scratch --workdir --writable --help" -- ${cur}) )
+            else
+                _filedir 
+            fi
+            return 0
+        ;;
+
+        instance.list)
+            if [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W " --user --help" -- ${cur}) )
+            else
+                _filedir
+            fi
+            return 0
+        ;;
+
+        instance.stop)
+            if [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W " --user --help" -- ${cur}) )
+            elif [ $container_idx -lt $COMP_CWORD ]; then
+                return 0
+            else
+                _filedir
+            fi
+            return 0
+        ;;
+
+        instance.stop-all)
+            if [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W " --user --help" -- ${cur}) )
+            else
+                _filedir
+            fi
+            return 0
+        ;;
+
+        image.create)
+            if [[ ${cur} == -s || ${cur} == --size ]]; then
+                _filedir
+            elif [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W "--size --force --help" -- ${cur}) )
+            else
+                _filedir 
+            fi
+            return 0
+        ;;
+
+        image.import)
+            if [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W " --help" -- ${cur}) )
+            else
+                _filedir
+            fi
+            return 0
+        ;;
+
+        image.expand)
+            if [[ ${cur} == -s || ${cur} == --size ]]; then
+                _filedir
+            elif [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W "--size --help" -- ${cur}) )
+            else
+                _filedir 
+            fi
+            return 0
+        ;;
+
+        image.export)
+            if [[ ${cur} == -* ]] ; then
+                COMPREPLY=( $(compgen -W " --help" -- ${cur}) )
+            elif [ $container_idx -lt $COMP_CWORD ]; then
+                return 0
+            else
+                _filedir
+            fi
+            return 0
+        ;;
+
         instance)
             # In this case, no sub-command is present.
             if [ $container_idx -eq $COMP_CWORD ]; then
@@ -177,21 +300,28 @@ _singularity() {
             # In this case the next non-option is a subcommand not an image
             elif [ $container_idx -lt $COMP_CWORD ]; then
                 subcmd="${COMP_WORDS[$container_idx]}"
-		container_idx=$(( $container_idx + 1 ))
+                container_idx=$(( $container_idx + 1 ))
                 container_idx=( $(_singularity_next_nonopt $container_idx ) )
-	    elif [[ ${cur} == -* ]] ; then
+            elif [[ ${cur} == -* ]] ; then
                 COMPREPLY=( $(compgen -W "--help" -- ${cur}) )
                 return 0
             fi
 
             case "${subcmd}" in
                 start)
-                    if [[ ${cur} == -* ]] ; then
-                        COMPREPLY=( $(compgen -W "--bind --contain --cleanenv --home --net --nv --pwd --scratch --workdir --writable --help" -- ${cur}) )
-                    elif [ $container_idx -lt $COMP_CWORD ]; then
-                        return 0
-                    else
+                    if [[ ${cur} == -B || ${cur} == --bind ]]; then
+                        #TODO: Not really a path, but this should be a bind spec...
                         _filedir
+                    elif [[ ${cur} == -S || ${cur} == --scratch* || ${cur} == --pwd ]]; then
+                        _filedir
+                    elif [[ ${cur} == -H || ${cur} == --home ]]; then
+                        COMPREPLY=( $(compgen -f -- ${cur}) )
+                    elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
+                        COMPREPLY=( $(compgen -f -- ${cur}) )
+                    elif [[ ${cur} == -* ]] ; then
+                        COMPREPLY=( $(compgen -W "--bind --contain --cleanenv --home --net --nv --pwd --scratch --workdir --writable --help" -- ${cur}) )
+                    else
+                        _filedir 
                     fi
                     return 0
                 ;;
@@ -235,9 +365,9 @@ _singularity() {
             # In this case the next non-option is a subcommand not an image
             elif [ $container_idx -lt $COMP_CWORD ]; then
                 subcmd="${COMP_WORDS[$container_idx]}"
-		container_idx=$(( $container_idx + 1 ))
+                container_idx=$(( $container_idx + 1 ))
                 container_idx=( $(_singularity_next_nonopt $container_idx ) )
-	    elif [[ ${cur} == -* ]] ; then
+            elif [[ ${cur} == -* ]] ; then
                 COMPREPLY=( $(compgen -W "--help" -- ${cur}) )
                 return 0
             fi
@@ -245,12 +375,12 @@ _singularity() {
             case "${subcmd}" in
 
                 create)
-                    if [[ ${cur} == -* ]] ; then
-                        COMPREPLY=( $(compgen -W "--size --force --help" -- ${cur}) )
-                    elif [ $container_idx -lt $COMP_CWORD ]; then
-                        return 0
-                    else
+                    if [[ ${cur} == -s || ${cur} == --size ]]; then
                         _filedir
+                    elif [[ ${cur} == -* ]] ; then
+                        COMPREPLY=( $(compgen -W "--size --force --help" -- ${cur}) )
+                    else
+                        _filedir 
                     fi
                     return 0
                 ;;
@@ -276,10 +406,12 @@ _singularity() {
                 ;;
 
                 expand)
-                    if [[ ${cur} == -* ]] ; then
-                        COMPREPLY=( $(compgen -W " --size --help" -- ${cur}) )
-                    else
+                    if [[ ${cur} == -s || ${cur} == --size ]]; then
                         _filedir
+                    elif [[ ${cur} == -* ]] ; then
+                        COMPREPLY=( $(compgen -W "--size --help" -- ${cur}) )
+                    else
+                        _filedir 
                     fi
                     return 0
                 ;;
@@ -289,4 +421,3 @@ _singularity() {
 }
 
 complete -F _singularity singularity
-
