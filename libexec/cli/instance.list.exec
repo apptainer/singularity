@@ -67,7 +67,8 @@ done
 
 message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
 
-for i in `singularity_daemon_glob`; do
+COUNT=0
+for i in `singularity_daemon_glob ${1:-}`; do
     if [ -f "$i" ]; then
         if [ ! -s "$i" ]; then
             rm "$i"
@@ -78,6 +79,11 @@ for i in `singularity_daemon_glob`; do
         . "$i"
 
         printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
-        
+
+        let "COUNT++"
     fi
 done
+
+if [ "$COUNT" == 0 ]; then
+    exit 1
+fi
