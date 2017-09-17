@@ -375,7 +375,7 @@ _singularity() {
             case "${subcmd}" in
 
                 create)
-                    if [[ ${cur} == -B || ${cur} == --size ]]; then
+                    if [[ ${cur} == -s || ${cur} == --size ]]; then
                         _filedir
                     elif [[ ${cur} == -* ]] ; then
                         COMPREPLY=( $(compgen -W "--size --force --help" -- ${cur}) )
@@ -406,7 +406,7 @@ _singularity() {
                 ;;
 
                 expand)
-                    if [[ ${cur} == -B || ${cur} == --size ]]; then
+                    if [[ ${cur} == -s || ${cur} == --size ]]; then
                         _filedir
                     elif [[ ${cur} == -* ]] ; then
                         COMPREPLY=( $(compgen -W "--size --help" -- ${cur}) )
