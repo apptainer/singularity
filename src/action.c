@@ -67,17 +67,17 @@ int main(int argc, char **argv) {
 
     singularity_daemon_init();
 
+    if ( singularity_registry_get("WRITABLE") != NULL ) {
+        singularity_message(VERBOSE3, "Instantiating writable container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
+    } else {
+        singularity_message(VERBOSE3, "Instantiating read only container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
+    }
+
     singularity_runtime_ns(SR_NS_ALL);
 
     if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
-        if ( singularity_registry_get("WRITABLE") != NULL ) {
-            singularity_message(VERBOSE3, "Instantiating writable container image object\n");
-            image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
-        } else {
-            singularity_message(VERBOSE3, "Instantiating read only container image object\n");
-            image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
-        }
-
         singularity_cleanupd();
 
         singularity_sessiondir();
