@@ -12,7 +12,6 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
                     instance.list.exec \
                     instance.start.exec \
                     instance.stop.exec \
-                    instance.stop-all.exec \
                     image.exec \
                     image.create.exec \
                     image.expand.exec \
@@ -37,7 +36,6 @@ dist_cliexec_DATA = singularity.help \
                     instance.list.help \
                     instance.start.help \
                     instance.stop.help \
-                    instance.stop-all.help \
                     image.help \
                     image.create.help \
                     image.expand.help \
