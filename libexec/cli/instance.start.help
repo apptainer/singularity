@@ -48,7 +48,7 @@ EXAMPLES:
 
     $ singularity instance.start /tmp/my-sql.img mysql
 
-    $ singularity shell --join mysql /tmp/my-sql.img
+    $ singularity shell instance://mysql
     Singularity my-sql.img> pwd
     /home/mibauer/mysql
     Singularity my-sql.img> ps
@@ -56,15 +56,7 @@ EXAMPLES:
       1 pts/0    00:00:00 sinit
       2 pts/0    00:00:00 bash
       3 pts/0    00:00:00 ps
-    Singularity my-sql.img> exit
-    
-    $ singularity shell --join mysql /tmp/my-sql.img
-    Singularity my-sql.img> ps
-    PID TTY          TIME CMD
-      1 pts/0    00:00:00 sinit
-      4 pts/0    00:00:00 bash
-      5 pts/0    00:00:00 ps
-    Singularity my-sql.img> exit
+    Singularity my-sql.img> 
     
     $ singularity instance.stop /tmp/my-sql.img mysql
     Stopping /tmp/my-sql.img mysql

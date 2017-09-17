@@ -20,8 +20,6 @@ EXEC OPTIONS:
                         of the home directory outside the container and dest
                         overrides the home directory within the container
     -i/--ipc            Run container in a new IPC namespace
-    -j/--join           Join a running named instance of the given container
-                        image
     -n/--net            Run container in a new network namespace (loopback is
                         only network device active)
     --nv                Enable experimental Nvidia support

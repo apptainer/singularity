@@ -117,33 +117,58 @@ singularity_keys_get() {
 }
 
 singularity_daemon_glob() {
+    local DAEMON_NAME="${1:-*}"
+
     if ! USERID=`id --real --user`; then
         message ERROR "Could not ascertain user ID\n"
         exit 255
     fi
 
-    HOST=`hostname`
-    HOME=`getent passwd ${USERID} | cut -d: -f6`
+    if ! HOST=`hostname`; then
+        message ERROR "Could not ascertain hostname\n"
+        ABORT 255
+    fi
+
+    if ! HOME=`getent passwd ${USERID} | cut -d: -f6`; then
+        message ERROR "Could not discover user's home directory\n"
+        ABORT 255
+    fi
 
     # This is a configurable option, needs to be set accordingly!
-    SINGULARITY_DAEMON_GLOB="${HOME}/.singularity/daemon/${HOST}/*"
+    SINGULARITY_DAEMON_GLOB="${HOME}/.singularity/daemon/${HOST}/${DAEMON_NAME}"
     echo $SINGULARITY_DAEMON_GLOB
     return 0
 }
 
 singularity_daemon_file() {
+    SINGULARITY_DAEMON_NAME="${1:-}"
+
+    if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
+        message ERROR "singularity_daemon_file() called with no process name\n"
+        ABORT 255
+    fi
+
     if ! USERID=`id --real --user`; then
         message ERROR "Could not ascertain user ID\n"
-        exit 255
+        ABORT 255
     fi
     
-    HOST=`hostname`
-    HOME=`getent passwd ${USERID} | cut -d: -f6`
-    DEVINO=`stat --format=%d.%i ${SINGULARITY_IMAGE}`
+    if ! HOST=`hostname`; then
+        message ERROR "Could not ascertain hostname\n"
+        ABORT 255
+    fi
+
+    if ! HOME=`getent passwd ${USERID} | cut -d: -f6`; then
+        message ERROR "Could not discover user's home directory\n"
+        ABORT 255
+    fi
 
     # This is a configurable option, needs to be set accordingly!
-    SINGULARITY_DAEMON_FILE="${HOME}/.singularity/daemon/${HOST}/${DEVINO}-${SINGULARITY_DAEMON_NAME}"
-    echo $SINGULARITY_DAEMON_FILE
+    SINGULARITY_DAEMON_FILE="${HOME}/.singularity/daemon/${HOST}/${SINGULARITY_DAEMON_NAME}"
+    export SINGULARITY_DAEMON_FILE SINGULARITY_DAEMON_NAME
+
+    message 2 "Using Daemon configuration file: ${SINGULARITY_DAEMON_FILE}\n"
+
     return 0
 }
 
