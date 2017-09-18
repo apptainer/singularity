@@ -41,6 +41,8 @@ from sutils import (
 from defaults import (
     DOCKER_API_BASE,
     DOCKER_API_VERSION,
+    DOCKER_ARCHITECTURE,
+    DOCKER_OS,
     DOCKER_NUMBER,
     DOCKER_PREFIX,
     ENV_BASE,
@@ -74,6 +76,7 @@ class DockerApiConnection(ApiConnection):
         self.api_base = DOCKER_API_BASE
         self.api_version = DOCKER_API_VERSION
         self.manifest = None
+        self.manifestv1 = None
 
         if 'auth' in kwargs:
             self.auth = kwargs['auth']
@@ -198,28 +201,41 @@ class DockerApiConnection(ApiConnection):
             bot.error(msg)
             sys.exit(1)
 
-    def get_images(self):
-        '''get_images is a wrapper for get_manifest, but it
-        additionally parses the repo_name and tag's images
-        and returns the complete ids
-        :param repo_name: the name of the repo, eg "ubuntu"
-        :param namespace: the namespace for the image
-                          default is "library"
-        :param repo_tag: the repo tag default "latest"
-        :param registry: the docker registry url
-                         default will use index.docker.io
+    def get_images(self, manifest=None):
+        '''get_images will return a list of layers from a manifest.
+        The function is intended to work with both version
+        1 and 2 of the schema
+        :param manifest: the manifest to read_layers from
         '''
+        if manifest is None:
+            self.update_manifests()
+            manifest = self.manifest
 
-        # Get full image manifest, using version 2.0 of Docker Registry API
-        if self.manifest is None:
-            if self.repo_name is not None and self.namespace is not None:
-                self.manifest = self.get_manifest()
+        digests = []
+        layer_key = 'layers'
+        digest_key = 'digest'
 
-            else:
-                bot.error("No namespace or sufficient metadata to get one.")
-                sys.exit(1)
+        # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-2.md#image-manifest  # noqa
+        if 'layers' in manifest:
+            bot.debug('Image manifest version 2.2 found.')
 
-        digests = read_digests(self.manifest)
+        # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-1.md#example-manifest  # noqa
+        elif 'fsLayers' in manifest:
+            layer_key = 'fsLayers'
+            digest_key = 'blobSum'
+            bot.debug('Image manifest version 2.1 found.')
+
+        else:
+            msg = "Improperly formed manifest, "
+            msg += "layers, manifests, or fsLayers must be present"
+            bot.error(msg)
+            sys.exit(1)
+
+        for layer in manifest[layer_key]:
+            if digest_key in layer:
+                if layer[digest_key] not in digests:
+                    bot.debug("Adding digest %s" % layer[digest_key])
+                    digests.append(layer[digest_key])
         return digests
 
     def get_tags(self, return_response=False):
@@ -253,7 +269,7 @@ class DockerApiConnection(ApiConnection):
             bot.error("Error obtaining tags: %s" % base)
             sys.exit(1)
 
-    def get_manifest(self, old_version=False):
+    def get_manifest(self, old_version=False, version=None):
         '''get_manifest should return an image manifest
         for a particular repo and tag.  The image details
         are extracted when the client is generated.
@@ -271,17 +287,23 @@ class DockerApiConnection(ApiConnection):
                                           self.api_version,
                                           self.namespace,
                                           self.repo_name)
-        if self.version is not None:
+
+        # First priority given to calling function
+        if version is not None:
+            base = "%s/%s" % (base, version)
+
+        elif self.version is not None:
             base = "%s/%s" % (base, self.version)
+
         else:
             base = "%s/%s" % (base, self.repo_tag)
         bot.verbose("Obtaining manifest: %s" % base)
 
-        headers = self.headers
+        headers = self.headers.copy()
         if old_version is True:
             headers['Accept'] = 'application/json'
 
-        response = self.get(base, headers=self.headers)
+        response = self.get(base, headers=headers)
 
         try:
             response = json.loads(response)
@@ -300,6 +322,43 @@ class DockerApiConnection(ApiConnection):
 
         # If we have errors, don't continue
         return self.check_errors(response)
+
+    def update_manifests(self):
+        '''update manifests ensures that each of a version1 and version2
+        manifest are present
+        '''
+        bot.debug('Updating manifests.')
+
+        if self.repo_name is None and self.namespace is None:
+            bot.error("Insufficient metadata to get manifest.")
+            sys.exit(1)
+
+        # Get full image manifest, using version 2.0 of Docker Registry API
+        if self.manifest is None:
+            bot.debug('MANIFEST (Primary): not found, making initial call.')
+            self.manifest = self.get_manifest()
+
+        if self.manifestv1 is None:
+            bot.debug('MANIFEST (Metadata): not found, making initial call.')
+            self.manifestv1 = self.get_manifest(old_version=True)
+
+        # https://docs.docker.com/registry/spec/manifest-v2-2/#manifest-list
+        if "manifests" in self.manifest:
+            for entry in self.manifest['manifests']:
+                if entry['platform']['architecture'] == DOCKER_ARCHITECTURE:
+                    if entry['platform']['os'] == DOCKER_OS:
+                        digest = entry['digest']
+                        bot.debug('Image manifest version 2.2 list found.')
+                        bot.debug('Obtaining architecture: %s, OS: %s'
+                                  % (DOCKER_ARCHITECTURE, DOCKER_OS))
+
+                        # Obtain specific os, architecture
+                        self.manifest = self.get_manifest(version=digest)
+                        break
+
+        # If we didn't get a new manifest, fall back to version 1
+        if "manifests" in self.manifest:
+            self.manifest = self.manifestv1
 
     def get_layer(self,
                   image_id,
@@ -371,11 +430,11 @@ class DockerApiConnection(ApiConnection):
         :round_up: if true, round up to nearest integer
         :return_mb: if true, defaults bytes are converted to MB
         '''
-        manifest = self.get_manifest()
+        self.update_manifests()
         size = None
-        if "layers" in manifest:
+        if "layers" in self.manifest:
             size = 0
-            for layer in manifest["layers"]:
+            for layer in self.manifest["layers"]:
                 if "size" in layer:
                     size += layer['size']
 
@@ -425,40 +484,3 @@ class DockerApiConnection(ApiConnection):
                 if spec in manifest['config']:
                     cmd = manifest['config'][spec]
         return cmd
-
-
-# API Helper functions
-
-def read_digests(manifest):
-    '''read_layers will return a list of layers from a manifest.
-    The function is intended to work with both version
-    1 and 2 of the schema
-    :param manifest: the manifest to read_layers from
-    '''
-
-    digests = []
-
-    # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-2.md#image-manifest  # noqa
-    if 'layers' in manifest:
-        layer_key = 'layers'
-        digest_key = 'digest'
-        bot.debug('Image manifest version 2.2 found.')
-
-    # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-1.md#example-manifest  # noqa
-    elif 'fsLayers' in manifest:
-        layer_key = 'fsLayers'
-        digest_key = 'blobSum'
-        bot.debug('Image manifest version 2.1 found.')
-
-    else:
-        msg = "Improperly formed manifest, "
-        msg += "layers or fsLayers must be present"
-        bot.error(msg)
-        sys.exit(1)
-
-    for layer in manifest[layer_key]:
-        if digest_key in layer:
-            if layer[digest_key] not in digests:
-                bot.debug("Adding digest %s" % layer[digest_key])
-                digests.append(layer[digest_key])
-    return digests
