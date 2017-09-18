@@ -1,5 +1,15 @@
 USAGE: singularity [...] bootstrap <container path> <definition file>
 
+******************************************************************************
+WARNING: The bootstrap command is deprecated and will be removed in a later 
+version of Singularity.  bootstrap now uses build to create a writable
+container from an existing image via the following syntax:
+
+$ singularity build -e -w container.img recipe.def
+
+You should update your usage accordingly. 
+******************************************************************************
+
 The bootstrap command is useful for creating a new bootstrap or modifying an
 existing one using a definition file that describes how to build the
 container. The quickest, easiest Bootstrap is dumping Docker layers into
@@ -17,12 +27,8 @@ note: This command must be executed as root.
 
 CREATE OPTIONS:
     -T|--notest     Bootstrap without running tests in %test section
-    -f|--force      Force a rebootstrap of an OS (note: this does not delete
-                    what is currently in the image, just causes the core to
-                    be reinstalled)
     -s|--section    Only run a given section within the bootstrap (setup,
                     post, files, environment, test, labels, none)
-       --nobase     Skip the generation of the base OS
 
 
 CHECKS OPTIONS:
@@ -35,6 +41,10 @@ CHECKS OPTIONS:
 See singularity check --help for available tags
 
 DEFFILE BASEOS EXAMPLES:
+
+    Singularity Hub:
+        Bootstrap: shub
+        From: singularityhub/busybox
 
     Docker:
         Bootstrap: docker
@@ -85,6 +95,10 @@ DEFFILE SECTION EXAMPLES:
     %files
         /path/on/host/file.txt /path/on/container/file.txt 
         relative_file.txt /path/on/container/relative_file.txt
+        
+    %environment
+        export PATH=/opt/good/stuff:$PATH
+        export FOO=bar
 
 
 EXAMPLES:

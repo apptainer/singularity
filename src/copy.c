@@ -64,8 +64,8 @@ int main(int argc, char **argv) {
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    singularity_image_open(&image, O_RDWR);
-    singularity_image_check(&image);
+//    singularity_image_open(&image, O_RDWR);
+//    singularity_image_check(&image);
 
     singularity_registry_set("WRITABLE", "1");
 

@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <limits.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -41,7 +42,7 @@ int check_mounted(char *mountpoint) {
     int retval = -1;
     FILE *mounts;
     char *line = (char *)malloc(MAX_LINE_LEN);
-    char *rootfs_dir = singularity_runtime_rootfs(NULL);
+    char *rootfs_dir = CONTAINER_FINALDIR;
     unsigned int mountpoint_len = strlength(mountpoint, PATH_MAX);
 
     singularity_message(DEBUG, "Opening /proc/mounts\n");
