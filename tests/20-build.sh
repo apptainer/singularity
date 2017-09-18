@@ -130,15 +130,15 @@ stest 0 sudo singularity build --exists "$CONTAINER" "../examples/busybox/Singul
 container_check
 
 # from tar to squashfs
-singularity image.export "$CONTAINER" >"$CONTAINER2".tar
-sudo rm "$CONTAINER"
-stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2".tar
+stest 0 sudo sh -c "singularity image.export '$CONTAINER' > '${CONTAINER2}.tar'"
+stest 0 sudo rm "$CONTAINER"
+stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar"
 container_check
 
 # from tar.gx to squashfs
-singularity image.export "$CONTAINER" | gzip -9 >"$CONTAINER2".tar.gz
+stest 0 sh -c "singularity image.export '$CONTAINER' | gzip -9 > '${CONTAINER2}.tar.gz'"
 sudo rm "$CONTAINER"
-stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2".tar.gz
+stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar.gz"
 container_check
 
 
