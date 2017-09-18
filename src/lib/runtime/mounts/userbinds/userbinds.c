@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <libgen.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -42,7 +43,7 @@
 
 
 int _singularity_runtime_mount_userbinds(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
     char *bind_path_string;
 
     singularity_message(DEBUG, "Checking for environment variable 'SINGULARITY_BINDPATH'\n");
@@ -164,7 +165,7 @@ int _singularity_runtime_mount_userbinds(void) {
                         singularity_message(ERROR, "There was an error write-protecting the path %s: %s\n", source, strerror(errno));
                         ABORT(255);
                     }
-                    if ( access(joinpath(container_dir, dest), W_OK) == 0 || errno != EROFS ) { // Flawfinder: ignore (precautionary confirmation, not necessary)
+                    if ( access(joinpath(container_dir, dest), W_OK) == 0 || (errno != EROFS && errno != EACCES) ) { // Flawfinder: ignore (precautionary confirmation, not necessary)
                         singularity_message(ERROR, "Failed to write-protect the path %s: %s\n", source, strerror(errno));
                         ABORT(255);
                     }

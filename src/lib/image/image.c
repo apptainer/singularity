@@ -33,24 +33,16 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
+#include "util/registry.h"
 
 #include "./image.h"
-#include "./open/open.h"
-#include "./bind/bind.h"
-#include "./create/create.h"
-#include "./check/check.h"
-#include "./expand/expand.h"
-#include "./mount/mount.h"
-#include "./offset/offset.h"
+#include "./bind.h"
+#include "./squashfs/include.h"
+#include "./dir/include.h"
+#include "./ext3/include.h"
 
 
-// extern int singularity_image_expand(char *image, unsigned int size)
-//
-// extern int singularity_image_mount(char *mountpoint, unsigned int flags);
-
-
-
-struct image_object singularity_image_init(char *path) {
+struct image_object singularity_image_init(char *path, int open_flags) {
     struct image_object image;
 
     if ( path == NULL ) {
@@ -63,7 +55,28 @@ struct image_object singularity_image_init(char *path) {
     image.type = -1;
     image.fd = -1;
     image.loopdev = NULL;
-    image.id = NULL;
+    image.offset = 0;
+
+    if ( open_flags & ( O_RDWR | O_WRONLY ) ) {
+        image.writable = 1;
+    } else {
+        image.writable = 0;
+    }
+
+    singularity_message(DEBUG, "Calling image_init for each file system module\n");
+    if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
+        singularity_message(DEBUG, "got image_init type for directory\n");
+        image.type = DIRECTORY;
+    } else if ( _singularity_image_squashfs_init(&image, open_flags) == 0 ) {
+        singularity_message(DEBUG, "got image_init type for squashfs\n");
+        image.type = SQUASHFS;
+    } else if ( _singularity_image_ext3_init(&image, open_flags) == 0 ) {
+        singularity_message(DEBUG, "got image_init type for ext3\n");
+        image.type = EXT3;
+    } else {
+        singularity_message(ERROR, "Unknown image format/type: %s\n", path);
+        ABORT(255);
+    }
 
     return(image);
 }
@@ -84,31 +97,36 @@ char *singularity_image_path(struct image_object *image) {
     return(image->path);
 }
 
-int singularity_image_open(struct image_object *image, int open_flags) {
-    return(_singularity_image_open(image, open_flags));
-}
-
-int singularity_image_create(struct image_object *image, long int size) {
-    return(_singularity_image_create(image, size));
-}
-
-int singularity_image_expand(struct image_object *image, unsigned int size) {
-    return(_singularity_image_expand(image, size));
-}
-
-int singularity_image_check(struct image_object *image) {
-    return(_singularity_image_check(image));
-}
-
 int singularity_image_offset(struct image_object *image) {
-    return(_singularity_image_offset(image));
+    return(image->offset);
 }
 
-int singularity_image_bind(struct image_object *image) {
-    return(_singularity_image_bind(image));
+int singularity_image_type(struct image_object *image) {
+    return(image->type);
+}
+
+int singularity_image_writable(struct image_object *image) {
+    return(image->writable);
 }
 
 int singularity_image_mount(struct image_object *image, char *mount_point) {
-    return(_singularity_image_mount(image, mount_point));
-}
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+    }
 
+    singularity_message(DEBUG, "Figuring out which mount module to use...\n");
+    if ( image->type == SQUASHFS ) {
+        singularity_message(DEBUG, "Calling squashfs_mount\n");
+        return(_singularity_image_squashfs_mount(image, mount_point));
+    } else if ( image->type == DIRECTORY ) {
+        singularity_message(DEBUG, "Calling dir_mount\n");
+        return(_singularity_image_dir_mount(image, mount_point));
+    } else if ( image->type == EXT3 ) {
+        singularity_message(DEBUG, "Calling ext3_mount\n");
+        return(_singularity_image_ext3_mount(image, mount_point));
+    } else {
+        singularity_message(ERROR, "Can not mount file system of unknown type\n");
+        ABORT(255);
+    }
+    return(-1);
+}

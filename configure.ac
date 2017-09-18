@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.3.2],[gmkurtzer@lbl.gov])
+AC_INIT([singularity],[2.3.9],[gmkurtzer@lbl.gov])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -136,6 +136,18 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                       ]
                   )
 
+AC_MSG_CHECKING([for namespace: CLONE_NEWNET])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+                                     #include <sched.h>
+                                   ]],
+                                   [[unshare(CLONE_NEWNET);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWNET"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
 
 AC_MSG_CHECKING([for feature: NO_NEW_PRIVS])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -231,6 +243,17 @@ AC_CHECK_FUNCS(setns, [
 AC_SUBST(NO_SETNS)
 
 
+AC_MSG_CHECKING([for setns syscall support])
+if test -d "/proc/self/ns"; then
+    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SETNS_SYSCALL"
+    SETNS_SYSCALL=1
+    AC_MSG_RESULT([yes])
+else
+    AC_MSG_RESULT([no])
+fi
+AC_SUBST(SETNS_SYSCALL)
+
+
 AC_MSG_CHECKING([for overlayfs])
 KVERS=`uname -r`
 if test -f "/lib/modules/$KVERS/modules.dep"; then
@@ -305,7 +328,7 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid create-suid expand-suid export-suid import-suid mount-suid"
+    BUILD_SUID="action-suid start-suid mount-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
@@ -327,6 +350,16 @@ fi
 AC_MSG_RESULT([$GIT_VERSION])
 AC_SUBST(GIT_VERSION)
 
+AC_DEFINE(CONTAINER_MOUNTDIR, LOCALSTATEDIR "/singularity/mnt/container", "container mount location")
+AC_DEFINE(CONTAINER_FINALDIR, LOCALSTATEDIR "/singularity/mnt/final", "location of container post overlay")
+AC_DEFINE(CONTAINER_OVERLAY, LOCALSTATEDIR "/singularity/mnt/overlay", "location of container post overlay")
+AC_DEFINE(SESSIONDIR, LOCALSTATEDIR "/singularity/mnt/session", "location of session directory")
+
+AC_SUBST(CONTAINER_MOUNTDIR, "$localstatedir/singularity/mnt/container")
+AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
+AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
+AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
+
 
 AC_CONFIG_FILES([
    Makefile
@@ -339,6 +372,7 @@ AC_CONFIG_FILES([
    src/lib/runtime/ns/Makefile
    src/lib/runtime/ns/ipc/Makefile
    src/lib/runtime/ns/mnt/Makefile
+   src/lib/runtime/ns/net/Makefile
    src/lib/runtime/ns/pid/Makefile
    src/lib/runtime/files/Makefile
    src/lib/runtime/files/group/Makefile
@@ -359,20 +393,11 @@ AC_CONFIG_FILES([
    src/lib/runtime/enter/chroot/Makefile
    src/lib/runtime/environment/Makefile
    src/lib/runtime/overlayfs/Makefile
+   src/lib/runtime/autofs/Makefile
    src/lib/image/Makefile
-   src/lib/image/bind/Makefile
-   src/lib/image/check/Makefile
-   src/lib/image/check/image/Makefile
-   src/lib/image/check/squashfs/Makefile
-   src/lib/image/check/dir/Makefile
-   src/lib/image/create/Makefile
-   src/lib/image/expand/Makefile
-   src/lib/image/mount/Makefile
-   src/lib/image/mount/dir/Makefile
-   src/lib/image/mount/image/Makefile
-   src/lib/image/mount/squashfs/Makefile
-   src/lib/image/offset/Makefile
-   src/lib/image/open/Makefile
+   src/lib/image/squashfs/Makefile
+   src/lib/image/dir/Makefile
+   src/lib/image/ext3/Makefile
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
    src/util/Makefile
@@ -384,7 +409,10 @@ AC_CONFIG_FILES([
    libexec/bootstrap-scripts/Makefile
    libexec/bootstrap-scripts/environment/Makefile
    libexec/cli/Makefile
+   libexec/handlers/Makefile
    libexec/helpers/Makefile
+   libexec/helpers/apps/Makefile
+   libexec/helpers/checks/Makefile
    libexec/python/Makefile
    libexec/python/docker/Makefile
    libexec/python/shub/Makefile

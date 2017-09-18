@@ -25,36 +25,37 @@ fi
 
 . ./functions
 
-test_init "Checking new container with legacy Singularity"
-
-CONTAINER="$SINGULARITY_TESTDIR/container.img"
-CONTAINERDIR="$SINGULARITY_TESTDIR/container.dir"
-LEGACYDIR="/usr/local/singularity-2.2.1-legacytests/bin"
-
-stest 0 cp "../examples/busybox/Singularity" $SINGULARITY_TESTDIR
-stest 0 echo '%environment' >> "$SINGULARITY_TESTDIR/Singularity"
-stest 0 echo '    export FOO=bar' >> $SINGULARITY_TESTDIR"/Singularity"
-stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "$SINGULARITY_TESTDIR/Singularity"
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" true
-stest 1 $LEGACYDIR/singularity exec "$CONTAINER" false
-
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/runscript
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/labels.json
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -L /.singularity.d/environment
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -L /singularity
-stest 0 $LEGACYDIR/singularity exec "$CONTAINER" env | grep -cw FOO=bar > /dev/null
-
-stest 0 mkdir "$CONTAINERDIR"
-stest 0 sudo singularity bootstrap "$CONTAINERDIR" "$SINGULARITY_TESTDIR/Singularity"
-stest 0 $LEGACYDIR/singularity exec "$CONTAINERDIR" true
-stest 1 $LEGACYDIR/singularity exec "$CONTAINERDIR" false
-stest 0 $LEGACYDIR/singularity exec "$CONTAINERDIR" env | grep -cw FOO=bar > /dev/null
-
-stest 0 sudo rm -rf "$CONTAINERDIR"
+test_init "DISABLED: Checking new container with legacy Singularity"
+#
+#CONTAINER="$SINGULARITY_TESTDIR/container.img"
+#CONTAINERDIR="$SINGULARITY_TESTDIR/container.dir"
+#LEGACYDIR="/usr/local/singularity-2.2.1-legacytests/bin"
+#
+#stest 0 cp "../examples/busybox/Singularity" $SINGULARITY_TESTDIR
+#stest 0 echo '%environment' >> "$SINGULARITY_TESTDIR/Singularity"
+#stest 0 echo '    export FOO=bar' >> $SINGULARITY_TESTDIR"/Singularity"
+#stest 0 sudo singularity build --writable "$CONTAINER" "$SINGULARITY_TESTDIR/Singularity"
+#stest 0 singularity exec "$CONTAINER" true
+#stest 1 singularity exec "$CONTAINER" false
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" true
+#stest 1 $LEGACYDIR/singularity exec "$CONTAINER" false
+#
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/runscript
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/labels.json
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -L /environment
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" test -L /singularity
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINER" env | grep -cw FOO=bar > /dev/null
+#
+#stest 0 mkdir "$CONTAINERDIR"
+#stest 0 sudo singularity bootstrap "$CONTAINERDIR" "$SINGULARITY_TESTDIR/Singularity"
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINERDIR" true
+#stest 1 $LEGACYDIR/singularity exec "$CONTAINERDIR" false
+#stest 0 $LEGACYDIR/singularity exec "$CONTAINERDIR" env | grep -cw FOO=bar > /dev/null
+#
+#stest 0 sudo rm -rf "$CONTAINERDIR"
 
 test_cleanup

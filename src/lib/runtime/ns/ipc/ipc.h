@@ -24,6 +24,7 @@
 #define __SINGULARITY_RUNTIME_NS_IPC_H_
 
 extern int _singularity_runtime_ns_ipc(void);
+extern int _singularity_runtime_ns_ipc_join(void);
 
 #endif /* __SINGULARITY_RUNTIME_NS_IPC_H */
 

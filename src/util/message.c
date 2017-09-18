@@ -57,6 +57,14 @@ static void message_init(void) {
 }
 
 
+int singularity_message_level(void) {
+    if ( messagelevel == -1 ) {
+        message_init();
+    }
+
+    return(messagelevel);
+}
+
 void _singularity_message(int level, const char *function, const char *file_in, int line, char *format, ...) {
     const char *file = file_in;
     int syslog_level = LOG_NOTICE;

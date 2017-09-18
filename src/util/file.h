@@ -20,6 +20,8 @@
  * 
  */
 
+#ifndef __FILE_H_
+#define __FILE_H_
 
 char *file_id(char *path);
 char *file_devino(char *path);
@@ -41,4 +43,7 @@ int s_rmdir(char *dir);
 int copy_file(char * source, char * dest);
 char *filecat(char *path);
 int fileput(char *path, char *string);
+int filelock(const char *const filepath, int *const fdptr);
 char *basedir(char *dir);
+
+#endif

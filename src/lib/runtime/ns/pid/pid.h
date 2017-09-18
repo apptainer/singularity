@@ -24,6 +24,7 @@
 #define __SINGULARITY_RUNTIME_NS_PID_H_
 
 extern int _singularity_runtime_ns_pid(void);
+extern int _singularity_runtime_ns_pid_join(void);
 
 #endif /* __SINGULARITY_RUNTIME_NS_PID_H */
 

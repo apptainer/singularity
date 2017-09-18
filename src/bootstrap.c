@@ -63,31 +63,36 @@ int main(int argc, char **argv) {
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    singularity_image_open(&image, O_RDWR);
-
-    singularity_image_check(&image);
+//    singularity_image_open(&image, O_RDWR);
+//
+//    singularity_image_check(&image);
 
     singularity_runtime_ns(SR_NS_MNT);
 
-    singularity_image_bind(&image);
-    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+//    singularity_image_bind(&image);
+    singularity_image_mount(&image, CONTAINER_MOUNTDIR);
 
     envar_set("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
-    envar_set("SINGULARITY_ROOTFS", singularity_runtime_rootfs(NULL), 1);
+    envar_set("SINGULARITY_ROOTFS", CONTAINER_MOUNTDIR, 1);
     envar_set("SINGULARITY_libexecdir", singularity_registry_get("LIBEXECDIR"), 1);
     envar_set("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
     envar_set("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
+    envar_set("SINGULARITY_CHECKS", singularity_registry_get("CHECKS"), 1);
+    envar_set("SINGULARITY_CHECKLEVEL", singularity_registry_get("CHECKLEVEL"), 1);
+    envar_set("SINGULARITY_CHECKTAGS", singularity_registry_get("CHECKTAGS"), 1);
     envar_set("SINGULARITY_MESSAGELEVEL", singularity_registry_get("MESSAGELEVEL"), 1);
     envar_set("SINGULARITY_NOTEST", singularity_registry_get("NOTEST"), 1);
     envar_set("SINGULARITY_BUILDSECTION", singularity_registry_get("BUILDSECTION"), 1);
     envar_set("SINGULARITY_BUILDNOBASE", singularity_registry_get("BUILDNOBASE"), 1);
+    envar_set("SINGULARITY_DOCKER_PASSWORD", singularity_registry_get("DOCKER_PASSWORD"), 1);
+    envar_set("SINGULARITY_DOCKER_USERNAME", singularity_registry_get("DOCKER_USERNAME"), 1);
     envar_set("SINGULARITY_CACHEDIR", singularity_registry_get("CACHEDIR"), 1);
     envar_set("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
     envar_set("HOME", singularity_priv_home(), 1);
     envar_set("LANG", "C", 1);
 
     // At this point, the container image is mounted at
-    // singularity_runtime_rootfs(NULL), and bootstrap code can be added
+    // CONTAINER_MOUNTDIR, and bootstrap code can be added
     // in the bootstrap-lib/ directory.
 
     bootstrap_init(argc, argv);

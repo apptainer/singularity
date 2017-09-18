@@ -37,256 +37,40 @@ if [ -z "${SINGULARITY_COMMAND:-}" ]; then
 fi
 
 case "$SINGULARITY_IMAGE" in
-    http://*|https://*)
-        NAME=`basename "$SINGULARITY_IMAGE"`
-        if [ -f "$NAME" ]; then
-            message 2 "Using cached container in current working directory: $NAME\n"
-            SINGULARITY_IMAGE="$NAME"
-        else
-            message 1 "Caching container to current working directory: $NAME\n"
-            if curl -L -k "$SINGULARITY_IMAGE" > "$NAME"; then
-                SINGULARITY_IMAGE="$NAME"
-            else
-                ABORT 255
-            fi
-        fi
+
+    instance://*)
+
+        . "$SINGULARITY_libexecdir/singularity/handlers/image-instance.sh"
+
     ;;
+
     docker://*)
-        NAME=`echo "$SINGULARITY_IMAGE" | sed -e 's@^docker://@@'`
-
-        if [ -z "${SINGULARITY_LOCALCACHEDIR:-}" ]; then
-            SINGULARITY_LOCALCACHEDIR="/tmp"
-        fi
-
-        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_LOCALCACHEDIR/.singularity-runtime.XXXXXXXX`; then
-            message ERROR "Failed to create temporary directory\n"
-            ABORT 255
-        fi
-
-        SINGULARITY_ROOTFS="$SINGULARITY_TMPDIR/$NAME"
-        if ! mkdir -p "$SINGULARITY_ROOTFS"; then
-            message ERROR "Failed to create named SINGULARITY_ROOTFS=$SINGULARITY_ROOTFS\n"
-            ABORT 255
-        fi
-
-        SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
-        SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
-        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
-        SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layers.XXXXXXXX`
-
-        export SINGULARITY_ROOTFS SINGULARITY_IMAGE SINGULARITY_CONTAINER SINGULARITY_CONTENTS SINGULARITY_CLEANUPDIR
-
-        eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
-
-        message 1 "Creating container runtime...\n"
-        message 2 "Importing: base Singularity environment\n"
-        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
-         
-        for i in `cat "$SINGULARITY_CONTENTS"`; do
-            name=`basename "$i"`
-            message 2 "Exploding layer: $name\n"
-            ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -) || exit $? ) | while read file; do
-                if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
-                    # Skipping symlinks
-                    true
-                elif [ -f "$SINGULARITY_ROOTFS/$file" ]; then
-                    chmod u+rw "$SINGULARITY_ROOTFS/$file"
-                elif [ -d "$SINGULARITY_ROOTFS/$file" ]; then
-                    chmod u+rwx "$SINGULARITY_ROOTFS/${file%/}"
-                fi
-            done
-        done
-
-        rm -f "$SINGULARITY_CONTENTS"
+        
+        . "$SINGULARITY_libexecdir/singularity/handlers/image-docker.sh"
 
     ;;
+
+    http://*|https://*)
+
+        . "$SINGULARITY_libexecdir/singularity/handlers/image-http.sh"
+
+    ;;
+
     shub://*)
-        SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
 
-        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
-        else
-            SINGULARITY_PULLFOLDER="."
-        fi
-
-        SINGULARITY_CONTAINER="$SINGULARITY_IMAGE"
-        export SINGULARITY_PULLFOLDER SINGULARITY_CONTAINER SINGULARITY_CONTENTS
-
-        if ! eval "$SINGULARITY_libexecdir/singularity/python/pull.py"; then
-            ABORT 255
-        fi
-
-        # The python script saves names to files in CONTAINER_DIR
-        SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
-        export SINGULARITY_IMAGE
-
-        rm -f "$SINGULARITY_CONTENTS"
-
-        if [ -f "$SINGULARITY_IMAGE" ]; then
-            chmod +x "$SINGULARITY_IMAGE"
-        else
-            message ERROR "Could not locate downloaded image\n"
-            ABORT 255
-        fi
+        . "$SINGULARITY_libexecdir/singularity/handlers/image-shub.sh"
     ;;
-esac
 
-case "$SINGULARITY_IMAGE" in
-    *.cpioz|*.vnfs)
-        NAME=`basename "$SINGULARITY_IMAGE"`
-        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
-        fi
-        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
-            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
-            ABORT 1
-        fi
-        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
-            message ERROR "Failed to create tmpdir\n"
-            ABORT 255
-        fi
+    *.cpioz|*.vnfs|*.cpio)
 
-        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
-        if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-            ABORT 255
-        fi
+        . "$SINGULARITY_libexecdir/singularity/handlers/archive-cpio.sh"
 
-        message 1 "Opening cpio archive, stand by...\n"
-        # this almost always gives permission errors, so ignore them when
-        # running as a user.
-        zcat "$SINGULARITY_IMAGE" | ( cd "$CONTAINER_DIR"; cpio -id >/dev/null 2>&1 )
-
-        chmod -R +w "$CONTAINER_DIR"
-
-        SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
     ;;
-    *.cpio)
-        NAME=`basename "$SINGULARITY_IMAGE"`
-        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
-        fi
-        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
-            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
-            ABORT 1
-        fi
-        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
-            message ERROR "Failed to create tmpdir\n"
-            ABORT 255
-        fi
 
-        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
-        if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-            ABORT 255
-        fi
+    *.tar|*.tgz|*.tar.gz|*.tbz|*.tar.bz)
 
-        message 1 "Opening cpio archive, stand by...\n"
-        # this almost always gives permission errors, so ignore them when
-        # running as a user.
-        cat "$SINGULARITY_IMAGE" | ( cd "$CONTAINER_DIR"; cpio -id >/dev/null 2>&1 )
+        . "$SINGULARITY_libexecdir/singularity/handlers/archive-tar.sh"
 
-        chmod -R +w "$CONTAINER_DIR"
-
-        SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
-    ;;
-    *.tar)
-        NAME=`basename "$SINGULARITY_IMAGE"`
-        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
-        fi
-        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
-            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
-            ABORT 1
-        fi
-        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
-            message ERROR "Failed to create tmpdir\n"
-            ABORT 255
-        fi
-
-        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
-        if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-            ABORT 255
-        fi
-
-        message 1 "Opening tar archive, stand by...\n"
-        # this almost always gives permission errors, so ignore them when
-        # running as a user.
-        tar -C "$CONTAINER_DIR" -xf "$SINGULARITY_IMAGE" 2>/dev/null
-
-        chmod -R +w "$CONTAINER_DIR"
-
-        SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
-    ;;
-    *.tgz|*.tar.gz)
-        NAME=`basename "$SINGULARITY_IMAGE"`
-        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
-        fi
-        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
-            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
-            ABORT 1
-        fi
-        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
-            message ERROR "Failed to create tmpdir\n"
-            ABORT 255
-        fi
-
-        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
-        if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-            ABORT 255
-        fi
-
-        message 1 "Opening gzip compressed archive, stand by...\n"
-        # this almost always gives permission errors, so ignore them when
-        # this almost always gives permission errors, so ignore them when
-        # running as a user.
-        tar -C "$CONTAINER_DIR" -xzf "$SINGULARITY_IMAGE" 2>/dev/null
-
-        chmod -R +w "$CONTAINER_DIR"
-
-        SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
-    ;;
-    *.tbz|*.tar.bz)
-        NAME=`basename "$SINGULARITY_IMAGE"`
-        if [ -z "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_CACHEDIR="/tmp"
-        fi
-        if [ ! -d "$SINGULARITY_CACHEDIR" ]; then
-            message ERROR "Cache directory does not exist: $SINGULARITY_CACHEDIR\n"
-            ABORT 1
-        fi
-        if ! SINGULARITY_TMPDIR=`mktemp -d $SINGULARITY_CACHEDIR/singularity-rundir.XXXXXXXX`; then
-            message ERROR "Failed to create tmpdir\n"
-            ABORT 255
-        fi
-
-        CONTAINER_DIR="$SINGULARITY_TMPDIR/$NAME"
-        if ! mkdir -p "$CONTAINER_DIR"; then
-            message ERROR "Could not create cache directory: $CONTAINER_DIR\n"
-            ABORT 255
-        fi
-
-        message 1 "Opening bzip compressed archive, stand by...\n"
-        # this almost always gives permission errors, so ignore them when
-        # running as a user.
-        tar -C "$CONTAINER_DIR" -xjf "$SINGULARITY_IMAGE" 2>/dev/null
-
-        chmod -R +w "$CONTAINER_DIR"
-
-        SINGULARITY_IMAGE="$CONTAINER_DIR"
-        SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
-        export SINGULARITY_CLEANUPDIR SINGULARITY_IMAGE
     ;;
 esac
 
