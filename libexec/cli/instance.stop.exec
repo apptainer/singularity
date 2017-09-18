@@ -56,6 +56,11 @@ while true; do
                 exit 1
             fi
         ;;
+        -a|--all)
+            ALL_DAEMONS=1
+            export ALL_DAEMONS
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -67,13 +72,7 @@ while true; do
 done
 
 
-if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
-    SINGULARITY_DAEMON_NAME="${1:-}"
-    export SINGULARITY_DAEMON_NAME
-    shift
-fi
-
-if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
+if [ -z "${1:-}" -a -z "${ALL_DAEMONS:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
     else
@@ -83,8 +82,14 @@ if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
 fi
 
 COUNT=0
+if [ -n "${ALL_DAEMONS:-}" ]; then
+    DAEMONS=`singularity_daemon_glob '*' | sort | uniq`
+else
+    DAEMONS=`singularity_daemon_glob "$@" | sort | uniq`
+fi
 
-for i in `singularity_daemon_glob ${SINGULARITY_DAEMON_NAME}`; do
+
+for i in $DAEMONS; do
     if [ -f "$i" ]; then
         if [ ! -s "$i" ]; then
             rm "$i"
@@ -102,7 +107,7 @@ for i in `singularity_daemon_glob ${SINGULARITY_DAEMON_NAME}`; do
 done
 
 if [ "$COUNT" == 0 ]; then
-    message ERROR "No instances found with the name: ${SINGULARITY_DAEMON_NAME}\n"
+    message ERROR "No instances found with the name(s): $*\n"
     exit 1
 else
     message 2 "Stopped $COUNT instances\n"
