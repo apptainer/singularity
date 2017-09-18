@@ -56,13 +56,13 @@ int _singularity_runtime_ns(unsigned int flags) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_ipc()\n");
         retval += _singularity_runtime_ns_ipc();
     }
-    if ( flags & SR_NS_MNT ) {
-        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_mnt()\n");
-        retval += _singularity_runtime_ns_mnt();
-    }
     if ( flags & SR_NS_NET ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_net()\n");
         retval += _singularity_runtime_ns_net();
+    }
+    if ( flags & SR_NS_MNT ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_mnt()\n");
+        retval += _singularity_runtime_ns_mnt();
     }
 
 
@@ -80,13 +80,13 @@ int _singularity_runtime_ns_join(unsigned int flags) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_ipc_join()\n");
         retval += _singularity_runtime_ns_ipc_join();
     }
-    if ( flags & SR_NS_MNT ) {
-        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_mnt_join()\n");
-        retval += _singularity_runtime_ns_mnt_join();
-    }
     if ( flags & SR_NS_NET ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_net_join()\n");
         retval += _singularity_runtime_ns_net_join();
+    }
+    if ( flags & SR_NS_MNT ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_mnt_join()\n");
+        retval += _singularity_runtime_ns_mnt_join();
     }
 
     return(retval);

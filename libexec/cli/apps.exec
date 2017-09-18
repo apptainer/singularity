@@ -27,6 +27,24 @@ else
     exit 1
 fi
 
+
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        *)
+            break
+        ;;
+    esac
+done
+
 RETVAL=0
 SINGULARITY_IMAGE="${1:-}"
 if ! SINGULARITY_MOUNTPOINT=`mktemp -d ${TMPDIR:-/tmp}/.singularity-inspect.XXXXXXXX`; then
@@ -38,10 +56,10 @@ export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 shift
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/apps/list.sh"
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/apps/list.sh"
     RETVAL=$?
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/apps/list.sh"
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/apps/list.sh"
     RETVAL=$?
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"

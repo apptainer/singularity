@@ -78,6 +78,7 @@ int main(int argc, char **argv) {
     if ( flock(trigger_fd, LOCK_EX) == 0 ) {
         singularity_message(VERBOSE, "Cleaning directory: %s\n", cleanup_dir);
         if ( s_rmdir(cleanup_dir) < 0 ) {
+            unlink(trigger);
             singularity_message(ERROR, "Could not remove directory %s: %s\n", cleanup_dir, strerror(errno));
             ABORT(255);
         }

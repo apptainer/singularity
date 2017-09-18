@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -40,7 +41,7 @@
 
 
 int _singularity_runtime_enter_chroot(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Entering container file system root: %s\n", container_dir);
