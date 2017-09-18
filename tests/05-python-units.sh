@@ -34,7 +34,6 @@ if which python2 >/dev/null 2>&1; then
     stest 0 python2 -m unittest tests.test_docker_import
     stest 0 python2 -m unittest tests.test_docker_api
     stest 0 python2 -m unittest tests.test_docker_tasks
-    stest 0 python2 -m unittest tests.test_shub_import
     stest 0 python2 -m unittest tests.test_shub_pull
     stest 0 python2 -m unittest tests.test_shub_api
     stest 0 python2 -m unittest tests.test_custom_cache
@@ -52,7 +51,6 @@ if which python3 >/dev/null 2>&1; then
     stest 0 python3 -m unittest tests.test_docker_import
     stest 0 python3 -m unittest tests.test_docker_api
     stest 0 python3 -m unittest tests.test_docker_tasks
-    stest 0 python3 -m unittest tests.test_shub_import
     stest 0 python3 -m unittest tests.test_shub_pull
     stest 0 python3 -m unittest tests.test_shub_api
     stest 0 python3 -m unittest tests.test_custom_cache

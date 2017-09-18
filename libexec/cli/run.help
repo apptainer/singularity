@@ -9,14 +9,15 @@ runscript.
 
 
 RUN OPTIONS:
+    -a/--app            Run an app's runscript instead of the default one
     -B/--bind <spec>    A user-bind path specification.  spec has the format
                         src[:dest[:opts]], where src and dest are outside and
                         inside paths.  If dest is not given, it is set equal
                         to src.  Mount options ('opts') may be specified as
                         'ro' (read-only) or 'rw' (read/write, which is the 
                         default). This option can be called multiple times.
-    -c/--contain        This option disables the sharing of filesystems on 
-                        your host (e.g. /dev, $HOME and /tmp).
+    -c/--contain        Use minimal /dev and empty other directories (e.g. /tmp
+                        and $HOME) instead of sharing filesystems on your host
     -C/--containall     Contain not only file systems, but also PID and IPC
     -e/--cleanenv       Clean environment before running container
     -H/--home <spec>    A home directory specification.  spec can either be a
@@ -24,7 +25,10 @@ RUN OPTIONS:
                         of the home directory outside the container and dest
                         overrides the home directory within the container
     -i/--ipc            Run container in a new IPC namespace
-    -n/--nv             Enable experimental Nvidia support
+    -n/--net            Run container in a new network namespace (loopback is
+                        only network device active)
+    --nv                Enable experimental Nvidia support
+    -o|--overlay        Use a persistent overlayFS via a writable image
     -p/--pid            Run container in a new PID namespace
     --pwd               Initial working directory for payload process inside
                         the container

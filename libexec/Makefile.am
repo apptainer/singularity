@@ -1,4 +1,4 @@
-SUBDIRS = bootstrap-scripts cli python helpers
+SUBDIRS = bootstrap-scripts cli helpers handlers python
 
 scriptlibexecdir = $(libexecdir)/singularity
 

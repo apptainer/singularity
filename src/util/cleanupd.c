@@ -49,6 +49,10 @@ int singularity_cleanupd(void) {
     char *cleanup_dir = singularity_registry_get("CLEANUPDIR");
     int trigger_fd = -1;
 
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+    }
+
     if ( ( singularity_registry_get("NOSESSIONCLEANUP") != NULL ) || ( singularity_registry_get("NOCLEANUP") != NULL ) ) {
         singularity_message(DEBUG, "Not running a cleanup thread, requested not to\n");
         return(0);

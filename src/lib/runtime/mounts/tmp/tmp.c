@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <pwd.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -43,7 +44,7 @@
 
 
 int _singularity_runtime_mount_tmp(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
     char *tmp_source;
     char *vartmp_source;
 
@@ -117,12 +118,12 @@ int _singularity_runtime_mount_tmp(void) {
             if ( is_dir(joinpath(container_dir, "/var/tmp")) == 0 ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting directory: /var/tmp\n");
-                if ( mount(vartmp_source, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+                if ( mount(vartmp_source, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Failed to mount %s -> /var/tmp: %s\n", vartmp_source, strerror(errno));
                     ABORT(255);
                 }
                 if ( singularity_priv_userns_enabled() != 1 ) {
-                    if ( mount(NULL, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    if ( mount(NULL, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV|MS_REMOUNT, NULL) < 0 ) {
                         singularity_message(ERROR, "Failed to remount /var/tmp: %s\n", strerror(errno));
                         ABORT(255);
                     }

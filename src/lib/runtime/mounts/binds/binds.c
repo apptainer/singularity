@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <libgen.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -43,7 +44,7 @@
 
 int _singularity_runtime_mount_binds(void) {
     char *tmp_config_string;
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
 
     if ( singularity_registry_get("CONTAIN") != NULL ) {
         singularity_message(DEBUG, "Skipping bind mounts as contain was requested\n");

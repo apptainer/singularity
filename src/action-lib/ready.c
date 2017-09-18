@@ -28,16 +28,17 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
 
 
-void action_ready(char *path) {
+void action_ready(void) {
 
-    singularity_message(DEBUG, "Checking if container is valid at: %s\n", path);
+    singularity_message(DEBUG, "Checking if container is valid at: %s\n", CONTAINER_MOUNTDIR);
 
-    if ( is_exec(joinpath(path, "/bin/sh")) != 0 && is_link(joinpath(path, "/bin/sh")) != 0 ) {
+    if ( is_exec(joinpath(CONTAINER_MOUNTDIR, "/bin/sh")) != 0 && is_link(joinpath(CONTAINER_MOUNTDIR, "/bin/sh")) != 0 ) {
         singularity_message(ERROR, "No valid /bin/sh in container\n");
         ABORT(255);
     }

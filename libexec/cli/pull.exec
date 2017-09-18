@@ -1,22 +1,17 @@
 #!/bin/bash
-# 
-# Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved. 
-# 
-# Copyright (c) 2016-2017, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
-# This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software.
-# 
-# NOTICE.  This Software was developed under funding from the U.S. Department of
-# Energy and the U.S. Government consequently retains certain rights. As such,
-# the U.S. Government has been granted for itself and others acting on its
-# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
-# to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
+#
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+# Copyright (c) 2017, Vanessa Sochat. All rights reserved.
+#
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+#
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
+
  
 
 ## Basic sanity
@@ -46,8 +41,8 @@ while true; do
         ;;
         -n|--name|name)
             shift
-            SINGULARITY_IMAGE="${1:-}"
-            export SINGULARITY_IMAGE
+            SHUB_CONTAINERNAME="${1:-}"
+            export SHUB_CONTAINERNAME
             shift
         ;;
         -C|--commit|commit)
@@ -82,7 +77,7 @@ while true; do
             exit 1
         ;;
         *)
-            break;
+            break
         ;;
     esac
 done
@@ -99,7 +94,12 @@ fi
 
 RETVAL=0
 SINGULARITY_CONTAINER="${1:-}"
-SINGULARITY_CONTENTS=`mktemp /tmp/.singularity-layerfile.XXXXXX`
+if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
+    message ERROR "Failed to create temporary directory\n"
+    ABORT 255
+fi
+
+# If cache is set, set pull folder to it (first priority)
 if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
     SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
 else
@@ -115,7 +115,16 @@ export SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS
 case "$SINGULARITY_CONTAINER" in
     docker://*)
         if [ -z "${SINGULARITY_IMAGE:-}" ]; then
-            SINGULARITY_IMAGE=`basename "$SINGULARITY_CONTAINER.img" | sed -e 's/:/-/g'`
+
+            # If name given, use that
+            if [ -n "${SHUB_CONTAINERNAME:-}" ]; then
+                SINGULARITY_IMAGE=`basename "$SHUB_CONTAINERNAME.img" | sed -e 's/.img//g'`".img"   
+            else
+                SINGULARITY_IMAGE=`basename "$SINGULARITY_CONTAINER.img" | sed -e 's/:/-/g'`
+            fi
+
+            SINGULARITY_IMAGE="$SINGULARITY_PULLFOLDER/$SINGULARITY_IMAGE"
+            message 3 "Singularity Image: $SINGULARITY_IMAGE"
             export SINGULARITY_IMAGE
         fi
 
@@ -127,15 +136,6 @@ case "$SINGULARITY_CONTAINER" in
                 message ERROR "Image file exists, not overwriting.\n"
                 exit 1
             fi
-        fi
-
-        if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/import-suid" ]; then
-            IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import-suid"
-        elif [ -x "$SINGULARITY_libexecdir/singularity/bin/import" ]; then
-            IMPORT_BIN="$SINGULARITY_libexecdir/singularity/bin/import"
-        else
-            message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/import\n"
-            exit 1
         fi
 
         if [ -z "${SINGULARITY_IMAGESIZE:-}" ]; then
@@ -152,33 +152,23 @@ case "$SINGULARITY_CONTAINER" in
         SINGULARITY_WRITABLE=1
         export SINGULARITY_WRITABLE
 
-        if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
-            eval_abort "$SINGULARITY_libexecdir/singularity/bin/create-suid"
-        elif [ -x "$SINGULARITY_libexecdir/singularity/bin/create" ]; then
-            eval_abort "$SINGULARITY_libexecdir/singularity/bin/create"
-        else
-            message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
-            exit 1
-        fi
+        "$SINGULARITY_bindir"/singularity image.create -s "$SINGULARITY_IMAGESIZE" "$SINGULARITY_IMAGE"
 
         cat /dev/null > "$SINGULARITY_CONTENTS"
 
         eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
         message 1 "Importing: base Singularity environment\n"
-        zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | eval_abort "$IMPORT_BIN" || exit $?
+
+        zcat "$SINGULARITY_libexecdir"/singularity/bootstrap-scripts/environment.tar | "$SINGULARITY_bindir"/singularity image.import "$SINGULARITY_IMAGE" || exit $?
 
         for i in `cat "$SINGULARITY_CONTENTS"`; do
             message 1 "Importing: $i\n"
-            zcat "$i" | eval_abort "$IMPORT_BIN" || exit $?
+            zcat "$i" | $SINGULARITY_bindir/singularity image.import "$SINGULARITY_IMAGE" || exit $?
         done
 
     ;;
     shub://*)
-        if [ -n "${SINGULARITY_IMAGE:-}" ]; then
-            SHUB_CONTAINERNAME="$SINGULARITY_IMAGE"
-            export SHUB_CONTAINERNAME
-        fi
-
+        
         eval_abort $SINGULARITY_libexecdir/singularity/python/pull.py
         RETVAL=$?
 

@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -39,7 +40,7 @@
 
 int container_file_bind(char *source, char *dest_path) {
     char *dest;
-    char *containerdir = singularity_runtime_rootfs(NULL);
+    char *containerdir = CONTAINER_FINALDIR;
 
     singularity_message(DEBUG, "Called file_bind(%s, %s()\n", source, dest_path);
 

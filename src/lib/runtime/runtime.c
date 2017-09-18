@@ -35,6 +35,7 @@
 
 #include "util/file.h"
 #include "util/util.h"
+#include "util/registry.h"
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
@@ -45,44 +46,26 @@
 #include "./enter/enter.h"
 #include "./overlayfs/overlayfs.h"
 #include "./environment/environment.h"
+#include "./autofs/autofs.h"
 
 #ifndef LOCALSTATEDIR
 #error LOCALSTATEDIR not defined
 #endif
 
-static char *container_directory = NULL;
-
-char *singularity_runtime_rootfs(char *directory) {
-    if ( directory != NULL ) {
-        if ( is_dir(directory) == 0 ) {
-            singularity_message(DEBUG, "Setting container_directory = '%s'\n", directory);
-            container_directory = strdup(directory);
-        } else {
-            singularity_message(ERROR, "Container path is not a directory: %s\n", directory);
-            ABORT(255);
-        }
-    } else if ( container_directory == NULL ) {
-        container_directory = joinpath(LOCALSTATEDIR, "/singularity/mnt/container");
-
-        singularity_message(VERBOSE, "Set container directory to: %s\n", container_directory);
-
-        singularity_message(DEBUG, "Checking for container directory\n");
-        if ( is_dir(container_directory) != 0 ) {
-            singularity_message(ERROR, "Container directory does not exist: %s\n", container_directory);
-            ABORT(255);
-        }
-
-    }
-
-    singularity_message(DEBUG, "Returning container_directory: %s\n", container_directory);
-    return(container_directory);
-}
-
 int singularity_runtime_ns(unsigned int flags) {
+    /* If a daemon already exists, join existing namespaces instead of creating */
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        return(_singularity_runtime_ns_join(flags));
+    }
+    
     return(_singularity_runtime_ns(flags));
 }
 
 int singularity_runtime_overlayfs(void) {
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+    }
+
     return(_singularity_runtime_overlayfs());
 }
 
@@ -91,29 +74,25 @@ int singularity_runtime_environment(void) {
 }
 
 int singularity_runtime_mounts(void) {
-    if ( singularity_runtime_rootfs(NULL) == NULL ) {
-        singularity_message(ERROR, "The runtime container directory has not been set!\n");
-        ABORT(5);
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
     }
 
     return(_singularity_runtime_mounts());
 }
 
 int singularity_runtime_files(void) {
-    if ( singularity_runtime_rootfs(NULL) == NULL ) {
-        singularity_message(ERROR, "The runtime container directory has not been set!\n");
-        ABORT(5);
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
     }
 
     return(_singularity_runtime_files());
 }
 
 int singularity_runtime_enter(void) {
-    if ( singularity_runtime_rootfs(NULL) == NULL ) {
-        singularity_message(ERROR, "The runtime container directory has not been set!\n");
-        ABORT(5);
-    }
-
     return(_singularity_runtime_enter());
 }
 
+int singularity_runtime_autofs(void) {
+    return(_singularity_runtime_autofs());
+}

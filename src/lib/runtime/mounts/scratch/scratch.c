@@ -33,6 +33,7 @@
 #include <libgen.h>
 #include <linux/limits.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -45,7 +46,7 @@
 
 
 int _singularity_runtime_mount_scratch(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
     char *scratchdir_path;
     char *tmpdir_path;
     char *sourcedir_path;
@@ -64,8 +65,8 @@ int _singularity_runtime_mount_scratch(void) {
     }
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return(0);
+    singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
+    return(0);
 #endif  
 
     singularity_message(DEBUG, "Checking SINGULARITY_WORKDIR from environment\n");
