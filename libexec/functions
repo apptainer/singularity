@@ -117,8 +117,6 @@ singularity_keys_get() {
 }
 
 singularity_daemon_glob() {
-    local DAEMON_NAME="${1:-*}"
-
     if ! USERID=`id --real --user`; then
         message ERROR "Could not ascertain user ID\n"
         exit 255
@@ -134,9 +132,11 @@ singularity_daemon_glob() {
         ABORT 255
     fi
 
-    # This is a configurable option, needs to be set accordingly!
-    SINGULARITY_DAEMON_GLOB="${HOME}/.singularity/daemon/${HOST}/${DAEMON_NAME}"
-    echo $SINGULARITY_DAEMON_GLOB
+    for arg in "$@"; do
+        for i in ${HOME}/.singularity/daemon/${HOST}/${arg}; do
+            echo "$i"
+        done
+    done
     return 0
 }
 
