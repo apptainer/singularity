@@ -39,6 +39,7 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/capability.h"
 
 #include "lib/image/image.h"
 
@@ -46,6 +47,11 @@
 
 
 int _singularity_runtime_overlayfs(void) {
+    int secure_flags = MS_NOSUID | MS_NODEV;
+
+    if ( singularity_capability_keep_privs() ) {
+        secure_flags &= ~MS_NOSUID;
+    }
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Creating overlay_final directory: %s\n", CONTAINER_FINALDIR);
@@ -110,7 +116,7 @@ int _singularity_runtime_overlayfs(void) {
 
             singularity_priv_escalate();
             singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
-            if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID | MS_NODEV, size) < 0 ){
+            if ( mount("tmpfs", overlay_mount, "tmpfs", secure_flags, size) < 0 ){
                 singularity_message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
                 ABORT(255);
             }
@@ -133,7 +139,7 @@ int _singularity_runtime_overlayfs(void) {
         }
 
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
-        if ( mount("OverlayFS", overlay_final, "overlay", MS_NOSUID | MS_NODEV, overlay_options) < 0 ){
+        if ( mount("OverlayFS", overlay_final, "overlay", secure_flags, overlay_options) < 0 ){
             singularity_message(ERROR, "Could not mount Singularity overlay: %s\n", strerror(errno));
             ABORT(255); 
         }
@@ -156,7 +162,7 @@ int _singularity_runtime_overlayfs(void) {
     // If we got here, assume we are not overlaying, so we must bind to final directory
     singularity_priv_escalate();
     singularity_message(DEBUG, "Binding container directory to final home %s->%s\n", CONTAINER_MOUNTDIR, CONTAINER_FINALDIR);
-    if ( mount(CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV, NULL) < 0 ) {
+    if ( mount(CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, NULL, MS_BIND|MS_REC|secure_flags, NULL) < 0 ) {
         singularity_message(ERROR, "Could not bind mount container to final home %s->%s: %s\n", CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, strerror(errno));
         return 1;
     }

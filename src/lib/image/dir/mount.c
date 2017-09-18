@@ -51,7 +51,7 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
 
     if ( singularity_capability_keep_privs() ) {
         singularity_message(DEBUG, "keep-privs option set, removing MS_NOSUID mount flags\n");
-        mntflags &= ~(1 << MS_NOSUID);
+        mntflags &= ~MS_NOSUID;
     }
 
     singularity_priv_escalate();
