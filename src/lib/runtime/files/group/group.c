@@ -32,6 +32,7 @@
 #include <grp.h>
 #include <pwd.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/config_parser.h"
@@ -52,7 +53,7 @@ int _singularity_runtime_files_group(void) {
     uid_t gid = singularity_priv_getgid();
     const gid_t *gids = singularity_priv_getgids();
     int gid_count = singularity_priv_getgidcount();
-    char *containerdir = singularity_runtime_rootfs(NULL);
+    char *containerdir = CONTAINER_FINALDIR;
     char *tmpdir = singularity_registry_get("SESSIONDIR");
 
     singularity_message(DEBUG, "Called singularity_file_group_create()\n");

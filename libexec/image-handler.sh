@@ -38,6 +38,12 @@ fi
 
 case "$SINGULARITY_IMAGE" in
 
+    instance://*)
+
+        . "$SINGULARITY_libexecdir/singularity/handlers/image-instance.sh"
+
+    ;;
+
     docker://*)
         
         . "$SINGULARITY_libexecdir/singularity/handlers/image-docker.sh"

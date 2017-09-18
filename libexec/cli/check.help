@@ -1,6 +1,6 @@
 USAGE: singularity [...] check [exec options...] <container path>
 
-This command will run security checks for an image.
+This command will run lint and security checks for an image.
 Note that some checks require sudo.
 
 CHECK OPTIONS:

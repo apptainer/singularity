@@ -9,6 +9,7 @@ dist_mods_SCRIPTS = functions checks.sh \
                     deffile-driver-docker.sh \
                     deffile-driver-localimage.sh \
                     deffile-driver-self.sh \
+                    deffile-driver-shub.sh \
                     deffile-driver-yum.sh \
                     deffile-driver-zypper.sh \
                     deffile-sections.sh \

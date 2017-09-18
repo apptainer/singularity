@@ -35,6 +35,7 @@
 #include <libgen.h>
 #include <linux/limits.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -47,7 +48,7 @@
 
 
 int _singularity_runtime_files_libs(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
     char *tmpdir = singularity_registry_get("SESSIONDIR");
     char *includelibs_string;
     char *libdir = joinpath(tmpdir, "/libs");

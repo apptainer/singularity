@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -42,7 +43,7 @@
 
 
 int _singularity_runtime_mount_kernelfs(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
 
     // Mount /proc if we are configured
     singularity_message(DEBUG, "Checking configuration file for 'mount proc'\n");
