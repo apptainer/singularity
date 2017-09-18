@@ -164,12 +164,6 @@ if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
     shift
 fi
 
-SINGULARITY_DAEMON_START=1
-export SINGULARITY_DAEMON_START
-
-SINGULARITY_DAEMON_FILE=`singularity_daemon_file`
-export SINGULARITY_DAEMON_FILE
-
 if [ -z "${SINGULARITY_IMAGE:-}" ] || [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
     if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
         head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
@@ -179,10 +173,26 @@ if [ -z "${SINGULARITY_IMAGE:-}" ] || [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; the
     exit 0
 fi
 
+ALLOWED_DAEMON_CHARS='^[a-zA-Z0-9._-]+$'
+if ! [[ "$SINGULARITY_DAEMON_NAME" =~ $ALLOWED_DAEMON_CHARS ]]; then
+    message ERROR "Illegal characters in daemon name: $SINGULARITY_DAEMON_NAME\n"
+    ABORT 255
+fi
+
+SINGULARITY_DAEMON_START=1
+export SINGULARITY_DAEMON_START
+
+singularity_daemon_file "$SINGULARITY_DAEMON_NAME"
+
+if [ -f "${SINGULARITY_DAEMON_FILE}" ]; then
+    message ERROR "A daemon process is already running with this name: ${SINGULARITY_DAEMON_NAME}\n"
+    ABORT 255
+fi
+
+
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
 fi
-
 
 if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
     . "$SINGULARITY_libexecdir/singularity/image-handler.sh"

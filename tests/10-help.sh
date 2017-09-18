@@ -43,7 +43,6 @@ ALL_COMMANDS="
     instance.start
     instance.list
     instance.stop
-    instance.stop-all
 "
 
 # Testing singularity internal commands

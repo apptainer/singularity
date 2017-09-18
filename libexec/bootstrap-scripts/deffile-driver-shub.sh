@@ -35,18 +35,43 @@ fi
 if [ -z "${FROM:-}" ]; then
     message ERROR "Required Definition tag 'From:' not defined.\n"
     exit 1
-elif [ ! -e "${FROM:-}" ]; then
-    message ERROR "${FROM} does not exist\n"
-    exit 1
 fi
 
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########
+SINGULARITY_CONTAINER="shub://${FROM}"
+if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
+    message ERROR "Failed to create temporary directory\n"
+    ABORT 255
+fi
+        
+# If cache is set, set pull folder to it (first priority)
+if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
+    SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
+else
+    # Only set the pull folder to be $PWD if not set by user
+    if [ ! -n "${SINGULARITY_PULLFOLDER:-}" ]; then
+        SINGULARITY_PULLFOLDER="."
+    fi
+fi
+
+export SINGULARITY_CONTENTS SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER
 
 umask 0002
 
-message 1 "Exporting contents of ${FROM} to ${SINGULARITY_IMAGE}\n"
-if ! eval "${SINGULARITY_bindir}"/singularity image.export "${FROM}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
-    message ERROR "Failed to export contents of ${FROM} to ${SINGULARITY_ROOTFS}\n"
+# relying on pull.py for error checking here
+${SINGULARITY_libexecdir}/singularity/python/pull.py
+
+message 1 "Exporting contents of ${SINGULARITY_CONTAINER} to ${SINGULARITY_IMAGE}\n"
+
+# switch $SINGULARITY_CONTAINER from remote to local 
+SINGULARITY_CONTAINER=`cat $SINGULARITY_CONTENTS`
+rm -r $SINGULARITY_CONTENTS
+
+#if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER}" | (cd "${SINGULARITY_ROOTFS}" && tar xBf -); then
+if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+    message ERROR "Failed to export contents of ${SINGULARITY_CONTAINER} to ${SINGULARITY_ROOTFS}\n"
+    rm $SINGULARITY_CONTAINER
     ABORT 255
 fi
+rm $SINGULARITY_CONTAINER

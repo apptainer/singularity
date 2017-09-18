@@ -8,7 +8,6 @@ IMAGE GROUP COMMANDS:
     instance.list     Print all running container instances
     instance.start    Start a persistent container instance
     instance.stop     Stop and kill all processes within a running instance
-    instance.stop-all Stop all running instances
 
 All group commands have their own help output:
 
