@@ -23,14 +23,6 @@
 
 %{!?_rel:%{expand:%%global _rel 0.1}}
 
-# This allows us to pick up the default value from the configure
-%define with_slurm @with_slurm@
-%if "%{with_slurm}" == "yes"
-%define slurm 1
-%else
-%define slurm 0
-%endif
-
 Summary: Application and environment virtualization
 Name: singularity
 Version: @PACKAGE_VERSION@
@@ -43,12 +35,6 @@ Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
 
-%if %slurm
-# NOTE: doing a direct file dependency because experience has shown there are a few
-# site-local RPMs that have random pieces missing.
-BuildRequires: /usr/include/slurm/spank.h
-%endif
-
 %description
 Singularity provides functionality to make portable
 containers that can be used across host environments.
@@ -60,20 +46,6 @@ Group: System Environment/Development
 %description devel
 Development files for Singularity
 
-%if %slurm
-%package slurm
-Summary: Singularity plugin for SLURM
-Group: System Environment/Libraries
-Requires: singularity = %{version}-%{release}
-
-%description slurm
-The Singularity plugin for SLURM allows jobs to be started within
-a container.  This provides a simpler interface to the user (they
-don't have to be aware of the singularity executable) and doesn't
-require a setuid binary.
-%endif
-
-
 %prep
 %setup
 
@@ -83,13 +55,7 @@ if [ ! -f configure ]; then
   ./autogen.sh
 fi
 
-%configure \
-%if %slurm
-  --with-slurm
-%else
-  --without-slurm
-%endif
-
+%configure
 %{__make} %{?mflags}
 
 
@@ -121,26 +87,19 @@ rm -rf $RPM_BUILD_ROOT
 
 #SUID programs
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/action-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/bin/create-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/bin/expand-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/bin/export-suid
-%attr(4755, root, root) %{_libexecdir}/singularity/bin/import-suid
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/mount-suid
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/start-suid
 
 # Binaries
 %{_libexecdir}/singularity/bin/action
-%{_libexecdir}/singularity/bin/bootstrap
-%{_libexecdir}/singularity/bin/copy
+%{_libexecdir}/singularity/bin/builddef
 %{_libexecdir}/singularity/bin/cleanupd
-%{_libexecdir}/singularity/bin/create
-%{_libexecdir}/singularity/bin/expand
-%{_libexecdir}/singularity/bin/export
 %{_libexecdir}/singularity/bin/get-section
-%{_libexecdir}/singularity/bin/import
 %{_libexecdir}/singularity/bin/mount
 %{_libexecdir}/singularity/bin/sinit
 %{_libexecdir}/singularity/bin/start
-%{_libexecdir}/singularity/bin/start-suid
+%{_libexecdir}/singularity/bin/image-type
+%{_libexecdir}/singularity/bin/prepheader
 
 # Scripts
 %{_libexecdir}/singularity/functions
@@ -159,12 +118,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/singularity/lib*.a
 %{_includedir}/singularity/*.h
 
-
-%if %slurm
-%files slurm
-%defattr(-, root, root)
-%{_libdir}/slurm/singularity.so
-%endif
 
 %changelog
 
