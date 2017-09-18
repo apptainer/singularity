@@ -1,9 +1,5 @@
 AC_PREREQ(2.59)
-<<<<<<< HEAD
-AC_INIT([singularity],[2.3.2],[gmkurtzer@lbl.gov])
-=======
 AC_INIT([singularity],[2.3.9],[gmkurtzer@lbl.gov])
->>>>>>> 543deb562d7529373f0de49a59b67f020c3e95bc
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
