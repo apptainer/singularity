@@ -52,6 +52,10 @@ int singularity_sessiondir(void) {
     int sessiondir_size_str_len;
     int sessiondir_size_str_usd;
 
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+    }
+
     singularity_message(DEBUG, "Setting sessiondir\n");
     sessiondir = joinpath(LOCALSTATEDIR, "/singularity/mnt/session");
     singularity_message(VERBOSE, "Using session directory: %s\n", sessiondir);

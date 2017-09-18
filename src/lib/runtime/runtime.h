@@ -23,10 +23,6 @@
 #ifndef __SINGULARITY_RUNTIME_H_
 #define __SINGULARITY_RUNTIME_H_
 
-// Set and return the runtime container directory location to use. If
-// 'directory' is NULL, then it will return the currently set directory.
-extern char *singularity_runtime_rootfs(char *directory);
-
 // The Following functions actually do work:
 // Unshare namespaces
 extern int singularity_runtime_ns(unsigned int flags);
@@ -34,6 +30,7 @@ extern int singularity_runtime_ns(unsigned int flags);
 #define SR_NS_PID 1
 #define SR_NS_IPC 2
 #define SR_NS_MNT 4
+#define SR_NS_NET 8
 #define SR_NS_ALL 255
 
 // Setup/initialize the overlayFS
@@ -50,6 +47,9 @@ extern int singularity_runtime_enter(void);
 
 // Clean, santize, update environment
 extern int singularity_runtime_environment(void);
+
+// Setup for buggy autofs path
+extern int singularity_runtime_autofs(void);
 
 #endif /* __SINGULARITY_RUNTIME_H */
 

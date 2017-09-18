@@ -23,11 +23,15 @@
 #ifndef __ACTION_LIB_H_
 #define __ACTION_LIB_H_
 
-extern void action_ready(char *path);
+extern void action_ready(void);
 extern int action_shell(int argc, char **argv);
 extern int action_exec(int argc, char **argv);
 extern int action_run(int argc, char **argv);
 extern int action_test(int argc, char **argv);
+extern int action_appexec(int argc, char **argv);
+extern int action_apprun(int argc, char **argv);
+extern int action_appshell(int argc, char **argv);
+extern int action_apptest(int argc, char **argv);
 
 #endif /* __ACTION_LIB_H */
 

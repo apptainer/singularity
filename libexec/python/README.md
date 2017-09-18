@@ -72,16 +72,22 @@ For each, the details of required arguments are detailed in the scripts, and dis
 
 
 ### Defaults
-The following variables in [defaults.py](defaults.py) are static values that do not change. You probably don't care much about these, but they are included for reference.
-
+The following variables in [defaults.py](defaults.py) are a combination of static values, and variables that can be customized by the user via environment variables at runtime. 
 
 #### Docker
 
-**API_BASE** 
-Set as `index.docker.io`, which is the name of the registry. In the first version of Singularity we parsed the Registry argument from the build spec file, however now this is removed because it can be obtained directly from the image name (eg, `registry/namespace/repo:tag`)
+**DOCKER_API_BASE** 
+Set as `index.docker.io`, which is the name of the registry. In the first version of Singularity we parsed the Registry argument from the build spec file, however now this is removed because it can be obtained directly from the image name (eg, `registry/namespace/repo:tag`). If you don't specify a registry name for your image, this default is used.
 
-**API_VERSION**
+**DOCKER_API_VERSION**
 Is the version of the Docker Registry API currently being used, by default now is `v2`.
+
+**DOCKER_OS**
+This is exposed via the exported environment variable `SINGULARITY_DOCKER_OS` and pertains to images that reveal a version 2 manifest with a [manifest list](https://docs.docker.com/registry/spec/manifest-v2-2/#manifest-list). In the case that the list is present, we must choose an operating system (this variable) and an architecture (below). The default is `linux`.
+
+**DOCKER_ARCHITECTURE**
+This is exposed via the exported environment variable `SINGULARITY_DOCKER_ARCHITECTURE` and the same applies as for the `DOCKER_OS` with regards to being used in context of a list of manifests. In the case that the list is present, we must choose an architecture (this variable) and an os (above). The default is `amd64`, and other common ones include `arm`, `arm64`, `ppc64le`, `386`, and `s390x`.
+
 
 **DOCKER_PREFIX**
 Whenever a new Docker container is imported, it brings its environment. This means that we must write the environmental variables to a file where they can be preserved. To keep a record of Docker imports, we generate a file starting with `DOCKER_PREFIX` in the environment metadata folder (see environment variable `ENV_BASE`) (default is `docker`). 
@@ -97,6 +103,9 @@ Is not obtained from the environment, but is a hard coded default (`"/bin/bash"`
 
 **TAG**
 Is the default tag, `latest`.
+
+**DISABLE_HTTPS**
+If you export the variable `SINGULARITY_NOHTTPS` you can force the software to not use https when interacting with a Docker registry. This use case is typically for use of a local registry.
 
 
 #### Singularity Hub

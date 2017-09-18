@@ -48,7 +48,7 @@
 
 int main(int argc, char **argv) {
     int retval = 0;
-    char *tar_cmd[5];
+    char *tar_cmd[7];
     struct image_object image;
     struct image_object image_test;
 
@@ -64,34 +64,32 @@ int main(int argc, char **argv) {
         singularity_registry_set("IMAGE", argv[1]);
     }
 
-    singularity_sessiondir();
-
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    singularity_image_open(&image, O_RDONLY);
-    singularity_image_check(&image);
+//    singularity_image_open(&image, O_RDONLY);
+//    singularity_image_check(&image);
 
-    if ( image.type != SINGULARITY ) {
+    if ( image.type != EXT3 ) {
         singularity_message(ERROR, "Export is only allowed on Singularity image files\n");
         ABORT(255);
     }
 
     singularity_runtime_ns(SR_NS_MNT);
 
-    singularity_image_bind(&image);
-
-    if ( image.loopdev == NULL ) {
-        singularity_message(ERROR, "Bind failed to connect to image!\n");
-        ABORT(255);
-    }
+//    singularity_image_bind(&image);
+//
+//    if ( image.loopdev == NULL ) {
+//        singularity_message(ERROR, "Bind failed to connect to image!\n");
+//        ABORT(255);
+//    }
 
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
     // Check to make sure the image hasn't been swapped out by a race
     image_test = singularity_image_init(singularity_registry_get("IMAGE"));
-    singularity_image_open(&image_test, O_RDONLY);
-    singularity_image_check(&image_test);
-    if ( image_test.type != SINGULARITY ) {
+//    singularity_image_open(&image_test, O_RDONLY);
+//    singularity_image_check(&image_test);
+    if ( image_test.type != EXT3 ) {
         singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
         ABORT(255);
     }
@@ -106,10 +104,12 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
-    tar_cmd[1] = strdup("-cf");
-    tar_cmd[2] = strdup("-");
-    tar_cmd[3] = strdup(".");
-    tar_cmd[4] = NULL;
+    tar_cmd[1] = strdup("--exclude=*//*");
+    tar_cmd[2] = strdup("--exclude=*../*");
+    tar_cmd[3] = strdup("-cf");
+    tar_cmd[4] = strdup("-");
+    tar_cmd[5] = strdup(".");
+    tar_cmd[6] = NULL;
 
     if ( chdir(singularity_runtime_rootfs(NULL)) != 0 ) {
         singularity_message(ERROR, "Could not change to working directory: %s\n", singularity_runtime_rootfs(NULL));
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
     }
 
     singularity_priv_escalate();
-    retval = singularity_fork_exec(tar_cmd);
+    retval = singularity_fork_exec(0, tar_cmd);
     singularity_priv_drop();
 
     if ( retval != 0 ) {

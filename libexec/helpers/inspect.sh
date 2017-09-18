@@ -1,25 +1,16 @@
 #!/bin/bash
-# 
-# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
-# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# 
-# Copyright (c) 2016-2017, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
-# This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software.
-# 
-# NOTICE.  This Software was developed under funding from the U.S. Department of
-# Energy and the U.S. Government consequently retains certain rights. As such,
-# the U.S. Government has been granted for itself and others acting on its
-# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
-# to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+# Copyright (c) 2017, Vanessa Sochat. All rights reserved.
+#
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+#
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
 
 
 ## Basic sanity
@@ -47,6 +38,10 @@ if [ ! -d "${SINGULARITY_MOUNTPOINT}/.singularity.d" ]; then
 fi
 
 SINGULARITY_ROOTFS=${SINGULARITY_MOUNTPOINT}
-export SINGULARITY_MOUNTPOINT SINGULARITY_INSPECT_LABELS SINGULARITY_INSPECT_DEFFILE SINGULARITY_INSPECT_RUNSCRIPT SINGULARITY_INSPECT_TEST SINGULARITY_INSPECT_ENVIRONMENT SINGULARITY_ROOTFS SINGULARITY_PRINT_STRUCTURED
+export SINGULARITY_MOUNTPOINT SINGULARITY_INSPECT_LABELS SINGULARITY_INSPECT_DEFFILE SINGULARITY_INSPECT_RUNSCRIPT SINGULARITY_INSPECT_TEST SINGULARITY_INSPECT_ENVIRONMENT SINGULARITY_ROOTFS SINGULARITY_PRINT_STRUCTURED SINGULARITY_INSPECT_HELP
+
+if [ ! -z ${SINGULARITY_APPNAME+x} ]; then
+    export SINGULARITY_APPNAME
+fi
 
 eval_abort "$SINGULARITY_libexecdir/singularity/python/helpers/json/inspect.py"

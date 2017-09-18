@@ -32,6 +32,7 @@
 #include <pwd.h>
 #include <linux/limits.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -48,7 +49,7 @@
 int _singularity_runtime_mount_hostfs(void) {
     FILE *mounts;
     char *line = NULL;
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
 
     if ( singularity_config_get_bool(MOUNT_HOSTFS) <= 0 ) {
         singularity_message(DEBUG, "Not mounting host file systems per configuration\n");
@@ -105,6 +106,10 @@ int _singularity_runtime_mount_hostfs(void) {
         }
         if ( strncmp(mountpoint, "/sys", 4) == 0 ) {
             singularity_message(DEBUG, "Skipping /sys based file system: %s,%s,%s\n", source, mountpoint, filesystem);
+            continue;
+        }
+        if ( strncmp(mountpoint, "/boot", 5) == 0 ) {
+            singularity_message(DEBUG, "Skipping /boot based file system: %s,%s,%s\n", source, mountpoint, filesystem);
             continue;
         }
         if ( strncmp(mountpoint, "/proc", 5) == 0 ) {

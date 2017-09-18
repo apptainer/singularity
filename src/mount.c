@@ -56,35 +56,30 @@ int main(int argc, char **argv) {
     singularity_registry_init();
     singularity_priv_drop();
 
-    image = singularity_image_init(singularity_registry_get("IMAGE"));
-
-    if ( singularity_registry_get("WRITABLE") == NULL ) {
-        singularity_image_open(&image, O_RDONLY);
+    if ( singularity_registry_get("WRITABLE") != NULL ) {
+        singularity_message(VERBOSE3, "Instantiating writable container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
     } else {
-        singularity_image_open(&image, O_RDWR);
+        singularity_message(VERBOSE3, "Instantiating read only container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
     }
 
-    singularity_image_check(&image);
-
-    if ( image.type != SINGULARITY ) {
-        singularity_message(ERROR, "Mount is only allowed on Singularity image files\n");
+    if ( is_owner(CONTAINER_MOUNTDIR, 0) != 0 ) {
+        singularity_message(ERROR, "Root must own container mount directory: %s\n", CONTAINER_MOUNTDIR);
         ABORT(255);
     }
 
-    if ( is_owner(singularity_runtime_rootfs(NULL), 0) != 0 ) {
-            singularity_message(ERROR, "Root must own container mount directory: %s\n", singularity_runtime_rootfs(NULL));
-            ABORT(255);
-    }
+    singularity_runtime_ns(SR_NS_MNT);
+
+    singularity_image_mount(&image, CONTAINER_MOUNTDIR);
+
+    singularity_runtime_overlayfs();
+
+    singularity_priv_drop_perm();
+
+    envar_set("SINGULARITY_MOUNTPOINT", CONTAINER_FINALDIR, 1);
 
     if ( argc > 1 ) {
-        singularity_runtime_ns(SR_NS_MNT);
-
-        singularity_image_bind(&image);
-        singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
-
-        singularity_priv_drop_perm();
-
-        envar_set("SINGULARITY_MOUNTPOINT", singularity_runtime_rootfs(NULL), 1);
 
         singularity_message(VERBOSE, "Running command: %s\n", argv[1]);
         singularity_message(DEBUG, "Calling exec...\n");
@@ -92,21 +87,10 @@ int main(int argc, char **argv) {
 
         singularity_message(ERROR, "Exec failed: %s: %s\n", argv[1], strerror(errno));
         ABORT(255);
+
     } else {
-        singularity_runtime_ns(SR_NS_MNT);
 
-        singularity_image_bind(&image);
-        singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
-
-        singularity_priv_escalate();
-        if ( mount(singularity_runtime_rootfs(NULL), singularity_runtime_rootfs(NULL), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
-            singularity_message(ERROR, "There was an error binding mounted container to %s: %s\n", singularity_runtime_rootfs(NULL), strerror(errno));
-            ABORT(255);
-        }
-
-        singularity_priv_drop_perm();
-
-        singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), singularity_runtime_rootfs(NULL));
+        singularity_message(INFO, "%s is mounted at: %s\n\n", singularity_image_name(&image), CONTAINER_FINALDIR);
         envar_set("PS1", "Singularity> ", 1);
 
         execl("/bin/sh", "/bin/sh", NULL); // Flawfinder: ignore (Yes flawfinder, this is what we want, sheesh, so demanding!)

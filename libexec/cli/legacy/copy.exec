@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+#
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
+#
+# This file also contains content that is covered under the LBNL/DOE/UC modified
+# 3-clause BSD license and is subject to the license terms in the LICENSE-LBNL.md
+# file found in the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/LICENSE-LBNL.md.
+
+
+
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
+
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+            else
+                message ERROR "No help exists for this command\n"
+                exit 1
+            fi
+            exit
+        ;;
+        -*)
+            message ERROR "Unknown option: $1\n"
+            exit 1
+        ;;
+        *)
+            break;
+        ;;
+    esac
+done
+
+if [ -z "${1:-}" ]; then
+    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
+        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    else
+        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
+    fi
+    exit 0
+fi
+
+
+SINGULARITY_IMAGE="${1:-}"
+export SINGULARITY_IMAGE
+shift
+
+if [ -x "$SINGULARITY_libexecdir/singularity/bin/copy" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/copy" "$@"
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/copy\n"
+    exit 1
+fi
+
+
+message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
+exit 255
+

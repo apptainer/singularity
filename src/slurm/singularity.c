@@ -22,16 +22,27 @@
 
 #define _GNU_SOURCE 1
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "config.h"
-#include "lib/singularity.h"
 #include "util/util.h"
 #include "util/file.h"
+#include "util/registry.h"
+#include "lib/image/image.h"
+#include "util/suid.h"
+#include "util/sessiondir.h"
+#include "util/cleanupd.h"
+#include "lib/runtime/runtime.h"
+#include "util/config_parser.h"
+#include "util/privilege.h"
+
+#include "action-lib/include.h"
 
 #include "slurm/spank.h"
 
@@ -55,8 +66,13 @@ static int setup_container_environment(spank_t spank)
 
     uid_t job_uid = -1;
     gid_t job_gid = -1;
-    char *job_cwd = NULL,
-         *bindpath = NULL;
+    char *job_cwd = NULL;
+    char *bindpath = NULL;
+    int argc;
+    char **argv = NULL;
+    int i;
+
+     setenv("SINGULARITY_MESSAGELEVEL", "1", 0); //Don't overwrite if exists
 
     if (ESPANK_SUCCESS != spank_get_item(spank, S_JOB_UID, &job_uid)) {
         slurm_error("spank/%s: Failed to get job's target UID", plugin_name);
@@ -142,10 +158,10 @@ static int setup_container_cwd() {
 static int setup_container(spank_t spank)
 {
     int rc;
-    char *image;
+    struct image_object image;
+    char *command = NULL;
 
     if ((rc = setup_container_environment(spank)) != 0) { return rc; }
-    printf("Finished container env setup.\n");
 
     /*
      * Ugg, singularity_* calls tend to call ABORT(255), which translates to
@@ -162,47 +178,63 @@ static int setup_container(spank_t spank)
     singularity_message(VERBOSE, "Running SLURM/Singularity integration "
                         "plugin\n");
 
-    if ((rc = singularity_config_init(
-              joinpath(SYSCONFDIR, "/singularity/singularity.conf")))
-        != 0) {
+    if ((rc = singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"))) != 0) {
          return rc;
     }
 
 
-    char *image;
-    if ( ( image = singularity_registry_get("IMAGE") ) == NULL ) {
-        singularity_message(ERROR, "SINGULARITY_CONTAINER not defined!\n");
+    singularity_priv_init();
+//TODO    singularity_suid_init(argv);
+
+    singularity_registry_init();
+    singularity_priv_userns();
+    singularity_priv_drop();
+
+    singularity_cleanupd();
+
+    singularity_runtime_ns(SR_NS_ALL);
+
+    singularity_sessiondir();
+
+    image = singularity_image_init(singularity_registry_get("IMAGE")); 
+
+    if ( singularity_registry_get("WRITABLE") == NULL ) {
+        singularity_image_open(&image, O_RDONLY);
+    } else {
+        singularity_image_open(&image, O_RDWR);
+    }  
+
+    singularity_image_check(&image);
+    singularity_image_bind(&image);
+    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+
+    action_ready(singularity_runtime_rootfs(NULL));
+
+    singularity_runtime_overlayfs();
+    singularity_runtime_mounts();
+    singularity_runtime_files();
+    singularity_runtime_enter();
+
+    singularity_runtime_environment();
+
+    singularity_priv_drop_perm();
+
+ 
+    if ((rc = setup_container_cwd()) < 0) { 
+       singularity_message(ERROR, "Could not obtain current directory.\n");
+       return rc; 
     }
 
-    if ((rc = singularity_rootfs_init(image)) != 0) {  /* return rc; */ }
+    envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
+    envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
+    envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
 
-    /*
-     * Umm, singularity.h declaration shows void for this, but the .c
-     * definition shows char *
-     */
-    singularity_sessiondir_init(image);
-
-    /* This was malloc() */
-    free(image);
-
-    if ((rc = singularity_ns_unshare()) != 0) {  /* return rc; */ }
-
-    if ((rc = singularity_rootfs_mount()) != 0) {  /* return rc; */ }
-
-    if ((rc = singularity_rootfs_check()) != 0) {  /* return rc; */ }
-
-    if ((rc = singularity_file()) != 0) {  /* return rc; */ }
-
-    if ((rc = singularity_mount()) != 0) {  /* return rc; */ }
-
-    if ((rc = singularity_rootfs_chroot()) != 0) {  /* return rc; */ }
-
-    if ((rc = setup_container_cwd()) < 0) {  /* return rc; */ }
+    command = singularity_registry_get("COMMAND");
+    singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
 
     // At this point, the current process is in the runtime container environment.
     // Return control flow back to SLURM: when execv is invoked, it'll be done from
     // within the container.
-    singularity_priv_escalate();
 
     return 0;
 }
