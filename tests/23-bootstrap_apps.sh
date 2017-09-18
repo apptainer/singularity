@@ -46,8 +46,10 @@ stest 0 singularity exec "$CONTAINER" test -d "/scif/data/foo/output"
 stest 0 singularity exec "$CONTAINER" test -d "/scif/data/foo/input"
 
 # Metadata folder
+stest 0 singularity exec "$CONTAINER" test -d "/scif/apps/foo/scif"
+stest 0 singularity exec "$CONTAINER" test -d "/scif/apps/foo/scif/env"
 stest 0 singularity exec "$CONTAINER" test -f "/scif/apps/foo/scif/Singularity"
-stest 0 singularity exec "$CONTAINER" test -f "/scif/apps/foo/scif/environment"
+stest 0 singularity exec "$CONTAINER" test -f "/scif/apps/foo/scif/env/01-base.sh"
 stest 0 singularity exec "$CONTAINER" test -f "/scif/apps/foo/scif/labels.json"
 stest 0 singularity exec "$CONTAINER" test -f "/scif/apps/foo/scif/runscript"
 stest 0 singularity exec "$CONTAINER" test -f "/scif/apps/foo/scif/runscript.help"

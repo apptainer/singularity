@@ -106,7 +106,7 @@ class SingularityApiConnection(ApiConnection):
         # If the Hub returns 404, the image name is likely wrong
         response = self.get(base, return_response=True)
         if response.code == 404:
-            msg = "Cannot find image %s." % image
+            msg = "Cannot find image."
             msg += " Is your capitalization correct?"
             bot.error(msg)
             sys.exit(1)
