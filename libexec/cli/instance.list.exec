@@ -65,10 +65,16 @@ while true; do
     esac
 done
 
+COUNT=0
+if [ -z "${1:-}" ]; then
+    DAEMONS=`singularity_daemon_glob '*' | sort | uniq`
+else
+    DAEMONS=`singularity_daemon_glob "$@" | sort | uniq`
+fi
+
 message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
 
-COUNT=0
-for i in `singularity_daemon_glob ${1:-}`; do
+for i in $DAEMONS; do
     if [ -f "$i" ]; then
         if [ ! -s "$i" ]; then
             rm "$i"

@@ -5,6 +5,7 @@ Stop a named instance of the given container image.
 LIST OPTIONS:
     -u/--user <username>   If running as root, stop the specified instance
                            of <username>
+    -a/--all               Stop all user's running instances
 
 EXAMPLES:
 

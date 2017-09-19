@@ -29,11 +29,23 @@ stest 0 sh -c "echo $PID | grep -q 1"
 stest 1 singularity instance.start "$CONTAINER" service1
 stest 0 singularity instance.start "$CONTAINER" service2
 stest 0 singularity instance.start "$CONTAINER" service3
+stest 0 singularity instance.start "$CONTAINER" t1
+stest 0 singularity instance.start "$CONTAINER" t2
+stest 0 singularity instance.start "$CONTAINER" t22
+stest 0 singularity instance.start "$CONTAINER" t3
+stest 0 singularity instance.start "$CONTAINER" t4
 stest 0 singularity instance.list service1
 stest 0 singularity instance.stop service1
 stest 1 singularity instance.list service1
 stest 0 singularity instance.stop service\*
 stest 1 singularity instance.list service\*
+stest 0 singularity instance.list
+stest 0 singularity instance.list t\*
+stest 0 singularity instance.stop t1 t2\* t3
+stest 0 singularity instance.list t\*
+stest 0 singularity instance.stop --all
+stest 1 singularity instance.list t\*
+
 
 stest 0 sudo rm -rf "$CONTAINER"
 test_cleanup
