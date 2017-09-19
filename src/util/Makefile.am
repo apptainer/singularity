@@ -24,6 +24,7 @@ EXTRA_DIST = capability.c \
 			 privilege.h \
 			 registry.c \
 			 registry.h \
+			 securebits.h \
 			 sessiondir.c \
 			 sessiondir.h \
 			 suid.c \
