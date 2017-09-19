@@ -34,7 +34,7 @@ stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
 # Checking no new privs with capabilities
-stest 1 sudo singularity exec "$CONTAINER" cat /proc/self/status
+stest 1 sudo singularity exec "$CONTAINER" uname -a
 stest 1 sudo singularity exec "$CONTAINER" ping localhost -c 1
 stest 0 sudo singularity exec --keep-privs "$CONTAINER" ping localhost -c 1
 stest 1 singularity exec "$CONTAINER" ping localhost -c 1
