@@ -21,9 +21,9 @@ test_init "Instance command group tests"
 CONTAINER="$SINGULARITY_TESTDIR/container"
 
 stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
-stest 0 singularity instance.start "$CONTAINER" service1
-stest 0 singularity exec instance://service1 true
-stest 0 singularity exec instance://service1 false
+stest 0 singularity -x instance.start "$CONTAINER" service1
+stest 0 singularity -x exec instance://service1 true
+stest 0 singularity -x exec instance://service1 false
 
 stest 1 singularity instance.start "$CONTAINER" service1
 stest 0 singularity instance.start "$CONTAINER" service2
