@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -46,7 +47,7 @@ int _singularity_runtime_mount_home(void) {
     char *homemount_dest = NULL;
     char *home_dest = singularity_priv_home();
     char *home_source = singularity_priv_homedir();
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
     int contain = 0;
 
 

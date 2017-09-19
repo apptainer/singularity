@@ -1,0 +1,32 @@
+#!/bin/bash -ex
+
+# this script runs as root under docker 
+
+OS_VERSION="$1"
+
+# build and install
+yum install -y libtool rpm-build make squashfs-tools
+./autogen.sh
+./configure
+make dist
+rpmbuild -ta *.tar.gz
+rpm -iv ~/rpmbuild/RPMS/*/*.rpm
+
+if [ "$OS_VERSION" = 6 ]; then
+    # the test suite has not yet been ported to centos6 python, skip it
+    exit
+fi
+
+# Install python 3 and pylint
+yum install -y epel-release
+yum install -y python34 python34-pip python34-setuptools
+yum install -y pylint
+
+# run the test suite
+yum install -y libtool sudo which e2fsprogs
+sed -i 's,^prefix=.*,prefix=/usr,' test.sh
+sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
+sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
+useradd testuser
+echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
+su testuser -c "make test"

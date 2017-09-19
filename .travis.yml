@@ -5,39 +5,28 @@ addons:
     packages:
       - flawfinder
       - python-pip
+      - squashfs-tools
 
 env:
   global:
     - secure: ZgH9zeVLyn7BvZo5IiVlBsmteLi1qsTwlCA6/60iIG+WJ1S1cbYRQeHyVvrat+wdjXqcJxRGyg/J6iGAFObIqngzSHPutyV48KgGV8tdPM0Rr+vtEJgW4b8pVcrlI2lsjgG1avqkW93SyOiaqWNE9cIQhlOKNEvIP2exqEuTra0muxl8rOWMpLTdKpA8NPsB0Xx+gRVZvwLtmSjqaSjNDrv/jt+HsnKazZQYKoewB+WO7hT/A4u0TcE+cggEep8LzjZt1xiU9O+OSHlibiKeYLDex+Vl6VtkNrlWYemFQR37nUJaleSXPFQ7H7DETmLCQtQ3NZSlrW/c+mwqFxJTfvgJ6xgK5fp7FlwMpqLBlgZrYAgyxSSC/N7o49zugYlJyoVKk9rDWGLRrxrmoX99hizsEE9bp6hyn9sXbBjsbzmQwhUOChiVAuEbGuLAYNyZIXbhfjbDUJVz748MQS0ymqK3jLrZOYTEs1/8IVk02FhRVKBdy6jHPbgD7egwls3P41jUgpmGxOLl9lvY/7lUo4ckrSso6jQELDIUcpyQiZxlOAhoic1sY6/vKqHB/RxUViufE/OdCDumwNcDfP8X8mpIeDUNn0ECogpx4ChpzdB/1c0YRRNT0O3E7qaVmyAApHCKcnZyskFWHr2FvCU2ToejgZxCqeP0YIdPMeROntA=
     - secure: "mOVQKTzAfpcemi9mLLts0h1aU2FhhNwurwkwiLBjiLYql+QgBX2wMWsCiVYx10trYil3jFCyEuPB4Zu84ukInSpb/QvKcBT7N1Cqpdkw2qrc2faPThPrmwyJ5gg7wb70sg0Fiz3eKY2fe1f6ab7ZNA+prvttskz4YKskkGIJoG6jH1JpD+T8jixozGSp3rgu4FkvMwkq4zzZ53R/8+eANfcleTA0evfPXfXv+n1nQjTMTCrsHeThzkXad/PZjqR4vMcCKdQ4g31B8uX17gOtoQvhe6jHCABFW5qzJ/Fgj6CE1LiEt6sLk0pwMjJ7vsbgdhgwveQker14CN5PumBNr08VFutpfJ/eEqVw2mIONUx6sfPExNa4V+xPTdXXVaLs55UiXOpi84FlNqn6AlmMMBQryDPMRcxudspXboHLReMP5fnikOjs1zBNJlUKoMFkcmR5A5jgZYwHE1WONVNevHM3wuhPaAjds4jxFPqckH6nTe3Zl5CTKRV4N+ieTd30y6dFcl1PXLFeE9kr2hH0PdCuxHK+W9zM/9nj8PZWhVyNe40OZl/Cvm4KNvTikSWGjzLlfaAlsgNXoxRxLpE7EniH+ZUgiEgbbxPETT4+z1W7uzIjJHPxjfJeImNAy2eMZ3CVeo4ZUuxt+f8rLGsyAkVhpj9ZQDPnICNoBV8H304="
 
-
 sudo: true
 
-os: linux
+matrix:
+  include:
+    - os: linux
+    - os: linux
+      env: OS_TYPE=centos OS_VERSION=6
+    - os: linux
+      env: OS_TYPE=centos OS_VERSION=7
 
-compiler:
-  - gcc
+services:
+  - docker
 
 before_install:
-  # so that adjusted PATH propagates into sudo
-  - sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
-  # Install updated version of pylint
-  - sudo pip install pylint
-  # Install last release for legacy testing
-  - cd $TRAVIS_BUILD_DIR/
-  - wget https://github.com/singularityware/singularity/releases/download/2.2.1/singularity-2.2.1.tar.gz
-  - tar xvf singularity-2.2.1.tar.gz
-  - rm singularity-2.2.1.tar.gz
-  - cd singularity-2.2.1
-  - ./configure --prefix=/usr/local/singularity-2.2.1-legacytests
-  - sudo make install 
-  - cd $TRAVIS_BUILD_DIR/
-
-install:
-  - ./autogen.sh
-  - ./configure --prefix=/usr/local
-  - sudo make install
+  - .travis/before_install
 
 script:
-  - make test
+  - .travis/script

@@ -33,6 +33,7 @@
 #include <libgen.h>
 #include <linux/limits.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -45,7 +46,7 @@
 
 
 int _singularity_runtime_mount_scratch(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
     char *scratchdir_path;
     char *tmpdir_path;
     char *sourcedir_path;

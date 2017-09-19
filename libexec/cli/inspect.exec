@@ -90,7 +90,7 @@ while true; do
             exit 1
         ;;
         *)
-            break;
+            break
         ;;
     esac
 done
@@ -110,10 +110,10 @@ export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 shift
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
     RETVAL=$?
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
     RETVAL=$?
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
