@@ -146,7 +146,7 @@ int _singularity_runtime_mount_dev(void) {
             if ( mount("devpts", joinpath(devdir, "/pts"), "devpts", MS_NOSUID|MS_NOEXEC, devpts_opts) < 0 ) {
                 if (errno == EINVAL) {
                     // This is the error when unprivileged on RHEL7.4
-                    singularity_message(DEBUG, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
+                    singularity_message(VERBOSE, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
                 } else {
                     singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
                     ABORT(255);
