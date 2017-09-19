@@ -18,6 +18,7 @@ if [ "$OS_VERSION" = 6 ]; then
 fi
 
 # Install python 3 and pylint
+yum install -y epel-release
 yum install -y python34 python34-pip python34-setuptools
 pip install pylint
 
