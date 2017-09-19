@@ -17,6 +17,10 @@ if [ "$OS_VERSION" = 6 ]; then
     exit
 fi
 
+# Install python 3 and pylint
+yum install -y python34 python34-pip python34-setuptools
+pip install pylint
+
 # run the test suite
 yum install -y libtool sudo which e2fsprogs
 sed -i 's,^prefix=.*,prefix=/usr,' test.sh
