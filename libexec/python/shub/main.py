@@ -81,6 +81,8 @@ def PULL(image, download_folder=None, layerfile=None):
     else:
         cache_base = os.path.abspath(download_folder)
 
+    bot.debug("Pull folder set to %s" % cache_base)
+
     # The image name is the md5 hash, download if it's not there
     image_name = get_image_name(manifest)
 
