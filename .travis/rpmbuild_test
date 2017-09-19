@@ -20,7 +20,7 @@ fi
 # Install python 3 and pylint
 yum install -y epel-release
 yum install -y python34 python34-pip python34-setuptools
-pip install pylint
+yum install -y pylint
 
 # run the test suite
 yum install -y libtool sudo which e2fsprogs
