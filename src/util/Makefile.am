@@ -32,5 +32,5 @@ EXTRA_DIST = capability.c \
 			 util.c \
 			 util.h \
 			 setns.c \
-			 setns.h \
+			 setns.h \
 			 config_defaults.h
