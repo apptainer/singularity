@@ -89,6 +89,12 @@ def GET(key, jsonfile):
 def ADD(key, value, jsonfile, force=False, quiet=False):
     '''ADD will write or update a key in a json file
     '''
+
+    # Check that key is not empty
+    if key.strip() in ['#', '', None]:
+        bot.verbose('Empty key %s, skipping' % key)
+        sys.exit(0)
+
     key = format_keyname(key)
     bot.debug("Adding label: '%s' = '%s'" % (key, value))
     bot.debug("ADD %s from %s" % (key, jsonfile))

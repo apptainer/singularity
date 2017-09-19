@@ -300,26 +300,20 @@ AC_SUBST(SINGULARITY_DEFINES)
 
 AC_MSG_CHECKING([--with-slurm])
 AC_ARG_WITH([slurm],
-            AS_HELP_STRING([--with-slurm], [Enable build of slurm integration]),
+            AS_HELP_STRING([--with-slurm], [This feature will no longer be part of Singularity proper]),
            )
 AS_IF([test "x$with_slurm" == "xyes"],
     [
         AC_MSG_RESULT([yes])
-        AC_CHECK_HEADER([slurm/spank.h],
-            [AC_MSG_RESULT([yes])
-                with_slurm="yes"
-            ],
-            [
-                AC_MSG_ERROR([SLURM support requested, but slurm/spank.h header not found.])
-            ])
+        echo
+        echo "ERROR: Slurm support is no longer maintained in Singularity proper and will"
+        echo "       be maintained as a subproject on GitHub."
+        exit 1
     ],
     [
         AC_MSG_RESULT([no])
-        with_slurm="no"
     ]
 )
-AM_CONDITIONAL([WITH_SLURM], [test "$with_slurm" = "yes"])
-AC_SUBST(with_slurm)
 
 
 AC_MSG_CHECKING([if suid should be enabled])
@@ -365,7 +359,6 @@ AC_CONFIG_FILES([
    Makefile
    singularity.spec
    test.sh
-   src/slurm/Makefile
    src/Makefile
    src/lib/Makefile
    src/lib/runtime/Makefile

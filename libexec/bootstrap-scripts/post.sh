@@ -72,7 +72,7 @@ eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage.singularity.deffil
 eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage.singularity.version" --value $(printf "%q" "$SINGULARITY_version") --file $SINGULARITY_LABELFILE
 
 # Calculate image final size
-message 1 "Calculating final size for metadata..."
+message 1 "Calculating final size for metadata...\n"
 EXCLUDE_LIST="--exclude=$SINGULARITY_ROOTFS/proc --exclude=$SINGULARITY_ROOTFS/dev --exclude=$SINGULARITY_ROOTFS/dev --exclude=$SINGULARITY_ROOTFS/var --exclude=$SINGULARITY_ROOTFS/tmp --exclude=$SINGULARITY_ROOTFS/media --exclude=$SINGULARITY_ROOTFS/home"
 IMAGE_SIZE=$(du --apparent-size -sm $EXCLUDE_LIST $SINGULARITY_ROOTFS | cut -f 1)
 eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-size" --value "${IMAGE_SIZE}MB" --file $SINGULARITY_LABELFILE
