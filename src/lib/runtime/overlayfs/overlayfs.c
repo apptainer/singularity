@@ -160,9 +160,6 @@ int _singularity_runtime_overlayfs(void) {
 
         if (result >= 0) {
             singularity_registry_set("OVERLAYFS_ENABLED", "1");
-
-            singularity_message(VERBOSE2, "Updating the containerdir to: %s\n", overlay_final);
-            singularity_runtime_rootfs(overlay_final);
             return(0);
         }
     }
