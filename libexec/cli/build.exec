@@ -214,17 +214,12 @@ case $SINGULARITY_BUILDDEF in
             ABORT 255
         fi
 
-        # If cache is set, set pull folder to it (first priority)
-        if [ -n "${SINGULARITY_CACHEDIR:-}" ]; then
-            SINGULARITY_PULLFOLDER="$SINGULARITY_CACHEDIR"
+        # If not set, don't export PULLFOLDER. PULL in shub/main.py will default to it
+        if [ ! -n "${SINGULARITY_PULLFOLDER:-}" ]; then
+            export SINGULARITY_CONTENTS SINGULARITY_CONTAINER
         else
-            # Only set the pull folder to be $PWD if not set by user
-            if [ ! -n "${SINGULARITY_PULLFOLDER:-}" ]; then
-                SINGULARITY_PULLFOLDER="."
-            fi
+            export SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS SINGULARITY_CONTAINER
         fi
-
-        export SINGULARITY_CONTENTS SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER
 
         # relying on pull.py for error checking here
         ${SINGULARITY_libexecdir}/singularity/python/pull.py
