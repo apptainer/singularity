@@ -99,6 +99,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/bin/image-type
 %{_libexecdir}/singularity/bin/prepheader
+%{_libexecdir}/singularity/bin/wrapper
 
 # Scripts
 %{_libexecdir}/singularity/functions
