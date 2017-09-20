@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <sched.h>
 #include <linux/capability.h>
+#include <sys/syscall.h>
 
 #ifdef SINGULARITY_SECUREBITS
 #  include <linux/securebits.h>
@@ -78,6 +79,15 @@ static __u32 no_capabilities[] = {
     NO_CAP
 };
 
+
+int capget(cap_user_header_t hdrp, cap_user_data_t datap) {
+    return syscall(__NR_capget, hdrp, datap);
+}
+
+int capset(cap_user_header_t hdrp, const cap_user_data_t datap) {
+    return syscall(__NR_capset, hdrp, datap);
+}
+
 int singularity_capability_keep_privs(void) {
     if ( getuid() == 0 && singularity_registry_get("KEEP_PRIVS") != NULL ) {
         return(1);
@@ -108,6 +118,8 @@ void singularity_capability_set(__u32 *capabilities) {
     int caps_index;
     int keep_index;
     int keep_cap;
+    struct __user_cap_header_struct header;
+    struct __user_cap_data_struct data[2];
 
     singularity_message(DEBUG, "Entering in a restricted capability set\n");
 
@@ -125,6 +137,22 @@ void singularity_capability_set(__u32 *capabilities) {
                 ABORT(255);
             }
         }
+    }
+
+    header.version = _LINUX_CAPABILITY_VERSION_3;
+    header.pid = getpid();
+
+    if ( capget(&header, data) < 0 ) {
+        singularity_message(ERROR, "Failed to get processus capabilities\n");
+        ABORT(255);
+    }
+
+    data[0].inheritable = 0;
+    data[1].inheritable = 0;
+
+    if ( capset(&header, data) < 0 ) {
+        singularity_message(ERROR, "Failed to set processus capabilities\n");
+        ABORT(255);
     }
 }
 
