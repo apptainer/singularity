@@ -139,7 +139,9 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "e
         singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
 
         # Sourcing the environment
+        set +u
         . "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
+        set -u
     fi
 else
     message 2 "Skipping environment section\n"
@@ -321,7 +323,9 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             message 1 "Adding custom environment to ${APPNAME}\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             get_section "appenv ${APPNAME}" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
+            set +u
             . "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
+            set -u
         done
     fi
 fi
