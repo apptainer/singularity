@@ -20,8 +20,8 @@ PULL OPTIONS:
 ******************************************************************************
 NOTICE: The pull --size command will be deprecated for Singularity 2.4+
         images that are in squashfs format (and do not need a size 
-        estimation. The option is maintained for pulling previously generated
-        (2.3 and below) images.
+        estimation). The option is maintained for pulling previously
+        generated (2.3 and below) images.
 ******************************************************************************
 
 
