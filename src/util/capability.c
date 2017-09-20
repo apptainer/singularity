@@ -42,6 +42,15 @@
 
 #define NO_CAP  CAP_LAST_CAP + 1
 
+/* Support only 64 bits sets, since kernel 2.6.25 */
+#ifdef _LINUX_CAPABILITY_VERSION_3
+#  define LINUX_CAPABILITY_VERSION  _LINUX_CAPABILITY_VERSION_3
+#elif defined(_LINUX_CAPABILITY_VERSION_2)
+#  define LINUX_CAPABILITY_VERSION  _LINUX_CAPABILITY_VERSION_2
+#else
+#  error Linux 64 bits capability set not supported
+#endif /* _LINUX_CAPABILITY_VERSION_3 */
+
 /*
     if uid != 0 -> no capabilities
     if uid = 0 -> default capabilities
@@ -78,7 +87,6 @@ static __u32 minimal_capabilities[] = {
 static __u32 no_capabilities[] = {
     NO_CAP
 };
-
 
 int capget(cap_user_header_t hdrp, cap_user_data_t datap) {
     return syscall(__NR_capget, hdrp, datap);
@@ -118,12 +126,42 @@ void singularity_capability_set(__u32 *capabilities) {
     int caps_index;
     int keep_index;
     int keep_cap;
+    int last_cap;
+    __u32 pcap;
+    __u32 mask;
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
 
     singularity_message(DEBUG, "Entering in a restricted capability set\n");
 
-    for ( caps_index = 0; caps_index <= CAP_LAST_CAP; caps_index++ ) {
+    header.version = LINUX_CAPABILITY_VERSION;
+    header.pid = getpid();
+
+    if ( capget(&header, data) < 0 ) {
+        singularity_message(ERROR, "Failed to get processus capabilities\n");
+        ABORT(255);
+    }
+
+    // We can't rely on CAP_LAST_CAP if singularity is compiled in a container by
+    // example, host is ubuntu with a recent kernel and container is a centos 6
+    // container, so CAP_LAST_CAP could be less than CAP_LAST_CAP host and we could
+    // forget to drop some capabilities. So we take the MSB of permitted set
+    pcap = data[1].permitted;
+    mask = 1 << 31;
+
+    if ( pcap > 0 ) {
+        last_cap = 63;
+    } else {
+        last_cap = 31;
+        pcap = data[0].permitted;
+    }
+
+    while ( !(pcap & mask) ) {
+        last_cap -= 1;
+        mask >>= 1;
+    }
+
+    for ( caps_index = 0; caps_index <= last_cap; caps_index++ ) {
         keep_cap = -1;
         for ( keep_index = 0; capabilities[keep_index] != NO_CAP; keep_index++ ) {
             if ( caps_index == capabilities[keep_index] ) {
@@ -133,20 +171,13 @@ void singularity_capability_set(__u32 *capabilities) {
         }
         if ( keep_cap < 0 ) {
             if ( prctl(PR_CAPBSET_DROP, caps_index) < 0 ) {
-                singularity_message(ERROR, "Failed to drop capabilities\n");
+                singularity_message(ERROR, "Failed to drop bounding capabilities set\n");
                 ABORT(255);
             }
         }
     }
 
-    header.version = _LINUX_CAPABILITY_VERSION_3;
-    header.pid = getpid();
-
-    if ( capget(&header, data) < 0 ) {
-        singularity_message(ERROR, "Failed to get processus capabilities\n");
-        ABORT(255);
-    }
-
+    // drop all in inheritable set to force childs to inherit capabilities from bounding set
     data[0].inheritable = 0;
     data[1].inheritable = 0;
 
