@@ -199,7 +199,7 @@ singularity_app_init() {
     # App specific variables should be exposed at run, shell, exec
     echo "
     SINGULARITY_APPNAME=$APPNAME
-    SINGULARITY_APPBASE=\"/scif/apps/${APPNAME}\"
+    SINGULARITY_APPROOT=\"/scif/apps/${APPNAME}\"
     SINGULARITY_APPMETA=\"/scif/apps/${APPNAME}/scif\"
     SINGULARITY_APPDATA=\"/scif/data/${APPNAME}\"
     SINGULARITY_APPINPUT=\"/scif/data/${APPNAME}/input\"

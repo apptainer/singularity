@@ -15,8 +15,9 @@
 if test -n "${SINGULARITY_APPNAME:-}"; then
 
     if test -d "/scif/apps/${SINGULARITY_APPNAME:-}/"; then
+        SINGULARITY_APPS="/scif/apps"
         SINGULARITY_APPROOT="/scif/apps/${SINGULARITY_APPNAME:-}"
-        export SINGULARITY_APPROOT
+        export SINGULARITY_APPROOT SINGULARITY_APPS
         PATH="/scif/apps/${SINGULARITY_APPNAME:-}:$PATH"
 
         # Automatically add application bin to path
