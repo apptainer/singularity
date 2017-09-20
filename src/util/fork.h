@@ -21,6 +21,15 @@
 #ifndef __SINGULARITY_FORK_H_
 #define __SINGULARITY_FORK_H_
 
+    // SINGULARITY_WAIT_FOR_GO_AHEAD()
+    //
+    void singularity_wait_for_go_ahead();
+
+
+    // SINGULARITY_SIGNAL_GO_AHEAD()
+    //
+    void singularity_signal_go_ahead();
+
 
     // SINGULARITY_FORK()
     // Wrap the fork() system call and create the necessary communication
