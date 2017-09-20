@@ -146,7 +146,7 @@ shift
 
 
 if [ -z "$SINGULARITY_COMMAND" ]; then
-    cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
+    exec $SINGULARITY_libexecdir/singularity/cli/help.exec "$@"
     exit 0
 fi
 

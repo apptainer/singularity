@@ -10,27 +10,27 @@ GLOBAL OPTIONS:
     -x --sh-debug Print shell wrapper debugging information
 
 GENERAL COMMANDS:
-    help          Show additional help for a command or container
-    selftest      Run some self tests for singularity install
+:C  help          Show additional help for a command or container
+:C  selftest      Run some self tests for singularity install
 
 CONTAINER USAGE COMMANDS:
-    exec          Execute a command within container
-    run           Launch a runscript within container
-    shell         Run a Bourne shell within container
-    test          Execute any test code defined within container
+:C  exec          Execute a command within container
+:C  run           Launch a runscript within container
+:C  shell         Run a Bourne shell within container
+:C  test          Execute any test code defined within container
 
 CONTAINER MANAGEMENT COMMANDS:
-    apps          List available apps within a container
-    bootstrap     *Deprecated* use build instead
-    build         Build a new Singularity container
-    check         Perform container lint checks
-    inspect       Display a container's metadata
-    mount         Mount a Singularity container image
-    pull          Pull a Singularity/Docker container to $PWD
+:C  apps          List available apps within a container
+:C  bootstrap     *Deprecated* use build instead
+:C  build         Build a new Singularity container
+:C  check         Perform container lint checks
+:C  inspect       Display a container's metadata
+:C  mount         Mount a Singularity container image
+:C  pull          Pull a Singularity/Docker container to $PWD
 
 COMMAND GROUPS:
-    instance      Persistent instance management commands
-    image         Image file management utilities
+:C  instance      Persistent instance management commands
+:C  image         Image file management utilities
 
 
 CONTAINER USAGE OPTIONS:
