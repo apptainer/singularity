@@ -146,6 +146,9 @@ void singularity_capability_set(__u32 *capabilities) {
     // example, host is ubuntu with a recent kernel and container is a centos 6
     // container, so CAP_LAST_CAP could be less than CAP_LAST_CAP host and we could
     // forget to drop some capabilities. So we take the MSB of permitted set
+
+    singularity_message(DEBUG, "Determining highest capability of the running process\n");
+
     pcap = data[1].permitted;
     mask = 1 << 31;
 
@@ -161,6 +164,7 @@ void singularity_capability_set(__u32 *capabilities) {
         mask >>= 1;
     }
 
+    singularity_message(DEBUG, "Dropping capabilities in bounding set\n");
     for ( caps_index = 0; caps_index <= last_cap; caps_index++ ) {
         keep_cap = -1;
         for ( keep_index = 0; capabilities[keep_index] != NO_CAP; keep_index++ ) {
