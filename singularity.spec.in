@@ -88,6 +88,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/apps.*
 %{_libexecdir}/singularity/cli/bootstrap.*
 %{_libexecdir}/singularity/cli/build.*
+%{_libexecdir}/singularity/cli/check.*
 %{_libexecdir}/singularity/cli/create.*
 %{_libexecdir}/singularity/cli/image.*
 %{_libexecdir}/singularity/cli/inspect.*
@@ -124,7 +125,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/run-singularity
 %{_libdir}/singularity/lib*.so.*
 %{_libexecdir}/singularity/cli/action_argparser.*
-%{_libexecdir}/singularity/cli/check.*
 %{_libexecdir}/singularity/cli/exec.*
 %{_libexecdir}/singularity/cli/help.*
 %{_libexecdir}/singularity/cli/instance.*
