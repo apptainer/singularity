@@ -21,16 +21,6 @@
 #ifndef __SINGULARITY_FORK_H_
 #define __SINGULARITY_FORK_H_
 
-    // SINGULARITY_WAIT_FOR_GO_AHEAD()
-    //
-    void singularity_wait_for_go_ahead();
-
-
-    // SINGULARITY_SIGNAL_GO_AHEAD()
-    //
-    void singularity_signal_go_ahead();
-
-
     // SINGULARITY_FORK()
     // Wrap the fork() system call and create the necessary communication
     // pipes and signal handlers so that signals are correctly passed around
@@ -55,8 +45,18 @@
 
 
     // SINGULARITY_FORK_DAEMONIZE
-    // Fork and exec sinit
-    void singularity_fork_daemonize(void);
+    // Fork and exec
+    void singularity_fork_daemonize(unsigned int flags);
+
+    // SINGULARITY_FORK_DAEMONIZE_WAIT
+    // Fork and exec and wait for the child to send the
+    // singularity_signal_go_ahead() before exiting
+    void singularity_fork_daemonize_wait(unsigned int flags);
+
+
+    // SINGULARITY_SIGNAL_GO_AHEAD()
+    //
+    void singularity_signal_go_ahead(int code);
 
 
 #endif /* __SINGULARITY_FORK_H_ */

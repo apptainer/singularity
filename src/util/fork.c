@@ -162,7 +162,7 @@ void singularity_wait_for_go_ahead() {
 }
 
 /* Updated signal_go_ahead() which allows bi-directional wait signaling */
-void singularity_signal_go_ahead(char code) {
+void singularity_signal_go_ahead(int code) {
     if ( (coordination_pipe[0] == -1) || (coordination_pipe[1] == -1)) {
         singularity_message(ERROR, "Internal error!  signal_go_ahead invoked with invalid pipe state (%d, %d).\n",
                             coordination_pipe[0], coordination_pipe[1]);
@@ -442,10 +442,10 @@ int singularity_fork_exec(unsigned int flags, char **argv) {
     return(retval);
 }
 
-int singularity_fork_daemonize() {
+int singularity_fork_daemonize(unsigned int flags) {
     pid_t child;
 
-    child = singularity_fork(CLONE_NEWPID);
+    child = singularity_fork(flags);
 
     if ( child == 0 ) {
         return(0);
@@ -460,4 +460,25 @@ int singularity_fork_daemonize() {
     ABORT(255);
 
     return(0);
-}    
+}
+
+int singularity_fork_daemonize_wait(unsigned int flags) {
+    pid_t child;
+
+    child = singularity_fork(flags);
+
+    if ( child == 0 ) {
+        return(0);
+    } else if ( child > 0 ) {
+        singularity_message(DEBUG, "Successfully spawned daemon, waiting for signal_go_ahead from child\n");
+
+        singularity_wait_for_go_ahead();
+
+        exit(0);
+    }
+    
+    singularity_message(ERROR, "Reached unreachable code. How did you get here?\n");
+    ABORT(255);
+
+    return(0);
+}
