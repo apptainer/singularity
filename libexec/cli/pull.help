@@ -13,6 +13,8 @@ PULL OPTIONS:
     -n/--name   Specify a custom container name (first priority)
     -C/--commit Name container based on Github commit (second priority)
     -H/--hash   Name container based on file hash (second priority)
+
+    -F/--force  overwrite an image file if it exists
     -s/--size   Specify a size for an operation in MiB, i.e. 1024*1024B
                 (default 768MiB)
 
