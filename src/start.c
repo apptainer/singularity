@@ -79,10 +79,6 @@ int main(int argc, char **argv) {
     singularity_runtime_mounts();
     singularity_runtime_files();
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-    singularity_priv_init();
-    singularity_registry_init();
-
     /* After this point, we are running as PID 1 inside PID NS */
     singularity_message(DEBUG, "Preparing sinit daemon\n");
     singularity_registry_set("ROOTFS", CONTAINER_FINALDIR);
