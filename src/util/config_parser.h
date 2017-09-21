@@ -59,6 +59,6 @@ int _singularity_config_get_bool_char_impl(const char *key, const char *value);
 
 // Initialize the configuration table
 //
-int singularity_config_init(char *config_path);
+int singularity_config_init(void);
 
 #endif /* __SINGULARITY_CONFIG_H_ */

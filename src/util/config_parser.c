@@ -38,6 +38,7 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/file.h"
+#include "util/registry.h"
 #include "config_parser.h"
 
 #define MAX_LINE_LEN (PATH_MAX + 128)
@@ -119,6 +120,11 @@ int singularity_config_parse(char *config_path) {
     singularity_message(VERBOSE, "Initialize configuration file: %s\n", config_path);
     if ( is_file(config_path) != 0 ) {
         singularity_message(ERROR, "Specified configuration file %s does not appear to be a normal file.\n", config_path);
+        return -1;
+    }
+    if ( is_owner(config_path, 0) != 0 ) {
+        singularity_message(ERROR, "Specified configuration file %s is not owned by root\n", config_path);
+        return -1;
     }
     FILE *config_fp = fopen(config_path, "r");
     if ( config_fp == NULL ) { // Flawfinder: ignore (we have to open the file...)
@@ -201,11 +207,19 @@ int singularity_config_parse(char *config_path) {
  *
  * Returns non-zero on error.
  */
-int singularity_config_init(char *config_path) {
+int singularity_config_init(void) {
+    char *config_path;
+
     if (config_initialized) {
         return 0;
     }
     config_initialized = 1;
+
+    if ( getuid() == 0 && singularity_registry_get("CONFIG_FILE") != NULL ) {
+        config_path = singularity_registry_get("CONFIG_FILE");
+    } else {
+        config_path = joinpath(SYSCONFDIR, "/singularity/singularity.conf");
+    }
 
     hcreate_r(60, &config_table);
     int retval = singularity_config_parse(config_path);

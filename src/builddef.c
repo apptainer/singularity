@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     char *line;
     char *builddef;
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
     singularity_registry_init();
     singularity_priv_init();
 

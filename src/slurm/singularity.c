@@ -178,7 +178,7 @@ static int setup_container(spank_t spank)
     singularity_message(VERBOSE, "Running SLURM/Singularity integration "
                         "plugin\n");
 
-    if ((rc = singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"))) != 0) {
+    if ((rc = singularity_config_init()) != 0) {
          return rc;
     }
 

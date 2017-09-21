@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
 
     singularity_registry_init();
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
 
     singularity_capability_init();
 

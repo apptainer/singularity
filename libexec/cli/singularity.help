@@ -8,6 +8,7 @@ GLOBAL OPTIONS:
        --version  Show application version
     -v --verbose  Increase verbosity +1
     -x --sh-debug Print shell wrapper debugging information
+    -c --conf     Use a custom configuration file (for root only)
 
 GENERAL COMMANDS:
     help          Show additional help for a command or container
