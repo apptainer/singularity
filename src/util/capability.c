@@ -64,6 +64,7 @@ static __u32 default_capabilities[] = {
     CAP_SETGID,
     CAP_SETPCAP,
     CAP_SYS_ADMIN,
+    CAP_NET_ADMIN,
     CAP_MKNOD,
     CAP_CHOWN,
     CAP_FOWNER,
