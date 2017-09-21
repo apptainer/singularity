@@ -45,14 +45,10 @@
     int singularity_fork_exec(unsigned int flags, char **argv);
 
 
-    // SINGULARITY_FORK_DAEMONIZE
-    // Fork and exec
-    void singularity_fork_daemonize(unsigned int flags);
-
     // SINGULARITY_FORK_DAEMONIZE_WAIT
-    // Fork and exec and wait for the child to send the
-    // singularity_signal_go_ahead() before exiting
-    void singularity_fork_daemonize_wait(unsigned int flags);
+    // Fork and wait for the child to send the go-ahead signal via
+    // singularity_signal_go_ahead() before exiting.
+    void singularity_fork_daemonize(unsigned int flags);
 
 
     // SINGULARITY_SIGNAL_GO_AHEAD()

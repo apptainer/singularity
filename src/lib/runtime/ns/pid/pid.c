@@ -69,7 +69,7 @@ int _singularity_runtime_ns_pid(void) {
     singularity_message(DEBUG, "Virtualizing PID namespace\n");
         
     if ( singularity_registry_get("DAEMON_START") ) {
-        singularity_fork_daemonize_wait(CLONE_NEWPID);
+        singularity_fork_daemonize(CLONE_NEWPID);
     } else {
         singularity_fork_run(CLONE_NEWPID);
     }
