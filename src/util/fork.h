@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  * Copyright (c) 2016, Brian Bockelman. All rights reserved.
  * 
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -55,8 +56,16 @@
 
 
     // SINGULARITY_SIGNAL_GO_AHEAD()
-    //
+    // Send a go-ahead signal via pipes to the partner process
+    // to indicate that it is allowed to move forward. Requires
+    // that prepare_fork() & prepare_pipes_[child/parent]() are
+    // called first to work properly.
     void singularity_signal_go_ahead(int code);
+
+
+    // SINGULARITY_WAIT_FOR_GO_AHEAD()
+    // Wait for the go-ahead signal described above
+    void singularity_wait_for_go_ahead();
 
 
 #endif /* __SINGULARITY_FORK_H_ */
