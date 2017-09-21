@@ -76,6 +76,7 @@ int _singularity_runtime_mount_scratch(void) {
             return(0);
         }
     }
+    printf("%s\n", tmpdir_path);
 
     sourcedir_path = joinpath(tmpdir_path, "/scratch");
 
@@ -104,10 +105,12 @@ int _singularity_runtime_mount_scratch(void) {
                 singularity_priv_drop();
                 if ( r < 0 ) {
                     singularity_message(VERBOSE, "Skipping scratch directory mount, could not create dir inside container %s: %s\n", current, strerror(errno));
+                    current = strtok_r(NULL, ",", &outside_token);
                     continue;
                 }
             } else {
                 singularity_message(WARNING, "Skipping scratch directory mount, target directory does not exist: %s\n", current);
+                current = strtok_r(NULL, ",", &outside_token);
                 continue;
             }
         }
