@@ -141,7 +141,6 @@ int main(int argc, char **argv) {
 
                 // Cool little feature, every key defined in def file is transposed
                 // to environment
-                envar_set(uppercase(bootdef_key), bootdef_value, 1);
                 envar_set(strjoin("SINGULARITY_DEFFILE_", uppercase(bootdef_key)), bootdef_value, 1);
             }
         }

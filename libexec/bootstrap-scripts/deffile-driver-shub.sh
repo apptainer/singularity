@@ -32,6 +32,7 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+FROM="${SINGULARITY_DEFFILE_FROM:-}"
 if [ -z "${FROM:-}" ]; then
     message ERROR "Required Definition tag 'From:' not defined.\n"
     exit 1
@@ -69,7 +70,8 @@ SINGULARITY_CONTAINER=`cat $SINGULARITY_CONTENTS`
 rm -r $SINGULARITY_CONTENTS
 
 #if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER}" | (cd "${SINGULARITY_ROOTFS}" && tar xBf -); then
-if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+${SINGULARITY_bindir}/singularity image.export "${SINGULARITY_CONTAINER}" | tar xBf - -C "${SINGULARITY_ROOTFS}"
+if [ $? != 0 ]; then
     message ERROR "Failed to export contents of ${SINGULARITY_CONTAINER} to ${SINGULARITY_ROOTFS}\n"
     rm $SINGULARITY_CONTAINER
     ABORT 255

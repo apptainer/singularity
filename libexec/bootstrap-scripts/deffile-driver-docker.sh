@@ -37,12 +37,13 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+FROM="${SINGULARITY_DEFFILE_FROM:-}"
 if [ -z "${FROM:-}" ]; then
     message ERROR "Required Definition tag 'From:' not defined.\n"
     exit 1
 fi
 
-if [ -z "${INCLUDECMD:-}" ]; then
+if [ -z "${SINGULARITY_DEFFILE_INCLUDECMD:-}" ]; then
     export SINGULARITY_INCLUDECMD="yes"
 fi
 

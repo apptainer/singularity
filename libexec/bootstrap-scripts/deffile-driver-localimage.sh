@@ -32,6 +32,7 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+FROM="${SINGULARITY_DEFFILE_FROM:-}"
 if [ -z "${FROM:-}" ]; then
     message ERROR "Required Definition tag 'From:' not defined.\n"
     exit 1
@@ -46,7 +47,9 @@ fi
 umask 0002
 
 message 1 "Exporting contents of ${FROM} to ${SINGULARITY_IMAGE}\n"
-if ! eval "${SINGULARITY_bindir}"/singularity image.export "${FROM}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+
+${SINGULARITY_bindir}/singularity image.export "${FROM}" | tar xBf - -C "${SINGULARITY_ROOTFS}"
+if [ $? != 0 ]; then
     message ERROR "Failed to export contents of ${FROM} to ${SINGULARITY_ROOTFS}\n"
     ABORT 255
 fi
