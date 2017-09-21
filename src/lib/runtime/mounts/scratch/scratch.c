@@ -76,7 +76,6 @@ int _singularity_runtime_mount_scratch(void) {
             return(0);
         }
     }
-    printf("%s\n", tmpdir_path);
 
     sourcedir_path = joinpath(tmpdir_path, "/scratch");
 
