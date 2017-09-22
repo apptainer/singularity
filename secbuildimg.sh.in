@@ -34,7 +34,7 @@ if [ $(id -ru) != 0 ]; then
 fi
 
 if [ -e "$SECBUILD_IMAGE" ]; then
-    rm -f $SECBUILD_IMAGE
+    export SINGULARITY_BTSTRP_2EXISTING=1
 fi
 
 BUILDTMP=$(mktemp -d)
