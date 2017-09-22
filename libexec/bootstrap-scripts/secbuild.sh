@@ -61,6 +61,12 @@ fi
 
 BUILDDEF_DIR_NAME=$(dirname ${SINGULARITY_BUILDDEF:-})
 BUILDDEF_DIR=$(realpath ${BUILDDEF_DIR_NAME:-})
+
+if [ -z "${BUILDDEF_DIR:-}" ]; then
+    message ERROR "Can't find parent directory of $SINGULARITY_BUILDDEF\n"
+    exit 1
+fi
+
 BUILDDEF=$(basename ${SINGULARITY_BUILDDEF:-})
 
 # create a temporary dir per build instance
@@ -76,9 +82,6 @@ chmod 1777 $SINGULARITY_WORKDIR/var_tmp
 # setup a fake root directory
 cp -a /etc/skel $SINGULARITY_WORKDIR/root
 
-# this is where to put git clone code
-# and manipulate definition file
-
 REPO_DIR="/root/repo"
 STAGED_BUILD_IMAGE="/root/build"
 
@@ -90,7 +93,7 @@ TMP_CONF_FILE="$SINGULARITY_WORKDIR/tmp.conf"
 FSTAB_FILE="$SINGULARITY_WORKDIR/fstab"
 
 cat > "$FSTAB_FILE" << FSTAB
-none /root/build      bind    dev     0 0
+none $STAGED_BUILD_IMAGE      bind    dev     0 0
 FSTAB
 
 cat > "$TMP_CONF_FILE" << CONF
@@ -116,18 +119,33 @@ cat > "$BUILD_SCRIPT" << SCRIPT
 #!/bin/sh
 
 mount -r --no-mtab -t proc proc /proc
+if [ \$? != 0 ]; then
+    echo "Can't mount /proc directory"
+    exit 1
+fi
+
 mount -r --no-mtab -t sysfs sysfs /sys
-mount -o remount,dev /root/build
+if [ \$? != 0 ]; then
+    echo "Can't mount /sys directory"
+    exit 1
+fi
+
+mount -o remount,dev $STAGED_BUILD_IMAGE
+if [ \$? != 0 ]; then
+    echo "Can't remount $STAGED_BUILD_IMAGE"
+    exit 1
+fi
 
 cd $REPO_DIR
 singularity build -f -s $STAGED_BUILD_IMAGE $BUILDDEF
+exit \$?
 SCRIPT
 
 chmod +x $BUILD_SCRIPT
 
 unset SINGULARITY_IMAGE
 
-singularity -c $TMP_CONF_FILE exec -e -i -p $SECBUILD_IMAGE /tmp/build-script
+${SINGULARITY_bindir}/singularity -c $TMP_CONF_FILE exec -e -i -p $SECBUILD_IMAGE /tmp/build-script
 if [ $? != 0 ]; then
     rm -rf $SINGULARITY_WORKDIR
     exit 1
