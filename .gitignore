@@ -32,7 +32,7 @@ ltmain.sh
 missing
 singularity.spec
 test.sh
-secbuild.sh
+secbuildimg.sh
 
 src/action
 src/action-suid
