@@ -153,8 +153,6 @@ if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
     elif [ -n "${SINGULARITY_FORCE:-}" ]; then
         if [ -f "$SINGULARITY_CONTAINER_OUTPUT" ]; then
             rm -f "$SINGULARITY_CONTAINER_OUTPUT"
-        elif [ -d "$SINGULARITY_CONTAINER_OUTPUT" -a ! -z "$(ls -A $SINGULARITY_CONTAINER_OUTPUT)" ]; then
-            rm -rf "$SINGULARITY_CONTAINER_OUTPUT"
         fi
     else
         message ERROR "Container already exists: $SINGULARITY_CONTAINER_OUTPUT\n"
