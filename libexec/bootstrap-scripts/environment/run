@@ -8,6 +8,15 @@ done
 
 if test -n "${SINGULARITY_APPNAME:-}"; then
 
+    # Add apps dynamically
+    for app in $(ls /scif/apps)
+    do 
+        app=(`echo $app | sed -e "s/-/_/g"`)
+        export "APPDATA_$app=/scif/data/$app"
+        export "APPROOT_$app=/scif/apps/$app"
+    done
+
+
     if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript"; then
         exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript" "$@"
     else

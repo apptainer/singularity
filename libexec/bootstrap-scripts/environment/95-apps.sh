@@ -14,6 +14,9 @@
 
 if test -n "${SINGULARITY_APPNAME:-}"; then
 
+    # The active app should be exported
+    export SINGULARITY_APPNAME
+
     if test -d "/scif/apps/${SINGULARITY_APPNAME:-}/"; then
         SINGULARITY_APPS="/scif/apps"
         SINGULARITY_APPROOT="/scif/apps/${SINGULARITY_APPNAME:-}"
