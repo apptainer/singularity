@@ -109,6 +109,10 @@ while true; do
             SINGULARITY_CHECKTAGS="${1:-}"
             shift;
         ;;
+        -p|--paranoid)
+            SINGULARITY_PARANOID=1
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -147,7 +151,11 @@ if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
     if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
         message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
     elif [ -n "${SINGULARITY_FORCE:-}" ]; then
-        rm -f "$SINGULARITY_CONTAINER_OUTPUT"
+        if [ -f "$SINGULARITY_CONTAINER_OUTPUT" ]; then
+            rm -f "$SINGULARITY_CONTAINER_OUTPUT"
+        elif [ -d "$SINGULARITY_CONTAINER_OUTPUT" -a ! -z "$(ls -A $SINGULARITY_CONTAINER_OUTPUT)" ]; then
+            rm -rf "$SINGULARITY_CONTAINER_OUTPUT"
+        fi
     else
         message ERROR "Container already exists: $SINGULARITY_CONTAINER_OUTPUT\n"
         exit 1
@@ -260,7 +268,11 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             fi
         fi
         export SINGULARITY_BUILDDEF
-        eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
+        if [ -n "${SINGULARITY_PARANOID:-}" ]; then
+            eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/secbuild.sh"
+        else
+            eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
+        fi
 
     elif eval is_tar "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"

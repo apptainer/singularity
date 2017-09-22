@@ -20,7 +20,8 @@ dist_mods_SCRIPTS = functions checks.sh \
                     main-deffile-stage1.sh \
                     main-deffile-stage2.sh \
                     main-dockerhub.sh \
-                    main-null.sh
+                    main-null.sh \
+                    secbuild.sh
 
 MAINTAINERCLEANFILES = Makefile.in
 

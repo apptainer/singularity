@@ -368,6 +368,7 @@ AC_CONFIG_FILES([
    Makefile
    singularity.spec
    test.sh
+   secbuildimg.sh
    src/Makefile
    src/lib/Makefile
    src/lib/runtime/Makefile

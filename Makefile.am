@@ -1,7 +1,7 @@
 SUBDIRS = bin etc libexec man src
 
-MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure ltmain.sh depcomp install-sh missing config.* *.m4 singularity-*.tar.gz singularity-*.rpm m4/* test.sh
-DISTCLEANFILES = Makefile test.sh
+MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure ltmain.sh depcomp install-sh missing config.* *.m4 singularity-*.tar.gz singularity-*.rpm m4/* test.sh secbuildimg.sh
+DISTCLEANFILES = Makefile test.sh secbuildimg.sh
 CLEANFILES = 
 EXTRA_DIST = singularity.spec autogen.sh examples debian AUTHORS.md CONTRIBUTING.md COPYRIGHT.md INSTALL.md LICENSE-LBNL.md LICENSE.md README.md tests
 
@@ -12,6 +12,9 @@ distclean-local: maintainer-clean-local
 
 test: test.sh
 	sh ./test.sh
+
+secbuildimg: secbuildimg.sh
+	sh ./secbuildimg.sh
 
 install-perms:
 	@echo
