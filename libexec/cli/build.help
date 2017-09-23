@@ -112,9 +112,10 @@ DEFFILE SECTION EXAMPLES:
         relative_file.txt /path/on/container/relative_file.txt
 
     %environment 
-        export LUKE=goodguy
-        export VADER=badguy
-        export HAN=someguy
+        LUKE=goodguy
+        VADER=badguy
+        HAN=someguy
+        export HAN VADER LUKE
 
 
 DEFFILE SCI-F SECTION EXAMPLES:

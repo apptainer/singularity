@@ -8,6 +8,7 @@ done
 
 
 if test -z "${SINGULARITY_APPNAME:-}"; then
+
     if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/test"; then
         exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/test" "$@"
     else
