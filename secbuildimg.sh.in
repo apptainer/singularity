@@ -56,6 +56,8 @@ From: debian:jessie-slim
     apt-get install -y debootstrap yum zypper
     apt-get clean
     apt-get autoclean
+    rm -rf /usr/local/libexec/singularity
+    rm -rf /usr/local/lib/singularity
     cd $SECBUILD_SINGULARITY
     ./configure --disable-suid
     make clean
