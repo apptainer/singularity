@@ -95,7 +95,12 @@ _singularity() {
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--bind --contain --containall --cleanenv --home --ipc --join --net --nv --overlay --pid --pwd --scratch --user --workdir --writable --help" -- ${cur}) )
+                opts="--app --bind --contain --containall --cleanenv --home --ipc --net --nv --overlay --pid --pwd --scratch --user --workdir --writable --help "
+                case "${cmd}" in
+                    shell)
+                        opts="$opts --shell"
+                esac
+                COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
             else
                 _filedir 
             fi
@@ -104,7 +109,7 @@ _singularity() {
 
         bootstrap)
             if [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--notest --section --checks --tag --low --med --high --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--notest --section --checks --tag --low --med --high --force --help" -- ${cur}) )
             else
                 _filedir
             fi
@@ -196,7 +201,7 @@ _singularity() {
             elif [[ ${cur} == -s || ${cur} == --size ]]; then
                 _filedir
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--name --commit --hash --size --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--name --commit --hash --size --force --help" -- ${cur}) )
             else
                 _filedir 
             fi

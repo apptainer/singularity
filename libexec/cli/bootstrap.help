@@ -29,6 +29,9 @@ CREATE OPTIONS:
     -T|--notest     Bootstrap without running tests in %test section
     -s|--section    Only run a given section within the bootstrap (setup,
                     post, files, environment, test, labels, none)
+    -f|-F|--force   Force a rebootstrap of a base OS (note: this does not
+                    delete what is currently in the image, just causes the core
+                    to be reinstalled)
 
 
 CHECKS OPTIONS:
@@ -99,6 +102,22 @@ DEFFILE SECTION EXAMPLES:
     %environment
         export PATH=/opt/good/stuff:$PATH
         export FOO=bar
+
+
+DEFFILE SCI-F SECTION EXAMPLES:
+
+    %appinstall app1
+        echo "These are steps to install an app using the SCI-F format"
+
+    %appenv app1
+        APP1VAR=app1value
+        export APP1VAR
+
+    %apphelp app1
+        This is a help doc for running app1
+
+    %apprun app1
+        echo "this is a runscript for app1"
 
 
 EXAMPLES:
