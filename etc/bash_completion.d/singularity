@@ -1,4 +1,4 @@
-#!/bin/bash ## Only here for syntax highlighting
+top!/bin/bash ## Only here for syntax highlighting
 # 
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
@@ -237,7 +237,7 @@ _singularity() {
 
         instance.stop)
             if [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W " --user --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--all --user --help" -- ${cur}) )
             elif [ $container_idx -lt $COMP_CWORD ]; then
                 return 0
             else
@@ -333,7 +333,7 @@ _singularity() {
 
                 stop)
                     if [[ ${cur} == -* ]] ; then
-                        COMPREPLY=( $(compgen -W " --user --help" -- ${cur}) )
+                        COMPREPLY=( $(compgen -W "--all --user --help" -- ${cur}) )
                     elif [ $container_idx -lt $COMP_CWORD ]; then
                         return 0
                     else

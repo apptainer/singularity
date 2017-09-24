@@ -37,9 +37,9 @@ CREATE OPTIONS:
 CHECKS OPTIONS:
     -c|--checks    enable checks
     -t|--tag       specify a check tag (not default)
-    -l/--low       Specify low threshold (all checks, default) 
-    -m/--med       Perform medium and high checks
-    -h/--high      Perform only checks at level high
+    -l|--low       Specify low threshold (all checks, default) 
+    -m|--med       Perform medium and high checks
+    -h|--high      Perform only checks at level high
 
 See singularity check --help for available tags
 

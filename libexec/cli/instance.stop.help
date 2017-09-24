@@ -3,9 +3,9 @@ USAGE: singularity [...] instance.stop [...] <instance name glob>
 Stop a named instance of the given container image.
 
 LIST OPTIONS:
-    -u/--user <username>   If running as root, stop the specified instance
+    -u|--user <username>   If running as root, stop the specified instance
                            of <username>
-    -a/--all               Stop all user's running instances
+    -a|--all               Stop all user's running instances
 
 EXAMPLES:
 
