@@ -5,7 +5,7 @@ WARNING: The bootstrap command is deprecated and will be removed in a later
 version of Singularity.  bootstrap now uses build to create a writable
 container from an existing image via the following syntax:
 
-$ singularity build -e -w container.img recipe.def
+$ singularity build -w container.img recipe.def
 
 You should update your usage accordingly. 
 ******************************************************************************

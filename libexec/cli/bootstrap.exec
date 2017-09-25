@@ -110,13 +110,16 @@ message WARNING "The bootstrap command is deprecated and will be removed in a fu
 message WARNING "Use the build command like so:\n"
 message WARNING "singularity build ${SINGULARITY_IMAGE} ${SINGULARITY_BUILDDEF}\n"
 
-if [ -x "${SINGULARITY_bindir}/singularity" ]; then
-    ${SINGULARITY_bindir}/singularity build -e -w  ${SINGULARITY_IMAGE} ${SINGULARITY_BUILDDEF}
+if [ -x "${SINGULARITY_bindir}/singularity" -a -n "${SINGULARITY_REBOOTSTRAP:-}" ]; then
+    ${SINGULARITY_bindir}/singularity build -f -w  ${SINGULARITY_IMAGE} ${SINGULARITY_BUILDDEF}
+    exit 0
+elif [ -x "${SINGULARITY_bindir}/singularity" ]; then
+    ${SINGULARITY_bindir}/singularity build -w  ${SINGULARITY_IMAGE} ${SINGULARITY_BUILDDEF}
     exit 0
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_home/singularity\n"
     exit 1
-fi 
+fi
 
 message ERROR "We should never have gotten here... Ahhh!!!!\n"
 exit 255

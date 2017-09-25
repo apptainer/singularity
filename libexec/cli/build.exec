@@ -61,10 +61,6 @@ while true; do
             SINGULARITY_SANDBOX=1
             shift
         ;;
-        -e|--exists)
-            SINGULARITY_BTSTRP_2EXISTING=1
-            shift
-        ;;
         -w|--writable)
             if [ "$USERID" != "0" ]; then
                 message ERROR "Writable images must be created as root\n"
@@ -132,24 +128,18 @@ fi
 SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
 
-if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
-    if [ ! -f "${SINGULARITY_CONTAINER_OUTPUT:-}" ]; then
-        message ERROR "Could not open image $SINGULARITY_CONTAINER_OUTPUT: No such file or directory\n"
-        exit 1
-    fi
-    if ! eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
-        message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an image file\n"
-        exit 1
-    fi
-fi
-
+# if the container exists, build into it (or delete it if -F was passed)
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
-    if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
-        message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
-    elif [ -n "${SINGULARITY_FORCE:-}" ]; then
-        rm -f "$SINGULARITY_CONTAINER_OUTPUT"
+    if eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
+        if [ -z "${SINGULARITY_FORCE:-}" ]; then 
+            message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
+            SINGULARITY_BTSTRP_2EXISTING=1
+        elif [ -n "${SINGULARITY_FORCE:-}" ]; then
+            # this may be a directory, so rm -rf 
+            rm -rf "$SINGULARITY_CONTAINER_OUTPUT"
+        fi
     else
-        message ERROR "Container already exists: $SINGULARITY_CONTAINER_OUTPUT\n"
+        message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an image file\n"
         exit 1
     fi
 fi
