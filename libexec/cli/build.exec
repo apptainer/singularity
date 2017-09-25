@@ -160,12 +160,6 @@ if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
     if [ "$USERID" == "0" ]; then
         SINGULARITY_ROOTFS_DIRNAME=`dirname "$SINGULARITY_ROOTFS"`
         SINGULARITY_ROOTFS_DIRNAME_OWNER=`stat -c '%u' $SINGULARITY_ROOTFS_DIRNAME`
-        if [ "$USERID" != "$SINGULARITY_ROOTFS_DIRNAME_OWNER" ]; then
-            message WARNING "You should only run this command within a root-owned directory\n"
-            if [ -z "${SINGULARITY_FORCE:-}" ]; then
-                exit 1
-            fi
-        fi
     fi
     if [ ! -d "${SINGULARITY_ROOTFS:-}" ]; then
         if ! mkdir -p "${SINGULARITY_ROOTFS:-}"; then
