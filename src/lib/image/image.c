@@ -53,7 +53,7 @@ struct image_object singularity_image_init(char *path, int open_flags) {
 
     real_path = realpath(path, NULL); // Flawfinder: ignore
     if ( real_path == NULL ) {
-        singularity_message(ERROR, "No container image path defined\n");
+        singularity_message(ERROR, "Image path doesn't exists\n");
         ABORT(255);
     }
 
