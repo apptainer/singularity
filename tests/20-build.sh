@@ -43,10 +43,7 @@ container_check
 
 # from definition file to sandbox
 sudo rm "$CONTAINER"
-# This should fail as root does not own the parent directory
-stest 1 sudo singularity build --sandbox "$CONTAINER" "../examples/busybox/Singularity"
-# Force fixes that
-stest 0 sudo singularity -x build --force --sandbox "$CONTAINER" "../examples/busybox/Singularity"
+stest 0 sudo singularity build --sandbox "$CONTAINER" "../examples/busybox/Singularity"
 container_check
 
 # from ridicolus to squashfs
