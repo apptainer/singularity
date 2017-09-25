@@ -450,26 +450,6 @@ int singularity_fork_daemonize(unsigned int flags) {
     if ( child == 0 ) {
         return(0);
     } else if ( child > 0 ) {
-        singularity_message(DEBUG, "Successfully spawned daemon, terminating\n");
-        
-        /* In the future, code will go here to execute action.c workflow for startscript */
-        exit(0);
-    }
-    
-    singularity_message(ERROR, "Reached unreachable code. How did you get here?\n");
-    ABORT(255);
-
-    return(0);
-}
-
-int singularity_fork_daemonize_wait(unsigned int flags) {
-    pid_t child;
-
-    child = singularity_fork(flags);
-
-    if ( child == 0 ) {
-        return(0);
-    } else if ( child > 0 ) {
         singularity_message(DEBUG, "Successfully spawned daemon, waiting for signal_go_ahead from child\n");
 
         singularity_wait_for_go_ahead();
