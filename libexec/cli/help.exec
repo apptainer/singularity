@@ -44,7 +44,22 @@ else
 fi
 
 if [ -z "${HELP_ASK:-}" ]; then
-    cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
+    # Lines that begin with ":C" are optionally installed commands.
+    # Only show a command's description (with :C replaced by two blanks)
+    #  if the command's .exec cli file is installed.
+    while read; do
+        if [[ "$REPLY" != ":C"* ]]; then
+            echo "$REPLY"
+            continue
+        fi
+        echo "$REPLY" | while read X CMD X; do
+            if [ -f "$SINGULARITY_libexecdir/singularity/cli/$CMD.exec" ]; then
+                echo "${REPLY/:C/  }"
+            else
+                echo "$REPLY"|sed 's/:C\([ ]*[^ ]*[ ]*\).*/  \1(not installed)/'
+            fi
+        done
+    done < "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
     exit 0
 elif [ -f "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.help" ]; then
     cat "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.help"
