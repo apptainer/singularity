@@ -120,12 +120,6 @@ stest 0 sudo singularity -x build --force --sandbox "$CONTAINER2" "../examples/b
 stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
 container_check
 
-# from def file to existing image 
-sudo rm "$CONTAINER"
-stest 0 singularity image.create "$CONTAINER"
-stest 0 sudo singularity build --exists "$CONTAINER" "../examples/busybox/Singularity"
-container_check
-
 # from tar to squashfs
 stest 0 sudo sh -c "singularity image.export '$CONTAINER' > '${CONTAINER2}.tar'"
 stest 0 sudo rm "$CONTAINER"
