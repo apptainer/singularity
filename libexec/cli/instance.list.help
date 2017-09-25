@@ -3,7 +3,7 @@ USAGE: singularity [...] instance.list [list options...]
 List all running named instances
 
 LIST OPTIONS:
-    -u/--user <username>   If running as root, list instances from <username>
+    -u|--user <username>   If running as root, list instances from <username>
 
 EXAMPLES:
 
