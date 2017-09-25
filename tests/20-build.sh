@@ -47,7 +47,7 @@ stest 0 sudo singularity build --sandbox "$CONTAINER" "../examples/busybox/Singu
 container_check
 
 # from ridicolus to squashfs
-stest 1 sudo singularity build -F "$CONTAINER" "/some/dumb/path"
+stest 1 sudo singularity build "$CONTAINER" "/some/dumb/path"
 
 # from sandbox to squashfs
 sudo mv "$CONTAINER" "$CONTAINER2"
