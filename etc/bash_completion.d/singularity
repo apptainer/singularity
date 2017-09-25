@@ -122,7 +122,7 @@ _singularity() {
 
         build)
             if [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--sandbox --writable --exists --force --notest --section --checks --tag --low --med --high --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--sandbox --writable --force --notest --section --checks --tag --low --med --high --help" -- ${cur}) )
             else
                 _filedir
             fi
