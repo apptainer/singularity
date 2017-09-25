@@ -44,7 +44,6 @@
 
 struct image_object singularity_image_init(char *path, int open_flags) {
     struct image_object image;
-    int retval = 0;
 
     if ( path == NULL ) {
         singularity_message(ERROR, "No container image path defined\n");
