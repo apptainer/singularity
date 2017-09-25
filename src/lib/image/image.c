@@ -81,7 +81,11 @@ struct image_object singularity_image_init(char *path, int open_flags) {
         singularity_message(DEBUG, "got image_init type for ext3\n");
         image.type = EXT3;
     } else {
-        singularity_message(ERROR, "Unknown image format/type: %s\n", path);
+        if ( errno == EROFS ) {
+            singularity_message(ERROR, "Unable to open squashfs image in read-write mode: %s\n", strerror(errno));
+        } else {
+            singularity_message(ERROR, "Unknown image format/type: %s\n", path);
+        }
         ABORT(255);
     }
 
