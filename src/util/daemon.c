@@ -103,7 +103,7 @@ void daemon_init_start(void) {
     char *daemon_file = singularity_registry_get("DAEMON_FILE");
     char *daemon_name = singularity_registry_get("DAEMON_NAME");
     char *daemon_file_dir = strdup(daemon_file);
-    char *daemon_pid = (char *)malloc(256 * sizeof(char *));
+    char *daemon_pid = (char *)malloc(256 * sizeof(char));
     char *daemon_image;
     int daemon_fd;
     int lock;
@@ -120,6 +120,7 @@ void daemon_init_start(void) {
         singularity_message(DEBUG, "Successfully obtained excluse lock on %s\n", daemon_file);
 
         /* Calling readlink on /proc/self returns the PID of the thread in the host PID NS */
+        memset(daemon_pid, 0, 256);
         if ( readlink("/proc/self", daemon_pid, 256) == -1 ) { //Flawfinder: ignore
             singularity_message(ERROR, "Unable to open /proc/self: %s\n", strerror(errno));
             ABORT(255);
