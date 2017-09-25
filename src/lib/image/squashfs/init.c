@@ -42,6 +42,10 @@ int _singularity_image_squashfs_init(struct image_object *image, int open_flags)
     static char buf[1024];
     char *p;
 
+    if ( open_flags == O_RDWR ) {
+        singularity_message(ERROR, "Can not open squashfs image in writable mode\n");
+        ABORT(255);
+    }
 
     singularity_message(DEBUG, "Opening file descriptor to image: %s\n", image->path);
     if ( ( image_fd = open(image->path, open_flags, 0755) ) < 0 ) {
