@@ -47,7 +47,7 @@ while true; do
             SINGULARITY_NOTEST=1
             export SINGULARITY_NOTEST
         ;;
-        -f|--force)
+        -f|-F|--force)
             shift
             SINGULARITY_REBOOTSTRAP=1
             export SINGULARITY_REBOOTSTRAP
