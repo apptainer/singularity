@@ -64,7 +64,7 @@ int _singularity_image_ext3_mount(struct image_object *image, char *mount_point)
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Mounting '%s' to: '%s'\n", loop_dev, mount_point);
-    if ( mount(loop_dev, mount_point, "ext3", opts, "errors=remount-ro") < 0 ) {
+    if ( mount(loop_dev, mount_point, "ext3", opts, "errors=remount-ro,ext_attr=0") < 0 ) {
         singularity_message(ERROR, "Failed to mount ext3 image: %s\n", strerror(errno));
         ABORT(255);
     }
