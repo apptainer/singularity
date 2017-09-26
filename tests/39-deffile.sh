@@ -40,8 +40,7 @@ true
 EOF
 
 
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 0 singularity run "$CONTAINER"
 
@@ -54,8 +53,7 @@ From: busybox
 false
 EOF
 
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity run "$CONTAINER"
 
@@ -75,8 +73,7 @@ $DEFFILE /deffile
 touch /testfile
 EOF
 
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 0 singularity exec "$CONTAINER" test -f /deffile
 stest 0 singularity exec "$CONTAINER" test -f /testfile
@@ -91,8 +88,7 @@ From: busybox
 echo "hi from environment"
 EOF
 
-stest 0 singularity create -F -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "$DEFFILE"
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 stest 0 sh -c "echo true | singularity shell "$CONTAINER" | grep 'hi from environment'"

@@ -56,18 +56,6 @@ void daemon_file_write(int fd, char *key, char *val) {
     }
 }
 
-/* This should become unnecessary after we make the rootfs path static */
-void singularity_daemon_rootfs(void) {
-    char *file_str = filecat(singularity_registry_get("DAEMON_FILE"));
-
-    char *rootfs_str = strtok(file_str, "\n");
-    rootfs_str = strtok(NULL, "\n");
-
-    singularity_runtime_rootfs(rootfs_str);
-
-    free(file_str);
-}
-
 void daemon_init_join(void) {
     char *ns_path, *ns_fd_str;
     int lock_result, ns_fd;
@@ -81,8 +69,7 @@ void daemon_init_join(void) {
 
     if ( lock_result == 0 ) {
         /* Successfully obtained lock, no daemon controls this file. */
-        singularity_message(ERROR, "Unable to join daemon: %s daemon does not exist\n",
-                            daemon_name);
+        singularity_message(ERROR, "Unable to join daemon: %s daemon does not exist\n", daemon_name);
         unlink(daemon_file);
         close(*lock_fd);
         ABORT(255);
@@ -98,8 +85,7 @@ void daemon_init_join(void) {
 
         /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
         if ( (ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC)) == -1 ) {
-            singularity_message(ERROR, "Unable to open ns directory of PID in daemon file: %s\n",
-                                strerror(errno));
+            singularity_message(ERROR, "Unable to open ns directory of PID in daemon file: %s\n", strerror(errno));
             return;
         }
         
@@ -108,8 +94,7 @@ void daemon_init_join(void) {
         /* Set DAEMON_NS_FD to /proc/[PID]/ns FD in registry */
         singularity_registry_set("DAEMON_NS_FD", ns_fd_str);
     } else {
-        singularity_message(ERROR, "Unable to join daemon: %s daemon does not exist\n",
-                            daemon_name);
+        singularity_message(ERROR, "Unable to join daemon: %s daemon does not exist\n", daemon_name);
         ABORT(255);
     }
 }
@@ -118,7 +103,7 @@ void daemon_init_start(void) {
     char *daemon_file = singularity_registry_get("DAEMON_FILE");
     char *daemon_name = singularity_registry_get("DAEMON_NAME");
     char *daemon_file_dir = strdup(daemon_file);
-    char *daemon_pid = (char *)malloc(256 * sizeof(char *));
+    char *daemon_pid = (char *)malloc(256 * sizeof(char));
     char *daemon_image;
     int daemon_fd;
     int lock;
@@ -135,6 +120,7 @@ void daemon_init_start(void) {
         singularity_message(DEBUG, "Successfully obtained excluse lock on %s\n", daemon_file);
 
         /* Calling readlink on /proc/self returns the PID of the thread in the host PID NS */
+        memset(daemon_pid, 0, 256);
         if ( readlink("/proc/self", daemon_pid, 256) == -1 ) { //Flawfinder: ignore
             singularity_message(ERROR, "Unable to open /proc/self: %s\n", strerror(errno));
             ABORT(255);

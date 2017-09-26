@@ -1,0 +1,22 @@
+#!/bin/bash -ex
+
+if [ -z "$OS_TYPE" ]; then
+    # default is ubuntu
+    # install packages
+    sudo apt-get install -y flawfinder python-pip gcc
+    # so that adjusted PATH propagates into sudo
+    sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
+    # Install updated version of pylint
+    sudo pip install pylint
+    exit
+fi
+
+# run docker as shown at
+#  https://djw8605.github.io/2016/05/03/building-centos-packages-on-travisci/
+
+sudo apt-get update
+echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | \
+        sudo tee /etc/default/docker > /dev/null
+sudo service docker restart
+sleep 5
+sudo docker pull ${OS_TYPE}:${OS_VERSION}

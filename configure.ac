@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.3.1],[gmkurtzer@lbl.gov])
+AC_INIT([singularity],[2.3.9],[gmkurtzer@lbl.gov])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -313,26 +313,20 @@ AC_SUBST(SINGULARITY_DEFINES)
 
 AC_MSG_CHECKING([--with-slurm])
 AC_ARG_WITH([slurm],
-            AS_HELP_STRING([--with-slurm], [Enable build of slurm integration]),
+            AS_HELP_STRING([--with-slurm], [This feature will no longer be part of Singularity proper]),
            )
 AS_IF([test "x$with_slurm" == "xyes"],
     [
         AC_MSG_RESULT([yes])
-        AC_CHECK_HEADER([slurm/spank.h],
-            [AC_MSG_RESULT([yes])
-                with_slurm="yes"
-            ],
-            [
-                AC_MSG_ERROR([SLURM support requested, but slurm/spank.h header not found.])
-            ])
+        echo
+        echo "ERROR: Slurm support is no longer maintained in Singularity proper and will"
+        echo "       be maintained as a subproject on GitHub."
+        exit 1
     ],
     [
         AC_MSG_RESULT([no])
-        with_slurm="no"
     ]
 )
-AM_CONDITIONAL([WITH_SLURM], [test "$with_slurm" = "yes"])
-AC_SUBST(with_slurm)
 
 
 AC_MSG_CHECKING([if suid should be enabled])
@@ -341,7 +335,7 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid start-suid create-suid expand-suid export-suid import-suid mount-suid"
+    BUILD_SUID="action-suid start-suid mount-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
@@ -363,12 +357,21 @@ fi
 AC_MSG_RESULT([$GIT_VERSION])
 AC_SUBST(GIT_VERSION)
 
+AC_DEFINE(CONTAINER_MOUNTDIR, LOCALSTATEDIR "/singularity/mnt/container", "container mount location")
+AC_DEFINE(CONTAINER_FINALDIR, LOCALSTATEDIR "/singularity/mnt/final", "location of container post overlay")
+AC_DEFINE(CONTAINER_OVERLAY, LOCALSTATEDIR "/singularity/mnt/overlay", "location of container post overlay")
+AC_DEFINE(SESSIONDIR, LOCALSTATEDIR "/singularity/mnt/session", "location of session directory")
+
+AC_SUBST(CONTAINER_MOUNTDIR, "$localstatedir/singularity/mnt/container")
+AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
+AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
+AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
+
 
 AC_CONFIG_FILES([
    Makefile
    singularity.spec
    test.sh
-   src/slurm/Makefile
    src/Makefile
    src/lib/Makefile
    src/lib/runtime/Makefile
@@ -399,19 +402,9 @@ AC_CONFIG_FILES([
    src/lib/runtime/overlayfs/Makefile
    src/lib/runtime/autofs/Makefile
    src/lib/image/Makefile
-   src/lib/image/bind/Makefile
-   src/lib/image/check/Makefile
-   src/lib/image/check/image/Makefile
-   src/lib/image/check/squashfs/Makefile
-   src/lib/image/check/dir/Makefile
-   src/lib/image/create/Makefile
-   src/lib/image/expand/Makefile
-   src/lib/image/mount/Makefile
-   src/lib/image/mount/dir/Makefile
-   src/lib/image/mount/image/Makefile
-   src/lib/image/mount/squashfs/Makefile
-   src/lib/image/offset/Makefile
-   src/lib/image/open/Makefile
+   src/lib/image/squashfs/Makefile
+   src/lib/image/dir/Makefile
+   src/lib/image/ext3/Makefile
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
    src/util/Makefile

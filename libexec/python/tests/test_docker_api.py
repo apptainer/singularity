@@ -73,10 +73,10 @@ class TestApi(TestCase):
         print("Case 1: Obtain manifest for %s/%s" % (self.client.namespace,
                                                      self.client.repo_name))
 
-        manifest = self.client.get_manifest()
+        manifest = self.client.get_manifest(old_version=True)
 
         # Default tag should be latest
-        self.assertTrue("fsLayers" in manifest or "layers" in manifest)
+        self.assertTrue("fsLayers" in manifest)
 
         # Giving a bad tag sould return error
         print("Case 3: Bad tag should print valid tags and exit")
@@ -85,7 +85,7 @@ class TestApi(TestCase):
         # Should work for custom registries
         print("Case 4: Obtain manifest from custom registry")
         client = DockerApiConnection(image="gcr.io/tensorflow/tensorflow")
-        manifest = client.get_manifest()
+        manifest = client.get_manifest(old_version=True)
         self.assertTrue("fsLayers" in manifest or "layers" in manifest)
 
     def test_get_images(self):

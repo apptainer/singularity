@@ -89,6 +89,12 @@ def GET(key, jsonfile):
 def ADD(key, value, jsonfile, force=False, quiet=False):
     '''ADD will write or update a key in a json file
     '''
+
+    # Check that key is not empty
+    if key.strip() in ['#', '', None]:
+        bot.verbose('Empty key %s, skipping' % key)
+        sys.exit(0)
+
     key = format_keyname(key)
     bot.debug("Adding label: '%s' = '%s'" % (key, value))
     bot.debug("ADD %s from %s" % (key, jsonfile))
@@ -174,9 +180,8 @@ def INSPECT(inspect_labels=None,
         RUNSCRIPT = RUNSCRIPT.replace(".singularity.d/runscript", RUNBASE)
         TESTBASE = "scif/apps/%s/scif/test" % inspect_app
         TESTFILE = TESTFILE.replace(".singularity.d/test", TESTBASE)
-        ENVBASE = "scif/apps/%s/scif/environment" % inspect_app
-        ENVIRONMENT = ENVIRONMENT.replace(".singularity.d/environment",
-                                          ENVBASE)
+        ENVBASE = "scif/apps/%s/scif/" % inspect_app
+        ENVIRONMENT = ENVIRONMENT.replace(".singularity.d/", ENVBASE)
 
     data = dict()
     errors = dict()

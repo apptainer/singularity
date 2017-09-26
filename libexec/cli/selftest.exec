@@ -41,11 +41,8 @@ SINGULARITY_MESSAGELEVEL=5
 
 SUID_FILES="
     $SINGULARITY_libexecdir/singularity/bin/action-suid
-    $SINGULARITY_libexecdir/singularity/bin/create-suid
-    $SINGULARITY_libexecdir/singularity/bin/expand-suid
-    $SINGULARITY_libexecdir/singularity/bin/export-suid
-    $SINGULARITY_libexecdir/singularity/bin/import-suid
     $SINGULARITY_libexecdir/singularity/bin/mount-suid
+    $SINGULARITY_libexecdir/singularity/bin/start-suid
 "
 
 stest 0 sh -c "test -f $SINGULARITY_sysconfdir/singularity/singularity.conf"

@@ -82,7 +82,6 @@ DEBIAN_FRONTEND=noninteractive
 SINGULARITY_ENVIRONMENT="/.singularity.d/env/91-environment.sh"
 export DEBIAN_FRONTEND SINGULARITY_ENVIRONMENT
 
-
 # Script helper paths
 ADD_LABEL=$SINGULARITY_libexecdir/singularity/python/helpers/json/add.py
 
@@ -140,7 +139,9 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "e
         singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
 
         # Sourcing the environment
+        set +u
         . "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
+        set -u
     fi
 else
     message 2 "Skipping environment section\n"
@@ -167,7 +168,12 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "l
 
         singularity_section_get "labels" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
             if [ -n "$KEY" -a -n "$VAL" ]; then
-                $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+                if [ "${SINGULARITY_DEFFILE_BOOTSTRAP:-}" = "shub" -o "${SINGULARITY_DEFFILE_BOOTSTRAP:-}" = "localimage" ]; then
+                    $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json" -f
+                else
+                    $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/.singularity.d/labels.json"
+                
+                fi
             fi
         done
     fi
@@ -236,29 +242,31 @@ fi
 #
 ##########################################################################################
 
-### APPINSTALL
-if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appinstall" ]; then
-    if singularity_section_exists "appinstall" "$SINGULARITY_BUILDDEF"; then
-        APPNAMES=(`singularity_section_args "appinstall" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Found applications ${APPNAMES} to install\n"
-        
+### APPFILES
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appfiles" ]; then
+    if singularity_section_exists "appfiles" "$SINGULARITY_BUILDDEF"; then
+        APPNAMES=(`singularity_section_args "appfiles" "$SINGULARITY_BUILDDEF"`)
+
         for APPNAME in "${APPNAMES[@]}"; do
-
-            APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
-            SINGULARITY_APPROOT="/scif/apps/${APPNAME}"
-            export SINGULARITY_APPROOT
+            message 1 "Adding files to ${APPNAME}\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_app_save "${APPNAME}" "$SINGULARITY_BUILDDEF" "${APPBASE}/scif/Singularity"
-            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -xe || ABORT 255
-
-            APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
-            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json"
-            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json"
-
+            get_section "appfiles ${APPNAME}" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
+                if [ -n "${origin:-}" ]; then
+                    if [ -z "${dest:-}" ]; then
+                        # files must be relative to app
+                        dest="scif/apps/${APPNAME}"
+                    else
+                        dest="scif/apps/${APPNAME}/$dest"
+                    fi
+                    message 1 "+ $origin to $dest\n"
+                    if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
+                        message ERROR "Failed copying file(s) for app ${APPNAME} into container\n"
+                        exit 255
+                    fi
+                fi
+            done
         done
     fi
-else
-    message 2 "No applications detected for install\n"
 fi
 
 
@@ -266,11 +274,11 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apphelp" ]; then
     if singularity_section_exists "apphelp" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "apphelp" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Found applications ${APPNAMES} with help sections\n"
-        
+
         for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "${APPNAME} has help section\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            APPHELP=$(singularity_section_get "'apphelp ${APPNAME}'" "$SINGULARITY_BUILDDEF")
+            APPHELP=$(get_section "apphelp ${APPNAME}" "$SINGULARITY_BUILDDEF")
 
             if [ ! -z "$APPHELP" ]; then
                 echo "$APPHELP" > "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/runscript.help"    
@@ -284,11 +292,11 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "apprun" ]; then
     if singularity_section_exists "apprun" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "apprun" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Found applications ${APPNAMES} with runscript definitions\n"
         
         for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "${APPNAME} has runscript definition\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            APPRUN=$(singularity_section_get "'apprun ${APPNAME}'" "$SINGULARITY_BUILDDEF")
+            APPRUN=$(get_section "apprun ${APPNAME}" "$SINGULARITY_BUILDDEF")
 
             if [ ! -z "$APPRUN" ]; then
                 echo "$APPRUN" > "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/runscript"
@@ -298,36 +306,9 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             # Make sure we have metadata
             APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
             APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
-            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json" --quiet -f
-            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json" --quiet -f
+            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json"
+            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json"
 
-        done
-    fi
-fi
-
-
-### APPFILES
-if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appfiles" ]; then
-    if singularity_section_exists "appfiles" "$SINGULARITY_BUILDDEF"; then
-        APPNAMES=(`singularity_section_args "appfiles" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Adding files to ${APPNAMES}\n"
-
-        for APPNAME in "${APPNAMES[@]}"; do
-            singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_section_get "'appfiles ${APPNAME}'" "$SINGULARITY_BUILDDEF" | sed -e 's/#.*//' | while read origin dest; do
-                if [ -n "${origin:-}" ]; then
-                    if [ -z "${dest:-}" ]; then
-                        dest="$origin"
-                    fi
-                    # files must be relative to app
-                    dest="scif/apps/${APPNAME}"
-                    message 1 "Copying '$origin' to '$dest'\n"
-                    if ! /bin/cp -fLr $origin "$SINGULARITY_ROOTFS/$dest"; then
-                        message ERROR "Failed copying file(s) for app ${APPNAME} into container\n"
-                        exit 255
-                    fi
-                fi
-            done
         done
     fi
 fi
@@ -337,12 +318,14 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appenv" ]; then
     if singularity_section_exists "appenv" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "appenv" "$SINGULARITY_BUILDDEF"`)
-        message 1 "Adding custom environment to ${APPNAMES}\n"
 
         for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "Adding custom environment to ${APPNAME}\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_section_get "'appenv ${APPNAME}'" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/environment"
-            . "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/environment"
+            get_section "appenv ${APPNAME}" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
+            set +u
+            . "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
+            set -u
         done
     fi
 fi
@@ -352,11 +335,11 @@ fi
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appfiles" ]; then
     if singularity_section_exists "applabels" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "applabels" "$SINGULARITY_BUILDDEF"`)
-        message 2 "Adding labels to ${APPNAMES}\n"
 
         for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "Adding labels to ${APPNAME}\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
-            singularity_section_get "'applabels ${APPNAME}'" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
+            get_section "applabels ${APPNAME}" "$SINGULARITY_BUILDDEF" | while read KEY VAL; do
                 if [ -n "$KEY" -a -n "$VAL" ]; then
                     $ADD_LABEL --key "$KEY" --value "$VAL" --file "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/labels.json"
                 fi
@@ -365,6 +348,41 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
      fi
 fi
 
+### APPINSTALL
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appinstall" ]; then
+    if singularity_section_exists "appinstall" "$SINGULARITY_BUILDDEF"; then
+        APPNAMES=(`singularity_section_args "appinstall" "$SINGULARITY_BUILDDEF"`)
+        
+        for APPNAME in "${APPNAMES[@]}"; do
+            message 1 "Installing ${APPNAME}\n"
+            APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
+            SINGULARITY_APPROOT="/scif/apps/${APPNAME}"
+            export SINGULARITY_APPROOT
+            singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
+            singularity_app_save "${APPNAME}" "$SINGULARITY_BUILDDEF" "${APPBASE}/scif/Singularity"
+            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -xe || ABORT 255
+
+            APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
+            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json" --quiet -f
+            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json" --quiet -f
+
+        done
+    fi
+else
+    message 2 "No applications detected for install\n"
+fi
+
+## APPGLOBAL
+
+for app in ${SINGULARITY_ROOTFS}/scif/apps/*; do
+    if [ -d "$app" ]; then
+        app="${app##*/}"
+        app=(`echo $app | sed -e "s/-/_/g"`)
+        echo "APPDATA_$app=/scif/data/$app" >> "$SINGULARITY_ROOTFS/.singularity.d/env/95-apps.sh"
+        echo "APPROOT_$app=/scif/apps/$app" >> "$SINGULARITY_ROOTFS/.singularity.d/env/95-apps.sh"
+        echo "export APPDATA_$app APPROOT_$app"  >> "$SINGULARITY_ROOTFS/.singularity.d/env/95-apps.sh"
+    fi
+done
 
 
 ##########################################################################################

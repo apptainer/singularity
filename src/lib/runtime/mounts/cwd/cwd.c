@@ -35,6 +35,7 @@
 #include <libgen.h>
 #include <linux/limits.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -47,7 +48,7 @@
 
 
 int _singularity_runtime_mount_cwd(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
     char *cwd_path = NULL;
     int r;
 
@@ -103,6 +104,15 @@ int _singularity_runtime_mount_cwd(void) {
          ( strcmp(cwd_path, "/opt") == 0 ) ||
          ( strcmp(cwd_path, "/sbin") == 0 ) ) {
         singularity_message(VERBOSE, "Not mounting CWD within operating system directory: %s\n", cwd_path);
+        free(cwd_path);
+        return(0);
+    }
+
+    singularity_message(DEBUG, "Checking if cwd is in a virtual directory\n");
+    if ( ( strncmp(cwd_path, "/sys", 4) == 0 ) ||
+         ( strncmp(cwd_path, "/dev", 4) == 0 ) ||
+         ( strncmp(cwd_path, "/proc", 5) == 0 ) ) {
+        singularity_message(VERBOSE, "Not mounting CWD within virtual directory: %s\n", cwd_path);
         free(cwd_path);
         return(0);
     }

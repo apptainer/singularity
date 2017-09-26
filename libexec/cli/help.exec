@@ -31,20 +31,27 @@ while true; do
             exit 1
         ;;
         *)
-            break;
+            break
         ;;
     esac
 done
 
-if [ -z "${1:-}" ]; then
+# take care of command groups
+if [ -n "${2:-}" ]; then
+    HELP_ASK="$1.$2"
+else 
+    HELP_ASK="${1:-}"
+fi
+
+if [ -z "${HELP_ASK:-}" ]; then
     cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
     exit 0
-elif [ -f "$SINGULARITY_libexecdir/singularity/cli/${1}.help" ]; then
-    cat "$SINGULARITY_libexecdir/singularity/cli/${1}.help"
+elif [ -f "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.help" ]; then
+    cat "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.help"
     exit 0
-elif [ -f "${1}" ]; then
+elif [ -f "${HELP_ASK}" ]; then
     RETVAL=0
-    SINGULARITY_IMAGE="${1:-}"
+    SINGULARITY_IMAGE="${HELP_ASK:-}"
     if ! SINGULARITY_MOUNTPOINT=`mktemp -d ${TMPDIR:-/tmp}/.singularity-inspect.XXXXXXXX`; then
         message ERROR "Failed to create temporary directory\n"
         ABORT 255
@@ -53,10 +60,10 @@ elif [ -f "${1}" ]; then
     shift
 
     if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-        eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/help.sh"
+        eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/help.sh"
         RETVAL=$?
     elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
-        eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/help.sh"
+        eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/help.sh"
         RETVAL=$?
     else
         message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"
@@ -67,6 +74,6 @@ elif [ -f "${1}" ]; then
 
     exit $RETVAL
 else
-    echo "No help provided for: ${1}"
+    echo "No help provided for: ${HELP_ASK}"
     exit 1
 fi

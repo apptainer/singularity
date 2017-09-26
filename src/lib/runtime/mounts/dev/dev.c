@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <grp.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -45,7 +46,7 @@ static int bind_dev(char *tmpdir, char *dev);
 
 
 int _singularity_runtime_mount_dev(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
 
     if ( ( singularity_registry_get("CONTAIN") != NULL ) || ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) ) {
         char *sessiondir = singularity_registry_get("SESSIONDIR");
@@ -143,16 +144,21 @@ int _singularity_runtime_mount_dev(void) {
 
             singularity_message(DEBUG, "Mounting devpts for staged /dev/pts\n");
             if ( mount("devpts", joinpath(devdir, "/pts"), "devpts", MS_NOSUID|MS_NOEXEC, devpts_opts) < 0 ) {
-                singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
-                ABORT(255);
+                if (errno == EINVAL) {
+                    // This is the error when unprivileged on RHEL7.4
+                    singularity_message(VERBOSE, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
+                } else {
+                    singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
+                    ABORT(255);
+                }
+            } else {
+                singularity_message(DEBUG, "Creating staged /dev/ptmx symlink\n");
+                if ( symlink("/dev/pts/ptmx", joinpath(devdir, "/ptmx")) < 0 ) {
+                    singularity_message(ERROR, "Failed to create /dev/ptmx symlink: %s\n", strerror(errno));
+                    ABORT(255);
+                }
             }
             free(devpts_opts);
-
-            singularity_message(DEBUG, "Creating staged /dev/ptmx symlink\n");
-            if ( symlink("/dev/pts/ptmx", joinpath(devdir, "/ptmx")) < 0 ) {
-                singularity_message(ERROR, "Failed to create /dev/ptmx symlink: %s\n", strerror(errno));
-                ABORT(255);
-            }
         }
 
         singularity_message(DEBUG, "Mounting minimal staged /dev into container\n");
@@ -188,8 +194,6 @@ int _singularity_runtime_mount_dev(void) {
     }
 
     singularity_message(VERBOSE, "Not mounting /dev inside the container\n");
-
-    free(container_dir);
 
     return(0);
 }

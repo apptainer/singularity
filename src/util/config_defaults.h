@@ -95,4 +95,13 @@
 #define AUTOFS_BUG_PATH "autofs bug path"
 #define AUTOFS_BUG_PATH_DEFAULT ""
 
+#define ALLOW_CONTAINER_DIR "allow container dir"
+#define ALLOW_CONTAINER_DIR_DEFAULT 1
+
+#define ALLOW_CONTAINER_EXTFS "allow container extfs"
+#define ALLOW_CONTAINER_EXTFS_DEFAULT 1
+
+#define ALLOW_CONTAINER_SQUASHFS "allow container squashfs"
+#define ALLOW_CONTAINER_SQUASHFS_DEFAULT 1
+
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_

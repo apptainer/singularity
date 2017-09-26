@@ -30,10 +30,16 @@ while true; do
             fi
             exit
         ;;
-        -l|--labels)
-            SINGULARITY_INSPECT_SCRIPT="/.singularity.d/labels.json"
-            export SINGULARITY_INSPECT_SCRIPT
+        -o|--overlay)
             shift
+            SINGULARITY_OVERLAYIMAGE="${1:-}"
+            export SINGULARITY_OVERLAYIMAGE
+            shift
+
+            if [ ! -e "${SINGULARITY_OVERLAYIMAGE:-}" ]; then
+                message ERROR "Overlay image must be a file or directory!\n"
+                ABORT 255
+            fi
         ;;
         -s|--shell)
             shift
@@ -50,14 +56,6 @@ while true; do
             shift
             SINGULARITY_WRITABLE=1
             export SINGULARITY_WRITABLE
-        ;;
-        -j|--join)
-            shift
-            SINGULARITY_DAEMON_JOIN=1
-            export SINGULARITY_DAEMON_JOIN
-            SINGULARITY_DAEMON_NAME="${1:-}"
-            export SINGULARITY_DAEMON_NAME
-            shift
         ;;
         -H|--home)
             shift
@@ -99,9 +97,8 @@ while true; do
             SINGULARITY_CONTAIN=1
             SINGULARITY_UNSHARE_PID=1
             SINGULARITY_UNSHARE_IPC=1
-            SINGULARITY_UNSHARE_NET=1
             SINGULARITY_CLEANENV=1
-            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC SINGULARITY_CLEANENV SINGULARITY_UNSHARE_NET
+            export SINGULARITY_CONTAIN SINGULARITY_UNSHARE_PID SINGULARITY_UNSHARE_IPC SINGULARITY_CLEANENV
         ;;
         -e|--cleanenv)
             shift
