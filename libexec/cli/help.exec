@@ -49,7 +49,7 @@ if [ -z "${HELP_ASK:-}" ]; then
 elif [ -f "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.help" ]; then
     cat "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.help"
     exit 0
-elif [ -f "${HELP_ASK}" ]; then
+elif [ -e "${HELP_ASK}" ]; then
     RETVAL=0
     SINGULARITY_IMAGE="${HELP_ASK:-}"
     if ! SINGULARITY_MOUNTPOINT=`mktemp -d ${TMPDIR:-/tmp}/.singularity-inspect.XXXXXXXX`; then
