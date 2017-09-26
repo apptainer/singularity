@@ -19,6 +19,7 @@ START OPTIONS:
                         overrides the home directory within the container
     -n|--net            Run container in a new network namespace (loopback is
                         only network device active)
+    --uts               Run container in a new UTS namespace
     --nv                Enable experimental Nvidia support
     --pwd               Initial working directory for payload process inside
                         the container

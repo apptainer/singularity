@@ -32,6 +32,14 @@
 
 int _singularity_runtime_ns_uts(void) {
 
+    if ( singularity_registry_get("UNSHARE_UTS") == NULL ) {
+        /* UTS namespace is enforced for root user */
+        if ( singularity_priv_getuid() != 0 ) {
+            singularity_message(VERBOSE2, "Not virtualizing UTS namespace on user request\n");
+            return(0);
+        }
+    }
+
 #ifdef NS_CLONE_NEWUTS
     singularity_message(DEBUG, "Using UTS namespace: CLONE_NEWUTS\n");
     singularity_priv_escalate();
