@@ -10,10 +10,22 @@ SUPPORTED URIs:
     docker: Pull a docker image using python to $PWD
 
 PULL OPTIONS:
-    -n/--name   Specify a custom container name (first priority)
-    -C/--commit Name container based on Github commit (second priority)
-    -H/--hash   Name container based on file hash (second priority)
-    
+    -n|--name   Specify a custom container name (first priority)
+    -C|--commit Name container based on Github commit (second priority)
+    -H|--hash   Name container based on file hash (second priority)
+
+    -F|--force  overwrite an image file if it exists
+    -s|--size   Specify a size for an operation in MiB, i.e. 1024*1024B
+                (default 768MiB)
+
+
+******************************************************************************
+NOTICE: The pull --size command will be deprecated for Singularity 2.4+
+        images that are in squashfs format (and do not need a size 
+        estimation). The option is maintained for pulling previously
+        generated (2.3 and below) images.
+******************************************************************************
+
 
 EXAMPLES:
 

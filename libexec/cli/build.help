@@ -34,11 +34,9 @@ BUILD SPEC TARGET:
 
 
 CREATE OPTIONS:
-    -s/--sandbox    Build a sandbox rather then a read only compressed image
-    -w/--writable   Build a writable image (warning: deprecated due to sparse
+    -s|--sandbox    Build a sandbox rather then a read only compressed image
+    -w|--writable   Build a writable image (warning: deprecated due to sparse
                     file image corruption issues)
-    -e/--exists     Build to an existing image without overwriting (mimics
-                    behavior of legacy command bootstrap)
     -f|-F|--force   Force a rebootstrap of a base OS (note: this does not 
                     delete what is currently in the image, just causes the core 
                     to be reinstalled)
@@ -51,9 +49,9 @@ CREATE OPTIONS:
 CHECKS OPTIONS:
     -c|--checks    enable checks
     -t|--tag       specify a check tag (not default)
-    -l/--low       Specify low threshold (all checks, default) 
-    -m/--med       Perform medium and high checks
-    -h/--high      Perform only checks at level high
+    -l|--low       Specify low threshold (all checks, default) 
+    -m|--med       Perform medium and high checks
+    -h|--high      Perform only checks at level high
 
 See singularity check --help for available tags
 
@@ -113,9 +111,26 @@ DEFFILE SECTION EXAMPLES:
         relative_file.txt /path/on/container/relative_file.txt
 
     %environment 
-        export LUKE=goodguy
-        export VADER=badguy
-        export HAN=someguy
+        LUKE=goodguy
+        VADER=badguy
+        HAN=someguy
+        export HAN VADER LUKE
+
+
+DEFFILE SCI-F SECTION EXAMPLES:
+
+    %appinstall app1
+        echo "These are steps to install an app using the SCI-F format"
+
+    %appenv app1
+        APP1VAR=app1value
+        export APP1VAR
+
+    %apphelp app1
+        This is a help doc for running app1
+
+    %apprun app1
+        echo "this is a runscript for app1"
 
 
 EXAMPLES:
