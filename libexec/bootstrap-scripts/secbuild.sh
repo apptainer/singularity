@@ -82,6 +82,11 @@ chmod 1777 $SINGULARITY_WORKDIR/var_tmp
 # setup a fake root directory
 cp -a /etc/skel $SINGULARITY_WORKDIR/root
 
+cat > "$SINGULARITY_WORKDIR/root/.rpmmacros" << RPMMAC
+%_var /var
+%_dbpath %{_var}/lib/rpm
+RPMMAC
+
 REPO_DIR="/root/repo"
 STAGED_BUILD_IMAGE="/root/build"
 

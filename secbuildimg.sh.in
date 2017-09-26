@@ -52,7 +52,7 @@ From: debian:jessie-slim
     export LC_LANG=C
     apt-get update
     apt-get install -y git gcc python make
-    apt-get install -y squashfs-tools
+    apt-get install -y squashfs-tools curl
     apt-get install -y debootstrap yum zypper
     apt-get clean
     apt-get autoclean
