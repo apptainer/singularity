@@ -31,13 +31,7 @@ fi
 while true; do
     case ${1:-} in
         -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         -n|--name|name)
             shift
