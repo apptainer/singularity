@@ -44,15 +44,34 @@
 
 
 int main(int argc, char **argv) {
-
+    int waitstatus, child;
+    pid_t pid;
+    
     if (chdir("/") < 0 ) {
         singularity_message(ERROR, "Can't change directory to /\n");
     }
+    
     setsid();
     umask(0);
 
-    while(1) {
-        pause();
+    /* Create child process so sinit call to wait() blocks */
+    child = singularity_fork(0);
+    
+    if ( child == 0 ) {
+        /* In child process, block indefinitely */
+        while(1) {
+            pause();
+        }
+        exit(0);
+    } else if ( child > 0 ) {
+        /* In sinit process, use wait() to catch defunct process in PID NS */
+        while(1) {
+            pid = wait(&waitstatus);
+            singularity_message(LOG, "Child (PID=%d) exited with status: %d\n", pid, waitstatus);
+        }
+    } else {
+        singularity_message(ERROR, "Unable to fork: %s\n", strerror(errno));
+        ABORT(255);
     }
     
     return(0);
