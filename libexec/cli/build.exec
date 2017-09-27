@@ -299,7 +299,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_bindir}/singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
     else
         message 1 "Building Singularity image...\n"
-        if [ "$USERID" != 0 ]; then
+        if [ "$USERID" != "0" ]; then
             OPTS="-all-root"
         else
             OPTS=""
