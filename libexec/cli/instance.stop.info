@@ -1,11 +1,17 @@
-USAGE: singularity [...] instance.stop [...] <instance name glob>
+NAME="instance.stop"
+GROUP="instance"
+SUMMARY="Stop a running container instance"
+USAGE="singularity [...] instance.stop [...] <instance name glob>"
+
+print_help() {
+cat<<EOF
 
 Stop a named instance of the given container image.
 
 LIST OPTIONS:
-    -u/--user <username>   If running as root, stop the specified instance
+    -u|--user <username>   If running as root, stop the specified instance
                            of <username>
-    -a/--all               Stop all user's running instances
+    -a|--all               Stop all user's running instances
 
 EXAMPLES:
 
@@ -20,4 +26,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-
+EOF
+}

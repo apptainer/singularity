@@ -34,6 +34,7 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/registry.h"
+#include "util/config_parser.h"
 
 #include "./image.h"
 #include "./bind.h"
@@ -44,14 +45,21 @@
 
 struct image_object singularity_image_init(char *path, int open_flags) {
     struct image_object image;
+    char *real_path;
 
     if ( path == NULL ) {
         singularity_message(ERROR, "No container image path defined\n");
         ABORT(255);
     }
 
-    image.path = strdup(path);
-    image.name = basename(strdup(path));
+    real_path = realpath(path, NULL); // Flawfinder: ignore
+    if ( real_path == NULL ) {
+        singularity_message(ERROR, "Image path doesn't exists\n");
+        ABORT(255);
+    }
+
+    image.path = real_path;
+    image.name = basename(strdup(real_path));
     image.type = -1;
     image.fd = -1;
     image.loopdev = NULL;
@@ -67,14 +75,30 @@ struct image_object singularity_image_init(char *path, int open_flags) {
     if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for directory\n");
         image.type = DIRECTORY;
+        if ( singularity_config_get_bool(ALLOW_CONTAINER_DIR) <= 0 ) {
+            singularity_message(ERROR, "Configuration disallows container directory support\n");
+            ABORT(255);
+        }
     } else if ( _singularity_image_squashfs_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for squashfs\n");
         image.type = SQUASHFS;
+        if ( singularity_config_get_bool(ALLOW_CONTAINER_SQUASHFS) <= 0 ) {
+            singularity_message(ERROR, "Configuration disallows container squashfs support\n");
+            ABORT(255);
+        }
     } else if ( _singularity_image_ext3_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for ext3\n");
         image.type = EXT3;
+        if ( singularity_config_get_bool(ALLOW_CONTAINER_EXTFS) <= 0 ) {
+            singularity_message(ERROR, "Configuration disallows container extfs support\n");
+            ABORT(255);
+        }
     } else {
-        singularity_message(ERROR, "Unknown image format/type: %s\n", path);
+        if ( errno == EROFS ) {
+            singularity_message(ERROR, "Unable to open squashfs image in read-write mode: %s\n", strerror(errno));
+        } else {
+            singularity_message(ERROR, "Unknown image format/type: %s\n", path);
+        }
         ABORT(255);
     }
 

@@ -22,13 +22,7 @@ message 2 "Evaluating args: '$*'\n"
 while true; do
     case ${1:-} in
         -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         -o|--overlay)
             shift
@@ -40,11 +34,6 @@ while true; do
                 message ERROR "Overlay image must be a file or directory!\n"
                 ABORT 255
             fi
-        ;;
-        -l|--labels)
-            SINGULARITY_INSPECT_SCRIPT="/.singularity.d/labels.json"
-            export SINGULARITY_INSPECT_SCRIPT
-            shift
         ;;
         -s|--shell)
             shift

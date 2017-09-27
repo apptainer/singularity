@@ -1,5 +1,10 @@
-USAGE: singularity [...] apps <container path>
+NAME="apps"
+SECTION="management"
+SUMMARY="List available apps within a container"
+USAGE="singularity [...] apps <container path>"
 
+print_help() {
+cat<<EOF
 List applications (apps) installed in a container, located at
     /scif/apps. See http://containers-ftw.org/SCI-F/
 
@@ -28,3 +33,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
+EOF
+}

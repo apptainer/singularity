@@ -1,4 +1,10 @@
-USAGE: singularity [...] pull shub:// [unique id]
+NAME="pull"
+SECTION="management"
+SUMMARY="Pull a Singularity/Docker container to \$PWD"
+USAGE="singularity [...] pull shub://[unique id]"
+
+print_help() {
+cat<<EOF
 
 pull takes a Singularity Hub (shub) URI and will pull a container
 to PWD. If you want the image to go to SINGULARITY_CACHEDIR, you
@@ -10,12 +16,12 @@ SUPPORTED URIs:
     docker: Pull a docker image using python to $PWD
 
 PULL OPTIONS:
-    -n/--name   Specify a custom container name (first priority)
-    -C/--commit Name container based on Github commit (second priority)
-    -H/--hash   Name container based on file hash (second priority)
+    -n|--name   Specify a custom container name (first priority)
+    -C|--commit Name container based on Github commit (second priority)
+    -H|--hash   Name container based on file hash (second priority)
 
-    -F/--force  overwrite an image file if it exists
-    -s/--size   Specify a size for an operation in MiB, i.e. 1024*1024B
+    -F|--force  overwrite an image file if it exists
+    -s|--size   Specify a size for an operation in MiB, i.e. 1024*1024B
                 (default 768MiB)
 
 
@@ -44,3 +50,5 @@ found at:
 
     http://singularity.lbl.gov/
     https://www.singularity-hub.org/faq
+EOF
+}

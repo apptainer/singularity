@@ -170,6 +170,14 @@ bind path = /etc/hosts
 #@LIMIT_CONTAINER_PATHS@ = /scratch, /tmp, /global
 
 
+# ALLOW CONTAINER ${TYPE}: [BOOL]
+# DEFAULT: yes
+# This feature limits what kind of containers that Singularity will support.
+@ALLOW_CONTAINER_SQUASHFS@ = @ALLOW_CONTAINER_SQUASHFS_DEFAULT@
+@ALLOW_CONTAINER_EXTFS@ = @ALLOW_CONTAINER_EXTFS_DEFAULT@
+@ALLOW_CONTAINER_DIR@ = @ALLOW_CONTAINER_DIR_DEFAULT@
+
+
 # AUTOFS BUG PATH: [STRING]
 # DEFAULT: Undefined
 # Define list of autofs directories which produces "Too many levels of symbolink links"

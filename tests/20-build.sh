@@ -43,14 +43,11 @@ container_check
 
 # from definition file to sandbox
 sudo rm "$CONTAINER"
-# This should fail as root does not own the parent directory
-stest 1 sudo singularity build --sandbox "$CONTAINER" "../examples/busybox/Singularity"
-# Force fixes that
-stest 0 sudo singularity -x build --force --sandbox "$CONTAINER" "../examples/busybox/Singularity"
+stest 0 sudo singularity build --sandbox "$CONTAINER" "../examples/busybox/Singularity"
 container_check
 
 # from ridicolus to squashfs
-stest 1 sudo singularity build -F "$CONTAINER" "/some/dumb/path"
+stest 1 sudo singularity build "$CONTAINER" "/some/dumb/path"
 
 # from sandbox to squashfs
 sudo mv "$CONTAINER" "$CONTAINER2"
@@ -121,12 +118,6 @@ container_check
 sudo rm -rf "$CONTAINER" "$CONTAINER2"
 stest 0 sudo singularity -x build --force --sandbox "$CONTAINER2" "../examples/busybox/Singularity"
 stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
-container_check
-
-# from def file to existing image 
-sudo rm "$CONTAINER"
-stest 0 singularity image.create "$CONTAINER"
-stest 0 sudo singularity build --exists "$CONTAINER" "../examples/busybox/Singularity"
 container_check
 
 # from tar to squashfs
