@@ -44,6 +44,7 @@ int check_mounted(char *mountpoint) {
     char *line = (char *)malloc(MAX_LINE_LEN);
     char *rootfs_dir = CONTAINER_FINALDIR;
     unsigned int mountpoint_len = strlength(mountpoint, PATH_MAX);
+    char *real_mountpoint;
 
     singularity_message(DEBUG, "Opening /proc/mounts\n");
     if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) { // Flawfinder: ignore
@@ -56,10 +57,23 @@ int check_mounted(char *mountpoint) {
         mountpoint[mountpoint_len-1] = '\0';
     }
 
+    real_mountpoint = realpath(mountpoint, NULL); // Flawfinder: ignore
+    if ( real_mountpoint == NULL ) {
+        // mountpoint doesn't exists
+        return(retval);
+    }
+
     singularity_message(DEBUG, "Iterating through /proc/mounts\n");
     while ( fgets(line, MAX_LINE_LEN, mounts) != NULL ) {
         (void) strtok(strdup(line), " ");
         char *mount = strtok(NULL, " ");
+
+        // Check to see if mountpoint is already mounted
+        if ( strcmp(joinpath(rootfs_dir, real_mountpoint), mount) == 0 ) {
+            singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", mountpoint);
+            retval = 1;
+            break;
+        }
 
         // Check to see if path is in container root
         if ( strncmp(rootfs_dir, mount, strlength(rootfs_dir, 1024)) != 0 ) {
@@ -70,17 +84,11 @@ int check_mounted(char *mountpoint) {
         if ( strcmp(mount, rootfs_dir) == 0 ) {
             continue;
         }
-
-        // Check to see if mountpoint is already mounted
-        if ( strcmp(joinpath(rootfs_dir, mountpoint), mount) == 0 ) {
-            singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", mountpoint);
-            retval = 1;
-            break;
-        }
     }
 
     fclose(mounts);
     free(line);
+    free(real_mountpoint);
 
     return(retval);
 }

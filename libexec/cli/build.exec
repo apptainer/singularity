@@ -43,26 +43,19 @@ fi
 
 USERID=`id -ru`
 
+SINGULARITY_CHECKS="no"
+SINGULARITY_CHECKTAGS=bootstrap
+SINGULARITY_CHECKLEVEL=3
 while true; do
     case ${1:-} in
         -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         -s|--sandbox)
             if [ "$USERID" != "0" ]; then
                 message WARNING "Building sandbox as non-root will result in wrong file permissions\n"
             fi
             SINGULARITY_SANDBOX=1
-            shift
-        ;;
-        -e|--exists)
-            SINGULARITY_BTSTRP_2EXISTING=1
             shift
         ;;
         -w|--writable)
@@ -119,37 +112,37 @@ while true; do
     esac
 done
 
-if [ -z "${2:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
+else
+    message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
+    ABORT 255
+fi
+
+if [ -z "${1:-}" ]; then
+    if [ -n "${USAGE:-}" ]; then
+        echo "USAGE: $USAGE"
     else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
+        echo "To see usage summary type: singularity help $SINGULARITY_COMMAND"
     fi
     exit 0
 fi
 
-
 SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
 
-if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
-    if [ ! -f "${SINGULARITY_CONTAINER_OUTPUT:-}" ]; then
-        message ERROR "Could not open image $SINGULARITY_CONTAINER_OUTPUT: No such file or directory\n"
-        exit 1
-    fi
-    if ! eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
-        message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an image file\n"
-        exit 1
-    fi
-fi
-
+# if the container exists, build into it (or delete it if -F was passed)
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
-    if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
-        message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
-    elif [ -n "${SINGULARITY_FORCE:-}" ]; then
-        rm -f "$SINGULARITY_CONTAINER_OUTPUT"
+    if eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
+        if [ -z "${SINGULARITY_FORCE:-}" ]; then 
+            message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
+            SINGULARITY_BTSTRP_2EXISTING=1
+        elif [ -n "${SINGULARITY_FORCE:-}" ]; then
+            # this may be a directory, so rm -rf 
+            rm -rf "$SINGULARITY_CONTAINER_OUTPUT"
+        fi
     else
-        message ERROR "Container already exists: $SINGULARITY_CONTAINER_OUTPUT\n"
+        message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an image file\n"
         exit 1
     fi
 fi
@@ -160,12 +153,6 @@ if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
     if [ "$USERID" == "0" ]; then
         SINGULARITY_ROOTFS_DIRNAME=`dirname "$SINGULARITY_ROOTFS"`
         SINGULARITY_ROOTFS_DIRNAME_OWNER=`stat -c '%u' $SINGULARITY_ROOTFS_DIRNAME`
-        if [ "$USERID" != "$SINGULARITY_ROOTFS_DIRNAME_OWNER" ]; then
-            message WARNING "You should only run this command within a root-owned directory\n"
-            if [ -z "${SINGULARITY_FORCE:-}" ]; then
-                exit 1
-            fi
-        fi
     fi
     if [ ! -d "${SINGULARITY_ROOTFS:-}" ]; then
         if ! mkdir -p "${SINGULARITY_ROOTFS:-}"; then
@@ -181,7 +168,8 @@ else
     SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
 fi
 
-export SINGULARITY_IMAGE SINGULARITY_ROOTFS
+export SINGULARITY_IMAGE SINGULARITY_ROOTFS \
+       SINGULARITY_CHECKS SINGULARITY_CHECKTAGS SINGULARITY_CHECKLEVEL
 
 SINGULARITY_BUILDDEF="${1:-}"
 
@@ -312,7 +300,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
     else
         message 1 "Building Singularity image...\n"
         if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend -all-root > /dev/null; then
-            message ERROR "Failed squashing image, left template directory at: $SINGULARITY_CONTAINER_OUTPUT\n"
+            message ERROR "Failed squashing image, left template directory at: $SINGULARITY_ROOTFS\n"
             exit 1
         fi
     fi
