@@ -44,10 +44,80 @@ else
 fi
 
 if [ -z "${HELP_ASK:-}" ]; then
-    cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
+cat <<EOF
+USAGE: singularity [global options...] <command> [command options...] ...
+
+GLOBAL OPTIONS:
+    -d|--debug    Print debugging information
+    -h|--help     Display usage summary
+    -s|--silent   Only print errors
+    -q|--quiet    Suppress all normal output
+       --version  Show application version
+    -v|--verbose  Increase verbosity +1
+    -x|--sh-debug Print shell wrapper debugging information
+EOF
+    echo
+    echo "GENERAL COMMANDS:"
+    egrep -l '^SECTION="?general"?' "$SINGULARITY_libexecdir/singularity/cli/"*.info | while read i; do
+        if [ -f "$i" ]; then
+            . "$i"
+            if [ -n "$USAGE" -a -n "$NAME" ]; then
+                printf "    %-10s %-65.65s\n" "$NAME" "$SUMMARY"
+            fi
+        fi
+    done
+
+    echo
+    echo "CONTAINER USAGE COMMANDS:"
+    egrep -l '^SECTION="?action"?' "$SINGULARITY_libexecdir/singularity/cli/"*.info | while read i; do
+        if [ -f "$i" ]; then
+            . "$i"
+            if [ -n "$USAGE" -a -n "$NAME" ]; then
+                printf "    %-10s %-65.65s\n" "$NAME" "$SUMMARY"
+            fi
+        fi
+    done
+
+    echo
+    echo "CONTAINER MANAGEMENT COMMANDS:"
+    egrep -l '^SECTION="?management"?' "$SINGULARITY_libexecdir/singularity/cli/"*.info | while read i; do
+        if [ -f "$i" ]; then
+            . "$i"
+            if [ -n "$USAGE" -a -n "$NAME" ]; then
+                printf "    %-10s %-65.65s\n" "$NAME" "$SUMMARY"
+            fi
+        fi
+    done
+
+    echo
+    echo "COMMAND GROUPS:"
+    egrep -l '^SECTION="?group"?' "$SINGULARITY_libexecdir/singularity/cli/"*.info | while read i; do
+        if [ -f "$i" ]; then
+            . "$i"
+            if [ -n "$USAGE" -a -n "$NAME" ]; then
+                printf "    %-10s %-65.65s\n" "$NAME" "$SUMMARY"
+            fi
+        fi
+    done
+
+cat <<EOF
+CONTAINER USAGE OPTIONS:
+    see singularity help <command>
+
+For any additional help or support visit the Singularity
+website: http://singularity.lbl.gov/
+
+EOF
+
     exit 0
-elif [ -f "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.help" ]; then
-    cat "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.help"
+elif [ -f "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.info" ]; then
+    print_help() { echo "No help defined for ${HELP_ASK}."; }
+    . "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.info"
+    if [ -n "${USAGE:-}" ]; then
+        echo "USAGE: $USAGE"
+    fi
+    print_help
+    echo
     exit 0
 elif [ -f "${HELP_ASK}" ]; then
     RETVAL=0

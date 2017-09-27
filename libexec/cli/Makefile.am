@@ -25,27 +25,26 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
                     test.exec \
                     selftest.exec
 
-dist_cliexec_DATA = singularity.help \
-                    apps.help \
-                    bootstrap.help \
-                    build.help \
-                    check.help \
-                    create.help \
-                    exec.help \
-                    instance.help \
-                    instance.list.help \
-                    instance.start.help \
-                    instance.stop.help \
-                    image.help \
-                    image.create.help \
-                    image.expand.help \
-                    image.export.help \
-                    image.import.help \
-                    inspect.help \
-                    mount.help \
-                    pull.help \
-                    run.help \
-                    shell.help \
-                    test.help
+dist_cliexec_DATA = apps.info \
+                    bootstrap.info \
+                    build.info \
+                    check.info \
+                    create.info \
+                    exec.info \
+                    instance.info \
+                    instance.list.info \
+                    instance.start.info \
+                    instance.stop.info \
+                    image.info \
+                    image.create.info \
+                    image.expand.info \
+                    image.export.info \
+                    image.import.info \
+                    inspect.info \
+                    mount.info \
+                    pull.info \
+                    run.info \
+                    shell.info \
+                    test.info
 
 MAINTAINERCLEANFILES = Makefile.in

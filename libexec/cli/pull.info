@@ -1,4 +1,10 @@
-USAGE: singularity [...] pull shub:// [unique id]
+NAME="pull"
+SECTION="management"
+SUMMARY="Pull a Singularity/Docker container to \$PWD"
+USAGE="singularity [...] pull shub://[unique id]"
+
+print_help() {
+cat<<EOF
 
 pull takes a Singularity Hub (shub) URI and will pull a container
 to PWD. If you want the image to go to SINGULARITY_CACHEDIR, you
@@ -44,3 +50,5 @@ found at:
 
     http://singularity.lbl.gov/
     https://www.singularity-hub.org/faq
+EOF
+}

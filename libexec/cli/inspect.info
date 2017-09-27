@@ -1,4 +1,10 @@
-USAGE: singularity [...] inspect [exec options...] <container path>
+NAME="inspect"
+SECTION="management"
+SUMMARY="Display a container's metadata"
+USAGE="singularity [...] inspect [exec options...] <container path>"
+
+print_help() {
+cat<<EOF
 
 This command will show you labels, environment variables, and scripts associated with the image.
 
@@ -34,3 +40,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
+EOF
+}
