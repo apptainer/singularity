@@ -57,7 +57,7 @@ struct cmd_wrapper cmd_wrapper[] = {
     { .command = NULL,              .binary = NULL }
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **envp) {
     int index;
     char *command;
     char *libexec_bin = joinpath(LIBEXECDIR, "/singularity/bin/");
@@ -66,9 +66,13 @@ int main(int argc, char **argv) {
 
     singularity_config_init();
 
-    singularity_capability_init();
-
-    singularity_suid_init(argv);
+    /* if allow setuid is no or nosuid requested fallback to non suid command */
+    if ( singularity_suid_init(envp) < 0 ) {
+        singularity_priv_init();
+        singularity_priv_drop_perm();
+    } else {
+        singularity_capability_init();
+    }
 
     command = singularity_registry_get("COMMAND");
 
@@ -79,10 +83,8 @@ int main(int argc, char **argv) {
 
     for ( index = 0; cmd_wrapper[index].command != NULL; index++) {
         if ( strcmp(command, cmd_wrapper[index].command) == 0 ) {
-            envar_set("SINGULARITY_SUID_WRAPPER", "1", 1);
-
             argv[0] = strjoin(libexec_bin, cmd_wrapper[index].binary);
-            execve(argv[0], argv, environ);
+            execv(argv[0], argv);
 
             singularity_message(ERROR, "Failed to execute %s binary\n", cmd_wrapper[index].binary);
             ABORT(255);

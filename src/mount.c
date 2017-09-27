@@ -45,13 +45,13 @@
 #endif
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **envp) {
     struct image_object image;
 
     singularity_config_init();
 
     singularity_priv_init();
-    singularity_suid_init(argv);
+    singularity_suid_init(envp);
 
     singularity_registry_init();
     singularity_priv_drop();

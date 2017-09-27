@@ -44,11 +44,11 @@
 int _singularity_image_dir_mount(struct image_object *image, char *mount_point) {
     int mntflags = MS_BIND | MS_NOSUID | MS_REC | MS_NODEV;
 
-    if ( strcmp(image->path, "/") == 0 ) {
+/*    if ( strcmp(image->path, "/") == 0 ) {
         singularity_message(ERROR, "Naughty naughty naughty...\n");
         ABORT(255);
     }
-
+*/
     if ( singularity_capability_keep_privs() ) {
         singularity_message(DEBUG, "keep-privs option set, removing MS_NOSUID mount flags\n");
         mntflags &= ~MS_NOSUID;

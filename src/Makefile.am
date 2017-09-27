@@ -12,7 +12,7 @@ lexecdir = $(libexecdir)/singularity/bin
 lexec_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start sinit wrapper $(BUILD_SUID)
 EXTRA_PROGRAMS = wrapper-suid
 
-cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c
+cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c util/suid.c
 cleanupd_CPPFLAGS = $(AM_CPPFLAGS)
 
 action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/daemon.c util/capability.c
@@ -40,7 +40,7 @@ sinit_SOURCES = sinit.c util/util.c util/file.c util/registry.c util/privilege.c
 sinit_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 sinit_CPPFLAGS = $(AM_CPPFLAGS)
 
-get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c
+get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c util/suid.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)
 
 image_type_SOURCES = image-type.c util/util.c util/message.c util/config_parser.c util/file.c

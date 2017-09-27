@@ -38,7 +38,7 @@
 
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **envp) {
     struct image_object image;
     char *sinit_bin = joinpath(LIBEXECDIR, "/singularity/bin/sinit"); //path to sinit binary
     char *daemon_fd_str;
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     singularity_config_init();
 
     singularity_priv_init();
-    singularity_suid_init(argv);
+    singularity_suid_init(envp);
 
     singularity_registry_init();
     singularity_priv_userns();
