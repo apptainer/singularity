@@ -114,8 +114,8 @@ export SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS
 
 case "$SINGULARITY_CONTAINER" in
     docker://*)
-        if [ -z "${SINGULARITY_IMAGE:-}" ]; then
 
+        if [ -z "${SINGULARITY_IMAGE:-}" ]; then
             # If name given, use that
             if [ -n "${SHUB_CONTAINERNAME:-}" ]; then
                 SINGULARITY_IMAGE=`basename "$SHUB_CONTAINERNAME.img" | sed -e 's/.img//g'`".img"   
@@ -127,8 +127,17 @@ case "$SINGULARITY_CONTAINER" in
             message 3 "Singularity Image: $SINGULARITY_IMAGE"
             export SINGULARITY_IMAGE
         fi
+ 
+         message WARNING "Using pull for Docker Hub images is deprecated.\n"
+         message WARNING "Use the build command like so:\n"
+         message WARNING "singularity build ${SINGULARITY_IMAGE} ${SINGULARITY_CONTAINER}\n"
+       
+        if [ -n "${SINGULARITY_IMAGESIZE:-}" ]; then
+            message WARNING "Using the --size option when building from Docker Hub is deprecated.\n"
+            message WARNING "Container will be sized appropriately for Docker image.\n"
+        fi
 
-        if [ -f "$SINGULARITY_IMAGE" ]; then
+         if [ -f "$SINGULARITY_IMAGE" ]; then
             if [ -n "${OVERWRITE:-}" ]; then
                 message 2 "Removing existing file\n"
                 rm -f "$SINGULARITY_IMAGE"
@@ -138,35 +147,43 @@ case "$SINGULARITY_CONTAINER" in
             fi
         fi
 
-        if [ -z "${SINGULARITY_IMAGESIZE:-}" ]; then
-            eval_abort $SINGULARITY_libexecdir/singularity/python/size.py
+         if [ -x "${SINGULARITY_bindir}/singularity" ]; then
+             ${SINGULARITY_bindir}/singularity build ${SINGULARITY_IMAGE} ${SINGULARITY_CONTAINER}
+             exit 0
+         else
+             message ERROR "Could not locate the Singularity binary: $SINGULARITY_home/singularity\n"
+             exit 1
+         fi
+        ## build in a temporory directory and then convert to squashfs
+        #if ! SINGULARITY_ROOTFS=`mktemp -d ${SINGULARITY_TMPDIR:-/tmp}/.singularity-build.XXXXXX`; then
+        #    message ERROR "Failed to create temporary directory\n"
+        #    ABORT 255
+        #fi
 
-            SINGULARITY_IMAGESIZE=`cat "$SINGULARITY_CONTENTS"`
-            if [ "$SINGULARITY_IMAGESIZE" -eq "$SINGULARITY_IMAGESIZE" ] 2>/dev/null; then
-                export SINGULARITY_IMAGESIZE
-            else
-                message ERROR "Could not obtain the container size, try using --size\n"
-                ABORT 255
-            fi
-        fi
-        SINGULARITY_WRITABLE=1
-        export SINGULARITY_WRITABLE
+        #cat /dev/null > "$SINGULARITY_CONTENTS"
 
-        "$SINGULARITY_bindir"/singularity image.create -s "$SINGULARITY_IMAGESIZE" "$SINGULARITY_IMAGE"
+        #eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
+        #message 1 "Importing: base Singularity environment\n"
 
-        cat /dev/null > "$SINGULARITY_CONTENTS"
+        #zcat "$SINGULARITY_libexecdir"/singularity/bootstrap-scripts/environment.tar | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
 
-        eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
-        message 1 "Importing: base Singularity environment\n"
+        #for i in `cat "$SINGULARITY_CONTENTS"`; do
+        #    message 1 "Importing: $i\n"
+        #    zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
+        #done
+        #
+        #message 1 "Building Singularity image...\n"
+        #if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_IMAGE" -noappend -all-root > /dev/null; then
+        #    message ERROR "Failed squashing image, left template directory at: $SINGULARITY_ROOTFS\    n"
+        #    exit 1
+        #fi
 
-        zcat "$SINGULARITY_libexecdir"/singularity/bootstrap-scripts/environment.tar | "$SINGULARITY_bindir"/singularity image.import "$SINGULARITY_IMAGE" || exit $?
-
-        for i in `cat "$SINGULARITY_CONTENTS"`; do
-            message 1 "Importing: $i\n"
-            zcat "$i" | $SINGULARITY_bindir/singularity image.import "$SINGULARITY_IMAGE" || exit $?
-        done
-
+        #if ! ${SINGULARITY_libexecdir}/singularity/bin/prepheader "$SINGULARITY_IMAGE" > /dev/null; then
+        #    message ERROR "Failed to prepend singularity header\n"
+        #    exit 1
+        #fi
     ;;
+
     shub://*)
         
         eval_abort $SINGULARITY_libexecdir/singularity/python/pull.py
