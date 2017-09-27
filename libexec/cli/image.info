@@ -1,4 +1,10 @@
-USAGE: singularity [...] image.<command> [...] <image path>
+NAME="image"
+SECTION="management"
+SUMMARY="Container image command group"
+USAGE="singularity [...] image.<command> [...] <image path>"
+
+print_help() {
+cat<<EOF
 
 This is a command group that supports the management of various container
 image functions.
@@ -19,4 +25,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-
+EOF
+}

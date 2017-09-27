@@ -1,11 +1,16 @@
-USAGE: singularity [...] image.create [create options...] <container path>
+NAME="image.create"
+GROUP="image"
+SUMMARY="Create a new empty disk image"
+USAGE="singularity [...] image.create [create options...] <container path>"
 
+print_help() {
+cat<<EOF
 Create a new Singularity formatted blank image.
 
 CREATE OPTIONS:
-    -s/--size   Specify a size for an operation in MiB, i.e. 1024*1024B
+    -s|--size   Specify a size for an operation in MiB, i.e. 1024*1024B
                 (default 768MiB)
-    -F/--force  Overwrite an image file if it exists
+    -F|--force  Overwrite an image file if it exists
 
 EXAMPLES:
 
@@ -16,4 +21,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-
+EOF
+}

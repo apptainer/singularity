@@ -1,4 +1,11 @@
-USAGE: singularity [...] test [exec options...] <container path>
+NAME="run"
+SECTION="action"
+SUMMARY="Launch a runscript within container"
+USAGE="singularity [...] test [exec options...] <container path>"
+
+
+print_help() {
+cat<<EOF
 
 Run defined tests for this particular container. Tests will be run
 contained (e.g. no persistent writable directories will be available 
@@ -20,4 +27,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-
+EOF
+}

@@ -1,4 +1,10 @@
-USAGE: singularity [...] instance.<command> [...]
+NAME="instance"
+SECTION="action"
+SUMMARY="Persistent instance command group"
+USAGE="singularity [...] instance.<command> [...]"
+
+print_help() {
+cat<<EOF
 
 This is a command group that supports the management of various instance
 functions.
@@ -18,4 +24,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-
+EOF
+}
