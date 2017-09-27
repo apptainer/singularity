@@ -78,15 +78,11 @@ int singularity_suid_init(char **envp) {
     singularity_message(VERBOSE2, "Running SUID program workflow\n");
 
     singularity_message(VERBOSE2, "Checking program has appropriate permissions\n");
-    if ( is_enabled == 0 ) {
+    if ( is_enabled == 0 && getuid() != 0 ) {
         singularity_message(ERROR, "Installation error, run the following commands as root to fix:\n");
         singularity_message(ERROR, "    sudo chown root:root %s\n", progname);
         singularity_message(ERROR, "    sudo chmod 4755 %s\n", progname);
-        if ( getuid() == 0 ) {
-            singularity_message(INFO, "\n");
-        } else {
-            ABORT(255);
-        }
+        ABORT(255);
     }
 
     singularity_message(VERBOSE2, "Checking if singularity.conf allows us to run as suid\n");
