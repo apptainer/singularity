@@ -128,7 +128,7 @@ case "$SINGULARITY_CONTAINER" in
             export SINGULARITY_IMAGE
         fi
  
-         message WARNING "Using pull for Docker Hub images is deprecated.\n"
+         message WARNING "pull for Docker Hub images is only supported as a legacy command.\n"
          message WARNING "Use the build command like so:\n"
          message WARNING "singularity build ${SINGULARITY_IMAGE} ${SINGULARITY_CONTAINER}\n"
        
@@ -164,7 +164,7 @@ case "$SINGULARITY_CONTAINER" in
         SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
     ;;
     *)
-        message ERROR "pull is only supported for docker and shub URIs\n"
+        message ERROR "pull is only supported for shub URIs\n"
         exit 255
     ;;
 esac
