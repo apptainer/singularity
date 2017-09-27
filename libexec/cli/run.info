@@ -1,4 +1,11 @@
-USAGE: singularity [...] run [run options...] <container path> [...]
+NAME="run"
+SECTION="action"
+SUMMARY="Launch a runscript within container"
+USAGE="singularity [...] run [run options...] <container path> [...]"
+
+
+print_help() {
+cat<<EOF
 
 This command will launch a Singularity container and execute a runscript
 if one is defined for that container. The runscript is a file at
@@ -75,4 +82,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-
+EOF
+}

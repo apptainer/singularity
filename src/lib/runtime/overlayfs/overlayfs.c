@@ -89,8 +89,8 @@ int _singularity_runtime_overlayfs(void) {
 
             image = singularity_image_init(singularity_registry_get("OVERLAYIMAGE"), O_RDWR);
 
-            if ( singularity_image_type(&image) != EXT3 ) {
-                singularity_message(ERROR, "Persistent overlay must be a writable Singularity image\n");
+            if ( ( singularity_image_type(&image) != EXT3 ) && ( singularity_image_type(&image) != DIRECTORY ) ) {
+                singularity_message(ERROR, "Persistent overlay must be a writable image or directory\n");
                 ABORT(255);
             }
 

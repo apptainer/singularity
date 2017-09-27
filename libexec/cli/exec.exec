@@ -42,6 +42,13 @@ else
     exit 1
 fi
 
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
+else
+    message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
+    ABORT 255
+fi
+
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     SINGULARITY_IMAGE="${1:-}"
     export SINGULARITY_IMAGE
@@ -49,24 +56,13 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
 fi
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-    else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
-    fi
-    exit 0
+    exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
 fi
 
 if [ -n "${SINGULARITY_DAEMON_JOIN:-}" ]; then
     SINGULARITY_DAEMON_FILE=`singularity_daemon_file`
     export SINGULARITY_DAEMON_FILE
 fi
-
-if [ -z "${1:-}" ]; then
-    head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-    exit 1
-fi
-
 
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
