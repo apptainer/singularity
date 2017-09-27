@@ -154,34 +154,6 @@ case "$SINGULARITY_CONTAINER" in
              message ERROR "Could not locate the Singularity binary: $SINGULARITY_home/singularity\n"
              exit 1
          fi
-        ## build in a temporory directory and then convert to squashfs
-        #if ! SINGULARITY_ROOTFS=`mktemp -d ${SINGULARITY_TMPDIR:-/tmp}/.singularity-build.XXXXXX`; then
-        #    message ERROR "Failed to create temporary directory\n"
-        #    ABORT 255
-        #fi
-
-        #cat /dev/null > "$SINGULARITY_CONTENTS"
-
-        #eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
-        #message 1 "Importing: base Singularity environment\n"
-
-        #zcat "$SINGULARITY_libexecdir"/singularity/bootstrap-scripts/environment.tar | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
-
-        #for i in `cat "$SINGULARITY_CONTENTS"`; do
-        #    message 1 "Importing: $i\n"
-        #    zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
-        #done
-        #
-        #message 1 "Building Singularity image...\n"
-        #if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_IMAGE" -noappend -all-root > /dev/null; then
-        #    message ERROR "Failed squashing image, left template directory at: $SINGULARITY_ROOTFS\    n"
-        #    exit 1
-        #fi
-
-        #if ! ${SINGULARITY_libexecdir}/singularity/bin/prepheader "$SINGULARITY_IMAGE" > /dev/null; then
-        #    message ERROR "Failed to prepend singularity header\n"
-        #    exit 1
-        #fi
     ;;
 
     shub://*)
