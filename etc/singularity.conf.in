@@ -128,10 +128,11 @@ bind path = /etc/hosts
 @USER_BIND_CONTROL@ = @USER_BIND_CONTROL_DEFAULT@
 
 
-# ENABLE OVERLAY: [BOOL]
+# ENABLE OVERLAY: [yes/no/try]
 # DEFAULT: @ENABLE_OVERLAY_DEFAULT@
 # Enabling this option will make it possible to specify bind paths to locations
-# that do not currently exist within the container.
+# that do not currently exist within the container.  If 'try' is chosen,
+# overlayfs will be tried but if it is unavailable it will be silently ignored.
 @ENABLE_OVERLAY@ = @ENABLE_OVERLAY_DEFAULT@
 
 

@@ -56,14 +56,14 @@ int _singularity_runtime_overlayfs(void) {
     singularity_priv_drop();
 
     singularity_message(DEBUG, "Checking if overlayfs should be used\n");
-    if ( singularity_config_get_bool(ENABLE_OVERLAY) <= 0 ) {
+    int try_overlay = ( strcmp("try", singularity_config_get_value(ENABLE_OVERLAY)) == 0 );
+    if ( !try_overlay && ( singularity_config_get_bool_char(ENABLE_OVERLAY) <= 0 ) ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS via configuration\n");
     } else if ( singularity_registry_get("DISABLE_OVERLAYFS") != NULL ) {
         singularity_message(VERBOSE3, "Not enabling overlayFS via environment\n");
     } else if ( singularity_registry_get("WRITABLE") != NULL ) {
-        singularity_message(VERBOSE3, "Not enabling overlayFS, image mounted writablable\n");
+        singularity_message(VERBOSE3, "Not enabling overlayFS, image mounted writable\n");
     } else {
-#if (SINGULARITY_OVERLAYFS || SINGULARITY_TRY_OVERLAYFS)
         char *rootfs_source = CONTAINER_MOUNTDIR;
         char *overlay_final = CONTAINER_FINALDIR;
         char *overlay_mount = CONTAINER_OVERLAY;
@@ -73,11 +73,10 @@ int _singularity_runtime_overlayfs(void) {
         char *overlay_options = (char *) malloc(overlay_options_len);
         char *overlay_path = NULL;
 
-#ifdef SINGULARITY_TRY_OVERLAYFS
-        singularity_message(DEBUG, "Trying OverlayFS as requested by host build\n");
-#else
-        singularity_message(DEBUG, "OverlayFS enabled by host build\n");
-#endif
+        if (try_overlay)
+            singularity_message(VERBOSE3, "Trying OverlayFS as requested by configuration\n");
+        else
+            singularity_message(VERBOSE3, "OverlayFS enabled by configuration\n");
 
         singularity_message(DEBUG, "Setting up overlay mount options\n");
         snprintf(overlay_options, overlay_options_len, "lowerdir=%s,upperdir=%s,workdir=%s", rootfs_source, overlay_upper, overlay_work); // Flawfinder: ignore
@@ -139,11 +138,7 @@ int _singularity_runtime_overlayfs(void) {
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
         int result = mount("OverlayFS", overlay_final, "overlay", MS_NOSUID | MS_NODEV, overlay_options);
         if (result < 0) {
-            if ((errno == EPERM)     // not running with escalated privileges
-#ifdef SINGULARITY_TRY_OVERLAYFS
-                 || (errno == ENODEV) // overlay device not available
-#endif
-                ) {
+            if ( (errno == EPERM) || ( try_overlay && ( errno == ENODEV ) ) ) {
                 singularity_message(VERBOSE, "Singularity overlay mount did not work (%s), continuing without it\n", strerror(errno));
                 singularity_message(DEBUG, "Unmounting overlay tmpfs: %s\n", overlay_mount);
                 umount(overlay_mount);
@@ -163,10 +158,6 @@ int _singularity_runtime_overlayfs(void) {
             return(0);
         }
     }
-#else
-        singularity_message(VERBOSE, "OverlayFS not supported by host build\n");
-    }
-#endif
 
 
     // If we got here, assume we are not overlaying, so we must bind to final directory
