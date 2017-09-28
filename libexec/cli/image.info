@@ -1,5 +1,5 @@
 NAME="image"
-SECTION="management"
+SECTION="group"
 SUMMARY="Container image command group"
 USAGE="singularity [...] image.<command> [...] <image path>"
 

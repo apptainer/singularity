@@ -136,6 +136,18 @@ DEFFILE SCI-F SECTION EXAMPLES:
     %apprun app1
         echo "this is a runscript for app1"
 
+    %applabels app1
+        AUTHOR tolkien
+
+    %appfiles app1
+        /file/on/host/foo.txt /file/in/contianer/foo.txt
+
+    %appsetup app1
+        echo "a %setup section (see above) for apps"
+
+    %apptest app1
+        echo "some test for an app" 
+
 
 EXAMPLES:
 

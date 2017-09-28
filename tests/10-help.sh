@@ -26,6 +26,7 @@ test_init "Help and usage tests"
 
 ALL_COMMANDS="
     apps
+    bootstrap
     build
     check
     create
@@ -40,6 +41,7 @@ ALL_COMMANDS="
     pull
     run
     shell
+    test
     instance.start
     instance.list
     instance.stop

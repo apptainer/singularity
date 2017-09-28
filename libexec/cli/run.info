@@ -51,9 +51,9 @@ RUN OPTIONS:
                         as read/write.
 
 CONTAINER FORMATS SUPPORTED:
+    *.sqsh              SquashFS format.  Native to Singularity 2.4+
     *.img               This is the native Singularity image format for all
-                        Singularity versions 2.x.
-    *.sqsh              SquashFS format, note the suffix is required!
+                        Singularity versions < 2.4.
     *.tar*              Tar archives are exploded to a temporary directory and
                         run within that directory (and cleaned up after). The
                         contents of the archive is a root file system with root
@@ -61,6 +61,10 @@ CONTAINER FORMATS SUPPORTED:
                         '.gz' and '.bz2' are supported.
     directory/          Container directories that contain a valid root file
                         system.
+    instance://*        A local running instance of a container. (See the
+                        instance command group.)
+    shub://*            A container hosted on Singularity Hub
+    docker://*          A container hosted on Docker Hub
 
 
 EXAMPLES:
