@@ -24,7 +24,17 @@
 
 test_init "Help and usage tests"
 
-ALL_COMMANDS=(
+alias cmd_check="echo
+    echo \"Testing command usage: '\${cmd}'\"
+    stest 0 singularity --help \$cmd
+    stest 0 singularity -h \$cmd
+    stest 0 singularity help \$cmd
+    stest 0 singularity \$cmd help
+    stest 0 singularity \$cmd -h
+    stest 0 singularity \$cmd --help"
+
+
+MOST_COMMANDS="
     apps
     bootstrap
     build
@@ -36,10 +46,6 @@ ALL_COMMANDS=(
     image.expand
     image.export
     image.import
-    "image create"
-    "image expand"
-    "image export"
-    "image import"
     inspect
     mount
     pull
@@ -49,32 +55,40 @@ ALL_COMMANDS=(
     instance.start
     instance.list
     instance.stop
-    "instance start"
-    "instance list"
-    "instance stop")
+"
 
-
-# Testing singularity internal commands
+# Testing singularity internal commands (one word)
 stest 0 singularity
 stest 0 singularity --help
 stest 0 singularity --version
-for ((i=0; i<${#ALL_COMMANDS[*]}; i++)); do
-    cmd="${ALL_COMMANDS[i]}"
-    echo
-    echo "Testing command usage: '$cmd'"
-    stest 0 singularity --help "$cmd"
-    stest 0 singularity -h "$cmd"
-    stest 0 singularity help "$cmd"
-    stest 0 singularity $cmd help
-    stest 0 singularity $cmd -h
-    stest 0 singularity $cmd --help
+
+# Testing one word commands
+for cmd in $MOST_COMMANDS; do
+    cmd_check
 done
+
+# Testing two word commands
+cmd="image create"
+cmd_check
+cmd="image expand"
+cmd_check
+cmd="image export"
+cmd_check
+cmd="image import"
+cmd_check
+cmd="instance start"
+cmd_check
+cmd="instance list"
+cmd_check
+cmd="instance stop"
+cmd_check
 
 /bin/echo
 /bin/echo "Testing error on bad commands"
 
 stest 1 singularity help bogus
 stest 1 singularity bogus help
-
+stest 1 singularity help instance bogus
+stest 1 singularity image bogus help
 
 test_cleanup
