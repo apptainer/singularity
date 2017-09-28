@@ -24,7 +24,7 @@
 
 test_init "Help and usage tests"
 
-ALL_COMMANDS="
+ALL_COMMANDS=(
     apps
     bootstrap
     build
@@ -36,6 +36,10 @@ ALL_COMMANDS="
     image.expand
     image.export
     image.import
+    "image create"
+    "image expand"
+    "image export"
+    "image import"
     inspect
     mount
     pull
@@ -45,21 +49,25 @@ ALL_COMMANDS="
     instance.start
     instance.list
     instance.stop
-"
+    "instance start"
+    "instance list"
+    "instance stop")
+
 
 # Testing singularity internal commands
 stest 0 singularity
 stest 0 singularity --help
 stest 0 singularity --version
-for i in $ALL_COMMANDS; do
+for ((i=0; i<${#ALL_COMMANDS[*]}; i++)); do
+    cmd="${ALL_COMMANDS[i]}"
     echo
-    echo "Testing command usage: '$i'"
-    stest 0 singularity --help "$i"
-    stest 0 singularity -h "$i"
-    stest 0 singularity help "$i"
-    stest 0 singularity $i help
-    stest 0 singularity $i -h
-    stest 0 singularity $i --help
+    echo "Testing command usage: '$cmd'"
+    stest 0 singularity --help "$cmd"
+    stest 0 singularity -h "$cmd"
+    stest 0 singularity help "$cmd"
+    stest 0 singularity $cmd help
+    stest 0 singularity $cmd -h
+    stest 0 singularity $cmd --help
 done
 
 /bin/echo
