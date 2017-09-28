@@ -363,9 +363,9 @@ for app in ${SINGULARITY_ROOTFS}/scif/apps/*; do
     if [ -d "$app" ]; then
         app="${app##*/}"
         app=(`echo $app | sed -e "s/-/_/g"`)
-        echo "APPDATA_$app=/scif/data/$app" >> "$SINGULARITY_ROOTFS/.singularity.d/env/95-apps.sh"
-        echo "APPROOT_$app=/scif/apps/$app" >> "$SINGULARITY_ROOTFS/.singularity.d/env/95-apps.sh"
-        echo "export APPDATA_$app APPROOT_$app"  >> "$SINGULARITY_ROOTFS/.singularity.d/env/95-apps.sh"
+        echo "APPDATA_$app=/scif/data/$app" >> "$SINGULARITY_ROOTFS/.singularity.d/env/94-appsbase.sh"
+        echo "APPROOT_$app=/scif/apps/$app" >> "$SINGULARITY_ROOTFS/.singularity.d/env/94-appsbase.sh"
+        echo "export APPDATA_$app APPROOT_$app"  >> "$SINGULARITY_ROOTFS/.singularity.d/env/94-appsbase.sh"
     fi
 done
 

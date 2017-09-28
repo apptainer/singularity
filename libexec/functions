@@ -413,14 +413,9 @@ is_image() {
 is_tar() {
 # check if a file looks like, walks like,... oh you get the idea
     FILE2CHECK=$1
+    TARMAGIC="ustar  \x00"
 
-    if ! `file $FILE2CHECK | grep -q compressed` ; then
-	if ! `file $FILE2CHECK | grep -q archive`; then
-	    return 1
-    	fi 
-    fi
-
-    echo $FILE2CHECK | grep -qi ".tar" # this is honestly a very silly check, please improve if able!
+    zcat -f "$FILE2CHECK" | head -c 320 | grep -q -m 1 -Pa "$TARMAGIC"
     RETVAL=$?
     return $RETVAL
 }
