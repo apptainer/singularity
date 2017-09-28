@@ -415,7 +415,7 @@ is_tar() {
     FILE2CHECK=$1
     TARMAGIC="ustar  \x00"
 
-    zcat -f "$FILE2CHECK" | head -c 320 | grep -q -m 1 -Pa "$TARMAGIC"
+    zgrep -q -Pa "$TARMAGIC" "$FILE2CHECK"
     RETVAL=$?
     return $RETVAL
 }
