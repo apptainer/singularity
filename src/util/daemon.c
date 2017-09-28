@@ -58,6 +58,7 @@ void daemon_file_write(int fd, char *key, char *val) {
 
 void daemon_init_join(void) {
     char *ns_path, *ns_fd_str;
+    char *pid_path;
     int lock_result, ns_fd;
     int *lock_fd = malloc(sizeof(int));
     char *daemon_file = singularity_registry_get("DAEMON_FILE");
@@ -80,15 +81,24 @@ void daemon_init_join(void) {
 
         daemon_file_parse();
                 
-        ns_path = (char *)malloc(2048 * sizeof(char *));
-        sprintf(ns_path, "/proc/%s/ns", singularity_registry_get("DAEMON_PID")); //Flawfinder: ignore
+        pid_path = (char *)malloc(2048 * sizeof(char *));
+        sprintf(pid_path, "/proc/%s", singularity_registry_get("DAEMON_PID")); //Flawfinder: ignore
+
+        if ( is_owner(pid_path, singularity_priv_getuid()) < 0 ) {
+            singularity_message(ERROR, "Unable to join instance: you are not the owner\n");
+            ABORT(255);
+        }
+
+        ns_path = joinpath(pid_path, "/ns");
 
         /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
-        if ( (ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC)) == -1 ) {
+        singularity_priv_escalate();
+        if ( ( ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC) ) == -1 ) {
             singularity_message(ERROR, "Unable to open ns directory of PID in daemon file: %s\n", strerror(errno));
-            return;
+            ABORT(255);
         }
-        
+        singularity_priv_drop();
+
         ns_fd_str = int2str(ns_fd);
 
         /* Set DAEMON_NS_FD to /proc/[PID]/ns FD in registry */

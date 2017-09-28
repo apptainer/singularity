@@ -84,6 +84,7 @@ int _singularity_runtime_ns_pid_join(void) {
     int pid_fd;
 
     /* Attempt to open /proc/[PID]/ns/pid */
+    singularity_priv_escalate();
     pid_fd = openat(ns_fd, "pid", O_RDONLY);
 
     if( pid_fd == -1 ) {
@@ -92,7 +93,6 @@ int _singularity_runtime_ns_pid_join(void) {
         ABORT(255);
     }
     
-    singularity_priv_escalate();
     singularity_message(DEBUG, "Attempting to join PID namespace\n");
     if ( setns(pid_fd, CLONE_NEWPID) < 0 ) {
         singularity_message(ERROR, "Could not join PID namespace: %s\n", strerror(errno));

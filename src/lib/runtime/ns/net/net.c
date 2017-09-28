@@ -87,6 +87,7 @@ int _singularity_runtime_ns_net_join(void) {
     int net_fd;
 
     /* Attempt to open /proc/[PID]/ns/net */
+    singularity_priv_escalate();
     net_fd = openat(ns_fd, "net", O_RDONLY);
 
     if( net_fd == -1 ) {
@@ -94,7 +95,6 @@ int _singularity_runtime_ns_net_join(void) {
         ABORT(255);
     }
     
-    singularity_priv_escalate();
     singularity_message(DEBUG, "Attempting to join NET namespace\n");
     if ( setns(net_fd, CLONE_NEWNET) < 0 ) {
         singularity_message(ERROR, "Could not join NET namespace: %s\n", strerror(errno));
