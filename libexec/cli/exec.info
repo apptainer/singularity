@@ -1,4 +1,11 @@
-USAGE: singularity [...] exec [exec options...] <container path> <command>
+NAME="exec"
+SECTION="action"
+SUMMARY="Execute a command within container"
+USAGE="singularity [...] exec [exec options...] <container path> <command>"
+
+
+print_help() {
+cat<<EOF
 
 This command will allow you to execute any program within the given
 container image.
@@ -63,4 +70,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-
+EOF
+}

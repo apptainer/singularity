@@ -31,19 +31,29 @@ fi
 while true; do
     case ${1:-} in
         -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         *)
             break
         ;;
     esac
 done
+
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
+else
+    message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
+    ABORT 255
+fi
+
+if [ -z "${1:-}" ]; then
+    if [ -n "${USAGE:-}" ]; then
+        echo "USAGE: $USAGE"
+    else
+        echo "To see usage summary type: singularity help $SINGULARITY_COMMAND"
+    fi
+    exit 0
+fi
 
 RETVAL=0
 SINGULARITY_IMAGE="${1:-}"

@@ -1,4 +1,10 @@
-USAGE: singularity [...] instance.start [...] <container path> <instance name>
+NAME="instance.start"
+GROUP="instance"
+SUMMARY="Start a new container instance"
+USAGE="singularity [...] instance.start [...] <container path> <instance name>"
+
+print_help() {
+cat<<EOF
 
 Start a named instance of the given container image.
 
@@ -66,4 +72,5 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-
+EOF
+}

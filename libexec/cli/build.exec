@@ -49,13 +49,7 @@ SINGULARITY_CHECKLEVEL=3
 while true; do
     case ${1:-} in
         -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         -s|--sandbox)
             if [ "$USERID" != "0" ]; then
@@ -118,15 +112,21 @@ while true; do
     esac
 done
 
-if [ -z "${2:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
+else
+    message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
+    ABORT 255
+fi
+
+if [ -z "${1:-}" ]; then
+    if [ -n "${USAGE:-}" ]; then
+        echo "USAGE: $USAGE"
     else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
+        echo "To see usage summary type: singularity help $SINGULARITY_COMMAND"
     fi
     exit 0
 fi
-
 
 SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
@@ -255,7 +255,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
         if [ "$USERID" != "0" ]; then
             message WARNING "You are not root! Some files may not be exported from ${SINGULARITY_BUILDDEF} due to permission errors.\n"
         fi
-        if ! eval tar xf "${SINGULARITY_BUILDDEF}" -C "${SINGULARITY_ROOTFS}"; then
+        if ! eval "zcat -f ${SINGULARITY_BUILDDEF} | tar xf - -C ${SINGULARITY_ROOTFS}"; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
