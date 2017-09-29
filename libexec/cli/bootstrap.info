@@ -6,13 +6,13 @@ USAGE="singularity [...] bootstrap <container path> <definition file>"
 print_help() {
 cat<<EOF
 ******************************************************************************
-WARNING: The bootstrap command is deprecated and will be removed in a later 
-version of Singularity.  bootstrap now uses build to create a writable
-container from an existing image via the following syntax:
+NOTICE: The bootstrap command is deprecated and will be removed in a later 
+        release. bootstrap now uses the build command to create a writable 
+        container via the following syntax:
 
 $ singularity build -w container.img recipe.def
 
-You should update your usage accordingly. 
+        You should update your usage accordingly. 
 ******************************************************************************
 EOF
 }

@@ -94,7 +94,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/inspect.*
 %{_libexecdir}/singularity/cli/mount.*
 %{_libexecdir}/singularity/cli/pull.*
-%{_libexecdir}/singularity/cli/selftest.exec
+%{_libexecdir}/singularity/cli/selftest.*
 %{_libexecdir}/singularity/handlers
 %{_libexecdir}/singularity/helpers
 %{_libexecdir}/singularity/image-handler.sh
