@@ -73,16 +73,16 @@ while true; do
             SINGULARITY_CONTAIN=1
             export SINGULARITY_CONTAIN
         ;;
-        -e|--cleanenv)
+        -o|--overlay)
             shift
-            SINGULARITY_CLEANENV=1
-            export SINGULARITY_CLEANENV
-        ;;
-        --pwd)
+            SINGULARITY_OVERLAYIMAGE="${1:-}"
+            export SINGULARITY_OVERLAYIMAGE
             shift
-            SINGULARITY_TARGET_PWD="$1"
-            export SINGULARITY_TARGET_PWD
-            shift
+
+            if [ ! -e "${SINGULARITY_OVERLAYIMAGE:-}" ]; then
+                message ERROR "Overlay image must be a file or directory!\n"
+                ABORT 255
+            fi
         ;;
         -n|--nv)
             shift

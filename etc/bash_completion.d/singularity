@@ -223,7 +223,7 @@ _singularity() {
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--bind --contain --cleanenv --home --net --nv --pwd --scratch --workdir --writable --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--bind --contain --home --net --nv --overlay --scratch --workdir --writable --help" -- ${cur}) )
             else
                 _filedir 
             fi
@@ -319,7 +319,7 @@ _singularity() {
                     elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                         COMPREPLY=( $(compgen -f -- ${cur}) )
                     elif [[ ${cur} == -* ]] ; then
-                        COMPREPLY=( $(compgen -W "--bind --contain --cleanenv --home --net --nv --pwd --scratch --workdir --writable --help" -- ${cur}) )
+                        COMPREPLY=( $(compgen -W "--bind --contain --home --net --nv --overlay --scratch --workdir --writable --help" -- ${cur}) )
                     else
                         _filedir 
                     fi
