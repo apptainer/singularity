@@ -20,6 +20,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/wait.h>
+#include <sys/prctl.h>
 #include <signal.h>
 #include <poll.h>
 
@@ -43,11 +44,19 @@
 #error SYSCONFDIR not defined
 #endif
 
-void sigchld_sinit(int sig, siginfo_t *siginf, void *_);
-static void install_sigchld_handle();
+/* remove daemon pid file if instance start failed */
+static void clean_exit(int code) {
+    if ( code != 0 ) {
+        char *daemon_file = singularity_registry_get("DAEMON_FILE");
+        if ( unlink(daemon_file) < 0 ) {
+            singularity_message(ERROR, "Failed to delete %s\n", daemon_file);
+        }
+    }
+    ABORT(code);
+}
 
 /* Sigaction function, write PID of process that sent SIGCHLD to signal pipe */
-void sigchld_sinit(int sig, siginfo_t *siginf, void *_) {
+static void sigchld_handler(int sig, siginfo_t *siginf, void *_) {
     while (1) {
         pid_t pid = waitpid(-1, 0, WNOHANG);
         if ( pid <= 0 ) break;
@@ -55,7 +64,7 @@ void sigchld_sinit(int sig, siginfo_t *siginf, void *_) {
 }
 
 /* Set sigchld signal handler */
-static void install_sigchld_handle() {
+static void install_sigchld_handle(void) {
     struct sigaction action;
     sigset_t empty_mask;
 
@@ -65,23 +74,22 @@ static void install_sigchld_handle() {
     sigemptyset(&empty_mask);
 
     /* Fill action with handle_sigchld function */
-    action.sa_sigaction = &sigchld_sinit;
+    action.sa_sigaction = &sigchld_handler;
     action.sa_flags = SA_SIGINFO|SA_RESTART;
     action.sa_mask = empty_mask;
 
     singularity_message(DEBUG, "Assigning SIGCHLD sigaction()\n");
     if ( -1 == sigaction(SIGCHLD, &action, NULL) ) {
         singularity_message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
-        ABORT(255);
+        clean_exit(255);
     }
 }
-
 
 int main(int argc, char **argv) {
     struct image_object image;
     char *daemon_fd_str;
     int daemon_fd, i;
-
+    pid_t child;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -130,6 +138,11 @@ int main(int argc, char **argv) {
     singularity_message(DEBUG, "Signaling parent it is ok to go ahead\n");
     singularity_signal_go_ahead(0);
 
+    singularity_runtime_enter();
+    singularity_priv_drop_perm();
+
+    install_sigchld_handle();
+
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i >= 2; i-- ) {
@@ -138,29 +151,30 @@ int main(int argc, char **argv) {
         }
     }
 
-    singularity_runtime_enter();
-    singularity_priv_drop_perm();
-
-    install_sigchld_handle();
-
-    if (chdir("/") < 0 ) {
+    if ( chdir("/") < 0 ) {
         singularity_message(ERROR, "Can't change directory to /\n");
+        clean_exit(255);
     }
     setsid();
     umask(0);
 
-    if ( fork() == 0 ) {
+    child = fork();
+
+    if ( child == 0 ) {
         if ( is_exec("/.singularity.d/actions/start") == 0 ) {
             singularity_message(DEBUG, "Exec'ing /.singularity.d/actions/start\n");
             if ( execv("/.singularity.d/actions/start", argv) < 0 ) { // Flawfinder: ignore
                 singularity_message(ERROR, "Failed to execv() /.singularity.d/actions/start: %s\n", strerror(errno));
             }
-            ABORT(255);
+            clean_exit(255);
         }
-    } else {
+        singularity_message(WARNING, "Start script not found\n");
+    } else if ( child > 0 ) {
         while(1) {
             pause();
         }
+    } else {
+        clean_exit(255);
     }
-    return(0);
+    clean_exit(0);
 }
