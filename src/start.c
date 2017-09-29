@@ -149,9 +149,18 @@ int main(int argc, char **argv) {
     setsid();
     umask(0);
 
-    while(1) {
-        pause();
+    if ( fork() == 0 ) {
+        if ( is_exec("/.singularity.d/actions/start") == 0 ) {
+            singularity_message(DEBUG, "Exec'ing /.singularity.d/actions/start\n");
+            if ( execv("/.singularity.d/actions/start", argv) < 0 ) { // Flawfinder: ignore
+                singularity_message(ERROR, "Failed to execv() /.singularity.d/actions/start: %s\n", strerror(errno));
+            }
+            ABORT(255);
+        }
+    } else {
+        while(1) {
+            pause();
+        }
     }
-
     return(0);
 }
