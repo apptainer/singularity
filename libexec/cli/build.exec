@@ -102,8 +102,8 @@ while true; do
             SINGULARITY_CHECKTAGS="${1:-}"
             shift;
         ;;
-        -p|--paranoid)
-            SINGULARITY_PARANOID=1
+        --secure)
+            SINGULARITY_SECURE_BUILD=1
             shift
         ;;
         -*)
@@ -257,7 +257,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             fi
         fi
         export SINGULARITY_BUILDDEF
-        if [ -n "${SINGULARITY_PARANOID:-}" ]; then
+        if [ -n "${SINGULARITY_SECURE_BUILD:-}" ]; then
             eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/secbuild.sh"
         else
             eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"

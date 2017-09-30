@@ -48,7 +48,7 @@ CREATE OPTIONS:
     -T|--notest     Bootstrap without running tests in %test section
     -s|--section    Only run a given section within the bootstrap (setup,
                     post, files, environment, test, labels, none)
-    -p|--paranoid   Build image into a fully isolated container (for definition file only)
+    --secure        Build image into a fully isolated container (for definition file only)
 
 
 CHECKS OPTIONS:
