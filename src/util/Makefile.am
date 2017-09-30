@@ -30,4 +30,6 @@ EXTRA_DIST = cleanupd.c \
 			 util.h \
 			 setns.c \
 			 setns.h \
+			 signal.c \
+			 signal.h \
 			 config_defaults.h

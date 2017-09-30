@@ -37,6 +37,7 @@
 #include "util/sessiondir.h"
 #include "util/cleanupd.h"
 #include "util/daemon.h"
+#include "util/signal.h"
 
 #include "./action-lib/include.h"
 
@@ -55,40 +56,10 @@ static void clean_exit(int code) {
     ABORT(code);
 }
 
-/* Sigaction function, write PID of process that sent SIGCHLD to signal pipe */
-static void sigchld_handler(int sig, siginfo_t *siginf, void *_) {
-    while (1) {
-        pid_t pid = waitpid(-1, 0, WNOHANG);
-        if ( pid <= 0 ) break;
-    }
-}
-
-/* Set sigchld signal handler */
-static void install_sigchld_handle(void) {
-    struct sigaction action;
-    sigset_t empty_mask;
-
-    /* reset signal handler for sigchld */
-    signal(SIGCHLD, SIG_DFL);
-
-    sigemptyset(&empty_mask);
-
-    /* Fill action with handle_sigchld function */
-    action.sa_sigaction = &sigchld_handler;
-    action.sa_flags = SA_SIGINFO|SA_RESTART;
-    action.sa_mask = empty_mask;
-
-    singularity_message(DEBUG, "Assigning SIGCHLD sigaction()\n");
-    if ( -1 == sigaction(SIGCHLD, &action, NULL) ) {
-        singularity_message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
-        clean_exit(255);
-    }
-}
-
 int main(int argc, char **argv) {
     struct image_object image;
     char *daemon_fd_str;
-    int daemon_fd, i;
+    int daemon_fd, sig_fd, i;
     pid_t child;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
@@ -141,7 +112,7 @@ int main(int argc, char **argv) {
     singularity_runtime_enter();
     singularity_priv_drop_perm();
 
-    install_sigchld_handle();
+    sig_fd = singularity_install_signal_fd();
 
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
@@ -150,7 +121,7 @@ int main(int argc, char **argv) {
             close(i);
         }
     }
-
+    
     if ( chdir("/") < 0 ) {
         singularity_message(ERROR, "Can't change directory to /\n");
         clean_exit(255);
@@ -159,19 +130,22 @@ int main(int argc, char **argv) {
     umask(0);
 
     child = fork();
-
+    
     if ( child == 0 ) {
+        singularity_unblock_signals();
+        
         if ( is_exec("/.singularity.d/actions/start") == 0 ) {
             singularity_message(DEBUG, "Exec'ing /.singularity.d/actions/start\n");
+            
             if ( execv("/.singularity.d/actions/start", argv) < 0 ) { // Flawfinder: ignore
                 singularity_message(ERROR, "Failed to execv() /.singularity.d/actions/start: %s\n", strerror(errno));
             }
-            clean_exit(255);
         }
         singularity_message(WARNING, "Start script not found\n");
+        exit(0);
     } else if ( child > 0 ) {
         while(1) {
-            pause();
+            singularity_handle_signals(sig_fd);
         }
     } else {
         clean_exit(255);

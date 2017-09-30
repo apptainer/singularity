@@ -24,7 +24,7 @@ builddef_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-ru
 builddef_CPPFLAGS = $(AM_CPPFLAGS)
 builddef_LDFLAGS = -static
 
-start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c
+start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/signal.c
 start_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 start_CPPFLAGS = $(AM_CPPFLAGS)
 
