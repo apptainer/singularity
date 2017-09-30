@@ -18,7 +18,6 @@ START OPTIONS:
                         default). This option can be called multiple times.
     -c|--contain        Use minimal /dev and empty other directories (e.g. /tmp
                         and $HOME) instead of sharing filesystems on your host
-    -e|--cleanenv       Clean environment before running container
     -H|--home <spec>    A home directory specification.  spec can either be a
                         src path or src:dest pair.  src is the source path
                         of the home directory outside the container and dest
@@ -26,8 +25,7 @@ START OPTIONS:
     -n|--net            Run container in a new network namespace (loopback is
                         only network device active)
     --nv                Enable experimental Nvidia support
-    --pwd               Initial working directory for payload process inside
-                        the container
+    -o|--overlay        Use a persistent overlayFS via a writable image
     -S|--scratch <path> Include a scratch directory within the container that
                         is linked to a temporary dir (use -W to force location)
     -W|--workdir        Working directory to be used for /tmp, /var/tmp and
