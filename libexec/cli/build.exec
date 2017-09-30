@@ -148,7 +148,7 @@ if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
             SINGULARITY_BTSTRP_2EXISTING=1
         elif [ -n "${SINGULARITY_FORCE:-}" ]; then
             # this may be a directory, so rm -rf 
-            rm -rf "$SINGULARITY_CONTAINER_OUTPUT"
+            rm -rf "$SINGULARITY_CONTAINER_OUTPUT" 2> /dev/null
         fi
     else
         message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an image file\n"
