@@ -125,11 +125,7 @@ if [ -z "${2:-}" ]; then
     else
         echo "To see usage summary type: singularity help $SINGULARITY_COMMAND"
     fi
-    if [ $(( RANDOM % 10 )) != 0 ]; then
-        exit 0
-    else
-        message 1 "               ***** THE COW HAS LANDED! *****\n"
-    fi
+    exit 0
 fi
 
 if [ -n "${SINGULARITY_WRITABLE:-}" -a -n "${SINGULARITY_SANDBOX:-}" ]; then
@@ -137,12 +133,8 @@ if [ -n "${SINGULARITY_WRITABLE:-}" -a -n "${SINGULARITY_SANDBOX:-}" ]; then
     ABORT 255
 fi
 
-if [ -n "${1:-}" ]; then
-    SINGULARITY_CONTAINER_OUTPUT="${1:-}"
-    shift
-else
-    SINGULARITY_CONTAINER_OUTPUT="lolcow.img"
-fi
+SINGULARITY_CONTAINER_OUTPUT="${1:-}"
+shift
 
 # if the container exists, build into it (or delete it if -F was passed)
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
@@ -185,11 +177,7 @@ export SINGULARITY_IMAGE SINGULARITY_ROOTFS \
        SINGULARITY_CHECKS SINGULARITY_CHECKTAGS SINGULARITY_CHECKLEVEL
 
 
-if [ -n "${1:-}" ]; then
-    SINGULARITY_BUILDDEF="${1:-}"
-else
-    SINGULARITY_BUILDDEF="docker://godlovedc/lolcow"
-fi
+SINGULARITY_BUILDDEF="${1:-}"
 
 case $SINGULARITY_BUILDDEF in
     docker://*)
