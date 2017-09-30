@@ -31,6 +31,7 @@ dist_cliexec_DATA = apps.info \
                     check.info \
                     create.info \
                     exec.info \
+                    help.info \
                     instance.info \
                     instance.list.info \
                     instance.start.info \
@@ -44,6 +45,7 @@ dist_cliexec_DATA = apps.info \
                     mount.info \
                     pull.info \
                     run.info \
+                    selftest.info \
                     shell.info \
                     test.info
 

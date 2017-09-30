@@ -1,6 +1,6 @@
 NAME="image.expand"
 GROUP="image"
-SUMMARY="Expand a new empty disk image"
+SUMMARY="Expand a disk image"
 USAGE="singularity [...] image.expand [expand options...] <container path>"
 
 print_help() {

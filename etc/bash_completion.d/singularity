@@ -186,7 +186,7 @@ _singularity() {
 
         check)
             if [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--low --med --high --tag" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--low --med --high --tag --help" -- ${cur}) )
             elif [ $container_idx -lt $COMP_CWORD ]; then
                 return 0
             else

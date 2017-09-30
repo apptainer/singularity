@@ -1,5 +1,5 @@
 NAME="instance"
-SECTION="action"
+SECTION="group"
 SUMMARY="Persistent instance command group"
 USAGE="singularity [...] instance.<command> [...]"
 

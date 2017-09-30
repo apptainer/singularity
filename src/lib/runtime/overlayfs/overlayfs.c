@@ -95,9 +95,18 @@ int _singularity_runtime_overlayfs(void) {
 
             image = singularity_image_init(singularity_registry_get("OVERLAYIMAGE"), O_RDWR);
 
-            if ( ( singularity_image_type(&image) != EXT3 ) && ( singularity_image_type(&image) != DIRECTORY ) ) {
-                singularity_message(ERROR, "Persistent overlay must be a writable image or directory\n");
-                ABORT(255);
+            if ( singularity_image_type(&image) != EXT3 ) {
+                if ( singularity_image_type(&image) == DIRECTORY ) {
+                    if ( singularity_priv_getuid() == 0 ) {
+                        singularity_message(VERBOSE, "Allowing directory based overlay as root user\n");
+                    } else {
+                        singularity_message(ERROR, "Only root can use directory based overlays\n");
+                        ABORT(255);
+                    }
+                } else {
+                    singularity_message(ERROR, "Persistent overlay must be a writable image or directory\n");
+                    ABORT(255);
+                }
             }
 
             if ( singularity_image_mount(&image, overlay_mount) != 0 ) {

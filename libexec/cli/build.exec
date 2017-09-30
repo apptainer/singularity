@@ -132,6 +132,11 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
+if [ -n "${SINGULARITY_WRITABLE:-}" -a -n "${SINGULARITY_SANDBOX:-}" ]; then
+    message ERROR "--writable and --sandbox are conflicting options. There can be only one.\n"
+    ABORT 255
+fi
+
 SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
 
