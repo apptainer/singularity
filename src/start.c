@@ -114,6 +114,8 @@ int main(int argc, char **argv) {
 
     sig_fd = singularity_install_signal_fd();
 
+    singularity_message(DEBUG, "Exited sigfd\n");
+
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i >= 2; i-- ) {
@@ -144,9 +146,7 @@ int main(int argc, char **argv) {
         singularity_message(WARNING, "Start script not found\n");
         exit(0);
     } else if ( child > 0 ) {
-        while(1) {
-            singularity_handle_signals(sig_fd);
-        }
+        singularity_handle_signals(sig_fd);
     } else {
         clean_exit(255);
     }
