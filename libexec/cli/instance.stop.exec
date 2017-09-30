@@ -34,6 +34,9 @@ if ! USERID=`id --real --user`; then
     exit 255
 fi
 
+KILL_KEY="-s"
+KILL_VAL="15"
+KILL_WAIT="10"
 
 while true; do
     case ${1:-} in
@@ -53,6 +56,16 @@ while true; do
         -a|--all)
             ALL_DAEMONS=1
             export ALL_DAEMONS
+            shift
+        ;;
+        -f|--force)
+            FORCE=1
+            shift
+        ;;
+        -s|--signal)
+            KILL_KEY=${1:-}
+            shift
+            KILL_VAL=${1:-}
             shift
         ;;
         -*)
@@ -102,7 +115,13 @@ for i in $DAEMONS; do
         . "$i"
         
         echo "Stopping ${DAEMON_NAME} instance of ${DAEMON_IMAGE} (PID=${DAEMON_PID})"
-        kill -n 9 ${DAEMON_PID}
+        if [ -n "${FORCE:-}" ]; then
+            kill -s 9 ${DAEMON_PID}
+        else
+            kill ${KILL_KEY} ${KILL_VAL} ${DAEMON_PID}
+            { sleep "${KILL_WAIT}"; kill -s 9 "${DAEMON_PID}"; } &
+        fi
+        
         rm $i
         let "COUNT++"
     fi

@@ -181,10 +181,12 @@ if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
     . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
 fi
 
+INSTANCE_PROC_NAME="singularity-instance: $USER [$SINGULARITY_DAEMON_NAME]"
+
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/start-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/start-suid" "$@" <&0
+    exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/start-suid" "$@" <&0
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/start" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/start" "$@" <&0
+    exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/start" "$@" <&0
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/start\n"
     exit 1

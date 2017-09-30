@@ -132,7 +132,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/shell.*
 %{_libexecdir}/singularity/cli/test.*
 %{_libexecdir}/singularity/bin/action
-%{_libexecdir}/singularity/bin/sinit
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/functions
 %dir %{_sysconfdir}/singularity

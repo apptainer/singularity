@@ -182,6 +182,22 @@ else
 fi
 
 ### RUNSCRIPT
+if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "startscript" ]; then
+    if singularity_section_exists "startscript" "$SINGULARITY_BUILDDEF"; then
+        message 1 "Adding startscript\n"
+
+        echo -n "#!/bin/sh " > "$SINGULARITY_ROOTFS/.singularity.d/startscript"
+        singularity_section_args "startscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/startscript"
+        echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/startscript"
+        singularity_section_get "startscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/startscript"
+
+    fi
+else
+    message 2 "Skipping startscript section\n"
+fi
+
+
+### RUNSCRIPT
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "runscript" ]; then
     if singularity_section_exists "runscript" "$SINGULARITY_BUILDDEF"; then
         message 1 "Adding runscript\n"
