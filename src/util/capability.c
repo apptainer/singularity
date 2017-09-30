@@ -69,6 +69,7 @@ static __u32 default_capabilities[] = {
     CAP_CHOWN,
     CAP_FOWNER,
     CAP_SYS_CHROOT,
+    CAP_SYS_PTRACE,
     CAP_DAC_READ_SEARCH,
     CAP_DAC_OVERRIDE,
     NO_CAP
