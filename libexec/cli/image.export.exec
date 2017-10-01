@@ -32,6 +32,8 @@ else
     exit 1
 fi
 
+echo "->$*<-"
+
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -40,6 +42,7 @@ while true; do
         -f|--file)
              shift
              SINGULARITY_EXPORT_FILE="${1:-}"
+             export SINGULARITY_EXPORT_FILE
              shift
          ;;
         -*)
@@ -73,6 +76,12 @@ fi
 SINGULARITY_IMAGE="${1:-}"
 export SINGULARITY_IMAGE
 shift
+
+if [ -n "${1:-}" ]; then
+    SINGULARITY_EXPORT_FILE="${1:-}"
+    export SINGULARITY_EXPORT_FILE
+    shift
+fi
 
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then

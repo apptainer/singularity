@@ -1,13 +1,17 @@
 NAME="image.export"
 GROUP="image"
 SUMMARY="Export an image to a tar pipe"
-USAGE="singularity [...] image.export <container path>"
+USAGE="singularity [...] image.export [...] <container path>"
 
 print_help() {
 cat<<EOF
 
 Export will dump a tar stream of the container image contents to standard
 out (stdout). 
+
+EXPORT OPTIONS:
+    -f|--file   Export to a given tarfile (instead of pipe)
+
 
 EXAMPLES:
 

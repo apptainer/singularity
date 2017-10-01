@@ -39,10 +39,18 @@ fi
 
 case "$SINGULARITY_COMMAND" in
     image.import) 
-        exec tar xf - -C "$SINGULARITY_MOUNTPOINT"
+        if [ -n "${SINGULARITY_IMPORT_FILE:-}" ]; then
+            exec zcat "${SINGULARITY_IMPORT_FILE}" | tar -xf - --ignore-failed-read -C "$SINGULARITY_MOUNTPOINT"
+        else
+            exec tar -xf - --ignore-failed-read -C "$SINGULARITY_MOUNTPOINT"
+        fi
     ;;
     image.export)
-        exec tar cf - -C "$SINGULARITY_MOUNTPOINT" .
+        if [ -n "${SINGULARITY_EXPORT_FILE:-}" ]; then
+            exec tar -cf - --ignore-failed-read -C "$SINGULARITY_MOUNTPOINT" . > "${SINGULARITY_EXPORT_FILE}"
+        else
+            exec tar -cf - --ignore-failed-read -C "$SINGULARITY_MOUNTPOINT" .
+        fi
     ;;
     *)
         message ERROR "Unknown image class command\n"
