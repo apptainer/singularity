@@ -185,7 +185,7 @@ for i in $DAEMONS; do
         if [ -e "$PROC_CMDLINE" ]; then
             PROGNAME=`cat ${PROC_CMDLINE}`
             if [ "${PROGNAME}" == "${INSTANCE_PROC_NAME}" ]; then
-                message ERROR "A daemon process is already running with this name: ${FILE_NAME}\n"
+                message ERROR "A daemon process is already running with this name: ${DAEMON_NAME}\n"
                 ABORT 255
             fi
             if [ "${PROGNAME}" != "singularity-instance: $USER [$FILE_NAME]" ]; then
