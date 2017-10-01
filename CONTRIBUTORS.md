@@ -4,7 +4,9 @@
 
 #Developers:
 
-    - Brian Bockelman <bbockelm@cse.unl.edu>
+    - Cedric Clerget <cedric.clerget@univ-fcomte.fr>
+    - Dave Dykstra <dwd@fnal.gov>
+    - Dave Godlove <davidgodlove@gmail.com>
     - Krishna Muriki <kmuriki@lbl.gov>
     - Michael Bauer <bauerm@umich.edu>
     - Vanessa Sochat <vsochat@stanford.edu>
@@ -15,20 +17,19 @@
     - Amanda Duffy <aduffy@lenovo.com>
     - Ángel Bejarano <abejarano@ontropos.com>
     - Bernard Li <bernardli@lbl.gov>
-    - Dave Godlove <davidgodlove@gmail.com>
+    - Brian Bockelman <bbockelm@cse.unl.edu>
+    - Chris Hollowell <hollowec@bnl.gov>
     - Dave Love <d.love@liverpool.ac.uk>
+    - Eduardo Arango <carlos.arango.gutierrez@correounivalle.edu.co>
     - Felix Abecassis <fabecassis@nvidia.com>
+    - George Hartzell <hartzell@alerce.com>
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jason.stover@gmail.com>
     - Maciej Sieczka <msieczka@sieczka.org>
-    - Nathan Lin <nathan.lin@yale.edu>
-    - Ralph Castain <rhc@open-mpi.org>
-    - Yaroslav Halchenko <debian@onerussian.com>
-    - Eduardo Arango <carlos.arango.gutierrez@correounivalle.edu.co>
-    - Oleksandr Moskalenko <om@rc.ufl.edu>
-    - Cedric Clerget <cedric.clerget@univ-fcomte.fr>
-    - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
+    - Nathan Lin <nathan.lin@yale.edu>
+    - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Petr Votava <votava.petr@gene.com>
-    - George Hartzell <hartzell@alerce.com>
-    - Dave Dykstra <dwd@fnal.gov>
+    - Ralph Castain <rhc@open-mpi.org>
+    - Rémy Dernat <remy.dernat@umontpellier.fr>
+    - Yaroslav Halchenko <debian@onerussian.com>

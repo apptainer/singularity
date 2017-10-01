@@ -8,7 +8,7 @@ export DEB_BUILD_OPTIONS=nocheck
 	dh $@  --with autoreconf
 
 override_dh_installdocs:
-	dh_installdocs README.md AUTHORS.md
+	dh_installdocs README.md CONTRIBUTORS.md
 
 override_dh_fixperms:
 	dh_fixperms
