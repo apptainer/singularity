@@ -130,9 +130,9 @@ case "$SINGULARITY_CONTAINER" in
             export SINGULARITY_IMAGE
         fi
  
-         message WARNING "pull for Docker Hub images is only supported as a legacy command.\n"
-         message WARNING "Use the build command like so:\n"
-         message WARNING "singularity build ${SINGULARITY_IMAGE} ${SINGULARITY_CONTAINER}\n"
+         message WARNING "pull for Docker Hub is not guaranteed to produce the\n"
+         message WARNING "same image on repeated pull. Use Singularity Registry\n"
+         message WARNING "(shub://) to pull exactly equivalent images.\n"
        
         if [ -n "${SINGULARITY_IMAGESIZE:-}" ]; then
             message WARNING "Using the --size option when building from Docker Hub is deprecated.\n"
