@@ -167,11 +167,35 @@ export SINGULARITY_DAEMON_START
 
 singularity_daemon_file "$SINGULARITY_DAEMON_NAME"
 
-if [ -f "${SINGULARITY_DAEMON_FILE}" ]; then
-    message ERROR "A daemon process is already running with this name: ${SINGULARITY_DAEMON_NAME}\n"
-    ABORT 255
-fi
+INSTANCE_PROC_NAME="singularity-instance: $USER [$SINGULARITY_DAEMON_NAME]"
 
+# cleanup by testing if daemons are alive
+DAEMONS=`singularity_daemon_glob '*' | sort | uniq`
+
+for i in $DAEMONS; do
+    if [ -f "$i" ]; then
+        if [ ! -s "$i" ]; then
+            rm "$i"
+            continue
+        fi
+        FILE_NAME=`basename "$i"`
+        DAEMON_NAME=${FILE_NAME##*-}
+        . "$i"
+        PROC_CMDLINE="/proc/${DAEMON_PID:-}/cmdline"
+        if [ -e "$PROC_CMDLINE" ]; then
+            PROGNAME=`cat ${PROC_CMDLINE}`
+            if [ "${PROGNAME}" == "${INSTANCE_PROC_NAME}" ]; then
+                message ERROR "A daemon process is already running with this name: ${DAEMON_NAME}\n"
+                ABORT 255
+            fi
+            if [ "${PROGNAME}" != "singularity-instance: $USER [$FILE_NAME]" ]; then
+                rm -f "$i"
+            fi
+        else
+            rm -f "$i"
+        fi
+    fi
+done
 
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
@@ -180,8 +204,6 @@ fi
 if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
     . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
 fi
-
-INSTANCE_PROC_NAME="singularity-instance: $USER [$SINGULARITY_DAEMON_NAME]"
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/start-suid" ]; then
     exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/start-suid" "$@" <&0

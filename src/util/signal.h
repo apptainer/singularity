@@ -10,9 +10,9 @@
 #ifndef __SINGULARITY_SIGNAL_H_
 #define __SINGULARITY_SIGNAL_H_
 
-int singularity_install_signal_fd();
+void singularity_install_signal_handler();
 
-void singularity_handle_signals(int sig_fd);
+int singularity_handle_signals(siginfo_t *siginfo);
 
 void singularity_unblock_signals();
     

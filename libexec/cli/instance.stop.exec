@@ -34,7 +34,6 @@ if ! USERID=`id --real --user`; then
     exit 255
 fi
 
-KILL_KEY="-s"
 KILL_VAL="15"
 KILL_WAIT="10"
 
@@ -63,7 +62,6 @@ while true; do
             shift
         ;;
         -s|--signal)
-            KILL_KEY=${1:-}
             shift
             KILL_VAL=${1:-}
             shift
@@ -116,10 +114,15 @@ for i in $DAEMONS; do
         
         echo "Stopping ${DAEMON_NAME} instance of ${DAEMON_IMAGE} (PID=${DAEMON_PID})"
         if [ -n "${FORCE:-}" ]; then
-            kill -s 9 ${DAEMON_PID}
+            kill -s 9 ${DAEMON_PID} 2> /dev/null
         else
-            kill ${KILL_KEY} ${KILL_VAL} ${DAEMON_PID}
-            { sleep "${KILL_WAIT}"; kill -s 9 "${DAEMON_PID}"; } &
+            kill -s ${KILL_VAL} ${DAEMON_PID} 2> /dev/null
+            if [ $? = 0 ]; then
+                { sleep "${KILL_WAIT}"; test -d "/proc/${DAEMON_PID}" && kill -s 9 "${DAEMON_PID}"; } &
+            else
+                message ERROR "No instance running with pid ${DAEMON_PID}\n"
+                exit 1
+            fi
         fi
         
         rm $i
