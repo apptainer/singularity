@@ -59,7 +59,8 @@ fi
 
 
 # relying on image.create for error checking
-message WARNING "The create command is deprecated and will be removed in a future release.\n"
+message WARNING "The create command is deprecated, and will be removed\n"
+message WARNING "To create, use the image.create command.\n"
 message WARNING "Use the build command to create and build an image in a single step.\n"
 
 exec  "$SINGULARITY_bindir"/singularity image.create "$@"
