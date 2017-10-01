@@ -148,8 +148,10 @@ void singularity_wait_for_go_ahead() {
         singularity_message(ERROR, "Failed to communicate with other process: %s (errno=%d)\n", strerror(errno), errno);
         ABORT(255);
     } else if (retval == 0) {  // Other process closed the write pipe unexpectedly.
-        singularity_message(ERROR, "Other process closed write pipe unexpectedly.\n");
-        ABORT(255);
+        if ( close(dup(coordination_pipe[1])) == -1 ) {
+            singularity_message(ERROR, "Other process closed write pipe unexpectedly.\n");
+            ABORT(255);
+        }
     }
 
     // Other process successfully sent a code.
@@ -175,8 +177,10 @@ void singularity_signal_go_ahead(int code) {
     while ( (-1 == (retval = write(coordination_pipe[1], &code, 1))) && errno == EINTR) {}
 
     if (retval == -1) {
-        singularity_message(ERROR, "Failed to send go-ahead to child process: %s (errno=%d)\n", strerror(errno), errno);
-        ABORT(255);
+        if ( errno != EPIPE ) {
+            singularity_message(ERROR, "Failed to send go-ahead to child process: %s (errno=%d)\n", strerror(errno), errno);
+            ABORT(255);
+        }
     }  // Note that we don't test for retval == 0 as we should get a EPIPE instead.
 
 }

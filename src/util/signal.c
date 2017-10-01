@@ -8,7 +8,6 @@
  */
 
 #define _GNU_SOURCE
-#include <sys/signalfd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <stdio.h>
@@ -16,13 +15,15 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/prctl.h>
 
 #include "config.h"
 #include "util/util.h"
 #include "util/signal.h"
+#include "util/fork.h"
 
-static int sigfd = -1;
 static sigset_t old_mask;
+static sigset_t sig_mask;
 
 static const int all_signals[] = {
     SIGHUP,
@@ -53,19 +54,20 @@ static const int all_signals[] = {
     SIGSYS
 };
 
-static void handle_sig_sigchld(struct signalfd_siginfo *siginfo) {
-    if ( waitpid(siginfo->ssi_pid, NULL, WNOHANG) <= 0 ) {
+static void handle_sig_sigchld(siginfo_t *siginfo) {
+    if ( waitpid(siginfo->si_pid, NULL, WNOHANG) <= 0 ) {
         singularity_message(ERROR, "Unable to wait on child: %s\n", strerror(errno));
     }
 }
 
-static void handle_sig_generic(struct signalfd_siginfo *siginfo) {
-    singularity_message(DEBUG, "Generic sig received: %d\n", siginfo->ssi_signo);
-    kill(-1,  siginfo->ssi_signo);
+static void handle_sig_generic(siginfo_t *siginfo) {
+    singularity_message(DEBUG, "Generic sig received: %d\n", siginfo->si_signo);
+    if ( siginfo->si_signo != SIGALRM && siginfo->si_signo != SIGCONT ) {
+        kill(-1,  siginfo->si_signo);
+    }
 }
 
-int singularity_install_signal_fd() {
-    sigset_t sig_mask;
+void singularity_install_signal_handler() {
     int i = 0;
 
     singularity_message(DEBUG, "Creating signalfd to handle signals\n");
@@ -80,36 +82,21 @@ int singularity_install_signal_fd() {
         singularity_message(ERROR, "Unable to block signals: %s\n", strerror(errno));
         ABORT(255);
     }
-
-    if ( -1 == (sigfd = signalfd(-1, &sig_mask, SFD_CLOEXEC)) ) {
-        singularity_message(ERROR, "Unable to open signalfd: %s\n", strerror(errno));
-        ABORT(255);
-    }
-
-    return(sigfd);
 }
 
 /* Never returns. Will always read from sig_fd and wait for signal events */
-void singularity_handle_signals(int sig_fd) {
-    ssize_t size = sizeof(struct signalfd_siginfo);
-    struct signalfd_siginfo *siginfo = (struct signalfd_siginfo *)malloc(size);
-
-    singularity_message(DEBUG, "Waiting for signals\n");
-    
-    while(1) {
-        if ( read(sig_fd, siginfo, size) != size ) {
-            singularity_message(ERROR, "Unable to read sfd: %s\n", strerror(errno));
-            ABORT(255);
-        }
-
-        if ( siginfo->ssi_signo == SIGCHLD ) {
-            handle_sig_sigchld(siginfo);
-        } else {
-            handle_sig_generic(siginfo);
-        }
-
-        memset(siginfo, 0, size);
+int singularity_handle_signals(siginfo_t *siginfo) {
+    if ( sigwaitinfo(&sig_mask, siginfo) < 0 ) {
+        singularity_message(ERROR, "Unable to get siginfo: %s\n", strerror(errno));
+        return(-1);
     }
+
+    if ( siginfo->si_signo == SIGCHLD ) {
+        handle_sig_sigchld(siginfo);
+    } else {
+        handle_sig_generic(siginfo);
+    }
+    return(0);
 }
 
 void singularity_unblock_signals() {

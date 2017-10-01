@@ -45,22 +45,16 @@
 #error SYSCONFDIR not defined
 #endif
 
-/* remove daemon pid file if instance start failed */
-static void clean_exit(int code) {
-    if ( code != 0 ) {
-        char *daemon_file = singularity_registry_get("DAEMON_FILE");
-        if ( unlink(daemon_file) < 0 ) {
-            singularity_message(ERROR, "Failed to delete %s\n", daemon_file);
-        }
-    }
-    ABORT(code);
-}
+#define CHILD_FAILED    200
+
+int started = 0;
 
 int main(int argc, char **argv) {
+    int i, daemon_fd;
     struct image_object image;
-    char *daemon_fd_str;
-    int daemon_fd, sig_fd, i;
     pid_t child;
+    siginfo_t siginfo;
+    struct stat filestat;
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -83,9 +77,9 @@ int main(int argc, char **argv) {
         singularity_message(VERBOSE3, "Instantiating read only container image object\n");
         image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
     }
-        
+
     singularity_runtime_ns(SR_NS_ALL);
-    
+
     singularity_sessiondir();
 
     singularity_image_mount(&image, CONTAINER_MOUNTDIR);
@@ -103,52 +97,77 @@ int main(int argc, char **argv) {
 
     singularity_message(DEBUG, "We are ready to recieve jobs, sending signal_go_ahead to parent\n");
 
-    daemon_fd_str = singularity_registry_get("DAEMON_FD");
-    daemon_fd = atoi(daemon_fd_str);
-
-    singularity_message(DEBUG, "Signaling parent it is ok to go ahead\n");
-    singularity_signal_go_ahead(0);
-
     singularity_runtime_enter();
     singularity_priv_drop_perm();
 
-    sig_fd = singularity_install_signal_fd();
+    singularity_install_signal_handler();
 
     singularity_message(DEBUG, "Exited sigfd\n");
 
+    daemon_fd = atoi(singularity_registry_get("DAEMON_FD"));
+
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
-    for( i = sysconf(_SC_OPEN_MAX); i >= 2; i-- ) {
-        if( i != daemon_fd && i != sig_fd) {
+    for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {
+        if ( i != daemon_fd ) {
+            if ( fstat(i, &filestat) == 0 ) {
+                if ( S_ISFIFO(filestat.st_mode) != 0 ) {
+                    continue;
+                }
+            }
             close(i);
         }
     }
-    
+
     if ( chdir("/") < 0 ) {
         singularity_message(ERROR, "Can't change directory to /\n");
-        clean_exit(255);
     }
     setsid();
     umask(0);
 
     child = fork();
-    
+
     if ( child == 0 ) {
         singularity_unblock_signals();
-        
         if ( is_exec("/.singularity.d/actions/start") == 0 ) {
             singularity_message(DEBUG, "Exec'ing /.singularity.d/actions/start\n");
-            
+
             if ( execv("/.singularity.d/actions/start", argv) < 0 ) { // Flawfinder: ignore
                 singularity_message(ERROR, "Failed to execv() /.singularity.d/actions/start: %s\n", strerror(errno));
+                ABORT(CHILD_FAILED);
+            }
+        } else {
+            singularity_message(WARNING, "Start script not found\n");
+        }
+    } else if ( child > 0 ) {
+        singularity_message(DEBUG, "Waiting for signals\n");
+        /* send a SIGALRM if start script doesn't send SIGCONT within 1 seconds */
+        alarm(1);
+        while (1) {
+            if ( singularity_handle_signals(&siginfo) < 0 ) {
+                singularity_signal_go_ahead(255);
+                break;
+            }
+            if ( siginfo.si_signo == SIGCHLD ) {
+                singularity_message(DEBUG, "Child exited\n");
+                if ( siginfo.si_pid == 2 && siginfo.si_status == CHILD_FAILED ) {
+                    singularity_signal_go_ahead(CHILD_FAILED);
+                    break;
+                }
+            } else if ( siginfo.si_signo == SIGCONT && siginfo.si_pid == 2 ) {
+                /* start script correctly exec */
+                singularity_signal_go_ahead(0);
+                started = 1;
+            } else if ( siginfo.si_signo == SIGALRM && started == 0 ) {
+                /* don't receive SIGCONT, start script modified/replaced ? */
+                singularity_message(ERROR, "Start script doesn't send SIGCONT\n");
+                singularity_signal_go_ahead(255);
+                break;
             }
         }
-        singularity_message(WARNING, "Start script not found\n");
-        exit(0);
-    } else if ( child > 0 ) {
-        singularity_handle_signals(sig_fd);
     } else {
-        clean_exit(255);
+        singularity_message(ERROR, "Failed to execute start script\n");
+        singularity_signal_go_ahead(255);
     }
-    clean_exit(0);
+    return(0);
 }
