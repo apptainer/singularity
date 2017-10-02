@@ -128,6 +128,12 @@ int main(int argc, char **argv) {
     setsid();
     umask(0);
 
+    /* set program name */
+    if ( prctl(PR_SET_NAME, "sinit", 0, 0, 0) < 0 ) {
+        singularity_message(ERROR, "Failed to set program name\n");
+        ABORT(255);
+    }
+
     child = fork();
 
     if ( child == 0 ) {
@@ -140,7 +146,6 @@ int main(int argc, char **argv) {
                 ABORT(CHILD_FAILED);
             }
         } else {
-            singularity_message(WARNING, "Start script not found\n");
             kill(1, SIGCONT);
         }
     } else if ( child > 0 ) {
