@@ -261,7 +261,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
         if [ "$USERID" != "0" ]; then
             message WARNING "You are not root! Some files may not be exported from ${SINGULARITY_BUILDDEF} due to permission errors.\n"
         fi
-        if ! eval "zcat -f ${SINGULARITY_BUILDDEF} | tar xf - -C ${SINGULARITY_ROOTFS}"; then
+        if ! eval "zcat_compat ${SINGULARITY_BUILDDEF} | tar xf - -C ${SINGULARITY_ROOTFS}"; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
