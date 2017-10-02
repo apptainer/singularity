@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
                 ABORT(CHILD_FAILED);
             }
         } else {
-            singularity_message(WARNING, "Start script not found\n");
+            singularity_message(VERBOSE, "Instance start script not found\n");
             kill(1, SIGCONT);
         }
     } else if ( child > 0 ) {
