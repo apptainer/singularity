@@ -32,8 +32,6 @@ else
     exit 1
 fi
 
-echo "->$*<-"
-
 while true; do
     case ${1:-} in
         -h|--help|help)

@@ -40,16 +40,16 @@ fi
 case "$SINGULARITY_COMMAND" in
     image.import) 
         if [ -n "${SINGULARITY_IMPORT_FILE:-}" ]; then
-            exec zcat "${SINGULARITY_IMPORT_FILE}" | tar -xf - --ignore-failed-read -C "$SINGULARITY_MOUNTPOINT"
+            exec zcat "${SINGULARITY_IMPORT_FILE}" | tar --ignore-failed-read -xf - -C "$SINGULARITY_MOUNTPOINT"
         else
-            exec tar -xf - --ignore-failed-read -C "$SINGULARITY_MOUNTPOINT"
+            exec tar --ignore-failed-read -xf - -C "$SINGULARITY_MOUNTPOINT"
         fi
     ;;
     image.export)
         if [ -n "${SINGULARITY_EXPORT_FILE:-}" ]; then
-            exec tar -cf - --ignore-failed-read -C "$SINGULARITY_MOUNTPOINT" . > "${SINGULARITY_EXPORT_FILE}"
+            exec tar --ignore-failed-read -cf - -C "$SINGULARITY_MOUNTPOINT" . > "${SINGULARITY_EXPORT_FILE}"
         else
-            exec tar -cf - --ignore-failed-read -C "$SINGULARITY_MOUNTPOINT" .
+            exec tar --ignore-failed-read -cf - -C "$SINGULARITY_MOUNTPOINT" .
         fi
     ;;
     *)
