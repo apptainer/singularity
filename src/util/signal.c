@@ -55,8 +55,8 @@ static const int all_signals[] = {
 };
 
 static void handle_sig_sigchld(siginfo_t *siginfo) {
-    if ( waitpid(siginfo->si_pid, NULL, WNOHANG) <= 0 ) {
-        singularity_message(ERROR, "Unable to wait on child: %s\n", strerror(errno));
+    while(1) {
+        if ( waitpid(-1, NULL, WNOHANG) <= 0 ) break;
     }
 }
 
