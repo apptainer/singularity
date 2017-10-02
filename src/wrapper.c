@@ -60,6 +60,7 @@ struct cmd_wrapper cmd_wrapper[] = {
 int main(int argc, char **argv, char **envp) {
     int index;
     char *command;
+    char *binary;
     char *libexec_bin = joinpath(LIBEXECDIR, "/singularity/bin/");
 
     singularity_registry_init();
@@ -83,8 +84,8 @@ int main(int argc, char **argv, char **envp) {
 
     for ( index = 0; cmd_wrapper[index].command != NULL; index++) {
         if ( strcmp(command, cmd_wrapper[index].command) == 0 ) {
-            argv[0] = strjoin(libexec_bin, cmd_wrapper[index].binary);
-            execv(argv[0], argv); // Flawfinder: ignore
+            binary = strjoin(libexec_bin, cmd_wrapper[index].binary);
+            execv(binary, argv); // Flawfinder: ignore
 
             singularity_message(ERROR, "Failed to execute %s binary\n", cmd_wrapper[index].binary);
             ABORT(255);
