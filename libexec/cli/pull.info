@@ -26,9 +26,10 @@ PULL OPTIONS:
 
 
 ******************************************************************************
-NOTICE: The pull command has been deprecated for Docker Hub containers and now
-        uses build when a Docker URI is supplied.  You should update your usage
-        accordingly.
+NOTICE: The pull command for Docker Hub containers assembles layers at the
+        time of the pull and is not guaranteed to, on repeated pull, produce
+        the equivalent image. To pull exactly equivlent images, pull
+        from a Singularity Registry.
 
         The pull --size option will be deprecated for Singularity 2.4+ images 
         that are in squashfs format (and do not need a size estimation). The 
