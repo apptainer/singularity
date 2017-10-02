@@ -236,6 +236,7 @@ case $SINGULARITY_BUILDDEF in
         done
 
         SINGULARITY_BUILDDEF="$SINGULARITY_ROOTFS"
+        SINGULARITY_QUIET_SANDBOXMESSAGE=1
         rm -f "$SINGULARITY_CONTENTS"
     ;;
 
@@ -310,7 +311,9 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
     fi
 
 elif [ -d "$SINGULARITY_BUILDDEF" ]; then
-    message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
+    if [ -z ${SINGULARITY_QUIET_SANDBOXMESSAGE:-} ]; then
+        message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
+    fi
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
 
 else
