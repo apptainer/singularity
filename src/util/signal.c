@@ -70,7 +70,7 @@ static void handle_sig_generic(siginfo_t *siginfo) {
 void singularity_install_signal_handler() {
     int i = 0;
 
-    singularity_message(DEBUG, "Creating signalfd to handle signals\n");
+    singularity_message(DEBUG, "Creating signal handler\n");
     
     sigemptyset(&sig_mask);
     while( all_signals[i] != 0 ) {
