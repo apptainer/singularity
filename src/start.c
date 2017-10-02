@@ -128,6 +128,12 @@ int main(int argc, char **argv) {
     setsid();
     umask(0);
 
+    /* set program name */
+    if ( prctl(PR_SET_NAME, "sinit", 0, 0, 0) < 0 ) {
+        singularity_message(ERROR, "Failed to set program name\n");
+        ABORT(255);
+    }
+
     child = fork();
 
     if ( child == 0 ) {
