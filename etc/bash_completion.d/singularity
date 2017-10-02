@@ -413,3 +413,4 @@ _singularity() {
 }
 
 complete -F _singularity singularity
+
