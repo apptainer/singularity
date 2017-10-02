@@ -52,9 +52,6 @@ while true; do
             exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         -s|--sandbox)
-            if [ "$USERID" != "0" ]; then
-                message WARNING "Building sandbox as non-root will result in wrong file permissions\n"
-            fi
             SINGULARITY_SANDBOX=1
             shift
         ;;
@@ -113,6 +110,11 @@ while true; do
     esac
 done
 
+
+################################################################################
+# Source Usage and Help
+################################################################################
+
 if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
     . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
 else
@@ -129,13 +131,45 @@ if [ -z "${2:-}" ]; then
     exit 0
 fi
 
+
+SINGULARITY_CONTAINER_OUTPUT="${1:-}"
+shift
+
+################################################################################
+# Are the commands and permissions valid?
+################################################################################
+
+SINGULARITY_BUILDDEF="${1:-}"
+
+# not allowed to use --writable and --sandbox
 if [ -n "${SINGULARITY_WRITABLE:-}" -a -n "${SINGULARITY_SANDBOX:-}" ]; then
     message ERROR "--writable and --sandbox are conflicting options. There can be only one.\n"
     ABORT 255
 fi
 
-SINGULARITY_CONTAINER_OUTPUT="${1:-}"
-shift
+# The user is not root
+if [ "$USERID" != "0" ]; then
+
+    # They want sandbox
+    if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
+
+        # Sandbox with deffile is no go.
+        if eval is_deffile "${SINGULARITY_BUILDDEF}"; then 
+            message ERROR "You must be the root user to sandbox from a definition file\n"
+            exit 1
+
+        # Sandbox with anything else is ok
+        else
+            message WARNING "Building sandbox as non-root will result in wrong file permissions\n"
+        fi
+    fi
+fi
+
+
+################################################################################
+# Sandbox Directory and Image Creation
+################################################################################
+
 
 # if the container exists, build into it (or delete it if -F was passed)
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
@@ -178,7 +212,11 @@ export SINGULARITY_IMAGE SINGULARITY_ROOTFS \
        SINGULARITY_CHECKS SINGULARITY_CHECKTAGS SINGULARITY_CHECKLEVEL
 
 
-SINGULARITY_BUILDDEF="${1:-}"
+################################################################################
+# Image Handlers
+# Note this code is redundant, needs to be consolidated with handlers/ folder
+################################################################################
+
 
 case $SINGULARITY_BUILDDEF in
     docker://*)
