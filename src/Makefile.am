@@ -9,7 +9,7 @@ AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATE
 
 lexecdir = $(libexecdir)/singularity/bin
 
-lexec_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start sinit wrapper $(BUILD_SUID)
+lexec_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start wrapper $(BUILD_SUID)
 EXTRA_PROGRAMS = wrapper-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c util/suid.c
@@ -24,7 +24,7 @@ builddef_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-ru
 builddef_CPPFLAGS = $(AM_CPPFLAGS)
 builddef_LDFLAGS = -static
 
-start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/capability.c
+start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/signal.c util/capability.c
 start_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 start_CPPFLAGS = $(AM_CPPFLAGS)
 
@@ -35,10 +35,6 @@ mount_CPPFLAGS = $(AM_CPPFLAGS)
 prepheader_SOURCES = prepheader.c
 prepheader_LDADD =
 prepheader_CPPFLAGS = $(AM_CPPFLAGS)
-
-sinit_SOURCES = sinit.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/capability.c
-sinit_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
-sinit_CPPFLAGS = $(AM_CPPFLAGS)
 
 get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c util/suid.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)

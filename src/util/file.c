@@ -546,6 +546,11 @@ int filelock(const char *const filepath, int *const fdptr) {
         return errno = EALREADY;
     }
 
+    if ( fcntl(fd, F_SETFD, FD_CLOEXEC) != 0 ) {
+        close(fd);
+        return errno = EBADF;
+    }
+
     /* Save descriptor, if the caller wants it. */
     if (fdptr)
         *fdptr = fd;

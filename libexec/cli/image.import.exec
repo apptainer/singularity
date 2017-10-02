@@ -37,6 +37,12 @@ while true; do
         -h|--help|help)
             exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
+        -f|--file)
+             shift
+             SINGULARITY_IMPORT_FILE="${1:-}"
+             export SINGULARITY_IMPORT_FILE
+             shift
+         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -68,6 +74,13 @@ SINGULARITY_IMAGE="${1:-}"
 SINGULARITY_WRITABLE=1
 shift
 export SINGULARITY_IMAGE SINGULARITY_WRITABLE
+
+if [ -n "${1:-}" ]; then
+    SINGULARITY_EXPORT_FILE="${1:-}"
+    export SINGULARITY_IMPORT_FILE
+    shift
+fi
+
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/image.sh" "$@"

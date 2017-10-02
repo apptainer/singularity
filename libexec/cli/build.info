@@ -111,6 +111,9 @@ DEFFILE SECTION EXAMPLES:
         echo "Define actions for the container to be executed with the run command or"
         echo "when container is executed."
 
+    %startscript
+        echo "Define actions for container to perform when started as an instance."
+
     %labels
         HELLO MOTO
         KEY VALUE

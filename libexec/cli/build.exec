@@ -61,6 +61,7 @@ while true; do
         -w|--writable)
             if [ "$USERID" != "0" ]; then
                 message ERROR "Writable images must be created as root\n"
+                message ERROR "Use --sandbox (does not required sudo) for a writable folder.\n"
                 exit 1
             fi
             SINGULARITY_WRITABLE=1
@@ -123,7 +124,7 @@ else
     ABORT 255
 fi
 
-if [ -z "${1:-}" ]; then
+if [ -z "${2:-}" ]; then
     if [ -n "${USAGE:-}" ]; then
         echo "USAGE: $USAGE"
     else
@@ -180,8 +181,8 @@ fi
 export SINGULARITY_IMAGE SINGULARITY_ROOTFS \
        SINGULARITY_CHECKS SINGULARITY_CHECKTAGS SINGULARITY_CHECKLEVEL
 
-SINGULARITY_BUILDDEF="${1:-}"
 
+SINGULARITY_BUILDDEF="${1:-}"
 
 case $SINGULARITY_BUILDDEF in
     docker://*)
