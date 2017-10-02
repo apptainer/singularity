@@ -188,7 +188,7 @@ for i in $DAEMONS; do
                 message ERROR "A daemon process is already running with this name: ${DAEMON_NAME}\n"
                 ABORT 255
             fi
-            if [ "${PROGNAME}" != "singularity-instance: $USER [$FILE_NAME]" ]; then
+            if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
                 rm -f "$i"
             fi
         else
