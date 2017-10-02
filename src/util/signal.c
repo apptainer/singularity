@@ -55,8 +55,8 @@ static const int all_signals[] = {
 };
 
 static void handle_sig_sigchld(siginfo_t *siginfo) {
-    if ( waitpid(siginfo->si_pid, NULL, WNOHANG) <= 0 ) {
-        singularity_message(ERROR, "Unable to wait on child: %s\n", strerror(errno));
+    while(1) {
+        if ( waitpid(-1, NULL, WNOHANG) <= 0 ) break;
     }
 }
 
@@ -70,7 +70,7 @@ static void handle_sig_generic(siginfo_t *siginfo) {
 void singularity_install_signal_handler() {
     int i = 0;
 
-    singularity_message(DEBUG, "Creating signalfd to handle signals\n");
+    singularity_message(DEBUG, "Creating signal handler\n");
     
     sigemptyset(&sig_mask);
     while( all_signals[i] != 0 ) {
