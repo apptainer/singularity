@@ -29,7 +29,7 @@ if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
 fi
 
 
-if ! USERID=`id --real --user`; then
+if ! USERID=`id -ru`; then
     message ERROR "Could not ascertain user ID\n"
     exit 255
 fi
