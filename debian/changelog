@@ -1,4 +1,19 @@
-singularity (2.3-1) unstable; urgency=low
+singularity-container (2.3.2-1) unstable; urgency=high
+
+  * Fix for a change that Docker implemented to their registry RESTful API
+    which broke compatibility with Singularity
+  * Several other low minor fixes
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Fri, 15 Sep 2017 14:36:34 -0700
+
+singularity-container (2.3.1-1) unstable; urgency=high
+
+  * Fix for a High Severity security issue on older hosts
+  * Other improvements and fixes to previous versions of Singularity
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Mon, 26 Jun 2017 11:24:12 -0700
+
+singularity-container (2.3-1) unstable; urgency=low
 
   * Lots of backend library changes to accommodate a more flexible API
   * Restructured Python backend
@@ -11,21 +26,21 @@ singularity (2.3-1) unstable; urgency=low
 
  -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Wed, 31 May 2017 18:19:46 -0700
 
-singularity (2.2-1) unstable; urgency=low
+singularity-container (2.2-1) unstable; urgency=low
 
   * New upstream release
   * Install sexec-suid as suid instead of sexec
 
  -- Roland Fehrenbacher <rf@q-leap.de>  Fri, 21 Oct 2016 13:25:06 +0200
 
-singularity (2.0-1) UNRELEASED; urgency=medium
+singularity-container (2.0-1) UNRELEASED; urgency=medium
 
   * New upstream release
-  * Initial Debian packaging (Closes: #828970)
+  * Initial Debian packaging
 
  -- Dave Love <fx@gnu.org>  Thu, 02 Jun 2016 22:48:28 +0100
 
-singularity (1.0-1) UNRELEASED; urgency=low
+singularity-container (1.0-1) UNRELEASED; urgency=low
 
   * Initial release
 
