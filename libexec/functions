@@ -374,6 +374,13 @@ zcat_compat() {
     fi
 }
 
+nonroot_build_warning() {
+USERID=`id -ru`
+if [ "$USERID" != "0" ]; then
+    message WARNING "Building container as an unprivileged user. If you run this container as root
+         it may be missing some functionality.\n"
+fi
+}
 
 is_deffile() {
 # check if a file looks like, walks like, and quacks like a def file
