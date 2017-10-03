@@ -96,7 +96,7 @@ int main(int argc, char **argv, char **envp) {
     singularity_daemon_init();
 
     singularity_message(DEBUG, "We are ready to recieve jobs, sending signal_go_ahead to parent\n");
-
+    
     singularity_runtime_enter();
     singularity_priv_drop_perm();
 
@@ -106,8 +106,6 @@ int main(int argc, char **argv, char **envp) {
     }
 
     singularity_install_signal_handler();
-
-    singularity_message(DEBUG, "Exited sigfd\n");
 
     daemon_fd = atoi(singularity_registry_get("DAEMON_FD"));
 
@@ -130,6 +128,12 @@ int main(int argc, char **argv, char **envp) {
     setsid();
     umask(0);
 
+    /* set program name */
+    if ( prctl(PR_SET_NAME, "sinit", 0, 0, 0) < 0 ) {
+        singularity_message(ERROR, "Failed to set program name\n");
+        ABORT(255);
+    }
+
     child = fork();
 
     if ( child == 0 ) {
@@ -142,7 +146,8 @@ int main(int argc, char **argv, char **envp) {
                 ABORT(CHILD_FAILED);
             }
         } else {
-            singularity_message(WARNING, "Start script not found\n");
+            singularity_message(VERBOSE, "Instance start script not found\n");
+            kill(1, SIGCONT);
         }
     } else if ( child > 0 ) {
         singularity_message(DEBUG, "Waiting for signals\n");
