@@ -21,7 +21,7 @@ if [ -z "${DAEMON_IMAGE}" ]; then
     ABORT 255
 fi
 
-if [ ! -f "${DAEMON_IMAGE}" ]; then
+if [ ! -f "${DAEMON_IMAGE}" -a ! -d "${DAEMON_IMAGE}" ]; then
     message ERROR "Image for daemon is not found: ${DAEMON_IMAGE}\n"
     ABORT 255
 fi
