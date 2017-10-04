@@ -117,7 +117,7 @@ singularity_keys_get() {
 }
 
 singularity_daemon_glob() {
-    if ! USERID=`id --real --user`; then
+    if ! USERID=`id -ru`; then
         message ERROR "Could not ascertain user ID\n"
         exit 255
     fi
@@ -148,7 +148,7 @@ singularity_daemon_file() {
         ABORT 255
     fi
 
-    if ! USERID=`id --real --user`; then
+    if ! USERID=`id -ru`; then
         message ERROR "Could not ascertain user ID\n"
         ABORT 255
     fi
@@ -358,6 +358,30 @@ replace_string() {
 }
 
 
+zcat_compat() {
+    if [ -z "${1:-}" ]; then
+        message FAIL "zcat_compat: missing argument\n"
+        exit 1
+    fi
+
+    FILE=$1
+    HEAD_CHUNK=`head -c 3 $FILE | od -A n -t x1 -w3 | tr -d ' '`
+
+    if [ "$HEAD_CHUNK" == "1f8b08" ]; then
+        zcat "$1"
+    else
+        cat "$1"
+    fi
+}
+
+nonroot_build_warning() {
+    USERID=`id -ru`
+    if [ "$USERID" != "0" ]; then
+        message WARNING "Building container as an unprivileged user. If you run this container as root\n";
+        message WARNING "it may be missing some functionality.\n"
+    fi
+}
+
 is_deffile() {
 # check if a file looks like, walks like, and quacks like a def file
     FILE2CHECK=$1
@@ -381,7 +405,7 @@ is_deffile() {
         esac
 
     # name is ambiguous.  is it a text file with def file words in it?
-    if ! `file $FILE2CHECK | grep -q ASCII`; then
+    if ! `file $FILE2CHECK | grep -q "ASCII\|Unicode"`; then
         return 1
     fi
         
@@ -409,14 +433,9 @@ is_image() {
 is_tar() {
 # check if a file looks like, walks like,... oh you get the idea
     FILE2CHECK=$1
+    TARMAGIC="7573746172202000" # "ustar  \x00"
 
-    if ! `file $FILE2CHECK | grep -q compressed` ; then
-	if ! `file $FILE2CHECK | grep -q archive`; then
-	    return 1
-    	fi 
-    fi
-
-    echo $FILE2CHECK | grep -qi ".tar" # this is honestly a very silly check, please improve if able!
+    zcat_compat "$FILE2CHECK" | head -c 320 | od -A n -t x1 -w320 | tr -d ' ' | grep -q "$TARMAGIC"
     RETVAL=$?
     return $RETVAL
 }

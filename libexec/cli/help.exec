@@ -100,6 +100,8 @@ EOF
         fi
     done
 
+echo 
+echo 
 cat <<EOF
 CONTAINER USAGE OPTIONS:
     see singularity help <command>
@@ -119,7 +121,7 @@ elif [ -f "$SINGULARITY_libexecdir/singularity/cli/${HELP_ASK}.info" ]; then
     print_help
     echo
     exit 0
-elif [ -f "${HELP_ASK}" ]; then
+elif [ -e "${HELP_ASK}" ]; then
     RETVAL=0
     SINGULARITY_IMAGE="${HELP_ASK:-}"
     if ! SINGULARITY_MOUNTPOINT=`mktemp -d ${TMPDIR:-/tmp}/.singularity-inspect.XXXXXXXX`; then
@@ -147,3 +149,4 @@ else
     echo "No help provided for: ${HELP_ASK}"
     exit 1
 fi
+

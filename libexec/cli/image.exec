@@ -32,11 +32,13 @@ else
     exit 1
 fi
 
-
 while true; do
     case ${1:-} in
         -h|--help|help)
             exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
+        ;;
+        *)
+            break
         ;;
     esac
 done

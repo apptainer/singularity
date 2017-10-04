@@ -26,8 +26,8 @@ to you when called from the shell inside the container:
     SINGULARITY_APPMETA     the application metadata folder
     SINGULARITY_DATA        the base of scif defined data (/scif/data
     SINGULARITY_APPDATA     the data base folder, with subfolders for:
-      - SINGULARITY_APPINPUT  the expected input folder for the application
-      - SINGULARITY_APPOUTPUT the output data folder of the application
+    SINGULARITY_APPINPUT    the expected input folder for the application
+    SINGULARITY_APPOUTPUT   the output data folder of the application
     
 For additional help, please visit our public documentation pages which are
 found at:

@@ -186,7 +186,7 @@ _singularity() {
 
         check)
             if [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--low --med --high --tag" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--low --med --high --tag --help" -- ${cur}) )
             elif [ $container_idx -lt $COMP_CWORD ]; then
                 return 0
             else
@@ -223,7 +223,7 @@ _singularity() {
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--bind --contain --cleanenv --home --net --nv --pwd --scratch --workdir --writable --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--bind --contain --home --net --nv --overlay --scratch --workdir --writable --help" -- ${cur}) )
             else
                 _filedir 
             fi
@@ -283,7 +283,7 @@ _singularity() {
 
         image.export)
             if [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W " --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--file --help" -- ${cur}) )
             elif [ $container_idx -lt $COMP_CWORD ]; then
                 return 0
             else
@@ -319,7 +319,7 @@ _singularity() {
                     elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                         COMPREPLY=( $(compgen -f -- ${cur}) )
                     elif [[ ${cur} == -* ]] ; then
-                        COMPREPLY=( $(compgen -W "--bind --contain --cleanenv --home --net --nv --pwd --scratch --workdir --writable --help" -- ${cur}) )
+                        COMPREPLY=( $(compgen -W "--bind --contain --home --net --nv --overlay --scratch --workdir --writable --help" -- ${cur}) )
                     else
                         _filedir 
                     fi
@@ -388,7 +388,7 @@ _singularity() {
 
                 export)
                     if [[ ${cur} == -* ]] ; then
-                        COMPREPLY=( $(compgen -W " --help" -- ${cur}) )
+                        COMPREPLY=( $(compgen -W "--file --help" -- ${cur}) )
                     elif [ $container_idx -lt $COMP_CWORD ]; then
                         return 0
                     else
@@ -413,3 +413,4 @@ _singularity() {
 }
 
 complete -F _singularity singularity
+

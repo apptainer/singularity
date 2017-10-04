@@ -81,7 +81,7 @@ rm -f $RPM_BUILD_ROOT/%{_libdir}/singularity/lib*.la
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%doc examples AUTHORS.md CONTRIBUTING.md COPYRIGHT.md INSTALL.md LICENSE-LBNL.md LICENSE.md README.md
+%doc examples CONTRIBUTORS.md CONTRIBUTING.md COPYRIGHT.md INSTALL.md LICENSE-LBNL.md LICENSE.md README.md
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
 
@@ -94,7 +94,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/inspect.*
 %{_libexecdir}/singularity/cli/mount.*
 %{_libexecdir}/singularity/cli/pull.*
-%{_libexecdir}/singularity/cli/selftest.exec
+%{_libexecdir}/singularity/cli/selftest.*
 %{_libexecdir}/singularity/handlers
 %{_libexecdir}/singularity/helpers
 %{_libexecdir}/singularity/image-handler.sh
@@ -130,10 +130,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/instance.*
 %{_libexecdir}/singularity/cli/run.*
 %{_libexecdir}/singularity/cli/shell.*
-%{_libexecdir}/singularity/cli/singularity.help
 %{_libexecdir}/singularity/cli/test.*
 %{_libexecdir}/singularity/bin/action
-%{_libexecdir}/singularity/bin/sinit
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/functions
 %dir %{_sysconfdir}/singularity

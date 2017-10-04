@@ -80,6 +80,7 @@ int _singularity_runtime_ns_ipc_join(void) {
     int ipc_fd;
 
     /* Attempt to open /proc/[PID]/ns/pid */
+    singularity_priv_escalate();
     ipc_fd = openat(ns_fd, "ipc", O_RDONLY);
 
     if( ipc_fd == -1 ) {
@@ -87,7 +88,6 @@ int _singularity_runtime_ns_ipc_join(void) {
         ABORT(255);
     }
     
-    singularity_priv_escalate();
     singularity_message(DEBUG, "Attempting to join IPC namespace\n");
     if ( setns(ipc_fd, CLONE_NEWIPC) < 0 ) {
         singularity_message(ERROR, "Could not join IPC namespace: %s\n", strerror(errno));

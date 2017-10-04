@@ -56,7 +56,7 @@
     // to indicate that it is allowed to move forward. Requires
     // that prepare_fork() & prepare_pipes_[child/parent]() are
     // called first to work properly.
-    void singularity_signal_go_ahead(int code);
+    int singularity_signal_go_ahead(int code);
 
 
     // SINGULARITY_WAIT_FOR_GO_AHEAD()

@@ -116,8 +116,8 @@ export SINGULARITY_CONTAINER SINGULARITY_PULLFOLDER SINGULARITY_CONTENTS
 
 case "$SINGULARITY_CONTAINER" in
     docker://*)
-        if [ -z "${SINGULARITY_IMAGE:-}" ]; then
 
+        if [ -z "${SINGULARITY_IMAGE:-}" ]; then
             # If name given, use that
             if [ -n "${SHUB_CONTAINERNAME:-}" ]; then
                 SINGULARITY_IMAGE=`basename "$SHUB_CONTAINERNAME.img" | sed -e 's/.img//g'`".img"   
@@ -129,8 +129,17 @@ case "$SINGULARITY_CONTAINER" in
             message 3 "Singularity Image: $SINGULARITY_IMAGE"
             export SINGULARITY_IMAGE
         fi
+ 
+         message WARNING "pull for Docker Hub is not guaranteed to produce the\n"
+         message WARNING "same image on repeated pull. Use Singularity Registry\n"
+         message WARNING "(shub://) to pull exactly equivalent images.\n"
+       
+        if [ -n "${SINGULARITY_IMAGESIZE:-}" ]; then
+            message WARNING "Using the --size option when building from Docker Hub is deprecated.\n"
+            message WARNING "Container will be sized appropriately for Docker image.\n"
+        fi
 
-        if [ -f "$SINGULARITY_IMAGE" ]; then
+         if [ -f "$SINGULARITY_IMAGE" ]; then
             if [ -n "${OVERWRITE:-}" ]; then
                 message 2 "Removing existing file\n"
                 rm -f "$SINGULARITY_IMAGE"
@@ -140,35 +149,15 @@ case "$SINGULARITY_CONTAINER" in
             fi
         fi
 
-        if [ -z "${SINGULARITY_IMAGESIZE:-}" ]; then
-            eval_abort $SINGULARITY_libexecdir/singularity/python/size.py
-
-            SINGULARITY_IMAGESIZE=`cat "$SINGULARITY_CONTENTS"`
-            if [ "$SINGULARITY_IMAGESIZE" -eq "$SINGULARITY_IMAGESIZE" ] 2>/dev/null; then
-                export SINGULARITY_IMAGESIZE
-            else
-                message ERROR "Could not obtain the container size, try using --size\n"
-                ABORT 255
-            fi
-        fi
-        SINGULARITY_WRITABLE=1
-        export SINGULARITY_WRITABLE
-
-        "$SINGULARITY_bindir"/singularity image.create -s "$SINGULARITY_IMAGESIZE" "$SINGULARITY_IMAGE"
-
-        cat /dev/null > "$SINGULARITY_CONTENTS"
-
-        eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
-        message 1 "Importing: base Singularity environment\n"
-
-        zcat "$SINGULARITY_libexecdir"/singularity/bootstrap-scripts/environment.tar | "$SINGULARITY_bindir"/singularity image.import "$SINGULARITY_IMAGE" || exit $?
-
-        for i in `cat "$SINGULARITY_CONTENTS"`; do
-            message 1 "Importing: $i\n"
-            zcat "$i" | $SINGULARITY_bindir/singularity image.import "$SINGULARITY_IMAGE" || exit $?
-        done
-
+         if [ -x "${SINGULARITY_bindir}/singularity" ]; then
+             ${SINGULARITY_bindir}/singularity build ${SINGULARITY_IMAGE} ${SINGULARITY_CONTAINER}
+             exit 0
+         else
+             message ERROR "Could not locate the Singularity binary: $SINGULARITY_home/singularity\n"
+             exit 1
+         fi
     ;;
+
     shub://*)
         
         eval_abort $SINGULARITY_libexecdir/singularity/python/pull.py
@@ -177,7 +166,7 @@ case "$SINGULARITY_CONTAINER" in
         SINGULARITY_IMAGE=`cat $SINGULARITY_CONTENTS`
     ;;
     *)
-        message ERROR "pull is only supported for docker and shub URIs\n"
+        message ERROR "pull is only supported for shub URIs\n"
         exit 255
     ;;
 esac
