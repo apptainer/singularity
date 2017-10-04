@@ -114,10 +114,12 @@ else:
 
 # API
 DOCKER_API_BASE = "index.docker.io"  # registry
+CUSTOM_REGISTRY = getenv("REGISTRY")
+NAMESPACE = "library"
+CUSTOM_NAMESPACE = getenv('NAMESPACE')
 DOCKER_API_VERSION = "v2"
 DOCKER_ARCHITECTURE = getenv("SINGULARITY_DOCKER_ARCHITECTURE", "amd64")
 DOCKER_OS = getenv("SINGULARITY_DOCKER_OS", "linux")
-NAMESPACE = "library"
 TAG = "latest"
 
 # Container Metadata
