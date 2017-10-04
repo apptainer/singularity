@@ -45,9 +45,9 @@ for i in `cat "$SINGULARITY_CONTENTS"`; do
             # Skipping symlinks
             true
         elif [ -f "$SINGULARITY_ROOTFS/$file" ]; then
-            chmod u+rw "$SINGULARITY_ROOTFS/$file"
+            chmod u+rw "$SINGULARITY_ROOTFS/$file" >/dev/null 2>&1
         elif [ -d "$SINGULARITY_ROOTFS/$file" ]; then
-            chmod u+rwx "$SINGULARITY_ROOTFS/${file%/}"
+            chmod u+rwx "$SINGULARITY_ROOTFS/${file%/}" >/dev/null 2>&1
         fi
     done
 done
