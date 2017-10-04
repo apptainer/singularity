@@ -41,14 +41,14 @@ for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
     message 2 "Exploding layer: $name\n"
     ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -) || exit $? ) | while read file; do
-if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
-    # Skipping symlinks
-    true
-elif [ -f "$SINGULARITY_ROOTFS/$file" ]; then
-    chmod u+rw "$SINGULARITY_ROOTFS/$file"
-elif [ -d "$SINGULARITY_ROOTFS/$file" ]; then
-    chmod u+rwx "$SINGULARITY_ROOTFS/${file%/}"
-fi
+        if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
+            # Skipping symlinks
+            true
+        elif [ -f "$SINGULARITY_ROOTFS/$file" ]; then
+            chmod u+rw "$SINGULARITY_ROOTFS/$file"
+        elif [ -d "$SINGULARITY_ROOTFS/$file" ]; then
+            chmod u+rwx "$SINGULARITY_ROOTFS/${file%/}"
+        fi
     done
 done
 
