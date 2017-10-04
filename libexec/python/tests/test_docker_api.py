@@ -85,7 +85,7 @@ class TestApi(TestCase):
         # Should work for custom registries
         print("Case 4: Obtain manifest from custom registry")
         client = DockerApiConnection(image="gcr.io/tensorflow/tensorflow")
-        manifest = client.get_manifest(old_version=True)
+        manifest = client.get_manifest()
         self.assertTrue("fsLayers" in manifest or "layers" in manifest)
 
     def test_get_images(self):

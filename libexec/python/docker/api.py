@@ -356,7 +356,7 @@ class DockerApiConnection(ApiConnection):
 
         if self.manifestv1 is None:
             bot.debug('MANIFEST (Metadata): not found, making initial call.')
-            self.manifestv1 = self.get_manifest(old_version=True)
+            self.manifestv1 = self.get_manifest()
 
         # https://docs.docker.com/registry/spec/manifest-v2-2/#manifest-list
         if "manifests" in self.manifest:
