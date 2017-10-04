@@ -177,7 +177,8 @@ def INSPECT(inspect_labels=None,
         HELPBASE = "scif/apps/%s/scif/runscript.help" % inspect_app
         HELPFILE = HELPFILE.replace('.singularity.d/runscript.help', HELPBASE)
         RUNBASE = "scif/apps/%s/scif/runscript" % inspect_app
-        RUNSCRIPT = RUNSCRIPT.replace(".singularity.d/runscript", RUNBASE)
+        RUNSCRIPT = "%s/%s" % (RUNSCRIPT.strip('singularity'), RUNBASE)
+
         TESTBASE = "scif/apps/%s/scif/test" % inspect_app
         TESTFILE = TESTFILE.replace(".singularity.d/test", TESTBASE)
         ENVBASE = "scif/apps/%s/scif/" % inspect_app
