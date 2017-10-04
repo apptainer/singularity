@@ -38,6 +38,21 @@ if [ -z "${FROM:-}" ]; then
 fi
 
 
+################################################################################
+# Singularity Hub/Registry Customizations
+################################################################################
+
+if [ ! -z "${REGISTRY:-}" ]; then
+    message DEBUG "Custom Singularity Registry 'Registry:' ${REGISTRY}.\n"
+    export REGISTRY
+fi
+
+if [ ! -z "${NAMESPACE:-}" ]; then
+    message DEBUG "Custom Singularity Registry Namespace 'Namespace:' ${NAMESPACE}.\n"
+    export NAMESPACE
+fi
+
+
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 SINGULARITY_CONTAINER="shub://${FROM}"
 if ! SINGULARITY_CONTENTS=`mktemp ${TMPDIR:-/tmp}/.singularity-layerfile.XXXXXX`; then
