@@ -104,7 +104,6 @@ class TestApi(TestCase):
         ubuntu_tags = ['xenial', 'latest', 'trusty', 'yakkety']
         [self.assertTrue(x in tags) for x in ubuntu_tags]
 
-
     def test_get_layer(self):
         '''test_get_layer will download docker layers
         '''
