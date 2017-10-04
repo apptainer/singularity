@@ -76,7 +76,7 @@ container_check
 
 # from shub to squashfs 
 sudo rm "$CONTAINER"
-stest 0 sudo singularity build "$CONTAINER" "shub://GodloveD/busybox"
+stest 0 singularity build "$CONTAINER" "shub://GodloveD/busybox"
 container_check
 
 # from docker to squashfs (via def file)

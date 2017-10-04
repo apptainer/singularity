@@ -19,10 +19,6 @@
 
 set -u
 
-if [ -n "${BASH_VERSION:-}" ]; then
-    set -o pipefail
-fi
-
 if [ -z "${SINGULARITY_libexecdir:-}" ]; then
     echo "ERROR: SINGULARITY_libexecdir not defined in environment"
     exit 2
