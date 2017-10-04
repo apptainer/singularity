@@ -27,8 +27,11 @@
 #include <sys/types.h>
 #include <errno.h> 
 #include <string.h>
-#include <fcntl.h>  
+#include <fcntl.h>
 
+#include <uuid/uuid.h>
+#include <list.h>
+#include <sif.h>
 
 #include "util/message.h"
 #include "util/util.h"

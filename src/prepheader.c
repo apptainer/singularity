@@ -17,6 +17,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <uuid/uuid.h>
+#include <list.h>
+#include <sif.h>
+
 #include "lib/image/image.h"
 
 

@@ -31,6 +31,10 @@
 #include <fcntl.h>  
 #include <linux/limits.h>
 
+#include <uuid/uuid.h>
+#include <list.h>
+#include <sif.h>
+
 #include "util/message.h"
 #include "util/util.h"
 #include "util/file.h"

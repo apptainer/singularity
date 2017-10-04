@@ -30,6 +30,10 @@
 #include <stdlib.h>
 #include <libgen.h>
 
+#include <uuid/uuid.h>
+#include <list.h>
+#include <sif.h>
+
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -42,6 +46,7 @@
 #include "./squashfs/include.h"
 #include "./dir/include.h"
 #include "./ext3/include.h"
+#include "./sif/include.h"
 
 
 struct image_object singularity_image_init(char *path, int open_flags) {
@@ -73,7 +78,13 @@ struct image_object singularity_image_init(char *path, int open_flags) {
     }
 
     singularity_message(DEBUG, "Calling image_init for each file system module\n");
-    if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
+    if ( _singularity_image_sif_init(&image, open_flags) == 0 ) {
+        singularity_message(DEBUG, "got image_init type for SIF\n");
+        if ( singularity_config_get_bool(ALLOW_CONTAINER_SIF) <= 0 ) {
+            singularity_message(ERROR, "Configuration disallows container sif support\n");
+            ABORT(255);
+        }
+    } else if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for directory\n");
         image.type = DIRECTORY;
         if ( ( singularity_config_get_bool(ALLOW_CONTAINER_DIR) <= 0 ) && ( singularity_priv_getuid() != 0 ) ) {

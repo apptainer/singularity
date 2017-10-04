@@ -29,6 +29,10 @@
 #include <string.h>
 #include <fcntl.h>
 
+#include <uuid/uuid.h>
+#include <list.h>
+#include <sif.h>
+
 #include "config.h"
 #include "util/util.h"
 #include "util/config_parser.h"

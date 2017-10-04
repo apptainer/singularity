@@ -27,15 +27,18 @@
 #define SQUASHFS    1
 #define EXT3        2
 #define DIRECTORY   3
+#define SIF         4
 
 struct image_object {
     char *path;
     char *name;
     char *loopdev;
     int offset;
+    size_t size;
     int fd;
     int type;
     int writable;
+    Sifinfo sif;
 };
 
 extern struct image_object singularity_image_init(char *path, int open_flags);

@@ -24,6 +24,10 @@
 #include <signal.h>
 #include <poll.h>
 
+#include <uuid/uuid.h>
+#include <list.h>
+#include <sif.h>
+
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
