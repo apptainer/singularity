@@ -91,6 +91,8 @@ int singularity_cleanupd(void) {
             ABORT(255);
         }
 
+        singularity_registry_set("CLEANUPD_FD", int2str(trigger_fd));
+        
     } else {
         singularity_message(DEBUG, "Using existing cleanup trigger file: %s\n", trigger);
     }
