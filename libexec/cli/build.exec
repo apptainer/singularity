@@ -310,6 +310,7 @@ elif [ -d "$SINGULARITY_BUILDDEF" ]; then
     nonroot_build_warning
     if [ -z ${SINGULARITY_QUIET_SANDBOXMESSAGE:-} ]; then
         message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
+        SINGULARITY_NOCLEANUP=1 # don't delete when building directly from sandbox
     fi
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
 
