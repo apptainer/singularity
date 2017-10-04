@@ -31,6 +31,7 @@ libtool
 ltmain.sh
 missing
 singularity.spec
+src/util/config_defaults.h
 test.sh
 secbuildimg.sh
 

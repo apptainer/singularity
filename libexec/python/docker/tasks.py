@@ -168,8 +168,9 @@ def extract_env(manifest):
     '''
     environ = get_config(manifest, 'Env')
     if environ is not None:
-        if isinstance(environ, list):
-            environ = "\n".join(environ)
+        environ = re.findall("(?P<var_name>.+)=(?P<var_value>.+)", environ)
+        environ = ['%s="%s"' % (x[0], x[1]) for x in environ]
+        environ = "\n".join(environ)
         environ = ["export %s" % x for x in environ.split('\n')]
         environ = "\n".join(environ)
         bot.verbose3("Found Docker container environment!")

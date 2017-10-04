@@ -34,9 +34,8 @@ stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
 # Checking no new privs with capabilities
-stest 1 sudo singularity exec "$CONTAINER" ping localhost -c 1
-stest 0 sudo singularity exec --keep-privs "$CONTAINER" ping localhost -c 1
-stest 1 singularity exec "$CONTAINER" ping localhost -c 1
+stest 0 sudo singularity exec "$CONTAINER" chsh -s /bin/sh
+stest 1 singularity exec "$CONTAINER" chsh -s /bin/sh
 
 stest 0 sudo singularity exec "$CONTAINER" mknod -m 600 /test-null c 1 3
 stest 1 sudo singularity exec --no-privs "$CONTAINER" mknod -m 600 /test-null c 1 3

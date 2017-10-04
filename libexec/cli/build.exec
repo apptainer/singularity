@@ -164,7 +164,7 @@ if [ "$USERID" != "0" ]; then
 
         # Sandbox with anything else is ok
         else
-            message WARNING "Building sandbox as non-root will result in wrong file permissions\n"
+            message WARNING "Building sandbox as non-root may result in wrong file permissions\n"
         fi
     fi
 fi
@@ -273,10 +273,8 @@ esac
 if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
     if eval is_image "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
-        if [ "$USERID" != "0" ]; then
-            message WARNING "You are not root! Some files may not be exported from ${SINGULARITY_BUILDDEF} due to permission errors.\n"
-        fi
-        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+        nonroot_build_warning
+        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" 2>/dev/null | tar xBf - -C "${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
@@ -305,10 +303,8 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
 
     elif eval is_tar "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
-        if [ "$USERID" != "0" ]; then
-            message WARNING "You are not root! Some files may not be exported from ${SINGULARITY_BUILDDEF} due to permission errors.\n"
-        fi
-        if ! eval "zcat_compat ${SINGULARITY_BUILDDEF} | tar xf - -C ${SINGULARITY_ROOTFS}"; then
+        nonroot_build_warning
+        if ! eval "zcat_compat ${SINGULARITY_BUILDDEF} 2>/dev/null | tar xf - -C ${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
@@ -319,8 +315,10 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
     fi
 
 elif [ -d "$SINGULARITY_BUILDDEF" ]; then
+    nonroot_build_warning
     if [ -z ${SINGULARITY_QUIET_SANDBOXMESSAGE:-} ]; then
         message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
+        SINGULARITY_NOCLEANUP=1 # don't delete when building directly from sandbox
     fi
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
 
