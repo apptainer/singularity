@@ -27,7 +27,6 @@
 #include "../image.h"
 
 int _singularity_image_sif_init(struct image_object *image, int open_flags) {
-    int ret;
     Sifpartition *partdesc;
 
     singularity_message(DEBUG, "Checking if writable image requested\n");
