@@ -35,6 +35,7 @@
 #include "util/message.h"
 #include "util/registry.h"
 #include "util/config_parser.h"
+#include "util/privilege.h"
 
 #include "./image.h"
 #include "./bind.h"
@@ -75,22 +76,22 @@ struct image_object singularity_image_init(char *path, int open_flags) {
     if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for directory\n");
         image.type = DIRECTORY;
-        if ( singularity_config_get_bool(ALLOW_CONTAINER_DIR) <= 0 ) {
-            singularity_message(ERROR, "Configuration disallows container directory support\n");
+        if ( ( singularity_config_get_bool(ALLOW_CONTAINER_DIR) <= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
+            singularity_message(ERROR, "Configuration disallows users from running directory based containers\n");
             ABORT(255);
         }
     } else if ( _singularity_image_squashfs_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for squashfs\n");
         image.type = SQUASHFS;
-        if ( singularity_config_get_bool(ALLOW_CONTAINER_SQUASHFS) <= 0 ) {
-            singularity_message(ERROR, "Configuration disallows container squashfs support\n");
+        if ( ( singularity_config_get_bool(ALLOW_CONTAINER_SQUASHFS) <= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
+            singularity_message(ERROR, "Configuration disallows users from running squashFS based containers\n");
             ABORT(255);
         }
     } else if ( _singularity_image_ext3_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for ext3\n");
         image.type = EXT3;
-        if ( singularity_config_get_bool(ALLOW_CONTAINER_EXTFS) <= 0 ) {
-            singularity_message(ERROR, "Configuration disallows container extfs support\n");
+        if ( ( singularity_config_get_bool(ALLOW_CONTAINER_EXTFS) <= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
+            singularity_message(ERROR, "Configuration disallows users from running extFS based containers\n");
             ABORT(255);
         }
     } else {
