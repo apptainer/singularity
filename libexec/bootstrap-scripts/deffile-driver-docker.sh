@@ -43,9 +43,27 @@ if [ -z "${FROM:-}" ]; then
     exit 1
 fi
 
+################################################################################
+# Docker Customizations
+################################################################################
+
+if [ ! -z "${SINGULARITY_DEFFILE_REGISTRY:-}" ]; then
+    message DEBUG "Custom Docker Registry 'Registry:' ${SINGULARITY_DEFFILE_REGISTRY}.\n"
+    REGISTRY="${SINGULARITY_DEFFILE_REGISTRY}"
+    export REGISTRY
+fi
+
+if [ ! -z "${SINGULARITY_DEFFILE_NAMESPACE:-}" ]; then
+    message DEBUG "Custom Docker Namespace 'Namespace:' ${SINGULARITY_DEFFILE_NAMESPACE}.\n"
+    NAMESPACE="${SINGULARITY_DEFFILE_NAMESPACE}"
+    export NAMESPACE
+fi
+
 if [ -z "${SINGULARITY_DEFFILE_INCLUDECMD:-}" ]; then
     export SINGULARITY_INCLUDECMD="yes"
 fi
+
+
 
 SINGULARITY_CONTAINER="docker://$FROM"
 SINGULARITY_LABELFILE="$SINGULARITY_ROOTFS/.singularity.d/labels.json"

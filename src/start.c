@@ -50,7 +50,7 @@
 int started = 0;
 
 int main(int argc, char **argv, char **envp) {
-    int i, daemon_fd;
+    int i, daemon_fd, cleanupd_fd;
     struct image_object image;
     pid_t child;
     siginfo_t siginfo;
@@ -108,11 +108,12 @@ int main(int argc, char **argv, char **envp) {
     singularity_install_signal_handler();
 
     daemon_fd = atoi(singularity_registry_get("DAEMON_FD"));
-
+    cleanupd_fd = atoi(singularity_registry_get("CLEANUPD_FD"));
+    
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {
-        if ( i != daemon_fd ) {
+        if ( i != daemon_fd && i != cleanupd_fd ) {
             if ( fstat(i, &filestat) == 0 ) {
                 if ( S_ISFIFO(filestat.st_mode) != 0 ) {
                     continue;
