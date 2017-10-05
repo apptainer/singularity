@@ -72,6 +72,10 @@ struct image_object singularity_image_init(char *path, int open_flags) {
         image.writable = 0;
     }
 
+    if ( ( singularity_priv_getuid() == 0 ) && ( is_owner(real_path, 0) != 0 ) ) {
+        singularity_message(WARNING, "The container you are using is not owned by root.\n");
+    }
+
     singularity_message(DEBUG, "Calling image_init for each file system module\n");
     if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for directory\n");
