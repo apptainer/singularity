@@ -47,7 +47,7 @@ while true; do
             SINGULARITY_CHECKLEVEL=2       # MED
             shift;
         ;;
-        -h|--high)
+        --high)
             SINGULARITY_CHECKLEVEL=1      # level 1 only
             shift;                        # HIGH
         ;;
