@@ -52,15 +52,13 @@ while true; do
             exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         -s|--sandbox)
-            if [ "$USERID" != "0" ]; then
-                message WARNING "Building sandbox as non-root will result in wrong file permissions\n"
-            fi
             SINGULARITY_SANDBOX=1
             shift
         ;;
         -w|--writable)
             if [ "$USERID" != "0" ]; then
                 message ERROR "Writable images must be created as root\n"
+                message ERROR "Use --sandbox (does not required sudo) for a writable folder.\n"
                 exit 1
             fi
             SINGULARITY_WRITABLE=1
@@ -112,6 +110,11 @@ while true; do
     esac
 done
 
+
+################################################################################
+# Source Usage and Help
+################################################################################
+
 if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
     . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
 else
@@ -119,7 +122,7 @@ else
     ABORT 255
 fi
 
-if [ -z "${1:-}" ]; then
+if [ -z "${2:-}" ]; then
     if [ -n "${USAGE:-}" ]; then
         echo "USAGE: $USAGE"
     else
@@ -128,8 +131,45 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
+
 SINGULARITY_CONTAINER_OUTPUT="${1:-}"
 shift
+
+################################################################################
+# Are the commands and permissions valid?
+################################################################################
+
+SINGULARITY_BUILDDEF="${1:-}"
+
+# not allowed to use --writable and --sandbox
+if [ -n "${SINGULARITY_WRITABLE:-}" -a -n "${SINGULARITY_SANDBOX:-}" ]; then
+    message ERROR "--writable and --sandbox are conflicting options. There can be only one.\n"
+    ABORT 255
+fi
+
+# The user is not root
+if [ "$USERID" != "0" ]; then
+
+    # They want sandbox
+    if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
+
+        # Sandbox with deffile is no go.
+        if eval is_deffile "${SINGULARITY_BUILDDEF}"; then 
+            message ERROR "You must be the root user to sandbox from a definition file\n"
+            exit 1
+
+        # Sandbox with anything else is ok
+        else
+            message WARNING "Building sandbox as non-root may result in wrong file permissions\n"
+        fi
+    fi
+fi
+
+
+################################################################################
+# Sandbox Directory and Image Creation
+################################################################################
+
 
 # if the container exists, build into it (or delete it if -F was passed)
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
@@ -171,7 +211,11 @@ fi
 export SINGULARITY_IMAGE SINGULARITY_ROOTFS \
        SINGULARITY_CHECKS SINGULARITY_CHECKTAGS SINGULARITY_CHECKLEVEL
 
-SINGULARITY_BUILDDEF="${1:-}"
+
+################################################################################
+# Image Handlers
+# Note this code is redundant, needs to be consolidated with handlers/ folder
+################################################################################
 
 
 case $SINGULARITY_BUILDDEF in
@@ -192,6 +236,7 @@ case $SINGULARITY_BUILDDEF in
         done
 
         SINGULARITY_BUILDDEF="$SINGULARITY_ROOTFS"
+        SINGULARITY_QUIET_SANDBOXMESSAGE=1
         rm -f "$SINGULARITY_CONTENTS"
     ;;
 
@@ -224,10 +269,8 @@ esac
 if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
     if eval is_image "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
-        if [ "$USERID" != "0" ]; then
-            message WARNING "You are not root! Some files may not be exported from ${SINGULARITY_BUILDDEF} due to permission errors.\n"
-        fi
-        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+        nonroot_build_warning
+        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" 2>/dev/null | tar xBf - -C "${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
@@ -252,10 +295,8 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
 
     elif eval is_tar "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
-        if [ "$USERID" != "0" ]; then
-            message WARNING "You are not root! Some files may not be exported from ${SINGULARITY_BUILDDEF} due to permission errors.\n"
-        fi
-        if ! eval tar xf "${SINGULARITY_BUILDDEF}" -C "${SINGULARITY_ROOTFS}"; then
+        nonroot_build_warning
+        if ! eval "zcat_compat ${SINGULARITY_BUILDDEF} 2>/dev/null | tar xf - -C ${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
@@ -266,7 +307,11 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
     fi
 
 elif [ -d "$SINGULARITY_BUILDDEF" ]; then
-    message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
+    nonroot_build_warning
+    if [ -z ${SINGULARITY_QUIET_SANDBOXMESSAGE:-} ]; then
+        message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
+        SINGULARITY_NOCLEANUP=1 # don't delete when building directly from sandbox
+    fi
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
 
 else
@@ -299,7 +344,12 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_bindir}/singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
     else
         message 1 "Building Singularity image...\n"
-        if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend -all-root > /dev/null; then
+        if [ "$USERID" != "0" ]; then
+            OPTS="-all-root"
+        else
+            OPTS=""
+        fi
+        if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend $OPTS > /dev/null; then
             message ERROR "Failed squashing image, left template directory at: $SINGULARITY_ROOTFS\n"
             exit 1
         fi

@@ -106,6 +106,13 @@ DEFFILE SECTION EXAMPLES:
         echo "as any non-zero exit code will be assumed as failure"
         exit 0
 
+    %runscript
+        echo "Define actions for the container to be executed with the run command or"
+        echo "when container is executed."
+
+    %startscript
+        echo "Define actions for container to perform when started as an instance."
+
     %labels
         HELLO MOTO
         KEY VALUE
@@ -135,6 +142,18 @@ DEFFILE SCI-F SECTION EXAMPLES:
 
     %apprun app1
         echo "this is a runscript for app1"
+
+    %applabels app1
+        AUTHOR tolkien
+
+    %appfiles app1
+        /file/on/host/foo.txt /file/in/contianer/foo.txt
+
+    %appsetup app1
+        echo "a %setup section (see above) for apps"
+
+    %apptest app1
+        echo "some test for an app" 
 
 
 EXAMPLES:

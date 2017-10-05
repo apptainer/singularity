@@ -272,15 +272,17 @@ KVERS=`uname -r`
 if test -f "/lib/modules/$KVERS/modules.dep"; then
     if grep -q 'overlay.ko' "/lib/modules/$KVERS/modules.dep"; then
         AC_MSG_RESULT([yes])
-        SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
-        OVERLAY_FS=1
+        ENABLE_OVERLAY_CONFIG_DEFAULT="yes"
+        OVERLAY_FS=1 # this adds it to testing
     else
         AC_MSG_RESULT([no])
+        ENABLE_OVERLAY_CONFIG_DEFAULT="no"
     fi
 else
     AC_MSG_RESULT([maybe])
-    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_OVERLAYFS"
+    ENABLE_OVERLAY_CONFIG_DEFAULT="try"
 fi
+AC_SUBST(ENABLE_OVERLAY_CONFIG_DEFAULT)
 
 
 # ---------------------------------------------------------------------
@@ -408,6 +410,7 @@ AC_CONFIG_FILES([
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
    src/util/Makefile
+   src/util/config_defaults.h
    etc/Makefile
    bin/Makefile
    bin/singularity

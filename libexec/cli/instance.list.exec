@@ -28,7 +28,7 @@ if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
 fi
 
-if ! USERID=`id --real --user`; then
+if ! USERID=`id -ru`; then
     message ERROR "Could not ascertain user ID\n"
     exit 255
 fi
@@ -77,6 +77,18 @@ for i in $DAEMONS; do
         FILE_NAME=`basename "$i"`
         DAEMON_NAME=${FILE_NAME##*-}
         . "$i"
+
+        PROC_CMDLINE="/proc/$DAEMON_PID/cmdline"
+        if [ -e "$PROC_CMDLINE" ]; then
+            PROGNAME=`cat ${PROC_CMDLINE}`
+            if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
+                rm -f "$i"
+                continue
+            fi
+        else
+            rm -f "$i"
+            continue
+        fi
 
         printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
 

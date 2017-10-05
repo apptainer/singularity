@@ -15,7 +15,7 @@ fixing or enhancing.
 - [ ] I have read the [Guidelines for Contributing](https://github.com/singularityware/singularity/blob/master/CONTRIBUTING.md), and this PR conforms to the stated requirements.
 - [ ] I have tested this PR locally with a `make test`
 - [ ] This PR is NOT against the project's master branch
-- [ ] I have added myself as a contributor to the [Author's file](https://github.com/singularityware/singularity/blob/master/AUTHORS.md)
+- [ ] I have added myself as a contributor to the [contributors's file](https://github.com/singularityware/singularity/blob/master/CONTRIBUTORS.md)
 - [ ] This PR is ready for review and/or merge
 
 

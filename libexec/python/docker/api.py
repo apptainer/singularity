@@ -73,6 +73,8 @@ class DockerApiConnection(ApiConnection):
         self.auth = None
         self.token = None
         self.token_url = None
+        self.schemaVersion = None
+        self.reverseLayers = False
         self.api_base = DOCKER_API_BASE
         self.api_version = DOCKER_API_VERSION
         self.manifest = None
@@ -106,7 +108,6 @@ class DockerApiConnection(ApiConnection):
         # specify wanting version 2 schema
         # meaning the correct order of digests
         # returned (base to child)
-
         return {"Accept": 'application/vnd.docker.distribution.manifest.v2+json,application/vnd.docker.distribution.manifest.list.v2+json,application/json',  # noqa
                'Content-Type': 'application/json; charset=utf-8'}  # noqa
 
@@ -204,7 +205,11 @@ class DockerApiConnection(ApiConnection):
     def get_images(self, manifest=None):
         '''get_images will return a list of layers from a manifest.
         The function is intended to work with both version
-        1 and 2 of the schema
+        1 and 2 of the schema. All layers (including redundant)
+        are returned.
+
+        For version 1 manifests: extraction is reversed
+
         :param manifest: the manifest to read_layers from
         '''
         if manifest is None:
@@ -233,9 +238,15 @@ class DockerApiConnection(ApiConnection):
 
         for layer in manifest[layer_key]:
             if digest_key in layer:
-                if layer[digest_key] not in digests:
-                    bot.debug("Adding digest %s" % layer[digest_key])
-                    digests.append(layer[digest_key])
+                bot.debug("Adding digest %s" % layer[digest_key])
+                digests.append(layer[digest_key])
+
+        # Reverse layer order for manifest version 1.0
+        if self.reverseLayers is True:
+            message = 'v%s manifest, reversing layers' % self.schemaVersion
+            bot.debug(message)
+            digests.reverse()
+
         return digests
 
     def get_tags(self, return_response=False):
@@ -337,6 +348,11 @@ class DockerApiConnection(ApiConnection):
         if self.manifest is None:
             bot.debug('MANIFEST (Primary): not found, making initial call.')
             self.manifest = self.get_manifest()
+            # This is the primary manifest schema version, determines if we
+            # need to reverse layers
+            self.schemaVersion = self.manifest['schemaVersion']
+            if self.schemaVersion == 1:
+                self.reverseLayers = True
 
         if self.manifestv1 is None:
             bot.debug('MANIFEST (Metadata): not found, making initial call.')

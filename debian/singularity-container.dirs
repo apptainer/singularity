@@ -1,0 +1,4 @@
+var/lib/singularity
+var/lib/singularity/mnt
+var/lib/singularity/mnt/source
+usr/share/bash-completion

@@ -129,7 +129,7 @@ static void prepare_pipes_parent() {
 }
 
 /* Updated wait_for_go_ahead() which allows bi-directional wait signaling */
-void singularity_wait_for_go_ahead() {
+int singularity_wait_for_go_ahead() {
     if ( (coordination_pipe[0] == -1) || (coordination_pipe[1] == -1)) {
         singularity_message(ERROR, "Internal error!  wait_for_go_ahead invoked with invalid pipe state (%d, %d).\n",
                             coordination_pipe[0], coordination_pipe[1]);
@@ -148,17 +148,14 @@ void singularity_wait_for_go_ahead() {
         singularity_message(ERROR, "Failed to communicate with other process: %s (errno=%d)\n", strerror(errno), errno);
         ABORT(255);
     } else if (retval == 0) {  // Other process closed the write pipe unexpectedly.
-        singularity_message(ERROR, "Other process closed write pipe unexpectedly.\n");
-        ABORT(255);
-    }
-
-    // Other process successfully sent a code.
-    if (code != 0) {
-        singularity_message(ERROR, "Other process indicated an error occurred; exiting with the suggested status.\n");
-        ABORT(code);
+        if ( close(dup(coordination_pipe[1])) == -1 ) {
+            singularity_message(ERROR, "Other process closed write pipe unexpectedly.\n");
+            ABORT(255);
+        }
     }
 
     singularity_message(DEBUG, "Received go-ahead signal: %d\n", code);
+    return(code);
 }
 
 /* Updated signal_go_ahead() which allows bi-directional wait signaling */
@@ -175,8 +172,10 @@ void singularity_signal_go_ahead(int code) {
     while ( (-1 == (retval = write(coordination_pipe[1], &code, 1))) && errno == EINTR) {}
 
     if (retval == -1) {
-        singularity_message(ERROR, "Failed to send go-ahead to child process: %s (errno=%d)\n", strerror(errno), errno);
-        ABORT(255);
+        if ( errno != EPIPE ) {
+            singularity_message(ERROR, "Failed to send go-ahead to child process: %s (errno=%d)\n", strerror(errno), errno);
+            ABORT(255);
+        }
     }  // Note that we don't test for retval == 0 as we should get a EPIPE instead.
 
 }
@@ -452,9 +451,13 @@ int singularity_fork_daemonize(unsigned int flags) {
     } else if ( child > 0 ) {
         singularity_message(DEBUG, "Successfully spawned daemon, waiting for signal_go_ahead from child\n");
 
-        singularity_wait_for_go_ahead();
-
-        exit(0);
+        int code = singularity_wait_for_go_ahead();
+        if ( code == 0 ) {
+            exit(0);
+        } else {
+            singularity_message(ERROR, "Daemon failed to start\n");
+            ABORT(code);
+        }
     }
     
     singularity_message(ERROR, "Reached unreachable code. How did you get here?\n");

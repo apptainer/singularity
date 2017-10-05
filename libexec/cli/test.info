@@ -1,6 +1,6 @@
-NAME="run"
+NAME="test"
 SECTION="action"
-SUMMARY="Launch a runscript within container"
+SUMMARY="Launch a testscript within container"
 USAGE="singularity [...] test [exec options...] <container path>"
 
 

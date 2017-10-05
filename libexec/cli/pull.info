@@ -13,7 +13,7 @@ should use one of run, exec, or shell.
 SUPPORTED URIs:
 
     shub: Pull an image using python from Singularity Hub to $PWD
-    docker: Pull a docker image using python to $PWD
+    docker: Pull a docker image using python to $PWD (deprecated, use build)
 
 PULL OPTIONS:
     -n|--name   Specify a custom container name (first priority)
@@ -26,10 +26,15 @@ PULL OPTIONS:
 
 
 ******************************************************************************
-NOTICE: The pull --size command will be deprecated for Singularity 2.4+
-        images that are in squashfs format (and do not need a size 
-        estimation). The option is maintained for pulling previously
-        generated (2.3 and below) images.
+NOTICE: The pull command for Docker Hub containers assembles layers at the
+        time of the pull and is not guaranteed to, on repeated pull, produce
+        the equivalent image. To pull exactly equivlent images, pull
+        from a Singularity Registry.
+
+        The pull --size option will be deprecated for Singularity 2.4+ images 
+        that are in squashfs format (and do not need a size estimation). The 
+        option is maintained for pulling previously generated (2.3 and below) 
+        images.
 ******************************************************************************
 
 

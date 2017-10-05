@@ -175,9 +175,10 @@ def INSPECT(inspect_labels=None,
         LABELBASE = "scif/apps/%s/scif/labels.json" % inspect_app
         LABELFILE = LABELFILE.replace('.singularity.d/labels.json', LABELBASE)
         HELPBASE = "scif/apps/%s/scif/runscript.help" % inspect_app
-        HELPFILE = HELPFILE.replace('.singularity.d/runscript.help', LABELBASE)
+        HELPFILE = HELPFILE.replace('.singularity.d/runscript.help', HELPBASE)
         RUNBASE = "scif/apps/%s/scif/runscript" % inspect_app
-        RUNSCRIPT = RUNSCRIPT.replace(".singularity.d/runscript", RUNBASE)
+        RUNSCRIPT = "%s/%s" % (RUNSCRIPT.strip('singularity'), RUNBASE)
+
         TESTBASE = "scif/apps/%s/scif/test" % inspect_app
         TESTFILE = TESTFILE.replace(".singularity.d/test", TESTBASE)
         ENVBASE = "scif/apps/%s/scif/" % inspect_app

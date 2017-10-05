@@ -29,11 +29,13 @@ if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
 fi
 
 
-if ! USERID=`id --real --user`; then
+if ! USERID=`id -ru`; then
     message ERROR "Could not ascertain user ID\n"
     exit 255
 fi
 
+KILL_VAL="15"
+KILL_WAIT="10"
 
 while true; do
     case ${1:-} in
@@ -53,6 +55,15 @@ while true; do
         -a|--all)
             ALL_DAEMONS=1
             export ALL_DAEMONS
+            shift
+        ;;
+        -f|--force)
+            FORCE=1
+            shift
+        ;;
+        -s|--signal)
+            shift
+            KILL_VAL=${1:-}
             shift
         ;;
         -*)
@@ -102,7 +113,18 @@ for i in $DAEMONS; do
         . "$i"
         
         echo "Stopping ${DAEMON_NAME} instance of ${DAEMON_IMAGE} (PID=${DAEMON_PID})"
-        kill -n 9 ${DAEMON_PID}
+        if [ -n "${FORCE:-}" ]; then
+            kill -s 9 ${DAEMON_PID} 2> /dev/null
+        else
+            kill -s ${KILL_VAL} ${DAEMON_PID} 2> /dev/null
+            if [ $? = 0 ]; then
+                { sleep "${KILL_WAIT}"; test -d "/proc/${DAEMON_PID}" && kill -s 9 "${DAEMON_PID}"; } &
+            else
+                message ERROR "No instance running with pid ${DAEMON_PID}\n"
+                exit 1
+            fi
+        fi
+        
         rm $i
         let "COUNT++"
     fi

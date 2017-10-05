@@ -27,7 +27,7 @@ if [ -f "${HOME:-}/.singularity-init" ]; then
     . "${HOME:-}/.singularity-init"
 fi
 
-if ! USERID=`id --real --user`; then
+if ! USERID=`id -ru`; then
     message ERROR "Could not ascertain user ID\n"
     exit 255
 fi
@@ -73,16 +73,16 @@ while true; do
             SINGULARITY_CONTAIN=1
             export SINGULARITY_CONTAIN
         ;;
-        -e|--cleanenv)
+        -o|--overlay)
             shift
-            SINGULARITY_CLEANENV=1
-            export SINGULARITY_CLEANENV
-        ;;
-        --pwd)
+            SINGULARITY_OVERLAYIMAGE="${1:-}"
+            export SINGULARITY_OVERLAYIMAGE
             shift
-            SINGULARITY_TARGET_PWD="$1"
-            export SINGULARITY_TARGET_PWD
-            shift
+
+            if [ ! -e "${SINGULARITY_OVERLAYIMAGE:-}" ]; then
+                message ERROR "Overlay image must be a file or directory!\n"
+                ABORT 255
+            fi
         ;;
         -n|--nv)
             shift
@@ -167,11 +167,35 @@ export SINGULARITY_DAEMON_START
 
 singularity_daemon_file "$SINGULARITY_DAEMON_NAME"
 
-if [ -f "${SINGULARITY_DAEMON_FILE}" ]; then
-    message ERROR "A daemon process is already running with this name: ${SINGULARITY_DAEMON_NAME}\n"
-    ABORT 255
-fi
+INSTANCE_PROC_NAME="singularity-instance: $USER [$SINGULARITY_DAEMON_NAME]"
 
+# cleanup by testing if daemons are alive
+DAEMONS=`singularity_daemon_glob '*' | sort | uniq`
+
+for i in $DAEMONS; do
+    if [ -f "$i" ]; then
+        if [ ! -s "$i" ]; then
+            rm "$i"
+            continue
+        fi
+        FILE_NAME=`basename "$i"`
+        DAEMON_NAME=${FILE_NAME##*-}
+        . "$i"
+        PROC_CMDLINE="/proc/${DAEMON_PID:-}/cmdline"
+        if [ -e "$PROC_CMDLINE" ]; then
+            PROGNAME=`cat ${PROC_CMDLINE}`
+            if [ "${PROGNAME}" == "${INSTANCE_PROC_NAME}" ]; then
+                message ERROR "A daemon process is already running with this name: ${DAEMON_NAME}\n"
+                ABORT 255
+            fi
+            if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
+                rm -f "$i"
+            fi
+        else
+            rm -f "$i"
+        fi
+    fi
+done
 
 if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
     . "$SINGULARITY_sysconfdir/singularity/init"
@@ -182,9 +206,9 @@ if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
 fi
 
 if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/start-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/start-suid" "$@" <&0
+    exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/start-suid" "$@" <&0
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/start" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/start" "$@" <&0
+    exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/start" "$@" <&0
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/start\n"
     exit 1

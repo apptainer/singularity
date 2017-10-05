@@ -96,6 +96,7 @@ int _singularity_runtime_ns_mnt_join(void) {
     int mnt_fd;
 
     /* Attempt to open /proc/[MNT]/ns/mnt */
+    singularity_priv_escalate();
     mnt_fd = openat(ns_fd, "mnt", O_RDONLY);
 
     if( mnt_fd == -1 ) {
@@ -103,7 +104,6 @@ int _singularity_runtime_ns_mnt_join(void) {
         ABORT(255);
     }
     
-    singularity_priv_escalate();
     singularity_message(DEBUG, "Attempting to join mount namespace\n");
     if ( setns(mnt_fd, CLONE_NEWNS) < 0 ) {
         singularity_message(ERROR, "Could not join mount namespace: %s\n", strerror(errno));
