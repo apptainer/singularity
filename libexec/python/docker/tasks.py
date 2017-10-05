@@ -99,8 +99,8 @@ def extract_runscript(manifest, includecmd=False):
         # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
         if not isinstance(cmd, list):
             cmd = [cmd]
-    
-        cmd = " ".join(['"%s"' %x for x in cmd])
+
+        cmd = " ".join(['"%s"' % x for x in cmd])
 
         if not RUNSCRIPT_COMMAND_ASIS:
             cmd = 'exec %s' % cmd
@@ -170,7 +170,7 @@ def extract_env(manifest):
     '''
     environ = get_config(manifest, 'Env')
     if environ is not None:
-        if not isinstance(environ,list):
+        if not isinstance(environ, list):
             environ = [environ]
 
         lines = []
