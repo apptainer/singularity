@@ -94,7 +94,6 @@ def extract_runscript(manifest, includecmd=False):
     if cmd is not None:
         bot.verbose3("Adding Docker %s as Singularity runscript..."
                      % command.upper())
-        bot.debug(cmd)
 
         # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
         if not isinstance(cmd, list):
