@@ -60,7 +60,7 @@ if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 BUILDDEF_DIR_NAME=$(dirname ${SINGULARITY_BUILDDEF:-})
-BUILDDEF_DIR=$(realpath ${BUILDDEF_DIR_NAME:-})
+BUILDDEF_DIR=$(readlink -f ${BUILDDEF_DIR_NAME:-})
 
 if [ -z "${BUILDDEF_DIR:-}" ]; then
     message ERROR "Can't find parent directory of $SINGULARITY_BUILDDEF\n"

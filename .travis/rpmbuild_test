@@ -29,4 +29,5 @@ sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
 sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
 useradd testuser
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
+make secbuildimg
 su testuser -c "make test"
