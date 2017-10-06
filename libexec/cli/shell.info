@@ -38,7 +38,7 @@ SHELL OPTIONS:
     -S|--scratch <path> Include a scratch directory within the container that
                         is linked to a temporary dir (use -W to force location)
     -s|--shell <shell>  Path to program to use for interactive shell
-    -u|--user           Run container in a new user namespace (this allows
+    -u|--userns         Run container in a new user namespace (this allows
                         Singularity to run completely unprivileged on recent
                         kernels and doesn't support all features)
     -W|--workdir        Working directory to be used for /tmp, /var/tmp and

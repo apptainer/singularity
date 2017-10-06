@@ -70,7 +70,6 @@ def remove_image_uri(image, image_uri=None, quiet=False):
         image = image.replace(image_uri, '')
     return image
 
-
 def parse_image_uri(image,
                     uri=None,
                     quiet=False,
