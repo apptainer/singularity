@@ -11,7 +11,7 @@ This command will show you labels, environment variables, and scripts associated
 INSPECT OPTIONS:
     -a|--app         Inspect an application specified in the container
     -l|--labels      Show the labels associated with the image (default)
-    -d|--deffile     Show the bootstrap definition file that was used
+    -d|--deffile     Show the Singularity recipe file that was used
                      to generate the image
     -r|--runscript   Show the runscript for the image
     -t|--test        Show the test script for the image

@@ -21,8 +21,8 @@ CONTAINER PATH:
     This format can not be modified.
 
 BUILD SPEC TARGET:
-    The build spec target is a definition, local image, archive, or URI that
-    can be used to create a Singularity container. Several different
+    The build spec target is a Singularity recipe, local image, archive, or URI 
+    that can be used to create a Singularity container. Several different
     local target formats exist:
 
         def file  : This is a recipe for building a container (examples below)
@@ -46,7 +46,7 @@ CREATE OPTIONS:
                     delete what is currently in the image, just causes the core 
                     to be reinstalled)
     -T|--notest     Bootstrap without running tests in %test section
-    -s|--section    Only run a given section within the bootstrap (setup,
+    -s|--section    Only run a given section within the recipe file (setup,
                     post, files, environment, test, labels, none)
 
 
