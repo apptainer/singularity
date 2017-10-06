@@ -87,12 +87,6 @@ class TestApi(TestCase):
         self.assertTrue(image in glob("*"))
         os.remove(image)
 
-        print("Case 3: Image should not be extracted.")
-        image = self.client.download_image(manifest,
-                                           image_name=image_name,
-                                           extract=False)
-        self.assertTrue(image.endswith('.img.gz'))
-
     def test_uri(self):
         '''test_uri will make sure that the endpoint returns the equivalent
         image for all different uri options
