@@ -24,6 +24,11 @@ bindir="@bindir@"
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_PATH="$bindir"
 
+if [ ! -x "$SINGULARITY_PATH/singularity" ]; then
+    /bin/echo "ERROR: Could not locate singularity program at: $SINGULARITY_PATH/singularity"
+    exit 1
+fi
+
 SECBUILD_IMAGE="$SINGULARITY_libexecdir/singularity/bootstrap-scripts/secbuild.img"
 
 if [ $(id -ru) != 0 ]; then

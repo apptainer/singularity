@@ -29,5 +29,11 @@ sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
 sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
 useradd testuser
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
+
+# build image for isolated builds
+sed -i 's,^prefix=.*,prefix=/usr,' secbuildimg.sh
+sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' secbuildimg.sh
+sed -i 's,^localstatedir=.*,localstatedir=/var,' secbuildimg.sh
 make secbuildimg
+
 su testuser -c "make test"
