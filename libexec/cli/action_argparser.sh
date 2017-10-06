@@ -114,6 +114,11 @@ while true; do
             SINGULARITY_UNSHARE_NET=1
             export SINGULARITY_UNSHARE_NET
         ;;
+        --uts)
+            shift
+            SINGULARITY_UNSHARE_UTS=1
+            export SINGULARITY_UNSHARE_UTS
+        ;;
         --pwd)
             shift
             SINGULARITY_TARGET_PWD="$1"

@@ -149,6 +149,19 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                       ]
                   )
 
+AC_MSG_CHECKING([for namespace: CLONE_NEWUTS])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+                                     #include <sched.h>
+                                   ]],
+                                   [[unshare(CLONE_NEWUTS);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWUTS"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
 AC_MSG_CHECKING([for feature: NO_NEW_PRIVS])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                                      #include <sys/prctl.h>
@@ -369,6 +382,7 @@ AC_CONFIG_FILES([
    src/lib/runtime/ns/mnt/Makefile
    src/lib/runtime/ns/net/Makefile
    src/lib/runtime/ns/pid/Makefile
+   src/lib/runtime/ns/uts/Makefile
    src/lib/runtime/files/Makefile
    src/lib/runtime/files/group/Makefile
    src/lib/runtime/files/passwd/Makefile

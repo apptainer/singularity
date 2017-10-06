@@ -24,6 +24,7 @@ START OPTIONS:
                         overrides the home directory within the container
     -n|--net            Run container in a new network namespace (loopback is
                         only network device active)
+    --uts               Run container in a new UTS namespace
     --nv                Enable experimental Nvidia support
     -o|--overlay        Use a persistent overlayFS via a writable image
     -S|--scratch <path> Include a scratch directory within the container that
