@@ -37,7 +37,7 @@ from shell import (
 from sutils import (
     add_http,
     clean_up,
-    get_image_format,
+    is_gzip,
     read_file,
     run_command
 )
@@ -169,14 +169,17 @@ class SingularityApiConnection(ApiConnection):
                                               file_name=image_name,
                                               show_progress=True)
 
-        # Squashfs, folders do not get extracted
-        image_format = get_image_format(image_file)
-        if image_format == "GZIP":
+        # Compressed ext3 images need extraction
+        if is_gzip(image_file):
             extract = True
 
         if extract is True:
+            if not image_file.endswith('.gz'):
+                os.rename(image_file, "%s.gz" % image_file)
+
             if not bot.is_quiet():
                 print("Decompressing %s" % image_file)
+
             output = run_command(['gzip', '-d', '-f', image_file])
             image_file = image_file.replace('.gz', '')
 
@@ -189,7 +192,7 @@ class SingularityApiConnection(ApiConnection):
 
 
 # Various Helpers -----------------------------------------------
-def get_image_name(manifest):
+def get_image_name(manifest, extension="simg"):
     '''return the image name for a manifest. Estimates extension from file
     :param manifest: the image manifest with 'image'
                      as key with download link
@@ -197,14 +200,6 @@ def get_image_name(manifest):
     from defaults import (SHUB_CONTAINERNAME,
                           SHUB_NAMEBYCOMMIT,
                           SHUB_NAMEBYHASH)
-
-    # Find the image extension based on the url
-    if ".img.gz" in manifest['image']:
-        extension = 'img.gz'
-    elif ".simg.gz" in manifest['image']:
-        extension = 'simg.gz'
-    else:
-        extension = 'simg'
 
     # First preference goes to a custom name
     default_naming = True
@@ -251,6 +246,7 @@ def extract_metadata(manifest, labelfile=None, prefix=None):
     '''extract_metadata will write a file of metadata from shub
     :param manifest: the manifest to use
     '''
+
     if prefix is None:
         prefix = ""
     prefix = prefix.upper()
