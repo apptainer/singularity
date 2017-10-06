@@ -93,13 +93,18 @@ def basic_auth_header(username, password):
 ####################################################################
 
 
-def run_command(cmd):
+def run_command(cmd, env=None, quiet=False):
     '''run_command uses subprocess to send a command to the terminal.
     :param cmd: the command to send, should be a list for subprocess
+    :param env: an optional environment to include, a dictionary of key/values
     '''
     try:
-        bot.verbose2("Running command %s with subprocess" % " ".join(cmd))
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        if quiet is False:
+            bot.verbose2("Running command %s with subprocess" % " ".join(cmd))
+        if env is None:
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        else:
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env)
     except OSError as error:
         bot.error("Error with subprocess: %s, returning None" % error)
         return None
@@ -211,11 +216,11 @@ def create_tar(files, output_folder=None):
 
 
 ####################################################################
-# HASHES ###########################################################
+# HASHES/FORMAT ####################################################
 ####################################################################
 
 def get_content_hash(contents):
-    '''get_content_hash will return a hash for a list of content (bytes or other)
+    '''get_content_hash will return a hash for a list of content (bytes/other)
     '''
     hasher = hashlib.sha256()
     for content in contents:
@@ -225,6 +230,37 @@ def get_content_hash(contents):
             content = bytes(content)
         hasher.update(content)
     return hasher.hexdigest()
+
+
+def get_image_format(image_file):
+    '''
+       get image format will use the image-format executable to return the kind
+       of file type for the image
+
+       Parameters
+       ==========
+       image_file: full path to the image file to inspect
+
+       Returns
+       =======
+       GZIP, DIRECTORY, SQUASHFS, EXT3
+
+    '''
+    if image_file.endswith('gz'):
+        bot.debug('Found compressed image')
+        return "GZIP"
+
+    here = os.path.abspath(os.path.dirname(__file__))
+    sbin = here.replace("python", "bin/image-type")
+    custom_env = os.environ.copy()
+    custom_env["SINGULARITY_MESSAGELEVEL"] = "1"
+    image_format = run_command([sbin, image_file], env=custom_env, quiet=True)
+    if image_format is not None:
+        if isinstance(image_format, bytes):
+            image_format = image_format.decode('utf-8')
+        image_format = str(image_format).strip('\n')
+    bot.debug('Found %s image' % image_format)
+    return image_format
 
 
 ####################################################################
