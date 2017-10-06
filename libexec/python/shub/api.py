@@ -161,9 +161,6 @@ class SingularityApiConnection(ApiConnection):
             bot.error("please try when build completed or specify tag.")
             sys.exit(1)
 
-        if not image_name.endswith('.gz'):
-            image_name = "%s.gz" % image_name
-
         if download_folder is not None:
             image_name = "%s/%s" % (download_folder, image_name)
 
@@ -171,7 +168,6 @@ class SingularityApiConnection(ApiConnection):
         image_file = self.download_atomically(url=url,
                                               file_name=image_name,
                                               show_progress=True)
-
 
         # Squashfs, folders do not get extracted
         image_format = get_image_format(image_file)
@@ -193,21 +189,28 @@ class SingularityApiConnection(ApiConnection):
 
 
 # Various Helpers -----------------------------------------------
-def get_image_name(manifest, extension='img.gz'):
-    '''return the image name for a manifest
+def get_image_name(manifest):
+    '''return the image name for a manifest. Estimates extension from file
     :param manifest: the image manifest with 'image'
                      as key with download link
-    :param use_hash: use the image hash instead of name
     '''
     from defaults import (SHUB_CONTAINERNAME,
                           SHUB_NAMEBYCOMMIT,
                           SHUB_NAMEBYHASH)
 
+    # Find the image extension based on the url
+    if ".img.gz" in manifest['image']:
+        extension = 'img.gz'
+    elif ".simg.gz" in manifest['image']:
+        extension = 'simg.gz'
+    else:
+        extension = 'simg'
+
     # First preference goes to a custom name
     default_naming = True
 
     if SHUB_CONTAINERNAME is not None:
-        for replace in [" ", ".gz", ".img"]:
+        for replace in [" ", ".gz", ".img", ".simg"]:
             SHUB_CONTAINERNAME = SHUB_CONTAINERNAME.replace(replace, "")
         image_name = "%s.%s" % (SHUB_CONTAINERNAME, extension)
         default_naming = False
