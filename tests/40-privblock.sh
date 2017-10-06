@@ -29,7 +29,8 @@ test_init "Checking escalation block"
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
-stest 0 sudo singularity build "$CONTAINER" docker://centos:7
+stest 0 sudo singularity build --writable "$CONTAINER" docker://centos:7
+
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
@@ -37,11 +38,16 @@ stest 1 singularity exec "$CONTAINER" false
 stest 0 sudo singularity exec "$CONTAINER" chsh -s /bin/sh
 stest 1 singularity exec "$CONTAINER" chsh -s /bin/sh
 
-stest 0 sudo singularity exec "$CONTAINER" mknod -m 600 /test-null c 1 3
-stest 1 sudo singularity exec --no-privs "$CONTAINER" mknod -m 600 /test-null c 1 3
+stest 0 sudo singularity exec -w "$CONTAINER" mknod -m 600 /test-null c 1 3
+stest 1 sudo singularity exec -w --no-privs "$CONTAINER" mknod -m 600 /test-null c 1 3
 
 stest 0 sudo singularity exec "$CONTAINER" mount -B /etc /mnt
 stest 1 sudo singularity exec --no-privs "$CONTAINER" mount -B /etc /mnt
+
+stest 1 sudo singularity exec "$CONTAINER" dd if=/dev/mem of=/dev/null bs=1 count=1
+stest 0 sudo singularity exec --keep-privs "$CONTAINER" dd if=/dev/mem of=/dev/null bs=1 count=1
+
+stest 0 sudo rm -rf "$CONTAINER"
 
 test_cleanup
 
