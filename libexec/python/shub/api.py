@@ -37,6 +37,7 @@ from shell import (
 from sutils import (
     add_http,
     clean_up,
+    get_image_format,
     read_file,
     run_command
 )
@@ -125,7 +126,7 @@ class SingularityApiConnection(ApiConnection):
                        manifest,
                        image_name=None,
                        download_folder=None,
-                       extract=True):
+                       extract=False):
 
         '''
 
@@ -143,6 +144,7 @@ class SingularityApiConnection(ApiConnection):
         image_file: the full path to the downloaded image
 
         '''
+
         if image_name is None:
             image_name = get_image_name(manifest)
 
@@ -169,6 +171,12 @@ class SingularityApiConnection(ApiConnection):
         image_file = self.download_atomically(url=url,
                                               file_name=image_name,
                                               show_progress=True)
+
+
+        # Squashfs, folders do not get extracted
+        image_format = get_image_format(image_file)
+        if image_format == "GZIP":
+            extract = True
 
         if extract is True:
             if not bot.is_quiet():
