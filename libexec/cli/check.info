@@ -11,7 +11,7 @@ Note that some checks require sudo.
 CHECK OPTIONS:
     -l|--low       Specify low threshold (all checks, default) 
     -m|--med       Perform medium and high checks
-    -h|--high      Perform only checks at level high
+       --high      Perform only checks at level high
     -t|--tag       tag to filter checks. default is "default"                      
                       Available: default, security, docker, clean
 

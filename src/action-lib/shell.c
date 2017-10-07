@@ -31,6 +31,7 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
+#include "util/privilege.h"
 
 
 void action_shell(int argc, char **argv) {
