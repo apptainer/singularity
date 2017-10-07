@@ -170,7 +170,7 @@ singularity_daemon_file "$SINGULARITY_DAEMON_NAME"
 INSTANCE_PROC_NAME="singularity-instance: $USER [$SINGULARITY_DAEMON_NAME]"
 
 # cleanup by testing if daemons are alive
-DAEMONS=`singularity_daemon_glob '*' | sort | uniq`
+DAEMONS=$(singularity_daemon_glob '*' | sort | uniq)
 
 for i in $DAEMONS; do
     if [ -f "$i" ]; then
@@ -181,17 +181,24 @@ for i in $DAEMONS; do
         FILE_NAME=`basename "$i"`
         DAEMON_NAME=${FILE_NAME##*-}
         . "$i"
-        PROC_CMDLINE="/proc/${DAEMON_PID:-}/cmdline"
-        if [ -e "$PROC_CMDLINE" ]; then
-            PROGNAME=`cat ${PROC_CMDLINE}`
-            if [ "${PROGNAME}" == "${INSTANCE_PROC_NAME}" ]; then
-                message ERROR "A daemon process is already running with this name: ${DAEMON_NAME}\n"
-                ABORT 255
-            fi
-            if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
+        if [ -n "${DAEMON_PID:-}" ]; then
+            PROC_CMDLINE="/proc/${DAEMON_PID:-}/cmdline"
+            if [ -e "$PROC_CMDLINE" ]; then
+                PROGNAME=$(<"${PROC_CMDLINE}" tr -d \\0)
+                if [ "${PROGNAME}" == "${INSTANCE_PROC_NAME}" ]; then
+                    message ERROR "A daemon process is already running with this name: ${DAEMON_NAME}\n"
+                    ABORT 255
+                fi
+                if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
+                    message WARN "Removing stale daemon file: $i\n"
+                    rm -f "$i"
+                fi
+            else
+                message WARN "Removing stale daemon file: $i\n"
                 rm -f "$i"
             fi
         else
+            message WARN "Removing invalid daemon file: $i\n"
             rm -f "$i"
         fi
     fi
