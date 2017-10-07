@@ -71,8 +71,10 @@ int main(int argc, char **argv) {
     struct image_object image;
     char *compfmtstr;
 
-    if ( (compfmtstr = check_compression_formats(argv[1])) != NULL )
+    if ( (compfmtstr = check_compression_formats(argv[1])) != NULL ) {
         printf("%s\n", compfmtstr);
+        return(0);
+    }
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
