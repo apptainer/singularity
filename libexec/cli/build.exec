@@ -37,7 +37,7 @@ else
 fi
 
 if ! which mksquashfs > /dev/null 2>&1; then
-    message ERROR "You must install squashfs-tools to build images\n"
+    message ERROR "You must install squashfs-tools to build FS images\n"
     ABORT 255
 fi
 
@@ -202,7 +202,7 @@ if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
             rm -rf "$SINGULARITY_CONTAINER_OUTPUT"
         fi
     else
-        message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an image file\n"
+        message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an FS image file\n"
         exit 1
     fi
 fi
@@ -294,7 +294,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
         fi
 
     elif eval is_image "${SINGULARITY_BUILDDEF}"; then
-        message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
+        message 1 "Building from local FS image: $SINGULARITY_BUILDDEF\n"
         nonroot_build_warning
         if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" 2>/dev/null | tar xBf - -C "${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
@@ -324,7 +324,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
 elif [ -d "$SINGULARITY_BUILDDEF" ]; then
     nonroot_build_warning
     if [ -z ${SINGULARITY_QUIET_SANDBOXMESSAGE:-} ]; then
-        message 1 "Building image from sandbox: $SINGULARITY_BUILDDEF\n"
+        message 1 "Building FS image from sandbox: $SINGULARITY_BUILDDEF\n"
         SINGULARITY_NOCLEANUP=1 # don't delete when building directly from sandbox
     fi
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
@@ -355,27 +355,33 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
             eval_abort ${SINGULARITY_bindir}/singularity image.create --size ${IMAGE_SIZE} ${SINGULARITY_CONTAINER_OUTPUT}
         fi
 
-        message 1 "Building Singularity image...\n"
+        message 1 "Building Singularity FS image...\n"
         tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_bindir}/singularity image.import ${SINGULARITY_CONTAINER_OUTPUT}
     else
-        message 1 "Building Singularity image...\n"
+        message 1 "Building Singularity FS image...\n"
         if [ "$USERID" != "0" ]; then
             OPTS="-all-root"
         else
             OPTS=""
         fi
         if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend $OPTS > /dev/null; then
-            message ERROR "Failed squashing image, left template directory at: $SINGULARITY_ROOTFS\n"
+            message ERROR "Failed squashing FS image, left template directory at: $SINGULARITY_ROOTFS\n"
             exit 1
         fi
     fi
 
-    if ! ${SINGULARITY_libexecdir}/singularity/bin/prepheader "$SINGULARITY_CONTAINER_OUTPUT" > /dev/null; then
-        message ERROR "Failed to prepend singularity header\n"
-	exit 1
+    env | grep SING
+
+    message 1 "Building Singularity SIF container image...\n"
+    if ! /usr/bin/sifcreate -D "${SINGULARITY_BUILDDEF}" -E \
+      -L ${SINGULARITY_ROOTFS}/.singularity.d/labels.json \
+      -P "$SINGULARITY_CONTAINER_OUTPUT" -f 0 -c "System partition" \
+      "$SINGULARITY_CONTAINER_OUTPUT".sif > /dev/null; then
+        message ERROR "Failed to wrap container into a SIF image\n"
+        exit 1
     fi
 
-    chmod a+x "$SINGULARITY_CONTAINER_OUTPUT"
+    chmod a+x "$SINGULARITY_CONTAINER_OUTPUT".sif
 fi
 
-message 1 "Singularity container built: $SINGULARITY_CONTAINER_OUTPUT\n"
+message 1 "Singularity container built: ${SINGULARITY_CONTAINER_OUTPUT}.sif\n"
