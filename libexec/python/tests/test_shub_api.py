@@ -127,7 +127,7 @@ class TestApi(TestCase):
 
         print("Case 1: return an image name corresponding to repo")
         image_name = get_image_name(manifest)
-        self.assertEqual('vsoch-singularity-images-mongo.img.gz',
+        self.assertEqual('vsoch-singularity-images-mongo.simg',
                          image_name)
 
 
