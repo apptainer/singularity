@@ -158,7 +158,7 @@ class SingularityApiConnection(ApiConnection):
 
         if url is None:
             bot.error("%s is not ready for download" % image_name)
-            bot.error("please try when build completed or specify tag.")
+            bot.error("please try when build completes or specify tag.")
             sys.exit(1)
 
         if download_folder is not None:
