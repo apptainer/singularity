@@ -232,27 +232,6 @@ def get_content_hash(contents):
     return hasher.hexdigest()
 
 
-def is_gzip(image_file):
-    '''
-       is gzip will assess if a file is gzip format, which needs to be
-       deecompressed.
-
-       Parameters
-       ==========
-       image_file: full path to the image file to inspect
-
-       Returns
-       =======
-       True or False
-    '''
-    image_format = run_command(["file", '--brief', image_file], quiet=True)
-    if isinstance(image_format, bytes):
-        image_format = image_format.decode('utf-8')
-    if image_format.startswith("gzip"):
-        return True
-    return False
-
-
 def get_image_format(image_file):
     '''
        get image format will use the image-format executable to return the kind

@@ -37,7 +37,7 @@ from shell import (
 from sutils import (
     add_http,
     clean_up,
-    is_gzip,
+    get_image_format,
     read_file,
     run_command
 )
@@ -170,10 +170,9 @@ class SingularityApiConnection(ApiConnection):
                                               show_progress=True)
 
         # Compressed ext3 images need extraction
-        if is_gzip(image_file):
-            extract = True
+        image_type = get_image_format(image_file)
+        if image_type == "GZIP" or extract is True:
 
-        if extract is True:
             if not image_file.endswith('.gz'):
                 os.rename(image_file, "%s.gz" % image_file)
 
