@@ -21,6 +21,7 @@
 #include <sys/un.h>
 #include <sys/wait.h>
 #include <sys/prctl.h>
+#include <sys/file.h>
 #include <signal.h>
 #include <poll.h>
 
@@ -50,7 +51,7 @@
 int started = 0;
 
 int main(int argc, char **argv) {
-    int i, daemon_fd, cleanupd_fd;
+    int i, cleanupd_fd;
     struct image_object image;
     pid_t child;
     siginfo_t siginfo;
@@ -67,6 +68,10 @@ int main(int argc, char **argv) {
 
     singularity_registry_set("UNSHARE_PID", "1");
     singularity_registry_set("UNSHARE_IPC", "1");
+
+    if ( singularity_registry_get("INSTANCE_BOOT") != NULL ) {
+        singularity_registry_set("CONTAIN", "1");
+    }
 
     singularity_cleanupd();
 
@@ -95,8 +100,8 @@ int main(int argc, char **argv) {
     singularity_registry_set("ROOTFS", CONTAINER_FINALDIR);
     singularity_daemon_init();
 
-    singularity_message(DEBUG, "We are ready to recieve jobs, sending signal_go_ahead to parent\n");
-    
+    singularity_message(DEBUG, "Entering chroot environment\n");
+
     singularity_runtime_enter();
     singularity_priv_drop_perm();
 
@@ -105,15 +110,65 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+    if ( chdir("/") < 0 ) {
+        singularity_message(ERROR, "Can't change directory to /\n");
+    }
+    setsid();
+    umask(0);
+
+    cleanupd_fd = atoi(singularity_registry_get("CLEANUPD_FD"));
+
+    if ( singularity_registry_get("INSTANCE_BOOT") != NULL ) {
+        int pipes[2];
+
+        if ( pipe2(pipes, O_CLOEXEC) < 0 ) {
+            singularity_signal_go_ahead(255);
+            return(0);
+        }
+
+        if ( fork() == 0 ) {
+            /* wait a broken pipe which mean exec success */
+            struct pollfd pfd;
+            pfd.fd = pipes[0];
+            pfd.events = POLLRDHUP;
+
+            close(pipes[1]);
+            while( poll(&pfd, 1, 1000) >= 0 ) {
+                if ( pfd.revents == POLLHUP ) break;
+            }
+            singularity_signal_go_ahead(0);
+
+            /* wait /sbin/init install signal handler */
+            usleep(20000);
+            return(0);
+        } else {
+            close(pipes[0]);
+            if ( is_exec("/sbin/init") == 0 ) {
+                argv[1] = NULL;
+                if ( execv("/sbin/init", argv) < 0 ) { // Flawfinder: ignore
+                    singularity_message(ERROR, "Exec of /sbin/init failed\n");
+                }
+            } else {
+                singularity_message(ERROR, "/sbin/init not present in container\n");
+            }
+            /* send exit status and implicitly kill polling child */
+            singularity_signal_go_ahead(255);
+            return(0);
+        }
+    }
+
+    /* set program name */
+    if ( prctl(PR_SET_NAME, "sinit", 0, 0, 0) < 0 ) {
+        singularity_message(ERROR, "Failed to set program name\n");
+        ABORT(255);
+    }
+
     singularity_install_signal_handler();
 
-    daemon_fd = atoi(singularity_registry_get("DAEMON_FD"));
-    cleanupd_fd = atoi(singularity_registry_get("CLEANUPD_FD"));
-    
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {
-        if ( i != daemon_fd && i != cleanupd_fd ) {
+        if ( i != cleanupd_fd ) {
             if ( fstat(i, &filestat) == 0 ) {
                 if ( S_ISFIFO(filestat.st_mode) != 0 ) {
                     continue;
@@ -121,18 +176,6 @@ int main(int argc, char **argv) {
             }
             close(i);
         }
-    }
-
-    if ( chdir("/") < 0 ) {
-        singularity_message(ERROR, "Can't change directory to /\n");
-    }
-    setsid();
-    umask(0);
-
-    /* set program name */
-    if ( prctl(PR_SET_NAME, "sinit", 0, 0, 0) < 0 ) {
-        singularity_message(ERROR, "Failed to set program name\n");
-        ABORT(255);
     }
 
     child = fork();

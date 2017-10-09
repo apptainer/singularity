@@ -32,6 +32,17 @@ if ! USERID=`id -ru`; then
     exit 255
 fi
 
+if [ "${USERID}" = "0" ]; then
+    cat /proc/1/status | grep -q "systemd"
+    if [ $? != 0 ]; then
+        SINGULARITY_UNSHARE_NET=1
+        export SINGULARITY_UNSHARE_NET
+    fi
+    message 2 "Boot instance since running as root\n"
+    SINGULARITY_INSTANCE_BOOT=1
+    export SINGULARITY_INSTANCE_BOOT
+fi
+
 message 2 "Evaluating args: '$*'\n"
 
 while true; do
@@ -84,7 +95,7 @@ while true; do
                 ABORT 255
             fi
         ;;
-        -n|--nv)
+        --nv)
             shift
             for i in `ldconfig -p | grep -E "/libnv|/libcuda|/libEGL|/libGL|/libnvcu|/libvdpau|/libOpenCL|/libOpenGL"`; do
                 if [ -f "$i" ]; then
@@ -116,6 +127,10 @@ while true; do
             shift
             SINGULARITY_UNSHARE_NET=1
             export SINGULARITY_UNSHARE_NET
+        ;;
+        --noboot)
+            shift
+            unset SINGULARITY_INSTANCE_BOOT
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"

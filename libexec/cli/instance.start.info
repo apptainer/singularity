@@ -34,6 +34,8 @@ START OPTIONS:
     -w|--writable       By default all Singularity containers are available as
                         read only. This option makes the file system accessible
                         as read/write.
+    --noboot            By default instance execute /sbin/init, this option turn
+                        off this behaviour and execute startscript
 
 
 CONTAINER FORMATS SUPPORTED:
