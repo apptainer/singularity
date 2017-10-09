@@ -63,6 +63,7 @@ int _singularity_runtime_ns_uts_join(void) {
     int uts_fd;
 
     /* Attempt to open /proc/[PID]/ns/pid */
+    singularity_priv_escalate();
     uts_fd = openat(ns_fd, "uts", O_RDONLY);
 
     if( uts_fd == -1 ) {
@@ -71,7 +72,6 @@ int _singularity_runtime_ns_uts_join(void) {
         return(0);
     }
     
-    singularity_priv_escalate();
     singularity_message(DEBUG, "Attempting to join UTS namespace\n");
     if ( setns(uts_fd, CLONE_NEWUTS) < 0 ) {
         singularity_message(ERROR, "Could not join UTS namespace: %s\n", strerror(errno));
