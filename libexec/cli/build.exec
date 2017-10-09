@@ -52,7 +52,7 @@ build_cleanup() {
         rm -f "${SINGULARITY_BUILDDEF:-}"
     fi
 
-    if [ -z "${SINGULARITY_NOCLEANUP:-}" ]; then
+    if [ -z "${SINGULARITY_NOCLEANUP:-}" -a -z "${SINGULARITY_SANDBOX:-}" ]; then
         if [ -d "${SINGULARITY_ROOTFS:-}" ]; then
             rm -rf "${SINGULARITY_ROOTFS:-}"
         fi
