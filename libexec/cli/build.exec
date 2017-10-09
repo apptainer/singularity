@@ -42,6 +42,8 @@ if ! which mksquashfs > /dev/null 2>&1; then
 fi
 
 build_cleanup() {
+    message 1 "Cleaning up...\n";
+
     if [ -f "${SINGULARITY_CONTENTS:-}" ]; then
         rm -f "${SINGULARITY_CONTENTS:-}"
     fi
@@ -52,7 +54,6 @@ build_cleanup() {
 
     if [ -z "${SINGULARITY_NOCLEANUP:-}" ]; then
         if [ -d "${SINGULARITY_ROOTFS:-}" ]; then
-            message 1 "Cleaning up...\n";
             rm -rf "${SINGULARITY_ROOTFS:-}"
         fi
     fi
