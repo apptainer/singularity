@@ -271,7 +271,15 @@ esac
 
 
 if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
-    if eval is_image "${SINGULARITY_BUILDDEF}"; then
+    if eval is_tar "${SINGULARITY_BUILDDEF}"; then
+        message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
+        nonroot_build_warning
+        if ! eval "zcat_compat ${SINGULARITY_BUILDDEF} 2>/dev/null | tar xf - -C ${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
+            message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
+            ABORT 255
+        fi
+
+    elif eval is_image "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
         nonroot_build_warning
         if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" 2>/dev/null | tar xBf - -C "${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
@@ -299,14 +307,6 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/secbuild.sh"
         else
             eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
-        fi
-
-    elif eval is_tar "${SINGULARITY_BUILDDEF}"; then
-        message 1 "Building from local tar file: $SINGULARITY_BUILDDEF\n"
-        nonroot_build_warning
-        if ! eval "zcat_compat ${SINGULARITY_BUILDDEF} 2>/dev/null | tar xf - -C ${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
-            message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
-            ABORT 255
         fi
 
     else

@@ -77,17 +77,19 @@ for i in $DAEMONS; do
         FILE_NAME=`basename "$i"`
         DAEMON_NAME=${FILE_NAME##*-}
         . "$i"
-
-        PROC_CMDLINE="/proc/$DAEMON_PID/cmdline"
-        if [ -e "$PROC_CMDLINE" ]; then
-            PROGNAME=`cat ${PROC_CMDLINE}`
-            if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
+        if [ -n "${DAEMON_PID:-}" ]; then
+            PROC_CMDLINE="/proc/${DAEMON_PID:-}/cmdline"
+            if [ -e "$PROC_CMDLINE" ]; then
+                PROGNAME=$(<"${PROC_CMDLINE}" tr -d \\0)
+                if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
+                    message WARN "Removing stale daemon file: $i\n"
+                    rm -f "$i"
+                    continue
+                fi
+            else
                 rm -f "$i"
                 continue
             fi
-        else
-            rm -f "$i"
-            continue
         fi
 
         printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"

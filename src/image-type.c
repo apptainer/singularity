@@ -35,17 +35,51 @@
 #include "util/message.h"
 #include "lib/image/image.h"
 
-#define MAX_LINE_LEN 4096
+enum {
+    BUFLEN = 512
+};
 
+static unsigned char gzmagic[2] = { 0x1f, 0x8b };
+static unsigned char bzmagic[3] = { 0x42, 0x5a, 0x68 };
+static unsigned char tarmagic[5] = { 0x75, 0x73, 0x74, 0x61, 0x72 };
+
+char * check_compression_formats(char *fname) {
+    FILE *fp;
+    size_t ret;
+    static unsigned char buf[BUFLEN];
+
+    if ( fname == NULL )
+        return NULL;
+
+    fp = fopen(fname, "r");
+    if ( fp == NULL )
+        return NULL;
+
+    ret = fread(buf, 1, BUFLEN, fp);
+    fclose(fp);
+    if ( ret >= 2 && memcmp(buf, gzmagic, 2) == 0 )
+        return "GZIP";
+    else if ( ret >= 3 && memcmp(buf, bzmagic, 3) == 0 )
+        return "BZIP2";
+    else if ( ret >= 263 && memcmp(&buf[257], tarmagic, 5) == 0 )
+        return "TAR";
+
+    return NULL;
+}
 
 int main(int argc, char **argv) {
     struct image_object image;
+    char *compfmtstr;
+
+    if ( (compfmtstr = check_compression_formats(argv[1])) != NULL ) {
+        printf("%s\n", compfmtstr);
+        return(0);
+    }
 
     singularity_config_init();
 
     singularity_message(VERBOSE3, "Instantiating read only container image object\n");
     image = singularity_image_init(argv[1], O_RDONLY);
-
 
     if ( singularity_image_type(&image) == SQUASHFS ) {
         printf("SQUASHFS\n");

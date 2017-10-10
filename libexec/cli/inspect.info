@@ -1,6 +1,6 @@
 NAME="inspect"
 SECTION="management"
-SUMMARY="Display a container's metadata"
+SUMMARY="Display container's metadata"
 USAGE="singularity [...] inspect [exec options...] <container path>"
 
 print_help() {
