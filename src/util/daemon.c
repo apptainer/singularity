@@ -81,6 +81,7 @@ int daemon_is_owner(char *pid_path) {
 
     free(uid_check);
     free(line);
+    fclose(status);
 
     return(retval);
 }
