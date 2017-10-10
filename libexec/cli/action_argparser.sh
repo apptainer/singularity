@@ -41,7 +41,7 @@ while true; do
             export SINGULARITY_SHELL
             shift
         ;;
-        -u|--user)
+        -u|--user|--userns)
             SINGULARITY_NOSUID=1
             export SINGULARITY_NOSUID
             shift
