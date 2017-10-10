@@ -52,9 +52,6 @@ DEFFILE BASEOS EXAMPLES:
         OSVersion: trusty
         MirrorURL: http://us.archive.ubuntu.com/ubuntu/
 
-    Self:
-        Bootstrap: self
-
     Local Image:
         Bootstrap: localimage
         From: /home/dave/starter.img 
