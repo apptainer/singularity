@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
     
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
-    for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {
+    for( i = sysconf(_SC_OPEN_MAX); i >= 0; i-- ) {
         if ( i != daemon_fd && i != cleanupd_fd ) {
             if ( fstat(i, &filestat) == 0 ) {
                 if ( S_ISFIFO(filestat.st_mode) != 0 ) {
