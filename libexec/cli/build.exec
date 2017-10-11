@@ -41,6 +41,26 @@ if ! which mksquashfs > /dev/null 2>&1; then
     ABORT 255
 fi
 
+build_cleanup() {
+    message 1 "Cleaning up...\n";
+
+    if [ -f "${SINGULARITY_CONTENTS:-}" ]; then
+        rm -f "${SINGULARITY_CONTENTS:-}"
+    fi
+
+    if [ -n "${SINGULARITY_CLEANUP:-}" ]; then
+        rm -f "${SINGULARITY_BUILDDEF:-}"
+    fi
+
+    if [ -z "${SINGULARITY_NOCLEANUP:-}" -a -z "${SINGULARITY_SANDBOX:-}" ]; then
+        if [ -d "${SINGULARITY_ROOTFS:-}" ]; then
+            rm -rf "${SINGULARITY_ROOTFS:-}"
+        fi
+    fi
+}
+
+atexit build_cleanup
+
 USERID=`id -ru`
 
 SINGULARITY_CHECKS="no"
@@ -241,7 +261,6 @@ case $SINGULARITY_BUILDDEF in
 
         SINGULARITY_BUILDDEF="$SINGULARITY_ROOTFS"
         SINGULARITY_QUIET_SANDBOXMESSAGE=1
-        rm -f "$SINGULARITY_CONTENTS"
     ;;
 
     shub://*)
@@ -264,7 +283,6 @@ case $SINGULARITY_BUILDDEF in
         # switch $SINGULARITY_CONTAINER from remote to local 
         SINGULARITY_BUILDDEF=`cat $SINGULARITY_CONTENTS`
         SINGULARITY_CLEANUP=1
-        rm -f "$SINGULARITY_CONTENTS"
     ;;
 
 esac
@@ -285,9 +303,6 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
         if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" 2>/dev/null | tar xBf - -C "${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
-        fi
-        if [ -n "${SINGULARITY_CLEANUP:-}" ]; then
-            rm -f "$SINGULARITY_BUILDDEF"
         fi
 
     elif eval is_deffile "${SINGULARITY_BUILDDEF}"; then 
@@ -368,10 +383,6 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
 	exit 1
     fi
 
-    if [ -z "${SINGULARITY_NOCLEANUP:-}" ]; then
-        message 1 "Cleaning up...\n";
-        rm -rf "$SINGULARITY_ROOTFS"
-    fi
     chmod a+x "$SINGULARITY_CONTAINER_OUTPUT"
 fi
 
