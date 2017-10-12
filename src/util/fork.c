@@ -380,7 +380,7 @@ pid_t singularity_fork(unsigned int flags) {
         fds[1].revents = 0;
 
         /* Drop privs if we're SUID */
-        if ( singularity_suid_enabled() == 0 ) {
+        if ( singularity_suid_enabled() ) {
             singularity_message(DEBUG, "Dropping permissions\n");
             singularity_priv_drop();
         }
