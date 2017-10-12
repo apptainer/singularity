@@ -38,9 +38,8 @@ if [ $(id -ru) != 0 ]; then
     exit 1
 fi
 
-SINGULARITY_OPTS=""
-if [ -d "$SECBUILD_IMAGE" ]; then
-    SINGULARITY_OPTS="--force"
+if [ -e "$SECBUILD_IMAGE" ]; then
+    rm -rf $SECBUILD_IMAGE
 fi
 
 BUILDTMP=$(mktemp -d)
