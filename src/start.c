@@ -51,6 +51,7 @@ int started = 0;
 
 int main(int argc, char **argv, char **envp) {
     int i, daemon_fd, cleanupd_fd;
+    struct tempfile *stdout_log, *stderr_log, *singularity_debug;
     struct image_object image;
     pid_t child;
     siginfo_t siginfo;
@@ -112,7 +113,7 @@ int main(int argc, char **argv, char **envp) {
     
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
-    for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {
+    for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {        
         if ( i != daemon_fd && i != cleanupd_fd ) {
             if ( fstat(i, &filestat) == 0 ) {
                 if ( S_ISFIFO(filestat.st_mode) != 0 ) {
@@ -121,6 +122,14 @@ int main(int argc, char **argv, char **envp) {
             }
             close(i);
         }
+    }
+
+    singularity_debug = make_logfile("singularity-debug");
+    stdout_log = make_logfile("stdout");
+    stderr_log = make_logfile("stderr");
+    
+    for( i = 0; i <= 2; i++ ) {
+        close(i);
     }
 
     if ( chdir("/") < 0 ) {
@@ -136,8 +145,24 @@ int main(int argc, char **argv, char **envp) {
     }
 
     child = fork();
-
+    
     if ( child == 0 ) {
+        /* Make standard output and standard error files to log stdout & stderr into */
+        if ( stdout_log != NULL ) {
+            if ( -1 == dup2(stdout_log->fd, 1) ) {
+                singularity_message(ERROR, "Unable to dup2(): %s\n", strerror(errno));
+                ABORT(255);
+            }
+        }
+
+        if ( stderr_log != NULL ) {
+            if ( -1 == dup2(stderr_log->fd, 2) ) {
+                singularity_message(ERROR, "Unable to dup2(): %s\n", strerror(errno));
+                ABORT(255);
+            }
+        }
+
+        /* Unblock signals and execute startscript */
         singularity_unblock_signals();
         if ( is_exec("/.singularity.d/actions/start") == 0 ) {
             singularity_message(DEBUG, "Exec'ing /.singularity.d/actions/start\n");
@@ -151,6 +176,13 @@ int main(int argc, char **argv, char **envp) {
             kill(1, SIGCONT);
         }
     } else if ( child > 0 ) {
+        if ( singularity_debug != NULL ) {
+            if ( -1 == dup2(singularity_debug->fd, 2) ) {
+                singularity_message(ERROR, "Unable to dup2(): %s\n", strerror(errno));
+                ABORT(255);
+            }
+        }
+
         singularity_message(DEBUG, "Waiting for signals\n");
         /* send a SIGALRM if start script doesn't send SIGCONT within 1 seconds */
         alarm(1);
