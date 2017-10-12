@@ -36,6 +36,7 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/registry.h"
 #include "util/capability.h"
 
 #include "../image.h"
@@ -44,11 +45,11 @@
 int _singularity_image_dir_mount(struct image_object *image, char *mount_point) {
     int mntflags = MS_BIND | MS_NOSUID | MS_REC | MS_NODEV;
 
-/*    if ( strcmp(image->path, "/") == 0 ) {
+    if ( strcmp(image->path, "/") == 0 ) {
         singularity_message(ERROR, "Naughty naughty naughty...\n");
         ABORT(255);
     }
-*/
+
     if ( singularity_capability_keep_privs() ) {
         singularity_message(DEBUG, "keep-privs option set, removing MS_NOSUID mount flags\n");
         mntflags &= ~MS_NOSUID;
@@ -61,6 +62,15 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
         return 1;
     }
     singularity_priv_drop();
+
+    if ( singularity_priv_userns_enabled() != 1 && singularity_registry_get("MOUNTDIR_RO") ) {
+        singularity_priv_escalate();
+        if ( mount(NULL, mount_point, NULL, MS_REMOUNT | MS_RDONLY | mntflags, NULL) < 0 ) {
+            singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
+            return 1;
+        }
+        singularity_priv_drop();
+    }
 
     return(0);
 }
