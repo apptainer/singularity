@@ -21,7 +21,7 @@ fi
 
 SECBUILD_IMAGE="$SINGULARITY_libexecdir/singularity/bootstrap-scripts/secbuild.img"
 
-if [ ! -d "${SECBUILD_IMAGE:-}" ]; then
+if [ ! -f "${SECBUILD_IMAGE:-}" ]; then
     echo
     echo "$SECBUILD_IMAGE is missing, build it as root by typing:"
     echo
@@ -96,6 +96,9 @@ mkdir ${SINGULARITY_WORKDIR}${STAGED_BUILD_IMAGE}
 BUILD_SCRIPT="$SINGULARITY_WORKDIR/tmp/build-script"
 TMP_CONF_FILE="$SINGULARITY_WORKDIR/tmp.conf"
 FSTAB_FILE="$SINGULARITY_WORKDIR/fstab"
+RESOLV_CONF="$SINGULARITY_WORKDIR/resolv.conf"
+
+cp /etc/resolv.conf $RESOLV_CONF
 
 cat > "$FSTAB_FILE" << FSTAB
 none $STAGED_BUILD_IMAGE      bind    dev     0 0
@@ -104,10 +107,12 @@ FSTAB
 cat > "$TMP_CONF_FILE" << CONF
 config passwd = no
 config group = no
+config resolv_conf = no
 mount proc = no
 mount sys = no
 mount home = no
 mount dev = minimal
+mount devpts = no
 mount tmp = no
 enable overlay = no
 user bind control = no
@@ -117,6 +122,7 @@ bind path = $SINGULARITY_WORKDIR/var_tmp:/var/tmp
 bind path = $SINGULARITY_ROOTFS:$STAGED_BUILD_IMAGE
 bind path = $BUILDDEF_DIR:$REPO_DIR
 bind path = $FSTAB_FILE:/etc/fstab
+bind path = $RESOLV_CONF:/etc/resolv.conf
 CONF
 
 # here build pre-stage
