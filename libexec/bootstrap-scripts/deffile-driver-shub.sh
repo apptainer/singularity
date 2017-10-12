@@ -43,13 +43,15 @@ fi
 # Singularity Hub/Registry Customizations
 ################################################################################
 
-if [ ! -z "${REGISTRY:-}" ]; then
-    message DEBUG "Custom Singularity Registry 'Registry:' ${REGISTRY}.\n"
+if [ ! -z "${SINGULARITY_DEFFILE_REGISTRY:-}" ]; then
+    message DEBUG "Custom Singularity Registry 'Registry:' ${SINGULARITY_DEFFILE_REGISTRY}.\n"
+    REGISTRY="${SINGULARITY_DEFFILE_REGISTRY:-}"
     export REGISTRY
 fi
 
-if [ ! -z "${NAMESPACE:-}" ]; then
-    message DEBUG "Custom Singularity Registry Namespace 'Namespace:' ${NAMESPACE}.\n"
+if [ ! -z "${SINGULARITY_DEFFILE_NAMESPACE:-}" ]; then
+    message DEBUG "Custom Singularity Registry Namespace 'Namespace:' ${SINGULARITY_DEFFILE_NAMESPACE}.\n"
+    NAMESPACE="${SINGULARITY_DEFFILE_NAMESPACE:-}"
     export NAMESPACE
 fi
 
