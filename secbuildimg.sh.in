@@ -51,7 +51,6 @@ Bootstrap: docker
 From: debian:jessie-slim
 
 %setup
-    cp /etc/resolv.conf $BUILDTMP/
     cp -a . $SECBUILD_SINGULARITY
 
 %post 
@@ -69,7 +68,6 @@ From: debian:jessie-slim
     make clean
     make -j4
     make install
-    cp $BUILDTMP/resolv.conf /etc/resolv.conf
 DEFFILE
 
 $SINGULARITY_PATH/singularity build $SECBUILD_IMAGE $SECBUILD_DEFFILE
