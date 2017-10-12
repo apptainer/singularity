@@ -21,7 +21,7 @@ fi
 
 SECBUILD_IMAGE="$SINGULARITY_libexecdir/singularity/bootstrap-scripts/secbuild.img"
 
-if [ ! -f "${SECBUILD_IMAGE:-}" ]; then
+if [ ! -d "${SECBUILD_IMAGE:-}" ]; then
     echo
     echo "$SECBUILD_IMAGE is missing, build it as root by typing:"
     echo
@@ -142,7 +142,7 @@ if [ \$? != 0 ]; then
 fi
 
 cd $REPO_DIR
-singularity build -f -s $STAGED_BUILD_IMAGE $BUILDDEF
+singularity build --force --sandbox $STAGED_BUILD_IMAGE $BUILDDEF
 exit \$?
 SCRIPT
 
