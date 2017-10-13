@@ -175,6 +175,7 @@ class SingularityApiConnection(ApiConnection):
 
             if not image_file.endswith('.gz'):
                 os.rename(image_file, "%s.gz" % image_file)
+                image_file = "%s.gz" % image_file
 
             if not bot.is_quiet():
                 print("Decompressing %s" % image_file)
