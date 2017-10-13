@@ -166,6 +166,17 @@ void singularity_capability_set(__u32 *capabilities) {
         mask >>= 1;
     }
 
+    /* fallback and read bounding set */
+    if ( last_cap == 63 ) {
+        for ( caps_index = last_cap; caps_index >= 0; caps_index-- ) {
+            if ( prctl(PR_CAPBSET_READ, caps_index) <= 0 ) {
+                last_cap--;
+            } else {
+                break;
+            }
+        }
+    }
+
     singularity_message(DEBUG, "Dropping capabilities in bounding set\n");
     for ( caps_index = 0; caps_index <= last_cap; caps_index++ ) {
         keep_cap = -1;

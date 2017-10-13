@@ -26,6 +26,9 @@
 #include <string.h>
 #include <limits.h>
 #include <link.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -45,14 +48,25 @@
 
 int is_enabled = -1;
 
-int singularity_suid_init(char **envp) {
+int singularity_suid_init(void) {
     ElfW(auxv_t) *auxv;
     char *progname = NULL;
+    char *buffer = (char *)malloc(4096);
+    int proc_auxv = open("/proc/self/auxv", O_RDONLY);
+
+    if ( proc_auxv < 0 ) {
+        singularity_message(ERROR, "Can't open /proc/self/auxv: %s\n", strerror(errno));
+        ABORT(255);
+    }
 
     /* use auxiliary vectors to determine if running privileged */
-    while(*envp++ != NULL) {}
+    memset(buffer, 0, 4096);
+    if ( read(proc_auxv, buffer, 4092) < 0 ) {
+        singularity_message(ERROR, "Can't read auxiliary vectors: %s\n", strerror(errno));
+        ABORT(255);
+    }
 
-    auxv = (ElfW(auxv_t) *)envp;
+    auxv = (ElfW(auxv_t) *)buffer;
 
     for (; auxv->a_type != AT_NULL; auxv++) {
         if ( auxv->a_type == AT_SECURE ) {
@@ -62,6 +76,8 @@ int singularity_suid_init(char **envp) {
             progname = (char *)auxv->a_un.a_val;
         }
     }
+
+    free(buffer);
 
     if ( is_enabled < 0 ) {
         singularity_message(ERROR, "Failed to determine if program run with SUID or not\n");

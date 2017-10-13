@@ -49,7 +49,7 @@
 
 int started = 0;
 
-int main(int argc, char **argv, char **envp) {
+int main(int argc, char **argv) {
     int i, daemon_fd, cleanupd_fd;
     struct tempfile *stdout_log, *stderr_log, *singularity_debug;
     struct image_object image;
@@ -60,7 +60,7 @@ int main(int argc, char **argv, char **envp) {
     singularity_config_init();
 
     singularity_priv_init();
-    singularity_suid_init(envp);
+    singularity_suid_init();
 
     singularity_registry_init();
     singularity_priv_userns();

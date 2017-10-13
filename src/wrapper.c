@@ -57,7 +57,7 @@ struct cmd_wrapper cmd_wrapper[] = {
     { .command = NULL,              .binary = NULL }
 };
 
-int main(int argc, char **argv, char **envp) {
+int main(int argc, char **argv) {
     int index;
     char *command;
     char *binary;
@@ -68,7 +68,7 @@ int main(int argc, char **argv, char **envp) {
     singularity_config_init();
 
     /* if allow setuid is no or nosuid requested fallback to non suid command */
-    if ( singularity_suid_init(envp) < 0 ) {
+    if ( singularity_suid_init() < 0 ) {
         singularity_priv_init();
         singularity_priv_drop_perm();
     } else {

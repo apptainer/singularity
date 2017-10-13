@@ -49,7 +49,7 @@
 #endif
 
 
-int main(int argc, char **argv, char **envp) {
+int main(int argc, char **argv) {
     struct image_object image;
     char *pwd = get_current_dir_name();
     char *target_pwd = NULL;
@@ -58,7 +58,7 @@ int main(int argc, char **argv, char **envp) {
     singularity_config_init();
 
     singularity_priv_init();
-    singularity_suid_init(envp);
+    singularity_suid_init();
 
     singularity_registry_init();
     

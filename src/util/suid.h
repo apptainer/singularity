@@ -24,7 +24,7 @@
 #ifndef __SINGULARITY_SUID_H_
 #define __SINGULARITY_SUID_H_
 
-extern int singularity_suid_init(char **envp);
+extern int singularity_suid_init(void);
 extern int singularity_suid_enabled(void);
 
 #endif /* __SINGULARITY_SUID_H_ */
