@@ -402,6 +402,7 @@ struct tempfile *make_logfile(char *label) {
         singularity_message(ERROR, "Label string too long\n");
         ABORT(255);
     }
+    tf->filename[sizeof(tf->filename) - 1] = '\0';
 
     if ( (tf->fd = mkstemp(tf->filename)) == -1 || (tf->fp = fdopen(tf->fd, "w+")) == NULL ) {
         if (tf->fd != -1) {
