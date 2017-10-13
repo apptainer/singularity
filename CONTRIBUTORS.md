@@ -29,6 +29,7 @@
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
+    - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
     - Petr Votava <votava.petr@gene.com>
     - Ralph Castain <rhc@open-mpi.org>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
