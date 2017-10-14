@@ -138,6 +138,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/prepheader
 %{_libexecdir}/singularity/bin/wrapper
 %{_libexecdir}/singularity/functions
+%{_libexecdir}/singularity/capabilities
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*
 %{_mandir}/man1/singularity.1*
