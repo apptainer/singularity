@@ -393,7 +393,7 @@ void singularity_priv_drop_perm(void) {
     }
 
     if ( uinfo.uid == 0 ) {
-        singularity_capability_drop_all();
+        singularity_capability_drop();
         singularity_message(VERBOSE2, "Calling user is root, no privileges to drop\n");
         return;
     }
@@ -401,7 +401,7 @@ void singularity_priv_drop_perm(void) {
     singularity_message(DEBUG, "Escalating permissison so we can properly drop permission\n");
     singularity_priv_escalate();
 
-    singularity_capability_drop_all();
+    singularity_capability_drop();
 
     singularity_message(DEBUG, "Resetting supplementary groups\n");
     if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {

@@ -1,0 +1,99 @@
+#!/bin/bash
+
+declare -A SINGULARITY_CAPS
+
+SINGULARITY_CAPS[CAP_CHOWN]=0
+SINGULARITY_CAPS[CAP_DAC_OVERRIDE]=1
+SINGULARITY_CAPS[CAP_DAC_READ_SEARCH]=2
+SINGULARITY_CAPS[CAP_FOWNER]=3
+SINGULARITY_CAPS[CAP_FSETID]=4
+SINGULARITY_CAPS[CAP_KILL]=5
+SINGULARITY_CAPS[CAP_SETGID]=6
+SINGULARITY_CAPS[CAP_SETUID]=7
+SINGULARITY_CAPS[CAP_SETPCAP]=8
+SINGULARITY_CAPS[CAP_LINUX_IMMUTABLE]=9
+SINGULARITY_CAPS[CAP_NET_BIND_SERVICE]=10
+SINGULARITY_CAPS[CAP_NET_BROADCAST]=11
+SINGULARITY_CAPS[CAP_NET_ADMIN]=12
+SINGULARITY_CAPS[CAP_NET_RAW]=13
+SINGULARITY_CAPS[CAP_IPC_LOCK]=14
+SINGULARITY_CAPS[CAP_IPC_OWNER]=15
+SINGULARITY_CAPS[CAP_SYS_MODULE]=16
+SINGULARITY_CAPS[CAP_SYS_RAWIO]=17
+SINGULARITY_CAPS[CAP_SYS_CHROOT]=18
+SINGULARITY_CAPS[CAP_SYS_PTRACE]=19
+SINGULARITY_CAPS[CAP_SYS_PACCT]=20
+SINGULARITY_CAPS[CAP_SYS_ADMIN]=21
+SINGULARITY_CAPS[CAP_SYS_BOOT]=22
+SINGULARITY_CAPS[CAP_SYS_NICE]=23
+SINGULARITY_CAPS[CAP_SYS_RESOURCE]=24
+SINGULARITY_CAPS[CAP_SYS_TIME]=25
+SINGULARITY_CAPS[CAP_SYS_TTY_CONFIG]=26
+SINGULARITY_CAPS[CAP_MKNOD]=27
+SINGULARITY_CAPS[CAP_LEASE]=28
+SINGULARITY_CAPS[CAP_AUDIT_WRITE]=29
+SINGULARITY_CAPS[CAP_AUDIT_CONTROL]=30
+SINGULARITY_CAPS[CAP_SETFCAP]=31
+SINGULARITY_CAPS[CAP_MAC_OVERRIDE]=32
+SINGULARITY_CAPS[CAP_MAC_ADMIN]=33
+SINGULARITY_CAPS[CAP_SYSLOG]=34
+SINGULARITY_CAPS[CAP_WAKE_ALARM]=35
+SINGULARITY_CAPS[CAP_BLOCK_SUSPEND]=36
+SINGULARITY_CAPS[CAP_AUDIT_READ]=37
+
+parse_capabilities() {
+    parsed=""
+    caps=$(echo "${1:-}" | tr '[a-z]' '[A-Z]')
+    last=$(echo "${1##*,}" | tr '[a-z]' '[A-Z]')
+
+    while true; do
+        pcaps="${caps%%,*}"
+
+        if [[ ! "$pcaps" =~ ^CAP_ ]]; then
+            pcaps="CAP_$pcaps"
+        fi
+
+        if [ -z "${SINGULARITY_CAPS[$pcaps]:-}" ]; then
+            message WARNING "Unknown or not supported capability $pcaps, skipped\n"
+            if [ "$caps" == "$last" ]; then
+                break
+            fi
+            caps=${caps#*,}
+            continue
+        fi
+
+        if [ -z "$parsed" ]; then
+            parsed="${SINGULARITY_CAPS[$pcaps]:-}"
+        else
+            parsed="${parsed:-} ${SINGULARITY_CAPS[$pcaps]:-}"
+        fi
+
+        if [ "$caps" == "$last" ]; then
+            break
+        fi
+
+        caps=${caps#*,}
+    done
+
+    echo "$parsed" | tr ' ' '\n' | sort | uniq | tr '\n' ',' | sed 's/,$/\n/'
+}
+
+if [ -n "${SINGULARITY_ADD_CAPS:-}" ]; then
+    if [ "$(id -ru)" = "0" ]; then 
+        SINGULARITY_ADD_NCAPS=$(parse_capabilities $SINGULARITY_ADD_CAPS)
+        export SINGULARITY_ADD_NCAPS
+        unset SINGULARITY_ADD_CAPS
+    else
+        message WARNING "Adding capabilities is for root only\n"
+    fi
+fi
+
+if [ -n "${SINGULARITY_DROP_CAPS:-}" ]; then
+    if [ "$(id -ru)" = "0" ]; then
+        SINGULARITY_DROP_NCAPS=$(parse_capabilities $SINGULARITY_DROP_CAPS)
+        export SINGULARITY_DROP_NCAPS
+        unset SINGULARITY_DROP_CAPS
+    else
+        message WARNING "Dropping capabilities is for root only\n"
+    fi
+fi

@@ -63,9 +63,12 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
     }
     singularity_priv_drop();
 
-    if ( singularity_priv_userns_enabled() != 1 && singularity_registry_get("MOUNTDIR_RO") ) {
+    if ( singularity_priv_userns_enabled() != 1 ) {
+        if ( image->writable == 0 ) {
+            mntflags |= MS_RDONLY;
+        }
         singularity_priv_escalate();
-        if ( mount(NULL, mount_point, NULL, MS_REMOUNT | MS_RDONLY | mntflags, NULL) < 0 ) {
+        if ( mount(NULL, mount_point, NULL, MS_REMOUNT | mntflags, NULL) < 0 ) {
             singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
             return 1;
         }

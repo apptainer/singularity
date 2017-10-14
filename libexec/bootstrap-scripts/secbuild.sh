@@ -156,7 +156,6 @@ chmod +x $BUILD_SCRIPT
 
 unset SINGULARITY_IMAGE
 
-export SINGULARITY_MOUNTDIR_RO=1
 ${SINGULARITY_bindir}/singularity -c $TMP_CONF_FILE exec -e -i -p $SECBUILD_IMAGE /tmp/build-script
 if [ $? != 0 ]; then
     rm -rf $SINGULARITY_WORKDIR

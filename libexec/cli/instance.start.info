@@ -36,6 +36,13 @@ START OPTIONS:
     --keep-privs        Lets root user to keep all privileges
     --no-privs          Drop all privileges, for root user only as privilieges
                         are always dropped for users
+    --add-caps          A comma separated capability list to add (root only)
+                        Accepted formats:
+                            - CAP_CHOWN,CAP_SETUID
+                            - CHOWN,SETUID
+                            - cap_chown,cap_setuid
+                            - chown,setuid
+    --drop-caps         A comma separated capability list to drop (root only)
 
 
 CONTAINER FORMATS SUPPORTED:

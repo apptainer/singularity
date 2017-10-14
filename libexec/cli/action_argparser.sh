@@ -169,6 +169,16 @@ while true; do
             fi
             shift
         ;;
+        --add-caps)
+            shift
+            singularity_add_caps "$1"
+            shift
+        ;;
+        --drop-caps)
+            shift
+            singularity_drop_caps "$1"
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -178,3 +188,11 @@ while true; do
         ;;
     esac
 done
+
+## Load capabilities
+if [ -f "$SINGULARITY_libexecdir/singularity/capabilities" ]; then
+    . "$SINGULARITY_libexecdir/singularity/capabilities"
+else
+    echo "Error loading capabilities: $SINGULARITY_libexecdir/singularity/capabilities"
+    exit 1
+fi

@@ -57,15 +57,31 @@ struct cmd_wrapper cmd_wrapper[] = {
     { .command = NULL,              .binary = NULL }
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **envp) {
     int index;
     char *command;
     char *binary;
     char *libexec_bin = joinpath(LIBEXECDIR, "/singularity/bin/");
 
     singularity_registry_init();
-
     singularity_config_init();
+
+    command = singularity_registry_get("COMMAND");
+    if ( command == NULL ) {
+        singularity_message(ERROR, "no command passed\n");
+        ABORT(255);
+    }
+
+    for ( index = 0; cmd_wrapper[index].command != NULL; index++) {
+        if ( strcmp(command, cmd_wrapper[index].command) == 0 ) {
+            break;
+        }
+    }
+
+    if ( cmd_wrapper[index].command == NULL ) {
+        singularity_message(ERROR, "unknown command %s\n", command);
+        ABORT(255);
+    }
 
     /* if allow setuid is no or nosuid requested fallback to non suid command */
     if ( singularity_suid_init() < 0 ) {
@@ -75,24 +91,10 @@ int main(int argc, char **argv) {
         singularity_capability_init();
     }
 
-    command = singularity_registry_get("COMMAND");
+    binary = strjoin(libexec_bin, cmd_wrapper[index].binary);
+    execve(binary, argv, envp); // Flawfinder: ignore
 
-    if ( command == NULL ) {
-        singularity_message(ERROR, "no command passed\n");
-        ABORT(255);
-    }
-
-    for ( index = 0; cmd_wrapper[index].command != NULL; index++) {
-        if ( strcmp(command, cmd_wrapper[index].command) == 0 ) {
-            binary = strjoin(libexec_bin, cmd_wrapper[index].binary);
-            execv(binary, argv); // Flawfinder: ignore
-
-            singularity_message(ERROR, "Failed to execute %s binary\n", cmd_wrapper[index].binary);
-            ABORT(255);
-        }
-    }
-
-    singularity_message(ERROR, "unknown command %s\n", command);
+    singularity_message(ERROR, "Failed to execute %s binary\n", cmd_wrapper[index].binary);
     ABORT(255);
 
     return(0);
