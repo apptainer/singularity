@@ -25,8 +25,8 @@
 #include <unistd.h>
 #include <uuid/uuid.h>
 
-#include "list.h"
-#include "sif.h"
+#include "lib/image/sif/list.h"
+#include "lib/image/sif/sif.h"
 
 static void
 usage(char *argv[])

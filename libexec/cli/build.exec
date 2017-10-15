@@ -373,7 +373,8 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
     env | grep SING
 
     message 1 "Building Singularity SIF container image...\n"
-    if ! /usr/bin/sifcreate -D "${SINGULARITY_BUILDDEF}" -E \
+    if ! $SINGULARITY_libexecdir/singularity/bin/sifcreate \
+      -D "${SINGULARITY_BUILDDEF}" -E \
       -L ${SINGULARITY_ROOTFS}/.singularity.d/labels.json \
       -P "$SINGULARITY_CONTAINER_OUTPUT" -f 0 -c "System partition" \
       "$SINGULARITY_CONTAINER_OUTPUT".sif > /dev/null; then
