@@ -31,8 +31,6 @@
 #include <libgen.h>
 
 #include <uuid/uuid.h>
-#include <list.h>
-#include <sif.h>
 
 #include "util/file.h"
 #include "util/util.h"
@@ -40,6 +38,9 @@
 #include "util/registry.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+
+#include "./sif/list.h"
+#include "./sif/sif.h"
 
 #include "./image.h"
 #include "./bind.h"

@@ -32,13 +32,14 @@
 #include <linux/limits.h>
 
 #include <uuid/uuid.h>
-#include <list.h>
-#include <sif.h>
 
 #include "util/message.h"
 #include "util/util.h"
 #include "util/file.h"
 #include "util/registry.h"
+
+#include "../sif/list.h"
+#include "../sif/sif.h"
 
 #include "../image.h"
 

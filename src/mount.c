@@ -31,8 +31,6 @@
 #include <sys/mount.h>
 
 #include <uuid/uuid.h>
-#include <list.h>
-#include <sif.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -41,6 +39,8 @@
 #include "util/config_parser.h"
 #include "util/privilege.h"
 #include "util/suid.h"
+#include "lib/image/sif/list.h"
+#include "lib/image/sif/sif.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 
