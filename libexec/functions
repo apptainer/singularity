@@ -526,6 +526,10 @@ scheck() {
     return $CODE
 }
 
+atexit() {
+    trap "$1" EXIT
+}
+
 if [ -n "${SHELL_DEBUG:-}" ]; then
     set -x
 fi

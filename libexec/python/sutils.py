@@ -236,15 +236,12 @@ def get_image_format(image_file):
     '''
        get image format will use the image-format executable to return the kind
        of file type for the image
-
        Parameters
        ==========
        image_file: full path to the image file to inspect
-
        Returns
        =======
        GZIP, DIRECTORY, SQUASHFS, EXT3
-
     '''
     if image_file.endswith('gz'):
         bot.debug('Found compressed image')

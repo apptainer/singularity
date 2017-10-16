@@ -121,6 +121,36 @@ int daemon_is_running(char *pid_path) {
     return(retval);
 }
 
+int daemon_is_owner(char *pid_path) {
+    int retval = 0;
+    char *proc_status = joinpath(pid_path, "/status");
+    char *uid_check = (char *)malloc(2048);
+    char *line = (char *)malloc(2048);
+    FILE *status = fopen(proc_status, "r");
+    pid_t uid = singularity_priv_getuid();
+
+    if ( status == NULL ) {
+        singularity_message(ERROR, "Failed to open %s to check instance owner\n", proc_status);
+        ABORT(255);
+    }
+
+    memset(uid_check, 0, 2048);
+    snprintf(uid_check, 2047, "Uid:\t%d\t%d\t%d\t%d\n", uid, uid, uid, uid);
+
+    while ( fgets(line, 2048, status) ) {
+        if ( strcmp(line, uid_check) == 0 ) {
+            retval = 1;
+            break;
+        }
+    }
+
+    free(uid_check);
+    free(line);
+    fclose(status);
+
+    return(retval);
+}
+
 void daemon_init_join(void) {
     char *ns_path, *ns_fd_str;
     int ns_fd;
@@ -149,7 +179,7 @@ void daemon_init_join(void) {
 
     xsnprintf(&pid_path, 2048, "/proc/%s", singularity_registry_get("DAEMON_PID"));
 
-    if ( is_owner(pid_path, singularity_priv_getuid()) < 0 ) {
+    if ( daemon_is_owner(pid_path) == 0 ) {
         singularity_message(ERROR, "Unable to join instance: you are not the owner\n");
         ABORT(255);
     }
