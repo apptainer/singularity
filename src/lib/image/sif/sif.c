@@ -165,10 +165,13 @@ sif_validate(Sifinfo *info)
 		return -1;
 	}
 
-	if(!strncmp(name.machine, "x86_64", 6))
-		currarch = SIF_ARCH_AMD64;
-	else if(name.machine[0] == 'i' && name.machine[2] == '8' &&
-	        name.machine[3] == '8')
+	if(!strncmp(name.machine, "x86_64", 6)){
+		if(sizeof(void *) == 8)
+			currarch = SIF_ARCH_AMD64;
+		else
+			currarch = SIF_ARCH_386;
+	}else if(name.machine[0] == 'i' && name.machine[2] == '8' &&
+	        name.machine[3] == '6')
 		currarch = SIF_ARCH_386;
 	else if(!strncmp(name.machine, "arm", 3) && sizeof(void *) == 4)
 		currarch = SIF_ARCH_ARM;

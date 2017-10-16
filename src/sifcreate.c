@@ -17,6 +17,7 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -280,6 +281,7 @@ main(int argc, char *argv[])
 	int lopts = 0;
 	int popts = 0;
 	int sopts = 0;
+	struct utsname name;
 	Sifcreateinfo createinfo = { };
 	Node *n;
 
@@ -347,6 +349,27 @@ main(int argc, char *argv[])
 	createinfo.sifversion = SIF_VERSION;
 	createinfo.arch = SIF_ARCH_AMD64;
 	uuid_generate(createinfo.uuid);
+	if(uname(&name) < 0){
+		fprintf(stderr, "Error: Calling uname failed\n");
+		return -1;
+	}
+	if(!strncmp(name.machine, "x86_64", 6)){
+		if(sizeof(void *) == 8)
+			createinfo.arch = SIF_ARCH_AMD64;
+		else
+			createinfo.arch = SIF_ARCH_386;
+	}else if(name.machine[0] == 'i' && name.machine[2] == '8' &&
+	        name.machine[3] == '6')
+		createinfo.arch = SIF_ARCH_386;
+	else if(!strncmp(name.machine, "arm", 3) && sizeof(void *) == 4)
+		createinfo.arch = SIF_ARCH_ARM;
+	else if(!strncmp(name.machine, "arm", 3) && sizeof(void *) == 8)
+		createinfo.arch = SIF_ARCH_AARCH64;
+	else{
+		fprintf(stderr, "Error: Cannot determine running arch\n");
+		return -1;
+	}
+
 
 	ret = sif_create(&createinfo);
 	if(ret < 0){
