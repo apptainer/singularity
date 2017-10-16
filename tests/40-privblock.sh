@@ -44,6 +44,10 @@ stest 1 sudo singularity exec -w --no-privs "$CONTAINER" mknod -m 600 /test-null
 stest 0 sudo singularity exec "$CONTAINER" mount -B /etc /mnt
 stest 1 sudo singularity exec --no-privs "$CONTAINER" mount -B /etc /mnt
 
+stest 1 sudo singularity exec --drop-caps sys_admin "$CONTAINER" mount -B /etc /mnt
+stest 0 sudo singularity exec --no-privs --add-caps sys_admin "$CONTAINER" mount -B /etc /mnt
+stest 1 sudo singularity exec --keep-privs --drop-caps sys_admin "$CONTAINER" mount -B /etc /mnt
+
 stest 1 sudo singularity exec "$CONTAINER" dd if=/dev/mem of=/dev/null bs=1 count=1
 stest 0 sudo singularity exec --keep-privs "$CONTAINER" dd if=/dev/mem of=/dev/null bs=1 count=1
 
