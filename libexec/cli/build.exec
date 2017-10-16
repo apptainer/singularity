@@ -370,16 +370,24 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         fi
     fi
 
-    env | grep SING
+    fstype=`$SINGULARITY_libexecdir/singularity/bin/image-type "$SINGULARITY_CONTAINER_OUTPUT"`
 
     message 1 "Building Singularity SIF container image...\n"
-    if ! $SINGULARITY_libexecdir/singularity/bin/sifcreate \
-      -D "${SINGULARITY_BUILDDEF}" -E \
-      -L ${SINGULARITY_ROOTFS}/.singularity.d/labels.json \
-      -P "$SINGULARITY_CONTAINER_OUTPUT" -f 0 -c "System partition" \
-      "$SINGULARITY_CONTAINER_OUTPUT".sif > /dev/null; then
-        message ERROR "Failed to wrap container into a SIF image\n"
-        exit 1
+    if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
+        if ! $SINGULARITY_libexecdir/singularity/bin/sifcreate \
+          -D "${SINGULARITY_BUILDDEF}" \
+          -P "$SINGULARITY_CONTAINER_OUTPUT" -f 0 -c "System partition" \
+          "$SINGULARITY_CONTAINER_OUTPUT".sif 2>/dev/null 2>&1; then
+            message ERROR "Failed to wrap container into a SIF image\n"
+            exit 1
+        fi
+    else
+        if ! $SINGULARITY_libexecdir/singularity/bin/sifcreate \
+          -P "$SINGULARITY_CONTAINER_OUTPUT" -f 0 -c "System partition" \
+          "$SINGULARITY_CONTAINER_OUTPUT".sif 2>/dev/null 2>&1; then
+            message ERROR "Failed to wrap container into a SIF image\n"
+            exit 1
+        fi
     fi
 
     chmod a+x "$SINGULARITY_CONTAINER_OUTPUT".sif
