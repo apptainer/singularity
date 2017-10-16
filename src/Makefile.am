@@ -36,7 +36,7 @@ prepheader_SOURCES = prepheader.c
 prepheader_LDADD =
 prepheader_CPPFLAGS = $(AM_CPPFLAGS)
 
-sifcreate_SOURCES = sifcreate.c
+sifcreate_SOURCES = sifcreate.c util/util.c
 sifcreate_LDADD = lib/image/libsingularity-image.la -luuid
 sifcreate_CPPFLAGS = $(AM_CPPFLAGS)
 

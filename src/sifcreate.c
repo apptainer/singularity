@@ -28,6 +28,8 @@
 #include "lib/image/sif/list.h"
 #include "lib/image/sif/sif.h"
 
+#include "util/util.h"
+
 static void
 usage(char *argv[])
 {
@@ -146,6 +148,7 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 	char content[SIF_CONTENT_LEN] = { };
 	int fstype = -1;
 	struct stat st;
+	char *fstypestr;
 
 	while((opt = getopt(argc, argv, "c:f:")) != -1){ /* Flawfinder: ignore */
 		switch(opt){
@@ -153,7 +156,14 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 			strncpy(content, optarg, sizeof(content)-1);
 			break;
 		case 'f':
-			fstype = atoi(optarg);
+			fstypestr = uppercase(optarg);
+			if(strncmp(fstypestr, "SQUASHFS", strlen("SQUASHFS")) == 0)
+				fstype = FS_SQUASH;
+			else if(strncmp(fstypestr, "EXT3", strlen("EXT3")) == 0)
+				fstype = FS_EXT3;
+			else
+				fstype = 1000; /* unknown */
+			free(fstypestr);
 			break;
 		default:
 			fprintf(stderr, "Error expecting -c CONTENT and -f FSTYPE\n");
@@ -340,7 +350,8 @@ main(int argc, char *argv[])
 
 	ret = sif_create(&createinfo);
 	if(ret < 0){
-		fprintf(stderr, "Error creating SIF file %s\n", createinfo.pathname);
+		fprintf(stderr, "Error creating SIF file %s: %s\n",
+		        createinfo.pathname, sif_strerror(siferrno));
 		return -1;
 	}
 
