@@ -78,6 +78,7 @@ int singularity_suid_init(void) {
     }
 
     free(buffer);
+    close(proc_auxv);
 
     if ( is_enabled < 0 ) {
         singularity_message(ERROR, "Failed to determine if program run with SUID or not\n");
