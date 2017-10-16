@@ -75,10 +75,10 @@ int main(int argc, char **argv) {
         image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
     }
 
-    singularity_runtime_ns(SR_NS_ALL);
-
     if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
         singularity_cleanupd();
+
+        singularity_runtime_ns(SR_NS_ALL);
 
         singularity_sessiondir();
 
@@ -89,6 +89,8 @@ int main(int argc, char **argv) {
         singularity_runtime_overlayfs();
         singularity_runtime_mounts();
         singularity_runtime_files();
+    } else {
+        singularity_runtime_ns(SR_NS_ALL);
     }
 
     singularity_runtime_enter();
