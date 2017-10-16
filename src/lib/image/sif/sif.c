@@ -58,6 +58,7 @@ char *
 sif_strerror(Siferrno siferrno)
 {
 	switch(siferrno){
+	case SIF_ENOERR: return "SIF errno not set or success";
 	case SIF_EMAGIC: return "invalid SIF magic";
 	case SIF_EFNAME: return "invalid input file name";
 	case SIF_EFOPEN: return "cannot open input file name";
@@ -70,6 +71,24 @@ sif_strerror(Siferrno siferrno)
 	case SIF_ESIFVER: return "unsupported SIF version while validating image";
 	case SIF_ERARCH: return "architecture mismatch while validating image";
 	case SIF_ENODESC: return "cannot find data object descriptors while validating image";
+	case SIF_ENODEF: return "cannot find partition descriptor";
+	case SIF_ENOENV: return "cannot find envvar descriptor";
+	case SIF_ENOLAB: return "cannot find jason label descriptor";
+	case SIF_ENOPAR: return "cannot find partition descriptor";
+	case SIF_ENOSIG: return "cannot find signature descriptor";
+	case SIF_EFDDEF: return "cannot open definition file";
+	case SIF_EMAPDEF: return "cannot mmap definition file";
+	case SIF_EFDLAB: return "cannot open jason-labels file";
+	case SIF_EMAPLAB: return "cannot mmap jason-labels file";
+	case SIF_EFDPAR: return "cannot open partition file";
+	case SIF_EMAPPAR: return "cannot mmap partition file";
+	case SIF_EUDESC: return "unknown data descriptor type";
+	case SIF_EEMPTY: return "nothing to generate into SIF file (empty)";
+	case SIF_ECREAT: return "cannot create output SIF file, check permissions";
+	case SIF_EFALLOC: return "fallocate on SIF output file failed";
+	case SIF_EOMAP: return "cannot mmap SIF output file";
+	case SIF_EOUNMAP: return "cannot unmmap SIF output file";
+	case SIF_EOCLOSE: return "closing SIF file failed, file corrupted, don't use";
 	default: return "Unknown SIF error";
 	}
 }
@@ -296,8 +315,10 @@ sif_getdeffile(Sifinfo *info, int groupid)
 	lookfor.cm.groupid = groupid;
 
 	n = listfind(&info->deschead, &lookfor, isdeffile);
-	if(n == NULL)
+	if(n == NULL){
+		siferrno = SIF_ENODEF;
 		return NULL;
+	}
 	return n->elem;
 }
 
@@ -322,8 +343,10 @@ sif_getlabels(Sifinfo *info, int groupid)
 	lookfor.cm.groupid = groupid;
 
 	n = listfind(&info->deschead, &lookfor, islabels);
-	if(n == NULL)
+	if(n == NULL){
+		siferrno = SIF_ENOLAB;
 		return NULL;
+	}
 	return n->elem;
 }
 
@@ -348,8 +371,10 @@ sif_getenvvar(Sifinfo *info, int groupid)
 	lookfor.cm.groupid = groupid;
 
 	n = listfind(&info->deschead, &lookfor, isenvvar);
-	if(n == NULL)
+	if(n == NULL){
+		siferrno = SIF_ENOENV;
 		return NULL;
+	}
 	return n->elem;
 }
 
@@ -374,8 +399,10 @@ sif_getpartition(Sifinfo *info, int groupid)
 	lookfor.cm.groupid = groupid;
 
 	n = listfind(&info->deschead, &lookfor, ispartition);
-	if(n == NULL)
+	if(n == NULL){
+		siferrno = SIF_ENOPAR;
 		return NULL;
+	}
 	return n->elem;
 }
 
@@ -400,8 +427,10 @@ sif_getsignature(Sifinfo *info, int groupid)
 	lookfor.cm.groupid = groupid;
 
 	n = listfind(&info->deschead, &lookfor, issignature);
-	if(n == NULL)
+	if(n == NULL){
+		siferrno = SIF_ENOSIG;
 		return NULL;
+	}
 	return n->elem;
 }
 
@@ -421,13 +450,13 @@ prepddesc(void *elem)
 	/* prep input file (definition file) */
 	d->fd = open(d->fname, O_RDONLY);
 	if(d->fd < 0){
-		perror("open() failed to open input definition file");
+		siferrno = SIF_EFDDEF;
 		return -1;
 	}
 	/* map input definition file into memory for SIF creation coming up after */
 	d->mapstart = mmap(NULL, d->len, PROT_READ, MAP_PRIVATE, d->fd, 0);
 	if(d->mapstart == MAP_FAILED){
-		perror("Error mapping input definition file");
+		siferrno = SIF_EMAPDEF;
 		close(d->fd);
 		return -1;
 	}
@@ -459,13 +488,13 @@ prepldesc(void *elem)
 	/* prep input file (JSON-label file) */
 	l->fd = open(l->fname, O_RDONLY);
 	if(l->fd < 0){
-		perror("open() failed to open input JSON-label file");
+		siferrno = SIF_EFDLAB;
 		return -1;
 	}
 	/* map input JSON-label file into memory for SIF creation coming up after */
 	l->mapstart = mmap(NULL, l->len, PROT_READ, MAP_PRIVATE, l->fd, 0);
 	if(l->mapstart == MAP_FAILED){
-		perror("Error mapping input JSON-label file");
+		siferrno = SIF_EMAPLAB;
 		close(l->fd);
 		return -1;
 	}
@@ -484,13 +513,13 @@ preppdesc(void *elem)
 	/* prep input file (partition file) */
 	p->fd = open(p->fname, O_RDONLY);
 	if(p->fd < 0){
-		perror("open() failed to open input partition file");
+		siferrno = SIF_EFDPAR;
 		return -1;
 	}
 	/* map input partition file into memory for SIF creation coming up after */
 	p->mapstart = mmap(NULL, p->len, PROT_READ, MAP_PRIVATE, p->fd, 0);
 	if(p->mapstart == MAP_FAILED){
-		perror("Error mapping input partition file");
+		siferrno = SIF_EMAPPAR;
 		close(p->fd);
 		return -1;
 	}
@@ -525,7 +554,7 @@ prepdesc(void *elem)
 	case DATA_SIGNATURE:
 		return prepsdesc(elem);
 	default:
-		fprintf(stderr, "Error unrecognized data descriptor type\n");
+		siferrno = SIF_EUDESC;
 		return -1;
 	}
 	return 0;
@@ -536,9 +565,6 @@ putddesc(void *elem)
 {
 	Ddesc *d = elem;
 	Sifdeffile *desc = (Sifdeffile *)siflayout.descptr;
-
-	/* set the current definition-file descriptor pointer */
-	currentgroup++;
 
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_DEFFILE;
@@ -679,7 +705,7 @@ putdesc(void *elem)
 	case DATA_SIGNATURE:
 		return putsdesc(elem);
 	default:
-		fprintf(stderr, "Error unrecognized data descriptor type\n");
+		siferrno = SIF_EUDESC;
 		return -1;
 	}
 	return 0;
@@ -750,7 +776,7 @@ cleanupdesc(void *elem)
 	case DATA_SIGNATURE:
 		return cleanupsdesc(elem);
 	default:
-		fprintf(stderr, "Error unrecognized data descriptor type\n");
+		siferrno = SIF_EUDESC;
 		return -1;
 	}
 	return 0;
@@ -776,7 +802,7 @@ sif_create(Sifcreateinfo *cinfo)
 		return -1;
 
 	if(siflayout.header.ndesc == 0){
-		fprintf(stderr, "Nothing to put in SIF file, will not create empty file\n");
+		siferrno = SIF_EEMPTY;
 		return -1;
 	}
 
@@ -784,11 +810,11 @@ sif_create(Sifcreateinfo *cinfo)
 	fd = open(cinfo->pathname, O_CREAT|O_TRUNC|O_RDWR,
 	          S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
 	if(fd < 0){
-		perror("open() failed to open output file");
+		siferrno = SIF_ECREAT;
 		return -1;
 	}
 	if(posix_fallocate(fd, 0, siflayout.header.dataoff + siflayout.header.datalen) != 0){
-		fprintf(stderr, "Error while calling fallocate\n");
+		siferrno = SIF_EFALLOC;
 		close(fd);
 		return -1;
 	}
@@ -797,7 +823,7 @@ sif_create(Sifcreateinfo *cinfo)
 	siflayout.mapstart = mmap(NULL, siflayout.header.dataoff + siflayout.header.datalen,
 	                          PROT_WRITE, MAP_SHARED, fd, 0);
 	if(siflayout.mapstart == MAP_FAILED){
-		perror("Error mapping file");
+		siferrno = SIF_EOMAP;
 		close(fd);
 		return -1;
 	}
@@ -816,12 +842,12 @@ sif_create(Sifcreateinfo *cinfo)
 
 	/* unmap and close resulting output file */
 	if(munmap(siflayout.mapstart, siflayout.header.dataoff + siflayout.header.datalen) < 0){
-		perror("Error tearing down map, file corrupted -- dont use");
+		siferrno = SIF_EOUNMAP;
 		close(fd);
 		return -1;
 	}
 	if(close(fd) < 0){
-		perror("Error closing file, file corrupted -- dont use");
+		siferrno = SIF_EOCLOSE;
 		return -1;
 	}
 

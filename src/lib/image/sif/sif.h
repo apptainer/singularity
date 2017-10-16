@@ -120,7 +120,7 @@ enum{
 	SIF_ENTITY_LEN = 64,		/* "Joe Bloe <jbloe@gmail.com>..." */
 	SIF_CONTENT_LEN = 256,		/* "RHEL 7.4 / kernel 3.10.0-693 / ..." */
 
-	SIF_DEFAULT_GROUP = 1		/* first groupid number created */
+	SIF_DEFAULT_GROUP = 0		/* first groupid number created */
 };
 
 /* types of data objects stored in the image */
@@ -302,6 +302,7 @@ struct Sifcreateinfo{
  */
 
 typedef enum{
+	SIF_ENOERR,	/* SIF errno not set or success */
 	SIF_EMAGIC,	/* invalid SIF magic */
 	SIF_EFNAME,	/* invalid input file name */
 	SIF_EFOPEN,	/* cannot open input file name */
@@ -313,7 +314,25 @@ typedef enum{
 	SIF_EUARCH,	/* unknown host architecture while validating image */
 	SIF_ESIFVER,	/* unsupported SIF version while validating image */
 	SIF_ERARCH,	/* architecture mismatch while validating image */
-	SIF_ENODESC	/* cannot find data object descriptors while validating image */
+	SIF_ENODESC,	/* cannot find data object descriptors while validating image */
+	SIF_ENODEF,	/* cannot find partition descriptor */
+	SIF_ENOENV,	/* cannot find envvar descriptor */
+	SIF_ENOLAB,	/* cannot find jason label descriptor */
+	SIF_ENOPAR,	/* cannot find partition descriptor */
+	SIF_ENOSIG,	/* cannot find signature descriptor */
+	SIF_EFDDEF,	/* cannot open definition file */
+	SIF_EMAPDEF,	/* cannot mmap definition file */
+	SIF_EFDLAB,	/* cannot open jason-labels file */
+	SIF_EMAPLAB,	/* cannot mmap jason-labels file */
+	SIF_EFDPAR,	/* cannot open partition file */
+	SIF_EMAPPAR,	/* cannot mmap partition file */
+	SIF_EUDESC,	/* unknown data descriptor type */
+	SIF_EEMPTY,	/* nothing to generate into SIF file (empty) */
+	SIF_ECREAT,	/* cannot create output SIF file, check permissions */
+	SIF_EFALLOC,	/* fallocate on SIF output file failed */
+	SIF_EOMAP,	/* cannot mmap SIF output file */
+	SIF_EOUNMAP,	/* cannot unmmap SIF output file */
+	SIF_EOCLOSE	/* closing SIF file failed, file corrupted, don't use */
 } Siferrno;
 
 
