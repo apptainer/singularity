@@ -66,6 +66,16 @@ int main(int argc, char ** argv) {
     }
 
     singularity_message(DEBUG, "Iterating through file looking for sections matching: %%%s\n", section);
+
+    // prepend commands to source environment to post section
+    if ( strncmp(section, "post", 4) == 0 ) {
+        printf("for script in /.singularity.d/env/*.sh; do\n");
+        printf("    if [ -f \"$script\" ]; then\n");
+        printf("        . \"$script\"\n");
+        printf("    fi\n");
+        printf("done\n");
+    }
+
     while ( fgets(line, MAX_LINE_LEN, input) != NULL ) {
         if ( strncmp(line, strjoin("%", section), strlength(section, 128) + 1) == 0 ) {
             toggle_section = 1;

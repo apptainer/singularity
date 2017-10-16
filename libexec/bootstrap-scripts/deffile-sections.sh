@@ -138,10 +138,10 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "e
 
         singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
 
-        # Sourcing the environment
-        set +u
-        . "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
-        set -u
+        # # Sourcing the environment
+        # set +u
+        # . "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
+        # set -u
     fi
 else
     message 2 "Skipping environment section\n"
