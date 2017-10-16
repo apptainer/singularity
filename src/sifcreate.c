@@ -147,7 +147,7 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 	int fstype = -1;
 	struct stat st;
 
-	while((opt = getopt(argc, argv, "c:f:")) != -1){
+	while((opt = getopt(argc, argv, "c:f:")) != -1){ /* Flawfinder: ignore */
 		switch(opt){
 		case 'c':
 			strncpy(content, optarg, sizeof(content)-1);
@@ -190,7 +190,7 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 	}
 	e->len = st.st_size;
 	e->fstype = fstype;
-	strcpy(e->content, content);
+	strcpy(e->content, content); /* Flawfinder: ignore */
 
 	n = listcreate(e);
 	if(n == NULL){
@@ -213,7 +213,7 @@ sdescadd(Node *head, int argc, char *argv[])
 	char entity[SIF_ENTITY_LEN] = { };
 	int hashtype = -1;
 
-	while((opt = getopt(argc, argv, "e:h:")) != -1){
+	while((opt = getopt(argc, argv, "e:h:")) != -1){ /* Flawfinder: ignore */
 		switch(opt){
 		case 'e':
 			strncpy(entity, optarg, sizeof(entity)-1);
@@ -247,7 +247,7 @@ sdescadd(Node *head, int argc, char *argv[])
 	e->signature = testsign;
 	e->len = sizeof(testsign);
 	e->hashtype = hashtype;
-	strcpy(e->entity, entity);
+	strcpy(e->entity, entity); /* Flawfinder: ignore */
 
 	n = listcreate(e);
 	if(n == NULL){
@@ -270,11 +270,10 @@ main(int argc, char *argv[])
 	int lopts = 0;
 	int popts = 0;
 	int sopts = 0;
-	Sifinfo loadinfo = { };
 	Sifcreateinfo createinfo = { };
 	Node *n;
 
-	while((opt = getopt(argc, argv, "D:EL:P:S")) != -1){
+	while((opt = getopt(argc, argv, "D:EL:P:S")) != -1){ /* Flawfinder: ignore */
 		switch(opt){
 		case 'D':
 			n = ddescadd(&createinfo.deschead, optarg);
@@ -321,8 +320,8 @@ main(int argc, char *argv[])
 			return -1;
 		}
 	}
-	if(dopts == 0 || lopts == 0 || popts == 0){
-		fprintf(stderr, "Error: At least one deffile, labels & one partition are required\n");
+	if(popts == 0){
+		fprintf(stderr, "Error: At least one partition (-P) is required\n");
 		return -1;
 	}
 	if(optind >= argc){
@@ -341,12 +340,7 @@ main(int argc, char *argv[])
 
 	ret = sif_create(&createinfo);
 	if(ret < 0){
-		fprintf(stderr, "Error Test writing %s failed\n", createinfo.pathname);
-		return -1;
-	}
-
-	if(sif_load(argv[0], &loadinfo) < 0){
-		fprintf(stderr, "Error Test reading %s failed\n", createinfo.pathname);
+		fprintf(stderr, "Error creating SIF file %s\n", createinfo.pathname);
 		return -1;
 	}
 
