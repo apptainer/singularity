@@ -151,7 +151,7 @@ case "$SINGULARITY_CONTAINER" in
 
          if [ -x "${SINGULARITY_bindir}/singularity" ]; then
              ${SINGULARITY_bindir}/singularity build ${SINGULARITY_IMAGE} ${SINGULARITY_CONTAINER}
-             exit $?
+             RETVAL=$?
          else
              message ERROR "Could not locate the Singularity binary: $SINGULARITY_home/singularity\n"
              exit 1
