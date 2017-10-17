@@ -62,11 +62,6 @@ if [ ! -z "$runscript_command" ]; then
     echo "$runscript_command" > "$SINGULARITY_ROOTFS/singularity"    
 fi
 
-if ! CHROOT=`singularity_which chroot`; then
-    message ERROR "chroot command not found\n"
-    exit 1
-fi
-
 ### EXPORT ENVARS
 DEBIAN_FRONTEND=noninteractive
 SINGULARITY_ENVIRONMENT="/.singularity.d/env/91-environment.sh"
@@ -122,15 +117,11 @@ fi
 
 
 ### ENVIRONMENT
-SINGULARITY_SOURCE_ENV="/dev/null"
-
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "environment" ]; then
     if singularity_section_exists "environment" "$SINGULARITY_BUILDDEF"; then
         message 1 "Adding environment to container\n"
 
         singularity_section_get "environment" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
-
-        SINGULARITY_SOURCE_ENV="$SINGULARITY_ROOTFS/.singularity.d/env/90-environment.sh"
     fi
 else
     message 2 "Skipping environment section\n"
@@ -143,10 +134,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "p
         message 1 "Running post scriptlet\n"
         
         ARGS=`singularity_section_args "post" "$SINGULARITY_BUILDDEF"`
-
-        singularity_section_get "post" "$SINGULARITY_BUILDDEF" \
-        | (set +u && . $SINGULARITY_SOURCE_ENV && set -u && $CHROOT "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS) \
-        || ABORT 255
+        singularity_section_get "post" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS || ABORT 255
     fi
 else
     message 2 "Skipping post section\n"
@@ -236,7 +224,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "t
 
             chmod 0755 "$SINGULARITY_ROOTFS/.singularity.d/test"
 
-            (set +u && . $SINGULARITY_SOURCE_ENV && set -u && $CHROOT "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.singularity.d/test" "$@") || ABORT 255
+            chroot "$SINGULARITY_ROOTFS" /bin/sh -e -x $ARGS "/.singularity.d/test" "$@" || ABORT 255
         fi
     fi
 else
@@ -323,10 +311,7 @@ fi
 
 
 ### APPENVIRONMENT
-declare -A SINGULARITY_SOURCE_ENV_APP
-
 if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "appenv" ]; then
-    
     if singularity_section_exists "appenv" "$SINGULARITY_BUILDDEF"; then
         APPNAMES=(`singularity_section_args "appenv" "$SINGULARITY_BUILDDEF"`)
 
@@ -334,7 +319,6 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             message 1 "Adding custom environment to ${APPNAME}\n"
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             get_section "appenv ${APPNAME}" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
-            SINGULARITY_SOURCE_ENV_APP[${APPNAME}]="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}/scif/env/90-environment.sh"
         done
     fi
 fi
@@ -369,14 +353,7 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             export SINGULARITY_APPROOT
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             singularity_app_save "${APPNAME}" "$SINGULARITY_BUILDDEF" "${APPBASE}/scif/Singularity"
-            if [ "${SINGULARITY_SOURCE_ENV_APP[${APPNAME}]:-}" ]; then
-                singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" \
-                | (set +u && . ${SINGULARITY_SOURCE_ENV_APP[${APPNAME}]} && set -u && $CHROOT "$SINGULARITY_ROOTFS" /bin/sh -xe) \
-                || ABORT 255
-            else
-                singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" \
-                | $CHROOT "$SINGULARITY_ROOTFS" /bin/sh -xe || ABORT 255
-            fi
+            singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -xe || ABORT 255
 
             APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
             $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json" --quiet -f
