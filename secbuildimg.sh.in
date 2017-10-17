@@ -71,8 +71,12 @@ From: debian:jessie-slim
 DEFFILE
 
 $SINGULARITY_PATH/singularity build --sandbox $SECBUILD_IMAGE $SECBUILD_DEFFILE
-
-rm -rf $BUILDTMP
-
-echo
-echo "Secbuild image completed"
+if [ $? != 0 ]; then
+    echo
+    echo "Secbuild image failed"
+    rm -rf $BUILDTMP
+    exit 1
+else
+    echo
+    echo "Secbuild image completed"
+fi
