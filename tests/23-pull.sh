@@ -40,4 +40,6 @@ stest 0 sudo singularity pull --force --size 10 docker://busybox
 
 stest 0 sudo rm -rf "${CONTAINER}"
 
+stest 1 singularity pull docker://this_should_not/exist
+
 test_cleanup
