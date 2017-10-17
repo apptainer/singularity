@@ -64,6 +64,7 @@ static __u32 default_capabilities[] = {
     CAP_SETUID,
     CAP_SETGID,
     CAP_SETPCAP,
+    CAP_SETFCAP,
     CAP_SYS_ADMIN,
     CAP_NET_ADMIN,
     CAP_MKNOD,
@@ -79,6 +80,7 @@ static __u32 default_capabilities[] = {
 static __u32 minimal_capabilities[] = {
     CAP_SETUID,
     CAP_SETGID,
+    CAP_SETFCAP,
     CAP_CHOWN,
     CAP_FOWNER,
     CAP_SYS_CHROOT,
