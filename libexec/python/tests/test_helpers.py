@@ -82,5 +82,33 @@ class TestJson(TestCase):
         result = int(read_file(self.file)[0])
         self.assertTrue(250 <= result <= 251)
 
+    def test_shub_size(self):
+        '''test the function to return Singularity Hub Image Size
+        '''
+        print('Testing Singularity Hub Size')
+        from sutils import read_file
+
+        shub_cont = "shub://vsoch/singularity-hello-world"
+        os.environ['SINGULARITY_CONTAINER'] = shub_cont
+        os.environ['SINGULARITY_CONTENTS'] = self.file
+
+        script_path = "%s/size.py" % self.here
+        if VERSION == 2:
+            testing_command = ["python2", script_path]
+        else:
+            testing_command = ["python3", script_path]
+
+        output = Popen(testing_command,
+                       stderr=STDOUT,
+                       stdout=PIPE)
+
+        t = output.communicate()[0], output.returncode
+        result = {'message': t[0],
+                  'return_code': t[1]}
+        self.assertEqual(result['return_code'], 0)
+        result = read_file(self.file)[0]
+        self.assertEqual('260', result)
+
+
 if __name__ == '__main__':
     unittest.main()
