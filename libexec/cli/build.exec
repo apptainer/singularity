@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 # 
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
@@ -43,6 +43,9 @@ fi
 
 build_cleanup() {
     message 1 "Cleaning up...\n";
+    if [ -f "${SINGULARITY_TEMP_FS:-}" ]; then
+        rm -f "${SINGULARITY_TEMP_FS:-}"
+    fi
 
     if [ -f "${SINGULARITY_CONTENTS:-}" ]; then
         rm -f "${SINGULARITY_CONTENTS:-}"
@@ -190,7 +193,6 @@ fi
 # Sandbox Directory and Image Creation
 ################################################################################
 
-
 # if the container exists, build into it (or delete it if -F was passed)
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
     if eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
@@ -208,8 +210,8 @@ if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
 fi
 
 if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
-    SINGULARITY_ROOTFS="${SINGULARITY_CONTAINER_OUTPUT}.fs"
-    SINGULARITY_IMAGE="${SINGULARITY_CONTAINER_OUTPUT}.fs"
+    SINGULARITY_ROOTFS="${SINGULARITY_CONTAINER_OUTPUT}"
+    SINGULARITY_IMAGE="${SINGULARITY_CONTAINER_OUTPUT}"
     if [ "$USERID" == "0" ]; then
         SINGULARITY_ROOTFS_DIRNAME=`dirname "$SINGULARITY_ROOTFS"`
         SINGULARITY_ROOTFS_DIRNAME_OWNER=`stat -c '%u' $SINGULARITY_ROOTFS_DIRNAME`
@@ -221,11 +223,17 @@ if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
         fi
     fi
 else
-    if ! SINGULARITY_ROOTFS=`mktemp -d ${SINGULARITY_TMPDIR:-/tmp}/.singularity-build.XXXXXX`; then
+    if ! SINGULARITY_ROOTFS=`mktemp -d "${SINGULARITY_TMPDIR:-/tmp}"/.singularity-build.XXXXXX`; then
         message ERROR "Failed to create temporary directory\n"
         ABORT 255
     fi
     SINGULARITY_IMAGE="$SINGULARITY_ROOTFS"
+
+    # create a temporary placeholder location to build file system 
+     if ! SINGULARITY_TEMP_FS=`mktemp "${SINGULARITY_TMPDIR:-/tmp}"/.singularity-temp-fs.XXXXXX`; then
+        message ERROR "Failed to create temporary file system\n"
+        ABORT 255
+    fi
 fi
 
 export SINGULARITY_IMAGE SINGULARITY_ROOTFS \
@@ -308,7 +316,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             exit 1
         fi
         if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then # we are bootstrapping to an existing image and need to populate the rootfs
-            if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER_OUTPUT}.fs" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+            if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER_OUTPUT}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
                 message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
                 ABORT 255
             fi
@@ -352,11 +360,11 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
                 IMAGE_SIZE=10
             fi
             message 1 "Creating empty Singularity writable container ${CONTAINER_SIZE}MB\n"
-            eval_abort ${SINGULARITY_bindir}/singularity image.create --size ${IMAGE_SIZE} "${SINGULARITY_CONTAINER_OUTPUT}.fs"
+            eval_abort ${SINGULARITY_bindir}/singularity image.create --force --size ${IMAGE_SIZE} "${SINGULARITY_TEMP_FS}"
         fi
 
         message 1 "Building Singularity FS image...\n"
-        tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_bindir}/singularity image.import "${SINGULARITY_CONTAINER_OUTPUT}.fs"
+        tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_bindir}/singularity image.import "${SINGULARITY_TEMP_FS}"
     else
         message 1 "Building Singularity FS image...\n"
         if [ "$USERID" != "0" ]; then
@@ -364,26 +372,26 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         else
             OPTS=""
         fi
-        if ! mksquashfs "$SINGULARITY_ROOTFS/" "${SINGULARITY_CONTAINER_OUTPUT}.fs" -noappend $OPTS > /dev/null; then
+        if ! mksquashfs "$SINGULARITY_ROOTFS/" "${SINGULARITY_TEMP_FS}" -noappend $OPTS > /dev/null; then
             message ERROR "Failed squashing FS image, left template directory at: $SINGULARITY_ROOTFS\n"
             exit 1
         fi
     fi
 
-    fstype=`$SINGULARITY_libexecdir/singularity/bin/image-type "${SINGULARITY_CONTAINER_OUTPUT}.fs"`
+    fstype=`$SINGULARITY_libexecdir/singularity/bin/image-type "${SINGULARITY_TEMP_FS}"`
 
     message 1 "Building Singularity SIF container image...\n"
     if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
         if ! $SINGULARITY_libexecdir/singularity/bin/sifcreate \
           -D "${SINGULARITY_BUILDDEF}" \
-          -P "${SINGULARITY_CONTAINER_OUTPUT}.fs" -f "$fstype" -c "System partition" \
+          -P "${SINGULARITY_TEMP_FS}" -f "$fstype" -c "System partition" \
           "$SINGULARITY_CONTAINER_OUTPUT" 2>/dev/null 2>&1; then
             message ERROR "Failed to wrap container into a SIF image\n"
             exit 1
         fi
     else
         if ! $SINGULARITY_libexecdir/singularity/bin/sifcreate \
-          -P "${SINGULARITY_CONTAINER_OUTPUT}.fs" -f "$fstype" -c "System partition" \
+          -P "${SINGULARITY_TEMP_FS}" -f "$fstype" -c "System partition" \
           "$SINGULARITY_CONTAINER_OUTPUT" 2>/dev/null 2>&1; then
             message ERROR "Failed to wrap container into a SIF image\n"
             exit 1
