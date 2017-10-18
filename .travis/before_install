@@ -3,7 +3,6 @@
 wget -q -O - https://www.mongodb.org/static/pgp/server-3.2.pub | sudo apt-key add -
 
 if [ -z "$OS_TYPE" ]; then
-    echo "OS TYPE ${OS_TYPE}: "
     # default is ubuntu
     # install packages
     sudo apt-get update && sudo apt-get install -y flawfinder python-pip gcc
