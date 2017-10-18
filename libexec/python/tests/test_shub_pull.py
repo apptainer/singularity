@@ -50,6 +50,7 @@ class TestImport(TestCase):
 
         # Variables are obtained from environment
         os.environ["SINGULARITY_CONTAINER"] = "shub://vsoch/singularity-images"
+        os.environ["SINGULARITY_MESSAGELEVEL"] = 5
         os.environ["SINGULARITY_PULLFOLDER"] = self.tmpdir
         os.environ["SINGULARITY_CONTENTS"] = "%s/.layers" % self.tmpdir
 
@@ -68,12 +69,16 @@ class TestImport(TestCase):
         else:
             testing_command = ["python3", script_path]
 
+        print(' '.join(testing_command))
         output = Popen(testing_command,
                        stderr=STDOUT,
                        stdout=PIPE)
         t = output.communicate()[0], output.returncode
         result = {'message': t[0],
                   'return_code': t[1]}
+
+        print(result['message'])
+
         self.assertEqual(result['return_code'], 0)
 
 
