@@ -96,10 +96,10 @@ class SingularityApiConnection(ApiConnection):
         '''
         # make sure we have a complete url
         registry = add_http(self.image['registry'])
-        base = "%s/api/container/%s/%s:%s/" % (registry,
-                                               self.image['namespace'],
-                                               self.image['repo_name'],
-                                               self.image['repo_tag'])
+        base = "%s/api/container/%s/%s:%s" % (registry,
+                                              self.image['namespace'],
+                                              self.image['repo_name'],
+                                              self.image['repo_tag'])
         # ------------------------------------------------------
         # If we need to authenticate, will do it here
         # ------------------------------------------------------
