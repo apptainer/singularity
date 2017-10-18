@@ -50,7 +50,7 @@ class TestImport(TestCase):
 
         # Variables are obtained from environment
         os.environ["SINGULARITY_CONTAINER"] = "shub://vsoch/singularity-images"
-        os.environ["SINGULARITY_MESSAGELEVEL"] = 5
+        os.environ["SINGULARITY_MESSAGELEVEL"] = "5"
         os.environ["SINGULARITY_PULLFOLDER"] = self.tmpdir
         os.environ["SINGULARITY_CONTENTS"] = "%s/.layers" % self.tmpdir
 

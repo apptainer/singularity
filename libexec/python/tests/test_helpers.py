@@ -91,7 +91,7 @@ class TestJson(TestCase):
         shub_cont = "shub://vsoch/singularity-hello-world"
         os.environ['SINGULARITY_CONTAINER'] = shub_cont
         os.environ['SINGULARITY_CONTENTS'] = self.file
-        os.environ['SINGULARITY_MESSAGELEVEL'] = 5
+        os.environ['SINGULARITY_MESSAGELEVEL'] = "5"
 
         script_path = "%s/size.py" % self.here
         if VERSION == 2:
