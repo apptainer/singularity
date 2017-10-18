@@ -24,8 +24,8 @@
 
 test_init "Checking Python unit tests"
 
-mv ../libexec/python/tests /usr/local/libexec/singularity/python/tests
-chmod u+x /usr/local/libexec/singularity/python/tests/test*
+sudo mv ../libexec/python/tests /usr/local/libexec/singularity/python/tests
+sudo chmod u+x /usr/local/libexec/singularity/python/tests/test*
 cd /usr/local/libexec/singularity/python
 
 if which python2 >/dev/null 2>&1; then
