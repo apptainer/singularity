@@ -61,8 +61,8 @@ class TestApi(TestCase):
         '''
         print("Case 1: Testing retrieval of singularity-hub manifest")
         manifest = self.client.get_manifest()
-        keys = ['files', 'version', 'collection', 'branch',
-                'name', 'id', 'metrics', 'spec', 'image']
+        keys = ['version', 'tag', 'branch',
+                'name', 'id', 'commit', 'image']
         [self.assertTrue(x in manifest) for x in keys]
 
     def test_download_image(self):
