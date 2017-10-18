@@ -107,7 +107,7 @@ class TestJson(TestCase):
                   'return_code': t[1]}
         self.assertEqual(result['return_code'], 0)
         result = read_file(self.file)[0]
-        self.assertEqual('331', result)
+        self.assertEqual('260', result)
 
 
 if __name__ == '__main__':
