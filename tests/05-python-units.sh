@@ -24,7 +24,9 @@
 
 test_init "Checking Python unit tests"
 
-cd ../libexec/python
+mv ../libexec/python/tests /usr/local/libexec/singularity/python/tests
+chmod u+x /usr/local/libexec/singularity/python/tests/test*
+cd /usr/local/libexec/singularity/python
 
 if which python2 >/dev/null 2>&1; then
     stest 0 python2 -m unittest tests.test_json
