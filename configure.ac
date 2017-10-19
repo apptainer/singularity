@@ -258,6 +258,7 @@ if test -d "/proc/self/ns"; then
     SETNS_SYSCALL=1
     AC_MSG_RESULT([yes])
 else
+    SETNS_SYSCALL=0
     AC_MSG_RESULT([no])
 fi
 AC_SUBST(SETNS_SYSCALL)
@@ -426,4 +427,11 @@ AC_CONFIG_FILES([
    libexec/python/helpers/json/Makefile
 
 ])
+
 AC_OUTPUT
+
+if test "$SETNS_SYSCALL" = "0"; then
+    echo
+    echo "WARNING: instance feature is disabled due to lack of kernel support"
+    echo
+fi

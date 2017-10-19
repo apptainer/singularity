@@ -1,9 +1,11 @@
 #!/bin/bash -ex
 
+wget -q -O - https://www.mongodb.org/static/pgp/server-3.2.pub | sudo apt-key add -
+
 if [ -z "$OS_TYPE" ]; then
     # default is ubuntu
     # install packages
-    sudo apt-get install -y flawfinder python-pip gcc
+    sudo apt-get update && sudo apt-get install -y flawfinder python-pip gcc
     # so that adjusted PATH propagates into sudo
     sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
     # Install updated version of pylint
