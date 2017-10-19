@@ -47,6 +47,8 @@ char *singularity_image_bind(struct image_object *object);
 int singularity_image_writable(struct image_object *object);
 int singularity_image_type(struct image_object *object);
 extern int singularity_image_mount(struct image_object *image, char *mount_point);
+void singularity_limit_container_paths(struct image_object *object);
+void singularity_limit_container_owners(struct image_object *object);
 
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
 
