@@ -16,6 +16,11 @@
 
 . ./functions
 
+if [ ! -d "/proc/self/ns" ]; then
+    echo "Instance is not supported on your host, skipping tests"
+    exit 0
+fi
+
 test_init "Instance command group tests"
 
 CONTAINER="$SINGULARITY_TESTDIR/container"

@@ -61,8 +61,8 @@ class TestApi(TestCase):
         '''
         print("Case 1: Testing retrieval of singularity-hub manifest")
         manifest = self.client.get_manifest()
-        keys = ['files', 'version', 'collection', 'branch',
-                'name', 'id', 'metrics', 'spec', 'image']
+        keys = ['version', 'tag', 'branch',
+                'name', 'id', 'commit', 'image']
         [self.assertTrue(x in manifest) for x in keys]
 
     def test_download_image(self):
@@ -96,28 +96,11 @@ class TestApi(TestCase):
         image_name = get_image_name(manifest)
 
         fullname = "%s/%s" % (self.user_name, self.repo_name)
-        print("Case 1: ask for image and ask for master branch (tag)")
-        client = self.connect(image="%s:master" % fullname)
+        print("Case 1: ask for image by tag.")
+        client = self.connect(image="%s:latest" % fullname)
         manifest = client.get_manifest()
         image_name = get_image_name(manifest)
         self.assertEqual(image_name, get_image_name(manifest))
-
-        print("Case 2: ask for different tag (mongo)")
-        client = self.connect(image="%s:mongo" % fullname)
-        manifest = client.get_manifest()
-        mongo = get_image_name(manifest)
-        self.assertFalse(image_name == mongo)
-
-        print("Case 3: image without tag (should be latest across tags)")
-        client = self.connect(image="%s" % fullname)
-        manifest = client.get_manifest()
-        self.assertEqual(mongo, get_image_name(manifest))
-
-        print("Case 4: ask for latest tag (should be latest across tags)")
-        client = self.connect(image="%s/%s:latest"
-                              % (self.user_name, self.repo_name))
-        manifest = client.get_manifest()
-        self.assertEqual(mongo, get_image_name(manifest))
 
     def test_get_image_name(self):
         '''test_get_image_name will return the image name from the manifest
@@ -127,7 +110,7 @@ class TestApi(TestCase):
 
         print("Case 1: return an image name corresponding to repo")
         image_name = get_image_name(manifest)
-        self.assertEqual('vsoch-singularity-images-mongo.simg',
+        self.assertEqual('vsoch-singularity-images-master-latest.simg',
                          image_name)
 
 

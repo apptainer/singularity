@@ -59,7 +59,7 @@ def SIZE(image, contentfile=None):
     if 'size_mb' in manifest:  # sregistry
         size = manifest['size_mb']
     else:
-        size = json.loads(manifest['metrics'].replace("'", '"'))['size']
+        size = manifest['metrics']['size']
     if contentfile is not None:
         write_file(contentfile, str(size), mode="w")
     return size

@@ -152,7 +152,7 @@ DISABLE_HTTPS = convert2boolean(getenv("SINGULARITY_NOHTTPS", False))
 #######################################################################
 
 SINGULARITY_PULLFOLDER = getenv("SINGULARITY_PULLFOLDER", os.getcwd())
-SHUB_API_BASE = "singularity-hub.org"
+SHUB_API_BASE = "www.singularity-hub.org"
 SHUB_NAMEBYHASH = getenv("SHUB_NAMEBYHASH")
 SHUB_NAMEBYCOMMIT = getenv("SHUB_NAMEBYCOMMIT")
 SHUB_CONTAINERNAME = getenv("SHUB_CONTAINERNAME")
