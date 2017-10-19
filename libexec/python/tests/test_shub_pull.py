@@ -68,12 +68,17 @@ class TestImport(TestCase):
         else:
             testing_command = ["python3", script_path]
 
+        print(' '.join(testing_command))
         output = Popen(testing_command,
                        stderr=STDOUT,
                        stdout=PIPE)
         t = output.communicate()[0], output.returncode
         result = {'message': t[0],
                   'return_code': t[1]}
+
+        if result['return_code'] != 0:
+            print(result['message'])
+
         self.assertEqual(result['return_code'], 0)
 
 
