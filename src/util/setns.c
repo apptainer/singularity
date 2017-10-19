@@ -16,6 +16,7 @@
 #define _GNU_SOURCE
 
 #include <unistd.h>
+#include <errno.h>
 #include <sys/syscall.h>
 
 #if defined (NO_SETNS) && defined (SINGULARITY_SETNS_SYSCALL)
@@ -24,6 +25,13 @@
 
 int setns(int fd, int nstype) {
     return syscall(__NR_setns, fd, nstype);
+}
+
+#elif defined (NO_SETNS) && !defined (SINGULARITY_SETNS_SYSCALL)
+
+int setns(int fd, int nstype) {
+    errno = ENOSYS;
+    return -1;
 }
 
 #endif /* NO_SETNS && SINGULARITY_SETNS_SYCALL */
