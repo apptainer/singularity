@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <libgen.h>
 
@@ -112,6 +113,11 @@ struct image_object singularity_image_init(char *path, int open_flags) {
         } else {
             singularity_message(ERROR, "Unknown image format/type: %s\n", path);
         }
+        ABORT(255);
+    }
+
+    if ( fcntl(image.fd, F_SETFD, FD_CLOEXEC) != 0 ) {
+        singularity_message(ERROR, "Failed to set CLOEXEC on image file descriptor\n");
         ABORT(255);
     }
 
