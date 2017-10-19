@@ -70,7 +70,7 @@ int _singularity_runtime_enter_chroot(void) {
         }
     } else {
         if ( chroot("/proc/1/root") < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
-            singularity_message(ERROR, "failed chroot to container at: %s\n", container_dir);
+            singularity_message(ERROR, "failed chroot to container instance\n");
             ABORT(255);
         }
     }
