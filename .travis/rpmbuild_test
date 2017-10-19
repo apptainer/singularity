@@ -13,7 +13,6 @@ rpmbuild -ta *.tar.gz
 rpm -iv ~/rpmbuild/RPMS/*/*.rpm
 
 if [ "$OS_VERSION" = 6 ]; then
-    # the test suite has not yet been ported to centos6 python, skip it
     echo "the test suite has not yet been ported to centos6 python, skipping."
     exit
 fi
