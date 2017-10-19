@@ -13,9 +13,6 @@ if [ -z "$OS_TYPE" ]; then
     exit
 fi
 
-# run docker as shown at
-#  https://djw8605.github.io/2016/05/03/building-centos-packages-on-travisci/
-
 sudo apt-get update
 
 ./autogen.sh
