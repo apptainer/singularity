@@ -24,12 +24,6 @@
 
 test_init "Checking Python unit tests"
 
-# /usr/local doesn't exist on centos
-
-#sudo mv ../libexec/python/tests /usr/local/libexec/singularity/python/tests
-#sudo chmod u+x /usr/local/libexec/singularity/python/tests/test*
-#cd /usr/local/libexec/singularity/python
-echo $PWD
 cd ../libexec/python
 
 if which python2 >/dev/null 2>&1; then

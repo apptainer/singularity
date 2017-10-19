@@ -91,7 +91,6 @@ class TestJson(TestCase):
         shub_cont = "shub://vsoch/singularity-hello-world"
         os.environ['SINGULARITY_CONTAINER'] = shub_cont
         os.environ['SINGULARITY_CONTENTS'] = self.file
-        os.environ['SINGULARITY_MESSAGELEVEL'] = "5"
 
         script_path = "%s/size.py" % self.here
         if VERSION == 2:
@@ -107,7 +106,10 @@ class TestJson(TestCase):
         t = output.communicate()[0], output.returncode
         result = {'message': t[0],
                   'return_code': t[1]}
-        print(result['message'])
+
+        if result['return_code'] != 0:
+            print(result['message'])
+
         self.assertEqual(result['return_code'], 0)
         result = read_file(self.file)[0]
         self.assertEqual('260', result)
