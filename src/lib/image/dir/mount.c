@@ -55,6 +55,11 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
         mntflags &= ~MS_NOSUID;
     }
 
+    if ( singularity_priv_getuid() == 0 ) {
+        singularity_message(DEBUG, "run as root, removing MS_NODEV mount flags\n");
+        mntflags &= ~MS_NODEV;
+    }
+
     singularity_priv_escalate();
     singularity_message(DEBUG, "Mounting container directory %s->%s\n", image->path, mount_point);
     if ( mount(image->path, mount_point, NULL, mntflags, NULL) < 0 ) {
