@@ -498,15 +498,15 @@ bind_nvidia_files() {
 
     # in case we couldn't find files, warn the user. otherwise export variables
     if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
-         message WARNING "Could not find any NVIDIA libraries on this host!\n";
-         message WARNING "You may need to edit $SINGULARITY_sysconfdir/singularity/nvliblist.conf\n"
+        message WARNING "Could not find any NVIDIA libraries on this host!\n";
+        message WARNING "You may need to edit $SINGULARITY_sysconfdir/singularity/nvliblist.conf\n"
     else
         export SINGULARITY_CONTAINLIBS
     fi
 
     if [ -z "${SINGULARITY_NVBIN:-}" ]; then
-         message WARNING "Could not find any NVIDIA binaries on this host!\n";
-         message WARNING "You may need to edit $SINGULARITY_sysconfdir/singularity/nvliblist.conf\n"
+        message WARNING "Could not find any NVIDIA binaries on this host!\n";
+        message WARNING "You may need to edit $SINGULARITY_sysconfdir/singularity/nvliblist.conf\n"
     else
         export SINGULARITY_BINDPATH
     fi

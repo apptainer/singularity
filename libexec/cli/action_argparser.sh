@@ -20,6 +20,13 @@
 
 message 2 "Evaluating args: '$*'\n"
 
+if grep "always use nv" "${SINGULARITY_sysconfdir}/singularity/singularity.conf" 2>/dev/null | grep -q "yes"; then
+    message 2 "'always use nv = yes' found in singularity.conf\n"
+    message 2 "binding nvidia files into container\n"
+    bind_nvidia_files
+    NV_IN_CONFIG=1
+fi
+
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -128,7 +135,9 @@ while true; do
         ;;
         --nv)
             shift
-            bind_nvidia_files
+            if [ -z ${NV_IN_CONFIG:-} ]; then
+                bind_nvidia_files
+            fi
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
