@@ -1,7 +1,7 @@
 NAME="verify"
 SECTION="management"
 SUMMARY="Verify the crypto signature of group of data objects in container"
-USAGE: singularity [...] verify <container path>
+USAGE="singularity [...] verify <container path>"
 
 print_help() {
 cat<<EOF

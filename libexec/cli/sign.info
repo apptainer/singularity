@@ -1,7 +1,7 @@
 NAME="sign"
 SECTION="management"
 SUMMARY="Sign a group of data objects in container"
-USAGE: singularity [...] sign <container path>
+USAGE="singularity [...] sign <container path>"
 
 print_help() {
 cat<<EOF
