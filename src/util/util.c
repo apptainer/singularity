@@ -422,7 +422,6 @@ struct tempfile *make_logfile(char *label) {
     if (tf == NULL) {
         singularity_message(ERROR, "Could not allocate memory for tempfile\n");
         ABORT(255);
-<<<<<<< HEAD
     }    
 
     if ( snprintf(tf->filename, sizeof(tf->filename) - 1, "/tmp/%s.%s.%s.XXXXXX", image, daemon, label) > sizeof(tf->filename) - 1 ) {
