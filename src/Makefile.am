@@ -32,6 +32,10 @@ prepheader_SOURCES = prepheader.c
 prepheader_LDADD =
 prepheader_CPPFLAGS = $(AM_CPPFLAGS)
 
+mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c
+mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
+mount_CPPFLAGS = $(AM_CPPFLAGS)
+
 sign_SOURCES = sign.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/crypt.c
 sign_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto
 sign_CPPFLAGS = $(AM_CPPFLAGS)
