@@ -103,4 +103,7 @@
 #define ALLOW_CONTAINER_SQUASHFS "allow container squashfs"
 #define ALLOW_CONTAINER_SQUASHFS_DEFAULT 1
 
+#define ALWAYS_USE_NV "always use nv"
+#define ALWAYS_USE_NV_DEFAULT "no"
+
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_
