@@ -74,6 +74,7 @@ static __u32 default_capabilities[] = {
     CAP_SYS_PTRACE,
     CAP_DAC_READ_SEARCH,
     CAP_DAC_OVERRIDE,
+    CAP_AUDIT_WRITE,
     NO_CAP
 };
 
@@ -86,6 +87,7 @@ static __u32 minimal_capabilities[] = {
     CAP_SYS_CHROOT,
     CAP_DAC_READ_SEARCH,
     CAP_DAC_OVERRIDE,
+    CAP_AUDIT_WRITE,
     NO_CAP
 };
 
