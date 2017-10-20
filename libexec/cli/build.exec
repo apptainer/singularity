@@ -36,7 +36,7 @@ else
     exit 1
 fi
 
-if ! which mksquashfs > /dev/null 2>&1; then
+if ! singularity_which mksquashfs > /dev/null 2>&1; then
     message ERROR "You must install squashfs-tools to build FS images\n"
     ABORT 255
 fi
