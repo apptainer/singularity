@@ -1,4 +1,4 @@
-SUBDIRS = ext3 dir squashfs sif
+SUBDIRS = ext3 dir squashfs sif sign verify
 
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
@@ -10,7 +10,7 @@ distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
 noinst_LTLIBRARIES = libimage.la
-libimage_la_LIBADD = ext3/libinternal.la dir/libinternal.la squashfs/libinternal.la sif/libinternal.la
+libimage_la_LIBADD = ext3/libinternal.la dir/libinternal.la squashfs/libinternal.la sif/libinternal.la sign/libinternal.la verify/libinternal.la
 libimage_la_SOURCES = image.c bind.c ../../util/registry.c ../../util/message.c ../../util/config_parser.c ../../util/privilege.c ../../util/util.c ../../util/file.c ../../util/suid.c
 libimage_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 

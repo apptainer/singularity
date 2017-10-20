@@ -47,6 +47,8 @@ src/prepheader
 src/sifcreate
 src/sinit
 src/get-section
+src/sign
+src/verify
 src/stamp-h1
 src/include/stamp-h1
 src/.dirstamp
