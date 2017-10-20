@@ -41,11 +41,11 @@ sifcreate_LDADD = lib/image/libsingularity-image.la -luuid
 sifcreate_CPPFLAGS = $(AM_CPPFLAGS)
 
 sign_SOURCES = sign.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/crypt.c
-sign_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto
+sign_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto -luuid
 sign_CPPFLAGS = $(AM_CPPFLAGS)
 
 verify_SOURCES = verify.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/crypt.c
-verify_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto
+verify_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto -luuid
 verify_CPPFLAGS = $(AM_CPPFLAGS)
 
 get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c

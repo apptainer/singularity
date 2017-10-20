@@ -14,7 +14,10 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <uuid/uuid.h>
 
+#include "lib/image/sif/list.h"
+#include "lib/image/sif/sif.h"
 #include "lib/image/image.h"
 #include "util/crypt.h"
 #include "util/util.h"

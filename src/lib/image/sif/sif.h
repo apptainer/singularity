@@ -315,7 +315,7 @@ typedef enum{
 	SIF_ESIFVER,	/* unsupported SIF version while validating image */
 	SIF_ERARCH,	/* architecture mismatch while validating image */
 	SIF_ENODESC,	/* cannot find data object descriptors while validating image */
-	SIF_ENODEF,	/* cannot find partition descriptor */
+	SIF_ENODEF,	/* cannot find definition file descriptor */
 	SIF_ENOENV,	/* cannot find envvar descriptor */
 	SIF_ENOLAB,	/* cannot find jason label descriptor */
 	SIF_ENOPAR,	/* cannot find partition descriptor */

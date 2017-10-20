@@ -71,7 +71,7 @@ sif_strerror(Siferrno siferrno)
 	case SIF_ESIFVER: return "unsupported SIF version while validating image";
 	case SIF_ERARCH: return "architecture mismatch while validating image";
 	case SIF_ENODESC: return "cannot find data object descriptors while validating image";
-	case SIF_ENODEF: return "cannot find partition descriptor";
+	case SIF_ENODEF: return "cannot find definition file descriptor";
 	case SIF_ENOENV: return "cannot find envvar descriptor";
 	case SIF_ENOLAB: return "cannot find jason label descriptor";
 	case SIF_ENOPAR: return "cannot find partition descriptor";

@@ -19,17 +19,21 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <uuid/uuid.h>
 
 #include "util/crypt.h"
 #include "util/message.h"
 #include "util/file.h"
 #include "util/util.h"
 
+#include "../sif/list.h"
+#include "../sif/sif.h"
 #include "../image.h"
 
 extern char verifblock[VERIFBLOCK_SIZE];
 
 int _singularity_image_verify(struct image_object *image) {
+#if 0
     int ret;
     char *vb, *vb_hashstr;
     unsigned char *map;
@@ -80,6 +84,7 @@ int _singularity_image_verify(struct image_object *image) {
 
     if (!is_equal)
         return -1;
+#endif
 
     return 0;
 }

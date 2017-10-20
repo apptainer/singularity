@@ -18,11 +18,14 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <uuid/uuid.h>
 
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/registry.h"
+#include "lib/image/sif/list.h"
+#include "lib/image/sif/sif.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 #include "util/config_parser.h"
@@ -48,18 +51,9 @@ int main(int argc, char **argv) {
     singularity_priv_drop();
 
     singularity_message(INFO, "Initializing Singularity image subsystem\n");
-    image = singularity_image_init(singularity_registry_get("IMAGE"));
+    image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
 
-    singularity_message(INFO, "Opening image file: %s\n", image.name);
-    singularity_image_open(&image, O_RDWR);
-
-    if ( image.vbpresent == 1 ) {
-        ret = singularity_image_verify(&image);
-    } else {
-        singularity_message(ERROR, "The image was not created with a verification block needed by the signature feature\n");
-        ABORT(255);
-    }
-
+    ret = singularity_image_verify(&image);
     if (ret < 0) {
         singularity_message(ERROR, "Could not authenticate/validate image\n");
     } else {
