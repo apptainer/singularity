@@ -260,17 +260,13 @@ KVERS=`uname -r`
 if test -f "/lib/modules/$KVERS/modules.dep"; then
     if grep -q 'overlay.ko' "/lib/modules/$KVERS/modules.dep"; then
         AC_MSG_RESULT([yes])
-        ENABLE_OVERLAY_CONFIG_DEFAULT="yes"
         OVERLAY_FS=1 # this adds it to testing
     else
-        AC_MSG_RESULT([no])
-        ENABLE_OVERLAY_CONFIG_DEFAULT="no"
+        AC_MSG_RESULT([maybe])
     fi
 else
     AC_MSG_RESULT([maybe])
-    ENABLE_OVERLAY_CONFIG_DEFAULT="try"
 fi
-AC_SUBST(ENABLE_OVERLAY_CONFIG_DEFAULT)
 
 
 # ---------------------------------------------------------------------
