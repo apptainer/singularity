@@ -167,6 +167,11 @@ class SingularityMessage:
 
         if not message.endswith('\n'):
             message = "%s\n" % (message)
+
+        # Ensure proper format
+        if isinstance(message, bytes):
+            message = message.decode('utf-8')
+
         return message
 
 
@@ -214,8 +219,6 @@ class SingularityMessage:
         '''write will write a message to a stream,
         first checking the encoding
         '''
-        if isinstance(message, bytes):
-            message = message.decode('utf-8')
         stream.write(message)
 
     def get_logs(self, join_newline=True):
