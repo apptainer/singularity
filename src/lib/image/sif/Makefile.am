@@ -1,4 +1,4 @@
-MAINTAINERCLEANFILES = Makefile.in 
+MAINTAINERCLEANFILES = Makefile.in
 DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ *.la
 

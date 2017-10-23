@@ -1,10 +1,10 @@
-/* 
+/*
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
- * 
+ *
  * This software is licensed under a 3-clause BSD license.  Please
  * consult LICENSE file distributed with the sources of this project regarding
  * your rights to use or distribute this software.
- * 
+ *
  */
 
 #include <stdio.h>
@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <errno.h> 
+#include <errno.h>
 #include <string.h>
 #include <fcntl.h>
 

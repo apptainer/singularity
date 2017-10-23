@@ -33,7 +33,7 @@
  * | - dataoff: 280                                                 |   |
  * | - datalen: 42111314                                            |   |
  * |----------------------------------------------------------------|   |
- * | DESCR[0]: Siflabels  					    | <-'
+ * | DESCR[0]: Siflabels                                            | <-'
  * | - Sifcommon                                                    |
  * |   - datatype: DATA_LABELS                                      |
  * |   - groupid: inter-object relation                             |
