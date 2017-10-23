@@ -34,6 +34,8 @@ The following levels do nothing (quiet)
 
 0
 
+SINGULARITY_LOGFILE, when defined, outputs to the file with level DEBUG
+
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved.
 
 "Singularity" Copyright (c) 2016, The Regents of the University of California,
@@ -55,6 +57,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 import os
 import sys
+import io
 
 ABRT = -4
 ERROR = -3
@@ -71,8 +74,9 @@ DEBUG = 5
 class SingularityMessage:
 
     def __init__(self, MESSAGELEVEL=None):
-        self.level = get_logging_level()
         self.history = []
+        self.logfile = os.environ.get("SINGULARITY_LOGFILE")
+        self.level = get_logging_level()
         self.errorStream = sys.stderr
         self.outputStream = sys.stdout
         self.colorize = self.useColor()
@@ -139,14 +143,12 @@ class SingularityMessage:
             return True
         return False
 
-    def emit(self, level, message, prefix=None):
-        '''emit is the main function to print the message
-        optionally with a prefix
-        :param level: the level of the message
-        :param message: the message to print
-        :param prefix: a prefix for the message
-        '''
 
+    def format(self, level, message, prefix=None):
+        ''' format will take a message and an output
+            level and given that a file is not being used
+            format the message (color and add the prefix)
+        '''
         if prefix is not None:
             prefix = self.addColor(level, "%s " % (prefix))
         else:
@@ -158,10 +160,24 @@ class SingularityMessage:
 
         if not message.endswith('\n'):
             message = "%s\n" % (message)
+        return message
+
+
+    def emit(self, level, message, prefix=None):
+        '''emit is the main function to print the message
+        optionally with a prefix
+        :param level: the level of the message
+        :param message: the message to print
+        :param prefix: a prefix for the message
+        '''
+        message = self.format(level, message, prefix)
 
         # If the level is quiet, only print to error
         if self.level == QUIET:
             pass
+
+        elif self.logfile is not None:
+            self._emit_file(message)
 
         # Otherwise if in range print to stdout and stderr
         elif self.isEnabledFor(level):
@@ -172,6 +188,21 @@ class SingularityMessage:
 
         # Add all log messages to history
         self.history.append(message)
+
+    def _emit_file(self, level, message, prefix=""):
+        '''emit writes a message to the logfile, not including
+           special coloring or formatting. The log level should
+           be set to DEBUG (5). If the file doesn't exist, we exit.
+        '''
+        if self.logfile is not None:
+            if not os.path.exists(self.logfile):
+                print('ERROR: Logfile %s is not found.')
+                sys.exit(1)
+
+        # Otherwise write to file, DEBUG always in range
+        if self.isEnabledFor(level):
+            with io.open(self.logfile, 'a') as filey:
+                filey.write(message)
 
     def write(self, stream, message):
         '''write will write a message to a stream,
@@ -275,34 +306,37 @@ class SingularityMessage:
         return True
 
 
-def get_logging_level():
-    '''get_logging_level will configure a logging to
-    standard out based on the user's selected level,
-    which should be in an environment variable called
-    SINGULARITY_MESSAGELEVEL. if SINGULARITY_MESSAGELEVEL
-    is not set, the maximum level (5) is assumed (all
-    messages).
+    def get_logging_level():
+        '''get_logging_level will configure a logging to
+        standard out based on the user's selected level,
+        which should be in an environment variable called
+        SINGULARITY_MESSAGELEVEL. if SINGULARITY_MESSAGELEVEL
+        is not set, the maximum level (5) is assumed (all
+        messages).
 
-    #define ABRT -4
-    #define ERROR -3
-    #define WARNING -2
-    #define LOG -1
-    #define INFO 1
+        #define ABRT -4
+        #define ERROR -3
+        #define WARNING -2
+        #define LOG -1
+        #define INFO 1
 
-    implied define: QUIET 0
+        implied define: QUIET 0
 
-    #define VERBOSE 2
-    #define VERBOSE1 2
-    #define VERBOSE2 3
-    #define VERBOSE3 4
-    #define DEBUG 5
-    '''
+        #define VERBOSE 2
+        #define VERBOSE1 2
+        #define VERBOSE2 3
+        #define VERBOSE3 4
+        #define DEBUG 5
 
-    return int(os.environ.get("SINGULARITY_MESSAGELEVEL", 5))
+        '''
+        # SINGULARITY_LOGFILE --> DEBUG
+        if self.logfile is not None:
+            return 5
+        return int(os.environ.get("SINGULARITY_MESSAGELEVEL", 5))
 
 
 def get_user_color_preference():
-    COLORIZE = os.environ.get('SINGULARITY_COLORIZE', None)
+    COLORIZE = os.environ.get('SINGULARITY_COLORIZE')
     if COLORIZE is not None:
         COLORIZE = convert2boolean(COLORIZE)
     return COLORIZE
