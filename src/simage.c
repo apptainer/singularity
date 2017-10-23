@@ -107,8 +107,7 @@ int main(int argc_in, char ** argv_in) {
             if ( argv[3] != NULL ) {
                 size = ( strtol(argv[3], (char **)NULL, 10) );
             }
-            argv[2]->size = size - VERIFBLOCK_SIZE;
-            return(singularity_image_create(argv[2]));
+            return(singularity_image_create(argv[2], size));
         }
         
         /* Run image expand workflow */

@@ -44,6 +44,7 @@
 #error SYSCONFDIR not defined
 #endif
 
+
 int main(int argc, char **argv) {
     struct image_object image;
     long int size = 768;
@@ -69,13 +70,12 @@ int main(int argc, char **argv) {
 
     singularity_message(INFO, "Initializing Singularity image subsystem\n");
     image = singularity_image_init(singularity_registry_get("IMAGE"));
-    image.size = size * BUFFER_SIZE;
 
     singularity_message(INFO, "Opening image file: %s\n", image.name);
 //    singularity_image_open(&image, O_CREAT | O_RDWR);
 
-    singularity_message(INFO, "Creating %ldMiB image\n", image.size / BUFFER_SIZE);
-    singularity_image_create(&image);
+    singularity_message(INFO, "Creating %ldMiB image\n", size);
+    singularity_image_create(&image, size);
 
     singularity_message(INFO, "Binding image to loop\n");
     singularity_image_bind(&image);
