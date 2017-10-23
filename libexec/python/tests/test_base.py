@@ -37,7 +37,7 @@ VERSION = sys.version_info[0]
 print("*** PYTHON VERSION %s BASE TESTING START ***" % VERSION)
 
 
-class TestShell(TestCase):
+class TestBase(TestCase):
 
     def setUp(self):
 

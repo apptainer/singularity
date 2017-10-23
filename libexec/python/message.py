@@ -55,9 +55,9 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
+import io
 import os
 import sys
-import io
 
 ABRT = -4
 ERROR = -3
@@ -76,7 +76,7 @@ class SingularityMessage:
     def __init__(self, MESSAGELEVEL=None):
         self.history = []
         self.logfile = os.environ.get("SINGULARITY_LOGFILE")
-        self.level = get_logging_level()
+        self.level = self.get_logging_level()
         self.errorStream = sys.stderr
         self.outputStream = sys.stdout
         self.colorize = self.useColor()
@@ -92,10 +92,17 @@ class SingularityMessage:
     def useColor(self):
         '''useColor will determine if color should be added
         to a print. Will check if being run in a terminal, and
-        if has support for asci'''
+        if has support for ascii'''
+        # Logging to file, never use color
+        if self.logfile is not None:
+            return False
+
+        # Second preference goes to user choice
         COLORIZE = get_user_color_preference()
         if COLORIZE is not None:
             return COLORIZE
+
+        # Then determine based on stream
         streams = [self.errorStream, self.outputStream]
         for stream in streams:
             if not hasattr(stream, 'isatty'):
@@ -176,31 +183,30 @@ class SingularityMessage:
         if self.level == QUIET:
             pass
 
+        # If it's not enabled for the level, also pass
+        elif self.isEnabledFor(level) is False:
+            pass
+
+        # If the user wants to print to a log file
         elif self.logfile is not None:
             self._emit_file(message)
 
         # Otherwise if in range print to stdout and stderr
-        elif self.isEnabledFor(level):
-            if self.emitError(level):
-                self.write(self.errorStream, message)
-            else:
-                self.write(self.outputStream, message)
+        elif self.emitError(level):
+            self.write(self.errorStream, message)
+        else:
+            self.write(self.outputStream, message)
 
         # Add all log messages to history
         self.history.append(message)
 
-    def _emit_file(self, level, message, prefix=""):
+    def _emit_file(self, message):
         '''emit writes a message to the logfile, not including
            special coloring or formatting. The log level should
-           be set to DEBUG (5). If the file doesn't exist, we exit.
+           be set to DEBUG (5). 
+           If the file doesn't exist, it's created
         '''
         if self.logfile is not None:
-            if not os.path.exists(self.logfile):
-                print('ERROR: Logfile %s is not found.')
-                sys.exit(1)
-
-        # Otherwise write to file, DEBUG always in range
-        if self.isEnabledFor(level):
             with io.open(self.logfile, 'a') as filey:
                 filey.write(message)
 
@@ -305,8 +311,7 @@ class SingularityMessage:
             return False
         return True
 
-
-    def get_logging_level():
+    def get_logging_level(self):
         '''get_logging_level will configure a logging to
         standard out based on the user's selected level,
         which should be in an environment variable called
