@@ -29,9 +29,6 @@ cd ../libexec/python
 if which python2 >/dev/null 2>&1; then
     stest 0 python2 -m unittest tests.test_base
     stest 0 python2 -m unittest tests.test_core
-    stest 0 python2 -m unittest tests.test_custom_cache
-    stest 0 python2 -m unittest tests.test_default_cache
-    stest 0 python2 -m unittest tests.test_disable_cache
     stest 0 python2 -m unittest tests.test_docker_api
     stest 0 python2 -m unittest tests.test_docker_import
     stest 0 python2 -m unittest tests.test_docker_tasks
@@ -40,6 +37,9 @@ if which python2 >/dev/null 2>&1; then
     stest 0 python2 -m unittest tests.test_message
     stest 0 python2 -m unittest tests.test_shub_api
     stest 0 python2 -m unittest tests.test_shub_pull
+    stest 0 python2 -m unittest tests.test_custom_cache
+    stest 0 python2 -m unittest tests.test_default_cache
+    stest 0 python2 -m unittest tests.test_disable_cache
 else
     echo "Skipping python2 tests: not installed"
 fi
@@ -47,9 +47,6 @@ fi
 if which python3 >/dev/null 2>&1; then
     stest 0 python3 -m unittest tests.test_base
     stest 0 python3 -m unittest tests.test_core
-    stest 0 python3 -m unittest tests.test_custom_cache
-    stest 0 python3 -m unittest tests.test_default_cache
-    stest 0 python3 -m unittest tests.test_disable_cache
     stest 0 python3 -m unittest tests.test_docker_api
     stest 0 python3 -m unittest tests.test_docker_import
     stest 0 python3 -m unittest tests.test_docker_tasks
@@ -58,6 +55,9 @@ if which python3 >/dev/null 2>&1; then
     stest 0 python3 -m unittest tests.test_message
     stest 0 python3 -m unittest tests.test_shub_api
     stest 0 python3 -m unittest tests.test_shub_pull
+    stest 0 python3 -m unittest tests.test_custom_cache
+    stest 0 python3 -m unittest tests.test_default_cache
+    stest 0 python3 -m unittest tests.test_disable_cache
 else
     echo "Skipping python3 tests: not installed"
 fi
