@@ -131,6 +131,16 @@ int _singularity_runtime_overlayfs(void) {
             free(size);
         }
 
+        if ( is_link(overlay_upper) == 0 ) {
+            singularity_message(ERROR, "symlink detected, upper overlay %s must be a directory\n", overlay_upper);
+            ABORT(255);
+        }
+
+        if ( is_link(overlay_work) == 0 ) {
+            singularity_message(ERROR, "symlink detected, work overlay %s must be a directory\n", overlay_work);
+            ABORT(255);
+        }
+
         singularity_priv_escalate();
         singularity_message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
         if ( s_mkpath(overlay_upper, 0755) < 0 ) {
