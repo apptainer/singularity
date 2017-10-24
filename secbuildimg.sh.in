@@ -48,7 +48,7 @@ SECBUILD_DEFFILE="$BUILDTMP/secbuild.def"
 
 cat > "$SECBUILD_DEFFILE" << DEFFILE
 Bootstrap: docker
-From: debian:jessie-slim
+From: ubuntu:latest
 
 %setup
     cp -a . $SECBUILD_SINGULARITY
