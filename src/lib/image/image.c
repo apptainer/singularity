@@ -34,8 +34,6 @@
 #include <pwd.h>
 #include <libgen.h>
 
-#include <uuid/uuid.h>
-
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
@@ -44,18 +42,12 @@
 #include "util/privilege.h"
 #include "util/suid.h"
 
-#include "./sif/list.h"
-#include "./sif/sif.h"
-
 #include "./image.h"
 #include "./bind.h"
 #include "./squashfs/include.h"
 #include "./dir/include.h"
 #include "./ext3/include.h"
 #include "./sif/include.h"
-#include "./sign/sign.h"
-#include "./verify/verify.h"
-
 
 struct image_object singularity_image_init(char *path, int open_flags) {
     struct image_object image;
@@ -280,12 +272,4 @@ void singularity_limit_container_paths(struct image_object *image) {
             ABORT(255);
         }
     }
-}
-
-int singularity_image_sign(struct image_object *image) {
-    return(_singularity_image_sign(image));
-}
-
-int singularity_image_verify(struct image_object *image) {
-    return(_singularity_image_verify(image));
 }

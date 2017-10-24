@@ -16,39 +16,39 @@ cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privil
 cleanupd_CPPFLAGS = $(AM_CPPFLAGS)
 
 action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/daemon.c
-action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la -lcrypto -luuid
+action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la lib/sif/libsingularity-sif.la action-lib/libinternal.la -luuid
 action_CPPFLAGS = $(AM_CPPFLAGS)
 
 builddef_SOURCES = builddef.c util/util.c util/file.c util/registry.c util/sessiondir.c
-builddef_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la bootstrap-lib/libinternal.la -luuid
+builddef_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la lib/sif/libsingularity-sif.la bootstrap-lib/libinternal.la -luuid
 builddef_CPPFLAGS = $(AM_CPPFLAGS)
 builddef_LDFLAGS = -static
 
 start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/signal.c
-start_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la -lcrypto -luuid
+start_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la lib/sif/libsingularity-sif.la action-lib/libinternal.la -luuid
 start_CPPFLAGS = $(AM_CPPFLAGS)
 
 mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c
-mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto -luuid
+mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la lib/sif/libsingularity-sif.la -luuid
 mount_CPPFLAGS = $(AM_CPPFLAGS)
 
 sifcreate_SOURCES = sifcreate.c util/util.c
-sifcreate_LDADD = lib/image/libsingularity-image.la -luuid
+sifcreate_LDADD = lib/image/libsingularity-image.la lib/sif/libsingularity-sif.la -luuid
 sifcreate_CPPFLAGS = $(AM_CPPFLAGS)
 
-sign_SOURCES = sign.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/crypt.c
-sign_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto -luuid
+sign_SOURCES = sign.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c
+sign_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la lib/sif/libsingularity-sif.la lib/signing/libsingularity-signing.la -lcrypto -luuid
 sign_CPPFLAGS = $(AM_CPPFLAGS)
 
-verify_SOURCES = verify.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/crypt.c
-verify_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto -luuid
+verify_SOURCES = verify.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c
+verify_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la lib/sif/libsingularity-sif.la lib/signing/libsingularity-signing.la -lcrypto -luuid
 verify_CPPFLAGS = $(AM_CPPFLAGS)
 
 get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)
 
 image_type_SOURCES = image-type.c util/util.c util/message.c util/config_parser.c util/file.c
-image_type_LDADD = lib/image/libsingularity-image.la -luuid
+image_type_LDADD = lib/image/libsingularity-image.la lib/sif/libsingularity-sif.la -luuid
 image_type_CPPFLAGS = $(AM_CPPFLAGS)
 
 action_suid_SOURCES = $(action_SOURCES)

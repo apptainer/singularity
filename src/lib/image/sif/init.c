@@ -17,16 +17,17 @@
 #include <fcntl.h>
 
 #include <uuid/uuid.h>
-#include <list.h>
-#include <sif.h>
 
 #include "util/message.h"
 #include "util/util.h"
 #include "util/file.h"
 
+#include "../../sif/list.h"
+#include "../../sif/sif.h"
 #include "../image.h"
 
 int _singularity_image_sif_init(struct image_object *image, int open_flags) {
+    Sifinfo sif;
     Sifpartition *partdesc;
 
     singularity_message(DEBUG, "Checking if writable image requested\n");
@@ -35,7 +36,7 @@ int _singularity_image_sif_init(struct image_object *image, int open_flags) {
         return(-1);
     }
 
-    if (sif_load(image->path, &image->sif) < 0) {
+    if (sif_load(image->path, &sif) < 0) {
         singularity_message(VERBOSE, "File is not a valid SIF image\n");
         return(-1);
     } else {
@@ -43,9 +44,9 @@ int _singularity_image_sif_init(struct image_object *image, int open_flags) {
     }
 
     if ( singularity_message_level() >= VERBOSE3 )
-        printsifhdr(&image->sif);
+        printsifhdr(&sif);
 
-    partdesc = sif_getpartition(&image->sif, SIF_DEFAULT_GROUP);
+    partdesc = sif_getpartition(&sif, SIF_DEFAULT_GROUP);
     if ( partdesc == NULL ) {
         singularity_message(ERROR, "%s\n", sif_strerror(siferrno));
         return(-1);
@@ -53,7 +54,7 @@ int _singularity_image_sif_init(struct image_object *image, int open_flags) {
 
     image->offset = partdesc->cm.fileoff;
     image->size = partdesc->cm.filelen;
-    image->fd = image->sif.fd;
+    image->fd = sif.fd;
     switch(partdesc->fstype){
     case FS_SQUASH:
         image->type = SQUASHFS;

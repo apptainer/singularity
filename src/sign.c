@@ -18,16 +18,14 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
-#include <uuid/uuid.h>
 
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/registry.h"
-#include "lib/image/sif/list.h"
-#include "lib/image/sif/sif.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
+#include "lib/signing/signing.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
 #include "util/suid.h"
@@ -39,20 +37,7 @@
 
 
 int main(int argc, char **argv) {
-    struct image_object image;
-
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-
-    singularity_priv_init();
-    singularity_suid_init(argv);
-
-    singularity_registry_init();
-    singularity_priv_drop();
-
-    singularity_message(INFO, "Initializing Singularity image subsystem\n");
-    image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
-
-    singularity_image_sign(&image);
+    _singularity_image_sign(NULL);
 
     return(0);
 }

@@ -11,9 +11,18 @@
  * except according to the terms contained in the LICENSE.md file.
  */
 
-#ifndef __SINGULARITY_IMAGE_VERIFY_H_
-#define __SINGULARITY_IMAGE_VERIFY_H_
+#ifndef __SINGULARITY_UTIL_CRYPT_H_
+#define __SINGULARITY_UTIL_CRYPT_H_
 
-extern int _singularity_image_verify(struct image_object *image);
+#include <openssl/sha.h>
 
-#endif /* __SINGULARITY_IMAGE_VERIFY_H_ */
+#define HASH_LEN SHA384_DIGEST_LENGTH
+
+/* XXX: need to get rid of that and use size from SIF descriptor */
+#define VERIFBLOCK_SIZE 4096
+
+unsigned char *compute_hash(const unsigned char *data, size_t size, unsigned char *result);
+int sign_verifblock(char *verifstr, char *verifblock);
+int verify_verifblock(char *verifblock);
+
+#endif /* __SINGULARITY_UTIL_CRYPT_H_ */

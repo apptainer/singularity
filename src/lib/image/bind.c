@@ -33,8 +33,6 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-#include <uuid/uuid.h>
-
 #include "config.h"
 #include "util/util.h"
 #include "util/file.h"
@@ -42,9 +40,6 @@
 #include "util/privilege.h"
 #include "util/registry.h"
 #include "util/config_parser.h"
-
-#include "./sif/list.h"
-#include "./sif/sif.h"
 
 #include "./image.h"
 

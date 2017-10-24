@@ -29,14 +29,10 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include <uuid/uuid.h>
-
 #include "config.h"
 #include "util/util.h"
 #include "util/config_parser.h"
 #include "util/message.h"
-#include "lib/image/sif/list.h"
-#include "lib/image/sif/sif.h"
 #include "lib/image/image.h"
 
 enum {

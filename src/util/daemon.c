@@ -16,16 +16,12 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include <uuid/uuid.h>
-
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/daemon.h"
 #include "util/registry.h"
 #include "util/message.c"
-#include "lib/image/sif/list.h"
-#include "lib/image/sif/sif.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 #include "util/privilege.h"

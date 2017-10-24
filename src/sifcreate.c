@@ -26,8 +26,8 @@
 #include <unistd.h>
 #include <uuid/uuid.h>
 
-#include "lib/image/sif/list.h"
-#include "lib/image/sif/sif.h"
+#include "lib/sif/list.h"
+#include "lib/sif/sif.h"
 
 #include "util/util.h"
 

@@ -31,17 +31,12 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include <uuid/uuid.h>
-
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
 #include "util/registry.h"
-
-#include "../sif/list.h"
-#include "../sif/sif.h"
 
 #include "../image.h"
 #include "../bind.h"

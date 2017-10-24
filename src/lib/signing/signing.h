@@ -11,9 +11,10 @@
  * except according to the terms contained in the LICENSE.md file.
  */
 
-#ifndef __SINGULARITY_IMAGE_SIGN_H_
-#define __SINGULARITY_IMAGE_SIGN_H_
+#ifndef __SINGULARITY_IMAGE_SIGNING_H_
+#define __SINGULARITY_IMAGE_SIGNING_H_
 
-extern int _singularity_image_sign(struct image_object *image);
+extern int _singularity_image_sign(unsigned char *text);
+extern int _singularity_image_verify(unsigned char *signature);
 
-#endif /* __SINGULARITY_IMAGE_SIGN_H */
+#endif /* __SINGULARITY_IMAGE_SIGNING_H */

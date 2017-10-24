@@ -395,8 +395,8 @@ AC_CONFIG_FILES([
    src/lib/image/dir/Makefile
    src/lib/image/ext3/Makefile
    src/lib/image/sif/Makefile
-   src/lib/image/sign/Makefile
-   src/lib/image/verify/Makefile
+   src/lib/sif/Makefile
+   src/lib/signing/Makefile
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
    src/util/Makefile

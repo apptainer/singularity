@@ -16,10 +16,10 @@
 #include <string.h>
 #include <uuid/uuid.h>
 
-#include "lib/image/sif/list.h"
-#include "lib/image/sif/sif.h"
+#include "../sif/list.h"
+#include "../sif/sif.h"
 #include "lib/image/image.h"
-#include "util/crypt.h"
+#include "crypt.h"
 #include "util/util.h"
 
 #define SIGN_COMMAND "gpg --clearsign"

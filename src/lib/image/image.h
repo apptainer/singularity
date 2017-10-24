@@ -29,9 +29,6 @@
 #define SIF         4
 
 #define BUFFER_SIZE (1024*1024)
-#define VERIFBLOCK_SIZE 4096
-#define VERIFBLOCK_MAGIC "-----BEGIN PGP SIGNED MESSAGE-----"
-#define IMAGE_HASH_PREFIX "IMAGE_HASH: "
 
 #define LAUNCH_STRING "#!/usr/bin/env run-singularity\n"
 
@@ -44,7 +41,6 @@ struct image_object {
     int fd;
     int type;
     int writable;
-    Sifinfo sif;
 };
 
 extern struct image_object singularity_image_init(char *path, int open_flags);
@@ -59,8 +55,5 @@ int singularity_image_type(struct image_object *object);
 extern int singularity_image_mount(struct image_object *image, char *mount_point);
 void singularity_limit_container_paths(struct image_object *object);
 void singularity_limit_container_owners(struct image_object *object);
-
-extern int singularity_image_sign(struct image_object *image);
-extern int singularity_image_verify(struct image_object *image);
 
 #endif

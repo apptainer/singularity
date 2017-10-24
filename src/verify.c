@@ -24,8 +24,9 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/registry.h"
-#include "lib/image/sif/list.h"
-#include "lib/image/sif/sif.h"
+#include "lib/sif/list.h"
+#include "lib/sif/sif.h"
+#include "lib/signing/signing.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 #include "util/config_parser.h"
@@ -40,20 +41,8 @@
 
 int main(int argc, char **argv) {
     int ret;
-    struct image_object image;
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
-
-    singularity_priv_init();
-    singularity_suid_init(argv);
-
-    singularity_registry_init();
-    singularity_priv_drop();
-
-    singularity_message(INFO, "Initializing Singularity image subsystem\n");
-    image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
-
-    ret = singularity_image_verify(&image);
+    ret = _singularity_image_verify(NULL);
     if (ret < 0) {
         singularity_message(ERROR, "Could not authenticate/validate image\n");
     } else {
