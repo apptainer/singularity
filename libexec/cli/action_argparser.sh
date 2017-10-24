@@ -122,7 +122,7 @@ while true; do
         ;;
         --nv)
             shift
-            SINGULARITY_NVLIBLIST=$(mktemp singularity-nvliblist.XXXXXXXX)
+            SINGULARITY_NVLIBLIST=`mktemp ${TMPDIR:-/tmp}/.singularity-nvliblist.XXXXXXXX`
             cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" > $SINGULARITY_NVLIBLIST
             for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
                 if [ -f "$i" ]; then
