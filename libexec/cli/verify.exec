@@ -30,13 +30,7 @@ PATH=/sbin:/usr/sbin:${PATH:-}
 while true; do
     case ${1:-} in
         -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -48,19 +42,26 @@ while true; do
     esac
 done
 
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
+else
+    message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
+    ABORT 255
+fi
+
 if [ -z "${1:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    if [ -n "${USAGE:-}" ]; then
+        echo "USAGE: $USAGE"
     else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
+        echo "To see usage summary type: singularity help $SINGULARITY_COMMAND"
     fi
     exit 0
 fi
 
-
 SINGULARITY_IMAGE="${1:-}"
 SINGULARITY_WRITABLE=1
 export SINGULARITY_IMAGE SINGULARITY_WRITABLE
+shift
 
 if [ -z "$SINGULARITY_IMAGE" ]; then
     message ERROR "You must supply a path to an image to verify\n"
@@ -71,10 +72,8 @@ if [ ! -f "$SINGULARITY_IMAGE" ]; then
     exit 1
 fi
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/verify-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/verify-suid"
-elif [ -x "$SINGULARITY_libexecdir/singularity/bin/verify" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/verify"
+if [ -x "$SINGULARITY_libexecdir/singularity/bin/verify" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/verify" ${SINGULARITY_IMAGE}
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/verify\n"
     exit 1
