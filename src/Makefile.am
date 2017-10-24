@@ -9,7 +9,7 @@ AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATE
 
 lexecdir = $(libexecdir)/singularity/bin
 
-lexec_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start sifcreate sign verify $(BUILD_SUID)
+lexec_PROGRAMS = action builddef cleanupd get-section image-type mount start sifcreate sign verify $(BUILD_SUID)
 EXTRA_PROGRAMS = action-suid mount-suid start-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
@@ -31,10 +31,6 @@ start_CPPFLAGS = $(AM_CPPFLAGS)
 mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c
 mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la -lcrypto -luuid
 mount_CPPFLAGS = $(AM_CPPFLAGS)
-
-prepheader_SOURCES = prepheader.c
-prepheader_LDADD =
-prepheader_CPPFLAGS = $(AM_CPPFLAGS)
 
 sifcreate_SOURCES = sifcreate.c util/util.c
 sifcreate_LDADD = lib/image/libsingularity-image.la -luuid

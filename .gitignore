@@ -43,7 +43,6 @@ src/cleanupd
 src/image-type
 src/mount
 src/mount-suid
-src/prepheader
 src/sifcreate
 src/sinit
 src/get-section
