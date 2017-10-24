@@ -70,8 +70,7 @@ class TestApi(TestCase):
         '''
         from docker.api import DockerApiConnection
 
-        print("Case 1: Obtain manifest for %s/%s" % (self.client.namespace,
-                                                     self.client.repo_name))
+        print("Case 1: Obtain manifest for %s" % self.client.repo_name)
 
         manifest = self.client.get_manifest(old_version=True)
 
@@ -96,8 +95,7 @@ class TestApi(TestCase):
         '''
         from docker.api import DockerApiConnection
 
-        full_name = "%s/%s" % (self.client.namespace, self.client.repo_name)
-        print("Case 1: Ask for tags from standard %s" % full_name)
+        print("Case 1: Ask for tags from standard %s" % self.client.repo_name)
         tags = self.client.get_tags()
         self.assertTrue(isinstance(tags, list))
         self.assertTrue(len(tags) > 1)
