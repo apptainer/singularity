@@ -42,6 +42,7 @@ SINGULARITY_CAPS[CAP_BLOCK_SUSPEND]=36
 SINGULARITY_CAPS[CAP_AUDIT_READ]=37
 
 parse_capabilities() {
+    ncaps=0
     parsed=""
     caps=$(echo "${1:-}" | tr '[a-z]' '[A-Z]')
     last=$(echo "${1##*,}" | tr '[a-z]' '[A-Z]')
@@ -62,11 +63,7 @@ parse_capabilities() {
             continue
         fi
 
-        if [ -z "$parsed" ]; then
-            parsed="${SINGULARITY_CAPS[$pcaps]:-}"
-        else
-            parsed="${parsed:-} ${SINGULARITY_CAPS[$pcaps]:-}"
-        fi
+        ncaps=$(( $(( 1 << ${SINGULARITY_CAPS[$pcaps]} )) | $ncaps ))
 
         if [ "$caps" == "$last" ]; then
             break
@@ -75,25 +72,35 @@ parse_capabilities() {
         caps=${caps#*,}
     done
 
-    echo "$parsed" | tr ' ' '\n' | sort | uniq | tr '\n' ',' | sed 's/,$/\n/'
+    echo "$ncaps"
 }
 
-if [ -n "${SINGULARITY_ADD_CAPS:-}" ]; then
-    if [ "$(id -ru)" = "0" ]; then 
-        SINGULARITY_ADD_NCAPS=$(parse_capabilities $SINGULARITY_ADD_CAPS)
-        export SINGULARITY_ADD_NCAPS
-        unset SINGULARITY_ADD_CAPS
-    else
-        message WARNING "Adding capabilities is for root only\n"
+singularity_add_capabilities() {
+    if [ -z "${1:-}" ]; then
+        message ERROR "No capability specified"
+        exit 1
     fi
-fi
 
-if [ -n "${SINGULARITY_DROP_CAPS:-}" ]; then
-    if [ "$(id -ru)" = "0" ]; then
-        SINGULARITY_DROP_NCAPS=$(parse_capabilities $SINGULARITY_DROP_CAPS)
-        export SINGULARITY_DROP_NCAPS
-        unset SINGULARITY_DROP_CAPS
+    if [ ! -z "${SINGULARITY_ADD_CAPS:-}" ]; then
+        OLD_CAPS=${SINGULARITY_ADD_CAPS:-}
+        NEW_CAPS=$(parse_capabilities ${1:-})
+        export SINGULARITY_ADD_CAPS=$(( $OLD_CAPS | $NEW_CAPS ))
     else
-        message WARNING "Dropping capabilities is for root only\n"
+        export SINGULARITY_ADD_CAPS=$(parse_capabilities ${1:-})
     fi
-fi
+}
+
+singularity_drop_capabilities() {
+    if [ -z "${1:-}" ]; then
+        message ERROR "No capability specified"
+        exit 1
+    fi
+
+    if [ ! -z "${SINGULARITY_DROP_CAPS:-}" ]; then
+        OLD_CAPS=${SINGULARITY_DROP_CAPS:-}
+        NEW_CAPS=$(parse_capabilities ${1:-})
+        export SINGULARITY_DROP_CAPS=$(( $OLD_CAPS & ~$NEW_CAPS ))
+    else
+        export SINGULARITY_DROP_CAPS=$(parse_capabilities ${1:-})
+    fi
+}

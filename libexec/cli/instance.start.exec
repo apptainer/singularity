@@ -23,6 +23,14 @@ else
     exit 1
 fi
 
+## Load capabilities
+if [ -f "$SINGULARITY_libexecdir/singularity/capabilities" ]; then
+    . "$SINGULARITY_libexecdir/singularity/capabilities"
+else
+    echo "Error loading capabilities: $SINGULARITY_libexecdir/singularity/capabilities"
+    exit 1
+fi
+
 if [ -f "${HOME:-}/.singularity-init" ]; then
     . "${HOME:-}/.singularity-init"
 fi
@@ -137,14 +145,12 @@ while true; do
         ;;
         --add-caps)
             shift
-            SINGULARITY_ADD_CAPS="$1"
-            export SINGULARITY_ADD_CAPS
+            singularity_add_capabilities "$1"
             shift
         ;;
         --drop-caps)
             shift
-            SINGULARITY_ADD_CAPS="$1"
-            export SINGULARITY_DROP_CAPS
+            singularity_drop_capabilities "$1"
             shift
         ;;
         -*)
@@ -162,14 +168,6 @@ if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; t
 else
     message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
     ABORT 255
-fi
-
-## Load capabilities
-if [ -f "$SINGULARITY_libexecdir/singularity/capabilities" ]; then
-    . "$SINGULARITY_libexecdir/singularity/capabilities"
-else
-    echo "Error loading capabilities: $SINGULARITY_libexecdir/singularity/capabilities"
-    exit 1
 fi
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
