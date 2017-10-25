@@ -619,3 +619,4 @@ atexit() {
 if [ -n "${SHELL_DEBUG:-}" ]; then
     set -x
 fi
+
