@@ -123,6 +123,7 @@ bind path = $SINGULARITY_ROOTFS:$STAGED_BUILD_IMAGE
 bind path = $BUILDDEF_DIR:$REPO_DIR
 bind path = $FSTAB_FILE:/etc/fstab
 bind path = $RESOLV_CONF:/etc/resolv.conf
+root default capabilities = default
 CONF
 
 # here build pre-stage
@@ -155,6 +156,10 @@ SCRIPT
 chmod +x $BUILD_SCRIPT
 
 unset SINGULARITY_IMAGE
+unset SINGULARITY_NO_PRIVS
+unset SINGULARITY_KEEP_PRIVS
+unset SINGULARITY_ADD_CAPS
+unset SINGULARITY_DROP_CAPS
 
 ${SINGULARITY_bindir}/singularity -c $TMP_CONF_FILE exec -e -i -p $SECBUILD_IMAGE /tmp/build-script
 if [ $? != 0 ]; then

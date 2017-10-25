@@ -394,6 +394,7 @@ void singularity_priv_drop_perm(void) {
 
     if ( uinfo.uid == 0 ) {
         singularity_capability_drop();
+
         singularity_message(VERBOSE2, "Calling user is root, no privileges to drop\n");
         return;
     }

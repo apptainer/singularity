@@ -378,7 +378,7 @@ static unsigned long long get_group_capabilities_from_file(void) {
     return(caps);
 }
 
-static void setup_root_default_capabilities(void) {
+static int setup_root_default_capabilities(void) {
     int root_default_caps = get_root_default_capabilities();
 
     if ( getuid() == 0 ) {
@@ -411,6 +411,7 @@ static void setup_root_default_capabilities(void) {
     }
 
     envar_set("SINGULARITY_ROOT_DEFAULT_CAPS", int2str(root_default_caps), 1);
+    return(root_default_caps);
 }
 
 void singularity_capability_init(void) {
@@ -452,9 +453,13 @@ void singularity_capability_drop(void) {
     long int root_default_caps;
     int root_user = (getuid() == 0) ? 1 : 0;
 
-    if ( str2int(singularity_registry_get("ROOT_DEFAULT_CAPS"), &root_default_caps) == -1 ) {
-        singularity_message(ERROR, "Failed to get root default capabilities via environment variable\n");
-        ABORT(255);
+    if ( singularity_registry_get("ROOT_DEFAULT_CAPS") == NULL ) {
+        root_default_caps = setup_root_default_capabilities();
+    } else {
+        if ( str2int(singularity_registry_get("ROOT_DEFAULT_CAPS"), &root_default_caps) == -1 ) {
+            singularity_message(ERROR, "Failed to get root default capabilities via environment variable\n");
+            ABORT(255);
+        }
     }
 
     if ( root_default_caps == ROOT_DEFCAPS_NO && root_user ) {
