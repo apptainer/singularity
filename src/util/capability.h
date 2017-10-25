@@ -13,6 +13,7 @@
 
 void singularity_capability_init(void);
 void singularity_capability_init_minimal(void);
+void singularity_capability_init_default(void);
 
 // Drop all capabilities
 void singularity_capability_drop(void);

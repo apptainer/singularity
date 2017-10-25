@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
-    singularity_capability_init();
+    singularity_capability_init_default();
 
     singularity_message(INFO, "Sanitizing environment\n");
     if ( envclean() != 0 ) {

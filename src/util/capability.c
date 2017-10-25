@@ -11,11 +11,11 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/prctl.h>
+#include <sys/sysmacros.h>
 #include <pwd.h>
 #include <errno.h>
 #include <string.h>
@@ -40,6 +40,10 @@
 #include "util/privilege.h"
 #include "util/message.h"
 #include "util/config_parser.h"
+
+#ifndef SYSCONFDIR
+#error SYSCONFDIR not defined
+#endif
 
 #define NO_CAP      100
 #define CAPSET_MAX  40
@@ -96,6 +100,36 @@ static __u32 no_capabilities[] = {
     NO_CAP
 };
 
+enum {
+    ROOT_DEFCAPS_FULL,
+    ROOT_DEFCAPS_FILE,
+    ROOT_DEFCAPS_DEFAULT,
+    ROOT_DEFCAPS_NO,
+    ROOT_DEFCAPS_ERROR
+};
+
+static int get_root_default_capabilities(void) {
+    char *value = strdup(singularity_config_get_value(ROOT_DEFAULT_CAPABILITIES));
+
+    if ( value == NULL ) {
+        return(ROOT_DEFCAPS_ERROR);
+    }
+
+    chomp(value);
+
+    if ( strcmp(value, "full") == 0 ) {
+        return(ROOT_DEFCAPS_FULL);
+    } else if ( strcmp(value, "file") == 0 ) {
+        return(ROOT_DEFCAPS_FILE);
+    } else if ( strcmp(value, "default") == 0 ) {
+        return(ROOT_DEFCAPS_DEFAULT);
+    } else if ( strcmp(value, "no") == 0 ) {
+        return(ROOT_DEFCAPS_NO);
+    }
+
+    return(ROOT_DEFCAPS_ERROR);
+}
+
 static __u32 *alloc_capability_set(void) {
     __u32 *caps = (__u32 *)calloc(CAPSET_MAX, sizeof(*caps));
 
@@ -114,6 +148,7 @@ static __u32 *get_current_capabilities(void) {
     for ( i = CAPSET_MAX - 1; i >= 0; i-- ) {
         if ( prctl(PR_CAPBSET_READ, i) > 0 ) {
             caps[caps_index++] = i;
+            if ( caps_index == CAPSET_MAX ) break;
         }
     }
 
@@ -140,6 +175,7 @@ static __u32 *add_capabilities(__u32 *to, __u32 *capabilities) {
         }
         if ( add ) {
             caps[index++] = *ptr;
+            if ( index == CAPSET_MAX ) break;
         }
     }
 
@@ -162,6 +198,7 @@ static __u32 *drop_capabilities(__u32 *from, __u32 *capabilities) {
         }
         if ( ! drop ) {
             caps[index++] = *fptr;
+            if ( index == CAPSET_MAX ) break;
         }
     }
 
@@ -169,20 +206,44 @@ static __u32 *drop_capabilities(__u32 *from, __u32 *capabilities) {
     return(caps);
 }
 
-static __u32 *get_capabilities_from(char *strval) {
-    __u32 i, ncaps = 0;
-    uint64_t cap;
-    __u32 *caps = alloc_capability_set();
+static char *cap2str(unsigned long long cap) {
+    char *str = (char *)malloc(24);
+
+    if ( str == NULL ) {
+        singularity_message(ERROR, "Failed to allocate 24 memory bytes\n");
+        ABORT(255);
+    }
+
+    memset(str, 0, 24);
+    snprintf(str, 23, "%llu", cap);
+
+    return(str);
+}
+
+static unsigned long long str2cap(char *value) {
+    unsigned long long cap;
 
     errno = 0;
-    cap = strtoull(strval, NULL, 10);
+    cap = strtoull(value, NULL, 10);
     if ( errno != 0 ) {
-        singularity_message(WARNING, "Can't convert string %s to unsigned long long\n", strval);
+        singularity_message(WARNING, "Can't convert string %s to unsigned long long\n", value);
+        cap = 0;
     }
+
+    return(cap);
+}
+
+static __u32 *get_capabilities_from(char *strval) {
+    __u32 i, ncaps = 0;
+    unsigned long long cap;
+    __u32 *caps = alloc_capability_set();
+
+    cap = str2cap(strval);
 
     for ( i = 0; i < CAPSET_MAX; i++ ) {
         if ( (cap & (1ULL << i)) ) {
             caps[ncaps++] = i;
+            if ( ncaps == CAPSET_MAX ) break;
         }
     }
 
@@ -283,9 +344,82 @@ static void singularity_capability_set(__u32 *capabilities) {
     }
 }
 
+static unsigned long long get_user_capabilities_from_file(void) {
+    unsigned long long caps = 0;
+    FILE *file = NULL;
+    char strcap[24];
+    char path[PATH_MAX];
+
+    memset(strcap, 0, 24);
+    memset(path, 0, PATH_MAX);
+
+    snprintf(path, PATH_MAX-1, SYSCONFDIR "/singularity/capabilities/user.%d", getuid()); // Flawfinder: ignore
+
+    printf("%s\n", path);
+
+    file = fopen(path, "r");
+    if ( file == NULL ) {
+        printf("open failed: %s\n",strerror(errno));
+        return(caps);
+    }
+
+    if ( fgets(strcap, 23, file) == NULL ) {
+        printf("read failed\n");
+        return(caps);
+    }
+
+    caps = str2cap(strcap);
+    return(caps);
+}
+
+static unsigned long long get_group_capabilities_from_file(void) {
+    unsigned long long caps = 0;
+
+    return(caps);
+}
+
+static void setup_root_default_capabilities(void) {
+    int root_default_caps = get_root_default_capabilities();
+
+    if ( getuid() == 0 ) {
+        if ( root_default_caps == ROOT_DEFCAPS_ERROR ) {
+            singularity_message(WARNING, "root default capabilities value in configuration is unknown, set to no\n");
+            singularity_registry_set("NO_PRIVS", "1");
+            singularity_registry_set("KEEP_PRIVS", NULL);
+
+            unsetenv("SINGULARITY_KEEP_PRIVS");
+            envar_set("SINGULARITY_NO_PRIVS", "1", 1);
+        } else if ( root_default_caps == ROOT_DEFCAPS_FULL ) {
+            singularity_registry_set("KEEP_PRIVS", "1");
+            envar_set("SINGULARITY_KEEP_PRIVS", "1", 1);
+        } else if ( root_default_caps == ROOT_DEFCAPS_FILE ) {
+            unsigned long long filecap = get_user_capabilities_from_file();
+
+            if ( singularity_registry_get("ADD_CAPS") == NULL ) {
+                singularity_registry_set("ADD_CAPS", cap2str(filecap));
+            } else {
+                unsigned long long envcap = str2cap(singularity_registry_get("ADD_CAPS"));
+                singularity_registry_set("ADD_CAPS", cap2str(envcap | filecap));
+            }
+            envar_set("SINGULARITY_ADD_CAPS", singularity_registry_get("ADD_CAPS"), 1);
+
+            if ( ! singularity_capability_keep_privs() ) {
+                singularity_registry_set("NO_PRIVS", "1");
+                envar_set("SINGULARITY_NO_PRIVS", "1", 1);
+            }
+        }
+    }
+
+    envar_set("SINGULARITY_ROOT_DEFAULT_CAPS", int2str(root_default_caps), 1);
+}
+
 void singularity_capability_init(void) {
+    int root_user = (getuid() == 0) ? 1 : 0;
+
+    setup_root_default_capabilities();
+
     if ( ! singularity_capability_keep_privs() ) {
-        if ( singularity_registry_get("ADD_CAPS") && getuid() == 0 ) {
+        if ( singularity_registry_get("ADD_CAPS") && root_user ) {
             __u32 *capabilities = get_capabilities_from(singularity_registry_get("ADD_CAPS"));
             __u32 *final = add_capabilities(default_capabilities, capabilities);
 
@@ -299,15 +433,39 @@ void singularity_capability_init(void) {
     }
 }
 
+/* for mount command */
+void singularity_capability_init_default(void) {
+    singularity_capability_set(default_capabilities);
+    envar_set("SINGULARITY_ROOT_DEFAULT_CAPS", int2str(ROOT_DEFCAPS_DEFAULT), 1);
+    unsetenv("SINGULARITY_ADD_CAPS");
+    unsetenv("SINGULARITY_DROP_CAPS");
+    unsetenv("SINGULARITY_NO_PRIVS");
+    unsetenv("SINGULARITY_KEEP_PRIVS");
+}
+
 /* for build stage 2 */
 void singularity_capability_init_minimal(void) {
     singularity_capability_set(minimal_capabilities);
 }
 
 void singularity_capability_drop(void) {
-    if ( singularity_capability_no_privs() || ( ! singularity_capability_keep_privs() && getuid() != 0 ) ) {
-        singularity_message(DEBUG, "Drop all capabilities\n");
-        if ( singularity_registry_get("ADD_CAPS") && getuid() == 0 ) {
+    long int root_default_caps;
+    int root_user = (getuid() == 0) ? 1 : 0;
+
+    if ( str2int(singularity_registry_get("ROOT_DEFAULT_CAPS"), &root_default_caps) == -1 ) {
+        singularity_message(ERROR, "Failed to get root default capabilities via environment variable\n");
+        ABORT(255);
+    }
+
+    if ( root_default_caps == ROOT_DEFCAPS_NO && root_user ) {
+        if ( ! singularity_capability_keep_privs() ) {
+            singularity_registry_set("NO_PRIVS", "1");
+        }
+    }
+
+    if ( singularity_capability_no_privs() || ( ! singularity_capability_keep_privs() && ! root_user ) ) {
+        singularity_message(DEBUG, "Drop capabilities\n");
+        if ( singularity_registry_get("ADD_CAPS") && root_user ) {
             __u32 *capabilities = get_capabilities_from(singularity_registry_get("ADD_CAPS"));
             __u32 *final = add_capabilities(no_capabilities, capabilities);
 
@@ -320,7 +478,7 @@ void singularity_capability_drop(void) {
             singularity_capability_set(no_capabilities);
         }
     }
-    if ( singularity_registry_get("DROP_CAPS") && getuid() == 0 ) {
+    if ( singularity_registry_get("DROP_CAPS") && root_user ) {
         __u32 *capabilities = get_capabilities_from(singularity_registry_get("DROP_CAPS"));
         __u32 *current = get_current_capabilities();
         __u32 *final = drop_capabilities(current, capabilities);

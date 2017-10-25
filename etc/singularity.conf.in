@@ -186,3 +186,7 @@ bind path = /etc/hosts
 # errors when accessed from container (typically bind mounts)
 #autofs bug path = /nfs
 #autofs bug path = /cifs-share
+
+# ROOT DEFAULT CAPABILITIES ${TYPE}: [full/file/default/no]
+# DEFAULT: no
+@ROOT_DEFAULT_CAPABILITIES@ = @ROOT_DEFAULT_CAPABILITIES_DEFAULT@
