@@ -136,7 +136,7 @@ typedef enum{
 typedef enum{
 	FS_SQUASH,			/* Squashfs file system, RDONLY */
 	FS_EXT3,			/* EXT3 file system, RDWR (deprecated) */
-	FS_IMMOBJECTS,			/* immutable object archive */
+	FS_IMMOBJECTS,			/* immutable data object archive */
 	FS_RAW				/* raw data */
 } Siffstype;
 
@@ -145,7 +145,7 @@ typedef enum{
 	PART_SYSTEM,			/* partition hosts an operating system */
 	PART_DATA,			/* partition hosts data only */
 	PART_OVERLAY			/* partition hosts an overlay */
-}Sifconttype;
+}Sifparttype;
 
 /* types of hashing function used to fingerprint data objects */
 typedef enum{
@@ -158,6 +158,7 @@ typedef enum{
 typedef struct Sifcommon Sifcommon;
 struct Sifcommon{
 	Sifdatatype datatype;		/* informs of descriptor type */
+	int id;				/* a unique id for this data object */
 	int groupid;			/* object this data object is related to */
 	off_t fileoff;			/* offset from start of image file */
 	size_t filelen; 		/* length of data in file */
@@ -186,7 +187,7 @@ typedef struct Sifpartition Sifpartition;
 struct Sifpartition{
 	Sifcommon cm;
 	Siffstype fstype;
-	Sifconttype parttype;
+	Sifparttype parttype;
 	char content[SIF_CONTENT_LEN];
 };
 
@@ -271,7 +272,7 @@ struct Pdesc{
 	unsigned char *mapstart;
 	size_t len;
 	Siffstype fstype;
-	Sifconttype parttype;
+	Sifparttype parttype;
 	char content[SIF_CONTENT_LEN];
 };
 
@@ -343,15 +344,9 @@ typedef enum{
 extern Siferrno siferrno;
 
 char *sif_strerror(Siferrno siferrno);
-void printsifhdr(Sifinfo *info);
 int sif_load(char *filename, Sifinfo *info);
 int sif_unload(Sifinfo *info);
 int sif_create(Sifcreateinfo *cinfo);
-Sifheader *sif_getheader(Sifinfo *info);
-Sifdeffile *sif_getdeffile(Sifinfo *info, int groupid);
-Siflabels *sif_getlabels(Sifinfo *info, int groupid);
-Sifenvvar *sif_getenvvar(Sifinfo *info, int groupid);
-Sifpartition *sif_getpartition(Sifinfo *info, int groupid);
-Sifsignature *sif_getsignature(Sifinfo *info, int groupid);
+
 
 #endif /* __SINGULARITY_SIF_H_ */

@@ -36,16 +36,15 @@ Siferrno siferrno;
 /* current placement group id; increments with every new definition-file */
 static int currentgroup;
 
+/* count the next descriptor id to generate when adding a new descriptor */
+static int desccounter = 1;
+
 typedef struct Siflayout Siflayout;
 static struct Siflayout{
 	Sifheader header;
 	unsigned char *mapstart;
 	unsigned char *descptr;
 	unsigned char *dataptr;
-	int defindex;
-	int envindex;
-	int parindex;
-	int sigindex;
 } siflayout;
 
 
@@ -92,62 +91,6 @@ sif_strerror(Siferrno siferrno)
 	default: return "Unknown SIF error";
 	}
 }
-
-static int
-printdesc(void *elem)
-{
-	Sifcommon *cm = (Sifcommon *)elem;
-	Sifpartition *p = (Sifpartition *)elem;
-	Sifsignature *s = (Sifsignature *)elem;
-
-	printf("desc type: %x\n", cm->datatype);
-	printf("group id: %d\n", cm->groupid);
-	printf("fileoff: %ld\n", cm->fileoff);
-	printf("filelen: %ld\n", cm->filelen);
-
-	switch(cm->datatype){
-	case DATA_PARTITION:
-		printf("fstype: %d\n", p->fstype);
-		printf("parttype: %d\n", p->parttype);
-		printf("content: %s\n", p->content);
-		break;
-	case DATA_SIGNATURE:
-		printf("hashtype: %d\n", s->hashtype);
-		printf("entity: %s\n", s->entity);
-		break;
-	default:
-		break;
-	}
-	printf("---------------------------\n");
-
-	return 0;
-}
-
-void
-printsifhdr(Sifinfo *info)
-{
-	char uuid[37];
-
-	printf("================ SIF Header ================\n");
-	printf("launch: |%s|\n", info->header.launch);
-
-	printf("magic: |%s|\n", info->header.magic);
-	printf("version: |%s|\n", info->header.version);
-	printf("arch: |%s|\n", info->header.arch);
-	uuid_unparse(info->header.uuid, uuid);
-	printf("uuid: |%s|\n", uuid);
-
-	printf("creation time: %s", ctime(&info->header.ctime));
-
-	printf("number of descriptors: %d\n", info->header.ndesc);
-	printf("start of descriptors in file: %ld\n", info->header.descoff);
-	printf("start of data in file: %ld\n", info->header.dataoff);
-	printf("length of data in file: %ld\n", info->header.datalen);
-	printf("============================================\n");
-
-	listforall(&info->deschead, printdesc);
-}
-
 
 /*
  * routines associated with the loading of an SIF image file
@@ -290,153 +233,6 @@ sif_unload(Sifinfo *info)
 	return 0;
 }
 
-/* Get the SIF header structure */
-Sifheader *
-sif_getheader(Sifinfo *info)
-{
-	return &info->header;
-}
-
-static int
-isdeffile(void *cur, void *elem)
-{
-	Sifdeffile *c = (Sifdeffile *)cur;
-        Sifdeffile *e = (Sifdeffile *)elem;
-
-	if(c->cm.datatype == DATA_DEFFILE && c->cm.groupid == e->cm.groupid)
-		return 1;
-	return 0;
-}
-
-/* Get a definition-file descriptor based on groupid */
-Sifdeffile *
-sif_getdeffile(Sifinfo *info, int groupid)
-{
-	Sifdeffile lookfor;
-	Node *n;
-
-	lookfor.cm.groupid = groupid;
-
-	n = listfind(&info->deschead, &lookfor, isdeffile);
-	if(n == NULL){
-		siferrno = SIF_ENODEF;
-		return NULL;
-	}
-	return n->elem;
-}
-
-/* Get an JSON-labels descriptor based on groupid */
-static int
-islabels(void *cur, void *elem)
-{
-	Siflabels *c = (Siflabels *)cur;
-        Siflabels *e = (Siflabels *)elem;
-
-	if(c->cm.datatype == DATA_LABELS && c->cm.groupid == e->cm.groupid)
-		return 1;
-	return 0;
-}
-
-Siflabels *
-sif_getlabels(Sifinfo *info, int groupid)
-{
-	Siflabels lookfor;
-	Node *n;
-
-	lookfor.cm.groupid = groupid;
-
-	n = listfind(&info->deschead, &lookfor, islabels);
-	if(n == NULL){
-		siferrno = SIF_ENOLAB;
-		return NULL;
-	}
-	return n->elem;
-}
-
-/* Get an environment var descriptor based on groupid */
-static int
-isenvvar(void *cur, void *elem)
-{
-	Sifenvvar *c = (Sifenvvar *)cur;
-        Sifenvvar *e = (Sifenvvar *)elem;
-
-	if(c->cm.datatype == DATA_ENVVAR && c->cm.groupid == e->cm.groupid)
-		return 1;
-	return 0;
-}
-
-Sifenvvar *
-sif_getenvvar(Sifinfo *info, int groupid)
-{
-	Sifenvvar lookfor;
-	Node *n;
-
-	lookfor.cm.groupid = groupid;
-
-	n = listfind(&info->deschead, &lookfor, isenvvar);
-	if(n == NULL){
-		siferrno = SIF_ENOENV;
-		return NULL;
-	}
-	return n->elem;
-}
-
-/* Get an partition descriptor based on groupid */
-static int
-ispartition(void *cur, void *elem)
-{
-	Sifpartition *c = (Sifpartition *)cur;
-        Sifpartition *e = (Sifpartition *)elem;
-
-	if(c->cm.datatype == DATA_PARTITION && c->cm.groupid == e->cm.groupid)
-		return 1;
-	return 0;
-}
-
-Sifpartition *
-sif_getpartition(Sifinfo *info, int groupid)
-{
-	Sifpartition lookfor;
-	Node *n;
-
-	lookfor.cm.groupid = groupid;
-
-	n = listfind(&info->deschead, &lookfor, ispartition);
-	if(n == NULL){
-		siferrno = SIF_ENOPAR;
-		return NULL;
-	}
-	return n->elem;
-}
-
-/* Get an signature/verification descriptor based on groupid */
-static int
-issignature(void *cur, void *elem)
-{
-	Sifsignature *c = (Sifsignature *)cur;
-        Sifsignature *e = (Sifsignature *)elem;
-
-	if(c->cm.datatype == DATA_SIGNATURE && c->cm.groupid == e->cm.groupid)
-		return 1;
-	return 0;
-}
-
-Sifsignature *
-sif_getsignature(Sifinfo *info, int groupid)
-{
-	Sifsignature lookfor;
-	Node *n;
-
-	lookfor.cm.groupid = groupid;
-
-	n = listfind(&info->deschead, &lookfor, issignature);
-	if(n == NULL){
-		siferrno = SIF_ENOSIG;
-		return NULL;
-	}
-	return n->elem;
-}
-
 /*
  * routines associated with the creation of a new SIF image file
  */
@@ -571,6 +367,7 @@ putddesc(void *elem)
 
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_DEFFILE;
+	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
 	desc->cm.filelen = d->len;
@@ -581,9 +378,6 @@ putddesc(void *elem)
 	/* increment file map pointers */
 	siflayout.descptr += sizeof(Sifdeffile);
 	siflayout.dataptr += desc->cm.filelen;
-
-	/* increment definition-file object descriptor placement index */
-	siflayout.defindex++;
 
 	return 0;
 }
@@ -596,6 +390,7 @@ putedesc(void *elem)
 
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_ENVVAR;
+	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
 	desc->cm.filelen = e->len;
@@ -606,9 +401,6 @@ putedesc(void *elem)
 	/* increment file map pointers */
 	siflayout.descptr += sizeof(Sifenvvar);
 	siflayout.dataptr += desc->cm.filelen;
-
-	/* increment definition-file object descriptor placement index */
-	siflayout.envindex++;
 
 	return 0;
 }
@@ -621,6 +413,7 @@ putldesc(void *elem)
 
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_LABELS;
+	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
 	desc->cm.filelen = l->len;
@@ -631,9 +424,6 @@ putldesc(void *elem)
 	/* increment file map pointers */
 	siflayout.descptr += sizeof(Siflabels);
 	siflayout.dataptr += desc->cm.filelen;
-
-	/* increment JSON-label object descriptor placement index */
-	siflayout.envindex++;
 
 	return 0;
 }
@@ -646,6 +436,7 @@ putpdesc(void *elem)
 
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_PARTITION;
+	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
 	desc->cm.filelen = p->len;
@@ -659,9 +450,6 @@ putpdesc(void *elem)
 	siflayout.descptr += sizeof(Sifpartition);
 	siflayout.dataptr += desc->cm.filelen;
 
-	/* increment definition-file object descriptor placement index */
-	siflayout.parindex++;
-
 	return 0;
 }
 
@@ -673,6 +461,7 @@ putsdesc(void *elem)
 
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_SIGNATURE;
+	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
 	desc->cm.filelen = s->len;
@@ -685,9 +474,6 @@ putsdesc(void *elem)
 	/* increment file map pointers */
 	siflayout.descptr += sizeof(Sifsignature);
 	siflayout.dataptr += desc->cm.filelen;
-
-	/* increment definition-file object descriptor placement index */
-	siflayout.sigindex++;
 
 	return 0;
 }

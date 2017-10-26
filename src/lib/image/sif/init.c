@@ -24,6 +24,7 @@
 
 #include "../../sif/list.h"
 #include "../../sif/sif.h"
+#include "../../sif/sifaccess.h"
 #include "../image.h"
 
 int _singularity_image_sif_init(struct image_object *image, int open_flags) {
@@ -44,7 +45,7 @@ int _singularity_image_sif_init(struct image_object *image, int open_flags) {
     }
 
     if ( singularity_message_level() >= VERBOSE3 )
-        printsifhdr(&sif);
+        sif_printheader(&sif);
 
     partdesc = sif_getpartition(&sif, SIF_DEFAULT_GROUP);
     if ( partdesc == NULL ) {

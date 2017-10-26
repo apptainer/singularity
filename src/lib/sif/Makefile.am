@@ -8,10 +8,10 @@ distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
 noinst_LTLIBRARIES = libsif.la
-libsif_la_SOURCES = list.c sif.c
+libsif_la_SOURCES = list.c sif.c sifaccess.c
 libsif_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
-distinclude_HEADERS = list.h sif.h
+distinclude_HEADERS = list.h sif.h sifaccess.h
 distlib_LTLIBRARIES = libsingularity-sif.la
 
 libsingularity_sif_la_SOURCES =
