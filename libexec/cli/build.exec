@@ -392,3 +392,4 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
 fi
 
 message 1 "Singularity container built: $SINGULARITY_CONTAINER_OUTPUT\n"
+
