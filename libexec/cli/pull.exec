@@ -118,11 +118,12 @@ case "$SINGULARITY_CONTAINER" in
     docker://*)
 
         if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+
             # If name given, use that
             if [ -n "${SHUB_CONTAINERNAME:-}" ]; then
-                SINGULARITY_IMAGE=`basename "$SHUB_CONTAINERNAME.img" | sed -e 's/.img//g'`".img"   
+                SINGULARITY_IMAGE=`basename "$SHUB_CONTAINERNAME"`   
             else
-                SINGULARITY_IMAGE=`basename "$SINGULARITY_CONTAINER.img" | sed -e 's/:/-/g'`
+                SINGULARITY_IMAGE=`basename "$SINGULARITY_CONTAINER.simg" | sed -e 's/:/-/g'`
             fi
 
             SINGULARITY_IMAGE="$SINGULARITY_PULLFOLDER/$SINGULARITY_IMAGE"
