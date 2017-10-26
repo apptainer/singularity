@@ -39,9 +39,10 @@ stest 0 sudo singularity exec "$CONTAINER" chsh -s /bin/sh
 stest 1 singularity exec "$CONTAINER" chsh -s /bin/sh
 
 stest 1 sudo singularity exec -w "$CONTAINER" mknod -m 600 /test-null c 1 3
-stest 0 sudo singularity exec -w --add-caps mknod "$CONTAINER" mknod -m 600 /test-null c 1 3
+stest 0 sudo singularity -d exec -w --add-caps mknod "$CONTAINER" mknod -m 600 /test-null c 1 3
 
 stest 1 sudo singularity exec "$CONTAINER" mount -B /etc /mnt
+stest 1 sudo singularity exec --no-privs "$CONTAINER" mount -B /etc /mnt
 stest 0 sudo singularity exec --add-caps sys_admin "$CONTAINER" mount -B /etc /mnt
 
 stest 0 sudo singularity exec --no-privs --add-caps sys_admin "$CONTAINER" mount -B /etc /mnt

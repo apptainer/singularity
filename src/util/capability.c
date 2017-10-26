@@ -130,124 +130,55 @@ static int get_root_default_capabilities(void) {
     return(ROOT_DEFCAPS_ERROR);
 }
 
-static __u32 *alloc_capability_set(void) {
-    __u32 *caps = (__u32 *)calloc(CAPSET_MAX, sizeof(*caps));
-
-    if ( caps == NULL ) {
-        singularity_message(ERROR, "Failed to allocate memory for capability set\n");
-        ABORT(255);
-    }
-
-    return(caps);
-}
-
-static __u32 *get_current_capabilities(void) {
-    int i, caps_index = 0;
-    __u32 *caps = alloc_capability_set();
+static unsigned long long get_current_capabilities(void) {
+    int i;
+    unsigned long long caps = 0;
 
     for ( i = CAPSET_MAX - 1; i >= 0; i-- ) {
         if ( prctl(PR_CAPBSET_READ, i) > 0 ) {
-            caps[caps_index++] = i;
-            if ( caps_index == CAPSET_MAX ) break;
+            caps |= (1ULL << i);
         }
     }
 
-    caps[caps_index] = NO_CAP;
-    return(caps);
-}
-
-static __u32 *add_capabilities(__u32 *to, __u32 *capabilities) {
-    int i, index = 0, add = 1;
-    __u32 *ptr;
-    __u32 *caps = alloc_capability_set();
-
-    for ( ptr = to; *ptr != NO_CAP; ptr++ ) {
-        caps[index++] = *ptr;
-    }
-
-    for ( ptr = capabilities; *ptr != NO_CAP; ptr++ ) {
-        add = 1;
-        for ( i = 0; i < index; i++ ) {
-            if ( *ptr == caps[i] ) {
-                add = 0;
-                break;
-            }
-        }
-        if ( add ) {
-            caps[index++] = *ptr;
-            if ( index == CAPSET_MAX ) break;
-        }
-    }
-
-    caps[index] = NO_CAP;
-    return(caps);
-}
-
-static __u32 *drop_capabilities(__u32 *from, __u32 *capabilities) {
-    int index = 0, drop = 0;
-    __u32 *ptr, *fptr;
-    __u32 *caps = alloc_capability_set();
-
-    for ( fptr = from; *fptr != NO_CAP; fptr++ ) {
-        drop = 0;
-        for ( ptr = capabilities; *ptr != NO_CAP; ptr++ ) {
-            if ( *ptr == *fptr ) {
-                drop = 1;
-                break;
-            }
-        }
-        if ( ! drop ) {
-            caps[index++] = *fptr;
-            if ( index == CAPSET_MAX ) break;
-        }
-    }
-
-    caps[index] = NO_CAP;
     return(caps);
 }
 
 static char *cap2str(unsigned long long cap) {
-    char *str = (char *)malloc(24);
+    char *str = (char *)calloc(24, sizeof(char *));
 
     if ( str == NULL ) {
         singularity_message(ERROR, "Failed to allocate 24 memory bytes\n");
         ABORT(255);
     }
 
-    memset(str, 0, 24);
     snprintf(str, 23, "%llu", cap);
 
     return(str);
 }
 
 static unsigned long long str2cap(char *value) {
-    unsigned long long cap;
+    unsigned long long caps = 0;
+
+    if ( value == NULL ) return(caps);
 
     errno = 0;
-    cap = strtoull(value, NULL, 10);
+    caps = strtoull(value, NULL, 10);
     if ( errno != 0 ) {
         singularity_message(WARNING, "Can't convert string %s to unsigned long long\n", value);
-        cap = 0;
+        caps = 0;
     }
 
-    return(cap);
+    return(caps);
 }
 
-static __u32 *get_capabilities_from(char *strval) {
-    __u32 i, ncaps = 0;
-    unsigned long long cap;
-    __u32 *caps = alloc_capability_set();
+static unsigned long long array2cap(__u32 *capabilities) {
+    unsigned long long caps = 0;
+    __u32 i;
 
-    cap = str2cap(strval);
-
-    for ( i = 0; i < CAPSET_MAX; i++ ) {
-        if ( (cap & (1ULL << i)) ) {
-            caps[ncaps++] = i;
-            if ( ncaps == CAPSET_MAX ) break;
-        }
+    for ( i = 0; capabilities[i] != NO_CAP; i++ ) {
+        caps |= (1ULL << capabilities[i]);
     }
 
-    caps[ncaps] = NO_CAP;
     return(caps);
 }
 
@@ -279,16 +210,14 @@ static void singularity_capability_set_securebits(void) {
                                   SECBIT_NOROOT|
                                   SECBIT_NOROOT_LOCKED|
                                   SECBIT_NO_SETUID_FIXUP|
-                                  SECBIT_NO_SETUID_FIXUP_LOCKED) < 0) {
+                                  SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
         singularity_message(ERROR, "Failed to set securebits\n");
         ABORT(255);
     }
 }
 
-static void singularity_capability_set(__u32 *capabilities) {
+static void singularity_capability_set(unsigned long long capabilities) {
     __u32 caps_index;
-    __u32 keep_index;
-    __u32 keep_cap;
     __u32 last_cap;
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
@@ -306,7 +235,7 @@ static void singularity_capability_set(__u32 *capabilities) {
     // We can't rely on CAP_LAST_CAP if singularity is compiled in a container by
     // example, host is ubuntu with a recent kernel and container is a centos 6
     // container, so CAP_LAST_CAP could be less than CAP_LAST_CAP host and we could
-    // forget to drop some capabilities. So we take the MSB of permitted set
+    // forget to drop some capabilities
 
     singularity_message(DEBUG, "Determining highest capability of the running process\n");
 
@@ -319,14 +248,7 @@ static void singularity_capability_set(__u32 *capabilities) {
 
     singularity_message(DEBUG, "Dropping capabilities in bounding set\n");
     for ( caps_index = 0; caps_index <= last_cap; caps_index++ ) {
-        keep_cap = NO_CAP;
-        for ( keep_index = 0; capabilities[keep_index] != NO_CAP; keep_index++ ) {
-            if ( caps_index == capabilities[keep_index] ) {
-                keep_cap = caps_index;
-                break;
-            }
-        }
-        if ( keep_cap == NO_CAP ) {
+        if ( !(capabilities & (1ULL << caps_index)) ) {
             if ( prctl(PR_CAPBSET_DROP, caps_index) < 0 ) {
                 singularity_message(ERROR, "Failed to drop bounding capabilities set\n");
                 ABORT(255);
@@ -344,27 +266,27 @@ static void singularity_capability_set(__u32 *capabilities) {
     }
 }
 
-static unsigned long long get_user_capabilities_from_file(void) {
+static unsigned long long get_capabilities_from_file(char *ftype, char *id) {
     unsigned long long caps = 0;
     FILE *file = NULL;
     char strcap[24];
     char path[PATH_MAX];
 
+    singularity_message(DEBUG, "Get capabilities from file for %s %s\n", ftype, id);
+
     memset(strcap, 0, 24);
     memset(path, 0, PATH_MAX);
 
-    snprintf(path, PATH_MAX-1, SYSCONFDIR "/singularity/capabilities/user.%d", getuid()); // Flawfinder: ignore
-
-    printf("%s\n", path);
+    snprintf(path, PATH_MAX-1, SYSCONFDIR "/singularity/capabilities/%s.%s", ftype, id); // Flawfinder: ignore
 
     file = fopen(path, "r");
     if ( file == NULL ) {
-        printf("open failed: %s\n",strerror(errno));
+        singularity_message(DEBUG, "Fail to open %s: %s\n", path, strerror(errno));
         return(caps);
     }
 
     if ( fgets(strcap, 23, file) == NULL ) {
-        printf("read failed\n");
+        singularity_message(DEBUG, "Fail to read %s content: %s\n", path, strerror(errno));
         return(caps);
     }
 
@@ -372,9 +294,53 @@ static unsigned long long get_user_capabilities_from_file(void) {
     return(caps);
 }
 
-static unsigned long long get_group_capabilities_from_file(void) {
+static unsigned long long get_user_file_capabilities(void) {
     unsigned long long caps = 0;
+    uid_t uid = getuid();
+    struct passwd *pw;
 
+    pw = getpwuid(uid);
+    if ( pw == NULL ) {
+        singularity_message(ERROR, "Failed to retrieve password file entry for uid %d\n", uid);
+        ABORT(255);
+    }
+
+    caps = get_capabilities_from_file("user", pw->pw_name);
+    caps &= ~get_capabilities_from_file("blacklist", "all");
+    return(caps);
+}
+
+static unsigned long long get_group_file_capabilities(void) {
+    unsigned long long caps = 0;
+    gid_t *gids = NULL;
+    int i, count = getgroups(0, NULL);
+
+    if ( count > NGROUPS_MAX ) {
+        singularity_message(ERROR, "Number of user group\n");
+        ABORT(255);
+    }
+
+    gids = (gid_t *)calloc(count, sizeof(gid_t));
+    if ( gids == NULL ) {
+        singularity_message(ERROR, "Failed to allocate memory for user groups\n");
+        ABORT(255);
+    }
+
+    for ( i = count - 1; i >= 0; i-- ) {
+        struct group *gr = getgrgid(gids[i]);
+
+        if ( gr == NULL ) {
+            singularity_message(ERROR, "Failed to retrieve group file entry for gid %d\n", gids[i]);
+            ABORT(255);
+        }
+        if ( (caps = get_capabilities_from_file("group", gr->gr_name)) != 0 ) {
+            break;
+        }
+    }
+
+    free(gids);
+
+    caps &= ~get_capabilities_from_file("blacklist", "all");
     return(caps);
 }
 
@@ -393,7 +359,7 @@ static int setup_root_default_capabilities(void) {
             singularity_registry_set("KEEP_PRIVS", "1");
             envar_set("SINGULARITY_KEEP_PRIVS", "1", 1);
         } else if ( root_default_caps == ROOT_DEFCAPS_FILE ) {
-            unsigned long long filecap = get_user_capabilities_from_file();
+            unsigned long long filecap = get_user_file_capabilities();
 
             if ( singularity_registry_get("ADD_CAPS") == NULL ) {
                 singularity_registry_set("ADD_CAPS", cap2str(filecap));
@@ -421,22 +387,19 @@ void singularity_capability_init(void) {
 
     if ( ! singularity_capability_keep_privs() ) {
         if ( singularity_registry_get("ADD_CAPS") && root_user ) {
-            __u32 *capabilities = get_capabilities_from(singularity_registry_get("ADD_CAPS"));
-            __u32 *final = add_capabilities(default_capabilities, capabilities);
+            unsigned long long capabilities = str2cap(singularity_registry_get("ADD_CAPS"));
+            unsigned long long final = array2cap(default_capabilities) | capabilities;
 
             singularity_capability_set(final);
-
-            free(capabilities);
-            free(final);
         } else {
-            singularity_capability_set(default_capabilities);
+            singularity_capability_set(array2cap(default_capabilities));
         }
     }
 }
 
 /* for mount command */
 void singularity_capability_init_default(void) {
-    singularity_capability_set(default_capabilities);
+    singularity_capability_set(array2cap(default_capabilities));
     envar_set("SINGULARITY_ROOT_DEFAULT_CAPS", int2str(ROOT_DEFCAPS_DEFAULT), 1);
     unsetenv("SINGULARITY_ADD_CAPS");
     unsetenv("SINGULARITY_DROP_CAPS");
@@ -446,7 +409,7 @@ void singularity_capability_init_default(void) {
 
 /* for build stage 2 */
 void singularity_capability_init_minimal(void) {
-    singularity_capability_set(minimal_capabilities);
+    singularity_capability_set(array2cap(minimal_capabilities));
 }
 
 void singularity_capability_drop(void) {
@@ -471,27 +434,20 @@ void singularity_capability_drop(void) {
     if ( singularity_capability_no_privs() || ( ! singularity_capability_keep_privs() && ! root_user ) ) {
         singularity_message(DEBUG, "Drop capabilities\n");
         if ( singularity_registry_get("ADD_CAPS") && root_user ) {
-            __u32 *capabilities = get_capabilities_from(singularity_registry_get("ADD_CAPS"));
-            __u32 *final = add_capabilities(no_capabilities, capabilities);
+            unsigned long long capabilities = str2cap(singularity_registry_get("ADD_CAPS"));
 
-            singularity_capability_set(final);
-
-            free(capabilities);
-            free(final);
+            singularity_capability_set(capabilities);
         } else {
             singularity_capability_set_securebits();
-            singularity_capability_set(no_capabilities);
+            singularity_capability_set(array2cap(no_capabilities));
         }
     }
     if ( singularity_registry_get("DROP_CAPS") && root_user ) {
-        __u32 *capabilities = get_capabilities_from(singularity_registry_get("DROP_CAPS"));
-        __u32 *current = get_current_capabilities();
-        __u32 *final = drop_capabilities(current, capabilities);
+        unsigned long long capabilities = str2cap(singularity_registry_get("DROP_CAPS"));
+        unsigned long long current = get_current_capabilities();
 
-        singularity_capability_set(final);
+        current &= ~capabilities;
 
-        free(current);
-        free(capabilities);
-        free(final);
+        singularity_capability_set(current);
     }
 }
