@@ -184,7 +184,8 @@ bind path = /etc/hosts
 # The mksquashfs command is necessary to use the build command.  If your
 # mksquashfs is installed outside of the following directories:
 # /bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin
-# you can specify the full path to it here.
+# you can specify the full path to it here. For example:
+# mksquashfs location = /opt/bin/mksquashfs
 @MKSQUASHFS_LOCATION@ = @MKSQUASHFS_LOCATION_DEFAULT@
 
 # AUTOFS BUG PATH: [STRING]
