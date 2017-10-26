@@ -179,6 +179,13 @@ bind path = /etc/hosts
 @ALLOW_CONTAINER_EXTFS@ = @ALLOW_CONTAINER_EXTFS_DEFAULT@
 @ALLOW_CONTAINER_DIR@ = @ALLOW_CONTAINER_DIR_DEFAULT@
 
+# MKSQUASHFS LOCATION ${TYPE}: [STRING] 
+# DEFAULT: @MKSQUASHFS_LOCATION_DEFAULT@
+# The mksquashfs command is necessary to use the build command.  If your
+# mksquashfs is installed outside of the following directories:
+# /bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin
+# you can specify the full path to it here.
+@MKSQUASHFS_LOCATION@ = @MKSQUASHFS_LOCATION_DEFAULT@
 
 # AUTOFS BUG PATH: [STRING]
 # DEFAULT: Undefined

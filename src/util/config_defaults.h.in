@@ -103,4 +103,7 @@
 #define ALLOW_CONTAINER_SQUASHFS "allow container squashfs"
 #define ALLOW_CONTAINER_SQUASHFS_DEFAULT 1
 
+#define MKSQUASHFS_LOCATION "mksquashfs location"
+#define MKSQUASHFS_LOCATION_DEFAULT ""
+
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_
