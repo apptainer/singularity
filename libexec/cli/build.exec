@@ -37,10 +37,17 @@ else
 fi
 
 # check to see if the location of mksquashfs is in singularity.conf
-tmp=`grep "mksquashfs location" "${SINGULARITY_sysconfdir}/singularity/singularity.conf" | awk -F = '{print $2}'`
+tmp=`grep -Ev "^#|^\s*$" "${SINGULARITY_sysconfdir}/singularity/singularity.conf" | grep "mksquashfs location" | awk -F = '{print $2}'`
 if [ -n "${tmp// }" ]; then
     MKSQUASHFS_PATH=`dirname "${tmp}" | sed 's/^[ \t]*//;s/[ \t]*$//'`/
 fi
+echo ===
+echo "${MKSQUASHFS_PATH:-}mksquashfs"
+which "${MKSQUASHFS_PATH:-}mksquashfs"
+echo $?
+singularity_which "${MKSQUASHFS_PATH:-}mksquashfs"
+echo $?
+echo ===
 
 if ! singularity_which "${MKSQUASHFS_PATH:-}mksquashfs" > /dev/null 2>&1; then
     message ERROR "You must install squashfs-tools to build images\n"
