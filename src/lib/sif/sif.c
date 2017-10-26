@@ -441,6 +441,7 @@ putpdesc(void *elem)
 	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
 	desc->cm.filelen = p->len;
 	desc->fstype = p->fstype;
+	desc->parttype = p->parttype;
 	strncpy(desc->content, p->content, sizeof(desc->content)-1);
 
 	/* write data object */

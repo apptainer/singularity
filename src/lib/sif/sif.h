@@ -134,7 +134,7 @@ typedef enum{
 
 /* types of file systems found in partition data objects */
 typedef enum{
-	FS_SQUASH,			/* Squashfs file system, RDONLY */
+	FS_SQUASH = 1,			/* Squashfs file system, RDONLY */
 	FS_EXT3,			/* EXT3 file system, RDWR (deprecated) */
 	FS_IMMOBJECTS,			/* immutable data object archive */
 	FS_RAW				/* raw data */
@@ -142,14 +142,14 @@ typedef enum{
 
 /* type of container partition and usage purpose */
 typedef enum{
-	PART_SYSTEM,			/* partition hosts an operating system */
+	PART_SYSTEM = 1,		/* partition hosts an operating system */
 	PART_DATA,			/* partition hosts data only */
 	PART_OVERLAY			/* partition hosts an overlay */
-}Sifparttype;
+} Sifparttype;
 
 /* types of hashing function used to fingerprint data objects */
 typedef enum{
-	HASH_SHA256,
+	HASH_SHA256 = 1,
 	HASH_SHA384,
 	HASH_SHA512
 } Sifhashtype;

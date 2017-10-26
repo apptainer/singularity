@@ -147,11 +147,13 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 	Node *n;
 	int opt;
 	char content[SIF_CONTENT_LEN] = { };
-	int fstype = -1;
+	Siffstype fstype = -1;
+	Sifparttype parttype = -1;
 	struct stat st;
 	char *fstypestr;
+	char *parttypestr;
 
-	while((opt = getopt(argc, argv, "c:f:")) != -1){ /* Flawfinder: ignore */
+	while((opt = getopt(argc, argv, "c:f:p:")) != -1){ /* Flawfinder: ignore */
 		switch(opt){
 		case 'c':
 			strncpy(content, optarg, sizeof(content)-1);
@@ -166,12 +168,23 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 				fstype = 1000; /* unknown */
 			free(fstypestr);
 			break;
+		case 'p':
+			parttypestr = uppercase(optarg);
+			if(strncmp(parttypestr, "SYSTEM", strlen("SYSTEM")) == 0)
+				parttype = PART_SYSTEM;
+			else if(strncmp(parttypestr, "DATA", strlen("DATA")) == 0)
+				parttype = PART_DATA;
+			else if(strncmp(parttypestr, "OVERLAY", strlen("OVERLAY")) == 0)
+				parttype = PART_OVERLAY;
+			else
+				parttype = 1000; /* unknown */
+			break;
 		default:
-			fprintf(stderr, "Error expecting -c CONTENT and -f FSTYPE\n");
+			fprintf(stderr, "Error expecting -c CONTENT, -f FSTYPE and -p PARTTYPE\n");
 			return NULL;
 		}
 		/* done parsing attributes for option 'P' */
-		if(fstype != -1 && strlen(content) != 0)
+		if(fstype != -1 && strlen(content) != 0 && parttype != -1)
 			break;
 	}
 	if(strlen(content) == 0){
@@ -180,6 +193,10 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 	}
 	if(fstype == -1){
 		fprintf(stderr, "Error extracting FSTYPE\n");
+		return NULL;
+	}
+	if(parttype == -1){
+		fprintf(stderr, "Error extracting PARTTYPE\n");
 		return NULL;
 	}
 
@@ -201,6 +218,7 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 	}
 	e->len = st.st_size;
 	e->fstype = fstype;
+	e->parttype = parttype;
 	strcpy(e->content, content); /* Flawfinder: ignore */
 
 	n = listcreate(e);

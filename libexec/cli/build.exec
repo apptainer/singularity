@@ -384,14 +384,14 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
     if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
         if ! $SINGULARITY_libexecdir/singularity/bin/sifcreate \
           -D "${SINGULARITY_BUILDDEF}" \
-          -P "${SINGULARITY_TEMP_FS}" -f "$fstype" -c "System partition" \
+          -P "${SINGULARITY_TEMP_FS}" -f "$fstype" -p "SYSTEM" -c "Linux" \
           "$SINGULARITY_CONTAINER_OUTPUT" 2>/dev/null 2>&1; then
             message ERROR "Failed to wrap container into a SIF image\n"
             exit 1
         fi
     else
         if ! $SINGULARITY_libexecdir/singularity/bin/sifcreate \
-          -P "${SINGULARITY_TEMP_FS}" -f "$fstype" -c "System partition" \
+          -P "${SINGULARITY_TEMP_FS}" -f "$fstype" -p "SYSTEM" -c "Linux" \
           "$SINGULARITY_CONTAINER_OUTPUT" 2>/dev/null 2>&1; then
             message ERROR "Failed to wrap container into a SIF image\n"
             exit 1
