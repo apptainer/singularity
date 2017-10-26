@@ -220,11 +220,11 @@ class DockerApiConnection(ApiConnection):
         layer_key = 'layers'
         digest_key = 'digest'
 
-        # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-2.md#image-manifest  # noqa
+        # Docker manifest-v2-2.md#image-manifest
         if 'layers' in manifest:
             bot.debug('Image manifest version 2.2 found.')
 
-        # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-1.md#example-manifest  # noqa
+        # Docker manifest-v2-1.md#example-manifest  # noqa
         elif 'fsLayers' in manifest:
             layer_key = 'fsLayers'
             digest_key = 'blobSum'
