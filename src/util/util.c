@@ -29,6 +29,7 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/fsuid.h>
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>  
@@ -46,6 +47,22 @@
 #include "util/privilege.h"
 #include "util/registry.h"
 
+int __wrap_mount(const char *source, const char *target,
+                 const char *filesystemtype, unsigned long mountflags,
+                 const void *data);
+
+int __real_mount(const char *source, const char *target,
+                 const char *filesystemtype, unsigned long mountflags,
+                 const void *data);
+
+int __wrap_mount(const char *source, const char *target,
+                 const char *filesystemtype, unsigned long mountflags,
+                 const void *data) {
+    if ( ( mountflags & MS_BIND ) ) {
+        setfsuid(singularity_priv_getuid());
+    }
+    return __real_mount(source, target, filesystemtype, mountflags, data);
+}
 
 char *envar_get(char *name, char *allowed, int len) {
     char *ret;

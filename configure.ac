@@ -42,7 +42,7 @@ AC_PROG_LIBTOOL(libtool)
 
 # Setting rpath if necessary
 if test "$libdir" = "\${exec_prefix}/lib"; then
-    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir)"
+    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir) -Wl,--wrap=mount"
 fi
 
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
