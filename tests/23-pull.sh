@@ -20,25 +20,25 @@ test_init "Pull tests"
 
 cd "$SINGULARITY_TESTDIR"
 
-stest 0 sudo singularity pull --size 10 docker://busybox
+#stest 0 sudo singularity pull --size 10 docker://busybox
 CONTAINER=busybox.img
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/runscript
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
-stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
-stest 0 singularity exec "$CONTAINER" test -L /environment
-stest 0 singularity exec "$CONTAINER" test -L /singularity
+#stest 0 singularity exec "$CONTAINER" true
+#stest 1 singularity exec "$CONTAINER" false
+#stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/runscript
+#stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/env/01-base.sh
+#stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/shell
+#stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/exec
+#stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/actions/run
+#stest 0 singularity exec "$CONTAINER" test -L /environment
+#stest 0 singularity exec "$CONTAINER" test -L /singularity
 
 # should fail b/c we already pulled busybox
-stest 1 sudo singularity pull --size 10 docker://busybox
+#stest 1 sudo singularity pull --size 10 docker://busybox
 
 # force should fix
-stest 0 sudo singularity pull --force --size 10 docker://busybox
+#stest 0 sudo singularity pull --force --size 10 docker://busybox
 
-stest 0 sudo rm -rf "${CONTAINER}"
+#stest 0 sudo rm -rf "${CONTAINER}"
 
 stest 1 singularity pull docker://this_should_not/exist
 
