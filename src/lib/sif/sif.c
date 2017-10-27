@@ -622,7 +622,7 @@ sif_create(Sifcreateinfo *cinfo)
 	siflayout.descptr = siflayout.mapstart;
 	siflayout.dataptr = siflayout.mapstart + siflayout.header.dataoff;
 
-	/* build SIF: header, section descriptors, section data */
+	/* build SIF: header, data object descriptors, data objects */
 	memcpy(siflayout.descptr, &siflayout.header, sizeof(Sifheader));
 	siflayout.descptr += sizeof(Sifheader);
 	listforall(&cinfo->deschead, putdesc);

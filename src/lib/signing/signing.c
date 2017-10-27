@@ -29,8 +29,6 @@
 #include "../sif/list.h"
 #include "../sif/sif.h"
 
-extern char verifblock[VERIFBLOCK_SIZE];
-
 int _singularity_image_sign(unsigned char *text) {
 #if 0
     ssize_t retval;
