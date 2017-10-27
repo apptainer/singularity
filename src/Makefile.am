@@ -33,7 +33,7 @@ mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runti
 mount_CPPFLAGS = $(AM_CPPFLAGS)
 
 sifcreate_SOURCES = sifcreate.c util/util.c
-sifcreate_LDADD = lib/image/libsingularity-image.la lib/sif/libsingularity-sif.la -luuid
+sifcreate_LDADD = lib/image/libsingularity-image.la lib/signing/libsingularity-signing.la lib/sif/libsingularity-sif.la -luuid -lcrypto
 sifcreate_CPPFLAGS = $(AM_CPPFLAGS)
 
 sign_SOURCES = sign.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c
