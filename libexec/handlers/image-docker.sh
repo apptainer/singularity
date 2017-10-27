@@ -40,7 +40,7 @@ zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
     message 2 "Exploding layer: $name\n"
-    ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -) || exit $? ) | while read file; do
+    ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* --exclude=*/.wh.* -xvf -) || exit $? ) | while read file; do
         if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
             # Skipping symlinks
             true
