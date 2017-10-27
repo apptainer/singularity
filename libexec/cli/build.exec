@@ -252,7 +252,7 @@ case $SINGULARITY_BUILDDEF in
 
         for i in `cat "$SINGULARITY_CONTENTS"`; do
             message 1 "Importing: $i\n"
-            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
+            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* --exclude=*/.wh.* -xf - ) || exit $?
         done
 
         SINGULARITY_BUILDDEF="$SINGULARITY_ROOTFS"
