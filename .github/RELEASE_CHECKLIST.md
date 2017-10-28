@@ -4,6 +4,7 @@
 ## Code
 - [] Ensure docs exist at singularityware.github.io for new/updated features
 - [] Update version number in `configure.ac`
+- [] Update changelog and version in `debian/changelog`
 - [] Confirm tests exist for new features, and tests pass
 - [] Commit the changes: 
 
