@@ -29,4 +29,18 @@ stest 1 sudo false
 stest 0 which singularity
 stest 0 test -f "$SINGULARITY_sysconfdir/singularity/singularity.conf"
 
+# Check whether singularity binary is on a volume mounted with 'nosuid'
+# I guess one could just grep /etc/mtab, but...
+mount | grep $(df -h $SINGULARITY_PATH | grep -v File | awk '{print $1}') \
+    > $SINGULARITY_TESTDIR/singularity_fs_nosuid
+stest 1 grep "nosuid" $SINGULARITY_TESTDIR/singularity_fs_nosuid
+
+# Is the SINGULARITY_PATH going to be there when you sudo?
+sudo grep "^Defaults.*secure_path=.*$SINGULARITY_PATH" /etc/sudoers
+echo $? > $SINGULARITY_TESTDIR/singularity_secure_path
+stest 0 grep 0 $SINGULARITY_TESTDIR/singularity_secure_path
+
+# Yes, Virginia, we use curl in these tests
+stest 0 which curl
+
 test_cleanup
