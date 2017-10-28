@@ -208,53 +208,13 @@ else
     message 2 "Skipping labels section\n"
 fi
 
+
 ### STARTSCRIPT
 _add_run_or_start_script startscript
-# if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "startscript" ]; then
-#     if singularity_section_exists "startscript" "$SINGULARITY_BUILDDEF"; then
-#         message 1 "Adding startscript\n"
-# 
-#         echo -n "#!/bin/sh " > "$SINGULARITY_ROOTFS/.singularity.d/startscript"
-#         singularity_section_args "startscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/startscript"
-#         echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/startscript"
-#         singularity_section_get "startscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/startscript"
-# 
-#     fi
-# else
-#     message 2 "Skipping startscript section\n"
-# fi
 
 
 ### RUNSCRIPT
 _add_run_or_start_script runscript
-# if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "runscript" ]; then
-#     if singularity_section_exists "runscript" "$SINGULARITY_BUILDDEF"; then
-#         message 1 "Adding runscript\n"
-# 
-#         # process the shebang if it exists
-#         RUNSCRIPT_CONTENTS=`singularity_section_get "runscript" "$SINGULARITY_BUILDDEF"`
-#         SHEBANG=`echo "$RUNSCRIPT_CONTENTS" | head -n 1 | sed 's/^[ \t]*//;s/[ \t]*$//' | grep -E "^#!"`
-#         if [ -n "${SHEBANG}" ]; then
-#             echo -n "$SHEBANG " > "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-#         else
-#             echo -n "#!/bin/sh " > "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-#         fi
-# 
-#         # add any args to shebang
-#         singularity_section_args "runscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-#         echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-# 
-#         # add the rest of the content (minus shebang if it exists)
-#         if [ -n "${SHEBANG}" ]; then
-#             echo "$RUNSCRIPT_CONTENTS" | tail -n +2  >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-#         else
-#             echo "$RUNSCRIPT_CONTENTS" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-#         fi
-# 
-#     fi
-# else
-#     message 2 "Skipping runscript section\n"
-# fi
 
 
 ### HELP FOR RUNSCRIPT
