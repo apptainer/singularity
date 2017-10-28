@@ -186,6 +186,11 @@ while true; do
             singularity_drop_capabilities "$1"
             shift
         ;;
+        --allow-setuid)
+            shift
+            SINGULARITY_ALLOW_SETUID=1
+            export SINGULARITY_ALLOW_SETUID
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1

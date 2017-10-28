@@ -106,4 +106,10 @@
 #define ROOT_DEFAULT_CAPABILITIES "root default capabilities"
 #define ROOT_DEFAULT_CAPABILITIES_DEFAULT "no"
 
+#define ALLOW_ROOT_CAPABILITIES "allow root capabilities"
+#define ALLOW_ROOT_CAPABILITIES_DEFAULT 1
+
+#define ALLOW_USER_CAPABILITIES "allow user capabilities"
+#define ALLOW_USER_CAPABILITIES_DEFAULT 0
+
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_

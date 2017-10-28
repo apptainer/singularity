@@ -55,7 +55,7 @@ parse_capabilities() {
         fi
 
         if [ -z "${SINGULARITY_CAPS[$pcaps]:-}" ]; then
-            message WARNING "Unknown or not supported capability $pcaps, skipped\n"
+            echo "Unknown or not supported capability $pcaps, skipped" 1>&2
             if [ "$caps" == "$last" ]; then
                 break
             fi
@@ -72,7 +72,7 @@ parse_capabilities() {
         caps=${caps#*,}
     done
 
-    echo "$ncaps"
+    echo -en "$ncaps"
 }
 
 singularity_add_capabilities() {

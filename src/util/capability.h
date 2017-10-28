@@ -18,7 +18,4 @@ void singularity_capability_init_default(void);
 // Drop all capabilities
 void singularity_capability_drop(void);
 
-int singularity_capability_keep_privs(void);
-int singularity_capability_no_privs(void);
-
 #endif /* __CAPABILITY_H_ */

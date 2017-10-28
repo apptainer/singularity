@@ -124,6 +124,7 @@ bind path = $BUILDDEF_DIR:$REPO_DIR
 bind path = $FSTAB_FILE:/etc/fstab
 bind path = $RESOLV_CONF:/etc/resolv.conf
 root default capabilities = default
+allow user capabilities = no
 CONF
 
 # here build pre-stage

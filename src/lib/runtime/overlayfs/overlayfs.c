@@ -39,7 +39,7 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
-#include "util/capability.h"
+#include "util/suid.h"
 
 #include "lib/image/image.h"
 
@@ -49,7 +49,7 @@
 int _singularity_runtime_overlayfs(void) {
     int secure_flags = MS_NOSUID | MS_NODEV;
 
-    if ( singularity_capability_keep_privs() ) {
+    if ( singularity_allow_setuid() ) {
         secure_flags &= ~MS_NOSUID;
     }
 

@@ -17,5 +17,5 @@ SCRIPT
 cd /tmp/$DIST/singularity
 
 # mounting /run for /dev/shm (python multiprocessing)
-sudo singularity exec -w -B /run --keep-privs docker://${OS_TYPE}:${OS_VERSION} /bin/bash -ex /tmp/$DIST/script
+sudo singularity exec -w -B /run --keep-privs --allow-setuid docker://${OS_TYPE}:${OS_VERSION} /bin/bash -ex /tmp/$DIST/script
 sudo rm -rf /tmp/$DIST

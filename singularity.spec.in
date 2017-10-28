@@ -85,6 +85,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc examples CONTRIBUTORS.md CONTRIBUTING.md COPYRIGHT.md INSTALL.md LICENSE-LBNL.md LICENSE.md README.md
 %attr(0755, root, root) %dir %{_sysconfdir}/singularity
 %attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
+%attr(0755, root, root) %dir %{_sysconfdir}/singularity/capabilities
+%attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/capabilities/*
 
 %{_libexecdir}/singularity/cli/apps.*
 %{_libexecdir}/singularity/cli/bootstrap.*
@@ -132,6 +134,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/run.*
 %{_libexecdir}/singularity/cli/shell.*
 %{_libexecdir}/singularity/cli/test.*
+%{_libexecdir}/singularity/cli/capability.*
 %{_libexecdir}/singularity/bin/action
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/bin/image-type
@@ -141,6 +144,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/capabilities
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*
+%dir %{_sysconfdir}/singularity/capabilities
+%config(noreplace) %{_sysconfdir}/singularity/capabilities/*
 %{_mandir}/man1/singularity.1*
 %dir %{_sysconfdir}/bash_completion.d
 %{_sysconfdir}/bash_completion.d/singularity

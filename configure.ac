@@ -223,6 +223,21 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                       ]
                   )
 
+AC_MSG_CHECKING([for user capabilities])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/prctl.h>
+                                   ]],
+                                   [[#ifndef PR_CAP_AMBIENT
+                                     #error failed
+                                     #endif
+                                   ]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DUSER_CAPABILITIES"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
 
 AC_CHECK_HEADER([linux/securebits.h], [
                     SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SECUREBITS"

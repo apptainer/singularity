@@ -451,7 +451,6 @@ void singularity_priv_drop_perm(void) {
     singularity_message(VERBOSE2, "Not enabling NO_NEW_PRIVS flag due to lack of compile-time support.\n");
 #endif
 
-
     singularity_message(DEBUG, "Finished dropping privileges\n");
 }
 

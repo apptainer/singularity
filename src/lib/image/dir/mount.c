@@ -36,8 +36,8 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/suid.h"
 #include "util/registry.h"
-#include "util/capability.h"
 
 #include "../image.h"
 
@@ -50,8 +50,8 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
         ABORT(255);
     }
 
-    if ( singularity_capability_keep_privs() ) {
-        singularity_message(DEBUG, "keep-privs option set, removing MS_NOSUID mount flags\n");
+    if ( singularity_allow_setuid() ) {
+        singularity_message(DEBUG, "allow-setuid option set, removing MS_NOSUID mount flags\n");
         mntflags &= ~MS_NOSUID;
     }
 
