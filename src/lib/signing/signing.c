@@ -19,6 +19,8 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+
+#include <openssl/sha.h>
 #include <uuid/uuid.h>
 
 #include "crypt.h"

@@ -14,50 +14,60 @@
 #ifndef __SINGULARITY_UTIL_CRYPT_H_
 #define __SINGULARITY_UTIL_CRYPT_H_
 
-#include <openssl/sha.h>
-
 
 #define SIGN_COMMAND "gpg --clearsign"
 #define VERIFY_COMMAND "gpg --verify"
 #define GPG_SIGNATURE_GOOD "gpg: Good signature"
+#define SIFHASH_PREFIX "SIFHASH:\n"
 
 
 /* a few quantities */
 enum{
-	SIGN_HASH_LEN = SHA384_DIGEST_LENGTH,
-	SIGN_MAXLEN = 4096
+	SGN_HASHLEN = SHA384_DIGEST_LENGTH,
+	SGN_MAXLEN = 2048,
+
+	/* These values are meant to match sif.h Sifhashtype */
+	SNG_SHA256 = 1,
+	SNG_SHA384 = 2,
+	SNG_SHA512 = 3,
+	SNG_DEFAULT_HASH = 2
 };
 
 typedef enum{
-	SIGN_EDUPOUT,	/* Could not duplicate stdout */
-	SIGN_EPIPE,	/* Could not create pipe */
-	SIGN_EDUP2OUT,	/* Could not duplicate stdout to pipe */
-	SIGN_EPSOPEN,	/* Popen failed with SIGN_COMMAND */
-	SIGN_EPIPESWR,	/* Could not write verifstr to pgp */
-	SIGN_EFPCLOSE,	/* Could not close the pgp pipe stream */
-	SIGN_EDUP2RSTO,	/* Could not duplicate and restore stdout */
-	SIGN_ESOFLOW,	/* Buffer too small to hold signature */
-	SIGN_ERDPIPE,	/* Read error on pgp pipe stream */
-	SIGN_EDUPERR,	/* Could not duplicate stderr */
-	SIGN_EDUP2ERR,	/* Could not duplicate stderr to pipe */
-	SIGN_EPVOPEN,	/* Popen failed with VERIFY_COMMAND */
-	SIGN_EPIPEVWR,	/* Could not write verifblock to pgp */
-	SIGN_EDUP2RSTE,	/* Could not duplicate and restore stderr */
-	SIGN_EVOFLOW,	/* Response buffer too small to hold pgp output */
-	SIGN_EPCLOSE,	/* Could not close pipe descriptor */
-	SIGN_ECLOSEOUT,	/* Could not close saved stdout fd */
-	SIGN_ECLOSEERR	/* Could not close saved stderr fd */
-} Signerrno;
+	SGN_ENOERR,	/* Signing errno not set or success */
+	SGN_EDUPOUT,	/* Could not duplicate stdout */
+	SGN_EPIPE,	/* Could not create pipe */
+	SGN_EDUP2OUT,	/* Could not duplicate stdout to pipe */
+	SGN_EPSOPEN,	/* Popen failed with SIGN_COMMAND */
+	SGN_EPIPESWR,	/* Could not write verifstr to pgp */
+	SGN_EFPCLOSE,	/* Could not close the pgp pipe stream */
+	SGN_EDUP2RSTO,	/* Could not duplicate and restore stdout */
+	SGN_ESOFLOW,	/* Buffer too small to hold signature */
+	SGN_ERDPIPE,	/* Read error on pgp pipe stream */
+	SGN_EDUPERR,	/* Could not duplicate stderr */
+	SGN_EDUP2ERR,	/* Could not duplicate stderr to pipe */
+	SGN_EPVOPEN,	/* Popen failed with VERIFY_COMMAND */
+	SGN_EPIPEVWR,	/* Could not write verifblock to pgp */
+	SGN_EDUP2RSTE,	/* Could not duplicate and restore stderr */
+	SGN_EVOFLOW,	/* Response buffer too small to hold pgp output */
+	SGN_EPCLOSE,	/* Could not close pipe descriptor */
+	SGN_ECLOSEOUT,	/* Could not close saved stdout fd */
+	SGN_ECLOSEERR,	/* Could not close saved stderr fd */
+	SGN_EFNAME,	/* Invalid input file name */
+	SGN_EFOPEN,	/* Cannot open input file name */
+	SGN_EFSTAT,	/* fstat on input file failed */
+	SGN_EFMAP	/* Cannot mmap input file */
+} Sgnerrno;
 
 
-extern Signerrno signerrno;
+extern Sgnerrno sgnerrno;
 
-char *sign_strerror(Signerrno signerrno);
-
-unsigned char *compute_buffer_hash(unsigned char *data, size_t size, unsigned char *result);
-unsigned char *compute_file_hash(char *fname, unsigned char *result);
-
-int sign_hash(char *hashstr, char *signedhash);
-int verify_signedhash(char *signedhash);
+char *sgn_strerror(Sgnerrno sgnerrno);
+void sgn_hashtostr(char *hash, char *hashstr);
+void sgn_sifhashstr(char *hashstr, char *sifhashstr);
+unsigned char *sgn_hashbuffer(char *data, size_t size, char *result);
+unsigned char *sgn_hashfile(char *fname, char *result);
+int sgn_signhash(char *hashstr, char *signedhash);
+int sgn_verifyhash(char *signedhash);
 
 #endif /* __SINGULARITY_UTIL_CRYPT_H_ */
