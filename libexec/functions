@@ -353,12 +353,12 @@ compare_envs() {
     if [ -n "${REMOVED:-}" -o -n "${ADDED:-}" ]; then
         message 1 "Environment variables were added, removed, and/or changed during bootstrap.\n"
     elif [ "${SINGULARITY_STARTING_ENVSHA1:-}" != "${SINGULARITY_ENDING_ENVSHA1:-}" ]; then
-        message 1 "The environment of ${SINGULARITY_IMAGE} may differ from the environment of ${FROM}\n"
-        message 1 "${FROM} sha1 sum of environment is ${SINGULARITY_STARTING_ENVSHA1}\n"
+        message 1 "The environment of ${SINGULARITY_IMAGE} may differ from the environment of ${SINGULARITY_DEFFILE_FROM}\n"
+        message 1 "${SINGULARITY_DEFFILE_FROM} sha1 sum of environment is ${SINGULARITY_STARTING_ENVSHA1}\n"
         message 1 "${SINGULARITY_IMAGE} sha1 sum of environment is ${SINGULARITY_ENDING_ENVSHA1}\n"
     fi
     if [ -n "${REMOVED:-}" ]; then
-        message 1 "Variables unique to original image (${FROM})\n"
+        message 1 "Variables unique to original image (${SINGULARITY_DEFFILE_FROM})\n"
         message 1 "$REMOVED\n"
     fi
     if [ -n "${ADDED:-}" ]; then
