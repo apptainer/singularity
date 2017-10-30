@@ -19,28 +19,43 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+
+#include <openssl/sha.h>
 #include <uuid/uuid.h>
 
 #include "lib/sif/list.h"
 #include "lib/sif/sif.h"
+#include "lib/sif/sifaccess.h"
+#include "lib/signing/crypt.h"
 
 #include "util/util.h"
 
+char *progname;
+
 static void
-usage(char *argv[])
+usage()
 {
-	fprintf(stderr, "usage: %s OPTION FILE\n", argv[0]);
-	fprintf(stderr, "\nGenerates a SIF output FILE with descriptors from -D,-E,-P,-S options.\n");
-	fprintf(stderr, "\ndescriptor options: -D deffile [-E] -P partfile [-S signfile]\n");
-	fprintf(stderr, "descriptor attributes:\n");
-	fprintf(stderr, " for -P: -c CONTENT, -f FSTYPE\n");
-	fprintf(stderr, " for -S: -h HASHTYPE, -e ENTITY\n");
+	fprintf(stderr, "usage: %s COMMAND OPTION FILE\n", progname);
+	fprintf(stderr, "\n\n");
+	fprintf(stderr, "create   Create a new sif file with input data objects\n");
+	fprintf(stderr, "list     List SIF data descriptors from an input SIF file\n");
+	fprintf(stderr, "sign     Cryptographically sign a data object from an input SIF file\n");
+	fprintf(stderr, "\n\n");
+	fprintf(stderr, "create options:\n");
+	fprintf(stderr, "\t-D deffile : include definitions file `deffile'\n");
+	fprintf(stderr, "\t-E : include environment variables\n");
+	fprintf(stderr, "\t-P partfile : include file system partition `partfile'\n");
+	fprintf(stderr, "\t\t-c CONTENT : freeform partition content string\n");
+	fprintf(stderr, "\t\t-f FSTYPE : filesystem type: EXT3, SQUASHFS\n");
+	fprintf(stderr, "\t\t-p PARTTYPE : filesystem partition type: SYSTEM, DATA, OVERLAY\n");
 	fprintf(stderr, "\n");
+	fprintf(stderr, "example: sif -P /tmp/fs.squash -f \"SQUASHFS\" -p \"SYSTEM\" -c \"Linux\" /tmp/container.sif\n\n");
 }
 
 Node *
@@ -141,6 +156,35 @@ ldescadd(Node *head, char *fname)
 }
 
 Node *
+sdescadd(Node *head, char *signedhash, Sifhashtype hashtype)
+{
+	Sdesc *e;
+	Node *n;
+	char entity[SIF_ENTITY_LEN] = { };
+
+	e = malloc(sizeof(Sdesc));
+	if(e == NULL){
+		fprintf(stderr, "Error allocating memory for Sdesc\n");
+		return NULL;
+	}
+	e->datatype = DATA_SIGNATURE;
+	e->signature = strdup(signedhash);
+	e->len = strlen(signedhash)+1;
+	e->hashtype = hashtype;
+	strcpy(e->entity, entity); /* Flawfinder: ignore */
+
+	n = listcreate(e);
+	if(n == NULL){
+		fprintf(stderr, "Error allocating Sdesc node\n");
+		free(e);
+		return NULL;
+	}
+	listaddtail(head, n);
+
+	return n;
+}
+
+Node *
 pdescadd(Node *head, char *fname, int argc, char *argv[])
 {
 	Pdesc *e;
@@ -232,65 +276,8 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 	return n;
 }
 
-static char testsign[] = "-----BEGIN PGP SIGNED MESSAGE-----";
-Node *
-sdescadd(Node *head, int argc, char *argv[])
-{
-	Sdesc *e;
-	Node *n;
-	int opt;
-	char entity[SIF_ENTITY_LEN] = { };
-	int hashtype = -1;
-
-	while((opt = getopt(argc, argv, "e:h:")) != -1){ /* Flawfinder: ignore */
-		switch(opt){
-		case 'e':
-			strncpy(entity, optarg, sizeof(entity)-1);
-			break;
-		case 'h':
-			hashtype = atoi(optarg);
-			break;
-		default:
-			fprintf(stderr, "Error expecting -e ENTITY and -h HASHTYPE\n");
-			return NULL;
-		}
-		/* done parsing attributes for option 'S' */
-		if(hashtype != -1 && strlen(entity) != 0)
-			break;
-	}
-	if(strlen(entity) == 0){
-		fprintf(stderr, "Error invalid signing entity string, use -e ENTITY\n");
-		return NULL;
-	}
-	if(hashtype == -1){
-		fprintf(stderr, "Error extracting HASHTYPE, use -h HASHTYPE\n");
-		return NULL;
-	}
-
-	e = malloc(sizeof(Sdesc));
-	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Sdesc\n");
-		return NULL;
-	}
-	e->datatype = DATA_SIGNATURE;
-	e->signature = testsign;
-	e->len = sizeof(testsign);
-	e->hashtype = hashtype;
-	strcpy(e->entity, entity); /* Flawfinder: ignore */
-
-	n = listcreate(e);
-	if(n == NULL){
-		fprintf(stderr, "Error allocating Sdesc node\n");
-		free(e);
-		return NULL;
-	}
-	listaddtail(head, n);
-
-	return n;
-}
-
 int
-main(int argc, char *argv[])
+cmd_create(int argc, char *argv[])
 {
 	int ret;
 	int opt;
@@ -298,12 +285,15 @@ main(int argc, char *argv[])
 	int eopts = 0;
 	int lopts = 0;
 	int popts = 0;
-	int sopts = 0;
 	struct utsname name;
 	Sifcreateinfo createinfo = { };
 	Node *n;
 
-	while((opt = getopt(argc, argv, "D:EL:P:S")) != -1){ /* Flawfinder: ignore */
+	/* get rid of command */
+	argc--;
+	argv++;
+
+	while((opt = getopt(argc, argv, "D:EL:P:")) != -1){ /* Flawfinder: ignore */
 		switch(opt){
 		case 'D':
 			n = ddescadd(&createinfo.deschead, optarg);
@@ -337,16 +327,8 @@ main(int argc, char *argv[])
 			}
 			popts++;
 			break;
-		case 'S':
-			n = sdescadd(&createinfo.deschead, argc, argv);
-			if(n == NULL){
-				fprintf(stderr, "Could not add a signature descriptor\n");
-				return -1;
-			}
-			sopts++;
-			break;
 		default:
-			usage(argv);
+			usage();
 			return -1;
 		}
 	}
@@ -356,7 +338,7 @@ main(int argc, char *argv[])
 	}
 	if(optind >= argc){
 		fprintf(stderr, "Error: Expected argument after options\n");
-		usage(argv);
+		usage();
 		return -1;
 	}
 	argc -= optind;
@@ -397,4 +379,98 @@ main(int argc, char *argv[])
 	}
 
 	return 0;
+}
+
+int
+cmd_list(int argc, char *argv[])
+{
+	Sifinfo sif;
+
+	if(argc < 3){
+		usage();
+		return -1;
+	}
+
+	if (sif_load(argv[2], &sif) < 0) {
+		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
+		return(-1);
+	}
+	sif_printlist(&sif);
+
+	return 0;
+}
+
+int
+cmd_sign(int argc, char *argv[])
+{
+	Sifinfo sif;
+	Sifcommon *cm;
+	int id;
+	static char signedhash[SGN_MAXLEN];
+	static char hash[SGN_HASHLEN];
+	static char hashstr[SGN_HASHLEN*2+1];
+	static char sifhashstr[sizeof(SIFHASH_PREFIX)+SGN_HASHLEN*2+1];
+
+	if(argc < 3){
+		usage();
+		return -1;
+	}
+
+	id = atoi(argv[2]);
+
+	if (sif_load(argv[3], &sif) < 0) {
+		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
+		return(-1);
+	}
+
+	cm = sif_getdesc_id(&sif, id);
+	if(cm == NULL){
+		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
+		        sif_strerror(siferrno));
+		return -1;
+	}
+
+	if(sgn_hashbuffer(sif.mapstart, cm->filelen, hash) == NULL){
+		fprintf(stderr, "Error with computing hash: %s\n",
+		        sgn_strerror(sgnerrno));
+		return -1;
+	}
+	sgn_hashtostr(hash, hashstr);
+	sgn_sifhashstr(hashstr, sifhashstr);
+
+	if(sgn_signhash(sifhashstr, signedhash) < 0){
+		fprintf(stderr, "Error signing partition hash: %s\n",
+		        sgn_strerror(sgnerrno));
+		return -1;
+	}
+	printf("%s\n", signedhash);
+/*
+	n = sdescadd(head, signedhash, SNG_DEFAULT_HASH);
+	if(n == NULL){
+		fprintf(stderr, "Could not add a signature descriptor for system partition\n");
+		return NULL;
+	}
+*/
+
+	return 0;
+}
+
+int
+main(int argc, char *argv[])
+{
+	progname = basename(argv[0]);
+
+	if(argc < 2){
+		usage();
+		return -1;
+	}
+	if(strncmp(argv[1], "create", 6) == 0)
+		return cmd_create(argc, argv);
+	if(strncmp(argv[1], "list", 4) == 0)
+		return cmd_list(argc, argv);
+	if(strncmp(argv[1], "sign", 4) == 0)
+		return cmd_sign(argc, argv);
+
+	usage();
+	return -1;
 }
