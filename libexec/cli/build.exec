@@ -250,9 +250,29 @@ case $SINGULARITY_BUILDDEF in
         message 1 "Importing: base Singularity environment\n"
         zcat "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar" | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
 
+        # Docker layers are extracted with tar, but we need additional handling
+        # for aufs whiteout files that may be present.
+        # - .wh..whi..opq inside a directory indicates that directory is opaque.
+        #    Any content in this directory from previous layers must be deleted
+        #    before extracting the current layer.
+        # - .wh.<file/dirname> indicates <file/dirname> from a previous layer must
+        #    be deleted as we extract the current layer.
+        # See:
+        #   https://github.com/tonistiigi/docker/blob/2fb5d0c32376951ef41a6f64bb7dbd8f6fd14fba/pkg/archive/whiteouts.go#L3-L23
         for i in `cat "$SINGULARITY_CONTENTS"`; do
             message 1 "Importing: $i\n"
-            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* --exclude=*/.wh.* -xf - ) || exit $?
+            # Remove any existing directories containing a whiteout opaque
+            # indicator file .wh..wh..opq in the layer we are about to extract
+            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar -tf - | grep '\.wh\.\.wh\.\.opq' | sed 's/\.wh\.\.wh\.\.opq//' | xargs -r -d '\n' echo Opaque: rm -rf ) || exit $?
+            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar -tf - | grep '\.wh\.\.wh\.\.opq' | sed 's/\.wh\.\.wh\.\.opq//' | xargs -r -d '\n' rm -rf ) || exit $?
+            # Now extract our current layer, exclude whiteout markes handled
+            # above.
+            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* --exclude=*/.wh..wh..opq -xf - ) || exit $?
+            # Get rid of any files/dirs marked for white out
+            find "$SINGULARITY_ROOTFS" -type f -name '.wh.*' -print | sed 's/\.wh\.//' | xargs -r -d '\n' echo Whiteout: rm -rf
+            find "$SINGULARITY_ROOTFS" -type f -name '.wh.*' -print | sed 's/\.wh\.//' | xargs -r -d '\n' rm -rf
+            # Get rid of all of the whiteout indicator files themselves
+            find "$SINGULARITY_ROOTFS" -type f -name '.wh.*' -delete
         done
 
         SINGULARITY_BUILDDEF="$SINGULARITY_ROOTFS"
