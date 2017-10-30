@@ -107,7 +107,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/get-section
 %{_libexecdir}/singularity/bin/mount
 %{_libexecdir}/singularity/bin/image-type
-%{_libexecdir}/singularity/bin/sifcreate
+%{_libexecdir}/singularity/bin/sif
 
 # Directories
 %{_libexecdir}/singularity/bootstrap-scripts

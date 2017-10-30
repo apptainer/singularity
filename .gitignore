@@ -43,7 +43,7 @@ src/cleanupd
 src/image-type
 src/mount
 src/mount-suid
-src/sifcreate
+src/sif
 src/sinit
 src/get-section
 src/sign
