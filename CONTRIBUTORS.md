@@ -34,4 +34,6 @@
     - Ralph Castain <rhc@open-mpi.org>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
+    - Josef Hrabal <josef.hrabal@vsb.cz>
     - Daniele Tamino <daniele.tamino@gmail.com>
+    
