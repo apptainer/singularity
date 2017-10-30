@@ -1,33 +1,30 @@
 # CHANGELOG
 
 This is a manually generated log to track changes to the repository for each release. 
-Each section should include general headers such as **Implemented enhancements** 
+Each section should include general headers such as ### Implemented enhancements 
 and **Merged pull requests**. All closed issued and bug fixes should be 
 represented by the pull requests that fixed them. This log originated with Singularity 2.4
-and changes prior to that are (unfortunately) done retrospectively. From @olifre, critical items to know are:
+and changes prior to that are (unfortunately) done retrospectively. Critical items to know are:
 
- - renamed commands
- - deprecated / removed commands
- - changed defaults
+ - renamed, deprecaed, or removed commands
+ - defaults that are changed
  - backward incompatible changes (recipe file format? image file format?)
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
 
-## [v3.0](https://github.com/singularityware/singularity/tree/development) (development)
+## [v2.4.1](https://github.com/singularityware/singularity/tree/development) (development)
 
-**Implemented enhancements**
+### Implemented enhancements
  - This changelog was added.
 
-**Bug Fixes**
- - .wh.* files leading to permissions errors from Docker aufs extractions are skipped on extraction
- - The `pull` command respects the user's custom name, and otherwise gives an extension based on file type
+### Bug Fixes
  - Tar creation uses GNU tar-1.28 to not add a timestamp to the header for more reproducible builds
 
 ## [v2.4](https://github.com/singularityware/singularity/tree/v2.4) (2017-10-02)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3.2...2.4)
 
-**Implemented enhancements**
+### Implemented enhancements
 
  - a new `build` command was added to replace `create` + `bootstrap` ([build](https://singularityware.github.io/docs-build-container))
  - default image format is squashfs, eliminating the need to specify a size
@@ -46,29 +43,29 @@ and changes prior to that are (unfortunately) done retrospectively. From @olifre
  - Group image commands
  - Bash completion updates
 
-**Deprecated**
+### Deprecated
  - the `create` command is being deprecated in favor of `image.create`
  - `bootstrap` is being deprecated in favor of `build` (will work through 2.4)
- - `expand` is being deprecated, as a container can be used as a build base to change it (will work through 2.4)
+ - `expand` is being deprecated in favor of `image.expand`, and no longer works on images with headers (meaning after they are built).
  - `export` is being deprecated and added to the image command group, `image.export`
  - the `shub://` URI no longer supports an integer to reference a container
 
 ## [v2.3.2](https://github.com/singularityware/singularity/tree/v2.3.2) (2017-09-15)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3.1...2.3.2)
 
-**Implemented enhancements**
+### Implemented enhancements
  - Quick fix to support manifest lists when pulling from Docker Hub
 
 ## [v2.3.1](https://github.com/singularityware/singularity/tree/v2.3.1) (2017-06-26)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3...2.3.1)
 
-**Security Fix**
+### Security Fix
  - A fix was implemented to address an escalation pathway and various identified bugs and potential race conditions.
 
 ## [v2.3](https://github.com/singularityware/singularity/tree/v2.3) (2017-05-31)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.2.1...2.3)
 
-**Implemented enhancements**
+### Implemented enhancements
 - Lots of backend library changes to accommodate a more flexible API
 - Restructured Python backend
 - Updated bootstrap backend to make it much more reliable
@@ -80,10 +77,10 @@ and changes prior to that are (unfortunately) done retrospectively. From @olifre
 ## [v2.2.1](https://github.com/singularityware/singularity/tree/v2.2.1) (2017-02-14)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.2...2.2.1)
 
-**Security Fix**
+### Security Fix
  - a security loophole related to mount devices was fixed (thanks @UMU in Sweden)
 
-**Implemented enhancements**
+### Implemented enhancements
  - Fixed some leaky file descriptors
  - Cleaned up `*printf()` usage
  - Catch if user's group is not properly defined
@@ -91,7 +88,7 @@ and changes prior to that are (unfortunately) done retrospectively. From @olifre
 ## [v2.2](https://github.com/singularityware/singularity/tree/v2.2) (2016-10-11)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.1.2...2.2)
 
-**Implemented enhancements**
+### Implemented enhancements
  - A complete rework of the back end source code to allow a much larger feature set, sanity, and facilitate contributions
  - The ability to execute completely unprivileged (does not support Singularity images) (thanks to Brian Bockelman)
  - Container execute by URI support (file, http, https, docker, etc..)
@@ -105,14 +102,14 @@ and changes prior to that are (unfortunately) done retrospectively. From @olifre
 ## [v2.1.2](https://github.com/singularityware/singularity/tree/v2.1.2) (2016-08-04)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.1.1...2.1.2)
 
-**Bug Fixes**
+### Bug Fixes
  - Fix for kernel panic on corrupt images
  - Fixes build warning
 
 ## [v2.1.1](https://github.com/singularityware/singularity/tree/v2.1.1) (2016-08-03)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.1...2.1.1)
 
-**Bug Fixes**
+### Bug Fixes
 - Contain option no longer maintains current working directory
 - Remove need to obtain a shared lock on the image (was failing on some shared file systems)
 - Move creation of a container's /environment to the beginning of the bootstrap (so it can be modified via a bootstrap definition file
@@ -120,7 +117,7 @@ and changes prior to that are (unfortunately) done retrospectively. From @olifre
 ## [v2.1](https://github.com/singularityware/singularity/tree/v2.1) (2016-07-28)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.0...2.1)
 
-**Implemented enhancements**
+### Implemented enhancements
 - Configuration file for system administrator control over what Singularity features users are allowed to use
 - Support for non Gnu LibC based distributions (e.g. Alpine Linux)
 - Source file restructuring and refactoring
@@ -130,7 +127,7 @@ and changes prior to that are (unfortunately) done retrospectively. From @olifre
 - Support custom container environments (via container:/environment)
 - Sanitized source files for Flawfinder
 
-**Bug Fixes**
+### Bug Fixes
 - Fix bug with /run and /var directories being read only in some situations
 - Fix lots of bootstrap definition issues
 - Fixed issue with /dev/pts not being mounted within a container
@@ -140,8 +137,7 @@ and changes prior to that are (unfortunately) done retrospectively. From @olifre
 ## [v2.0](https://github.com/singularityware/singularity/tree/v2.0) (2016-06-01)
 [Full Changelog](https://github.com/singularityware/singularity/compare/1.x...2.0)
 
-**Implemented enhancements:**
-
+### Implemented enhancements
  - Support for non-root container contexts (user outside container, is same user inside container)
  - Support of “live” container sparse image files
  - Utilizing the operating system’s build and dependency resolution subsystems (e.g. YUM, Apt, etc.)
@@ -153,7 +149,7 @@ and changes prior to that are (unfortunately) done retrospectively. From @olifre
 
 ## [v1.x](https://github.com/singularityware/singularity/tree/v1.x) (2016-04-06)
 
-**Implemented enhancements:**
+### Implemented enhancements
 
  - Ability to create Singularity containers based on a package specfile
  - Specfile templates can be generated automatically (singularity specgen …)
