@@ -76,15 +76,22 @@ parse_capabilities() {
 }
 
 singularity_add_capabilities() {
+    CAPS=0
+
     if [ -z "${1:-}" ]; then
-        message ERROR "No capability specified"
-        exit 1
+        if [ -z "${SINGULARITY_ADD_CAPS:-}" ]; then
+            message ERROR "No capability specified"
+            exit 1
+        else
+            CAPS=$(parse_capabilities ${SINGULARITY_ADD_CAPS:-})
+        fi
+    else
+        CAPS=$(parse_capabilities ${1:-})
     fi
 
     if [ ! -z "${SINGULARITY_ADD_CAPS:-}" ]; then
         OLD_CAPS=${SINGULARITY_ADD_CAPS:-}
-        NEW_CAPS=$(parse_capabilities ${1:-})
-        export SINGULARITY_ADD_CAPS=$(( $OLD_CAPS | $NEW_CAPS ))
+        export SINGULARITY_ADD_CAPS=$(( $OLD_CAPS | $CAPS ))
     else
         export SINGULARITY_ADD_CAPS=$(parse_capabilities ${1:-})
     fi
@@ -102,5 +109,14 @@ singularity_drop_capabilities() {
         export SINGULARITY_DROP_CAPS=$(( $OLD_CAPS & ~$NEW_CAPS ))
     else
         export SINGULARITY_DROP_CAPS=$(parse_capabilities ${1:-})
+    fi
+}
+
+singularity_get_env_capabilities() {
+    if [ ! -z "${SINGULARITY_ADD_CAPS:-}" ]; then
+        export SINGULARITY_ADD_CAPS=$(parse_capabilities ${SINGULARITY_ADD_CAPS:-})
+    fi
+    if [ ! -z "${SINGULARITY_DROP_CAPS:-}" ]; then
+        export SINGULARITY_DROP_CAPS=$(parse_capabilities ${SINGULARITY_DROP_CAPS:-})
     fi
 }

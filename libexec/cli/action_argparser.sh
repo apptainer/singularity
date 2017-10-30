@@ -19,6 +19,7 @@
 ## Load capabilities
 if [ -f "$SINGULARITY_libexecdir/singularity/capabilities" ]; then
     . "$SINGULARITY_libexecdir/singularity/capabilities"
+    singularity_get_env_capabilities
 else
     echo "Error loading capabilities: $SINGULARITY_libexecdir/singularity/capabilities"
     exit 1
