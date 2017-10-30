@@ -18,6 +18,8 @@ EXTRA_DIST = cleanupd.c \
 			 fork.h \
 			 message.c \
 			 message.h \
+			 mount.c \
+			 mount.h \
 			 privilege.c \
 			 privilege.h \
 			 registry.c \
