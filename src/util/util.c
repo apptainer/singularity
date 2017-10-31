@@ -29,7 +29,6 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/fsuid.h>
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>  
@@ -46,6 +45,7 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/registry.h"
+
 
 char *envar_get(char *name, char *allowed, int len) {
     char *ret;
