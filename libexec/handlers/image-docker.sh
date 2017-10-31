@@ -1,5 +1,5 @@
 #!/bin/bash
-# 
+#
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 
@@ -36,11 +36,13 @@ eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 message 1 "Creating container runtime...\n"
 message 2 "Importing: base Singularity environment\n"
 zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
- 
+
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
     message 2 "Exploding layer: $name\n"
-    ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -) || exit $? ) | while read file; do
+    # Settings of file privileges must be buffered
+    files=$( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -)) || exit $?
+    for file in $files; do
         if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
             # Skipping symlinks
             true

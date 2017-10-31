@@ -17,46 +17,56 @@ form.
 When contributing to Singularity, it is important to properly communicate the
 gist of the contribution. If it is a simple code or editorial fix, simply
 explaining this within the GitHub Pull Request (PR) will suffice. But if this
-is a larger fix or Enhancement, it should be first discussed with the project
-leader or developers.
+is a larger fix or Enhancement, you are advised to first discuss the change
+with the project leader or developers.
 
 Please note we have a code of conduct, described below. Please follow it in
 all your interactions with the project members and users.
 
-## Pull Request Process
+## Pull Requests (PRs)
 
-1. Bug fix PRs should be sent to both the master and development branches.
-   Feature enhancements should only be submitted against the development
-   branch.
-2. Follow the existing code style precedent. This does not need to be strictly
+### Process
+1. Essential bug fix PRs should be sent to both master and devopment branches.
+2. Small bug fix and feature enhancement PRs should be sent to development only.
+3. Follow the existing code style precedent. This does not need to be strictly
    defined as there are many thousands of lines of examples. Note the lack
    of tabs anywhere in the project, parentheses and spacing, curly bracket
    locations, source code layout, variable scoping, etc. and follow the
    project's standards.
-3. Ensure any install or build dependencies are removed before doing a build
+4. Ensure any install or build dependencies are removed before doing a build
    to test your PR locally.
-4. For any new functionality, please write a test to be added to Continuous
+5. For any new functionality, please write a test to be added to Continuous
    Integration (Travis) to test it (tests can be found in the `tests/`
    directory).
-5. The project's default copyright and header have been included in any new
+6. The project's default copyright and header have been included in any new
    source files.
-6. Make sure you have implemented a local `make test` and all tests succeed
+7. Make sure you have implemented a local `make test` and all tests succeed
    before submitting the PR.
-7. All (major) changes to Singularity must be documented on
-   [singularityware.github.io](https://singularityware.github.io). If your PR
-   changes a core functionality, please include clear description of the
-   changes in your PR so that the docs can be updated, or better, submit a
-   sister PR to update the docs directly.
-8. If necessary, update the README.md, and check the `*.help` scripts under
+8. Is the code human understandable? This can be accomplished via a clear code
+   style as well as documentation and/or comments.
+9. The pull request will be reviewed by others, and the final merge must be
+   done by the Singularity project lead, @gmkurtzer (or approved by him).
+10. Documentation must be provided if necessary (next section)
+
+### Documentation
+1. If you are changing any of the following:
+
+   - renamed commands
+   - deprecated / removed commands
+   - changed defaults
+   - backward incompatible changes (recipe file format? image file format?)
+   - migration guidance (how to convert images?)
+   - changed behaviour (recipe sections work differently)
+
+You are **required** to document it in the [changelog](CHANGELOG.md) for the next release.  
+You are also required to provide documentation or a direct pull request to
+the (upcoming) version of the [singularityware.github.io](https://www.github.io/singularityware/singularityware.github.io) docs. Ask for help if you aren't sure where your contribution
+should go.
+2. If necessary, update the README.md, and check the `*.help` scripts under
    [libexec/cli](libexec/cli) that provide the command line helper output. If
    you make changes to the internal Python API, make sure to check those
    changes into the [libexec/python/README.md](libexec/python/README.md) as
    well.
-9. Is the code human understandable? This can be accomplished via a clear code
-   style as well as documentation and/or comments.
-10. The pull request will be reviewed by others, and the final merge must be
-   done by the Singularity project lead, @gmkurtzer (or approved by him).
-
 
 # Code of Conduct
 
