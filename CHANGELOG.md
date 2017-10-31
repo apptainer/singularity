@@ -132,6 +132,7 @@ of the following actions:
  - Check of overlay upper/work images are symlinks
 
 ### Implemented enhancements
+ - Users can specify custom shebang in first line of runscript or startscript
  - This changelog was added.
  - Addition of APP[app]_[LABELS,ENV,RUNSCRIPT,META] so apps can internally find one another.
  - Exposing labels for SCI-F in environment
