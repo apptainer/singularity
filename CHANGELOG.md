@@ -20,6 +20,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ### Bug Fixes
  - Tar creation uses GNU tar-1.28 to not add a timestamp to the header for more reproducible builds
+ - Adjusting environment parsing regular expression for Docker to allow for "=" sign in variable
 
 ## [v2.4](https://github.com/singularityware/singularity/tree/v2.4) (2017-10-02)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3.2...2.4)
