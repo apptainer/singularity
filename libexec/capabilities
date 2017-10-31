@@ -80,7 +80,7 @@ singularity_add_capabilities() {
 
     if [ -z "${1:-}" ]; then
         if [ -z "${SINGULARITY_ADD_CAPS:-}" ]; then
-            message ERROR "No capability specified"
+            message ERROR "No capability specified\n"
             exit 1
         else
             CAPS=$(parse_capabilities ${SINGULARITY_ADD_CAPS:-})
@@ -99,7 +99,7 @@ singularity_add_capabilities() {
 
 singularity_drop_capabilities() {
     if [ -z "${1:-}" ]; then
-        message ERROR "No capability specified"
+        message ERROR "No capability specified\n"
         exit 1
     fi
 
@@ -119,4 +119,24 @@ singularity_get_env_capabilities() {
     if [ ! -z "${SINGULARITY_DROP_CAPS:-}" ]; then
         export SINGULARITY_DROP_CAPS=$(parse_capabilities ${SINGULARITY_DROP_CAPS:-})
     fi
+}
+
+singularity_print_capabilities() {
+    if [ -z "${1:-}" ]; then
+        message ERROR "No capability to print\n"
+    fi
+
+    PCAPS=""
+
+    for capname in "${!SINGULARITY_CAPS[@]}"; do
+        if [ $(( ${1:-0} & $(( 1 << ${SINGULARITY_CAPS[$capname]} )) )) != 0 ]; then
+            if [ -z "$PCAPS" ]; then
+                PCAPS="$capname"
+            else
+                PCAPS="$PCAPS,$capname"
+            fi
+        fi
+    done
+
+    echo "$PCAPS"
 }

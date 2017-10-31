@@ -42,11 +42,6 @@ if [ ! -d "$SINGULARITY_sysconfdir/singularity/capabilities" ]; then
     exit 1
 fi
 
-if ! USERID=`id -ru`; then
-    message ERROR "Could not ascertain user ID\n"
-    exit 1
-fi
-
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -111,11 +106,14 @@ if [ "${SWITCH}" == "defined" ]; then
         if [ -f "$file" ]; then
             caps=$(cat $file)
             file=$(basename $file)
+            type=${file%%.*}
+            id=${file##*.}
             if [ "$caps" != "0" ]; then
-                echo "$file" | tr '.' ':'
+                printf "%.16s\t[%s]\t" "$id" "$type"
+                singularity_print_capabilities $caps
             fi
         fi
-    done | sort
+    done
     exit 0
 fi
 
@@ -138,11 +136,7 @@ if [ "$caps" = "0" ]; then
     message 1 "No capabilities defined for ${ctype:-} ${usergroup:-}\n"
     exit 0
 else
-    echo "Capabilities for $ctype $usergroup"
+    echo "Capabilities for $ctype $usergroup" 1>&2
 fi
 
-for capname in "${!SINGULARITY_CAPS[@]}"; do
-    if [ $(( $caps & $(( 1 << ${SINGULARITY_CAPS[$capname]} )) )) != 0 ]; then
-        echo "$capname"
-    fi
-done | sort
+singularity_print_capabilities $caps

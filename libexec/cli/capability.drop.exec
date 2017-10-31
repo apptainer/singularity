@@ -42,11 +42,6 @@ if [ ! -d "$SINGULARITY_sysconfdir/singularity/capabilities" ]; then
     exit 1
 fi
 
-if ! USERID=`id -ru`; then
-    message ERROR "Could not ascertain user ID\n"
-    exit 1
-fi
-
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -136,8 +131,4 @@ if [ $? != 0 ]; then
 fi
 
 echo "Authorized capabilities after changes for ${ctype:-} ${usergroup:-}" 1>&2
-for capname in "${!SINGULARITY_CAPS[@]}"; do
-    if [ $(( $caps & $(( 1 << ${SINGULARITY_CAPS[$capname]} )) )) != 0 ]; then
-        echo "$capname" 1>&2
-    fi
-done | sort
+singularity_print_capabilities $caps
