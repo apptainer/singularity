@@ -47,6 +47,9 @@ static struct Siflayout{
 	unsigned char *dataptr;
 } siflayout;
 
+enum{
+	REGION_GROWSIZE = 4096	/* Initial and grow size of data object descriptors */
+};
 
 
 /*
@@ -88,6 +91,7 @@ sif_strerror(Siferrno siferrno)
 	case SIF_EOMAP: return "cannot mmap SIF output file";
 	case SIF_EOUNMAP: return "cannot unmmap SIF output file";
 	case SIF_EOCLOSE: return "closing SIF file failed, file corrupted, don't use";
+	case SIF_EDNOMEM: return "no more space to add new descriptors";
 	default: return "Unknown SIF error";
 	}
 }
@@ -237,14 +241,35 @@ sif_unload(Sifinfo *info)
  * routines associated with the creation of a new SIF image file
  */
 
+static off_t
+grow_descregion(Sifheader *header)
+{
+	header->dataoff += REGION_GROWSIZE;
+	return header->dataoff;
+}
+
+static int
+update_headeroffsets(Sifheader *header, size_t descsize, size_t datasize)
+{
+	header->ndesc++;
+	if((header->descoff + header->desclen + descsize) >= header->dataoff){
+		siferrno = SIF_EDNOMEM;
+		return -1;
+	}
+
+	header->desclen += descsize;
+	header->datalen += datasize;
+
+	return 0;
+}
+
 static int
 prepddesc(void *elem)
 {
 	Ddesc *d = elem;
 
-	siflayout.header.ndesc++;
-	siflayout.header.dataoff += sizeof(Sifdeffile);
-	siflayout.header.datalen += d->len;
+	if(update_headeroffsets(&siflayout.header, sizeof(Sifdeffile), d->len))
+		return -1;
 
 	/* prep input file (definition file) */
 	d->fd = open(d->fname, O_RDONLY);
@@ -268,10 +293,8 @@ prepedesc(void *elem)
 {
 	Edesc *e = elem;
 
-	siflayout.header.ndesc++;
-	siflayout.header.dataoff += sizeof(Sifenvvar);
-	siflayout.header.datalen += e->len;
-
+	if(update_headeroffsets(&siflayout.header, sizeof(Sifenvvar), e->len) < 0)
+		return -1;
 	return 0;
 }
 
@@ -280,9 +303,8 @@ prepldesc(void *elem)
 {
 	Ldesc *l = elem;
 
-	siflayout.header.ndesc++;
-	siflayout.header.dataoff += sizeof(Siflabels);
-	siflayout.header.datalen += l->len;
+	if(update_headeroffsets(&siflayout.header, sizeof(Siflabels), l->len) < 0)
+		return -1;
 
 	/* prep input file (JSON-label file) */
 	l->fd = open(l->fname, O_RDONLY);
@@ -305,9 +327,8 @@ preppdesc(void *elem)
 {
 	Pdesc *p = elem;
 
-	siflayout.header.ndesc++;
-	siflayout.header.dataoff += sizeof(Sifpartition);
-	siflayout.header.datalen += p->len;
+	if(update_headeroffsets(&siflayout.header, sizeof(Sifpartition), p->len) < 0)
+		return -1;
 
 	/* prep input file (partition file) */
 	p->fd = open(p->fname, O_RDONLY);
@@ -330,10 +351,8 @@ prepsdesc(void *elem)
 {
 	Sdesc *s = elem;
 
-	siflayout.header.ndesc++;
-	siflayout.header.dataoff += sizeof(Sifsignature);
-	siflayout.header.datalen += s->len;
-
+	if(update_headeroffsets(&siflayout.header, sizeof(Sifsignature), s->len) < 0)
+		return -1;
 	return 0;
 }
 
@@ -573,6 +592,19 @@ cleanupdesc(void *elem)
 }
 
 int
+sif_putdataobj(Sifinfo *info, Sifdatatype datatype)
+{
+	
+	return 0;
+}
+
+int
+sif_deldataobj(Sifinfo *info, int id)
+{
+	return 0;
+}
+
+int
 sif_create(Sifcreateinfo *cinfo)
 {
 	int fd;
@@ -585,7 +617,7 @@ sif_create(Sifcreateinfo *cinfo)
 	uuid_copy(siflayout.header.uuid, cinfo->uuid);
 	siflayout.header.ctime = time(NULL);
 	siflayout.header.descoff = sizeof(Sifheader);
-	siflayout.header.dataoff = sizeof(Sifheader); /* augmented by prep?desc (below) */
+	siflayout.header.dataoff = grow_descregion(&siflayout.header);
 
 	/* check the number of data object descriptors and sizes */
 	if(listforall(&cinfo->deschead, prepdesc) < 0)

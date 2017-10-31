@@ -207,7 +207,7 @@ sameid(void *cur, void *elem)
 }
 
 Sifcommon *
-sif_getdesc_id(Sifinfo *info, int id)
+sif_getdescid(Sifinfo *info, int id)
 {
 	Sifcommon lookfor;
 	Node *n;

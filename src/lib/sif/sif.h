@@ -217,8 +217,9 @@ struct Sifheader{
 	/* info about data object descriptors */
 	int ndesc;			/* total # of data object descr. */
 	off_t descoff;			/* bytes into file where descs start */
+	size_t desclen;			/* bytes used by all current descriptors */
 	off_t dataoff;			/* bytes into file where data starts */
-	size_t datalen;			/* combined size of all data objects */
+	size_t datalen;			/* bytes used by all data objects */
 };
 
 typedef struct Sifinfo Sifinfo;
@@ -334,7 +335,8 @@ typedef enum{
 	SIF_EFALLOC,	/* fallocate on SIF output file failed */
 	SIF_EOMAP,	/* cannot mmap SIF output file */
 	SIF_EOUNMAP,	/* cannot unmmap SIF output file */
-	SIF_EOCLOSE	/* closing SIF file failed, file corrupted, don't use */
+	SIF_EOCLOSE,	/* closing SIF file failed, file corrupted, don't use */
+	SIF_EDNOMEM	/* no more space to add new descriptors */
 } Siferrno;
 
 
@@ -345,9 +347,12 @@ typedef enum{
 extern Siferrno siferrno;
 
 char *sif_strerror(Siferrno siferrno);
+
 int sif_load(char *filename, Sifinfo *info);
 int sif_unload(Sifinfo *info);
-int sif_create(Sifcreateinfo *cinfo);
 
+int sif_create(Sifcreateinfo *cinfo);
+int sif_putdataobj(Sifinfo *info, Sifdatatype datatype);
+int sif_deldataobj(Sifinfo *info, int id);
 
 #endif /* __SINGULARITY_SIF_H_ */

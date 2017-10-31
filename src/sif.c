@@ -423,7 +423,7 @@ cmd_sign(int argc, char *argv[])
 		return(-1);
 	}
 
-	cm = sif_getdesc_id(&sif, id);
+	cm = sif_getdescid(&sif, id);
 	if(cm == NULL){
 		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
 		        sif_strerror(siferrno));
