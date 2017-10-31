@@ -174,7 +174,7 @@ def extract_env(manifest):
 
         lines = []
         for line in environ:
-            line = re.findall("(?P<var_name>.+)=(?P<var_value>.+)", line)
+            line = re.findall("(?P<var_name>.+?)=(?P<var_value>.+)", line)
             line = ['export %s="%s"' % (x[0], x[1]) for x in line]
             lines = lines + line
 

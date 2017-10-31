@@ -38,7 +38,7 @@
 #define ALLOW_USER_NS_DEFAULT 1
 
 #define ENABLE_OVERLAY "enable overlay"
-#define ENABLE_OVERLAY_DEFAULT "@ENABLE_OVERLAY_CONFIG_DEFAULT@"
+#define ENABLE_OVERLAY_DEFAULT "try"
 
 #define CONFIG_PASSWD "config passwd"
 #define CONFIG_PASSWD_DEFAULT 1
