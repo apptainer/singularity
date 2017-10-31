@@ -121,7 +121,7 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
-echo -en "$caps" > $file 2>/dev/null
+echo -en "$caps" 2>/dev/null > $file
 if [ $? != 0 ]; then
     message ERROR "You don't have permission to add/drop capabilities\n"
     exit 1
