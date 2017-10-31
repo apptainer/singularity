@@ -11,6 +11,7 @@ For issues with code (and especially if you need to share debug output) we recom
 
  - [Singularity Issues](https://github.com/singularityware/singularity/issues): is recommended for most issues with the Singularity software.
  - [Singularity Hub Issues](https://github.com/singularityhub/singularityhub.github.io/issues): is the board for issues relevant to Singularity Hub.
+ - [Singularity Registry Issues](https://github.com/singularityhub/sregistry/issues): is the board for issues relevant to Singularity Registry
  - [Documentation Issues](https://github.com/singularityware/singularityware.github.io/issues): documentation questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
 
 ## Google Group
