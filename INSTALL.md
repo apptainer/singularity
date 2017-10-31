@@ -11,9 +11,9 @@ $ sudo yum groupinstall "Development Tools"
 
 
 ## To compile and install Singularity from a released tarball:
-Assuming a 2.3.1 released tarball...
+Assuming a 2.4 released tarball...
 ```
-$ version=2.3.1
+$ version=2.4
 $ wget "https://github.com/singularityware/singularity/releases/download/${version}/singularity-${version}.tar.gz"
 $ tar -xvzf singularity-${version}.tar.gz
 $ cd singularity-${version}
@@ -30,7 +30,7 @@ will result in a non-functioning or semi-functioning installation.
 ```
 $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
-$ git checkout tags/2.3.1 -b 2.3.1
+$ git checkout tags/2.4 -b 2.4
 $ ./autogen.sh
 $ ./configure --prefix=/usr/local
 $ make
@@ -45,7 +45,7 @@ will result in a non-functioning or semi-functioning installation.
 ```
 $ cd singularity
 $ git fetch --tags origin
-$ git checkout tags/2.3.1 -b 2.3.1
+$ git checkout tags/2.4 -b 2.4
 $ ./autogen.sh
 $ ./configure --prefix=/usr/local
 $ make
@@ -60,10 +60,9 @@ will result in a non-functioning or semi-functioning installation.
 ```
 $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
-$ git checkout tags/2.3.1 -b 2.3.1
+$ git checkout tags/2.4 -b 2.4
 $ ./autogen.sh
 $ ./configure
 $ make dist
 $ rpmbuild -ta singularity-*.tar.gz
 ```
-
