@@ -231,6 +231,27 @@ class TestShell(TestCase):
         self.assertTrue(digest['repo_name'] == self.repo_name)
         self.assertTrue(digest['repo_tag'] == self.tag)
 
+        print("Case 18: tag cannot contain @, version without : should be parsed")
+	# apparently there was a bug where if @version doesn't contain any : character
+	# it will get mis-parsed as part of the tag, which is clearly wrong
+        image_name = "myuri://meow.io/mix/my-repo:tag-1.2.3@master"
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == 'my-repo')
+        self.assertTrue(digest['repo_tag'] == 'tag-1.2.3')
+        self.assertTrue(digest['version'] == 'master')
+
+        print("Case 19: tag cannot contain @, version without : should be parsed")
+	# apparently there was a bug where if @version doesn't contain any : character
+	# it will get mis-parsed as part of the tag, which is clearly wrong
+        image_name = "myuri://meow.io/mix/my-repo:tag@2.2"
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == 'my-repo')
+        self.assertTrue(digest['repo_tag'] == 'tag')
+        self.assertTrue(digest['version'] == '2.2')
 
     def test_parse_image_uri_docker(self):
         """
@@ -374,6 +395,28 @@ class TestShell(TestCase):
         self.assertTrue(digest['namespace'] == '')
         self.assertTrue(digest['repo_name'] == self.repo_name)
         self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 18: tag cannot contain @, version without : should be parsed")
+	# apparently there was a bug where if @version doesn't contain any : character
+	# it will get mis-parsed as part of the tag, which is clearly wrong
+        image_name = "docker://meow.io/mix/my-repo:tag-1.2.3@master"
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == 'my-repo')
+        self.assertTrue(digest['repo_tag'] == 'tag-1.2.3')
+        self.assertTrue(digest['version'] == 'master')
+
+        print("Case 19: tag cannot contain @, version without : should be parsed")
+	# apparently there was a bug where if @version doesn't contain any : character
+	# it will get mis-parsed as part of the tag, which is clearly wrong
+        image_name = "docker://meow.io/mix/my-repo:tag@2.2"
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == 'my-repo')
+        self.assertTrue(digest['repo_tag'] == 'tag')
+        self.assertTrue(digest['version'] == '2.2')
 
 
 class TestUtils(TestCase):
