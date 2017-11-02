@@ -36,7 +36,7 @@ else
     exit 1
 fi
 
-if ! which mksquashfs > /dev/null 2>&1; then
+if ! singularity_which mksquashfs > /dev/null 2>&1; then
     message ERROR "You must install squashfs-tools to build images\n"
     ABORT 255
 fi
@@ -175,7 +175,7 @@ if [ "$USERID" != "0" ]; then
 
         # Sandbox with deffile is no go.
         if eval is_deffile "${SINGULARITY_BUILDDEF}"; then 
-            message ERROR "You must be the root user to sandbox from a definition file\n"
+            message ERROR "You must be the root user to sandbox from a Singularity recipe file\n"
             exit 1
 
         # Sandbox with anything else is ok
@@ -304,7 +304,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
     elif eval is_deffile "${SINGULARITY_BUILDDEF}"; then 
         message 1 "Using container recipe deffile: $SINGULARITY_BUILDDEF\n"
         if [ "$USERID" != "0" ]; then
-            message ERROR "You must be the root user to build from a definition file\n"
+            message ERROR "You must be the root user to build from a Singularity recipe file\n"
             exit 1
         fi
         if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then # we are bootstrapping to an existing image and need to populate the rootfs
@@ -330,7 +330,7 @@ elif [ -d "$SINGULARITY_BUILDDEF" ]; then
     SINGULARITY_ROOTFS="$SINGULARITY_BUILDDEF"
 
 else
-    message ERROR "Unknown container build definition format: $SINGULARITY_BUILDDEF\n"
+    message ERROR "Unknown container build Singularity recipe format: $SINGULARITY_BUILDDEF\n"
     ABORT 255
 fi
 

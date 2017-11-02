@@ -27,7 +27,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <stdlib.h>
+#include <grp.h>
+#include <pwd.h>
 #include <libgen.h>
 
 #include "util/file.h"
@@ -36,6 +40,7 @@
 #include "util/registry.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/suid.h"
 
 #include "./image.h"
 #include "./bind.h"
@@ -103,6 +108,16 @@ struct image_object singularity_image_init(char *path, int open_flags) {
         ABORT(255);
     }
 
+    if ( fcntl(image.fd, F_SETFD, FD_CLOEXEC) != 0 ) {
+        singularity_message(ERROR, "Failed to set CLOEXEC on image file descriptor\n");
+        ABORT(255);
+    }
+
+    if ( ( singularity_suid_enabled() >= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
+        singularity_limit_container_paths(&image);
+        singularity_limit_container_owners(&image);
+    }
+
     return(image);
 }
 
@@ -154,4 +169,101 @@ int singularity_image_mount(struct image_object *image, char *mount_point) {
         ABORT(255);
     }
     return(-1);
+}
+
+void singularity_limit_container_owners(struct image_object *image) {
+    const char *limit_container_owners = singularity_config_get_value(LIMIT_CONTAINER_OWNERS);
+
+    if ( strcmp(limit_container_owners, "NULL") != 0 ) {
+        struct stat image_stat;
+        char *user_token = NULL;
+        char *current = strtok_r(strdup(limit_container_owners), ",", &user_token);
+
+        chomp(current);
+
+        singularity_message(DEBUG, "Limiting container access to allowed users\n");
+
+        if ( fstat(image->fd, &image_stat) != 0 ) {
+            singularity_message(ERROR, "Could not fstat() image file descriptor (%d): %s\n", image->fd, strerror(errno));
+            ABORT(255);
+        }
+
+        while (1) {
+            struct passwd *user_pw;
+
+            if ( current[0] == '\0' ) {
+                singularity_message(DEBUG, "Skipping blank user limit entry\n");
+            } else {
+                singularity_message(DEBUG, "Checking user: '%s'\n", current);
+
+                if ( ( user_pw = getpwnam(current) ) != NULL ) {
+                    if ( user_pw->pw_uid == image_stat.st_uid ) {
+                        singularity_message(DEBUG, "Singularity image is owned by required user: %s\n", current);
+                        break;
+                    }
+                }
+            }
+
+            current = strtok_r(NULL, ",", &user_token);
+            chomp(current);
+
+            if ( current == NULL ) {
+                singularity_message(ERROR, "Singularity image is not owned by required user(s)\n");
+                ABORT(255);
+            }
+        }
+    }
+}
+
+void singularity_limit_container_paths(struct image_object *image) {
+    const char *limit_container_paths = singularity_config_get_value(LIMIT_CONTAINER_PATHS);
+
+    if ( strcmp(limit_container_paths, "NULL") != 0 ) { 
+        char image_path[PATH_MAX];
+        char *path_token = NULL;
+        char *fd_path = NULL;
+
+        fd_path = (char *) malloc(PATH_MAX+21);
+
+        singularity_message(DEBUG, "Obtaining full path to image file descriptor (%d)\n", image->fd);
+
+        if ( snprintf(fd_path, PATH_MAX+20, "/proc/self/fd/%d", image->fd) > 0 ) {
+            singularity_message(DEBUG, "Checking image path from file descriptor source: %s\n", fd_path);
+        } else {
+            singularity_message(ERROR, "Internal - Failed allocating memory for fd_path string: %s\n", strerror(errno));
+            ABORT(255);
+        }
+
+        if ( readlink(fd_path, image_path, PATH_MAX-1) > 0 ) { // Flawfinder: ignore (TOCTOU not an issue within /proc)
+            char *current = strtok_r(strdup(limit_container_paths), ",", &path_token);
+
+            chomp(current);
+            while (1) {
+
+                if ( current[0] == '\0' ) {
+                    singularity_message(DEBUG, "Skipping blank path limit entry\n");
+
+                } else {
+                    singularity_message(DEBUG, "Checking image path: '%s'\n", current);
+
+                    if ( strncmp(image_path, current, strlength(current, PATH_MAX)) == 0 ) {
+                        singularity_message(VERBOSE, "Singularity image is in an allowed path: %s\n", current);
+                        break;
+                    }
+
+                    current = strtok_r(NULL, ",", &path_token);
+                    chomp(current);
+
+                    if ( current == NULL ) {
+                        singularity_message(ERROR, "Singularity image is not in an allowed configured path\n");
+                        ABORT(255);
+                    }
+                }
+            }
+
+        } else {
+            singularity_message(ERROR, "Could not obtain the full system path of the image file: %s\n", strerror(errno));
+            ABORT(255);
+        }
+    }
 }

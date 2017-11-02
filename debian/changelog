@@ -1,3 +1,23 @@
+singularity-container (2.4-1) unstable; urgency=low
+
+  * Building an image is now more intuitive with the introduction of our build
+    command. You don't need to worry about sizes or using create, or bootstrap
+  * By default the build command now creates compressed read only containers
+    using squashfs
+  * Singularity now supports building additional base targets: local images,
+    Singularity Hub, or the host operating system itself
+  * A well documented solution for internal container modularity
+    (http://containers-ftw.org/SCI-F/)
+  * By popular demand and bribery, we are bringing back persistent instance
+    support. You can now start up a container instance and using a given name,
+    you can connect to that instance, and it keeps running even when you exit!
+  * We are now using the network namespace to provide network isolation
+  * Using a persistent overlay, you can modify a container image and all
+    changes are written to the overlay layer
+  * Cleanup and optimization of the Singularity image library
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Wed, 11 Oct 2017 19:39:19 -0700
+
 singularity-container (2.3.2-1) unstable; urgency=high
 
   * Fix for a change that Docker implemented to their registry RESTful API
