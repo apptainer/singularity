@@ -44,6 +44,7 @@ usage()
 	fprintf(stderr, "usage: %s COMMAND OPTION FILE\n", progname);
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, "create --  Create a new sif file with input data objects\n");
+	fprintf(stderr, "dump   id  Display data object content\n");
 	fprintf(stderr, "list   --  List SIF data descriptors from an input SIF file\n");
 	fprintf(stderr, "print  id  Print data object descriptor info\n");
 	fprintf(stderr, "sign   id  Cryptographically sign a data object from an input SIF file\n");
@@ -511,6 +512,44 @@ cmd_print(int argc, char *argv[])
 }
 
 int
+cmd_dump(int argc, char *argv[])
+{
+	int id;
+	Sifinfo sif;
+	Sifcommon *cm;
+	char *c;
+
+	if(argc < 4){
+		usage();
+		return -1;
+	}
+
+	id = atoi(argv[2]);
+
+	if(sif_load(argv[3], &sif, 1) < 0){
+		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
+		return(-1);
+	}
+
+	cm = sif_getdescid(&sif, id);
+	if(cm == NULL){
+		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
+		        sif_strerror(siferrno));
+		sif_unload(&sif);
+		return -1;
+	}
+
+	printf("Descriptor data:\n");
+	printf("---------------------------\n");
+	for(c = sif.mapstart+cm->fileoff; c < sif.mapstart+cm->fileoff+cm->filelen; c++)
+		printf("%c", *c);
+
+	sif_unload(&sif);
+
+	return 0;
+}
+
+int
 main(int argc, char *argv[])
 {
 	progname = basename(argv[0]);
@@ -527,6 +566,8 @@ main(int argc, char *argv[])
 		return cmd_sign(argc, argv);
 	if(strncmp(argv[1], "print", 5) == 0)
 		return cmd_print(argc, argv);
+	if(strncmp(argv[1], "dump", 4) == 0)
+		return cmd_dump(argc, argv);
 
 	usage();
 	return -1;
