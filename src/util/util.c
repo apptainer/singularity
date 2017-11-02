@@ -261,8 +261,10 @@ void chomp(char *str) {
 
 void chomp_comments(char *str) {
     if (!str) {return;}
-    char *rest = str;
-    str = strtok_r(str, "#", &rest);
+    char* comment = strchr(str, '#');
+    if (comment) {
+        *comment = '\0'; // terminate string at comment
+    }
     chomp(str);
 }
 
