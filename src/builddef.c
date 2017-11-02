@@ -101,6 +101,8 @@ int main(int argc, char **argv) {
     while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
         char *bootdef_key;
 
+        chomp_comments(line);
+
         if ( line[0] == '%' ) { // We hit a section, stop parsing for keyword tags
             break;
         } else if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
