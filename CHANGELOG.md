@@ -17,6 +17,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ### Implemented enhancements
  - This changelog was added.
+ - Addition of APP[app]_[LABELS,ENV,RUNSCRIPT,META] so apps can internally find one another.
 
 ### Bug Fixes
  - Tar creation uses GNU tar-1.28 to not add a timestamp to the header for more reproducible builds
