@@ -95,5 +95,22 @@ stest 0 sh -c "echo true | singularity shell "$CONTAINER" | grep 'hi from enviro
 stest 0 sh -c "singularity exec "$CONTAINER" true | grep 'hi from environment'"
 
 
+# Test for #1103: Duplicate bootstrap definition key found: '#UpdateURL'
+cat <<EOF > "$DEFFILE"
+Bootstrap: docker
+From: busybox#comment that needs to be ignored
+
+#DuplicateKey: commented value
+#DuplicateKey: other commented value
+# also include exact example found in #1103
+#UpdateURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/updates/\$basearch/
+#UpdateURL: http://mirror.centos.org/centos-7/7.4.1708/updates/x86_64/
+EOF
+
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
+
+
 test_cleanup
 
