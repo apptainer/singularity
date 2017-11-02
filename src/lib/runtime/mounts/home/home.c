@@ -74,7 +74,7 @@ int _singularity_runtime_mount_home(void) {
     }
 
     singularity_message(DEBUG, "Checking ownership of home directory source: %s\n", home_source);
-    if ( is_owner(home_source, singularity_priv_getuid()) != 0 ) {
+    if ( is_owner(home_source, getuid()) != 0 ) {
         singularity_message(ERROR, "Home directory is not owned by calling user: %s\n", home_source);
         ABORT(255);
     }

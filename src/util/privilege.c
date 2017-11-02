@@ -207,6 +207,22 @@ void singularity_priv_userns(void) {
     } else {
         uid_t uid = singularity_priv_getuid();
         gid_t gid = singularity_priv_getgid();
+        char *target_uid_str = singularity_registry_get("USERNS_UID");
+        char *target_gid_str = singularity_registry_get("USERNS_GID");
+        long int target_uid = uid, target_gid = gid;
+
+        if ( target_uid_str != NULL ) {
+            if ( str2int(target_uid_str, &target_uid) < 0 ) {
+                singularity_message(ERROR, "Unable to convert target UID (%s) to integer: %s\n", target_uid_str, strerror(errno));
+                ABORT(255);
+            }
+        }
+        if ( target_gid_str != NULL ) {
+            if ( str2int(target_gid_str, &target_gid) < 0 ) {
+                singularity_message(ERROR, "Unable to convert target GID (%s) to integer: %s\n", target_gid_str, strerror(errno));
+                ABORT(255);
+            }
+        }
 
         singularity_message(DEBUG, "Attempting to virtualize the USER namespace\n");
         if ( unshare(CLONE_NEWUSER) != 0 ) {
@@ -241,7 +257,7 @@ void singularity_priv_userns(void) {
             FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
             if ( map_fp != NULL ) {
                 singularity_message(DEBUG, "Updating the parent gid_map: %s\n", map_file);
-                fprintf(map_fp, "%i %i 1\n", gid, gid);
+                fprintf(map_fp, "%i %i 1\n", (gid_t)target_gid, gid);
                 if ( fclose(map_fp) < 0 ) {
                     singularity_message(ERROR, "Failed to write to GID map %s: %s\n", map_file, strerror(errno));
                     ABORT(255);
@@ -259,7 +275,7 @@ void singularity_priv_userns(void) {
             FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
             if ( map_fp != NULL ) {
                 singularity_message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
-                fprintf(map_fp, "%i %i 1\n", uid, uid);
+                fprintf(map_fp, "%i %i 1\n", (uid_t)target_uid, uid);
                 if ( fclose(map_fp) < 0 ) {
                     singularity_message(ERROR, "Failed to write to UID map %s: %s\n", map_file, strerror(errno));
                     ABORT(255);

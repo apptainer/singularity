@@ -156,6 +156,13 @@ while true; do
                 message WARN "Could not find the Nvidia SMI binary to bind into container\n"
             fi
         ;;
+        -f|--fakeroot)
+            shift
+            SINGULARITY_NOSUID=1
+            SINGULARITY_USERNS_UID=0
+            SINGULARITY_USERNS_GID=0
+            export SINGULARITY_USERNS_UID SINGULARITY_USERNS_GID SINGULARITY_NOSUID
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
