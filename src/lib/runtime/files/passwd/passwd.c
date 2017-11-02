@@ -49,7 +49,7 @@ int _singularity_runtime_files_passwd(void) {
     char *source_file;
     char *tmp_file;
     char *homedir = singularity_priv_home();
-    uid_t uid = singularity_priv_getuid();
+    uid_t uid = getuid();
     struct passwd *pwent = getpwuid(uid);
     char *containerdir = CONTAINER_FINALDIR;
     char *tmpdir = singularity_registry_get("SESSIONDIR");

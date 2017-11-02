@@ -94,7 +94,7 @@ int _singularity_runtime_overlayfs(void) {
 
             if ( singularity_image_type(&image) != EXT3 ) {
                 if ( singularity_image_type(&image) == DIRECTORY ) {
-                    if ( singularity_priv_getuid() == 0 ) {
+                    if ( getuid() == 0 ) {
                         singularity_message(VERBOSE, "Allowing directory based overlay as root user\n");
                     } else {
                         singularity_message(ERROR, "Only root can use directory based overlays\n");
@@ -114,7 +114,7 @@ int _singularity_runtime_overlayfs(void) {
         } else {
             char *size = NULL;
 
-            if ( singularity_priv_getuid() == 0 ) {
+            if ( getuid() == 0 ) {
                 size = strdup("");
             } else {
                 size = strdup("size=1m");
