@@ -348,11 +348,11 @@ extern Siferrno siferrno;
 
 char *sif_strerror(Siferrno siferrno);
 
-int sif_load(char *filename, Sifinfo *info);
+int sif_load(char *filename, Sifinfo *info, int rdonly);
 int sif_unload(Sifinfo *info);
 
 int sif_create(Sifcreateinfo *cinfo);
-int sif_putdataobj(Sifinfo *info, Sifdatatype datatype);
+int sif_putdataobj(Sifinfo *info, Sifdatatype *datatype);
 int sif_deldataobj(Sifinfo *info, int id);
 
 #endif /* __SINGULARITY_SIF_H_ */

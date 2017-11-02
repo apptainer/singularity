@@ -181,6 +181,7 @@ sif_printheader(Sifinfo *info)
 
 	printf("number of descriptors: %d\n", info->header.ndesc);
 	printf("start of descriptors in file: %ld\n", info->header.descoff);
+	printf("length of descriptors in file: %ld\n", info->header.desclen);
 	printf("start of data in file: %ld\n", info->header.dataoff);
 	printf("length of data in file: %ld\n", info->header.datalen);
 	printf("============================================\n");

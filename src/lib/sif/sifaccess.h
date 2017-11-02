@@ -25,7 +25,7 @@ int sif_printdesc(void *elem);
 void sif_printlist(Sifinfo *info);
 void sif_printheader(Sifinfo *info);
 
-Sifcommon *sif_getdesc_id(Sifinfo *info, int id);
+Sifcommon *sif_getdescid(Sifinfo *info, int id);
 
 Sifheader *sif_getheader(Sifinfo *info);
 Sifdeffile *sif_getdeffile(Sifinfo *info, int groupid);

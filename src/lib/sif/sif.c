@@ -41,10 +41,9 @@ static int desccounter = 1;
 
 typedef struct Siflayout Siflayout;
 static struct Siflayout{
-	Sifheader header;
-	unsigned char *mapstart;
-	unsigned char *descptr;
-	unsigned char *dataptr;
+	Sifinfo *info;
+	char *descptr;
+	char *dataptr;
 } siflayout;
 
 enum{
@@ -151,13 +150,15 @@ sif_validate(Sifinfo *info)
 
 /* load and returns the SIF header and populate the list of data object descriptor */
 int
-sif_load(char *filename, Sifinfo *info)
+sif_load(char *filename, Sifinfo *info, int rdonly)
 {
 	int ret = -1;
 	int i;
+	int oflags, mprot, mflags;
 	struct stat st;
 	char *p;
 
+	siflayout.info = info;
 	memset(info, 0, sizeof(Sifinfo));
 
 	if(filename == NULL){
@@ -165,7 +166,17 @@ sif_load(char *filename, Sifinfo *info)
 		return -1;
 	}
 
-	info->fd = open(filename, O_RDONLY);
+	if(rdonly){
+		oflags = O_RDONLY;
+		mprot = PROT_READ;
+		mflags = MAP_PRIVATE;
+	}else{
+		oflags = O_RDWR;
+		mprot = PROT_WRITE;
+		mflags = MAP_SHARED;
+	}
+
+	info->fd = open(filename, oflags);
 	if(info->fd < 0){
 		siferrno = SIF_EFOPEN;
 		return -1;
@@ -177,7 +188,7 @@ sif_load(char *filename, Sifinfo *info)
 	}
 	info->filesize = st.st_size;
 
-	info->mapstart = mmap(NULL, info->filesize, PROT_READ, MAP_PRIVATE, info->fd, 0);
+	info->mapstart = mmap(NULL, info->filesize, mprot, mflags, info->fd, 0);
 	if(info->mapstart == MAP_FAILED){
 		siferrno = SIF_EFMAP;
 		goto bail_close;
@@ -186,6 +197,13 @@ sif_load(char *filename, Sifinfo *info)
 	memcpy(&info->header, info->mapstart, sizeof(Sifheader));
 	if(sif_validate(info) < 0)
 		goto bail_unmap;
+
+	/* init the descriptor counter for next id to use */
+	desccounter = info->header.ndesc + 1;
+
+	/* set output file write pointers (descriptors and data) */
+	siflayout.descptr = info->mapstart + info->header.descoff+info->header.desclen;
+	siflayout.dataptr = info->mapstart + info->header.dataoff+info->header.datalen;
 
 	/* build up the list of SIF data object descriptors */
 	for(i = 0, p = info->mapstart+sizeof(Sifheader); i < info->header.ndesc; i++){
@@ -231,8 +249,14 @@ bail_close:
 int
 sif_unload(Sifinfo *info)
 {
-	munmap(info->mapstart, info->filesize);
-	close(info->fd);
+	if(munmap(info->mapstart, info->filesize) < 0){
+		siferrno = SIF_EOUNMAP;
+		return -1;
+	}
+	if(close(info->fd) < 0){
+		siferrno = SIF_EOCLOSE;
+		return -1;
+	}
 
 	return 0;
 }
@@ -268,7 +292,7 @@ prepddesc(void *elem)
 {
 	Ddesc *d = elem;
 
-	if(update_headeroffsets(&siflayout.header, sizeof(Sifdeffile), d->len))
+	if(update_headeroffsets(&siflayout.info->header, sizeof(Sifdeffile), d->len))
 		return -1;
 
 	/* prep input file (definition file) */
@@ -293,7 +317,7 @@ prepedesc(void *elem)
 {
 	Edesc *e = elem;
 
-	if(update_headeroffsets(&siflayout.header, sizeof(Sifenvvar), e->len) < 0)
+	if(update_headeroffsets(&siflayout.info->header, sizeof(Sifenvvar), e->len) < 0)
 		return -1;
 	return 0;
 }
@@ -303,7 +327,7 @@ prepldesc(void *elem)
 {
 	Ldesc *l = elem;
 
-	if(update_headeroffsets(&siflayout.header, sizeof(Siflabels), l->len) < 0)
+	if(update_headeroffsets(&siflayout.info->header, sizeof(Siflabels), l->len) < 0)
 		return -1;
 
 	/* prep input file (JSON-label file) */
@@ -327,7 +351,7 @@ preppdesc(void *elem)
 {
 	Pdesc *p = elem;
 
-	if(update_headeroffsets(&siflayout.header, sizeof(Sifpartition), p->len) < 0)
+	if(update_headeroffsets(&siflayout.info->header, sizeof(Sifpartition), p->len) < 0)
 		return -1;
 
 	/* prep input file (partition file) */
@@ -351,7 +375,7 @@ prepsdesc(void *elem)
 {
 	Sdesc *s = elem;
 
-	if(update_headeroffsets(&siflayout.header, sizeof(Sifsignature), s->len) < 0)
+	if(update_headeroffsets(&siflayout.info->header, sizeof(Sifsignature), s->len) < 0)
 		return -1;
 	return 0;
 }
@@ -388,7 +412,7 @@ putddesc(void *elem)
 	desc->cm.datatype = DATA_DEFFILE;
 	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
-	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
+	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = d->len;
 
 	/* write data object */
@@ -411,7 +435,7 @@ putedesc(void *elem)
 	desc->cm.datatype = DATA_ENVVAR;
 	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
-	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
+	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = e->len;
 
 	/* write data object */
@@ -434,7 +458,7 @@ putldesc(void *elem)
 	desc->cm.datatype = DATA_LABELS;
 	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
-	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
+	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = l->len;
 
 	/* write data object */
@@ -457,7 +481,7 @@ putpdesc(void *elem)
 	desc->cm.datatype = DATA_PARTITION;
 	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
-	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
+	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = p->len;
 	desc->fstype = p->fstype;
 	desc->parttype = p->parttype;
@@ -483,7 +507,7 @@ putsdesc(void *elem)
 	desc->cm.datatype = DATA_SIGNATURE;
 	desc->cm.id = desccounter++;
 	desc->cm.groupid = currentgroup;
-	desc->cm.fileoff = siflayout.dataptr - siflayout.mapstart;
+	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = s->len;
 	desc->hashtype = s->hashtype;
 	strncpy(desc->entity, s->entity, sizeof(desc->entity)-1);
@@ -592,9 +616,32 @@ cleanupdesc(void *elem)
 }
 
 int
-sif_putdataobj(Sifinfo *info, Sifdatatype datatype)
+sif_putdataobj(Sifinfo *info, Sifdatatype *datatype)
 {
-	
+	if(prepdesc(datatype) < 0)
+		return -1;
+
+	if(munmap(info->mapstart, info->filesize) < 0){
+		siferrno = SIF_EOUNMAP;
+		return -1;
+	}
+	info->filesize = info->header.dataoff + info->header.datalen;
+	if(posix_fallocate(info->fd, 0, info->filesize) != 0){
+		siferrno = SIF_EFALLOC;
+		return -1;
+	}
+	info->mapstart = mmap(NULL, info->filesize, PROT_WRITE, MAP_SHARED, info->fd, 0);
+	if(info->mapstart == MAP_FAILED){
+		siferrno = SIF_EOMAP;
+		return -1;
+	}
+
+	/* write down the modified header */
+	memcpy(info->mapstart, &info->header, sizeof(Sifheader));
+
+	putdesc(datatype);
+	cleanupdesc(datatype);
+
 	return 0;
 }
 
@@ -607,55 +654,58 @@ sif_deldataobj(Sifinfo *info, int id)
 int
 sif_create(Sifcreateinfo *cinfo)
 {
-	int fd;
+	Sifinfo info;
+
+	siflayout.info = &info;
+	memset(&info, 0, sizeof(Sifinfo));
 
 	/* assemble the SIF global header from options (cinfo) */
-	memcpy(siflayout.header.launch, cinfo->launchstr, strlen(cinfo->launchstr)+1);
-	memcpy(siflayout.header.magic, SIF_MAGIC, SIF_MAGIC_LEN);
-	memcpy(siflayout.header.version, cinfo->sifversion, SIF_ARCH_LEN);
-	memcpy(siflayout.header.arch, cinfo->arch, SIF_ARCH_LEN);
-	uuid_copy(siflayout.header.uuid, cinfo->uuid);
-	siflayout.header.ctime = time(NULL);
-	siflayout.header.descoff = sizeof(Sifheader);
-	siflayout.header.dataoff = grow_descregion(&siflayout.header);
+	memcpy(info.header.launch, cinfo->launchstr, strlen(cinfo->launchstr)+1);
+	memcpy(info.header.magic, SIF_MAGIC, SIF_MAGIC_LEN);
+	memcpy(info.header.version, cinfo->sifversion, SIF_ARCH_LEN);
+	memcpy(info.header.arch, cinfo->arch, SIF_ARCH_LEN);
+	uuid_copy(info.header.uuid, cinfo->uuid);
+	info.header.ctime = time(NULL);
+	info.header.descoff = sizeof(Sifheader);
+	info.header.dataoff = grow_descregion(&info.header);
 
 	/* check the number of data object descriptors and sizes */
 	if(listforall(&cinfo->deschead, prepdesc) < 0)
 		return -1;
 
-	if(siflayout.header.ndesc == 0){
+	if(info.header.ndesc == 0){
 		siferrno = SIF_EEMPTY;
 		return -1;
 	}
 
 	/* create and grow output file */
-	fd = open(cinfo->pathname, O_CREAT|O_TRUNC|O_RDWR,
-	          S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
-	if(fd < 0){
+	info.fd = open(cinfo->pathname, O_CREAT|O_TRUNC|O_RDWR,
+	               S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH);
+	if(info.fd < 0){
 		siferrno = SIF_ECREAT;
 		return -1;
 	}
-	if(posix_fallocate(fd, 0, siflayout.header.dataoff + siflayout.header.datalen) != 0){
+	if(posix_fallocate(info.fd, 0, info.header.dataoff + info.header.datalen) != 0){
 		siferrno = SIF_EFALLOC;
-		close(fd);
+		close(info.fd);
 		return -1;
 	}
 
 	/* represent output file in memory */
-	siflayout.mapstart = mmap(NULL, siflayout.header.dataoff + siflayout.header.datalen,
-	                          PROT_WRITE, MAP_SHARED, fd, 0);
-	if(siflayout.mapstart == MAP_FAILED){
+	info.mapstart = mmap(NULL, info.header.dataoff + info.header.datalen,
+	                          PROT_WRITE, MAP_SHARED, info.fd, 0);
+	if(info.mapstart == MAP_FAILED){
 		siferrno = SIF_EOMAP;
-		close(fd);
+		close(info.fd);
 		return -1;
 	}
 
 	/* set output file write pointers (descriptors and data) */
-	siflayout.descptr = siflayout.mapstart;
-	siflayout.dataptr = siflayout.mapstart + siflayout.header.dataoff;
+	siflayout.descptr = info.mapstart;
+	siflayout.dataptr = info.mapstart + info.header.dataoff;
 
 	/* build SIF: header, data object descriptors, data objects */
-	memcpy(siflayout.descptr, &siflayout.header, sizeof(Sifheader));
+	memcpy(siflayout.descptr, &info.header, sizeof(Sifheader));
 	siflayout.descptr += sizeof(Sifheader);
 	listforall(&cinfo->deschead, putdesc);
 
@@ -663,12 +713,12 @@ sif_create(Sifcreateinfo *cinfo)
 	listforall(&cinfo->deschead, cleanupdesc);
 
 	/* unmap and close resulting output file */
-	if(munmap(siflayout.mapstart, siflayout.header.dataoff + siflayout.header.datalen) < 0){
+	if(munmap(info.mapstart, info.header.dataoff + info.header.datalen) < 0){
 		siferrno = SIF_EOUNMAP;
-		close(fd);
+		close(info.fd);
 		return -1;
 	}
-	if(close(fd) < 0){
+	if(close(info.fd) < 0){
 		siferrno = SIF_EOCLOSE;
 		return -1;
 	}

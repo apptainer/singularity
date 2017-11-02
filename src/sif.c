@@ -43,9 +43,10 @@ usage()
 {
 	fprintf(stderr, "usage: %s COMMAND OPTION FILE\n", progname);
 	fprintf(stderr, "\n\n");
-	fprintf(stderr, "create   Create a new sif file with input data objects\n");
-	fprintf(stderr, "list     List SIF data descriptors from an input SIF file\n");
-	fprintf(stderr, "sign     Cryptographically sign a data object from an input SIF file\n");
+	fprintf(stderr, "create --  Create a new sif file with input data objects\n");
+	fprintf(stderr, "list   --  List SIF data descriptors from an input SIF file\n");
+	fprintf(stderr, "print  id  Print data object descriptor info\n");
+	fprintf(stderr, "sign   id  Cryptographically sign a data object from an input SIF file\n");
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, "create options:\n");
 	fprintf(stderr, "\t-D deffile : include definitions file `deffile'\n");
@@ -391,11 +392,13 @@ cmd_list(int argc, char *argv[])
 		return -1;
 	}
 
-	if (sif_load(argv[2], &sif) < 0) {
+	if(sif_load(argv[2], &sif, 1) < 0){
 		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
 		return(-1);
 	}
 	sif_printlist(&sif);
+
+	sif_unload(&sif);
 
 	return 0;
 }
@@ -405,20 +408,21 @@ cmd_sign(int argc, char *argv[])
 {
 	Sifinfo sif;
 	Sifcommon *cm;
+	Sdesc s;
 	int id;
 	static char signedhash[SGN_MAXLEN];
 	static char hash[SGN_HASHLEN];
 	static char hashstr[SGN_HASHLEN*2+1];
 	static char sifhashstr[sizeof(SIFHASH_PREFIX)+SGN_HASHLEN*2+1];
 
-	if(argc < 3){
+	if(argc < 4){
 		usage();
 		return -1;
 	}
 
 	id = atoi(argv[2]);
 
-	if (sif_load(argv[3], &sif) < 0) {
+	if (sif_load(argv[3], &sif, 0) < 0) {
 		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
 		return(-1);
 	}
@@ -427,12 +431,14 @@ cmd_sign(int argc, char *argv[])
 	if(cm == NULL){
 		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
 		        sif_strerror(siferrno));
+		sif_unload(&sif);
 		return -1;
 	}
 
 	if(sgn_hashbuffer(sif.mapstart, cm->filelen, hash) == NULL){
 		fprintf(stderr, "Error with computing hash: %s\n",
 		        sgn_strerror(sgnerrno));
+		sif_unload(&sif);
 		return -1;
 	}
 	sgn_hashtostr(hash, hashstr);
@@ -441,16 +447,65 @@ cmd_sign(int argc, char *argv[])
 	if(sgn_signhash(sifhashstr, signedhash) < 0){
 		fprintf(stderr, "Error signing partition hash: %s\n",
 		        sgn_strerror(sgnerrno));
+		sif_unload(&sif);
+		return -1;
+	};
+
+	s.datatype = DATA_SIGNATURE;
+	s.signature = strdup(signedhash);
+	s.len = strlen(signedhash)+1;
+	s.hashtype = SNG_DEFAULT_HASH;
+
+	if(sif_putdataobj(&sif, (Sifdatatype *)&s) < 0){
+		fprintf(stderr, "Error adding new data object: %s\n",
+			sif_strerror(siferrno));
+		free(s.signature);
+		sif_unload(&sif);
 		return -1;
 	}
-	printf("%s\n", signedhash);
-/*
-	n = sdescadd(head, signedhash, SNG_DEFAULT_HASH);
-	if(n == NULL){
-		fprintf(stderr, "Could not add a signature descriptor for system partition\n");
-		return NULL;
+
+	if(sif_unload(&sif) < 0){
+		fprintf(stderr, "Error releasing SIF file gracefully: %s\n",
+		        sif_strerror(siferrno));
+		free(s.signature);
+		return -1;
 	}
-*/
+
+	return 0;
+}
+
+int
+cmd_print(int argc, char *argv[])
+{
+	int id;
+	Sifinfo sif;
+	Sifcommon *cm;
+
+	if(argc < 4){
+		usage();
+		return -1;
+	}
+
+	id = atoi(argv[2]);
+
+	if(sif_load(argv[3], &sif, 1) < 0){
+		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
+		return(-1);
+	}
+
+	cm = sif_getdescid(&sif, id);
+	if(cm == NULL){
+		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
+		        sif_strerror(siferrno));
+		sif_unload(&sif);
+		return -1;
+	}
+
+	printf("Descriptor info:\n");
+	printf("---------------------------\n");
+	sif_printdesc(cm);
+
+	sif_unload(&sif);
 
 	return 0;
 }
@@ -470,6 +525,8 @@ main(int argc, char *argv[])
 		return cmd_list(argc, argv);
 	if(strncmp(argv[1], "sign", 4) == 0)
 		return cmd_sign(argc, argv);
+	if(strncmp(argv[1], "print", 5) == 0)
+		return cmd_print(argc, argv);
 
 	usage();
 	return -1;
