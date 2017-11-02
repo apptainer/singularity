@@ -50,13 +50,13 @@ int _singularity_runtime_enter_chroot(void) {
 
     singularity_message(VERBOSE, "Entering container file system root: %s\n", container_dir);
 
-    singularity_priv_escalate();
     if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
+        singularity_priv_escalate();
         if ( chdir(container_dir) < 0 ) {
             singularity_message(ERROR, "Could not chdir to file system root %s: %s\n", container_dir, strerror(errno));
             ABORT(1);
         }
-        if ( pivot_root(".", "bin") < 0 ) {
+        if ( pivot_root(".", "etc") < 0 ) {
             singularity_message(ERROR, "Changing root filesystem failed\n");
             ABORT(255);
         }
@@ -64,17 +64,12 @@ int _singularity_runtime_enter_chroot(void) {
             singularity_message(ERROR, "failed chroot to container at: %s\n", container_dir);
             ABORT(255);
         }
-        if ( umount2("bin", MNT_DETACH) < 0 ) {
+        if ( umount2("etc", MNT_DETACH) < 0 ) {
             singularity_message(ERROR, "Changing root filesystem failed\n");
             ABORT(255);
         }
-    } else {
-        if ( chroot("/proc/1/root") < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
-            singularity_message(ERROR, "failed chroot to container instance\n");
-            ABORT(255);
-        }
+        singularity_priv_drop();
     }
-    singularity_priv_drop();
 
     singularity_message(DEBUG, "Changing dir to '/' within the new root\n");
     if ( chdir("/") < 0 ) {
