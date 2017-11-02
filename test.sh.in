@@ -29,8 +29,14 @@ sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 bindir="@bindir@"
 
-SINGULARITY_OVERLAY_FS="@OVERLAY_FS@"
 SINGULARITY_USER_NS="@USER_NS@"
+SINGULARITY_OVERLAY_FS="0"
+KVERS=`uname -r`
+if test -f "/lib/modules/$KVERS/modules.dep"; then
+    if grep -q 'overlay.ko' "/lib/modules/$KVERS/modules.dep"; then
+        SINGULARITY_OVERLAY_FS="1"
+    fi
+fi
 
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
