@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
             if (bootdef_value == NULL) {
                 bootdef_value = empty;
             } else {
-                chomp_comments(bootdef_value);
+                chomp(bootdef_value);
             }
 
             singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
