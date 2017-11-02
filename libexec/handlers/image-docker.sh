@@ -54,4 +54,20 @@ for i in `cat "$SINGULARITY_CONTENTS"`; do
     done
 done
 
+# If SINGULARITY_CREATE_HOME set and user home dir not in container
+# then inject it if we are not root here.
+if [ ! -z "${SINGULARITY_CREATE_HOME:-}" ]; then
+
+    if [ "$(id -u)" == "0" ]; then
+        message ERROR "Cannot use SINGULARITY_CREATE_HOME as root\n"
+        ABORT 255
+    fi
+
+    ROOTFS_HOME="${SINGULARITY_ROOTFS}${HOME}"
+    if [ ! -d "$ROOTFS_HOME" ]; then
+        message 1 "SINGULARITY_CREATE_HOME set. Creating missing $ROOTFS_HOME\n"
+        mkdir -p "$ROOTFS_HOME"
+    fi
+fi
+
 rm -f "$SINGULARITY_CONTENTS"
