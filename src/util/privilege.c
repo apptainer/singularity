@@ -251,7 +251,7 @@ void singularity_priv_userns(void) {
             free(map_file);
         }
         {
-            singularity_message(DEBUG, "Setting GID map to: '%i %i 1'\n", gid, gid);
+            singularity_message(DEBUG, "Setting GID map to: '%i %i 1'\n", (gid_t)target_gid, gid);
             char *map_file = (char *) malloc(PATH_MAX);
             snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid()); // Flawfinder: ignore
             FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
@@ -269,7 +269,7 @@ void singularity_priv_userns(void) {
             free(map_file);
         }
         {   
-            singularity_message(DEBUG, "Setting UID map to: '%i %i 1'\n", uid, uid);
+            singularity_message(DEBUG, "Setting UID map to: '%i %i 1'\n", (uid_t)target_uid, uid);
             char *map_file = (char *) malloc(PATH_MAX);
             snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid()); // Flawfinder: ignore
             FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
