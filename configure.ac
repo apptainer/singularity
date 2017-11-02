@@ -42,7 +42,7 @@ AC_PROG_LIBTOOL(libtool)
 
 # Setting rpath if necessary
 if test "$libdir" = "\${exec_prefix}/lib"; then
-    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir)"
+    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir) -Wl,-z,relro,-z,now"
 fi
 
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
@@ -362,6 +362,7 @@ AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
 AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
 AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
 
+CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([
    Makefile
