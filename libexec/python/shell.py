@@ -208,7 +208,7 @@ def parse_image_uri(image,
     if uri == "docker://":
         uri_regexes = [ _docker_uri_re ]
 
-    image = remove_image_uri(image, uri);
+    image = remove_image_uri(image, uri)
 
     for r in uri_regexes:
         match = r.match(image)
@@ -259,7 +259,6 @@ def parse_image_uri(image,
               'namespace': namespace,
               'repo_name': repo_name,
               'repo_tag': repo_tag,
-              'version': version,
-              }
+              'version': version }
 
     return parsed
