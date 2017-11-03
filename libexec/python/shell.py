@@ -81,19 +81,19 @@ def remove_image_uri(image, image_uri=None, quiet=False):
 # - namespace is completely optional
 _docker_uri_re = re.compile(
     # Optionally match a registry if it contains a '.' or a ':',
-    # may contain any character but '/', and terminated by '/'
+    # may contain any character but '/' or '@', and terminated by '/'
     # Note the use of (?:) to make sure the group "registry" does
     # not contain the / at the end. Also, registry includes the port
-    "(?:(?P<registry>[^/]+[.:][^/]*)/)?"
+    "(?:(?P<registry>[^/@]+[.:][^/@]*)/)?"
     # Optionally match a namespace, matched as any characters but
     # ':' or '/', followed by '/'. Note the match will include the final /
     "(?P<namespace>(?:[^:@/]+/)+)?"
     # Match a repo name, mandatory. Any character but ':' or '/'
     "(?P<repo>[^:@/]+)"
     # Match :tag (optional)
-    "(?::(?P<tag>[^:]+))?"
+    "(?::(?P<tag>[^:@]+))?"
     # Match @digest (optional)
-    "(?:@(?P<version>[^@]+))?"
+    "(?:@(?P<version>.+))?"
     # we need to match the whole string, make sure there's no leftover
     "$"
     )
@@ -105,14 +105,14 @@ _docker_uri_re = re.compile(
 # This is tried before _default_uri_re, so that namespace/repo takes
 # precedence over registry/repo.
 _reduced_uri_no_ns_re = re.compile(
-    # match a registry, optional, may include a : or .
-    "(?:(?P<registry>[^/]+[.:][^/]*)/)?"
+    # match a registry, optional, may include a : or ., but not a @
+    "(?:(?P<registry>[^/@]+[.:][^/@]*)/)?"
     # Match a repo name, mandatory. Any character but ':' or '/'
     "(?P<repo>[^:@/]+)"
     # Match :tag (optional)
-    "(?::(?P<tag>[^:]+))?"
+    "(?::(?P<tag>[^:@]+))?"
     # Match @digest (optional)
-    "(?:@(?P<version>[^@]+))?"
+    "(?:@(?P<version>.+))?"
     # we need to match the whole string, make sure there's no leftover
     "$"
     # dummy group that will never match, but will add a 'namespace' entry
@@ -127,16 +127,16 @@ _default_uri_re = re.compile(
     # must be either registry[:port]/namespace[/more/namespaces]/repo
     # or namespace/repo, at least one namespace is required
     # Match registry, if specified
-    "(?:(?P<registry>[^/]+)/)?"
+    "(?:(?P<registry>[^/@]+)/)?"
     # Match a namespace, matched as any characters but
     # ':' or '@', ended by a '/'. Note the match will include the final /
     "(?P<namespace>(?:[^:@/]+/)+)"
     # Match a repo name, mandatory. Any character but ':' or '/'
     "(?P<repo>[^:@/]+)"
     # Match :tag (optional)
-    "(?::(?P<tag>[^:]+))?"
+    "(?::(?P<tag>[^:@]+))?"
     # Match @digest (optional)
-    "(?:@(?P<version>[^@]+))?"
+    "(?:@(?P<version>.+))?"
     # we need to match the whole string, make sure there's no leftover
     "$"
     )
