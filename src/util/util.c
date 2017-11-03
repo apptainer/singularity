@@ -342,8 +342,12 @@ int envclean(void) {
 
         key = strtok_r(envclone[i], "=", &tok);
 
-        singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
-        unsetenv(key);
+        if ( strcmp(key, "http_proxy") == 0 ) {
+            singularity_message(DEBUG, "Leaving environment variable set: %s\n", key);
+        } else {
+            singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
+            unsetenv(key);
+        }
     }
 
     return(retval);
