@@ -80,6 +80,11 @@ class SingularityApiConnection(ApiConnection):
                                      uri='shub://',
                                      default_registry=SHUB_API_BASE,
                                      quiet=True)
+        # parse_image_uri may return an empty namespace cause that's allowed
+        # with docker://, but not with shub://
+        if len(self.image["namespace"]) == 0:
+            bot.error("Namespace cannot be empty for shub:// url!")
+            sys.exit(1)
 
     def get_manifest(self):
         '''get_image will return a json object with image metadata
