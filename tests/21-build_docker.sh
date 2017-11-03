@@ -60,6 +60,7 @@ stest 1 sudo singularity build -F "$CONTAINER" docker://something_that_doesnt_ex
 stest 1 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
+if singularity_which docker >/dev/null 2>&1; then
 # make sure local test does not exist, ignore errors
 sudo docker kill registry >/dev/null 2>&1
 sudo docker rm registry >/dev/null 2>&1
@@ -110,5 +111,7 @@ stest 1 singularity exec "$CONTAINER" false
 # destroy registry container once done
 stest 0 sudo docker kill registry
 stest 0 sudo docker rm registry
+
+fi
 
 test_cleanup
