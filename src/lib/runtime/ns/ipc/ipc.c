@@ -40,6 +40,7 @@
 #include "util/privilege.h"
 #include "util/fork.h"
 #include "util/registry.h"
+#include "util/daemon.h"
 #include "util/setns.h"
 
 
@@ -81,6 +82,11 @@ int _singularity_runtime_ns_ipc_join(void) {
 
     /* Attempt to open /proc/[PID]/ns/pid */
     singularity_priv_escalate();
+    if ( ! singularity_daemon_has_namespace("ipc") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
     ipc_fd = openat(ns_fd, "ipc", O_RDONLY);
 
     if( ipc_fd == -1 ) {

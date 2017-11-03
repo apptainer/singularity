@@ -40,6 +40,7 @@
 #include "util/privilege.h"
 #include "util/fork.h"
 #include "util/registry.h"
+#include "util/daemon.h"
 #include "util/setns.h"
 
 
@@ -85,6 +86,11 @@ int _singularity_runtime_ns_pid_join(void) {
 
     /* Attempt to open /proc/[PID]/ns/pid */
     singularity_priv_escalate();
+    if ( ! singularity_daemon_has_namespace("pid") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
     pid_fd = openat(ns_fd, "pid", O_RDONLY);
 
     if( pid_fd == -1 ) {

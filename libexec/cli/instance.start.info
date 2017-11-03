@@ -34,8 +34,12 @@ START OPTIONS:
     -w|--writable       By default all Singularity containers are available as
                         read only. This option makes the file system accessible
                         as read/write.
+    -u|--userns         Run container in a new user namespace (this allows
+                        Singularity to run completely unprivileged on recent
+                        kernels and doesn't support all features)
     --noboot            By default instance execute /sbin/init, this option turn
                         off this behaviour and execute startscript
+    -f|--fakeroot       Run container in a new user namespace as root uid/gid
 
 
 CONTAINER FORMATS SUPPORTED:

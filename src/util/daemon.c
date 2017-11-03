@@ -16,13 +16,14 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <limits.h>
 
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/daemon.h"
 #include "util/registry.h"
-#include "util/message.c"
+#include "util/message.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 #include "util/privilege.h"
@@ -124,8 +125,8 @@ int daemon_is_running(char *pid_path) {
 int daemon_is_owner(char *pid_path) {
     int retval = 0;
     char *proc_status = joinpath(pid_path, "/status");
-    char *uid_check = (char *)malloc(2048);
-    char *line = (char *)malloc(2048);
+    char *uid_check = (char *)xmalloc(2048);
+    char *line = (char *)xmalloc(2048);
     FILE *status = fopen(proc_status, "r");
     pid_t uid = singularity_priv_getuid();
 
@@ -279,6 +280,56 @@ void daemon_init_start(void) {
     free(daemon_pid);
     free(daemon_image);
     free(daemon_file_dir);
+}
+
+int singularity_daemon_has_namespace(char *namespace) {
+    int retval = 0;
+    char *self_ns_path = NULL;
+    char *target_ns_path = (char *)xmalloc(PATH_MAX);
+    struct stat self_ns;
+    struct stat target_ns;
+    char *target_pid = singularity_registry_get("DAEMON_PID");
+
+    if ( target_pid == NULL ) {
+        singularity_message(ERROR, "DAEMON_PID is not set\n");
+        ABORT(255);
+    }
+
+    if ( target_ns_path == NULL ) {
+        singularity_message(ERROR, "Can't allocate %d memory bytes buffer\n", PATH_MAX);
+        ABORT(255);
+    }
+
+    if ( namespace == NULL ) {
+        singularity_message(ERROR, "No namespace specified\n");
+        ABORT(255);
+    }
+
+    if ( xsnprintf(&target_ns_path, PATH_MAX, "/proc/%s/ns/%s", target_pid, namespace) >= PATH_MAX ) {
+        singularity_message(ERROR, "Path too long\n");
+        ABORT(255);
+    }
+
+    self_ns_path = joinpath("/proc/self/ns/", namespace);
+
+    if ( stat(self_ns_path, &self_ns) < 0 ) {
+        singularity_message(ERROR, "Stat failed on link %s\n", self_ns_path);
+        ABORT(255);
+    }
+
+    if ( stat(target_ns_path, &target_ns) < 0 ) {
+        singularity_message(ERROR, "Stat failed on link %s\n", target_ns_path);
+        ABORT(255);
+    }
+
+    if ( self_ns.st_ino != target_ns.st_ino ) {
+        retval = 1;
+    }
+
+    free(target_ns_path);
+    free(self_ns_path);
+
+    return(retval);
 }
 
 void singularity_daemon_init(void) {

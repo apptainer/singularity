@@ -47,6 +47,7 @@ SHELL OPTIONS:
     -w|--writable       By default all Singularity containers are available as
                         read only. This option makes the file system accessible
                         as read/write.
+    -f|--fakeroot       Run container in a new user namespace as root uid/gid
 
 
 CONTAINER FORMATS SUPPORTED:

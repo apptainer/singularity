@@ -38,6 +38,7 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/daemon.h"
 #include "util/setns.h"
 
 
@@ -97,6 +98,11 @@ int _singularity_runtime_ns_mnt_join(void) {
 
     /* Attempt to open /proc/[MNT]/ns/mnt */
     singularity_priv_escalate();
+    if ( ! singularity_daemon_has_namespace("mnt") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
     mnt_fd = openat(ns_fd, "mnt", O_RDONLY);
 
     if( mnt_fd == -1 ) {

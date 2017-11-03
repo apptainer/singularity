@@ -139,6 +139,11 @@ while true; do
             SINGULARITY_USERNS_GID=0
             export SINGULARITY_USERNS_UID SINGULARITY_USERNS_GID SINGULARITY_NOSUID
         ;;
+        -u|--user|--userns)
+            shift
+            SINGULARITY_NOSUID=1
+            export SINGULARITY_NOSUID
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1

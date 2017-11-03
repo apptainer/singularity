@@ -64,7 +64,6 @@ int main(int argc, char **argv) {
     singularity_suid_init(argv);
 
     singularity_registry_init();
-    singularity_priv_userns();
     singularity_priv_drop();
 
     singularity_registry_set("UNSHARE_PID", "1");

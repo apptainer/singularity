@@ -62,7 +62,6 @@ int main(int argc, char **argv) {
 
     singularity_registry_init();
     
-    singularity_priv_userns();
     singularity_priv_drop();
 
     singularity_daemon_init();

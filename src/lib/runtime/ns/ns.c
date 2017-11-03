@@ -43,12 +43,17 @@
 #include "./pid/pid.h"
 #include "./net/net.h"
 #include "./uts/uts.h"
+#include "./user/user.h"
 #include "../runtime.h"
 
 
 int _singularity_runtime_ns(unsigned int flags) {
     int retval = 0;
 
+    if ( flags & SR_NS_USER ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_user()\n");
+        retval += _singularity_runtime_ns_user();
+    }
     if ( flags & SR_NS_IPC ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_ipc()\n");
         retval += _singularity_runtime_ns_ipc();
@@ -76,6 +81,10 @@ int _singularity_runtime_ns(unsigned int flags) {
 int _singularity_runtime_ns_join(unsigned int flags) {
     int retval = 0;
 
+    if ( flags & SR_NS_USER ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_user_join()\n");
+        retval += _singularity_runtime_ns_user_join();
+    }
     if ( flags & SR_NS_IPC ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_ipc_join()\n");
         retval += _singularity_runtime_ns_ipc_join();
