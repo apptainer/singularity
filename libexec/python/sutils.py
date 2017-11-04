@@ -27,7 +27,7 @@ perform publicly and display publicly, and to permit other to do so.
 from defaults import (
     SINGULARITY_CACHE,
     DISABLE_HTTPS,
-    SINGULARITY_sysconfdir,
+    SINGULARITY_sysconfdir
 )
 from message import bot
 import datetime

@@ -149,7 +149,7 @@ def IMPORT(image, auth=None, layerfile=None):
         if bind_tar_file is not None:
             write_file(layerfile, "\n%s" % bind_tar_file, mode="a")
 
-    # Return additions dictionarys
+    # Return additions dictionary
     additions = {"layers": layers,
                  "image": image,
                  "manifest": client.manifest,

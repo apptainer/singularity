@@ -30,7 +30,7 @@ from defaults import (
     LABELFILE,
     PLUGIN_FIXPERMS,
     METADATA_FOLDER_NAME,
-    RUNSCRIPT_COMMAND_ASIS,
+    RUNSCRIPT_COMMAND_ASIS
 )
 
 from helpers.json.main import ADD
