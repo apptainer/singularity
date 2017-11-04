@@ -31,7 +31,8 @@ from base import MultiProcess
 
 from sutils import (
     get_cache,
-    write_file
+    write_file,
+    get_singularity_conf_value
 )
 
 from .api import (
@@ -42,8 +43,11 @@ from .tasks import (
     download_layer,
     change_permissions,
     extract_runscript,
-    extract_metadata_tar
+    extract_metadata_tar,
+    create_bind_tar
 )
+
+from defaults import convert2boolean
 
 from message import bot
 
@@ -128,20 +132,31 @@ def IMPORT(image, auth=None, layerfile=None):
 
     bot.verbose2('Tar file with Docker env and labels: %s' % tar_file)
 
+    # File with bind mount points if "docker inject binds" in singularity.conf
+    bind_tar_file = None
+    if get_singularity_conf_value('docker_inject_binds')\
+            and convert2boolean(get_singularity_conf_value('docker inject binds')):
+        bind_tar_file = create_bind_tar()
+        bot.verbose2('Tar file with injected bind points: %s' % tar_file)
+
+
     # Write all layers to the layerfile
     if layerfile is not None:
         bot.verbose3("Writing Docker layers files to %s" % layerfile)
         write_file(layerfile, "\n".join(layers), mode="w")
         if tar_file is not None:
             write_file(layerfile, "\n%s" % tar_file, mode="a")
+        if bind_tar_file is not None:
+            write_file(layerfile, "\n%s" % bind_tar_file, mode="a")
 
-    # Return additions dictionary
+    # Return additions dictionarys
     additions = {"layers": layers,
                  "image": image,
                  "manifest": client.manifest,
                  "manifestv1": client.manifestv1,
                  "cache_base": cache_base,
-                 "metadata": tar_file}
+                 "metadata": tar_file,
+                 "binds": bind_tar_file}
 
     bot.debug("*** FINISHING DOCKER IMPORT PYTHON PORTION ****\n")
 

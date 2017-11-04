@@ -22,9 +22,12 @@ perform publicly and display publicly, and to permit other to do so.
 
 '''
 
+
+
 from defaults import (
     SINGULARITY_CACHE,
-    DISABLE_HTTPS
+    DISABLE_HTTPS,
+    SINGULARITY_sysconfdir,
 )
 from message import bot
 import datetime
@@ -528,3 +531,31 @@ def write_singularity_infos(base_dir,
                                  extension)
     write_file(output_file, content)
     return output_file
+
+
+def get_singularity_conf_value(key):
+    '''Given a key, return the value, or list of values, assigned to that key
+    in the main singularity.conf file. Return None if the key does not exist
+    in the configuration file.
+    :param key: the key naming the configuration value to return
+    '''
+    if not SINGULARITY_sysconfdir:
+        return None
+
+    vals = []
+    conf_file = os.path.join(SINGULARITY_sysconfdir, 'singularity', 'singularity.conf')
+    with open(conf_file, 'r') as f:
+        for line in f:
+            if '=' not in line:
+                continue
+            parts = line.split('=', 1)
+            if parts[0].strip() == key:
+                vals.append(parts[1].strip())
+
+    if len(vals) == 1:
+        return vals[0]
+
+    if len(vals) == 0:
+        return None
+
+    return vals

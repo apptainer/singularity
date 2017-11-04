@@ -73,6 +73,9 @@
 #define BIND_PATH "bind path"
 #define BIND_PATH_DEFAULT ""
 
+#define DOCKER_INJECT_BINDS "docker inject binds"
+#define DOCKER_INJECT_BINDS_DEFAULT 0
+
 #define USER_BIND_CONTROL "user bind control"
 #define USER_BIND_CONTROL_DEFAULT 1
 

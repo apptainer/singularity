@@ -17,6 +17,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ### Implemented enhancements
  - This changelog was added.
+ - Added `docker inject binds` option in `singularity.conf`. This option will inject the users home directory and
+   any system-wide `bind path` directories into docker containers that are pulled, allowing binds to work as
+   exoected when overlay is not available.
 
 ### Bug Fixes
  - Tar creation uses GNU tar-1.28 to not add a timestamp to the header for more reproducible builds

@@ -120,6 +120,14 @@ bind path = /etc/localtime
 bind path = /etc/hosts
 
 
+# DOCKER INJECT BINDS: [BOOL]
+# DEFAULT: @DOCKER_INJECT_BINDS_DEFAULT@
+# If set, inject the home directory and all bind paths into any docker
+# container that is pulled. This allows binds to work on systems where overlay
+# is not available, and the bind paths are not present in the docker container.
+@DOCKER_INJECT_BINDS@ = @DOCKER_INJECT_BINDS_DEFAULT@
+
+
 # USER BIND CONTROL: [BOOL]
 # DEFAULT: @USER_BIND_CONTROL_DEFAULT@
 # Allow users to influence and/or define bind points at runtime? This will allow

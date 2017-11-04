@@ -35,7 +35,6 @@ import os
 import pwd
 import sys
 
-
 def getenv(variable_key, default=None, required=False, silent=False):
     '''getenv will attempt to get an environment variable. If the
     variable is not found, None is returned.
@@ -81,7 +80,7 @@ METADATA_FOLDER_NAME = ".singularity.d"
 _metadata_base = "%s/%s" % (SINGULARITY_ROOTFS, METADATA_FOLDER_NAME)
 METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER", _metadata_base,
                        required=True)
-
+SINGULARITY_sysconfdir = getenv("SINGULARITY_sysconfdir")
 
 #######################################################################
 # Plugins and Formatting
