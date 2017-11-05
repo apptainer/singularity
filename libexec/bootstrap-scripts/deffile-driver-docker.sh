@@ -51,7 +51,9 @@ if [ ! -z "${REGISTRY:-}" ]; then
     export REGISTRY
 fi
 
-if [ ! -z "${NAMESPACE:-}" ]; then
+# Note: NAMESPACE can be set to an empty string, and that's a valid namespace
+# for Docker (not so for shub://)
+if [ -n "${NAMESPACE+set}" ]; then
     message DEBUG "Custom Docker Namespace 'Namespace:' ${NAMESPACE}.\n"
     export NAMESPACE
 fi

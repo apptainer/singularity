@@ -1,5 +1,5 @@
 #!/bin/bash
-# 
+#
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 
@@ -65,7 +65,7 @@ for i in `cat "$SINGULARITY_CONTENTS"`; do
 
     # Now extract our current layer, exclude whiteout opaque marker handled
     # above so they don't interfere in the logic below.
-    ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* --exclude=*/.wh.* -xvf -) || exit $? ) | while read file; do
+    ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* --exclude=*/.wh..wh..opq -xvf -) || exit $? ) | while read file; do
         if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
             # Skipping symlinks
             true

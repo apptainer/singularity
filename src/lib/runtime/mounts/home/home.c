@@ -37,8 +37,8 @@
 #include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
+#include "util/mount.h"
 
-#include "../mount-util.h"
 #include "../../runtime.h"
 
 
@@ -101,12 +101,12 @@ int _singularity_runtime_mount_home(void) {
     if ( ( singularity_registry_get("CONTAIN") == NULL ) || ( singularity_registry_get("HOME") != NULL ) ) {
         singularity_priv_escalate();
         singularity_message(VERBOSE, "Mounting home directory source into session directory: %s -> %s\n", home_source, joinpath(session_dir, home_dest));
-        if ( mount(home_source, joinpath(session_dir, home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
+        if ( singularity_mount(home_source, joinpath(session_dir, home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to mount home directory %s -> %s: %s\n", home_source, joinpath(session_dir, home_dest), strerror(errno));
             ABORT(255);
         }
         if ( singularity_priv_userns_enabled() != 1 ) {
-            if ( mount(NULL, joinpath(session_dir, home_dest), NULL, MS_BIND | MS_REMOUNT | MS_NODEV | MS_NOSUID | MS_REC, NULL) < 0 ) {
+            if ( singularity_mount(NULL, joinpath(session_dir, home_dest), NULL, MS_BIND | MS_REMOUNT | MS_NODEV | MS_NOSUID | MS_REC, NULL) < 0 ) {
                 singularity_message(ERROR, "Failed to remount home directory base %s: %s\n", joinpath(session_dir, home_dest), strerror(errno));
                 ABORT(255);
             }
@@ -136,7 +136,7 @@ int _singularity_runtime_mount_home(void) {
 
         singularity_priv_escalate();
         singularity_message(VERBOSE, "Mounting staged home directory base to container's base dir: %s -> %s\n", joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base));
-        if ( mount(joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
+        if ( singularity_mount(joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to mount staged home base: %s -> %s: %s\n", joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base), strerror(errno));
             ABORT(255);
         }
@@ -154,7 +154,7 @@ int _singularity_runtime_mount_home(void) {
         }
 
         singularity_message(VERBOSE, "Mounting staged home directory to container: %s -> %s\n", joinpath(session_dir, home_dest), joinpath(container_dir, home_dest));
-        if ( mount(joinpath(session_dir, home_dest), joinpath(container_dir, home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
+        if ( singularity_mount(joinpath(session_dir, home_dest), joinpath(container_dir, home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to mount staged home base: %s -> %s: %s\n", joinpath(session_dir, home_dest), joinpath(container_dir, home_dest), strerror(errno));
             ABORT(255);
         }
