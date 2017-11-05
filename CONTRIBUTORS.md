@@ -35,4 +35,5 @@
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
-    - David Trudgian <david.trudgian@utsouthwestern.edu>
+    - Daniele Tamino <daniele.tamino@gmail.com>
+    - David Trudgian <david.trudgian@utsouthwestern.edu>   

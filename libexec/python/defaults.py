@@ -49,7 +49,8 @@ def getenv(variable_key, default=None, required=False, silent=False):
         sys.exit(1)
 
     if silent:
-        bot.verbose2("%s found" % (variable_key))
+        if variable is not None:
+            bot.verbose2("%s found" % (variable_key))
     else:
         if variable is not None:
             bot.verbose2("%s found as %s" % (variable_key, variable))

@@ -15,15 +15,33 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ## [v2.4.1](https://github.com/singularityware/singularity/tree/development) (development)
 
+### Security related fixes
+ - Fixed container path and owner limitations (original merge was lost)
+ - Check of overlay upper/work images are symlinks
+
 ### Implemented enhancements
  - This changelog was added.
- - Added `docker inject binds` option in `singularity.conf`. This option will inject the users home directory and
+ - Addition of APP[app]_[LABELS,ENV,RUNSCRIPT,META] so apps can internally find one another.
+ - Exposing labels for SCI-F in environment
+  - Added `docker inject binds` option in `singularity.conf`. This option will inject the users home directory and
    any system-wide `bind path` directories into docker containers that are pulled, allowing binds to work as
-   exoected when overlay is not available.
+   expected when overlay is not available.
 
 ### Bug Fixes
  - Tar creation uses GNU tar-1.28 to not add a timestamp to the header for more reproducible builds
  - Adjusting environment parsing regular expression for Docker to allow for "=" sign in variable
+ - Try overlayFS now default option
+ - Confirm that localstate directories were properly packaged
+ - Fix when running over NFS with root_squash enabled
+ - Honor the user name request when pulling from Singularity Hub
+ - Allow http_proxy envar for runtime and build
+ - Properly require mksquashfs tools for Debian packaging
+ - Fix for empty docker namespaces in private repositories
+ - Fix Docker environment parsing
+ - Revert lolcow easter egg
+
+
+
 
 ## [v2.4](https://github.com/singularityware/singularity/tree/v2.4) (2017-10-02)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3.2...2.4)

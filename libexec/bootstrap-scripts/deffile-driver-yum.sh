@@ -116,8 +116,6 @@ mkdir -m 0755 -p "$SINGULARITY_ROOTFS/$YUM_CONF_DIRNAME"
 echo "[main]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 if [ -n "${http_proxy:-}" ]; then
     echo "proxy=$http_proxy" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
-elif [ -n "${HTTP_PROXY:-}" ]; then
-    echo "proxy=$HTTP_PROXY" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 fi
 echo 'cachedir=/var/cache/yum-bootstrap' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "keepcache=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"

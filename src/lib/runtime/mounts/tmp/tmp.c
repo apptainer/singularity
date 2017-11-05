@@ -38,8 +38,8 @@
 #include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
+#include "util/mount.h"
 
-#include "../mount-util.h"
 #include "../../runtime.h"
 
 
@@ -88,12 +88,12 @@ int _singularity_runtime_mount_tmp(void) {
             if ( is_dir(joinpath(container_dir, "/tmp")) == 0 ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting directory: /tmp\n");
-                if ( mount(tmp_source, joinpath(container_dir, "/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
+                if ( singularity_mount(tmp_source, joinpath(container_dir, "/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Failed to mount %s -> /tmp: %s\n", tmp_source, strerror(errno));
                     ABORT(255);
                 }
                 if ( singularity_priv_userns_enabled() != 1 ) {
-                    if ( mount(NULL, joinpath(container_dir, "/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    if ( singularity_mount(NULL, joinpath(container_dir, "/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
                         singularity_message(ERROR, "Failed to remount /tmp: %s\n", strerror(errno));
                         ABORT(255);
                     }
@@ -118,12 +118,12 @@ int _singularity_runtime_mount_tmp(void) {
             if ( is_dir(joinpath(container_dir, "/var/tmp")) == 0 ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting directory: /var/tmp\n");
-                if ( mount(vartmp_source, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
+                if ( singularity_mount(vartmp_source, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Failed to mount %s -> /var/tmp: %s\n", vartmp_source, strerror(errno));
                     ABORT(255);
                 }
                 if ( singularity_priv_userns_enabled() != 1 ) {
-                    if ( mount(NULL, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV|MS_REMOUNT, NULL) < 0 ) {
+                    if ( singularity_mount(NULL, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV|MS_REMOUNT, NULL) < 0 ) {
                         singularity_message(ERROR, "Failed to remount /var/tmp: %s\n", strerror(errno));
                         ABORT(255);
                     }
