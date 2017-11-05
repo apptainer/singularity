@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ * Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
  *
  * See the COPYRIGHT.md file at the top-level directory of this distribution and at
  * https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
@@ -41,6 +42,8 @@ sif_hashstr(Sifhashtype htype)
 	case HASH_SHA256: return "SHA256";
 	case HASH_SHA384: return "SHA384";
 	case HASH_SHA512: return "SHA512";
+	case HASH_BLAKE2S: return "BLAKE2S";
+	case HASH_BLAKE2B: return "BLAKE2B";
 	}
 	return "Unknown hash-type";
 }
@@ -60,11 +63,11 @@ char *
 sif_datastr(Sifdatatype dtype)
 {
 	switch(dtype){
-	case DATA_DEFFILE: return "Definition-file";
-	case DATA_ENVVAR: return "Environment-variables";
-	case DATA_LABELS: return "Jason-metadata";
-	case DATA_PARTITION: return "FS partition image";
-	case DATA_SIGNATURE: return "Crypto-signature";
+	case DATA_DEFFILE: return "Def.File";
+	case DATA_ENVVAR: return "Env.Vars";
+	case DATA_LABELS: return "Jason.Labels";
+	case DATA_PARTITION: return "FS.Img";
+	case DATA_SIGNATURE: return "Signature";
 	}
 	return "Unknown data-type";
 }
@@ -75,8 +78,8 @@ sif_fsstr(Siffstype ftype)
 	switch(ftype){
 	case FS_SQUASH: return "Squashfs";
 	case FS_EXT3: return "Ext3";
-	case FS_IMMOBJECTS: return "Data-archive";
-	case FS_RAW: return "Raw-data";
+	case FS_IMMOBJECTS: return "Data.Archive";
+	case FS_RAW: return "Raw.Data";
 	}
 	return "Unknown fstype";
 }
@@ -90,7 +93,14 @@ sif_printrow(void *elem)
 	Sifsignature *s = (Sifsignature *)elem;
 
 	printf("%-4d ", cm->id);
-	printf("|%-7d ", cm->groupid);
+	if(cm->groupid == SIF_UNUSED_GROUP)
+		printf("|%-7s ", "NONE");
+	else
+		printf("|%-7d ", cm->groupid & ~SIF_GROUP_MASK);
+	if(cm->link == SIF_UNUSED_LINK)
+		printf("|%-7s ", "NONE");
+	else
+		printf("|%-7d ", cm->link);
 	sprintf(fposbuf, "|%ld-%ld ", cm->fileoff, cm->fileoff+cm->filelen-1);
 	printf("%-26s ", fposbuf);
 
@@ -122,11 +132,12 @@ sif_printlist(Sifinfo *info)
 
 	printf("Container uuid: %s\n", uuid);
 	printf("Created on: %s", ctime(&info->header.ctime));
+	printf("Modified on: %s", ctime(&info->header.mtime));
 	printf("----------------------------------------------------\n\n");
 
 	printf("Descriptor list:\n");
 
-	printf("%-4s %-8s %-26s %s\n", "ID", "|GROUP", "|SIF POSITION (start-end)", "|TYPE");
+	printf("%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE");
 	printf("------------------------------------------------------------------------------\n");
 
 	listforall(&info->deschead, sif_printrow);
@@ -141,7 +152,14 @@ sif_printdesc(void *elem)
 
 	printf("desc type: %s\n", sif_datastr(cm->datatype));
 	printf("desc id: %d\n", cm->id);
-	printf("group id: %d\n", cm->groupid);
+	if(cm->groupid == SIF_UNUSED_GROUP)
+		printf("group id: NONE\n");
+	else
+		printf("group id: %d\n", cm->groupid & ~SIF_GROUP_MASK);
+	if(cm->link == SIF_UNUSED_LINK)
+		printf("link: NONE\n");
+	else
+		printf("link: %d\n", cm->link);
 	printf("fileoff: %ld\n", cm->fileoff);
 	printf("filelen: %ld\n", cm->filelen);
 
@@ -178,6 +196,7 @@ sif_printheader(Sifinfo *info)
 	printf("uuid: %s\n", uuid);
 
 	printf("creation time: %s", ctime(&info->header.ctime));
+	printf("modification time: %s", ctime(&info->header.mtime));
 
 	printf("number of descriptors: %d\n", info->header.ndesc);
 	printf("start of descriptors in file: %ld\n", info->header.descoff);
@@ -217,7 +236,7 @@ sif_getdescid(Sifinfo *info, int id)
 
 	n = listfind(&info->deschead, &lookfor, sameid);
 	if(n == NULL){
-		siferrno = SIF_ENODEF;
+		siferrno = SIF_ENOID;
 		return NULL;
 	}
 	return n->elem;
@@ -358,6 +377,34 @@ sif_getsignature(Sifinfo *info, int groupid)
 	n = listfind(&info->deschead, &lookfor, issignature);
 	if(n == NULL){
 		siferrno = SIF_ENOSIG;
+		return NULL;
+	}
+	return n->elem;
+}
+
+/* Get descriptors linked to a specific id */
+static int
+linkmatches(void *cur, void *elem)
+{
+	Sifcommon *c = (Sifcommon *)cur;
+        Sifcommon *e = (Sifcommon *)elem;
+
+	if(c->link == e->id)
+		return 1;
+	return 0;
+}
+
+Sifcommon *
+sif_getlinkeddesc(Sifinfo *info, int id)
+{
+	Sifcommon lookfor;
+	Node *n;
+
+	lookfor.id = id;
+
+	n = listfind(&info->deschead, &lookfor, linkmatches);
+	if(n == NULL){
+		siferrno = SIF_ENOLINK;
 		return NULL;
 	}
 	return n->elem;

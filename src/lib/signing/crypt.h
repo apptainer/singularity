@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ * Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
  *
  * See the COPYRIGHT.md file at the top-level directory of this distribution and at
  * https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
@@ -56,7 +57,10 @@ typedef enum{
 	SGN_EFNAME,	/* Invalid input file name */
 	SGN_EFOPEN,	/* Cannot open input file name */
 	SGN_EFSTAT,	/* fstat on input file failed */
-	SGN_EFMAP	/* Cannot mmap input file */
+	SGN_EFMAP,	/* Cannot mmap input file */
+	SGN_EGPGV,	/* Gpg reports an invalid signature */
+	SGN_ENOHASH,	/* No hash found in signature message */
+	SGN_ESTRDUP	/* Error duplicating signedhash string */
 } Sgnerrno;
 
 
@@ -65,6 +69,8 @@ extern Sgnerrno sgnerrno;
 char *sgn_strerror(Sgnerrno sgnerrno);
 void sgn_hashtostr(char *hash, char *hashstr);
 void sgn_sifhashstr(char *hashstr, char *sifhashstr);
+int sgn_getsignedhash(char *signedhash, char *hashstr);
+
 unsigned char *sgn_hashbuffer(char *data, size_t size, char *result);
 unsigned char *sgn_hashfile(char *fname, char *result);
 int sgn_signhash(char *hashstr, char *signedhash);

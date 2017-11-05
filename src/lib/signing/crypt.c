@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ * Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
  *
  * See the COPYRIGHT.md file at the top-level directory of this distribution and at
  * https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
@@ -17,6 +18,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -51,6 +53,9 @@ sgn_strerror(Sgnerrno sgnerrno)
 	case SGN_ECLOSEERR: return "Could not close saved stderr fd";
 	case SGN_EFNAME: return "Invalid input file name";
 	case SGN_EFOPEN: return "Cannot open input file name";
+	case SGN_EGPGV:	return "Gpg reports an invalid signature";
+	case SGN_ENOHASH: return "No hash found in signature message";
+	case SGN_ESTRDUP: return "Error duplicating signedhash string";
 	default: return "Unknown Signing-lib error";
 	}
 }
@@ -70,6 +75,36 @@ sgn_sifhashstr(char *hashstr, char *sifhashstr)
 {
 	strcpy(sifhashstr, SIFHASH_PREFIX);
 	strncat(sifhashstr, hashstr, SGN_HASHLEN*2);
+}
+
+int
+sgn_getsignedhash(char *signedhash, char *hashstr)
+{
+	char *p = NULL;
+	char *scopy, *scopysave;
+
+	scopy = strdup(signedhash);
+	if(scopy == NULL){
+		sgnerrno = SGN_ESTRDUP;
+		return -1;
+	}
+	scopysave = scopy;
+	for(p = strsep(&scopy, "\n"); p != NULL; p = strsep(&scopy, "\n")){
+		if(strncmp(p, SIFHASH_PREFIX, strlen(SIFHASH_PREFIX)-1) == 0){
+			p = strsep(&scopy, "\n");
+			break;
+		}
+	}
+	if(p == NULL){
+		free(scopysave);
+		sgnerrno = SGN_ENOHASH;
+		return -1;
+	}
+
+	strncpy(hashstr, p, SGN_HASHLEN*2);
+	hashstr[SGN_HASHLEN*2] = '\0';
+	free(scopysave);
+	return 0;
 }
 
 unsigned char *
@@ -169,13 +204,14 @@ sgn_signhash(char *hashstr, char *signedhash)
 		close(p[0]);
 	}else{
 		for( ; ; ){
-			ret = read(p[0], signedhash, SGN_MAXLEN);
-			if(ret == SGN_MAXLEN && read(p[0], signedhash, 1) != 0){
+			int rv;
+			rv = read(p[0], signedhash, SGN_MAXLEN);
+			if(rv == SGN_MAXLEN && read(p[0], signedhash, 1) != 0){
 				sgnerrno = SGN_ESOFLOW;
 				close(p[0]);
 				break;
 			}
-			if(ret < 0){
+			if(rv < 0){
 				if(errno == EINTR){
 					continue;
 				}else{
@@ -245,13 +281,15 @@ sgn_verifyhash(char *signedhash)
 		close(p[0]);
 	}else{
 		for( ; ; ){
-			ret = read(p[0], response, sizeof(response));
-			if(ret == sizeof(response) && read(p[0], response, 1) != 0){
+			int rv;
+
+			rv = read(p[0], response, sizeof(response));
+			if(rv == sizeof(response) && read(p[0], response, 1) != 0){
 				sgnerrno = SGN_EVOFLOW;
 				close(p[0]);
 				break;
 			}
-			if(ret < 0){
+			if(rv < 0){
 				if(errno == EINTR){
 					continue;
 				}else{
@@ -262,6 +300,8 @@ sgn_verifyhash(char *signedhash)
 			}
 			if(strstr(response, GPG_SIGNATURE_GOOD) != NULL)
 				ret = 0;
+			else
+				sgnerrno = SGN_EGPGV;
 			break;
 		}
 	}

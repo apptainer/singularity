@@ -121,7 +121,11 @@ enum{
 	SIF_ENTITY_LEN = 64,		/* "Joe Bloe <jbloe@gmail.com>..." */
 	SIF_CONTENT_LEN = 256,		/* "RHEL 7.4 / kernel 3.10.0-693 / ..." */
 
-	SIF_DEFAULT_GROUP = 0		/* first groupid number created */
+	SIF_GROUP_MASK = 0xf0000000,	/* groups start at that offset */
+	SIF_UNUSED_GROUP = SIF_GROUP_MASK,/* descriptor without a group */
+	SIF_DEFAULT_GROUP = SIF_GROUP_MASK|1,/* first groupid number created */
+
+	SIF_UNUSED_LINK = 0		/* descriptor without link to other */
 };
 
 /* types of data objects stored in the image */
@@ -152,7 +156,9 @@ typedef enum{
 typedef enum{
 	HASH_SHA256 = 1,
 	HASH_SHA384,
-	HASH_SHA512
+	HASH_SHA512,
+	HASH_BLAKE2S,
+	HASH_BLAKE2B
 } Sifhashtype;
 
 /* SIF data object descriptor info common to all object type */
@@ -160,7 +166,8 @@ typedef struct Sifcommon Sifcommon;
 struct Sifcommon{
 	Sifdatatype datatype;		/* informs of descriptor type */
 	int id;				/* a unique id for this data object */
-	int groupid;			/* object this data object is related to */
+	int groupid;			/* object group this data object is related to */
+	int link;			/* special link or relation to an id or group */
 	off_t fileoff;			/* offset from start of image file */
 	size_t filelen; 		/* length of data in file */
 };
@@ -213,6 +220,7 @@ struct Sifheader{
 
 	/* start of common header */
 	time_t ctime;			/* image creation time */
+	time_t mtime;			/* last modification time */
 
 	/* info about data object descriptors */
 	int ndesc;			/* total # of data object descr. */
@@ -241,6 +249,8 @@ struct Sifinfo{
 typedef struct Ddesc Ddesc;
 struct Ddesc{
 	Sifdatatype datatype;
+	int groupid;
+	int link;
 	char *fname;
 	int fd;
 	unsigned char *mapstart;
@@ -251,6 +261,8 @@ struct Ddesc{
 typedef struct Edesc Edesc;
 struct Edesc{
 	Sifdatatype datatype;
+	int groupid;
+	int link;
 	char *vars;
 	size_t len;
 };
@@ -259,6 +271,8 @@ struct Edesc{
 typedef struct Ldesc Ldesc;
 struct Ldesc{
 	Sifdatatype datatype;
+	int groupid;
+	int link;
 	char *fname;
 	int fd;
 	unsigned char *mapstart;
@@ -269,6 +283,8 @@ struct Ldesc{
 typedef struct Pdesc Pdesc;
 struct Pdesc{
 	Sifdatatype datatype;
+	int groupid;
+	int link;
 	char *fname;
 	int fd;
 	unsigned char *mapstart;
@@ -282,6 +298,8 @@ struct Pdesc{
 typedef struct Sdesc Sdesc;
 struct Sdesc{
 	Sifdatatype datatype;
+	int groupid;
+	int link;
 	char *signature;
 	size_t len;
 	Sifhashtype hashtype;
@@ -323,6 +341,8 @@ typedef enum{
 	SIF_ENOLAB,	/* cannot find jason label descriptor */
 	SIF_ENOPAR,	/* cannot find partition descriptor */
 	SIF_ENOSIG,	/* cannot find signature descriptor */
+	SIF_ENOLINK,	/* cannot find descriptor linked to specified id */
+	SIF_ENOID,	/* cannot find descriptor with specified id */
 	SIF_EFDDEF,	/* cannot open definition file */
 	SIF_EMAPDEF,	/* cannot mmap definition file */
 	SIF_EFDLAB,	/* cannot open jason-labels file */

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ * Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
  *
  * See the COPYRIGHT.md file at the top-level directory of this distribution and at
  * https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
@@ -32,9 +33,6 @@
 #include "sif.h"
 
 Siferrno siferrno;
-
-/* current placement group id; increments with every new definition-file */
-static int currentgroup;
 
 /* count the next descriptor id to generate when adding a new descriptor */
 static int desccounter = 1;
@@ -77,6 +75,8 @@ sif_strerror(Siferrno siferrno)
 	case SIF_ENOLAB: return "cannot find jason label descriptor";
 	case SIF_ENOPAR: return "cannot find partition descriptor";
 	case SIF_ENOSIG: return "cannot find signature descriptor";
+	case SIF_ENOLINK: return "cannot find descriptor linked to specified id";
+	case SIF_ENOID: return "cannot find descriptor with specified id";
 	case SIF_EFDDEF: return "cannot open definition file";
 	case SIF_EMAPDEF: return "cannot mmap definition file";
 	case SIF_EFDLAB: return "cannot open jason-labels file";
@@ -411,7 +411,8 @@ putddesc(void *elem)
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_DEFFILE;
 	desc->cm.id = desccounter++;
-	desc->cm.groupid = currentgroup;
+	desc->cm.groupid = d->groupid;
+	desc->cm.link = d->link;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = d->len;
 
@@ -434,7 +435,8 @@ putedesc(void *elem)
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_ENVVAR;
 	desc->cm.id = desccounter++;
-	desc->cm.groupid = currentgroup;
+	desc->cm.groupid = e->groupid;
+	desc->cm.link = e->link;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = e->len;
 
@@ -457,7 +459,8 @@ putldesc(void *elem)
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_LABELS;
 	desc->cm.id = desccounter++;
-	desc->cm.groupid = currentgroup;
+	desc->cm.groupid = l->groupid;
+	desc->cm.link = l->link;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = l->len;
 
@@ -480,7 +483,8 @@ putpdesc(void *elem)
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_PARTITION;
 	desc->cm.id = desccounter++;
-	desc->cm.groupid = currentgroup;
+	desc->cm.groupid = p->groupid;
+	desc->cm.link = p->link;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = p->len;
 	desc->fstype = p->fstype;
@@ -506,7 +510,8 @@ putsdesc(void *elem)
 	/* write data object descriptor */
 	desc->cm.datatype = DATA_SIGNATURE;
 	desc->cm.id = desccounter++;
-	desc->cm.groupid = currentgroup;
+	desc->cm.groupid = s->groupid;
+	desc->cm.link = s->link;
 	desc->cm.fileoff = siflayout.dataptr - siflayout.info->mapstart;
 	desc->cm.filelen = s->len;
 	desc->hashtype = s->hashtype;
@@ -637,6 +642,7 @@ sif_putdataobj(Sifinfo *info, Sifdatatype *datatype)
 	}
 
 	/* write down the modified header */
+	info->header.mtime = time(NULL);
 	memcpy(info->mapstart, &info->header, sizeof(Sifheader));
 
 	putdesc(datatype);
@@ -666,6 +672,7 @@ sif_create(Sifcreateinfo *cinfo)
 	memcpy(info.header.arch, cinfo->arch, SIF_ARCH_LEN);
 	uuid_copy(info.header.uuid, cinfo->uuid);
 	info.header.ctime = time(NULL);
+	info.header.mtime = time(NULL);
 	info.header.descoff = sizeof(Sifheader);
 	info.header.dataoff = grow_descregion(&info.header);
 

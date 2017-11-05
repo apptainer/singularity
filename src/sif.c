@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ * Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
  *
  * See the COPYRIGHT.md file at the top-level directory of this distribution and at
  * https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
@@ -46,8 +47,9 @@ usage()
 	fprintf(stderr, "create --  Create a new sif file with input data objects\n");
 	fprintf(stderr, "dump   id  Display data object content\n");
 	fprintf(stderr, "list   --  List SIF data descriptors from an input SIF file\n");
-	fprintf(stderr, "print  id  Print data object descriptor info\n");
+	fprintf(stderr, "info   id  Print data object descriptor info\n");
 	fprintf(stderr, "sign   id  Cryptographically sign a data object from an input SIF file\n");
+	fprintf(stderr, "verify id  Verify the signature of a data object from an input SIF file\n");
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, "create options:\n");
 	fprintf(stderr, "\t-D deffile : include definitions file `deffile'\n");
@@ -73,6 +75,8 @@ ddescadd(Node *head, char *fname)
 		return NULL;
 	}
 	e->datatype = DATA_DEFFILE;
+	e->groupid = SIF_DEFAULT_GROUP;
+	e->link = SIF_UNUSED_LINK;
 	e->fname = strdup(fname);
 	if(e->fname == NULL){
 		fprintf(stderr, "Error allocating memory for e->fname\n");
@@ -108,6 +112,8 @@ edescadd(Node *head)
 		return NULL;
 	}
 	e->datatype = DATA_ENVVAR;
+	e->groupid = SIF_DEFAULT_GROUP;
+	e->link = SIF_UNUSED_LINK;
 	e->vars = testenvs;
 	e->len = sizeof(testenvs);
 
@@ -135,6 +141,8 @@ ldescadd(Node *head, char *fname)
 		return NULL;
 	}
 	e->datatype = DATA_LABELS;
+	e->groupid = SIF_DEFAULT_GROUP;
+	e->link = SIF_UNUSED_LINK;
 	e->fname = strdup(fname);
 	if(e->fname == NULL){
 		fprintf(stderr, "Error allocating memory for e->fname\n");
@@ -170,6 +178,8 @@ sdescadd(Node *head, char *signedhash, Sifhashtype hashtype)
 		return NULL;
 	}
 	e->datatype = DATA_SIGNATURE;
+	e->groupid = SIF_DEFAULT_GROUP;
+	e->link = SIF_UNUSED_LINK;
 	e->signature = strdup(signedhash);
 	e->len = strlen(signedhash)+1;
 	e->hashtype = hashtype;
@@ -252,6 +262,8 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 		return NULL;
 	}
 	e->datatype = DATA_PARTITION;
+	e->groupid = SIF_DEFAULT_GROUP;
+	e->link = SIF_UNUSED_LINK;
 	e->fname = strdup(fname);
 	if(e->fname == NULL){
 		fprintf(stderr, "Error allocating memory for e->fname\n");
@@ -372,7 +384,6 @@ cmd_create(int argc, char *argv[])
 		return -1;
 	}
 
-
 	ret = sif_create(&createinfo);
 	if(ret < 0){
 		fprintf(stderr, "Error creating SIF file %s: %s\n",
@@ -436,7 +447,7 @@ cmd_sign(int argc, char *argv[])
 		return -1;
 	}
 
-	if(sgn_hashbuffer(sif.mapstart, cm->filelen, hash) == NULL){
+	if(sgn_hashbuffer(sif.mapstart+cm->fileoff, cm->filelen, hash) == NULL){
 		fprintf(stderr, "Error with computing hash: %s\n",
 		        sgn_strerror(sgnerrno));
 		sif_unload(&sif);
@@ -453,6 +464,8 @@ cmd_sign(int argc, char *argv[])
 	};
 
 	s.datatype = DATA_SIGNATURE;
+	s.groupid = SIF_UNUSED_GROUP;
+	s.link = id;
 	s.signature = strdup(signedhash);
 	s.len = strlen(signedhash)+1;
 	s.hashtype = SNG_DEFAULT_HASH;
@@ -469,14 +482,84 @@ cmd_sign(int argc, char *argv[])
 		fprintf(stderr, "Error releasing SIF file gracefully: %s\n",
 		        sif_strerror(siferrno));
 		free(s.signature);
+		sif_unload(&sif);
 		return -1;
 	}
 
+	sif_unload(&sif);
 	return 0;
 }
 
 int
-cmd_print(int argc, char *argv[])
+cmd_verify(int argc, char *argv[])
+{
+	Sifinfo sif;
+	Sifcommon *cm;
+	Sifcommon *link;
+	int id;
+	static char hash[SGN_HASHLEN];
+	static char hashstr[SGN_HASHLEN*2+1];
+	static char hashstr2[SGN_HASHLEN*2+1];
+
+	if(argc < 4){
+		usage();
+		return -1;
+	}
+
+	id = atoi(argv[2]);
+
+	if (sif_load(argv[3], &sif, 1) < 0) {
+		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
+		return(-1);
+	}
+
+	cm = sif_getdescid(&sif, id);
+	if(cm == NULL){
+		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
+		        sif_strerror(siferrno));
+		sif_unload(&sif);
+		return -1;
+	}
+
+	link = sif_getlinkeddesc(&sif, cm->id);
+	if(link == NULL){
+		fprintf(stderr, "Cannot find signature for id %d: %s\n", cm->id,
+		        sif_strerror(siferrno));
+		sif_unload(&sif);
+		return -1;
+	}
+
+	if(sgn_verifyhash(sif.mapstart+link->fileoff) < 0){
+		fprintf(stderr, "Signature verification failed: %s\n", sgn_strerror(sgnerrno));
+		sif_unload(&sif);
+		return -1;
+	}
+	if(sgn_getsignedhash(sif.mapstart+link->fileoff, hashstr) < 0){
+		fprintf(stderr, "Could not find SIFHASH inside signature: %s\n",
+		        sgn_strerror(sgnerrno));
+		sif_unload(&sif);
+		return -1;
+	}
+	if(sgn_hashbuffer(sif.mapstart+cm->fileoff, cm->filelen, hash) == NULL){
+		fprintf(stderr, "Error with computing hash: %s\n",
+		        sgn_strerror(sgnerrno));
+		sif_unload(&sif);
+		return -1;
+	}
+	sgn_hashtostr(hash, hashstr2);
+
+	if(strcmp(hashstr, hashstr2) != 0){
+		sif_unload(&sif);
+		fprintf(stderr, "Computed and signed hash mismatch\n");
+		return -1;
+	}
+
+	sif_unload(&sif);
+	return 0;
+}
+
+int
+cmd_info(int argc, char *argv[])
 {
 	int id;
 	Sifinfo sif;
@@ -539,8 +622,6 @@ cmd_dump(int argc, char *argv[])
 		return -1;
 	}
 
-	printf("Descriptor data:\n");
-	printf("---------------------------\n");
 	for(c = sif.mapstart+cm->fileoff; c < sif.mapstart+cm->fileoff+cm->filelen; c++)
 		printf("%c", *c);
 
@@ -564,8 +645,10 @@ main(int argc, char *argv[])
 		return cmd_list(argc, argv);
 	if(strncmp(argv[1], "sign", 4) == 0)
 		return cmd_sign(argc, argv);
-	if(strncmp(argv[1], "print", 5) == 0)
-		return cmd_print(argc, argv);
+	if(strncmp(argv[1], "verify", 6) == 0)
+		return cmd_verify(argc, argv);
+	if(strncmp(argv[1], "info", 4) == 0)
+		return cmd_info(argc, argv);
 	if(strncmp(argv[1], "dump", 4) == 0)
 		return cmd_dump(argc, argv);
 
