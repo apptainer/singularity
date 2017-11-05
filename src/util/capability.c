@@ -221,6 +221,36 @@ static void singularity_capability_set_securebits(void) {
     }
 }
 
+void singularity_capability_keep(void) {
+    if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP) < 0 ) {
+        singularity_message(ERROR, "Failed to keep capabilities\n");
+        ABORT(255);
+    }
+}
+
+void singularity_capability_set_effective(void) {
+    struct __user_cap_header_struct header;
+    struct __user_cap_data_struct data[2];
+
+    singularity_message(DEBUG, "Set effective/permitted capabilities for current processus\n");
+
+    header.version = LINUX_CAPABILITY_VERSION;
+    header.pid = getpid();
+
+    if ( capget(&header, data) < 0 ) {
+        singularity_message(ERROR, "Failed to get processus capabilities\n");
+        ABORT(255);
+    }
+
+    data[1].permitted = data[1].effective = data[1].inheritable;
+    data[0].permitted = data[0].effective = data[0].inheritable;
+
+    if ( capset(&header, data) < 0 ) {
+        singularity_message(ERROR, "Failed to set processus capabilities\n");
+        ABORT(255);
+    }
+}
+
 static void singularity_capability_set(unsigned long long capabilities) {
     __u32 caps_index;
     __u32 last_cap;
@@ -523,4 +553,5 @@ void singularity_capability_drop(void) {
         singularity_capability_set(current);
     }
     singularity_capability_set_securebits();
+    singularity_capability_set_effective();
 }

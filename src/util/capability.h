@@ -17,5 +17,6 @@ void singularity_capability_init_default(void);
 
 // Drop all capabilities
 void singularity_capability_drop(void);
+void singularity_capability_keep(void);
 
 #endif /* __CAPABILITY_H_ */
