@@ -36,7 +36,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fix for empty docker namespaces in private repositories
  - Fix Docker environment parsing
  - Revert lolcow easter egg
-
+ - Fix docker layer aufs whiteout handling
 
 
 
