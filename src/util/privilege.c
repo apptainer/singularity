@@ -423,7 +423,7 @@ uid_t singularity_priv_getuid(void) {
         singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
-    return uinfo.uid;
+    return singularity_priv_userns_enabled() ? getuid() : uinfo.uid;
 }
 
 gid_t singularity_priv_getgid(void) {
@@ -431,7 +431,7 @@ gid_t singularity_priv_getgid(void) {
         singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
-    return uinfo.gid;
+    return singularity_priv_userns_enabled() ? getgid() : uinfo.gid;
 }
 
 const gid_t *singularity_priv_getgids(void) {

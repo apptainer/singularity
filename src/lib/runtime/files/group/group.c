@@ -49,8 +49,8 @@ int _singularity_runtime_files_group(void) {
     char *source_file;
     char *tmp_file;
     int i;
-    uid_t uid = getuid();
-    uid_t gid = getgid();
+    uid_t uid = singularity_priv_getuid();
+    uid_t gid = singularity_priv_getgid();
     const gid_t *gids = singularity_priv_getgids();
     int gid_count = singularity_priv_getgidcount();
     char *containerdir = CONTAINER_FINALDIR;

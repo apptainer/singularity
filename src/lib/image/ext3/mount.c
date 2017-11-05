@@ -51,7 +51,7 @@ int _singularity_image_ext3_mount(struct image_object *image, char *mount_point)
         ABORT(255);
     }
 
-    if ( getuid() != 0 ) {
+    if ( singularity_priv_getuid() != 0 ) {
         singularity_message(DEBUG, "Adding MS_NODEV to mount options\n");
         opts |= MS_NODEV;
     }
