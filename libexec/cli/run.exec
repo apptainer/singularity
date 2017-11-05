@@ -57,12 +57,7 @@ if [ -z "${SINGULARITY_IMAGE:-}" ]; then
 fi
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
-    if [ $(( RANDOM % 10 )) != 0 ]; then
-        exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
-    else
-        message 1 "               ***** COW SIGHTING! *****\n"
-        SINGULARITY_IMAGE="shub://GodloveD/lolcow"
-    fi
+    exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
 fi
 
 if [ -n "${SINGULARITY_DAEMON_JOIN:-}" ]; then
