@@ -24,6 +24,11 @@ if [ -z "${SINGULARITY_libexecdir:-}" ]; then
     exit 2
 fi
 
+if [ -z "${SINGULARITY_sysconfdir:-}" ]; then
+    echo "ERROR: SINGULARITY_sysconfdir not defined in environment"
+    exit 2
+fi
+
 if [ -z "${SINGULARITY_MESSAGELEVEL:-}" ]; then
     echo "Warning: SINGULARITY_MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     SINGULARITY_MESSAGELEVEL=5
@@ -556,6 +561,17 @@ scheck() {
 
 atexit() {
     trap "$1" EXIT
+}
+
+singularity_config_value() {
+    if [ ! -z "${SINGULARITY_CONFIG_FILE:-}" ]; then
+        config="${SINGULARITY_CONFIG_FILE:-}"
+    else
+        config="${SINGULARITY_sysconfdir:-}/singularity/singularity.conf"
+    fi
+
+    value=$(sed -n "s/^\s*$1[ \t]*=[ \t]*\(.*\)/\1/p" $config)
+    echo $value
 }
 
 if [ -n "${SHELL_DEBUG:-}" ]; then

@@ -128,6 +128,11 @@ while true; do
         ;;
         --keep-privs)
             if [ "$(id -ru)" = "0" ]; then
+                if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+                    message ERROR "keep-privs is disabled when allow root capabilities directive is set to no\n"
+                    exit 1
+                fi
+
                 SINGULARITY_KEEP_PRIVS=1
                 export SINGULARITY_KEEP_PRIVS
                 message 4 "Requesting keep privileges\n"
@@ -156,6 +161,14 @@ while true; do
         ;;
         --allow-setuid)
             shift
+            if [ "$(id -ru)" != "0" ]; then
+                message ERROR "allow-setuid is for root only\n"
+                exit 1
+            fi
+            if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+                message ERROR "allow-setuid is disabled when allow root capabilities directive is set to no\n"
+                exit 1
+            fi
             SINGULARITY_ALLOW_SETUID=1
             export SINGULARITY_ALLOW_SETUID
         ;;

@@ -76,6 +76,20 @@ parse_capabilities() {
 }
 
 singularity_add_capabilities() {
+    if [ "$(singularity_config_value 'allow user capabilities')" != "yes" ]; then
+        if [ "$(id -ru)" != 0 ]; then
+            message ERROR "User capabilities are disabled by configuration\n"
+            exit 1
+        fi
+    fi
+
+    if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+        if [ "$(id -ru)" = 0 ]; then
+            message ERROR "Root capabilities are disabled by configuration\n"
+            exit 1
+        fi
+    fi
+
     if [ -z "${1:-}" ]; then
         message ERROR "No capability specified\n"
         exit 1
@@ -91,6 +105,20 @@ singularity_add_capabilities() {
 }
 
 singularity_drop_capabilities() {
+    if [ "$(singularity_config_value 'allow user capabilities')" != "yes" ]; then
+        if [ "$(id -ru)" != 0 ]; then
+            message ERROR "User capabilities are disabled by configuration\n"
+            exit 1
+        fi
+    fi
+
+    if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+        if [ "$(id -ru)" = 0 ]; then
+            message ERROR "Root capabilities are disabled by configuration\n"
+            exit 1
+        fi
+    fi
+
     if [ -z "${1:-}" ]; then
         message ERROR "No capability specified\n"
         exit 1
@@ -106,6 +134,22 @@ singularity_drop_capabilities() {
 }
 
 singularity_get_env_capabilities() {
+    if [ ! -z "${SINGULARITY_ADD_CAPS:-}" -o ! -z "${SINGULARITY_DROP_CAPS:-}" ]; then
+        if [ "$(singularity_config_value 'allow user capabilities')" != "yes" ]; then
+            if [ "$(id -ru)" != 0 ]; then
+                message ERROR "User capabilities are disabled by configuration\n"
+                exit 1
+            fi
+        fi
+
+        if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+            if [ "$(id -ru)" = 0 ]; then
+                message ERROR "Root capabilities are disabled by configuration\n"
+                exit 1
+            fi
+        fi
+    fi
+
     if [ ! -z "${SINGULARITY_ADD_CAPS:-}" ]; then
         export SINGULARITY_ADD_CAPS=$(parse_capabilities ${SINGULARITY_ADD_CAPS:-})
     fi
