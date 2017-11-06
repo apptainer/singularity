@@ -26,7 +26,7 @@ import math
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                 os.path.pardir)))  # noqa
-sys.path.append('..')  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
 
 from base import ApiConnection
 
