@@ -58,11 +58,18 @@ if [ -z "${1:-}" ]; then
     exit 0
 fi
 
-SINGULARITY_IMAGE="${1:-}"
 SINGULARITY_WRITABLE=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE
+SINGULARITY_SIFID="${1:-}"
 shift
 
+SINGULARITY_IMAGE="${1:-}"
+shift
+export SINGULARITY_SIFID SINGULARITY_IMAGE SINGULARITY_WRITABLE
+
+if [ -z "$SINGULARITY_SIFID" ]; then
+    message ERROR "You must supply the id of a data object to sign\n"
+    exit 1
+fi
 if [ -z "$SINGULARITY_IMAGE" ]; then
     message ERROR "You must supply a path to an image to sign\n"
     exit 1
@@ -72,10 +79,10 @@ if [ ! -f "$SINGULARITY_IMAGE" ]; then
     exit 1
 fi
 
-if [ -x "$SINGULARITY_libexecdir/singularity/bin/sign" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/sign" ${SINGULARITY_IMAGE}
+if [ -x "$SINGULARITY_libexecdir/singularity/bin/sif" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/sif" sign ${SINGULARITY_SIFID} ${SINGULARITY_IMAGE}
 else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/sign\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/sif\n"
     exit 1
 fi
 

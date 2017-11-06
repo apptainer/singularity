@@ -49,7 +49,7 @@ else
     ABORT 255
 fi
 
-if [ -z "${2:-}" ]; then
+if [ -z "${1:-}" ]; then
     if [ -n "${USAGE:-}" ]; then
         echo "USAGE: $USAGE"
     else
@@ -59,17 +59,10 @@ if [ -z "${2:-}" ]; then
 fi
 
 SINGULARITY_WRITABLE=0
-SINGULARITY_SIFID="${1:-}"
-shift
-
 SINGULARITY_IMAGE="${1:-}"
 shift
-export SINGULARITY_SIFID SINGULARITY_IMAGE SINGULARITY_WRITABLE
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE
 
-if [ -z "$SINGULARITY_SIFID" ]; then
-    message ERROR "You must supply the id of a data object to verify\n"
-    exit 1
-fi
 if [ -z "$SINGULARITY_IMAGE" ]; then
     message ERROR "You must supply a path to an image to verify\n"
     exit 1
@@ -80,7 +73,7 @@ if [ ! -f "$SINGULARITY_IMAGE" ]; then
 fi
 
 if [ -x "$SINGULARITY_libexecdir/singularity/bin/sif" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/sif" verify ${SINGULARITY_SIFID} ${SINGULARITY_IMAGE}
+    exec "$SINGULARITY_libexecdir/singularity/bin/sif" list ${SINGULARITY_IMAGE}
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/sif\n"
     exit 1
