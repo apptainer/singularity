@@ -230,11 +230,9 @@ void singularity_capability_keep(void) {
     }
 
     if ( ! (current_bits & SECBIT_NO_SETUID_FIXUP_LOCKED) ) {
-        if ( getuid() != 0 ) {
-            if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP) < 0 ) {
-                singularity_message(ERROR, "Failed to keep capabilities\n");
-                ABORT(255);
-            }
+        if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP) < 0 ) {
+            singularity_message(ERROR, "Failed to keep capabilities\n");
+            ABORT(255);
         }
     }
 }
