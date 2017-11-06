@@ -111,6 +111,18 @@ stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
+# Test multiple empty lines
+cat <<EOF > "$DEFFILE"
+Bootstrap: docker
+From: busybox
+
+
+# this is a comment
+EOF
+
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
 
 test_cleanup
 
