@@ -20,6 +20,8 @@ EXTRA_DIST = capability.c \
 			 fork.h \
 			 message.c \
 			 message.h \
+			 mount.c \
+			 mount.h \
 			 privilege.c \
 			 privilege.h \
 			 registry.c \

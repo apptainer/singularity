@@ -53,7 +53,9 @@ if [ ! -z "${SINGULARITY_DEFFILE_REGISTRY:-}" ]; then
     export REGISTRY
 fi
 
-if [ ! -z "${SINGULARITY_DEFFILE_NAMESPACE:-}" ]; then
+# Note: NAMESPACE can be set to an empty string, and that's a valid namespace
+# for Docker (not so for shub://)
+if [ ! -z "${SINGULARITY_DEFFILE_NAMESPACE+set}" ]; then
     message DEBUG "Custom Docker Namespace 'Namespace:' ${SINGULARITY_DEFFILE_NAMESPACE}.\n"
     NAMESPACE="${SINGULARITY_DEFFILE_NAMESPACE}"
     export NAMESPACE

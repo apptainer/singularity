@@ -15,7 +15,7 @@ EXTRA_PROGRAMS = wrapper-suid
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c util/suid.c
 cleanupd_CPPFLAGS = $(AM_CPPFLAGS)
 
-action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/daemon.c util/capability.c
+action_SOURCES = action.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/daemon.c util/capability.c util/mount.c
 action_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 action_CPPFLAGS = $(AM_CPPFLAGS)
 
@@ -24,11 +24,11 @@ builddef_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-ru
 builddef_CPPFLAGS = $(AM_CPPFLAGS)
 builddef_LDFLAGS = -static
 
-start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/signal.c util/capability.c
+start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/signal.c util/capability.c util/mount.c
 start_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 start_CPPFLAGS = $(AM_CPPFLAGS)
 
-mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/capability.c
+mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/capability.c util/mount.c
 mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
 mount_CPPFLAGS = $(AM_CPPFLAGS)
 

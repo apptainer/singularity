@@ -19,7 +19,7 @@ fi
 
 # Install python 3 and pylint
 yum install -y epel-release
-yum install -y python34 python34-pip python34-setuptools
+yum install -y python34 python34-pip python34-setuptools docker
 yum install -y pylint
 
 # run the test suite
@@ -28,6 +28,7 @@ sed -i 's,^prefix=.*,prefix=/usr,' test.sh
 sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
 sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
 useradd testuser
+echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
 
 # build image for isolated builds

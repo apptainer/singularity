@@ -37,6 +37,7 @@
 #include "util/config_parser.h"
 #include "util/suid.h"
 #include "util/privilege.h"
+#include "util/mount.h"
 
 #include "../image.h"
 #include "../bind.h"
@@ -58,7 +59,7 @@ int _singularity_image_squashfs_mount(struct image_object *image, char *mount_po
 
     singularity_priv_escalate();
     singularity_message(VERBOSE, "Mounting squashfs image: %s -> %s\n", loop_dev, mount_point);
-    if ( mount(loop_dev, mount_point, "squashfs", mntflags, "errors=remount-ro") < 0 ) {
+    if ( singularity_mount(loop_dev, mount_point, "squashfs", mntflags, "errors=remount-ro") < 0 ) {
         singularity_message(ERROR, "Failed to mount squashfs image in (read only): %s\n", strerror(errno));
         ABORT(255);
     }

@@ -124,6 +124,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_localstatedir}/singularity/mnt/session
 %dir %{_localstatedir}/singularity/mnt/container
 %dir %{_localstatedir}/singularity/mnt/overlay
+%dir %{_localstatedir}/singularity/mnt/final
 %{_bindir}/singularity
 %{_bindir}/run-singularity
 %{_libdir}/singularity/lib*.so.*

@@ -120,29 +120,33 @@ int main(int argc, char **argv) {
 
             char *bootdef_value;
 
-            if ( ( bootdef_value = strtok(NULL, "\n") ) != NULL ) {
-
+            bootdef_value = strtok(NULL, "\n");
+            char empty[] = "";
+            if (bootdef_value == NULL) {
+                bootdef_value = empty;
+            } else {
                 chomp_comments(bootdef_value);
-                singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
-
-                if ( envar_defined(strjoin("SINGULARITY_DEFFILE_", uppercase(bootdef_key))) == 0 ) {
-                    singularity_message(ERROR, "Duplicate bootstrap definition key found: '%s'\n", bootdef_key);
-                    ABORT(255);
-                }
-
-                if ( strcasecmp(bootdef_key, "import") == 0 ) {
-                    // Do this again for an imported deffile
-                    bootstrap_keyval_parse(bootdef_value);
-                }
-
-                if ( strcasecmp(bootdef_key, "bootstrap") == 0 ) {
-                    singularity_registry_set("DRIVER", bootdef_value);
-                }
-
-                // Cool little feature, every key defined in def file is transposed
-                // to environment
-                envar_set(strjoin("SINGULARITY_DEFFILE_", uppercase(bootdef_key)), bootdef_value, 1);
             }
+
+            singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
+
+            if ( envar_defined(strjoin("SINGULARITY_DEFFILE_", uppercase(bootdef_key))) == 0 ) {
+                singularity_message(ERROR, "Duplicate bootstrap definition key found: '%s'\n", bootdef_key);
+                ABORT(255);
+            }
+
+            if ( strcasecmp(bootdef_key, "import") == 0 ) {
+                // Do this again for an imported deffile
+                bootstrap_keyval_parse(bootdef_value);
+            }
+
+            if ( strcasecmp(bootdef_key, "bootstrap") == 0 ) {
+                singularity_registry_set("DRIVER", bootdef_value);
+            }
+
+            // Cool little feature, every key defined in def file is transposed
+            // to environment
+            envar_set(strjoin("SINGULARITY_DEFFILE_", uppercase(bootdef_key)), bootdef_value, 1);
         }
     }
 
@@ -165,7 +169,7 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_DOCKER_PASSWORD", singularity_registry_get("DOCKER_PASSWORD"), 1);
     envar_set("SINGULARITY_DOCKER_USERNAME", singularity_registry_get("DOCKER_USERNAME"), 1);
     envar_set("SINGULARITY_CACHEDIR", singularity_registry_get("CACHEDIR"), 1);
-    envar_set("SINGULARITY_MESSAGELEVEL", singularity_registry_get("MESSAGELEVEL"), 1);
+    envar_set("SINGULARITY_NOHTTPS", singularity_registry_get("NOHTTPS"), 1);
     envar_set("SINGULARITY_version", singularity_registry_get("VERSION"), 1);
     envar_set("HOME", singularity_priv_home(), 1);
     envar_set("LANG", "C", 1);
