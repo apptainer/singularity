@@ -338,6 +338,25 @@ AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
 AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
 AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
 
+# check for libuuid needed by SIF
+AC_CHECK_HEADERS([uuid/uuid.h],
+        [uuid_header_found=yes; break;])
+AS_IF([test "x$uuid_header_found" != "xyes"],
+	[AC_MSG_ERROR([Unable to find the uuid headers])])
+AC_SEARCH_LIBS([uuid_generate], [uuid], [], [
+	AC_MSG_ERROR([unable to find the uuid_generate() function])
+])
+
+# check for openssl needed by signing
+AC_CHECK_HEADERS([openssl/sha.h],
+	[ssl_header_found=yes; break;])
+AS_IF([test "x$ssl_header_found" != "xyes"],
+	[AC_MSG_ERROR([Unable to find the ssl headers])])
+AC_SEARCH_LIBS([SHA1], [crypto], [], [
+	AC_MSG_ERROR([unable to find the SHA1() function])
+])
+
+
 
 AC_CONFIG_FILES([
    Makefile
