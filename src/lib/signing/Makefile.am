@@ -8,10 +8,10 @@ distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
 noinst_LTLIBRARIES = libsigning.la
-libsigning_la_SOURCES = crypt.c signing.c
+libsigning_la_SOURCES = crypt.c
 libsigning_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
-distinclude_HEADERS = crypt.h signing.h
+distinclude_HEADERS = crypt.h
 distlib_LTLIBRARIES = libsingularity-signing.la
 
 libsingularity_signing_la_SOURCES =
