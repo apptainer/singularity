@@ -102,8 +102,8 @@ def extract_runscript(manifest, includecmd=False):
         cmd = " ".join(['"%s"' % x for x in cmd])
 
         if not RUNSCRIPT_COMMAND_ASIS:
-            cmd = 'exec %s' % cmd
-        cmd = "#!/bin/sh\n\n%s $@\n" % cmd
+            cmd = 'exec %s "$@"' % cmd
+        cmd = "#!/bin/sh\n\n%s\n" % cmd
         return cmd
 
     bot.debug("CMD and ENTRYPOINT not found, skipping runscript.")
