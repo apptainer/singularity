@@ -62,7 +62,7 @@ SINGULARITY_ADD_SCRIPT=$(printf "%q" "$SINGULARITY_libexecdir/singularity/python
 
 
 eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.schema-version" --value "1.0" --file $SINGULARITY_LABELFILE
-eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-date" --value $(date --rfc-3339=seconds | sed 's/ /T/') --file $SINGULARITY_LABELFILE
+eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-date" --value $(date -R  | sed 's/ /_/') --file $SINGULARITY_LABELFILE
 
 if [ -f "${SINGULARITY_ROOTFS}/.singularity.d/runscript.help" ]; then
     eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage" --value "/.singularity.d/runscript.help" --file $SINGULARITY_LABELFILE
@@ -73,8 +73,7 @@ eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage.singularity.versio
 
 # Calculate image final size
 message 1 "Calculating final size for metadata...\n"
-EXCLUDE_LIST="--exclude=$SINGULARITY_ROOTFS/proc --exclude=$SINGULARITY_ROOTFS/dev --exclude=$SINGULARITY_ROOTFS/dev --exclude=$SINGULARITY_ROOTFS/var --exclude=$SINGULARITY_ROOTFS/tmp --exclude=$SINGULARITY_ROOTFS/media --exclude=$SINGULARITY_ROOTFS/home"
-IMAGE_SIZE=$(du --apparent-size -sm $EXCLUDE_LIST $SINGULARITY_ROOTFS | cut -f 1)
+IMAGE_SIZE=$(du -x -sm $SINGULARITY_ROOTFS | cut -f 1)
 eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-size" --value "${IMAGE_SIZE}MB" --file $SINGULARITY_LABELFILE
 
 
