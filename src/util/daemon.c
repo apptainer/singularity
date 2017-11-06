@@ -194,6 +194,10 @@ void daemon_init_start(void) {
 }
 
 void singularity_daemon_init(void) {
+#if defined (NO_SETNS) && !defined (SINGULARITY_SETNS_SYSCALL)
+    singularity_message(ERROR, "Instance feature is disabled, your kernel is too old\n");
+    ABORT(255);
+#else
     if ( singularity_registry_get("DAEMON_START") ) {
         daemon_init_start();
         return;
@@ -204,4 +208,5 @@ void singularity_daemon_init(void) {
         singularity_message(DEBUG, "Not joining a daemon, daemon join not set\n");
         return;
     }
+#endif
 }

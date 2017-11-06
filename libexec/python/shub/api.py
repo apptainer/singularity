@@ -211,22 +211,43 @@ def get_image_name(manifest, extension="simg"):
         default_naming = False
 
     # Second preference goes to commit
-    elif SHUB_NAMEBYCOMMIT is not None and manifest['version'] is not None:
-        image_name = "%s.%s" % (manifest['version'], extension)
+    elif SHUB_NAMEBYCOMMIT is not None:
+
+        if manifest.get("commit") is not None:
+            commit = manifest['commit']
+
+        elif manifest['version'] is not None:
+            commit = manifest['version']
+
+        image_name = "%s.%s" % (commit, extension)
         default_naming = False
 
     elif SHUB_NAMEBYHASH is not None:
         image_url = os.path.basename(unquote(manifest['image']))
-        image_name = re.findall(".+[.]%s" % (extension), image_url)[0]
-        default_naming = False
+        image_name = re.findall(".+[.]%s" % (extension), image_url)
+        if len(image_name) == 0:
+            image_name = re.findall(".+[.]img.gz", image_url)
+        if len(image_name) > 0:
+            default_naming = False
+            image_name = image_name[0]
 
     # Default uses the image name-branch
     if default_naming is True:
 
-        # Tag is derived from branch for Shub, tag from sregistry
-        tag_source = 'branch'
-        if tag_source not in manifest:
-            tag_source = 'tag'
+        # Singularity Hub v2.0
+        if "tag" in manifest and "branch" in manifest:
+            container_name = "%s-%s" % (manifest["branch"], manifest["tag"])
+
+        # Singularity Registry
+        elif "tag" in manifest:
+            container_name = manifest["tag"]
+
+        # Singularity Hub v1.0
+        else:
+            container_name = manifest['branch']
+
+        # Remove slashes
+        container_name = container_name.replace('/', '-')
 
         # sregistry images store collection/name separately
         name = manifest['name']
@@ -235,7 +256,7 @@ def get_image_name(manifest, extension="simg"):
             source = "Registry"
             name = '%s-%s' % (manifest['collection'], name)
         image_name = "%s-%s.%s" % (name.replace('/', '-'),
-                                   manifest[tag_source].replace('/', '-'),
+                                   container_name,
                                    extension)
     if not bot.is_quiet():
         print("Singularity %s Image: %s" % (source, image_name))
