@@ -47,6 +47,16 @@ message() {
     fi
     shift
     shift
+
+    # if level is symbolic, get a numeric value
+    case "$LEVEL" in
+	INFO) LEVNUM=1 ;;
+	VERBOSE) LEVNUM=4 ;;
+	DEBUG) LEVNUM=5 ;;
+        [1-5]) LEVNUM="$LEVEL" ;;
+        *) LEVNUM=1 ;; # default to INFO
+    esac
+
     case "$LEVEL" in
         e|error|E|ERROR)
             tput -Txterm setaf 1 2>/dev/null
@@ -64,7 +74,7 @@ message() {
             tput -Txterm sgr0 2>/dev/null
         ;;
         1|INFO)
-            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
+            if [ "$LEVNUM" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@"
             fi
         ;;
@@ -84,7 +94,7 @@ message() {
             tput -Txterm sgr0 2>/dev/null
         ;;
         [2-5]|VERBOSE|DEBUG)
-            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
+            if [ "$LEVNUM" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@" 1>&2
             fi
         ;;

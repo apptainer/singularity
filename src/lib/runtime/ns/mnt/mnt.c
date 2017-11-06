@@ -39,6 +39,7 @@
 #include "util/config_parser.h"
 #include "util/privilege.h"
 #include "util/setns.h"
+#include "util/mount.h"
 
 
 static int enabled = -1;
@@ -71,7 +72,7 @@ int _singularity_runtime_ns_mnt(void) {
     // The strange formatting here is to avoid SonarQube complaints about bitwise or of signed operands.
     unsigned mount_flags = MS_REC;
     mount_flags |= (unsigned)(slave ? MS_SLAVE : MS_PRIVATE);
-    if ( mount(NULL, "/", NULL, mount_flags, NULL) < 0 ) {
+    if ( singularity_mount(NULL, "/", NULL, mount_flags, NULL) < 0 ) {
         singularity_message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
         ABORT(255);
     }
@@ -80,7 +81,7 @@ int _singularity_runtime_ns_mnt(void) {
         singularity_message(WARNING, "Requested option 'mount slave' is not available on this host, using private\n");
     }
     singularity_message(DEBUG, "Making mounts private\n");
-    if ( mount(NULL, "/", NULL, MS_PRIVATE | MS_REC, NULL) < 0 ) {
+    if ( singularity_mount(NULL, "/", NULL, MS_PRIVATE | MS_REC, NULL) < 0 ) {
         singularity_message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
         ABORT(255);
     }
