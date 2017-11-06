@@ -124,5 +124,24 @@ stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
-test_cleanup
+# Test comments inside runscript
+cat <<EOF > "$DEFFILE"
+Bootstrap: docker
+From: busybox
+
+%runscript
+#this is a comment
+EOF
+# expected output of test below
+cat <<EOF >"$SINGULARITY_TESTDIR/expected.txt"
+#!/bin/sh 
+
+#this is a comment
+EOF
+
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
+stest 0 singularity exec "$CONTAINER" cat /.singularity.d/runscript
+# save output of last test, need it to compare with expected
+cp "$SINGULARITY_TESTDIR/output" "$SINGULARITY_TESTDIR/actual.txt"
+stest 0 cmp "$SINGULARITY_TESTDIR/actual.txt" "$SINGULARITY_TESTDIR/expected.txt"
 
