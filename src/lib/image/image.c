@@ -70,6 +70,7 @@ struct image_object singularity_image_init(char *path, int open_flags) {
     image.fd = -1;
     image.loopdev = NULL;
     image.offset = 0;
+    image.size = 0;
 
     if ( open_flags & ( O_RDWR | O_WRONLY ) ) {
         image.writable = 1;
