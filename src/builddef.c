@@ -103,6 +103,11 @@ int main(int argc, char **argv) {
 
         chomp_comments(line);
 
+        // skip empty lines (do this after 'chomp')
+        if (line[0] == '\0') {
+            continue;
+        }
+
         if ( line[0] == '%' ) { // We hit a section, stop parsing for keyword tags
             break;
         } else if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
