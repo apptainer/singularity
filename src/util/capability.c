@@ -222,9 +222,20 @@ static void singularity_capability_set_securebits(void) {
 }
 
 void singularity_capability_keep(void) {
-    if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP) < 0 ) {
-        singularity_message(ERROR, "Failed to keep capabilities\n");
+    int current_bits = prctl(PR_GET_SECUREBITS);
+
+    if ( current_bits < 0 ) {
+        singularity_message(ERROR, "Failed to read securebits\n");
         ABORT(255);
+    }
+
+    if ( ! (current_bits & SECBIT_NO_SETUID_FIXUP_LOCKED) ) {
+        if ( getuid() != 0 ) {
+            if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP) < 0 ) {
+                singularity_message(ERROR, "Failed to keep capabilities\n");
+                ABORT(255);
+            }
+        }
     }
 }
 
