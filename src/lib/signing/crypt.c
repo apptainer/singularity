@@ -73,7 +73,7 @@ sgn_hashtostr(char *hash, char *hashstr)
 void
 sgn_sifhashstr(char *hashstr, char *sifhashstr)
 {
-	strcpy(sifhashstr, SIFHASH_PREFIX);
+	strcpy(sifhashstr, SIFHASH_PREFIX); // Flawfinder: ignore
 	strncat(sifhashstr, hashstr, SGN_HASHLEN*2);
 }
 
@@ -179,7 +179,7 @@ sgn_signhash(char *hashstr, char *signedhash)
 		dup2(stdoutfd, 1);	/* restore stdout and close other fd's */
 		close(p[0]);
 		close(stdoutfd);
-	}else if((pfp = popen(SIGN_COMMAND, "w")) == NULL){
+	}else if((pfp = popen(SIGN_COMMAND, "w")) == NULL){ // Flawfinder: ignore
 		sgnerrno = SGN_EPSOPEN;
 		dup2(stdoutfd, 1);	/* restore stdout and close other fd's */
 		close(p[0]);
@@ -256,7 +256,7 @@ sgn_verifyhash(char *signedhash)
 		dup2(stderrfd, 2);	/* restore stderr and close other fd's */
 		close(p[0]);
 		close(stderrfd);
-	}else if((pfp = popen(VERIFY_COMMAND, "w")) == NULL){
+	}else if((pfp = popen(VERIFY_COMMAND, "w")) == NULL){ // Flawfinder: ignore
 		sgnerrno = SGN_EPVOPEN;
 		dup2(stderrfd, 2);	/* restore stderr and close other fd's */
 		close(p[0]);

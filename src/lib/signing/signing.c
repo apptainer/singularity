@@ -51,7 +51,7 @@ int _singularity_image_sign(unsigned char *text) {
 
     singularity_message(DEBUG, "Computing hash from '%c' for %ld bytes\n", map[0], image->size);
     compute_hash(map, image->size, hash);
-    strcpy(hashstr, IMAGE_HASH_PREFIX);
+    strcpy(hashstr, IMAGE_HASH_PREFIX); // Flawfinder: ignore
     for (int i = 0, pos = strlen(IMAGE_HASH_PREFIX); i < HASH_LEN; i++, pos = i*2+strlen(IMAGE_HASH_PREFIX)) {
         sprintf(&hashstr[pos], "%02hhx", hash[i]);
     }
