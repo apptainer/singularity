@@ -145,3 +145,5 @@ stest 0 singularity exec "$CONTAINER" cat /.singularity.d/runscript
 cp "$SINGULARITY_TESTDIR/output" "$SINGULARITY_TESTDIR/actual.txt"
 stest 0 cmp "$SINGULARITY_TESTDIR/actual.txt" "$SINGULARITY_TESTDIR/expected.txt"
 
+
+test_cleanup
