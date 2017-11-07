@@ -20,7 +20,7 @@
 # perform publicly and display publicly, and to permit other to do so. 
 # 
 # 
-
+set -e
 
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
@@ -363,6 +363,9 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
             eval_abort ${SINGULARITY_bindir}/singularity image.create --force --size ${IMAGE_SIZE} "${SINGULARITY_TEMP_FS}"
         fi
 
+	# deprecated path where create/bootstrap produced and empty image to use
+	cp -a "$SINGULARITY_CONTAINER_OUTPUT" "${SINGULARITY_TEMP_FS}"
+
         message 1 "Building Singularity FS image...\n"
         tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_bindir}/singularity image.import "${SINGULARITY_TEMP_FS}"
     else
@@ -379,6 +382,10 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
     fi
 
     fstype=`$SINGULARITY_libexecdir/singularity/bin/image-type "${SINGULARITY_TEMP_FS}"`
+    if [ "$fstype" = "" ]; then
+	    message ERROR "Failed to determine FS type\n"
+	    exit 1
+    fi
 
     message 1 "Building Singularity SIF container image...\n"
     if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
