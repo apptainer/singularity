@@ -364,7 +364,9 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         fi
 
 	# deprecated path where create/bootstrap produced and empty image to use
-	cp -a "$SINGULARITY_CONTAINER_OUTPUT" "${SINGULARITY_TEMP_FS}"
+	if [ -f "$SINGULARITY_CONTAINER_OUTPUT" ]; then
+		cp -a "$SINGULARITY_CONTAINER_OUTPUT" "${SINGULARITY_TEMP_FS}"
+	fi
 
         message 1 "Building Singularity FS image...\n"
         tar -cf - -C "$SINGULARITY_ROOTFS" . | eval_abort ${SINGULARITY_bindir}/singularity image.import "${SINGULARITY_TEMP_FS}"
