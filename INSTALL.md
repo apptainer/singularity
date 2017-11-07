@@ -1,7 +1,7 @@
 # Installing Singularity
 
 Since you are reading this from the Singualrity source code, it will be
-assumed that you are building/compiling. To start off with you must first
+assumed that you are building/compiling. You must first
 install the development tools and libraries to your host. Assuming a Red
 Hat compatible system (apply similar to Debian derivitives):
 
@@ -10,16 +10,18 @@ $ sudo yum groupinstall "Development Tools"
 ```
 
 
-## To compile and install Singularity from a released tarball:
-Assuming a 2.4 released tarball...
+## To compile and install Singularity from a [released tarball](https://github.com/singularityware/singularity/blob/master/.travis.yml):
+Here, the version of Singularity that you want to install is given in **<version>**.  Please substitute as necessary.  
 ```
-$ version=2.4
+<pre>
+$ version=<b>version</b>
 $ wget "https://github.com/singularityware/singularity/releases/download/${version}/singularity-${version}.tar.gz"
 $ tar -xvzf singularity-${version}.tar.gz
 $ cd singularity-${version}
 $ ./configure --prefix=/usr/local
 $ make
 $ sudo make install
+</pre>
 ```
 
 note: The `sudo` is very important for the `make install`. Failure to do this
