@@ -38,7 +38,7 @@ sgn_strerror(Sgnerrno sgnerrno)
 	case SGN_EDUP2OUT: return "Could not duplicate stdout to pipe";
 	case SGN_EPSOPEN: return "Popen failed with SIGN_COMMAND";
 	case SGN_EPIPESWR: return "Could not write verifstr to pgp";
-	case SGN_EFPCLOSE: return "Could not close the pgp pipe stream";
+	case SGN_EFPCLOSE: return "Pclose failed: unsuccessful GPG operation";
 	case SGN_EDUP2RSTO: return "Could not duplicate and restore stdout";
 	case SGN_ESOFLOW: return "Buffer too small to hold signature";
 	case SGN_ERDPIPE: return "Read error on pgp pipe stream";
@@ -160,12 +160,21 @@ sgn_signhash(char *hashstr, char *signedhash)
 	FILE *pfp;
 	int p[2];
 	int stdoutfd;
+	int stderrfd;
 
 	stdoutfd = dup(1);		/* save the original stdout */
 	if(stdoutfd < 0){
 		sgnerrno = SGN_EDUPOUT;
 		return -1;
 	}
+	stderrfd = dup(2);		/* save the original stderr to mute */
+	if(stderrfd < 0){
+		close(stdoutfd);
+		sgnerrno = SGN_EDUPERR;
+		return -1;
+	}
+	close(2);
+
 	if(pipe(p) < 0){		/* create the pgp run pipe */
 		sgnerrno = SGN_EPIPE;
 		close(stdoutfd);
@@ -190,7 +199,7 @@ sgn_signhash(char *hashstr, char *signedhash)
 		dup2(stdoutfd, 1);	/* restore stdout and close other fd's */
 		close(p[0]);
 		close(stdoutfd);
-	}else if(pclose(pfp) < 0){
+	}else if(pclose(pfp) != 0){
 		sgnerrno = SGN_EFPCLOSE;
 		dup2(stdoutfd, 1);	/* restore stdout and close other fd's */
 		close(p[0]);
@@ -224,6 +233,8 @@ sgn_signhash(char *hashstr, char *signedhash)
 			break;
 		}
 	}
+	dup2(stderrfd, 2);	/* restore stderr and close its duplicate */
+	close(stderrfd);
 
 	return ret;
 }
@@ -267,7 +278,7 @@ sgn_verifyhash(char *signedhash)
 		dup2(stderrfd, 2);	/* restore stderr and close other fd's */
 		close(p[0]);
 		close(stderrfd);
-	}else if(pclose(pfp) < 0){
+	}else if(pclose(pfp) != 0){
 		sgnerrno = SGN_EFPCLOSE;
 		dup2(stderrfd, 2);	/* restore stderr and close other fd's */
 		close(p[0]);

@@ -49,7 +49,7 @@ else
     ABORT 255
 fi
 
-if [ -z "${1:-}" ]; then
+if [ -z "${2:-}" ]; then
     if [ -n "${USAGE:-}" ]; then
         echo "USAGE: $USAGE"
     else
@@ -66,12 +66,8 @@ SINGULARITY_IMAGE="${1:-}"
 shift
 export SINGULARITY_SIFID SINGULARITY_IMAGE SINGULARITY_WRITABLE
 
-if [ -z "$SINGULARITY_SIFID" ]; then
-    message ERROR "You must supply the id of a data object to sign\n"
-    exit 1
-fi
-if [ -z "$SINGULARITY_IMAGE" ]; then
-    message ERROR "You must supply a path to an image to sign\n"
+if [ -z "$SINGULARITY_SIFID" -o -z "$SINGULARITY_IMAGE" ]; then
+    message ERROR "You must supply the id of a data object and a path to an image to sign\n"
     exit 1
 fi
 if [ ! -f "$SINGULARITY_IMAGE" ]; then

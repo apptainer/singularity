@@ -41,7 +41,7 @@ typedef enum{
 	SGN_EDUP2OUT,	/* Could not duplicate stdout to pipe */
 	SGN_EPSOPEN,	/* Popen failed with SIGN_COMMAND */
 	SGN_EPIPESWR,	/* Could not write verifstr to pgp */
-	SGN_EFPCLOSE,	/* Could not close the pgp pipe stream */
+	SGN_EFPCLOSE,	/* Pclose failed: unsuccessful GPG operation */
 	SGN_EDUP2RSTO,	/* Could not duplicate and restore stdout */
 	SGN_ESOFLOW,	/* Buffer too small to hold signature */
 	SGN_ERDPIPE,	/* Read error on pgp pipe stream */
