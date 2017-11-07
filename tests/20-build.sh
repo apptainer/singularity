@@ -132,6 +132,19 @@ sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar.gz"
 container_check
 
+# check for "Duplicate bootstrap definition key found:" error triggered by
+# comment (issue #1103) or by extra spaces in header (PR #1127)
+cat >"${SINGULARITY_TESTDIR}/Singularity" <<EOF
+Bootstrap: shub
+From: GodloveD/bootstrap
+#From: GodloveD/bootstrap
+
+
+EOF
+stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+container_check
+
+
 
 stest 0 sudo rm -rf "${CONTAINER}"
 stest 0 sudo rm -rf "${CONTAINER2}"
