@@ -11,9 +11,9 @@ $ sudo yum groupinstall "Development Tools"
 
 
 ## To compile and install Singularity from a [released tarball](https://github.com/singularityware/singularity/blob/master/.travis.yml):
-Here, the version of Singularity that you want to install is given in **<version>**.  Please substitute as necessary.  
+Here, the version of Singularity that you want to install is given in **&lt;version&gt;**.  Please substitute as necessary.  
 <pre>
-$ version=<b>version</b>
+$ version=<b>&lt;version&gt;</b>
 $ wget "https://github.com/singularityware/singularity/releases/download/${version}/singularity-${version}.tar.gz"
 $ tar -xvzf singularity-${version}.tar.gz
 $ cd singularity-${version}
