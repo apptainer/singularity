@@ -44,7 +44,7 @@ image_type_LDADD = lib/image/libsingularity-image.la lib/sif/libsingularity-sif.
 image_type_CPPFLAGS = $(AM_CPPFLAGS)
 
 wrapper_SOURCES = wrapper.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/capability.c
-wrapper_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la
+wrapper_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la lib/sif/libsingularity-sif.la -luuid
 wrapper_CPPFLAGS = $(AM_CPPFLAGS)
 
 wrapper_suid_SOURCES = $(wrapper_SOURCES)
