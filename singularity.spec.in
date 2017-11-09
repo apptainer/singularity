@@ -142,7 +142,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/action
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/bin/image-type
-%{_libexecdir}/singularity/bin/prepheader
 %{_libexecdir}/singularity/bin/wrapper
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/capabilities
