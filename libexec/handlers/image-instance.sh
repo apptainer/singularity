@@ -26,6 +26,22 @@ if [ ! -f "${DAEMON_IMAGE}" -a ! -d "${DAEMON_IMAGE}" ]; then
     ABORT 255
 fi
 
+if [ ! -z "${ADD_CAPS:-}" ]; then
+    export SINGULARITY_ADD_CAPS="${ADD_CAPS}"
+fi
+
+if [ ! -z "${DROP_CAPS:-}" ]; then
+    export SINGULARITY_DROP_CAPS="${DROP_CAPS}"
+fi
+
+if [ ! -z "${KEEP_PRIVS:-}" ]; then
+    export SINGULARITY_KEEP_PRIVS="1"
+fi
+
+if [ ! -z "${NO_PRIVS:-}" ]; then
+    export SINGULARITY_NO_PRIVS="1"
+fi
+
 SINGULARITY_IMAGE="${DAEMON_IMAGE}"
 SINGULARITY_DAEMON_JOIN=1
 export SINGULARITY_DAEMON_JOIN SINGULARITY_IMAGE
