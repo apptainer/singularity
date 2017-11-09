@@ -37,8 +37,8 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Revert lolcow easter egg
  - Fix "Duplicate bootstrap definition key" triggered by comments and blank spaces
  - Fix for docker permission error when downloading multiple layers
- - Fix parsing of docker tags and version
- - Add "$@" to an empty runscript when building from docker
+ - Fix parsing of registry (including port), namespace, tags, and version
+ - Add "$@" to any CMD/ENTRYPOINT found when building from Docker
  - Added sqaushfs-tools as a dependency for building deb files
 
 ## [v2.4](https://github.com/singularityware/singularity/tree/v2.4) (2017-10-02)
