@@ -6,6 +6,8 @@ addons:
       - flawfinder
       - python-pip
       - squashfs-tools
+      - uuid-dev
+      - libssl-dev
 
 env:
   global:

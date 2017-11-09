@@ -5,7 +5,7 @@
 OS_VERSION="$1"
 
 # build and install
-yum install -y libtool rpm-build make squashfs-tools
+yum install -y libtool rpm-build make squashfs-tools openssl-devel libuuid-devel
 ./autogen.sh
 ./configure
 make dist

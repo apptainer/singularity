@@ -78,7 +78,7 @@ get_section() {
     do
 
  
-        if echo $line | grep --quiet -e "^%$SECTION$"; then
+        if echo $line | grep -q -e "^%$SECTION$"; then
 
             # If not found, continue
             if [[ "$FOUND" == "no" ]]; then
@@ -90,7 +90,7 @@ get_section() {
         # We didn't match this line but...
         else
             # It's the start of a new section
-            if echo $line | grep --quiet -e "^%"; then
+            if echo $line | grep -q -e "^%"; then
 
                 # We already found it, we're done
                 if [[ "$FOUND" == "yes" ]]; then

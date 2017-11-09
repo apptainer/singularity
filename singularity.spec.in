@@ -109,7 +109,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/get-section
 %{_libexecdir}/singularity/bin/mount
 %{_libexecdir}/singularity/bin/image-type
-%{_libexecdir}/singularity/bin/prepheader
+%{_libexecdir}/singularity/bin/sif
 
 # Directories
 %{_libexecdir}/singularity/bootstrap-scripts
@@ -136,6 +136,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/shell.*
 %{_libexecdir}/singularity/cli/test.*
 %{_libexecdir}/singularity/cli/capability.*
+%{_libexecdir}/singularity/cli/sign.*
+%{_libexecdir}/singularity/cli/verify.*
+%{_libexecdir}/singularity/cli/siflist.*
 %{_libexecdir}/singularity/bin/action
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/bin/image-type

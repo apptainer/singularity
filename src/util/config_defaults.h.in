@@ -94,6 +94,9 @@
 #define AUTOFS_BUG_PATH "autofs bug path"
 #define AUTOFS_BUG_PATH_DEFAULT ""
 
+#define ALLOW_CONTAINER_SIF "allow container sif"
+#define ALLOW_CONTAINER_SIF_DEFAULT 1
+
 #define ALLOW_CONTAINER_DIR "allow container dir"
 #define ALLOW_CONTAINER_DIR_DEFAULT 1
 

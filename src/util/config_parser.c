@@ -273,7 +273,7 @@ const char **_singularity_config_get_value_multi_impl(const char *key, const cha
         singularity_message(ERROR, "Called singularity_config_get_value on uninitialized config subsystem\n");
         ABORT(255);
     }
-    _default_entry[1] = '\0';
+    _default_entry[1] = "\0";
     _default_entry[0] = default_value;
 
     ENTRY search_item;
