@@ -95,5 +95,55 @@ stest 0 sh -c "echo true | singularity shell "$CONTAINER" | grep 'hi from enviro
 stest 0 sh -c "singularity exec "$CONTAINER" true | grep 'hi from environment'"
 
 
-test_cleanup
+# Test for #1103: Duplicate bootstrap definition key found: '#UpdateURL'
+cat <<EOF > "$DEFFILE"
+Bootstrap: docker
+From: busybox#comment that needs to be ignored
 
+#DuplicateKey: commented value
+#DuplicateKey: other commented value
+# also include exact example found in #1103
+#UpdateURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/updates/\$basearch/
+#UpdateURL: http://mirror.centos.org/centos-7/7.4.1708/updates/x86_64/
+EOF
+
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
+
+# Test multiple empty lines
+cat <<EOF > "$DEFFILE"
+Bootstrap: docker
+From: busybox
+
+
+# this is a comment
+EOF
+
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
+stest 0 singularity exec "$CONTAINER" true
+stest 1 singularity exec "$CONTAINER" false
+
+# Test comments inside runscript
+cat <<EOF > "$DEFFILE"
+Bootstrap: docker
+From: busybox
+
+%runscript
+#this is a comment
+EOF
+# expected output of test below
+cat <<EOF >"$SINGULARITY_TESTDIR/expected.txt"
+#!/bin/sh 
+
+#this is a comment
+EOF
+
+stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
+stest 0 singularity exec "$CONTAINER" cat /.singularity.d/runscript
+# save output of last test, need it to compare with expected
+cp "$SINGULARITY_TESTDIR/output" "$SINGULARITY_TESTDIR/actual.txt"
+stest 0 cmp "$SINGULARITY_TESTDIR/actual.txt" "$SINGULARITY_TESTDIR/expected.txt"
+
+
+test_cleanup
