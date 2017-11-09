@@ -20,6 +20,7 @@
  * 
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <linux/loop.h>
 #include <unistd.h>
@@ -33,7 +34,6 @@
 #include <sys/ioctl.h>
 
 #include "config.h"
-#include "lib/image/image.h"
 #include "util/util.h"
 #include "util/file.h"
 #include "util/message.h"
@@ -127,6 +127,7 @@ char *singularity_image_bind(struct image_object *image) {
 
     singularity_message(DEBUG, "Using image offset: %d\n", image->offset);
     lo64.lo_offset = image->offset;
+    lo64.lo_sizelimit = image->size;
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Setting loop device flags\n");

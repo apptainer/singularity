@@ -29,8 +29,14 @@ sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 bindir="@bindir@"
 
-SINGULARITY_OVERLAY_FS="@OVERLAY_FS@"
 SINGULARITY_USER_NS="@USER_NS@"
+SINGULARITY_OVERLAY_FS="0"
+KVERS=`uname -r`
+if test -f "/lib/modules/$KVERS/modules.dep"; then
+    if grep -q 'overlay.ko' "/lib/modules/$KVERS/modules.dep"; then
+        SINGULARITY_OVERLAY_FS="1"
+    fi
+fi
 
 SINGULARITY_libexecdir="$libexecdir"
 SINGULARITY_sysconfdir="$sysconfdir"
@@ -45,7 +51,9 @@ if [ -z "$CLEAN_SHELL" ]; then
     /bin/echo "Building/Installing Singularity to temporary directory"
     /bin/echo "Reinvoking in a clean shell"
     sleep 1
-    exec env -i CLEAN_SHELL=1 PATH="$SINGULARITY_PATH:/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin" bash "$0" "$@"
+    # Keep docker host for travis under centos 7, which runs the whole test suite in a docker container
+    exec env -i CLEAN_SHELL=1 PATH="$SINGULARITY_PATH:/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin" \
+                DOCKER_HOST="$DOCKER_HOST" bash "$0" "$@"
 fi
 
 if [ ! -d "tests" ]; then

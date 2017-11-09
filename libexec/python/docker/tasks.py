@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),  # noqa
                 os.path.pardir)))  # noqa
-sys.path.append('..')  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
 
 from sutils import (
     add_http,
@@ -102,7 +102,7 @@ def extract_runscript(manifest, includecmd=False):
         cmd = " ".join(['"%s"' % x for x in cmd])
 
         if not RUNSCRIPT_COMMAND_ASIS:
-            cmd = 'exec %s' % cmd
+            cmd = 'exec %s "$@"' % cmd
         cmd = "#!/bin/sh\n\n%s\n" % cmd
         return cmd
 
@@ -174,7 +174,7 @@ def extract_env(manifest):
 
         lines = []
         for line in environ:
-            line = re.findall("(?P<var_name>.+)=(?P<var_value>.+)", line)
+            line = re.findall("(?P<var_name>.+?)=(?P<var_value>.+)", line)
             line = ['export %s="%s"' % (x[0], x[1]) for x in line]
             lines = lines + line
 
