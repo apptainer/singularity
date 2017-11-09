@@ -51,7 +51,7 @@
 int started = 0;
 
 int main(int argc, char **argv) {
-    int i, daemon_fd, cleanupd_fd;
+    int i, cleanupd_fd;
     struct tempfile *stdout_log, *stderr_log, *singularity_debug;
     struct image_object image;
     pid_t child;
@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
     for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {        
-        if ( i != daemon_fd && i != cleanupd_fd ) {
+        if ( i != cleanupd_fd ) {
             if ( fstat(i, &filestat) == 0 ) {
                 if ( S_ISFIFO(filestat.st_mode) != 0 ) {
                     continue;

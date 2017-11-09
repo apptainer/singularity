@@ -17,6 +17,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <libgen.h>
 
 #include "config.h"
 #include "util/file.h"
