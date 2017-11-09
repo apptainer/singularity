@@ -3,7 +3,7 @@
 
 ## Code
 - [] Ensure docs exist at singularityware.github.io for new/updated features
-- [] Update version number in `configure.ac` and `INSTALL.md`
+- [] Update version number in `configure.ac`
 - [] Update changelog and version in `debian/changelog`
 - [] Confirm tests exist for new features, and tests pass
 - [] Commit the changes: 
@@ -15,7 +15,7 @@ git commit -m "Release 2.3.3"
 
 ## Github
 
--[] Tag the last git commit with the version number:
+- [] Tag the last git commit with the version number:
 
 ```
 git tag -a 2.3.3
