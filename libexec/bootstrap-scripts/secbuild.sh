@@ -150,7 +150,8 @@ if [ \$? != 0 ]; then
 fi
 
 cd $REPO_DIR
-singularity build --force --sandbox $STAGED_BUILD_IMAGE $BUILDDEF
+
+singularity build --sandbox $STAGED_BUILD_IMAGE $BUILDDEF
 exit \$?
 SCRIPT
 
