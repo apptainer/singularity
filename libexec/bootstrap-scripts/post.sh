@@ -47,7 +47,6 @@ cat > "$SINGULARITY_ROOTFS/etc/mtab" << EOF
 singularity / rootfs rw 0 0
 EOF
 
-
 # Populate the labels.
 # NOTE: We have to be careful to quote stuff that we know isn't quoted.
 SINGULARITY_LABELFILE=$(printf "%q" "$SINGULARITY_ROOTFS/.singularity.d/labels.json")
@@ -62,7 +61,7 @@ SINGULARITY_ADD_SCRIPT=$(printf "%q" "$SINGULARITY_libexecdir/singularity/python
 
 
 eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.schema-version" --value "1.0" --file $SINGULARITY_LABELFILE
-eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-date" --value $(date -R  | sed 's/ /_/') --file $SINGULARITY_LABELFILE
+eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-date" --value $(date -R  | sed 's/ /_/g') --file $SINGULARITY_LABELFILE
 
 if [ -f "${SINGULARITY_ROOTFS}/.singularity.d/runscript.help" ]; then
     eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage" --value "/.singularity.d/runscript.help" --file $SINGULARITY_LABELFILE
@@ -73,7 +72,7 @@ eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage.singularity.versio
 
 # Calculate image final size
 message 1 "Calculating final size for metadata...\n"
-IMAGE_SIZE=$(du -x -sm $SINGULARITY_ROOTFS | cut -f 1)
+IMAGE_SIZE=$(du -x -sm $SINGULARITY_ROOTFS 2>/dev/null | cut -f 1)
 eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-size" --value "${IMAGE_SIZE}MB" --file $SINGULARITY_LABELFILE
 
 
