@@ -1,7 +1,7 @@
 NAME="build"
 SECTION="management"
 SUMMARY="Build a new Singularity container"
-USAGE="singularity [...] build  [build options...] <container path> <BUILD SPEC TARGET>"
+USAGE="singularity [...] build [build options...] <container path> <BUILD SPEC TARGET>"
 
 print_help() {
 cat<<EOF
