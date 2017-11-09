@@ -1,7 +1,7 @@
 NAME="build"
 SECTION="management"
 SUMMARY="Build a new Singularity container"
-USAGE="singularity [...] build <container path> <BUILD SPEC TARGET>"
+USAGE="singularity [...] build  [build options...] <container path> <BUILD SPEC TARGET>"
 
 print_help() {
 cat<<EOF
@@ -15,13 +15,13 @@ CONTAINER PATH:
         default:    The compressed Singularity read only image format (default)
         sandbox:    This is a read-write container within a directory structure
         writable:   Legacy writable image format
-    
+
     note: A common workflow is to use the "sandbox" mode for development of the
-    container, and then build it as a default Singularity image  when done. 
+    container, and then build it as a default Singularity image  when done.
     This format can not be modified.
 
 BUILD SPEC TARGET:
-    The build spec target is a Singularity recipe, local image, archive, or URI 
+    The build spec target is a Singularity recipe, local image, archive, or URI
     that can be used to create a Singularity container. Several different
     local target formats exist:
 
@@ -38,12 +38,12 @@ BUILD SPEC TARGET:
         docker://   This points to a Docker registry (Docker Hub default)
 
 
-CREATE OPTIONS:
+BUILD OPTIONS:
     -s|--sandbox    Build a sandbox rather then a read only compressed image
     -w|--writable   Build a writable image (warning: deprecated due to sparse
                     file image corruption issues)
-    -f|-F|--force   Force a rebootstrap of a base OS (note: this does not 
-                    delete what is currently in the image, just causes the core 
+    -f|-F|--force   Force a rebootstrap of a base OS (note: this does not
+                    delete what is currently in the image, just causes the core
                     to be reinstalled)
     -T|--notest     Bootstrap without running tests in %test section
     -s|--section    Only run a given section within the recipe file (setup,
@@ -53,7 +53,7 @@ CREATE OPTIONS:
 CHECKS OPTIONS:
     -c|--checks    enable checks
     -t|--tag       specify a check tag (not default)
-    -l|--low       Specify low threshold (all checks, default) 
+    -l|--low       Specify low threshold (all checks, default)
     -m|--med       Perform medium and high checks
     -h|--high      Perform only checks at level high
 
@@ -82,7 +82,7 @@ DEF FILE BASEOS EXAMPLES:
 
     Local Image:
         Bootstrap: localimage
-        From: /home/dave/starter.img 
+        From: /home/dave/starter.img
 
 
 DEFFILE SECTION EXAMPLES:
@@ -115,10 +115,10 @@ DEFFILE SECTION EXAMPLES:
         KEY VALUE
 
     %files
-        /path/on/host/file.txt /path/on/container/file.txt 
+        /path/on/host/file.txt /path/on/container/file.txt
         relative_file.txt /path/on/container/relative_file.txt
 
-    %environment 
+    %environment
         LUKE=goodguy
         VADER=badguy
         HAN=someguy
@@ -150,7 +150,7 @@ DEFFILE SCI-F SECTION EXAMPLES:
         echo "a %setup section (see above) for apps"
 
     %apptest app1
-        echo "some test for an app" 
+        echo "some test for an app"
 
 
 EXAMPLES:
