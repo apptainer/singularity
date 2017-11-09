@@ -39,6 +39,7 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/mount.h"
 
 #include "lib/image/image.h"
 
@@ -122,13 +123,23 @@ int _singularity_runtime_overlayfs(void) {
 
             singularity_priv_escalate();
             singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
-            if ( mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID | MS_NODEV, size) < 0 ){
+            if ( singularity_mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID | MS_NODEV, size) < 0 ){
                 singularity_message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
                 ABORT(255);
             }
             singularity_priv_drop();
 
             free(size);
+        }
+
+        if ( is_link(overlay_upper) == 0 ) {
+            singularity_message(ERROR, "symlink detected, upper overlay %s must be a directory\n", overlay_upper);
+            ABORT(255);
+        }
+
+        if ( is_link(overlay_work) == 0 ) {
+            singularity_message(ERROR, "symlink detected, work overlay %s must be a directory\n", overlay_work);
+            ABORT(255);
         }
 
         singularity_priv_escalate();
@@ -145,7 +156,7 @@ int _singularity_runtime_overlayfs(void) {
         }
 
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
-        int result = mount("OverlayFS", overlay_final, "overlay", MS_NOSUID | MS_NODEV, overlay_options);
+        int result = singularity_mount("OverlayFS", overlay_final, "overlay", MS_NOSUID | MS_NODEV, overlay_options);
         if (result < 0) {
             if ( (errno == EPERM) || ( try_overlay && ( errno == ENODEV ) ) ) {
                 singularity_message(VERBOSE, "Singularity overlay mount did not work (%s), continuing without it\n", strerror(errno));
@@ -172,7 +183,7 @@ int _singularity_runtime_overlayfs(void) {
     // If we got here, assume we are not overlaying, so we must bind to final directory
     singularity_priv_escalate();
     singularity_message(DEBUG, "Binding container directory to final home %s->%s\n", CONTAINER_MOUNTDIR, CONTAINER_FINALDIR);
-    if ( mount(CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV, NULL) < 0 ) {
+    if ( singularity_mount(CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV, NULL) < 0 ) {
         singularity_message(ERROR, "Could not bind mount container to final home %s->%s: %s\n", CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, strerror(errno));
         return 1;
     }

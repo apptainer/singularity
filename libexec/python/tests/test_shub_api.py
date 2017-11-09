@@ -49,17 +49,15 @@ class TestApi(TestCase):
         self.tmpdir = tempfile.mkdtemp()
         os.environ['SINGULARITY_ROOTFS'] = self.tmpdir
         os.mkdir('%s/.singularity.d' % self.tmpdir)
-        print("\n---START----------------------------------------")
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
 
-        print("---END------------------------------------------")
-
     def test_get_manifest(self):
         '''test_get_manifest should return the shub manifest
         '''
-        print("Case 1: Testing retrieval of singularity-hub manifest")
+        print("Testing singularity hub manifest retrieval")
+        print("...case 1: Testing retrieval of singularity-hub manifest")
         manifest = self.client.get_manifest()
         keys = ['version', 'tag', 'branch',
                 'name', 'id', 'commit', 'image']
@@ -70,18 +68,16 @@ class TestApi(TestCase):
         an image is downloaded to an
         appropriate location (tmpdir) or cache
         '''
-        print("Case 1: Specifying a directory downloads to it")
-        image_name = "tacos.img"
+        print("Testing singularity hub pull")
+        print("...case 1: Specifying a directory downloads to it")
         manifest = self.client.get_manifest()
         image = self.client.download_image(manifest=manifest,
-                                           image_name=image_name,
                                            download_folder=self.tmpdir)
         self.assertEqual(os.path.dirname(image), self.tmpdir)
 
-        print("Case 2: Not specifying a directory downloads to PWD")
+        print("...case 2: Not specifying a directory downloads to PWD")
         os.chdir(self.tmpdir)
-        image = self.client.download_image(manifest,
-                                           image_name=image_name)
+        image = self.client.download_image(manifest)
         self.assertEqual(os.getcwd(), self.tmpdir)
         print(image)
         self.assertTrue(image in glob("*"))
@@ -91,12 +87,13 @@ class TestApi(TestCase):
         '''test_uri will make sure that the endpoint returns the equivalent
         image for all different uri options
         '''
+        print("Testing singularity hub uris")
         from shub.api import get_image_name
         manifest = self.client.get_manifest()
         image_name = get_image_name(manifest)
 
         fullname = "%s/%s" % (self.user_name, self.repo_name)
-        print("Case 1: ask for image by tag.")
+        print("...case 1: ask for image by tag.")
         client = self.connect(image="%s:latest" % fullname)
         manifest = client.get_manifest()
         image_name = get_image_name(manifest)
@@ -105,13 +102,12 @@ class TestApi(TestCase):
     def test_get_image_name(self):
         '''test_get_image_name will return the image name from the manifest
         '''
+        print("Testing singularity hub image naming")
         from shub.api import get_image_name
         manifest = self.client.get_manifest()
-
-        print("Case 1: return an image name corresponding to repo")
+        print("...case 1: return an image name corresponding to repo")
         image_name = get_image_name(manifest)
-        self.assertEqual('vsoch-singularity-images-master-latest.simg',
-                         image_name)
+        self.assertEqual('vsoch-singularity-images-master-latest', image_name)
 
 
 if __name__ == '__main__':
