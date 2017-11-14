@@ -26,6 +26,6 @@
 
 extern int singularity_suid_init(void);
 extern int singularity_suid_enabled(void);
-extern int singularity_allow_setuid(void);
+extern int singularity_allow_container_setuid(void);
 
 #endif /* __SINGULARITY_SUID_H_ */
