@@ -35,7 +35,11 @@ Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
 BuildRequires: python
+%if "%{_target_vendor}" == "suse"
+Requires: squashfs
+%else
 Requires: squashfs-tools
+%endif
 
 Requires: %{name}-runtime = %{version}-%{release}
 
