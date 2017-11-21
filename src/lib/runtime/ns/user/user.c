@@ -125,8 +125,7 @@ int _singularity_runtime_ns_user(void) {
     return(0);
 }
 
-int _singularity_runtime_ns_user_join(void) {
-    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+int _singularity_runtime_ns_user_join(int ns_fd) {
     int user_fd;
 
     if ( singularity_priv_userns_enabled() ) {

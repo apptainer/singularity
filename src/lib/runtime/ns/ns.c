@@ -36,6 +36,7 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
+#include "util/registry.h"
 #include "util/config_parser.h"
 
 #include "./ipc/ipc.h"
@@ -80,31 +81,34 @@ int _singularity_runtime_ns(unsigned int flags) {
 
 int _singularity_runtime_ns_join(unsigned int flags) {
     int retval = 0;
+    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
 
     if ( flags & SR_NS_USER ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_user_join()\n");
-        retval += _singularity_runtime_ns_user_join();
+        retval += _singularity_runtime_ns_user_join(ns_fd);
     }
     if ( flags & SR_NS_IPC ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_ipc_join()\n");
-        retval += _singularity_runtime_ns_ipc_join();
+        retval += _singularity_runtime_ns_ipc_join(ns_fd);
     }
     if ( flags & SR_NS_PID ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_pid_join()\n");
-        retval += _singularity_runtime_ns_pid_join();
+        retval += _singularity_runtime_ns_pid_join(ns_fd);
     }
     if ( flags & SR_NS_NET ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_net_join()\n");
-        retval += _singularity_runtime_ns_net_join();
+        retval += _singularity_runtime_ns_net_join(ns_fd);
     }
     if ( flags & SR_NS_UTS ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_uts_join()\n");
-        retval += _singularity_runtime_ns_uts_join();
+        retval += _singularity_runtime_ns_uts_join(ns_fd);
     }
     if ( flags & SR_NS_MNT ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_mnt_join()\n");
-        retval += _singularity_runtime_ns_mnt_join();
+        retval += _singularity_runtime_ns_mnt_join(ns_fd);
     }
+
+    close(ns_fd);
 
     return(retval);
 }

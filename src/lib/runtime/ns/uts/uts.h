@@ -11,7 +11,7 @@
 #define __SINGULARITY_RUNTIME_NS_UTS_H_
 
 extern int _singularity_runtime_ns_uts(void);
-extern int _singularity_runtime_ns_uts_join(void);
+extern int _singularity_runtime_ns_uts_join(int ns_fd);
 
 #endif /* __SINGULARITY_RUNTIME_NS_UTS_H */
 

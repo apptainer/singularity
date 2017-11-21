@@ -76,8 +76,7 @@ int _singularity_runtime_ns_ipc(void) {
     return(0);
 }
 
-int _singularity_runtime_ns_ipc_join(void) {
-    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+int _singularity_runtime_ns_ipc_join(int ns_fd) {
     int ipc_fd;
 
     /* Attempt to open /proc/[PID]/ns/pid */

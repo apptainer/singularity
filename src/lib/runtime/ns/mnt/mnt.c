@@ -93,8 +93,7 @@ int _singularity_runtime_ns_mnt(void) {
     return(0);
 }
 
-int _singularity_runtime_ns_mnt_join(void) {
-    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+int _singularity_runtime_ns_mnt_join(int ns_fd) {
     int mnt_fd;
 
     /* Attempt to open /proc/[MNT]/ns/mnt */
@@ -119,7 +118,7 @@ int _singularity_runtime_ns_mnt_join(void) {
     singularity_priv_drop();
     singularity_message(DEBUG, "Successfully joined mount namespace\n");
 
-    close(ns_fd);
+    close(mnt_fd);
     return(0);    
 }
 
