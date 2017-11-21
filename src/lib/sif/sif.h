@@ -21,84 +21,68 @@
 /*
  * Layout of a SIF file (example)
  *
- * .================================================================.
- * | GLOBAL HEADER: Sifheader                                       |
- * | - launch: "#!/usr/bin/env..."                                  |
- * | - magic: "SIF_MAGIC"                                           |
- * | - version: "1"                                                 |
- * | - arch: "4"                                                    |
- * | - uuid: b2659d4e-bd50-4ea5-bd17-eec5e54f918e                   |
- * | - ctime: 1504657553                                            |
- * | - ndesc: 4                                                     |
- * | - descoff: 88                                                  | --.
- * | - dataoff: 280                                                 |   |
- * | - datalen: 42111314                                            |   |
- * |----------------------------------------------------------------|   |
- * | DESCR[0]: Siflabels                                            | <-'
- * | - Sifcommon                                                    |
- * |   - datatype: DATA_LABELS                                      |
- * |   - groupid: inter-object relation                             |
- * |   - fileoff: #bytes from start                                 | --.
- * |   - filelen: #bytes used                                       |   |
- * |----------------------------------------------------------------|   |
- * | DESCR[1]: Sifdeffile                                           |   |
- * | - Sifcommon                                                    |   |
- * |   - datatype: DATA_LABELS                                      |   |
- * |   - groupid: inter-object relation                             |   |
- * |   - fileoff: #bytes from start                                 | ----.
- * |   - filelen: #bytes used                                       |   | |
- * |----------------------------------------------------------------|   | |
- * | DESCR[2]: Sifenvvar                                            |   | |
- * | - Sifcommon                                                    |   | |
- * |   - datatype: DATA_LABELS                                      |   | |
- * |   - groupid: inter-object relation                             |   | |
- * |   - fileoff: #bytes from start                                 | ------.
- * |   - filelen: #bytes used                                       |   | | |
- * |----------------------------------------------------------------|   | | |
- * | DESCR[3]: Sifsignature                                         |   | | |
- * | - Sifcommon                                                    |   | | |
- * |   - datatype: DATA_LABELS                                      |   | | |
- * |   - groupid: inter-object relation                             |   | | |
- * |   - fileoff: #bytes from start                                 | --------.
- * |   - filelen: #bytes used                                       |   | | | |
- * | - hashtype: HASH_SHA384                                        |   | | | |
- * | - entity: "Joe Bloe <jbloe..."                                 |   | | | |
- * |----------------------------------------------------------------|   | | | |
- * | DESCR[4]: Sifpartition                                         |   | | | |
- * | - Sifcommon                                                    |   | | | |
- * |   - datatype: DATA_LABELS                                      |   | | | |
- * |   - groupid: inter-object relation                             |   | | | |
- * |   - fileoff: #bytes from start                                 | ----------.
- * |   - filelen: #bytes used                                       |   | | | | |
- * | - fstype: FS_SQUASH                                            |   | | | | |
- * | - parttype: PART_SYSTEM                                        |   | | | | |
- * | - content: "RHEL 7.4 / kernel 3.10.0-693 / Webmail server"     |   | | | | |
- * |----------------------------------------------------------------| <-' | | | |
- * | JSON labels data                                               |     | | | |
- * | .                                                              |     | | | |
- * | .                                                              |     | | | |
- * | .                                                              |     | | | |
- * |----------------------------------------------------------------| <---' | | |
- * | Definition file data                                           |       | | |
- * | .                                                              |       | | |
- * | .                                                              |       | | |
- * | .                                                              |       | | |
- * |----------------------------------------------------------------| <-----' | |
- * | Environment variables data                                     |         | |
- * | .                                                              |         | |
- * | .                                                              |         | |
- * | .                                                              |         | |
- * |----------------------------------------------------------------| <-------' |
- * | Signed verification data                                       |           |
- * | .                                                              |           |
- * | .                                                              |           |
- * | .                                                              |           |
- * |----------------------------------------------------------------| <---------'
- * | File system partition image                                    |
- * | .                                                              |
- * | .                                                              |
- * | .                                                              |
- * `================================================================'
+ * .================================================.
+ * | GLOBAL HEADER: Sifheader                       |
+ * | - launch: "#!/usr/bin/env..."                  |
+ * | - magic: "SIF_MAGIC"                           |
+ * | - version: "1"                                 |
+ * | - arch: "4"                                    |
+ * | - uuid: b2659d4e-bd50-4ea5-bd17-eec5e54f918e   |
+ * | - ctime: 1504657553                            |
+ * | - mtime: 1504657653                            |
+ * | - ndesc: 3                                     |
+ * | - descoff: 120                                 | --.
+ * | - desclen: 432                                 |   |
+ * | - dataoff: 4096                                |   |
+ * | - datalen: 619362                              |   |
+ * |------------------------------------------------| <-'
+ * | DESCR[0]: Sifdeffile                           |
+ * | - Sifcommon                                    |
+ * |   - datatype: DATA_DEFFILE                     |
+ * |   - id: 1                                      |
+ * |   - groupid: 1                                 |
+ * |   - link: NONE                                 |
+ * |   - fileoff: 4096                              | --.
+ * |   - filelen: 222                               |   |
+ * |------------------------------------------------|   |
+ * | DESCR[1]: Sifpartition                         |   |
+ * | - Sifcommon                                    |   |
+ * |   - datatype: DATA_PARTITION                   |   |
+ * |   - id: 2                                      |   |
+ * |   - groupid: 1                                 |   |
+ * |   - link: NONE                                 |   |
+ * |   - fileoff: 4318                              | ----.
+ * |   - filelen: 618496                            |   | |
+ * | - fstype: Squashfs                             |   | |
+ * | - parttype: System                             |   | |
+ * | - content: Linux                               |   | |
+ * |------------------------------------------------|   | |
+ * | DESCR[2]: Sifsignature                         |   | |
+ * | - Sifcommon                                    |   | |
+ * |   - datatype: DATA_SIGNATURE                   |   | |
+ * |   - id: 3                                      |   | |
+ * |   - groupid: NONE                              |   | |
+ * |   - link: 2                                    |   | |
+ * |   - fileoff: 622814                            | ------.
+ * |   - filelen: 644                               |   | | |
+ * | - hashtype: SHA384                             |   | | |
+ * | - entity: @                                    |   | | |
+ * |------------------------------------------------| <-' | |
+ * | Definition file data                           |     | |
+ * | .                                              |     | |
+ * | .                                              |     | |
+ * | .                                              |     | |
+ * |------------------------------------------------| <---' |
+ * | File system partition image                    |       |
+ * | .                                              |       |
+ * | .                                              |       |
+ * | .                                              |       |
+ * |------------------------------------------------| <-----'
+ * | Signed verification data                       |
+ * | .                                              |
+ * | .                                              |
+ * | .                                              |
+ * `================================================'
  */
 
 #ifndef __SINGULARITY_SIF_H_
