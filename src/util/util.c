@@ -342,7 +342,11 @@ int envclean(void) {
 
         key = strtok_r(envclone[i], "=", &tok);
 
-        if ( strcmp(key, "http_proxy") == 0 ) {
+        if ( (strcasecmp(key, "http_proxy")  == 0) ||
+             (strcasecmp(key, "https_proxy") == 0) ||
+             (strcasecmp(key, "no_proxy")    == 0) ||
+             (strcasecmp(key, "all_proxy")   == 0)
+           ) {
             singularity_message(DEBUG, "Leaving environment variable set: %s\n", key);
         } else {
             singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
