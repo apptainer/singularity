@@ -342,18 +342,18 @@ AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
 AC_CHECK_HEADERS([uuid/uuid.h],
         [uuid_header_found=yes; break;])
 AS_IF([test "x$uuid_header_found" != "xyes"],
-	[AC_MSG_ERROR([Unable to find the uuid headers, need package libuuid-devel])])
+	[AC_MSG_ERROR([Unable to find the uuid headers, need package libuuid-devel (uuid-dev on Debian/Ubuntu)])])
 AC_SEARCH_LIBS([uuid_generate], [uuid], [], [
-	AC_MSG_ERROR([unable to find the uuid_generate(), need package libuuid-devel ])
+	AC_MSG_ERROR([unable to find the uuid_generate(), need package libuuid-devel (uuid-dev on Debian/Ubuntu)])
 ])
 
 # check for openssl needed by signing
 AC_CHECK_HEADERS([openssl/sha.h],
 	[ssl_header_found=yes; break;])
 AS_IF([test "x$ssl_header_found" != "xyes"],
-	[AC_MSG_ERROR([Unable to find the ssl headers, need package openssl-devel])])
+	[AC_MSG_ERROR([Unable to find the ssl headers, need package openssl-devel (libssl-dev on Debian/Ubuntu)])])
 AC_SEARCH_LIBS([SHA1], [crypto], [], [
-	AC_MSG_ERROR([unable to find the SHA1(), need package openssl-devel])
+	AC_MSG_ERROR([unable to find the SHA1(), need package openssl-devel (libssl-dev on Debian/Ubuntu)])
 ])
 
 
