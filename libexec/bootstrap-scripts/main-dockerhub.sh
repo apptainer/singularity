@@ -58,7 +58,8 @@ eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 # See:
 #   https://github.com/tonistiigi/docker/blob/2fb5d0c32376951ef41a6f64bb7dbd8f6fd14fba/pkg/archive/whiteouts.go#L3-L23
 for i in `cat "$SINGULARITY_CONTENTS"`; do
-    message 1 "Importing: $i\n"
+    name=`basename "$i"`
+    message 1 "Exploding layer: $name\n"
     zcat "$i" | tar --quoting-style=escape -tf - | grep '\.wh\.' | while read WHITEOUT
     do
         # Handle opaque directories (remove them, will be recreated
