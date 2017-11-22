@@ -213,12 +213,14 @@ static int wait_child() {
         }
     } while( child_ok );
 
-    /* Catch the exit status of the child process */
-    retval = 0;
+    /* Catch the exit status or kill signal of the child process */
     waitpid(child_pid, &tmpstatus, 0);
-    retval = WEXITSTATUS(tmpstatus);
-    
-    return(retval);
+    if (WIFEXITED(tmpstatus)) {
+        return(WEXITSTATUS(tmpstatus));
+    } else if (WIFSIGNALED(tmpstatus)) {
+        kill(getpid(), WTERMSIG(tmpstatus));
+    }
+    return(-1);
 }
 
 /* */
