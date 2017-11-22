@@ -150,6 +150,16 @@ while true; do
             else
                 message WARN "Could not find the Nvidia SMI binary to bind into container\n"
             fi
+            if [ -d "/etc/OpenCL/vendors" ]; then
+                if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
+                    SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},/etc/OpenCL/vendors"
+                else
+                    SINGULARITY_BINDPATH="/etc/OpenCL/vendors"
+                fi
+                export SINGULARITY_BINDPATH
+            else
+                message WARN "Could not find OpenCL vendor information to bind into container\n"
+            fi
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
