@@ -36,4 +36,3 @@
     - Yaroslav Halchenko <debian@onerussian.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
     - Daniele Tamino <daniele.tamino@gmail.com>
-    
