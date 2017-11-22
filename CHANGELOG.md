@@ -40,6 +40,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fix parsing of registry (including port), namespace, tags, and version
  - Add "$@" to any CMD/ENTRYPOINT found when building from Docker
  - Added sqaushfs-tools as a dependency for building deb files
+ - Bind /etc/OpenCL/vendors when using --nv option
 
 ## [v2.4](https://github.com/singularityware/singularity/tree/v2.4) (2017-10-02)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3.2...2.4)
