@@ -50,7 +50,7 @@ eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 
 # Docker layers are extracted with tar, but we need additional handling
 # for aufs whiteout files that may be present.
-# - .wh..whi..opq inside a directory indicates that directory is opaque.
+# - .wh..wh..opq inside a directory indicates that directory is opaque.
 #    Any content in this directory from previous layers must be deleted
 #    before extracting the current layer.
 # - .wh.<file/dirname> indicates <file/dirname> from a previous layer must
