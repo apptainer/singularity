@@ -65,18 +65,18 @@ usage()
 Node *
 ddescadd(Node *head, char *fname)
 {
-	Ddesc *e;
+	Defdesc *e;
 	Node *n;
 	struct stat st;
 
-	e = malloc(sizeof(Ddesc));
+	e = malloc(sizeof(Defdesc));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Ddesc\n");
+		fprintf(stderr, "Error allocating memory for Defdesc\n");
 		return NULL;
 	}
-	e->datatype = DATA_DEFFILE;
-	e->groupid = SIF_DEFAULT_GROUP;
-	e->link = SIF_UNUSED_LINK;
+	e->cm.datatype = DATA_DEFFILE;
+	e->cm.groupid = SIF_DEFAULT_GROUP;
+	e->cm.link = SIF_UNUSED_LINK;
 	e->fname = strdup(fname);
 	if(e->fname == NULL){
 		fprintf(stderr, "Error allocating memory for e->fname\n");
@@ -87,10 +87,10 @@ ddescadd(Node *head, char *fname)
 		free(e);
 		return NULL;
 	}
-	e->len = st.st_size;
+	e->cm.len = st.st_size;
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Ddesc node\n");
+		fprintf(stderr, "Error allocating Defdesc node\n");
 		free(e);
 		return NULL;
 	}
@@ -103,23 +103,23 @@ static char testenvs[] = "VAR0=VALUE0\nVAR1=VALUE1\nVAR2=VALUE2";
 Node *
 edescadd(Node *head)
 {
-	Edesc *e;
+	Envdesc *e;
 	Node *n;
 
-	e = malloc(sizeof(Edesc));
+	e = malloc(sizeof(Envdesc));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Edesc\n");
+		fprintf(stderr, "Error allocating memory for Envdesc\n");
 		return NULL;
 	}
-	e->datatype = DATA_ENVVAR;
-	e->groupid = SIF_DEFAULT_GROUP;
-	e->link = SIF_UNUSED_LINK;
+	e->cm.datatype = DATA_ENVVAR;
+	e->cm.groupid = SIF_DEFAULT_GROUP;
+	e->cm.link = SIF_UNUSED_LINK;
+	e->cm.len = sizeof(testenvs);
 	e->vars = testenvs;
-	e->len = sizeof(testenvs);
 
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Edesc node\n");
+		fprintf(stderr, "Error allocating Envdesc node\n");
 		free(e);
 		return NULL;
 	}
@@ -131,18 +131,18 @@ edescadd(Node *head)
 Node *
 ldescadd(Node *head, char *fname)
 {
-	Ldesc *e;
+	Labeldesc *e;
 	Node *n;
 	struct stat st;
 
-	e = malloc(sizeof(Ldesc));
+	e = malloc(sizeof(Labeldesc));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Ldesc\n");
+		fprintf(stderr, "Error allocating memory for Labeldesc\n");
 		return NULL;
 	}
-	e->datatype = DATA_LABELS;
-	e->groupid = SIF_DEFAULT_GROUP;
-	e->link = SIF_UNUSED_LINK;
+	e->cm.datatype = DATA_LABELS;
+	e->cm.groupid = SIF_DEFAULT_GROUP;
+	e->cm.link = SIF_UNUSED_LINK;
 	e->fname = strdup(fname);
 	if(e->fname == NULL){
 		fprintf(stderr, "Error allocating memory for e->fname\n");
@@ -153,10 +153,10 @@ ldescadd(Node *head, char *fname)
 		free(e);
 		return NULL;
 	}
-	e->len = st.st_size;
+	e->cm.len = st.st_size;
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Ldesc node\n");
+		fprintf(stderr, "Error allocating Labeldesc node\n");
 		free(e);
 		return NULL;
 	}
@@ -168,26 +168,26 @@ ldescadd(Node *head, char *fname)
 Node *
 sdescadd(Node *head, char *signedhash, Sifhashtype hashtype)
 {
-	Sdesc *e;
+	Sigdesc *e;
 	Node *n;
 	char entity[SIF_ENTITY_LEN] = { };
 
-	e = malloc(sizeof(Sdesc));
+	e = malloc(sizeof(Sigdesc));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Sdesc\n");
+		fprintf(stderr, "Error allocating memory for Sigdesc\n");
 		return NULL;
 	}
-	e->datatype = DATA_SIGNATURE;
-	e->groupid = SIF_DEFAULT_GROUP;
-	e->link = SIF_UNUSED_LINK;
+	e->cm.datatype = DATA_SIGNATURE;
+	e->cm.groupid = SIF_DEFAULT_GROUP;
+	e->cm.link = SIF_UNUSED_LINK;
+	e->cm.len = strlen(signedhash)+1;
 	e->signature = strdup(signedhash);
-	e->len = strlen(signedhash)+1;
 	e->hashtype = hashtype;
 	strcpy(e->entity, entity); /* Flawfinder: ignore */
 
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Sdesc node\n");
+		fprintf(stderr, "Error allocating Sigdesc node\n");
 		free(e);
 		return NULL;
 	}
@@ -199,7 +199,7 @@ sdescadd(Node *head, char *signedhash, Sifhashtype hashtype)
 Node *
 pdescadd(Node *head, char *fname, int argc, char *argv[])
 {
-	Pdesc *e;
+	Partdesc *e;
 	Node *n;
 	int opt;
 	char content[SIF_CONTENT_LEN] = { };
@@ -256,14 +256,14 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 		return NULL;
 	}
 
-	e = malloc(sizeof(Pdesc));
+	e = malloc(sizeof(Partdesc));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Pdesc\n");
+		fprintf(stderr, "Error allocating memory for Partdesc\n");
 		return NULL;
 	}
-	e->datatype = DATA_PARTITION;
-	e->groupid = SIF_DEFAULT_GROUP;
-	e->link = SIF_UNUSED_LINK;
+	e->cm.datatype = DATA_PARTITION;
+	e->cm.groupid = SIF_DEFAULT_GROUP;
+	e->cm.link = SIF_UNUSED_LINK;
 	e->fname = strdup(fname);
 	if(e->fname == NULL){
 		fprintf(stderr, "Error allocating memory for e->fname\n");
@@ -274,14 +274,14 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 		free(e);
 		return NULL;
 	}
-	e->len = st.st_size;
+	e->cm.len = st.st_size;
 	e->fstype = fstype;
 	e->parttype = parttype;
 	strcpy(e->content, content); /* Flawfinder: ignore */
 
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Pdesc node\n");
+		fprintf(stderr, "Error allocating Partdesc node\n");
 		free(e);
 		return NULL;
 	}
@@ -420,7 +420,7 @@ cmd_sign(int argc, char *argv[])
 {
 	Sifinfo sif;
 	Sifcommon *cm;
-	Sdesc s;
+	Sigdesc s;
 	int id;
 	static char signedhash[SGN_MAXLEN];
 	static char hash[SGN_HASHLEN];
@@ -463,11 +463,11 @@ cmd_sign(int argc, char *argv[])
 		return -1;
 	};
 
-	s.datatype = DATA_SIGNATURE;
-	s.groupid = SIF_UNUSED_GROUP;
-	s.link = id;
+	s.cm.datatype = DATA_SIGNATURE;
+	s.cm.groupid = SIF_UNUSED_GROUP;
+	s.cm.link = id;
+	s.cm.len = strlen(signedhash)+1;
 	s.signature = strdup(signedhash);
-	s.len = strlen(signedhash)+1;
 	s.hashtype = SNG_DEFAULT_HASH;
 
 	if(sif_putdataobj(&sif, (Sifdatatype *)&s) < 0){

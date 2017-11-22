@@ -191,6 +191,16 @@ struct Sifsignature{
 	char entity[SIF_ENTITY_LEN];
 };
 
+typedef union Sifdescriptor Sifdescriptor;
+union Sifdescriptor{
+	Sifcommon cm;
+	Sifdeffile def;
+	Siflabels label;
+	Sifenvvar env;
+	Sifpartition part;
+	Sifsignature sig;
+};
+
 /* Singularity image format (SIF) global header */
 typedef struct Sifheader Sifheader;
 struct Sifheader{
@@ -229,63 +239,57 @@ struct Sifinfo{
  * a new SIF file. Transient data not found in the final SIF file.
  */
 
-/* information needed to create an definition-file data object descriptor */
-typedef struct Ddesc Ddesc;
-struct Ddesc{
+/* common information needed to create a data object descriptor */
+typedef struct Cmdesc Cmdesc;
+struct Cmdesc{
 	Sifdatatype datatype;
 	int groupid;
 	int link;
+	size_t len;
+};
+
+/* information needed to create an definition-file data object descriptor */
+typedef struct Defdesc Defdesc;
+struct Defdesc{
+	Cmdesc cm;
 	char *fname;
 	int fd;
 	unsigned char *mapstart;
-	size_t len;
 };
 
 /* information needed to create an envvar data object descriptor */
-typedef struct Edesc Edesc;
-struct Edesc{
-	Sifdatatype datatype;
-	int groupid;
-	int link;
+typedef struct Envdesc Envdesc;
+struct Envdesc{
+	Cmdesc cm;
 	char *vars;
-	size_t len;
 };
 
 /* information needed to create an JSON-labels data object descriptor */
-typedef struct Ldesc Ldesc;
-struct Ldesc{
-	Sifdatatype datatype;
-	int groupid;
-	int link;
+typedef struct Labeldesc Labeldesc;
+struct Labeldesc{
+	Cmdesc cm;
 	char *fname;
 	int fd;
 	unsigned char *mapstart;
-	size_t len;
 };
 
 /* information needed to create an partition data object descriptor */
-typedef struct Pdesc Pdesc;
-struct Pdesc{
-	Sifdatatype datatype;
-	int groupid;
-	int link;
+typedef struct Partdesc Partdesc;
+struct Partdesc{
+	Cmdesc cm;
 	char *fname;
 	int fd;
 	unsigned char *mapstart;
-	size_t len;
 	Siffstype fstype;
 	Sifparttype parttype;
 	char content[SIF_CONTENT_LEN];
 };
 
 /* information needed to create an signature data object descriptor */
-typedef struct Sdesc Sdesc;
-struct Sdesc{
-	Sifdatatype datatype;
-	int groupid;
-	int link;
+typedef struct Sigdesc Sigdesc;
+struct Sigdesc{
+	Cmdesc cm;
 	char *signature;
-	size_t len;
 	Sifhashtype hashtype;
 	char entity[SIF_ENTITY_LEN];
 };
