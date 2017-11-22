@@ -101,6 +101,13 @@ int main(int argc, char **argv) {
     while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
         char *bootdef_key;
 
+        chomp_comments(line);
+
+        // skip empty lines (do this after 'chomp')
+        if (line[0] == '\0') {
+            continue;
+        }
+
         if ( line[0] == '%' ) { // We hit a section, stop parsing for keyword tags
             break;
         } else if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
@@ -114,7 +121,7 @@ int main(int argc, char **argv) {
             if (bootdef_value == NULL) {
                 bootdef_value = empty;
             } else {
-                chomp_comments(bootdef_value);
+                chomp(bootdef_value);
             }
 
             singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
