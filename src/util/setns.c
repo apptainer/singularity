@@ -19,7 +19,7 @@
 #include <errno.h>
 #include <sys/syscall.h>
 
-#if defined (NO_SETNS) && defined (SINGULARITY_SETNS_SYSCALL)
+#if defined (NO_SETNS) && defined (SETNS_SYSCALL)
 
 #include "util/setns.h"
 
@@ -27,7 +27,7 @@ int setns(int fd, int nstype) {
     return syscall(__NR_setns, fd, nstype);
 }
 
-#elif defined (NO_SETNS) && !defined (SINGULARITY_SETNS_SYSCALL)
+#elif defined (NO_SETNS) && !defined (SETNS_SYSCALL)
 
 int setns(int fd, int nstype) {
     errno = ENOSYS;
