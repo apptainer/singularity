@@ -42,7 +42,7 @@ AC_PROG_LIBTOOL(libtool)
 
 # Setting rpath if necessary
 if test "$libdir" = "\${exec_prefix}/lib"; then
-    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir)"
+    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir) -Wl,-z,relro,-z,now"
 fi
 
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
@@ -223,6 +223,30 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                       ]
                   )
 
+AC_MSG_CHECKING([for user capabilities])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/prctl.h>
+                                   ]],
+                                   [[#ifndef PR_CAP_AMBIENT
+                                     #error failed
+                                     #endif
+                                   ]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DUSER_CAPABILITIES"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
+AC_CHECK_HEADER([linux/securebits.h], [
+                    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SECUREBITS"
+                ])
+
+
+AC_CHECK_HEADER([linux/capability.h], [], [
+                    AC_MSG_ERROR([linux/capability.h header not found, requires kernel headers installation.])
+                ])
 
 
 AC_ARG_WITH([userns],
@@ -302,7 +326,7 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid start-suid mount-suid"
+    BUILD_SUID="wrapper-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
@@ -352,12 +376,13 @@ AC_SEARCH_LIBS([SHA1], [crypto], [], [
 	AC_MSG_ERROR([unable to find the SHA1(), need package openssl-devel (libssl-dev on Debian/Ubuntu)])
 ])
 
-
+CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([
    Makefile
    singularity.spec
    test.sh
+   secbuildimg.sh
    src/Makefile
    src/lib/Makefile
    src/lib/runtime/Makefile

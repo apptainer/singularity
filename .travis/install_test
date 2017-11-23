@@ -3,4 +3,5 @@
 ./autogen.sh
 ./configure --prefix=/usr/local
 sudo make install
+sudo make secbuildimg
 make test

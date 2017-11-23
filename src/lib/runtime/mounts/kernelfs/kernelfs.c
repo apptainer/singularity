@@ -64,6 +64,10 @@ int _singularity_runtime_mount_kernelfs(void) {
                     singularity_message(ERROR, "Could not mount new procfs into container: %s\n", strerror(errno));
                     ABORT(255);
                 }
+                if ( singularity_mount(NULL, "/proc", NULL, MS_UNBINDABLE | MS_REC, NULL) < 0 ) {
+                    singularity_message(ERROR, "Could not propagate /proc as unbindable: %s\n", strerror(errno));
+                    ABORT(255);
+                }
                 singularity_priv_drop();
             }
         } else {

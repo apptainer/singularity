@@ -49,6 +49,18 @@ RUN OPTIONS:
     -w|--writable       By default all Singularity containers are available as
                         read only. This option makes the file system accessible
                         as read/write.
+    --keep-privs        Lets root user to keep all privileges (root only)
+    --no-privs          Drop all privileges, for root user only as privilieges
+                        are always dropped for users
+    --add-caps          A comma separated capability list to add
+                        Accepted formats:
+                            - CAP_CHOWN,CAP_SETUID
+                            - CHOWN,SETUID
+                            - cap_chown,cap_setuid
+                            - chown,setuid
+    --drop-caps         A comma separated capability list to drop
+    --allow-setuid      Allow setuid binaries in container (root only)
+
 
 CONTAINER FORMATS SUPPORTED:
     *.sqsh              SquashFS format.  Native to Singularity 2.4+

@@ -182,6 +182,19 @@ void daemon_init_start(void) {
         daemon_file_write(daemon_fd, "DAEMON_IMAGE", daemon_image);
         daemon_file_write(daemon_fd, "DAEMON_ROOTFS", singularity_registry_get("ROOTFS"));
 
+        if ( singularity_registry_get("ADD_CAPS") ) {
+            daemon_file_write(daemon_fd, "ADD_CAPS", singularity_registry_get("ADD_CAPS"));
+        }
+        if ( singularity_registry_get("DROP_CAPS") ) {
+            daemon_file_write(daemon_fd, "DROP_CAPS", singularity_registry_get("DROP_CAPS"));
+        }
+        if ( singularity_registry_get("NO_PRIVS") ) {
+            daemon_file_write(daemon_fd, "NO_PRIVS", singularity_registry_get("NO_PRIVS"));
+        }
+        if ( singularity_registry_get("KEEP_PRIVS") ) {
+            daemon_file_write(daemon_fd, "KEEP_PRIVS", singularity_registry_get("KEEP_PRIVS"));
+        }
+
         singularity_registry_set("DAEMON_FD", int2str(daemon_fd));
     } else if( lock == EALREADY ) {
         /* Another daemon controls this file already */
