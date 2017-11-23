@@ -13,6 +13,11 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - changed behaviour (recipe sections work differently)
 
 
+## [v3.0](https://github.com/singularityware/singularity/tree/development)
+
+ - Feature sif sign #1143
+ - Add capability support and secure build #934
+
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
 This fixed an issue for support of older distributions and kernels with regards to `setns()`
