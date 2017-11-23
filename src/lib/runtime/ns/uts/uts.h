@@ -7,11 +7,11 @@
  * 
  */
 
+#ifndef __SINGULARITY_RUNTIME_NS_UTS_H_
+#define __SINGULARITY_RUNTIME_NS_UTS_H_
 
-#ifndef __SINGULARITY_DAEMON_H_
-#define __SINGULARITY_DAEMON_H_
+extern int _singularity_runtime_ns_uts(void);
+extern int _singularity_runtime_ns_uts_join(int ns_fd);
 
-    void singularity_daemon_init(void);
-    int singularity_daemon_has_namespace(char *namespace);
+#endif /* __SINGULARITY_RUNTIME_NS_UTS_H */
 
-#endif

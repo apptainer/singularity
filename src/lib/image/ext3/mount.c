@@ -53,6 +53,11 @@ int _singularity_image_ext3_mount(struct image_object *image, char *mount_point)
         ABORT(255);
     }
 
+    if ( singularity_priv_getuid() != 0 ) {
+        singularity_message(DEBUG, "Adding MS_NODEV to mount options\n");
+        mntflags |= MS_NODEV;
+    }
+
     if ( singularity_allow_setuid() ) {
         singularity_message(DEBUG, "allow-setuid option set, removing MS_NOSUID mount flags\n");
         mntflags &= ~MS_NOSUID;

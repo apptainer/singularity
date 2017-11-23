@@ -11,7 +11,7 @@
 #define __SINGULARITY_RUNTIME_NS_NET_H_
 
 extern int _singularity_runtime_ns_net(void);
-extern int _singularity_runtime_ns_net_join(void);
+extern int _singularity_runtime_ns_net_join(int ns_fd);
 
 #endif /* __SINGULARITY_RUNTIME_NS_NET_H */
 
