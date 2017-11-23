@@ -128,7 +128,7 @@ while true; do
         ;;
         --boot)
             shift
-            if [ "${USERID}" = "0" ];
+            if [ "${USERID}" = "0" ]; then
                 SINGULARITY_INSTANCE_BOOT=1
                 SINGULARITY_UNSHARE_NET=1
                 export SINGULARITY_INSTANCE_BOOT SINGULARITY_UNSHARE_NET

@@ -41,6 +41,7 @@ if [ $? = 0 ]; then
             export SINGULARITY_NOSUID
         fi
     fi
+fi
 
 if [ ! -z "${ADD_CAPS:-}" ]; then
     export SINGULARITY_ADD_CAPS="${ADD_CAPS}"
