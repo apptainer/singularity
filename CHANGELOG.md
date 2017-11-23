@@ -13,7 +13,12 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - changed behaviour (recipe sections work differently)
 
 
-## [v2.4.1](https://github.com/singularityware/singularity/tree/development) (development)
+## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4) (development)
+
+This fixed an issue for support of older distributions and kernels with regards to `setns()`
+functionality.
+
+## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (development)
 
 ### Security related fixes
  - Fixed container path and owner limitations (original merge was lost)
