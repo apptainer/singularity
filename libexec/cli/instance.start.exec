@@ -41,17 +41,6 @@ if ! USERID=`id -ru`; then
     exit 255
 fi
 
-if [ "${USERID}" = "0" ]; then
-    cat /proc/1/status | grep -q "systemd"
-    if [ $? != 0 ]; then
-        SINGULARITY_UNSHARE_NET=1
-        export SINGULARITY_UNSHARE_NET
-    fi
-    message 2 "Boot instance since running as root\n"
-    SINGULARITY_INSTANCE_BOOT=1
-    export SINGULARITY_INSTANCE_BOOT
-fi
-
 message 2 "Evaluating args: '$*'\n"
 
 while true; do
@@ -137,9 +126,16 @@ while true; do
             SINGULARITY_UNSHARE_NET=1
             export SINGULARITY_UNSHARE_NET
         ;;
-        --noboot)
+        --boot)
             shift
-            unset SINGULARITY_INSTANCE_BOOT
+            if [ "${USERID}" = "0" ];
+                SINGULARITY_INSTANCE_BOOT=1
+                SINGULARITY_UNSHARE_NET=1
+                export SINGULARITY_INSTANCE_BOOT SINGULARITY_UNSHARE_NET
+            else
+                message ERROR "boot option requires root privileges\n"
+                exit 1
+            fi
         ;;
         -f|--fakeroot)
             shift
