@@ -41,6 +41,21 @@ if [ $? = 0 ]; then
             export SINGULARITY_NOSUID
         fi
     fi
+
+if [ ! -z "${ADD_CAPS:-}" ]; then
+    export SINGULARITY_ADD_CAPS="${ADD_CAPS}"
+fi
+
+if [ ! -z "${DROP_CAPS:-}" ]; then
+    export SINGULARITY_DROP_CAPS="${DROP_CAPS}"
+fi
+
+if [ ! -z "${KEEP_PRIVS:-}" ]; then
+    export SINGULARITY_KEEP_PRIVS="1"
+fi
+
+if [ ! -z "${NO_PRIVS:-}" ]; then
+    export SINGULARITY_NO_PRIVS="1"
 fi
 
 SINGULARITY_IMAGE="${DAEMON_IMAGE}"

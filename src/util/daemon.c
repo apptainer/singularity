@@ -276,6 +276,19 @@ void daemon_init_start(void) {
     daemon_file_write(daemon_fd, "DAEMON_IMAGE", daemon_image);
     daemon_file_write(daemon_fd, "DAEMON_ROOTFS", singularity_registry_get("ROOTFS"));
 
+    if ( singularity_registry_get("ADD_CAPS") ) {
+        daemon_file_write(daemon_fd, "ADD_CAPS", singularity_registry_get("ADD_CAPS"));
+    }
+    if ( singularity_registry_get("DROP_CAPS") ) {
+        daemon_file_write(daemon_fd, "DROP_CAPS", singularity_registry_get("DROP_CAPS"));
+    }
+    if ( singularity_registry_get("NO_PRIVS") ) {
+        daemon_file_write(daemon_fd, "NO_PRIVS", singularity_registry_get("NO_PRIVS"));
+    }
+    if ( singularity_registry_get("KEEP_PRIVS") ) {
+        daemon_file_write(daemon_fd, "KEEP_PRIVS", singularity_registry_get("KEEP_PRIVS"));
+    }
+
     close(daemon_fd);
 
     free(daemon_pid);
@@ -334,19 +347,26 @@ int singularity_daemon_has_namespace(char *namespace) {
 }
 
 void singularity_daemon_init(void) {
-#if defined (NO_SETNS) && !defined (SINGULARITY_SETNS_SYSCALL)
-    singularity_message(ERROR, "Instance feature is disabled, your kernel is too old\n");
-    ABORT(255);
-#else
     if ( singularity_registry_get("DAEMON_START") ) {
+
+#if defined (SINGULARITY_NO_SETNS) && !defined (SINGULARITY_SETNS_SYSCALL)
+        singularity_message(ERROR, "Instance feature is disabled, your kernel is too old\n");
+        ABORT(255);
+#endif
+
         daemon_init_start();
         return;
     } else if ( singularity_registry_get("DAEMON_JOIN") ) {
+
+#if defined (SINGULARITY_NO_SETNS) && !defined (SINGULARITY_SETNS_SYSCALL)
+        singularity_message(ERROR, "Instance feature is disabled, your kernel is too old\n");
+        ABORT(255);
+#endif
+
         daemon_init_join();
         return;
     } else {
         singularity_message(DEBUG, "Not joining a daemon, daemon join not set\n");
         return;
     }
-#endif
 }

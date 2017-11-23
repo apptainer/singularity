@@ -58,10 +58,10 @@ int main(int argc, char **argv) {
     siginfo_t siginfo;
     struct stat filestat;
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
 
     singularity_priv_init();
-    singularity_suid_init(argv);
+    singularity_suid_init();
 
     singularity_registry_init();
     singularity_priv_drop();

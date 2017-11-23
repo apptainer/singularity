@@ -40,6 +40,17 @@ START OPTIONS:
     --noboot            By default instance execute /sbin/init, this option turn
                         off this behaviour and execute startscript
     -f|--fakeroot       Run container in a new user namespace as root uid/gid
+    --keep-privs        Lets root user to keep all privileges (root only)
+    --no-privs          Drop all privileges, for root user only as privilieges
+                        are always dropped for users
+    --add-caps          A comma separated capability list to add
+                        Accepted formats:
+                            - CAP_CHOWN,CAP_SETUID
+                            - CHOWN,SETUID
+                            - cap_chown,cap_setuid
+                            - chown,setuid
+    --drop-caps         A comma separated capability list to drop
+    --allow-setuid      Allow setuid binaries in container (root only)
 
 
 CONTAINER FORMATS SUPPORTED:

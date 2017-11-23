@@ -42,7 +42,9 @@
 #include "util/util.h"
 #include "util/registry.h"
 #include "util/privilege.h"
+#include "util/capability.h"
 #include "util/message.h"
+#include "util/suid.h"
 #include "util/config_parser.h"
 
 
@@ -196,7 +198,7 @@ void singularity_priv_init(void) {
         singularity_message(VERBOSE, "Not virtualizing USER namespace by configuration: 'allow user ns' = no\n");
     } else if ( getuid() == 0 ) {
         singularity_message(VERBOSE, "Not virtualizing USER namespace: running as root\n");
-    } else if ( singularity_priv_is_suid() == 0 ) {
+    } else if ( singularity_suid_enabled() ) {
         singularity_message(VERBOSE, "Not virtualizing USER namespace: running as SUID\n");
     } else if ( singularity_registry_get("NOSUID") == NULL ) {
         singularity_message(VERBOSE, "Not virtualizing USER namespace: not requested by user\n");
@@ -322,12 +324,15 @@ void singularity_priv_drop_perm(void) {
     }
 
     if ( uinfo.uid == 0 ) {
+        singularity_capability_drop();
         singularity_message(VERBOSE2, "Calling user is root, no privileges to drop\n");
         return;
     }
 
     singularity_message(DEBUG, "Escalating permissison so we can properly drop permission\n");
     singularity_priv_escalate();
+
+    singularity_capability_keep();
 
     singularity_message(DEBUG, "Resetting supplementary groups\n");
     if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
@@ -376,6 +381,7 @@ void singularity_priv_drop_perm(void) {
     singularity_message(VERBOSE2, "Not enabling NO_NEW_PRIVS flag due to lack of compile-time support.\n");
 #endif
 
+    singularity_capability_drop();
 
     singularity_message(DEBUG, "Finished dropping privileges\n");
 }
@@ -383,15 +389,6 @@ void singularity_priv_drop_perm(void) {
 
 int singularity_priv_userns_enabled(void) {
     return uinfo.userns;
-}
-
-/* Return 0 if program is SUID, -1 if not SUID */
-int singularity_priv_is_suid(void) {
-    if ( ( is_suid("/proc/self/exe") == 0 ) && ( is_owner("/proc/self/exe", 0)  == 0) ) {
-        return(0);
-    } else {
-        return(-1);
-    }
 }
 
 char *singularity_priv_home(void) {
