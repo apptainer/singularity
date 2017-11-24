@@ -561,6 +561,8 @@ void singularity_capability_drop(void) {
 
         singularity_capability_set(current);
     }
-    singularity_capability_set_securebits();
+    if ( singularity_capability_keep_privs() == 0 ) {
+        singularity_capability_set_securebits();
+    }
     singularity_capability_set_effective();
 }

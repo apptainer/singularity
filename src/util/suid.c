@@ -108,6 +108,9 @@ int singularity_suid_init(void) {
     }
 
 #else
+    if ( is_enabled < 0 ) {
+        is_enabled = 0;
+    }
     singularity_message(VERBOSE, "Running NON-SUID program workflow\n");
 
     singularity_message(DEBUG, "Checking program has appropriate permissions\n");
