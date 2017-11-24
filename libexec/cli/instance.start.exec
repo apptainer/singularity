@@ -126,14 +126,20 @@ while true; do
             SINGULARITY_UNSHARE_NET=1
             export SINGULARITY_UNSHARE_NET
         ;;
+        --uts)
+            shift
+            SINGULARITY_UNSHARE_UTS=1
+            export SINGULARITY_UNSHARE_UTS
+        ;;
         --boot)
             shift
             if [ "${USERID}" = "0" ]; then
                 SINGULARITY_INSTANCE_BOOT=1
                 SINGULARITY_UNSHARE_NET=1
+                SINGULARITY_UNSHARE_UTS=1
                 SINGULARITY_KEEP_PRIVS=1
                 singularity_drop_capabilities "CAP_SYS_BOOT,CAP_SYS_RAWIO"
-                export SINGULARITY_INSTANCE_BOOT SINGULARITY_UNSHARE_NET SINGULARITY_KEEP_PRIVS
+                export SINGULARITY_INSTANCE_BOOT SINGULARITY_UNSHARE_NET SINGULARITY_KEEP_PRIVS SINGULARITY_UNSHARE_UTS
             else
                 message ERROR "boot option requires root privileges\n"
                 exit 1
