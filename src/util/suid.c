@@ -36,6 +36,7 @@
 #include "util/registry.h"
 #include "util/config_parser.h"
 #include "util/message.h"
+#include "util/privilege.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined
@@ -130,7 +131,7 @@ int singularity_suid_enabled(void) {
 int singularity_allow_container_setuid(void) {
     int ret = 0;
     if ( singularity_config_get_bool(ALLOW_ROOT_CAPABILITIES) ) {
-        if ( singularity_registry_get("ALLOW_SETUID") && getuid() == 0 ) {
+        if ( singularity_registry_get("ALLOW_SETUID") && singularity_priv_getuid() == 0 ) {
             return(1);
         }
     }
