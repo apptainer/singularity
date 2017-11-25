@@ -14,6 +14,7 @@
 
 #Contributors:
 
+    - Afif Elghraoui <afif.elghraoui@nih.gov>
     - Amanda Duffy <aduffy@lenovo.com>
     - Ángel Bejarano <abejarano@ontropos.com>
     - Bernard Li <bernardli@lbl.gov>
