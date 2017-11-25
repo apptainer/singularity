@@ -18,6 +18,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Feature sif sign #1143
  - Add capability support and secure build #934
  - Boot/start instance #1032
+ - Put /usr/local/{bin,sbin} in front of the default PATH
 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
