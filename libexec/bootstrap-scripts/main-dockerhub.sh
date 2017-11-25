@@ -60,23 +60,33 @@ eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
     message 1 "Exploding layer: $name\n"
-    zcat "$i" | tar --quoting-style=escape -tf - | grep '\.wh\.' | while read WHITEOUT
+    zcat "$i" | tar -tf - | grep '\.wh\.' | while read WHITEOUT
     do
-        # Handle opaque directories (remove them, will be recreated
-        # empty at extraction of tar).
-        if [[ $WHITEOUT == *.wh..wh..opq ]]; then
-            OPAQUE_DIR=$(dirname "$WHITEOUT")
-            if [ -d "${SINGULARITY_ROOTFS}${OPAQUE_DIR}" ]; then
-                message 2 "Making $OPAQUE_DIR opaque\n"
-                rm -rf "${SINGULARITY_ROOTFS}${OPAQUE_DIR}"
-            fi
-        # Handle other plain whiteout marker files. Remove the target
-        # before extraction.
-        else
-            WHITEOUT_TARGET="${WHITEOUT/\/\.wh\.//}"
-            message 2 "Removing whiteout-ed file/dir $WHITEOUT_TARGET\n"
-            rm -rf "${SINGULARITY_ROOTFS}/${WHITEOUT_TARGET}"
-        fi
+        case "$WHITEOUT" in
+            # Handle opaque directories (remove them, will be recreated
+            # empty at extraction of tar).
+            */.wh..wh..opq )
+                OPAQUE_DIR=$(dirname "$WHITEOUT")
+                if [ -d "${SINGULARITY_ROOTFS}/${OPAQUE_DIR}" ]; then
+                    message 2 "Making $OPAQUE_DIR opaque\n"
+                    rm -rf "${SINGULARITY_ROOTFS}/${OPAQUE_DIR}"
+                fi
+                ;;
+            # Handle other plain whiteout marker files. Remove the target
+            # before extraction.
+            *)
+                WHITEOUT_TARGET=$(printf '%s' "$WHITEOUT" | sed -e 's@/.wh.@/@')
+                WHITEOUT_TARGET_ABS=$(readlink -f "${SINGULARITY_ROOTFS}/${WHITEOUT_TARGET}")
+                case "$WHITEOUT_TARGET_ABS" in
+                    "$SINGULARITY_ROOTFS"* )
+                        if [ -e "${WHITEOUT_TARGET_ABS}" ]; then
+                            message 2 "Removing whiteout-ed file/dir $WHITEOUT_TARGET\n"
+                            rm -rf "${WHITEOUT_TARGET_ABS}"
+                        fi
+                        ;;
+                esac
+                ;;
+        esac
     done
     # Now extract our current layer, exclude whiteout files handled
     # above.
