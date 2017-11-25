@@ -8,4 +8,5 @@ MirrorURL: http://ftp.us.debian.org/debian/
 %post
     echo "Hello from inside the container"
     apt-get update
-    apt-get -y --force-yes install vim
+    apt-get -y install vim
+    apt-get clean
