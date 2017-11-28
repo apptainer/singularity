@@ -572,8 +572,8 @@ cleanupsdesc(void *elem)
 static int
 cleanupdesc(void *elem)
 {
-	Sifdatatype *dt = (Sifdatatype *)elem;
-	switch(*dt){
+	Cmdesc *desc = (Cmdesc *)elem;
+	switch(desc->datatype){
 	case DATA_DEFFILE:
 		return cleanupddesc(elem);
 	case DATA_ENVVAR:
@@ -592,9 +592,11 @@ cleanupdesc(void *elem)
 }
 
 int
-sif_putdataobj(Sifinfo *info, Sifdatatype *datatype)
+sif_putdataobj(Sifinfo *info, Cmdesc *cm)
 {
-	if(prepdesc(datatype) < 0)
+	printf("sizeof Sifdescriptor: %ld", sizeof(Sifdescriptor));
+	printf("sizeof Sifparition: %ld", sizeof(Sifpartition));
+	if(prepdesc(cm) < 0)
 		return -1;
 
 	if(munmap(info->mapstart, info->filesize) < 0){
@@ -616,8 +618,8 @@ sif_putdataobj(Sifinfo *info, Sifdatatype *datatype)
 	info->header.mtime = time(NULL);
 	memcpy(info->mapstart, &info->header, sizeof(Sifheader));
 
-	putdesc(datatype);
-	cleanupdesc(datatype);
+	putdesc(cm);
+	cleanupdesc(cm);
 
 	return 0;
 }

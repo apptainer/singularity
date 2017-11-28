@@ -419,7 +419,7 @@ int
 cmd_sign(int argc, char *argv[])
 {
 	Sifinfo sif;
-	Sifcommon *cm;
+	Sifdescriptor *desc;
 	Sigdesc s;
 	int id;
 	static char signedhash[SGN_MAXLEN];
@@ -439,15 +439,15 @@ cmd_sign(int argc, char *argv[])
 		return(-1);
 	}
 
-	cm = sif_getdescid(&sif, id);
-	if(cm == NULL){
+	desc = sif_getdescid(&sif, id);
+	if(desc == NULL){
 		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
 		        sif_strerror(siferrno));
 		sif_unload(&sif);
 		return -1;
 	}
 
-	if(sgn_hashbuffer(sif.mapstart+cm->fileoff, cm->filelen, hash) == NULL){
+	if(sgn_hashbuffer(sif.mapstart+desc->cm.fileoff, desc->cm.filelen, hash) == NULL){
 		fprintf(stderr, "Error with computing hash: %s\n",
 		        sgn_strerror(sgnerrno));
 		sif_unload(&sif);
@@ -470,23 +470,21 @@ cmd_sign(int argc, char *argv[])
 	s.signature = strdup(signedhash);
 	s.hashtype = SNG_DEFAULT_HASH;
 
-	if(sif_putdataobj(&sif, (Sifdatatype *)&s) < 0){
+	if(sif_putdataobj(&sif, (Cmdesc *)&s) < 0){
 		fprintf(stderr, "Error adding new data object: %s\n",
 			sif_strerror(siferrno));
 		free(s.signature);
 		sif_unload(&sif);
 		return -1;
 	}
+	free(s.signature);
 
 	if(sif_unload(&sif) < 0){
 		fprintf(stderr, "Error releasing SIF file gracefully: %s\n",
 		        sif_strerror(siferrno));
-		free(s.signature);
-		sif_unload(&sif);
 		return -1;
 	}
 
-	sif_unload(&sif);
 	return 0;
 }
 
@@ -494,8 +492,8 @@ int
 cmd_verify(int argc, char *argv[])
 {
 	Sifinfo sif;
-	Sifcommon *cm;
-	Sifcommon *link;
+	Sifdescriptor *desc;
+	Sifdescriptor *link;
 	int id;
 	static char hash[SGN_HASHLEN];
 	static char hashstr[SGN_HASHLEN*2+1];
@@ -513,34 +511,34 @@ cmd_verify(int argc, char *argv[])
 		return(-1);
 	}
 
-	cm = sif_getdescid(&sif, id);
-	if(cm == NULL){
+	desc = sif_getdescid(&sif, id);
+	if(desc == NULL){
 		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
 		        sif_strerror(siferrno));
 		sif_unload(&sif);
 		return -1;
 	}
 
-	link = sif_getlinkeddesc(&sif, cm->id);
+	link = sif_getlinkeddesc(&sif, desc->cm.id);
 	if(link == NULL){
-		fprintf(stderr, "Cannot find signature for id %d: %s\n", cm->id,
-		        sif_strerror(siferrno));
+		fprintf(stderr, "Cannot find signature for id %d: %s\n",
+		        desc->cm.id, sif_strerror(siferrno));
 		sif_unload(&sif);
 		return -1;
 	}
 
-	if(sgn_verifyhash(sif.mapstart+link->fileoff) < 0){
+	if(sgn_verifyhash(sif.mapstart+link->cm.fileoff) < 0){
 		fprintf(stderr, "Signature verification failed: %s\n", sgn_strerror(sgnerrno));
 		sif_unload(&sif);
 		return -1;
 	}
-	if(sgn_getsignedhash(sif.mapstart+link->fileoff, hashstr) < 0){
+	if(sgn_getsignedhash(sif.mapstart+link->cm.fileoff, hashstr) < 0){
 		fprintf(stderr, "Could not find SIFHASH inside signature: %s\n",
 		        sgn_strerror(sgnerrno));
 		sif_unload(&sif);
 		return -1;
 	}
-	if(sgn_hashbuffer(sif.mapstart+cm->fileoff, cm->filelen, hash) == NULL){
+	if(sgn_hashbuffer(sif.mapstart+desc->cm.fileoff, desc->cm.filelen, hash) == NULL){
 		fprintf(stderr, "Error with computing hash: %s\n",
 		        sgn_strerror(sgnerrno));
 		sif_unload(&sif);
@@ -563,7 +561,7 @@ cmd_info(int argc, char *argv[])
 {
 	int id;
 	Sifinfo sif;
-	Sifcommon *cm;
+	Sifdescriptor *desc;
 
 	if(argc < 4){
 		usage();
@@ -577,8 +575,8 @@ cmd_info(int argc, char *argv[])
 		return(-1);
 	}
 
-	cm = sif_getdescid(&sif, id);
-	if(cm == NULL){
+	desc = sif_getdescid(&sif, id);
+	if(desc == NULL){
 		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
 		        sif_strerror(siferrno));
 		sif_unload(&sif);
@@ -587,7 +585,7 @@ cmd_info(int argc, char *argv[])
 
 	printf("Descriptor info:\n");
 	printf("---------------------------\n");
-	sif_printdesc(cm);
+	sif_printdesc(desc);
 
 	sif_unload(&sif);
 
@@ -599,7 +597,7 @@ cmd_dump(int argc, char *argv[])
 {
 	int id;
 	Sifinfo sif;
-	Sifcommon *cm;
+	Sifdescriptor *desc;
 	char *c;
 
 	if(argc < 4){
@@ -614,15 +612,17 @@ cmd_dump(int argc, char *argv[])
 		return(-1);
 	}
 
-	cm = sif_getdescid(&sif, id);
-	if(cm == NULL){
+	desc = sif_getdescid(&sif, id);
+	if(desc == NULL){
 		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
 		        sif_strerror(siferrno));
 		sif_unload(&sif);
 		return -1;
 	}
 
-	for(c = sif.mapstart+cm->fileoff; c < sif.mapstart+cm->fileoff+cm->filelen; c++)
+	for(c = sif.mapstart+desc->cm.fileoff;
+	    c < sif.mapstart+desc->cm.fileoff+desc->cm.filelen;
+	    c++)
 		printf("%c", *c);
 
 	sif_unload(&sif);

@@ -103,7 +103,7 @@ enum{
 	SIF_VERSION_LEN = 3,		/* sizeof("99"); */
 	SIF_ARCH_LEN = 3,		/* sizeof("99"); */
 	SIF_ENTITY_LEN = 64,		/* "Joe Bloe <jbloe@gmail.com>..." */
-	SIF_CONTENT_LEN = 256,		/* "RHEL 7.4 / kernel 3.10.0-693 / ..." */
+	SIF_CONTENT_LEN = 64,		/* "RHEL 7.4 / kernel 3.10.0-693 / ..." */
 
 	SIF_GROUP_MASK = 0xf0000000,	/* groups start at that offset */
 	SIF_UNUSED_GROUP = SIF_GROUP_MASK,/* descriptor without a group */
@@ -360,7 +360,7 @@ int sif_load(char *filename, Sifinfo *info, int rdonly);
 int sif_unload(Sifinfo *info);
 
 int sif_create(Sifcreateinfo *cinfo);
-int sif_putdataobj(Sifinfo *info, Sifdatatype *datatype);
+int sif_putdataobj(Sifinfo *info, Cmdesc *cm);
 int sif_deldataobj(Sifinfo *info, int id);
 
 #endif /* __SINGULARITY_SIF_H_ */
