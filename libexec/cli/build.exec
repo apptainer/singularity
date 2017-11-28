@@ -263,8 +263,11 @@ case $SINGULARITY_BUILDDEF in
         zcat "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar" | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
 
         for i in `cat "$SINGULARITY_CONTENTS"`; do
-            message 1 "Importing: $i\n"
-            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
+            name=`basename "$i"`
+            message 2 "Exploding layer: $name\n"
+            echo ${SINGULARITY_ROOTFS}
+            echo $SINGULARITY_libexecdir/singularity/bin/docker-extract "$i"
+            $SINGULARITY_libexecdir/singularity/bin/docker-extract "$i"
         done
 
         SINGULARITY_BUILDDEF="$SINGULARITY_ROOTFS"
