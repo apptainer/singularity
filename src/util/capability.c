@@ -242,8 +242,16 @@ void singularity_capability_set_effective(void) {
         ABORT(255);
     }
 
+#ifdef USER_CAPABILITIES
+    data[1].permitted = data[1].inheritable;
+    data[0].permitted = data[0].inheritable;
+
+    data[1].effective = 0;
+    data[0].effective = 0;
+#else
     data[1].permitted = data[1].effective = data[1].inheritable;
     data[0].permitted = data[0].effective = data[0].inheritable;
+#endif
 
     if ( capset(&header, data) < 0 ) {
         singularity_message(ERROR, "Failed to set processus capabilities\n");
