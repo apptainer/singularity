@@ -27,6 +27,7 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -35,21 +36,40 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
+#include "util/registry.h"
 #include "util/config_parser.h"
 
 #include "../../runtime.h"
 
+int pivot_root(const char *new_root, const char *put_old) {
+    return syscall(__NR_pivot_root, new_root, put_old);
+}
 
 int _singularity_runtime_enter_chroot(void) {
     char *container_dir = CONTAINER_FINALDIR;
 
-    singularity_priv_escalate();
     singularity_message(VERBOSE, "Entering container file system root: %s\n", container_dir);
-    if ( chroot(container_dir) < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
-        singularity_message(ERROR, "failed chroot to container at: %s\n", container_dir);
-        ABORT(255);
+
+    if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
+        singularity_priv_escalate();
+        if ( chdir(container_dir) < 0 ) {
+            singularity_message(ERROR, "Could not chdir to file system root %s: %s\n", container_dir, strerror(errno));
+            ABORT(1);
+        }
+        if ( pivot_root(".", "etc") < 0 ) {
+            singularity_message(ERROR, "Changing root filesystem failed\n");
+            ABORT(255);
+        }
+        if ( chroot(".") < 0 ) { // Flawfinder: ignore (yep, yep, yep... we know!)
+            singularity_message(ERROR, "failed chroot to container at: %s\n", container_dir);
+            ABORT(255);
+        }
+        if ( umount2("etc", MNT_DETACH) < 0 ) {
+            singularity_message(ERROR, "Changing root filesystem failed\n");
+            ABORT(255);
+        }
+        singularity_priv_drop();
     }
-    singularity_priv_drop();
 
     singularity_message(DEBUG, "Changing dir to '/' within the new root\n");
     if ( chdir("/") < 0 ) {

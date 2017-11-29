@@ -24,7 +24,7 @@
 #define __SINGULARITY_RUNTIME_NS_MNT_H_
 
 extern int _singularity_runtime_ns_mnt(void);
-extern int _singularity_runtime_ns_mnt_join(void);
+extern int _singularity_runtime_ns_mnt_join(int ns_fd);
 
 #endif /* __SINGULARITY_RUNTIME_NS_MNT_H */
 

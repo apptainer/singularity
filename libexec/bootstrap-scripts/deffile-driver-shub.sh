@@ -32,6 +32,7 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+FROM="${SINGULARITY_DEFFILE_FROM:-}"
 if [ -z "${FROM:-}" ]; then
     message ERROR "Required Definition tag 'From:' not defined.\n"
     exit 1
@@ -42,13 +43,15 @@ fi
 # Singularity Hub/Registry Customizations
 ################################################################################
 
-if [ ! -z "${REGISTRY:-}" ]; then
-    message DEBUG "Custom Singularity Registry 'Registry:' ${REGISTRY}.\n"
+if [ ! -z "${SINGULARITY_DEFFILE_REGISTRY:-}" ]; then
+    message DEBUG "Custom Singularity Registry 'Registry:' ${SINGULARITY_DEFFILE_REGISTRY}.\n"
+    REGISTRY="${SINGULARITY_DEFFILE_REGISTRY:-}"
     export REGISTRY
 fi
 
-if [ ! -z "${NAMESPACE:-}" ]; then
-    message DEBUG "Custom Singularity Registry Namespace 'Namespace:' ${NAMESPACE}.\n"
+if [ ! -z "${SINGULARITY_DEFFILE_NAMESPACE:-}" ]; then
+    message DEBUG "Custom Singularity Registry Namespace 'Namespace:' ${SINGULARITY_DEFFILE_NAMESPACE}.\n"
+    NAMESPACE="${SINGULARITY_DEFFILE_NAMESPACE:-}"
     export NAMESPACE
 fi
 
@@ -83,8 +86,8 @@ message 1 "Exporting contents of ${SINGULARITY_CONTAINER} to ${SINGULARITY_IMAGE
 SINGULARITY_CONTAINER=`cat $SINGULARITY_CONTENTS`
 rm -r $SINGULARITY_CONTENTS
 
-#if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER}" | (cd "${SINGULARITY_ROOTFS}" && tar xBf -); then
-if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+${SINGULARITY_bindir}/singularity image.export "${SINGULARITY_CONTAINER}" | tar xBf - -C "${SINGULARITY_ROOTFS}"
+if [ $? != 0 ]; then
     message ERROR "Failed to export contents of ${SINGULARITY_CONTAINER} to ${SINGULARITY_ROOTFS}\n"
     rm $SINGULARITY_CONTAINER
     ABORT 255

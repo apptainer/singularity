@@ -123,6 +123,10 @@ while true; do
             SINGULARITY_CHECKTAGS="${1:-}"
             shift;
         ;;
+        -i|--isolated)
+            SINGULARITY_ISOLATED_BUILD=1
+            shift
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -201,7 +205,7 @@ if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
             SINGULARITY_BTSTRP_2EXISTING=1
         elif [ -n "${SINGULARITY_FORCE:-}" ]; then
             # this may be a directory, so rm -rf 
-            rm -rf "$SINGULARITY_CONTAINER_OUTPUT"
+            rm -rf "$SINGULARITY_CONTAINER_OUTPUT" 2> /dev/null
         fi
     else
         message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an FS image file\n"
@@ -361,7 +365,11 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             fi
         fi
         export SINGULARITY_BUILDDEF
-        eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
+        if [ -n "${SINGULARITY_ISOLATED_BUILD:-}" ]; then
+            eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/secbuild.sh"
+        else
+            eval_abort "$SINGULARITY_libexecdir/singularity/bin/builddef"
+        fi
 
     else
         message ERROR "Unsupported file type: $SINGULARITY_BUILDDEF\n"

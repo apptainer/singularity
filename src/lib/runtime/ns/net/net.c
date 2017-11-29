@@ -29,6 +29,7 @@
 #include "util/privilege.h"
 #include "util/fork.h"
 #include "util/registry.h"
+#include "util/daemon.h"
 #include "util/setns.h"
 
 
@@ -82,12 +83,16 @@ int _singularity_runtime_ns_net(void) {
     return(0);
 }
 
-int _singularity_runtime_ns_net_join(void) {
-    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+int _singularity_runtime_ns_net_join(int ns_fd) {
     int net_fd;
 
     /* Attempt to open /proc/[PID]/ns/net */
     singularity_priv_escalate();
+    if ( ! singularity_daemon_has_namespace("net") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
     net_fd = openat(ns_fd, "net", O_RDONLY);
 
     if( net_fd == -1 ) {

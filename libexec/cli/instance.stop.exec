@@ -34,7 +34,8 @@ if ! USERID=`id -ru`; then
     exit 255
 fi
 
-KILL_VAL="15"
+# kill instances with SIGINT by default, for init systems it's equal to Ctrl+Alt+Del
+KILL_VAL="SIGINT"
 KILL_WAIT="10"
 
 while true; do

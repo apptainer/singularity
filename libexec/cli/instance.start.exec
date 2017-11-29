@@ -23,6 +23,15 @@ else
     exit 1
 fi
 
+## Load capabilities
+if [ -f "$SINGULARITY_libexecdir/singularity/capabilities" ]; then
+    . "$SINGULARITY_libexecdir/singularity/capabilities"
+    singularity_get_env_capabilities
+else
+    echo "Error loading capabilities: $SINGULARITY_libexecdir/singularity/capabilities"
+    exit 1
+fi
+
 if [ -f "${HOME:-}/.singularity-init" ]; then
     . "${HOME:-}/.singularity-init"
 fi
@@ -84,7 +93,7 @@ while true; do
                 ABORT 255
             fi
         ;;
-        -n|--nv)
+        --nv)
             shift
             for i in `ldconfig -p | grep -E "/libnv|/libcuda|/libEGL|/libGL|/libnvcu|/libvdpau|/libOpenCL|/libOpenGL"`; do
                 if [ -f "$i" ]; then
@@ -117,6 +126,75 @@ while true; do
             SINGULARITY_UNSHARE_NET=1
             export SINGULARITY_UNSHARE_NET
         ;;
+        --boot)
+            shift
+            if [ "${USERID}" = "0" ]; then
+                SINGULARITY_INSTANCE_BOOT=1
+                SINGULARITY_UNSHARE_NET=1
+                export SINGULARITY_INSTANCE_BOOT SINGULARITY_UNSHARE_NET
+            else
+                message ERROR "boot option requires root privileges\n"
+                exit 1
+            fi
+        ;;
+        -f|--fakeroot)
+            shift
+            SINGULARITY_NOSUID=1
+            SINGULARITY_USERNS_UID=0
+            SINGULARITY_USERNS_GID=0
+            export SINGULARITY_USERNS_UID SINGULARITY_USERNS_GID SINGULARITY_NOSUID
+        ;;
+        -u|--user|--userns)
+            shift
+            SINGULARITY_NOSUID=1
+            export SINGULARITY_NOSUID
+        ;;
+        --keep-privs)
+            if [ "$(id -ru)" = "0" ]; then
+                if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+                    message ERROR "keep-privs is disabled when allow root capabilities directive is set to no\n"
+                    exit 1
+                fi
+
+                SINGULARITY_KEEP_PRIVS=1
+                export SINGULARITY_KEEP_PRIVS
+                message 4 "Requesting keep privileges\n"
+            else
+                message WARNING "Keeping privileges is for root only\n"
+            fi
+            shift
+        ;;
+        --no-privs)
+            if [ "$(id -ru)" = "0" ]; then
+                SINGULARITY_NO_PRIVS=1
+                export SINGULARITY_NO_PRIVS
+                message 4 "Requesting no privileges\n"
+            fi
+            shift
+        ;;
+        --add-caps)
+            shift
+            singularity_add_capabilities "$1"
+            shift
+        ;;
+        --drop-caps)
+            shift
+            singularity_drop_capabilities "$1"
+            shift
+        ;;
+        --allow-setuid)
+            shift
+            if [ "$(id -ru)" != "0" ]; then
+                message ERROR "allow-setuid is for root only\n"
+                exit 1
+            fi
+            if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+                message ERROR "allow-setuid is disabled when allow root capabilities directive is set to no\n"
+                exit 1
+            fi
+            SINGULARITY_ALLOW_SETUID=1
+            export SINGULARITY_ALLOW_SETUID
+        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
@@ -133,7 +211,6 @@ else
     message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
     ABORT 255
 fi
-
 
 if [ -z "${SINGULARITY_IMAGE:-}" ]; then
     SINGULARITY_IMAGE="${1:-}"
@@ -212,8 +289,9 @@ if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
     . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
 fi
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/start-suid" ]; then
-    exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/start-suid" "$@" <&0
+
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
+    exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" "$@" <&0
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/start" ]; then
     exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/start" "$@" <&0
 else

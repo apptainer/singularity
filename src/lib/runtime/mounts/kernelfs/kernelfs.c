@@ -64,6 +64,22 @@ int _singularity_runtime_mount_kernelfs(void) {
                     singularity_message(ERROR, "Could not mount new procfs into container: %s\n", strerror(errno));
                     ABORT(255);
                 }
+                if ( singularity_mount(NULL, "/proc", NULL, MS_UNBINDABLE | MS_REC, NULL) < 0 ) {
+                    singularity_message(ERROR, "Could not propagate /proc as unbindable: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                singularity_priv_drop();
+            }
+            if ( singularity_priv_userns_enabled() != 1 ) {
+                singularity_priv_escalate();
+                if ( singularity_mount(joinpath(container_dir, "/proc/sys"), joinpath(container_dir, "/proc/sys"), NULL, MS_BIND, NULL) < 0) {
+                    singularity_message(ERROR, "Could not bind-mount /proc/sys into container: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                if ( singularity_mount(NULL, joinpath(container_dir, "/proc/sys"), NULL, MS_BIND | MS_REMOUNT | MS_NOSUID | MS_RDONLY, NULL) < 0) {
+                    singularity_message(ERROR, "Could not remount /proc into container: %s\n", strerror(errno));
+                    ABORT(255);
+                }
                 singularity_priv_drop();
             }
         } else {
@@ -89,7 +105,11 @@ int _singularity_runtime_mount_kernelfs(void) {
             } else {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting /sys\n");
-                if ( singularity_mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", MS_NOSUID, NULL) < 0 ) {
+                if ( singularity_mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", MS_NOSUID | MS_RDONLY, NULL) < 0 ) {
+                    singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                if ( singularity_mount(NULL, joinpath(container_dir, "/sys"), NULL, MS_BIND | MS_REMOUNT | MS_NOSUID | MS_RDONLY, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
                     ABORT(255);
                 }

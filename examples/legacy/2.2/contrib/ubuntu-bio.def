@@ -19,6 +19,7 @@ Include: bash
     sed -i 's/main/main restricted universe/g' /etc/apt/sources.list
     apt-get update
     apt-get -y install wget bzip2 build-essential zlib1g-dev software-properties-common libncurses5-dev
+    apt-get clean
 
 
     # Install BWA
@@ -44,6 +45,7 @@ Include: bash
     apt-get update
     echo 'oracle-java8-installer shared/accepted-oracle-license-v1-1 select true' | debconf-set-selections
     apt-get -y install oracle-java8-installer
+    apt-get clean
 
 
     # This is now ready to have GATK (Genomic Analysis Took Kit) installed
