@@ -35,8 +35,9 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
     strncpy(opq_dir, opq_marker, length);
     opq_dir[length] = 0;
 
-    char *opq_dir_rootfs = malloc(strlen(rootfs_dir) + 1 + strlen(opq_dir) + 1);
-    sprintf(opq_dir_rootfs, "%s/%s", rootfs_dir, opq_dir);
+    size_t buff_len = strlen(rootfs_dir) + 1 + strlen(opq_dir) + 1;
+    char *opq_dir_rootfs = malloc(buff_len);
+    snprintf(opq_dir_rootfs, buff_len, "%s/%s", rootfs_dir, opq_dir);
 
     if (is_dir(opq_dir_rootfs) == 0) {
         s_rmdir(opq_dir_rootfs);
@@ -70,8 +71,9 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
     wh_path[token_pos] = 0;
     strcat(wh_path, token + 4);
 
-    char *wh_path_rootfs = malloc(strlen(rootfs_dir) + 1 + strlen(wh_path) + 1);
-    sprintf(wh_path_rootfs, "%s/%s", rootfs_dir, wh_path);
+    size_t buff_len = strlen(rootfs_dir) + 1 + strlen(wh_path) + 1;
+    char *wh_path_rootfs = malloc(buff_len);
+    snprintf(wh_path_rootfs, buff_len, "%s/%s", rootfs_dir, wh_path);
 
     if (is_dir(wh_path_rootfs) == 0) {
         retval = s_rmdir(wh_path_rootfs);
