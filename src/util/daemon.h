@@ -12,5 +12,6 @@
 #define __SINGULARITY_DAEMON_H_
 
     void singularity_daemon_init(void);
-    
+    int singularity_daemon_has_namespace(char *namespace);
+
 #endif

@@ -17,9 +17,11 @@ dist_mods_SCRIPTS = functions checks.sh \
                     environment.sh \
                     post.sh \
                     pre.sh \
-                    main-deffile.sh \
+                    main-deffile-stage1.sh \
+                    main-deffile-stage2.sh \
                     main-dockerhub.sh \
-                    main-null.sh
+                    main-null.sh \
+                    secbuild.sh
 
 MAINTAINERCLEANFILES = Makefile.in
 

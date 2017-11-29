@@ -40,6 +40,8 @@ fi
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 
+BOOTSTRAP="${SINGULARITY_DEFFILE_BOOTSTRAP:-}"
+
 if [ -n "${BOOTSTRAP:-}" -a -z "${SINGULARITY_BUILDNOBASE:-}" ]; then
     if [ -x "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-driver-$BOOTSTRAP.sh" ]; then
         if [ ! -f "${SINGULARITY_ROOTFS}/.coredone" ]; then
@@ -59,7 +61,7 @@ if [ "${BOOTSTRAP:-}" = "localimage" -o "${BOOTSTRAP:-}" = "shub" ]; then
     export SINGULARITY_STARTING_ENVIRONMENT SINGULARITY_STARTING_ENVSHA1
 fi 
 
-eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/deffile-sections.sh"
+eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/main-deffile-stage2.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/post.sh"
 
 # take another snapshot and compare to see what changed
