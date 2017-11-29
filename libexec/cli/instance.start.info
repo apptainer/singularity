@@ -37,6 +37,7 @@ START OPTIONS:
     -u|--userns         Run container in a new user namespace (this allows
                         Singularity to run completely unprivileged on recent
                         kernels and doesn't support all features)
+    --hostname          Set container hostname
     --boot              By default instance execute startscript, this option
                         turn off this behaviour and execute /sbin/init (root only)
     -f|--fakeroot       Run container in a new user namespace as root uid/gid

@@ -296,7 +296,7 @@ void daemon_init_start(void) {
     free(daemon_file_dir);
 }
 
-int singularity_daemon_has_namespace(char *namespace) {
+int singularity_daemon_own_namespace(char *namespace) {
     int retval = 0;
     char *self_ns_path = NULL;
     char *target_ns_path = (char *)xmalloc(PATH_MAX);

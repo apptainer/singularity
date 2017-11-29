@@ -81,7 +81,7 @@ int _singularity_runtime_ns_ipc_join(int ns_fd) {
 
     /* Attempt to open /proc/[PID]/ns/pid */
     singularity_priv_escalate();
-    if ( ! singularity_daemon_has_namespace("ipc") ) {
+    if ( ! singularity_daemon_own_namespace("ipc") ) {
         singularity_priv_drop();
         return(0);
     }
