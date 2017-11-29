@@ -114,6 +114,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/mount
 %{_libexecdir}/singularity/bin/image-type
 %{_libexecdir}/singularity/bin/sif
+%{_libexecdir}/singularity/bin/docker-extract
 
 # Directories
 %{_libexecdir}/singularity/bootstrap-scripts
@@ -147,6 +148,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/bin/image-type
 %{_libexecdir}/singularity/bin/wrapper
+%{_libexecdir}/singularity/bin/docker-extract
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/capabilities
 %dir %{_sysconfdir}/singularity
