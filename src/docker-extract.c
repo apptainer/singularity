@@ -100,7 +100,11 @@ int apply_whiteouts(char *tarfile, char *rootfs_dir) {
     struct archive_entry *entry;
 
     a = archive_read_new();
+#if ARCHIVE_VERSION_NUMBER <= 3000000
     archive_read_support_compression_all(a);
+#else
+    archive_read_support_filter_all(a);
+#endif
     archive_read_support_format_all(a);
     ret = archive_read_open_filename(a, tarfile, 10240);
     if (ret != ARCHIVE_OK)
@@ -124,7 +128,11 @@ int apply_whiteouts(char *tarfile, char *rootfs_dir) {
             }
         }
     }
+#if ARCHIVE_VERSION_NUMBER <= 3000000
     ret = archive_read_finish(a);
+#else
+    ret = archive_read_free(a);
+#endif
     if (ret != ARCHIVE_OK){
         singularity_message(ERROR, "Error freeing archive\n");
         ABORT(255);
@@ -179,7 +187,11 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
 
     a = archive_read_new();
     archive_read_support_format_all(a);
+#if ARCHIVE_VERSION_NUMBER <= 3000000
     archive_read_support_compression_all(a);
+#else
+    archive_read_support_filter_all(a);
+#endif
     ext = archive_write_disk_new();
     archive_write_disk_set_options(ext, flags);
     archive_write_disk_set_standard_lookup(ext);
@@ -239,10 +251,17 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
         }
     }
     archive_read_close(a);
+#if ARCHIVE_VERSION_NUMBER <= 3000000
     archive_read_finish(a);
+#else
+    archive_read_free(a);
+#endif
     archive_write_close(ext);
+#if ARCHIVE_VERSION_NUMBER <= 3000000
     archive_write_finish(ext);
-
+#else
+    archive_write_free(ext);
+#endif
     r = chdir(orig_dir);
     if (r < 0 ){
         singularity_message(ERROR, "Could not chdir back to %s\n", orig_dir);
