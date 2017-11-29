@@ -65,6 +65,8 @@ int main(int argc, char **argv) {
     singularity_priv_userns();
     singularity_priv_drop();
 
+    singularity_runtime_autofs();
+
     singularity_daemon_init();
 
     if ( singularity_registry_get("WRITABLE") != NULL ) {
