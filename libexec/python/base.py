@@ -20,12 +20,13 @@ import os
 
 try:
     from urllib.parse import urlencode, urlparse
-    from urllib.request import urlopen, Request, unquote
+    from urllib.request import Request, HTTPRedirectHandler, build_opener
     from urllib.error import HTTPError
 except ImportError:
-    from urllib import urlencode, unquote
     from urlparse import urlparse
-    from urllib2 import urlopen, Request, HTTPError
+    from urllib import urlencode
+    from urllib2 import Request, HTTPError
+    from urllib2 import HTTPRedirectHandler, build_opener
 
 
 class MultiProcess(object):
@@ -124,6 +125,31 @@ def multi_wrapper(func_args):
 
 def multi_package(func, args):
     return zip(itertools.repeat(func), args)
+
+
+class AuthRedirectHandler(HTTPRedirectHandler):
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        newreq = HTTPRedirectHandler.redirect_request(
+            self, req, fp, code, msg, headers, newurl)
+
+        if 'Authorization' not in req.headers:
+            return newreq
+
+        src = urlparse(req.get_full_url()).hostname
+        dest = urlparse(newreq.get_full_url()).hostname
+
+        if dest != src:
+            bot.debug('AuthRedirectHandler: stripping "Authorization" header '
+                      "(%s != %s)" % (dest, src))
+            del newreq.headers['Authorization']
+
+        return newreq
+
+
+def urlopen(*args, **kwargs):
+    opener = build_opener(AuthRedirectHandler())
+    return opener.open(*args, **kwargs)
 
 
 class ApiConnection(object):
