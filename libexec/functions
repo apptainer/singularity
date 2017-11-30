@@ -506,6 +506,7 @@ bind_nvidia_files() {
     for SINGULARITY_NVBIN in $SINGULARITY_NVBINLIST; do
         if [ -f "$SINGULARITY_NVBIN" ]; then
             message 2 "Found NV binary: $SINGULARITY_NVBIN\n"
+            SINGULARITY_BIN_FOUND=1
             SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH:-},${SINGULARITY_NVBIN}"
         fi
     done
@@ -518,7 +519,7 @@ bind_nvidia_files() {
         export SINGULARITY_CONTAINLIBS
     fi
 
-    if [ -z "${SINGULARITY_NVBIN:-}" ]; then
+    if [ -z "${SINGULARITY_BIN_FOUND:-}" ]; then
         message WARNING "Could not find any NVIDIA binaries on this host!\n";
         message WARNING "You may need to edit ${SINGULARITY_sysconfdir}/singularity/nvliblist.conf\n"
     else
