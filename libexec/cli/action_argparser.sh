@@ -20,7 +20,7 @@
 
 message 2 "Evaluating args: '$*'\n"
 
-if grep "always use nv" "${SINGULARITY_sysconfdir}/singularity/singularity.conf" 2>/dev/null | grep -q "yes"; then
+if [ `$SINGULARITY_libexecdir/singularity/bin/get-configvals "always use nv"` == "yes" ]; then 
     message 2 "'always use nv = yes' found in singularity.conf\n"
     message 2 "binding nvidia files into container\n"
     bind_nvidia_files
