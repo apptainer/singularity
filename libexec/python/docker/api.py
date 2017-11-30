@@ -163,7 +163,9 @@ class DockerApiConnection(ApiConnection):
                 sys.exit(1)
 
             challenge = response.headers["Www-Authenticate"]
-            regexp = '^Bearer\s+realm="(.+?)"(?:,service="(.+?)")?(?:,scope="(.+?)")?'
+            regexp = '^Bearer\s+realm="(.+?)"'
+            regexp += '(?:,service="(.+?)")?'
+            regexp += '(?:,scope="(.+?)")?'
             match = re.match(regexp, challenge)
 
             if not match:

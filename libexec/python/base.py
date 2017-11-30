@@ -19,13 +19,15 @@ import os
 
 
 try:
-    from urllib.parse import urlencode, urlparse
-    from urllib.request import urlopen, Request, unquote
+    from urllib.parse import urlencode, urlparse, parse_qs
+    from urllib.request import Request, unquote
+    from urllib.request import HTTPHandler, HTTPSHandler, build_opener
     from urllib.error import HTTPError
 except ImportError:
     from urllib import urlencode, unquote
-    from urlparse import urlparse
-    from urllib2 import urlopen, Request, HTTPError
+    from urlparse import urlparse, parse_qs
+    from urllib2 import Request, HTTPError
+    from urllib2 import HTTPHandler, HTTPSHandler, build_opener
 
 
 class MultiProcess(object):
@@ -124,6 +126,51 @@ def multi_wrapper(func_args):
 
 def multi_package(func, args):
     return zip(itertools.repeat(func), args)
+
+
+def _strip_auth_presigned_s3(req, auth_query_params=['Signature',
+                                                     'X-Amz-Algorithm']):
+    """
+    Handles stripping authorization headers from requests to pre-signed S3
+    URLs. Without this we hit an InvalidArgument error about using more than
+    one auth mechanism.
+    """
+    if 'Authorization' not in req.headers:
+        return req
+
+    parts = urlparse(req.get_full_url())
+    host = parts.netloc
+    query_dict = parse_qs(parts.query)
+    is_s3_url = 's3' in host and host.endswith('.amazonaws.com')
+
+    if not is_s3_url:
+        return req
+
+    for q in auth_query_params:
+        if q in query_dict:
+            del req.headers['Authorization']
+            break
+
+    return req
+
+
+class HTTPPreSignedS3URLS(HTTPHandler):
+
+    def http_open(self, req):
+        req = _strip_auth_presigned_s3(req)
+        return HTTPHandler.http_open(self, req)
+
+
+class HTTPSPreSignedS3URLS(HTTPSHandler):
+
+    def https_open(self, req):
+        req = _strip_auth_presigned_s3(req)
+        return HTTPSHandler.https_open(self, req)
+
+
+def urlopen(*args, **kwargs):
+    opener = build_opener(HTTPPreSignedS3URLS(), HTTPSPreSignedS3URLS())
+    return opener.open(*args, **kwargs)
 
 
 class ApiConnection(object):
