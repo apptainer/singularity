@@ -15,8 +15,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
-This fixed an issue for support of older distributions and kernels with regards to `setns()`
-functionality.
+ - This fixed an issue for support of older distributions and kernels with regards to `setns()`
+   functionality.
+ - Fixed autofs bug path (lost during merge)
 
 ## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (2017-11-22)
 

@@ -66,6 +66,8 @@ int main(int argc, char **argv) {
     singularity_priv_userns();
     singularity_priv_drop();
 
+    singularity_runtime_autofs();
+
     singularity_registry_set("UNSHARE_PID", "1");
     singularity_registry_set("UNSHARE_IPC", "1");
 
