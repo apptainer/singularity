@@ -37,4 +37,6 @@ EXTRA_DIST = capability.c \
 			 setns.h \
 			 signal.c \
 			 signal.h \
+			 binary.c \
+			 binary.h \
 			 config_defaults.h

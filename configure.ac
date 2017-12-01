@@ -389,6 +389,15 @@ AC_SEARCH_LIBS([SHA1], [crypto], [], [
 	AC_MSG_ERROR([unable to find the SHA1(), need package openssl-devel (libssl-dev on Debian/Ubuntu)])
 ])
 
+# check for libelf needed for sorting libraries
+AC_CHECK_HEADERS([libelf.h],
+	[elf_header_found=yes; break;])
+AS_IF([test "x$elf_header_found" != "xyes"],
+	[AC_MSG_ERROR([Unable to find the libelf headers, need package elfutils-libelf-devel (libelf-dev on Debian/Ubuntu)])])
+AC_SEARCH_LIBS([elf_begin], [elf], [], [
+	AC_MSG_ERROR([unable to find the elf_begin(), need package elfutils-libelf-devel (libelf-dev on Debian/Ubuntu)])
+])
+
 CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([
