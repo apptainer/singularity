@@ -43,10 +43,10 @@
 #include "util/config_parser.h"
 #include "util/registry.h"
 #include "util/mount.h"
+#include "util/binary.h"
 
 #include "../file-bind.h"
 #include "../../runtime.h"
-
 
 int _singularity_runtime_files_libs(void) {
     char *container_dir = CONTAINER_FINALDIR;
@@ -54,6 +54,8 @@ int _singularity_runtime_files_libs(void) {
     char *includelibs_string;
     char *libdir = joinpath(tmpdir, "/libs");
     char *libdir_contained = joinpath(container_dir, "/.singularity.d/libs");
+    const char * const supported_archs[] = { "x86_64", "i686", "x32" };
+    int nb_supported_archs = 3;
 
     if ( ( includelibs_string = singularity_registry_get("CONTAINLIBS") ) != NULL ) {
         char *tok = NULL;
@@ -79,26 +81,19 @@ int _singularity_runtime_files_libs(void) {
             ABORT(255);
         }
 
+        // Iterate through the requested paths
         while (current != NULL ) {
+            char *destdir = NULL;
             char *dest = NULL;
             char *source = NULL;
 
             singularity_message(DEBUG, "Evaluating requested library path: %s\n", current);
 
-            dest = joinpath(libdir, basename(current));
-
-            if ( is_file(dest) == 0 ) {
-                singularity_message(VERBOSE3, "Staged library exists, skipping: %s\n", current);
-                current = strtok_r(NULL, ",", &tok);
-                continue;
-            }
-
+            // Find the library actual path on the host
             if ( is_link(current) == 0 ) {
                 char *link_name;
                 ssize_t len;
-
                 link_name = (char *) malloc(PATH_MAX);
-
                 len = readlink(current, link_name, PATH_MAX-1); // Flawfinder: ignore
                 if ( ( len > 0 ) && ( len <= PATH_MAX) ) {
                     link_name[len] = '\0';
@@ -117,7 +112,6 @@ int _singularity_runtime_files_libs(void) {
                     ABORT(255);
                 }
                 free(link_name);
-
             } else if (is_file(current) == 0 ) {
                 source = strdup(current);
                 singularity_message(VERBOSE3, "Found library source: %s\n", source);
@@ -127,13 +121,51 @@ int _singularity_runtime_files_libs(void) {
                 continue;
             }
 
-            singularity_message(DEBUG, "Binding library source here: %s -> %s\n", source, dest);
+            // Find the full destination path (with optional arch)
+            switch(singularity_binary_arch(source)) {
+                case BINARY_ARCH_X86_64:
+                    destdir = joinpath(libdir, "x86_64");
+                    break;
+                case BINARY_ARCH_I386:
+                    destdir = joinpath(libdir, "i686");
+                    break;
+                case BINARY_ARCH_X32:
+                    destdir = joinpath(libdir, "x32");
+                    break;
+                default :
+                    destdir = strdup(libdir);
+            }
+            dest = joinpath(destdir, basename(current));
 
+            // This one already exists
+            if ( is_file(dest) == 0 ) {
+                singularity_message(VERBOSE3, "Staged library exists, skipping: %s\n", current);
+                current = strtok_r(NULL, ",", &tok);
+                continue;
+            }
+
+            // Create the destination arch directory if it does not exists
+            singularity_message(DEBUG, "Creating destdir for %s at: %s\n", source, libdir);
+            singularity_priv_escalate();
+            if ( s_mkpath(destdir, 0755) != 0 ) {
+                singularity_priv_drop();
+                singularity_message(ERROR, "Failed creating temp lib directory at: %s\n", libdir);
+                ABORT(255);
+            }
+            singularity_priv_drop();
+
+
+            // Create the bind target file (empty)
+            singularity_message(DEBUG, "Binding library source here: %s -> %s\n", source, dest);
+            singularity_priv_escalate();
             if ( fileput(dest, "") != 0 ) {
+                singularity_priv_drop();
                 singularity_message(ERROR, "Failed creating file at %s: %s\n", dest, strerror(errno));
                 ABORT(255);
             }
+            singularity_priv_drop();
 
+            // Bind the source to the target
             singularity_priv_escalate();
             singularity_message(VERBOSE, "Binding file '%s' to '%s'\n", source, dest);
             if ( singularity_mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
@@ -145,11 +177,13 @@ int _singularity_runtime_files_libs(void) {
 
             free(source);
             free(dest);
+            free(destdir);
             current = strtok_r(NULL, ",", &tok);
         }
 
+        char *ld_path;
+        // Create the base lib directory inside the container (necessary for old containers)
         if ( is_dir(libdir_contained) != 0 ) {
-            char *ld_path;
             singularity_message(DEBUG, "Attempting to create contained libdir\n");
             singularity_priv_escalate();
             if ( s_mkpath(libdir_contained, 0755) != 0 ) {
@@ -157,6 +191,8 @@ int _singularity_runtime_files_libs(void) {
                 ABORT(255);
             }
             singularity_priv_drop();
+
+            // Set base LD_LIBRARY_PATH
             ld_path = envar_path("LD_LIBRARY_PATH");
             if ( ld_path == NULL ) {
                 singularity_message(DEBUG, "Setting LD_LIBRARY_PATH to '/.singularity.d/libs'\n");
@@ -167,6 +203,29 @@ int _singularity_runtime_files_libs(void) {
             }
         }
 
+
+        // Add per arch directories to LD_LIBRARY_PATH if those exists
+        int idx;
+        for (idx = 0; idx < nb_supported_archs; idx++) {
+            char *subdir = joinpath(libdir, supported_archs[idx]);
+            char *subdir_path;
+            singularity_message(DEBUG, "Examining libs subdir arch %d, %s, (%s)\n", idx, supported_archs[idx], subdir);
+            if ( is_dir(subdir) == 0 ) {
+                singularity_message(VERBOSE, "Prepending subdir '%s' to LD_LIBRARY_PATH\n", subdir_path);
+                ld_path = envar_path("LD_LIBRARY_PATH");
+                if ( ld_path == NULL ) {
+                    subdir_path = joinpath("/.singularity.d/libs/", supported_archs[idx]);
+                    singularity_message(DEBUG, "Setting LD_LIBRARY_PATH to '%s'\n", subdir_path);
+                    envar_set("LD_LIBRARY_PATH", subdir_path, 1);
+                } else {
+                    subdir_path = strjoin(joinpath("/.singularity.d/libs/", supported_archs[idx]), ":");
+                    singularity_message(DEBUG, "Prepending '%s' to LD_LIBRARY_PATH\n", subdir_path);
+                    envar_set("LD_LIBRARY_PATH", strjoin(subdir_path, ld_path), 1);
+                }
+            }
+        }
+
+        // Bind the base directory
         singularity_priv_escalate();
         singularity_message(VERBOSE, "Binding libdir '%s' to '%s'\n", libdir, libdir_contained);
         if ( singularity_mount(libdir, libdir_contained, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
@@ -177,8 +236,6 @@ int _singularity_runtime_files_libs(void) {
         singularity_priv_drop();
 
     }
-
-
 
     return(0);
 }
