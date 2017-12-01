@@ -209,8 +209,8 @@ int _singularity_runtime_mount_dev(void) {
                 singularity_priv_drop();
 
                 if (errno == EINVAL) {
-                    // This is the error when unprivileged on RHEL7.4
-                    singularity_message(VERBOSE, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
+                    // This is the error when unprivileged on RHEL7.4 
+                    singularity_message(WARNING, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
                 } else {
                     singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
                     ABORT(255);
