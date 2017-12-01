@@ -1,12 +1,12 @@
 #!/bin/bash
-# 
+#
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # This software is licensed under a 3-clause BSD license.  Please
 # consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software. 
+# your rights to use or distribute this software.
 #
-# 
+#
 
 
 ## Basic sanity
@@ -33,6 +33,67 @@ if ! USERID=`id -ru`; then
     exit 255
 fi
 
+jsonFmt (){
+  INSTANCE='"instance"'
+  INSTANCE_PID='"pid"'
+  INSTANCE_IMG='"img"'
+  JSON=""
+  JSON_INIT='{"instances":['
+  JSON_END=']}'
+  COUNT=0
+
+
+  if [ -z "${1:-}" ]; then
+      DAEMONS=`singularity_daemon_glob '*' | sort | uniq`
+  else
+      DAEMONS=`singularity_daemon_glob "$@" | sort | uniq`
+  fi
+
+DLEN=0
+for i in $DAEMONS; do
+	let "DLEN++"
+done
+let "DLEN--"
+
+  for i in $DAEMONS; do
+      if [ -f "$i" ]; then
+          if [ ! -s "$i" ]; then
+              rm "$i"
+              continue
+          fi
+          FILE_NAME=`basename "$i"`
+          DAEMON_NAME=${FILE_NAME##*-}
+          . "$i"
+          if [ -n "${DAEMON_PID:-}" ]; then
+              PROC_CMDLINE="/proc/${DAEMON_PID:-}/cmdline"
+              if [ -e "$PROC_CMDLINE" ]; then
+                  PROGNAME=$(<"${PROC_CMDLINE}" tr -d \\0)
+                  if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
+                      message WARN "Removing stale daemon file: $i\n"
+                      rm -f "$i"
+                      continue
+                  fi
+              else
+                  rm -f "$i"
+                  continue
+              fi
+          fi
+
+	if [ "$COUNT" -lt "$DLEN" ]; then
+		JSON+="{"${INSTANCE}":"${FILE_NAME}","${INSTANCE_PID}":"${DAEMON_PID}","${INSTANCE_IMG}":"${DAEMON_IMAGE:-}"},"
+	else
+		JSON+="{"${INSTANCE}":"${FILE_NAME}","${INSTANCE_PID}":"${DAEMON_PID}","${INSTANCE_IMG}":"${DAEMON_IMAGE:-}"}"
+	fi
+
+          let "COUNT++"
+      fi
+  done
+
+  if [ "$COUNT" == 0 ]; then
+      exit 1
+  fi
+  echo "${JSON_INIT}${JSON}${JSON_END}"
+}
 
 while true; do
     case ${1:-} in
@@ -48,6 +109,10 @@ while true; do
                 message ERROR "Must be root to list with -u/--user option\n"
                 exit 1
             fi
+        ;;
+        --json)
+          jsonFmt
+          exit 0
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
