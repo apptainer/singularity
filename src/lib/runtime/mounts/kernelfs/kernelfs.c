@@ -105,7 +105,7 @@ int _singularity_runtime_mount_kernelfs(void) {
             } else {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting /sys\n");
-                if ( singularity_mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", MS_NOSUID | MS_RDONLY, NULL) < 0 ) {
+                if ( singularity_mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", MS_NOSUID, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
                     ABORT(255);
                 }

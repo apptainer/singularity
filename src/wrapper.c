@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
         singularity_priv_init();
         singularity_priv_drop_perm();
     } else {
+        singularity_priv_init();
         cmd_wrapper[index].capinit();
     }
 

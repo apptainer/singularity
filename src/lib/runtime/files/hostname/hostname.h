@@ -7,11 +7,10 @@
  * 
  */
 
+#ifndef __SINGULARITY_RUNTIME_FILES_HOSTNAME_H_
+#define __SINGULARITY_RUNTIME_FILES_HOSTNAME_H_
 
-#ifndef __SINGULARITY_DAEMON_H_
-#define __SINGULARITY_DAEMON_H_
+extern int _singularity_runtime_files_hostname(void);
 
-    void singularity_daemon_init(void);
-    int singularity_daemon_own_namespace(char *namespace);
+#endif /* __SINGULARITY_RUNTIME_FILES_HOSTNAME_H */
 
-#endif

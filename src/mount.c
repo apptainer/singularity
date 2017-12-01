@@ -50,8 +50,8 @@ int main(int argc, char **argv) {
 
     singularity_config_init();
 
-    singularity_priv_init();
     singularity_suid_init();
+    singularity_priv_init();
 
     singularity_registry_init();
     singularity_priv_drop();
