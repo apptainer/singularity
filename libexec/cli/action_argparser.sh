@@ -19,13 +19,6 @@
 
 message 2 "Evaluating args: '$*'\n"
 
-if [ `$SINGULARITY_libexecdir/singularity/bin/get-configvals "always use nv"` == "yes" ]; then 
-    message 2 "'always use nv = yes' found in singularity.conf\n"
-    message 2 "binding nvidia files into container\n"
-    bind_nvidia_files
-    NV_IN_CONFIG=1
-fi
-
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -129,9 +122,7 @@ while true; do
         ;;
         --nv)
             shift
-            if [ -z ${NV_IN_CONFIG:-} ]; then
-                bind_nvidia_files
-            fi
+            SINGULARITY_NV=1
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -142,3 +133,17 @@ while true; do
         ;;
     esac
 done
+
+if [ -z "${SINGULARITY_NV_OFF:-}" ]; then # this is a "kill switch" provided for user
+    # if singularity.conf specifies --nv
+    if [ `$SINGULARITY_libexecdir/singularity/bin/get-configvals "always use nv"` == "yes" ]; then 
+        message 2 "'always use nv = yes' found in singularity.conf\n"
+        message 2 "binding nvidia files into container\n"
+        bind_nvidia_files
+    # or if the user asked for --nv    
+    elif [ -n "${SINGULARITY_NV:-}" ]; then
+        bind_nvidia_files
+    fi
+fi 
+
+
