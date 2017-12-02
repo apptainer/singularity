@@ -33,6 +33,7 @@ missing
 singularity.spec
 src/util/config_defaults.h
 test.sh
+secbuildimg.sh
 
 src/action
 src/action-suid
@@ -43,15 +44,16 @@ src/cleanupd
 src/image-type
 src/mount
 src/mount-suid
-src/prepheader
+src/sif
 src/sinit
 src/get-section
+src/sign
+src/verify
 src/stamp-h1
 src/include/stamp-h1
 src/.dirstamp
-src/sinit
-src/start
-src/start-suid
+src/wrapper
+src/wrapper-suid
 
 src/.deps/
 src/.libs/

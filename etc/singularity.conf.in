@@ -194,3 +194,31 @@ bind path = /etc/hosts
 # should be executed implicitely with the --nv option (useful for GPU only 
 # environments). 
 @ALWAYS_USE_NV@ = @ALWAYS_USE_NV_DEFAULT@  
+
+
+# ROOT DEFAULT CAPABILITIES: [full/file/default/no]
+# DEFAULT: no
+# Define default root capability set kept during runtime
+# - full: keep all capabilities (same as --keep-privs)
+# - file: keep capabilities configured in ${prefix}/etc/singularity/capabilities/user.root
+# - default: keep capabilities required by singularity binary
+# - no: no capabilities (same as --no-privs)
+@ROOT_DEFAULT_CAPABILITIES@ = @ROOT_DEFAULT_CAPABILITIES_DEFAULT@
+
+
+# ALLOW_ROOT CAPABILITIES: [BOOL]
+# DEFAULT: yes
+# This allows root to gain/drop capabilities other than those defined
+# by root default capabilities.
+# Example:
+# If root default capabilities = file and allow root capabilities = no,
+# only capabilities defined in file ${prefix}/etc/singularity/capabilities/user.root
+# could be obtained by root
+@ALLOW_ROOT_CAPABILITIES@ = @ALLOW_ROOT_CAPABILITIES_DEFAULT@
+
+
+# ALLOW USER CAPABILITIES: [BOOL]
+# DEFAULT: no
+# This allows user to gain capabilities based on whitelist managed by administrator
+# (requires recent kernel >= 4.3)
+@ALLOW_USER_CAPABILITIES@ = @ALLOW_USER_CAPABILITIES_DEFAULT@

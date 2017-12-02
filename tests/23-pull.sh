@@ -21,7 +21,7 @@ test_init "Pull tests"
 cd "$SINGULARITY_TESTDIR"
 
 stest 0 sudo singularity pull --size 10 docker://busybox
-CONTAINER=busybox.img
+CONTAINER=busybox.simg
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/runscript

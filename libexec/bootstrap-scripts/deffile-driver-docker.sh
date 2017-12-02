@@ -37,6 +37,7 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
+FROM="${SINGULARITY_DEFFILE_FROM:-}"
 if [ -z "${FROM:-}" ]; then
     message ERROR "Required Definition tag 'From:' not defined.\n"
     exit 1
@@ -46,17 +47,21 @@ fi
 # Docker Customizations
 ################################################################################
 
-if [ ! -z "${REGISTRY:-}" ]; then
-    message DEBUG "Custom Docker Registry 'Registry:' ${REGISTRY}.\n"
+if [ ! -z "${SINGULARITY_DEFFILE_REGISTRY:-}" ]; then
+    message DEBUG "Custom Docker Registry 'Registry:' ${SINGULARITY_DEFFILE_REGISTRY}.\n"
+    REGISTRY="${SINGULARITY_DEFFILE_REGISTRY}"
     export REGISTRY
 fi
 
-if [ ! -z "${NAMESPACE:-}" ]; then
-    message DEBUG "Custom Docker Namespace 'Namespace:' ${NAMESPACE}.\n"
+# Note: NAMESPACE can be set to an empty string, and that's a valid namespace
+# for Docker (not so for shub://)
+if [ ! -z "${SINGULARITY_DEFFILE_NAMESPACE+set}" ]; then
+    message DEBUG "Custom Docker Namespace 'Namespace:' ${SINGULARITY_DEFFILE_NAMESPACE}.\n"
+    NAMESPACE="${SINGULARITY_DEFFILE_NAMESPACE}"
     export NAMESPACE
 fi
 
-if [ -z "${INCLUDECMD:-}" ]; then
+if [ -z "${SINGULARITY_DEFFILE_INCLUDECMD:-}" ]; then
     export SINGULARITY_INCLUDECMD="yes"
 fi
 

@@ -26,7 +26,7 @@ import math
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                 os.path.pardir)))  # noqa
-sys.path.append('..')  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
 
 from base import ApiConnection
 
@@ -93,9 +93,8 @@ class DockerApiConnection(ApiConnection):
         '''
         if sep is None:
             sep = "-"
-        image_uri = "%s%s%s%s%s" % (self.registry, sep,
-                                    self.namespace, sep,
-                                    self.repo_name)
+
+        image_uri = "%s%s%s" % (self.registry, sep, self.repo_name)
 
         if self.version is not None:
             image_uri = "%s@%s" % (image_uri, self.version)
@@ -133,9 +132,12 @@ class DockerApiConnection(ApiConnection):
         or name of docker image'''
 
         image = parse_image_uri(image=image, uri="docker://")
-        self.repo_name = image['repo_name']
+        if len(image['namespace']) > 0:
+            self.repo_name = "%s/%s" % (image['namespace'], image['repo_name'])
+        else:
+            self.repo_name = image['repo_name']
+
         self.repo_tag = image['repo_tag']
-        self.namespace = image['namespace']
         self.version = image['version']
         self.registry = image['registry']
         self.update_token()
@@ -196,10 +198,8 @@ class DockerApiConnection(ApiConnection):
             self.update_headers(token)
 
         except Exception:
-            msg = "Error getting token for repository "
-            msg += "%s/%s, exiting." % (self.namespace,
-                                        self.repo_name)
-            bot.error(msg)
+            bot.error("Error getting token for repository %s, exiting."
+                      % self.repo_name)
             sys.exit(1)
 
     def get_images(self, manifest=None):
@@ -220,11 +220,11 @@ class DockerApiConnection(ApiConnection):
         layer_key = 'layers'
         digest_key = 'digest'
 
-        # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-2.md#image-manifest  # noqa
+        # Docker manifest-v2-2.md#image-manifest
         if 'layers' in manifest:
             bot.debug('Image manifest version 2.2 found.')
 
-        # https://github.com/docker/distribution/blob/master/docs/spec/manifest-v2-1.md#example-manifest  # noqa
+        # Docker manifest-v2-1.md#example-manifest  # noqa
         elif 'fsLayers' in manifest:
             layer_key = 'fsLayers'
             digest_key = 'blobSum'
@@ -259,10 +259,9 @@ class DockerApiConnection(ApiConnection):
 
         registry = add_http(registry)  # make sure we have a complete url
 
-        base = "%s/%s/%s/%s/tags/list" % (registry,
-                                          self.api_version,
-                                          self.namespace,
-                                          self.repo_name)
+        base = "%s/%s/%s/tags/list" % (registry,
+                                       self.api_version,
+                                       self.repo_name)
 
         bot.verbose("Obtaining tags: %s" % base)
 
@@ -294,10 +293,9 @@ class DockerApiConnection(ApiConnection):
         # make sure we have a complete url
         registry = add_http(registry)
 
-        base = "%s/%s/%s/%s/manifests" % (registry,
-                                          self.api_version,
-                                          self.namespace,
-                                          self.repo_name)
+        base = "%s/%s/%s/manifests" % (registry,
+                                       self.api_version,
+                                       self.repo_name)
 
         # First priority given to calling function
         if version is not None:
@@ -324,9 +322,8 @@ class DockerApiConnection(ApiConnection):
             # If the call fails, give the user a list of acceptable tags
             tags = self.get_tags()
             print("\n".join(tags))
-            repo_uri = "%s/%s:%s" % (self.namespace,
-                                     self.repo_name,
-                                     self.repo_tag)
+            repo_uri = "%s:%s" % (self.repo_name,
+                                  self.repo_tag)
 
             bot.error("Error getting manifest for %s, exiting." % repo_uri)
             sys.exit(1)
@@ -340,7 +337,7 @@ class DockerApiConnection(ApiConnection):
         '''
         bot.debug('Updating manifests.')
 
-        if self.repo_name is None and self.namespace is None:
+        if self.repo_name is None:
             bot.error("Insufficient metadata to get manifest.")
             sys.exit(1)
 
@@ -400,12 +397,11 @@ class DockerApiConnection(ApiConnection):
         # make sure we have a complete url
         registry = add_http(registry)
 
-        # The <name> variable is the namespace/repo_name
-        base = "%s/%s/%s/%s/blobs/%s" % (registry,
-                                         self.api_version,
-                                         self.namespace,
-                                         self.repo_name,
-                                         image_id)
+        # The <name> variable is repo_name
+        base = "%s/%s/%s/blobs/%s" % (registry,
+                                      self.api_version,
+                                      self.repo_name,
+                                      image_id)
         bot.verbose("Downloading layers from %s" % base)
 
         if download_folder is None:

@@ -55,15 +55,16 @@ int main(int argc, char **argv) {
     char *target_pwd = NULL;
     char *command = NULL;
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
 
+    singularity_suid_init();
     singularity_priv_init();
-    singularity_suid_init(argv);
 
     singularity_registry_init();
     
-    singularity_priv_userns();
     singularity_priv_drop();
+
+    singularity_runtime_autofs();
 
     singularity_daemon_init();
 
@@ -150,8 +151,6 @@ int main(int argc, char **argv) {
     } else if ( strcmp(command, "shell") == 0 ) {
         action_shell(argc, argv);
     } else if ( strcmp(command, "exec") == 0 ) {
-        action_exec(argc, argv);
-    } else if ( strcmp(command, "inspect") == 0 ) {
         action_exec(argc, argv);
     } else if ( strcmp(command, "run") == 0 ) {
         action_run(argc, argv);

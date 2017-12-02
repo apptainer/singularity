@@ -1,17 +1,21 @@
 #!/bin/bash -ex
 
-# This script starts docker and (on el7) systemd and runs a test
+DIST="${OS_TYPE}${OS_VERSION}"
 
-if [ "$OS_VERSION" = "6" ]; then
-    sudo docker run --privileged --rm=true -v `pwd`:/build:rw centos:${OS_VERSION} /bin/bash -exc "cd /build;.travis/rpmbuild_test $OS_VERSION"
-    exit
-fi
+mkdir /tmp/$DIST
 
+cp -a . /tmp/$DIST/singularity
+cat > "/tmp/$DIST/script" << SCRIPT
+#!/bin/bash
 
-docker run --privileged -d -ti -e "container=docker"  -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/build:rw  centos:${OS_VERSION}   /usr/sbin/init
-DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
-docker logs $DOCKER_CONTAINER_ID
-docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -exc "cd /build;.travis/rpmbuild_test $OS_VERSION"
-docker ps -a
-docker stop $DOCKER_CONTAINER_ID
-docker rm -v $DOCKER_CONTAINER_ID
+echo "%_var /var" > /root/.rpmmacros
+echo "%_dbpath %{_var}/lib/rpm" >> /root/.rpmmacros
+
+.travis/rpmbuild_test $OS_VERSION
+SCRIPT
+
+cd /tmp/$DIST/singularity
+
+# mounting /run for /dev/shm (python multiprocessing)
+sudo singularity exec -w -B /run --keep-privs --allow-setuid docker://${OS_TYPE}:${OS_VERSION} /bin/bash -ex /tmp/$DIST/script
+sudo rm -rf /tmp/$DIST
