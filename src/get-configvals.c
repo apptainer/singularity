@@ -28,7 +28,8 @@ int main(int argc, char **argv) {
 
     char *key = strdup(argv[1]);
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    // singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
 
     /* 
     If the key does not exist in the singularity.conf file, this is just 
