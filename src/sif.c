@@ -65,24 +65,24 @@ usage()
 Node *
 ddescadd(Node *head, char *fname)
 {
-	Defdesc *e;
+	Eleminfo *e;
 	Node *n;
 	struct stat st;
 
-	e = malloc(sizeof(Defdesc));
+	e = malloc(sizeof(Eleminfo));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Defdesc\n");
+		fprintf(stderr, "Error allocating memory for Eleminfo\n");
 		return NULL;
 	}
 	e->cm.datatype = DATA_DEFFILE;
 	e->cm.groupid = SIF_DEFAULT_GROUP;
 	e->cm.link = SIF_UNUSED_LINK;
-	e->fname = strdup(fname);
-	if(e->fname == NULL){
-		fprintf(stderr, "Error allocating memory for e->fname\n");
+	e->defdesc.fname = strdup(fname);
+	if(e->defdesc.fname == NULL){
+		fprintf(stderr, "Error allocating memory for e->defdesc.fname\n");
 		return NULL;
 	}
-	if(stat(e->fname, &st) < 0){
+	if(stat(e->defdesc.fname, &st) < 0){
 		perror("Error calling stat");
 		free(e);
 		return NULL;
@@ -90,7 +90,7 @@ ddescadd(Node *head, char *fname)
 	e->cm.len = st.st_size;
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Defdesc node\n");
+		fprintf(stderr, "Error allocating Eleminfo node\n");
 		free(e);
 		return NULL;
 	}
@@ -103,23 +103,23 @@ static char testenvs[] = "VAR0=VALUE0\nVAR1=VALUE1\nVAR2=VALUE2";
 Node *
 edescadd(Node *head)
 {
-	Envdesc *e;
+	Eleminfo *e;
 	Node *n;
 
-	e = malloc(sizeof(Envdesc));
+	e = malloc(sizeof(Eleminfo));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Envdesc\n");
+		fprintf(stderr, "Error allocating memory for Eleminfo\n");
 		return NULL;
 	}
 	e->cm.datatype = DATA_ENVVAR;
 	e->cm.groupid = SIF_DEFAULT_GROUP;
 	e->cm.link = SIF_UNUSED_LINK;
 	e->cm.len = sizeof(testenvs);
-	e->vars = testenvs;
+	e->envdesc.vars = testenvs;
 
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Envdesc node\n");
+		fprintf(stderr, "Error allocating Eleminfo node\n");
 		free(e);
 		return NULL;
 	}
@@ -131,24 +131,24 @@ edescadd(Node *head)
 Node *
 ldescadd(Node *head, char *fname)
 {
-	Labeldesc *e;
+	Eleminfo *e;
 	Node *n;
 	struct stat st;
 
-	e = malloc(sizeof(Labeldesc));
+	e = malloc(sizeof(Eleminfo));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Labeldesc\n");
+		fprintf(stderr, "Error allocating memory for Eleminfo\n");
 		return NULL;
 	}
 	e->cm.datatype = DATA_LABELS;
 	e->cm.groupid = SIF_DEFAULT_GROUP;
 	e->cm.link = SIF_UNUSED_LINK;
-	e->fname = strdup(fname);
-	if(e->fname == NULL){
-		fprintf(stderr, "Error allocating memory for e->fname\n");
+	e->labeldesc.fname = strdup(fname);
+	if(e->labeldesc.fname == NULL){
+		fprintf(stderr, "Error allocating memory for e->labeldesc.fname\n");
 		return NULL;
 	}
-	if(stat(e->fname, &st) < 0){
+	if(stat(e->labeldesc.fname, &st) < 0){
 		perror("Error calling stat");
 		free(e);
 		return NULL;
@@ -156,7 +156,7 @@ ldescadd(Node *head, char *fname)
 	e->cm.len = st.st_size;
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Labeldesc node\n");
+		fprintf(stderr, "Error allocating Eleminfo node\n");
 		free(e);
 		return NULL;
 	}
@@ -168,26 +168,26 @@ ldescadd(Node *head, char *fname)
 Node *
 sdescadd(Node *head, char *signedhash, Sifhashtype hashtype)
 {
-	Sigdesc *e;
+	Eleminfo *e;
 	Node *n;
 	char entity[SIF_ENTITY_LEN] = { };
 
-	e = malloc(sizeof(Sigdesc));
+	e = malloc(sizeof(Eleminfo));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Sigdesc\n");
+		fprintf(stderr, "Error allocating memory for Eleminfo\n");
 		return NULL;
 	}
 	e->cm.datatype = DATA_SIGNATURE;
 	e->cm.groupid = SIF_DEFAULT_GROUP;
 	e->cm.link = SIF_UNUSED_LINK;
 	e->cm.len = strlen(signedhash)+1;
-	e->signature = strdup(signedhash);
-	e->hashtype = hashtype;
-	strcpy(e->entity, entity); /* Flawfinder: ignore */
+	e->sigdesc.signature = strdup(signedhash);
+	e->sigdesc.hashtype = hashtype;
+	strcpy(e->sigdesc.entity, entity); /* Flawfinder: ignore */
 
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Sigdesc node\n");
+		fprintf(stderr, "Error allocating Eleminfo node\n");
 		free(e);
 		return NULL;
 	}
@@ -199,7 +199,7 @@ sdescadd(Node *head, char *signedhash, Sifhashtype hashtype)
 Node *
 pdescadd(Node *head, char *fname, int argc, char *argv[])
 {
-	Partdesc *e;
+	Eleminfo *e;
 	Node *n;
 	int opt;
 	char content[SIF_CONTENT_LEN] = { };
@@ -256,32 +256,32 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 		return NULL;
 	}
 
-	e = malloc(sizeof(Partdesc));
+	e = malloc(sizeof(Eleminfo));
 	if(e == NULL){
-		fprintf(stderr, "Error allocating memory for Partdesc\n");
+		fprintf(stderr, "Error allocating memory for Eleminfo\n");
 		return NULL;
 	}
 	e->cm.datatype = DATA_PARTITION;
 	e->cm.groupid = SIF_DEFAULT_GROUP;
 	e->cm.link = SIF_UNUSED_LINK;
-	e->fname = strdup(fname);
-	if(e->fname == NULL){
-		fprintf(stderr, "Error allocating memory for e->fname\n");
+	e->partdesc.fname = strdup(fname);
+	if(e->partdesc.fname == NULL){
+		fprintf(stderr, "Error allocating memory for e->partdesc.fname\n");
 		return NULL;
 	}
-	if(stat(e->fname, &st) < 0){
+	if(stat(e->partdesc.fname, &st) < 0){
 		perror("Error calling stat");
 		free(e);
 		return NULL;
 	}
 	e->cm.len = st.st_size;
-	e->fstype = fstype;
-	e->parttype = parttype;
-	strcpy(e->content, content); /* Flawfinder: ignore */
+	e->partdesc.fstype = fstype;
+	e->partdesc.parttype = parttype;
+	strcpy(e->partdesc.content, content); /* Flawfinder: ignore */
 
 	n = listcreate(e);
 	if(n == NULL){
-		fprintf(stderr, "Error allocating Partdesc node\n");
+		fprintf(stderr, "Error allocating Eleminfo node\n");
 		free(e);
 		return NULL;
 	}
@@ -419,8 +419,8 @@ int
 cmd_sign(int argc, char *argv[])
 {
 	Sifinfo sif;
+	Eleminfo e;
 	Sifdescriptor *desc;
-	Sigdesc s;
 	int id;
 	static char signedhash[SGN_MAXLEN];
 	static char hash[SGN_HASHLEN];
@@ -463,21 +463,21 @@ cmd_sign(int argc, char *argv[])
 		return -1;
 	};
 
-	s.cm.datatype = DATA_SIGNATURE;
-	s.cm.groupid = SIF_UNUSED_GROUP;
-	s.cm.link = id;
-	s.cm.len = strlen(signedhash)+1;
-	s.signature = strdup(signedhash);
-	s.hashtype = SNG_DEFAULT_HASH;
+	e.cm.datatype = DATA_SIGNATURE;
+	e.cm.groupid = SIF_UNUSED_GROUP;
+	e.cm.link = id;
+	e.cm.len = strlen(signedhash)+1;
+	e.sigdesc.signature = strdup(signedhash);
+	e.sigdesc.hashtype = SNG_DEFAULT_HASH;
 
-	if(sif_putdataobj(&sif, (Cmdesc *)&s) < 0){
+	if(sif_putdataobj(&e, &sif) < 0){
 		fprintf(stderr, "Error adding new data object: %s\n",
 			sif_strerror(siferrno));
-		free(s.signature);
+		free(e.sigdesc.signature);
 		sif_unload(&sif);
 		return -1;
 	}
-	free(s.signature);
+	free(e.sigdesc.signature);
 
 	if(sif_unload(&sif) < 0){
 		fprintf(stderr, "Error releasing SIF file gracefully: %s\n",
@@ -585,7 +585,7 @@ cmd_info(int argc, char *argv[])
 
 	printf("Descriptor info:\n");
 	printf("---------------------------\n");
-	sif_printdesc(desc);
+	sif_printdesc(desc, NULL);
 
 	sif_unload(&sif);
 

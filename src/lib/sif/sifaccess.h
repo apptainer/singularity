@@ -21,8 +21,8 @@ char *sif_partstr(Sifparttype ptype);
 char *sif_datastr(Sifdatatype dtype);
 char *sif_fsstr(Siffstype ftype);
 
-int sif_printrow(void *elem);
-int sif_printdesc(void *elem);
+int sif_printrow(void *elem, void *data);
+int sif_printdesc(void *elem, void *data);
 void sif_printlist(Sifinfo *info);
 void sif_printheader(Sifinfo *info);
 

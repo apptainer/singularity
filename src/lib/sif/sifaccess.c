@@ -85,7 +85,7 @@ sif_fsstr(Siffstype ftype)
 }
 
 int
-sif_printrow(void *elem)
+sif_printrow(void *elem, void *data)
 {
 	static char fposbuf[26];
 	Sifdescriptor *desc = elem;
@@ -139,11 +139,11 @@ sif_printlist(Sifinfo *info)
 	printf("%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE");
 	printf("------------------------------------------------------------------------------\n");
 
-	listforall(&info->deschead, sif_printrow);
+	listforall(&info->deschead, sif_printrow, NULL);
 }
 
 int
-sif_printdesc(void *elem)
+sif_printdesc(void *elem, void *data)
 {
 	Sifdescriptor *desc = elem;
 
@@ -202,7 +202,7 @@ sif_printheader(Sifinfo *info)
 	printf("length of data in file: %ld\n", info->header.datalen);
 	printf("============================================\n");
 
-	listforall(&info->deschead, sif_printdesc);
+	listforall(&info->deschead, sif_printdesc, NULL);
 }
 
 /* Get the SIF header structure */

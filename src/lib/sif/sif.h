@@ -294,6 +294,21 @@ struct Sigdesc{
 	char entity[SIF_ENTITY_LEN];
 };
 
+/* Most SIF manipulations require Sifinfo and *desc */
+typedef struct Eleminfo Eleminfo;
+struct Eleminfo{
+	Sifinfo *info;
+	Sifdescriptor *desc;
+	union{
+		Cmdesc cm;
+		Defdesc defdesc;
+		Envdesc envdesc;
+		Labeldesc labeldesc;
+		Partdesc partdesc;
+		Sigdesc sigdesc;
+	};
+};
+
 /* all creation info needed wrapped into a struct */
 typedef struct Sifcreateinfo Sifcreateinfo;
 struct Sifcreateinfo{
@@ -360,7 +375,7 @@ int sif_load(char *filename, Sifinfo *info, int rdonly);
 int sif_unload(Sifinfo *info);
 
 int sif_create(Sifcreateinfo *cinfo);
-int sif_putdataobj(Sifinfo *info, Cmdesc *cm);
+int sif_putdataobj(Eleminfo *e, Sifinfo *info);
 int sif_deldataobj(Sifinfo *info, int id);
 
 #endif /* __SINGULARITY_SIF_H_ */
