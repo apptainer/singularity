@@ -1,5 +1,5 @@
 /* 
-* Copyright (c) 2017, SyLabs, Inc. All rights reserved.
+* Copyright (c) 2017, SingularityWare, LLC., Inc. All rights reserved.
 * 
 * This software is licensed under a 3-clause BSD license.  Please
 * consult LICENSE file distributed with the sources of this project regarding
