@@ -187,21 +187,20 @@ static int capset(cap_user_header_t hdrp, const cap_user_data_t datap) {
 }
 
 static int singularity_capability_keep_privs(void) {
-    if ( getuid() == 0 && singularity_registry_get("KEEP_PRIVS") != NULL ) {
+    if ( singularity_priv_getuid() == 0 && singularity_registry_get("KEEP_PRIVS") != NULL ) {
         return(1);
     }
     return(0);
 }
 
 static int singularity_capability_no_privs(void) {
-    if ( getuid() == 0 && singularity_registry_get("NO_PRIVS") != NULL ) {
+    if ( singularity_priv_getuid() == 0 && singularity_registry_get("NO_PRIVS") != NULL ) {
         return(1);
     }
     return(0);
 }
 
-static void singularity_capability_set_securebits(void) {
-    int bits = SECURE_ALL_BITS | SECURE_ALL_LOCKS;
+static void singularity_capability_set_securebits(int bits) {
     int current_bits = prctl(PR_GET_SECUREBITS);
 
     if ( current_bits < 0 ) {
@@ -210,11 +209,15 @@ static void singularity_capability_set_securebits(void) {
     }
 
     if ( ! (current_bits & SECBIT_NO_SETUID_FIXUP_LOCKED) ) {
-        if ( getuid() == 0 ) {
+        if ( singularity_capability_keep_privs() == 1 ) {
+            return;
+        }
+
+        if ( singularity_priv_getuid() == 0 ) {
             bits &= ~(SECBIT_NOROOT|SECBIT_NOROOT_LOCKED);
         }
 
-        if ( prctl(PR_SET_SECUREBITS, bits ) < 0 ) {
+        if ( prctl(PR_SET_SECUREBITS, bits) < 0 ) {
             singularity_message(ERROR, "Failed to set securebits\n");
             ABORT(255);
         }
@@ -222,19 +225,7 @@ static void singularity_capability_set_securebits(void) {
 }
 
 void singularity_capability_keep(void) {
-    int current_bits = prctl(PR_GET_SECUREBITS);
-
-    if ( current_bits < 0 ) {
-        singularity_message(ERROR, "Failed to read securebits\n");
-        ABORT(255);
-    }
-
-    if ( ! (current_bits & SECBIT_NO_SETUID_FIXUP_LOCKED) ) {
-        if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP) < 0 ) {
-            singularity_message(ERROR, "Failed to keep capabilities\n");
-            ABORT(255);
-        }
-    }
+    singularity_capability_set_securebits(SECBIT_NO_SETUID_FIXUP);
 }
 
 void singularity_capability_set_effective(void) {
@@ -251,8 +242,16 @@ void singularity_capability_set_effective(void) {
         ABORT(255);
     }
 
+#ifdef USER_CAPABILITIES
+    data[1].permitted = data[1].inheritable;
+    data[0].permitted = data[0].inheritable;
+
+    data[1].effective = 0;
+    data[0].effective = 0;
+#else
     data[1].permitted = data[1].effective = data[1].inheritable;
     data[0].permitted = data[0].effective = data[0].inheritable;
+#endif
 
     if ( capset(&header, data) < 0 ) {
         singularity_message(ERROR, "Failed to set processus capabilities\n");
@@ -355,7 +354,7 @@ static unsigned long long get_capabilities_from_file(char *ftype, char *id) {
 
 static unsigned long long get_user_file_capabilities(void) {
     unsigned long long caps = 0;
-    uid_t uid = getuid();
+    uid_t uid = singularity_priv_getuid();
     struct passwd *pw;
 
     pw = getpwuid(uid);
@@ -431,7 +430,7 @@ static unsigned long long setup_user_capabilities(void) {
 static int setup_capabilities(void) {
     int root_default_caps = get_root_default_capabilities();
 
-    if ( getuid() == 0 ) {
+    if ( singularity_priv_getuid() == 0 ) {
         if ( singularity_config_get_bool(ALLOW_ROOT_CAPABILITIES) <= 0 ) {
             singularity_registry_set("ADD_CAPS", NULL);
             unsetenv("SINGULARITY_ADD_CAPS");
@@ -531,7 +530,7 @@ void singularity_capability_init_minimal(void) {
 
 void singularity_capability_drop(void) {
     long int root_default_caps;
-    int root_user = (getuid() == 0) ? 1 : 0;
+    int root_user = (singularity_priv_getuid() == 0) ? 1 : 0;
 
     if ( singularity_registry_get("ROOT_DEFAULT_CAPS") == NULL ) {
         root_default_caps = setup_capabilities();
@@ -561,6 +560,6 @@ void singularity_capability_drop(void) {
 
         singularity_capability_set(current);
     }
-    singularity_capability_set_securebits();
+    singularity_capability_set_securebits(SECURE_ALL_BITS|SECURE_ALL_LOCKS);
     singularity_capability_set_effective();
 }

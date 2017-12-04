@@ -51,7 +51,7 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
         ABORT(255);
     }
 
-    if ( singularity_allow_setuid() ) {
+    if ( singularity_allow_container_setuid() ) {
         singularity_message(DEBUG, "allow-setuid option set, removing MS_NOSUID mount flags\n");
         mntflags &= ~MS_NOSUID;
     }
