@@ -39,7 +39,6 @@ sif_CPPFLAGS = $(AM_CPPFLAGS)
 get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c util/suid.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)
 
-# get_configvals_SOURCES = get-configvals.c util/util.c util/config_parser.c util/message.c util/registry.c util/file.c util/privilege.c
 get_configvals_SOURCES = get-configvals.c util/util.c util/config_parser.c util/message.c util/registry.c util/file.c util/privilege.c util/suid.c util/capability.c
 get_configvals_CPPFLAGS = $(AM_CPPFLAGS)
 
