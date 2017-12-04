@@ -19,6 +19,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Add capability support and secure build #934
  - Boot/start instance #1032
  - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Fix docker layer aufs whiteout handling
 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 

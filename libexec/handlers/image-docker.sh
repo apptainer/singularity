@@ -37,12 +37,49 @@ message 1 "Creating container runtime...\n"
 message 2 "Importing: base Singularity environment\n"
 zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
 
+ # Docker layers are extracted with tar, but we need additional handling
+# for aufs whiteout files that may be present.
+# - .wh..wh..opq inside a directory indicates that directory is opaque.
+#    Any content in this directory from previous layers must be deleted
+#    before extracting the current layer.
+# - .wh.<file/dirname> indicates <file/dirname> from a previous layer must
+#    be deleted before we extract the current layer.
+# See:
+#   https://github.com/tonistiigi/docker/blob/2fb5d0c32376951ef41a6f64bb7dbd8f6fd14fba/pkg/archive/whiteouts.go#L3-L23
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
-    message 2 "Exploding layer: $name\n"
-    # Settings of file privileges must be buffered
-    files=$( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -)) || exit $?
-    for file in $files; do
+    message 1 "Exploding layer: $name\n"
+    zcat "$i" | tar -tf - | grep '\.wh\.' | while read WHITEOUT
+    do
+        case "$WHITEOUT" in
+            # Handle opaque directories (remove them, will be recreated
+            # empty at extraction of tar).
+            */.wh..wh..opq )
+                OPAQUE_DIR=$(dirname "$WHITEOUT")
+                if [ -d "${SINGULARITY_ROOTFS}/${OPAQUE_DIR}" ]; then
+                    message 2 "Making $OPAQUE_DIR opaque\n"
+                    rm -rf "${SINGULARITY_ROOTFS}/${OPAQUE_DIR}"
+                fi
+                ;;
+            # Handle other plain whiteout marker files. Remove the target
+            # before extraction.
+            *)
+                WHITEOUT_TARGET=$(printf '%s' "$WHITEOUT" | sed -e 's@/.wh.@/@')
+                WHITEOUT_TARGET_ABS=$(readlink -f "${SINGULARITY_ROOTFS}/${WHITEOUT_TARGET}")
+                case "$WHITEOUT_TARGET_ABS" in
+                    "$SINGULARITY_ROOTFS"* )
+                        if [ -e "${WHITEOUT_TARGET_ABS}" ]; then
+                            message 2 "Removing whiteout-ed file/dir $WHITEOUT_TARGET\n"
+                            rm -rf "${WHITEOUT_TARGET_ABS}"
+                        fi
+                        ;;
+                esac
+                ;;
+        esac
+    done
+    # Now extract our current layer, exclude whiteout files handled
+    # above.
+    ( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* --exclude=*/.wh.* -xvf -) || exit $? ) | while read file; do
         if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
             # Skipping symlinks
             true
