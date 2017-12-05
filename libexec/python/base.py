@@ -388,6 +388,7 @@ class ApiConnection(object):
             msg = "Error downloading %s. " % (url)
             msg += "Do you have permission to write to %s?" % (download_folder)
             bot.error(msg)
+            bot.exception(msg)
             try:
                 os.remove(tmp_file)
             except Exception:
