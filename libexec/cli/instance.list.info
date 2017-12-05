@@ -18,9 +18,9 @@ EXAMPLES:
     test            11963     /home/mibauer/singularity/sinstance/test.img
          
     $ sudo singularity instance.list -u mibauer
-        DAEMON NAME      PID      CONTAINER IMAGE
+    DAEMON NAME      PID      CONTAINER IMAGE
     test            11963     /home/mibauer/singularity/sinstance/test.img
-    test            16219     /home/mibauer/singularity/sinstance/test.img
+    test2           16219     /home/mibauer/singularity/sinstance/test.img
 
 For additional help, please visit our public documentation pages which are
 found at:
