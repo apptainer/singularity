@@ -23,7 +23,29 @@
 
 #if defined (SINGULARITY_NO_SETNS) && defined (SINGULARITY_SETNS_SYSCALL)
 
-#include "util/setns.h"
+#ifndef __NR_setns
+#  if defined (__x86_64__)
+#    define __NR_setns 308
+#  elif defined (__i386__)
+#    define __NR_setns 346
+#  elif defined (__alpha__)
+#    define __NR_setns 501
+#  elif defined (__arm__)
+#    define __NR_setns 375
+#  elif defined (__aarch64__)
+#    define __NR_setns 375
+#  elif defined (__ia64__)
+#    define __NR_setns 1330
+#  elif defined (__sparc__)
+#    define __NR_setns 337
+#  elif defined (__powerpc__)
+#    define __NR_setns 350
+#  elif defined (__s390__)
+#    define __NR_setns 339
+#  else
+#    error Please determine the syscall number for setns on your architecture
+#  endif
+#endif
 
 int setns(int fd, int nstype) {
     singularity_message(DEBUG, "Using syscall() wrapped __NR_setns\n");
