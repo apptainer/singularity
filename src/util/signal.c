@@ -36,7 +36,9 @@ static const int all_signals[] = {
     SIGPIPE,
     SIGALRM,
     SIGTERM,
+#ifdef SIGSTKFLT
     SIGSTKFLT,
+#endif
     SIGCHLD,
     SIGCONT,
     SIGTSTP,
