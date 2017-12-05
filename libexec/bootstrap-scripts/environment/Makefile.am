@@ -41,7 +41,7 @@ environment.tar:
 	ln -sf .singularity.d/actions/run newroot/.run
 	ln -sf .singularity.d/actions/shell newroot/.shell
 	ln -sf .singularity.d/actions/test newroot/.test
-	cd newroot; tar czf ../environment.tar . --owner=0 --group=0
+	cd newroot; GZIP=-n tar czf ../environment.tar . --owner=0 --group=0 --sort=name --mtime="@${SOURCE_DATE_EPOCH:-$(date +%s)}"
 	rm -rf newroot
 
 MAINTAINERCLEANFILES = Makefile.in
