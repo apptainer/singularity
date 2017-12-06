@@ -5,13 +5,13 @@
 OS_VERSION="$1"
 
 # build and install
-yum install -y libtool rpm-build make yum-utils squashfs-tools
+yum install -y libtool rpm-build make yum-utils
 ./autogen.sh
 yum-builddep -y singularity.spec
 ./configure
 make dist
 rpmbuild -ta *.tar.gz
-rpm -iv ~/rpmbuild/RPMS/*/*.rpm
+yum install -y ~/rpmbuild/RPMS/*/*.rpm
 
 if [ "$OS_VERSION" = 6 ]; then
     echo "the test suite has not yet been ported to centos6 python, skipping."
