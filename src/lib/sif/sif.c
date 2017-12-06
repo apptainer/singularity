@@ -596,9 +596,10 @@ sif_putdataobj(Eleminfo *e, Sifinfo *info)
 	oldsize = e->info->filesize;
 
 	e->info->filesize = e->info->header.dataoff + e->info->header.datalen;
-
-	lseek(e->info->fd, 0, SEEK_END);
-	write(e->info->fd, e->info->mapstart, e->cm.len);
+	if(posix_fallocate(e->info->fd, 0, e->info->filesize) != 0){
+		siferrno = SIF_EFALLOC;
+		return -1;
+	}
 
 	e->info->mapstart = mremap(oldmap, oldsize, e->info->filesize, MREMAP_MAYMOVE);
 	if(e->info->mapstart == MAP_FAILED){
