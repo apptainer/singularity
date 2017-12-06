@@ -35,6 +35,7 @@ Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
 BuildRequires: python
+BuildRequires: elfutils-libelf-devel
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
