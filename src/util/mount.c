@@ -35,7 +35,19 @@ int singularity_mount(const char *source, const char *target,
                       const char *filesystemtype, unsigned long mountflags,
                       const void *data) {
     if ( ( mountflags & MS_BIND ) ) {
+        struct stat stbuf;
+
         setfsuid(singularity_priv_getuid());
+
+        if ( source ) {
+            if ( stat(source, &stbuf) < 0 ) {
+                singularity_message(ERROR, "Can't stat %s directory: %s\n", source, strerror(errno));
+                ABORT(255);
+            }
+            if ( singularity_priv_has_gid(stbuf.st_gid) ) {
+                setfsgid(stbuf.st_gid);
+            }
+        }
     }
     return mount(source, target, filesystemtype, mountflags, data);
 }
