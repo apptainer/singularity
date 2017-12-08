@@ -127,13 +127,11 @@ int _singularity_runtime_overlayfs(void) {
                 size = strdup("size=1m");
             }
 
-            singularity_priv_escalate();
             singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
             if ( singularity_mount("tmpfs", overlay_mount, "tmpfs", secure_flags, size) < 0 ){
                 singularity_message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
                 ABORT(255);
             }
-            singularity_priv_drop();
 
             free(size);
         }
@@ -187,13 +185,11 @@ int _singularity_runtime_overlayfs(void) {
 
 
     // If we got here, assume we are not overlaying, so we must bind to final directory
-    singularity_priv_escalate();
     singularity_message(DEBUG, "Binding container directory to final home %s->%s\n", CONTAINER_MOUNTDIR, CONTAINER_FINALDIR);
     if ( singularity_mount(CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, NULL, MS_BIND|MS_REC|secure_flags, NULL) < 0 ) {
         singularity_message(ERROR, "Could not bind mount container to final home %s->%s: %s\n", CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, strerror(errno));
         return 1;
     }
-    singularity_priv_drop();
 
     return(0);
 }

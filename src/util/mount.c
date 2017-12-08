@@ -34,10 +34,14 @@
 int singularity_mount(const char *source, const char *target,
                       const char *filesystemtype, unsigned long mountflags,
                       const void *data) {
+    int ret;
+    uid_t fsuid = 0;
+    gid_t fsgid = 0;
+
     if ( ( mountflags & MS_BIND ) ) {
         struct stat stbuf;
 
-        setfsuid(singularity_priv_getuid());
+        fsuid = singularity_priv_getuid();
 
         if ( source ) {
             if ( stat(source, &stbuf) < 0 ) {
@@ -45,11 +49,17 @@ int singularity_mount(const char *source, const char *target,
                 ABORT(255);
             }
             if ( singularity_priv_has_gid(stbuf.st_gid) ) {
-                setfsgid(stbuf.st_gid);
+                fsgid = stbuf.st_gid;
             }
         }
     }
-    return mount(source, target, filesystemtype, mountflags, data);
+    singularity_priv_escalate();
+    setfsuid(fsuid);
+    setfsgid(fsgid);
+    ret = mount(source, target, filesystemtype, mountflags, data);
+    singularity_priv_drop();
+
+    return ret;
 }
 
 int check_mounted(char *mountpoint) {
