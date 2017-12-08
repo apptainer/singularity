@@ -114,13 +114,11 @@ int _singularity_runtime_mount_scratch(void) {
             }
         }
 
-        singularity_priv_escalate();
         singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", full_sourcedir_path, container_dir, current);
         r = singularity_mount(full_sourcedir_path, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
         if ( singularity_priv_userns_enabled() != 1 ) {
             r += singularity_mount(NULL, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL);
         }
-        singularity_priv_drop();
         if ( r < 0 ) {
             singularity_message(WARNING, "Could not bind scratch directory into container %s: %s\n", full_sourcedir_path, strerror(errno));
             ABORT(255);

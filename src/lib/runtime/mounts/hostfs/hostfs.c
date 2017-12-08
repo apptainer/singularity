@@ -163,7 +163,6 @@ int _singularity_runtime_mount_hostfs(void) {
         }
 
 
-        singularity_priv_escalate();
         singularity_message(VERBOSE, "Binding '%s'(%s) to '%s/%s'\n", mountpoint, filesystem, container_dir, mountpoint);
         if ( singularity_mount(mountpoint, joinpath(container_dir, mountpoint), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "There was an error binding the path %s: %s\n", mountpoint, strerror(errno));
@@ -175,7 +174,6 @@ int _singularity_runtime_mount_hostfs(void) {
                 ABORT(255);
             }
         }
-        singularity_priv_drop();
 
     }
 
