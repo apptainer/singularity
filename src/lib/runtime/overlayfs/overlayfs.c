@@ -158,6 +158,7 @@ int _singularity_runtime_overlayfs(void) {
             singularity_message(ERROR, "Failed creating overlay work directory %s: %s\n", overlay_work, strerror(errno));
             ABORT(255);
         }
+        singularity_priv_drop();
 
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
         int result = singularity_mount("OverlayFS", overlay_final, "overlay", secure_flags, overlay_options);
@@ -165,13 +166,15 @@ int _singularity_runtime_overlayfs(void) {
             if ( (errno == EPERM) || ( try_overlay && ( errno == ENODEV ) ) ) {
                 singularity_message(VERBOSE, "Singularity overlay mount did not work (%s), continuing without it\n", strerror(errno));
                 singularity_message(DEBUG, "Unmounting overlay tmpfs: %s\n", overlay_mount);
+
+                singularity_priv_escalate();
                 umount(overlay_mount);
+                singularity_priv_drop();
             } else {
                 singularity_message(ERROR, "Could not mount Singularity overlay: %s\n", strerror(errno));
                 ABORT(255); 
             }
         }
-        singularity_priv_drop();
 
         free(overlay_upper);
         free(overlay_work);
