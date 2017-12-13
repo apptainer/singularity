@@ -69,6 +69,15 @@ int _singularity_runtime_ns_pid(void) {
         singularity_fork_daemonize(CLONE_NEWPID);
     } else {
         singularity_fork_run(CLONE_NEWPID);
+
+        // At this point, we are now PID 1; when we later exec the payload,
+        // it will also be PID 1.  Unfortunately, PID 1 in Linux has special
+        // signal handling rules (the _only_ signal that will terminate the
+        // process is SIGKILL; all other signals are ignored).  Hence, we fork
+        // one more time.  This makes PID 1 a shim process and the payload
+        // process PID 2 (meaning that the payload gets the "normal" signal
+        // handling rules it would expect).
+        singularity_fork_run(0);
     }
 
     singularity_registry_set("PIDNS_ENABLED", "1");
