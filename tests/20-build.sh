@@ -169,7 +169,7 @@ container_check
 # with a paranoid umask (as non-root)
 sudo rm -rf "$CONTAINER" "$CONTAINER2"
 umask 0077
-stest 0 singularity build "$CONTAINER" "../examples/busybox/Singularity"
+stest 0 singularity build "$CONTAINER" "shub://GodloveD/busybox"
 container_check
 umask 0022
 
