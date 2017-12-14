@@ -8,6 +8,7 @@ addons:
       - squashfs-tools
       - uuid-dev
       - libssl-dev
+      - libelf-dev
 
 env:
   global:
