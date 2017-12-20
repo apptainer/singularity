@@ -45,6 +45,7 @@ usage()
 	fprintf(stderr, "usage: %s COMMAND OPTION FILE\n", progname);
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, "create --  Create a new sif file with input data objects\n");
+	fprintf(stderr, "del    id  Delete a specified set of descriptor+object\n");
 	fprintf(stderr, "dump   id  Display data object content\n");
 	fprintf(stderr, "list   --  List SIF data descriptors from an input SIF file\n");
 	fprintf(stderr, "info   id  Print data object descriptor info\n");
@@ -631,6 +632,38 @@ cmd_dump(int argc, char *argv[])
 }
 
 int
+cmd_del(int argc, char *argv[])
+{
+	int ret;
+	int id;
+	Sifinfo sif;
+
+	if(argc < 4){
+		usage();
+		return -1;
+	}
+
+	id = atoi(argv[2]);
+
+	if(sif_load(argv[3], &sif, 0) < 0){
+		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
+		return(-1);
+	}
+
+	ret = sif_deldataobj(&sif, id, DEL_ZERO);
+	if(ret < 0){
+		fprintf(stderr, "Cannot delete object with id %d from SIF file: %s\n", id,
+		        sif_strerror(siferrno));
+		sif_unload(&sif);
+		return -1;
+	}
+
+	sif_unload(&sif);
+
+	return 0;
+}
+
+int
 main(int argc, char *argv[])
 {
 	progname = basename(argv[0]);
@@ -651,6 +684,8 @@ main(int argc, char *argv[])
 		return cmd_info(argc, argv);
 	if(strncmp(argv[1], "dump", 4) == 0)
 		return cmd_dump(argc, argv);
+	if(strncmp(argv[1], "del", 3) == 0)
+		return cmd_del(argc, argv);
 
 	usage();
 	return -1;

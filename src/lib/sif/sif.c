@@ -661,10 +661,11 @@ sif_deldataobj(Sifinfo *info, int id, int flags)
 		memset(desc, 0, sizeof(Sifdescriptor));
 	}
 
-	info->header.ndesc--;
-
 	/* write down the modified header */
+	info->header.ndesc--;
 	info->header.mtime = time(NULL);
+	info->header.desclen -= sizeof(Sifdescriptor);
+
 	memcpy(info->mapstart, &info->header, sizeof(Sifheader));
 
 	return 0;
