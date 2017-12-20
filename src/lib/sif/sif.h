@@ -145,6 +145,11 @@ typedef enum{
 	HASH_BLAKE2B
 } Sifhashtype;
 
+enum{
+	DEL_ZERO = 1,
+	DEL_COMPACT
+};
+
 /* SIF data object descriptor info common to all object type */
 typedef struct Sifcommon Sifcommon;
 struct Sifcommon{
@@ -227,6 +232,7 @@ struct Sifheader{
 typedef struct Sifinfo Sifinfo;
 struct Sifinfo{
 	Sifheader header;		/* the loaded SIF global header */
+	int nextid;			/* The next id to use for new descriptors */
 	int fd;				/* file descriptor of opened SIF file */
 	size_t filesize;		/* file size of the opened SIF file */
 	char *mapstart;			/* memory map of opened SIF file */
@@ -338,7 +344,7 @@ typedef enum{
 	SIF_EUARCH,	/* unknown host architecture while validating image */
 	SIF_ESIFVER,	/* unsupported SIF version while validating image */
 	SIF_ERARCH,	/* architecture mismatch while validating image */
-	SIF_ENODESC,	/* cannot find data object descriptors while validating image */
+	SIF_ENODESC,	/* cannot find data object descriptor(s) */
 	SIF_ENODEF,	/* cannot find definition file descriptor */
 	SIF_ENOENV,	/* cannot find envvar descriptor */
 	SIF_ENOLAB,	/* cannot find jason label descriptor */
@@ -359,7 +365,8 @@ typedef enum{
 	SIF_EOMAP,	/* cannot mmap SIF output file */
 	SIF_EOUNMAP,	/* cannot unmmap SIF output file */
 	SIF_EOCLOSE,	/* closing SIF file failed, file corrupted, don't use */
-	SIF_EDNOMEM	/* no more space to add new descriptors */
+	SIF_EDNOMEM,	/* no more space to add new descriptors */
+	SIF_ENOSUPP	/* operation not implemented/supported */
 } Siferrno;
 
 
@@ -376,6 +383,6 @@ int sif_unload(Sifinfo *info);
 
 int sif_create(Sifcreateinfo *cinfo);
 int sif_putdataobj(Eleminfo *e, Sifinfo *info);
-int sif_deldataobj(Sifinfo *info, int id);
+int sif_deldataobj(Sifinfo *info, int id, int flags);
 
 #endif /* __SINGULARITY_SIF_H_ */

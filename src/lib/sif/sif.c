@@ -29,6 +29,7 @@
 
 #include "list.h"
 #include "sif.h"
+#include "sifaccess.h"
 
 Siferrno siferrno;
 
@@ -57,7 +58,7 @@ sif_strerror(Siferrno siferrno)
 	case SIF_EUARCH: return "unknown host architecture while validating image";
 	case SIF_ESIFVER: return "unsupported SIF version while validating image";
 	case SIF_ERARCH: return "architecture mismatch while validating image";
-	case SIF_ENODESC: return "cannot find data object descriptors while validating image";
+	case SIF_ENODESC: return "cannot find data object descriptor(s)";
 	case SIF_ENODEF: return "cannot find definition file descriptor";
 	case SIF_ENOENV: return "cannot find envvar descriptor";
 	case SIF_ENOLAB: return "cannot find jason label descriptor";
@@ -187,10 +188,14 @@ sif_load(char *filename, Sifinfo *info, int rdonly)
 
 	/* point to the first descriptor in SIF file */
 	desc = (Sifdescriptor *)(info->mapstart + sizeof(Sifheader));
+	info->nextid = desc->cm.id;
 
 	/* build up the list of SIF data object descriptors */
 	for(i = 0; i < info->header.ndesc; i++){
 		Node *n;
+
+		if(desc->cm.id > info->nextid)
+			info->nextid = desc->cm.id;
 
 		n = listcreate(desc++);
 		if(n == NULL){
@@ -199,6 +204,7 @@ sif_load(char *filename, Sifinfo *info, int rdonly)
 		}
 		listaddtail(&info->deschead, n);
 	}
+	info->nextid++;
 
 	return 0;
 
@@ -365,7 +371,8 @@ putddesc(void *elem)
 
 	/* write data object descriptor */
 	e->desc->cm.datatype = DATA_DEFFILE;
-	e->desc->cm.id = ++e->info->header.ndesc;
+	e->desc->cm.id = e->info->nextid++;
+	e->info->header.ndesc++;
 	e->desc->cm.groupid = e->cm.groupid;
 	e->desc->cm.link = e->cm.link;
 	e->desc->cm.fileoff = e->info->header.dataoff + e->info->header.datalen;
@@ -390,7 +397,8 @@ putedesc(void *elem)
 
 	/* write data object descriptor */
 	e->desc->cm.datatype = DATA_ENVVAR;
-	e->desc->cm.id = ++e->info->header.ndesc;
+	e->desc->cm.id = e->info->nextid++;
+	e->info->header.ndesc++;
 	e->desc->cm.groupid = e->cm.groupid;
 	e->desc->cm.link = e->cm.link;
 	e->desc->cm.fileoff = e->info->header.dataoff + e->info->header.datalen;
@@ -415,7 +423,8 @@ putldesc(void *elem)
 
 	/* write data object descriptor */
 	e->desc->cm.datatype = DATA_LABELS;
-	e->desc->cm.id = ++e->info->header.ndesc;
+	e->desc->cm.id = e->info->nextid++;
+	e->info->header.ndesc++;
 	e->desc->cm.groupid = e->cm.groupid;
 	e->desc->cm.link = e->cm.link;
 	e->desc->cm.fileoff = e->info->header.dataoff + e->info->header.datalen;
@@ -440,7 +449,8 @@ putpdesc(void *elem)
 
 	/* write data object descriptor */
 	e->desc->cm.datatype = DATA_PARTITION;
-	e->desc->cm.id = ++e->info->header.ndesc;
+	e->desc->cm.id = e->info->nextid++;
+	e->info->header.ndesc++;
 	e->desc->cm.groupid = e->cm.groupid;
 	e->desc->cm.link = e->cm.link;
 	e->desc->cm.fileoff = e->info->header.dataoff + e->info->header.datalen;
@@ -468,7 +478,8 @@ putsdesc(void *elem)
 
 	/* write data object descriptor */
 	e->desc->cm.datatype = DATA_SIGNATURE;
-	e->desc->cm.id = ++e->info->header.ndesc;
+	e->desc->cm.id = e->info->nextid++;
+	e->info->header.ndesc++;
 	e->desc->cm.groupid = e->cm.groupid;
 	e->desc->cm.link = e->cm.link;
 	e->desc->cm.fileoff = e->info->header.dataoff + e->info->header.datalen;
@@ -592,17 +603,17 @@ sif_putdataobj(Eleminfo *e, Sifinfo *info)
 	if(prepdesc(e, info) < 0)
 		return -1;
 
-	oldmap = e->info->mapstart;
-	oldsize = e->info->filesize;
+	oldmap = info->mapstart;
+	oldsize = info->filesize;
 
-	e->info->filesize = e->info->header.dataoff + e->info->header.datalen;
-	if(posix_fallocate(e->info->fd, 0, e->info->filesize) != 0){
+	info->filesize = info->header.dataoff + info->header.datalen;
+	if(posix_fallocate(info->fd, 0, info->filesize) != 0){
 		siferrno = SIF_EFALLOC;
 		return -1;
 	}
 
-	e->info->mapstart = mremap(oldmap, oldsize, e->info->filesize, MREMAP_MAYMOVE);
-	if(e->info->mapstart == MAP_FAILED){
+	info->mapstart = mremap(oldmap, oldsize, info->filesize, MREMAP_MAYMOVE);
+	if(info->mapstart == MAP_FAILED){
 		siferrno = SIF_EOMAP;
 		return -1;
 	}
@@ -616,15 +627,46 @@ sif_putdataobj(Eleminfo *e, Sifinfo *info)
 	cleanupdesc(&e->cm, NULL);
 
 	/* write down the modified header */
-	e->info->header.mtime = time(NULL);
-	memcpy(e->info->mapstart, &e->info->header, sizeof(Sifheader));
+	info->header.mtime = time(NULL);
+	memcpy(info->mapstart, &info->header, sizeof(Sifheader));
 
 	return 0;
 }
 
 int
-sif_deldataobj(Sifinfo *info, int id)
+sif_deldataobj(Sifinfo *info, int id, int flags)
 {
+	Sifdescriptor *desc;
+
+	desc = sif_getdescid(info, id);
+	if(desc == NULL){
+		siferrno = SIF_ENODESC;
+		return -1;
+	}
+
+	/* zero out or remove data portion */
+	switch(flags){
+	case DEL_ZERO:
+		memset(info->mapstart + desc->cm.fileoff, 0, desc->cm.filelen);
+		break;
+	case DEL_COMPACT:
+		siferrno = SIF_ENOSUPP;
+		return -1;
+	}
+
+	/* remove and shuffle descriptors */
+	if(info->header.ndesc > 1){
+		memmove(desc, (char *)desc + sizeof(Sifdescriptor), sizeof(Sifdescriptor));
+	}else{
+		memset(desc, 0, sizeof(Sifdescriptor));
+	}
+
+	info->header.ndesc--;
+
+	/* write down the modified header */
+	info->header.mtime = time(NULL);
+	memcpy(info->mapstart, &info->header, sizeof(Sifheader));
+
 	return 0;
 }
 
@@ -641,6 +683,7 @@ sif_create(Sifcreateinfo *cinfo)
 	memcpy(info.header.version, cinfo->sifversion, SIF_ARCH_LEN);
 	memcpy(info.header.arch, cinfo->arch, SIF_ARCH_LEN);
 	uuid_copy(info.header.uuid, cinfo->uuid);
+	info.nextid = 1;
 	info.header.ctime = time(NULL);
 	info.header.mtime = time(NULL);
 	info.header.descoff = sizeof(Sifheader);
