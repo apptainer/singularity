@@ -102,9 +102,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/mount.*
 %{_libexecdir}/singularity/cli/pull.*
 %{_libexecdir}/singularity/cli/selftest.*
-%{_libexecdir}/singularity/handlers
 %{_libexecdir}/singularity/helpers
-%{_libexecdir}/singularity/image-handler.sh
 %{_libexecdir}/singularity/python
 
 # Binaries
@@ -146,6 +144,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/wrapper
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/capabilities
+%{_libexecdir}/singularity/handlers
+%{_libexecdir}/singularity/image-handler.sh
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_sysconfdir}/singularity/capabilities
