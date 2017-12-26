@@ -84,6 +84,36 @@ sif_fsstr(Siffstype ftype)
 	return "Unknown fstype";
 }
 
+char *
+sif_hreadable(size_t value)
+{
+	static char conversion[32];
+	int divs = 0;
+
+	memset(conversion, 0, 32);
+
+	for(; value; value>>=10) {
+		if(value < 1024)
+			break;
+		divs++;
+	}
+
+	switch(divs) {
+		case 0: snprintf(conversion, 31, "%ld", value);
+			break;
+		case 1: snprintf(conversion, 31, "%ldKB", value);
+			break;
+		case 2: snprintf(conversion, 31, "%ldMB", value);
+			break;
+		case 3: snprintf(conversion, 31, "%ldGB", value);
+			break;
+		case 4: snprintf(conversion, 31, "%ldTB", value);
+			break;
+	}
+
+	return conversion;
+}
+
 int
 sif_printrow(void *elem, void *data)
 {
@@ -197,9 +227,9 @@ sif_printheader(Sifinfo *info)
 
 	printf("number of descriptors: %d\n", info->header.ndesc);
 	printf("start of descriptors in file: %ld\n", info->header.descoff);
-	printf("length of descriptors in file: %ld\n", info->header.desclen);
+	printf("length of descriptors in file: %s\n", sif_hreadable(info->header.desclen));
 	printf("start of data in file: %ld\n", info->header.dataoff);
-	printf("length of data in file: %ld\n", info->header.datalen);
+	printf("length of data in file: %s\n", sif_hreadable(info->header.datalen));
 	printf("============================================\n");
 }
 
