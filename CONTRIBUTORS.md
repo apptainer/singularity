@@ -7,6 +7,7 @@
     - Cedric Clerget <cedric.clerget@univ-fcomte.fr>
     - Dave Dykstra <dwd@fnal.gov>
     - Dave Godlove <davidgodlove@gmail.com>
+    - Divya Cote <divya.cote@gmail.com>
     - Krishna Muriki <kmuriki@lbl.gov>
     - Michael Bauer <bauerm@umich.edu>
     - Vanessa Sochat <vsochat@stanford.edu>
