@@ -201,8 +201,6 @@ sif_printheader(Sifinfo *info)
 	printf("start of data in file: %ld\n", info->header.dataoff);
 	printf("length of data in file: %ld\n", info->header.datalen);
 	printf("============================================\n");
-
-	listforall(&info->deschead, sif_printdesc, NULL);
 }
 
 /* Get the SIF header structure */

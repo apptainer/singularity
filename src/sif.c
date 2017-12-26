@@ -47,8 +47,9 @@ usage()
 	fprintf(stderr, "create --  Create a new sif file with input data objects\n");
 	fprintf(stderr, "del    id  Delete a specified set of descriptor+object\n");
 	fprintf(stderr, "dump   id  Display data object content\n");
-	fprintf(stderr, "list   --  List SIF data descriptors from an input SIF file\n");
+	fprintf(stderr, "header --  Display SIF header\n");
 	fprintf(stderr, "info   id  Print data object descriptor info\n");
+	fprintf(stderr, "list   --  List SIF data descriptors from an input SIF file\n");
 	fprintf(stderr, "sign   id  Cryptographically sign a data object from an input SIF file\n");
 	fprintf(stderr, "verify id  Verify the signature of a data object from an input SIF file\n");
 	fprintf(stderr, "\n\n");
@@ -664,6 +665,28 @@ cmd_del(int argc, char *argv[])
 }
 
 int
+cmd_header(int argc, char *argv[])
+{
+	Sifinfo sif;
+
+	if(argc < 3) {
+		usage();
+		return -1;
+	}
+
+	if(sif_load(argv[2], &sif, 1) < 0) {
+		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
+		return -1;
+	}
+
+	sif_printheader(&sif);
+
+	sif_unload(&sif);
+
+	return 0;
+}
+
+int
 main(int argc, char *argv[])
 {
 	progname = basename(argv[0]);
@@ -686,6 +709,8 @@ main(int argc, char *argv[])
 		return cmd_dump(argc, argv);
 	if(strncmp(argv[1], "del", 3) == 0)
 		return cmd_del(argc, argv);
+	if(strncmp(argv[1], "header", 6) == 0)
+		return cmd_header(argc, argv);
 
 	usage();
 	return -1;
