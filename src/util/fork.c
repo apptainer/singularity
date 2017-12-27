@@ -40,15 +40,13 @@
 #include "util/message.h"
 #include "util/util.h"
 
-int generic_signal_rpipe = -1;
-int generic_signal_wpipe = -1;
-int sigchld_signal_rpipe = -1;
-int sigchld_signal_wpipe = -1;
+int signal_rpipe = -1;
+int signal_wpipe = -1;
 int watchdog_rpipe = -1;
 int watchdog_wpipe = -1;
 pid_t child_pid;
 
-struct pollfd fds[2];
+struct pollfd fdstruct;
 
 typedef struct fork_state_s
 {
@@ -62,12 +60,7 @@ typedef struct fork_state_s
 // version of singularity_message here.
 void handle_signal(int sig, siginfo_t * _, void * __) {
     char info = (char)sig;
-    while (-1 == write(generic_signal_wpipe, &info, 1) && errno == EINTR) {}
-}
-
-void handle_sigchld(int sig, siginfo_t *siginfo, void * _) {
-    char one = '1';
-    while (-1 == write(sigchld_signal_wpipe, &one, 1) && errno == EINTR) {}
+    while (-1 == write(signal_wpipe, &info, 1) && errno == EINTR) {}
 }
 
 
@@ -187,51 +180,44 @@ static int wait_child() {
     
     while (1) {
         /* Poll the signal handle read pipes to wait for any written signals */
-        while ( -1 == (retval = poll(fds, 2, -1)) && errno == EINTR ) {}
+        while ( -1 == (retval = poll(&fdstruct, 1, -1)) && errno == EINTR ) {}
         if ( -1 == retval ) {
             singularity_message(ERROR, "Failed to wait for file descriptors: %s\n", strerror(errno));
             ABORT(255);
         }
             
-        /* If we catch any signal other than SIGCHLD, forward it to the child */
-        if (fds[1].revents) {
-            char signum = SIGKILL;
-            while (-1 == (retval = read(generic_signal_rpipe, &signum, 1)) && errno == EINTR) {} // Flawfinder: ignore
-            if (-1 == retval) {
-                singularity_message(ERROR, "Failed to read from generic signal handler pipe: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            singularity_message(VERBOSE2, "Forwarding signal to child: %d\n", signum);
-            kill(child_pid, signum);
+        /* Read and process the signal */
+        char signum = SIGKILL;
+        while (-1 == (retval = read(signal_rpipe, &signum, 1)) && errno == EINTR) {} // Flawfinder: ignore
+        if (-1 == retval) {
+            singularity_message(ERROR, "Failed to read from signal handler pipe: %s\n", strerror(errno));
+            ABORT(255);
         }
 
-        /* When SIGCHILD is received, wait on the child */
-        if (fds[0].revents) {
-            char one;
-            while (-1 == (retval = read(sigchld_signal_rpipe, &one, 1)) && errno == EINTR) {} // Flawfinder: ignore
-            if (-1 == retval) {
-                singularity_message(ERROR, "Failed to read from sigchld signal handler pipe: %s\n", strerror(errno));
-                ABORT(255);
-            }
+        if ( signum != SIGCHLD ) {
+            /* Forward any signal other than SIGCHLD to the child */
+            singularity_message(VERBOSE2, "Forwarding signal to child: %d\n", signum);
+            kill(child_pid, signum);
+            continue;
+        } 
 
-            singularity_message(DEBUG, "SIGCHLD raised, waiting on the child\n");
-            /* Get the pid and exit status or kill signal of the child */
-            waited_pid = wait(&tmpstatus);
+        singularity_message(DEBUG, "SIGCHLD raised, waiting on the child\n");
+        /* Get the pid and exit status or kill signal of the child */
+        waited_pid = wait(&tmpstatus);
 
-            if (waited_pid == child_pid) {
-                singularity_message(DEBUG, "child exited, parent is exiting too\n");
-                if (WIFEXITED(tmpstatus)) {
-                    singularity_message(DEBUG, "child exit code: %d \n", WEXITSTATUS(tmpstatus));
-                    return(WEXITSTATUS(tmpstatus));
-                } else if (WIFSIGNALED(tmpstatus)) {
-                    singularity_message(DEBUG, "passing child signal to parent: %d\n", WTERMSIG(tmpstatus));
-                    kill(getpid(), WTERMSIG(tmpstatus));
-                }
-                break;
-            } else {
-                /* just prevented a zombie process; ignore exit code */
-                singularity_message(DEBUG, "unknown child %d exited, ignoring exit code\n", waited_pid);
+        if (waited_pid == child_pid) {
+            singularity_message(DEBUG, "child exited, parent is exiting too\n");
+            if (WIFEXITED(tmpstatus)) {
+                singularity_message(DEBUG, "child exit code: %d \n", WEXITSTATUS(tmpstatus));
+                return(WEXITSTATUS(tmpstatus));
+            } else if (WIFSIGNALED(tmpstatus)) {
+                singularity_message(DEBUG, "passing child signal to parent: %d\n", WTERMSIG(tmpstatus));
+                kill(getpid(), WTERMSIG(tmpstatus));
             }
+            break;
+        } else {
+            /* just prevented a zombie process; ignore exit code */
+            singularity_message(DEBUG, "unknown child %d exited, ignoring exit code\n", waited_pid);
         }
     }
 
@@ -268,7 +254,7 @@ static int fork_ns(unsigned int flags) {
     return retval;
 }
 
-void install_generic_signal_handle() {
+void install_signal_handle() {
     int pipes[2];
     struct sigaction action;
     sigset_t empty_mask;
@@ -305,6 +291,10 @@ void install_generic_signal_handle() {
         singularity_message(ERROR, "Failed to install SIGUSR2 signal handler: %s\n", strerror(errno));
         ABORT(255);
     }
+    if ( -1 == sigaction(SIGCHLD, &action, NULL) ) {
+        singularity_message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
+        ABORT(255);
+    }
 
     /* Open pipes for handle_signal() to write to */
     singularity_message(DEBUG, "Creating generic signal pipes\n");
@@ -312,36 +302,8 @@ void install_generic_signal_handle() {
         singularity_message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
         ABORT(255);
     }
-    generic_signal_rpipe = pipes[0];
-    generic_signal_wpipe = pipes[1];
-}
-
-void install_sigchld_signal_handle() {
-    int pipes[2];
-    struct sigaction action;
-    sigset_t empty_mask;
-    
-    sigemptyset(&empty_mask);
-
-    /* Fill action with handle_sigchld function */
-    action.sa_sigaction = &handle_sigchld;
-    action.sa_flags = SA_SIGINFO|SA_RESTART;
-    action.sa_mask = empty_mask;
-    
-    singularity_message(DEBUG, "Assigning SIGCHLD sigaction()\n");
-    if ( -1 == sigaction(SIGCHLD, &action, NULL) ) {
-        singularity_message(ERROR, "Failed to install SIGCHLD signal handler: %s\n", strerror(errno));
-        ABORT(255);
-    }
-    
-    /* Open pipes for handle_sigchld() to write to */
-    singularity_message(DEBUG, "Creating sigchld signal pipes\n");
-    if ( -1 == pipe2(pipes, O_CLOEXEC) ) {
-        singularity_message(ERROR, "Failed to create communication pipes: %s\n", strerror(errno));
-        ABORT(255);
-    }
-    sigchld_signal_rpipe = pipes[0];
-    sigchld_signal_wpipe = pipes[1];
+    signal_rpipe = pipes[0];
+    signal_wpipe = pipes[1];
 }
 
 pid_t singularity_fork(unsigned int flags) {
@@ -381,19 +343,15 @@ pid_t singularity_fork(unsigned int flags) {
         sigprocmask(SIG_SETMASK, &blocked_mask, &old_mask);
 
         /* Now that we can't receive any signals, install signal handlers for all signals we want to catch */
-        install_generic_signal_handle();
-        install_sigchld_signal_handle();
+        install_signal_handle();
 
         /* Set signal mask back to the original mask, unblocking the blocked signals */
         sigprocmask(SIG_SETMASK, &old_mask, NULL);
 
-        /* Set fds[n].fd to the read pipes created earlier */
-        fds[0].fd = sigchld_signal_rpipe;
-        fds[0].events = POLLIN;
-        fds[0].revents = 0;
-        fds[1].fd = generic_signal_rpipe;
-        fds[1].events = POLLIN;
-        fds[1].revents = 0;
+        /* Set fdstruct.fd to the read pipe created earlier */
+        fdstruct.fd = signal_rpipe;
+        fdstruct.events = POLLIN;
+        fdstruct.revents = 0;
 
         /* Drop privs if we're SUID and haven't dropped permanently */
         if ( singularity_suid_enabled() && !singularity_priv_dropped_perm() ) {
