@@ -381,8 +381,8 @@ pid_t singularity_fork(unsigned int flags) {
         fds[1].events = POLLIN;
         fds[1].revents = 0;
 
-        /* Drop privs if we're SUID */
-        if ( singularity_priv_is_suid() == 0 ) {
+        /* Drop privs if we're SUID and haven't dropped permanently */
+        if ( singularity_suid_enabled() && !singularity_priv_dropped_perm() ) {
             singularity_message(DEBUG, "Dropping permissions\n");
             singularity_priv_drop();
         }
