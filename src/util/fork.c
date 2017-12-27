@@ -66,10 +66,8 @@ void handle_signal(int sig, siginfo_t * _, void * __) {
 }
 
 void handle_sigchld(int sig, siginfo_t *siginfo, void * _) {
-    if ( siginfo->si_pid == child_pid ) {
-        char one = '1';
-        while (-1 == write(sigchld_signal_wpipe, &one, 1) && errno == EINTR) {}
-    }
+    char one = '1';
+    while (-1 == write(sigchld_signal_wpipe, &one, 1) && errno == EINTR) {}
 }
 
 
@@ -182,12 +180,12 @@ void singularity_signal_go_ahead(int code) {
 }
 
 static int wait_child() {
-    int child_ok = 1;
     int retval, tmpstatus;
+    pid_t waited_pid;
 
     singularity_message(DEBUG, "Parent process is waiting on child process\n");
     
-    do {            
+    while (1) {
         /* Poll the signal handle read pipes to wait for any written signals */
         while ( -1 == (retval = poll(fds, 2, -1)) && errno == EINTR ) {}
         if ( -1 == retval ) {
@@ -195,32 +193,48 @@ static int wait_child() {
             ABORT(255);
         }
             
-        /* When SIGCHILD is received, set child_ok = 0 to break out of loop */
-        if (fds[0].revents) {
-            singularity_message(DEBUG, "SIGCHLD raised, parent is exiting\n");
-            child_ok = 0;
-        }
-
-        /* If we catch any other signal, */
+        /* If we catch any signal other than SIGCHLD, forward it to the child */
         if (fds[1].revents) {
             char signum = SIGKILL;
             while (-1 == (retval = read(generic_signal_rpipe, &signum, 1)) && errno == EINTR) {} // Flawfinder: ignore
             if (-1 == retval) {
-                singularity_message(ERROR, "Failed to read from signal handler pipe: %s\n", strerror(errno));
+                singularity_message(ERROR, "Failed to read from generic signal handler pipe: %s\n", strerror(errno));
                 ABORT(255);
             }
-            singularity_message(VERBOSE2, "Sending signal to child: %d\n", signum);
+            singularity_message(VERBOSE2, "Forwarding signal to child: %d\n", signum);
             kill(child_pid, signum);
         }
-    } while( child_ok );
 
-    /* Catch the exit status or kill signal of the child process */
-    waitpid(child_pid, &tmpstatus, 0);
-    if (WIFEXITED(tmpstatus)) {
-        return(WEXITSTATUS(tmpstatus));
-    } else if (WIFSIGNALED(tmpstatus)) {
-        kill(getpid(), WTERMSIG(tmpstatus));
+        /* When SIGCHILD is received, wait on the child */
+        if (fds[0].revents) {
+            char one;
+            while (-1 == (retval = read(sigchld_signal_rpipe, &one, 1)) && errno == EINTR) {} // Flawfinder: ignore
+            if (-1 == retval) {
+                singularity_message(ERROR, "Failed to read from sigchld signal handler pipe: %s\n", strerror(errno));
+                ABORT(255);
+            }
+
+            singularity_message(DEBUG, "SIGCHLD raised, waiting on the child\n");
+            /* Get the pid and exit status or kill signal of the child */
+            waited_pid = wait(&tmpstatus);
+
+            if (waited_pid == child_pid) {
+                singularity_message(DEBUG, "child exited, parent is exiting too\n");
+                if (WIFEXITED(tmpstatus)) {
+                    singularity_message(DEBUG, "child exit code: %d \n", WEXITSTATUS(tmpstatus));
+                    return(WEXITSTATUS(tmpstatus));
+                } else if (WIFSIGNALED(tmpstatus)) {
+                    singularity_message(DEBUG, "passing child signal to parent: %d\n", WTERMSIG(tmpstatus));
+                    kill(getpid(), WTERMSIG(tmpstatus));
+                }
+                break;
+            } else {
+                /* just prevented a zombie process; ignore exit code */
+                singularity_message(DEBUG, "unknown child %d exited, ignoring exit code\n", waited_pid);
+            }
+        }
     }
+
     return(-1);
 }
 
