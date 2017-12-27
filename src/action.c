@@ -107,6 +107,19 @@ int main(int argc, char **argv) {
     singularity_runtime_environment();
     singularity_priv_drop_perm();
 
+    if ( singularity_registry_get("DAEMON_JOIN") == NULL  &&
+         singularity_registry_get("PIDNS_ENABLED") != NULL ) {
+
+        // At this point, we are now PID 1; when we later exec the payload,
+        // it will also be PID 1.  Unfortunately, PID 1 in Linux has special
+        // signal handling rules (the _only_ signal that will terminate the
+        // process is SIGKILL; all other signals are ignored).  Hence, we fork
+        // one more time.  This makes PID 1 a shim process and the payload
+        // process PID 2 (meaning that the payload gets the "normal" signal
+        // handling rules it would expect).
+        singularity_fork_run(0);
+    }
+
     if ( ( target_pwd = singularity_registry_get("TARGET_PWD") ) != NULL ) {
         singularity_message(DEBUG, "Attempting to chdir to TARGET_PWD: %s\n", target_pwd);
         if ( chdir(target_pwd) != 0 ) {
