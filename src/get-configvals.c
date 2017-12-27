@@ -32,12 +32,12 @@ int main(int argc, char **argv) {
 
     /* 
     If the key does not exist in the singularity.conf file, this is just 
-    going to return null char.  The function was originally designed to return
-    the default value if the value does not exist in the conf file, but I don't 
+    going to return "NULL".  The function was originally designed to return the
+    default value if the value does not exist in the conf file, but I don't
     know how to do that using only strings, and the key needs to be based on 
     user input, not hardcoded. 
     */
-    printf("%s\n", _singularity_config_get_value_impl(key, "\0"));
+    printf("%s\n", _singularity_config_get_value_impl(key, "NULL"));
 
     free(key);
     return(0);
