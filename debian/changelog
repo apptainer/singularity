@@ -1,3 +1,11 @@
+singularity-container (2.4.1-1) unstable; urgency=high
+
+  * This is a bug fix point release to the 2.4 feature branch, and includes a
+    number of fixes including some security related points that deserve
+    immediate attention
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Wed, 22 Nov 2017 12:20:27 -0700
+
 singularity-container (2.4-1) unstable; urgency=low
 
   * Building an image is now more intuitive with the introduction of our build

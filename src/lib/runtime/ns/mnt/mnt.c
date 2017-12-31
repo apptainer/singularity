@@ -38,6 +38,7 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/daemon.h"
 #include "util/setns.h"
 #include "util/mount.h"
 
@@ -92,12 +93,16 @@ int _singularity_runtime_ns_mnt(void) {
     return(0);
 }
 
-int _singularity_runtime_ns_mnt_join(void) {
-    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+int _singularity_runtime_ns_mnt_join(int ns_fd) {
     int mnt_fd;
 
     /* Attempt to open /proc/[MNT]/ns/mnt */
     singularity_priv_escalate();
+    if ( ! singularity_daemon_own_namespace("mnt") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
     mnt_fd = openat(ns_fd, "mnt", O_RDONLY);
 
     if( mnt_fd == -1 ) {
@@ -113,7 +118,7 @@ int _singularity_runtime_ns_mnt_join(void) {
     singularity_priv_drop();
     singularity_message(DEBUG, "Successfully joined mount namespace\n");
 
-    close(ns_fd);
+    close(mnt_fd);
     return(0);    
 }
 

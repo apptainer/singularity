@@ -27,7 +27,6 @@ CONTAINER="$SINGULARITY_TESTDIR/container"
 
 stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
 stest 0 singularity -x -d instance.start "$CONTAINER" service1
-stest 0 sleep 5
 stest 0 singularity -x exec instance://service1 true
 stest 1 singularity -x exec instance://service1 false
 

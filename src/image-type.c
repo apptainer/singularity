@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
         return(0);
     }
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
 
     singularity_message(VERBOSE3, "Instantiating read only container image object\n");
     image = singularity_image_init(argv[1], O_RDONLY);
