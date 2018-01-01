@@ -318,8 +318,8 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             # Make sure we have metadata
             APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
             APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
-            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json"
-            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json"
+            $ADD_LABEL --key "SCIF_APPSIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json"
+            $ADD_LABEL --key "SCIF_APPNAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json"
 
         done
     fi
@@ -372,8 +372,8 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
             singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -xe || ABORT 255
 
             APPFOLDER_SIZE=$(singularity_calculate_size "${APPBASE}")
-            $ADD_LABEL --key "SINGULARITY_APP_SIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json" --quiet -f
-            $ADD_LABEL --key "SINGULARITY_APP_NAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json" --quiet -f
+            $ADD_LABEL --key "SCIF_APPSIZE" --value "${APPFOLDER_SIZE}MB" --file "$APPBASE/scif/labels.json" --quiet -f
+            $ADD_LABEL --key "SCIF_APPNAME" --value "${APPNAME}" --file "${APPBASE}/scif/labels.json" --quiet -f
 
         done
     fi
@@ -394,29 +394,29 @@ for app in ${SINGULARITY_ROOTFS}/scif/apps/*; do
         appmeta="${appbase}/scif"
 
         # Export data, root, metadata, labels, environment
-        echo "APPDATA_$app=/scif/data/$app" >> "${APPGLOBAL}"
-        echo "APPMETA_$app=/scif/apps/$app/scif" >> "${APPGLOBAL}"
-        echo "APPROOT_$app=/scif/apps/$app" >> "${APPGLOBAL}"
-        echo "APPBIN_$app=/scif/apps/$app/bin" >> "${APPGLOBAL}"
-        echo "APPLIB_$app=/scif/apps/$app/lib" >> "${APPGLOBAL}"
-        echo "export APPDATA_$app APPROOT_$app APPMETA_$app APPBIN_$app APPLIB_$app"  >> "${APPGLOBAL}"
+        echo "SCIF_APPDATA_$app=/scif/data/$app" >> "${APPGLOBAL}"
+        echo "SCIF_APPMETA_$app=/scif/apps/$app/scif" >> "${APPGLOBAL}"
+        echo "SCIF_APPROOT_$app=/scif/apps/$app" >> "${APPGLOBAL}"
+        echo "SCIF_APPBIN_$app=/scif/apps/$app/bin" >> "${APPGLOBAL}"
+        echo "SCIF_APPLIB_$app=/scif/apps/$app/lib" >> "${APPGLOBAL}"
+        echo "export SCIF_APPDATA_$app SCIF_APPROOT_$app SCIF_APPMETA_$app SCIF_APPBIN_$app SCIF_APPLIB_$app"  >> "${APPGLOBAL}"
 
         # Environment
         if [ -e "${appmeta}/env/90-environment.sh" ]; then
-            echo  "APPENV_${app}=/scif/apps/$app/scif/env/90-environment.sh" >> "${APPGLOBAL}"
-            echo  "export APPENV_${app}" >> "${APPGLOBAL}"
+            echo  "SCIF_APPENV_${app}=/scif/apps/$app/scif/env/90-environment.sh" >> "${APPGLOBAL}"
+            echo  "export SCIF_APPENV_${app}" >> "${APPGLOBAL}"
         fi
 
         # Labels
         if [ -e "${appmeta}/labels.json" ]; then
-            echo  "APPLABELS_${app}=/scif/apps/$app/scif/labels.json" >> "${APPGLOBAL}"
-            echo  "export APPLABELS_${app}" >> "${APPGLOBAL}"
+            echo  "SCIF_APPLABELS_${app}=/scif/apps/$app/scif/labels.json" >> "${APPGLOBAL}"
+            echo  "export SCIF_APPLABELS_${app}" >> "${APPGLOBAL}"
         fi
 
         # Runscript
         if [ -e "${appmeta}/runscript" ]; then
-            echo  "APPRUN_${app}=/scif/apps/$app/scif/runscript" >> "${APPGLOBAL}"
-            echo  "export APPRUN_${app}" >> "${APPGLOBAL}"
+            echo  "SCIF_APPRUN_${app}=/scif/apps/$app/scif/runscript" >> "${APPGLOBAL}"
+            echo  "export SCIF_APPRUN_${app}" >> "${APPGLOBAL}"
         fi
     fi
 done
