@@ -16,6 +16,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 ## [v3.0](https://github.com/singularityware/singularity/tree/development)
 
  - Adjustments to SCIF (Scientific Filesystem) integration for broader use
+ - Fixed bug that did not export environment variables for apps with "-" in name
  - Feature sif sign #1143
  - Add capability support and secure build #934
  - Boot/start instance #1032
