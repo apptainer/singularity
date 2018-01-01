@@ -349,8 +349,8 @@ if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "a
         for APPNAME in "${APPNAMES[@]}"; do
             message 1 "Installing ${APPNAME}\n"
             APPBASE="$SINGULARITY_ROOTFS/scif/apps/${APPNAME}"
-            SINGULARITY_APPROOT="/scif/apps/${APPNAME}"
-            export SINGULARITY_APPROOT
+            SCIF_APPROOT="/scif/apps/${APPNAME}"
+            export SCIF_APPROOT
             singularity_app_init "${APPNAME}" "${SINGULARITY_ROOTFS}"
             singularity_app_save "${APPNAME}" "$SINGULARITY_BUILDDEF" "${APPBASE}/scif/Singularity"
             singularity_app_install_get "${APPNAME}" "$SINGULARITY_BUILDDEF" | chroot "$SINGULARITY_ROOTFS" /bin/sh -xe || ABORT 255
