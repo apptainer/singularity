@@ -27,8 +27,9 @@ import sys
 import tarfile
 sys.path.append('..')  # noqa
 
+from message import SingularityMessage
+from sutils import read_file
 from unittest import TestCase
-from base import ApiConnection
 import shutil
 import tempfile
 
@@ -37,24 +38,36 @@ VERSION = sys.version_info[0]
 print("*** PYTHON VERSION %s BASE TESTING START ***" % VERSION)
 
 
-class TestBase(TestCase):
+class TestMessage(TestCase):
 
     def setUp(self):
-
-        self.client = ApiConnection()
-        print("\n---START----------------------------------------")
-
+        self.logfile = tempfile.mktemp()
+        
     def tearDown(self):
-        print("---END------------------------------------------")
+        os.remove(self.logfile)
 
-    def test_client_headers(self):
-        '''test_load_client will load an empty client
-        '''
-        print("Testing client default headers")
-        required = ['Accept', 'Content-Type']
-        for required_header in required:
-            self.assertTrue(required_header in self.client.headers)
-        self.assertEqual(self.client.update_token(), None)
+    def test_logger(self):
+        print('Testing message not written to file')
+        bot = SingularityMessage()
+        self.assertTrue(bot.logfile==None)
+        bot.debug("This is a message log, not a message dog.")
+        self.assertTrue(os.path.exists(self.logfile)==False)
+
+        print('Testing that message is written to created logfile')
+        os.environ['SINGULARITY_LOGFILE'] = self.logfile
+        bot = SingularityMessage()
+        self.assertEqual(bot.logfile, self.logfile)
+        message = 'This is a message log, not a message dog.'
+        bot.debug(message)
+        self.assertTrue(os.path.exists(self.logfile))
+        content = read_file(bot.logfile)
+        self.assertTrue("DEBUG %s\n" % message in content) 
+
+        print('Testing that message is appended to existing logfile')
+        message = 'Line number two.'
+        bot.info(message)
+        content = read_file(bot.logfile)   
+        self.assertTrue("%s\n" % message in content)
 
 
 if __name__ == '__main__':
