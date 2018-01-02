@@ -67,7 +67,8 @@ case "$SINGULARITY_IMAGE" in
 
     ;;
 
-    *.tar|*.tgz|*.tar.gz|*.tbz|*.tar.bz)
+    *.tar|*.tgz|*.tar.gz|*.tbz|*.tbz2|*.tb2|*.tz2|*.tar.bz|*.tar.bz2|*.txz|*.tar.xz|\
+    *.tar.lz|*.tlz|*.tar.lzma|*.tar.Z|*.tZ|*.lzo)
 
         . "$SINGULARITY_libexecdir/singularity/handlers/archive-tar.sh"
 
