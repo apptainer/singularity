@@ -20,6 +20,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Boot/start instance #1032
  - Put /usr/local/{bin,sbin} in front of the default PATH
  - Add capability to support all tar compression formats #1155
+ - Clarify license situation #1242
 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
