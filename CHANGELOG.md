@@ -29,6 +29,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (2017-11-22)
 
+### apprun script backslash removal fix
+ - Fixed the unwanted removal of backslashes in apprun scripts
+
 ### Security related fixes
  - Fixed container path and owner limitations (original merge was lost)
  - Check of overlay upper/work images are symlinks
