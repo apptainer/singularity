@@ -129,7 +129,7 @@ int _singularity_runtime_ns_user_join(int ns_fd) {
     int user_fd;
 
     if ( singularity_priv_userns_enabled() ) {
-        if ( ! singularity_daemon_has_namespace("user") ) {
+        if ( ! singularity_daemon_own_namespace("user") ) {
             return(0);
         }
 

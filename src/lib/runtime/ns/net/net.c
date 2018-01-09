@@ -88,7 +88,7 @@ int _singularity_runtime_ns_net_join(int ns_fd) {
 
     /* Attempt to open /proc/[PID]/ns/net */
     singularity_priv_escalate();
-    if ( ! singularity_daemon_has_namespace("net") ) {
+    if ( ! singularity_daemon_own_namespace("net") ) {
         singularity_priv_drop();
         return(0);
     }

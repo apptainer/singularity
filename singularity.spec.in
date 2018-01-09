@@ -122,9 +122,6 @@ rm -rf $RPM_BUILD_ROOT
 # Directories
 %{_libexecdir}/singularity/bootstrap-scripts
 
-#SUID programs
-%attr(4755, root, root) %{_libexecdir}/singularity/bin/wrapper-suid
-
 %files runtime
 %dir %{_libexecdir}/singularity
 %dir %{_localstatedir}/singularity
@@ -161,6 +158,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man1/singularity.1*
 %dir %{_sysconfdir}/bash_completion.d
 %{_sysconfdir}/bash_completion.d/singularity
+
+#SUID programs
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/wrapper-suid
 
 %files devel
 %defattr(-, root, root)

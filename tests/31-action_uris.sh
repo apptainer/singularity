@@ -29,8 +29,34 @@ test_init "Action URI tests"
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
+NO_XZ=false
+if [ ! $(which xz) ]; then
+    NO_XZ=true
+    echo "Not testing with xz, not installed\n"
+fi
+
+# Testing Docker URI
 stest 0 singularity exec docker://busybox true
 stest 1 singularity exec docker://busybox false
+
+# Creating a new container
+stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
+
+# Creating tarball archives
+stest 0 sh -c "singularity image.export "$CONTAINER" | gzip -c - > \"$CONTAINER.tar.gz\""
+stest 0 sh -c "singularity image.export "$CONTAINER" | bzip2 -c - > \"$CONTAINER.tar.bz2\""
+
+$NO_XZ || stest 0 sh -c "singularity image.export "$CONTAINER" | xz -c - > \"$CONTAINER.tar.xz\""
+
+# Testing tarball archives
+stest 0 singularity exec "$CONTAINER.tar.gz" true
+stest 0 singularity exec "$CONTAINER.tar.bz2" true
+
+$NO_XZ || stest 0 singularity exec "$CONTAINER.tar.xz" true
+
+# Testing automatic algorithm detection
+stest 0 mv "$CONTAINER.tar.gz" "$CONTAINER.tar.bz2"
+stest 0 singularity exec "$CONTAINER.tar.bz2" true
 
 
 test_cleanup

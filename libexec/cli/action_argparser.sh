@@ -127,6 +127,13 @@ while true; do
             SINGULARITY_UNSHARE_UTS=1
             export SINGULARITY_UNSHARE_UTS
         ;;
+        --hostname)
+            shift
+            SINGULARITY_UNSHARE_UTS=1
+            SINGULARITY_HOSTNAME="$1"
+            export SINGULARITY_UNSHARE_UTS SINGULARITY_HOSTNAME
+            shift
+        ;;
         --pwd)
             shift
             SINGULARITY_TARGET_PWD="$1"

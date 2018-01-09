@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/mount.h>
@@ -32,6 +33,16 @@
 
 
 int _singularity_runtime_ns_uts(void) {
+    char *hostname = singularity_registry_get("HOSTNAME");
+    size_t hostname_len;
+
+    if ( hostname ) {
+        hostname_len = strlen(hostname);
+        if ( hostname_len > HOST_NAME_MAX ) {
+            singularity_message(WARNING, "Hostname too long, truncated to %d bytes length\n", HOST_NAME_MAX);
+            hostname_len = HOST_NAME_MAX;
+        }
+    }
 
     if ( singularity_registry_get("UNSHARE_UTS") == NULL ) {
         /* UTS namespace is enforced for root user */
@@ -49,6 +60,10 @@ int _singularity_runtime_ns_uts(void) {
         singularity_message(ERROR, "Could not virtualize UTS namespace: %s\n", strerror(errno));
         ABORT(255);
     }
+    if ( hostname && sethostname(hostname, hostname_len) < 0 ) {
+        singularity_message(ERROR, "Could not set hostname %s: %s\n", hostname, strerror(errno));
+        ABORT(255);
+    }
     singularity_priv_drop();
 
 #else
@@ -64,7 +79,7 @@ int _singularity_runtime_ns_uts_join(int ns_fd) {
 
     /* Attempt to open /proc/[PID]/ns/pid */
     singularity_priv_escalate();
-    if ( ! singularity_daemon_has_namespace("user") ) {
+    if ( ! singularity_daemon_own_namespace("uts") ) {
         singularity_priv_drop();
         return(0);
     }

@@ -50,7 +50,7 @@
 int _singularity_runtime_overlayfs(void) {
     int secure_flags = MS_NOSUID | MS_NODEV;
 
-    if ( singularity_allow_setuid() ) {
+    if ( singularity_allow_container_setuid() ) {
         secure_flags &= ~MS_NOSUID;
     }
 

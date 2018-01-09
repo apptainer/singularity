@@ -19,14 +19,19 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Add capability support and secure build #934
  - Boot/start instance #1032
  - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Add capability to support all tar compression formats #1155
  - Handle docker layer aufs whiteout files correctly (requires libarchive).
 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
-This fixed an issue for support of older distributions and kernels with regards to `setns()`
-functionality.
+ - This fixed an issue for support of older distributions and kernels with regards to `setns()`
+   functionality.
+ - Fixed autofs bug path (lost during merge)
 
 ## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (2017-11-22)
+
+### apprun script backslash removal fix
+ - Fixed the unwanted removal of backslashes in apprun scripts
 
 ### Security related fixes
  - Fixed container path and owner limitations (original merge was lost)
