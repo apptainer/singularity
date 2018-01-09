@@ -315,6 +315,14 @@ else
 
 fi
 
+# ---------------------------------------------------------------------
+# MKSQUASHFS
+# ---------------------------------------------------------------------
+AC_CHECK_PROG(MKSQUASHFS_CHECK,mksquashfs,yes)
+if test x"$MKSQUASHFS_CHECK" != "xyes" ; then
+    AC_MSG_ERROR([mksquashfs is required.])
+fi
+
 AC_MSG_CHECKING([--with-slurm])
 AC_ARG_WITH([slurm],
             AS_HELP_STRING([--with-slurm], [This feature will no longer be part of Singularity proper]),
