@@ -24,20 +24,22 @@
  */
 int apply_opaque(const char *opq_marker, char *rootfs_dir) {
     int retval = 0;
-    char *token = strrchr(opq_marker, '/');
+    char *token, *opq_dir, *opq_dir_rootfs;
+    size_t buff_len;
+
+    token = strrchr(opq_marker, '/');
 
     if (token == NULL) {
         singularity_message(ERROR, "Error getting dirname for opaque marker\n");
         ABORT(255);
     }
 
-    size_t length = token - opq_marker;
-    char *opq_dir = malloc(length + 1);
-    strncpy(opq_dir, opq_marker, length);
-    opq_dir[length] = 0;
+    buff_len = token - opq_marker + 1;
+    opq_dir = malloc(buff_len);
+    snprintf(opq_dir, buff_len, "%s", opq_marker);
 
-    size_t buff_len = strlen(rootfs_dir) + 1 + strlen(opq_dir) + 1;
-    char *opq_dir_rootfs = malloc(buff_len);
+    buff_len = strlen(rootfs_dir) + 1 + strlen(opq_dir) + 1;
+    opq_dir_rootfs = malloc(buff_len);
     snprintf(opq_dir_rootfs, buff_len, "%s/%s", rootfs_dir, opq_dir);
 
     if (is_dir(opq_dir_rootfs) == 0) {
@@ -58,22 +60,32 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
  */
 int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
     int retval = 0;
-    char *token = strstr(wh_marker, ".wh.");
+    char *token, *wh_path, *prefix_str, *suffix_str, *wh_path_rootfs;
+    size_t token_pos, buff_len;
+
+    token = strstr(wh_marker, ".wh.");
 
     if (token == NULL) {
         singularity_message(ERROR, "Error getting filename for whiteout marker\n");
         ABORT(255);
     }
 
-    size_t token_pos = strlen(wh_marker) - strlen(token);
-    size_t length = strlen(wh_marker) - strlen(".wh.") + 1;
-    char *wh_path = malloc(length);
-    strncpy(wh_path, wh_marker, token_pos + 1);
-    wh_path[token_pos] = 0;
-    strcat(wh_path, token + 4);
+    // Location of the ".wh." substring
+    token_pos = strlen(wh_marker) - strlen(token);
+    // Dest for path stripped of .wh.
+    buff_len = strlen(wh_marker) - strlen(".wh.") + 1;
+    wh_path = malloc(buff_len);
+    // Prefix before .wh. 
+    prefix_str = malloc(token_pos + 1);
+    snprintf(prefix_str, token_pos + 1, "%s", wh_marker);
+    // Suffix after .wh.
+    suffix_str = malloc(buff_len - token_pos);
+    snprintf(suffix_str, buff_len - token_pos, "%s", token + 4);
 
-    size_t buff_len = strlen(rootfs_dir) + 1 + strlen(wh_path) + 1;
-    char *wh_path_rootfs = malloc(buff_len);
+    snprintf(wh_path, buff_len, "%s%s", prefix_str, suffix_str);
+
+    buff_len = strlen(rootfs_dir) + 1 + strlen(wh_path) + 1;
+    wh_path_rootfs = malloc(buff_len);
     snprintf(wh_path_rootfs, buff_len, "%s/%s", rootfs_dir, wh_path);
 
     if (is_dir(wh_path_rootfs) == 0) {
@@ -84,6 +96,8 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
         retval = unlink(wh_path_rootfs);
     }
 
+    free(prefix_str);
+    free(suffix_str);
     free(wh_path);
     free(wh_path_rootfs);
 
