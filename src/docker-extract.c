@@ -13,6 +13,7 @@
 #include "config.h"
 #include "util/file.h"
 #include "util/message.h"
+#include "util/registry.h"
 #include "util/util.h"
 
 /* apply_opaque
@@ -93,7 +94,7 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
  *  Process tarfile and apply any aufs opaque/whiteouts on rootfs_dir
  */
 int apply_whiteouts(char *tarfile, char *rootfs_dir) {
-    int ret = 0;
+    int retval = 0;
     int errcode = 0;
 
     struct archive *a;
@@ -106,9 +107,10 @@ int apply_whiteouts(char *tarfile, char *rootfs_dir) {
     archive_read_support_filter_all(a);
 #endif
     archive_read_support_format_all(a);
-    ret = archive_read_open_filename(a, tarfile, 10240);
-    if (ret != ARCHIVE_OK)
+    retval = archive_read_open_filename(a, tarfile, 10240);
+    if (retval != ARCHIVE_OK) {
         return (1);
+    }
 
     while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
 
@@ -129,11 +131,11 @@ int apply_whiteouts(char *tarfile, char *rootfs_dir) {
         }
     }
 #if ARCHIVE_VERSION_NUMBER <= 3000000
-    ret = archive_read_finish(a);
+    retval = archive_read_finish(a);
 #else
-    ret = archive_read_free(a);
+    retval = archive_read_free(a);
 #endif
-    if (ret != ARCHIVE_OK){
+    if (retval != ARCHIVE_OK){
         singularity_message(ERROR, "Error freeing archive\n");
         ABORT(255);
     }
@@ -150,10 +152,12 @@ static int copy_data(struct archive *ar, struct archive *aw) {
 
     for (;;) {
         r = archive_read_data_block(ar, &buff, &size, &offset);
-        if (r == ARCHIVE_EOF)
+        if (r == ARCHIVE_EOF) {
             return (ARCHIVE_OK);
-        if (r < ARCHIVE_OK)
+        }
+        if (r < ARCHIVE_OK) {
             return (r);
+        }
         r = archive_write_data_block(aw, buff, size, offset);
         if (r < ARCHIVE_OK) {
             singularity_message(ERROR, "tar extraction error: %s\n", archive_error_string(aw));
@@ -176,6 +180,8 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
     int flags;
     int r;
     char *orig_dir;
+    const char *pathname;
+    int pathtype;
 
     orig_dir = get_current_dir_name();
 
@@ -210,18 +216,20 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
     for (;;) {
         r = archive_read_next_header(a, &entry);
 
-        if (r == ARCHIVE_EOF)
+        if (r == ARCHIVE_EOF) {
             break;
+        }
 
-        if (r < ARCHIVE_OK)
+        if (r < ARCHIVE_OK) {
             singularity_message(WARNING, "Warning reading tar header: %s\n", archive_error_string(a));
+        }
         if (r < ARCHIVE_WARN) {
             singularity_message(ERROR, "Error reading tar header: %s\n", archive_error_string(a));
             ABORT(255);
         }
 
-        const char *pathname = archive_entry_pathname(entry);
-        int pathtype = archive_entry_filetype(entry);
+        pathname = archive_entry_pathname(entry);
+        pathtype = archive_entry_filetype(entry);
 
         // Do not extract whiteout markers (handled in apply_whiteouts)
         // Do not extract sockers, chr/blk devices, pipes
@@ -231,20 +239,22 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
         }
 
         r = archive_write_header(ext, entry);
-        if (r < ARCHIVE_OK)
+        if (r < ARCHIVE_OK) {
             singularity_message(WARNING, "Warning handling tar header: %s\n", archive_error_string(ext));
-        else if (archive_entry_size(entry) > 0) {
+        }else if (archive_entry_size(entry) > 0) {
             r = copy_data(a, ext);
-            if (r < ARCHIVE_OK)
+            if (r < ARCHIVE_OK) {
                 singularity_message(WARNING, "Warning handling tar header: %s\n", archive_error_string(ext));
+            }
             if (r < ARCHIVE_WARN) {
                 singularity_message(ERROR, "Error handling tar header: %s\n", archive_error_string(ext));
                 ABORT(255);
             }
         }
         r = archive_write_finish_entry(ext);
-        if (r < ARCHIVE_OK)
+        if (r < ARCHIVE_OK) {
             singularity_message(WARNING, "Warning freeing archive entry: %s\n", archive_error_string(ext));
+        }
         if (r < ARCHIVE_WARN) {
             singularity_message(ERROR, "Error freeing archive entry: %s\n", archive_error_string(ext));
             ABORT(255);
@@ -253,13 +263,11 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
     archive_read_close(a);
 #if ARCHIVE_VERSION_NUMBER <= 3000000
     archive_read_finish(a);
-#else
-    archive_read_free(a);
-#endif
     archive_write_close(ext);
-#if ARCHIVE_VERSION_NUMBER <= 3000000
     archive_write_finish(ext);
 #else
+    archive_read_free(a);
+    archive_write_close(ext);
     archive_write_free(ext);
 #endif
     r = chdir(orig_dir);
@@ -275,8 +283,13 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
 
 int main(int argc, char **argv) {
     int retval = 0;
-    char *rootfs_dir = envar_path("SINGULARITY_ROOTFS");
+    char *rootfs_dir = singularity_registry_get("ROOTFS");
     char *tarfile = NULL;
+
+    if (argc != 2) {
+        singularity_message(ERROR, "Provide a single docker tar file to extract\n");
+        ABORT(255);
+    }
 
     if (rootfs_dir == NULL) {
         singularity_message(ERROR, "Environment is not properly setup\n");
@@ -285,11 +298,6 @@ int main(int argc, char **argv) {
 
     if (is_dir(rootfs_dir) < 0) {
         singularity_message(ERROR, "SINGULARITY_ROOTFS does not exist\n");
-        ABORT(255);
-    }
-
-    if (argc != 2) {
-        singularity_message(ERROR, "Provide a single docker tar file to extract\n");
         ABORT(255);
     }
 
