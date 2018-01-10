@@ -134,7 +134,7 @@ def IMPORT(image, auth=None, layerfile=None):
 
     # File with bind mount points if "docker inject binds" in singularity.conf
     bind_tar_file = None
-    if get_singularity_conf_value('docker_inject_binds')\
+    if get_singularity_conf_value('docker inject binds')\
             and convert2boolean(get_singularity_conf_value('docker inject binds')):
         bind_tar_file = create_bind_tar()
         bot.verbose2('Tar file with injected bind points: %s' % bind_tar_file)
