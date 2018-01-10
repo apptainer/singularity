@@ -276,6 +276,7 @@ def create_bind_tar():
 
     # Deal with home directory
     home_bind = os.path.join( os.path.expanduser("~"), '.singularity-bind' )
+    home_bind = home_bind.lstrip('/')
     bot.verbose3('Adding home bind point to bind tar')
     template = get_template('tarinfo')
     template['name'] = home_bind
@@ -286,6 +287,7 @@ def create_bind_tar():
     for bind_path in get_singularity_conf_value('bind path'):
         if os.path.isdir(bind_path):
             bind = os.path.join(bind_path, '.singularity-bind')
+            bind = bind.lstrip('/')
             bot.verbose3('Adding bind point %s to bind tar' % bind_path)
             template = get_template('tarinfo')
             template['name'] = bind
