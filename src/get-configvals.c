@@ -8,7 +8,6 @@
 */
 
 
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 
@@ -26,8 +25,6 @@ int main(int argc, char **argv) {
         exit(0);
     }
 
-    char *key = strdup(argv[1]);
-
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     /* 
@@ -37,8 +34,7 @@ int main(int argc, char **argv) {
     know how to do that using only strings, and the key needs to be based on 
     user input, not hardcoded. 
     */
-    printf("%s\n", _singularity_config_get_value_impl(key, "NULL"));
+    printf("%s\n", _singularity_config_get_value_impl(argv[1], "NULL"));
 
-    free(key);
     return(0);
 }
