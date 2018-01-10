@@ -18,5 +18,6 @@ Include: bash
     wget -O - http://dl.openfoam.org/gpg.key | apt-key add -
     apt-get update
     apt-get -y install openfoam4
+    apt-get clean
     echo ". /opt/openfoam4/etc/bashrc" >> /environment
 

@@ -23,12 +23,15 @@
 
 #define _XOPEN_SOURCE 500 // For nftw
 #define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+
+#include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>  
@@ -261,8 +264,10 @@ void chomp(char *str) {
 
 void chomp_comments(char *str) {
     if (!str) {return;}
-    char *rest = str;
-    str = strtok_r(str, "#", &rest);
+    char* comment = strchr(str, '#');
+    if (comment) {
+        *comment = '\0'; // terminate string at comment
+    }
     chomp(str);
 }
 
@@ -340,7 +345,11 @@ int envclean(void) {
 
         key = strtok_r(envclone[i], "=", &tok);
 
-        if ( strcmp(key, "http_proxy") == 0 ) {
+        if ( (strcasecmp(key, "http_proxy")  == 0) ||
+             (strcasecmp(key, "https_proxy") == 0) ||
+             (strcasecmp(key, "no_proxy")    == 0) ||
+             (strcasecmp(key, "all_proxy")   == 0)
+           ) {
             singularity_message(DEBUG, "Leaving environment variable set: %s\n", key);
         } else {
             singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
@@ -349,6 +358,29 @@ int envclean(void) {
     }
 
     return(retval);
+}
+
+
+void *mmap_file(off_t offset, size_t size, int fd) {
+    void *map;
+
+    map = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, offset);
+    if ( map == MAP_FAILED ) {
+        singularity_message(ERROR, "Could not mmap file: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    return map;
+}
+
+void munmap_file(void *map, size_t size) {
+    int retval;
+
+    retval  = munmap(map, size);
+    if ( retval < 0 ) {
+        singularity_message(ERROR, "Could not teardown memory map for file cleanly\n");
+        ABORT(255);
+    }
 }
 
 

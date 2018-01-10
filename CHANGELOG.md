@@ -13,7 +13,24 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - changed behaviour (recipe sections work differently)
 
 
-## [v2.4.1](https://github.com/singularityware/singularity/tree/development) (development)
+## [v3.0](https://github.com/singularityware/singularity/tree/development)
+
+ - Feature sif sign #1143
+ - Add capability support and secure build #934
+ - Boot/start instance #1032
+ - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Add capability to support all tar compression formats #1155
+
+## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
+
+ - This fixed an issue for support of older distributions and kernels with regards to `setns()`
+   functionality.
+ - Fixed autofs bug path (lost during merge)
+
+## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (2017-11-22)
+
+### apprun script backslash removal fix
+ - Fixed the unwanted removal of backslashes in apprun scripts
 
 ### Security related fixes
  - Fixed container path and owner limitations (original merge was lost)
@@ -28,7 +45,6 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
    expected when overlay is not available.
 
 ### Bug Fixes
- - Tar creation uses GNU tar-1.28 to not add a timestamp to the header for more reproducible builds
  - Adjusting environment parsing regular expression for Docker to allow for "=" sign in variable
  - Try overlayFS now default option
  - Confirm that localstate directories were properly packaged
@@ -39,9 +55,13 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fix for empty docker namespaces in private repositories
  - Fix Docker environment parsing
  - Revert lolcow easter egg
-
-
-
+ - Fix "Duplicate bootstrap definition key" triggered by comments and blank spaces
+ - Fix for docker permission error when downloading multiple layers
+ - Fix parsing of registry (including port), namespace, tags, and version
+ - Add "$@" to any CMD/ENTRYPOINT found when building from Docker
+ - Added sqaushfs-tools as a dependency for building deb files
+ - Fix terminal echo problem when using PID namespace and killing shell
+ - Fix SuSE squashFS package name in RPM spec
 
 ## [v2.4](https://github.com/singularityware/singularity/tree/v2.4) (2017-10-02)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3.2...2.4)

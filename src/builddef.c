@@ -36,6 +36,7 @@
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 #include "util/config_parser.h"
+#include "util/capability.h"
 #include "util/privilege.h"
 #include "util/sessiondir.h"
 
@@ -60,9 +61,19 @@ int main(int argc, char **argv) {
     char *line;
     char *builddef;
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
     singularity_registry_init();
     singularity_priv_init();
+
+    if ( singularity_registry_get("STAGE2") != NULL ) {
+        char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/deffile-sections.sh");
+        singularity_capability_init_minimal();
+        execl(bootstrap, bootstrap, NULL); //Flawfinder: ignore (Yes, yes, we know, and this is required)
+        singularity_message(ERROR, "Exec of bootstrap stage2 failed\n");
+        ABORT(255);
+    }
+
+    singularity_capability_init_default();
 
     singularity_message(INFO, "Sanitizing environment\n");
     if ( envclean() != 0 ) {
@@ -101,6 +112,13 @@ int main(int argc, char **argv) {
     while ( fgets(line, MAX_LINE_LEN, bootdef_fp) ) {
         char *bootdef_key;
 
+        chomp_comments(line);
+
+        // skip empty lines (do this after 'chomp')
+        if (line[0] == '\0') {
+            continue;
+        }
+
         if ( line[0] == '%' ) { // We hit a section, stop parsing for keyword tags
             break;
         } else if ( ( bootdef_key = strtok(line, ":") ) != NULL ) {
@@ -114,7 +132,7 @@ int main(int argc, char **argv) {
             if (bootdef_value == NULL) {
                 bootdef_value = empty;
             } else {
-                chomp_comments(bootdef_value);
+                chomp(bootdef_value);
             }
 
             singularity_message(VERBOSE2, "Got bootstrap definition key/val '%s' = '%s'\n", bootdef_key, bootdef_value);
@@ -135,7 +153,6 @@ int main(int argc, char **argv) {
 
             // Cool little feature, every key defined in def file is transposed
             // to environment
-            envar_set(uppercase(bootdef_key), bootdef_value, 1);
             envar_set(strjoin("SINGULARITY_DEFFILE_", uppercase(bootdef_key)), bootdef_value, 1);
         }
     }
@@ -146,6 +163,7 @@ int main(int argc, char **argv) {
     envar_set("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin", 1);
     envar_set("SINGULARITY_ROOTFS", CONTAINER_MOUNTDIR, 1);
     envar_set("SINGULARITY_libexecdir", LIBEXECDIR, 1);
+    envar_set("SINGULARITY_sysconfdir", SYSCONFDIR, 1);
     envar_set("SINGULARITY_bindir", BINDIR, 1);
     envar_set("SINGULARITY_IMAGE", singularity_registry_get("IMAGE"), 1);
     envar_set("SINGULARITY_BUILDDEF", singularity_registry_get("BUILDDEF"), 1);
@@ -164,11 +182,11 @@ int main(int argc, char **argv) {
     envar_set("HOME", singularity_priv_home(), 1);
     envar_set("LANG", "C", 1);
 
-    char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile.sh");
+    char *bootstrap = joinpath(LIBEXECDIR, "/singularity/bootstrap-scripts/main-deffile-stage1.sh");
 
     execl(bootstrap, bootstrap, NULL); //Flawfinder: ignore (Yes, yes, we know, and this is required)
 
-    singularity_message(ERROR, "Exec of bootstrap code failed: %s\n", strerror(errno));
+    singularity_message(ERROR, "Exec of bootstrap stage1 failed: %s\n", strerror(errno));
     ABORT(255);
 
     return(0);

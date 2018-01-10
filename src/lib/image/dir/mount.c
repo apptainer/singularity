@@ -36,25 +36,50 @@
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/suid.h"
+#include "util/registry.h"
 #include "util/mount.h"
 
 #include "../image.h"
 
 
 int _singularity_image_dir_mount(struct image_object *image, char *mount_point) {
+    int mntflags = MS_BIND | MS_NOSUID | MS_REC | MS_NODEV;
 
     if ( strcmp(image->path, "/") == 0 ) {
         singularity_message(ERROR, "Naughty naughty naughty...\n");
         ABORT(255);
     }
 
+    if ( singularity_allow_container_setuid() ) {
+        singularity_message(DEBUG, "allow-setuid option set, removing MS_NOSUID mount flags\n");
+        mntflags &= ~MS_NOSUID;
+    }
+
+    if ( singularity_priv_getuid() == 0 ) {
+        singularity_message(DEBUG, "run as root, removing MS_NODEV mount flags\n");
+        mntflags &= ~MS_NODEV;
+    }
+
     singularity_priv_escalate();
     singularity_message(DEBUG, "Mounting container directory %s->%s\n", image->path, mount_point);
-    if ( singularity_mount(image->path, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV, NULL) < 0 ) {
+    if ( singularity_mount(image->path, mount_point, NULL, mntflags, NULL) < 0 ) {
         singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
         return 1;
     }
     singularity_priv_drop();
+
+    if ( singularity_priv_userns_enabled() != 1 ) {
+        if ( image->writable == 0 ) {
+            mntflags |= MS_RDONLY;
+        }
+        singularity_priv_escalate();
+        if ( singularity_mount(NULL, mount_point, NULL, MS_REMOUNT | mntflags, NULL) < 0 ) {
+            singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
+            return 1;
+        }
+        singularity_priv_drop();
+    }
 
     return(0);
 }

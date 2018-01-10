@@ -23,7 +23,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-sys.path.append('..')  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
 
 from shell import parse_image_uri
 
