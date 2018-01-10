@@ -24,35 +24,10 @@ if ! mkdir -p "$CONTAINER_DIR"; then
     ABORT 255
 fi
 
-
-case "$SINGULARITY_IMAGE" in
-
-    *.tar)
-
-        message 1 "Opening tar archive, stand by...\n"
-        # this almost always gives permission errors, so ignore them when
-        # running as a user.
-        tar -C "$CONTAINER_DIR" -xf "$SINGULARITY_IMAGE" 2>/dev/null
-
-    ;;
-    *.tgz|*.tar.gz)
-
-        message 1 "Opening gzip compressed archive, stand by...\n"
-
-        # this almost always gives permission errors, so ignore them when
-        # running as a user.
-        tar -C "$CONTAINER_DIR" -xzf "$SINGULARITY_IMAGE" 2>/dev/null
-
-    ;;
-    *.tbz|*.tar.bz)
-
-        message 1 "Opening bzip compressed archive, stand by...\n"
-        # this almost always gives permission errors, so ignore them when
-        # running as a user.
-        tar -C "$CONTAINER_DIR" -xjf "$SINGULARITY_IMAGE" 2>/dev/null
-
-    ;;
-esac
+message 1 "Opening tar archive, stand by...\n"
+# this almost always gives permission errors, so ignore them when
+# running as a user.
+tar -C "$CONTAINER_DIR" -xf "$SINGULARITY_IMAGE" 2>/dev/null
 
 chmod -R +w "$CONTAINER_DIR"
 
