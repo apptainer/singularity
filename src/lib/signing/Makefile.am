@@ -21,10 +21,10 @@ libsingularity_signing_la_CFLAGS = $(AM_CFLAGS)
 
 # These are kludges so they don't remove the $(DEPDIR) in ../../util/ otherwise
 # the clean will fail when other Makefile tries to remove those directories
-distclean: distclean-recursive
+distclean:
 	-rm ./$(DEPDIR)
-	-rm -f Makefile
+	-rm -f $(DISTCLEANFILES)
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean:
 	-rm ./$(DEPDIR)
-	-rm -f Makefile
+	-rm -f $(MAINTAINERCLEANFILES)

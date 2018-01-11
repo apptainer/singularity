@@ -15,3 +15,14 @@ libinternal_la_LIBADD = mnt/libinternal.la pid/libinternal.la ipc/libinternal.la
 libinternal_la_SOURCES = ns.c ../../../util/daemon.c
 
 EXTRA_DIST = ns.h
+
+# These are kludges so they don't remove the $(DEPDIR) in ../../util/ otherwise
+# the clean will fail when other Makefile tries to remove those directories
+distclean: distclean-recursive
+	-rm ./$(DEPDIR)
+	-rm -f $(DISTCLEANFILES)
+
+maintainer-clean: maintainer-clean-recursive
+	-rm ./$(DEPDIR)
+	-rm -f $(MAINTAINERCLEANFILES)
+

@@ -29,9 +29,9 @@ EXTRA_DIST =
 # the clean will fail when other Makefile tries to remove those directories
 distclean: distclean-recursive
 	-rm ./$(DEPDIR)
-	-rm -f Makefile
+	-rm -f $(DISTCLEANFILES)
 
 maintainer-clean: maintainer-clean-recursive
 	-rm ./$(DEPDIR)
-	-rm -f Makefile
+	-rm -f $(MAINTAINERCLEANFILES)
 
