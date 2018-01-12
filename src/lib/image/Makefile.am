@@ -28,10 +28,10 @@ libsingularity_image_la_CFLAGS = $(AM_CFLAGS)
 distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -rf ./.libs
-	-rm -f Makefile
+	-rm -f $(DISTCLEANFILES) $(CLEANFILES)
 
 maintainer-clean: maintainer-clean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -rf ./.libs
-	-rm -f Makefile
+	-rm -f $(MAINTAINERCLEANFILES) $(DISTCLEANFILES) $(CLEANFILES)
 
