@@ -30,10 +30,10 @@ EXTRA_DIST =
 distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -rf ./.libs
-	-rm -f $(DISTCLEANFILES)
+	-rm -f $(DISTCLEANFILES) $(CLEANFILES)
 
 maintainer-clean: maintainer-clean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -rf ./.libs
-	-rm -f $(MAINTAINERCLEANFILES)
+	-rm -f $(MAINTAINERCLEANFILES) $(DISTCLEANFILES) $(CLEANFILES)
 

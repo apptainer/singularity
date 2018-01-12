@@ -1,8 +1,8 @@
 SUBDIRS = mnt pid ipc net uts user
 
-MAINTAINERCLEANFILES = Makefile.in 
-DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ *.la
+DISTCLEANFILES = Makefile 
+MAINTAINERCLEANFILES = Makefile.in
 
 AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
@@ -21,10 +21,10 @@ EXTRA_DIST = ns.h
 distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -rf ./.libs
-	-rm -f $(DISTCLEANFILES)
+	-rm -f $(DISTCLEANFILES) $(CLEANFILES)
 
 maintainer-clean: maintainer-clean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -rf ./.libs
-	-rm -f $(MAINTAINERCLEANFILES)
+	-rm -f $(MAINTAINERCLEANFILES) $(DISTCLEANFILES) $(CLEANFILES)
 
