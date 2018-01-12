@@ -1,7 +1,7 @@
 SUBDIRS = mnt pid ipc net uts user
 
 CLEANFILES = core.* *~ *.la
-DISTCLEANFILES = Makefile 
+DISTCLEANFILES = Makefile
 MAINTAINERCLEANFILES = Makefile.in
 
 AM_CFLAGS = -Wall -fpie
