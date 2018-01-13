@@ -166,6 +166,14 @@ stest 0 sudo singularity -x build --isolated --force --sandbox "$CONTAINER2" "..
 stest 0 sudo singularity build --isolated "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
 container_check
 
+# with a paranoid umask (as non-root)
+sudo rm -rf "$CONTAINER" "$CONTAINER2"
+umask 0077
+stest 0 singularity build "$CONTAINER" "shub://GodloveD/busybox"
+container_check
+umask 0022
+
+
 stest 0 sudo rm -rf "${CONTAINER}"
 stest 0 sudo rm -rf "${CONTAINER2}"
 stest 0 sudo rm -rf "${CONTAINER2}".tar
