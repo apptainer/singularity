@@ -142,34 +142,7 @@ while true; do
         ;;
         --nv)
             shift
-            SINGULARITY_NVLIBLIST=`mktemp ${TMPDIR:-/tmp}/.singularity-nvliblist.XXXXXXXX`
-            cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" > $SINGULARITY_NVLIBLIST
-            for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
-                if [ -f "$i" ]; then
-                    message 2 "Found NV library: $i\n"
-                    if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
-                        SINGULARITY_CONTAINLIBS="$i"
-                     else
-                        SINGULARITY_CONTAINLIBS="$SINGULARITY_CONTAINLIBS,$i"
-                    fi
-                fi
-            done
-            rm $SINGULARITY_NVLIBLIST
-            if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
-                message WARN "Could not find any Nvidia libraries on this host!\n";
-            else
-                export SINGULARITY_CONTAINLIBS
-            fi
-            if NVIDIA_SMI=$(which nvidia-smi); then
-                if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
-                    SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${NVIDIA_SMI}"
-                else
-                    SINGULARITY_BINDPATH="${NVIDIA_SMI}"
-                fi
-                export SINGULARITY_BINDPATH
-            else
-                message WARN "Could not find the Nvidia SMI binary to bind into container\n"
-            fi
+            SINGULARITY_NV=1
         ;;
         -f|--fakeroot)
             shift
@@ -232,3 +205,17 @@ while true; do
         ;;
     esac
 done
+
+if [ -z "${SINGULARITY_NV_OFF:-}" ]; then # this is a "kill switch" provided for user
+    # if singularity.conf specifies --nv
+    if [ `$SINGULARITY_libexecdir/singularity/bin/get-configvals "always use nv"` == "yes" ]; then 
+        message 2 "'always use nv = yes' found in singularity.conf\n"
+        message 2 "binding nvidia files into container\n"
+        bind_nvidia_files
+    # or if the user asked for --nv    
+    elif [ -n "${SINGULARITY_NV:-}" ]; then
+        bind_nvidia_files
+    fi
+fi 
+
+
