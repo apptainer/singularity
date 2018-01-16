@@ -320,7 +320,7 @@ fi
 # ---------------------------------------------------------------------
 AC_CHECK_PROG(MKSQUASHFS_CHECK,mksquashfs,yes)
 if test x"$MKSQUASHFS_CHECK" != "xyes" ; then
-    AC_MSG_ERROR([mksquashfs is required.])
+    AC_MSG_ERROR([Unable to find mksquashfs, need package squashfs-tools.])
 fi
 
 AC_MSG_CHECKING([--with-slurm])
