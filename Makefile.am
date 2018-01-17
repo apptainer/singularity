@@ -21,6 +21,13 @@ install-perms:
 	@echo "install-perms is no longer required"
 	@echo
 
+all-local:
+	@echo
+	@echo "******"
+	@echo "  mksquashfs from squash-tools is required for full functionality"
+	@echo "******"
+	@echo
+
 install-data-hook:
 	install -d -m 0755 $(DESTDIR)$(CONTAINER_MOUNTDIR)
 	install -d -m 0755 $(DESTDIR)$(CONTAINER_FINALDIR)
