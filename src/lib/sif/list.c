@@ -92,13 +92,13 @@ listdelete(Node *head, void *elem, Searchfn fn)
 }
 
 int
-listforall(Node *head, Actionfn fn)
+listforall(Node *head, Actionfn fn, void *data)
 {
 	int ret;
 	Node *e;
 
 	for(e = head->next; e != NULL; e = e->next){
-		ret = fn(e->elem);
+		ret = fn(e->elem, data);
 		if(ret < 0)
 			return ret;
 	}
