@@ -105,9 +105,9 @@ for i in $DAEMONS; do
 
         if [[ "${JSONFMT}" == "true" ]]; then
           if [ "$COUNT" -lt "$DLEN" ]; then
-            printf '\t{\n\t\t"instance":%s,\n\t\t"pid":%s,\n\t\t"img":%s\n\t},\n' "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+            printf '\t{\n\t\t"instance":"%s",\n\t\t"pid":"%s",\n\t\t"img":"%s"\n\t},\n' "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
           else
-            printf '\t{\n\t\t"instance":%s,\n\t\t"pid":%s,\n\t\t"img":%s\n\t}' "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+            printf '\t{\n\t\t"instance":"%s",\n\t\t"pid":"%s",\n\t\t"img":"%s"\n\t}' "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
           fi
         else
             printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
