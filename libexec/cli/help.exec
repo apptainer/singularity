@@ -131,8 +131,11 @@ elif [ -e "${HELP_ASK}" ]; then
     export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
     shift
 
-    if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-        eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/help.sh"
+    if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
+        if [ -z "${SINGULARITY_COMMAND:-}" ]; then
+            export SINGULARITY_COMMAND="mount"
+        fi
+        eval "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/help.sh"
         RETVAL=$?
     elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
         eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/help.sh"

@@ -5,7 +5,7 @@
 OS_VERSION="$1"
 
 # build and install
-yum install -y libtool rpm-build make squashfs-tools
+yum install -y libtool rpm-build make squashfs-tools openssl-devel libuuid-devel
 ./autogen.sh
 ./configure
 make dist
@@ -19,7 +19,7 @@ fi
 
 # Install python 3 and pylint
 yum install -y epel-release
-yum install -y python34 python34-pip python34-setuptools
+yum install -y python34 python34-pip python34-setuptools docker
 yum install -y pylint
 
 # run the test suite
@@ -28,5 +28,13 @@ sed -i 's,^prefix=.*,prefix=/usr,' test.sh
 sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
 sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
 useradd testuser
+echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
+
+# build image for isolated builds
+sed -i 's,^prefix=.*,prefix=/usr,' secbuildimg.sh
+sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' secbuildimg.sh
+sed -i 's,^localstatedir=.*,localstatedir=/var,' secbuildimg.sh
+make secbuildimg
+
 su testuser -c "make test"

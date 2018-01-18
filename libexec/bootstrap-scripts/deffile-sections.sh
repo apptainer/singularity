@@ -53,8 +53,6 @@ if [ ! -f "${SINGULARITY_BUILDDEF:-}" ]; then
 fi
 
 
-umask 0002
-
 # First priority goes to runscript defined in build file
 runscript_command=$(singularity_section_get "runscript" "$SINGULARITY_BUILDDEF")
 
@@ -63,19 +61,6 @@ if [ ! -z "$runscript_command" ]; then
     echo "User defined %runscript found! Taking priority."
     echo "$runscript_command" > "$SINGULARITY_ROOTFS/singularity"    
 fi
-
-test -d "$SINGULARITY_ROOTFS/proc" || install -d -m 755 "$SINGULARITY_ROOTFS/proc"
-test -d "$SINGULARITY_ROOTFS/sys" || install -d -m 755 "$SINGULARITY_ROOTFS/sys"
-test -d "$SINGULARITY_ROOTFS/tmp" || install -d -m 755 "$SINGULARITY_ROOTFS/tmp"
-test -d "$SINGULARITY_ROOTFS/dev" || install -d -m 755 "$SINGULARITY_ROOTFS/dev"
-
-mount --no-mtab -t proc proc "$SINGULARITY_ROOTFS/proc"
-mount --no-mtab -t sysfs sysfs "$SINGULARITY_ROOTFS/sys"
-mount --no-mtab --rbind "/tmp" "$SINGULARITY_ROOTFS/tmp"
-mount --no-mtab --rbind "/dev" "$SINGULARITY_ROOTFS/dev"
-
-cp /etc/hosts           "$SINGULARITY_ROOTFS/etc/hosts"
-cp /etc/resolv.conf     "$SINGULARITY_ROOTFS/etc/resolv.conf"
 
 ### EXPORT ENVARS
 DEBIAN_FRONTEND=noninteractive
@@ -382,13 +367,41 @@ fi
 
 ## APPGLOBAL
 
+APPGLOBAL="${SINGULARITY_ROOTFS}/.singularity.d/env/94-appsbase.sh"
+
 for app in ${SINGULARITY_ROOTFS}/scif/apps/*; do
     if [ -d "$app" ]; then
+
         app="${app##*/}"
         app=(`echo $app | sed -e "s/-/_/g"`)
-        echo "APPDATA_$app=/scif/data/$app" >> "$SINGULARITY_ROOTFS/.singularity.d/env/94-appsbase.sh"
-        echo "APPROOT_$app=/scif/apps/$app" >> "$SINGULARITY_ROOTFS/.singularity.d/env/94-appsbase.sh"
-        echo "export APPDATA_$app APPROOT_$app"  >> "$SINGULARITY_ROOTFS/.singularity.d/env/94-appsbase.sh"
+        appbase="${SINGULARITY_ROOTFS}/scif/apps/$app"
+        appmeta="${appbase}/scif"
+
+        # Export data, root, metadata, labels, environment
+        echo "APPDATA_$app=/scif/data/$app" >> "${APPGLOBAL}"
+        echo "APPMETA_$app=/scif/apps/$app/scif" >> "${APPGLOBAL}"
+        echo "APPROOT_$app=/scif/apps/$app" >> "${APPGLOBAL}"
+        echo "APPBIN_$app=/scif/apps/$app/bin" >> "${APPGLOBAL}"
+        echo "APPLIB_$app=/scif/apps/$app/lib" >> "${APPGLOBAL}"
+        echo "export APPDATA_$app APPROOT_$app APPMETA_$app APPBIN_$app APPLIB_$app"  >> "${APPGLOBAL}"
+
+        # Environment
+        if [ -e "${appmeta}/env/90-environment.sh" ]; then
+            echo  "APPENV_${app}=/scif/apps/$app/scif/env/90-environment.sh" >> "${APPGLOBAL}"
+            echo  "export APPENV_${app}" >> "${APPGLOBAL}"
+        fi
+
+        # Labels
+        if [ -e "${appmeta}/labels.json" ]; then
+            echo  "APPLABELS_${app}=/scif/apps/$app/scif/labels.json" >> "${APPGLOBAL}"
+            echo  "export APPLABELS_${app}" >> "${APPGLOBAL}"
+        fi
+
+        # Runscript
+        if [ -e "${appmeta}/runscript" ]; then
+            echo  "APPRUN_${app}=/scif/apps/$app/scif/runscript" >> "${APPGLOBAL}"
+            echo  "export APPRUN_${app}" >> "${APPGLOBAL}"
+        fi
     fi
 done
 

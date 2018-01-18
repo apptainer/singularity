@@ -24,6 +24,11 @@ if [ -z "${SINGULARITY_libexecdir:-}" ]; then
     exit 2
 fi
 
+if [ -z "${SINGULARITY_sysconfdir:-}" ]; then
+    echo "ERROR: SINGULARITY_sysconfdir not defined in environment"
+    exit 2
+fi
+
 if [ -z "${SINGULARITY_MESSAGELEVEL:-}" ]; then
     echo "Warning: SINGULARITY_MESSAGELEVEL is undefined, temporarily setting to '5' (all messages)"
     SINGULARITY_MESSAGELEVEL=5
@@ -47,6 +52,16 @@ message() {
     fi
     shift
     shift
+
+    # if level is symbolic, get a numeric value
+    case "$LEVEL" in
+	INFO) LEVNUM=1 ;;
+	VERBOSE) LEVNUM=4 ;;
+	DEBUG) LEVNUM=5 ;;
+        [1-5]) LEVNUM="$LEVEL" ;;
+        *) LEVNUM=1 ;; # default to INFO
+    esac
+
     case "$LEVEL" in
         e|error|E|ERROR)
             tput -Txterm setaf 1 2>/dev/null
@@ -64,7 +79,7 @@ message() {
             tput -Txterm sgr0 2>/dev/null
         ;;
         1|INFO)
-            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
+            if [ "$LEVNUM" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@"
             fi
         ;;
@@ -84,7 +99,7 @@ message() {
             tput -Txterm sgr0 2>/dev/null
         ;;
         [2-5]|VERBOSE|DEBUG)
-            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
+            if [ "$LEVNUM" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@" 1>&2
             fi
         ;;
@@ -181,6 +196,24 @@ singularity_calculate_size() {
     eval du -sm ${FOLDER} | cut -f1 # MB
 
     return 0
+}
+
+singularity_add_caps() {
+    if [ -n "${SINGULARITY_ADD_CAPS:-}" ]; then
+        SINGULARITY_ADD_CAPS="$SINGULARITY_ADD_CAPS,$1"
+    else
+        SINGULARITY_ADD_CAPS="$1"
+    fi
+    export SINGULARITY_ADD_CAPS
+}
+
+singularity_drop_caps() {
+    if [ -n "${SINGULARITY_DROP_CAPS:-}" ]; then
+        SINGULARITY_DROP_CAPS="$SINGULARITY_DROP_CAPS,$1"
+    else
+        SINGULARITY_DROP_CAPS="$1"
+    fi
+    export SINGULARITY_DROP_CAPS
 }
 
 ABORT() {
@@ -335,12 +368,12 @@ compare_envs() {
     if [ -n "${REMOVED:-}" -o -n "${ADDED:-}" ]; then
         message 1 "Environment variables were added, removed, and/or changed during bootstrap.\n"
     elif [ "${SINGULARITY_STARTING_ENVSHA1:-}" != "${SINGULARITY_ENDING_ENVSHA1:-}" ]; then
-        message 1 "The environment of ${SINGULARITY_IMAGE} may differ from the environment of ${FROM}\n"
-        message 1 "${FROM} sha1 sum of environment is ${SINGULARITY_STARTING_ENVSHA1}\n"
+        message 1 "The environment of ${SINGULARITY_IMAGE} may differ from the environment of ${SINGULARITY_DEFFILE_FROM}\n"
+        message 1 "${SINGULARITY_DEFFILE_FROM} sha1 sum of environment is ${SINGULARITY_STARTING_ENVSHA1}\n"
         message 1 "${SINGULARITY_IMAGE} sha1 sum of environment is ${SINGULARITY_ENDING_ENVSHA1}\n"
     fi
     if [ -n "${REMOVED:-}" ]; then
-        message 1 "Variables unique to original image (${FROM})\n"
+        message 1 "Variables unique to original image (${SINGULARITY_DEFFILE_FROM})\n"
         message 1 "$REMOVED\n"
     fi
     if [ -n "${ADDED:-}" ]; then
@@ -441,6 +474,81 @@ is_tar() {
 }
 
 
+bind_nvidia_files() {
+# either use nvidia-container-cli or nvliblist.conf to find nvidia libs and
+# binaries for binding at runtime with --nv 
+    if ! SINGULARITY_NVLIBLIST=`mktemp "${TMPDIR:-/tmp}"/.singularity-nvliblist.XXXXXXXX`; then
+        message ERROR "Failed to create temporary nvliblist file.\n"
+        ABORT 255
+    fi
+
+    # check to see if nvidia-container-cli is producing plausible output
+    if ! singularity_which nvidia-container-cli > /dev/null 2>&1 || ! SINGULARITY_NV_FILES=`nvidia-container-cli list -cguv`; then
+        message 2 "nvidia-container-cli not installed or not working\n"
+        SINGULARITY_USE_NVLIBLIST_CONF=1
+    else
+        for i in $SINGULARITY_NV_FILES; do
+            if [ ! -f $i ]; then
+                message 2 "nvidia-container-cli is returning unusable output\n"
+                SINGULARITY_USE_NVLIBLIST_CONF=1
+            fi
+        done
+    fi
+
+    # first choice use nvidia-container-cli
+    if [ -z ${SINGULARITY_USE_NVLIBLIST_CONF:-} ]; then
+        message 2 "Using nvidia-container-cli to locate nvidia libraries and binaries.\n"
+        # bins should have full paths
+        SINGULARITY_NVBINLIST=`echo "$SINGULARITY_NV_FILES" | grep -Ev "\.so"`
+        # libs should just be basenames ending in ".so"
+        for i in `echo "$SINGULARITY_NV_FILES" | grep -E "\.so"`; do
+            basename "$i" | awk -F "\.so" '{print $1 ".so"}' >> "$SINGULARITY_NVLIBLIST"
+        done
+
+    # if it's absent, or broken fall back to nvliblist.conf
+    else [ -n ${USE_NVLIBLIST_CONF:-} ]
+        message 2 "Falling back to $SINGULARITY_sysconfdir/singularity/nvliblist.conf\n"
+        # strip comments and spaces and bins do NOT end in .so
+        SINGULARITY_NVBINLIST=`cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" | grep -vE "\.so$"`
+        # strip comments and spaces and libs DO end in .so
+        cat "${SINGULARITY_sysconfdir}/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" | grep -E "\.so$" > $SINGULARITY_NVLIBLIST
+    fi
+
+    # first deal with libs (pattern match from ld.so cache)
+    for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
+        if [ -f "$i" ]; then
+            message 2 "Found NV library: $i\n"
+            SINGULARITY_CONTAINLIBS="${SINGULARITY_CONTAINLIBS:-},$i"
+        fi
+    done
+    rm $SINGULARITY_NVLIBLIST
+
+    # then deal with bins (should have full path specified)
+    for SINGULARITY_NVBIN in $SINGULARITY_NVBINLIST; do
+        if [ -f "$SINGULARITY_NVBIN" ]; then
+            message 2 "Found NV binary: $SINGULARITY_NVBIN\n"
+            SINGULARITY_BIN_FOUND=1
+            SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH:-},${SINGULARITY_NVBIN}"
+        fi
+    done
+
+    # in case we couldn't find files, warn the user. otherwise export variables
+    if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
+        message WARNING "Could not find any NVIDIA libraries on this host!\n";
+        message WARNING "You may need to edit ${SINGULARITY_sysconfdir}/singularity/nvliblist.conf\n"
+    else
+        export SINGULARITY_CONTAINLIBS
+    fi
+
+    if [ -z "${SINGULARITY_BIN_FOUND:-}" ]; then
+        message WARNING "Could not find any NVIDIA binaries on this host!\n";
+        message WARNING "You may need to edit ${SINGULARITY_sysconfdir}/singularity/nvliblist.conf\n"
+    else
+        export SINGULARITY_BINDPATH
+    fi
+}
+
+
 ##############################################################################
 # CHECKS
 ##############################################################################
@@ -530,6 +638,18 @@ atexit() {
     trap "$1" EXIT
 }
 
+singularity_config_value() {
+    if [ ! -z "${SINGULARITY_CONFIG_FILE:-}" ]; then
+        config="${SINGULARITY_CONFIG_FILE:-}"
+    else
+        config="${SINGULARITY_sysconfdir:-}/singularity/singularity.conf"
+    fi
+
+    value=$(sed -n "s/^\s*$1[ \t]*=[ \t]*\(.*\)/\1/p" $config)
+    echo $value
+}
+
 if [ -n "${SHELL_DEBUG:-}" ]; then
     set -x
 fi
+

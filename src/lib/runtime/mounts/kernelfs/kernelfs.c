@@ -36,8 +36,8 @@
 #include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
+#include "util/mount.h"
 
-#include "../mount-util.h"
 #include "../../runtime.h"
 #include "../../ns/ns.h"
 
@@ -52,7 +52,7 @@ int _singularity_runtime_mount_kernelfs(void) {
             if ( singularity_registry_get("PIDNS_ENABLED") == NULL ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Bind-mounting host /proc\n");
-                if ( mount("/proc", joinpath(container_dir, "/proc"), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0 ) {
+                if ( singularity_mount("/proc", joinpath(container_dir, "/proc"), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not bind-mount host /proc into container: %s\n", strerror(errno));
                     ABORT(255);
                 }
@@ -60,8 +60,24 @@ int _singularity_runtime_mount_kernelfs(void) {
             } else {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting new procfs\n");
-                if ( mount("proc", joinpath(container_dir, "/proc"), "proc", MS_NOSUID, NULL) < 0 ) {
+                if ( singularity_mount("proc", joinpath(container_dir, "/proc"), "proc", MS_NOSUID, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not mount new procfs into container: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                if ( singularity_mount(NULL, "/proc", NULL, MS_UNBINDABLE | MS_REC, NULL) < 0 ) {
+                    singularity_message(ERROR, "Could not propagate /proc as unbindable: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                singularity_priv_drop();
+            }
+            if ( singularity_priv_userns_enabled() != 1 ) {
+                singularity_priv_escalate();
+                if ( singularity_mount(joinpath(container_dir, "/proc/sys"), joinpath(container_dir, "/proc/sys"), NULL, MS_BIND, NULL) < 0) {
+                    singularity_message(ERROR, "Could not bind-mount /proc/sys into container: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                if ( singularity_mount(NULL, joinpath(container_dir, "/proc/sys"), NULL, MS_BIND | MS_REMOUNT | MS_NOSUID | MS_RDONLY, NULL) < 0) {
+                    singularity_message(ERROR, "Could not remount /proc into container: %s\n", strerror(errno));
                     ABORT(255);
                 }
                 singularity_priv_drop();
@@ -81,7 +97,7 @@ int _singularity_runtime_mount_kernelfs(void) {
             if ( singularity_priv_userns_enabled() == 1 ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting /sys\n");
-                if ( mount("/sys", joinpath(container_dir, "/sys"), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0 ) {
+                if ( singularity_mount("/sys", joinpath(container_dir, "/sys"), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
                     ABORT(255);
                 }
@@ -89,7 +105,11 @@ int _singularity_runtime_mount_kernelfs(void) {
             } else {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting /sys\n");
-                if ( mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", MS_NOSUID, NULL) < 0 ) {
+                if ( singularity_mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", MS_NOSUID, NULL) < 0 ) {
+                    singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+                if ( singularity_mount(NULL, joinpath(container_dir, "/sys"), NULL, MS_BIND | MS_REMOUNT | MS_NOSUID | MS_RDONLY, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
                     ABORT(255);
                 }

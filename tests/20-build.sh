@@ -126,12 +126,45 @@ stest 0 sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar"
 container_check
 
-# from tar.gx to squashfs
+# from tar.gz to squashfs
 stest 0 sh -c "singularity image.export '$CONTAINER' | gzip -9 > '${CONTAINER2}.tar.gz'"
 sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar.gz"
 container_check
 
+# isolated: from shub to squashfs (via def file)
+sudo rm "$CONTAINER"
+stest 0 sudo singularity build --isolated "$CONTAINER" "../examples/shub/Singularity"
+container_check
+
+# isolated: from docker to squashfs (via def file)
+sudo rm "$CONTAINER"
+stest 0 sudo singularity build --isolated "$CONTAINER" "../examples/docker/Singularity"
+container_check
+
+# isolated: from definition file to squashfs
+sudo rm "$CONTAINER"
+stest 0 sudo singularity build --isolated "$CONTAINER" "../examples/busybox/Singularity"
+container_check
+
+# when isolated, ${SINGULARITY_TESTDIR} is not accessible, localimage need to be in the same
+# directory as definition file and "From" need to be a relative path
+cat >"${SINGULARITY_TESTDIR}/Singularity" <<EOF
+Bootstrap: localimage
+From: $(basename $CONTAINER2)
+EOF
+
+# isolated: from localimage to squashfs (via def file)
+sudo rm -rf "$CONTAINER" "$CONTAINER2"
+stest 0 sudo singularity build --isolated --writable "$CONTAINER2" "../examples/busybox/Singularity"
+stest 0 sudo singularity build --isolated "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+container_check
+
+# isolated: from sandbox to squashfs (via def file)
+sudo rm -rf "$CONTAINER" "$CONTAINER2"
+stest 0 sudo singularity -x build --isolated --force --sandbox "$CONTAINER2" "../examples/busybox/Singularity"
+stest 0 sudo singularity build --isolated "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+container_check
 
 stest 0 sudo rm -rf "${CONTAINER}"
 stest 0 sudo rm -rf "${CONTAINER2}"
