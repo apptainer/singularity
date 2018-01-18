@@ -23,7 +23,6 @@ perform publicly and display publicly, and to permit other to do so.
 '''
 
 
-
 from defaults import (
     SINGULARITY_CACHE,
     DISABLE_HTTPS,
@@ -543,7 +542,8 @@ def get_singularity_conf_value(key):
         return None
 
     vals = []
-    conf_file = os.path.join(SINGULARITY_sysconfdir, 'singularity', 'singularity.conf')
+    conf_file = os.path.join(SINGULARITY_sysconfdir, 'singularity',
+                             'singularity.conf')
     with open(conf_file, 'r') as f:
         for line in f:
             if '=' not in line:

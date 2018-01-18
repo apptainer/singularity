@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),  # noqa
                 os.path.pardir)))  # noqa
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from sutils import (
     add_http,
@@ -275,12 +275,14 @@ def create_bind_tar():
     files = []
 
     # Deal with home directory
-    home_bind = os.path.join( os.path.expanduser("~"), '.singularity-bind' )
+    home_bind = os.path.join(os.path.expanduser("~"),
+                             '.singularity-bind')
     home_bind = home_bind.lstrip('/')
     bot.verbose3('Adding home bind point to bind tar')
     template = get_template('tarinfo')
     template['name'] = home_bind
-    template['content'] = "This is a bind point injected by singularity with the 'docker inject binds' option."
+    template['content'] = ("This is a bind point injected by singularity with "
+                           "the 'docker inject binds' option.")
     files.append(template)
 
     # Deal with 'bind path' entries\
@@ -291,10 +293,13 @@ def create_bind_tar():
             bot.verbose3('Adding bind point %s to bind tar' % bind_path)
             template = get_template('tarinfo')
             template['name'] = bind
-            template['content'] = "This is a bind point injected by singularity with the 'docker inject binds' option."
+            template['content'] = ("This is a bind point injected by "
+                                   "singularity with the 'docker inject"
+                                   "binds' option.")
             files.append(template)
         else:
-            bot.warning("Not injecting bind path %s into container - not a directory on host" % bind_path)
+            bot.warning("Not injecting bind path %s into container - not a "
+                        "directory on host" % bind_path)
 
     if len(files) > 0:
         output_folder = get_cache(subfolder="bind", quiet=True)
@@ -302,4 +307,3 @@ def create_bind_tar():
     else:
         bot.warning("No bind points will be included.")
     return tar_file
-

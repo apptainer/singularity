@@ -35,6 +35,7 @@ import os
 import pwd
 import sys
 
+
 def getenv(variable_key, default=None, required=False, silent=False):
     '''getenv will attempt to get an environment variable. If the
     variable is not found, None is returned.
