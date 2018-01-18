@@ -7,6 +7,7 @@
     - Cedric Clerget <cedric.clerget@univ-fcomte.fr>
     - Dave Dykstra <dwd@fnal.gov>
     - Dave Godlove <davidgodlove@gmail.com>
+    - Divya Cote <divya.cote@gmail.com>
     - Krishna Muriki <kmuriki@lbl.gov>
     - Michael Bauer <bauerm@umich.edu>
     - Vanessa Sochat <vsochat@stanford.edu>
@@ -26,6 +27,7 @@
     - George Hartzell <hartzell@alerce.com>
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jason.stover@gmail.com>
+    - Jeff Kriske <jekriske@gmail.com>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Nathan Lin <nathan.lin@yale.edu>

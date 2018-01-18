@@ -35,6 +35,8 @@ Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
 BuildRequires: python
+BuildRequires: libuuid-devel
+BuildRequires: openssl-devel
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
@@ -102,14 +104,13 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/mount.*
 %{_libexecdir}/singularity/cli/pull.*
 %{_libexecdir}/singularity/cli/selftest.*
-%{_libexecdir}/singularity/handlers
 %{_libexecdir}/singularity/helpers
-%{_libexecdir}/singularity/image-handler.sh
 %{_libexecdir}/singularity/python
 
 # Binaries
 %{_libexecdir}/singularity/bin/builddef
 %{_libexecdir}/singularity/bin/cleanupd
+%{_libexecdir}/singularity/bin/get-configvals
 %{_libexecdir}/singularity/bin/get-section
 %{_libexecdir}/singularity/bin/mount
 %{_libexecdir}/singularity/bin/image-type
@@ -146,6 +147,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/wrapper
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/capabilities
+%{_libexecdir}/singularity/handlers
+%{_libexecdir}/singularity/image-handler.sh
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_sysconfdir}/singularity/capabilities

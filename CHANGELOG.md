@@ -15,11 +15,22 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ## [v3.0](https://github.com/singularityware/singularity/tree/development)
 
+### Implemented enhancements
  - Feature sif sign #1143
- - Add capability support and secure build #934
  - Boot/start instance #1032
- - Put /usr/local/{bin,sbin} in front of the default PATH
+ - --nv option will use [nvidia-container-cli](https://github.com/NVIDIA/libnvidia-container) if installed
+ - [nvliblist.conf](https://github.com/singularityware/singularity/blob/master/etc/nvliblist.conf) now has a section for binaries
+ - --nv can be made default with all action commands in singularity.conf
+ - --nv can be controlled by env vars `$SINGULARITY_NV` and `$SINGULARITY_NV_OFF`
 
+### Security related fixes
+ - Add capability support and secure build #934
+ - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Add capability to support all tar compression formats #1155
+
+### Bug Fixes
+ - Put /usr/local/{bin,sbin} in front of the default PATH
+ 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
  - This fixed an issue for support of older distributions and kernels with regards to `setns()`
@@ -27,6 +38,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fixed autofs bug path (lost during merge)
 
 ## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (2017-11-22)
+
+### apprun script backslash removal fix
+ - Fixed the unwanted removal of backslashes in apprun scripts
 
 ### Security related fixes
  - Fixed container path and owner limitations (original merge was lost)

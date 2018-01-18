@@ -11,7 +11,9 @@ Build-Depends:
  debhelper (>= 9),
  dh-autoreconf,
  help2man,
+ libssl-dev,
  python,
+ uuid-dev,
 Standards-Version: 3.9.8
 Homepage: http://gmkurtzer.github.io/singularity
 Vcs-Git: https://github.com/singularityware/singularity.git
