@@ -46,6 +46,7 @@ if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     exit 1
 fi
 
+ARCH="${SINGULARITY_DEFFILE_ARCH:-}"
 if [ -n "${ARCH:-}" ]; then
     ARCH=`echo ${ARCH:-} | sed -e 's/\s//g'`
 else
