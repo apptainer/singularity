@@ -113,18 +113,21 @@ int singularity_suid_init(void) {
     }
 #endif /* SINGULARITY_SUID */
 
-    singularity_message(VERBOSE2, "Checking if singularity.conf allows us to run as suid\n");
-    if ( ( singularity_config_get_bool(ALLOW_SETUID) <= 0  ) || ( singularity_registry_get("NOSUID") != NULL ) ) {
-        envar_set("SINGULARITY_NOSUID", "1", 1);
-        singularity_registry_set("NOSUID", "1");
-        return(-1);
-    }
-
     return(0);
 }
 
 int singularity_suid_enabled(void) {
     return(is_enabled);
+}
+
+int singularity_suid_allowed(void) {
+    singularity_message(VERBOSE2, "Checking if singularity.conf allows us to run as suid\n");
+    if ( ( singularity_config_get_bool(ALLOW_SETUID) <= 0  ) || ( singularity_registry_get("NOSUID") != NULL ) ) {
+        envar_set("SINGULARITY_NOSUID", "1", 1);
+        singularity_registry_set("NOSUID", "1");
+        return(0);
+    }
+    return(1);
 }
 
 int singularity_allow_container_setuid(void) {
