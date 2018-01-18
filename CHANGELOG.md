@@ -25,6 +25,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - This fixed an issue for support of older distributions and kernels with regards to `setns()`
    functionality.
  - Fixed autofs bug path (lost during merge)
+ - Added json format to instance.list with flag --json
 
 ## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (2017-11-22)
 
