@@ -6,6 +6,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/file.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <archive.h>
 #include <archive_entry.h>
@@ -24,30 +25,24 @@
  */
 int apply_opaque(const char *opq_marker, char *rootfs_dir) {
     int retval = 0;
-    char *token, *opq_dir, *opq_dir_rootfs;
-    size_t buff_len;
+    char *token;
+    static char buf[MAXPATHLEN];
 
     token = strrchr(opq_marker, '/');
-
     if (token == NULL) {
         singularity_message(ERROR, "Error getting dirname for opaque marker\n");
         ABORT(255);
     }
 
-    buff_len = token - opq_marker + 1;
-    opq_dir = malloc(buff_len);
-    snprintf(opq_dir, buff_len, "%s", opq_marker);
-
-    buff_len = strlen(rootfs_dir) + 1 + strlen(opq_dir) + 1;
-    opq_dir_rootfs = malloc(buff_len);
-    snprintf(opq_dir_rootfs, buff_len, "%s/%s", rootfs_dir, opq_dir);
-
-    if (is_dir(opq_dir_rootfs) == 0) {
-        s_rmdir(opq_dir_rootfs);
+    retval = snprintf(buf, sizeof(buf), "%s/%s", rootfs_dir, opq_marker);
+    if (retval == -1 || retval >= sizeof(buf)) {
+        singularity_message(ERROR, "Error with pathname too long\n");
+        ABORT(255);
     }
 
-    free(opq_dir);
-    free(opq_dir_rootfs);
+    if (is_dir(buf) == 0) {
+        s_rmdir(buf);
+    }
 
     return retval;
 }
@@ -60,46 +55,45 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
  */
 int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
     int retval = 0;
-    char *token, *wh_path, *prefix_str, *suffix_str, *wh_path_rootfs;
-    size_t token_pos, buff_len;
+    char* token;
+    size_t token_pos, l = 0;
+    char buf[MAXPATHLEN];
 
     token = strstr(wh_marker, ".wh.");
-
     if (token == NULL) {
         singularity_message(ERROR, "Error getting filename for whiteout marker\n");
         ABORT(255);
     }
 
-    // Location of the ".wh." substring
+    // Start with ROOTFS
+    retval = snprintf(buf, sizeof(buf), "%s/", rootfs_dir);
+    if (retval == -1 || retval >= sizeof(buf)) {
+        singularity_message(ERROR, "Error with pathname too long\n");
+        ABORT(255);
+    }
+    l = strlen(buf);
+    // Add whiteout path up to .wh.
     token_pos = strlen(wh_marker) - strlen(token);
-    // Dest for path stripped of .wh.
-    buff_len = strlen(wh_marker) - strlen(".wh.") + 1;
-    wh_path = malloc(buff_len);
-    // Prefix before .wh. 
-    prefix_str = malloc(token_pos + 1);
-    snprintf(prefix_str, token_pos + 1, "%s", wh_marker);
-    // Suffix after .wh.
-    suffix_str = malloc(buff_len - token_pos);
-    snprintf(suffix_str, buff_len - token_pos, "%s", token + 4);
-
-    snprintf(wh_path, buff_len, "%s%s", prefix_str, suffix_str);
-
-    buff_len = strlen(rootfs_dir) + 1 + strlen(wh_path) + 1;
-    wh_path_rootfs = malloc(buff_len);
-    snprintf(wh_path_rootfs, buff_len, "%s/%s", rootfs_dir, wh_path);
-
-    if (is_dir(wh_path_rootfs) == 0) {
-        retval = s_rmdir(wh_path_rootfs);
-    } else if (is_file(wh_path_rootfs) == 0) {
-        singularity_message(DEBUG, "Removing whiteout-ed file: %s\n",
-                            wh_path_rootfs);
-        retval = unlink(wh_path_rootfs);
+    retval = snprintf(buf + l, token_pos + 1, "%s", wh_marker);
+    if (retval == -1 || retval >= sizeof(buf) - l) {
+        singularity_message(ERROR, "Error with pathname too long\n");
+        ABORT(255);
+    }
+    l = strlen(buf);
+    // Concatenate suffix after .wh
+    retval = snprintf(buf + l, sizeof(buf) - l, "%s", token + 4);
+    if (retval == -1 || retval >= sizeof(buf) - l) {
+        singularity_message(ERROR, "Error with pathname too long\n");
+        ABORT(255);
     }
 
-    free(prefix_str);
-    free(suffix_str);
-    free(wh_path);
-    free(wh_path_rootfs);
+    if (is_dir(buf) == 0) {
+        retval = s_rmdir(buf);
+    } else if (is_file(buf) == 0) {
+        singularity_message(DEBUG, "Removing whiteout-ed file: %s\n",
+                            buf);
+        retval = unlink(buf);
+    }
 
     return retval;
 }
