@@ -33,6 +33,7 @@ if ! USERID=`id -ru`; then
     exit 255
 fi
 
+JSONFMT="false"
 
 while true; do
     case ${1:-} in
