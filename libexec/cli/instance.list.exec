@@ -34,67 +34,6 @@ if ! USERID=`id -ru`; then
     exit 255
 fi
 
-jsonFmt (){
-  INSTANCE='"instance"'
-  INSTANCE_PID='"pid"'
-  INSTANCE_IMG='"img"'
-  JSON=""
-  JSON_INIT='{"instances":['
-  JSON_END=']}'
-  COUNT=0
-
-
-  if [ -z "${1:-}" ]; then
-      DAEMONS=`singularity_daemon_glob '*' | sort | uniq`
-  else
-      DAEMONS=`singularity_daemon_glob "$@" | sort | uniq`
-  fi
-
-DLEN=0
-for i in $DAEMONS; do
-	let "DLEN++"
-done
-let "DLEN--"
-
-  for i in $DAEMONS; do
-      if [ -f "$i" ]; then
-          if [ ! -s "$i" ]; then
-              rm "$i"
-              continue
-          fi
-          FILE_NAME=`basename "$i"`
-          DAEMON_NAME=${FILE_NAME##*-}
-          . "$i"
-          if [ -n "${DAEMON_PID:-}" ]; then
-              PROC_CMDLINE="/proc/${DAEMON_PID:-}/cmdline"
-              if [ -e "$PROC_CMDLINE" ]; then
-                  PROGNAME=$(<"${PROC_CMDLINE}" tr -d \\0)
-                  if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
-                      message WARN "Removing stale daemon file: $i\n"
-                      rm -f "$i"
-                      continue
-                  fi
-              else
-                  rm -f "$i"
-                  continue
-              fi
-          fi
-
-	if [ "$COUNT" -lt "$DLEN" ]; then
-		JSON+="{"${INSTANCE}":"${FILE_NAME}","${INSTANCE_PID}":"${DAEMON_PID}","${INSTANCE_IMG}":"${DAEMON_IMAGE:-}"},"
-	else
-		JSON+="{"${INSTANCE}":"${FILE_NAME}","${INSTANCE_PID}":"${DAEMON_PID}","${INSTANCE_IMG}":"${DAEMON_IMAGE:-}"}"
-	fi
-
-          let "COUNT++"
-      fi
-  done
-
-  if [ "$COUNT" == 0 ]; then
-      exit 1
-  fi
-  echo "${JSON_INIT}${JSON}${JSON_END}"
-}
 
 while true; do
     case ${1:-} in
@@ -112,8 +51,8 @@ while true; do
             fi
         ;;
         --json)
-          jsonFmt
-          exit 0
+        JSONFMT="true"
+        shift
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -132,7 +71,14 @@ else
     DAEMONS=`singularity_daemon_glob "$@" | sort | uniq`
 fi
 
-message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
+DLEN=`echo "$DAEMONS"|wc -l`
+let DLEN--
+
+if [[ "${JSONFMT}" == "true" ]]; then
+  printf "%s\n\t%s:[\n" "{" '"instances"'
+else
+  message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
+fi
 
 for i in $DAEMONS; do
     if [ -f "$i" ]; then
@@ -158,11 +104,23 @@ for i in $DAEMONS; do
             fi
         fi
 
-        printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+        if [[ "${JSONFMT}" == "true" ]]; then
+          if [ "$COUNT" -lt "$DLEN" ]; then
+            printf '\t{\n\t\t"instance":%s,\n\t\t"pid":%s,\n\t\t"img":%s\n\t},\n' "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+          else
+            printf '\t{\n\t\t"instance":%s,\n\t\t"pid":%s,\n\t\t"img":%s\n\t}' "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+          fi
+        else
+            printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+        fi
 
         let "COUNT++"
     fi
 done
+
+if [[ "${JSONFMT}" == "true" ]]; then
+printf "\n\t]\n}\n"
+fi
 
 if [ "$COUNT" == 0 ]; then
     exit 1
