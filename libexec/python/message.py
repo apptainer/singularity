@@ -55,6 +55,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 import os
 import sys
+import traceback
 
 ABRT = -4
 ERROR = -3
@@ -265,6 +266,10 @@ class SingularityMessage:
         self.emit(VERBOSE3, message, 'VERBOSE3')
 
     def debug(self, message):
+        self.emit(DEBUG, message, 'DEBUG')
+
+    def exception(self, message):
+        message = '%s\n%s' % (message, traceback.format_exc())
         self.emit(DEBUG, message, 'DEBUG')
 
     def is_quiet(self):
