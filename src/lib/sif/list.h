@@ -20,11 +20,11 @@ struct Node{
 };
 
 typedef int (*Searchfn)(void *cur, void *elem);
-typedef int (*Actionfn)(void *elem);
+typedef int (*Actionfn)(void *elem, void *data);
 
 Node *listcreate(void *elem);
 void listaddfront(Node *head, Node *new);
 void listaddtail(Node *head, Node *new);
 Node *listfind(Node *head, void *elem, Searchfn fn);
 Node *listdelete(Node *head, void *elem, Searchfn fn);
-int listforall(Node *head, Actionfn fn);
+int listforall(Node *head, Actionfn fn, void *data);

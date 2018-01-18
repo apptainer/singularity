@@ -28,10 +28,12 @@ EXTRA_DIST =
 # These are kludges so they don't remove the $(DEPDIR) in ../../util/ otherwise
 # the clean will fail when other Makefile tries to remove those directories
 distclean: distclean-recursive
-	-rm ./$(DEPDIR)
-	-rm -f Makefile
+	-rm -rf ./$(DEPDIR)
+	-rm -rf ./.libs
+	-rm -f $(DISTCLEANFILES) $(CLEANFILES)
 
 maintainer-clean: maintainer-clean-recursive
-	-rm ./$(DEPDIR)
-	-rm -f Makefile
+	-rm -rf ./$(DEPDIR)
+	-rm -rf ./.libs
+	-rm -f $(MAINTAINERCLEANFILES) $(DISTCLEANFILES) $(CLEANFILES)
 

@@ -21,13 +21,13 @@ char *sif_partstr(Sifparttype ptype);
 char *sif_datastr(Sifdatatype dtype);
 char *sif_fsstr(Siffstype ftype);
 
-int sif_printrow(void *elem);
-int sif_printdesc(void *elem);
+int sif_printrow(void *elem, void *data);
+int sif_printdesc(void *elem, void *data);
 void sif_printlist(Sifinfo *info);
 void sif_printheader(Sifinfo *info);
 
-Sifcommon *sif_getdescid(Sifinfo *info, int id);
-Sifcommon *sif_getlinkeddesc(Sifinfo *info, int id);
+Sifdescriptor *sif_getdescid(Sifinfo *info, int id);
+Sifdescriptor *sif_getlinkeddesc(Sifinfo *info, int id);
 
 Sifheader *sif_getheader(Sifinfo *info);
 Sifdeffile *sif_getdeffile(Sifinfo *info, int groupid);
