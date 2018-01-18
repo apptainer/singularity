@@ -107,6 +107,7 @@ of the following actions:
  - This fixed an issue for support of older distributions and kernels with regards to `setns()`
    functionality.
  - Fixed autofs bug path (lost during merge)
+ - Added json format to instance.list with flag --json
 
 ## [v2.4.1](https://github.com/singularityware/singularity/releases/tag/2.4.1) (2017-11-22)
 
