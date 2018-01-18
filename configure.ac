@@ -389,6 +389,15 @@ AC_SEARCH_LIBS([SHA1], [crypto], [], [
 	AC_MSG_ERROR([unable to find the SHA1(), need package openssl-devel (libssl-dev on Debian/Ubuntu)])
 ])
 
+# check for libarchive needed by docker-extract
+AC_CHECK_HEADERS([archive.h],
+[archive_header_found=yes; break;])
+AS_IF([test "x$archive_header_found" != "xyes"],
+[AC_MSG_ERROR([Unable to find the libarchive headers, need package libarchive-devel (libarchive-dev on Debian/Ubuntu)])])
+AC_SEARCH_LIBS([archive_read_new], [archive], [], [
+AC_MSG_ERROR([unable to find libarchive, need package libarchive-devel (libarchive-de on Debian/Ubuntu)])
+])
+
 CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([

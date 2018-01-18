@@ -81,8 +81,8 @@ eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 umask 0002
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
-    message 1 "Exploding layer: $name\n"
-    zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf -) || exit $?
+    message 2 "Exploding layer: $name\n"
+    $SINGULARITY_libexecdir/singularity/bin/docker-extract "$i"
 done
 
 rm -f "$SINGULARITY_CONTENTS"

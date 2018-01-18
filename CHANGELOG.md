@@ -27,6 +27,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Add capability support and secure build #934
  - Put /usr/local/{bin,sbin} in front of the default PATH
  - Add capability to support all tar compression formats #1155
+ - Handle docker layer aufs whiteout files correctly (requires libarchive).
 
 ### Bug Fixes
  - Put /usr/local/{bin,sbin} in front of the default PATH
