@@ -51,6 +51,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - This changelog was added.
  - Addition of APP[app]_[LABELS,ENV,RUNSCRIPT,META] so apps can internally find one another.
  - Exposing labels for SCI-F in environment
+  - Added `docker inject binds` option in `singularity.conf`. This option will inject the users home directory and
+   any system-wide `bind path` directories into docker containers that are pulled, allowing binds to work as
+   expected when overlay is not available.
 
 ### Bug Fixes
  - Adjusting environment parsing regular expression for Docker to allow for "=" sign in variable

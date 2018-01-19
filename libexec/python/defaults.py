@@ -82,7 +82,7 @@ METADATA_FOLDER_NAME = ".singularity.d"
 _metadata_base = "%s/%s" % (SINGULARITY_ROOTFS, METADATA_FOLDER_NAME)
 METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER", _metadata_base,
                        required=True)
-
+SINGULARITY_sysconfdir = getenv("SINGULARITY_sysconfdir")
 
 #######################################################################
 # Plugins and Formatting

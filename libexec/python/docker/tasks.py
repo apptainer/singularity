@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),  # noqa
                 os.path.pardir)))  # noqa
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from sutils import (
     add_http,
@@ -19,7 +19,8 @@ from sutils import (
     create_tar,
     change_tar_permissions,
     print_json,
-    write_singularity_infos
+    write_singularity_infos,
+    get_singularity_conf_value,
 )
 
 from defaults import (
@@ -261,3 +262,48 @@ def get_configs(manifest, keys, delim=None):
     for key in keys:
         configs[key] = get_config(manifest, key, delim=delim)
     return configs
+
+
+def create_bind_tar():
+
+    '''create_bind_tar creates a tar containing empty directories for the
+    user's $HOME and any system-wide "bind path" entries in singularity.conf
+    This allows non-overlay systems to bind these into docker containers
+    when those folders do not already exist in the container.
+    '''
+    tar_file = None
+    files = []
+
+    # Deal with home directory
+    home_bind = os.path.join(os.path.expanduser("~"),
+                             '.singularity-bind')
+    home_bind = home_bind.lstrip('/')
+    bot.verbose3('Adding home bind point to bind tar')
+    template = get_template('tarinfo')
+    template['name'] = home_bind
+    template['content'] = ("This is a bind point injected by singularity with "
+                           "the 'docker inject binds' option.")
+    files.append(template)
+
+    # Deal with 'bind path' entries\
+    for bind_path in get_singularity_conf_value('bind path'):
+        if os.path.isdir(bind_path):
+            bind = os.path.join(bind_path, '.singularity-bind')
+            bind = bind.lstrip('/')
+            bot.verbose3('Adding bind point %s to bind tar' % bind_path)
+            template = get_template('tarinfo')
+            template['name'] = bind
+            template['content'] = ("This is a bind point injected by "
+                                   "singularity with the 'docker inject"
+                                   "binds' option.")
+            files.append(template)
+        else:
+            bot.warning("Not injecting bind path %s into container - not a "
+                        "directory on host" % bind_path)
+
+    if len(files) > 0:
+        output_folder = get_cache(subfolder="bind", quiet=True)
+        tar_file = create_tar(files, output_folder)
+    else:
+        bot.warning("No bind points will be included.")
+    return tar_file
