@@ -3,7 +3,8 @@
 The Scientific Filesystem is well suited for Singularity containers to allow you
 to build a container that has multiple entrypoints, along with modular environments,
 libraries, and executables. Here we will review the basic building and using of a
-Singularity container that implements SCIF.
+Singularity container that implements SCIF. For more quick start tutorials, see
+the [official documentation for SCIF](https://vsoch.github.io/scif/).
 
 Build your image
 
@@ -39,6 +40,7 @@ to a better world, I am moved to lead a different life.
 Inspect an app
 
 ```
+ singularity inspect --app fortune cowsay.img 
 {
     "SCIF_APPNAME": "fortune",
     "SCIF_APPSIZE": "1MB"
