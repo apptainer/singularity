@@ -29,3 +29,4 @@
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Petr Votava <votava.petr@gene.com>
+    - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
