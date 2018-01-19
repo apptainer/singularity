@@ -1,0 +1,103 @@
+#!/bin/bash
+# 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# This software is licensed under a 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software. 
+#
+# 
+
+
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
+
+## Init Singularity environment
+if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/init"
+fi
+
+if ! USERID=`id -ru`; then
+    message ERROR "Could not ascertain user ID\n"
+    exit 255
+fi
+
+
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
+        ;;
+        -u|--user)
+            if [ "$USERID" = 0 ]; then
+                shift
+                USERID=${1:-}
+                shift
+            else
+                message ERROR "Must be root to list with -u/--user option\n"
+                exit 1
+            fi
+        ;;
+        -*)
+            message ERROR "Unknown option: ${1:-}\n"
+            exit 1
+        ;;
+        *)
+            break
+        ;;
+    esac
+done
+
+COUNT=0
+if [ -z "${1:-}" ]; then
+    DAEMONS=`singularity_daemon_glob '*' | sort | uniq`
+else
+    DAEMONS=`singularity_daemon_glob "$@" | sort | uniq`
+fi
+
+message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
+
+for i in $DAEMONS; do
+    if [ -f "$i" ]; then
+        if [ ! -s "$i" ]; then
+            rm "$i"
+            continue
+        fi
+        FILE_NAME=`basename "$i"`
+        DAEMON_NAME=${FILE_NAME##*-}
+        . "$i"
+        if [ -n "${DAEMON_PID:-}" ]; then
+            PROC_CMDLINE="/proc/${DAEMON_PID:-}/cmdline"
+            if [ -e "$PROC_CMDLINE" ]; then
+                PROGNAME=$(<"${PROC_CMDLINE}" tr -d \\0)
+                if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
+                    message WARN "Removing stale daemon file: $i\n"
+                    rm -f "$i"
+                    continue
+                fi
+            else
+                rm -f "$i"
+                continue
+            fi
+        fi
+
+        printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+
+        let "COUNT++"
+    fi
+done
+
+if [ "$COUNT" == 0 ]; then
+    exit 1
+fi

@@ -1,0 +1,7 @@
+#!/bin/bash -ex
+
+case $OS_TYPE in
+    "") .travis/install_test ;;
+    centos) .travis/centos_run ;;
+    *) echo "Unknown OS_TYPE $OS_TYPE"; exit 1;;
+esac

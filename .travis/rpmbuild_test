@@ -1,0 +1,41 @@
+#!/bin/bash -ex
+
+# this script runs as root under docker
+
+OS_VERSION="$1"
+
+# build and install
+yum install -y libtool rpm-build make yum-utils squashfs-tools
+./autogen.sh
+yum-builddep -y singularity.spec
+./configure
+make dist
+rpmbuild -ta *.tar.gz
+rpm -iv ~/rpmbuild/RPMS/*/*.rpm
+
+if [ "$OS_VERSION" = 6 ]; then
+    echo "the test suite has not yet been ported to centos6 python, skipping."
+    exit
+fi
+
+# Install python 3 and pylint
+yum install -y epel-release
+yum install -y python34 python34-pip python34-setuptools docker
+yum install -y pylint
+
+# run the test suite
+yum install -y libtool sudo which e2fsprogs
+sed -i 's,^prefix=.*,prefix=/usr,' test.sh
+sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
+sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
+useradd testuser
+echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
+echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
+
+# build image for isolated builds
+sed -i 's,^prefix=.*,prefix=/usr,' secbuildimg.sh
+sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' secbuildimg.sh
+sed -i 's,^localstatedir=.*,localstatedir=/var,' secbuildimg.sh
+make secbuildimg
+
+su testuser -c "make test"

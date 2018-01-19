@@ -23,12 +23,15 @@
 
 #define _XOPEN_SOURCE 500 // For nftw
 #define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+
+#include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>  
@@ -44,6 +47,7 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
+#include "util/registry.h"
 
 
 char *envar_get(char *name, char *allowed, int len) {
@@ -260,8 +264,10 @@ void chomp(char *str) {
 
 void chomp_comments(char *str) {
     if (!str) {return;}
-    char *rest = str;
-    str = strtok_r(str, "#", &rest);
+    char* comment = strchr(str, '#');
+    if (comment) {
+        *comment = '\0'; // terminate string at comment
+    }
     chomp(str);
 }
 
@@ -339,10 +345,111 @@ int envclean(void) {
 
         key = strtok_r(envclone[i], "=", &tok);
 
-        singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
-        unsetenv(key);
+        if ( (strcasecmp(key, "http_proxy")  == 0) ||
+             (strcasecmp(key, "https_proxy") == 0) ||
+             (strcasecmp(key, "no_proxy")    == 0) ||
+             (strcasecmp(key, "all_proxy")   == 0)
+           ) {
+            singularity_message(DEBUG, "Leaving environment variable set: %s\n", key);
+        } else {
+            singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
+            unsetenv(key);
+        }
     }
 
     return(retval);
 }
 
+
+void *mmap_file(off_t offset, size_t size, int fd) {
+    void *map;
+
+    map = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, offset);
+    if ( map == MAP_FAILED ) {
+        singularity_message(ERROR, "Could not mmap file: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    return map;
+}
+
+void munmap_file(void *map, size_t size) {
+    int retval;
+
+    retval  = munmap(map, size);
+    if ( retval < 0 ) {
+        singularity_message(ERROR, "Could not teardown memory map for file cleanly\n");
+        ABORT(255);
+    }
+}
+
+
+void free_tempfile(struct tempfile *tf) {
+    if (fclose(tf->fp)) {
+        singularity_message(ERROR, "Error while closing temp file %s\n", tf->filename);
+        ABORT(255);
+    }
+    if (unlink(tf->filename) < 0) {
+        singularity_message(ERROR, "Could not remove temp file %s\n", tf->filename);
+        ABORT(255);
+    }
+
+    free(tf);
+}
+
+
+struct tempfile *make_tempfile(void) {
+   int fd;
+   struct tempfile *tf;
+
+   tf = malloc(sizeof(struct tempfile));
+   if (tf == NULL) {
+       singularity_message(ERROR, "Could not allocate memory for tempfile\n");
+       ABORT(255);
+   }
+
+   strncpy(tf->filename, "/tmp/vb.XXXXXXXXXX", sizeof(tf->filename) - 1);
+   tf->filename[sizeof(tf->filename) - 1] = '\0';
+   if ((fd = mkstemp(tf->filename)) == -1 || (tf->fp = fdopen(fd, "w+")) == NULL) {
+       if (fd != -1) {
+           unlink(tf->filename);
+           close(fd);
+       }
+       singularity_message(ERROR, "Could not create temp file\n");
+       ABORT(255);
+   }
+   return tf;
+}
+
+
+struct tempfile *make_logfile(char *label) {
+    struct tempfile *tf;
+
+    char *daemon = singularity_registry_get("DAEMON_NAME");
+    char *image = basename(singularity_registry_get("IMAGE"));
+        
+    tf = malloc(sizeof(struct tempfile));
+    if (tf == NULL) {
+        singularity_message(ERROR, "Could not allocate memory for tempfile\n");
+        ABORT(255);
+    }    
+
+    if ( snprintf(tf->filename, sizeof(tf->filename) - 1, "/tmp/%s.%s.%s.XXXXXX", image, daemon, label) > sizeof(tf->filename) - 1 ) {
+        singularity_message(ERROR, "Label string too long\n");
+        ABORT(255);
+    }
+    tf->filename[sizeof(tf->filename) - 1] = '\0';
+
+    if ( (tf->fd = mkstemp(tf->filename)) == -1 || (tf->fp = fdopen(tf->fd, "w+")) == NULL ) {
+        if (tf->fd != -1) {
+            unlink(tf->filename);
+            close(tf->fd);
+        }
+        singularity_message(DEBUG, "Could not create log file, running silently\n");
+        return(NULL);
+    }
+
+    singularity_message(DEBUG, "Logging container's %s at: %s\n", label, tf->filename);
+    
+    return(tf);
+}

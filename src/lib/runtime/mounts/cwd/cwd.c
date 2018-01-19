@@ -35,19 +35,20 @@
 #include <libgen.h>
 #include <linux/limits.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
+#include "util/mount.h"
 
-#include "../mount-util.h"
 #include "../../runtime.h"
 
 
 int _singularity_runtime_mount_cwd(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
     char *cwd_path = NULL;
     int r;
 
@@ -60,7 +61,14 @@ int _singularity_runtime_mount_cwd(void) {
         ABORT(1);
     }
 
-    singularity_message(DEBUG, "Checking if current directory exists in container\n");
+    singularity_message(DEBUG, "Checking for contain option\n");
+    if ( singularity_registry_get("CONTAIN") != NULL ) {
+        singularity_message(VERBOSE, "Not mounting current directory: contain was requested\n");
+        free(cwd_path);
+        return(0);
+    }
+
+    singularity_message(DEBUG, "Checking if current directory already available within container: %s\n", cwd_path);
     if ( is_dir(joinpath(container_dir, cwd_path)) == 0 ) {
         char *cwd_fileid = file_devino(cwd_path);
         char *container_cwd_fileid = file_devino(joinpath(container_dir, cwd_path));
@@ -76,12 +84,7 @@ int _singularity_runtime_mount_cwd(void) {
             singularity_message(DEBUG, "Container's cwd is not the same as the host, continuing on...\n");
         }
     } else {
-        singularity_message(DEBUG, "Container does not have the directory: %s\n", cwd_path);
-    }
-
-    singularity_message(DEBUG, "Checking for contain option\n");
-    if ( singularity_registry_get("CONTAIN") != NULL ) {
-        singularity_message(VERBOSE, "Not mounting current directory: contain was requested\n");
+        singularity_message(VERBOSE, "Not mounting CWD, directory does not exist within container: %s\n", cwd_path);
         free(cwd_path);
         return(0);
     }
@@ -107,13 +110,13 @@ int _singularity_runtime_mount_cwd(void) {
         return(0);
     }
 
-    singularity_message(DEBUG, "Checking if overlay is enabled\n");
-    if ( singularity_registry_get("OVERLAYFS_ENABLED") == NULL ) {
-        if ( is_dir(joinpath(container_dir, cwd_path)) < 0 ) {
-            singularity_message(VERBOSE, "Not mounting current directory: overlay is not enabled and directory does not exist in container: %s\n", joinpath(container_dir, cwd_path));
-            free(cwd_path);
-            return(0);
-        }
+    singularity_message(DEBUG, "Checking if cwd is in a virtual directory\n");
+    if ( ( strncmp(cwd_path, "/sys", 4) == 0 ) ||
+         ( strncmp(cwd_path, "/dev", 4) == 0 ) ||
+         ( strncmp(cwd_path, "/proc", 5) == 0 ) ) {
+        singularity_message(VERBOSE, "Not mounting CWD within virtual directory: %s\n", cwd_path);
+        free(cwd_path);
+        return(0);
     }
 
     singularity_message(DEBUG, "Checking configuration file for 'user bind control'\n");
@@ -129,24 +132,11 @@ int _singularity_runtime_mount_cwd(void) {
     return(0);
 #endif  
 
-    singularity_message(DEBUG, "Creating current directory within container: %s\n", joinpath(container_dir, cwd_path));
-    if ( s_mkpath(joinpath(container_dir, cwd_path), 0755) != 0 ) {
-        singularity_priv_escalate();
-        singularity_message(DEBUG, "Creating current directory (privileged) within container: %s\n", joinpath(container_dir, cwd_path));
-        r = s_mkpath(joinpath(container_dir, cwd_path), 0755);
-        singularity_priv_drop();
-        if ( r < 0 ) {
-            singularity_message(VERBOSE, "Could not create directory for current directory, skipping CWD mount\n");
-            free(cwd_path);
-            return(0);
-        }
-    }
-
     singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", cwd_path, container_dir, cwd_path);
     singularity_priv_escalate();
-    r = mount(cwd_path, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
+    r = singularity_mount(cwd_path, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
     if ( singularity_priv_userns_enabled() != 1 ) {
-        r = mount(NULL, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL);
+        r = singularity_mount(NULL, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL);
     }
     singularity_priv_drop();
     if ( r < 0 ) {

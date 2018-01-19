@@ -1,25 +1,16 @@
 #!/bin/bash
-# 
-# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
-# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# 
-# Copyright (c) 2016-2017, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
-# This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software.
-# 
-# NOTICE.  This Software was developed under funding from the U.S. Department of
-# Energy and the U.S. Government consequently retains certain rights. As such,
-# the U.S. Government has been granted for itself and others acting on its
-# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
-# to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+# Copyright (c) 2017, Vanessa Sochat. All rights reserved.
+#
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+#
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
 
 
 ## Basic sanity
@@ -39,13 +30,13 @@ fi
 while true; do
     case ${1:-} in
         -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
+        ;;
+        app|--app|-a)
+            shift
+            SINGULARITY_APPNAME="${1:-}"
+            export SINGULARITY_APPNAME
+            shift
         ;;
         -j|--json)
             SINGULARITY_PRINT_STRUCTURED=1
@@ -93,7 +84,7 @@ while true; do
             exit 1
         ;;
         *)
-            break;
+            break
         ;;
     esac
 done
@@ -112,11 +103,11 @@ fi
 export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT
 shift
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
+    eval "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
     RETVAL=$?
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/inspect.sh"
     RETVAL=$?
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"

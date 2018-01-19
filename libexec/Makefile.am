@@ -1,8 +1,8 @@
-SUBDIRS = bootstrap-scripts cli python helpers
+SUBDIRS = bootstrap-scripts cli helpers handlers python
 
 scriptlibexecdir = $(libexecdir)/singularity
 
-dist_scriptlibexec_SCRIPTS = functions image-handler.sh
+dist_scriptlibexec_SCRIPTS = functions image-handler.sh capabilities
 
 MAINTAINERCLEANFILES = Makefile.in
 

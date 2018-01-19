@@ -1,0 +1,4 @@
+NAME="help"
+SECTION="general"
+SUMMARY="Show additional help for a command or container"
+USAGE="singularity help [apps]"

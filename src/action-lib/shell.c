@@ -31,6 +31,7 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
+#include "util/privilege.h"
 
 
 void action_shell(int argc, char **argv) {
@@ -59,6 +60,6 @@ void action_shell(int argc, char **argv) {
         }
     }
 
-    singularity_message(ERROR, "We should never get here... Grrrrrr!\n");
+    singularity_message(ERROR, "What are you doing %s, this is highly irregular!\n", singularity_priv_getuser());
     ABORT(255);
 }

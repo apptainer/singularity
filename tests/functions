@@ -23,6 +23,10 @@ SINGULARITY_MESSAGELEVEL=5
 
 . ../libexec/functions
 
+if [ `id -ru` = "0" ]; then 
+    message ERROR "Don't make test as root\n"
+    ABORT 255
+fi
 
 alias singularity="$SINGULARITY_PATH/singularity"
 
@@ -91,4 +95,3 @@ stest() {
         message 2 "%13s OK\n" "(retval=$RETVAL)"
     fi
 }
-

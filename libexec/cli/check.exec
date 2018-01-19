@@ -1,10 +1,16 @@
 #!/bin/bash
-# 
+#
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
-# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # Copyright (c) 2017, Vanessa Sochat. All rights reserved.
-# 
-# 
+#
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+#
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
 
 
 ## Basic sanity
@@ -30,14 +36,8 @@ SINGULARITY_CHECKTAGS="default"
 
 while true; do
     case ${1:-} in
-        --help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
+        -h|--help|help)
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         -l|--low)                          # levels 3,2,1
             SINGULARITY_CHECKLEVEL=3       # LOW
@@ -47,7 +47,7 @@ while true; do
             SINGULARITY_CHECKLEVEL=2       # MED
             shift;
         ;;
-        -h|--high)
+        --high)
             SINGULARITY_CHECKLEVEL=1      # level 1 only
             shift;                        # HIGH
         ;;
@@ -62,19 +62,28 @@ while true; do
             exit 1
         ;;
         *)
-            break;
+            break
         ;;
     esac
 done
 
+
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
+else
+    message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
+    ABORT 255
+fi
+
 if [ -z "${1:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    if [ -n "${USAGE:-}" ]; then
+        echo "USAGE: $USAGE"
     else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
+        echo "To see usage summary type: singularity help $SINGULARITY_COMMAND"
     fi
     exit 0
 fi
+
 
 RETVAL=0
 SINGULARITY_IMAGE="${1:-}"
@@ -87,11 +96,11 @@ export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT SINGULARITY_CHECKLEVEL SINGULARI
 shift
 
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/check.sh"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
+    eval "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/check.sh"
     RETVAL=$?
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/sh "$SINGULARITY_libexecdir/singularity/helpers/check.sh"
+    eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/check.sh"
     RETVAL=$?
 else
     message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/mount\n"

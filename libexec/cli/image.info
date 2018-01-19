@@ -1,0 +1,29 @@
+NAME="image"
+SECTION="group"
+SUMMARY="Container image command group"
+USAGE="singularity [...] image.<command> [...] <image path>"
+
+print_help() {
+cat<<EOF
+
+This is a command group that supports the management of various container
+image functions.
+
+IMAGE GROUP COMMANDS:
+
+    image.create    Create an image
+    image.import    Import data into an image
+    image.expand    Expand an image
+    image.export    Export the contents of an image
+
+All group commands have their own help output:
+
+    $ singularity help image.create
+    $ singularity image.create --help
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

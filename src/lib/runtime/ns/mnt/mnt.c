@@ -34,9 +34,14 @@
 
 #include "util/file.h"
 #include "util/util.h"
+#include "util/registry.h"
 #include "util/message.h"
 #include "util/config_parser.h"
 #include "util/privilege.h"
+#include "util/daemon.h"
+#include "util/setns.h"
+#include "util/mount.h"
+
 
 static int enabled = -1;
 
@@ -68,7 +73,7 @@ int _singularity_runtime_ns_mnt(void) {
     // The strange formatting here is to avoid SonarQube complaints about bitwise or of signed operands.
     unsigned mount_flags = MS_REC;
     mount_flags |= (unsigned)(slave ? MS_SLAVE : MS_PRIVATE);
-    if ( mount(NULL, "/", NULL, mount_flags, NULL) < 0 ) {
+    if ( singularity_mount(NULL, "/", NULL, mount_flags, NULL) < 0 ) {
         singularity_message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
         ABORT(255);
     }
@@ -77,7 +82,7 @@ int _singularity_runtime_ns_mnt(void) {
         singularity_message(WARNING, "Requested option 'mount slave' is not available on this host, using private\n");
     }
     singularity_message(DEBUG, "Making mounts private\n");
-    if ( mount(NULL, "/", NULL, MS_PRIVATE | MS_REC, NULL) < 0 ) {
+    if ( singularity_mount(NULL, "/", NULL, MS_PRIVATE | MS_REC, NULL) < 0 ) {
         singularity_message(ERROR, "Could not make mountspaces %s: %s\n", (slave ? "slave" : "private"), strerror(errno));
         ABORT(255);
     }
@@ -86,6 +91,35 @@ int _singularity_runtime_ns_mnt(void) {
     singularity_priv_drop();
     enabled = 0;
     return(0);
+}
+
+int _singularity_runtime_ns_mnt_join(int ns_fd) {
+    int mnt_fd;
+
+    /* Attempt to open /proc/[MNT]/ns/mnt */
+    singularity_priv_escalate();
+    if ( ! singularity_daemon_own_namespace("mnt") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
+    mnt_fd = openat(ns_fd, "mnt", O_RDONLY);
+
+    if( mnt_fd == -1 ) {
+        singularity_message(ERROR, "Could not open mount NS fd: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    
+    singularity_message(DEBUG, "Attempting to join mount namespace\n");
+    if ( setns(mnt_fd, CLONE_NEWNS) < 0 ) {
+        singularity_message(ERROR, "Could not join mount namespace: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    singularity_priv_drop();
+    singularity_message(DEBUG, "Successfully joined mount namespace\n");
+
+    close(mnt_fd);
+    return(0);    
 }
 
 /*

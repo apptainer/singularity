@@ -1,0 +1,31 @@
+NAME="test"
+SECTION="action"
+SUMMARY="Launch a testscript within container"
+USAGE="singularity [...] test [exec options...] <container path>"
+
+
+print_help() {
+cat<<EOF
+
+Run defined tests for this particular container. Tests will be run
+contained (e.g. no persistent writable directories will be available 
+inside of container) and will be executed as the calling user.    
+
+NOTE:
+    If there is a daemon process running inside the container, then 
+    subsequent container commands will all run within the same namespaces.
+    This means that the --writable and --contain options will not be
+    honored as the namespaces have already been configured by the
+    'singularity start' command.
+
+
+EXAMPLES:
+    
+    $ singularity test /tmp/Debian.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

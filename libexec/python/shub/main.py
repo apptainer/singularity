@@ -23,7 +23,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-sys.path.append('..')  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
 
 from shell import parse_image_uri
 
@@ -56,7 +56,10 @@ def SIZE(image, contentfile=None):
     bot.debug("Singularity Hub image: %s" % image)
     client = SingularityApiConnection(image=image)
     manifest = client.get_manifest()
-    size = json.loads(manifest['metrics'].replace("'", '"'))['size']
+    if 'size_mb' in manifest:  # sregistry
+        size = manifest['size_mb']
+    else:
+        size = manifest['metrics']['size']
     if contentfile is not None:
         write_file(contentfile, str(size), mode="w")
     return size
@@ -78,6 +81,8 @@ def PULL(image, download_folder=None, layerfile=None):
     else:
         cache_base = os.path.abspath(download_folder)
 
+    bot.debug("Pull folder set to %s" % cache_base)
+
     # The image name is the md5 hash, download if it's not there
     image_name = get_image_name(manifest)
 
@@ -92,8 +97,7 @@ def PULL(image, download_folder=None, layerfile=None):
     bot.debug('Pulling to %s' % image_file)
     if not os.path.exists(image_file):
         image_file = client.download_image(manifest=manifest,
-                                           download_folder=cache_base,
-                                           image_name=image_name)
+                                           download_folder=cache_base)
     else:
         if not bot.is_quiet():  # not --quiet
             print("Image already exists at %s, skipping download" % image_file)

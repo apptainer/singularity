@@ -1,0 +1,44 @@
+NAME="inspect"
+SECTION="management"
+SUMMARY="Display container's metadata"
+USAGE="singularity [...] inspect [exec options...] <container path>"
+
+print_help() {
+cat<<EOF
+
+This command will show you labels, environment variables, and scripts associated with the image.
+
+INSPECT OPTIONS:
+    -a|--app         Inspect an application specified in the container
+    -l|--labels      Show the labels associated with the image (default)
+    -d|--deffile     Show the Singularity recipe file that was used
+                     to generate the image
+    -r|--runscript   Show the runscript for the image
+    -t|--test        Show the test script for the image
+    -e|--environment Show the environment settings for the image
+    -j|--json        Print structured json instead of sections
+    -hf|--helpfile   Inspect the runscript helpfile, if exists
+
+
+EXAMPLES:
+    
+    $ singularity inspect ubuntu.img
+    #!/bin/sh
+
+    exec /bin/bash "$@"
+
+    $ singuarity inspect --labels ubuntu.img
+    {
+        "SINGULARITY_DEFFILE_BOOTSTRAP": "docker",
+        "SINGULARITY_DEFFILE": "Singularity",
+        "SINGULARITY_DEFFILE_FROM": "ubuntu:latest",
+        "SINGULARITY_BOOTSTRAP_VERSION": "2.2.99"
+    }
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

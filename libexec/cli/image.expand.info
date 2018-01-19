@@ -1,0 +1,24 @@
+NAME="image.expand"
+GROUP="image"
+SUMMARY="Expand a disk image"
+USAGE="singularity [...] image.expand [expand options...] <container path>"
+
+print_help() {
+cat<<EOF
+
+Grow the Singularity disk image by the given amount.
+
+EXPAND OPTIONS:
+    -s|--size   Specify a size for an operation in MiB, i.e. 1024*1024B
+                (default 768MiB)
+
+EXAMPLES:
+
+    $ singularity expand --size 10240 /tmp/Debian.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

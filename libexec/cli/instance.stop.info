@@ -1,0 +1,41 @@
+NAME="instance.stop"
+GROUP="instance"
+SUMMARY="Stop a running container instance"
+USAGE="singularity [...] instance.stop [...] <instance name glob>"
+
+print_help() {
+cat<<EOF
+
+Stop a named instance of the given container image.
+
+LIST OPTIONS:
+    -u|--user <username>   If running as root, stop the specified instance
+                           of <username>
+    -a|--all               Stop all user's running instances
+    -f|--force             Force kill instance
+    -s|--signal            Signal sent to the instance
+
+EXAMPLES:
+
+    $ singularity instance.start my-sql.img mysql1
+    $ singularity instance.start my-sql.img mysql2
+    $ singularity instance.stop mysql*
+    Stopping mysql1 instance of my-sql.img (PID=23845)
+    Stopping mysql2 instance of my-sql.img (PID=23858)
+
+    $ singularity instance.start my-sql.img mysql1
+    
+    Force instance to shutdown
+    $ singularity instance.stop -f mysql1 (may corrupt data)
+
+    Send SIGTERM to the instance
+    $ singularity instance.stop -s SIGTERM mysql1
+    $ singularity instance.stop -s TERM mysql1
+    $ singularity instance.stop -s 15 mysql1
+    
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

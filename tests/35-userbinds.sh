@@ -30,11 +30,9 @@ test_init "Testing user binds"
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
 # Creating a new container
-stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity"
+stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
 
 stest 0 touch /tmp/hello_world_test
-stest 0 sudo singularity exec --writable "$CONTAINER" mkdir /opt
 stest 0 singularity exec -B /tmp:/opt "$CONTAINER" test -f /opt/hello_world_test
 
 if [ -n "$SINGULARITY_OVERLAY_FS" ]; then

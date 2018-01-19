@@ -1,0 +1,110 @@
+#!/bin/bash
+#
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+#
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
+#
+# This file also contains content that is covered under the LBNL/DOE/UC modified
+# 3-clause BSD license and is subject to the license terms in the LICENSE-LBNL.md
+# file found in the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/LICENSE-LBNL.md.
+
+
+
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
+
+PATH=/sbin:/usr/sbin:${PATH:-}
+
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
+        ;;
+        -s|--size)
+            shift
+            SINGULARITY_IMAGESIZE="${1:-}"
+            export SINGULARITY_IMAGESIZE
+            shift
+        ;;
+        -F|--force)
+            shift
+            OVERWRITE=1
+        ;;
+        -*)
+            message ERROR "Unknown option: ${1:-}\n"
+            exit 1
+        ;;
+        *)
+            break
+        ;;
+    esac
+done
+
+
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
+else
+    message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
+    ABORT 255
+fi
+
+if [ -z "${1:-}" ]; then
+    if [ -n "${USAGE:-}" ]; then
+        echo "USAGE: $USAGE"
+    else
+        echo "To see usage summary type: singularity help $SINGULARITY_COMMAND"
+    fi
+    exit 0
+fi
+
+
+SINGULARITY_IMAGE="${1:-}"
+SINGULARITY_WRITABLE=1
+export SINGULARITY_IMAGE SINGULARITY_WRITABLE
+
+if [ -z "$SINGULARITY_IMAGE" ]; then
+    message ERROR "You must supply a path to an image to create\n"
+    exit 1
+fi
+if [ -f "$SINGULARITY_IMAGE" ]; then
+    if [ -n "${OVERWRITE:-}" ]; then
+        message 2 "Removing existing file\n"
+        rm -f "$SINGULARITY_IMAGE"
+    else
+        message ERROR "Image file exists, not overwriting.\n"
+        exit 1
+    fi
+fi
+
+message 1 "Creating empty ${SINGULARITY_IMAGESIZE:-768}MiB image file: $SINGULARITY_IMAGE\n"
+if ! dd if=/dev/zero of="$SINGULARITY_IMAGE" bs=1M count=${SINGULARITY_IMAGESIZE:-768} status=none; then
+    message ERROR "Failed creating image!\n"
+    exit 1
+fi
+
+message 1 "Formatting image with ext3 file system\n"
+if ! /sbin/mkfs.ext3 -q -F "$SINGULARITY_IMAGE"; then
+    exit 1
+fi
+
+message 1 "Image is done: $SINGULARITY_IMAGE\n"
+exit 0

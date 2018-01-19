@@ -28,6 +28,7 @@ libexecdir="@libexecdir@"
 sysconfdir="@sysconfdir@"
 localstatedir="@localstatedir@"
 bindir="@bindir@"
+home=`dirname  "$0"`
 
 SINGULARITY_version="@VERSION@@GIT_VERSION@"
 SINGULARITY_libexecdir="$libexecdir"
@@ -56,29 +57,8 @@ while true; do
     case ${1:-} in
         -h|--help|help)
 
-            # singularity help
-
-            if [ -z "${2:-}" ]; then
-                C="singularity"
-
-            # singularity image or command help
-            else
-                C="${2:-}"
-            fi
-
-            # help for a command
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$C.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$C.help"
-
-            # help for an image
-            elif [ -f "$C" ]; then
-                exec $SINGULARITY_libexecdir/singularity/cli/help.exec "$C"
-
-            else
-                message ERROR "No help exists for command: '$C'\n"
-                exit 1
-            fi
-            exit
+            shift
+            exec $SINGULARITY_libexecdir/singularity/cli/help.exec "$@"
         ;;
         -q|--quiet)
             SINGULARITY_MESSAGELEVEL=0
@@ -101,6 +81,16 @@ while true; do
             SHELL_DEBUG=1
             export SHELL_DEBUG
             message 4 "Enabling shell debugging\n"
+            shift
+        ;;
+        -c|--conf)
+            shift
+            if [ $(id -ru) != 0 ]; then
+                message ERROR "Only root can set a custom configuration file\n"
+                exit 1
+            else
+                export SINGULARITY_CONFIG_FILE="${1:-}"
+            fi
             shift
         ;;
         -v|--verbose)
@@ -142,7 +132,7 @@ shift
 
 
 if [ -z "$SINGULARITY_COMMAND" ]; then
-    cat "$SINGULARITY_libexecdir/singularity/cli/singularity.help"
+    exec $SINGULARITY_libexecdir/singularity/cli/help.exec "$@"
     exit 0
 fi
 
@@ -157,3 +147,4 @@ fi
 
 # We should never get here...
 exit 255
+

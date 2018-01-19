@@ -32,6 +32,7 @@
 #include <grp.h>
 #include <pwd.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/config_parser.h"
@@ -50,7 +51,7 @@ int _singularity_runtime_files_passwd(void) {
     char *homedir = singularity_priv_home();
     uid_t uid = singularity_priv_getuid();
     struct passwd *pwent = getpwuid(uid);
-    char *containerdir = singularity_runtime_rootfs(NULL);
+    char *containerdir = CONTAINER_FINALDIR;
     char *tmpdir = singularity_registry_get("SESSIONDIR");
 
     singularity_message(DEBUG, "Called singularity_file_passwd_create()\n");

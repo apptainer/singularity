@@ -30,8 +30,7 @@ test_init "Basic container action tests"
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
 # Creating a new container
-stest 0 singularity create -s 568 "$CONTAINER"
-stest 0 sudo singularity bootstrap "$CONTAINER" "../examples/busybox/Singularity"
+stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
 
 # Testing shell command
 stest 0 singularity shell "$CONTAINER" -c "true"
@@ -51,14 +50,11 @@ stest 1 sh -c "echo bye | singularity exec $CONTAINER grep hi"
 
 
 # Testing run command
-stest 0 sudo singularity exec --writable "$CONTAINER" sh -c "echo true > /.singularity.d/runscript"
-stest 0 singularity run "$CONTAINER"
-stest 0 sudo singularity exec --writable "$CONTAINER" sh -c "echo false > /.singularity.d/runscript"
-stest 1 singularity run "$CONTAINER"
+stest 0 singularity run "$CONTAINER" true
+stest 1 singularity run "$CONTAINER" false
 
 
 # Testing run command properly hands arguments
-stest 0 sudo singularity exec --writable "$CONTAINER" sh -c 'echo echo \"\$@\" > /.singularity.d/runscript'
 stest 0 sh -c "singularity run '$CONTAINER' foo | grep foo"
 
 

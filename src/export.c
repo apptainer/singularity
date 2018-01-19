@@ -66,30 +66,30 @@ int main(int argc, char **argv) {
 
     image = singularity_image_init(singularity_registry_get("IMAGE"));
 
-    singularity_image_open(&image, O_RDONLY);
-    singularity_image_check(&image);
+//    singularity_image_open(&image, O_RDONLY);
+//    singularity_image_check(&image);
 
-    if ( image.type != SINGULARITY ) {
+    if ( image.type != EXT3 ) {
         singularity_message(ERROR, "Export is only allowed on Singularity image files\n");
         ABORT(255);
     }
 
     singularity_runtime_ns(SR_NS_MNT);
 
-    singularity_image_bind(&image);
-
-    if ( image.loopdev == NULL ) {
-        singularity_message(ERROR, "Bind failed to connect to image!\n");
-        ABORT(255);
-    }
+//    singularity_image_bind(&image);
+//
+//    if ( image.loopdev == NULL ) {
+//        singularity_message(ERROR, "Bind failed to connect to image!\n");
+//        ABORT(255);
+//    }
 
     singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
 
     // Check to make sure the image hasn't been swapped out by a race
     image_test = singularity_image_init(singularity_registry_get("IMAGE"));
-    singularity_image_open(&image_test, O_RDONLY);
-    singularity_image_check(&image_test);
-    if ( image_test.type != SINGULARITY ) {
+//    singularity_image_open(&image_test, O_RDONLY);
+//    singularity_image_check(&image_test);
+    if ( image_test.type != EXT3 ) {
         singularity_message(ERROR, "Import is only allowed on Singularity image files\n");
         ABORT(255);
     }

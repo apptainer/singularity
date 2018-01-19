@@ -24,28 +24,71 @@
 
 test_init "Help and usage tests"
 
-ALL_COMMANDS="exec run shell test bootstrap copy create expand export import mount"
+alias cmd_check="echo
+    echo \"Testing command usage: '\${cmd}'\"
+    stest 0 singularity --help \$cmd
+    stest 0 singularity -h \$cmd
+    stest 0 singularity help \$cmd
+    stest 0 singularity \$cmd help
+    stest 0 singularity \$cmd -h
+    stest 0 singularity \$cmd --help"
 
-# Testing singularity internal commands
+
+MOST_COMMANDS="
+    apps
+    bootstrap
+    build
+    check
+    create
+    exec
+    image
+    image.create
+    image.expand
+    image.export
+    image.import
+    inspect
+    mount
+    pull
+    run
+    shell
+    test
+    instance.start
+    instance.list
+    instance.stop
+"
+
+# Testing singularity internal commands (one word)
 stest 0 singularity
 stest 0 singularity --help
 stest 0 singularity --version
-for i in $ALL_COMMANDS; do
-    echo
-    echo "Testing command usage: '$i'"
-    stest 0 singularity --help "$i"
-    stest 0 singularity -h "$i"
-    stest 0 singularity help "$i"
-    stest 0 singularity $i help
-    stest 0 singularity $i -h
-    stest 0 singularity $i --help
+
+# Testing one word commands
+for cmd in $MOST_COMMANDS; do
+    cmd_check
 done
+
+# Testing two word commands
+cmd="image create"
+cmd_check
+cmd="image expand"
+cmd_check
+cmd="image export"
+cmd_check
+cmd="image import"
+cmd_check
+cmd="instance start"
+cmd_check
+cmd="instance list"
+cmd_check
+cmd="instance stop"
+cmd_check
 
 /bin/echo
 /bin/echo "Testing error on bad commands"
 
 stest 1 singularity help bogus
 stest 1 singularity bogus help
-
+stest 1 singularity help instance bogus
+stest 1 singularity image bogus help
 
 test_cleanup

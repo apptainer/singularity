@@ -1,0 +1,60 @@
+Bootstrap: docker
+From: ubuntu:16.04
+
+# =======================
+# global
+# =======================
+%post
+    apt-get -y update
+
+%environment
+    export LC_ALL=C
+    export PATH=/usr/games:$PATH
+
+# =======================
+# fortune
+# =======================
+%appinstall fortune
+    apt-get -y install fortune
+
+%appenv fortune
+    BEST_APP=fortune
+    export BEST_APP
+
+%apphelp fortune
+    fortune is the best app
+
+%apprun fortune
+    fortune "$@"
+
+# =======================
+# cowsay
+# =======================
+%appinstall cowsay
+    apt-get -y install cowsay
+
+%appenv cowsay
+    BEST_APP=cowsay
+    export BEST_APP
+
+%apphelp cowsay
+    cowsay is the best app
+
+%apprun cowsay
+    cowsay "$@"
+
+# =======================
+# lolcat
+# =======================
+%appinstall lolcat
+    apt-get -y install lolcat
+
+%appenv lolcat
+    BEST_APP=lolcat
+    export BEST_APP
+
+%apphelp lolcat
+    lolcat is the best app
+
+%apprun lolcat
+    lolcat "$@"

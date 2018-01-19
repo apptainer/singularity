@@ -27,16 +27,17 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                 os.path.pardir)))  # noqa
-sys.path.append('..')  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
 
 from shell import (
-    remove_image_uri
+    parse_image_uri,
+    remove_image_uri,
 )
 
 from sutils import (
     add_http,
     clean_up,
-    is_number,
+    get_image_format,
     read_file,
     run_command
 )
@@ -66,39 +67,44 @@ class SingularityApiConnection(ApiConnection):
     def __init__(self, **kwargs):
         self.token = None
         self.api_base = SHUB_API_BASE
+
         if 'image' in kwargs:
             self.load_image(kwargs['image'])
+
         if 'token' in kwargs:
             self.token = kwargs['token']
         super(SingularityApiConnection, self).__init__(**kwargs)
 
     def load_image(self, image):
-        self.image = image
-        if not is_number(image):
-            self.image = remove_image_uri(image, quiet=True)
+        self.image = parse_image_uri(image=image,
+                                     uri='shub://',
+                                     default_registry=SHUB_API_BASE,
+                                     quiet=True)
+        # parse_image_uri may return an empty namespace cause that's allowed
+        # with docker://, but not with shub://
+        if len(self.image["namespace"]) == 0:
+            bot.error("Namespace cannot be empty for shub:// url!")
+            sys.exit(1)
 
-    def get_manifest(self, image=None, registry=None):
+    def get_manifest(self):
         '''get_image will return a json object with image metadata
         based on a unique id.
+
+        Parameters
+        ==========
         :param image: the image name, either an id
                       or a repo name, tag, etc.
-        :param registry: the registry (hub) to use
-                         if not defined, default is used
+
+        Returns
+        =======
+        manifest: a json manifest from the registry
         '''
-        if image is None:
-            image = self.image
-        if registry is None:
-            registry = self.api_base
-
         # make sure we have a complete url
-        registry = add_http(registry)
-
-        # Numeric images have slightly different endpoint from named
-        if is_number(image) is True:
-            base = "%s/containers/%s" % (registry, image)
-        else:
-            base = "%s/container/%s" % (registry, image)
-
+        registry = add_http(self.image['registry'])
+        base = "%s/api/container/%s/%s:%s" % (registry,
+                                              self.image['namespace'],
+                                              self.image['repo_name'],
+                                              self.image['repo_tag'])
         # ------------------------------------------------------
         # If we need to authenticate, will do it here
         # ------------------------------------------------------
@@ -106,7 +112,7 @@ class SingularityApiConnection(ApiConnection):
         # If the Hub returns 404, the image name is likely wrong
         response = self.get(base, return_response=True)
         if response.code == 404:
-            msg = "Cannot find image %s." % image
+            msg = "Cannot find image."
             msg += " Is your capitalization correct?"
             bot.error(msg)
             sys.exit(1)
@@ -123,17 +129,29 @@ class SingularityApiConnection(ApiConnection):
 
     def download_image(self,
                        manifest,
-                       image_name=None,
                        download_folder=None,
-                       extract=True):
-        '''download_image will download a singularity image from singularity
+                       extract=False):
+
+        '''
+
+        download_image will download a singularity image from singularity
         hub to a download_folder, named based on the image version (commit id)
+
+        Parameters
+        ==========
         :param manifest: the manifest obtained with get_manifest
         :param download_folder: the folder to download to, if None, will be pwd
         :param extract: if True, will extract image to .img and return that.
+
+        Returns
+        =======
+        image_file: the full path to the downloaded image
+
         '''
-        if image_name is None:
-            image_name = get_image_name(manifest)
+        from defaults import SHUB_CONTAINERNAME
+
+        # Returns just basename, no extension
+        image_name = get_image_name(manifest)
 
         if not bot.is_quiet():
             print("Found image %s:%s" % (manifest['name'],
@@ -145,11 +163,8 @@ class SingularityApiConnection(ApiConnection):
 
         if url is None:
             bot.error("%s is not ready for download" % image_name)
-            bot.error("please try when build completed or specify tag.")
+            bot.error("please try when build completes or specify tag.")
             sys.exit(1)
-
-        if not image_name.endswith('.gz'):
-            image_name = "%s.gz" % image_name
 
         if download_folder is not None:
             image_name = "%s/%s" % (download_folder, image_name)
@@ -159,9 +174,20 @@ class SingularityApiConnection(ApiConnection):
                                               file_name=image_name,
                                               show_progress=True)
 
-        if extract is True:
+        # Compressed ext3 images need extraction
+        image_type = get_image_format(image_file)
+        extension = "simg"
+
+        if image_type == "GZIP" or extract is True:
+
+            extension = "img"
+            if not image_file.endswith('.gz'):
+                os.rename(image_file, "%s.gz" % image_file)
+                image_file = "%s.gz" % image_file
+
             if not bot.is_quiet():
                 print("Decompressing %s" % image_file)
+
             output = run_command(['gzip', '-d', '-f', image_file])
             image_file = image_file.replace('.gz', '')
 
@@ -170,41 +196,82 @@ class SingularityApiConnection(ApiConnection):
                 bot.error('Error extracting image, cleaning up.')
                 clean_up([image_file, "%s.gz" % image_file])
 
+        # If the user has provided a default name, be true to it
+        if SHUB_CONTAINERNAME is not None:
+            folder = os.path.dirname(image_file)
+            image_name = "%s/%s" % (folder, SHUB_CONTAINERNAME)
+            os.rename(image_file, image_name)
+            image_file = image_name
+
+        # Otherwise rename to have extension matching image type
+        else:
+            image_name = "%s.%s" % (image_file, extension)
+            os.rename(image_file, image_name)
+            image_file = image_name
+
         return image_file
 
 
 # Various Helpers -----------------------------------------------
-def get_image_name(manifest, extension='img.gz'):
-    '''return the image name for a manifest
-    :param manifest: the image manifest with 'image'
+def get_image_name(manifest):
+    '''return the image name for a manifest. Does not return extension, and
+       does not account for a custom name provided by the user.
+       :param manifest: the image manifest with 'image'
                      as key with download link
-    :param use_hash: use the image hash instead of name
     '''
     from defaults import (SHUB_CONTAINERNAME,
                           SHUB_NAMEBYCOMMIT,
                           SHUB_NAMEBYHASH)
 
-    # First preference goes to a custom name
     if SHUB_CONTAINERNAME is not None:
-        for replace in [" ", ".gz", ".img"]:
-            SHUB_CONTAINERNAME = SHUB_CONTAINERNAME.replace(replace, "")
-        image_name = "%s.%s" % (SHUB_CONTAINERNAME, extension)
+        return SHUB_CONTAINERNAME
 
     # Second preference goes to commit
     elif SHUB_NAMEBYCOMMIT is not None:
-        image_name = "%s.%s" % (manifest['version'], extension)
+        if manifest.get("commit") is not None:
+            return manifest['commit']
+        elif manifest['version'] is not None:
+            return manifest['version']
 
     elif SHUB_NAMEBYHASH is not None:
         image_url = os.path.basename(unquote(manifest['image']))
-        image_name = re.findall(".+[.]%s" % (extension), image_url)[0]
+        image_name = re.findall('([-\w]+\.(?:img|simg|img.gz))', image_url)
+        if len(image_name) > 0:
+            return image_name[0].split('.')[0]
 
-    # Default uses the image name-branch
+    return get_default_name(manifest)
+
+
+def get_default_name(manifest, source="Hub"):
+    ''' get manifest name returns the default name that is discovered
+        via the image manifest. This is the fallback option in the case that
+        the user doesn't ask to name by commit, hash, or custom name
+    '''
+
+    # Singularity Hub v2.0
+    if "tag" in manifest and "branch" in manifest:
+        version = "%s-%s" % (manifest["branch"], manifest["tag"])
+
+    # Singularity Registry
+    elif "tag" in manifest:
+        version = manifest["tag"]
+
+    # Singularity Hub v1.0
     else:
-        image_name = "%s-%s.%s" % (manifest['name'].replace('/', '-'),
-                                   manifest['branch'].replace('/', '-'),
-                                   extension)
+        version = manifest['branch']
+
+    # Remove slashes
+    version = version.replace('/', '-')
+
+    # sregistry images store collection/name separately
+    name = manifest['name']
+    if 'frozen' in manifest:
+        source = "Registry"
+        name = '%s-%s' % (manifest['collection'], name)
+    image_name = "%s-%s" % (name.replace('/', '-'), version)
+
     if not bot.is_quiet():
-        print("Singularity Hub Image: %s" % image_name)
+        print("Singularity %s Image: %s" % (source, image_name))
     return image_name
 
 
@@ -212,9 +279,14 @@ def extract_metadata(manifest, labelfile=None, prefix=None):
     '''extract_metadata will write a file of metadata from shub
     :param manifest: the manifest to use
     '''
+
     if prefix is None:
         prefix = ""
     prefix = prefix.upper()
+
+    source = 'Hub'
+    if 'frozen' in manifest:
+        source = 'Registry'
 
     metadata = manifest.copy()
     remove_fields = ['files', 'spec', 'metrics']
@@ -230,5 +302,6 @@ def extract_metadata(manifest, labelfile=None, prefix=None):
                         jsonfile=labelfile,
                         force=True)
 
-        bot.verbose("Saving Singularity Hub metadata to %s" % labelfile)
+        bot.verbose("Saving Singularity %s metadata to %s" % (source,
+                                                              labelfile))
     return metadata

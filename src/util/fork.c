@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  * Copyright (c) 2016, Brian Bockelman. All rights reserved.
  *
  * Copyright (c) 2016-2017, The Regents of the University of California,
@@ -37,6 +38,7 @@
 #include "util/privilege.h"
 #include "util/message.h"
 #include "util/util.h"
+#include "util/suid.h"
 
 int generic_signal_rpipe = -1;
 int generic_signal_wpipe = -1;
@@ -81,68 +83,102 @@ void handle_sigchld(int sig, siginfo_t *siginfo, void * _) {
  *
  * Keeps global state in the coordination_pipe variable.
  */
+static int pipe_to_child[] = {-1, -1};
+static int pipe_to_parent[] = {-1, -1};
 static int coordination_pipe[] = {-1, -1};
 
 static void prepare_fork() {
     singularity_message(DEBUG, "Creating parent/child coordination pipes.\n");
     // Note we use pipe and not pipe2 here with CLOEXEC.  This is because we eventually want the parent process
     // to exec a separate unprivileged process and inherit the communication pipe.
-    if ( -1 == pipe(coordination_pipe) ) {
+    if ( -1 == pipe(pipe_to_child) ) {
         singularity_message(ERROR, "Failed to create coordination pipe for fork: %s (errno=%d)\n", strerror(errno), errno);
         ABORT(255);
     }
+
+    if ( -1 == pipe(pipe_to_parent) ) {
+        singularity_message(ERROR, "Failed to create coordination pipe for fork: %s (errno=%d)\n", strerror(errno), errno);
+        ABORT(255);
+    }
+    
 }
 
-static void wait_for_go_ahead() {
+/* Put the appropriate read and write pipes into coordination_pipe[] */
+static void prepare_pipes_child() {
+    /* Close to child write pipe */
+    close(pipe_to_child[1]);
+
+    /* Close to parent read pipe */
+    close(pipe_to_parent[0]);
+
+    /* Store read and write pipes into common variable */
+    coordination_pipe[0] = pipe_to_child[0];
+    coordination_pipe[1] = pipe_to_parent[1];
+}
+
+/* Put the appropriate read and write pipes into coordination_pipe[] */
+static void prepare_pipes_parent() {
+    /* Close to parent write pipe */
+    close(pipe_to_parent[1]);
+
+    /* Close to child read pipe */
+    close(pipe_to_child[0]);
+
+    /* Store read and write pipes into common variable */
+    coordination_pipe[0] = pipe_to_parent[0];
+    coordination_pipe[1] = pipe_to_child[1];
+}
+
+/* Updated wait_for_go_ahead() which allows bi-directional wait signaling */
+int singularity_wait_for_go_ahead() {
     if ( (coordination_pipe[0] == -1) || (coordination_pipe[1] == -1)) {
         singularity_message(ERROR, "Internal error!  wait_for_go_ahead invoked with invalid pipe state (%d, %d).\n",
                             coordination_pipe[0], coordination_pipe[1]);
         ABORT(255);
     }
 
-    // Close our copy of the write end of the pipe; only the parent should write.
-    close(coordination_pipe[1]);
-    coordination_pipe[1] = -1;
-
-    char parent_code = -1;
+    singularity_message(DEBUG, "Waiting for go-ahead signal\n");
+    
+    char code = -1;
     int retval;
-    // Block until parent indicates it is OK to proceed.
-    while ( (-1 == (retval = read(coordination_pipe[0], &parent_code, 1))) && errno == EINTR) {}
-    if (retval == -1) {  // Failed to communicate with parent.
-        singularity_message(ERROR, "Failed to communicate with parent process: %s (errno=%d)\n", strerror(errno), errno);
+
+    // Block until other process indicates it is OK to proceed.
+    while ( (-1 == (retval = read(coordination_pipe[0], &code, 1))) && errno == EINTR) {}
+
+    if (retval == -1) {  // Failed to communicate with other process.
+        singularity_message(ERROR, "Failed to communicate with other process: %s (errno=%d)\n", strerror(errno), errno);
         ABORT(255);
-    } else if (retval == 0) {  // Parent closed the write pipe unexpectedly.
-        singularity_message(ERROR, "Parent closed write pipe unexpectedly.\n");
-        ABORT(255);
+    } else if (retval == 0) {  // Other process closed the write pipe unexpectedly.
+        if ( close(dup(coordination_pipe[1])) == -1 ) {
+            singularity_message(ERROR, "Other process closed write pipe unexpectedly.\n");
+            ABORT(255);
+        }
     }
-    // Parent successfully sent a code.
-    if (parent_code != 0) {
-        singularity_message(ERROR, "Parent indicated an error occurred; exiting with the suggested status.\n");
-        ABORT(parent_code);
-    }
-    close(coordination_pipe[0]);
+
+    singularity_message(DEBUG, "Received go-ahead signal: %d\n", code);
+    return(code);
 }
 
-static void signal_go_ahead(char code) {
+/* Updated signal_go_ahead() which allows bi-directional wait signaling */
+void singularity_signal_go_ahead(int code) {
     if ( (coordination_pipe[0] == -1) || (coordination_pipe[1] == -1)) {
         singularity_message(ERROR, "Internal error!  signal_go_ahead invoked with invalid pipe state (%d, %d).\n",
                             coordination_pipe[0], coordination_pipe[1]);
         ABORT(255);
     }
 
-    // Close our copy of the read end of the pipe; only the child should read.
-    close(coordination_pipe[0]);
-    coordination_pipe[0] = -1;
+    singularity_message(DEBUG, "Sending go-ahead signal: %d\n", code);
 
     int retval;
     while ( (-1 == (retval = write(coordination_pipe[1], &code, 1))) && errno == EINTR) {}
 
     if (retval == -1) {
-        singularity_message(ERROR, "Failed to send go-ahead to child process: %s (errno=%d)\n", strerror(errno), errno);
-        ABORT(255);
+        if ( errno != EPIPE ) {
+            singularity_message(ERROR, "Failed to send go-ahead to child process: %s (errno=%d)\n", strerror(errno), errno);
+            ABORT(255);
+        }
     }  // Note that we don't test for retval == 0 as we should get a EPIPE instead.
 
-    close(coordination_pipe[1]);
 }
 
 static int wait_child() {
@@ -178,12 +214,14 @@ static int wait_child() {
         }
     } while( child_ok );
 
-    /* Catch the exit status of the child process */
-    retval = 0;
+    /* Catch the exit status or kill signal of the child process */
     waitpid(child_pid, &tmpstatus, 0);
-    retval = WEXITSTATUS(tmpstatus);
-    
-    return(retval);
+    if (WIFEXITED(tmpstatus)) {
+        return(WEXITSTATUS(tmpstatus));
+    } else if (WIFSIGNALED(tmpstatus)) {
+        kill(getpid(), WTERMSIG(tmpstatus));
+    }
+    return(-1);
 }
 
 /* */
@@ -293,34 +331,35 @@ void install_sigchld_signal_handle() {
 }
 
 pid_t singularity_fork(unsigned int flags) {
-    int priv_fork = 0;
+    int priv_fork = 1;
     prepare_fork();
 
-    if ( geteuid() == 0 ) {
-        priv_fork = 1;
+    if ( flags == 0 || geteuid() == 0 ) {
+        priv_fork = 0;
     }
 
     singularity_message(VERBOSE2, "Forking child process\n");
     
-    if ( priv_fork == 0 ) {
+    if ( priv_fork == 1 ) {
         singularity_priv_escalate();
     }
     
     child_pid = fork_ns(flags);
 
-    if ( priv_fork == 0 ) {
+    if ( priv_fork == 1 ) {
         singularity_priv_drop();
     }
     
     if ( child_pid == 0 ) {
         singularity_message(VERBOSE2, "Hello from child process\n");
 
-        wait_for_go_ahead();
-        singularity_message(DEBUG, "Received go-ahead from parent, continuing\n");
+        prepare_pipes_child();
+        singularity_wait_for_go_ahead();
         
         return(child_pid);
     } else if ( child_pid > 0 ) {
         singularity_message(VERBOSE2, "Hello from parent process\n");
+        prepare_pipes_parent();
         
         /* Set signal mask to block all signals while we set up sig actions */
         sigset_t blocked_mask, old_mask;
@@ -343,14 +382,13 @@ pid_t singularity_fork(unsigned int flags) {
         fds[1].revents = 0;
 
         /* Drop privs if we're SUID */
-        if ( singularity_priv_is_suid() == 0 ) {
+        if ( singularity_suid_enabled() ) {
             singularity_message(DEBUG, "Dropping permissions\n");
             singularity_priv_drop();
         }
 
         /* Allow child process to continue */
-        singularity_message(DEBUG, "Signalling go-ahead to child\n");
-        signal_go_ahead(0);
+        singularity_signal_go_ahead(0);
         
         return(child_pid);
     } else {
@@ -374,7 +412,7 @@ void singularity_fork_run(unsigned int flags) {
 }
 
 int singularity_fork_exec(unsigned int flags, char **argv) {
-    int retval;
+    int retval = 1;
     int i = 0;
     pid_t child;
 
@@ -406,3 +444,27 @@ int singularity_fork_exec(unsigned int flags, char **argv) {
     return(retval);
 }
 
+int singularity_fork_daemonize(unsigned int flags) {
+    pid_t child;
+
+    child = singularity_fork(flags);
+
+    if ( child == 0 ) {
+        return(0);
+    } else if ( child > 0 ) {
+        singularity_message(DEBUG, "Successfully spawned daemon, waiting for signal_go_ahead from child\n");
+
+        int code = singularity_wait_for_go_ahead();
+        if ( code == 0 ) {
+            exit(0);
+        } else {
+            singularity_message(ERROR, "Daemon failed to start\n");
+            ABORT(code);
+        }
+    }
+    
+    singularity_message(ERROR, "Reached unreachable code. How did you get here?\n");
+    ABORT(255);
+
+    return(0);
+}

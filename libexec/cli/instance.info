@@ -1,0 +1,28 @@
+NAME="instance"
+SECTION="group"
+SUMMARY="Persistent instance command group"
+USAGE="singularity [...] instance.<command> [...]"
+
+print_help() {
+cat<<EOF
+
+This is a command group that supports the management of various instance
+functions.
+
+IMAGE GROUP COMMANDS:
+
+    instance.list     Print all running container instances
+    instance.start    Start a persistent container instance
+    instance.stop     Stop and kill all processes within a running instance
+
+All group commands have their own help output:
+
+    $ singularity help instance.start
+    $ singularity instance.start --help
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

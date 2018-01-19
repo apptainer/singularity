@@ -1,0 +1,316 @@
+#!/bin/bash
+# 
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# This software is licensed under a 3-clause BSD license.  Please
+# consult LICENSE file distributed with the sources of this project regarding
+# your rights to use or distribute this software. 
+#
+# 
+
+
+## Basic sanity
+if [ -z "$SINGULARITY_libexecdir" ]; then
+    echo "Could not identify the Singularity libexecdir."
+    exit 1
+fi
+
+## Load functions
+if [ -f "$SINGULARITY_libexecdir/singularity/functions" ]; then
+    . "$SINGULARITY_libexecdir/singularity/functions"
+else
+    echo "Error loading functions: $SINGULARITY_libexecdir/singularity/functions"
+    exit 1
+fi
+
+## Load capabilities
+if [ -f "$SINGULARITY_libexecdir/singularity/capabilities" ]; then
+    . "$SINGULARITY_libexecdir/singularity/capabilities"
+    singularity_get_env_capabilities
+else
+    echo "Error loading capabilities: $SINGULARITY_libexecdir/singularity/capabilities"
+    exit 1
+fi
+
+if [ -f "${HOME:-}/.singularity-init" ]; then
+    . "${HOME:-}/.singularity-init"
+fi
+
+if ! USERID=`id -ru`; then
+    message ERROR "Could not ascertain user ID\n"
+    exit 255
+fi
+
+message 2 "Evaluating args: '$*'\n"
+
+while true; do
+    case ${1:-} in
+        -h|--help|help)
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
+        ;;
+        -w|--writable)
+            shift
+            SINGULARITY_WRITABLE=1
+            export SINGULARITY_WRITABLE
+        ;;
+        -H|--home)
+            shift
+            SINGULARITY_HOME="$1"
+            export SINGULARITY_HOME
+            shift
+        ;;
+        -W|--wdir|--workdir|--workingdir)
+            shift
+            SINGULARITY_WORKDIR="$1"
+            export SINGULARITY_WORKDIR
+            shift
+        ;;
+        -S|--scratchdir|--scratch-dir|--scratch)
+            shift
+            SINGULARITY_SCRATCHDIR="$1,${SINGULARITY_SCRATCHDIR:-}"
+            export SINGULARITY_SCRATCHDIR
+            shift
+        ;;
+        -B|--bind)
+            shift
+            SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH:-},${1:-}"
+            export SINGULARITY_BINDPATH
+            shift
+        ;;
+        -c|--contain)
+            shift
+            SINGULARITY_CONTAIN=1
+            export SINGULARITY_CONTAIN
+        ;;
+        -o|--overlay)
+            shift
+            SINGULARITY_OVERLAYIMAGE="${1:-}"
+            export SINGULARITY_OVERLAYIMAGE
+            shift
+
+            if [ ! -e "${SINGULARITY_OVERLAYIMAGE:-}" ]; then
+                message ERROR "Overlay image must be a file or directory!\n"
+                ABORT 255
+            fi
+        ;;
+        --nv)
+            shift
+            for i in `ldconfig -p | grep -E "/libnv|/libcuda|/libEGL|/libGL|/libnvcu|/libvdpau|/libOpenCL|/libOpenGL"`; do
+                if [ -f "$i" ]; then
+                    message 2 "Found NV library: $i\n"
+                    if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
+                        SINGULARITY_CONTAINLIBS="$i"
+                    else
+                        SINGULARITY_CONTAINLIBS="$SINGULARITY_CONTAINLIBS,$i"
+                    fi
+                fi
+            done
+            if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
+                message WARN "Could not find any Nvidia libraries on this host!\n";
+            else
+                export SINGULARITY_CONTAINLIBS
+            fi
+            if NVIDIA_SMI=`which nvidia-smi`; then
+                if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
+                    SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${NVIDIA_SMI}"
+                else
+                    SINGULARITY_BINDPATH="${NVIDIA_SMI}"
+                fi
+                export SINGULARITY_BINDPATH
+            else
+                message WARN "Could not find the Nvidia SMI binary to bind into container\n"
+            fi
+        ;;
+        -n|--net)
+            shift
+            SINGULARITY_UNSHARE_NET=1
+            export SINGULARITY_UNSHARE_NET
+        ;;
+        --uts)
+            shift
+            SINGULARITY_UNSHARE_UTS=1
+            export SINGULARITY_UNSHARE_UTS
+        ;;
+        --hostname)
+            shift
+            SINGULARITY_UNSHARE_UTS=1
+            SINGULARITY_HOSTNAME="$1"
+            export SINGULARITY_UNSHARE_UTS SINGULARITY_HOSTNAME
+            shift
+        ;;
+        --boot)
+            shift
+            if [ "${USERID}" = "0" ]; then
+                SINGULARITY_INSTANCE_BOOT=1
+                SINGULARITY_UNSHARE_NET=1
+                SINGULARITY_UNSHARE_UTS=1
+                SINGULARITY_KEEP_PRIVS=1
+                singularity_drop_capabilities "CAP_SYS_BOOT,CAP_SYS_RAWIO"
+                export SINGULARITY_INSTANCE_BOOT SINGULARITY_UNSHARE_NET SINGULARITY_KEEP_PRIVS SINGULARITY_UNSHARE_UTS
+            else
+                message ERROR "boot option requires root privileges\n"
+                exit 1
+            fi
+        ;;
+        -f|--fakeroot)
+            shift
+            SINGULARITY_NOSUID=1
+            SINGULARITY_USERNS_UID=0
+            SINGULARITY_USERNS_GID=0
+            export SINGULARITY_USERNS_UID SINGULARITY_USERNS_GID SINGULARITY_NOSUID
+        ;;
+        -u|--user|--userns)
+            shift
+            SINGULARITY_NOSUID=1
+            export SINGULARITY_NOSUID
+        ;;
+        --keep-privs)
+            if [ "$(id -ru)" = "0" ]; then
+                if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+                    message ERROR "keep-privs is disabled when allow root capabilities directive is set to no\n"
+                    exit 1
+                fi
+
+                SINGULARITY_KEEP_PRIVS=1
+                export SINGULARITY_KEEP_PRIVS
+                message 4 "Requesting keep privileges\n"
+            else
+                message WARNING "Keeping privileges is for root only\n"
+            fi
+            shift
+        ;;
+        --no-privs)
+            if [ "$(id -ru)" = "0" ]; then
+                SINGULARITY_NO_PRIVS=1
+                export SINGULARITY_NO_PRIVS
+                message 4 "Requesting no privileges\n"
+            fi
+            shift
+        ;;
+        --add-caps)
+            shift
+            singularity_add_capabilities "$1"
+            shift
+        ;;
+        --drop-caps)
+            shift
+            singularity_drop_capabilities "$1"
+            shift
+        ;;
+        --allow-setuid)
+            shift
+            if [ "$(id -ru)" != "0" ]; then
+                message ERROR "allow-setuid is for root only\n"
+                exit 1
+            fi
+            if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+                message ERROR "allow-setuid is disabled when allow root capabilities directive is set to no\n"
+                exit 1
+            fi
+            SINGULARITY_ALLOW_SETUID=1
+            export SINGULARITY_ALLOW_SETUID
+        ;;
+        -*)
+            message ERROR "Unknown option: ${1:-}\n"
+            exit 1
+        ;;
+        *)
+            break
+        ;;
+    esac
+done
+
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
+else
+    message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
+    ABORT 255
+fi
+
+if [ -z "${SINGULARITY_IMAGE:-}" ]; then
+    SINGULARITY_IMAGE="${1:-}"
+    export SINGULARITY_IMAGE
+    shift
+fi
+
+if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
+    SINGULARITY_DAEMON_NAME="${1:-}"
+    export SINGULARITY_DAEMON_NAME
+    shift
+fi
+
+if [ -z "${SINGULARITY_IMAGE:-}" ] || [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
+    if [ -n "${USAGE:-}" ]; then
+        echo "USAGE: $USAGE"
+    else
+        echo "To see usage summary type: singularity help $SINGULARITY_COMMAND"
+    fi
+    exit 0
+fi
+
+ALLOWED_DAEMON_CHARS='^[a-zA-Z0-9._-]+$'
+if ! [[ "$SINGULARITY_DAEMON_NAME" =~ $ALLOWED_DAEMON_CHARS ]]; then
+    message ERROR "Illegal characters in daemon name: $SINGULARITY_DAEMON_NAME\n"
+    ABORT 255
+fi
+
+SINGULARITY_DAEMON_START=1
+export SINGULARITY_DAEMON_START
+
+singularity_daemon_file "$SINGULARITY_DAEMON_NAME"
+
+INSTANCE_PROC_NAME="singularity-instance: $USER [$SINGULARITY_DAEMON_NAME]"
+
+# cleanup by testing if daemons are alive
+DAEMONS=$(singularity_daemon_glob '*' | sort | uniq)
+
+for i in $DAEMONS; do
+    if [ -f "$i" ]; then
+        if [ ! -s "$i" ]; then
+            rm "$i"
+            continue
+        fi
+        FILE_NAME=`basename "$i"`
+        DAEMON_NAME=${FILE_NAME##*-}
+        . "$i"
+        if [ -n "${DAEMON_PID:-}" ]; then
+            PROC_CMDLINE="/proc/${DAEMON_PID:-}/cmdline"
+            if [ -e "$PROC_CMDLINE" ]; then
+                PROGNAME=$(<"${PROC_CMDLINE}" tr -d \\0)
+                if [ "${PROGNAME}" == "${INSTANCE_PROC_NAME}" ]; then
+                    message ERROR "A daemon process is already running with this name: ${DAEMON_NAME}\n"
+                    ABORT 255
+                fi
+                if [ "${PROGNAME}" != "singularity-instance: $USER [$DAEMON_NAME]" ]; then
+                    message WARN "Removing stale daemon file: $i\n"
+                    rm -f "$i"
+                fi
+            else
+                message WARN "Removing stale daemon file: $i\n"
+                rm -f "$i"
+            fi
+        else
+            message WARN "Removing invalid daemon file: $i\n"
+            rm -f "$i"
+        fi
+    fi
+done
+
+if [ -f "$SINGULARITY_sysconfdir/singularity/init" ]; then
+    . "$SINGULARITY_sysconfdir/singularity/init"
+fi
+
+if [ -x "$SINGULARITY_libexecdir/singularity/image-handler.sh" ]; then
+    . "$SINGULARITY_libexecdir/singularity/image-handler.sh"
+fi
+
+
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
+    exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" "$@" <&0
+elif [ -x "$SINGULARITY_libexecdir/singularity/bin/start" ]; then
+    exec -a "$INSTANCE_PROC_NAME" "$SINGULARITY_libexecdir/singularity/bin/start" "$@" <&0
+else
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/start\n"
+    exit 1
+fi
+

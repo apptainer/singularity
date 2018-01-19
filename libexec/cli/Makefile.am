@@ -1,12 +1,66 @@
 cliexecdir = $(libexecdir)/singularity/cli
 
-dist_cliexec_SCRIPTS = bootstrap.exec check.exec copy.exec create.exec exec.exec \
-                       expand.exec export.exec help.exec import.exec inspect.exec  \
-                       mount.exec pull.exec run.exec shell.exec test.exec \
-                       selftest.exec action_argparser.sh
+dist_cliexec_SCRIPTS = action_argparser.sh \
+                    apps.exec \
+                    bootstrap.exec \
+                    build.exec \
+                    capability.exec \
+                    capability.add.exec \
+                    capability.drop.exec \
+                    capability.list.exec \
+                    check.exec \
+                    create.exec \
+                    exec.exec \
+                    help.exec \
+                    instance.exec \
+                    instance.list.exec \
+                    instance.start.exec \
+                    instance.stop.exec \
+                    image.exec \
+                    image.create.exec \
+                    image.expand.exec \
+                    image.export.exec \
+                    image.import.exec \
+                    inspect.exec  \
+                    mount.exec \
+                    pull.exec \
+                    run.exec \
+                    shell.exec \
+                    test.exec \
+                    selftest.exec \
+                    siflist.exec \
+                    sign.exec \
+                    verify.exec
 
-dist_cliexec_DATA = singularity.help bootstrap.help check.help copy.help create.help \
-                    exec.help expand.help export.help import.help inspect.help mount.help \
-                    pull.help run.help shell.help test.help
+dist_cliexec_DATA = apps.info \
+                    bootstrap.info \
+                    build.info \
+                    capability.info \
+                    capability.add.info \
+                    capability.drop.info \
+                    capability.list.info \
+                    check.info \
+                    create.info \
+                    exec.info \
+                    help.info \
+                    instance.info \
+                    instance.list.info \
+                    instance.start.info \
+                    instance.stop.info \
+                    image.info \
+                    image.create.info \
+                    image.expand.info \
+                    image.export.info \
+                    image.import.info \
+                    inspect.info \
+                    mount.info \
+                    pull.info \
+                    run.info \
+                    selftest.info \
+                    shell.info \
+                    siflist.info \
+                    sign.info \
+                    test.info \
+                    verify.info
 
 MAINTAINERCLEANFILES = Makefile.in

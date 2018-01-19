@@ -122,7 +122,7 @@ class TestShell(TestCase):
         self.assertEqual(image["repo_name"], 'lizardleezle')
         self.assertEqual(image["registry"], self.REGISTRY)
 
-        print("Case 4: Tag when speciifed should be returned.")
+        print("Case 4: Tag when specified should be returned.")
         image_name = "%s/%s:%s" % (self.namespace,
                                    self.repo_name,
                                    "pusheenasaurus")
@@ -134,34 +134,289 @@ class TestShell(TestCase):
         image_name = "%s:%s" % (self.repo_name, self.tag)
         digest = parse_image_uri(image_name)
         self.assertTrue(digest['repo_tag'] == self.tag)
-        self.assertTrue(digest['namespace'] == 'library')
+        self.assertTrue(digest['namespace'] == self.NAMESPACE)
         self.assertTrue(digest['repo_name'] == self.repo_name)
 
-        print("Case 6: Changing default namespace should not use library.")
+        print("Case 6: Changing namespace should not use default.")
         image_name = "meow/%s:%s" % (self.repo_name, self.tag)
         digest = parse_image_uri(image_name)
         self.assertTrue(digest['namespace'] == 'meow')
 
-        print("Case 7: Changing default shouldn't use index.docker.io.")
+        print("Case 7: Changing registry shouldn't use index.docker.io.")
         image_name = "meow/mix/%s:%s" % (self.repo_name, self.tag)
         digest = parse_image_uri(image_name)
         self.assertTrue(digest['registry'] == 'meow')
         self.assertTrue(digest['namespace'] == 'mix')
 
         print("Case 8: Custom uri should use it.")
-        image_name = "catdog://meow/mix/%s:%s" % (self.repo_name,
-                                                  self.tag)
+        image_name = "catdog://meow/mix/tenders/%s:%s" % (self.repo_name,
+                                                          self.tag)
         digest = parse_image_uri(image_name, uri="catdog://")
         self.assertTrue(digest['registry'] == 'meow')
-        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['namespace'] == 'mix/tenders')
 
         print("Case 9: Digest version should be parsed")
-        image_name = ("catdog://meow/mix/%s:%s@sha:256xxxxxxxxxxxxxxx"
+        image_name = ("catdog://meow/mix/original/choice/%s:%s@sha:256xxxxxxxxxxxxxxx"  # noqa
                       % (self.repo_name, self.tag))
         digest = parse_image_uri(image_name, uri="catdog://")
         self.assertTrue(digest['registry'] == 'meow')
-        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['namespace'] == 'mix/original/choice')
         self.assertTrue(digest['version'] == 'sha:256xxxxxxxxxxxxxxx')
+
+        # now test some tricky cases
+
+        print("Case 10: registry and namespace, @version contains / and : (docker://)")
+        image_name = "some.registry.com/mix/mux/repo@me/version-1:3:2"
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == 'some.registry.com')
+        self.assertTrue(digest['repo_tag'] == self.REPO_TAG)
+        self.assertTrue(digest['namespace'] == 'mix/mux')
+        self.assertTrue(digest['repo_name'] == 'repo')
+        self.assertTrue(digest['version'] == 'me/version-1:3:2')
+
+        print("Case 11: registry and namespace, @version contains / and : (generic)")
+        image_name = "registry/mix/mux/repo@me/version-1:3:2"
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'registry')
+        self.assertTrue(digest['repo_tag'] == self.REPO_TAG)
+        self.assertTrue(digest['namespace'] == 'mix/mux')
+        self.assertTrue(digest['repo_name'] == 'repo')
+        self.assertTrue(digest['version'] == 'me/version-1:3:2')
+
+        print("Case 12: Namespaces can include / characters i.e. can be nested")
+        image_name = "meow/mix/barf/baz/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow')
+        self.assertTrue(digest['namespace'] == 'mix/barf/baz')
+
+        print("Case 13: Namespaces can include '.'")
+        image_name = "meow/mix.max/barf.baz/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow')
+        self.assertTrue(digest['namespace'] == 'mix.max/barf.baz')
+        self.assertTrue(digest['repo_tag'] == self.tag)
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+
+        print("Case 14: registry contains ., default namespace")
+        image_name = "meow.io/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == self.NAMESPACE)
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 15: registry contains :port, default namespace")
+        # namespace is not allowed to be empty except for docker:// uris
+        # so in this case, the default namespace is used
+        image_name = "meow:123/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow:123')
+        self.assertTrue(digest['namespace'] == self.NAMESPACE)
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 16: Namespace cannot be empty with full non-docker uri")
+        image_name = "myuri://meow.io/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == self.NAMESPACE)
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 17: comments at the end of the line")
+        image_name = "myuri://meow.io/mix/%s:%s # comment hel.lo/test:blah@stuff" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 18: tag cannot contain @, version without : should be parsed")
+	# apparently there was a bug where if @version doesn't contain any : character
+	# it will get mis-parsed as part of the tag, which is clearly wrong
+        image_name = "myuri://meow.io/mix/my-repo:tag-1.2.3@master"
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == 'my-repo')
+        self.assertTrue(digest['repo_tag'] == 'tag-1.2.3')
+        self.assertTrue(digest['version'] == 'master')
+
+        print("Case 19: tag cannot contain @, version without : should be parsed")
+	# apparently there was a bug where if @version doesn't contain any : character
+	# it will get mis-parsed as part of the tag, which is clearly wrong
+        image_name = "myuri://meow.io/mix/my-repo:tag@2.2"
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == 'my-repo')
+        self.assertTrue(digest['repo_tag'] == 'tag')
+        self.assertTrue(digest['version'] == '2.2')
+
+    def test_parse_image_uri_docker(self):
+        """
+        Docker-specific uri parsing rules
+        """
+
+        from shell import parse_image_uri
+
+        print("Case 1: just image, default everything else")
+        digest = parse_image_uri(self.repo_name, uri="docker://")
+        self.assertTrue(digest['registry'] == self.REGISTRY)
+        self.assertTrue(digest['namespace'] == self.NAMESPACE)
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.REPO_TAG)
+
+        print("Case 2: just image and tag, default everything else")
+        image_name = "%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == self.REGISTRY)
+        self.assertTrue(digest['namespace'] == self.NAMESPACE)
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 3: image, namespace and tag")
+        image_name = "mix/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == self.REGISTRY)
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 4: image, namespace, tag and version")
+        image_name = "mix/%s:%s@sha:256xxxxxxxxxxxxxxx" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == self.REGISTRY)
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+        self.assertTrue(digest['version'] == 'sha:256xxxxxxxxxxxxxxx')
+
+        print("Case 5: image, several namespaces and tag")
+        # for docker, registry must have a . or a :port, else it's parsed
+        # as a namespace. In this case, no registry is specified
+        image_name = "mix/max/blitz/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == self.REGISTRY)
+        self.assertTrue(digest['namespace'] == 'mix/max/blitz')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 6: image, namespace, tag and version")
+        image_name = "mix/max/blitz/%s:%s@sha:256xxxxxxxxxxxxxxx" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == self.REGISTRY)
+        self.assertTrue(digest['namespace'] == 'mix/max/blitz')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+        self.assertTrue(digest['version'] == 'sha:256xxxxxxxxxxxxxxx')
+
+        print("Case 7: registry with ., image and tag, empty namespace")
+        # with docker://, if registry is present in uri, and namespace is empty,
+        # we parse the namespace as empty
+        image_name = "meow.io/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == '')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 8: registry with :port, image and tag, empty namespace")
+        image_name = "meow:5000/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == 'meow:5000')
+        self.assertTrue(digest['namespace'] == '')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 9: registry with . and :port, image and tag")
+        image_name = "meow.io:5000/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == 'meow.io:5000')
+        self.assertTrue(digest['namespace'] == '')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 10: registry with . and :port, image, no tag. empty namespace")
+        image_name = "meow.io:5000/%s" % (self.repo_name)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == 'meow.io:5000')
+        self.assertTrue(digest['namespace'] == '')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.REPO_TAG)
+
+        print("Case 11: registry, image, namespace and tag")
+        image_name = "meow.io/mix/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 12: registry, image, several namespaces and tag")
+        image_name = "meow:5000/mix/max/blitz/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == 'meow:5000')
+        self.assertTrue(digest['namespace'] == 'mix/max/blitz')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 13: no registry, several namespaces containing . and tag")
+        # a registry is matched if it contains : or ., but it must be the first one
+        # before any other namespace, else it's just a namespace
+        image_name = "mix/max.nix/blitz.krieg/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name, uri="docker://")
+        self.assertTrue(digest['registry'] == self.REGISTRY)
+        self.assertTrue(digest['namespace'] == 'mix/max.nix/blitz.krieg')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 15: full docker:// uri with registry")
+        image_name = "docker://meow.io/mix/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 16: full docker uri with registry, empty namespace")
+        image_name = "docker://meow:5000/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow:5000')
+        self.assertTrue(digest['namespace'] == '')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 17: Namespace can be empty when full docker:// uri specified")
+        # note: registry must include a . or a :port, else will be parsed as a namespace
+        image_name = "docker://meow.io/%s:%s" % (self.repo_name, self.tag)
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == '')
+        self.assertTrue(digest['repo_name'] == self.repo_name)
+        self.assertTrue(digest['repo_tag'] == self.tag)
+
+        print("Case 18: tag cannot contain @, version without : should be parsed")
+	# apparently there was a bug where if @version doesn't contain any : character
+	# it will get mis-parsed as part of the tag, which is clearly wrong
+        image_name = "docker://meow.io/mix/my-repo:tag-1.2.3@master"
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == 'my-repo')
+        self.assertTrue(digest['repo_tag'] == 'tag-1.2.3')
+        self.assertTrue(digest['version'] == 'master')
+
+        print("Case 19: tag cannot contain @, version without : should be parsed")
+	# apparently there was a bug where if @version doesn't contain any : character
+	# it will get mis-parsed as part of the tag, which is clearly wrong
+        image_name = "docker://meow.io/mix/my-repo:tag@2.2"
+        digest = parse_image_uri(image_name)
+        self.assertTrue(digest['registry'] == 'meow.io')
+        self.assertTrue(digest['namespace'] == 'mix')
+        self.assertTrue(digest['repo_name'] == 'my-repo')
+        self.assertTrue(digest['repo_tag'] == 'tag')
+        self.assertTrue(digest['version'] == '2.2')
 
 
 class TestUtils(TestCase):
@@ -254,25 +509,6 @@ class TestUtils(TestCase):
         if not isinstance(hello, str):  # python 3 support
             hello = hello.decode('utf-8')
         self.assertEqual(hello, 'hello\n')
-
-    def test_is_number(self):
-        '''test_is_number should return True for any string or
-        number that turns to a number, and False for everything else
-        '''
-        print("Testing utils.is_number...")
-
-        from sutils import is_number
-
-        print("Case 1: Testing string and float numbers returns True")
-        self.assertTrue(is_number("4"))
-        self.assertTrue(is_number(4))
-        self.assertTrue(is_number("2.0"))
-        self.assertTrue(is_number(2.0))
-
-        print("Case 2: Testing repo names, tags, commits, returns False")
-        self.assertFalse(is_number("vsoch/singularity-images"))
-        self.assertFalse(is_number("vsoch/singularity-images:latest"))
-        self.assertFalse(is_number("44ca6e7c6c35778ab80b34c3fc940c32f1810f39"))
 
     def test_extract_tar(self):
         '''test_extract_tar will test extraction of a tar.gz file

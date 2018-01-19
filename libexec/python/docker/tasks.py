@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),  # noqa
                 os.path.pardir)))  # noqa
-sys.path.append('..')  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
 
 from sutils import (
     add_http,
@@ -83,7 +83,7 @@ def extract_runscript(manifest, includecmd=False):
     commands = ["Entrypoint", "Cmd"]
     if includecmd is True:
         commands.reverse()
-    configs = get_configs(manifest, commands, delim=" ")
+    configs = get_configs(manifest, commands)
 
     # Look for non "None" command
     for command in commands:
@@ -94,15 +94,16 @@ def extract_runscript(manifest, includecmd=False):
     if cmd is not None:
         bot.verbose3("Adding Docker %s as Singularity runscript..."
                      % command.upper())
-        bot.debug(cmd)
 
         # If the command is a list, join. (eg ['/usr/bin/python','hello.py']
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
+        if not isinstance(cmd, list):
+            cmd = [cmd]
+
+        cmd = " ".join(['"%s"' % x for x in cmd])
 
         if not RUNSCRIPT_COMMAND_ASIS:
             cmd = 'exec %s "$@"' % cmd
-        cmd = "#!/bin/sh\n\n%s" % cmd
+        cmd = "#!/bin/sh\n\n%s\n" % cmd
         return cmd
 
     bot.debug("CMD and ENTRYPOINT not found, skipping runscript.")
@@ -168,10 +169,16 @@ def extract_env(manifest):
     '''
     environ = get_config(manifest, 'Env')
     if environ is not None:
-        if isinstance(environ, list):
-            environ = "\n".join(environ)
-        environ = ["export %s" % x for x in environ.split('\n')]
-        environ = "\n".join(environ)
+        if not isinstance(environ, list):
+            environ = [environ]
+
+        lines = []
+        for line in environ:
+            line = re.findall("(?P<var_name>.+?)=(?P<var_value>.+)", line)
+            line = ['export %s="%s"' % (x[0], x[1]) for x in line]
+            lines = lines + line
+
+        environ = "\n".join(lines)
         bot.verbose3("Found Docker container environment!")
     return environ
 
@@ -234,9 +241,8 @@ def get_config(manifest, spec="Entrypoint", delim=None):
 
     # Standard is to include commands like ['/bin/sh']
     if isinstance(cmd, list):
-        if delim is None:
-            delim = "\n"
-        cmd = delim.join(cmd)
+        if delim is not None:
+            cmd = delim.join(cmd)
     bot.verbose3("Found Docker command (%s) %s" % (spec, cmd))
 
     return cmd

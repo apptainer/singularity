@@ -42,7 +42,9 @@
 #include "util/util.h"
 #include "util/registry.h"
 #include "util/privilege.h"
+#include "util/capability.h"
 #include "util/message.h"
+#include "util/suid.h"
 #include "util/config_parser.h"
 
 
@@ -52,7 +54,7 @@ static struct PRIV_INFO {
     gid_t gid;
     gid_t *gids;
     size_t gids_count;
-    int userns_ready;
+    int userns;
     uid_t orig_uid;
     uid_t orig_gid;
     pid_t orig_pid;
@@ -189,93 +191,24 @@ void singularity_priv_init(void) {
         uinfo.home = strdup("/");
         uinfo.homedir = uinfo.home;
     }
-    
-    return;
-}
 
-
-void singularity_priv_userns(void) {
-
-    singularity_message(VERBOSE, "Invoking the user namespace\n");
+    uinfo.userns = 0;
 
     if ( singularity_config_get_bool(ALLOW_USER_NS) <= 0 ) {
         singularity_message(VERBOSE, "Not virtualizing USER namespace by configuration: 'allow user ns' = no\n");
     } else if ( getuid() == 0 ) {
         singularity_message(VERBOSE, "Not virtualizing USER namespace: running as root\n");
-    } else if ( singularity_priv_is_suid() == 0 ) {
+    } else if ( singularity_suid_enabled() ) {
         singularity_message(VERBOSE, "Not virtualizing USER namespace: running as SUID\n");
+    } else if ( singularity_registry_get("NOSUID") == NULL ) {
+        singularity_message(VERBOSE, "Not virtualizing USER namespace: not requested by user\n");
     } else {
-        uid_t uid = singularity_priv_getuid();
-        gid_t gid = singularity_priv_getgid();
-
-        singularity_message(DEBUG, "Attempting to virtualize the USER namespace\n");
-        if ( unshare(CLONE_NEWUSER) != 0 ) {
-            singularity_message(ERROR, "Failed invoking the NEWUSER namespace runtime: %s\n", strerror(errno));
-            ABORT(255); // If we are configured to use CLONE_NEWUSER, we should abort if that fails
-        }
-
-        singularity_message(DEBUG, "Enabled user namespaces\n");
-
-        {   
-            singularity_message(DEBUG, "Setting setgroups to: 'deny'\n");
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/setgroups", getpid()); // Flawfinder: ignore
-            FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
-            if ( map_fp != NULL ) {
-                singularity_message(DEBUG, "Updating setgroups: %s\n", map_file);
-                fprintf(map_fp, "deny\n");
-                if ( fclose(map_fp) < 0 ) {
-                    singularity_message(ERROR, "Failed to write deny to setgroup file %s: %s\n", map_file, strerror(errno));
-                    ABORT(255);
-                }
-            } else {
-                singularity_message(ERROR, "Could not write info to setgroups: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            free(map_file);
-        }
-        {
-            singularity_message(DEBUG, "Setting GID map to: '%i %i 1'\n", gid, gid);
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/gid_map", getpid()); // Flawfinder: ignore
-            FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
-            if ( map_fp != NULL ) {
-                singularity_message(DEBUG, "Updating the parent gid_map: %s\n", map_file);
-                fprintf(map_fp, "%i %i 1\n", gid, gid);
-                if ( fclose(map_fp) < 0 ) {
-                    singularity_message(ERROR, "Failed to write to GID map %s: %s\n", map_file, strerror(errno));
-                    ABORT(255);
-                }
-            } else {
-                singularity_message(ERROR, "Could not write parent info to gid_map: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            free(map_file);
-        }
-        {   
-            singularity_message(DEBUG, "Setting UID map to: '%i %i 1'\n", uid, uid);
-            char *map_file = (char *) malloc(PATH_MAX);
-            snprintf(map_file, PATH_MAX-1, "/proc/%d/uid_map", getpid()); // Flawfinder: ignore
-            FILE *map_fp = fopen(map_file, "w+"); // Flawfinder: ignore
-            if ( map_fp != NULL ) {
-                singularity_message(DEBUG, "Updating the parent uid_map: %s\n", map_file);
-                fprintf(map_fp, "%i %i 1\n", uid, uid);
-                if ( fclose(map_fp) < 0 ) {
-                    singularity_message(ERROR, "Failed to write to UID map %s: %s\n", map_file, strerror(errno));
-                    ABORT(255);
-                }
-            } else {
-                singularity_message(ERROR, "Could not write parent info to uid_map: %s\n", strerror(errno));
-                ABORT(255);
-            }
-            free(map_file);
-        }
-
-        uinfo.userns_ready = 1;
+        uinfo.userns = 1;
     }
 
-    singularity_message(DEBUG, "Returning singularity_priv_init(void)\n");
+    return;
 }
+
 
 void singularity_priv_escalate(void) {
 
@@ -284,7 +217,7 @@ void singularity_priv_escalate(void) {
         ABORT(255);
     }
 
-    if ( uinfo.userns_ready == 1 ) {
+    if ( uinfo.userns == 1 ) {
         singularity_message(DEBUG, "Not escalating privileges, user namespace enabled\n");
         return;
     }
@@ -319,7 +252,7 @@ void singularity_priv_drop(void) {
         ABORT(255);
     }
 
-    if ( uinfo.userns_ready == 1 ) {
+    if ( uinfo.userns == 1 ) {
         singularity_message(DEBUG, "Not dropping privileges, user namespace enabled\n");
         return;
     }
@@ -385,18 +318,21 @@ void singularity_priv_drop_perm(void) {
         ABORT(255);
     }
 
-    if ( uinfo.userns_ready == 1 ) {
+    if ( uinfo.userns == 1 ) {
         singularity_message(VERBOSE2, "User namespace called, no privilges to drop\n");
         return;
     }
 
     if ( uinfo.uid == 0 ) {
+        singularity_capability_drop();
         singularity_message(VERBOSE2, "Calling user is root, no privileges to drop\n");
         return;
     }
 
     singularity_message(DEBUG, "Escalating permissison so we can properly drop permission\n");
     singularity_priv_escalate();
+
+    singularity_capability_keep();
 
     singularity_message(DEBUG, "Resetting supplementary groups\n");
     if ( setgroups(uinfo.gids_count, uinfo.gids) < 0 ) {
@@ -445,22 +381,14 @@ void singularity_priv_drop_perm(void) {
     singularity_message(VERBOSE2, "Not enabling NO_NEW_PRIVS flag due to lack of compile-time support.\n");
 #endif
 
+    singularity_capability_drop();
 
     singularity_message(DEBUG, "Finished dropping privileges\n");
 }
 
 
 int singularity_priv_userns_enabled(void) {
-    return uinfo.userns_ready;
-}
-
-/* Return 0 if program is SUID, -1 if not SUID */
-int singularity_priv_is_suid(void) {
-    if ( ( is_suid("/proc/self/exe") == 0 ) && ( is_owner("/proc/self/exe", 0)  == 0) ) {
-        return(0);
-    } else {
-        return(-1);
-    }
+    return uinfo.userns;
 }
 
 char *singularity_priv_home(void) {
@@ -492,7 +420,7 @@ uid_t singularity_priv_getuid(void) {
         singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
-    return uinfo.uid;
+    return singularity_priv_userns_enabled() ? getuid() : uinfo.uid;
 }
 
 gid_t singularity_priv_getgid(void) {
@@ -500,7 +428,7 @@ gid_t singularity_priv_getgid(void) {
         singularity_message(ERROR, "Invoked before privilege info initialized!\n");
         ABORT(255);
     }
-    return uinfo.gid;
+    return singularity_priv_userns_enabled() ? getgid() : uinfo.gid;
 }
 
 const gid_t *singularity_priv_getgids(void) {

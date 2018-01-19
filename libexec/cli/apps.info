@@ -1,0 +1,48 @@
+NAME="apps"
+SECTION="management"
+SUMMARY="List available apps within a container"
+USAGE="singularity [...] apps <container path>"
+
+print_help() {
+cat<<EOF
+List applications (apps) installed in a container, located at
+    /scif/apps. See http://containers-ftw.org/SCI-F/
+
+EXAMPLES:
+    
+    $ singularity apps ubuntu.img
+     bar
+     foo
+
+To access apps, use shell, exec, run, inspect with --app <appname>
+
+With all of the above, the following environment variables are available
+to you when called from the shell inside the container. The top variables
+are relevant to the active app (--app <app>) and the bottom available
+for all apps regardless of the active:
+
+
+ACTIVE APP ENVIRONMENT:
+
+    SINGULARITY_APPNAME     the name of the application
+    SINGULARITY_APPROOT     the application base (/scif/apps/<app>)
+    SINGULARITY_APPMETA     the application metadata folder
+    SINGULARITY_APPDATA     the data base folder for active app
+        SINGULARITY_APPINPUT    expected input folder within data base folder
+        SINGULARITY_APPOUTPUT   the output data folder within data base folder
+
+
+GLOBAL APP ENVIRONMENT:
+    
+    SINGULARITY_DATA        scif defined data base for all apps (/scif/data)
+    SINGULARITY_APPS        scif defined install bases for all apps (/scif/apps)
+    APPROOT_<app>           root for application <app>
+    APPDATA_<app>           data root for application <app>
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

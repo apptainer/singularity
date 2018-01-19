@@ -53,7 +53,7 @@ def main():
 
     # What image is the user asking for?
     container = getenv("SINGULARITY_CONTAINER", required=True)
-    pull_folder = getenv("SINGULARITY_PULLFOLDER", required=True)
+    pull_folder = getenv("SINGULARITY_PULLFOLDER")
 
     image_uri = get_image_uri(container)
     container = remove_image_uri(container, quiet=True)

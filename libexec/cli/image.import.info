@@ -1,0 +1,27 @@
+NAME="image.import"
+GROUP="image"
+SUMMARY="Import tar stream to disk image"
+USAGE="singularity [...] image.import [...] <container path>"
+
+print_help() {
+cat<<EOF
+Import will recieve a tar stream via STDIN and will dump that into an
+image file.
+
+IMPORT OPTIONS:
+    -f|--file   Import from a given tarfile (instead of pipe)
+
+EXAMPLES:
+
+    $ singularity image.import /tmp/Debian.img < /tmp/Debian.tar
+    $ gzip -9 > Debian.tar.gz | singularity image.import /tmp/Debian.img
+    $ tar -cvf - -C data_dir/ . | singularity image.import /tmp/data.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}
+
+

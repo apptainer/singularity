@@ -36,24 +36,40 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
+#include "util/registry.h"
 #include "util/config_parser.h"
 
 #include "./ipc/ipc.h"
 #include "./mnt/mnt.h"
 #include "./pid/pid.h"
+#include "./net/net.h"
+#include "./uts/uts.h"
+#include "./user/user.h"
 #include "../runtime.h"
 
 
 int _singularity_runtime_ns(unsigned int flags) {
     int retval = 0;
 
-    if ( flags & SR_NS_PID ) {
-        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_pid()\n");
-        retval += _singularity_runtime_ns_pid();
+    if ( flags & SR_NS_USER ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_user()\n");
+        retval += _singularity_runtime_ns_user();
     }
     if ( flags & SR_NS_IPC ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_ipc()\n");
         retval += _singularity_runtime_ns_ipc();
+    }
+    if ( flags & SR_NS_PID ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_pid()\n");
+        retval += _singularity_runtime_ns_pid();
+    }
+    if ( flags & SR_NS_NET ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_net()\n");
+        retval += _singularity_runtime_ns_net();
+    }
+    if ( flags & SR_NS_UTS ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_uts()\n");
+        retval += _singularity_runtime_ns_uts();
     }
     if ( flags & SR_NS_MNT ) {
         singularity_message(DEBUG, "Calling: _singularity_runtime_ns_mnt()\n");
@@ -63,3 +79,36 @@ int _singularity_runtime_ns(unsigned int flags) {
     return(retval);
 }
 
+int _singularity_runtime_ns_join(unsigned int flags) {
+    int retval = 0;
+    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+
+    if ( flags & SR_NS_USER ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_user_join()\n");
+        retval += _singularity_runtime_ns_user_join(ns_fd);
+    }
+    if ( flags & SR_NS_IPC ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_ipc_join()\n");
+        retval += _singularity_runtime_ns_ipc_join(ns_fd);
+    }
+    if ( flags & SR_NS_PID ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_pid_join()\n");
+        retval += _singularity_runtime_ns_pid_join(ns_fd);
+    }
+    if ( flags & SR_NS_NET ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_net_join()\n");
+        retval += _singularity_runtime_ns_net_join(ns_fd);
+    }
+    if ( flags & SR_NS_UTS ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_uts_join()\n");
+        retval += _singularity_runtime_ns_uts_join(ns_fd);
+    }
+    if ( flags & SR_NS_MNT ) {
+        singularity_message(DEBUG, "Calling: _singularity_runtime_ns_mnt_join()\n");
+        retval += _singularity_runtime_ns_mnt_join(ns_fd);
+    }
+
+    close(ns_fd);
+
+    return(retval);
+}

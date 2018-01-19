@@ -1,25 +1,21 @@
 #!/bin/bash
-# 
+#
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
-# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# 
-# Copyright (c) 2016-2017, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
-# This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software.
-# 
-# NOTICE.  This Software was developed under funding from the U.S. Department of
-# Energy and the U.S. Government consequently retains certain rights. As such,
-# the U.S. Government has been granted for itself and others acting on its
-# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
-# to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+#
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
+#
+# This file also contains content that is covered under the LBNL/DOE/UC modified
+# 3-clause BSD license and is subject to the license terms in the LICENSE-LBNL.md
+# file found in the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/LICENSE-LBNL.md.
+
 
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
@@ -38,10 +34,6 @@ fi
 if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     message ERROR "Singularity root file system not defined\n"
     exit 1
-fi
-
-if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    exit
 fi
 
 
@@ -89,6 +81,7 @@ if [ "$RPM_DBPATH" != '%{_var}/lib/rpm' ]; then
     ABORT 1
 fi
 
+OSVERSION="${SINGULARITY_DEFFILE_OSVERSION:-}"
 if [ -z "${OSVERSION:-}" ]; then
     if [ -f "/etc/redhat-release" ]; then
         OSVERSION=`rpm -qf --qf '%{VERSION}' /etc/redhat-release`
@@ -97,15 +90,15 @@ if [ -z "${OSVERSION:-}" ]; then
     fi
 fi
 
-MIRROR=`echo "${MIRRORURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
-MIRROR_META=`echo "${METALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR=`echo "${SINGULARITY_DEFFILE_MIRRORURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_META=`echo "${SINGULARITY_DEFFILE_METALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 if [ -z "${MIRROR:-}" ] && [ -z "${MIRROR_META:-}" ]; then
     message ERROR "No 'MirrorURL' or 'MetaLink' defined in bootstrap definition\n"
     ABORT 1
  fi
 
-MIRROR_UPDATES=`echo "${UPDATEURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
-MIRROR_UPDATES_META=`echo "${UPDATEMETALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_UPDATES=`echo "${SINGULARITY_DEFFILE_UPDATEURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_UPDATES_META=`echo "${SINGULARITY_DEFFILE_UPDATEMETALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 if [ -n "${MIRROR_UPDATES:-}" ] || [ -n "${MIRROR_UPDATES_META:-}" ]; then
     message 1 "'UpdateURL' or 'UpdateMetaLink' defined in bootstrap definition\n"
 fi
@@ -124,8 +117,6 @@ mkdir -m 0755 -p "$SINGULARITY_ROOTFS/$YUM_CONF_DIRNAME"
 echo "[main]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 if [ -n "${http_proxy:-}" ]; then
     echo "proxy=$http_proxy" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
-elif [ -n "${HTTP_PROXY:-}" ]; then
-    echo "proxy=$HTTP_PROXY" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 fi
 echo 'cachedir=/var/cache/yum-bootstrap' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "keepcache=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
@@ -153,6 +144,8 @@ if [ -n "${MIRROR_META:-}" ]; then
     echo "metalink=$MIRROR_META" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 fi
 echo "enabled=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+
+GPG="${SINGULARITY_DEFFILE_GPG:-}"
 if [ -n "${GPG:-}" ]; then
 	echo "gpgcheck=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 else
@@ -215,7 +208,10 @@ else
 fi
 
 # Do the install!
-if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS --releasever=${OSVERSION} -y install /etc/redhat-release coreutils ${INCLUDE:-}"; then
+INCLUDE="${SINGULARITY_DEFFILE_INCLUDE:-}"
+$INSTALL_CMD --noplugins -c "$SINGULARITY_ROOTFS/$YUM_CONF" --installroot $SINGULARITY_ROOTFS --releasever="${OSVERSION}" -y install /etc/redhat-release coreutils ${INCLUDE:-}
+
+if [ $? != 0 ]; then
     message ERROR "Bootstrap failed... exiting\n"
     ABORT 255
 fi

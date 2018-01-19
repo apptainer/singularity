@@ -2,29 +2,30 @@
 #
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
-# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
 #
-# Copyright (c) 2016-2017, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
 #
-# This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software.
-#
-# NOTICE.  This Software was developed under funding from the U.S. Department of
-# Energy and the U.S. Government consequently retains certain rights. As such,
-# the U.S. Government has been granted for itself and others acting on its
-# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
-# to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so.
-#
-#
+# This file also contains content that is covered under the LBNL/DOE/UC modified
+# 3-clause BSD license and is subject to the license terms in the LICENSE-LBNL.md
+# file found in the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/LICENSE-LBNL.md.
+
 
 set -u
 
 if [ -z "${SINGULARITY_libexecdir:-}" ]; then
     echo "ERROR: SINGULARITY_libexecdir not defined in environment"
+    exit 2
+fi
+
+if [ -z "${SINGULARITY_sysconfdir:-}" ]; then
+    echo "ERROR: SINGULARITY_sysconfdir not defined in environment"
     exit 2
 fi
 
@@ -51,6 +52,16 @@ message() {
     fi
     shift
     shift
+
+    # if level is symbolic, get a numeric value
+    case "$LEVEL" in
+	INFO) LEVNUM=1 ;;
+	VERBOSE) LEVNUM=4 ;;
+	DEBUG) LEVNUM=5 ;;
+        [1-5]) LEVNUM="$LEVEL" ;;
+        *) LEVNUM=1 ;; # default to INFO
+    esac
+
     case "$LEVEL" in
         e|error|E|ERROR)
             tput -Txterm setaf 1 2>/dev/null
@@ -68,7 +79,7 @@ message() {
             tput -Txterm sgr0 2>/dev/null
         ;;
         1|INFO)
-            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
+            if [ "$LEVNUM" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@"
             fi
         ;;
@@ -88,7 +99,7 @@ message() {
             tput -Txterm sgr0 2>/dev/null
         ;;
         [2-5]|VERBOSE|DEBUG)
-            if [ "$LEVEL" -le "$SINGULARITY_MESSAGELEVEL" ]; then
+            if [ "$LEVNUM" -le "$SINGULARITY_MESSAGELEVEL" ]; then
                 printf "$MESSAGE" "$@" 1>&2
             fi
         ;;
@@ -120,53 +131,90 @@ singularity_keys_get() {
     return 0
 }
 
-singularity_section_exists() {
-    SECTION="${1:-}"
-    FILE="${2:-}"
-    TOGGLE=""
-    if [ ! -f "$FILE" ]; then
-        message ERROR "File not found ($FILE)\n"
-        exit 1
-    fi
-    if ! egrep -i -q -- "^%$SECTION\W*" "$FILE"; then
-        return 1
-    fi
-
-    return 0
-}
-
-singularity_section_args() {
-    SECTION="${1:-}"
-    FILE="${2:-}"
-    TOGGLE=""
-    if [ ! -f "$FILE" ]; then
-        message ERROR "File not found ($FILE)\n"
-        exit 1
-    fi
-
-    egrep -i -- "^%$SECTION\W*" "$FILE" | sed -e "s@%$SECTION\s*@@i"
-
-    return 0
-}
-
-singularity_section_get() {
-    SECTION="${1:-}"
-    FILE="${2:-}"
-    if [ ! -x "$SINGULARITY_libexecdir/singularity/bin/get-section" ]; then
-        message ERROR "Could not locate get-section program\n"
+singularity_daemon_glob() {
+    if ! USERID=`id -ru`; then
+        message ERROR "Could not ascertain user ID\n"
         exit 255
     fi
 
-    if [ ! -f "$FILE" ]; then
-        message ERROR "File not found ($FILE)\n"
-        exit 1
+    if ! HOST=`hostname`; then
+        message ERROR "Could not ascertain hostname\n"
+        ABORT 255
     fi
 
-    eval "$SINGULARITY_libexecdir/singularity/bin/get-section" "$SECTION" "$FILE"
+    if ! HOME=`getent passwd ${USERID} | cut -d: -f6`; then
+        message ERROR "Could not discover user's home directory\n"
+        ABORT 255
+    fi
+
+    for arg in "$@"; do
+        for i in ${HOME}/.singularity/daemon/${HOST}/${arg}; do
+            echo "$i"
+        done
+    done
+    return 0
+}
+
+singularity_daemon_file() {
+    SINGULARITY_DAEMON_NAME="${1:-}"
+
+    if [ -z "${SINGULARITY_DAEMON_NAME:-}" ]; then
+        message ERROR "singularity_daemon_file() called with no process name\n"
+        ABORT 255
+    fi
+
+    if ! USERID=`id -ru`; then
+        message ERROR "Could not ascertain user ID\n"
+        ABORT 255
+    fi
+    
+    if ! HOST=`hostname`; then
+        message ERROR "Could not ascertain hostname\n"
+        ABORT 255
+    fi
+
+    if ! HOME=`getent passwd ${USERID} | cut -d: -f6`; then
+        message ERROR "Could not discover user's home directory\n"
+        ABORT 255
+    fi
+
+    # This is a configurable option, needs to be set accordingly!
+    SINGULARITY_DAEMON_FILE="${HOME}/.singularity/daemon/${HOST}/${SINGULARITY_DAEMON_NAME}"
+    export SINGULARITY_DAEMON_FILE SINGULARITY_DAEMON_NAME
+
+    message 2 "Using Daemon configuration file: ${SINGULARITY_DAEMON_FILE}\n"
 
     return 0
 }
 
+singularity_calculate_size() {
+    FOLDER="${1:-}"
+    if [ ! -d "${FOLDER}" ]; then
+        message ERROR "Folder not found ($FOLDER)\n"
+    fi
+
+    eval du -sm ${FOLDER} | cut -f1 # MB
+
+    return 0
+}
+
+singularity_add_caps() {
+    if [ -n "${SINGULARITY_ADD_CAPS:-}" ]; then
+        SINGULARITY_ADD_CAPS="$SINGULARITY_ADD_CAPS,$1"
+    else
+        SINGULARITY_ADD_CAPS="$1"
+    fi
+    export SINGULARITY_ADD_CAPS
+}
+
+singularity_drop_caps() {
+    if [ -n "${SINGULARITY_DROP_CAPS:-}" ]; then
+        SINGULARITY_DROP_CAPS="$SINGULARITY_DROP_CAPS,$1"
+    else
+        SINGULARITY_DROP_CAPS="$1"
+    fi
+    export SINGULARITY_DROP_CAPS
+}
 
 ABORT() {
     RETVAL="${1:-}"
@@ -310,6 +358,31 @@ parse_opts() {
 }
 
 
+compare_envs() {
+    # during bootstrap, if we are bootstrapping from a local image, compare the
+    # environment in the new image to that in the old image and alert the user
+    # of any changes
+    REMOVED=$(comm -23 ${SINGULARITY_STARTING_ENVIRONMENT} ${SINGULARITY_ENDING_ENVIRONMENT})
+    ADDED=$(comm -13 ${SINGULARITY_STARTING_ENVIRONMENT} ${SINGULARITY_ENDING_ENVIRONMENT})
+     
+    if [ -n "${REMOVED:-}" -o -n "${ADDED:-}" ]; then
+        message 1 "Environment variables were added, removed, and/or changed during bootstrap.\n"
+    elif [ "${SINGULARITY_STARTING_ENVSHA1:-}" != "${SINGULARITY_ENDING_ENVSHA1:-}" ]; then
+        message 1 "The environment of ${SINGULARITY_IMAGE} may differ from the environment of ${SINGULARITY_DEFFILE_FROM}\n"
+        message 1 "${SINGULARITY_DEFFILE_FROM} sha1 sum of environment is ${SINGULARITY_STARTING_ENVSHA1}\n"
+        message 1 "${SINGULARITY_IMAGE} sha1 sum of environment is ${SINGULARITY_ENDING_ENVSHA1}\n"
+    fi
+    if [ -n "${REMOVED:-}" ]; then
+        message 1 "Variables unique to original image (${SINGULARITY_DEFFILE_FROM})\n"
+        message 1 "$REMOVED\n"
+    fi
+    if [ -n "${ADDED:-}" ]; then
+        message 1 "Variables unique to new image (${SINGULARITY_IMAGE})\n"
+        message 1 "$ADDED\n"
+    fi
+}
+
+
 replace_string() {
    ORIGINAL="${1:-}"
    MATCH="${2:-}"
@@ -317,8 +390,167 @@ replace_string() {
    echo $ORIGINAL | sed -e s/${MATCH}/${REPLACE}/g
 }
 
+
+zcat_compat() {
+    if [ -z "${1:-}" ]; then
+        message FAIL "zcat_compat: missing argument\n"
+        exit 1
+    fi
+
+    FILE=$1
+    HEAD_CHUNK=`head -c 3 $FILE | od -A n -t x1 -w3 | tr -d ' '`
+
+    if [ "$HEAD_CHUNK" == "1f8b08" ]; then
+        zcat "$1"
+    else
+        cat "$1"
+    fi
+}
+
+nonroot_build_warning() {
+    USERID=`id -ru`
+    if [ "$USERID" != "0" ]; then
+        message WARNING "Building container as an unprivileged user. If you run this container as root\n";
+        message WARNING "it may be missing some functionality.\n"
+    fi
+}
+
+is_deffile() {
+# check if a file looks like, walks like, and quacks like a def file
+    FILE2CHECK=$1
+    
+    # first make a guess based on naming convention
+    case ${FILE2CHECK:-} in
+        *.img)
+            return 1
+            ;;
+        *.tar*)
+            return 1
+            ;;
+        *.def)
+            return 0
+            ;;
+        Singularity) 
+            return 0
+            ;;
+        *)
+            ;;
+        esac
+
+    # name is ambiguous.  is it a text file with def file words in it?
+    if ! `file $FILE2CHECK | grep -q "ASCII\|Unicode"`; then
+        return 1
+    fi
+        
+    grep -qiE "^bootstrap:|^%setup|^%post|^%test|^%labels|^%files|^%runscript|^%environment" "$FILE2CHECK"
+    RETVAL=$?
+
+    return $RETVAL
+}
+
+
+is_image() {
+# check if a file looks like, walks like, and quacks like an image file
+
+    if [ -z "${1:-}" ]; then
+        return 1
+    fi
+
+    eval "$SINGULARITY_libexecdir/singularity/bin/image-type" "$1" >/dev/null 2>&1
+    RETVAL=$?
+
+    return $RETVAL
+}
+
+
+is_tar() {
+# check if a file looks like, walks like,... oh you get the idea
+    FILE2CHECK=$1
+    TARMAGIC="7573746172202000" # "ustar  \x00"
+
+    zcat_compat "$FILE2CHECK" | head -c 320 | od -A n -t x1 -w320 | tr -d ' ' | grep -q "$TARMAGIC"
+    RETVAL=$?
+    return $RETVAL
+}
+
+
+bind_nvidia_files() {
+# either use nvidia-container-cli or nvliblist.conf to find nvidia libs and
+# binaries for binding at runtime with --nv 
+    if ! SINGULARITY_NVLIBLIST=`mktemp "${TMPDIR:-/tmp}"/.singularity-nvliblist.XXXXXXXX`; then
+        message ERROR "Failed to create temporary nvliblist file.\n"
+        ABORT 255
+    fi
+
+    # check to see if nvidia-container-cli is producing plausible output
+    if ! singularity_which nvidia-container-cli > /dev/null 2>&1 || ! SINGULARITY_NV_FILES=`nvidia-container-cli list -cguv`; then
+        message 2 "nvidia-container-cli not installed or not working\n"
+        SINGULARITY_USE_NVLIBLIST_CONF=1
+    else
+        for i in $SINGULARITY_NV_FILES; do
+            if [ ! -f $i ]; then
+                message 2 "nvidia-container-cli is returning unusable output\n"
+                SINGULARITY_USE_NVLIBLIST_CONF=1
+            fi
+        done
+    fi
+
+    # first choice use nvidia-container-cli
+    if [ -z ${SINGULARITY_USE_NVLIBLIST_CONF:-} ]; then
+        message 2 "Using nvidia-container-cli to locate nvidia libraries and binaries.\n"
+        # bins should have full paths
+        SINGULARITY_NVBINLIST=`echo "$SINGULARITY_NV_FILES" | grep -Ev "\.so"`
+        # libs should just be basenames ending in ".so"
+        for i in `echo "$SINGULARITY_NV_FILES" | grep -E "\.so"`; do
+            basename "$i" | awk -F "\.so" '{print $1 ".so"}' >> "$SINGULARITY_NVLIBLIST"
+        done
+
+    # if it's absent, or broken fall back to nvliblist.conf
+    else [ -n ${USE_NVLIBLIST_CONF:-} ]
+        message 2 "Falling back to $SINGULARITY_sysconfdir/singularity/nvliblist.conf\n"
+        # strip comments and spaces and bins do NOT end in .so
+        SINGULARITY_NVBINLIST=`cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" | grep -vE "\.so$"`
+        # strip comments and spaces and libs DO end in .so
+        cat "${SINGULARITY_sysconfdir}/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" | grep -E "\.so$" > $SINGULARITY_NVLIBLIST
+    fi
+
+    # first deal with libs (pattern match from ld.so cache)
+    for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
+        if [ -f "$i" ]; then
+            message 2 "Found NV library: $i\n"
+            SINGULARITY_CONTAINLIBS="${SINGULARITY_CONTAINLIBS:-},$i"
+        fi
+    done
+    rm $SINGULARITY_NVLIBLIST
+
+    # then deal with bins (should have full path specified)
+    for SINGULARITY_NVBIN in $SINGULARITY_NVBINLIST; do
+        if [ -f "$SINGULARITY_NVBIN" ]; then
+            message 2 "Found NV binary: $SINGULARITY_NVBIN\n"
+            SINGULARITY_BIN_FOUND=1
+            SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH:-},${SINGULARITY_NVBIN}"
+        fi
+    done
+
+    # in case we couldn't find files, warn the user. otherwise export variables
+    if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
+        message WARNING "Could not find any NVIDIA libraries on this host!\n";
+        message WARNING "You may need to edit ${SINGULARITY_sysconfdir}/singularity/nvliblist.conf\n"
+    else
+        export SINGULARITY_CONTAINLIBS
+    fi
+
+    if [ -z "${SINGULARITY_BIN_FOUND:-}" ]; then
+        message WARNING "Could not find any NVIDIA binaries on this host!\n";
+        message WARNING "You may need to edit ${SINGULARITY_sysconfdir}/singularity/nvliblist.conf\n"
+    else
+        export SINGULARITY_BINDPATH
+    fi
+}
+
+
 ##############################################################################
-# CHECK FUNCTIONS
+# CHECKS
 ##############################################################################
 
 
@@ -402,6 +634,22 @@ scheck() {
     return $CODE
 }
 
+atexit() {
+    trap "$1" EXIT
+}
+
+singularity_config_value() {
+    if [ ! -z "${SINGULARITY_CONFIG_FILE:-}" ]; then
+        config="${SINGULARITY_CONFIG_FILE:-}"
+    else
+        config="${SINGULARITY_sysconfdir:-}/singularity/singularity.conf"
+    fi
+
+    value=$(sed -n "s/^\s*$1[ \t]*=[ \t]*\(.*\)/\1/p" $config)
+    echo $value
+}
+
 if [ -n "${SHELL_DEBUG:-}" ]; then
     set -x
 fi
+

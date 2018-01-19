@@ -1,26 +1,17 @@
 #!/bin/bash
 # 
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+# 
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+# 
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
 #
-# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# 
-# Copyright (c) 2016-2017, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
-# This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software.
-# 
-# NOTICE.  This Software was developed under funding from the U.S. Department of
-# Energy and the U.S. Government consequently retains certain rights. As such,
-# the U.S. Government has been granted for itself and others acting on its
-# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
-# to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
-
+#
 
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
@@ -41,27 +32,7 @@ PATH=/sbin:/usr/sbin:${PATH:-}
 while true; do
     case ${1:-} in
         -h|--help|help)
-            if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-                cat "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
-            else
-                message ERROR "No help exists for this command\n"
-                exit 1
-            fi
-            exit
-        ;;
-        -s|--size)
-            shift
-            SINGULARITY_IMAGESIZE="${1:-}"
-            export SINGULARITY_IMAGESIZE
-            shift
-        ;;
-        -F|--force)
-            shift
-            OVERWRITE=1
-        ;;
-        -*)
-            message ERROR "Unknown option: ${1:-}\n"
-            exit 1
+            exec "$SINGULARITY_libexecdir/singularity/cli/help.exec" "$SINGULARITY_COMMAND"
         ;;
         *)
             break;
@@ -69,42 +40,30 @@ while true; do
     esac
 done
 
+
+if [ -f "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info" ]; then
+    . "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.info"
+else
+    message ERROR "Could not find the info file for: $SINGULARITY_COMMAND\n"
+    ABORT 255
+fi
+
 if [ -z "${1:-}" ]; then
-    if [ -e "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help" ]; then
-        head -n 1 "$SINGULARITY_libexecdir/singularity/cli/$SINGULARITY_COMMAND.help"
+    if [ -n "${USAGE:-}" ]; then
+        echo "USAGE: $USAGE"
     else
-        message ERROR "To see usage summary, try: singularity help $SINGULARITY_COMMAND\n"
+        echo "To see usage summary type: singularity help $SINGULARITY_COMMAND"
     fi
     exit 0
 fi
 
 
-SINGULARITY_IMAGE="${1:-}"
-SINGULARITY_WRITABLE=1
-export SINGULARITY_IMAGE SINGULARITY_WRITABLE
+# relying on image.create for error checking
+message WARNING "The create command is deprecated, and will be removed\n"
+message WARNING "To create, use the image.create command.\n"
+message WARNING "Use the build command to create and build an image in a single step.\n"
 
-if [ -z "$SINGULARITY_IMAGE" ]; then
-    message ERROR "You must supply a path to an image to create\n"
-    exit 1
-fi
-if [ -f "$SINGULARITY_IMAGE" ]; then
-    if [ -n "${OVERWRITE:-}" ]; then
-        message 2 "Removing existing file\n"
-        rm -f "$SINGULARITY_IMAGE"
-    else
-        message ERROR "Image file exists, not overwriting.\n"
-        exit 1
-    fi
-fi
-
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/create-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/create-suid"
-elif [ -x "$SINGULARITY_libexecdir/singularity/bin/create" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/create"
-else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_libexecdir/singularity/bin/create\n"
-    exit 1
-fi
+exec  "$SINGULARITY_bindir"/singularity image.create "$@"
 
 message ERROR "We should never have gotten here... ARRRGGGG!!!!\n"
 exit 255

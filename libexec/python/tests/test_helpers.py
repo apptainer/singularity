@@ -98,6 +98,7 @@ class TestJson(TestCase):
         else:
             testing_command = ["python3", script_path]
 
+        print(' '.join(testing_command))
         output = Popen(testing_command,
                        stderr=STDOUT,
                        stdout=PIPE)
@@ -105,9 +106,13 @@ class TestJson(TestCase):
         t = output.communicate()[0], output.returncode
         result = {'message': t[0],
                   'return_code': t[1]}
+
+        if result['return_code'] != 0:
+            print(result['message'])
+
         self.assertEqual(result['return_code'], 0)
         result = read_file(self.file)[0]
-        self.assertEqual('331', result)
+        self.assertEqual('260', result)
 
 
 if __name__ == '__main__':

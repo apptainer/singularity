@@ -1,25 +1,21 @@
 #!/bin/bash
-# 
+#
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
-# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# 
-# Copyright (c) 2016-2017, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
-# This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software.
-# 
-# NOTICE.  This Software was developed under funding from the U.S. Department of
-# Energy and the U.S. Government consequently retains certain rights. As such,
-# the U.S. Government has been granted for itself and others acting on its
-# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
-# to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+#
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
+#
+# This file also contains content that is covered under the LBNL/DOE/UC modified
+# 3-clause BSD license and is subject to the license terms in the LICENSE-LBNL.md
+# file found in the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/LICENSE-LBNL.md.
+
 
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
@@ -51,7 +47,6 @@ cat > "$SINGULARITY_ROOTFS/etc/mtab" << EOF
 singularity / rootfs rw 0 0
 EOF
 
-
 # Populate the labels.
 # NOTE: We have to be careful to quote stuff that we know isn't quoted.
 SINGULARITY_LABELFILE=$(printf "%q" "$SINGULARITY_ROOTFS/.singularity.d/labels.json")
@@ -66,7 +61,7 @@ SINGULARITY_ADD_SCRIPT=$(printf "%q" "$SINGULARITY_libexecdir/singularity/python
 
 
 eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.schema-version" --value "1.0" --file $SINGULARITY_LABELFILE
-eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-date" --value $(date --rfc-3339=seconds | sed 's/ /T/') --file $SINGULARITY_LABELFILE
+eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-date" --value $(date -R  | sed 's/ /_/g') --file $SINGULARITY_LABELFILE
 
 if [ -f "${SINGULARITY_ROOTFS}/.singularity.d/runscript.help" ]; then
     eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage" --value "/.singularity.d/runscript.help" --file $SINGULARITY_LABELFILE
@@ -76,9 +71,8 @@ eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage.singularity.deffil
 eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.usage.singularity.version" --value $(printf "%q" "$SINGULARITY_version") --file $SINGULARITY_LABELFILE
 
 # Calculate image final size
-message 1 "Calculating final size for metadata..."
-EXCLUDE_LIST="--exclude=$SINGULARITY_ROOTFS/proc --exclude=$SINGULARITY_ROOTFS/dev --exclude=$SINGULARITY_ROOTFS/dev --exclude=$SINGULARITY_ROOTFS/var --exclude=$SINGULARITY_ROOTFS/tmp --exclude=$SINGULARITY_ROOTFS/media --exclude=$SINGULARITY_ROOTFS/home"
-IMAGE_SIZE=$(du --apparent-size -sm $EXCLUDE_LIST $SINGULARITY_ROOTFS | cut -f 1)
+message 1 "Calculating final size for metadata...\n"
+IMAGE_SIZE=$(du -x -sm $SINGULARITY_ROOTFS 2>/dev/null | cut -f 1)
 eval $SINGULARITY_ADD_SCRIPT -f --key "org.label-schema.build-size" --value "${IMAGE_SIZE}MB" --file $SINGULARITY_LABELFILE
 
 

@@ -70,37 +70,23 @@ class TestApi(TestCase):
         '''
         from docker.api import DockerApiConnection
 
-        print("Case 1: Obtain manifest for %s/%s" % (self.client.namespace,
-                                                     self.client.repo_name))
+        print("Case 1: Obtain manifest for %s" % self.client.repo_name)
 
-        manifest = self.client.get_manifest()
+        manifest = self.client.get_manifest(old_version=True)
 
         # Default tag should be latest
-        self.assertTrue("fsLayers" in manifest or "layers" in manifest)
+        self.assertTrue("fsLayers" in manifest)
 
         # Giving a bad tag sould return error
         print("Case 3: Bad tag should print valid tags and exit")
         client = DockerApiConnection(image="ubuntu:mmm.avocado")
-
-        # Should work for custom registries
-        print("Case 4: Obtain manifest from custom registry")
-        client = DockerApiConnection(image="gcr.io/tensorflow/tensorflow")
-        manifest = client.get_manifest()
-        self.assertTrue("fsLayers" in manifest or "layers" in manifest)
 
     def test_get_images(self):
         '''test_get_images will obtain a list of images
         '''
         from docker.api import DockerApiConnection
 
-        print("Case 1: Ask for images")
         images = self.client.get_images()
-        self.assertTrue(isinstance(images, list))
-        self.assertTrue(len(images) > 1)
-
-        print("Case 2: Ask for images from custom registry")
-        client = DockerApiConnection(image="gcr.io/tensorflow/tensorflow")
-        images = client.get_images()
         self.assertTrue(isinstance(images, list))
         self.assertTrue(len(images) > 1)
 
@@ -109,20 +95,12 @@ class TestApi(TestCase):
         '''
         from docker.api import DockerApiConnection
 
-        full_name = "%s/%s" % (self.client.namespace, self.client.repo_name)
-        print("Case 1: Ask for tags from standard %s" % full_name)
+        print("Case 1: Ask for tags from standard %s" % self.client.repo_name)
         tags = self.client.get_tags()
         self.assertTrue(isinstance(tags, list))
         self.assertTrue(len(tags) > 1)
         ubuntu_tags = ['xenial', 'latest', 'trusty', 'yakkety']
         [self.assertTrue(x in tags) for x in ubuntu_tags]
-
-        print("Case 2: Ask for tags from custom registry")
-        client = DockerApiConnection(image="gcr.io/tensorflow/tensorflow")
-        tags = client.get_tags()
-        self.assertTrue(isinstance(tags, list))
-        self.assertTrue(len(tags) > 1)
-        [self.assertTrue(x in tags) for x in ['latest', 'latest-gpu']]
 
     def test_get_layer(self):
         '''test_get_layer will download docker layers

@@ -32,6 +32,7 @@
 #include "config.h"
 #include "util/file.h"
 #include "util/util.h"
+#include "util/daemon.h"
 #include "util/registry.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
@@ -54,42 +55,49 @@ int main(int argc, char **argv) {
     char *target_pwd = NULL;
     char *command = NULL;
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
 
+    singularity_suid_init();
     singularity_priv_init();
-    singularity_suid_init(argv);
 
     singularity_registry_init();
-    singularity_priv_userns();
+    
     singularity_priv_drop();
 
-    singularity_cleanupd();
+    singularity_runtime_autofs();
 
-    singularity_runtime_ns(SR_NS_ALL);
+    singularity_daemon_init();
 
-    singularity_sessiondir();
-
-    image = singularity_image_init(singularity_registry_get("IMAGE"));
-
-    if ( singularity_registry_get("WRITABLE") == NULL ) {
-        singularity_image_open(&image, O_RDONLY);
+    if ( singularity_registry_get("WRITABLE") != NULL ) {
+        singularity_message(VERBOSE3, "Instantiating writable container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDWR);
     } else {
-        singularity_image_open(&image, O_RDWR);
+        singularity_message(VERBOSE3, "Instantiating read only container image object\n");
+        image = singularity_image_init(singularity_registry_get("IMAGE"), O_RDONLY);
     }
 
-    singularity_image_check(&image);
-    singularity_image_bind(&image);
-    singularity_image_mount(&image, singularity_runtime_rootfs(NULL));
+    if ( singularity_registry_get("DAEMON_JOIN") == NULL ) {
+        singularity_cleanupd();
 
-    action_ready(singularity_runtime_rootfs(NULL));
+        singularity_runtime_ns(SR_NS_ALL);
 
-    singularity_runtime_overlayfs();
-    singularity_runtime_mounts();
-    singularity_runtime_files();
+        singularity_sessiondir();
+
+        singularity_image_mount(&image, CONTAINER_MOUNTDIR);
+
+        action_ready();
+
+        singularity_runtime_overlayfs();
+        singularity_runtime_mounts();
+        singularity_runtime_files();
+    } else {
+        singularity_runtime_ns(SR_NS_ALL);
+    }
+
     singularity_runtime_enter();
-
+    
     singularity_runtime_environment();
-
+    
     singularity_priv_drop_perm();
 
     if ( ( target_pwd = singularity_registry_get("TARGET_PWD") ) != NULL ) {
@@ -126,22 +134,23 @@ int main(int argc, char **argv) {
 
     free(target_pwd);
 
+    command = singularity_registry_get("COMMAND");
+
     envar_set("SINGULARITY_CONTAINER", singularity_image_name(&image), 1); // Legacy PS1 support
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
     envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
-
-    command = singularity_registry_get("COMMAND");
+    envar_set("SINGULARITY_APPNAME", singularity_registry_get("APPNAME"), 1);
 
     singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
 
     if ( command == NULL ) {
         singularity_message(INFO, "No action command verb was given, invoking 'shell'\n");
         action_shell(argc, argv);
+
+    // Primary Commands
     } else if ( strcmp(command, "shell") == 0 ) {
         action_shell(argc, argv);
     } else if ( strcmp(command, "exec") == 0 ) {
-        action_exec(argc, argv);
-    } else if ( strcmp(command, "inspect") == 0 ) {
         action_exec(argc, argv);
     } else if ( strcmp(command, "run") == 0 ) {
         action_run(argc, argv);

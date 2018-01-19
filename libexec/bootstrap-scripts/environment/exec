@@ -5,4 +5,5 @@ for script in /.singularity.d/env/*.sh; do
         . "$script"
     fi
 done
+
 exec "$@"

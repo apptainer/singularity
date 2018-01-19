@@ -1,0 +1,25 @@
+NAME="capability.list"
+GROUP="capability"
+SUMMARY="List authorized capabilities for the given user/group"
+USAGE="singularity [...] capability.list [list options...]"
+
+print_help() {
+cat<<EOF
+List authorized capabilities for the given user/group.
+
+LIST OPTIONS:
+    -u|--user       List authorized capabilities for the given user
+    -g|--group      List authorized capabilities for the given group
+    -d|--defined    List users and groups for those capabilities are defined
+
+EXAMPLES:
+
+    $ singularity capability.list --user nobody 
+    $ singularity capability.list --group nobody
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

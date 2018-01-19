@@ -1,0 +1,97 @@
+USAGE: singularity [...] bootstrap <container path> <definition file>
+
+The bootstrap command is useful for creating a new bootstrap or modifying an
+existing one using a definition file that describes how to build the
+container. The quickest, easiest Bootstrap is dumping Docker layers into
+a container:
+
+    BootStrap: docker
+    From: library/ubuntu:14.04.1
+
+Optionally, you can perform container checks with --checks.
+For more documentation on definition file recipes, look below.
+
+note: This command must be executed as root.
+
+
+
+CREATE OPTIONS:
+    -T|--notest     Bootstrap without running tests in %test section
+    -f|--force      Force a rebootstrap of an OS (note: this does not delete
+                    what is currently in the image, just causes the core to
+                    be reinstalled)
+    -s|--section    Only run a given section within the bootstrap (setup,
+                    post, files, environment, test, labels, none)
+       --nobase     Skip the generation of the base OS
+
+
+CHECKS OPTIONS:
+    -c|--checks    enable checks
+    -t|--tag       specify a check tag (not default)
+    -l/--low       Specify low threshold (all checks, default) 
+    -m/--med       Perform medium and high checks
+    -h/--high      Perform only checks at level high
+
+See singularity check --help for available tags
+
+DEFFILE BASEOS EXAMPLES:
+
+    Docker:
+        Bootstrap: docker
+        From: tensorflow/tensorflow:latest
+        IncludeCmd: yes # Use the CMD as runscript instead of ENTRYPOINT
+
+    YUM/RHEL:
+        Bootstrap: yum
+        OSVersion: 7
+        MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+        Include: yum #This is important to include inside the base container
+
+    Debian/Ubuntu:
+        Bootstrap: debootstrap
+        OSVersion: trusty
+        MirrorURL: http://us.archive.ubuntu.com/ubuntu/
+
+    Local Image:
+        Bootstrap: localimage
+        From: /home/dave/starter.img 
+
+
+DEFFILE SECTION EXAMPLES:
+
+    %setup
+        echo "This is a scriptlet that will be executed on the host, as root, after"
+        echo "the container has been bootstrapped. To install things into the container"
+        echo "reference the file system location with \$SINGULARITY_BUILDROOT"
+
+    %post
+        echo "This scriptlet section will be executed from within the container after"
+        echo "the bootstrap/base has been created and setup"
+
+    %test
+        echo "Define any test commands that should be executed after container has been"
+        echo "built. This scriptlet will be executed from within the running container"
+        echo "as the root user. Pay attention to the exit/return value of this scriptlet"
+        echo "as any non-zero exit code will be assumed as failure"
+        exit 0
+
+    %labels
+        HELLO MOTO
+        KEY VALUE
+
+    %files
+        /path/on/host/file.txt /path/on/container/file.txt 
+        relative_file.txt /path/on/container/relative_file.txt
+
+
+EXAMPLES:
+
+    $ singularity create /tmp/Debian.img
+    $ sudo singularity bootstrap /tmp/Debian.img debian.def
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+

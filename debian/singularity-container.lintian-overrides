@@ -1,0 +1,2 @@
+# Singularity requires root suid for operation
+singularity-container: setuid-binary usr/lib/*/singularity/sexec-suid 4755 root/root

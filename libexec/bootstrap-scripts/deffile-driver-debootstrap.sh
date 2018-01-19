@@ -1,25 +1,21 @@
 #!/bin/bash
-# 
+#
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
-# Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# 
-# Copyright (c) 2016-2017, The Regents of the University of California,
-# through Lawrence Berkeley National Laboratory (subject to receipt of any
-# required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
-# This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software.
-# 
-# NOTICE.  This Software was developed under funding from the U.S. Department of
-# Energy and the U.S. Government consequently retains certain rights. As such,
-# the U.S. Government has been granted for itself and others acting on its
-# behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
-# to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
+# See the COPYRIGHT.md file at the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
+#
+# This file is part of the Singularity Linux container project. It is subject to the license
+# terms in the LICENSE.md file found in the top-level directory of this distribution and
+# at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+# of Singularity, including this file, may be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE.md file.
+#
+# This file also contains content that is covered under the LBNL/DOE/UC modified
+# 3-clause BSD license and is subject to the license terms in the LICENSE-LBNL.md
+# file found in the top-level directory of this distribution and at
+# https://github.com/singularityware/singularity/blob/master/LICENSE-LBNL.md.
+
 
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
@@ -40,10 +36,6 @@ if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     exit 1
 fi
 
-if [ -z "${SINGULARITY_BUILDDEF:-}" ]; then
-    exit
-fi
-
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
@@ -54,6 +46,7 @@ if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     exit 1
 fi
 
+ARCH="${SINGULARITY_DEFFILE_ARCH:-}"
 if [ -n "${ARCH:-}" ]; then
     ARCH=`echo ${ARCH:-} | sed -e 's/\s//g'`
 else
@@ -72,23 +65,26 @@ else
     fi
 fi
 
-
+MIRRORURL="${SINGULARITY_DEFFILE_MIRRORURL:-}"
 if [ -z "${MIRRORURL:-}" ]; then
     message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
     ABORT 1
 fi
 
+OSVERSION="${SINGULARITY_DEFFILE_OSVERSION:-}"
 if [ -z "${OSVERSION:-}" ]; then
     message ERROR "No 'OSVersion' defined in bootstrap definition\n"
     ABORT 1
 fi
 
-REQUIRES=`echo "${INCLUDE:-}" | sed -e 's/\s/,/g'`
+REQUIRES=`echo "${SINGULARITY_DEFFILE_INCLUDE:-}" | sed -e 's/\s/,/g'`
 
 # The excludes save 25M or so with jessie.  (Excluding udev avoids
 # systemd, for instance.)  There are a few more we could exclude
 # to save a few MB.  I see 182M cleaned with this, v. 241M with
 # the default debootstrap.
-if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH '$OSVERSION' '$SINGULARITY_ROOTFS' '$MIRRORURL'"; then
+
+$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH "$OSVERSION" "$SINGULARITY_ROOTFS" "$MIRRORURL"
+if [ $? != 0 ]; then
     ABORT 255
 fi

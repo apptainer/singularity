@@ -1,0 +1,25 @@
+NAME="image.create"
+GROUP="image"
+SUMMARY="Create a new empty disk image"
+USAGE="singularity [...] image.create [create options...] <container path>"
+
+print_help() {
+cat<<EOF
+Create a new Singularity formatted blank image.
+
+CREATE OPTIONS:
+    -s|--size   Specify a size for an operation in MiB, i.e. 1024*1024B
+                (default 768MiB)
+    -F|--force  Overwrite an image file if it exists
+
+EXAMPLES:
+
+    $ singularity image.create /tmp/Debian.img
+    $ singularity image.create -s 4096 /tmp/Debian.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

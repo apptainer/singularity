@@ -1,0 +1,18 @@
+NAME="bootstrap"
+SECTION="management"
+SUMMARY="*Deprecated* use build instead"
+USAGE="singularity [...] bootstrap <container path> <definition file>"
+
+print_help() {
+cat<<EOF
+******************************************************************************
+NOTICE: The bootstrap command is deprecated and will be removed in a later 
+        release. bootstrap now uses the build command to create a writable 
+        container via the following syntax:
+
+$ singularity build -w container.img recipe.def
+
+        You should update your usage accordingly. 
+******************************************************************************
+EOF
+}

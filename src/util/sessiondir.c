@@ -39,6 +39,7 @@
 #include "util/config_parser.h"
 #include "util/fork.h"
 #include "util/privilege.h"
+#include "util/mount.h"
 
 #ifndef LOCALSTATEDIR
 #error LOCALSTATEDIR not defined
@@ -51,6 +52,10 @@ int singularity_sessiondir(void) {
     long int sessiondir_size = 0;
     int sessiondir_size_str_len;
     int sessiondir_size_str_usd;
+
+    if ( singularity_registry_get("DAEMON_JOIN") ) {
+        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+    }
 
     singularity_message(DEBUG, "Setting sessiondir\n");
     sessiondir = joinpath(LOCALSTATEDIR, "/singularity/mnt/session");
@@ -86,7 +91,7 @@ int singularity_sessiondir(void) {
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Mounting sessiondir tmpfs: %s\n", sessiondir);
-    if ( mount("tmpfs", sessiondir, "tmpfs", MS_NOSUID, sessiondir_size_str) < 0 ){
+    if ( singularity_mount("tmpfs", sessiondir, "tmpfs", MS_NOSUID, sessiondir_size_str) < 0 ){
         singularity_message(ERROR, "Failed to mount sessiondir tmpfs %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }

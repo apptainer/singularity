@@ -40,6 +40,8 @@
 #include "util/privilege.h"
 #include "util/fork.h"
 #include "util/registry.h"
+#include "util/daemon.h"
+#include "util/setns.h"
 
 
 static int enabled = -1;
@@ -74,6 +76,34 @@ int _singularity_runtime_ns_ipc(void) {
     return(0);
 }
 
+int _singularity_runtime_ns_ipc_join(int ns_fd) {
+    int ipc_fd;
+
+    /* Attempt to open /proc/[PID]/ns/pid */
+    singularity_priv_escalate();
+    if ( ! singularity_daemon_own_namespace("ipc") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
+    ipc_fd = openat(ns_fd, "ipc", O_RDONLY);
+
+    if( ipc_fd == -1 ) {
+        singularity_message(ERROR, "Could not open IPC NS fd: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    
+    singularity_message(DEBUG, "Attempting to join IPC namespace\n");
+    if ( setns(ipc_fd, CLONE_NEWIPC) < 0 ) {
+        singularity_message(ERROR, "Could not join IPC namespace: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    singularity_priv_drop();
+    singularity_message(DEBUG, "Successfully joined IPC namespace\n");
+
+    close(ipc_fd);
+    return(0);
+}
 
 /*
 int singularity_ns_ipc_enabled(void) {

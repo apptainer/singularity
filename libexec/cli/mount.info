@@ -1,0 +1,29 @@
+NAME="mount"
+SECTION="management"
+SUMMARY="Mount a Singularity container image"
+USAGE="singularity [...] mount [mount options...] <container path>"
+
+print_help() {
+cat<<EOF
+
+Start a shell with a standard loop mount on the container image.  The
+mount is in the container namespace, i.e. not visible outside that
+shell.
+
+MOUNT OPTIONS:
+    -w|--writable       By default all Singularity containers are available as
+                        read only. This option makes the file system accessible
+                        as read/write.
+    -o|--overlay        Use a persistent overlayFS via a writable image
+
+EXAMPLES:
+
+    $ singularity create /tmp/new.img
+    $ singularity mount /tmp/new.img
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

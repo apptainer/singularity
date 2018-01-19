@@ -1,0 +1,28 @@
+NAME="image.export"
+GROUP="image"
+SUMMARY="Export an image to a tar pipe"
+USAGE="singularity [...] image.export [...] <container path>"
+
+print_help() {
+cat<<EOF
+
+Export will dump a tar stream of the container image contents to standard
+out (stdout). 
+
+EXPORT OPTIONS:
+    -f|--file   Export to a given tarfile (instead of pipe)
+
+
+EXAMPLES:
+
+    $ singularity image.export /tmp/Debian.img > /tmp/Debian.tar
+    $ singularity image.export /tmp/Debian.img | gzip -9 > /tmp/Debian.tar.gz
+    $ singularity image.export -f Debian.tar /tmp/Debian.img
+
+ 
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

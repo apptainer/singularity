@@ -40,9 +40,14 @@
 #include "util/privilege.h"
 #include "util/fork.h"
 #include "util/registry.h"
+#include "util/daemon.h"
+#include "util/setns.h"
 
 
 int _singularity_runtime_ns_pid(void) {
+
+#ifdef SINGULARITY_NO_NEW_PRIVS
+    // Use PID namespace when NO_NEW_PRIVS is not supported
     if ( singularity_config_get_bool(ALLOW_PID_NS) <= 0 ) {
         singularity_message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
         return(0);
@@ -52,25 +57,60 @@ int _singularity_runtime_ns_pid(void) {
         singularity_message(VERBOSE2, "Not virtualizing PID namespace on user request\n");
         return(0);
     }
+#endif /* SINGULARITY_NO_NEW_PRIVS */
 
 #ifdef NS_CLONE_NEWPID
     singularity_message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
     
 #else
-#ifdef NS_CLONE_PID
-    singularity_message(DEBUG, "Using PID namespace: CLONE_PID\n");
-
-#else
     singularity_message(WARNING, "Skipping PID namespace creation, support not available on host\n");
     return(0);
-
-#endif
 #endif
 
     singularity_message(DEBUG, "Virtualizing PID namespace\n");
-    singularity_fork_run(CLONE_NEWPID);
+        
+    if ( singularity_registry_get("DAEMON_START") ) {
+        singularity_fork_daemonize(CLONE_NEWPID);
+    } else {
+        singularity_fork_run(CLONE_NEWPID);
+    }
 
     singularity_registry_set("PIDNS_ENABLED", "1");
 
+    return(0);
+}
+
+int _singularity_runtime_ns_pid_join(int ns_fd) {
+    int pid_fd;
+
+    /* Attempt to open /proc/[PID]/ns/pid */
+    singularity_priv_escalate();
+    if ( ! singularity_daemon_own_namespace("pid") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
+    pid_fd = openat(ns_fd, "pid", O_RDONLY);
+
+    if( pid_fd == -1 ) {
+        /* Daemons should always have a ns/pid file. If it doesn't exist, something is wrong */
+        singularity_message(ERROR, "Could not open PID NS fd: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    
+    singularity_message(DEBUG, "Attempting to join PID namespace\n");
+    if ( setns(pid_fd, CLONE_NEWPID) < 0 ) {
+        singularity_message(ERROR, "Could not join PID namespace: %s\n", strerror(errno));
+        ABORT(255);
+    }
+    singularity_priv_drop();
+    singularity_message(DEBUG, "Successfully joined PID namespace\n");
+    
+    close(pid_fd);
+    
+    /* Enable PID NS by forking into a child */
+    singularity_fork_run(0);
+    singularity_registry_set("PIDNS_ENABLED", "1");
+    
     return(0);
 }

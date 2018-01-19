@@ -20,9 +20,9 @@
  * 
  */
 
-
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "util/message.h"
 
@@ -31,6 +31,12 @@
 
 #define TRUE 1
 #define FALSE 0
+
+struct tempfile {
+    FILE *fp;
+    int fd;
+    char filename[64];
+};
 
 char *envar_get(char *name, char *allowed, int len);
 char *envar_path(char *name);
@@ -47,6 +53,11 @@ void chomp(char *str);
 int strlength(const char *string, int max_len);
 int envclean(void);
 char *random_string(int length);
+void *mmap_file(off_t offset, size_t size, int fd);
+void munmap_file(void *map, size_t size);
+void free_tempfile(struct tempfile *tf);
+struct tempfile *make_tempfile(void);
+struct tempfile *make_logfile(char *label);
 
 // Given a const char * string containing a base-10 integer,
 // try to convert to an C integer.

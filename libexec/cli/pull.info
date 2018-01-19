@@ -1,0 +1,59 @@
+NAME="pull"
+SECTION="management"
+SUMMARY="Pull a Singularity/Docker container to \$PWD"
+USAGE="singularity [...] pull shub://[unique id]"
+
+print_help() {
+cat<<EOF
+
+pull takes a Singularity Hub (shub) URI and will pull a container
+to PWD. If you want the image to go to SINGULARITY_CACHEDIR, you
+should use one of run, exec, or shell.
+
+SUPPORTED URIs:
+
+    shub: Pull an image using python from Singularity Hub to $PWD
+    docker: Pull a docker image using python to $PWD (deprecated, use build)
+
+PULL OPTIONS:
+    -n|--name   Specify a custom container name (first priority)
+    -C|--commit Name container based on Github commit (second priority)
+    -H|--hash   Name container based on file hash (second priority)
+
+    -F|--force  overwrite an image file if it exists
+    -s|--size   Specify a size for an operation in MiB, i.e. 1024*1024B
+                (default 768MiB)
+
+
+******************************************************************************
+NOTICE: The pull command for Docker Hub containers assembles layers at the
+        time of the pull and is not guaranteed to, on repeated pull, produce
+        the equivalent image. To pull exactly equivlent images, pull
+        from a Singularity Registry.
+
+        The pull --size option will be deprecated for Singularity 2.4+ images 
+        that are in squashfs format (and do not need a size estimation). The 
+        option is maintained for pulling previously generated (2.3 and below) 
+        images.
+******************************************************************************
+
+
+EXAMPLES:
+
+    $ singularity pull docker://ubuntu:latest
+
+    $ singularity pull shub://vsoch/singularity-images
+      Found image vsoch/singularity-images:mongo
+      Downloading image... vsoch-singularity-images-mongo.img
+
+    $ singularity pull --name "meatballs.img" shub://vsoch/singularity-images
+    $ singularity pull --commit shub://vsoch/singularity-images
+    $ singularity pull --hash shub://vsoch/singularity-images
+    
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+    https://www.singularity-hub.org/faq
+EOF
+}

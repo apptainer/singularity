@@ -1,0 +1,17 @@
+USAGE="singularity [...] image.create [create options...] <container path>"
+
+print_help() {
+cat<<EOF
+******************************************************************************
+NOTICE: The create command is deprecated and will be removed in a later version 
+        of Singularity.  create now uses image.create to create a writable 
+        container via the following syntax:
+
+$ singularity image.create container.img
+
+        It is no longer necessary to create and bootstrap an image in 2 
+        seperate commands. You should use the build command to create and 
+        bootstrap your image in a single step. 
+******************************************************************************
+EOF
+}

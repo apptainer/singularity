@@ -30,19 +30,20 @@
 #include <stdlib.h>
 #include <libgen.h>
 
+#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
+#include "util/mount.h"
 
-#include "../mount-util.h"
 #include "../../runtime.h"
 
 
 int _singularity_runtime_mount_userbinds(void) {
-    char *container_dir = singularity_runtime_rootfs(NULL);
+    char *container_dir = CONTAINER_FINALDIR;
     char *bind_path_string;
 
     singularity_message(DEBUG, "Checking for environment variable 'SINGULARITY_BINDPATH'\n");
@@ -151,7 +152,7 @@ int _singularity_runtime_mount_userbinds(void) {
 
             singularity_priv_escalate();
             singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
-            if ( mount(source, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
+            if ( singularity_mount(source, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
                 singularity_message(ERROR, "There was an error binding the path %s: %s\n", source, strerror(errno));
                 ABORT(255);
             }
@@ -160,18 +161,18 @@ int _singularity_runtime_mount_userbinds(void) {
                     singularity_message(WARNING, "Can not make bind mount read only within the user namespace: %s\n", dest);
                 } else {
                     singularity_message(VERBOSE, "Remounting %s read-only\n", dest);
-                    if ( mount(NULL, joinpath(container_dir, dest), NULL, MS_RDONLY|MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    if ( singularity_mount(NULL, joinpath(container_dir, dest), NULL, MS_RDONLY|MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
                         singularity_message(ERROR, "There was an error write-protecting the path %s: %s\n", source, strerror(errno));
                         ABORT(255);
                     }
-                    if ( access(joinpath(container_dir, dest), W_OK) == 0 || errno != EROFS ) { // Flawfinder: ignore (precautionary confirmation, not necessary)
+                    if ( access(joinpath(container_dir, dest), W_OK) == 0 || (errno != EROFS && errno != EACCES) ) { // Flawfinder: ignore (precautionary confirmation, not necessary)
                         singularity_message(ERROR, "Failed to write-protect the path %s: %s\n", source, strerror(errno));
                         ABORT(255);
                     }
                 }
             } else {
                 if ( singularity_priv_userns_enabled() <= 0 ) {
-                    if ( mount(NULL, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    if ( singularity_mount(NULL, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
                         singularity_message(ERROR, "There was an error remounting the path %s: %s\n", source, strerror(errno));
                         ABORT(255);
                     }

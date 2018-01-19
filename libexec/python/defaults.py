@@ -36,7 +36,7 @@ import pwd
 import sys
 
 
-def getenv(variable_key, required=False, default=None, silent=False):
+def getenv(variable_key, default=None, required=False, silent=False):
     '''getenv will attempt to get an environment variable. If the
     variable is not found, None is returned.
     :param variable_key: the variable name
@@ -50,7 +50,8 @@ def getenv(variable_key, required=False, default=None, silent=False):
         sys.exit(1)
 
     if silent:
-        bot.verbose2("%s found" % (variable_key))
+        if variable is not None:
+            bot.verbose2("%s found" % (variable_key))
     else:
         if variable is not None:
             bot.verbose2("%s found as %s" % (variable_key, variable))
@@ -79,8 +80,7 @@ RUNSCRIPT_COMMAND_ASIS = convert2boolean(getenv("SINGULARITY_COMMAND_ASIS",
 SINGULARITY_ROOTFS = getenv("SINGULARITY_ROOTFS")
 METADATA_FOLDER_NAME = ".singularity.d"
 _metadata_base = "%s/%s" % (SINGULARITY_ROOTFS, METADATA_FOLDER_NAME)
-METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER",
-                       default=_metadata_base,
+METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER", _metadata_base,
                        required=True)
 
 
@@ -88,10 +88,9 @@ METADATA_BASE = getenv("SINGULARITY_METADATA_FOLDER",
 # Plugins and Formatting
 #######################################################################
 
-PLUGIN_FIXPERMS = convert2boolean(getenv("SINGULARITY_FIX_PERMS",
-                                  default=False))
+PLUGIN_FIXPERMS = convert2boolean(getenv("SINGULARITY_FIX_PERMS", False))
 
-COLORIZE = getenv("SINGULARITY_COLORIZE", default=None)
+COLORIZE = getenv("SINGULARITY_COLORIZE", None)
 if COLORIZE is not None:
     COLORIZE = convert2boolean(COLORIZE)
 
@@ -115,9 +114,13 @@ else:
 #######################################################################
 
 # API
-API_BASE = "index.docker.io"  # registry
-API_VERSION = "v2"
+DOCKER_API_BASE = "index.docker.io"  # registry
+CUSTOM_REGISTRY = getenv("REGISTRY")
 NAMESPACE = "library"
+CUSTOM_NAMESPACE = getenv('NAMESPACE')
+DOCKER_API_VERSION = "v2"
+DOCKER_ARCHITECTURE = getenv("SINGULARITY_DOCKER_ARCHITECTURE", "amd64")
+DOCKER_OS = getenv("SINGULARITY_DOCKER_OS", "linux")
 TAG = "latest"
 
 # Container Metadata
@@ -128,31 +131,29 @@ SHUB_PREFIX = "shub"
 # Defaults for environment, runscript, labels
 _envbase = "%s/env" % (METADATA_BASE)
 _runscript = "%s/singularity" % (SINGULARITY_ROOTFS)
-_environment = "%s/environment" % (METADATA_BASE)
+_environment = "%s/90-environment.sh" % (_envbase)
 _labelfile = "%s/labels.json" % (METADATA_BASE)
 _helpfile = "%s/runscript.help" % (METADATA_BASE)
 _deffile = "%s/Singularity" % (METADATA_BASE)
 _testfile = "%s/test" % (METADATA_BASE)
 
 
-ENVIRONMENT = getenv("SINGULARITY_ENVIRONMENT", default=_environment)
-RUNSCRIPT = getenv("SINGULARITY_RUNSCRIPT", default=_runscript)
-TESTFILE = getenv("SINGULARITY_TESTFILE", default=_testfile)
-DEFFILE = getenv("SINGULARITY_DEFFILE", default=_deffile)
-HELPFILE = getenv("SINGULARITY_HELPFILE", default=_helpfile)
-ENV_BASE = getenv("SINGULARITY_ENVBASE", default=_envbase)
-LABELFILE = getenv("SINGULARITY_LABELFILE", default=_labelfile)
-INCLUDE_CMD = convert2boolean(getenv("SINGULARITY_INCLUDECMD",
-                              default=False))
-DISABLE_HTTPS = convert2boolean(getenv("SINGULARITY_NOHTTPS",
-                                default=False))
+ENVIRONMENT = getenv("SINGULARITY_ENVIRONMENT", _environment)
+RUNSCRIPT = getenv("SINGULARITY_RUNSCRIPT", _runscript)
+TESTFILE = getenv("SINGULARITY_TESTFILE", _testfile)
+DEFFILE = getenv("SINGULARITY_DEFFILE", _deffile)
+HELPFILE = getenv("SINGULARITY_HELPFILE", _helpfile)
+ENV_BASE = getenv("SINGULARITY_ENVBASE", _envbase)
+LABELFILE = getenv("SINGULARITY_LABELFILE", _labelfile)
+INCLUDE_CMD = convert2boolean(getenv("SINGULARITY_INCLUDECMD", False))
+DISABLE_HTTPS = convert2boolean(getenv("SINGULARITY_NOHTTPS", False))
 
 #######################################################################
 # Singularity Hub
 #######################################################################
 
-SINGULARITY_PULLFOLDER = getenv("SINGULARITY_PULLFOLDER", default=os.getcwd())
-SHUB_API_BASE = "singularity-hub.org/api"
+SINGULARITY_PULLFOLDER = getenv("SINGULARITY_PULLFOLDER", os.getcwd())
+SHUB_API_BASE = "www.singularity-hub.org"
 SHUB_NAMEBYHASH = getenv("SHUB_NAMEBYHASH")
 SHUB_NAMEBYCOMMIT = getenv("SHUB_NAMEBYCOMMIT")
 SHUB_CONTAINERNAME = getenv("SHUB_CONTAINERNAME")
@@ -162,6 +163,6 @@ SHUB_CONTAINERNAME = getenv("SHUB_CONTAINERNAME")
 #######################################################################
 
 _layerfile = "%s/.layers" % (METADATA_BASE)
-LAYERFILE = getenv("SINGULARITY_CONTENTS", default=_layerfile)
+LAYERFILE = getenv("SINGULARITY_CONTENTS", _layerfile)
 
-SINGULARITY_WORKERS = int(getenv("SINGULARITY_PYTHREADS", default=9))
+SINGULARITY_WORKERS = int(getenv("SINGULARITY_PYTHREADS", 9))
