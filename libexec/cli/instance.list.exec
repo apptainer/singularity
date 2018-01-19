@@ -34,8 +34,6 @@ if ! USERID=`id -ru`; then
     exit 255
 fi
 
-JSONFMT="false"
-
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -52,7 +50,7 @@ while true; do
             fi
         ;;
         --json)
-        JSONFMT="true"
+        SINGULARITY_JSONFMT="true"
         shift
         ;;
         -*)
@@ -74,11 +72,12 @@ fi
 
 DLEN=`echo "$DAEMONS"|wc -l`
 let DLEN--
+JSON_PRINTF='\t{\n\t\t"instance":"%s",\n\t\t"pid":"%s",\n\t\t"img":"%s"\n\t}'
 
-if [[ "${JSONFMT}" == "true" ]]; then
-  printf "%s\n\t%s:[\n" "{" '"instances"'
-else
+if [[ -z "${SINGULARITY_JSONFMT:-}" ]]; then
   message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
+else
+  printf "%s\n\t%s:[\n" "{" '"instances"'
 fi
 
 for i in $DAEMONS; do
@@ -105,22 +104,24 @@ for i in $DAEMONS; do
             fi
         fi
 
-        if [[ "${JSONFMT}" == "true" ]]; then
-          if [ "$COUNT" -lt "$DLEN" ]; then
-            printf '\t{\n\t\t"instance":"%s",\n\t\t"pid":"%s",\n\t\t"img":"%s"\n\t},\n' "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
-          else
-            printf '\t{\n\t\t"instance":"%s",\n\t\t"pid":"%s",\n\t\t"img":"%s"\n\t}' "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
-          fi
+        if [[ -z "${SINGULARITY_JSONFMT:-}" ]]; then
+          printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
         else
-            printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+          if [ "$COUNT" -lt "$DLEN" ]; then
+            printf "${JSON_PRINTF},\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+          else
+            printf "${JSON_PRINTF}" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+          fi
         fi
 
         let "COUNT++"
     fi
 done
 
-if [[ "${JSONFMT}" == "true" ]]; then
-printf "\n\t]\n}\n"
+if [[ -z "${SINGULARITY_JSONFMT:-}" ]]; then
+  printf "\n"
+else
+  printf "\n\t]\n}\n"
 fi
 
 if [ "$COUNT" == 0 ]; then
