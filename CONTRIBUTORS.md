@@ -7,6 +7,7 @@
     - Cedric Clerget <cedric.clerget@univ-fcomte.fr>
     - Dave Dykstra <dwd@fnal.gov>
     - Dave Godlove <davidgodlove@gmail.com>
+    - Divya Cote <divya.cote@gmail.com>
     - Krishna Muriki <kmuriki@lbl.gov>
     - Michael Bauer <bauerm@umich.edu>
     - Vanessa Sochat <vsochat@stanford.edu>
@@ -39,5 +40,4 @@
     - Josef Hrabal <josef.hrabal@vsb.cz>
     - Daniele Tamino <daniele.tamino@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
-    - David Trudgian <david.trudgian@utsouthwestern.edu>   
-
+    - David Trudgian <david.trudgian@utsouthwestern.edu>

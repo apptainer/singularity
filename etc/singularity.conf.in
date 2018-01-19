@@ -196,6 +196,14 @@ bind path = /etc/hosts
 #autofs bug path = /cifs-share
 
 
+# ALWAYS USE NV ${TYPE}: [BOOL]
+# DEFAULT: no
+# This feature allows an administrator to determine that every action command
+# should be executed implicitely with the --nv option (useful for GPU only 
+# environments). 
+@ALWAYS_USE_NV@ = @ALWAYS_USE_NV_DEFAULT@  
+
+
 # ROOT DEFAULT CAPABILITIES: [full/file/default/no]
 # DEFAULT: no
 # Define default root capability set kept during runtime

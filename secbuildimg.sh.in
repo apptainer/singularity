@@ -57,7 +57,7 @@ From: ubuntu:latest
     export LC_LANG=C
     apt-get update
     apt-get install -y git gcc python make automake autoconf libtool
-    apt-get install -y squashfs-tools curl uuid-dev libssl-dev
+    apt-get install -y squashfs-tools curl uuid-dev libssl-dev libarchive-dev
     apt-get install -y debootstrap yum zypper
     apt-get clean
     apt-get autoclean

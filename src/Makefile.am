@@ -9,7 +9,7 @@ AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATE
 
 lexecdir = $(libexecdir)/singularity/bin
 
-lexec_PROGRAMS = action builddef cleanupd get-section image-type mount start sif wrapper $(BUILD_SUID)
+lexec_PROGRAMS = action builddef cleanupd docker-extract get-section get-configvals image-type mount start sif wrapper $(BUILD_SUID)
 EXTRA_PROGRAMS = wrapper-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c util/suid.c
@@ -23,6 +23,11 @@ builddef_SOURCES = builddef.c util/util.c util/file.c util/registry.c util/sessi
 builddef_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la lib/sif/libsingularity-sif.la bootstrap-lib/libinternal.la -luuid
 builddef_CPPFLAGS = $(AM_CPPFLAGS)
 builddef_LDFLAGS = -static
+
+docker_extract_SOURCES = docker-extract.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c util/suid.c
+docker_extract_LDADD = -larchive
+docker_extract_CPPFLAGS = $(AM_CPPFLAGS)
+docker_extract_LDFLAGS = -static
 
 start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/signal.c util/capability.c util/mount.c
 start_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la lib/sif/libsingularity-sif.la action-lib/libinternal.la -luuid
@@ -38,6 +43,9 @@ sif_CPPFLAGS = $(AM_CPPFLAGS)
 
 get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/capability.c util/suid.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)
+
+get_configvals_SOURCES = get-configvals.c util/util.c util/config_parser.c util/message.c util/registry.c util/file.c util/privilege.c util/suid.c util/capability.c
+get_configvals_CPPFLAGS = $(AM_CPPFLAGS)
 
 image_type_SOURCES = image-type.c util/util.c util/message.c util/config_parser.c util/file.c
 image_type_LDADD = lib/image/libsingularity-image.la lib/sif/libsingularity-sif.la -luuid

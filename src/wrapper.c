@@ -68,6 +68,7 @@ int main(int argc, char **argv) {
 
     singularity_registry_init();
     singularity_config_init();
+    singularity_suid_init();
 
     command = singularity_registry_get("COMMAND");
     if ( command == NULL ) {
@@ -87,7 +88,7 @@ int main(int argc, char **argv) {
     }
 
     /* if allow setuid is no or nosuid requested fallback to non suid command */
-    if ( singularity_suid_init() < 0 ) {
+    if ( singularity_suid_allowed() == 0 ) {
         singularity_priv_init();
         singularity_priv_drop_perm();
     } else {
