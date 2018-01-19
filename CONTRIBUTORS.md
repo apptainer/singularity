@@ -39,3 +39,4 @@
     - Daniele Tamino <daniele.tamino@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - David Trudgian <david.trudgian@utsouthwestern.edu>
+    - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
