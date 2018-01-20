@@ -40,8 +40,11 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
         ABORT(255);
     }
 
+    // Target may not exist - that's ok
+    retval = 0;
+
     if (is_dir(buf) == 0) {
-        s_rmdir(buf);
+        retval = s_rmdir(buf);
     }
 
     return retval;
@@ -86,6 +89,9 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
         singularity_message(ERROR, "Error with pathname too long\n");
         ABORT(255);
     }
+
+    // Target may not exist - that's ok
+    retval = 0;
 
     if (is_dir(buf) == 0) {
         retval = s_rmdir(buf);
