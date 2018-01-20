@@ -22,6 +22,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - [nvliblist.conf](https://github.com/singularityware/singularity/blob/master/etc/nvliblist.conf) now has a section for binaries
  - --nv can be made default with all action commands in singularity.conf
  - --nv can be controlled by env vars `$SINGULARITY_NV` and `$SINGULARITY_NV_OFF`
+ - Adjustments to SCIF (Scientific Filesystem) integration for broader use
 
 ### Security related fixes
  - Add capability support and secure build #934
@@ -31,6 +32,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ### Bug Fixes
  - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Fixed bug that did not export environment variables for apps with "-" in name
  
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
