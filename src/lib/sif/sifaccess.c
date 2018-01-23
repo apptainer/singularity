@@ -84,37 +84,66 @@ sif_fsstr(Siffstype ftype)
 	return "Unknown fstype";
 }
 
+char *
+sif_hreadable(size_t value)
+{
+	static char conversion[32];
+	int divs = 0;
+
+	memset(conversion, 0, 32);
+
+	for(; value; value>>=10) {
+		if(value < 1024)
+			break;
+		divs++;
+	}
+
+	switch(divs) {
+		case 0: snprintf(conversion, 31, "%ld", value);
+			break;
+		case 1: snprintf(conversion, 31, "%ldKB", value);
+			break;
+		case 2: snprintf(conversion, 31, "%ldMB", value);
+			break;
+		case 3: snprintf(conversion, 31, "%ldGB", value);
+			break;
+		case 4: snprintf(conversion, 31, "%ldTB", value);
+			break;
+	}
+
+	return conversion;
+}
+
 int
-sif_printrow(void *elem)
+sif_printrow(void *elem, void *data)
 {
 	static char fposbuf[26];
-	Sifcommon *cm = (Sifcommon *)elem;
-	Sifpartition *p = (Sifpartition *)elem;
-	Sifsignature *s = (Sifsignature *)elem;
+	Sifdescriptor *desc = elem;
 
-	printf("%-4d ", cm->id);
-	if(cm->groupid == SIF_UNUSED_GROUP)
+	printf("%-4d ", desc->cm.id);
+	if(desc->cm.groupid == SIF_UNUSED_GROUP)
 		printf("|%-7s ", "NONE");
 	else
-		printf("|%-7d ", cm->groupid & ~SIF_GROUP_MASK);
-	if(cm->link == SIF_UNUSED_LINK)
+		printf("|%-7d ", desc->cm.groupid & ~SIF_GROUP_MASK);
+	if(desc->cm.link == SIF_UNUSED_LINK)
 		printf("|%-7s ", "NONE");
 	else
-		printf("|%-7d ", cm->link);
-	sprintf(fposbuf, "|%ld-%ld ", cm->fileoff, cm->fileoff+cm->filelen-1);
+		printf("|%-7d ", desc->cm.link);
+	sprintf(fposbuf, "|%ld-%ld ", desc->cm.fileoff,
+	        desc->cm.fileoff+desc->cm.filelen-1);
 	printf("%-26s ", fposbuf);
 
-	switch(cm->datatype){
+	switch(desc->cm.datatype){
 	case DATA_PARTITION:
-		printf("|%s (%s/%s)", sif_datastr(cm->datatype),
-		       sif_fsstr(p->fstype), sif_partstr(p->parttype));
+		printf("|%s (%s/%s)", sif_datastr(desc->cm.datatype),
+		       sif_fsstr(desc->part.fstype), sif_partstr(desc->part.parttype));
 		break;
 	case DATA_SIGNATURE:
-		printf("|%s (%s)", sif_datastr(cm->datatype),
-		       sif_hashstr(s->hashtype));
+		printf("|%s (%s)", sif_datastr(desc->cm.datatype),
+		       sif_hashstr(desc->sig.hashtype));
 		break;
 	default:
-		printf("|%s", sif_datastr(cm->datatype));
+		printf("|%s", sif_datastr(desc->cm.datatype));
 		break;
 	}
 	printf("\n");
@@ -140,38 +169,36 @@ sif_printlist(Sifinfo *info)
 	printf("%-4s %-8s %-8s %-26s %s\n", "ID", "|GROUP", "|LINK", "|SIF POSITION (start-end)", "|TYPE");
 	printf("------------------------------------------------------------------------------\n");
 
-	listforall(&info->deschead, sif_printrow);
+	listforall(&info->deschead, sif_printrow, NULL);
 }
 
 int
-sif_printdesc(void *elem)
+sif_printdesc(void *elem, void *data)
 {
-	Sifcommon *cm = (Sifcommon *)elem;
-	Sifpartition *p = (Sifpartition *)elem;
-	Sifsignature *s = (Sifsignature *)elem;
+	Sifdescriptor *desc = elem;
 
-	printf("desc type: %s\n", sif_datastr(cm->datatype));
-	printf("desc id: %d\n", cm->id);
-	if(cm->groupid == SIF_UNUSED_GROUP)
+	printf("desc type: %s\n", sif_datastr(desc->cm.datatype));
+	printf("desc id: %d\n", desc->cm.id);
+	if(desc->cm.groupid == SIF_UNUSED_GROUP)
 		printf("group id: NONE\n");
 	else
-		printf("group id: %d\n", cm->groupid & ~SIF_GROUP_MASK);
-	if(cm->link == SIF_UNUSED_LINK)
+		printf("group id: %d\n", desc->cm.groupid & ~SIF_GROUP_MASK);
+	if(desc->cm.link == SIF_UNUSED_LINK)
 		printf("link: NONE\n");
 	else
-		printf("link: %d\n", cm->link);
-	printf("fileoff: %ld\n", cm->fileoff);
-	printf("filelen: %ld\n", cm->filelen);
+		printf("link: %d\n", desc->cm.link);
+	printf("fileoff: %ld\n", desc->cm.fileoff);
+	printf("filelen: %ld\n", desc->cm.filelen);
 
-	switch(cm->datatype){
+	switch(desc->cm.datatype){
 	case DATA_PARTITION:
-		printf("fstype: %s\n", sif_fsstr(p->fstype));
-		printf("parttype: %s\n", sif_partstr(p->parttype));
-		printf("content: %s\n", p->content);
+		printf("fstype: %s\n", sif_fsstr(desc->part.fstype));
+		printf("parttype: %s\n", sif_partstr(desc->part.parttype));
+		printf("content: %s\n", desc->part.content);
 		break;
 	case DATA_SIGNATURE:
-		printf("hashtype: %s\n", sif_hashstr(s->hashtype));
-		printf("entity: %s\n", s->entity);
+		printf("hashtype: %s\n", sif_hashstr(desc->sig.hashtype));
+		printf("entity: %s\n", desc->sig.entity);
 		break;
 	default:
 		break;
@@ -200,12 +227,10 @@ sif_printheader(Sifinfo *info)
 
 	printf("number of descriptors: %d\n", info->header.ndesc);
 	printf("start of descriptors in file: %ld\n", info->header.descoff);
-	printf("length of descriptors in file: %ld\n", info->header.desclen);
+	printf("length of descriptors in file: %s\n", sif_hreadable(info->header.desclen));
 	printf("start of data in file: %ld\n", info->header.dataoff);
-	printf("length of data in file: %ld\n", info->header.datalen);
+	printf("length of data in file: %s\n", sif_hreadable(info->header.datalen));
 	printf("============================================\n");
-
-	listforall(&info->deschead, sif_printdesc);
 }
 
 /* Get the SIF header structure */
@@ -218,21 +243,21 @@ sif_getheader(Sifinfo *info)
 static int
 sameid(void *cur, void *elem)
 {
-	Sifcommon *c = (Sifcommon *)cur;
-        Sifcommon *e = (Sifcommon *)elem;
+	Sifdescriptor *c = cur;
+	Sifdescriptor *e = elem;
 
-	if(c->id == e->id)
+	if(c->cm.id == e->cm.id)
 		return 1;
 	return 0;
 }
 
-Sifcommon *
+Sifdescriptor *
 sif_getdescid(Sifinfo *info, int id)
 {
-	Sifcommon lookfor;
+	Sifdescriptor lookfor;
 	Node *n;
 
-	lookfor.id = id;
+	lookfor.cm.id = id;
 
 	n = listfind(&info->deschead, &lookfor, sameid);
 	if(n == NULL){
@@ -246,7 +271,7 @@ static int
 isdeffile(void *cur, void *elem)
 {
 	Sifdeffile *c = (Sifdeffile *)cur;
-        Sifdeffile *e = (Sifdeffile *)elem;
+	Sifdeffile *e = (Sifdeffile *)elem;
 
 	if(c->cm.datatype == DATA_DEFFILE && c->cm.groupid == e->cm.groupid)
 		return 1;
@@ -275,7 +300,7 @@ static int
 islabels(void *cur, void *elem)
 {
 	Siflabels *c = (Siflabels *)cur;
-        Siflabels *e = (Siflabels *)elem;
+	Siflabels *e = (Siflabels *)elem;
 
 	if(c->cm.datatype == DATA_LABELS && c->cm.groupid == e->cm.groupid)
 		return 1;
@@ -303,7 +328,7 @@ static int
 isenvvar(void *cur, void *elem)
 {
 	Sifenvvar *c = (Sifenvvar *)cur;
-        Sifenvvar *e = (Sifenvvar *)elem;
+	Sifenvvar *e = (Sifenvvar *)elem;
 
 	if(c->cm.datatype == DATA_ENVVAR && c->cm.groupid == e->cm.groupid)
 		return 1;
@@ -331,7 +356,7 @@ static int
 ispartition(void *cur, void *elem)
 {
 	Sifpartition *c = (Sifpartition *)cur;
-        Sifpartition *e = (Sifpartition *)elem;
+	Sifpartition *e = (Sifpartition *)elem;
 
 	if(c->cm.datatype == DATA_PARTITION && c->cm.groupid == e->cm.groupid)
 		return 1;
@@ -359,7 +384,7 @@ static int
 issignature(void *cur, void *elem)
 {
 	Sifsignature *c = (Sifsignature *)cur;
-        Sifsignature *e = (Sifsignature *)elem;
+	Sifsignature *e = (Sifsignature *)elem;
 
 	if(c->cm.datatype == DATA_SIGNATURE && c->cm.groupid == e->cm.groupid)
 		return 1;
@@ -386,21 +411,21 @@ sif_getsignature(Sifinfo *info, int groupid)
 static int
 linkmatches(void *cur, void *elem)
 {
-	Sifcommon *c = (Sifcommon *)cur;
-        Sifcommon *e = (Sifcommon *)elem;
+	Sifdescriptor *c = cur;
+	Sifdescriptor *e = elem;
 
-	if(c->link == e->id)
+	if(c->cm.link == e->cm.id)
 		return 1;
 	return 0;
 }
 
-Sifcommon *
+Sifdescriptor *
 sif_getlinkeddesc(Sifinfo *info, int id)
 {
-	Sifcommon lookfor;
+	Sifdescriptor lookfor;
 	Node *n;
 
-	lookfor.id = id;
+	lookfor.cm.id = id;
 
 	n = listfind(&info->deschead, &lookfor, linkmatches);
 	if(n == NULL){

@@ -1,9 +1,9 @@
 MAINTAINERCLEANFILES = Makefile.in config.h config.h.in
 DISTCLEANFILES = Makefile
-CLEANFILES = core.* *~ *.la
+CLEANFILES = core.* *~ *.la *.o *.lo
 AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
-AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
+AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES)
 distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
@@ -21,10 +21,12 @@ libsingularity_signing_la_CFLAGS = $(AM_CFLAGS)
 
 # These are kludges so they don't remove the $(DEPDIR) in ../../util/ otherwise
 # the clean will fail when other Makefile tries to remove those directories
-distclean: distclean-recursive
-	-rm ./$(DEPDIR)
-	-rm -f Makefile
+distclean:
+	-rm -rf ./$(DEPDIR)
+	-rm -rf ./.libs
+	-rm -f $(DISTCLEANFILES) $(CLEANFILES)
 
-maintainer-clean: maintainer-clean-recursive
-	-rm ./$(DEPDIR)
-	-rm -f Makefile
+maintainer-clean:
+	-rm -rf ./$(DEPDIR)
+	-rm -rf ./.libs
+	-rm -f $(MAINTAINERCLEANFILES) $(DISTCLEANFILES) $(CLEANFILES)

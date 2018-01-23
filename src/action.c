@@ -55,15 +55,16 @@ int main(int argc, char **argv) {
     char *target_pwd = NULL;
     char *command = NULL;
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
 
+    singularity_suid_init();
     singularity_priv_init();
-    singularity_suid_init(argv);
 
     singularity_registry_init();
     
-    singularity_priv_userns();
     singularity_priv_drop();
+
+    singularity_runtime_autofs();
 
     singularity_daemon_init();
 
@@ -99,7 +100,13 @@ int main(int argc, char **argv) {
     
     singularity_priv_drop_perm();
 
-    if ( singularity_registry_get("CONTAIN") != NULL ) {
+    if ( ( target_pwd = singularity_registry_get("TARGET_PWD") ) != NULL ) {
+        singularity_message(DEBUG, "Attempting to chdir to TARGET_PWD: %s\n", target_pwd);
+        if ( chdir(target_pwd) != 0 ) {
+            singularity_message(ERROR, "Could not change directory to: %s\n", target_pwd);
+            ABORT(255);
+        }
+    } else if ( singularity_registry_get("CONTAIN") != NULL ) { 
         singularity_message(DEBUG, "Attempting to chdir to home: %s\n", singularity_priv_home());
         if ( chdir(singularity_priv_home()) != 0 ) {
             singularity_message(WARNING, "Could not chdir to home: %s\n", singularity_priv_home());
@@ -107,12 +114,6 @@ int main(int argc, char **argv) {
                 singularity_message(ERROR, "Could not change directory within container.\n");
                 ABORT(255);
             }
-        }
-    } else if ( ( target_pwd = singularity_registry_get("TARGET_PWD") ) != NULL ) {
-        singularity_message(DEBUG, "Attempting to chdir to TARGET_PWD: %s\n", target_pwd);
-        if ( chdir(target_pwd) != 0 ) {
-            singularity_message(ERROR, "Could not change directory to: %s\n", target_pwd);
-            ABORT(255);
         }
     } else if ( pwd != NULL ) {
         singularity_message(DEBUG, "Attempting to chdir to CWD: %s\n", pwd);
@@ -150,8 +151,6 @@ int main(int argc, char **argv) {
     } else if ( strcmp(command, "shell") == 0 ) {
         action_shell(argc, argv);
     } else if ( strcmp(command, "exec") == 0 ) {
-        action_exec(argc, argv);
-    } else if ( strcmp(command, "inspect") == 0 ) {
         action_exec(argc, argv);
     } else if ( strcmp(command, "run") == 0 ) {
         action_run(argc, argv);

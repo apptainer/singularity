@@ -5,13 +5,13 @@ DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ *.la
 AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
-AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
+AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES)
 distlibdir = $(libdir)/singularity
 distincludedir = $(includedir)/singularity
 
 noinst_LTLIBRARIES = libimage.la
 libimage_la_LIBADD = ext3/libinternal.la dir/libinternal.la squashfs/libinternal.la sif/libinternal.la
-libimage_la_SOURCES = image.c bind.c ../../util/registry.c ../../util/message.c ../../util/config_parser.c ../../util/privilege.c ../../util/util.c ../../util/file.c ../../util/suid.c ../../util/mount.c
+libimage_la_SOURCES = image.c bind.c ../../util/registry.c ../../util/message.c ../../util/config_parser.c ../../util/privilege.c ../../util/util.c ../../util/file.c ../../util/suid.c ../../util/capability.c ../../util/mount.c
 libimage_la_CFLAGS = $(AM_CFLAGS) # This fixes duplicate sources in library and progs
 
 distinclude_HEADERS = image.h bind.h
@@ -26,10 +26,12 @@ libsingularity_image_la_CFLAGS = $(AM_CFLAGS)
 # These are kludges so they don't remove the $(DEPDIR) in ../../util/ otherwise
 # the clean will fail when other Makefile tries to remove those directories
 distclean: distclean-recursive
-	-rm ./$(DEPDIR)
-	-rm -f Makefile
+	-rm -rf ./$(DEPDIR)
+	-rm -rf ./.libs
+	-rm -f $(DISTCLEANFILES) $(CLEANFILES)
 
 maintainer-clean: maintainer-clean-recursive
-	-rm ./$(DEPDIR)
-	-rm -f Makefile
+	-rm -rf ./$(DEPDIR)
+	-rm -rf ./.libs
+	-rm -f $(MAINTAINERCLEANFILES) $(DISTCLEANFILES) $(CLEANFILES)
 
