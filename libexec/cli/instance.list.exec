@@ -50,8 +50,8 @@ while true; do
             fi
         ;;
         --json)
-        SINGULARITY_JSONFMT="true"
-        shift
+           SINGULARITY_JSONFMT="true"
+           shift
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -74,7 +74,7 @@ DLEN=`echo "$DAEMONS"|wc -l`
 let DLEN--
 JSON_PRINTF='\t{\n\t\t"instance":"%s",\n\t\t"pid":"%s",\n\t\t"img":"%s"\n\t}'
 
-if [[ -z "${SINGULARITY_JSONFMT:-}" ]]; then
+if [ -z "${SINGULARITY_JSONFMT:-}" ]; then
   message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
 else
   printf "%s\n\t%s:[\n" "{" '"instances"'
@@ -104,7 +104,7 @@ for i in $DAEMONS; do
             fi
         fi
 
-        if [[ -z "${SINGULARITY_JSONFMT:-}" ]]; then
+        if [ -z "${SINGULARITY_JSONFMT:-}" ]; then
           printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
         else
           if [ "$COUNT" -lt "$DLEN" ]; then
@@ -118,12 +118,12 @@ for i in $DAEMONS; do
     fi
 done
 
-if [[ -z "${SINGULARITY_JSONFMT:-}" ]]; then
+if [ -z "${SINGULARITY_JSONFMT:-}" ]; then
   printf "\n"
 else
   printf "\n\t]\n}\n"
 fi
 
 if [ "$COUNT" == 0 ]; then
-    exit 1
+  exit 1
 fi
