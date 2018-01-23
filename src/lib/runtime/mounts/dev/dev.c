@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ * Copyright (c) 2017-2018, Sylabs, Inc. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  *
@@ -84,7 +84,7 @@ int _singularity_runtime_mount_dev(void) {
 
         if ( singularity_config_get_bool_char(MOUNT_DEVPTS) > 0 ) {
             struct stat multi_instance_devpts;
-            
+
             if( stat("/dev/pts/ptmx", &multi_instance_devpts) < 0 ) {
                 singularity_message(ERROR, "Multiple devpts instances unsupported and \"%s\" configured\n", MOUNT_DEVPTS);
                 ABORT(255);

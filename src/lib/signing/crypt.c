@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+ * Copyright (c) 2017-2018, Sylabs, Inc. All rights reserved.
  * Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
  *
  * See the COPYRIGHT.md file at the top-level directory of this distribution and at
