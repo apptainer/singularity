@@ -36,28 +36,25 @@ int singularity_mount(const char *source, const char *target,
                       const void *data) {
     int ret;
     uid_t fsuid = 0;
-    gid_t fsgid = 0;
 
     if ( ( mountflags & MS_BIND ) ) {
-        struct stat stbuf;
-
         fsuid = singularity_priv_getuid();
-
-        if ( source ) {
-            if ( stat(source, &stbuf) < 0 ) {
-                singularity_message(ERROR, "Can't stat %s directory: %s\n", source, strerror(errno));
-                ABORT(255);
-            }
-            if ( singularity_priv_has_gid(stbuf.st_gid) ) {
-                fsgid = stbuf.st_gid;
-            }
-        }
     }
-    singularity_priv_escalate();
-    setfsuid(fsuid);
-    setfsgid(fsgid);
+
+    /* don't modify user groups */
+    if ( singularity_priv_userns_enabled() == 0 ) {
+        if ( seteuid(0) < 0 ) {
+            singularity_message(ERROR, "Failed to escalate privileges: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        /* NFS root_squash option set uid 0 to nobody, force use of real user ID */
+        setfsuid(fsuid);
+    }
     ret = mount(source, target, filesystemtype, mountflags, data);
-    singularity_priv_drop();
+    if ( singularity_priv_userns_enabled() == 0 && seteuid(singularity_priv_getuid()) < 0 ) {
+        singularity_message(ERROR, "Failed to drop privileges: %s\n", strerror(errno));
+        ABORT(255);
+    }
 
     return ret;
 }
