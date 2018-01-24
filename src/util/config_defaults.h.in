@@ -85,6 +85,9 @@
 #define LIMIT_CONTAINER_OWNERS "limit container owners"
 #define LIMIT_CONTAINER_OWNERS_DEFAULT "NULL"
 
+#define LIMIT_CONTAINER_GROUPS "limit container groups"
+#define LIMIT_CONTAINER_GROUPS_DEFAULT "NULL"
+
 #define LIMIT_CONTAINER_PATHS "limit container paths"
 #define LIMIT_CONTAINER_PATHS_DEFAULT "NULL"
 
@@ -94,6 +97,9 @@
 #define AUTOFS_BUG_PATH "autofs bug path"
 #define AUTOFS_BUG_PATH_DEFAULT ""
 
+#define ALLOW_CONTAINER_SIF "allow container sif"
+#define ALLOW_CONTAINER_SIF_DEFAULT 1
+
 #define ALLOW_CONTAINER_DIR "allow container dir"
 #define ALLOW_CONTAINER_DIR_DEFAULT 1
 
@@ -102,5 +108,17 @@
 
 #define ALLOW_CONTAINER_SQUASHFS "allow container squashfs"
 #define ALLOW_CONTAINER_SQUASHFS_DEFAULT 1
+
+#define ALWAYS_USE_NV "always use nv"
+#define ALWAYS_USE_NV_DEFAULT "no"
+
+#define ROOT_DEFAULT_CAPABILITIES "root default capabilities"
+#define ROOT_DEFAULT_CAPABILITIES_DEFAULT "no"
+
+#define ALLOW_ROOT_CAPABILITIES "allow root capabilities"
+#define ALLOW_ROOT_CAPABILITIES_DEFAULT 1
+
+#define ALLOW_USER_CAPABILITIES "allow user capabilities"
+#define ALLOW_USER_CAPABILITIES_DEFAULT 0
 
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_

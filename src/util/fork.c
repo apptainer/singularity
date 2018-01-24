@@ -38,6 +38,7 @@
 #include "util/privilege.h"
 #include "util/message.h"
 #include "util/util.h"
+#include "util/suid.h"
 
 int generic_signal_rpipe = -1;
 int generic_signal_wpipe = -1;
@@ -381,7 +382,7 @@ pid_t singularity_fork(unsigned int flags) {
         fds[1].revents = 0;
 
         /* Drop privs if we're SUID */
-        if ( singularity_priv_is_suid() == 0 ) {
+        if ( singularity_suid_enabled() ) {
             singularity_message(DEBUG, "Dropping permissions\n");
             singularity_priv_drop();
         }

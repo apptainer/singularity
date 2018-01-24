@@ -1,0 +1,27 @@
+NAME="capability"
+SECTION="group"
+SUMMARY="User's capabilities management command group"
+USAGE="singularity [...] capability.<command> [...]"
+
+print_help() {
+cat<<EOF
+
+This is a command group that supports the management of user's capabilities.
+
+CAPABILITY GROUP COMMANDS:
+
+    capability.list     List user's capabilities
+    capability.add      Add user's capabilities
+    capability.drop     Drop user's capabillities
+
+All group commands have their own help output:
+
+    $ singularity help capability.list
+    $ singularity capability.list --help
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+    http://singularity.lbl.gov/
+EOF
+}

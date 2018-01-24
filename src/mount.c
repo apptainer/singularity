@@ -48,10 +48,10 @@
 int main(int argc, char **argv) {
     struct image_object image;
 
-    singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
+    singularity_config_init();
 
+    singularity_suid_init();
     singularity_priv_init();
-    singularity_suid_init(argv);
 
     singularity_registry_init();
     singularity_priv_drop();

@@ -25,7 +25,6 @@
 #define __PRIVILEGE_H_
 
     void singularity_priv_init(void);
-    void singularity_priv_userns(void);
     void singularity_priv_escalate(void);
     void singularity_priv_drop(void);
     void singularity_priv_drop_perm(void);
@@ -34,7 +33,6 @@
     const gid_t *singularity_priv_getgids();
     int singularity_priv_getgidcount(void);
     int singularity_priv_userns_enabled(void);
-    int singularity_priv_is_suid(void);
     char *singularity_priv_home(void);
     char *singularity_priv_homedir(void);
     char *singularity_priv_getuser(void);

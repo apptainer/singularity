@@ -47,7 +47,7 @@
 #include "./squashfs/include.h"
 #include "./dir/include.h"
 #include "./ext3/include.h"
-
+#include "./sif/include.h"
 
 struct image_object singularity_image_init(char *path, int open_flags) {
     struct image_object image;
@@ -70,6 +70,7 @@ struct image_object singularity_image_init(char *path, int open_flags) {
     image.fd = -1;
     image.loopdev = NULL;
     image.offset = 0;
+    image.size = 0;
 
     if ( open_flags & ( O_RDWR | O_WRONLY ) ) {
         image.writable = 1;
@@ -78,7 +79,13 @@ struct image_object singularity_image_init(char *path, int open_flags) {
     }
 
     singularity_message(DEBUG, "Calling image_init for each file system module\n");
-    if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
+    if ( _singularity_image_sif_init(&image, open_flags) == 0 ) {
+        singularity_message(DEBUG, "got image_init type for SIF\n");
+        if ( singularity_config_get_bool(ALLOW_CONTAINER_SIF) <= 0 ) {
+            singularity_message(ERROR, "Configuration disallows container sif support\n");
+            ABORT(255);
+        }
+    } else if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for directory\n");
         image.type = DIRECTORY;
         if ( ( singularity_config_get_bool(ALLOW_CONTAINER_DIR) <= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
@@ -116,6 +123,7 @@ struct image_object singularity_image_init(char *path, int open_flags) {
     if ( ( singularity_suid_enabled() >= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
         singularity_limit_container_paths(&image);
         singularity_limit_container_owners(&image);
+        singularity_limit_container_groups(&image);
     }
 
     return(image);
@@ -215,6 +223,50 @@ void singularity_limit_container_owners(struct image_object *image) {
     }
 }
 
+void singularity_limit_container_groups(struct image_object *image) {
+    const char *limit_container_groups = singularity_config_get_value(LIMIT_CONTAINER_GROUPS);
+
+    if ( strcmp(limit_container_groups, "NULL") != 0 ) {
+        struct stat image_stat;
+        char *group_token = NULL;
+        char *current = strtok_r(strdup(limit_container_groups), ",", &group_token);
+
+        chomp(current);
+
+        singularity_message(DEBUG, "Limiting container access to allowed groups\n");
+
+        if ( fstat(image->fd, &image_stat) != 0 ) {
+            singularity_message(ERROR, "Could not fstat() image file descriptor (%d): %s\n", image->fd, strerror(errno));
+            ABORT(255);
+        }
+
+        while (1) {
+            struct group *group;
+
+            if ( current[0] == '\0' ) {
+                singularity_message(DEBUG, "Skipping blank group limit entry\n");
+            } else {
+                singularity_message(DEBUG, "Checking group: '%s'\n", current);
+
+                if ( ( group = getgrnam(current) ) != NULL ) {
+                    if ( group->gr_gid == image_stat.st_gid ) {
+                        singularity_message(DEBUG, "Singularity image is owned by required group: %s\n", current);
+                        break;
+                    }
+                }
+            }
+
+            current = strtok_r(NULL, ",", &group_token);
+            chomp(current);
+
+            if ( current == NULL ) {
+                singularity_message(ERROR, "Singularity image is not owned by required group(s)\n");
+                ABORT(255);
+            }
+        }
+    }
+}
+
 void singularity_limit_container_paths(struct image_object *image) {
     const char *limit_container_paths = singularity_config_get_value(LIMIT_CONTAINER_PATHS);
 
@@ -236,8 +288,16 @@ void singularity_limit_container_paths(struct image_object *image) {
 
         if ( readlink(fd_path, image_path, PATH_MAX-1) > 0 ) { // Flawfinder: ignore (TOCTOU not an issue within /proc)
             char *current = strtok_r(strdup(limit_container_paths), ",", &path_token);
+            char *current_path = NULL;
 
             chomp(current);
+
+            current_path = realpath(current, NULL); // Flawfinder: ignore
+            if ( current_path == NULL ) {
+                singularity_message(WARNING, "Configuration limit container path contains an invalid path %s\n", current);
+                ABORT(255);
+            }
+
             while (1) {
 
                 if ( current[0] == '\0' ) {
@@ -246,8 +306,8 @@ void singularity_limit_container_paths(struct image_object *image) {
                 } else {
                     singularity_message(DEBUG, "Checking image path: '%s'\n", current);
 
-                    if ( strncmp(image_path, current, strlength(current, PATH_MAX)) == 0 ) {
-                        singularity_message(VERBOSE, "Singularity image is in an allowed path: %s\n", current);
+                    if ( strncmp(image_path, current_path, strlength(current_path, PATH_MAX)) == 0 ) {
+                        singularity_message(VERBOSE, "Singularity image is in an allowed path: %s\n", current_path);
                         break;
                     }
 
@@ -258,9 +318,17 @@ void singularity_limit_container_paths(struct image_object *image) {
                         singularity_message(ERROR, "Singularity image is not in an allowed configured path\n");
                         ABORT(255);
                     }
+
+                    if ( current_path ) free(current_path);
+
+                    current_path = realpath(current, NULL); // Flawfinder: ignore
+                    if ( current_path == NULL ) {
+                        singularity_message(WARNING, "Configuration limit container path contains an invalid path %s\n", current);
+                        ABORT(255);
+                    }
                 }
             }
-
+            free(current_path);
         } else {
             singularity_message(ERROR, "Could not obtain the full system path of the image file: %s\n", strerror(errno));
             ABORT(255);

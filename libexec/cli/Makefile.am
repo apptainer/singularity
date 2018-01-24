@@ -4,6 +4,10 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
                     apps.exec \
                     bootstrap.exec \
                     build.exec \
+                    capability.exec \
+                    capability.add.exec \
+                    capability.drop.exec \
+                    capability.list.exec \
                     check.exec \
                     create.exec \
                     exec.exec \
@@ -23,11 +27,18 @@ dist_cliexec_SCRIPTS = action_argparser.sh \
                     run.exec \
                     shell.exec \
                     test.exec \
-                    selftest.exec
+                    selftest.exec \
+                    siflist.exec \
+                    sign.exec \
+                    verify.exec
 
 dist_cliexec_DATA = apps.info \
                     bootstrap.info \
                     build.info \
+                    capability.info \
+                    capability.add.info \
+                    capability.drop.info \
+                    capability.list.info \
                     check.info \
                     create.info \
                     exec.info \
@@ -47,6 +58,9 @@ dist_cliexec_DATA = apps.info \
                     run.info \
                     selftest.info \
                     shell.info \
-                    test.info
+                    siflist.info \
+                    sign.info \
+                    test.info \
+                    verify.info
 
 MAINTAINERCLEANFILES = Makefile.in

@@ -1,8 +1,8 @@
-SUBDIRS = mnt pid ipc net
+SUBDIRS = mnt pid ipc net uts user
 
-MAINTAINERCLEANFILES = Makefile.in 
-DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ *.la
+DISTCLEANFILES = Makefile
+MAINTAINERCLEANFILES = Makefile.in
 
 AM_CFLAGS = -Wall -fpie
 AM_LDFLAGS = -pie
@@ -11,7 +11,20 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libinternal.la
 
-libinternal_la_LIBADD = mnt/libinternal.la pid/libinternal.la ipc/libinternal.la net/libinternal.la
-libinternal_la_SOURCES = ns.c
+libinternal_la_LIBADD = mnt/libinternal.la pid/libinternal.la ipc/libinternal.la net/libinternal.la uts/libinternal.la user/libinternal.la
+libinternal_la_SOURCES = ns.c ../../../util/daemon.c
 
 EXTRA_DIST = ns.h
+
+# These are kludges so they don't remove the $(DEPDIR) in ../../util/ otherwise
+# the clean will fail when other Makefile tries to remove those directories
+distclean: distclean-recursive
+	-rm -rf ./$(DEPDIR)
+	-rm -rf ./.libs
+	-rm -f $(DISTCLEANFILES) $(CLEANFILES)
+
+maintainer-clean: maintainer-clean-recursive
+	-rm -rf ./$(DEPDIR)
+	-rm -rf ./.libs
+	-rm -f $(MAINTAINERCLEANFILES) $(DISTCLEANFILES) $(CLEANFILES)
+
