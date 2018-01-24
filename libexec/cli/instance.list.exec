@@ -48,9 +48,9 @@ while true; do
                 exit 1
             fi
         ;;
-        --json)
-           SINGULARITY_JSONFMT="true"
-           shift
+        -j|--json)
+            SINGULARITY_PRINT_STRUCTURED="true"
+            shift
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -73,10 +73,10 @@ DLEN=`echo "$DAEMONS"|wc -l`
 let DLEN--
 JSON_PRINTF='\t{\n\t\t"instance":"%s",\n\t\t"pid":"%s",\n\t\t"img":"%s"\n\t}'
 
-if [ -z "${SINGULARITY_JSONFMT:-}" ]; then
-  message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
+if [ -z "${SINGULARITY_PRINT_STRUCTURED:-}" ]; then
+    message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
 else
-  printf "%s\n\t%s:[\n" "{" '"instances"'
+    printf "%s\n\t%s:[\n" "{" '"instances"'
 fi
 
 for i in $DAEMONS; do
@@ -103,26 +103,26 @@ for i in $DAEMONS; do
             fi
         fi
 
-        if [ -z "${SINGULARITY_JSONFMT:-}" ]; then
-          printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+        if [ -z "${SINGULARITY_PRINT_STRUCTURED:-}" ]; then
+            printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
         else
-          if [ "$COUNT" -lt "$DLEN" ]; then
-            printf "${JSON_PRINTF},\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
-          else
-            printf "${JSON_PRINTF}" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
-          fi
+            if [ "$COUNT" -lt "$DLEN" ]; then
+                printf "${JSON_PRINTF},\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+            else
+                printf "${JSON_PRINTF}" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+            fi
         fi
 
         let "COUNT++"
     fi
 done
 
-if [ -z "${SINGULARITY_JSONFMT:-}" ]; then
-  printf "\n"
+if [ -z "${SINGULARITY_PRINT_STRUCTURED:-}" ]; then
+    printf "\n"
 else
-  printf "\n\t]\n}\n"
+    printf "\n\t]\n}\n"
 fi
 
 if [ "$COUNT" == 0 ]; then
-  exit 1
+    exit 1
 fi
