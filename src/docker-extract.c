@@ -135,13 +135,15 @@ int apply_whiteouts(char *tarfile, char *rootfs_dir) {
             singularity_message(DEBUG, "Opaque Marker %s\n", pathname);
             errcode = apply_opaque(pathname, rootfs_dir);
             if (errcode != 0) {
-                break;
+                singularity_message(ERROR, "Error applying opaque marker from docker layer.\n");
+                ABORT(255);
             }
         } else if (strstr(pathname, "/.wh.")) {
             singularity_message(DEBUG, "Whiteout Marker %s\n", pathname);
             errcode = apply_whiteout(pathname, rootfs_dir);
             if (errcode != 0) {
-                break;
+                singularity_message(ERROR, "Error applying whiteout marker from docker layer.\n");
+                ABORT(255);
             }
         }
     }
