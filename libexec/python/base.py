@@ -128,7 +128,7 @@ def multi_package(func, args):
     return zip(itertools.repeat(func), args)
 
 
-def _strip_auth_presigned_s3(req, auth_query_params=['Signature',
+def _strip_auth_presigned_s3(req, auth_query_params=['AWSAccessKeyId',
                                                      'X-Amz-Algorithm']):
     """
     Handles stripping authorization headers from requests to pre-signed S3
@@ -139,17 +139,10 @@ def _strip_auth_presigned_s3(req, auth_query_params=['Signature',
         return req
 
     parts = urlparse(req.get_full_url())
-    host = parts.netloc
     query_dict = parse_qs(parts.query)
-    is_s3_url = 's3' in host and host.endswith('.amazonaws.com')
 
-    if not is_s3_url:
-        return req
-
-    for q in auth_query_params:
-        if q in query_dict:
-            del req.headers['Authorization']
-            break
+    if any(q in query_dict for q in auth_query_params):
+        del req.headers['Authorization']
 
     return req
 
