@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017-2018, Sylabs, Inc. All rights reserved.
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  * Copyright (c) 2016, Brian Bockelman. All rights reserved.
  *
  * Copyright (c) 2016-2017, The Regents of the University of California,

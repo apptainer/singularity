@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2017-2018, Sylabs, Inc. All rights reserved.
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
+# Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 # Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this

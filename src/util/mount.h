@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017-2018, Sylabs, Inc. All rights reserved.
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
+ * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  * 
  * See the COPYRIGHT.md file at the top-level directory of this distribution and at
  * https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
