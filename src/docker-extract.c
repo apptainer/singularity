@@ -8,6 +8,7 @@
 #include <sys/file.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <locale.h>
 #include <archive.h>
 #include <archive_entry.h>
 
@@ -40,8 +41,11 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
         ABORT(255);
     }
 
+    // Target may not exist - that's ok
+    retval = 0;
+
     if (is_dir(buf) == 0) {
-        s_rmdir(buf);
+        retval = s_rmdir(buf);
     }
 
     return retval;
@@ -87,6 +91,9 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
         ABORT(255);
     }
 
+    // Target may not exist - that's ok
+    retval = 0;
+
     if (is_dir(buf) == 0) {
         retval = s_rmdir(buf);
     } else if (is_file(buf) == 0) {
@@ -128,13 +135,15 @@ int apply_whiteouts(char *tarfile, char *rootfs_dir) {
             singularity_message(DEBUG, "Opaque Marker %s\n", pathname);
             errcode = apply_opaque(pathname, rootfs_dir);
             if (errcode != 0) {
-                break;
+                singularity_message(ERROR, "Error applying opaque marker from docker layer.\n");
+                ABORT(255);
             }
         } else if (strstr(pathname, "/.wh.")) {
             singularity_message(DEBUG, "Whiteout Marker %s\n", pathname);
             errcode = apply_whiteout(pathname, rootfs_dir);
             if (errcode != 0) {
-                break;
+                singularity_message(ERROR, "Error applying whiteout marker from docker layer.\n");
+                ABORT(255);
             }
         }
     }
@@ -293,6 +302,15 @@ int main(int argc, char **argv) {
     int retval = 0;
     char *rootfs_dir = singularity_registry_get("ROOTFS");
     char *tarfile = NULL;
+
+    // Set UTF8 locale so that libarchive doesn't produce warnings for UTF8
+    // names - en_US.UTF-8 is most likely to be available
+    if( setlocale(LC_ALL, "en_US.UTF-8") == NULL ) {
+        // Fall back to C.UTF-8 for super-minimal debian and musl based distros
+        if (setlocale(LC_ALL, "C.UTF-8") == NULL ) {
+            singularity_message(WARNING, "Could not set a UTF8 locale, layer extraction may produce warnings\n");
+        }
+    }
 
     if (argc != 2) {
         singularity_message(ERROR, "Provide a single docker tar file to extract\n");
