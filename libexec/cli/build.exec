@@ -36,8 +36,19 @@ else
     exit 1
 fi
 
-if ! singularity_which mksquashfs > /dev/null 2>&1; then
-    message ERROR "You must install squashfs-tools to build FS images\n"
+# check to see if the location of mksquashfs is in singularity.conf
+MKSQUASHFS_PATH=`$SINGULARITY_libexecdir/singularity/bin/get-configvals "mksquashfs location"`
+if [ "${MKSQUASHFS_PATH}" == "NULL" ] || [ -z "${MKSQUASHFS_PATH}" ]; then 
+    MKSQUASHFS_PATH=""
+else 
+    MKSQUASHFS_PATH=`dirname "${MKSQUASHFS_PATH}" | sed 's/^[ \t]*//;s/[ \t]*$//'`/
+fi
+
+if ! singularity_which "${MKSQUASHFS_PATH:-}mksquashfs" > /dev/null 2>&1; then
+    message ERROR "You must install squashfs-tools to build images.\n"
+    message ERROR "If you have installed squashf-tools in a non-standard\n"
+    message ERROR "directory, you may need to specifiy its location in \n"
+    message ERROR "singularity.conf.\n"
     ABORT 255
 fi
 
@@ -386,8 +397,8 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         else
             OPTS=""
         fi
-        if ! mksquashfs "$SINGULARITY_ROOTFS/" "${SINGULARITY_TEMP_FS}" -noappend $OPTS > /dev/null; then
-            message ERROR "Failed squashing FS image, left template directory at: $SINGULARITY_ROOTFS\n"
+        if ! "${MKSQUASHFS_PATH:-}mksquashfs" "$SINGULARITY_ROOTFS/" "$SINGULARITY_TEMP_FS" -noappend $OPTS > /dev/null; then
+            message ERROR "Failed squashing image, left template directory at: $SINGULARITY_ROOTFS\n"
             exit 1
         fi
     fi

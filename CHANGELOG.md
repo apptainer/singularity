@@ -16,6 +16,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 ## [v3.0](https://github.com/singularityware/singularity/tree/development)
 
 ### Implemented enhancements
+ - Location of mksquashfs is now configurable #1094
  - Feature sif sign #1143
  - Boot/start instance #1032
  - --nv option will use [nvidia-container-cli](https://github.com/NVIDIA/libnvidia-container) if installed

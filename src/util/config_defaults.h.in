@@ -109,6 +109,9 @@
 #define ALLOW_CONTAINER_SQUASHFS "allow container squashfs"
 #define ALLOW_CONTAINER_SQUASHFS_DEFAULT 1
 
+#define MKSQUASHFS_LOCATION "mksquashfs location"
+#define MKSQUASHFS_LOCATION_DEFAULT ""
+
 #define ALWAYS_USE_NV "always use nv"
 #define ALWAYS_USE_NV_DEFAULT "no"
 
