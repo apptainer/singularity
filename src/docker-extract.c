@@ -258,10 +258,17 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
 
         // Issue 977 - Force write perms needed for user builds
         if(getuid() != 0) {
+          #if ARCHIVE_VERSION_NUMBER <= 3000000
+            perms = archive_entry_mode(entry);
+            if( (perms & S_IWUSR) != S_IWUSR) {
+               archive_entry_set_mode(entry, perms | S_IWUSR);
+            }
+          #else
             perms = archive_entry_perm(entry);
             if( (perms & S_IWUSR) != S_IWUSR) {
                archive_entry_set_perm(entry, perms | S_IWUSR);
             }
+          #endif
         }
 
         r = archive_write_header(ext, entry);
