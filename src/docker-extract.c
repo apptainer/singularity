@@ -194,6 +194,7 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
     struct archive *a;
     struct archive *ext;
     struct archive_entry *entry;
+    mode_t perms;
     int flags;
     int r;
     char *orig_dir;
@@ -253,6 +254,14 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
         if (strstr(pathname, "/.wh.") || pathtype == AE_IFSOCK ||
             pathtype == AE_IFCHR || pathtype == AE_IFBLK || pathtype == AE_IFIFO) {
             continue;
+        }
+
+        // Issue 977 - Force write perms needed for user builds
+        if(getuid() != 0) {
+            perms = archive_entry_perm(entry);
+            if( (perms & S_IWUSR) != S_IWUSR) {
+               archive_entry_set_perm(entry, perms | S_IWUSR);
+            }
         }
 
         r = archive_write_header(ext, entry);
