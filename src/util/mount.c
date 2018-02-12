@@ -34,10 +34,29 @@
 int singularity_mount(const char *source, const char *target,
                       const char *filesystemtype, unsigned long mountflags,
                       const void *data) {
+    int ret;
+    uid_t fsuid = 0;
+
     if ( ( mountflags & MS_BIND ) ) {
-        setfsuid(singularity_priv_getuid());
+        fsuid = singularity_priv_getuid();
     }
-    return mount(source, target, filesystemtype, mountflags, data);
+
+    /* don't modify user groups */
+    if ( singularity_priv_userns_enabled() == 0 ) {
+        if ( seteuid(0) < 0 ) {
+            singularity_message(ERROR, "Failed to escalate privileges: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        /* NFS root_squash option set uid 0 to nobody, force use of real user ID */
+        setfsuid(fsuid);
+    }
+    ret = mount(source, target, filesystemtype, mountflags, data);
+    if ( singularity_priv_userns_enabled() == 0 && seteuid(singularity_priv_getuid()) < 0 ) {
+        singularity_message(ERROR, "Failed to drop privileges: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    return ret;
 }
 
 int check_mounted(char *mountpoint) {

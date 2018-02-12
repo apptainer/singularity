@@ -133,12 +133,10 @@ int _singularity_runtime_mount_cwd(void) {
 #endif  
 
     singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", cwd_path, container_dir, cwd_path);
-    singularity_priv_escalate();
     r = singularity_mount(cwd_path, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
     if ( singularity_priv_userns_enabled() != 1 ) {
         r = singularity_mount(NULL, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL);
     }
-    singularity_priv_drop();
     if ( r < 0 ) {
         singularity_message(WARNING, "Could not bind CWD to container %s: %s\n", cwd_path, strerror(errno));
     }

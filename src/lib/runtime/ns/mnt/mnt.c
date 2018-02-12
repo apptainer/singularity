@@ -64,6 +64,7 @@ int _singularity_runtime_ns_mnt(void) {
         singularity_message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
         ABORT(255);
     }
+    singularity_priv_drop();
 
     // Privatize the mount namespaces
     //
@@ -87,7 +88,6 @@ int _singularity_runtime_ns_mnt(void) {
     }
 #endif
 
-    singularity_priv_drop();
     enabled = 0;
     return(0);
 }
