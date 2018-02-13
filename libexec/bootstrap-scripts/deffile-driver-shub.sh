@@ -86,7 +86,7 @@ message 1 "Exporting contents of ${SINGULARITY_CONTAINER} to ${SINGULARITY_IMAGE
 SINGULARITY_CONTAINER=`cat $SINGULARITY_CONTENTS`
 rm -r $SINGULARITY_CONTENTS
 
-${SINGULARITY_bindir}/singularity image.export "${SINGULARITY_CONTAINER}" | tar xBf - -C "${SINGULARITY_ROOTFS}"
+${SINGULARITY_bindir}/singularity image.export "${SINGULARITY_CONTAINER}" | tar xf - -C "${SINGULARITY_ROOTFS}"
 if [ $? != 0 ]; then
     message ERROR "Failed to export contents of ${SINGULARITY_CONTAINER} to ${SINGULARITY_ROOTFS}\n"
     rm $SINGULARITY_CONTAINER
