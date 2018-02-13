@@ -122,10 +122,12 @@ int singularity_config_parse(char *config_path) {
         singularity_message(ERROR, "Specified configuration file %s does not appear to be a normal file.\n", config_path);
         return -1;
     }
+#ifndef DISABLE_SUID
     if ( is_owner(config_path, 0) != 0 ) {
         singularity_message(ERROR, "Specified configuration file %s is not owned by root\n", config_path);
         return -1;
     }
+#endif
     FILE *config_fp = fopen(config_path, "r");
     if ( config_fp == NULL ) { // Flawfinder: ignore (we have to open the file...)
         singularity_message(ERROR, "Could not open configuration file %s: %s\n", config_path, strerror(errno));
