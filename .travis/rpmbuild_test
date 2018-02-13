@@ -13,14 +13,13 @@ rpmbuild -ta *.tar.gz
 rpm -iv ~/rpmbuild/RPMS/*/*.rpm
 
 if [ "$OS_VERSION" = 6 ]; then
-    echo "the test suite has not yet been ported to centos6 python, skipping."
-    exit
+    echo "the python tests have not yet been ported to centos6 python, and will be skipped."
+else
+    # Install python 3 and pylint
+    yum install -y epel-release
+    yum install -y python34 python34-pip python34-setuptools docker
+    yum install -y pylint
 fi
-
-# Install python 3 and pylint
-yum install -y epel-release
-yum install -y python34 python34-pip python34-setuptools docker
-yum install -y pylint
 
 # run the test suite
 yum install -y libtool sudo which e2fsprogs
