@@ -27,18 +27,25 @@ test_init "Checking Python unit tests"
 cd ../libexec/python
 
 if which python2 >/dev/null 2>&1; then
-    stest 0 python2 -m unittest tests.test_json
-    stest 0 python2 -m unittest tests.test_helpers
-    stest 0 python2 -m unittest tests.test_base
-    stest 0 python2 -m unittest tests.test_core
-    stest 0 python2 -m unittest tests.test_docker_import
-    stest 0 python2 -m unittest tests.test_docker_api
-    stest 0 python2 -m unittest tests.test_docker_tasks
-    stest 0 python2 -m unittest tests.test_shub_pull
-    stest 0 python2 -m unittest tests.test_shub_api
-    stest 0 python2 -m unittest tests.test_custom_cache
-    stest 0 python2 -m unittest tests.test_default_cache
-    stest 0 python2 -m unittest tests.test_disable_cache
+   
+    PY_BELOW_27=`python -c 'import sys; print("%i" % (sys.hexversion<0x02070000))'`
+
+    if [ "$PY_BELOW_27" = "1" ]; then
+        echo "Skipping python2 tests: requires python >=2.7"
+    else
+        stest 0 python2 -m unittest tests.test_json
+        stest 0 python2 -m unittest tests.test_helpers
+        stest 0 python2 -m unittest tests.test_base
+        stest 0 python2 -m unittest tests.test_core
+        stest 0 python2 -m unittest tests.test_docker_import
+        stest 0 python2 -m unittest tests.test_docker_api
+        stest 0 python2 -m unittest tests.test_docker_tasks
+        stest 0 python2 -m unittest tests.test_shub_pull
+        stest 0 python2 -m unittest tests.test_shub_api
+        stest 0 python2 -m unittest tests.test_custom_cache
+        stest 0 python2 -m unittest tests.test_default_cache
+        stest 0 python2 -m unittest tests.test_disable_cache
+    fi
 else
     echo "Skipping python2 tests: not installed"
 fi

@@ -24,6 +24,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - --nv can be made default with all action commands in singularity.conf
  - --nv can be controlled by env vars `$SINGULARITY_NV` and `$SINGULARITY_NV_OFF`
  - Adjustments to SCIF (Scientific Filesystem) integration for broader use
+ - Test suite runs on CentOS 6, except python tests
 
 ### Security related fixes
  - Add capability support and secure build #934
