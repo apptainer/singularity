@@ -67,7 +67,6 @@ int _singularity_runtime_mount_kernelfs(void) {
                 }
             }
             if ( singularity_priv_userns_enabled() != 1 ) {
-                singularity_priv_escalate();
                 if ( singularity_mount(joinpath(container_dir, "/proc/sys"), joinpath(container_dir, "/proc/sys"), NULL, MS_BIND, NULL) < 0) {
                     singularity_message(ERROR, "Could not bind-mount /proc/sys into container: %s\n", strerror(errno));
                     ABORT(255);
