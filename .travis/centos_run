@@ -17,5 +17,12 @@ SCRIPT
 cd /tmp/$DIST/singularity
 
 # mounting /run for /dev/shm (python multiprocessing)
-sudo singularity exec -w -B /run --keep-privs --allow-setuid docker://${OS_TYPE}:${OS_VERSION} /bin/bash -ex /tmp/$DIST/script
+if [ "$OS_TYPE" = "centos" -a "$OS_VERSION" = "6" ]; then
+    # No overlay on CentOS6 - must mount shm to standard location for CentOS 6
+    sudo singularity build -s sandbox/ docker://${OS_TYPE}:${OS_VERSION}
+    sudo singularity exec -w sandbox/ mkdir /run
+    sudo singularity exec -w -B /run --keep-privs --allow-setuid sandbox/ /bin/bash -ex /tmp/$DIST/script
+else
+    sudo singularity exec -w -B /run --keep-privs --allow-setuid docker://${OS_TYPE}:${OS_VERSION} /bin/bash -ex /tmp/$DIST/script
+fi
 sudo rm -rf /tmp/$DIST
