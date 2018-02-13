@@ -343,6 +343,7 @@ AS_IF([test "x$enable_suid" != "xno"], [
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
+    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DDISABLE_SUID"
 ])
 
 AC_SUBST(BUILD_SUID)
