@@ -453,3 +453,32 @@ struct tempfile *make_logfile(char *label) {
     
     return(tf);
 }
+
+// close all file descriptors pointing to a directory
+void fd_cleanup(void) {
+    struct stat st;
+    char *fd_path = (char *)malloc(128);
+    int i;
+
+    singularity_message(DEBUG, "Cleanup file descriptor table\n");
+
+    if ( fd_path == NULL ) {
+        singularity_message(ERROR, "Failed to allocate memory\n");
+        ABORT(255);
+    }
+
+    for ( i = 0; i <= sysconf(_SC_OPEN_MAX); i++ ) {
+        int length;
+        length = snprintf(fd_path, 127, "/proc/self/fd/%d", i);
+        fd_path[length] = '\0';
+
+        if ( stat(fd_path, &st) < 0 ) {
+            continue;
+        }
+        if ( S_ISDIR(st.st_mode) ) {
+            close(i);
+        }
+    }
+
+    free(fd_path);
+}

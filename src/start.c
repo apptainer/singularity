@@ -58,6 +58,8 @@ int main(int argc, char **argv) {
     siginfo_t siginfo;
     struct stat filestat;
 
+    fd_cleanup();
+
     singularity_config_init();
 
     singularity_suid_init();
