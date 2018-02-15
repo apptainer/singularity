@@ -89,13 +89,11 @@ int singularity_sessiondir(void) {
         ABORT(255);
     }
 
-    singularity_priv_escalate();
     singularity_message(DEBUG, "Mounting sessiondir tmpfs: %s\n", sessiondir);
     if ( singularity_mount("tmpfs", sessiondir, "tmpfs", MS_NOSUID, sessiondir_size_str) < 0 ){
         singularity_message(ERROR, "Failed to mount sessiondir tmpfs %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
     }
-    singularity_priv_drop();
 
     singularity_registry_set("SESSIONDIR", sessiondir);
 

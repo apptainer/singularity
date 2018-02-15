@@ -61,24 +61,20 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
         mntflags &= ~MS_NODEV;
     }
 
-    singularity_priv_escalate();
     singularity_message(DEBUG, "Mounting container directory %s->%s\n", image->path, mount_point);
     if ( singularity_mount(image->path, mount_point, NULL, mntflags, NULL) < 0 ) {
         singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
         return 1;
     }
-    singularity_priv_drop();
 
     if ( singularity_priv_userns_enabled() != 1 ) {
         if ( image->writable == 0 ) {
             mntflags |= MS_RDONLY;
         }
-        singularity_priv_escalate();
         if ( singularity_mount(NULL, mount_point, NULL, MS_REMOUNT | mntflags, NULL) < 0 ) {
             singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
             return 1;
         }
-        singularity_priv_drop();
     }
 
     return(0);

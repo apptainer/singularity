@@ -86,7 +86,6 @@ int _singularity_runtime_mount_tmp(void) {
         }
         if ( is_dir(tmp_source) == 0 ) {
             if ( is_dir(joinpath(container_dir, "/tmp")) == 0 ) {
-                singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting directory: /tmp\n");
                 if ( singularity_mount(tmp_source, joinpath(container_dir, "/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Failed to mount %s -> /tmp: %s\n", tmp_source, strerror(errno));
@@ -98,7 +97,6 @@ int _singularity_runtime_mount_tmp(void) {
                         ABORT(255);
                     }
                 }
-                singularity_priv_drop();
             } else {
                 singularity_message(VERBOSE, "Could not mount container's /tmp directory: does not exist\n");
             }
@@ -116,7 +114,6 @@ int _singularity_runtime_mount_tmp(void) {
         }
         if ( is_dir(vartmp_source) == 0 ) {
             if ( is_dir(joinpath(container_dir, "/var/tmp")) == 0 ) {
-                singularity_priv_escalate();
                 singularity_message(VERBOSE, "Mounting directory: /var/tmp\n");
                 if ( singularity_mount(vartmp_source, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Failed to mount %s -> /var/tmp: %s\n", vartmp_source, strerror(errno));
@@ -128,7 +125,6 @@ int _singularity_runtime_mount_tmp(void) {
                         ABORT(255);
                     }
                 }
-                singularity_priv_drop();
             } else {
                 singularity_message(VERBOSE, "Could not mount container's /var/tmp directory: does not exist\n");
             }
