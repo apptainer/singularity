@@ -42,6 +42,7 @@
 
 #include "config.h"
 #include "util/util.h"
+#include "util/file.h"
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/registry.h"
@@ -430,7 +431,6 @@ struct tempfile *make_logfile(char *label) {
 
 // close all file descriptors pointing to a directory
 void fd_cleanup(void) {
-    struct stat st;
     char *fd_path = (char *)malloc(128);
     int i;
 
@@ -446,12 +446,10 @@ void fd_cleanup(void) {
         length = snprintf(fd_path, 127, "/proc/self/fd/%d", i);
         fd_path[length] = '\0';
 
-        if ( stat(fd_path, &st) < 0 ) {
+        if ( is_dir(fd_path) < 0 ) {
             continue;
         }
-        if ( S_ISDIR(st.st_mode) ) {
-            close(i);
-        }
+        close(i);
     }
 
     free(fd_path);
