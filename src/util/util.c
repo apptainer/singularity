@@ -431,7 +431,7 @@ struct tempfile *make_logfile(char *label) {
 
 // close all file descriptors pointing to a directory
 void fd_cleanup(void) {
-    char *fd_path = (char *)malloc(128);
+    char *fd_path = (char *)malloc(PATH_MAX);
     int i;
 
     singularity_message(DEBUG, "Cleanup file descriptor table\n");
@@ -443,7 +443,14 @@ void fd_cleanup(void) {
 
     for ( i = 0; i <= sysconf(_SC_OPEN_MAX); i++ ) {
         int length;
-        length = snprintf(fd_path, 127, "/proc/self/fd/%d", i);
+        length = snprintf(fd_path, PATH_MAX-1, "/proc/self/fd/%d", i);
+        if ( length < 0 ) {
+            singularity_message(ERROR, "Failed to determine file descriptor path\n");
+            ABORT(255);
+        }
+        if ( length > PATH_MAX-1 ) {
+            length = PATH_MAX-1;
+        }
         fd_path[length] = '\0';
 
         if ( is_dir(fd_path) < 0 ) {
