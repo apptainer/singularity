@@ -49,6 +49,8 @@
 int main(int argc, char **argv) {
     struct image_object image;
 
+    fd_cleanup();
+
     singularity_config_init();
 
     singularity_suid_init();
