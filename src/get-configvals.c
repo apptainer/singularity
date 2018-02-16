@@ -1,10 +1,10 @@
-/* 
-* Copyright (c) 2017, SingularityWare, LLC., Inc. All rights reserved.
-* 
+/*
+* Copyright (c) 2017-2018, Sylabs, Inc. All rights reserved.
+*
 * This software is licensed under a 3-clause BSD license.  Please
 * consult LICENSE file distributed with the sources of this project regarding
 * your rights to use or distribute this software.
-* 
+*
 */
 
 
@@ -27,12 +27,12 @@ int main(int argc, char **argv) {
 
     singularity_config_init();
 
-    /* 
-    If the key does not exist in the singularity.conf file, this is just 
+    /*
+    If the key does not exist in the singularity.conf file, this is just
     going to return "NULL".  The function was originally designed to return the
     default value if the value does not exist in the conf file, but I don't
-    know how to do that using only strings, and the key needs to be based on 
-    user input, not hardcoded. 
+    know how to do that using only strings, and the key needs to be based on
+    user input, not hardcoded.
     */
     printf("%s\n", _singularity_config_get_value_impl(argv[1], "NULL"));
 

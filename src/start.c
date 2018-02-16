@@ -1,10 +1,11 @@
-/* 
+/*
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
- * 
+ *
  * This software is licensed under a 3-clause BSD license.  Please
  * consult LICENSE file distributed with the sources of this project regarding
  * your rights to use or distribute this software.
- * 
+ *
  */
 
 
@@ -57,6 +58,8 @@ int main(int argc, char **argv) {
     pid_t child;
     siginfo_t siginfo;
     struct stat filestat;
+
+    fd_cleanup();
 
     singularity_config_init();
 
@@ -169,7 +172,7 @@ int main(int argc, char **argv) {
 
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
-    for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {        
+    for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {
         if ( i != cleanupd_fd ) {
             if ( fstat(i, &filestat) == 0 ) {
                 if ( S_ISFIFO(filestat.st_mode) != 0 ) {
@@ -183,7 +186,7 @@ int main(int argc, char **argv) {
     singularity_debug = make_logfile("singularity-debug");
     stdout_log = make_logfile("stdout");
     stderr_log = make_logfile("stderr");
-    
+
     for( i = 0; i <= 2; i++ ) {
         close(i);
     }
@@ -201,7 +204,7 @@ int main(int argc, char **argv) {
     }
 
     child = fork();
-    
+
     if ( child == 0 ) {
         /* Make standard output and standard error files to log stdout & stderr into */
         if ( stdout_log != NULL ) {

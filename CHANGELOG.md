@@ -12,6 +12,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
+
+ - Fix permission denied when binding directory located on NFS with root_squash enabled
 
 ## [v3.0](https://github.com/singularityware/singularity/tree/development)
 
@@ -30,6 +33,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Put /usr/local/{bin,sbin} in front of the default PATH
  - Add capability to support all tar compression formats #1155
  - Handle docker layer aufs whiteout files correctly (requires libarchive).
+ - Close file descriptors pointing to a directory #1305
 
 ### Bug Fixes
  - Put /usr/local/{bin,sbin} in front of the default PATH

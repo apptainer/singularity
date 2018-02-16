@@ -1,23 +1,24 @@
-/* 
+/*
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
- * 
+ *
  * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
- * 
+ *
  * This software is licensed under a customized 3-clause BSD license.  Please
  * consult LICENSE file distributed with the sources of this project regarding
  * your rights to use or distribute this software.
- * 
+ *
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
  * the U.S. Government has been granted for itself and others acting on its
  * behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
  * to reproduce, distribute copies to the public, prepare derivative works, and
- * perform publicly and display publicly, and to permit other to do so. 
- * 
+ * perform publicly and display publicly, and to permit other to do so.
+ *
 */
 
 #ifndef _GNU_SOURCE
@@ -130,15 +131,13 @@ int _singularity_runtime_mount_cwd(void) {
     singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
     free(cwd_path);
     return(0);
-#endif  
+#endif
 
     singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", cwd_path, container_dir, cwd_path);
-    singularity_priv_escalate();
     r = singularity_mount(cwd_path, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
     if ( singularity_priv_userns_enabled() != 1 ) {
         r = singularity_mount(NULL, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL);
     }
-    singularity_priv_drop();
     if ( r < 0 ) {
         singularity_message(WARNING, "Could not bind CWD to container %s: %s\n", cwd_path, strerror(errno));
     }
@@ -146,4 +145,3 @@ int _singularity_runtime_mount_cwd(void) {
     free(cwd_path);
     return(0);
 }
-
