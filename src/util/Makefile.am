@@ -3,7 +3,7 @@ DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ *.la *.o
 AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
-AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
+AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES)
 
 
 EXTRA_DIST = cleanupd.c \
@@ -18,6 +18,8 @@ EXTRA_DIST = cleanupd.c \
 			 fork.h \
 			 message.c \
 			 message.h \
+			 mount.c \
+			 mount.h \
 			 privilege.c \
 			 privilege.h \
 			 registry.c \

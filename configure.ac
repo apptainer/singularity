@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.4],[gmkurtzer@lbl.gov])
+AC_INIT([singularity],[2.4.2],[gmkurtzer@gmail.com])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -237,41 +237,21 @@ AC_SUBST(USER_NS)
 
 AC_CHECK_FUNCS(setns, [
                       ], [
-                          NO_SETNS="-DNO_SETNS"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_NO_SETNS"
+                          AC_MSG_CHECKING([for setns kernel support])
+                          if test -d "/proc/self/ns"; then
+                              SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SETNS_SYSCALL"
+                              AC_MSG_RESULT([yes])
+                          else
+                              WARN_SETNS=1
+                              AC_MSG_RESULT([no])
+                          fi
                       ]
                   )
-AC_SUBST(NO_SETNS)
 
 
-AC_MSG_CHECKING([for setns syscall support])
-if test -d "/proc/self/ns"; then
-    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SETNS_SYSCALL"
-    SETNS_SYSCALL=1
-    AC_MSG_RESULT([yes])
-else
-    SETNS_SYSCALL=0
-    AC_MSG_RESULT([no])
-fi
-AC_SUBST(SETNS_SYSCALL)
 
-
-AC_MSG_CHECKING([for overlayfs])
-KVERS=`uname -r`
-if test -f "/lib/modules/$KVERS/modules.dep"; then
-    if grep -q 'overlay.ko' "/lib/modules/$KVERS/modules.dep"; then
-        AC_MSG_RESULT([yes])
-        ENABLE_OVERLAY_CONFIG_DEFAULT="yes"
-        OVERLAY_FS=1 # this adds it to testing
-    else
-        AC_MSG_RESULT([no])
-        ENABLE_OVERLAY_CONFIG_DEFAULT="no"
-    fi
-else
-    AC_MSG_RESULT([maybe])
-    ENABLE_OVERLAY_CONFIG_DEFAULT="try"
-fi
-AC_SUBST(ENABLE_OVERLAY_CONFIG_DEFAULT)
-
+AC_SUBST(SINGULARITY_DEFINES)
 
 # ---------------------------------------------------------------------
 # PYTHON
@@ -297,9 +277,6 @@ else
     done
 
 fi
-
-AC_SUBST(OVERLAY_FS)
-AC_SUBST(SINGULARITY_DEFINES)
 
 AC_MSG_CHECKING([--with-slurm])
 AC_ARG_WITH([slurm],
@@ -420,7 +397,7 @@ AC_CONFIG_FILES([
 
 AC_OUTPUT
 
-if test "$SETNS_SYSCALL" = "0"; then
+if test -n "$WARN_SETNS"; then
     echo
     echo "WARNING: instance feature is disabled due to lack of kernel support"
     echo

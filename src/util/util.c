@@ -261,8 +261,10 @@ void chomp(char *str) {
 
 void chomp_comments(char *str) {
     if (!str) {return;}
-    char *rest = str;
-    str = strtok_r(str, "#", &rest);
+    char* comment = strchr(str, '#');
+    if (comment) {
+        *comment = '\0'; // terminate string at comment
+    }
     chomp(str);
 }
 
@@ -340,8 +342,16 @@ int envclean(void) {
 
         key = strtok_r(envclone[i], "=", &tok);
 
-        singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
-        unsetenv(key);
+        if ( (strcasecmp(key, "http_proxy")  == 0) ||
+             (strcasecmp(key, "https_proxy") == 0) ||
+             (strcasecmp(key, "no_proxy")    == 0) ||
+             (strcasecmp(key, "all_proxy")   == 0)
+           ) {
+            singularity_message(DEBUG, "Leaving environment variable set: %s\n", key);
+        } else {
+            singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
+            unsetenv(key);
+        }
     }
 
     return(retval);

@@ -23,7 +23,7 @@ perform publicly and display publicly, and to permit other to do so.
 
 import sys
 import os
-sys.path.append('..')  # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
 
 from shell import parse_image_uri
 
@@ -97,8 +97,7 @@ def PULL(image, download_folder=None, layerfile=None):
     bot.debug('Pulling to %s' % image_file)
     if not os.path.exists(image_file):
         image_file = client.download_image(manifest=manifest,
-                                           download_folder=cache_base,
-                                           image_name=image_name)
+                                           download_folder=cache_base)
     else:
         if not bot.is_quiet():  # not --quiet
             print("Image already exists at %s, skipping download" % image_file)
