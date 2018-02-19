@@ -23,7 +23,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fixed parsing of arch keyword from definition file #1217
  - Fixed incompatibility between --pwd and --contain options #1259
  - Updated license information #1267
+ - Fix non-root build from docker containers with non-writable file/dir permissions
 
+>>>>>>> 7d02d40... Merge pull request #1295 from dctrud/docker-user-perms
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
  - This fixed an issue for support of older distributions and kernels with regards to `setns()`

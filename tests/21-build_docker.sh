@@ -66,6 +66,11 @@ stest 0 singularity exec "$CONTAINER" ls /test/whiteout-dir/file2 /test/whiteout
 stest 1 singularity exec "$CONTAINER" ls /test/whiteout-dir/file1 /test/whiteout-file/file1
 stest 1 singularity exec "$CONTAINER" ls /test/*/.wh*
 
+# Check force permissions for user builds #977
+stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-userperms
+stest 0 singularity exec "$CONTAINER" ls /testdir/
+stest 1 singularity exec "$CONTAINER" ls /testdir/testfile
+
 if singularity_which docker >/dev/null 2>&1; then
 # make sure local test does not exist, ignore errors
 sudo docker kill registry >/dev/null 2>&1
