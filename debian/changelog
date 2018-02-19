@@ -1,3 +1,21 @@
+singularity-container (2.4.3-1) unstable; urgency=high
+
+  * This is a bug fix point release to the 2.4 feature branch. It includes
+    several fixes including some pertaining to a medium-level security issue on
+    older kernels.
+  * Fix permission denied when binding directory located on NFS 
+    with root_squash enabled
+  * Add capability to support all tar compression formats
+  * Handle docker layer aufs whiteout files correctly (requires libarchive)
+  * Close file descriptors pointing to a directory
+  * Updated output of image.print command
+  * Fixed parsing of backslashes in apprun script
+  * Fixed parsing of arch keyword from definition file
+  * Fixed incompatibility between --pwd and --contain options
+  * Updated license information
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Mon, 19 Feb 2018 14:12:13 -0700
+
 singularity-container (2.4.2-1) unstable; urgency=high
 
   * This fixed an issue for support of older distributions and kernels with regards to `setns()`
