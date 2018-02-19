@@ -63,7 +63,7 @@ struct image_object singularity_image_init(char *path, int open_flags) {
     urip = strstr(path, "://");
 
     if (urip != NULL) {
-        *(urip + 3) = '\n'
+        *(urip + 3) = '\n';
         singularity_message(ERROR, "Image paths beginning with %s are not supported\n", path);
         ABORT(255);
     }
