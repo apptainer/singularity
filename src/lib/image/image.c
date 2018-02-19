@@ -52,6 +52,7 @@
 
 struct image_object singularity_image_init(char *path, int open_flags) {
     struct image_object image;
+    char *urip;
     char *real_path;
 
     if ( path == NULL ) {
@@ -59,9 +60,17 @@ struct image_object singularity_image_init(char *path, int open_flags) {
         ABORT(255);
     }
 
+    urip = strstr(path, "://");
+
+    if (urip != NULL) {
+        *(urip + 3) = '\n'
+        singularity_message(ERROR, "Image paths beginning with %s are not supported\n", path);
+        ABORT(255);
+    }
+
     real_path = realpath(path, NULL); // Flawfinder: ignore
     if ( real_path == NULL ) {
-        singularity_message(ERROR, "Image path doesn't exist\n");
+        singularity_message(ERROR, "Image path %s doesn't exist\n", path);
         ABORT(255);
     }
 
