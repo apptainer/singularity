@@ -23,6 +23,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fixed parsing of arch keyword from definition file #1217
  - Fixed incompatibility between --pwd and --contain options #1259
  - Updated license information #1267
+ - Fix non-root build from docker containers with non-writable file/dir permissions
 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
