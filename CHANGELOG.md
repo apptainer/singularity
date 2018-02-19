@@ -18,6 +18,11 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Add capability to support all tar compression formats #1155
  - Handle docker layer aufs whiteout files correctly (requires libarchive).
  - Close file descriptors pointing to a directory #1305
+ - Updated output of image.print command #1190
+ - Fixed parsing of backslashes in apprun script #1189
+ - Fixed parsing of arch keyword from definition file #1217
+ - Fixed incompatibility between --pwd and --contain options #1259
+ - Updated license information #1267
 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
