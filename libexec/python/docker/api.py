@@ -142,7 +142,7 @@ class DockerApiConnection(ApiConnection):
         self.registry = image['registry']
         self.update_token()
 
-    def update_token(self, response=None, auth=None):
+    def update_token(self, response=None, auth=None, expires_in=9000):
         '''update_token uses HTTP basic authentication to get a token for
         Docker registry API V2 operations. We get here if a 401 is
         returned for a request.
@@ -163,7 +163,9 @@ class DockerApiConnection(ApiConnection):
                 sys.exit(1)
 
             challenge = response.headers["Www-Authenticate"]
-            regexp = '^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?'
+            regexp = '^Bearer\s+realm="(.+?)"'
+            regexp += '(?:,service="(.+?)")?'
+            regexp += '(?:,scope="(.+?)")?'
             match = re.match(regexp, challenge)
 
             if not match:
@@ -171,11 +173,17 @@ class DockerApiConnection(ApiConnection):
                 sys.exit(1)
 
             realm = match.group(1)
-            service = match.group(2)
-            scope = match.group(3).split(',')[0]
+            service = match.group(2) or ''
+            scope = (match.group(3) or '').split(',')[0]
 
-            self.token_url = ("%s?service=%s&expires_in=9000&scope=%s"
-                              % (realm, service, scope))
+            token_url_params = ['expires_in=%s' % expires_in]
+
+            if service:
+                token_url_params.append('service=%s' % service)
+            if scope:
+                token_url_params.append('scope=%s' % scope)
+
+            self.token_url = "%s?%s" % (realm, '&'.join(token_url_params))
 
         headers = dict()
 
