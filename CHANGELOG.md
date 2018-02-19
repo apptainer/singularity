@@ -38,7 +38,8 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 ### Bug Fixes
  - Put /usr/local/{bin,sbin} in front of the default PATH
  - Fixed bug that did not export environment variables for apps with "-" in name
- 
+ - Fix non-root build from docker containers with non-writable file/dir permissions
+
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
  - This fixed an issue for support of older distributions and kernels with regards to `setns()`
