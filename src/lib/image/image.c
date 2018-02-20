@@ -118,10 +118,9 @@ struct image_object singularity_image_init(char *path, int open_flags) {
         ABORT(255);
     }
 
-    if ( fcntl(image.fd, F_SETFD, FD_CLOEXEC) != 0 ) {
-        singularity_message(ERROR, "Failed to set CLOEXEC on image file descriptor\n");
-        ABORT(255);
-    }
+    // Do not CLOEXEC the image file descriptor, as we want to make sure we
+    // are holding onto it when we are running contained processes to prevent
+    // it from getting unmounted.
 
     if ( ( singularity_suid_enabled() >= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
         singularity_limit_container_paths(&image);
