@@ -108,7 +108,6 @@ rm -rf $RPM_BUILD_ROOT
 # Binaries
 %{_libexecdir}/singularity/bin/builddef
 %{_libexecdir}/singularity/bin/cleanupd
-%{_libexecdir}/singularity/bin/get-configvals
 %{_libexecdir}/singularity/bin/get-section
 %{_libexecdir}/singularity/bin/mount
 %{_libexecdir}/singularity/bin/image-type
@@ -140,6 +139,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/shell.*
 %{_libexecdir}/singularity/cli/test.*
 %{_libexecdir}/singularity/bin/action
+%{_libexecdir}/singularity/bin/get-configvals
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/bin/docker-extract
 %{_libexecdir}/singularity/functions
