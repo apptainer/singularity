@@ -1,0 +1,10 @@
+Bootstrap:localimage
+From:/path/to/container/file/or/directory
+%help:
+%setup:
+%files
+%labels
+%environment:
+%post:
+%runscript:
+%test:

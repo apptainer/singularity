@@ -1,0 +1,12 @@
+Bootstrap:debootstrap
+MirrorURL:http://us.archive.ubuntu.com/ubuntu/
+OSVersion:xenial
+Include:somepackage
+%help:
+%setup:
+%files
+%labels
+%environment:
+%post:
+%runscript:
+%test:

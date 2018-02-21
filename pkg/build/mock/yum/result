@@ -1,0 +1,12 @@
+Bootstrap:yum
+MirrorURL:http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+OSVersion:7
+Include:yum
+%help:
+%setup:
+%files
+%labels
+%environment:
+%post:
+%runscript:
+%test:

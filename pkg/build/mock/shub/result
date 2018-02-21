@@ -1,0 +1,10 @@
+Bootstrap:shub
+From:shub://<registry>/<username>/<container-name>:<tag>@digest
+%help:
+%setup:
+%files
+%labels
+%environment:
+%post:
+%runscript:
+%test:

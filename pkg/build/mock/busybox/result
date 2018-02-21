@@ -1,0 +1,10 @@
+Bootstrap:busybox 
+MirrorURL:https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64
+%help:
+%setup:
+%files
+%labels
+%environment:
+%post:
+%runscript:
+%test:

@@ -1,0 +1,12 @@
+Bootstrap:zypper
+MirrorURL:http://download.opensuse.org/distribution/leap/%{OSVERSION}/repo/oss/
+OSVersion:42.2
+Include:somepackage
+%help:
+%setup:
+%files
+%labels
+%environment:
+%post:
+%runscript:
+%test:
