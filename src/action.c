@@ -108,7 +108,8 @@ int main(int argc, char **argv) {
     singularity_priv_drop_perm();
 
     if ( singularity_registry_get("DAEMON_JOIN") == NULL  &&
-         singularity_registry_get("PIDNS_ENABLED") != NULL ) {
+         singularity_registry_get("PIDNS_ENABLED") != NULL &&
+         singularity_registry_get("NOSHIMINIT") == NULL ) {
 
         // At this point, we are now PID 1; when we later exec the payload,
         // it will also be PID 1.  Unfortunately, PID 1 in Linux has special
@@ -117,6 +118,7 @@ int main(int argc, char **argv) {
         // one more time.  This makes PID 1 a shim process and the payload
         // process PID 2 (meaning that the payload gets the "normal" signal
         // handling rules it would expect).
+
         singularity_fork_run(0);
     }
 
