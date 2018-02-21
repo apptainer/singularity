@@ -103,19 +103,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/pull.*
 %{_libexecdir}/singularity/cli/selftest.*
 %{_libexecdir}/singularity/helpers
-%{_libexecdir}/singularity/python
 
 # Binaries
 %{_libexecdir}/singularity/bin/builddef
-%{_libexecdir}/singularity/bin/cleanupd
 %{_libexecdir}/singularity/bin/get-section
 %{_libexecdir}/singularity/bin/mount
 %{_libexecdir}/singularity/bin/image-type
 %{_libexecdir}/singularity/bin/prepheader
 %{_libexecdir}/singularity/bin/docker-extract
-
-# Directories
-%{_libexecdir}/singularity/bootstrap-scripts
 
 #SUID programs
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/mount-suid
@@ -140,11 +135,14 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/test.*
 %{_libexecdir}/singularity/bin/action
 %{_libexecdir}/singularity/bin/get-configvals
+%{_libexecdir}/singularity/bin/cleanupd
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/bin/docker-extract
+%{_libexecdir}/singularity/bootstrap-scripts
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/handlers
 %{_libexecdir}/singularity/image-handler.sh
+%{_libexecdir}/singularity/python
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*
 %{_mandir}/man1/singularity.1*
