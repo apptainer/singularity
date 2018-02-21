@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/prctl.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -118,6 +119,11 @@ int main(int argc, char **argv) {
         // one more time.  This makes PID 1 a shim process and the payload
         // process PID 2 (meaning that the payload gets the "normal" signal
         // handling rules it would expect).
+
+        // Set the name of the process for ps
+        prctl(PR_SET_NAME, "shim-init", 0, 0, 0);
+        // And for ps -f
+        strncpy(argv[0], "shim-init", strlen(argv[0]));
 
         singularity_fork_run(0);
     }
