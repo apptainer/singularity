@@ -106,6 +106,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/mount.*
 %{_libexecdir}/singularity/cli/pull.*
 %{_libexecdir}/singularity/cli/selftest.*
+%{_libexecdir}/singularity/cli/sign.*
 %{_libexecdir}/singularity/helpers
 %{_libexecdir}/singularity/python
 
@@ -141,7 +142,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/shell.*
 %{_libexecdir}/singularity/cli/test.*
 %{_libexecdir}/singularity/cli/capability.*
-%{_libexecdir}/singularity/cli/sign.*
 %{_libexecdir}/singularity/cli/verify.*
 %{_libexecdir}/singularity/cli/siflist.*
 %{_libexecdir}/singularity/bin/action
