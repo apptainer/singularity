@@ -16,9 +16,9 @@ import (
 // singularity is the base command when called without any subcommands
 var singularityCmd = &cobra.Command{Use: "singularity"}
 
-/* 
-Execute adds all child commands to the root command and sets flags 
-appropriately.  This is called by main.main(). It only needs to happen once to 
+/*
+Execute adds all child commands to the root command and sets flags
+appropriately.  This is called by main.main(). It only needs to happen once to
 the root command (singularity).
 */
 func Execute() {
@@ -31,12 +31,12 @@ var verbose bool
 
 func init() {
 
-    singularityCmd.PersistentFlags().BoolP("debug", "d", false, "")
-    singularityCmd.PersistentFlags().BoolP("silent", "s", false, "")
-    singularityCmd.PersistentFlags().BoolP("quiet", "q", false, "")
-    singularityCmd.PersistentFlags().BoolP("verbose", "v", false, "")
+	singularityCmd.PersistentFlags().BoolP("debug", "d", false, "")
+	singularityCmd.PersistentFlags().BoolP("silent", "s", false, "")
+	singularityCmd.PersistentFlags().BoolP("quiet", "q", false, "")
+	singularityCmd.PersistentFlags().BoolP("verbose", "v", false, "")
 
-    singularityCmd.SetHelpTemplate(`
+	singularityCmd.SetHelpTemplate(`
 USAGE: singularity [global options...] <command> [command options...] ...
 
 GLOBAL OPTIONS:
@@ -79,7 +79,7 @@ For any additional help or support visit the Singularity
 website: http://singularity.lbl.gov/
     `)
 
-    singularityCmd.SetUsageTemplate(`
+	singularityCmd.SetUsageTemplate(`
 USAGE: singularity [global options...] <command> [command options...] ...
     `)
 }

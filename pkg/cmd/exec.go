@@ -15,7 +15,7 @@ import (
 
 // execCmd represents the exec command
 var execCmd = &cobra.Command{
-	Use:   "exec",
+	Use: "exec",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("exec called")
 	},
@@ -24,34 +24,34 @@ var execCmd = &cobra.Command{
 func init() {
 	singularityCmd.AddCommand(execCmd)
 
-    // ultimately all of this should go into a seperate function to be shared
-    // between exec, run, and shell
+	// ultimately all of this should go into a seperate function to be shared
+	// between exec, run, and shell
 	execCmd.PersistentFlags().String("overlay", "o", "")
 	execCmd.PersistentFlags().String("shell", "s", "")
-    execCmd.PersistentFlags().BoolP("userns", "u", false, "")
-    execCmd.PersistentFlags().BoolP("readonly", "r", false, "")
-    execCmd.PersistentFlags().String("home", "H", "")
+	execCmd.PersistentFlags().BoolP("userns", "u", false, "")
+	execCmd.PersistentFlags().BoolP("readonly", "r", false, "")
+	execCmd.PersistentFlags().String("home", "H", "")
 	execCmd.PersistentFlags().String("workdir", "W", "")
-    execCmd.PersistentFlags().String("scratchdir", "S", "")
+	execCmd.PersistentFlags().String("scratchdir", "S", "")
 	execCmd.PersistentFlags().String("app", "a", "")
 	execCmd.PersistentFlags().String("bind", "B", "")
-    execCmd.PersistentFlags().BoolP("contain", "c", false, "")
-    execCmd.PersistentFlags().BoolP("containall", "C", false, "")
-    execCmd.PersistentFlags().BoolP("cleanenv", "e", false, "")
-    execCmd.PersistentFlags().BoolP("pid", "p", false, "")
-    execCmd.PersistentFlags().BoolP("ipc", "i", false, "")
-    execCmd.PersistentFlags().BoolP("uts", "", false, "")
-    execCmd.PersistentFlags().BoolP("hostname", "", false, "")
+	execCmd.PersistentFlags().BoolP("contain", "c", false, "")
+	execCmd.PersistentFlags().BoolP("containall", "C", false, "")
+	execCmd.PersistentFlags().BoolP("cleanenv", "e", false, "")
+	execCmd.PersistentFlags().BoolP("pid", "p", false, "")
+	execCmd.PersistentFlags().BoolP("ipc", "i", false, "")
+	execCmd.PersistentFlags().BoolP("uts", "", false, "")
+	execCmd.PersistentFlags().BoolP("hostname", "", false, "")
 	execCmd.PersistentFlags().String("pwd", "p", "")
-    execCmd.PersistentFlags().BoolP("nv", "", false, "")
-    execCmd.PersistentFlags().BoolP("fakeroot", "f", false, "")
-    execCmd.PersistentFlags().BoolP("keep-privs", "", false, "")
-    execCmd.PersistentFlags().BoolP("no-privs", "", false, "")
-    execCmd.PersistentFlags().BoolP("add-caps", "", false, "")
-    execCmd.PersistentFlags().BoolP("drop-caps", "", false, "")
-    execCmd.PersistentFlags().BoolP("allow-setuid", "", false, "")
+	execCmd.PersistentFlags().BoolP("nv", "", false, "")
+	execCmd.PersistentFlags().BoolP("fakeroot", "f", false, "")
+	execCmd.PersistentFlags().BoolP("keep-privs", "", false, "")
+	execCmd.PersistentFlags().BoolP("no-privs", "", false, "")
+	execCmd.PersistentFlags().BoolP("add-caps", "", false, "")
+	execCmd.PersistentFlags().BoolP("drop-caps", "", false, "")
+	execCmd.PersistentFlags().BoolP("allow-setuid", "", false, "")
 
-    execCmd.SetHelpTemplate(`
+	execCmd.SetHelpTemplate(`
 USAGE: singularity [...] exec [exec options...] <container path> <command>
 
 This command will allow you to execute any program within the given
@@ -124,7 +124,7 @@ found at:
     http://singularity.lbl.gov/
     `)
 
-    execCmd.SetUsageTemplate(`
+	execCmd.SetUsageTemplate(`
 USAGE: singularity [...] exec [exec options...] <container path> <command>
     `)
 }

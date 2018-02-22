@@ -15,7 +15,7 @@ import (
 
 // shellCmd represents the shell command
 var shellCmd = &cobra.Command{
-	Use:   "shell",
+	Use: "shell",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("shell called")
 	},
@@ -24,34 +24,34 @@ var shellCmd = &cobra.Command{
 func init() {
 	singularityCmd.AddCommand(shellCmd)
 
-    // ultimately all of this should go into a seperate function to be shared
-    // between exec, run, and shell
+	// ultimately all of this should go into a seperate function to be shared
+	// between exec, run, and shell
 	shellCmd.PersistentFlags().String("overlay", "o", "")
 	shellCmd.PersistentFlags().String("shell", "s", "")
-    shellCmd.PersistentFlags().BoolP("userns", "u", false, "")
-    shellCmd.PersistentFlags().BoolP("readonly", "r", false, "")
-    shellCmd.PersistentFlags().String("home", "H", "")
+	shellCmd.PersistentFlags().BoolP("userns", "u", false, "")
+	shellCmd.PersistentFlags().BoolP("readonly", "r", false, "")
+	shellCmd.PersistentFlags().String("home", "H", "")
 	shellCmd.PersistentFlags().String("workdir", "W", "")
-    shellCmd.PersistentFlags().String("scratchdir", "S", "")
+	shellCmd.PersistentFlags().String("scratchdir", "S", "")
 	shellCmd.PersistentFlags().String("app", "a", "")
 	shellCmd.PersistentFlags().String("bind", "B", "")
-    shellCmd.PersistentFlags().BoolP("contain", "c", false, "")
-    shellCmd.PersistentFlags().BoolP("containall", "C", false, "")
-    shellCmd.PersistentFlags().BoolP("cleanenv", "e", false, "")
-    shellCmd.PersistentFlags().BoolP("pid", "p", false, "")
-    shellCmd.PersistentFlags().BoolP("ipc", "i", false, "")
-    shellCmd.PersistentFlags().BoolP("uts", "", false, "")
-    shellCmd.PersistentFlags().BoolP("hostname", "", false, "")
+	shellCmd.PersistentFlags().BoolP("contain", "c", false, "")
+	shellCmd.PersistentFlags().BoolP("containall", "C", false, "")
+	shellCmd.PersistentFlags().BoolP("cleanenv", "e", false, "")
+	shellCmd.PersistentFlags().BoolP("pid", "p", false, "")
+	shellCmd.PersistentFlags().BoolP("ipc", "i", false, "")
+	shellCmd.PersistentFlags().BoolP("uts", "", false, "")
+	shellCmd.PersistentFlags().BoolP("hostname", "", false, "")
 	shellCmd.PersistentFlags().String("pwd", "p", "")
-    shellCmd.PersistentFlags().BoolP("nv", "", false, "")
-    shellCmd.PersistentFlags().BoolP("fakeroot", "f", false, "")
-    shellCmd.PersistentFlags().BoolP("keep-privs", "", false, "")
-    shellCmd.PersistentFlags().BoolP("no-privs", "", false, "")
-    shellCmd.PersistentFlags().BoolP("add-caps", "", false, "")
-    shellCmd.PersistentFlags().BoolP("drop-caps", "", false, "")
-    shellCmd.PersistentFlags().BoolP("allow-setuid", "", false, "")
+	shellCmd.PersistentFlags().BoolP("nv", "", false, "")
+	shellCmd.PersistentFlags().BoolP("fakeroot", "f", false, "")
+	shellCmd.PersistentFlags().BoolP("keep-privs", "", false, "")
+	shellCmd.PersistentFlags().BoolP("no-privs", "", false, "")
+	shellCmd.PersistentFlags().BoolP("add-caps", "", false, "")
+	shellCmd.PersistentFlags().BoolP("drop-caps", "", false, "")
+	shellCmd.PersistentFlags().BoolP("allow-setuid", "", false, "")
 
-    shellCmd.SetHelpTemplate(`
+	shellCmd.SetHelpTemplate(`
 USAGE: singularity [...] shell [shell options...] <container path>
 Obtain an interactive shell (/bin/bash) within the container image.
 
@@ -144,7 +144,7 @@ found at:
 http://singularity.lbl.gov/
     `)
 
-    shellCmd.SetUsageTemplate(`
+	shellCmd.SetUsageTemplate(`
 USAGE: singularity [...] shell [shell options...] <container path>
     `)
 }

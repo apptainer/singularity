@@ -15,7 +15,7 @@ import (
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use:   "run",
+	Use: "run",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("run called")
 	},
@@ -24,34 +24,34 @@ var runCmd = &cobra.Command{
 func init() {
 	singularityCmd.AddCommand(runCmd)
 
-    // ultimately all of this should go into a seperate function to be shared
-    // between exec, run, and shell
+	// ultimately all of this should go into a seperate function to be shared
+	// between exec, run, and shell
 	runCmd.PersistentFlags().String("overlay", "o", "")
 	runCmd.PersistentFlags().String("shell", "s", "")
-    runCmd.PersistentFlags().BoolP("userns", "u", false, "")
-    runCmd.PersistentFlags().BoolP("readonly", "r", false, "")
-    runCmd.PersistentFlags().String("home", "H", "")
+	runCmd.PersistentFlags().BoolP("userns", "u", false, "")
+	runCmd.PersistentFlags().BoolP("readonly", "r", false, "")
+	runCmd.PersistentFlags().String("home", "H", "")
 	runCmd.PersistentFlags().String("workdir", "W", "")
-    runCmd.PersistentFlags().String("scratchdir", "S", "")
+	runCmd.PersistentFlags().String("scratchdir", "S", "")
 	runCmd.PersistentFlags().String("app", "a", "")
 	runCmd.PersistentFlags().String("bind", "B", "")
-    runCmd.PersistentFlags().BoolP("contain", "c", false, "")
-    runCmd.PersistentFlags().BoolP("containall", "C", false, "")
-    runCmd.PersistentFlags().BoolP("cleanenv", "e", false, "")
-    runCmd.PersistentFlags().BoolP("pid", "p", false, "")
-    runCmd.PersistentFlags().BoolP("ipc", "i", false, "")
-    runCmd.PersistentFlags().BoolP("uts", "", false, "")
-    runCmd.PersistentFlags().BoolP("hostname", "", false, "")
+	runCmd.PersistentFlags().BoolP("contain", "c", false, "")
+	runCmd.PersistentFlags().BoolP("containall", "C", false, "")
+	runCmd.PersistentFlags().BoolP("cleanenv", "e", false, "")
+	runCmd.PersistentFlags().BoolP("pid", "p", false, "")
+	runCmd.PersistentFlags().BoolP("ipc", "i", false, "")
+	runCmd.PersistentFlags().BoolP("uts", "", false, "")
+	runCmd.PersistentFlags().BoolP("hostname", "", false, "")
 	runCmd.PersistentFlags().String("pwd", "p", "")
-    runCmd.PersistentFlags().BoolP("nv", "", false, "")
-    runCmd.PersistentFlags().BoolP("fakeroot", "f", false, "")
-    runCmd.PersistentFlags().BoolP("keep-privs", "", false, "")
-    runCmd.PersistentFlags().BoolP("no-privs", "", false, "")
-    runCmd.PersistentFlags().BoolP("add-caps", "", false, "")
-    runCmd.PersistentFlags().BoolP("drop-caps", "", false, "")
-    runCmd.PersistentFlags().BoolP("allow-setuid", "", false, "")
+	runCmd.PersistentFlags().BoolP("nv", "", false, "")
+	runCmd.PersistentFlags().BoolP("fakeroot", "f", false, "")
+	runCmd.PersistentFlags().BoolP("keep-privs", "", false, "")
+	runCmd.PersistentFlags().BoolP("no-privs", "", false, "")
+	runCmd.PersistentFlags().BoolP("add-caps", "", false, "")
+	runCmd.PersistentFlags().BoolP("drop-caps", "", false, "")
+	runCmd.PersistentFlags().BoolP("allow-setuid", "", false, "")
 
-    runCmd.SetHelpTemplate(`
+	runCmd.SetHelpTemplate(`
 USAGE: singularity [...] run [run options...] <container path> [...]
 
 This command will launch a Singularity container and execute a runscript
@@ -136,7 +136,7 @@ found at:
 
     `)
 
-    runCmd.SetUsageTemplate(`
+	runCmd.SetUsageTemplate(`
 USAGE: singularity [...] run [run options...] <container path> [...]
     `)
 }
