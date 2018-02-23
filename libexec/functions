@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -444,8 +445,9 @@ is_tar() {
 # check if a file looks like, walks like,... oh you get the idea
     FILE2CHECK=$1
     TARMAGIC="7573746172202000" # "ustar  \x00"
+    PAX_TARMAGIC="7573746172003030" # "ustar.00"; dot denotes \x00 (NULL)
 
-    zcat_compat "$FILE2CHECK" | head -c 320 | od -A n -t x1 -w320 | tr -d ' ' | grep -q "$TARMAGIC"
+    zcat_compat "$FILE2CHECK" | head -c 320 | od -A n -t x1 -w320 | tr -d ' ' | grep -q -e "$TARMAGIC" -e "$PAX_TARMAGIC"
     RETVAL=$?
     return $RETVAL
 }

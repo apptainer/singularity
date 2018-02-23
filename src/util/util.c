@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -42,6 +43,7 @@
 
 #include "config.h"
 #include "util/util.h"
+#include "util/file.h"
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/registry.h"
@@ -426,4 +428,37 @@ struct tempfile *make_logfile(char *label) {
     singularity_message(DEBUG, "Logging container's %s at: %s\n", label, tf->filename);
     
     return(tf);
+}
+
+// close all file descriptors pointing to a directory
+void fd_cleanup(void) {
+    char *fd_path = (char *)malloc(PATH_MAX);
+    int i;
+
+    singularity_message(DEBUG, "Cleanup file descriptor table\n");
+
+    if ( fd_path == NULL ) {
+        singularity_message(ERROR, "Failed to allocate memory\n");
+        ABORT(255);
+    }
+
+    for ( i = 0; i <= sysconf(_SC_OPEN_MAX); i++ ) {
+        int length;
+        length = snprintf(fd_path, PATH_MAX-1, "/proc/self/fd/%d", i);
+        if ( length < 0 ) {
+            singularity_message(ERROR, "Failed to determine file descriptor path\n");
+            ABORT(255);
+        }
+        if ( length > PATH_MAX-1 ) {
+            length = PATH_MAX-1;
+        }
+        fd_path[length] = '\0';
+
+        if ( is_dir(fd_path) < 0 ) {
+            continue;
+        }
+        close(i);
+    }
+
+    free(fd_path);
 }

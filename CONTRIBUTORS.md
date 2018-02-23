@@ -11,6 +11,7 @@
     - Michael Bauer <bauerm@umich.edu>
     - Vanessa Sochat <vsochat@stanford.edu>
     - Yannick Cote <yhcote@gmail.com>
+    - Eduardo Arango <carlos.arango.gutierrez@correounivalle.edu.co>
 
 #Contributors:
 
@@ -20,11 +21,11 @@
     - Brian Bockelman <bbockelm@cse.unl.edu>
     - Chris Hollowell <hollowec@bnl.gov>
     - Dave Love <d.love@liverpool.ac.uk>
-    - Eduardo Arango <carlos.arango.gutierrez@correounivalle.edu.co>
     - Felix Abecassis <fabecassis@nvidia.com>
     - George Hartzell <hartzell@alerce.com>
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jason.stover@gmail.com>
+    - Jeff Kriske <jekriske@gmail.com>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Nathan Lin <nathan.lin@yale.edu>
@@ -36,3 +37,6 @@
     - Yaroslav Halchenko <debian@onerussian.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
     - Daniele Tamino <daniele.tamino@gmail.com>
+    - Thomas Hamel <hmlth@t-hamel.fr>
+    - David Trudgian <david.trudgian@utsouthwestern.edu>
+    - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>

@@ -15,6 +15,15 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 ## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
 
  - Fix permission denied when binding directory located on NFS with root_squash enabled
+ - Add capability to support all tar compression formats #1155
+ - Handle docker layer aufs whiteout files correctly (requires libarchive).
+ - Close file descriptors pointing to a directory #1305
+ - Updated output of image.print command #1190
+ - Fixed parsing of backslashes in apprun script #1189
+ - Fixed parsing of arch keyword from definition file #1217
+ - Fixed incompatibility between --pwd and --contain options #1259
+ - Updated license information #1267
+ - Fix non-root build from docker containers with non-writable file/dir permissions
 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
@@ -23,6 +32,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fixed autofs bug path (lost during merge)
 
 ## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (2017-11-22)
+
+### apprun script backslash removal fix
+ - Fixed the unwanted removal of backslashes in apprun scripts
 
 ### Security related fixes
  - Fixed container path and owner limitations (original merge was lost)
