@@ -118,9 +118,25 @@ struct image_object singularity_image_init(char *path, int open_flags) {
         ABORT(255);
     }
 
-    // Do not CLOEXEC the image file descriptor, as we want to make sure we
-    // are holding onto it when we are running contained processes to prevent
-    // it from getting unmounted.
+    if ( singularity_registry_get("UNSHARE_PID") == NULL ) {
+        // If not using a separate PID namespace, do not CLOEXEC the image
+        //   file descriptor, so we keep holding onto it when we are running
+        //   contained processes, to prevent the image from getting unmounted.
+        // When there is a separate PID namepace, the parent process keeps
+        //   running and holds it open, so it isn't needed to prevent image
+        //   unmounts.  More significantly, it would be a security hole to
+        //   leave that file descriptor open to code that is supposed to be
+        //   isolated.
+        // If in the future a separate parent process keeps running even
+        //   with --pid, this case can be removed.
+        singularity_message(DEBUG, "Not setting CLOEXEC on image file descriptor because PID namespace not requested\n");
+    } else {
+        singularity_message(DEBUG, "Setting CLOEXEC on image file descriptor because PID namespace requested\n");
+        if ( fcntl(image.fd, F_SETFD, FD_CLOEXEC) != 0 ) {
+            singularity_message(ERROR, "Failed to set CLOEXEC on image file descriptor\n");
+            ABORT(255);
+        }
+    }
 
     if ( ( singularity_suid_enabled() >= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
         singularity_limit_container_paths(&image);
