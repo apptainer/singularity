@@ -10,8 +10,8 @@ package build
 
 import (
 	"bufio"
+	"io"
 	"log"
-	"os"
 	"regexp"
 	"strings"
 	"unicode"
@@ -62,16 +62,16 @@ type Sections struct {
 	post      string
 	runscript string
 	test      string
+}
 
 // Header contains the information for what source to bootstrap from
 type header struct {
 	Lines []string
 }
 
-// DeffileFromPath reads a deffile from a given path
-// and returns a Deffile
-func DeffileFromPath(path string) (Deffile, error) {
-	lines, err := cleanUpFile(path)
+// ParseDefFile reads the contents of a deffile and returns it as a parsed Deffile
+func ParseDefFile(r io.Reader) (Deffile, error) {
+	lines, err := cleanUpFile(r)
 	if err != nil {
 		return Deffile{}, err
 	}
@@ -84,15 +84,9 @@ func DeffileFromPath(path string) (Deffile, error) {
 
 // cleanUpFile removes comments, escape characters
 // and white spaces from deffile and converts text to []string
-func cleanUpFile(path string) ([]string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
+func cleanUpFile(r io.Reader) ([]string, error) {
 	var lines []string
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
 		// Trim Blank lines

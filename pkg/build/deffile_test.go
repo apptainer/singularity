@@ -70,12 +70,18 @@ func TestCleanUpFile(t *testing.T) {
 
 		defer f.Close()
 
-		Df, err := DeffileFromPath(testFiles[k])
+		r, err := os.Open(testFiles[k])
+		if err != nil {
+			t.Error(err)
+		}
+		defer r.Close()
+
+		Df, err := ParseDefFile(r)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
-		//  `Write DeffileFromPath output to file
+		// Write Deffile output to file
 		for _, k := range headerKeys {
 			v, ok := Df.Header[k]
 			if ok {
