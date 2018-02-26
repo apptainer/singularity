@@ -25,6 +25,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Updated license information #1267
  - Fix non-root build from docker containers with non-writable file/dir permissions
 
+## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
+ - Fix race condition between container exit and cleanupd while removing runtime directory
+
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
 
  - This fixed an issue for support of older distributions and kernels with regards to `setns()`
