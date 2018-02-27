@@ -24,8 +24,6 @@ var buildCmd = &cobra.Command{
 func init() {
 	singularityCmd.AddCommand(buildCmd)
 
-	// ultimately all of this should go into a seperate function to be shared
-	// between exec, run, and shell
 	buildCmd.PersistentFlags().String("sandbox", "s", "")
 	buildCmd.PersistentFlags().String("writable", "w", "")
 	buildCmd.PersistentFlags().String("force", "f", "")
