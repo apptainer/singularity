@@ -11,67 +11,52 @@ import (
 	"github.com/singularityware/singularity/pkg/image"
 )
 
+// Incomplete or incorrect list of functions for now
+type Builder interface {
+	Build()
+	/*Provisioner
+	CreateMetadata()
+	PreScript()
+	SetupScript()
+	PostScript()
+	CopyFiles()*/
+}
+	
 // Builder is
 type Builder struct {
-	Provisioner
 	Sandbox   image.Sandbox
-	Out       image.Image
+	Image     image.Image
 	BuildData buildData
 	ImageData imageData
 }
 
-type imageData struct {
-	metadata []byte
-	labels   []string
-	imageScripts
-}
-
-type imageScripts struct {
-	help        string
-	environment string
-	runscript   string
-	test        string
-}
-
-type buildData struct {
-	buildScripts
-}
-
-type buildScripts struct {
-	pre   string
-	setup string
-	post  string
-}
-
-type metadata struct {
-}
 
 // createMetadataFolder installs /.singularity.d/* directory in the container.
 // Serves as replacement of libexec/bootstrap-scripts/pre.sh
-func (b *Builder) createMetadataFolder() {
+func (b Builder) createMetadataFolder() {
 
 }
 
-func (b *Builder) PreScript() {
+func (b Builder) PreScript() {
 
 }
 
-func (b *Builder) PostScript() {
+func (b Builder) PostScript() {
 
 }
 
-func (b *Builder) SetupScript() {
+func (b Builder) SetupScript() {
 
 }
 
-func (b *Builder) CopyFiles() {
+func (b Builder) CopyFiles() {
 
 }
 
-func (b *Builder) CopyEnvironment() {
+func (b Builder) CopyEnvironment() {
 
 }
 
-func (b *Builder) CopyRunscript() {
+func (b Builder) CopyRunscript() {
 
 }
