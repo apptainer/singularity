@@ -12,6 +12,15 @@ import (
 )
 
 type LocalBuilder struct {
+	Sandbox image.Sandbox
+	Image   image.Image
 	BuildDefinition
-	
+}
+
+func NewLocalBuilder(j []byte) LocalBuilder {
+	return LocalBuilder{image.Sandbox{}, &image.SIF{}, BuildDefinitionFromJSON(j)}
+}
+
+func (*LocalBuilder) Build() {
+
 }

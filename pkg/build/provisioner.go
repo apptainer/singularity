@@ -8,11 +8,13 @@
 
 package build
 
+import ()
+
 // Provisioner is the interface used to represent how we convert any image
 // source into a chroot tree on disk. All necessary input (URL, etc...) should be
 // set up when we're creating the specific data structure.
 type Provisioner interface {
-	Provision(string path) image.Sandbox
+	Provision(path string)
 }
 
 /*type PName string
