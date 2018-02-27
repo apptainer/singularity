@@ -7,12 +7,9 @@
 */
 package build
 
-import (
-	"github.com/singularityware/singularity/pkg/image"
-)
+// build_definition_json.go:
+// Provide transformation from JSON -> BuildDefinition
 
-type LocalBuilder struct {
-	Sandbox image.Sandbox
-	Image   image.Image
-	BuildDefinition
+func BuildDefinitionFromJSON(j []byte) BuildDefinition {
+
 }
