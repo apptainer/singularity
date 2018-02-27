@@ -30,7 +30,7 @@ message 1 "Opening tar archive, stand by...\n"
 # running as a user.
 tar -C "$CONTAINER_DIR" -xf "$SINGULARITY_IMAGE" 2>/dev/null
 
-chmod -R +w "$CONTAINER_DIR"
+find "$CONTAINER_DIR" ! -perm -u=w -print0|xargs -0 -r chmod u+w
 
 SINGULARITY_IMAGE="$CONTAINER_DIR"
 SINGULARITY_CLEANUPDIR="$SINGULARITY_TMPDIR"
