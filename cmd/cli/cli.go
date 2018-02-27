@@ -7,8 +7,13 @@ your rights to use or distribute this software.
 
 package main
 
-import "github.com/singularityware/singularity/internal/pkg/cli"
+import (
+	"github.com/singularityware/singularity/internal/pkg/cli"
+	"github.com/singularityware/singularity/pkg/build"
+)
 
 func main() {
-	cmd.Execute()
+	cli.Execute()
+	b := build.NewLocalBuilder([]byte{})
+	b.Build()
 }

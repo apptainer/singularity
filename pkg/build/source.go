@@ -9,13 +9,10 @@
 package build
 
 import (
-	"github.com/sylabs/sy-go/pkg/image"
+	"github.com/singularityware/singularity/pkg/image"
 )
 
-// Provisioner is the interface used to provision the rootfs of the new image
-type Provisioner interface {
-	Provision(path string)
-}
+//TODO: Move each data type into provisioner_*.go
 
 // DOCKER
 // Docker represents the docker:// URI, pulling from docker hub or

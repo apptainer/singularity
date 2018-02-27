@@ -7,9 +7,7 @@
 */
 package build
 
-import (
-	"github.com/singularityware/singularity/pkg/image"
-)
+import ()
 
 // Incomplete or incorrect list of functions for now
 type Builder interface {
@@ -21,18 +19,10 @@ type Builder interface {
 	PostScript()
 	CopyFiles()*/
 }
-	
-// Builder is
-type Builder struct {
-	Sandbox   image.Sandbox
-	Image     image.Image
-	BuildData buildData
-	ImageData imageData
-}
-
 
 // createMetadataFolder installs /.singularity.d/* directory in the container.
 // Serves as replacement of libexec/bootstrap-scripts/pre.sh
+/*
 func (b Builder) createMetadataFolder() {
 
 }
@@ -60,3 +50,4 @@ func (b Builder) CopyEnvironment() {
 func (b Builder) CopyRunscript() {
 
 }
+*/

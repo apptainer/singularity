@@ -7,9 +7,7 @@
 */
 package build
 
-import (
-	"github.com/singularityware/singularity/pkg/image"
-)
+import ()
 
 type BuildDefinition struct {
 	ImageData imageData

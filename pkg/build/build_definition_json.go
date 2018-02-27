@@ -11,5 +11,5 @@ package build
 // Provide transformation from JSON -> BuildDefinition
 
 func BuildDefinitionFromJSON(j []byte) BuildDefinition {
-
+	return BuildDefinition{}
 }

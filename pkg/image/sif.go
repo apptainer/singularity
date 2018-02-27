@@ -34,6 +34,10 @@ func (i *SIF) Root() *specs.Root {
 	return &specs.Root{}
 }
 
+func (i *SIF) Rootfs() string {
+	return ""
+}
+
 // isSIF checks the "magic" of the given file and
 // determines if the file is of the SIF type
 func isSIF(f io.ReadSeeker) bool {
