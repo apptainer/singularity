@@ -7,7 +7,7 @@ your rights to use or distribute this software.
 
 package main
 
-image "github.com/singularityware/singularity/internal/pkg/cli"
+import "github.com/singularityware/singularity/internal/pkg/cli"
 
 func main() {
 	cmd.Execute()
