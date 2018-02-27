@@ -12,25 +12,25 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
-type sif struct {
+type SIF struct {
 }
 
-// SifFromSandbox converts the sandbox, s, to a SIF file
-func SifFromSandbox(s *Sandbox) *sif {
-	return &sif{}
+// SIFFromSandbox converts the sandbox, s, to a SIF file
+func SIFFromSandbox(s *Sandbox) *SIF {
+	return &SIF{}
 }
 
-// SifFromPath returns a sif object of the file located at path
-func SifFromPath(path string) *sif {
-	return &sif{}
+// SIFFromPath returns a SIF object of the file located at path
+func SIFFromPath(path string) *SIF {
+	return &SIF{}
 }
 
-func (i *sif) Root() *specs.Root {
+func (i *SIF) Root() *specs.Root {
 	return &specs.Root{}
 }
 
-// isSif checks the "magic" of the given file and
-// determines if the file is of the sif type
-func isSif(path string) bool {
+// isSIF checks the "magic" of the given file and
+// determines if the file is of the SIF type
+func isSIF(path string) bool {
 	return false
 }
