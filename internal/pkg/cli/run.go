@@ -133,7 +133,7 @@ found at:
 
     http://singularity.lbl.gov/
 
-    `)
+`)
 
 	runCmd.SetUsageTemplate(`
 USAGE: singularity [...] run [run options...] <container path> [...]

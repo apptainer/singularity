@@ -141,7 +141,7 @@ For additional help, please visit our public documentation pages which are
 found at:
 
 http://singularity.lbl.gov/
-    `)
+`)
 
 	shellCmd.SetUsageTemplate(`
 USAGE: singularity [...] shell [shell options...] <container path>

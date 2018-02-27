@@ -121,7 +121,7 @@ For additional help, please visit our public documentation pages which are
 found at:
 
     http://singularity.lbl.gov/
-    `)
+`)
 
 	execCmd.SetUsageTemplate(`
 USAGE: singularity [...] exec [exec options...] <container path> <command>

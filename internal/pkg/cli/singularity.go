@@ -76,7 +76,7 @@ CONTAINER USAGE OPTIONS:
 
 For any additional help or support visit the Singularity
 website: http://singularity.lbl.gov/
-    `)
+`)
 
 	singularityCmd.SetUsageTemplate(`
 USAGE: singularity [global options...] <command> [command options...] ...
