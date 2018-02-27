@@ -10,6 +10,7 @@ package image
 
 import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"io"
 )
 
 type SIF struct {
@@ -25,12 +26,16 @@ func SIFFromPath(path string) *SIF {
 	return &SIF{}
 }
 
+func SIFFromReadSeeker(f io.ReadSeeker) *SIF {
+	return &SIF{}
+}
+
 func (i *SIF) Root() *specs.Root {
 	return &specs.Root{}
 }
 
 // isSIF checks the "magic" of the given file and
 // determines if the file is of the SIF type
-func isSIF(path string) bool {
+func isSIF(f io.ReadSeeker) bool {
 	return false
 }
