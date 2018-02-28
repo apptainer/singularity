@@ -8,8 +8,8 @@
 package build
 
 // build_definition_json.go:
-// Provide transformation from JSON -> BuildDefinition
+// Provide transformation from JSON -> Definition
 
-func BuildDefinitionFromJSON(j []byte) BuildDefinition {
-	return BuildDefinition{}
+func DefinitionFromJSON(j []byte) Definition {
+	return Definition{}
 }

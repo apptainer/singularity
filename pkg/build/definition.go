@@ -9,7 +9,7 @@ package build
 
 import ()
 
-type BuildDefinition struct {
+type Definition struct {
 	ImageData imageData
 	BuildData buildData
 }
