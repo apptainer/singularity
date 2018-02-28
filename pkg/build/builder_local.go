@@ -14,11 +14,11 @@ import (
 type LocalBuilder struct {
 	Sandbox image.Sandbox
 	Image   image.Image
-	BuildDefinition
+	Definition
 }
 
 func NewLocalBuilder(j []byte) LocalBuilder {
-	return LocalBuilder{image.Sandbox{}, &image.SIF{}, BuildDefinitionFromJSON(j)}
+	return LocalBuilder{image.Sandbox{}, &image.SIF{}, DefinitionFromJSON(j)}
 }
 
 func (*LocalBuilder) Build() {
