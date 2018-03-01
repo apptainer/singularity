@@ -32,6 +32,7 @@ type imageScripts struct {
 // buildData contains any scripts, metadata, etc... that the Builder may
 // need to know only at build time to build the image
 type buildData struct {
+	files map[string]string
 	buildScripts
 }
 
