@@ -8,14 +8,19 @@
 #
 
 export GOPATH=$PWD/go:$(go env GOPATH)
-go build -ldflags '-s -w -extldflags "-static"' -a -o ../build/scontainer go/scontainer.go
-go build -buildmode=c-archive -ldflags '-s -w' -a -o ../build/librpc.a go/rpc.go
-go build -ldflags '-s -w -extldflags "-static"' -a -o ../build/smaster go/smaster.go
+go build -x -o ../build/scontainer go/scontainer.go
+go build -buildmode=c-shared -o ../build/librpc.so go/rpc.go
+go build -o ../build/smaster go/smaster.go
+go build -o cli tmpdev/cli.go
 
-gcc c/wrapper.c -o ../build/wrapper -Ic -I../build -L../build -lrpc -lpthread
-rm -f ../build/wrapper-suid
-cp ../build/wrapper ../build/wrapper-suid
-sudo chown root:root ../build/wrapper-suid && sudo chmod 4755 ../build/wrapper-suid
+gcc c/wrapper.c c/util/message.c -o ../build/wrapper -Ic -I../build -L../build -ldl
+sudo rm -f /tmp/wrapper-suid /tmp/wrapper /tmp/scontainer /tmp/smaster /tmp/librpc.so
+cp ../build/wrapper /tmp/
+cp ../build/wrapper /tmp/wrapper-suid
+cp ../build/scontainer /tmp/
+cp ../build/smaster /tmp/
+cp ../build/librpc.so /tmp/
+sudo chown root:root /tmp/wrapper-suid && sudo chmod 4755 /tmp/wrapper-suid
 
 if [ ! -e "/tmp/testing.simg" ]; then
     singularity pull --name testing.simg shub://GodloveD/busybox

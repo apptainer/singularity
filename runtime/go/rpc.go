@@ -19,18 +19,21 @@ import (
 )
 
 //export RpcServer
-func RpcServer(socket int) {
+func RpcServer(socket int) int {
 	comm := os.NewFile(uintptr(socket), "unix")
 
 	conn, err := net.FileConn(comm)
 	if err != nil {
 		fmt.Println("communication error")
+        return 1
 	}
 	comm.Close()
 
 	rpcOps := new(server.RpcOps)
 	rpc.RegisterName("Privileged", rpcOps)
 	rpc.ServeConn(conn)
+
+    return 0
 }
 
 func main() {}
