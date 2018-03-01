@@ -8,7 +8,7 @@
 #
 
 export GOPATH=$PWD/go:$(go env GOPATH)
-go build -x -o ../build/scontainer go/scontainer.go
+go build -o ../build/scontainer go/scontainer.go
 go build -buildmode=c-shared -o ../build/librpc.so go/rpc.go
 go build -o ../build/smaster go/smaster.go
 go build -o cli tmpdev/cli.go
