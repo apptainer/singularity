@@ -9,7 +9,9 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/singularityware/singularity/pkg/build"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +20,18 @@ var buildCmd = &cobra.Command{
 	Use: "build",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("build called")
+
+		if cmd.Flags().Lookup("deffile") != nil {
+			str, _ := cmd.Flags().GetString("deffile")
+
+			file, _ := os.Open(str)
+			d, _ := build.ParseDeffile(file)
+
+			fmt.Println(d.BuildData.Pre)
+			fmt.Println(d.BuildData.Setup)
+			fmt.Println(d.BuildData.Post)
+
+		}
 	},
 }
 
@@ -29,6 +43,7 @@ func init() {
 	buildCmd.PersistentFlags().String("force", "f", "")
 	buildCmd.PersistentFlags().String("notest", "T", "")
 	buildCmd.PersistentFlags().String("section", "s", "")
+	buildCmd.PersistentFlags().String("deffile", "d", "")
 
 	buildCmd.SetHelpTemplate(`
 	The build command compiles a container per a recipe (definition file) or based

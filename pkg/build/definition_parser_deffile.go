@@ -9,12 +9,155 @@ package build
 
 import (
 	"bufio"
+	"bytes"
+	"fmt"
 	"io"
 	"log"
 	"regexp"
 	"strings"
 	"unicode"
 )
+
+// validSections just contains a list of all the valid sections a definition file
+// could contain. If any others are found, an error will generate
+var validSections = map[string]bool{
+	"help":        true,
+	"setup":       true,
+	"files":       true,
+	"labels":      true,
+	"environment": true,
+	"pre":         true,
+	"post":        true,
+	"runscript":   true,
+	"test":        true,
+}
+
+// scanSections is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
+// that designated by a line starting with %
+// If there are any Golang devs reading this, please improve your documentation for this. It's awful.
+func scanSections(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	var inSection bool = false
+	var retbuf bytes.Buffer
+	advance = 0
+
+	l := len(data)
+
+	for advance < l {
+		// We are essentially a pretty wrapper to bufio.ScanLines.
+		a, line, err := bufio.ScanLines(data, atEOF)
+		if err != nil && err != bufio.ErrFinalToken {
+			return 0, nil, err
+		} else if line == nil { // If ScanLines returns a nil line, it needs more data. Send req for more data
+			return 0, nil, nil // Returning 0, nil, nil requests Scanner.Scan() method find more data or EOF
+		}
+
+		_, word, err := bufio.ScanWords(line, true) // Tokenize the line into words
+		if err != nil && err != bufio.ErrFinalToken {
+			return 0, nil, err
+		}
+
+		// Check if the first word starts with % sign
+		if word != nil && word[0] == '%' {
+			// If the word starts with %, it's a section identifier
+			_, ok := validSections[string(word[1:])] // Validate that the section identifier is valid
+
+			if !ok {
+				// Invalid Section Identifier
+				return 0, nil, fmt.Errorf("Invalid section identifier found: %s", string(word))
+			} else {
+				// Valid Section Identifier
+				if inSection {
+					// Here we found the end of the section
+					return advance, retbuf.Bytes(), nil
+				} else {
+					// Here is the start of a section, write the section into the return buffer and
+					// flag that we've found the start of a section
+					retbuf.Write(word[1:])
+					retbuf.WriteString("\n")
+					inSection = true
+				}
+			}
+		} else {
+			// This line is not a section identifier
+			if inSection {
+				// If we're inside of a section,
+				retbuf.Write(line)
+				retbuf.WriteString("\n")
+			}
+		}
+
+		// Shift the advance retval and the data slice to the next line
+		advance += a
+		data = data[a:]
+		if a == 0 {
+			break
+		}
+	}
+
+	if !atEOF {
+		return 0, nil, nil
+	} else {
+		return advance, retbuf.Bytes(), nil
+	}
+}
+
+func scan(s *bufio.Scanner) (map[string]string, error) {
+	sections := make(map[string]string)
+
+	for s.Scan() {
+		b := s.Bytes()
+
+		for i := 0; i < len(b); i++ {
+			if b[i] == '\n' {
+				sections[string(b[:i])] = string(b[i+1:])
+				break
+			}
+		}
+	}
+
+	if s.Err() != nil {
+		fmt.Println(s.Err().Error())
+		return nil, s.Err()
+	}
+
+	fmt.Println("=======Sections=======")
+	for k, v := range sections {
+		fmt.Printf("Section: %s\n%s", k, v)
+	}
+
+	return sections, nil
+
+}
+
+func ParseDeffile(r io.Reader) (Definition, error) {
+	s := bufio.NewScanner(r)
+	s.Split(scanSections)
+
+	sections, err := scan(s)
+
+	def := Definition{
+		ImageData: imageData{
+			imageScripts: imageScripts{
+				Help:        sections["help"],
+				Environment: sections["environment"],
+				Runscript:   sections["runscript"],
+				Test:        sections["test"],
+			},
+		},
+		BuildData: buildData{
+			buildScripts: buildScripts{
+				Pre:   sections["pre"],
+				Setup: sections["setup"],
+				Post:  sections["post"],
+			},
+		},
+	}
+
+	return def, err
+
+}
+
+/* ==================================================================*/
 
 var (
 	tokenComment = regexp.MustCompile(`#.*$`)
