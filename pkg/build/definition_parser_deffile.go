@@ -9,12 +9,264 @@ package build
 
 import (
 	"bufio"
+	"bytes"
+	"fmt"
 	"io"
 	"log"
+	"os"
 	"regexp"
 	"strings"
 	"unicode"
 )
+
+// validSections just contains a list of all the valid sections a definition file
+// could contain. If any others are found, an error will generate
+var validSections = map[string]bool{
+	"help":        true,
+	"setup":       true,
+	"files":       true,
+	"labels":      true,
+	"environment": true,
+	"pre":         true,
+	"post":        true,
+	"runscript":   true,
+	"test":        true,
+}
+
+// scanSections is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
+// that designated by a line starting with %
+// If there are any Golang devs reading this, please improve your documentation for this. It's awful.
+func scanSections(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	var inSection bool = false
+	var retbuf bytes.Buffer
+	advance = 0
+
+	l := len(data)
+
+	for advance < l {
+		// We are essentially a pretty wrapper to bufio.ScanLines.
+		a, line, err := bufio.ScanLines(data, atEOF)
+		if err != nil && err != bufio.ErrFinalToken {
+			return 0, nil, err
+		} else if line == nil { // If ScanLines returns a nil line, it needs more data. Send req for more data
+			return 0, nil, nil // Returning 0, nil, nil requests Scanner.Scan() method find more data or EOF
+		}
+
+		_, word, err := bufio.ScanWords(line, true) // Tokenize the line into words
+		if err != nil && err != bufio.ErrFinalToken {
+			return 0, nil, err
+		}
+
+		// Check if the first word starts with % sign
+		if word != nil && word[0] == '%' {
+			// If the word starts with %, it's a section identifier
+			_, ok := validSections[string(word[1:])] // Validate that the section identifier is valid
+
+			if !ok {
+				// Invalid Section Identifier
+				return 0, nil, fmt.Errorf("Invalid section identifier found: %s", string(word))
+			} else {
+				// Valid Section Identifier
+				if inSection {
+					// Here we found the end of the section
+					return advance, retbuf.Bytes(), nil
+				} else {
+					// Here is the start of a section, write the section into the return buffer and
+					// flag that we've found the start of a section
+					retbuf.Write(word[1:])
+					retbuf.WriteString("\n")
+					inSection = true
+				}
+			}
+		} else {
+			// This line is not a section identifier
+			if inSection {
+				// If we're inside of a section,
+				retbuf.Write(line)
+				retbuf.WriteString("\n")
+			}
+		}
+
+		// Shift the advance retval and the data slice to the next line
+		advance += a
+		data = data[a:]
+		if a == 0 {
+			break
+		}
+	}
+
+	if !atEOF {
+		return 0, nil, nil
+	} else {
+		return advance, retbuf.Bytes(), nil
+	}
+}
+
+func doSections(r io.Reader) (sections map[string]string, err error) {
+	s := bufio.NewScanner(r)
+	s.Split(scanSections)
+
+	sections = make(map[string]string)
+
+	for s.Scan() {
+		b := s.Bytes()
+
+		for i := 0; i < len(b); i++ {
+			if b[i] == '\n' {
+				sections[string(b[:i])] = strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace)
+				break
+			}
+		}
+	}
+
+	if s.Err() != nil {
+		log.Fatal(s.Err())
+		return nil, s.Err()
+	}
+
+	fmt.Println("=======Sections=======")
+	for k, v := range sections {
+		fmt.Printf("Section[%s]:\n%s\n\n", k, v)
+	}
+
+	return
+}
+
+// validHeaders just contains a list of all the valid headers a definition file
+// could contain. If any others are found, an error will generate
+var validHeaders = map[string]bool{
+	"bootstrap":  true,
+	"from":       true,
+	"registry":   true,
+	"namespace":  true,
+	"includecmd": true,
+	"mirrorurl":  true,
+	"osversion":  true,
+	"include":    true,
+}
+
+// scanHeader is a SplitFunc to extract header tokens, token format: "key:val"
+func scanHeader(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	var retbuf bytes.Buffer
+
+	advance = 0
+	l := len(data)
+
+	for advance < l {
+		a, line, err := bufio.ScanLines(data, atEOF)
+		if err != nil && err != bufio.ErrFinalToken {
+			return 0, nil, err
+		} else if line == nil { // If ScanLines returns a nil line, it needs more data. Send req for more data
+			return 0, nil, nil // Returning 0, nil, nil requests Scanner.Scan() method find more data or EOF
+		}
+
+		advance += a
+		words := strings.SplitN(string(line), ":", 2)
+
+		hkey := strings.ToLower(strings.TrimRightFunc(words[0], unicode.IsSpace))
+		if _, ok := validHeaders[hkey]; ok {
+			retbuf.WriteString(hkey)
+			retbuf.WriteString(":")
+			retbuf.WriteString(strings.TrimSpace(words[1]))
+
+			return advance, retbuf.Bytes(), nil
+		}
+
+		data = data[a:]
+		if a == 0 {
+			break
+		}
+	}
+
+	if !atEOF {
+		return 0, nil, nil
+	} else {
+		return advance, nil, nil
+	}
+}
+
+func doHeader(r io.Reader) (header map[string]string, err error) {
+	s := bufio.NewScanner(r)
+	s.Split(scanHeader)
+
+	header = make(map[string]string)
+
+	fmt.Println("========Header========")
+	for s.Scan() {
+		tok := strings.SplitN(s.Text(), ":", 2)
+		header[tok[0]] = tok[1]
+		fmt.Printf("header[%s] = %s\n", tok[0], tok[1])
+	}
+
+	if s.Err() != nil {
+		log.Fatal(s.Err())
+		return nil, s.Err()
+	}
+
+	return
+}
+
+func ParseDefinitionFile(f *os.File) (Definition, error) {
+	header, err := doHeader(f)
+
+	f.Seek(0, 0)
+	sections, err := doSections(f)
+
+	def := Definition{
+		Header: header,
+		ImageData: imageData{
+			imageScripts: imageScripts{
+				Help:        sections["help"],
+				Environment: sections["environment"],
+				Runscript:   sections["runscript"],
+				Test:        sections["test"],
+			},
+		},
+		BuildData: buildData{
+			buildScripts: buildScripts{
+				Pre:   sections["pre"],
+				Setup: sections["setup"],
+				Post:  sections["post"],
+			},
+		},
+	}
+
+	return def, err
+}
+
+func writeSectionIfExists(w io.Writer, ident string, s string) {
+	if len(s) > 0 {
+		fmt.Printf("section[%s]:\n%s\n\n", ident, s)
+		w.Write([]byte("%"))
+		w.Write([]byte(ident))
+		w.Write([]byte("\n"))
+		w.Write([]byte(s))
+		w.Write([]byte("\n"))
+	}
+}
+
+func (d *Definition) WriteDefinitionFile(w io.Writer) {
+	fmt.Println("=======BEGIN DEFINITION FILE WRITE=======")
+	for k, v := range d.Header {
+		fmt.Printf("header[%s] = %s\n", k, v)
+		w.Write([]byte(k))
+		w.Write([]byte(": "))
+		w.Write([]byte(v))
+		w.Write([]byte("\n"))
+	}
+
+	writeSectionIfExists(w, "help", d.ImageData.Help)
+	writeSectionIfExists(w, "environment", d.ImageData.Environment)
+	writeSectionIfExists(w, "runscript", d.ImageData.Runscript)
+	writeSectionIfExists(w, "test", d.ImageData.Test)
+	writeSectionIfExists(w, "pre", d.BuildData.Pre)
+	writeSectionIfExists(w, "setup", d.BuildData.Setup)
+	writeSectionIfExists(w, "post", d.BuildData.Post)
+
+	fmt.Println("========END DEFINITION FILE WRITE========")
+}
+
+/* ==================================================================*/
 
 var (
 	tokenComment = regexp.MustCompile(`#.*$`)
