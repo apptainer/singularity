@@ -1,3 +1,14 @@
+/*
+  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+
+  This software is licensed under a 3-clause BSD license.  Please
+  consult LICENSE file distributed with the sources of this project regarding
+  your rights to use or distribute this software.
+*/
+
+#ifndef _SINGULARITY_WRAPPER_H
+#define _SINGULARITY_WRAPPER_H
+
 struct uidMapping {
     uid_t hostID;
     uid_t containerID;
@@ -35,3 +46,5 @@ struct cConfig {
     struct gidMapping gidMapping;
     unsigned int jsonConfSize;
 };
+
+#endif /* _SINGULARITY_WRAPPER_H */
