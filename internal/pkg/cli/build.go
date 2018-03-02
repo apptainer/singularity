@@ -9,6 +9,7 @@ package cli
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/singularityware/singularity/pkg/build"
@@ -27,7 +28,8 @@ var buildCmd = &cobra.Command{
 			file, _ := os.Open(str)
 			d, _ := build.ParseDefinitionFile(file)
 
-			_ = d
+			f, _ := ioutil.TempFile("/tmp/", "Singularity-Definition-")
+			d.WriteDefinitionFile(f)
 		}
 	},
 }

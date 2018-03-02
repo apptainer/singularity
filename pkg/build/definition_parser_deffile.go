@@ -234,6 +234,38 @@ func ParseDefinitionFile(f *os.File) (Definition, error) {
 	return def, err
 }
 
+func writeSectionIfExists(w io.Writer, ident string, s string) {
+	if len(s) > 0 {
+		fmt.Printf("section[%s]:\n%s\n\n", ident, s)
+		w.Write([]byte("%"))
+		w.Write([]byte(ident))
+		w.Write([]byte("\n"))
+		w.Write([]byte(s))
+		w.Write([]byte("\n"))
+	}
+}
+
+func (d *Definition) WriteDefinitionFile(w io.Writer) {
+	fmt.Println("=======BEGIN DEFINITION FILE WRITE=======")
+	for k, v := range d.Header {
+		fmt.Printf("header[%s] = %s\n", k, v)
+		w.Write([]byte(k))
+		w.Write([]byte(": "))
+		w.Write([]byte(v))
+		w.Write([]byte("\n"))
+	}
+
+	writeSectionIfExists(w, "help", d.ImageData.Help)
+	writeSectionIfExists(w, "environment", d.ImageData.Environment)
+	writeSectionIfExists(w, "runscript", d.ImageData.Runscript)
+	writeSectionIfExists(w, "test", d.ImageData.Test)
+	writeSectionIfExists(w, "pre", d.BuildData.Pre)
+	writeSectionIfExists(w, "setup", d.BuildData.Setup)
+	writeSectionIfExists(w, "post", d.BuildData.Post)
+
+	fmt.Println("========END DEFINITION FILE WRITE========")
+}
+
 /* ==================================================================*/
 
 var (
