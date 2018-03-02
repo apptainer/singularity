@@ -53,6 +53,7 @@ src/sinit
 src/start
 src/start-suid
 src/docker-extract
+src/prepheader
 
 src/.deps/
 src/.libs/
