@@ -28,13 +28,6 @@ var buildCmd = &cobra.Command{
 			d, _ := build.ParseDefinitionFile(file)
 
 			_ = d
-
-			fmt.Println(d)
-
-			//fmt.Println(d.BuildData.Pre)
-			//fmt.Println(d.BuildData.Setup)
-			//fmt.Println(d.BuildData.Post)
-
 		}
 	},
 }

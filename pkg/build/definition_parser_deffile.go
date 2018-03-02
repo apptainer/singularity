@@ -113,7 +113,7 @@ func doSections(r io.Reader) (sections map[string]string, err error) {
 
 		for i := 0; i < len(b); i++ {
 			if b[i] == '\n' {
-				sections[string(b[:i])] = string(b[i+1:])
+				sections[string(b[:i])] = strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace)
 				break
 			}
 		}
@@ -126,7 +126,7 @@ func doSections(r io.Reader) (sections map[string]string, err error) {
 
 	fmt.Println("=======Sections=======")
 	for k, v := range sections {
-		fmt.Printf("Section: %s\n%s", k, v)
+		fmt.Printf("Section[%s]:\n%s\n\n", k, v)
 	}
 
 	return
