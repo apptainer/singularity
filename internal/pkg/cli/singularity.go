@@ -1,5 +1,6 @@
 /*
 Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+
 This software is licensed under a 3-clause BSD license.  Please
 consult LICENSE file distributed with the sources of this project regarding
 your rights to use or distribute this software.
@@ -10,6 +11,14 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+)
+
+// Global variables for singularity CLI
+var (
+	debug   bool
+	silent  bool
+	verbose bool
+	quiet   bool
 )
 
 // singularity is the base command when called without any subcommands
@@ -26,14 +35,12 @@ func Execute() {
 	}
 }
 
-var verbose bool
-
 func init() {
 
-	singularityCmd.PersistentFlags().BoolP("debug", "d", false, "")
-	singularityCmd.PersistentFlags().BoolP("silent", "s", false, "")
-	singularityCmd.PersistentFlags().BoolP("quiet", "q", false, "")
-	singularityCmd.PersistentFlags().BoolP("verbose", "v", false, "")
+	singularityCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "")
+	singularityCmd.PersistentFlags().BoolVarP(&silent, "silent", "s", false, "")
+	singularityCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "")
+	singularityCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "")
 
 	singularityCmd.SetHelpTemplate(`
 USAGE: singularity [global options...] <command> [command options...] ...

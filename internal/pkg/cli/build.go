@@ -1,48 +1,44 @@
 /*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+Copyright (c) 2018, Sylabs, Inc. All rights reserved.
 
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
+This software is licensed under a 3-clause BSD license.  Please
+consult LICENSE file distributed with the sources of this project regarding
+your rights to use or distribute this software.
 */
+
 package cli
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-
-	"github.com/singularityware/singularity/pkg/build"
 	"github.com/spf13/cobra"
+)
+
+// Build cmd local vars
+var (
+	sandbox  bool
+	writable bool
+	remote   bool
+	force    bool
+	noTest   bool
+	section  string
 )
 
 // buildCmd represents the build command
 var buildCmd = &cobra.Command{
 	Use: "build",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("build called")
 
-		if cmd.Flags().Lookup("deffile") != nil {
-			str, _ := cmd.Flags().GetString("deffile")
-
-			file, _ := os.Open(str)
-			d, _ := build.ParseDefinitionFile(file)
-
-			f, _ := ioutil.TempFile("/tmp/", "Singularity-Definition-")
-			d.WriteDefinitionFile(f)
-		}
 	},
 }
 
 func init() {
 	singularityCmd.AddCommand(buildCmd)
 
-	buildCmd.PersistentFlags().String("sandbox", "s", "")
-	buildCmd.PersistentFlags().String("writable", "w", "")
-	buildCmd.PersistentFlags().String("force", "f", "")
-	buildCmd.PersistentFlags().String("notest", "T", "")
-	buildCmd.PersistentFlags().String("section", "s", "")
-	buildCmd.PersistentFlags().String("deffile", "d", "")
+	buildCmd.PersistentFlags().BoolVarP(&sandbox, "sandbox", "s", false, "")
+	buildCmd.PersistentFlags().BoolVarP(&remote, "remote", "r", false, "")
+	buildCmd.PersistentFlags().BoolVarP(&writable, "writable", "w", false, "")
+	buildCmd.PersistentFlags().BoolVarP(&force, "force", "f", false, "")
+	buildCmd.PersistentFlags().BoolVarP(&noTest, "notest", "T", false, "")
+	buildCmd.PersistentFlags().StringVarP(&section, "section", "s", "post", "")
 
 	buildCmd.SetHelpTemplate(`
 	The build command compiles a container per a recipe (definition file) or based
@@ -217,7 +213,6 @@ func init() {
 		
 	http://singularity.lbl.gov/
 `)
-
 	buildCmd.SetUsageTemplate(`
 USAGE: singularity [...] build [build options...] <container path> <deffile path>
     `)
