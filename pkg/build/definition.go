@@ -10,6 +10,7 @@ package build
 import ()
 
 type Definition struct {
+	Header    map[string]string
 	ImageData imageData
 	BuildData buildData
 }
@@ -17,8 +18,8 @@ type Definition struct {
 // imageData contains any scripts, metadata, etc... that needs to be
 // present in some from in the final built image
 type imageData struct {
-	Metadata []byte
-	Labels   []string
+	Metadata []byte   //
+	Labels   []string //
 	imageScripts
 }
 
@@ -32,7 +33,7 @@ type imageScripts struct {
 // buildData contains any scripts, metadata, etc... that the Builder may
 // need to know only at build time to build the image
 type buildData struct {
-	Files map[string]string
+	Files map[string]string //
 	buildScripts
 }
 

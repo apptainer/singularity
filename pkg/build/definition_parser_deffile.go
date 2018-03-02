@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"regexp"
 	"strings"
 	"unicode"
@@ -101,8 +102,11 @@ func scanSections(data []byte, atEOF bool) (advance int, token []byte, err error
 	}
 }
 
-func scan(s *bufio.Scanner) (map[string]string, error) {
-	sections := make(map[string]string)
+func doSections(r io.Reader) (sections map[string]string, err error) {
+	s := bufio.NewScanner(r)
+	s.Split(scanSections)
+
+	sections = make(map[string]string)
 
 	for s.Scan() {
 		b := s.Bytes()
@@ -116,7 +120,7 @@ func scan(s *bufio.Scanner) (map[string]string, error) {
 	}
 
 	if s.Err() != nil {
-		fmt.Println(s.Err().Error())
+		log.Fatal(s.Err())
 		return nil, s.Err()
 	}
 
@@ -125,17 +129,91 @@ func scan(s *bufio.Scanner) (map[string]string, error) {
 		fmt.Printf("Section: %s\n%s", k, v)
 	}
 
-	return sections, nil
-
+	return
 }
 
-func ParseDeffile(r io.Reader) (Definition, error) {
-	s := bufio.NewScanner(r)
-	s.Split(scanSections)
+// validHeaders just contains a list of all the valid headers a definition file
+// could contain. If any others are found, an error will generate
+var validHeaders = map[string]bool{
+	"bootstrap":  true,
+	"from":       true,
+	"registry":   true,
+	"namespace":  true,
+	"includecmd": true,
+	"mirrorurl":  true,
+	"osversion":  true,
+	"include":    true,
+}
 
-	sections, err := scan(s)
+// scanHeader is a SplitFunc to extract header tokens, token format: "key:val"
+func scanHeader(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	var retbuf bytes.Buffer
+
+	advance = 0
+	l := len(data)
+
+	for advance < l {
+		a, line, err := bufio.ScanLines(data, atEOF)
+		if err != nil && err != bufio.ErrFinalToken {
+			return 0, nil, err
+		} else if line == nil { // If ScanLines returns a nil line, it needs more data. Send req for more data
+			return 0, nil, nil // Returning 0, nil, nil requests Scanner.Scan() method find more data or EOF
+		}
+
+		advance += a
+		words := strings.SplitN(string(line), ":", 2)
+
+		hkey := strings.ToLower(strings.TrimRightFunc(words[0], unicode.IsSpace))
+		if _, ok := validHeaders[hkey]; ok {
+			retbuf.WriteString(hkey)
+			retbuf.WriteString(":")
+			retbuf.WriteString(strings.TrimSpace(words[1]))
+
+			return advance, retbuf.Bytes(), nil
+		}
+
+		data = data[a:]
+		if a == 0 {
+			break
+		}
+	}
+
+	if !atEOF {
+		return 0, nil, nil
+	} else {
+		return advance, nil, nil
+	}
+}
+
+func doHeader(r io.Reader) (header map[string]string, err error) {
+	s := bufio.NewScanner(r)
+	s.Split(scanHeader)
+
+	header = make(map[string]string)
+
+	fmt.Println("========Header========")
+	for s.Scan() {
+		tok := strings.SplitN(s.Text(), ":", 2)
+		header[tok[0]] = tok[1]
+		fmt.Printf("header[%s] = %s\n", tok[0], tok[1])
+	}
+
+	if s.Err() != nil {
+		log.Fatal(s.Err())
+		return nil, s.Err()
+	}
+
+	return
+}
+
+func ParseDeffile(f *os.File) (Definition, error) {
+	header, err := doHeader(f)
+
+	f.Seek(0, 0)
+	sections, err := doSections(f)
 
 	def := Definition{
+		Header: header,
 		ImageData: imageData{
 			imageScripts: imageScripts{
 				Help:        sections["help"],
@@ -154,7 +232,6 @@ func ParseDeffile(r io.Reader) (Definition, error) {
 	}
 
 	return def, err
-
 }
 
 /* ==================================================================*/
