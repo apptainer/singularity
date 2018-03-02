@@ -14,7 +14,7 @@ IMPORT OPTIONS:
 EXAMPLES:
 
     $ singularity image.import /tmp/Debian.img < /tmp/Debian.tar
-    $ gzip -9 > Debian.tar.gz | singularity image.import /tmp/Debian.img
+    $ gzip -dc Debian.tar.gz | singularity image.import /tmp/Debian.img
     $ tar -cvf - -C data_dir/ . | singularity image.import /tmp/data.img
 
 For additional help, please visit our public documentation pages which are

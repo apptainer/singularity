@@ -1,5 +1,6 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 # 
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -126,7 +127,7 @@ stest 0 sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar"
 container_check
 
-# from tar.gx to squashfs
+# from tar.gz to squashfs
 stest 0 sh -c "singularity image.export '$CONTAINER' | gzip -9 > '${CONTAINER2}.tar.gz'"
 sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar.gz"

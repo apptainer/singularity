@@ -5,11 +5,11 @@ DISTCLEANFILES = Makefile
 CLEANFILES = core.* *~ *.la
 AM_CFLAGS = -Wall -fpie -fPIC
 AM_LDFLAGS = -pie
-AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES) $(NO_SETNS)
+AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\" -DLIBEXECDIR=\"$(libexecdir)\" $(SINGULARITY_DEFINES)
 
 lexecdir = $(libexecdir)/singularity/bin
 
-lexec_PROGRAMS = action builddef cleanupd get-section image-type mount prepheader start $(BUILD_SUID)
+lexec_PROGRAMS = action builddef cleanupd docker-extract get-section image-type mount prepheader start $(BUILD_SUID)
 EXTRA_PROGRAMS = action-suid mount-suid start-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
@@ -27,6 +27,11 @@ builddef_LDFLAGS = -static
 start_SOURCES = start.c util/util.c util/file.c util/registry.c util/privilege.c util/sessiondir.c util/suid.c util/cleanupd.c util/fork.c util/daemon.c util/signal.c util/mount.c
 start_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la action-lib/libinternal.la
 start_CPPFLAGS = $(AM_CPPFLAGS)
+
+docker_extract_SOURCES = docker-extract.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c util/suid.c
+docker_extract_LDADD = -larchive
+docker_extract_CPPFLAGS = $(AM_CPPFLAGS)
+docker_extract_LDFLAGS = -static
 
 mount_SOURCES = mount.c util/util.c util/file.c util/registry.c util/suid.c util/privilege.c util/mount.c
 mount_LDADD = lib/image/libsingularity-image.la lib/runtime/libsingularity-runtime.la

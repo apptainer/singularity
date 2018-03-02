@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -50,8 +51,8 @@ eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
-    message 1 "Exploding layer: $name\n"
-    zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf -) || exit $?
+    message 2 "Exploding layer: $name\n"
+    $SINGULARITY_libexecdir/singularity/bin/docker-extract "$i"
 done
 
 rm -f "$SINGULARITY_CONTENTS"

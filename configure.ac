@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.4],[gmkurtzer@lbl.gov])
+AC_INIT([singularity],[2.4.3],[gmkurtzer@gmail.com])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -237,23 +237,21 @@ AC_SUBST(USER_NS)
 
 AC_CHECK_FUNCS(setns, [
                       ], [
-                          NO_SETNS="-DNO_SETNS"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_NO_SETNS"
+                          AC_MSG_CHECKING([for setns kernel support])
+                          if test -d "/proc/self/ns"; then
+                              SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SETNS_SYSCALL"
+                              AC_MSG_RESULT([yes])
+                          else
+                              WARN_SETNS=1
+                              AC_MSG_RESULT([no])
+                          fi
                       ]
                   )
-AC_SUBST(NO_SETNS)
 
 
-AC_MSG_CHECKING([for setns syscall support])
-if test -d "/proc/self/ns"; then
-    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SETNS_SYSCALL"
-    SETNS_SYSCALL=1
-    AC_MSG_RESULT([yes])
-else
-    SETNS_SYSCALL=0
-    AC_MSG_RESULT([no])
-fi
-AC_SUBST(SETNS_SYSCALL)
 
+AC_SUBST(SINGULARITY_DEFINES)
 
 # ---------------------------------------------------------------------
 # PYTHON
@@ -279,8 +277,6 @@ else
     done
 
 fi
-
-AC_SUBST(SINGULARITY_DEFINES)
 
 AC_MSG_CHECKING([--with-slurm])
 AC_ARG_WITH([slurm],
@@ -338,6 +334,16 @@ AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
 AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
 AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
 
+# check for libarchive needed by docker-extract
+AC_CHECK_HEADERS([archive.h],
+[archive_header_found=yes; break;])
+AS_IF([test "x$archive_header_found" != "xyes"],
+[AC_MSG_ERROR([Unable to find the libarchive headers, need package libarchive-devel (libarchive-dev on Debian/Ubuntu)])])
+AC_SEARCH_LIBS([archive_read_new], [archive], [], [
+AC_MSG_ERROR([unable to find libarchive, need package libarchive-devel (libarchive-de on Debian/Ubuntu)])
+])
+
+CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([
    Makefile
@@ -401,7 +407,7 @@ AC_CONFIG_FILES([
 
 AC_OUTPUT
 
-if test "$SETNS_SYSCALL" = "0"; then
+if test -n "$WARN_SETNS"; then
     echo
     echo "WARNING: instance feature is disabled due to lack of kernel support"
     echo

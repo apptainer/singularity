@@ -42,8 +42,8 @@ CONTAINER FORMATS SUPPORTED:
     *.tar*              Tar archives are exploded to a temporary directory and
                         run within that directory (and cleaned up after). The
                         contents of the archive is a root file system with root
-                        being in the current directory. Compression suffixes as
-                        '.gz' and '.bz2' are supported.
+                        being in the current directory. All compression
+                        suffixes are supported.
     directory/          Container directories that contain a valid root file
                         system.
 

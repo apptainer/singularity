@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -57,6 +58,7 @@ char *random_string(int length);
 void free_tempfile(struct tempfile *tf);
 struct tempfile *make_tempfile(void);
 struct tempfile *make_logfile(char *label);
+void fd_cleanup(void);
 
 // Given a const char * string containing a base-10 integer,
 // try to convert to an C integer.

@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -48,6 +49,8 @@
 int main(int argc, char **argv) {
     struct image_object image;
 
+    fd_cleanup();
+
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     singularity_priv_init();
@@ -55,6 +58,8 @@ int main(int argc, char **argv) {
 
     singularity_registry_init();
     singularity_priv_drop();
+
+    singularity_runtime_autofs();
 
     if ( singularity_registry_get("WRITABLE") != NULL ) {
         singularity_message(VERBOSE3, "Instantiating writable container image object\n");

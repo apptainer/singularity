@@ -12,8 +12,32 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
 
-## [v2.4.1](https://github.com/singularityware/singularity/tree/development) (development)
+ - Fix permission denied when binding directory located on NFS with root_squash enabled
+ - Add capability to support all tar compression formats #1155
+ - Handle docker layer aufs whiteout files correctly (requires libarchive).
+ - Close file descriptors pointing to a directory #1305
+ - Updated output of image.print command #1190
+ - Fixed parsing of backslashes in apprun script #1189
+ - Fixed parsing of arch keyword from definition file #1217
+ - Fixed incompatibility between --pwd and --contain options #1259
+ - Updated license information #1267
+ - Fix non-root build from docker containers with non-writable file/dir permissions
+
+## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
+ - Fix race condition between container exit and cleanupd while removing runtime directory
+
+## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
+
+ - This fixed an issue for support of older distributions and kernels with regards to `setns()`
+   functionality.
+ - Fixed autofs bug path (lost during merge)
+
+## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (2017-11-22)
+
+### apprun script backslash removal fix
+ - Fixed the unwanted removal of backslashes in apprun scripts
 
 ### Security related fixes
  - Fixed container path and owner limitations (original merge was lost)
@@ -40,6 +64,8 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fix parsing of registry (including port), namespace, tags, and version
  - Add "$@" to any CMD/ENTRYPOINT found when building from Docker
  - Added sqaushfs-tools as a dependency for building deb files
+ - Fix terminal echo problem when using PID namespace and killing shell
+ - Fix SuSE squashFS package name in RPM spec
 
 ## [v2.4](https://github.com/singularityware/singularity/tree/v2.4) (2017-10-02)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3.2...2.4)

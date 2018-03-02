@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  * 
  * This software is licensed under a 3-clause BSD license.  Please
@@ -57,6 +58,8 @@ int main(int argc, char **argv) {
     siginfo_t siginfo;
     struct stat filestat;
 
+    fd_cleanup();
+
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     singularity_priv_init();
@@ -65,6 +68,8 @@ int main(int argc, char **argv) {
     singularity_registry_init();
     singularity_priv_userns();
     singularity_priv_drop();
+
+    singularity_runtime_autofs();
 
     singularity_registry_set("UNSHARE_PID", "1");
     singularity_registry_set("UNSHARE_IPC", "1");
