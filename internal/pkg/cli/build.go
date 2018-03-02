@@ -25,7 +25,7 @@ var buildCmd = &cobra.Command{
 			str, _ := cmd.Flags().GetString("deffile")
 
 			file, _ := os.Open(str)
-			d, _ := build.ParseDeffile(file)
+			d, _ := build.ParseDefinitionFile(file)
 
 			_ = d
 

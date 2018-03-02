@@ -206,7 +206,7 @@ func doHeader(r io.Reader) (header map[string]string, err error) {
 	return
 }
 
-func ParseDeffile(f *os.File) (Definition, error) {
+func ParseDefinitionFile(f *os.File) (Definition, error) {
 	header, err := doHeader(f)
 
 	f.Seek(0, 0)
