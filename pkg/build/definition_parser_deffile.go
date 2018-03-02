@@ -191,12 +191,12 @@ func doHeader(r io.Reader) (header map[string]string, err error) {
 
 	header = make(map[string]string)
 
-	/*fmt.Println("========Header========")
+	//fmt.Println("========Header========")
 	for s.Scan() {
 		tok := strings.SplitN(s.Text(), ":", 2)
 		header[tok[0]] = tok[1]
-		fmt.Printf("header[%s] = %s\n", tok[0], tok[1])
-	}*/
+		//fmt.Printf("header[%s] = %s\n", tok[0], tok[1])
+	}
 
 	if s.Err() != nil {
 		log.Fatal(s.Err())
