@@ -11,7 +11,7 @@ unset ml
 unset BASH_ENV
 
 # Provide a sane path within the container
-if [ -z ${SINGULARITYENV_PATH+x} ]; then
+if [ -z "${SINGULARITYENV_PATH}" ]; then
     SINGULARITYENV_PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 else
     SINGULARITYENV_PATH="$SINGULARITYENV_PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
