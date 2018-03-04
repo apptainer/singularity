@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <grp.h>
+#include <string.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -52,6 +53,7 @@ int _singularity_runtime_mount_dev(void) {
     if ( ( singularity_registry_get("CONTAIN") != NULL ) || ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) ) {
         char *sessiondir = singularity_registry_get("SESSIONDIR");
         char *devdir = joinpath(sessiondir, "/dev");
+        char *nvdevs = singularity_registry_get("NVDEV"); 
 
         if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
             int ret;
@@ -102,6 +104,17 @@ int _singularity_runtime_mount_dev(void) {
         bind_dev(sessiondir, "/dev/zero");
         bind_dev(sessiondir, "/dev/random");
         bind_dev(sessiondir, "/dev/urandom");
+
+        /* if the user passed the --nv flag and the --contain flag, still bind
+        nvidia devices */
+        if ( nvdevs != NULL ) {
+            char *nvdev = strtok(nvdevs, ",");
+            while ( nvdev != NULL ) {
+                singularity_message(2, "Binding device %s\n", nvdev);
+                bind_dev(sessiondir, nvdev);
+                nvdev = strtok(NULL, ",");
+            }
+        }
 
         singularity_message(DEBUG, "Mounting tmpfs for staged /dev/shm\n");
         if ( singularity_mount("/dev/shm", joinpath(devdir, "/shm"), "tmpfs", MS_NOSUID, "") < 0 ) {

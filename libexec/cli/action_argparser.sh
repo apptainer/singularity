@@ -123,6 +123,11 @@ while true; do
         ;;
         --nv)
             shift
+            # if the --contain option is used, we will also need to bind mount
+            # whatever nvidia devices exist. $SINGULARITY_NVDEV is used in 
+            # src/lib/runtime/mounts/dev/dev.c
+            SINGULARITY_NVDEV=`ls /dev/nvidia* | tr '\n' ','`
+            export SINGULARITY_NV SINGULARITY_NVDEV
             SINGULARITY_NVLIBLIST=`mktemp ${TMPDIR:-/tmp}/.singularity-nvliblist.XXXXXXXX`
             cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" > $SINGULARITY_NVLIBLIST
             for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
@@ -147,6 +152,8 @@ while true; do
                 else
                     SINGULARITY_BINDPATH="${NVIDIA_SMI}"
                 fi
+
+                # SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},/dev/nvidia0"
                 export SINGULARITY_BINDPATH
             else
                 message WARN "Could not find the Nvidia SMI binary to bind into container\n"
