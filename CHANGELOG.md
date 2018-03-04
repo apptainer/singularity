@@ -12,6 +12,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.4.5](https://github.com/singularityware/singularity/tree/release-2.5)
+ - Fix conflict between `--nv` and `--contain` options
+
 ## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
 
  - Removed capability to handle docker layer aufs whiteout files correctly as
