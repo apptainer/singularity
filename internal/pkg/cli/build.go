@@ -15,7 +15,6 @@ import (
 var (
 	sandbox  bool
 	writable bool
-	remote   bool
 	force    bool
 	noTest   bool
 	section  string
