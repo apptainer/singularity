@@ -1,11 +1,10 @@
 /*
-Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+ Copyright (c) 2018, Sylabs, Inc. All rights reserved.
 
-This software is licensed under a 3-clause BSD license.  Please
-consult LICENSE file distributed with the sources of this project regarding
-your rights to use or distribute this software.
+ This software is licensed under a 3-clause BSD license.  Please
+ consult LICENSE file distributed with the sources of this project regarding
+ your rights to use or distribute this software.
 */
-
 package cli
 
 import (
@@ -34,7 +33,6 @@ func init() {
 	singularityCmd.AddCommand(buildCmd)
 
 	buildCmd.PersistentFlags().BoolVarP(&sandbox, "sandbox", "s", false, "")
-	buildCmd.PersistentFlags().BoolVarP(&remote, "remote", "r", false, "")
 	buildCmd.PersistentFlags().BoolVarP(&writable, "writable", "w", false, "")
 	buildCmd.PersistentFlags().BoolVarP(&force, "force", "f", false, "")
 	buildCmd.PersistentFlags().BoolVarP(&noTest, "notest", "T", false, "")
@@ -76,7 +74,6 @@ func init() {
 			docker://   This points to a Docker registry (Docker Hub default)
 		
 	BUILD OPTIONS:
-		-r|--remote		Build will be run on Sylabs cloud
 		-s|--sandbox    Build a sandbox rather then a read only compressed image
 		-w|--writable   Build a writable image (warning: deprecated due to sparse
 						file image corruption issues)
