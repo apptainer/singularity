@@ -6,7 +6,7 @@ and **Merged pull requests**. All closed issued and bug fixes should be
 represented by the pull requests that fixed them. This log originated with Singularity 2.4
 and changes prior to that are (unfortunately) done retrospectively. Critical items to know are:
 
- - renamed, deprecaed, or removed commands
+ - renamed, deprecated, or removed commands
  - defaults that are changed
  - backward incompatible changes (recipe file format? image file format?)
  - migration guidance (how to convert images?)
@@ -16,7 +16,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
  - Removed capability to handle docker layer aufs whiteout files correctly as
    it increased potential attack surface on some distros (with apologies to 
-   users who requestd it).
+   users who requested it).
 
 ## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
 
