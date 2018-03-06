@@ -36,10 +36,11 @@ test.sh
 
 src/action
 src/action-suid
-src/start
-src/start-suid
 src/builddef
 src/cleanupd
+src/docker-extract
+src/get-configvals
+src/get-section
 src/image-type
 src/mount
 src/mount-suid
@@ -47,6 +48,7 @@ src/prepheader
 src/sinit
 src/get-section
 src/stamp-h1
+src/verify
 src/include/stamp-h1
 src/.dirstamp
 src/sinit

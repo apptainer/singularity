@@ -126,6 +126,9 @@ TAG = "latest"
 # Container Metadata
 DOCKER_NUMBER = 10  # number to start docker files at in ENV_DIR
 DOCKER_PREFIX = "docker"
+
+# Default docker path defined in C, subtracted from Docker 10-docker.sh
+DOCKER_PATH = "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 SHUB_PREFIX = "shub"
 
 # Defaults for environment, runscript, labels
