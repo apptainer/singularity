@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -46,6 +47,7 @@ if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     exit 1
 fi
 
+ARCH="${SINGULARITY_DEFFILE_ARCH:-}"
 if [ -n "${ARCH:-}" ]; then
     ARCH=`echo ${ARCH:-} | sed -e 's/\s//g'`
 else

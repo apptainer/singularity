@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 
@@ -40,18 +41,7 @@ zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
     message 2 "Exploding layer: $name\n"
-    # Settings of file privileges must be buffered
-    files=$( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -)) || exit $?
-    for file in $files; do
-        if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
-            # Skipping symlinks
-            true
-        elif [ -f "$SINGULARITY_ROOTFS/$file" ]; then
-            chmod u+rw "$SINGULARITY_ROOTFS/$file" >/dev/null 2>&1
-        elif [ -d "$SINGULARITY_ROOTFS/$file" ]; then
-            chmod u+rwx "$SINGULARITY_ROOTFS/${file%/}" >/dev/null 2>&1
-        fi
-    done
+    $SINGULARITY_libexecdir/singularity/bin/docker-extract "$i"
 done
 
 rm -f "$SINGULARITY_CONTENTS"

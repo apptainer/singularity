@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -64,6 +65,7 @@ int _singularity_runtime_ns_mnt(void) {
         singularity_message(ERROR, "Could not virtualize mount namespace: %s\n", strerror(errno));
         ABORT(255);
     }
+    singularity_priv_drop();
 
     // Privatize the mount namespaces
     //
@@ -87,7 +89,6 @@ int _singularity_runtime_ns_mnt(void) {
     }
 #endif
 
-    singularity_priv_drop();
     enabled = 0;
     return(0);
 }

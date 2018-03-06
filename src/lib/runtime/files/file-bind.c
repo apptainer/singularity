@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -62,21 +63,17 @@ int container_file_bind(char *source, char *dest_path) {
         return(0);
     }
 
-    singularity_priv_escalate();
     singularity_message(VERBOSE, "Binding file '%s' to '%s'\n", source, dest);
     if ( singularity_mount(source, dest, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
-        singularity_priv_drop();
         singularity_message(ERROR, "There was an error binding %s to %s: %s\n", source, dest, strerror(errno));
         ABORT(255);
     }
     if ( singularity_priv_userns_enabled() != 1 ) {
         if ( singularity_mount(NULL, dest, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
-            singularity_priv_drop();
             singularity_message(ERROR, "There was an error remounting %s to %s: %s\n", source, dest, strerror(errno));
             ABORT(255);
         }
     }
-    singularity_priv_drop();
 
     return(0);
 }

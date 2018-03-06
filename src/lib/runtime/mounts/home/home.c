@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -99,7 +100,6 @@ int _singularity_runtime_mount_home(void) {
 
     singularity_message(DEBUG, "Checking if SINGULARITY_CONTAIN is set\n");
     if ( ( singularity_registry_get("CONTAIN") == NULL ) || ( singularity_registry_get("HOME") != NULL ) ) {
-        singularity_priv_escalate();
         singularity_message(VERBOSE, "Mounting home directory source into session directory: %s -> %s\n", home_source, joinpath(session_dir, home_dest));
         if ( singularity_mount(home_source, joinpath(session_dir, home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to mount home directory %s -> %s: %s\n", home_source, joinpath(session_dir, home_dest), strerror(errno));
@@ -111,7 +111,6 @@ int _singularity_runtime_mount_home(void) {
                 ABORT(255);
             }
         }
-        singularity_priv_drop();
     } else {
         singularity_message(VERBOSE, "Using sessiondir for home directory\n");
     }
@@ -134,13 +133,11 @@ int _singularity_runtime_mount_home(void) {
             ABORT(255);
         }
 
-        singularity_priv_escalate();
         singularity_message(VERBOSE, "Mounting staged home directory base to container's base dir: %s -> %s\n", joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base));
         if ( singularity_mount(joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to mount staged home base: %s -> %s: %s\n", joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base), strerror(errno));
             ABORT(255);
         }
-        singularity_priv_drop();
 
         free(homedir_base);
     } else {
@@ -152,14 +149,13 @@ int _singularity_runtime_mount_home(void) {
             singularity_message(ERROR, "Failed creating home directory in container %s: %s\n", joinpath(container_dir, home_dest), strerror(errno));
             ABORT(255);
         }
+        singularity_priv_drop();
 
         singularity_message(VERBOSE, "Mounting staged home directory to container: %s -> %s\n", joinpath(session_dir, home_dest), joinpath(container_dir, home_dest));
         if ( singularity_mount(joinpath(session_dir, home_dest), joinpath(container_dir, home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to mount staged home base: %s -> %s: %s\n", joinpath(session_dir, home_dest), joinpath(container_dir, home_dest), strerror(errno));
             ABORT(255);
         }
-        singularity_priv_drop();
-
     }
 
     envar_set("HOME", home_dest, 1);

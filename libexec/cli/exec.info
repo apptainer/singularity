@@ -20,7 +20,8 @@ EXEC OPTIONS:
                         default). This option can be called multiple times.
     -c|--contain        Use minimal /dev and empty other directories (e.g. /tmp
                         and $HOME) instead of sharing filesystems on your host
-    -C|--containall     Contain not only file systems, but also PID and IPC 
+    -C|--containall     Contain not only file systems, but also PID, IPC, and
+                        environment
     -e|--cleanenv       Clean environment before running container
     -H|--home <spec>    A home directory specification.  spec can either be a
                         src path or src:dest pair.  src is the source path
@@ -53,8 +54,8 @@ CONTAINER FORMATS SUPPORTED:
     *.tar*              Tar archives are exploded to a temporary directory and
                         run within that directory (and cleaned up after). The
                         contents of the archive is a root file system with root
-                        being in the current directory. Compression suffixes as
-                        '.gz' and '.bz2' are supported.
+                        being in the current directory. All compression 
+                        suffixes are supported.
     directory/          Container directories that contain a valid root file
                         system.
     instance://*        A local running instance of a container. (See the 
