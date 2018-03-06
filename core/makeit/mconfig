@@ -1,0 +1,503 @@
+#!/bin/sh -
+# Copyright (c) 2016-2018, Yannick Cote <yanick@divyan.org>. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be found
+# in the LICENSE file.
+set -e
+
+# defaults and compiler options
+verbose=0
+debug=0
+hstcc=
+hstcc_opts="cc gcc clang i686-w64-mingw32-gcc x86_64-w64-mingw32-gcc"
+hstcxx=
+hstcxx_opts="c++ g++ clang++ i686-w64-mingw32-g++ x86_64-w64-mingw32-g++"
+tgtcc=
+tgtcc_opts=$hstcc_opts
+tgtcxx=
+tgtcxx_opts=$hstcxx_opts
+hststatic=0
+tgtstatic=0
+
+
+
+usage () {
+	echo "${0##*/}: could not complete configuration"
+}
+
+usage_args () {
+	echo "usage: ${0##*/}: [-dvsS] [-b builddir] [-c hstcc] [-C tgtcc]"
+	echo "                 [-x hstcxx] [-X tgtcxx]"
+	echo "       -v build project with verbose flags on"
+	echo "       -d build project with debug flags on"
+	echo "       -s build final host project binary statically"
+	echo "       -S build final target project binary statically"
+	echo "       -b build project in \`builddir'"
+	echo "       -c build project with host C \`compiler'"
+	echo "       -C build project with target C\`compiler'"
+	echo "       -x build project with host C++ \`compiler'"
+	echo "       -h this help"
+	echo "\`host C compiler': $hstcc_opts"
+	echo "\`host C++ compiler': $hstcxx_opts"
+	echo "\`target C compiler': $tgtcc_opts"
+}
+
+# save the command line
+cmdline="`readlink -f $0` $*"
+
+# check line options
+args=`getopt b:c:C:dsSvx:h $*`
+if [ $? -ne 0 ]; then
+	usage_args
+	exit 2
+fi
+set -- $args
+while [ $# -ne 0 ]; do
+ case $1 in
+  -b) builddir="$2"; shift; shift;;
+  -c) hstcc="$2"; shift; shift;;
+  -C) tgtcc="$2"; shift; shift;;
+  -x) hstcxx="$2"; shift; shift;;
+  -d) debug=1; shift;;
+  -s) hststatic=1; shift;;
+  -S) tgtstatic=1; shift;;
+  -v) verbose=1; shift;;
+  -h) usage_args; exit 2;;
+  --) shift; break;;
+  ?) usage_args
+     exit 2;;
+ esac
+done
+#
+# non-option param
+if [ $# != 0 ]; then
+	usage_args
+	exit 2
+fi
+sourcedir=`readlink -f .`
+mfragsdir=$sourcedir/mfrags
+
+
+
+#######################################################################
+# System build tool configuration and debug/verbose flags 
+#######################################################################
+
+########################
+# builddir
+########################
+if [ "$builddir" = "" ]; then
+	builddir=builddir
+fi
+if [ -e $builddir -a $builddir != "." -a $builddir != ".." ]; then
+	printf "$builddir already exist, remove ? [N/y] "
+	read var
+	if [ "$var" = "y" -o "$var" = "Y" ]; then
+		rm -rf $builddir
+	else
+		echo "error: choose another build directory"
+		exit 2
+	fi
+fi
+mkdir -p $builddir
+
+
+########################
+# this product
+########################
+output=$builddir/Makefile
+
+
+########################
+# mconfig paths
+########################
+topdir=`dirname \`readlink mconfig\``
+genconfdir=`mktemp -d -p /tmp mconfig-generated-XXXXXXXXXX`
+genmk=$genconfdir/base.mk
+:>$genmk
+
+
+########################
+# host compilers
+########################
+if [ "$hstcc" = "" ]; then
+	printf " checking: host C compiler... "
+	for cc in $hstcc_opts; do
+		if $cc -E -x c /dev/null >/dev/null 2>&1; then
+			hstcc="$cc"
+			break
+		fi
+	done
+	if [ "$hstcc" != "" ]; then
+		echo $hstcc
+	else
+		echo "not found!"
+		usage
+		exit 1
+	fi
+else
+	printf " checking: host C compiler... "
+	if $hstcc -E -x c /dev/null >/dev/null 2>&1; then
+		echo $hstcc
+	else
+		echo "$hstcc cannot compile test code!"
+		usage
+		exit 1
+	fi
+
+fi
+if [ "$hstcxx" = "" ]; then
+	printf " checking: host C++ compiler... "
+	for cxx in $hstcxx_opts; do
+		if $cxx -E -x c++ /dev/null >/dev/null 2>&1; then
+			hstcxx="$cxx"
+			break
+		fi
+	done
+	if [ "$hstcxx" != "" ]; then
+		echo $hstcxx
+	else
+		echo "not found!"
+		usage
+		exit 1
+	fi
+else
+	printf " checking: host C++ compiler... "
+	if $hstcxx -E -x c++ /dev/null >/dev/null 2>&1; then
+		echo $hstcxx
+	else
+		echo "$hstcxx cannot compile test code!"
+		usage
+		exit 1
+	fi
+fi
+
+
+########################
+# target
+########################
+if [ "$tgtcc" = "" ]; then
+	tgtcc=$hstcc
+fi
+if [ "$tgtcxx" = "" ]; then
+	tgtcxx=$hstcxx
+fi
+
+
+########################
+# target compilers
+########################
+
+printf " checking: target C compiler... "
+if $tgtcc -E -x c /dev/null >/dev/null 2>&1; then
+	echo $tgtcc
+else
+	echo "$tgtcc cannot compile test code!"
+	usage
+	exit 1
+fi
+printf " checking: target C++ compiler... "
+if $tgtcxx -E -x c++ /dev/null >/dev/null 2>&1; then
+	echo $tgtcxx
+else
+	echo "$tgtcxx cannot compile test code!"
+	usage
+	exit 1
+fi
+
+
+########################
+# static
+########################
+printf " checking: host compiles static binaries... "
+if ! echo "int main(int args, char *argv[]) { return 0; }" | \
+   $hstcc -x c -static -o /dev/null - >/dev/null 2>&1; then
+	hststatic=0
+	echo "no"
+else
+	echo "yes"
+fi
+printf " checking: target compiles static binaries... "
+if ! echo "int main(int args, char *argv[]) { return 0; }" | \
+   $tgtcc -x c -static -o /dev/null - >/dev/null 2>&1; then
+	tgtstatic=0
+	echo "no"
+else
+	echo "yes"
+fi
+
+
+########################
+# host os
+########################
+printf " checking: host os type... "
+host=
+if echo | $hstcc -E -dM - | grep -qs -e __unix__ -e __unix -e unix \
+	-e __APPLE__; then
+	host="unix"
+fi
+if echo | $hstcc -E -dM - | grep -qs -e _WIN32 -e _WIN64 -e __WIN32 \
+	-e __WIN64 -e __WINNT -e __WINNT__ -e __WIN32__ -e WINNT -e __WIN64__ \
+	-e WIN32 -e WIN64; then
+	host="windows"
+fi
+if [ "$host" != "" ]; then
+	echo $host
+else
+	echo "not found!"
+	usage
+	exit 1
+fi
+
+
+########################
+# target architecture
+########################
+printf " checking: target architecture... "
+tgt_arch=
+if echo | $hstcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
+	tgt_arch=i386
+fi
+if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
+	-e __x86_64__; then
+	tgt_arch=x86_64
+fi
+if [ "$tgt_arch" != "" ]; then
+	echo $tgt_arch
+else
+	echo "not found!"
+	usage
+	exit 1
+fi
+
+
+########################
+# wordsize
+########################
+printf " checking: architecture word size... "
+wordsize=
+if echo | $hstcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
+	wordsize=32
+fi
+if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
+	-e __x86_64__; then
+	wordsize=64
+fi
+if [ "$wordsize" != "" ]; then
+	echo $wordsize
+else
+	echo "not found!"
+	usage
+	exit 1
+fi
+
+
+########################
+# verbose
+########################
+echo " checking: verbose flag... $verbose"
+
+
+########################
+# debug
+########################
+echo " checking: debug flag... $debug"
+
+
+
+#######################################################################
+# Generated fragments
+#######################################################################
+
+echo " generating fragments ..."
+if [ ! -d $mfragsdir ]; then
+	echo "error: $mfragsdir should be populated with Makefile fragments."
+	echo "NOTE: Fragments maybe copied from examples found in"
+	echo "NOTE: $topdir/fragments/example/* and tweak for your project."
+	exit 2
+fi
+
+
+########################
+# verbosity
+########################
+if [ "$verbose" = 1 ]; then
+	echo "# build with verbose flag on" >> $genmk
+	echo "V :=" >> $genmk
+else
+	echo "# silent build" >> $genmk
+	echo "V := @" >> $genmk
+fi
+echo >> $genmk
+
+
+########################
+# build tools
+########################
+cat >> $genmk << EOF
+# source/build locations
+BUILDDIR := .
+SOURCEDIR := $sourcedir
+CONTRIBDIR := $contribdir
+
+HOSTAR := ar
+HOSTCC := $hstcc
+HOSTCXX := $hstcxx
+HOSTLD := $hstcc
+HOSTRANLIB := ranlib
+HOSTSIZE := size
+HOSTOBJCOPY := objcopy
+
+AR := `readlink -f \`$tgtcc -print-prog-name=ar\``
+CC := $tgtcc
+CXX := $tgtcxx
+LD := `readlink -f \`$tgtcc -print-prog-name=ld\``
+RANLIB := `readlink -f \`$tgtcc -print-prog-name=ranlib\``
+SIZE := size
+OBJCOPY := `readlink -f \`$tgtcc -print-prog-name=objcopy\``
+
+ARCH := $tgt_arch
+
+EOF
+
+
+########################
+# modules
+########################
+:>$genconfdir/module.lst
+
+found_modules=`(cat modules | awk '{ printf("%s ", $0) }') \
+		2>/dev/null || true`
+if [ "$found_modules" = "" ]; then
+	found_modules=`find . -name *.mconf -print`
+	if [ "$found_modules" = "" ]; then
+		echo "error: no build modules found !"
+		echo
+		echo "You need to at least create one \`<module_name>.mconf' "
+		echo "file describing either a program, a lib, or a set of"
+		echo "objects to build."
+		exit 2
+	fi
+fi
+echo " found build modules:"
+echo "CPPFLAGS :=" >> $genmk
+# NOTE: parsed module (*.mconf) files only substitute var tgt_arch for now
+for m in $found_modules; do
+	mod=`eval echo ${m##*./}`
+	modpath=`eval echo ${mod%/*}`
+	if [ ! -f $mod ]; then
+		echo "error: module file \`$mod' not found!"
+		exit 2
+	fi
+
+	echo "   +-> $mod"
+	echo "$modpath `eval basename $mod`" >> $genconfdir/module.lst
+	mkdir -p $genconfdir/$modpath
+	cat $mod | awk -v tgt_arch=$tgt_arch '{ gsub(/tgt_arch/, \
+				tgt_arch); print }' > $genconfdir/${mod}.parsed
+	echo "CPPFLAGS += -iquote\$(SOURCEDIR)/$modpath" >> $genmk
+done
+echo >> $genmk
+
+# init LDFLAGS if static builds are supported
+if [ "$hststatic" = "1" -a "$tgtstatic" = "1" ]; then
+	echo "LDFLAGS := -static" >> $genmk
+else
+	echo "LDFLAGS :=" >> $genmk
+fi
+echo >> $genmk
+
+cat >> $genmk << EOF
+# make sure \`all' is the first rule
+all:
+EOF
+
+
+# call genmod.awk, generating Makefile components
+$topdir/genmod.awk modfile=$genconfdir/module.lst \
+	topdir=$sourcedir \
+	host=$host \
+	verbose=$verbose \
+	debug=$debug \
+	genconfdir=$genconfdir \
+	tmpldir=$topdir/tmpl
+
+
+
+#######################################################################
+# Target Makefile
+#######################################################################
+
+drawline () {
+	echo >> $output
+	printf "# [ Embedding file : %50s ] #\n" $1 >> $output
+	echo >> $output
+}
+
+echo " building Makefile ..."
+
+:> $output
+echo "#" >> $output
+echo "# Non-recursive Makefile GENERATED by \`${0##*/}' -- `date`" >> $output
+echo "# configured: $cmdline" >> $output
+echo "#" >> $output
+
+drawline $genmk
+cat $genmk >> $output
+
+drawline $mfragsdir/common_opts.mk
+cat $mfragsdir/common_opts.mk >> $output
+
+if [ "$debug" != 1 ]; then
+	drawline $mfragsdir/release_opts.mk
+	cat $mfragsdir/release_opts.mk >> $output
+else
+	drawline $mfragsdir/debug_opts.mk
+	cat $mfragsdir/debug_opts.mk >> $output
+fi
+
+if [ -f "$mfragsdir/arch_${tgt_arch}_opts.mk" ]; then
+	drawline $mfragsdir/arch_${tgt_arch}_opts.mk
+	cat $mfragsdir/arch_${tgt_arch}_opts.mk >> $output
+fi
+
+drawline $genconfdir/modules.mk
+cat $genconfdir/modules.mk >> $output
+
+drawline $genconfdir/all.mk
+cat $genconfdir/all.mk >> $output
+
+drawline $mfragsdir/Makefile.stub
+# here, `depends' need to happen after all other rules; at the very end
+final_all=`cat $genconfdir/all.mk | awk 'BEGIN { FS="all: " } { print $2 }'`
+cat $mfragsdir/Makefile.stub | awk \
+	"{ gsub(/^collect:/, \"collect: $final_all\"); print }" >> $output
+
+
+rm -rf $genconfdir
+
+
+
+#######################################################################
+# Configuration results
+#######################################################################
+
+echo "------------------------"
+echo " project setup with :"
+echo "    - target arch: $tgt_arch"
+echo "    - target compiler: $tgtcc"
+echo "    - host wordsize: ${wordsize}-bit"
+echo "    - host system: $host"
+if [ "$verbose" = 1 ]; then
+	echo "    - verbose: yes"
+else
+	echo "    - verbose: no"
+fi
+if [ "$debug" = 1 ]; then
+	echo "    - debug: yes"
+else
+	echo "    - debug: no"
+fi
+echo "------------------------"
+
+echo " $builddir/Makefile ready:"
+echo " cd $builddir; make"
