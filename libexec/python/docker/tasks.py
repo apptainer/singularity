@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),  # noqa
                 os.path.pardir)))  # noqa
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from sutils import (
     add_http,
@@ -181,7 +181,7 @@ def extract_env(manifest):
         lines = []
         for line in environ:
             line = re.findall("(?P<var_name>.+?)=(?P<var_value>.+)", line)
-            
+
             for x in line:
                 varname = x[0]
                 varval = x[1]
@@ -189,9 +189,9 @@ def extract_env(manifest):
                 # For PATH, subtract Docker set PATH from Singularity default
 
                 if varname == "PATH":
-                    components = varval.split(':')
-                    components = [x for x in components if x not in DOCKER_PATH]
-                    varval = "$PATH:%s" % ":".join(components)
+                    parts = varval.split(':')
+                    parts = [x for x in parts if x not in DOCKER_PATH]
+                    varval = "$PATH:%s" % ":".join(parts)
 
                 line = 'export %s="%s"' % (varname, varval.strip(':'))
                 lines.append(line)
