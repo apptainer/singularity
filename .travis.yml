@@ -6,7 +6,6 @@ addons:
       - flawfinder
       - python-pip
       - squashfs-tools
-      - libarchive-dev
 
 env:
   global:

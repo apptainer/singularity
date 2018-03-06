@@ -12,6 +12,12 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
+
+ - Removed capability to handle docker layer aufs whiteout files correctly as
+   it increased potential attack surface on some distros (with apologies to 
+   users who requestd it).
+
 ## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
 
  - Fix permission denied when binding directory located on NFS with root_squash enabled

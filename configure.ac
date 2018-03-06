@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.4.3],[gmkurtzer@gmail.com])
+AC_INIT([singularity],[2.4.4],[gmkurtzer@gmail.com])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -334,16 +334,6 @@ AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
 AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
 AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
 
-# check for libarchive needed by docker-extract
-AC_CHECK_HEADERS([archive.h],
-[archive_header_found=yes; break;])
-AS_IF([test "x$archive_header_found" != "xyes"],
-[AC_MSG_ERROR([Unable to find the libarchive headers, need package libarchive-devel (libarchive-dev on Debian/Ubuntu)])])
-AC_SEARCH_LIBS([archive_read_new], [archive], [], [
-AC_MSG_ERROR([unable to find libarchive, need package libarchive-devel (libarchive-de on Debian/Ubuntu)])
-])
-
-CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([
    Makefile

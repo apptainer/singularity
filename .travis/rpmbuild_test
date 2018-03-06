@@ -1,13 +1,12 @@
 #!/bin/bash -ex
 
-# this script runs as root under docker
+# this script runs as root under docker 
 
 OS_VERSION="$1"
 
 # build and install
-yum install -y libtool rpm-build make yum-utils squashfs-tools libarchive-devel
+yum install -y libtool rpm-build make squashfs-tools
 ./autogen.sh
-yum-builddep -y singularity.spec
 ./configure
 make dist
 rpmbuild -ta *.tar.gz
