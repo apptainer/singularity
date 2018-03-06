@@ -37,19 +37,21 @@ secbuildimg.sh
 
 src/action
 src/action-suid
-src/start
-src/start-suid
 src/builddef
 src/cleanupd
+src/docker-extract
+src/get-configvals
+src/get-section
 src/image-type
 src/mount
 src/mount-suid
 src/sif
-src/sinit
-src/get-section
 src/sign
-src/verify
+src/sinit
+src/start
+src/start-suid
 src/stamp-h1
+src/verify
 src/include/stamp-h1
 src/.dirstamp
 src/wrapper
