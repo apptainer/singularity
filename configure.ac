@@ -342,6 +342,8 @@ AS_IF([test "x$archive_header_found" != "xyes"],
 AC_SEARCH_LIBS([archive_read_new], [archive], [], [
 AC_MSG_ERROR([unable to find libarchive, need package libarchive-devel (libarchive-de on Debian/Ubuntu)])
 ])
+# we don't want the LIBS setting of AC_SEARCH_LIBS, override
+AC_SUBST(LIBS,"")
 
 CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
