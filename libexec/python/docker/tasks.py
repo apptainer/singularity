@@ -190,10 +190,10 @@ def extract_env(manifest):
 
                 if varname == "PATH":
                     components = varval.split(':')
-                    components = [x for x in components if x not in DOCKER_PATH]  
-                    varval = "$PATH:%s" % (":".join(DOCKER_PATH + components))
+                    components = [x for x in components if x not in DOCKER_PATH]
+                    varval = "$PATH:%s" % ":".join(components)
 
-                line = 'export %s="%s"' % (varname, varval)
+                line = 'export %s="%s"' % (varname, varval.strip(':'))
                 lines.append(line)
 
         environ = "\n".join(lines)
