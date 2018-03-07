@@ -124,11 +124,6 @@ func doSections(r io.Reader) (sections map[string]string, err error) {
 		return nil, s.Err()
 	}
 
-	/*fmt.Println("=======Sections=======")
-	for k, v := range sections {
-		fmt.Printf("Section[%s]:\n%s\n\n", k, v)
-	}*/
-
 	return
 }
 
@@ -191,11 +186,9 @@ func doHeader(r io.Reader) (header map[string]string, err error) {
 
 	header = make(map[string]string)
 
-	//fmt.Println("========Header========")
 	for s.Scan() {
 		tok := strings.SplitN(s.Text(), ":", 2)
 		header[tok[0]] = tok[1]
-		//fmt.Printf("header[%s] = %s\n", tok[0], tok[1])
 	}
 
 	if s.Err() != nil {
@@ -236,7 +229,6 @@ func ParseDefinitionFile(f *os.File) (Definition, error) {
 
 func writeSectionIfExists(w io.Writer, ident string, s string) {
 	if len(s) > 0 {
-		//fmt.Printf("section[%s]:\n%s\n\n", ident, s)
 		w.Write([]byte("%"))
 		w.Write([]byte(ident))
 		w.Write([]byte("\n"))
@@ -246,9 +238,8 @@ func writeSectionIfExists(w io.Writer, ident string, s string) {
 }
 
 func (d *Definition) WriteDefinitionFile(w io.Writer) {
-	//fmt.Println("=======BEGIN DEFINITION FILE WRITE=======")
+
 	for k, v := range d.Header {
-		//fmt.Printf("header[%s] = %s\n", k, v)
 		w.Write([]byte(k))
 		w.Write([]byte(": "))
 		w.Write([]byte(v))
@@ -262,8 +253,6 @@ func (d *Definition) WriteDefinitionFile(w io.Writer) {
 	writeSectionIfExists(w, "pre", d.BuildData.Pre)
 	writeSectionIfExists(w, "setup", d.BuildData.Setup)
 	writeSectionIfExists(w, "post", d.BuildData.Post)
-
-	//fmt.Println("========END DEFINITION FILE WRITE========")
 }
 
 /* ==================================================================*/
