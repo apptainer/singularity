@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"regexp"
 	"strings"
 	"unicode"
@@ -36,7 +35,7 @@ var validSections = map[string]bool{
 // scanSections is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
 // that designated by a line starting with %
 // If there are any Golang devs reading this, please improve your documentation for this. It's awful.
-func scanSections(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	var inSection bool = false
 	var retbuf bytes.Buffer
 	advance = 0
@@ -45,7 +44,7 @@ func scanSections(data []byte, atEOF bool) (advance int, token []byte, err error
 
 	for advance < l {
 		// We are essentially a pretty wrapper to bufio.ScanLines.
-		a, line, err := bufio.ScanLines(data, atEOF)
+		a, line, err := bufio.ScanLines(data[advance:], atEOF)
 		if err != nil && err != bufio.ErrFinalToken {
 			return 0, nil, err
 		} else if line == nil { // If ScanLines returns a nil line, it needs more data. Send req for more data
@@ -70,12 +69,18 @@ func scanSections(data []byte, atEOF bool) (advance int, token []byte, err error
 				if inSection {
 					// Here we found the end of the section
 					return advance, retbuf.Bytes(), nil
-				} else {
-					// Here is the start of a section, write the section into the return buffer and
-					// flag that we've found the start of a section
+				} else if advance == 0 {
+					// When advance == 0 and we found a section identifier, that means we have already
+					// parsed the header out and left the % as the first character in the data. This means
+					// we can now parse into sections.
 					retbuf.Write(word[1:])
 					retbuf.WriteString("\n")
 					inSection = true
+				} else {
+					// When advance != 0, that means we found the start of a section but there is
+					// data before it. We return the data up to the first % and that is the header
+					retbuf.WriteString(strings.TrimSpace(string(data[:advance])))
+					return advance, retbuf.Bytes(), nil
 				}
 			}
 		} else {
@@ -89,7 +94,7 @@ func scanSections(data []byte, atEOF bool) (advance int, token []byte, err error
 
 		// Shift the advance retval and the data slice to the next line
 		advance += a
-		data = data[a:]
+		//data = data[:]
 		if a == 0 {
 			break
 		}
@@ -102,11 +107,13 @@ func scanSections(data []byte, atEOF bool) (advance int, token []byte, err error
 	}
 }
 
-func doSections(r io.Reader) (sections map[string]string, err error) {
+func doDefinitionFile(r io.Reader) (sections map[string]string, header map[string]string, err error) {
 	s := bufio.NewScanner(r)
-	s.Split(scanSections)
+	s.Split(scanDefinitionFile)
 
 	sections = make(map[string]string)
+	s.Scan()
+	header, err = doHeader(s.Text())
 
 	for s.Scan() {
 		b := s.Bytes()
@@ -121,17 +128,20 @@ func doSections(r io.Reader) (sections map[string]string, err error) {
 
 	if s.Err() != nil {
 		log.Fatal(s.Err())
-		return nil, s.Err()
+		return nil, nil, s.Err()
 	}
 
-	/*fmt.Println("=======Sections=======")
-	for k, v := range sections {
-		fmt.Printf("Section[%s]:\n%s\n\n", k, v)
-	}*/
+	/*
+		fmt.Println("=======Sections=======")
+		for k, v := range sections {
+			fmt.Printf("Section[%s]:\n%s\n\n", k, v)
+		}
+	*/
 
 	return
 }
 
+/*
 // validHeaders just contains a list of all the valid headers a definition file
 // could contain. If any others are found, an error will generate
 var validHeaders = map[string]bool{
@@ -145,6 +155,7 @@ var validHeaders = map[string]bool{
 	"include":    true,
 }
 
+/*
 // scanHeader is a SplitFunc to extract header tokens, token format: "key:val"
 func scanHeader(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	var retbuf bytes.Buffer
@@ -205,12 +216,24 @@ func doHeader(r io.Reader) (header map[string]string, err error) {
 
 	return
 }
+*/
 
-func ParseDefinitionFile(f *os.File) (Definition, error) {
-	header, err := doHeader(f)
+func doHeader(h string) (header map[string]string, err error) {
+	toks := strings.Split(h, "\n")
+	header = make(map[string]string)
 
-	f.Seek(0, 0)
-	sections, err := doSections(f)
+	for _, line := range toks {
+		linetoks := strings.SplitN(line, ":", 2)
+		key, val := strings.ToLower(strings.TrimSpace(linetoks[0])), strings.TrimSpace(linetoks[1])
+		header[key] = val
+		//fmt.Printf("header[%s] = %s\n", key, val)
+	}
+
+	return
+}
+
+func ParseDefinitionFile(r io.Reader) (Definition, error) {
+	sections, header, err := doDefinitionFile(r)
 
 	def := Definition{
 		Header: header,

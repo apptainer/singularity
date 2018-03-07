@@ -8,6 +8,10 @@
 package cli
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/singularityware/singularity/pkg/build"
 	"github.com/spf13/cobra"
 )
 
@@ -17,14 +21,21 @@ var (
 	writable bool
 	force    bool
 	noTest   bool
-	section  string
+	defPath  string
 )
 
 // buildCmd represents the build command
 var buildCmd = &cobra.Command{
 	Use: "build",
 	Run: func(cmd *cobra.Command, args []string) {
+		if defPath != "" {
+			fmt.Println("Parsing deffile")
+			defFile, _ := os.Open(defPath)
 
+			definition, _ := build.ParseDefinitionFile(defFile)
+
+			_ = definition
+		}
 	},
 }
 
@@ -32,6 +43,7 @@ func init() {
 	singularityCmd.AddCommand(buildCmd)
 
 	buildCmd.PersistentFlags().BoolVarP(&sandbox, "sandbox", "", false, "")
+	buildCmd.PersistentFlags().StringVarP(&defPath, "deffile", "", "", "")
 	buildCmd.PersistentFlags().BoolVarP(&writable, "writable", "w", false, "")
 	buildCmd.PersistentFlags().BoolVarP(&force, "force", "f", false, "")
 	buildCmd.PersistentFlags().BoolVarP(&noTest, "notest", "T", false, "")
