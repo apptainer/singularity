@@ -396,30 +396,12 @@ nonroot_build_warning() {
 is_deffile() {
 # check if a file looks like, walks like, and quacks like a def file
     FILE2CHECK=$1
-    
-    # first make a guess based on naming convention
-    case ${FILE2CHECK:-} in
-        *.img)
-            return 1
-            ;;
-        *.tar*)
-            return 1
-            ;;
-        *.def)
-            return 0
-            ;;
-        Singularity) 
-            return 0
-            ;;
-        *)
-            ;;
-        esac
 
-    # name is ambiguous.  is it a text file with def file words in it?
+    # is it a text file with def file words in it?
     if ! `file $FILE2CHECK | grep -q "ASCII\|Unicode"`; then
         return 1
     fi
-        
+
     grep -qiE "^bootstrap:|^%setup|^%post|^%test|^%labels|^%files|^%runscript|^%environment" "$FILE2CHECK"
     RETVAL=$?
 
