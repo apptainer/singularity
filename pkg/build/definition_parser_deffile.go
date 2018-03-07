@@ -113,11 +113,20 @@ func doDefinitionFile(r io.Reader) (sections map[string]string, header map[strin
 
 	sections = make(map[string]string)
 	s.Scan()
+	if s.Err() != nil {
+		log.Fatal(s.Err())
+		return nil, nil, s.Err()
+	}
+
 	header, err = doHeader(s.Text())
 
 	for s.Scan() {
-		b := s.Bytes()
+		if s.Err() != nil {
+			log.Fatal(s.Err())
+			return nil, nil, s.Err()
+		}
 
+		b := s.Bytes()
 		for i := 0; i < len(b); i++ {
 			if b[i] == '\n' {
 				sections[string(b[:i])] = strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace)
@@ -226,7 +235,6 @@ func doHeader(h string) (header map[string]string, err error) {
 		linetoks := strings.SplitN(line, ":", 2)
 		key, val := strings.ToLower(strings.TrimSpace(linetoks[0])), strings.TrimSpace(linetoks[1])
 		header[key] = val
-		//fmt.Printf("header[%s] = %s\n", key, val)
 	}
 
 	return
