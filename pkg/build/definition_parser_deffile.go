@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"regexp"
 	"strings"
@@ -234,6 +235,9 @@ func doHeader(h string) (header map[string]string, err error) {
 
 func ParseDefinitionFile(r io.Reader) (Definition, error) {
 	sections, header, err := doDefinitionFile(r)
+	if err != nil {
+		return Definition{}, err
+	}
 
 	def := Definition{
 		Header: header,
@@ -254,7 +258,7 @@ func ParseDefinitionFile(r io.Reader) (Definition, error) {
 		},
 	}
 
-	return def, err
+	return def, nil
 }
 
 func writeSectionIfExists(w io.Writer, ident string, s string) {
