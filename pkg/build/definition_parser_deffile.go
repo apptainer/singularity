@@ -12,8 +12,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
-	"os"
 	"regexp"
 	"strings"
 	"unicode"
@@ -206,11 +206,22 @@ func doHeader(r io.Reader) (header map[string]string, err error) {
 	return
 }
 
-func ParseDefinitionFile(f *os.File) (Definition, error) {
-	header, err := doHeader(f)
+// ParseDefinitionFile parses the contents of a DefFile into a Definition
+func ParseDefinitionFile(r io.Reader) (Definition, error) {
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return Definition{}, err
+	}
 
-	f.Seek(0, 0)
-	sections, err := doSections(f)
+	header, err := doHeader(bytes.NewReader(b))
+	if err != nil {
+		return Definition{}, err
+	}
+
+	sections, err := doSections(bytes.NewReader(b))
+	if err != nil {
+		return Definition{}, err
+	}
 
 	def := Definition{
 		Header: header,
@@ -231,7 +242,7 @@ func ParseDefinitionFile(f *os.File) (Definition, error) {
 		},
 	}
 
-	return def, err
+	return def, nil
 }
 
 func writeSectionIfExists(w io.Writer, ident string, s string) {
