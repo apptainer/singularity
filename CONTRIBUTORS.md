@@ -13,6 +13,7 @@
     - Vanessa Sochat <vsochat@stanford.edu>
     - Yannick Cote <yhcote@gmail.com>
     - Eduardo Arango <carlos.arango.gutierrez@correounivalle.edu.co>
+    - Adam Hughes <stickmanica@gmail.com>
 
 #Contributors:
 
