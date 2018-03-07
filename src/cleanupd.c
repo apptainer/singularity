@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -77,6 +78,8 @@ int main(int argc, char **argv) {
     singularity_message(DEBUG, "Waiting for exclusive flock() on trigger file descriptor: %d\n", trigger_fd);
     if ( flock(trigger_fd, LOCK_EX) == 0 ) {
         singularity_message(VERBOSE, "Cleaning directory: %s\n", cleanup_dir);
+        /* remove directory after 50ms delay (issue #1255) */
+        usleep(50000);
         if ( s_rmdir(cleanup_dir) < 0 ) {
             unlink(trigger);
             singularity_message(ERROR, "Could not remove directory %s: %s\n", cleanup_dir, strerror(errno));

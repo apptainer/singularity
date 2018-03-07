@@ -1,25 +1,26 @@
 #!/bin/bash
-# 
+#
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# 
+#
 # Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
+#
 # This software is licensed under a customized 3-clause BSD license.  Please
 # consult LICENSE file distributed with the sources of this project regarding
 # your rights to use or distribute this software.
-# 
+#
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
 # the U.S. Government has been granted for itself and others acting on its
 # behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
 # to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
-# 
-# 
+# perform publicly and display publicly, and to permit other to do so.
+#
+#
 
 
 # This script is designed to be sourced rather then executed, as a result we do
@@ -45,7 +46,7 @@ case "$SINGULARITY_IMAGE" in
     ;;
 
     docker://*)
-        
+
         . "$SINGULARITY_libexecdir/singularity/handlers/image-docker.sh"
 
     ;;
@@ -67,10 +68,10 @@ case "$SINGULARITY_IMAGE" in
 
     ;;
 
-    *.tar|*.tgz|*.tar.gz|*.tbz|*.tar.bz)
+    *.tar|*.tgz|*.tar.gz|*.tbz|*.tbz2|*.tb2|*.tz2|*.tar.bz|*.tar.bz2|*.txz|*.tar.xz|\
+    *.tar.lz|*.tlz|*.tar.lzma|*.tar.Z|*.tZ|*.lzo)
 
         . "$SINGULARITY_libexecdir/singularity/handlers/archive-tar.sh"
 
     ;;
 esac
-

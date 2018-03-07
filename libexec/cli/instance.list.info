@@ -14,19 +14,13 @@ LIST OPTIONS:
 EXAMPLES:
 
     $ singularity instance.list
-    /home/mibauer/singularity/sinstance/test.img  [2056.132716]  Instances:
-         Instance PID:   11963
-         Instance Name:  test
+    DAEMON NAME      PID      CONTAINER IMAGE
+    test            11963     /home/mibauer/singularity/sinstance/test.img
          
     $ sudo singularity instance.list -u mibauer
-    /home/mibauer/singularity/sinstance/test.img  [2056.132716]  Instances:
-         Instance PID:   16219
-         Instance Name:  test
-         
-         Instance PID:   11963
-         Instance Name:  test
-
-
+    DAEMON NAME      PID      CONTAINER IMAGE
+    test            11963     /home/mibauer/singularity/sinstance/test.img
+    test2           16219     /home/mibauer/singularity/sinstance/test.img
 
 For additional help, please visit our public documentation pages which are
 found at:
