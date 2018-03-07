@@ -49,10 +49,24 @@ eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/pre.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.sh"
 eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
 
+
+# Try to run docker-extract
+$SINGULARITY_libexecdir/singularity/bin/docker-extract >/dev/null 2>/dev/null
+# Code 127 if docker-extract is missing, or missing dynamic libs
+if [ $? -eq 127 ]; then
+    message WARNING "docker-extract failed, missing executable or libarchive\n"
+    message WARNING "Will use old layer extraction method - this does not handle whiteouts\n"
+    OLD_EXTRACTION="TRUE"
+fi
+
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
-    message 2 "Exploding layer: $name\n"
-    $SINGULARITY_libexecdir/singularity/bin/docker-extract "$i"
+    message 1 "Exploding layer: $name\n"
+    if [ ! -z "${OLD_EXTRACTION:-}" ]; then
+        zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf -) || exit $?
+    else
+        $SINGULARITY_libexecdir/singularity/bin/docker-extract "$i" || exit $?
+    fi
 done
 
 rm -f "$SINGULARITY_CONTENTS"
