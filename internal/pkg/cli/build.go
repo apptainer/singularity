@@ -1,9 +1,9 @@
 /*
- Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
 
- This software is licensed under a 3-clause BSD license.  Please
- consult LICENSE file distributed with the sources of this project regarding
- your rights to use or distribute this software.
+  This software is licensed under a 3-clause BSD license.  Please
+  consult LICENSE file distributed with the sources of this project regarding
+  your rights to use or distribute this software.
 */
 package cli
 
@@ -31,11 +31,10 @@ var buildCmd = &cobra.Command{
 func init() {
 	singularityCmd.AddCommand(buildCmd)
 
-	buildCmd.PersistentFlags().BoolVarP(&sandbox, "sandbox", "s", false, "")
+	buildCmd.PersistentFlags().BoolVarP(&sandbox, "sandbox", "", false, "")
 	buildCmd.PersistentFlags().BoolVarP(&writable, "writable", "w", false, "")
 	buildCmd.PersistentFlags().BoolVarP(&force, "force", "f", false, "")
 	buildCmd.PersistentFlags().BoolVarP(&noTest, "notest", "T", false, "")
-	buildCmd.PersistentFlags().StringVarP(&section, "section", "s", "post", "")
 
 	buildCmd.SetHelpTemplate(`
 	The build command compiles a container per a recipe (definition file) or based
