@@ -1,12 +1,3 @@
-singularity-container (2.4.4-1) unstable; urgency=high
-
-  * This is point release to correct an error with the last point release.  
-  * Removed capability to handle docker layer aufs whiteout files correctly as
-    it increased potential attack surface on some distros (with apologies to
-    users who requestd it).
-
- -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Mon, 19 Feb 2018 14:12:13 -0700
-
 singularity-container (2.4.3-1) unstable; urgency=high
 
   * This is a bug fix point release to the 2.4 feature branch. It includes

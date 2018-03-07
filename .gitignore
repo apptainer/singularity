@@ -52,6 +52,7 @@ src/.dirstamp
 src/sinit
 src/start
 src/start-suid
+src/docker-extract
 
 src/.deps/
 src/.libs/
