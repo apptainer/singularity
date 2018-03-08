@@ -67,7 +67,7 @@ typedef enum{
 
 extern Sgnerrno sgnerrno;
 
-char *sgn_strerror(Sgnerrno sgnerrno);
+char *sgn_strerror(Sgnerrno errnum);
 void sgn_hashtostr(char *hash, char *hashstr);
 void sgn_sifhashstr(char *hashstr, char *sifhashstr);
 int sgn_getsignedhash(char *signedhash, char *hashstr);

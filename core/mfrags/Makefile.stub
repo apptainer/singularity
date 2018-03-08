@@ -22,9 +22,4 @@ clean:
 	@printf " CLEAN\n"
 	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
 
-.PHONY: gdb
-gdb:
-	@printf " GDB...\n"
-	$(V)$(GDB) $(kernel)
-
 -include $(BUILDDIR)/mergeddeps

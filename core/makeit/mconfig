@@ -347,13 +347,13 @@ HOSTRANLIB := ranlib
 HOSTSIZE := size
 HOSTOBJCOPY := objcopy
 
-AR := `readlink -f \`$tgtcc -print-prog-name=ar\``
+AR := `readlink -f \`which \\\`$tgtcc -print-prog-name=ar\\\`\``
 CC := $tgtcc
 CXX := $tgtcxx
-LD := `readlink -f \`$tgtcc -print-prog-name=ld\``
-RANLIB := `readlink -f \`$tgtcc -print-prog-name=ranlib\``
+LD := `readlink -f \`which \\\`$tgtcc -print-prog-name=ld\\\`\``
+RANLIB := `readlink -f \`which \\\`$tgtcc -print-prog-name=ranlib\\\`\``
 SIZE := size
-OBJCOPY := `readlink -f \`$tgtcc -print-prog-name=objcopy\``
+OBJCOPY := `readlink -f \`which \\\`$tgtcc -print-prog-name=objcopy\\\`\``
 
 ARCH := $tgt_arch
 

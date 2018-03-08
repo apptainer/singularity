@@ -377,7 +377,7 @@ typedef enum{
 
 extern Siferrno siferrno;
 
-char *sif_strerror(Siferrno siferrno);
+char *sif_strerror(Siferrno errnum);
 
 int sif_load(char *filename, Sifinfo *info, int rdonly);
 int sif_unload(Sifinfo *info);
