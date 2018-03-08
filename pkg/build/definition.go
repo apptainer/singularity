@@ -7,8 +7,6 @@
 */
 package build
 
-import ()
-
 type Definition struct {
 	Header    map[string]string
 	ImageData imageData
@@ -41,4 +39,31 @@ type buildScripts struct {
 	Pre   string
 	Setup string
 	Post  string
+}
+
+// validSections just contains a list of all the valid sections a definition file
+// could contain. If any others are found, an error will generate
+var validSections = map[string]bool{
+	"help":        true,
+	"setup":       true,
+	"files":       true,
+	"labels":      true,
+	"environment": true,
+	"pre":         true,
+	"post":        true,
+	"runscript":   true,
+	"test":        true,
+}
+
+// validHeaders just contains a list of all the valid headers a definition file
+// could contain. If any others are found, an error will generate
+var validHeaders = map[string]bool{
+	"bootstrap":  true,
+	"from":       true,
+	"registry":   true,
+	"namespace":  true,
+	"includecmd": true,
+	"mirrorurl":  true,
+	"osversion":  true,
+	"include":    true,
 }

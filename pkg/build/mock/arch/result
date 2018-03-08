@@ -1,10 +1,7 @@
-Bootstrap:arch
-%help:
-%setup:
-%files
-%labels
-%environment:
-%post:
-    echo 'this is a command so long that the user had to' 'add several new lines line' 'using the escape char' 'and more' 'and more lines'
-%runscript:
-%test:
+bootstrap: arch
+%post
+    echo 'this is a command so long that the user had to' \
+            'add several new lines line' \
+            'using the escape char' \
+            'and more' \
+            'and more lines'
