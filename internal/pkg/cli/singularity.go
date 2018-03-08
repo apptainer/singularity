@@ -26,7 +26,7 @@ var (
 
 // singularity is the base command when called without any subcommands
 var singularityCmd = &cobra.Command{
-	Use: "singularity [global options...] <command>",
+	Use: "singularity [global options...]",
 	DisableFlagsInUseLine: true,
 	Run: nil,
 }
@@ -42,13 +42,22 @@ func Execute() {
 	}
 }
 
+func TraverseParentsUses(cmd *cobra.Command) string {
+	if cmd.HasParent() {
+		return TraverseParentsUses(cmd.Parent()) + cmd.Use + " "
+	}
+
+	return cmd.Use + " "
+}
+
 func PrintFlagUsages(flagSet *pflag.FlagSet) string {
-	return strings.Replace(flagSet.FlagUsages(), ", ", "|", -1)
+	return strings.Replace(flagSet.FlagUsages(), ", ", "|", 1)
 }
 
 func init() {
 	templateFuncs := template.FuncMap{
-		"PrintFlagUsages": PrintFlagUsages,
+		"PrintFlagUsages":     PrintFlagUsages,
+		"TraverseParentsUses": TraverseParentsUses,
 	}
 
 	singularityCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
@@ -59,14 +68,28 @@ func init() {
 	cobra.AddTemplateFuncs(templateFuncs)
 
 	singularityCmd.SetHelpTemplate(
-		`{{.UsageString}}
+		`{{.UsageString}}{{if .HasAvailableLocalFlags}}
+
+Options:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}
+{{end}}{{if .HasAvailableInheritedFlags}}
+Global Options:
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}
+{{end}}{{if .HasExample}}
+Examples:{{.Example}}
+{{end}}
+For additional help, please visit our public documentation pages which are
+found at:
+
+    https://sylabs.io/
 `)
 
 	singularityCmd.SetUsageTemplate(
-		`Usage: {{if .HasParent}}{{if .Runnable}}
-  {{.Parent.CommandPath}} {{.Use}}{{end}} {{if .HasAvailableSubCommands}}
-  {{.CommandPath}}{{if .HasAvailableLocalFlags}} [{{.Name}} options...]{{end}} <command>{{end}}{{else}}
-  {{.CommandPath}} [global options...] <command>{{end}}`)
+		`Usage:
+  {{TraverseParentsUses . | trimTrailingWhitespaces}}{{if .HasAvailableSubCommands}} <command> 
+
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}`)
 
 	/*
 			singularityCmd.SetHelpTemplate(

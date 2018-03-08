@@ -19,7 +19,7 @@ func init() {
 }
 
 var instanceCmd = &cobra.Command{
-	Use: "instance <subcommand>",
+	Use: "instance",
 	Run: nil,
 	DisableFlagsInUseLine: true,
 }
