@@ -368,7 +368,7 @@ EOF
 found_modules=`(cat modules | awk '{ printf("%s ", $0) }') \
 		2>/dev/null || true`
 if [ "$found_modules" = "" ]; then
-	found_modules=`find . -name *.mconf -print`
+	found_modules=`find . -name '*.mconf' -print`
 	if [ "$found_modules" = "" ]; then
 		echo "error: no build modules found !"
 		echo
@@ -384,6 +384,9 @@ echo "CPPFLAGS :=" >> $genmk
 for m in $found_modules; do
 	mod=`eval echo ${m##*./}`
 	modpath=`eval echo ${mod%/*}`
+	if [ `dirname "$modpath"` = "." ]; then
+		modpath="."
+	fi
 	if [ ! -f $mod ]; then
 		echo "error: module file \`$mod' not found!"
 		exit 2
