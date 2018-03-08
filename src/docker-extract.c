@@ -96,7 +96,7 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
 
     if (is_dir(buf) == 0) {
         retval = s_rmdir(buf);
-    } else if (is_file(buf) == 0) {
+    } else if (is_file(buf) == 0 || is_link(buf) == 0) {
         singularity_message(DEBUG, "Removing whiteout-ed file: %s\n",
                             buf);
         retval = unlink(buf);
