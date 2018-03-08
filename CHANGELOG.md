@@ -12,6 +12,14 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.5](https://github.com/singularityware/singularity/tree/release-2.5)
+
+ - Restore docker-extract aufs whiteout handling that implements correct
+     extraction of docker container layers. This adds libarchive-devel as a
+     build time dep. At runtime libarchive is needed for whiteout handling. If
+     libarchive is not available at runtime will fall back to previous
+     extraction method.
+
 ## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
 
  - Removed capability to handle docker layer aufs whiteout files correctly as
