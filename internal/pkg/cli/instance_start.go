@@ -75,16 +75,18 @@ func init() {
 
 	for _, cmd := range instanceStartCmds {
 		// -B|--bind
-		cmd.LocalFlags().StringSliceVarP(&bindPath, "bind", "B", []string{}, "Path(s) to bind mount inside container")
+		cmd.LocalFlags().StringSliceVarP(&bindPath, "bind", "B", []string{}, "A user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.")
+		cmd.LocalFlags().SetAnnotation("bind", "argtag", []string{"<spec>"})
 
 		// -c|--contain
-		cmd.LocalFlags().BoolVarP(&isContained, "contain", "c", false, "Use minimal /dev and empty other directories (e.g. /tmp and $HOME).")
+		cmd.LocalFlags().BoolVarP(&isContained, "contain", "c", false, "Use minimal /dev and empty other directories (e.g. /tmp and $HOME) instead of sharing filesystems from your host.")
 
 		// -H|--home
-		cmd.LocalFlags().StringVarP(&homePath, "home", "H", getHomeDir(), "A home directory specification")
+		cmd.LocalFlags().StringVarP(&homePath, "home", "H", getHomeDir(), "A home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.")
+		cmd.LocalFlags().SetAnnotation("home", "argtag", []string{"<spec>"})
 
 		// -n|--net
-		cmd.LocalFlags().BoolVarP(&netNamespace, "net", "n", false, "Run container in a new NET namespace")
+		cmd.LocalFlags().BoolVarP(&netNamespace, "net", "n", false, "Run container in a new network namespace (loopback is the only network device active).")
 
 		// --uts
 		cmd.LocalFlags().BoolVar(&utsNamespace, "uts", false, "Run container in a new UTS namespace")
@@ -93,19 +95,19 @@ func init() {
 		cmd.LocalFlags().BoolVar(&nvidia, "nv", false, "Enable experimental Nvidia support")
 
 		// -o|--overlay
-		cmd.LocalFlags().StringVarP(&overlayPath, "overlay", "o", "", "Use a persistent overlayFS via a writable image")
+		cmd.LocalFlags().StringVarP(&overlayPath, "overlay", "o", "", "Use a persistent overlayFS via a writable image.")
 
 		// -S|--scratch
-		cmd.LocalFlags().StringVarP(&scratchPath, "scratch", "S", "", "Include a scratch directory within the container")
+		cmd.LocalFlags().StringVarP(&scratchPath, "scratch", "S", "", "Include a scratch directory within the container that is linked to a temporary dir (use -W to force location).")
 
 		// -W|--workdir
-		cmd.LocalFlags().StringVarP(&workdirPath, "workdir", "W", "", "Working directory to be used for /tmp, /var/tmp")
+		cmd.LocalFlags().StringVarP(&workdirPath, "workdir", "W", "", "Working directory to be used for /tmp, /var/tmp and $HOME (if -c/--contain was also used).")
 
 		// -w|--writable // Not applicable in 3.x
 		//cmd.LocalFlags().BoolVarP(&isWritable, "writable", "-w", false, )
 
 		// -u|--userns
-		cmd.LocalFlags().BoolVarP(&userNamespace, "userns", "u", false, "Run container in a new USER namespace")
+		cmd.LocalFlags().BoolVarP(&userNamespace, "userns", "u", false, "Run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This may not support every feature of Singularity.")
 
 		// --hostname
 		cmd.LocalFlags().StringVar(&hostname, "hostname", "", "Set container hostname")
@@ -136,7 +138,7 @@ func init() {
 }
 
 var instanceStartCmd = &cobra.Command{
-	Use:  "start [options...] <container path> <instance name>",
+	Use:  "start [start options...] <container path> <instance name>",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("starting instance")

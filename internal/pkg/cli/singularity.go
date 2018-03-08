@@ -1,9 +1,9 @@
 /*
-Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
 
-This software is licensed under a 3-clause BSD license.  Please
-consult LICENSE file distributed with the sources of this project regarding
-your rights to use or distribute this software.
+  This software is licensed under a 3-clause BSD license.  Please
+  consult LICENSE file distributed with the sources of this project regarding
+  your rights to use or distribute this software.
 */
 package cli
 
@@ -54,7 +54,52 @@ func PrintFlagUsages(flagSet *pflag.FlagSet) string {
 	return strings.Replace(flagSet.FlagUsages(), ", ", "|", 1)
 }
 
+/*
+func PrintFlagUsages2(flagSet *pflag.FlagSet) (ret string) {
+	ret = ""
+	wrapLength := 0
+	//lineWidth := 70
+
+	lines := []string{}
+	flagSet.VisitAll(func(flag *pflag.Flag) {
+		if flag.Deprecated != "" || flag.Hidden {
+			return
+		}
+
+		line := ""
+
+		if flag.Shorthand != "" {
+			line += fmt.Sprintf("  -%s|--%s", flag.Shorthand, flag.Name)
+		} else {
+			line += fmt.Sprintf("     --%s", flag.Name)
+		}
+
+		for key, val := range flag.Annotations {
+			if key == "argtag" {
+				line += fmt.Sprintf(" %s", val[0])
+			}
+		}
+
+		//line += "\x00"
+		if len(line) > wrapLength {
+			wrapLength = len(line)
+		}
+
+		lines = append(lines, line)
+	})
+
+	width := wrapLength + 4
+
+	for _, line := range lines {
+		ret += fmt.Sprintf("%s %*s\n", line, width-len(line)+6, "test test")
+	}
+
+	return
+}
+*/
+
 func init() {
+	//fmt.Printf("%s", PrintFlagUsages2(instanceStartCmd.LocalFlags()))
 	templateFuncs := template.FuncMap{
 		"PrintFlagUsages":     PrintFlagUsages,
 		"TraverseParentsUses": TraverseParentsUses,
@@ -71,10 +116,10 @@ func init() {
 		`{{.UsageString}}{{if .HasAvailableLocalFlags}}
 
 Options:
-{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}
+{{.LocalFlags.FlagUsagesWrapped 80 | trimTrailingWhitespaces}}
 {{end}}{{if .HasAvailableInheritedFlags}}
 Global Options:
-{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}
+{{.InheritedFlags.FlagUsagesWrapped 80 | trimTrailingWhitespaces}}
 {{end}}{{if .HasExample}}
 Examples:{{.Example}}
 {{end}}
@@ -88,7 +133,7 @@ found at:
 		`Usage:
   {{TraverseParentsUses . | trimTrailingWhitespaces}}{{if .HasAvailableSubCommands}} <command> 
 
-Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}`)
 
 	/*
