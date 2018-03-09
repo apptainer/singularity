@@ -4,7 +4,7 @@ csrc :=	lib/runtime/autofs.c
 	lib/runtime/chroot.c
 	lib/runtime/enter.c
 	lib/runtime/environment.c
-	lib/runtime/file-bind.c
+	lib/runtime/file_bind.c
 	lib/runtime/files.c
 	lib/runtime/group.c
 	lib/runtime/hostname.c

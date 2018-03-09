@@ -45,7 +45,7 @@
 #include "util/registry.h"
 #include "util/mount.h"
 
-#include "runtime/file-bind.h"
+#include "runtime/file_bind.h"
 #include "runtime/runtime.h"
 
 

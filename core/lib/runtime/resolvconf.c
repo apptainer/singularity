@@ -39,7 +39,7 @@
 #include "util/message.h"
 #include "util/privilege.h"
 
-#include "runtime/file-bind.h"
+#include "runtime/file_bind.h"
 #include "runtime/runtime.h"
 
 
