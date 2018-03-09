@@ -146,7 +146,7 @@ while true; do
             else
                 export SINGULARITY_CONTAINLIBS
             fi
-            if NVIDIA_SMI=$(which nvidia-smi); then
+            if NVIDIA_SMI=$(which nvidia-smi >/dev/null 2>&1); then
                 if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
                     SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${NVIDIA_SMI}"
                 else
