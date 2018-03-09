@@ -9,15 +9,15 @@
 package build
 
 import (
-	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"strings"
+	"reflect"
 	"testing"
 )
 
-func TestCleanUpFile(t *testing.T) {
-	testFiles := map[string]string{
+func TestParseDefinitionFile(t *testing.T) {
+	testFilesOK := map[string]string{
 		"docker":      "./mock/docker/docker",
 		"debootstrap": "./mock/debootstrap/debootstrap",
 		"arch":        "./mock/arch/arch",
@@ -27,15 +27,8 @@ func TestCleanUpFile(t *testing.T) {
 		"busybox":     "./mock/busybox/busybox",
 		"zypper":      "./mock/zypper/zypper",
 	}
-	testResultFile := map[string]string{
-		"docker":      "/tmp/singularity_test_build_docker",
-		"debootstrap": "/tmp/singularity_test_build_debootstrap",
-		"arch":        "/tmp/singularity_test_build_arch",
-		"yum":         "/tmp/singularity_test_build_yum",
-		"shub":        "/tmp/singularity_test_build_shub",
-		"localimage":  "/tmp/singularity_test_build_localimage",
-		"busybox":     "/tmp/singularity_test_build_busybox",
-		"zypper":      "/tmp/singularity_test_build_zypper",
+	testFilesBAD := map[string]string{
+		"bad_section": "./mock/bad_section/bad_section",
 	}
 	resultFile := map[string]string{
 		"docker":      "./mock/docker/result",
@@ -47,58 +40,51 @@ func TestCleanUpFile(t *testing.T) {
 		"busybox":     "./mock/busybox/result",
 		"zypper":      "./mock/zypper/result",
 	}
-	type printSection func(*testing.T, *Deffile, *os.File)
-	sectionsPrinters := map[string]printSection{
-		"%help":        PrintHelpSection,
-		"%setup":       PrintSetupSection,
-		"%files":       PrintFilesSection,
-		"%labels":      PrintLabelsSection,
-		"%environment": PrintEnvSection,
-		"%post":        PrintPostSection,
-		"%runscript":   PrintRunscriptSection,
-		"%test":        PrintTestSection,
-	}
 
-	// Loop through the Deffiles
-	for k := range testFiles {
+	// Loop through the Deffiles OK
+	for k := range testFilesOK {
 		t.Logf("=>\tRunning test for Deffile:\t\t[%s]", k)
-		f, err := os.Create(testResultFile[k])
+		f, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("singularity_parser_test_%s", k))
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
+		defer os.Remove(f.Name())
 
-		defer f.Close()
-
-		r, err := os.Open(testFiles[k])
+		r, err := os.Open(testFilesOK[k])
 		if err != nil {
 			t.Error(err)
 		}
 		defer r.Close()
 
-		Df, err := ParseDefFile(r)
+		Df, err := ParseDefinitionFile(r)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 		}
 		// Write Deffile output to file
-		for _, k := range headerKeys {
-			v, ok := Df.Header[k]
-			if ok {
-				_, err := f.WriteString(fmt.Sprintf("%s:%s\n", k, v))
-				if err != nil {
-					t.Log(err)
-					t.Fail()
-				}
-			}
-		}
-		for _, key := range sectionsKeys {
-			printer := sectionsPrinters[key]
-			printer(t, &Df, f)
-		}
+		Df.WriteDefinitionFile(f)
 		// And....compare the output (fingers crossed)
-		if !compareFiles(t, resultFile[k], testResultFile[k]) {
+		if !compareFiles(t, resultFile[k], f.Name()) {
 			t.Logf("<=\tFailed to parse Deffinition file:\t[%s]", k)
+			t.Fail()
+		}
+	}
+
+	// Loop through the Deffiles BAD (must return error)
+	for k, v := range testFilesBAD {
+		t.Logf("=>\tRunning test for Bad Deffile:\t\t[%s]", k)
+		r, err := os.Open(v)
+		if err != nil {
+			t.Error(err)
+		}
+		defer r.Close()
+
+		// Parse must return err and a nil Definition struct
+		_, err = ParseDefinitionFile(r)
+		if err == nil {
+			t.Logf("<=\tFailed to parse Bad Deffinition file:\t[%s]", k)
+			t.Log(err)
 			t.Fail()
 		}
 	}
@@ -118,115 +104,19 @@ func compareFiles(t *testing.T, resultFile, testFile string) bool {
 		t.Log(err)
 		t.Fail()
 	}
-	defer tfile.Close()
+	defer rfile.Close()
 
-	rscanner := bufio.NewScanner(rfile)
-	tscanner := bufio.NewScanner(tfile)
-	for tscanner.Scan() {
-		rscanner.Scan()
-		rline := rscanner.Text()
-		tline := tscanner.Text()
-		if strings.Compare(rline, tline) != 0 {
-			return false
-		}
-	}
-	return true
-}
-
-func PrintHelpSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%help:%s\n", def.Sections.help)
-	_, err := file.WriteString(toPrint)
+	testDef, err := ParseDefinitionFile(tfile)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
 
-func PrintSetupSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%setup:%s\n", def.Sections.setup)
-	_, err := file.WriteString(toPrint)
+	rDef, err := ParseDefinitionFile(rfile)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
 
-func PrintPostSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%post:%s\n", def.Sections.post)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintRunscriptSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%runscript:%s\n", def.Sections.runscript)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintTestSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%test:%s\n", def.Sections.test)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintEnvSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%environment:%s\n", def.Sections.env)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintLabelsSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := "%labels" + "\n"
-
-	for k, v := range def.Sections.labels {
-		toPrint = toPrint + fmt.Sprintf("%s:%s\n", k, v)
-	}
-
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintFilesSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := "%files" + "\n"
-
-	for k, v := range def.Sections.files {
-		toPrint = toPrint + fmt.Sprintf("%s:%s\n", k, v)
-	}
-
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
+	return reflect.DeepEqual(testDef, rDef)
 }

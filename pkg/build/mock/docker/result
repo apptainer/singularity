@@ -1,28 +1,27 @@
-Bootstrap:docker
-From:<registry>/<namespace>/<container>:<tag>@<digest>
-Registry:http://custom_registry
-Namespace:namespace
-IncludeCmd:yes
-%help:
+bootstrap: docker
+from: <registry>/<namespace>/<container>:<tag>@<digest>
+registry: http://custom_registry
+namespace: namespace
+includecmd: yes
+%help
 Hello Help!
-%setup:
-    touch ${SINGULARITY_ROOTFS}/mock.txt
-    touch mock.txt
-%files
-mock.txt:/opt
-%labels
-Maintainer:Eduardo
-Version:v1.0
-%environment:
+# # double Hashtag comment
+%environment
     VADER=badguy
     LUKE=goodguy
-    SOLO=someguy 
+    SOLO=someguy # comment 4
     export VADER LUKE SOLO
-%post:
-    echo 'this is a command so long that the user had to' 'add a new line'
-    echo 'export GOPATH=$HOME/go' >> $SINGULARITY_ENVIRONMENT
-%runscript:
+%runscript
     echo "Mock!"
-    echo "Arguments received: $*" 
+    echo "Arguments received: $*" # This is a very long comment \
+                                  # that needed use the continue character.
     exec echo "$@"
-%test:
+%setup
+    touch ${SINGULARITY_ROOTFS}/mock.txt
+    touch mock.txt
+
+# Some dummy comment 2
+%post
+    echo 'this is a command so long that the user had to' \
+            'add a new line'
+    echo 'export GOPATH=$HOME/go' >> $SINGULARITY_ENVIRONMENT
