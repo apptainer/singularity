@@ -37,6 +37,8 @@ secbuildimg.sh
 
 src/action
 src/action-suid
+src/docker-extract
+src/get-configvals
 src/start
 src/start-suid
 src/builddef
