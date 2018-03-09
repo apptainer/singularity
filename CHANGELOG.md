@@ -12,6 +12,12 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.5](https://github.com/singularityware/singularity/tree/release-2.5)
+ 
+ - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Adjustments to SCIF (Scientific Filesystem) integration for broader use
+ - Fixed bug that did not export environment variables for apps with "-" in name
+
 ## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
 
  - Removed capability to handle docker layer aufs whiteout files correctly as
