@@ -41,7 +41,7 @@
 char *progname;
 
 static void
-usage()
+usage(void)
 {
 	fprintf(stderr, "usage: %s COMMAND OPTION FILE\n", progname);
 	fprintf(stderr, "\n\n");

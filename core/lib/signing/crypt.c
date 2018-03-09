@@ -31,9 +31,9 @@
 Sgnerrno sgnerrno;
 
 char *
-sgn_strerror(Sgnerrno sgnerrno)
+sgn_strerror(Sgnerrno errnum)
 {
-	switch(sgnerrno){
+	switch(errnum){
 	case SGN_EDUPOUT: return "Could not duplicate stdout";
 	case SGN_EPIPE: return "Could not create pipe";
 	case SGN_EDUP2OUT: return "Could not duplicate stdout to pipe";

@@ -1,0 +1,6 @@
+__TARGET__ := $(BUILDDIR)/__PATH__/__TARGET__.a
+
+$(__TARGET__): $(__NAME___OBJ)
+	@echo " AR" $@
+	@mkdir -p $(@D)
+	$(V)$(AR) rcs $@ $(__NAME___OBJ)

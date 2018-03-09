@@ -1,0 +1,17 @@
+name := libutil
+lib := util
+csrc :=	lib/util/capability.c
+	lib/util/daemon.c
+	lib/util/message.c
+	lib/util/registry.c
+	lib/util/signal.c
+	lib/util/cleanupd.c
+	lib/util/file.c
+	lib/util/mount.c
+	lib/util/sessiondir.c
+	lib/util/suid.c
+	lib/util/config_parser.c
+	lib/util/fork.c
+	lib/util/privilege.c
+	lib/util/setns.c
+	lib/util/util.c
