@@ -30,17 +30,17 @@
 #ifdef SINGULARITY_SECUREBITS
 #  include <linux/securebits.h>
 #else
-#  include "util/securebits.h"
+#  include "securebits.h"
 #endif /* SINGULARITY_SECUREBITS */
 
-#include "config.h"
+// #include "config.h"
 
-#include "util/file.h"
-#include "util/util.h"
-#include "util/registry.h"
-#include "util/privilege.h"
-#include "util/message.h"
-#include "util/config_parser.h"
+#include "file.h"
+#include "util.h"
+#include "registry.h"
+#include "privilege.h"
+#include "message.h"
+#include "config_parser.h"
 
 #ifndef SYSCONFDIR
 #error SYSCONFDIR not defined

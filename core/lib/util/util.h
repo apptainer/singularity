@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "util/message.h"
+#include "message.h"
 
 #ifndef __UTIL_H_
 #define __UTIL_H_
