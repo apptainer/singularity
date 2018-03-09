@@ -9,11 +9,9 @@ package cli
 
 import (
 	"os"
-	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 // Global variables for singularity CLI
@@ -48,10 +46,6 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 	}
 
 	return cmd.Use + " "
-}
-
-func PrintFlagUsages(flagSet *pflag.FlagSet) string {
-	return strings.Replace(flagSet.FlagUsages(), ", ", "|", 1)
 }
 
 /*
@@ -101,7 +95,6 @@ func PrintFlagUsages2(flagSet *pflag.FlagSet) (ret string) {
 func init() {
 	//fmt.Printf("%s", PrintFlagUsages2(instanceStartCmd.LocalFlags()))
 	templateFuncs := template.FuncMap{
-		"PrintFlagUsages":     PrintFlagUsages,
 		"TraverseParentsUses": TraverseParentsUses,
 	}
 
