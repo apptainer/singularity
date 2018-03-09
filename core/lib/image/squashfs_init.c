@@ -34,7 +34,7 @@
 #include "util/util.h"
 #include "util/file.h"
 
-#include "../image.h"
+#include "image/image.h"
 
 int _singularity_image_squashfs_init(struct image_object *image, int open_flags) {
     int image_fd;

@@ -19,46 +19,50 @@
  * to reproduce, distribute copies to the public, prepare derivative works, and
  * perform publicly and display publicly, and to permit other to do so.
  *
- */
+*/
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <errno.h>
-#include <string.h>
-#include <fcntl.h>
+#include <sys/file.h>
+#include <sys/mount.h>
+#include <unistd.h>
+#include <stdlib.h>
 
-#include "util/message.h"
-#include "util/util.h"
 #include "util/file.h"
+#include "util/util.h"
+#include "util/message.h"
+#include "util/config_parser.h"
+#include "util/suid.h"
+#include "util/privilege.h"
+#include "util/mount.h"
 
-#include "../image.h"
+#include "image/image.h"
+#include "image/bind.h"
 
-int _singularity_image_dir_init(struct image_object *image, int open_flags) {
-    int fd = -1;
-    struct stat st;
 
-    singularity_message(DEBUG, "Opening file descriptor to directory: %s\n", image->path);
-    if ( ( fd = open(image->path, O_RDONLY, 0755) ) < 0 ) {
-        singularity_message(ERROR, "Could not open image %s: %s\n", image->path, strerror(errno));
+int _singularity_image_squashfs_mount(struct image_object *image, char *mount_point) {
+    int mntflags = MS_NOSUID | MS_RDONLY | MS_NODEV;
+    char *loop_dev = NULL;
+
+    if ( ( loop_dev = singularity_image_bind(image) ) == NULL ) {
+        singularity_message(ERROR, "Could not obtain the image loop device\n");
         ABORT(255);
     }
 
-    if ( fstat(fd, &st) != 0 ) {
-        singularity_message(ERROR, "Could not stat file descriptor: %s\n", strerror(errno));
+    if ( singularity_allow_container_setuid() ) {
+        singularity_message(DEBUG, "allow-setuid option set, removing MS_NOSUID mount flags\n");
+        mntflags &= ~MS_NOSUID;
+    }
+
+    singularity_message(VERBOSE, "Mounting squashfs image: %s -> %s\n", loop_dev, mount_point);
+    if ( singularity_mount(loop_dev, mount_point, "squashfs", mntflags, "errors=remount-ro") < 0 ) {
+        singularity_message(ERROR, "Failed to mount squashfs image in (read only): %s\n", strerror(errno));
         ABORT(255);
     }
-
-    if ( S_ISDIR(st.st_mode) == 0 ) {
-        singularity_message(DEBUG, "This is not a directory based image\n");
-        close(fd);
-        return(-1);
-    }
-
-    // If we got here, we assume things are a directory
-    image->fd = fd;
 
     return(0);
 }

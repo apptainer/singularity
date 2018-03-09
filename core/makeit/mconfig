@@ -397,7 +397,7 @@ for m in $found_modules; do
 	mkdir -p $genconfdir/$modpath
 	cat $mod | awk -v tgt_arch=$tgt_arch '{ gsub(/tgt_arch/, \
 				tgt_arch); print }' > $genconfdir/${mod}.parsed
-	echo "CPPFLAGS += -iquote\$(SOURCEDIR)/$modpath" >> $genmk
+#	echo "CPPFLAGS += -iquote\$(SOURCEDIR)/$modpath" >> $genmk
 done
 echo >> $genmk
 

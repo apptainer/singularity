@@ -33,7 +33,7 @@
 #  include "securebits.h"
 #endif /* SINGULARITY_SECUREBITS */
 
-// #include "config.h"
+#include "config.h"
 
 #include "file.h"
 #include "util.h"
@@ -329,7 +329,7 @@ static unsigned long long get_capabilities_from_file(char *ftype, char *id) {
     unsigned long long caps = 0;
     FILE *file = NULL;
     char strcap[24];
-    char path[PATH_MAX];
+    static char path[PATH_MAX];
 
     singularity_message(DEBUG, "Get capabilities from file for %s %s\n", ftype, id);
 

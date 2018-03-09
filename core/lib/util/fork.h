@@ -62,7 +62,7 @@
 
     // SINGULARITY_WAIT_FOR_GO_AHEAD()
     // Wait for the go-ahead signal described above
-    void singularity_wait_for_go_ahead();
+    void singularity_wait_for_go_ahead(void);
 
 
 #endif /* __SINGULARITY_FORK_H_ */

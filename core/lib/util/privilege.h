@@ -31,7 +31,7 @@
     void singularity_priv_drop_perm(void);
     uid_t singularity_priv_getuid(void);
     gid_t singularity_priv_getgid(void);
-    const gid_t *singularity_priv_getgids();
+    const gid_t *singularity_priv_getgids(void);
     int singularity_priv_getgidcount(void);
     int singularity_priv_userns_enabled(void);
     char *singularity_priv_home(void);
@@ -45,9 +45,9 @@
     int singularity_priv_has_gid(gid_t gid);
 
     // Returns the UID of the singularity user.
-    uid_t singularity_priv_singularity_uid();
+    uid_t singularity_priv_singularity_uid(void);
 
     // Returns the GID of the singularity user.
-    gid_t singularity_priv_singularity_gid();
+    gid_t singularity_priv_singularity_gid(void);
 
 #endif /* __PRIVILEGE_H_ */

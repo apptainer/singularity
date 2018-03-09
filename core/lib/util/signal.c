@@ -56,6 +56,7 @@ static const int all_signals[] = {
 };
 
 static void handle_sig_sigchld(siginfo_t *siginfo) {
+    (void)siginfo;
     while(1) {
         if ( waitpid(-1, NULL, WNOHANG) <= 0 ) break;
     }

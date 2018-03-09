@@ -11,11 +11,11 @@
 #ifndef __SINGULARITY_SIGNAL_H_
 #define __SINGULARITY_SIGNAL_H_
 
-void singularity_install_signal_handler();
+void singularity_install_signal_handler(void);
 
 int singularity_handle_signals(siginfo_t *siginfo);
 
-void singularity_unblock_signals();
+void singularity_unblock_signals(void);
     
 
 #endif

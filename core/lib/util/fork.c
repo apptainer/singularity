@@ -62,11 +62,15 @@ typedef struct fork_state_s
 // functions.  We might, in the future, add in a signal-safe
 // version of singularity_message here.
 void handle_signal(int sig, siginfo_t * _, void * __) {
+    (void)_;
+    (void)__;
     char info = (char)sig;
     while (-1 == write(generic_signal_wpipe, &info, 1) && errno == EINTR) {}
 }
 
 void handle_sigchld(int sig, siginfo_t *siginfo, void * _) {
+    (void)_;
+    (void)sig;
     if ( siginfo->si_pid == child_pid ) {
         char one = '1';
         while (-1 == write(sigchld_signal_wpipe, &one, 1) && errno == EINTR) {}
@@ -88,7 +92,7 @@ static int pipe_to_child[] = {-1, -1};
 static int pipe_to_parent[] = {-1, -1};
 static int coordination_pipe[] = {-1, -1};
 
-static void prepare_fork() {
+static void prepare_fork(void) {
     singularity_message(DEBUG, "Creating parent/child coordination pipes.\n");
     // Note we use pipe and not pipe2 here with CLOEXEC.  This is because we eventually want the parent process
     // to exec a separate unprivileged process and inherit the communication pipe.
@@ -105,7 +109,7 @@ static void prepare_fork() {
 }
 
 /* Put the appropriate read and write pipes into coordination_pipe[] */
-static void prepare_pipes_child() {
+static void prepare_pipes_child(void) {
     /* Close to child write pipe */
     close(pipe_to_child[1]);
 
@@ -118,7 +122,7 @@ static void prepare_pipes_child() {
 }
 
 /* Put the appropriate read and write pipes into coordination_pipe[] */
-static void prepare_pipes_parent() {
+static void prepare_pipes_parent(void) {
     /* Close to parent write pipe */
     close(pipe_to_parent[1]);
 
@@ -131,7 +135,7 @@ static void prepare_pipes_parent() {
 }
 
 /* Updated wait_for_go_ahead() which allows bi-directional wait signaling */
-int singularity_wait_for_go_ahead() {
+int singularity_wait_for_go_ahead(void) {
     if ( (coordination_pipe[0] == -1) || (coordination_pipe[1] == -1)) {
         singularity_message(ERROR, "Internal error!  wait_for_go_ahead invoked with invalid pipe state (%d, %d).\n",
                             coordination_pipe[0], coordination_pipe[1]);
@@ -182,7 +186,7 @@ void singularity_signal_go_ahead(int code) {
 
 }
 
-static int wait_child() {
+static int wait_child(void) {
     int child_ok = 1;
     int retval, tmpstatus;
 
@@ -240,7 +244,7 @@ static int fork_ns(unsigned int flags) {
     }
     
     int stack_size = 1024*1024;
-    void *child_stack_ptr = malloc(stack_size);
+    unsigned char *child_stack_ptr = malloc(stack_size);
     if ( child_stack_ptr == 0 ) {
         errno = ENOMEM;
         return -1;
@@ -255,7 +259,7 @@ static int fork_ns(unsigned int flags) {
     return retval;
 }
 
-void install_generic_signal_handle() {
+void install_generic_signal_handle(void) {
     int pipes[2];
     struct sigaction action;
     sigset_t empty_mask;
@@ -303,7 +307,7 @@ void install_generic_signal_handle() {
     generic_signal_wpipe = pipes[1];
 }
 
-void install_sigchld_signal_handle() {
+void install_sigchld_signal_handle(void) {
     int pipes[2];
     struct sigaction action;
     sigset_t empty_mask;
@@ -416,6 +420,8 @@ int singularity_fork_exec(unsigned int flags, char **argv) {
     int retval = 1;
     int i = 0;
     pid_t child;
+
+    (void)flags;
 
     child = singularity_fork(0);
 

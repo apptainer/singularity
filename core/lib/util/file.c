@@ -322,6 +322,10 @@ int s_mkpath(char *dir, mode_t mode) {
 int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     int retval;
 
+    (void)sb;
+    (void)typeflag;
+    (void)ftwbuf;
+
     if ( ( retval = remove(fpath) ) < 0 ) { 
         singularity_message(WARNING, "Failed removing file: %s\n", fpath);
     }
@@ -331,6 +335,10 @@ int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *
 
 int _writable(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     int retval;
+
+    (void)sb;
+    (void)typeflag;
+    (void)ftwbuf;
 
     if ( is_link((char *) fpath) == 0 ) {
         return(0);

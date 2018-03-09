@@ -75,6 +75,8 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     va_list args;
     va_start (args, format);
 
+    (void)line;
+
     if (vsnprintf(message, 512, format, args) >= 512) { // Flawfinder: ignore (args are not user modifyable)
         memcpy(message+496, "(TRUNCATED...)\n", 15);
         message[511] = '\0';

@@ -23,10 +23,10 @@
 #include "util/util.h"
 #include "util/file.h"
 
-#include "../../sif/list.h"
-#include "../../sif/sif.h"
-#include "../../sif/sifaccess.h"
-#include "../image.h"
+#include "sif/list.h"
+#include "sif/sif.h"
+#include "sif/sifaccess.h"
+#include "image/image.h"
 
 int _singularity_image_sif_init(struct image_object *image, int open_flags) {
     Sifinfo sif;

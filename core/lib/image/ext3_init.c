@@ -37,7 +37,7 @@
 #include "util/file.h"
 #include "util/registry.h"
 
-#include "../image.h"
+#include "image/image.h"
 
 #define BUFFER_SIZE     (1024*1024)
 #define MAX_LINE_LEN    2048

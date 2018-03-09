@@ -13,3 +13,5 @@ CFLAGS += -Wmissing-field-initializers -Wmissing-parameter-type -Wtype-limits
 CFLAGS += -Wshift-negative-value -Wunused-parameter -Wunused-but-set-parameter
 CFLAGS += -Wno-discarded-qualifiers -Wno-incompatible-pointer-types
 CFLAGS += -pipe -fmessage-length=0
+
+CPPFLAGS += -iquote\$(SOURCEDIR) -iquote\$(SOURCEDIR)/lib
