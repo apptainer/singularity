@@ -41,7 +41,7 @@
 #include "util/registry.h"
 #include "util/mount.h"
 
-#include "../../runtime.h"
+#include "runtime/runtime.h"
 
 static int bind_dev(char *tmpdir, char *dev);
 

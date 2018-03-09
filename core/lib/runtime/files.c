@@ -33,11 +33,11 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
-#include "./passwd/passwd.h"
-#include "./group/group.h"
-#include "./resolvconf/resolvconf.h"
-#include "./libs/libs.h"
-#include "./hostname/hostname.h"
+#include "runtime/passwd.h"
+#include "runtime/group.h"
+#include "runtime/resolvconf.h"
+#include "runtime/libs.h"
+#include "runtime/hostname.h"
 
 int _singularity_runtime_files(void) {
     int retval = 0;

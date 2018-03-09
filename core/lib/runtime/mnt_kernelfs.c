@@ -39,8 +39,8 @@
 #include "util/registry.h"
 #include "util/mount.h"
 
-#include "../../runtime.h"
-#include "../../ns/ns.h"
+#include "runtime/runtime.h"
+#include "runtime/ns.h"
 
 
 int _singularity_runtime_mount_kernelfs(void) {

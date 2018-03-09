@@ -42,7 +42,7 @@
 #include "util/registry.h"
 #include "util/mount.h"
 
-#include "../../runtime.h"
+#include "runtime/runtime.h"
 
 #define MAX_LINE_LEN 4096
 

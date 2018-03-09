@@ -37,7 +37,7 @@
 #include "util/privilege.h"
 #include "util/mount.h"
 
-#include "../runtime.h"
+#include "runtime/runtime.h"
 
 
 int container_file_bind(char *source, char *dest_path) {

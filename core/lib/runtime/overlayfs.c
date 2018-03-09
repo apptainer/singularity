@@ -43,9 +43,9 @@
 #include "util/suid.h"
 #include "util/mount.h"
 
-#include "lib/image/image.h"
+#include "image/image.h"
 
-#include "../runtime.h"
+#include "runtime/runtime.h"
 
 
 int _singularity_runtime_overlayfs(void) {

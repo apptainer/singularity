@@ -34,15 +34,15 @@
 #include "util/message.h"
 #include "util/privilege.h"
 
-#include "./binds/binds.h"
-#include "./home/home.h"
-#include "./hostfs/hostfs.h"
-#include "./kernelfs/kernelfs.h"
-#include "./tmp/tmp.h"
-#include "./dev/dev.h"
-#include "./cwd/cwd.h"
-#include "./userbinds/userbinds.h"
-#include "./scratch/scratch.h"
+#include "runtime/mnt_binds.h"
+#include "runtime/mnt_home.h"
+#include "runtime/mnt_hostfs.h"
+#include "runtime/mnt_kernelfs.h"
+#include "runtime/mnt_tmp.h"
+#include "runtime/mnt_dev.h"
+#include "runtime/mnt_cwd.h"
+#include "runtime/mnt_userbinds.h"
+#include "runtime/mnt_scratch.h"
 
 
 int _singularity_runtime_mounts(void) {

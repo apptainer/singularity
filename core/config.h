@@ -45,3 +45,5 @@
 #define SINGULARITY_SETNS_SYSCALL
 
 #define CONTAINER_FINALDIR LOCALSTATEDIR "/singularity/mnt/final"
+#define CONTAINER_MOUNTDIR LOCALSTATEDIR "/singularity/mnt/container"
+#define CONTAINER_OVERLAY LOCALSTATEDIR "/singularity/mnt/overlay"

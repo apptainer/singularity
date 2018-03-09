@@ -33,6 +33,7 @@
 #include "util/daemon.h"
 #include "util/setns.h"
 
+#include "config.h"
 
 static int enabled = -1;
 

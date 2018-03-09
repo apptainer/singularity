@@ -33,7 +33,6 @@
 #include <grp.h>
 #include <pwd.h>
 
-#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/config_parser.h"
@@ -41,9 +40,10 @@
 #include "util/privilege.h"
 #include "util/registry.h"
 
-#include "../file-bind.h"
-#include "../../runtime.h"
+#include "runtime/file-bind.h"
+#include "runtime/runtime.h"
 
+#include "config.h"
 
 int _singularity_runtime_files_passwd(void) {
     FILE *file_fp;

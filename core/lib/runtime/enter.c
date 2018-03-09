@@ -33,7 +33,7 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
-#include "./chroot/chroot.h"
+#include "runtime/chroot.h"
 
 
 int _singularity_runtime_enter(void) {

@@ -28,8 +28,8 @@
 #include "util/message.h"
 #include "util/privilege.h"
 
-#include "../file-bind.h"
-#include "../../runtime.h"
+#include "runtime/file-bind.h"
+#include "runtime/runtime.h"
 
 
 int _singularity_runtime_files_hostname(void) {

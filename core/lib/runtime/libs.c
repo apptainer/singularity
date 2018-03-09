@@ -45,8 +45,8 @@
 #include "util/registry.h"
 #include "util/mount.h"
 
-#include "../file-bind.h"
-#include "../../runtime.h"
+#include "runtime/file-bind.h"
+#include "runtime/runtime.h"
 
 
 int _singularity_runtime_files_libs(void) {

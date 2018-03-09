@@ -40,7 +40,7 @@
 #include "util/registry.h"
 #include "util/mount.h"
 
-#include "../../runtime.h"
+#include "runtime/runtime.h"
 
 
 int _singularity_runtime_mount_home(void) {

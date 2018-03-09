@@ -41,13 +41,15 @@
 #include "util/privilege.h"
 #include "util/config_parser.h"
 
-#include "./ns/ns.h"
-#include "./mounts/mounts.h"
-#include "./files/files.h"
-#include "./enter/enter.h"
-#include "./overlayfs/overlayfs.h"
-#include "./environment/environment.h"
-#include "./autofs/autofs.h"
+#include "runtime/ns.h"
+#include "runtime/mounts.h"
+#include "runtime/files.h"
+#include "runtime/enter.h"
+#include "runtime/overlayfs.h"
+#include "runtime/environment.h"
+#include "runtime/autofs.h"
+
+#include "config.h"
 
 #ifndef LOCALSTATEDIR
 #error LOCALSTATEDIR not defined

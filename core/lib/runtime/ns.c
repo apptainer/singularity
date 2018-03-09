@@ -40,13 +40,13 @@
 #include "util/registry.h"
 #include "util/config_parser.h"
 
-#include "./ipc/ipc.h"
-#include "./mnt/mnt.h"
-#include "./pid/pid.h"
-#include "./net/net.h"
-#include "./uts/uts.h"
-#include "./user/user.h"
-#include "../runtime.h"
+#include "runtime/ns_ipc.h"
+#include "runtime/ns_mnt.h"
+#include "runtime/ns_pid.h"
+#include "runtime/ns_net.h"
+#include "runtime/ns_uts.h"
+#include "runtime/ns_user.h"
+#include "runtime/runtime.h"
 
 
 int _singularity_runtime_ns(unsigned int flags) {
