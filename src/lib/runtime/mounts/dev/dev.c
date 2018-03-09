@@ -40,6 +40,7 @@
 #include "util/config_parser.h"
 #include "util/registry.h"
 #include "util/mount.h"
+#include "util/suid.h"
 
 #include "../../runtime.h"
 
@@ -95,7 +96,6 @@ int _singularity_runtime_mount_dev(void) {
                 singularity_message(ERROR, "Failed creating /dev/pts %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
                 ABORT(255);
             }
-            bind_dev(sessiondir, "/dev/tty");
         }
 
         bind_dev(sessiondir, "/dev/null");
@@ -108,59 +108,81 @@ int _singularity_runtime_mount_dev(void) {
             singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
             ABORT(255);
         }
+        singularity_priv_drop();
 
         if ( singularity_config_get_bool_char(MOUNT_DEVPTS) > 0 ) {
             struct group *ttygid;
-            char *devpts_opts_base="mode=0620,newinstance,ptmxmode=0666,gid=";
+            char *devpts_opts_base="mode=0620,newinstance,ptmxmode=0666";
+            char *devpts_opts_gid=",gid=";
             char *devpts_opts;
-            unsigned int max_sz, gd, gd_n;
+            unsigned int max_sz=0, gd, gd_n;
 
-            if ( (ttygid=getgrnam("tty")) == NULL ) {
-                singularity_message(ERROR, "Problem resolving 'tty' group GID: %s\n", strerror(errno));
-                ABORT(255);
-            }
+            if ( singularity_suid_enabled() > 0 ) {
 
-            /* number of digits in gid */
-            if ( ttygid->gr_gid == 0 ) {
-                gd_n = 1;
+                if ( (ttygid=getgrnam("tty")) == NULL ) {
+                    singularity_message(ERROR, "Problem resolving 'tty' group GID: %s\n", strerror(errno));
+                    ABORT(255);
+                }
+
+                /* number of digits in gid */
+                if ( ttygid->gr_gid == 0 ) {
+                    gd_n = 1;
+                }
+                else {
+                    gd_n = 0;
+                    gd = ttygid->gr_gid;
+                    while ( gd ) {
+                        gd /= 10;
+                        gd_n++;
+                    }
+                }
+
+                /* length of gid string + mount options + terminator + padding */
+                max_sz = gd_n + strlen(devpts_opts_base) + strlen(devpts_opts_gid) + 1 + 16;
+                if ( (devpts_opts=malloc(max_sz)) == NULL ) {
+                        singularity_message(ERROR, "Memory allocation failure: %s\n", strerror(errno));
+                        ABORT(255);
+                }
+                bzero(devpts_opts, max_sz);
+                snprintf(devpts_opts, max_sz-1, "%s%s%d", devpts_opts_base, devpts_opts_gid, ttygid->gr_gid);
             }
             else {
-                gd_n = 0;
-                gd = ttygid->gr_gid;
-                while ( gd ) {
-                    gd /= 10;
-                    gd_n++;
-                }
+                singularity_message(DEBUG, "Setuid not allowed - not setting /dev/pts filesystem gid\n");
+                devpts_opts=devpts_opts_base;
             }
 
-            /* length of gid string + mount options + terminator + padding */
-            max_sz = gd_n + strlen(devpts_opts_base) + 1 + 16;
-            if ( (devpts_opts=malloc(max_sz)) == NULL ) {
-                    singularity_message(ERROR, "Memory allocation failure: %s\n", strerror(errno));
-                    ABORT(255);
-            }
-            bzero(devpts_opts, max_sz);
-            snprintf(devpts_opts, max_sz-1, "%s%d", devpts_opts_base, ttygid->gr_gid);
-
+            singularity_priv_escalate();
             singularity_message(DEBUG, "Mounting devpts for staged /dev/pts\n");
             if ( singularity_mount("devpts", joinpath(devdir, "/pts"), "devpts", MS_NOSUID|MS_NOEXEC, devpts_opts) < 0 ) {
+                singularity_priv_drop();
+
                 if (errno == EINVAL) {
-                    // This is the error when unprivileged on RHEL7.4
-                    singularity_message(VERBOSE, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
+                    // This is the error when unprivileged on RHEL7.4 
+                    singularity_message(WARNING, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
                 } else {
                     singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
                     ABORT(255);
                 }
-            } else {
+            }
+            else
+            {
+                singularity_priv_drop();
+
+                bind_dev(sessiondir, "/dev/tty");
+
                 singularity_message(DEBUG, "Creating staged /dev/ptmx symlink\n");
                 if ( symlink("/dev/pts/ptmx", joinpath(devdir, "/ptmx")) < 0 ) {
                     singularity_message(ERROR, "Failed to create /dev/ptmx symlink: %s\n", strerror(errno));
                     ABORT(255);
                 }
+
             }
-            free(devpts_opts);
+
+            if (  max_sz != 0 )
+                free(devpts_opts);
         }
 
+        singularity_priv_escalate();
         singularity_message(DEBUG, "Mounting minimal staged /dev into container\n");
         if ( singularity_mount(devdir, joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_REC, NULL) < 0 ) {
             singularity_message(WARNING, "Could not stage dev tree: '%s' -> '%s': %s\n", devdir, joinpath(container_dir, "/dev"), strerror(errno));
