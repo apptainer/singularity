@@ -86,6 +86,9 @@
 #define LIMIT_CONTAINER_OWNERS "limit container owners"
 #define LIMIT_CONTAINER_OWNERS_DEFAULT "NULL"
 
+#define LIMIT_CONTAINER_GROUPS "limit container groups"
+#define LIMIT_CONTAINER_GROUPS_DEFAULT "NULL"
+
 #define LIMIT_CONTAINER_PATHS "limit container paths"
 #define LIMIT_CONTAINER_PATHS_DEFAULT "NULL"
 

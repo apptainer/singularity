@@ -14,7 +14,7 @@ unset BASH_ENV
 if [ -z "${SINGULARITYENV_PATH:-}" ]; then
     SINGULARITYENV_PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 else
-    SINGULARITYENV_PATH="$SINGULARITYENV_PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+    SINGULARITYENV_PATH="$SINGULARITYENV_PATH:/usr/local/bin:/usr/local/sbin:/bin:/sbin:/usr/bin:/usr/sbin"
 fi
 
 # Don't save the shell's HISTFILE

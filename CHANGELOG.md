@@ -6,11 +6,23 @@ and **Merged pull requests**. All closed issued and bug fixes should be
 represented by the pull requests that fixed them. This log originated with Singularity 2.4
 and changes prior to that are (unfortunately) done retrospectively. Critical items to know are:
 
- - renamed, deprecaed, or removed commands
+ - renamed, deprecated, or removed commands
  - defaults that are changed
  - backward incompatible changes (recipe file format? image file format?)
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
+
+## [v2.5](https://github.com/singularityware/singularity/tree/release-2.5)
+ 
+ - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Adjustments to SCIF (Scientific Filesystem) integration for broader use
+ - Fixed bug that did not export environment variables for apps with "-" in name
+
+## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
+
+ - Removed capability to handle docker layer aufs whiteout files correctly as
+   it increased potential attack surface on some distros (with apologies to 
+   users who requested it).
 
 ## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
 
@@ -24,8 +36,6 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fixed incompatibility between --pwd and --contain options #1259
  - Updated license information #1267
  - Fix non-root build from docker containers with non-writable file/dir permissions
-
-## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
  - Fix race condition between container exit and cleanupd while removing runtime directory
 
 ## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
