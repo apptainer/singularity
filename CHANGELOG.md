@@ -18,7 +18,10 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
      extraction of docker container layers. This adds libarchive-devel as a
      build time dep. At runtime libarchive is needed for whiteout handling. If
      libarchive is not available at runtime will fall back to previous
-     extraction method.
+     extraction method. 
+ - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Adjustments to SCIF (Scientific Filesystem) integration for broader use
+ - Fixed bug that did not export environment variables for apps with "-" in name
 
 ## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
 

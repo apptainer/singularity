@@ -16,6 +16,7 @@
 
 #Contributors:
 
+    - Afif Elghraoui <afif.elghraoui@nih.gov>
     - Amanda Duffy <aduffy@lenovo.com>
     - Ángel Bejarano <abejarano@ontropos.com>
     - Bernard Li <bernardli@lbl.gov>
@@ -38,4 +39,5 @@
     - Ralph Castain <rhc@open-mpi.org>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
+    - Thomas Hamel <hmlth@t-hamel.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
