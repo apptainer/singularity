@@ -334,6 +334,16 @@ AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
 AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
 AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
 
+# check for libarchive needed by docker-extract
+AC_CHECK_HEADERS([archive.h],
+[archive_header_found=yes; break;])
+AS_IF([test "x$archive_header_found" != "xyes"],
+[AC_MSG_ERROR([Unable to find the libarchive headers, need package libarchive-devel (libarchive-dev on Debian/Ubuntu)])])
+AC_SEARCH_LIBS([archive_read_new], [archive], [], [
+AC_MSG_ERROR([unable to find libarchive, need package libarchive-devel (libarchive-de on Debian/Ubuntu)])
+])
+# we don't want the LIBS setting of AC_SEARCH_LIBS, override
+AC_SUBST(LIBS,"")
 
 AC_CONFIG_FILES([
    Makefile
