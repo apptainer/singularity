@@ -10,7 +10,6 @@ package cli
 import (
 	"fmt"
 
-	sflags "github.com/singularityware/singularity/internal/pkg/cli/flags"
 	"github.com/spf13/cobra"
 )
 
@@ -58,28 +57,28 @@ func init() {
 	}
 
 	for _, cmd := range actionCmds {
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("bind"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("contain"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("containall"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("cleanenv"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("home"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("ipc"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("net"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("nv"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("overlay"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("pid"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("uts"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("pwd"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("scratch"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("userns"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("workdir"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("hostname"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("fakeroot"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("keep-privs"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("no-privs"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("add-caps"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("drop-caps"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("allow-setuid"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("bind"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("contain"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("containall"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("cleanenv"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("home"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("ipc"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("net"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("nv"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("overlay"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("pid"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("uts"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("pwd"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("scratch"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("userns"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("workdir"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("hostname"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("fakeroot"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("keep-privs"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("no-privs"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("add-caps"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("drop-caps"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("allow-setuid"))
 	}
 
 	singularityCmd.AddCommand(execCmd)

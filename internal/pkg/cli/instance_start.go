@@ -10,7 +10,6 @@ package cli
 import (
 	"fmt"
 
-	sflags "github.com/singularityware/singularity/internal/pkg/cli/flags"
 	"github.com/spf13/cobra"
 )
 
@@ -37,22 +36,24 @@ func init() {
 	}
 
 	for _, cmd := range instanceStartCmds {
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("bind"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("home"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("net"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("uts"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("overlay"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("scratch"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("workdir"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("userns"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("hostname"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("boot"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("fakeroot"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("keep-privs"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("no-privs"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("add-caps"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("drop-caps"))
-		cmd.PersistentFlags().AddFlag(sflags.Flags.Lookup("allow-setuid"))
+		cmd.Flags().SetInterspersed(false)
+
+		cmd.Flags().AddFlag(actionFlags.Lookup("bind"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("net"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("uts"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("scratch"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("workdir"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("userns"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("hostname"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("boot"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("fakeroot"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("keep-privs"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-privs"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
 	}
 
 	singularityCmd.AddCommand(instanceDotStartCmd)

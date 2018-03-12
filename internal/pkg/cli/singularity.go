@@ -24,7 +24,8 @@ var (
 
 // singularity is the base command when called without any subcommands
 var singularityCmd = &cobra.Command{
-	Use: "singularity [global options...]",
+	Use:                   "singularity [global options...]",
+	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	Run: nil,
 }
@@ -93,15 +94,17 @@ func PrintFlagUsages2(flagSet *pflag.FlagSet) (ret string) {
 */
 
 func init() {
+	singularityCmd.Flags().SetInterspersed(false)
+	singularityCmd.PersistentFlags().SetInterspersed(false)
 	//fmt.Printf("%s", PrintFlagUsages2(instanceStartCmd.LocalFlags()))
 	templateFuncs := template.FuncMap{
 		"TraverseParentsUses": TraverseParentsUses,
 	}
 
-	singularityCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
-	singularityCmd.PersistentFlags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
-	singularityCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
-	singularityCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
+	singularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
+	singularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
+	singularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
+	singularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
 
 	cobra.AddTemplateFuncs(templateFuncs)
 
