@@ -389,7 +389,10 @@ for app in ${SINGULARITY_ROOTFS}/scif/apps/*; do
     if [ -d "$app" ]; then
 
         app="${app##*/}"
-        appvar=(`echo $app | sed -e "s/-/_/g"`)
+
+
+        # Replace all - or . with an underscore
+        appvar=(`echo $app | sed -e "s/-/_/g" | sed -e "s/[.]/_/g"`)
         appbase="${SINGULARITY_ROOTFS}/scif/apps/$app"
         appmeta="${appbase}/scif"
 
