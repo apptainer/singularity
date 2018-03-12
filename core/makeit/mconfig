@@ -313,7 +313,7 @@ echo " checking: debug flag... $debug"
 # write a "#define" definition entry into $builddir/config.h
 config_add_def ()
 {
-	if [ "$1" == "" -o "$2" == "" ]; then
+	if [ "$1" = "" -o "$2" = "" ]; then
 		return
 	fi
 	echo "#define $*" >> $builddir/config.h
