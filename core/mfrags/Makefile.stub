@@ -1,4 +1,11 @@
-all: cscope collect
+libsycore := $(BUILDDIR)/lib/libsycore.a
+
+all: cscope collect $(libsycore)
+
+$(libsycore): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsigning_OBJ) $(libsif_OBJ)
+	@echo " AR" $@
+	@mkdir -p $(@D)
+	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsigning_OBJ) $(libsif_OBJ)
 
 .PHONY: collect
 collect:
