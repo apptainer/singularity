@@ -2,4 +2,4 @@ name := sif
 prog := sif
 csrc := sif.c
 depends := libsif libsigning libutil
-ldflags := -luuid -lcrypto
+extralibs := -luuid -lcrypto

@@ -2,4 +2,4 @@ name := mount
 prog := mount
 csrc := mount.c
 depends := libimage libruntime libsif libutil
-ldflags := -luuid
+extralibs := -luuid
