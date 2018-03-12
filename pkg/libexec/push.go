@@ -5,19 +5,12 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
-
 package libexec
 
 import (
-//capability "github.com/syndtr/gocapability/capability"
+	"fmt"
 )
 
-/*
-func CapabilityAdd(caps []capability.Cap) {
-
+func PushImage(image string, library string) {
+	fmt.Printf("Pushing image: \"%s\" to library: \"%s\"\n", image, library)
 }
-
-func CapabilityDrop(caps []capability.Cap) {
-
-}
-*/
