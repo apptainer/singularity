@@ -121,6 +121,8 @@ sif_printrow(void *elem, void *data)
 	static char fposbuf[26];
 	Sifdescriptor *desc = elem;
 
+	(void)data;
+
 	printf("%-4d ", desc->cm.id);
 	if(desc->cm.groupid == SIF_UNUSED_GROUP)
 		printf("|%-7s ", "NONE");
@@ -177,6 +179,8 @@ int
 sif_printdesc(void *elem, void *data)
 {
 	Sifdescriptor *desc = elem;
+
+	(void)data;
 
 	printf("desc type: %s\n", sif_datastr(desc->cm.datatype));
 	printf("desc id: %d\n", desc->cm.id);

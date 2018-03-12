@@ -44,9 +44,9 @@ enum{
  */
 
 char *
-sif_strerror(Siferrno siferrno)
+sif_strerror(Siferrno errnum)
 {
-	switch(siferrno){
+	switch(errnum){
 	case SIF_ENOERR: return "SIF errno not set or success";
 	case SIF_EMAGIC: return "invalid SIF magic";
 	case SIF_EFNAME: return "invalid input file name";
@@ -283,6 +283,7 @@ prepddesc(void *elem)
 static int
 prepedesc(void *elem)
 {
+	(void)elem;
 	return 0;
 }
 
@@ -331,6 +332,7 @@ preppdesc(void *elem)
 static int
 prepsdesc(void *elem)
 {
+	(void)elem;
 	return 0;
 }
 
@@ -503,6 +505,8 @@ putdesc(void *elem, void *data)
 {
 	Eleminfo *e = elem;
 
+	(void)data;
+
 	switch(e->cm.datatype){
 	case DATA_DEFFILE:
 		return putddesc(elem);
@@ -574,6 +578,9 @@ static int
 cleanupdesc(void *elem, void *data)
 {
 	Cmdesc *desc = (Cmdesc *)elem;
+
+	(void)data;
+
 	switch(desc->datatype){
 	case DATA_DEFFILE:
 		return cleanupddesc(elem);
