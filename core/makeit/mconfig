@@ -5,6 +5,7 @@
 set -e
 
 # defaults and compiler options
+prefix="/usr/local"
 verbose=0
 debug=0
 hstcc=
@@ -25,12 +26,13 @@ usage () {
 }
 
 usage_args () {
-	echo "usage: ${0##*/}: [-dvsS] [-b builddir] [-c hstcc] [-C tgtcc]"
-	echo "                 [-x hstcxx] [-X tgtcxx]"
+	echo "usage: ${0##*/}: [-dvsS] [-p prefix] [-b builddir] [-c hstcc]"
+	echo "                 [-C tgtcc] [-x hstcxx] [-X tgtcxx]"
 	echo "       -v build project with verbose flags on"
 	echo "       -d build project with debug flags on"
 	echo "       -s build final host project binary statically"
 	echo "       -S build final target project binary statically"
+	echo "       -p install project in \`prefix'"
 	echo "       -b build project in \`builddir'"
 	echo "       -c build project with host C \`compiler'"
 	echo "       -C build project with target C\`compiler'"
@@ -53,6 +55,7 @@ fi
 set -- $args
 while [ $# -ne 0 ]; do
  case $1 in
+  -p) prefix="$2"; shift; shift;;
   -b) builddir="$2"; shift; shift;;
   -c) hstcc="$2"; shift; shift;;
   -C) tgtcc="$2"; shift; shift;;
@@ -307,6 +310,16 @@ echo " checking: debug flag... $debug"
 #######################################################################
 # Extra user specified system configuration tests and checks (mtests)
 #######################################################################
+# write a "#define" definition entry into $builddir/config.h
+config_add_def ()
+{
+	if [ "$1" == "" -o "$2" == "" ]; then
+		return
+	fi
+	echo "#define $*" >> $builddir/config.h
+}
+
+rm -rf $builddir/config.h
 if [ -f $mtestsdir/base.chk ]; then
 	echo "=> running project specific checks ..."
 	. $mtestsdir/base.chk
