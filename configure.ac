@@ -253,6 +253,11 @@ AC_CHECK_FUNCS(setns, [
 
 AC_SUBST(SINGULARITY_DEFINES)
 
+
+AC_CHECK_PROG([mksquashfs],[mksquashfs],[yes],[no])
+AM_CONDITIONAL([FOUND_MKSQUASHFS], [test "x$mksquashfs" = xyes])
+AM_COND_IF([FOUND_MKSQUASHFS],,[AC_MSG_WARN([mksquashfs not found - needed at runtime for full build functionality])])
+
 # ---------------------------------------------------------------------
 # PYTHON
 # ---------------------------------------------------------------------
