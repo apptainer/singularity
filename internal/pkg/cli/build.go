@@ -10,6 +10,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/pkg/build"
 	"github.com/spf13/cobra"
 )
 
@@ -21,21 +22,6 @@ var (
 	Section  string
 )
 
-// buildCmd represents the build command
-var buildCmd = &cobra.Command{
-	Use: "build",
-	Run: func(cmd *cobra.Command, args []string) {
-		if silent {
-			fmt.Println("Silent!")
-		}
-
-		if Sandbox {
-			fmt.Println("Sandbox!")
-		}
-	},
-	TraverseChildren: true,
-}
-
 func init() {
 	buildCmd.Flags().SetInterspersed(false)
 	singularityCmd.AddCommand(buildCmd)
@@ -45,4 +31,29 @@ func init() {
 	buildCmd.Flags().BoolVarP(&Writable, "writable", "w", false, "")
 	buildCmd.Flags().BoolVarP(&Force, "force", "f", false, "")
 	buildCmd.Flags().BoolVarP(&NoTest, "notest", "T", false, "")
+}
+
+// buildCmd represents the build command
+var buildCmd = &cobra.Command{
+	Use:  "build",
+	Args: cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		if silent {
+			fmt.Println("Silent!")
+		}
+
+		if Sandbox {
+			fmt.Println("Sandbox!")
+		}
+
+		if build.IsValidURI(args[1]) {
+			b, err := build.NewCachedBuilder(args[0], args[1])
+			if err != nil {
+				fmt.Println("Image build system encountered an error:", err)
+				return
+			}
+			b.Build()
+		}
+	},
+	TraverseChildren: true,
 }

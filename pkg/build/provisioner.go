@@ -5,10 +5,41 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
-
 package build
 
-import ()
+import (
+	"fmt"
+	"net/url"
+)
+
+// NewProvisionerFromURI is used for providing a provisioner for any command that accepts
+// a remote image source (e.g. singularity run docker://..., singularity build image.sif docker://...)
+func NewProvisionerFromURI(uri string) (p Provisioner, err error) {
+	u, err := url.ParseRequestURI(uri)
+
+	if u.Scheme == "" {
+		return nil, err
+	}
+
+	switch u.Scheme {
+	case "docker":
+		return NewDockerProvisioner(), nil
+	case "shub":
+		return NewSHubProvisioner(), nil
+	default:
+		return nil, fmt.Errorf("Provisioner \"%s\" not supported", u.Scheme)
+	}
+}
+
+func IsValidURI(uri string) bool {
+	_, err := url.ParseRequestURI(uri)
+
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
+}
 
 // Provisioner is the interface used to represent how we convert any image
 // source into a chroot tree on disk. All necessary input (URL, etc...) should be
@@ -17,9 +48,26 @@ type Provisioner interface {
 	Provision(path string)
 }
 
-/*type PName string
+// ===== Docker =====
+func NewDockerProvisioner() (d *DockerProvisioner) {
+	return &DockerProvisioner{}
+}
 
-type PConstructor func([]interface{}) Provisioner{}
+type DockerProvisioner struct {
+}
 
-var PConstructors = map[PName]PConstructor
-*/
+func (d *DockerProvisioner) Provision(path string) {
+
+}
+
+// ===== SHub =====
+func NewSHubProvisioner() (s *SHubProvisioner) {
+	return &SHubProvisioner{}
+}
+
+type SHubProvisioner struct {
+}
+
+func (s *SHubProvisioner) Provision(path string) {
+
+}
