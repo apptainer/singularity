@@ -75,12 +75,14 @@ if [ $# != 0 ]; then
 fi
 sourcedir=`readlink -f .`
 mfragsdir=$sourcedir/mfrags
+mtestsdir=$sourcedir/mtests
 
 
 
 #######################################################################
 # System build tool configuration and debug/verbose flags 
 #######################################################################
+echo "=> running base system checks ..."
 
 ########################
 # builddir
@@ -186,7 +188,6 @@ fi
 ########################
 # target compilers
 ########################
-
 printf " checking: target C compiler... "
 if $tgtcc -E -x c /dev/null >/dev/null 2>&1; then
 	echo $tgtcc
@@ -303,12 +304,20 @@ echo " checking: verbose flag... $verbose"
 echo " checking: debug flag... $debug"
 
 
+#######################################################################
+# Extra user specified system configuration tests and checks (mtests)
+#######################################################################
+if [ -f $mtestsdir/base.chk ]; then
+	echo "=> running project specific checks ..."
+	. $mtestsdir/base.chk
+fi
+
+
 
 #######################################################################
 # Generated fragments
 #######################################################################
-
-echo " generating fragments ..."
+echo "=> generating fragments ..."
 if [ ! -d $mfragsdir ]; then
 	echo "error: $mfragsdir should be populated with Makefile fragments."
 	echo "NOTE: Fragments maybe copied from examples found in"
@@ -429,14 +438,13 @@ $topdir/genmod.awk modfile=$genconfdir/module.lst \
 #######################################################################
 # Target Makefile
 #######################################################################
-
 drawline () {
 	echo >> $output
 	printf "# [ Embedding file : %50s ] #\n" $1 >> $output
 	echo >> $output
 }
 
-echo " building Makefile ..."
+echo "=> building Makefile ..."
 
 :> $output
 echo "#" >> $output
@@ -483,9 +491,7 @@ rm -rf $genconfdir
 #######################################################################
 # Configuration results
 #######################################################################
-
-echo "------------------------"
-echo " project setup with :"
+echo "=> project setup with :"
 echo "    - target arch: $tgt_arch"
 echo "    - target compiler: $tgtcc"
 echo "    - host wordsize: ${wordsize}-bit"
@@ -500,7 +506,6 @@ if [ "$debug" = 1 ]; then
 else
 	echo "    - debug: no"
 fi
-echo "------------------------"
 
-echo " $builddir/Makefile ready:"
+echo "=> $builddir/Makefile ready:"
 echo " cd $builddir; make"
