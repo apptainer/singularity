@@ -12,14 +12,14 @@ import (
 )
 
 func init() {
-	singularityCmd.AddCommand(instanceCmd)
-	instanceCmd.AddCommand(instanceStartCmd)
-	instanceCmd.AddCommand(instanceStopCmd)
-	instanceCmd.AddCommand(instanceListCmd)
+	singularityCmd.AddCommand(capabilityCmd)
+	capabilityCmd.AddCommand(capabilityAddCmd)
+	capabilityCmd.AddCommand(capabilityDropCmd)
+	capabilityCmd.AddCommand(capabilityListCmd)
 }
 
-var instanceCmd = &cobra.Command{
-	Use: "instance",
+var capabilityCmd = &cobra.Command{
+	Use: "capability",
 	Run: nil,
 	DisableFlagsInUseLine: true,
 }

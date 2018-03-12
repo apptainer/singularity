@@ -1,19 +1,17 @@
 /*
-Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
 
-This software is licensed under a 3-clause BSD license.  Please
-consult LICENSE file distributed with the sources of this project regarding
-your rights to use or distribute this software.
+  This software is licensed under a 3-clause BSD license.  Please
+  consult LICENSE file distributed with the sources of this project regarding
+  your rights to use or distribute this software.
 */
 package cli
 
 import (
 	"os"
-	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 // Global variables for singularity CLI
@@ -26,7 +24,8 @@ var (
 
 // singularity is the base command when called without any subcommands
 var singularityCmd = &cobra.Command{
-	Use: "singularity [global options...] <command>",
+	Use:                   "singularity [global options...]",
+	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	Run: nil,
 }
@@ -42,31 +41,96 @@ func Execute() {
 	}
 }
 
-func PrintFlagUsages(flagSet *pflag.FlagSet) string {
-	return strings.Replace(flagSet.FlagUsages(), ", ", "|", -1)
-}
-
-func init() {
-	templateFuncs := template.FuncMap{
-		"PrintFlagUsages": PrintFlagUsages,
+func TraverseParentsUses(cmd *cobra.Command) string {
+	if cmd.HasParent() {
+		return TraverseParentsUses(cmd.Parent()) + cmd.Use + " "
 	}
 
-	singularityCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
-	singularityCmd.PersistentFlags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
-	singularityCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
-	singularityCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
+	return cmd.Use + " "
+}
+
+/*
+func PrintFlagUsages2(flagSet *pflag.FlagSet) (ret string) {
+	ret = ""
+	wrapLength := 0
+	//lineWidth := 70
+
+	lines := []string{}
+	flagSet.VisitAll(func(flag *pflag.Flag) {
+		if flag.Deprecated != "" || flag.Hidden {
+			return
+		}
+
+		line := ""
+
+		if flag.Shorthand != "" {
+			line += fmt.Sprintf("  -%s|--%s", flag.Shorthand, flag.Name)
+		} else {
+			line += fmt.Sprintf("     --%s", flag.Name)
+		}
+
+		for key, val := range flag.Annotations {
+			if key == "argtag" {
+				line += fmt.Sprintf(" %s", val[0])
+			}
+		}
+
+		//line += "\x00"
+		if len(line) > wrapLength {
+			wrapLength = len(line)
+		}
+
+		lines = append(lines, line)
+	})
+
+	width := wrapLength + 4
+
+	for _, line := range lines {
+		ret += fmt.Sprintf("%s %*s\n", line, width-len(line)+6, "test test")
+	}
+
+	return
+}
+*/
+
+func init() {
+	singularityCmd.Flags().SetInterspersed(false)
+	singularityCmd.PersistentFlags().SetInterspersed(false)
+	//fmt.Printf("%s", PrintFlagUsages2(instanceStartCmd.LocalFlags()))
+	templateFuncs := template.FuncMap{
+		"TraverseParentsUses": TraverseParentsUses,
+	}
+
+	singularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
+	singularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
+	singularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
+	singularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
 
 	cobra.AddTemplateFuncs(templateFuncs)
 
 	singularityCmd.SetHelpTemplate(
-		`{{.UsageString}}
+		`{{.UsageString}}{{if .HasAvailableLocalFlags}}
+
+Options:
+{{.LocalFlags.FlagUsagesWrapped 80 | trimTrailingWhitespaces}}
+{{end}}{{if .HasAvailableInheritedFlags}}
+Global Options:
+{{.InheritedFlags.FlagUsagesWrapped 80 | trimTrailingWhitespaces}}
+{{end}}{{if .HasExample}}
+Examples:{{.Example}}
+{{end}}
+For additional help, please visit our public documentation pages which are
+found at:
+
+    https://sylabs.io/
 `)
 
 	singularityCmd.SetUsageTemplate(
-		`Usage: {{if .HasParent}}{{if .Runnable}}
-  {{.Parent.CommandPath}} {{.Use}}{{end}} {{if .HasAvailableSubCommands}}
-  {{.CommandPath}}{{if .HasAvailableLocalFlags}} [{{.Name}} options...]{{end}} <command>{{end}}{{else}}
-  {{.CommandPath}} [global options...] <command>{{end}}`)
+		`Usage:
+  {{TraverseParentsUses . | trimTrailingWhitespaces}}{{if .HasAvailableSubCommands}} <command> 
+
+Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}`)
 
 	/*
 			singularityCmd.SetHelpTemplate(
