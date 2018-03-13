@@ -365,7 +365,7 @@ AC_CONFIG_FILES([
    src/lib/runtime/files/Makefile
    src/lib/runtime/files/group/Makefile
    src/lib/runtime/files/passwd/Makefile
-   src/lib/runtime/files/11_user_defined_SINGULARITYENV_PATH/Makefile
+   src/lib/runtime/files/11_udsep/Makefile
    src/lib/runtime/files/resolvconf/Makefile
    src/lib/runtime/files/libs/Makefile
    src/lib/runtime/mounts/Makefile
