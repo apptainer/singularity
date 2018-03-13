@@ -36,6 +36,7 @@
 #include "./passwd/passwd.h"
 #include "./group/group.h"
 #include "./resolvconf/resolvconf.h"
+#include "./11_user_defined_SINGULARITYENV_PATH/11_user_defined_SINGULARITYENV_PATH.h"
 #include "./libs/libs.h"
 
 
@@ -47,6 +48,7 @@ int _singularity_runtime_files(void) {
     retval += _singularity_runtime_files_group();
     retval += _singularity_runtime_files_resolvconf();
     retval += _singularity_runtime_files_libs();
+    retval += _singularity_runtime_files_11_user_defined_SINGULARITYENV_PATH();
 
     return(retval);
 }
