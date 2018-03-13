@@ -289,4 +289,4 @@ else
 	echo "yes"
 fi
 
-echo "INFO: userns and disable_suid are disabled. (mtests/base.chk)"
+echo "INFO: userns and disable_suid are disabled. (mchecks/base.chk)"
