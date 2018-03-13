@@ -86,11 +86,11 @@ mchecksdir=$sourcedir/mlocal/checks
 #######################################################################
 # System build tool configuration and debug/verbose flags 
 #######################################################################
-if [ -f $topdir/basechecks.chk ]; then
+if [ -f $mchecksdir/basechecks.chk ]; then
 	echo "=> running base system checks ..."
-	. $topdir/basechecks.chk
+	. $mchecksdir/basechecks.chk
 else
-	echo "error: file $topdir/basechecks.chk needs to be present"
+	echo "error: file $mchecksdir/basechecks.chk needs to be present"
 	exit 2
 fi
 
