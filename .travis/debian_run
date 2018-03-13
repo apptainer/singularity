@@ -1,0 +1,17 @@
+#!/bin/bash -ex
+
+DIST="${OS_TYPE}${OS_VERSION}"
+
+mkdir /tmp/$DIST
+
+cp -a . /tmp/$DIST/singularity
+cat > "/tmp/$DIST/script" << SCRIPT
+#!/bin/bash
+.travis/debuild_test $OS_VERSION
+SCRIPT
+
+cd /tmp/$DIST/singularity
+
+# mounting /run for /dev/shm (python multiprocessing)
+sudo singularity exec -w -B /run --keep-privs --allow-setuid docker://${OS_TYPE}:${OS_VERSION} /bin/bash -ex /tmp/$DIST/script
+sudo rm -rf /tmp/$DIST
