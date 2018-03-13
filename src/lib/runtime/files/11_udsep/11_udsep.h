@@ -21,11 +21,11 @@
  * 
 */
 
-#ifndef __SINGULARITY_RUNTIME_FILES_11_user_defined_SINGULARITYENV_PATH_H_
-#define __SINGULARITY_RUNTIME_FILES_11_user_defined_SINGULARITYENV_PATH_H_
+#ifndef __SINGULARITY_RUNTIME_FILES_11_udsep_H_
+#define __SINGULARITY_RUNTIME_FILES_11_udsep_H_
 
 extern int _singularity_runtime_files_11_user_defined_SINGULARITYENV_PATH(void);
 
-#endif /* __SINGULARITY_RUNTIME_FILES_11_user_defined_SINGULARITYENV_PATH_H */
+#endif /* __SINGULARITY_RUNTIME_FILES_11_udsep_H */
 
 
