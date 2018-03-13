@@ -36,7 +36,7 @@
 #include "./passwd/passwd.h"
 #include "./group/group.h"
 #include "./resolvconf/resolvconf.h"
-#include "./11_user_defined_SINGULARITYENV_PATH/11_user_defined_SINGULARITYENV_PATH.h"
+#include "./11_udsep/11_udsep.h"
 #include "./libs/libs.h"
 
 
