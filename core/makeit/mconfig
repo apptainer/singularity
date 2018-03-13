@@ -333,7 +333,7 @@ fi
 echo "=> generating fragments ..."
 if [ ! -d $mfragsdir ]; then
 	echo "error: $mfragsdir should be populated with Makefile fragments."
-	echo "NOTE: Fragments maybe copied from examples found in $topdir/examples/<project>/* "
+	echo "NOTE: Fragments may be copied from examples found in $topdir/examples/<project>/* "
 	echo "NOTE: to $sourcedir/mlocal/* and tweak for your project."
 	exit 2
 fi
