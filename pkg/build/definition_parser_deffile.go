@@ -118,6 +118,28 @@ func doSections(s *bufio.Scanner, d *Definition, done chan error) {
 		return
 	}
 
+	// Files are parsed as a map[string]string
+	filesSections := strings.TrimSpace(sections["files"])
+	subs := strings.Split(filesSections, "\n")
+	files := make(map[string]string)
+
+	for _, line := range subs {
+		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
+			continue
+		}
+		var key, val string
+		lineSubs := strings.SplitN(line, " ", 2)
+		if len(lineSubs) < 2 {
+			key = strings.ToLower(strings.TrimSpace(lineSubs[0]))
+			val = ""
+		} else {
+			key = strings.ToLower(strings.TrimSpace(lineSubs[0]))
+			val = strings.ToLower(strings.TrimSpace(lineSubs[1]))
+		}
+
+		files[key] = val
+	}
+
 	d.ImageData = imageData{
 		imageScripts: imageScripts{
 			Help:        sections["help"],
@@ -126,6 +148,7 @@ func doSections(s *bufio.Scanner, d *Definition, done chan error) {
 			Test:        sections["test"],
 		},
 	}
+	d.BuildData.Files = files
 	d.BuildData.buildScripts = buildScripts{
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
@@ -159,6 +182,9 @@ func doHeader(h string, d *Definition, done chan error) {
 	return
 }
 
+// ParseDefinitionFile recieves a reader from a definition file
+// and parse it into a Definition struct or return error if
+// the definition file has a bad section.
 func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 	d = Definition{}
 

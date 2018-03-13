@@ -18,27 +18,43 @@ import (
 
 func TestParseDefinitionFile(t *testing.T) {
 	testFilesOK := map[string]string{
-		"docker":      "./mock/docker/docker",
-		"debootstrap": "./mock/debootstrap/debootstrap",
-		"arch":        "./mock/arch/arch",
-		"yum":         "./mock/yum/yum",
-		"shub":        "./mock/shub/shub",
-		"localimage":  "./mock/localimage/localimage",
-		"busybox":     "./mock/busybox/busybox",
-		"zypper":      "./mock/zypper/zypper",
+		"docker": "./mock/docker/docker",
 	}
 	testFilesBAD := map[string]string{
 		"bad_section": "./mock/bad_section/bad_section",
 	}
-	resultFile := map[string]string{
-		"docker":      "./mock/docker/result",
-		"debootstrap": "./mock/debootstrap/result",
-		"arch":        "./mock/arch/result",
-		"yum":         "./mock/yum/result",
-		"shub":        "./mock/shub/result",
-		"localimage":  "./mock/localimage/result",
-		"busybox":     "./mock/busybox/result",
-		"zypper":      "./mock/zypper/result",
+	resultDefinition := map[string]Definition{
+		"docker": Definition{
+			Header: map[string]string{"bootstrap": "docker", "from": "<registry>/<namespace>/<container>:<tag>@<digest>",
+				"registry": "http://custom_registry", "namespace": "namespace", "includecmd": "yes"},
+			ImageData: imageData{
+				imageScripts: imageScripts{
+					Help: `Hello Help!
+# # double Hashtag comment`,
+					Environment: `    VADER=badguy
+    LUKE=goodguy
+    SOLO=someguy # comment 4
+    export VADER LUKE SOLO`,
+					Runscript: `    echo "Mock!"
+    echo "Arguments received: $*" # This is a very long comment
+    exec echo "$@"`,
+					Test: ``,
+				},
+			},
+			BuildData: buildData{
+				Files: map[string]string{`mock1.txt`: ``, `mock2.txt`: `/opt`},
+				buildScripts: buildScripts{
+					Pre: ``,
+					Setup: `    touch ${SINGULARITY_ROOTFS}/mock.txt
+    touch mock.txt
+
+# Some dummy comment 2`,
+					Post: `    echo 'this is a command so long that the user had to' \
+    'add a new line'
+    echo 'export GOPATH=$HOME/go' >> $SINGULARITY_ENVIRONMENT`,
+				},
+			},
+		},
 	}
 
 	// Loop through the Deffiles OK
@@ -62,11 +78,10 @@ func TestParseDefinitionFile(t *testing.T) {
 			t.Log(err)
 			t.Fail()
 		}
-		// Write Deffile output to file
-		Df.WriteDefinitionFile(f)
+
 		// And....compare the output (fingers crossed)
-		if !compareFiles(t, resultFile[k], f.Name()) {
-			t.Logf("<=\tFailed to parse Deffinition file:\t[%s]", k)
+		if !reflect.DeepEqual(resultDefinition[k], Df) {
+			t.Log("<=\tFailed to parse Deffinition header")
 			t.Fail()
 		}
 	}
@@ -88,35 +103,4 @@ func TestParseDefinitionFile(t *testing.T) {
 			t.Fail()
 		}
 	}
-}
-
-// compareFiles is a helper func to compare outputs
-func compareFiles(t *testing.T, resultFile, testFile string) bool {
-	rfile, err := os.Open(resultFile)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	defer rfile.Close()
-
-	tfile, err := os.Open(testFile)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	defer rfile.Close()
-
-	testDef, err := ParseDefinitionFile(tfile)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	rDef, err := ParseDefinitionFile(rfile)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	return reflect.DeepEqual(testDef, rDef)
 }
