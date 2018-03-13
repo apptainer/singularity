@@ -147,9 +147,9 @@ class AuthRedirectHandler(HTTPRedirectHandler):
         return newreq
 
 
-def urlopen(*args, **kwargs):
+def safe_urlopen(url, data=None):
     opener = build_opener(AuthRedirectHandler())
-    return opener.open(*args, **kwargs)
+    return opener.open(url, data=data)
 
 
 class ApiConnection(object):
@@ -301,7 +301,7 @@ class ApiConnection(object):
         '''
 
         try:
-            response = urlopen(request)
+            response = safe_urlopen(request)
 
         # If we have an HTTPError, try to follow the response
         except HTTPError as error:
@@ -314,7 +314,7 @@ class ApiConnection(object):
                 try:
                     request = self.prepare_request(request.get_full_url(),
                                                    headers=self.headers)
-                    response = urlopen(request)
+                    response = safe_urlopen(request)
                 except HTTPError as error:
                     bot.debug('Http Error with code %s' % (error.code))
                     return error
