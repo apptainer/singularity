@@ -5,6 +5,7 @@
 set -e
 
 # defaults and compiler options
+prefix="/usr/local"
 verbose=0
 debug=0
 hstcc=
@@ -25,12 +26,13 @@ usage () {
 }
 
 usage_args () {
-	echo "usage: ${0##*/}: [-dvsS] [-b builddir] [-c hstcc] [-C tgtcc]"
-	echo "                 [-x hstcxx] [-X tgtcxx]"
+	echo "usage: ${0##*/}: [-dvsS] [-p prefix] [-b builddir] [-c hstcc]"
+	echo "                 [-C tgtcc] [-x hstcxx] [-X tgtcxx]"
 	echo "       -v build project with verbose flags on"
 	echo "       -d build project with debug flags on"
 	echo "       -s build final host project binary statically"
 	echo "       -S build final target project binary statically"
+	echo "       -p install project in \`prefix'"
 	echo "       -b build project in \`builddir'"
 	echo "       -c build project with host C \`compiler'"
 	echo "       -C build project with target C\`compiler'"
@@ -53,6 +55,7 @@ fi
 set -- $args
 while [ $# -ne 0 ]; do
  case $1 in
+  -p) prefix="$2"; shift; shift;;
   -b) builddir="$2"; shift; shift;;
   -c) hstcc="$2"; shift; shift;;
   -C) tgtcc="$2"; shift; shift;;
@@ -73,246 +76,54 @@ if [ $# != 0 ]; then
 	usage_args
 	exit 2
 fi
+topdir=`dirname \`readlink mconfig\``
 sourcedir=`readlink -f .`
-mfragsdir=$sourcedir/mfrags
+mfragsdir=$sourcedir/mlocal/frags
+mchecksdir=$sourcedir/mlocal/checks
 
 
 
 #######################################################################
 # System build tool configuration and debug/verbose flags 
 #######################################################################
-
-########################
-# builddir
-########################
-if [ "$builddir" = "" ]; then
-	builddir=builddir
+if [ -f $mchecksdir/basechecks.chk ]; then
+	echo "=> running base system checks ..."
+	. $mchecksdir/basechecks.chk
+else
+	echo "error: file $mchecksdir/basechecks.chk needs to be present"
+	exit 2
 fi
-if [ -e $builddir -a $builddir != "." -a $builddir != ".." ]; then
-	printf "$builddir already exist, remove ? [N/y] "
-	read var
-	if [ "$var" = "y" -o "$var" = "Y" ]; then
-		rm -rf $builddir
-	else
-		echo "error: choose another build directory"
-		exit 2
+
+
+
+#######################################################################
+# Extra user specified system configuration checks (mlocal/checks)
+#######################################################################
+# write a "#define" definition entry into $builddir/config.h
+config_add_def ()
+{
+	if [ "$1" = "" -o "$2" = "" ]; then
+		return
 	fi
+	echo "#define $*" >> $builddir/config.h
+}
+
+rm -rf $builddir/config.h
+if [ -f $mchecksdir/project.chk ]; then
+	echo "=> running project specific checks ..."
+	. $mchecksdir/project.chk
 fi
-mkdir -p $builddir
-
-
-########################
-# this product
-########################
-output=$builddir/Makefile
-
-
-########################
-# mconfig paths
-########################
-topdir=`dirname \`readlink mconfig\``
-genconfdir=`mktemp -d -p /tmp mconfig-generated-XXXXXXXXXX`
-genmk=$genconfdir/base.mk
-:>$genmk
-
-
-########################
-# host compilers
-########################
-if [ "$hstcc" = "" ]; then
-	printf " checking: host C compiler... "
-	for cc in $hstcc_opts; do
-		if $cc -E -x c /dev/null >/dev/null 2>&1; then
-			hstcc="$cc"
-			break
-		fi
-	done
-	if [ "$hstcc" != "" ]; then
-		echo $hstcc
-	else
-		echo "not found!"
-		usage
-		exit 1
-	fi
-else
-	printf " checking: host C compiler... "
-	if $hstcc -E -x c /dev/null >/dev/null 2>&1; then
-		echo $hstcc
-	else
-		echo "$hstcc cannot compile test code!"
-		usage
-		exit 1
-	fi
-
-fi
-if [ "$hstcxx" = "" ]; then
-	printf " checking: host C++ compiler... "
-	for cxx in $hstcxx_opts; do
-		if $cxx -E -x c++ /dev/null >/dev/null 2>&1; then
-			hstcxx="$cxx"
-			break
-		fi
-	done
-	if [ "$hstcxx" != "" ]; then
-		echo $hstcxx
-	else
-		echo "not found!"
-		usage
-		exit 1
-	fi
-else
-	printf " checking: host C++ compiler... "
-	if $hstcxx -E -x c++ /dev/null >/dev/null 2>&1; then
-		echo $hstcxx
-	else
-		echo "$hstcxx cannot compile test code!"
-		usage
-		exit 1
-	fi
-fi
-
-
-########################
-# target
-########################
-if [ "$tgtcc" = "" ]; then
-	tgtcc=$hstcc
-fi
-if [ "$tgtcxx" = "" ]; then
-	tgtcxx=$hstcxx
-fi
-
-
-########################
-# target compilers
-########################
-
-printf " checking: target C compiler... "
-if $tgtcc -E -x c /dev/null >/dev/null 2>&1; then
-	echo $tgtcc
-else
-	echo "$tgtcc cannot compile test code!"
-	usage
-	exit 1
-fi
-printf " checking: target C++ compiler... "
-if $tgtcxx -E -x c++ /dev/null >/dev/null 2>&1; then
-	echo $tgtcxx
-else
-	echo "$tgtcxx cannot compile test code!"
-	usage
-	exit 1
-fi
-
-
-########################
-# static
-########################
-printf " checking: host compiles static binaries... "
-if ! echo "int main(int args, char *argv[]) { return 0; }" | \
-   $hstcc -x c -static -o /dev/null - >/dev/null 2>&1; then
-	hststatic=0
-	echo "no"
-else
-	echo "yes"
-fi
-printf " checking: target compiles static binaries... "
-if ! echo "int main(int args, char *argv[]) { return 0; }" | \
-   $tgtcc -x c -static -o /dev/null - >/dev/null 2>&1; then
-	tgtstatic=0
-	echo "no"
-else
-	echo "yes"
-fi
-
-
-########################
-# host os
-########################
-printf " checking: host os type... "
-host=
-if echo | $hstcc -E -dM - | grep -qs -e __unix__ -e __unix -e unix \
-	-e __APPLE__; then
-	host="unix"
-fi
-if echo | $hstcc -E -dM - | grep -qs -e _WIN32 -e _WIN64 -e __WIN32 \
-	-e __WIN64 -e __WINNT -e __WINNT__ -e __WIN32__ -e WINNT -e __WIN64__ \
-	-e WIN32 -e WIN64; then
-	host="windows"
-fi
-if [ "$host" != "" ]; then
-	echo $host
-else
-	echo "not found!"
-	usage
-	exit 1
-fi
-
-
-########################
-# target architecture
-########################
-printf " checking: target architecture... "
-tgt_arch=
-if echo | $hstcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
-	tgt_arch=i386
-fi
-if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
-	-e __x86_64__; then
-	tgt_arch=x86_64
-fi
-if [ "$tgt_arch" != "" ]; then
-	echo $tgt_arch
-else
-	echo "not found!"
-	usage
-	exit 1
-fi
-
-
-########################
-# wordsize
-########################
-printf " checking: architecture word size... "
-wordsize=
-if echo | $hstcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
-	wordsize=32
-fi
-if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
-	-e __x86_64__; then
-	wordsize=64
-fi
-if [ "$wordsize" != "" ]; then
-	echo $wordsize
-else
-	echo "not found!"
-	usage
-	exit 1
-fi
-
-
-########################
-# verbose
-########################
-echo " checking: verbose flag... $verbose"
-
-
-########################
-# debug
-########################
-echo " checking: debug flag... $debug"
 
 
 
 #######################################################################
 # Generated fragments
 #######################################################################
-
-echo " generating fragments ..."
+echo "=> generating fragments ..."
 if [ ! -d $mfragsdir ]; then
 	echo "error: $mfragsdir should be populated with Makefile fragments."
-	echo "NOTE: Fragments maybe copied from examples found in"
-	echo "NOTE: $topdir/fragments/example/* and tweak for your project."
+	echo "NOTE: Fragments may be copied from examples found in $topdir/examples/<project>/* "
+	echo "NOTE: to $sourcedir/mlocal/* and tweak for your project."
 	exit 2
 fi
 
@@ -429,14 +240,13 @@ $topdir/genmod.awk modfile=$genconfdir/module.lst \
 #######################################################################
 # Target Makefile
 #######################################################################
-
 drawline () {
 	echo >> $output
 	printf "# [ Embedding file : %50s ] #\n" $1 >> $output
 	echo >> $output
 }
 
-echo " building Makefile ..."
+echo "=> building Makefile ..."
 
 :> $output
 echo "#" >> $output
@@ -483,9 +293,7 @@ rm -rf $genconfdir
 #######################################################################
 # Configuration results
 #######################################################################
-
-echo "------------------------"
-echo " project setup with :"
+echo "=> project setup with :"
 echo "    - target arch: $tgt_arch"
 echo "    - target compiler: $tgtcc"
 echo "    - host wordsize: ${wordsize}-bit"
@@ -500,7 +308,7 @@ if [ "$debug" = 1 ]; then
 else
 	echo "    - debug: no"
 fi
-echo "------------------------"
 
-echo " $builddir/Makefile ready:"
-echo " cd $builddir; make"
+echo "=> $builddir/Makefile ready, try:"
+echo "   $ cd $builddir"
+echo "   $ make"
