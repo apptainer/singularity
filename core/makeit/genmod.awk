@@ -447,5 +447,5 @@ BEGIN {
 
 	genallrule(modules, moduledirs, tags, envar["genconfdir"] "/" "all.mk")
 
-	printtags(tags)
+#	printtags(tags)
 }

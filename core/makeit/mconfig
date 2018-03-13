@@ -77,8 +77,8 @@ if [ $# != 0 ]; then
 	exit 2
 fi
 sourcedir=`readlink -f .`
-mfragsdir=$sourcedir/mfrags
-mtestsdir=$sourcedir/mtests
+mfragsdir=$sourcedir/mlocal/frags
+mchecksdir=$sourcedir/mlocal/checks
 
 
 
@@ -308,7 +308,7 @@ echo " checking: debug flag... $debug"
 
 
 #######################################################################
-# Extra user specified system configuration tests and checks (mtests)
+# Extra user specified system configuration checks (mlocal/checks)
 #######################################################################
 # write a "#define" definition entry into $builddir/config.h
 config_add_def ()
@@ -320,9 +320,9 @@ config_add_def ()
 }
 
 rm -rf $builddir/config.h
-if [ -f $mtestsdir/base.chk ]; then
+if [ -f $mchecksdir/project.chk ]; then
 	echo "=> running project specific checks ..."
-	. $mtestsdir/base.chk
+	. $mchecksdir/project.chk
 fi
 
 
@@ -333,8 +333,8 @@ fi
 echo "=> generating fragments ..."
 if [ ! -d $mfragsdir ]; then
 	echo "error: $mfragsdir should be populated with Makefile fragments."
-	echo "NOTE: Fragments maybe copied from examples found in"
-	echo "NOTE: $topdir/fragments/example/* and tweak for your project."
+	echo "NOTE: Fragments maybe copied from examples found in $topdir/examples/<project>/* "
+	echo "NOTE: to $sourcedir/mlocal/* and tweak for your project."
 	exit 2
 fi
 
