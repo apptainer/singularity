@@ -32,7 +32,7 @@ var validSections = map[string]bool{
 	"test":        true,
 }
 
-// scanSections is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
+// scanDefinitionFile is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
 // that designated by a line starting with %
 // If there are any Golang devs reading this, please improve your documentation for this. It's awful.
 func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err error) {
