@@ -35,7 +35,7 @@
 
 int _singularity_runtime_ns_uts(void) {
     char *hostname = singularity_registry_get("HOSTNAME");
-    size_t hostname_len;
+    size_t hostname_len = 0;
 
     if ( hostname ) {
         hostname_len = strlen(hostname);

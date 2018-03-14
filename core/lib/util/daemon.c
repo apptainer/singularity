@@ -20,7 +20,6 @@
 #include <limits.h>
 #include <libgen.h>
 
-#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/daemon.h"
@@ -33,7 +32,7 @@
 void *xmalloc(size_t size) {
     void *mem = malloc(size);
     if ( mem == NULL ) {
-        singularity_message(ERROR, "Failed to allocate %lu memory bytes\n", size);
+        singularity_message(ERROR, "Failed to allocate %zu memory bytes\n", size);
         ABORT(255);
     }
     memset(mem, 0, size);

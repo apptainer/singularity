@@ -39,7 +39,6 @@
 #include "util/fork.h"
 #include "util/privilege.h"
 
-#include "config.h"
 
 #ifndef LIBEXECDIR
 #error LIBEXECDIR not defined

@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "config.h"
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"

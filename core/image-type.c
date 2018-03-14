@@ -30,7 +30,6 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include "config.h"
 #include "util/util.h"
 #include "util/config_parser.h"
 #include "util/message.h"

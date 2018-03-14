@@ -37,8 +37,6 @@
 #include <limits.h>
 #include <sched.h>
 
-#include "config.h"
-
 #include "util/file.h"
 #include "util/util.h"
 #include "util/registry.h"
@@ -269,7 +267,7 @@ void singularity_priv_drop(void) {
         singularity_message(VERBOSE, "Could not restore EUID to 0: %s (errno=%d).\n", strerror(errno), errno);
     }
 
-    singularity_message(DEBUG, "Dropping privileges to UID=%d, GID=%d (%lu supplementary GIDs)\n", uinfo.uid, uinfo.gid, uinfo.gids_count);
+    singularity_message(DEBUG, "Dropping privileges to UID=%d, GID=%d (%zu supplementary GIDs)\n", uinfo.uid, uinfo.gid, uinfo.gids_count);
 
     singularity_message(DEBUG, "Restoring supplementary groups\n");
     if ( uinfo.dropped_groups && (setgroups(uinfo.gids_count, uinfo.gids) < 0) ) {

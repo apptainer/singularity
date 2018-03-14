@@ -5,11 +5,11 @@ CLEANFILES :=
 AFLAGS := -g
 
 CFLAGS := -Wall -Werror -Wfatal-errors  -Wno-unknown-warning-option
-CFLAGS += -Wstrict-prototypes -Wshadow -Wpointer-arith -Wbad-function-cast
-CFLAGS += -Woverlength-strings -Wunreachable-code -Wframe-larger-than=2047
+CFLAGS += -Wstrict-prototypes -Wpointer-arith -Wbad-function-cast
+CFLAGS += -Woverlength-strings -Wframe-larger-than=2047
 CFLAGS += -Wno-sign-compare -Wclobbered -Wempty-body -Wmissing-parameter-type
 CFLAGS += -Wtype-limits -Wunused-parameter -Wunused-but-set-parameter
 CFLAGS += -Wno-discarded-qualifiers -Wno-incompatible-pointer-types
 CFLAGS += -pipe -fmessage-length=0
 
-CPPFLAGS += -iquote\$(BUILDDIR) -iquote\$(SOURCEDIR) -iquote\$(SOURCEDIR)/lib
+CPPFLAGS += -include $(BUILDDIR)/config.h -iquote\$(SOURCEDIR) -iquote\$(SOURCEDIR)/lib

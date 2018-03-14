@@ -1,2 +1,2 @@
-CFLAGS += -Ofast
+CFLAGS += -O2
 LDFLAGS += -s

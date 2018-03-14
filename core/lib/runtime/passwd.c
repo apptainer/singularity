@@ -43,8 +43,6 @@
 #include "runtime/file_bind.h"
 #include "runtime/runtime.h"
 
-#include "config.h"
-
 int _singularity_runtime_files_passwd(void) {
     FILE *file_fp;
     char *source_file;
