@@ -188,7 +188,7 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 	s.Split(scanDefinitionFile)
 
 	s.Scan()
-	for s.Text() == "" {
+	for s.Text() == "" && s.Err() == nil {
 		s.Scan()
 	}
 
