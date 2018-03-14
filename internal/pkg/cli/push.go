@@ -12,14 +12,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var(
+	PushLibraryURI string
+)
+
 func init() {
+	pushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "http://localhost:5051", "")
 	singularityCmd.AddCommand(pushCmd)
 }
 
 var pushCmd = &cobra.Command{
-	Use:  "push",
+	Use:  "push myimage.sif library://user/collection/container:tag",
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		libexec.PushImage(args[0], args[1])
+		libexec.PushImage(args[0], args[1], PushLibraryURI)
 	},
 }

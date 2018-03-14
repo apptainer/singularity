@@ -12,14 +12,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var(
+	PullLibraryURI string
+)
+
 func init() {
+	pullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "http://localhost:5051", "")
 	singularityCmd.AddCommand(pullCmd)
+
 }
 
 var pullCmd = &cobra.Command{
-	Use:  "pull",
+	Use:  "pull myimage.sif library://user/collection/container:tag",
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		libexec.PullImage(args[0], args[1])
+		libexec.PullImage(args[0], args[1], PullLibraryURI)
 	},
 }

@@ -9,8 +9,15 @@ package libexec
 
 import (
 	"fmt"
+
+	"github.com/singularityware/singularity/pkg/library/client"
+	"log"
 )
 
-func PushImage(image string, library string) {
+func PushImage(image string, library string, libraryURL string) {
 	fmt.Printf("Pushing image: \"%s\" to library: \"%s\"\n", image, library)
+	err := client.UploadImage(image, library, libraryURL)
+	if err != nil {
+		log.Fatalf("[ERROR] %s", err.Error())
+	}
 }

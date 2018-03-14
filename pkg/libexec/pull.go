@@ -9,10 +9,17 @@ package libexec
 
 import (
 	"fmt"
+
+	"github.com/singularityware/singularity/pkg/library/client"
+	"log"
 )
 
 // PullImage is the function that is responsible for pulling an image from a Sylabs library. This will
 // eventually be integrated with the build system as a builder, but for now this is the palce to put it
-func PullImage(image string, library string) {
+func PullImage(image string, library string, libraryURL string) {
 	fmt.Printf("Pulling image: \"%s\" from library: \"%s\"\n", image, library)
+	err := client.DownloadImage(image, library, libraryURL)
+	if err != nil {
+		log.Fatalf("[ERROR] %s", err.Error())
+	}
 }
