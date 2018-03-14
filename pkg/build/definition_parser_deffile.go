@@ -71,16 +71,12 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 			}
 		} else {
 			// This line is not a section identifier
-			if inSection {
-				// If we're inside of a section,
-				retbuf.Write(line)
-				retbuf.WriteString("\n")
-			}
+			retbuf.Write(line)
+			retbuf.WriteString("\n")
 		}
 
-		// Shift the advance retval and the data slice to the next line
+		// Shift the advance retval to the next line
 		advance += a
-		//data = data[:]
 		if a == 0 {
 			break
 		}
@@ -192,6 +188,10 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 	s.Split(scanDefinitionFile)
 
 	s.Scan()
+	for s.Text() == "" {
+		s.Scan()
+	}
+
 	if s.Err() != nil {
 		log.Println(s.Err())
 		return d, s.Err()
