@@ -11,7 +11,9 @@ import (
 	"os"
 	"text/template"
 
+	//"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	//flag "github.com/spf13/pflag"
 )
 
 // Global variables for singularity CLI
@@ -36,6 +38,7 @@ appropriately.  This is called by main.main(). It only needs to happen once to
 the root command (singularity).
 */
 func Execute() {
+	//goflag.Parse()
 	if err := singularityCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
@@ -49,6 +52,7 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 	return cmd.Use + " "
 }
 
+// TODO Come back to this and finish implementation!
 /*
 func PrintFlagUsages2(flagSet *pflag.FlagSet) (ret string) {
 	ret = ""
@@ -101,6 +105,10 @@ func init() {
 		"TraverseParentsUses": TraverseParentsUses,
 	}
 
+	//singularityCmd.Flags().AddGoFlagSet(goflag.CommandLine)
+	//flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
+	//goflag.Parse()
+
 	singularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
 	singularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
 	singularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
@@ -122,7 +130,7 @@ Examples:{{.Example}}
 For additional help, please visit our public documentation pages which are
 found at:
 
-    https://sylabs.io/
+    https://docs.sylabs.io/
 `)
 
 	singularityCmd.SetUsageTemplate(
