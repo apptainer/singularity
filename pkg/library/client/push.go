@@ -1,18 +1,18 @@
 package client
 
 import (
-	"log"
-	"net/http"
-	"fmt"
 	"bytes"
 	"encoding/json"
-	"gopkg.in/mgo.v2/bson"
-	"mime/multipart"
-	"os"
+	"fmt"
 	"io"
-	"github.com/cheggaaa/pb"
-)
+	"log"
+	"mime/multipart"
+	"net/http"
+	"os"
 
+	"github.com/cheggaaa/pb"
+	"gopkg.in/mgo.v2/bson"
+)
 
 var baseURL string
 
@@ -20,7 +20,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 
 	baseURL = libraryURL
 
-	if ! isLibraryRef(libraryRef) {
+	if !isLibraryRef(libraryRef) {
 		log.Printf("Not a valid library reference : %s", libraryRef)
 	}
 
@@ -83,8 +83,6 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 	return nil
 }
 
-
-
 func entityExists(entity string) (id string, err error) {
 	url := (baseURL + "/v1/entities/" + entity)
 	return apiExists(url)
@@ -110,42 +108,41 @@ func createEntity(name string) (id string, err error) {
 		Name:        name,
 		Description: "No description",
 	}
-	return apiCreate(e,baseURL + "/v1/entities")
+	return apiCreate(e, baseURL+"/v1/entities")
 
 }
 
 func createCollection(name string, entityID string) (id string, err error) {
 	c := Collection{
-		Name: name,
+		Name:        name,
 		Description: "No description",
-		Entity: bson.ObjectIdHex(entityID),
+		Entity:      bson.ObjectIdHex(entityID),
 	}
-	return apiCreate(c,baseURL + "/v1/collections")
+	return apiCreate(c, baseURL+"/v1/collections")
 }
-
 
 func createContainer(name string, collectionID string) (id string, err error) {
 	c := Container{
-		Name: name,
+		Name:        name,
 		Description: "No description",
-		Collection: bson.ObjectIdHex(collectionID),
+		Collection:  bson.ObjectIdHex(collectionID),
 	}
-	return apiCreate(c,baseURL + "/v1/containers")
+	return apiCreate(c, baseURL+"/v1/containers")
 }
 
 func createImage(name string, containerID string) (id string, err error) {
 	i := Image{
 		Name:        name,
 		Description: "No description",
-		Container: bson.ObjectIdHex(containerID),
+		Container:   bson.ObjectIdHex(containerID),
 	}
 
-	return apiCreate(i,baseURL + "/v1/images")
+	return apiCreate(i, baseURL+"/v1/images")
 }
 
-func apiCreate(o interface {}, url string) (id string, err error) {
+func apiCreate(o interface{}, url string) (id string, err error) {
 	s, err := json.Marshal(o)
-	if err != nil{
+	if err != nil {
 		return "", fmt.Errorf("Error endoding object to JSON:\n\t%s", err.Error())
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
@@ -156,7 +153,7 @@ func apiCreate(o interface {}, url string) (id string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("Error making request to server:\n\t%s", err.Error())
 	}
-	if res.StatusCode != http.StatusOK{
+	if res.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("Creation did not succeed, code %d", res.StatusCode)
 	}
 
@@ -171,7 +168,7 @@ func apiCreate(o interface {}, url string) (id string, err error) {
 
 }
 
-func apiExists(url string) (id string, err error){
+func apiExists(url string) (id string, err error) {
 	res, err := http.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("Error making request to server:\n\t%s", err.Error())
@@ -187,7 +184,7 @@ func apiExists(url string) (id string, err error){
 	return "", nil
 }
 
-func postFile(filePath string, imageID string) error{
+func postFile(filePath string, imageID string) error {
 
 	var b bytes.Buffer
 
@@ -220,7 +217,7 @@ func postFile(filePath string, imageID string) error{
 	// create proxy reader
 	bodyProgress := bar.NewProxyReader(&b)
 	// Make an upload request
-	req, _ := http.NewRequest("POST", baseURL + "/v1/imagefile/"+imageID, bodyProgress)
+	req, _ := http.NewRequest("POST", baseURL+"/v1/imagefile/"+imageID, bodyProgress)
 	// Don't forget to set the content type, this will contain the boundary.
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	client := &http.Client{}
@@ -231,11 +228,10 @@ func postFile(filePath string, imageID string) error{
 	if err != nil {
 		return fmt.Errorf("Error uploading file to server: %s", err.Error())
 	}
-	if res.StatusCode != http.StatusOK{
+	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("Upload did not succeed, status code: %d", res.StatusCode)
 	}
 
 	return nil
-
 
 }

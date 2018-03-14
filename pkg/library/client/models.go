@@ -5,10 +5,10 @@
 package client
 
 import (
-"fmt"
-"time"
+	"fmt"
+	"time"
 
-"gopkg.in/mgo.v2/bson"
+	"gopkg.in/mgo.v2/bson"
 )
 
 // ModelManager - Generic interface for models which must have a bson ObjectID

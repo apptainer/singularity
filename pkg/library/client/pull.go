@@ -1,18 +1,19 @@
 package client
 
 import (
-	"log"
-	"os"
-	"net/http"
-	"io"
-	"github.com/cheggaaa/pb"
-	"strings"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"strings"
+
+	"github.com/cheggaaa/pb"
 )
 
-func DownloadImage(filePath string, libraryRef string, libraryURL string) error{
+func DownloadImage(filePath string, libraryRef string, libraryURL string) error {
 
-	if ! isLibraryRef(libraryRef) {
+	if !isLibraryRef(libraryRef) {
 		log.Fatalf("Not a valid library URI: %s", libraryRef)
 	}
 
@@ -56,7 +57,5 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string) error{
 	log.Printf("Download Complete!")
 
 	return nil
-
-
 
 }
