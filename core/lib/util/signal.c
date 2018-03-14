@@ -18,7 +18,6 @@
 #include <string.h>
 #include <sys/prctl.h>
 
-#include "config.h"
 #include "util/util.h"
 #include "util/signal.h"
 #include "util/fork.h"

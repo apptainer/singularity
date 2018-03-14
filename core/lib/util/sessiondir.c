@@ -41,8 +41,6 @@
 #include "util/privilege.h"
 #include "util/mount.h"
 
-#include "config.h"
-
 #ifndef LOCALSTATEDIR
 #error LOCALSTATEDIR not defined
 #endif

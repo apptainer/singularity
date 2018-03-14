@@ -33,8 +33,6 @@
 #  include "securebits.h"
 #endif /* SINGULARITY_SECUREBITS */
 
-#include "config.h"
-
 #include "file.h"
 #include "util.h"
 #include "registry.h"
@@ -368,7 +366,7 @@ static unsigned long long get_user_file_capabilities(void) {
     return(caps);
 }
 
-static unsigned long long get_group_file_capabilities(void) {
+unsigned long long get_group_file_capabilities(void) {
     unsigned long long caps = 0;
     gid_t *gids = NULL;
     int i, count = getgroups(0, NULL);

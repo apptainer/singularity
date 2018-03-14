@@ -44,7 +44,6 @@
 #include <ctype.h>
 #include <pwd.h>
 
-#include "config.h"
 #include "util/util.h"
 #include "util/file.h"
 #include "util/message.h"

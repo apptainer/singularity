@@ -37,7 +37,6 @@
 #include <libgen.h>
 #include <linux/limits.h>
 
-#include "config.h"
 #include "lib/singularity.h"
 #include "util/file.h"
 #include "util/util.h"

@@ -33,8 +33,6 @@
 #include "util/daemon.h"
 #include "util/setns.h"
 
-#include "config.h"
-
 static int enabled = -1;
 
 int _singularity_runtime_ns_net(void) {

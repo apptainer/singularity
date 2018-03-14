@@ -31,7 +31,6 @@
 #include <syslog.h>
 #include <libgen.h>
 
-#include "config.h"
 #include "util/util.h"
 #include "util/message.h"
 

@@ -38,7 +38,6 @@
 #include <ftw.h>
 #include <time.h>
 
-#include "config.h"
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"

@@ -22,7 +22,6 @@
 #include <archive.h>
 #include <archive_entry.h>
 
-#include "config.h"
 #include "util/file.h"
 #include "util/message.h"
 #include "util/registry.h"

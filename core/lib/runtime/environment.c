@@ -74,7 +74,7 @@ int _singularity_runtime_environment(void) {
         for(i = 0; i < envlen; i++) {
             singularity_message(DEBUG, "Evaluating envar to clean: %s\n", envclone[i]);
             if ( strncmp(envclone[i], "SINGULARITY_", 12) == 0 ) {
-                char *key, *tok;
+                char *key, *tok = NULL;
 
                 key = strtok_r(envclone[i], "=", &tok);
 
@@ -89,7 +89,7 @@ int _singularity_runtime_environment(void) {
     singularity_message(DEBUG, "Transposing environment\n");
     for(i = 0; i < envlen; i++) {
         if ( strncmp(envclone[i], "SINGULARITYENV_", 15) == 0 ) {
-            char *tok, *key, *val;
+            char *tok = NULL, *key, *val;
 
             key = strtok_r(envclone[i], "=", &tok);
             val = strtok_r(NULL, "\n", &tok);

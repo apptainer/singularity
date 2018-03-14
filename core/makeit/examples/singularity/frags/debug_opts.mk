@@ -1,2 +1,2 @@
 CFLAGS += -O0 -ggdb
-CPPFLAGS += -DDEBUG
+CPPFLAGS += -DDBG

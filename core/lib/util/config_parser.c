@@ -35,7 +35,6 @@
 #include <search.h>
 #include <glob.h>
 
-#include "config.h"
 #include "util/util.h"
 #include "util/message.h"
 #include "util/file.h"

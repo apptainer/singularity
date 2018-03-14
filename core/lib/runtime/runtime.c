@@ -49,8 +49,6 @@
 #include "runtime/environment.h"
 #include "runtime/autofs.h"
 
-#include "config.h"
-
 #ifndef LOCALSTATEDIR
 #error LOCALSTATEDIR not defined
 #endif
