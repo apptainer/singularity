@@ -31,7 +31,7 @@ func (p *Docker) Provision() {
 }
 
 // DockerFromHeader creates a docker object from a header
-func DockerFromHeader(h Deffile) *Docker {
+func DockerFromHeader(h Definition) *Docker {
 	// TODO: Eduardo implement these
 	return &Docker{}
 }
@@ -52,7 +52,7 @@ func (p *shub) Provision() {
 }
 
 // ShubFromHeader creates a shub object from a header
-func ShubFromHeader(def Deffile) *shub {
+func ShubFromHeader(def Definition) *shub {
 	// TODO: Eduardo implement these
 	return &shub{}
 }
@@ -69,7 +69,7 @@ func (p *localImage) Provision() {
 }
 
 // LocalImageFromHeader creates a localImage object from a header
-func LocalImageFromHeader(def Deffile) *localImage {
+func LocalImageFromHeader(def Definition) *localImage {
 	// TODO: Eduardo implement these
 	return &localImage{}
 }
@@ -86,7 +86,7 @@ func (p *localArchive) Provision() {
 }
 
 // LocalArchiveFromHeader creates a localArchive object from a header
-func LocalArchiveFromHeader(def Deffile) *localArchive {
+func LocalArchiveFromHeader(def Definition) *localArchive {
 	// TODO: Eduardo implement these
 	return &localArchive{}
 }
@@ -104,7 +104,7 @@ func (p *debootstrap) Provision() {
 }
 
 // DebootstrapFromHeader creates a debootstrap object from a header
-func DebootstrapFromHeader(def Deffile) *debootstrap {
+func DebootstrapFromHeader(def Definition) *debootstrap {
 	// TODO: Eduardo implement these
 	return &debootstrap{}
 }
@@ -121,7 +121,7 @@ func (p *yum) Provision() {
 }
 
 // YumFromHeader creates a yum object from a header
-func YumFromHeader(def Deffile) *yum {
+func YumFromHeader(def Definition) *yum {
 	// TODO: Eduardo implement these
 	return &yum{}
 }
@@ -137,7 +137,7 @@ func (p *arch) Provision() {
 }
 
 // ArchFromHeader creates a arch object from a header
-func ArchFromHeader(def Deffile) *arch {
+func ArchFromHeader(def Definition) *arch {
 	// TODO: Eduardo implement these
 	return &arch{}
 }
@@ -154,7 +154,7 @@ func (p *busybox) Provision() {
 }
 
 // BusyboxFromHeader creates a busybox object from a header
-func BusyboxFromHeader(def Deffile) *busybox {
+func BusyboxFromHeader(def Definition) *busybox {
 	// TODO: Eduardo implement these
 	return &busybox{}
 }
@@ -172,7 +172,7 @@ func (p *zypper) Provision() {
 }
 
 // ZypperFromHeader creates a zypper object from a header
-func ZypperFromHeader(def Deffile) *zypper {
+func ZypperFromHeader(def Definition) *zypper {
 	// TODO: Eduardo implement these
 	return &zypper{}
 }
