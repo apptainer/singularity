@@ -130,11 +130,11 @@ func doSections(s *bufio.Scanner, d *Definition, done chan error) {
 		var key, val string
 		lineSubs := strings.SplitN(line, " ", 2)
 		if len(lineSubs) < 2 {
-			key = strings.ToLower(strings.TrimSpace(lineSubs[0]))
+			key = strings.TrimSpace(lineSubs[0])
 			val = ""
 		} else {
-			key = strings.ToLower(strings.TrimSpace(lineSubs[0]))
-			val = strings.ToLower(strings.TrimSpace(lineSubs[1]))
+			key = strings.TrimSpace(lineSubs[0])
+			val = strings.TrimSpace(lineSubs[1])
 		}
 
 		files[key] = val
