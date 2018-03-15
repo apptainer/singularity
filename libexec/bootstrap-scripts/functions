@@ -71,6 +71,7 @@ singularity_section_get() {
 
 get_section() {
 
+    IFS=""
     SECTION="$1"
     RECIPE="$2"
     FOUND="no"
@@ -101,10 +102,7 @@ get_section() {
             else
                 # We already found it, still in section
                 if [[ "$FOUND" == "yes" ]]; then
-                    if [ ! -z "${line}" ]; then
-                        echo $line
-                    fi 
-
+                    echo $line
                 fi            
             fi
         fi
