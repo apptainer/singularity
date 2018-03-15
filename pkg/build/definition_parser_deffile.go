@@ -187,14 +187,14 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 	s := bufio.NewScanner(r)
 	s.Split(scanDefinitionFile)
 
-	s.Scan()
-	for s.Text() == "" && s.Err() == nil {
-		s.Scan()
+	for s.Scan() && s.Text() == "" && s.Err() == nil {
 	}
 
 	if s.Err() != nil {
 		log.Println(s.Err())
 		return d, s.Err()
+	} else if s.Text() == "" {
+		return d, errors.New("Empty definition file")
 	}
 
 	hChan := make(chan error)

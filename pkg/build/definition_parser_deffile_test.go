@@ -89,6 +89,7 @@ func TestParseDefinitionFile(t *testing.T) {
 		"./testdata_bad/bad_section",
 		"./testdata_bad/json_input_1",
 		"./testdata_bad/json_input_2",
+		"./testdata_bad/empty",
 	}
 
 	for defPath, jsonPath := range definitionFilesGood {
