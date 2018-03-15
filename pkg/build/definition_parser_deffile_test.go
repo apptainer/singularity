@@ -9,98 +9,101 @@
 package build
 
 import (
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"reflect"
 	"testing"
 )
 
+func helperParseAndCompare(t *testing.T, defPath string, jsonPath string) (err error) {
+	defFile, err := os.Open(defPath)
+	defer defFile.Close()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	jsonFile, err := os.Open(jsonPath)
+	defer jsonFile.Close()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	defTest, err := ParseDefinitionFile(defFile)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	d := json.NewDecoder(jsonFile)
+	for {
+		var defCorrect Definition
+		if err := d.Decode(&defCorrect); err == io.EOF {
+			break
+		} else if err != nil {
+			t.Error(err)
+			return err
+		}
+
+		if !reflect.DeepEqual(defTest, defCorrect) {
+			return fmt.Errorf("Failed to correctly parse definition file: %s", defPath)
+		}
+	}
+
+	return nil
+}
+
+func helperParseBad(t *testing.T, defPath string) (err error) {
+	defFile, err := os.Open(defPath)
+	defer defFile.Close()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	_, err = ParseDefinitionFile(defFile)
+	if err != nil {
+		return nil
+	} else {
+		return fmt.Errorf("ParseDefinitionFile incorrectly succeeded in parsing file: %s", defPath)
+	}
+}
+
 func TestParseDefinitionFile(t *testing.T) {
-	testFilesOK := map[string]string{
-		"docker": "./mock/docker/docker",
-	}
-	testFilesBAD := map[string]string{
-		"bad_section": "./mock/bad_section/bad_section",
-	}
-	resultDefinition := map[string]Definition{
-		"docker": Definition{
-			Header: map[string]string{"bootstrap": "docker", "from": "<registry>/<namespace>/<container>:<tag>@<digest>",
-				"registry": "http://custom_registry", "namespace": "namespace", "includecmd": "yes"},
-			ImageData: imageData{
-				imageScripts: imageScripts{
-					Help: `Hello Help!
-# # double Hashtag comment`,
-					Environment: `    VADER=badguy
-    LUKE=goodguy
-    SOLO=someguy # comment 4
-    export VADER LUKE SOLO`,
-					Runscript: `    echo "Mock!"
-    echo "Arguments received: $*" # This is a very long comment
-    exec echo "$@"`,
-					Test: ``,
-				},
-			},
-			BuildData: buildData{
-				Files: map[string]string{`mock1.txt`: ``, `mock2.txt`: `/opt`},
-				buildScripts: buildScripts{
-					Pre: ``,
-					Setup: `    touch ${SINGULARITY_ROOTFS}/mock.txt
-    touch mock.txt
-
-# Some dummy comment 2`,
-					Post: `    echo 'this is a command so long that the user had to' \
-    'add a new line'
-    echo 'export GOPATH=$HOME/go' >> $SINGULARITY_ENVIRONMENT`,
-				},
-			},
-		},
+	// Map[path]path.json
+	definitionFilesGood := map[string]string{
+		"./testdata_good/docker/docker":           "./testdata_good/docker/docker.json",
+		"./testdata_good/busybox/busybox":         "./testdata_good/busybox/busybox.json",
+		"./testdata_good/debootstrap/debootstrap": "./testdata_good/debootstrap/debootstrap.json",
+		"./testdata_good/arch/arch":               "./testdata_good/arch/arch.json",
+		"./testdata_good/localimage/localimage":   "./testdata_good/localimage/localimage.json",
+		"./testdata_good/shub/shub":               "./testdata_good/shub/shub.json",
+		"./testdata_good/yum/yum":                 "./testdata_good/yum/yum.json",
+		"./testdata_good/zypper/zypper":           "./testdata_good/zypper/zypper.json",
 	}
 
-	// Loop through the Deffiles OK
-	for k := range testFilesOK {
-		t.Logf("=>\tRunning test for Deffile:\t\t[%s]", k)
-		f, err := ioutil.TempFile(os.TempDir(), fmt.Sprintf("singularity_parser_test_%s", k))
-		if err != nil {
-			t.Log(err)
-			t.Fail()
-		}
-		defer os.Remove(f.Name())
+	definitionFilesBad := []string{
+		"./testdata_bad/bad_section",
+		"./testdata_bad/json_input_1",
+		"./testdata_bad/json_input_2",
+		"./testdata_bad/empty",
+	}
 
-		r, err := os.Open(testFilesOK[k])
+	for defPath, jsonPath := range definitionFilesGood {
+		err := helperParseAndCompare(t, defPath, jsonPath)
 		if err != nil {
 			t.Error(err)
 		}
-		defer r.Close()
-
-		Df, err := ParseDefinitionFile(r)
-		if err != nil {
-			t.Log(err)
-			t.Fail()
-		}
-
-		// And....compare the output (fingers crossed)
-		if !reflect.DeepEqual(resultDefinition[k], Df) {
-			t.Log("<=\tFailed to parse Deffinition header")
-			t.Fail()
-		}
 	}
 
-	// Loop through the Deffiles BAD (must return error)
-	for k, v := range testFilesBAD {
-		t.Logf("=>\tRunning test for Bad Deffile:\t\t[%s]", k)
-		r, err := os.Open(v)
+	for _, defPath := range definitionFilesBad {
+		err := helperParseBad(t, defPath)
 		if err != nil {
 			t.Error(err)
 		}
-		defer r.Close()
 
-		// Parse must return err and a nil Definition struct
-		_, err = ParseDefinitionFile(r)
-		if err == nil {
-			t.Logf("<=\tFailed to parse Bad Deffinition file:\t[%s]", k)
-			t.Log(err)
-			t.Fail()
-		}
 	}
 }
