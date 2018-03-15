@@ -356,7 +356,7 @@ fi
 if [ "$USERID" != "0" ]; then
     # This is required as some files in a container are not readable or writable
     # by owner and thus fail to build when not root.
-    find "$SINGULARITY_ROOTFS" ! -perm -u=rw -print0|xargs -0 -r chmod u+rw
+    find "$SINGULARITY_ROOTFS" ! -type l ! -perm -u=rw -print0|xargs -0 -r chmod u+rw
 fi
 
 if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
