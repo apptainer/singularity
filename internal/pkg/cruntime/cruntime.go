@@ -7,8 +7,7 @@
 */
 package cruntime
 
-// #cgo CFLAGS: -I../../../core
-// #cgo LDFLAGS: -L/home/mibauer/go/src/github.com/singularityware/singularity/internal/pkg/cruntime/builddir/lib -lsycore -luuid
+// #cgo LDFLAGS: -lsycore -luuid
 /*
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -18,18 +17,19 @@ package cruntime
 #include <string.h>
 #include <fcntl.h>
 
-#include "builddir/config.h"
-#include "lib/util/file.h"
-#include "lib/util/util.h"
-#include "lib/util/daemon.h"
-#include "lib/util/registry.h"
-#include "lib/image/image.h"
-#include "lib/runtime/runtime.h"
-#include "lib/util/config_parser.h"
-#include "lib/util/privilege.h"
-#include "lib/util/suid.h"
-#include "lib/util/sessiondir.h"
-#include "lib/util/cleanupd.h"
+#include "config.h"
+
+#include "util/file.h"
+#include "util/util.h"
+#include "util/daemon.h"
+#include "util/registry.h"
+#include "image/image.h"
+#include "runtime/runtime.h"
+#include "util/config_parser.h"
+#include "util/privilege.h"
+#include "util/suid.h"
+#include "util/sessiondir.h"
+#include "util/cleanupd.h"
 
 #include "action-lib/include.h"
 
