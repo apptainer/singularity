@@ -12,12 +12,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var(
+var (
 	PullLibraryURI string
 )
 
 func init() {
-	pullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "http://localhost:5051", "")
+	pullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "http://localhost:5150", "")
 	singularityCmd.AddCommand(pullCmd)
 
 }

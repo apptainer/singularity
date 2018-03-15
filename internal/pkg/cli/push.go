@@ -12,12 +12,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var(
+var (
 	PushLibraryURI string
 )
 
 func init() {
-	pushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "http://localhost:5051", "")
+	pushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "http://localhost:5150", "")
 	singularityCmd.AddCommand(pushCmd)
 }
 
