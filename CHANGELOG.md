@@ -34,6 +34,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 ### Bug Fixes
  - Put /usr/local/{bin,sbin} in front of the default PATH
  - Fixed bug that did not export environment variables for apps with "-" in name
+ - Fixed stripping whitespaces and empty new lines for the app commands
  
 ## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
 
