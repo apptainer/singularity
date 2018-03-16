@@ -70,13 +70,12 @@ singularity_section_get() {
 
 
 get_section() {
-
-    IFS=""
+ 
     SECTION="$1"
     RECIPE="$2"
     FOUND="no"
 
-    while read -r line
+    while IFS="" read -r line
     do
 
  
