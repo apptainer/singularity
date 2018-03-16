@@ -10,6 +10,7 @@ package build
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -62,10 +63,11 @@ type DockerProvisioner struct {
 	policyCtx *signature.PolicyContext
 }
 
-func (p *DockerProvisioner) Provision(i *image.Sandbox) {
+func (p *DockerProvisioner) Provision(i *image.Sandbox) (err error) {
+	fmt.Println("provision start")
 	defer os.RemoveAll(p.tmpfs)
 
-	err := p.fetch(i)
+	err = p.fetch(i)
 	if err != nil {
 		return
 	}
@@ -95,6 +97,9 @@ func (p *DockerProvisioner) Provision(i *image.Sandbox) {
 		return
 	}
 
+	fmt.Println("provision ret")
+
+	return nil
 }
 
 func (p *DockerProvisioner) fetch(i *image.Sandbox) (err error) {

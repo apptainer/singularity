@@ -23,12 +23,15 @@ var validProvisioners = map[string]bool{
 // a remote image source (e.g. singularity run docker://..., singularity build image.sif docker://...)
 func NewProvisionerFromURI(uri string) (p Provisioner, err error) {
 	u := strings.SplitN(uri, ":", 2)
+	fmt.Printf("uri: %s\n", uri)
+	fmt.Printf("u[0]: %s; u[1]: %s\n", u[0], u[1])
 
 	switch u[0] {
 	case "docker":
+		fmt.Println("Returning docker provisioner")
 		return NewDockerProvisioner(u[1])
-	case "shub":
-		return NewSHubProvisioner()
+	//case "shub":
+	//	return NewSHubProvisioner()
 	default:
 		return nil, fmt.Errorf("Provisioner \"%s\" not supported", u[0])
 	}
@@ -52,17 +55,19 @@ func IsValidURI(uri string) (valid bool, err error) {
 // source into a chroot tree on disk. All necessary input (URL, etc...) should be
 // set up when we're creating the specific data structure.
 type Provisioner interface {
-	Provision(i *image.Sandbox)
+	Provision(i *image.Sandbox) (err error)
 }
 
+/*
 // ===== SHub =====
-func NewSHubProvisioner() (s *SHubProvisioner, err error) {
+func NewSHubProvisioner() (s SHubProvisioner, err error) {
 	return &SHubProvisioner{}, nil
 }
 
 type SHubProvisioner struct {
 }
 
-func (s *SHubProvisioner) Provision(i *image.Sandbox) {
-
+func (s *SHubProvisioner) Provision(i image.Sandbox) (err error) {
+	return nil
 }
+*/

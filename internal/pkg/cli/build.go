@@ -10,6 +10,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/singularityware/singularity/pkg/build"
@@ -72,7 +73,9 @@ var buildCmd = &cobra.Command{
 			doRemoteBuild(args[0], args[1])
 		} else {
 			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
-				b, err := build.NewCachedBuilder(args[0], args[1])
+				u := strings.SplitN(args[1], "://", 2)
+				fmt.Println(u)
+				b, err := build.NewSifBuilderFromURI(args[0], args[1])
 				if err != nil {
 					glog.Errorf("Image build system encountered an error: %s\n", err)
 					return

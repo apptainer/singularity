@@ -61,8 +61,6 @@ var validSections = map[string]bool{
 var validHeaders = map[string]bool{
 	"bootstrap":  true,
 	"from":       true,
-	"registry":   true,
-	"namespace":  true,
 	"includecmd": true,
 	"mirrorurl":  true,
 	"osversion":  true,

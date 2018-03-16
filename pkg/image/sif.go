@@ -9,16 +9,62 @@
 package image
 
 import (
-	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"os/exec"
+
+	"github.com/golang/glog"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
 type SIF struct {
+	path string
 }
 
 // SIFFromSandbox converts the sandbox, s, to a SIF file
-func SIFFromSandbox(s *Sandbox) *SIF {
-	return &SIF{}
+func SIFFromSandbox(sandbox *Sandbox, imagePath string) (*SIF, error) {
+	mksquashfs, err := exec.LookPath("mksquashfs")
+	if err != nil {
+		glog.Error("mksquashfs is not installed on this system")
+		return nil, err
+	}
+
+	f, err := ioutil.TempFile("", "squashfs-")
+	squashfsPath := f.Name() + ".img"
+	f.Close()
+	os.Remove(squashfsPath)
+	mksquashfsCmd := exec.Command(mksquashfs, sandbox.Rootfs(), squashfsPath, "-noappend", "-all-root")
+	fmt.Println("sandbox rootfs:", sandbox.Rootfs(), "sqfs:", squashfsPath)
+	out, err := mksquashfsCmd.Output()
+
+	fmt.Println("MKSQUASHFS:")
+	fmt.Println(string(out))
+
+	if err != nil {
+		return nil, err
+	}
+
+	sif, err := exec.LookPath("sif")
+	if err != nil {
+		glog.Error("sif is not installed on this system")
+		return nil, err
+	}
+
+	fmt.Println("sif:", sif, "sqfs:", squashfsPath, "image path:", imagePath)
+	sifCmd := exec.Command(sif, "create", "-P", squashfsPath, "-f", "\"SQUASHFS\"", "-p", "\"SYSTEM\"", "-c", "\"LINUX\"", imagePath)
+	out, err = sifCmd.CombinedOutput()
+
+	fmt.Println("SIF:")
+	fmt.Println(string(out))
+	fmt.Println(err)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SIF{path: imagePath}, nil
+
 }
 
 // SIFFromPath returns a SIF object of the file located at path
@@ -35,7 +81,7 @@ func (i *SIF) Root() *specs.Root {
 }
 
 func (i *SIF) Rootfs() string {
-	return ""
+	return i.path
 }
 
 // isSIF checks the "magic" of the given file and
