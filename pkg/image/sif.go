@@ -9,7 +9,6 @@
 package image
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -35,13 +34,9 @@ func SIFFromSandbox(sandbox *Sandbox, imagePath string) (*SIF, error) {
 	squashfsPath := f.Name() + ".img"
 	f.Close()
 	os.Remove(squashfsPath)
+
 	mksquashfsCmd := exec.Command(mksquashfs, sandbox.Rootfs(), squashfsPath, "-noappend", "-all-root")
-	fmt.Println("sandbox rootfs:", sandbox.Rootfs(), "sqfs:", squashfsPath)
-	out, err := mksquashfsCmd.Output()
-
-	fmt.Println("MKSQUASHFS:")
-	fmt.Println(string(out))
-
+	_, err = mksquashfsCmd.Output()
 	if err != nil {
 		return nil, err
 	}
@@ -52,13 +47,8 @@ func SIFFromSandbox(sandbox *Sandbox, imagePath string) (*SIF, error) {
 		return nil, err
 	}
 
-	fmt.Println("sif:", sif, "sqfs:", squashfsPath, "image path:", imagePath)
-	sifCmd := exec.Command(sif, "create", "-P", squashfsPath, "-f", "\"SQUASHFS\"", "-p", "\"SYSTEM\"", "-c", "\"LINUX\"", imagePath)
-	out, err = sifCmd.CombinedOutput()
-
-	fmt.Println("SIF:")
-	fmt.Println(string(out))
-	fmt.Println(err)
+	sifCmd := exec.Command(sif, "create", "-P", squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", imagePath)
+	_, err = sifCmd.CombinedOutput()
 	if err != nil {
 		return nil, err
 	}

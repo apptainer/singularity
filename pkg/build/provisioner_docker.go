@@ -10,7 +10,6 @@ package build
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -64,7 +63,6 @@ type DockerProvisioner struct {
 }
 
 func (p *DockerProvisioner) Provision(i *image.Sandbox) (err error) {
-	fmt.Println("provision start")
 	defer os.RemoveAll(p.tmpfs)
 
 	err = p.fetch(i)
@@ -96,8 +94,6 @@ func (p *DockerProvisioner) Provision(i *image.Sandbox) (err error) {
 	if err != nil {
 		return
 	}
-
-	fmt.Println("provision ret")
 
 	return nil
 }

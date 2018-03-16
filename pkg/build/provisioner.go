@@ -23,12 +23,9 @@ var validProvisioners = map[string]bool{
 // a remote image source (e.g. singularity run docker://..., singularity build image.sif docker://...)
 func NewProvisionerFromURI(uri string) (p Provisioner, err error) {
 	u := strings.SplitN(uri, ":", 2)
-	fmt.Printf("uri: %s\n", uri)
-	fmt.Printf("u[0]: %s; u[1]: %s\n", u[0], u[1])
 
 	switch u[0] {
 	case "docker":
-		fmt.Println("Returning docker provisioner")
 		return NewDockerProvisioner(u[1])
 	//case "shub":
 	//	return NewSHubProvisioner()

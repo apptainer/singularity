@@ -8,6 +8,8 @@
 
 package build
 
+import "strings"
+
 type Definition struct {
 	Header    map[string]string
 	ImageData imageData
@@ -40,6 +42,19 @@ type buildScripts struct {
 	Pre   string
 	Setup string
 	Post  string
+}
+
+func NewDefinitionFromURI(uri string) (d Definition, err error) {
+	u := strings.SplitN(uri, "://", 2)
+
+	d = Definition{
+		Header: map[string]string{
+			"bootstrap": u[0],
+			"from":      u[1],
+		},
+	}
+
+	return d, nil
 }
 
 // validSections just contains a list of all the valid sections a definition file

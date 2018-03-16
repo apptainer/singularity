@@ -8,9 +8,7 @@
 package build
 
 import (
-	"fmt"
 	"path"
-	"strings"
 
 	"github.com/singularityware/singularity/pkg/image"
 )
@@ -23,9 +21,9 @@ type SifBuilder struct {
 	tmpfs *image.Sandbox
 }
 
+/*
 func NewSifBuilderFromURI(imagePath string, uri string) (b *SifBuilder, err error) {
 	u := strings.SplitN(uri, "://", 2)
-	fmt.Println(u)
 	d := Definition{
 		Header: map[string]string{
 			"bootstrap": u[0],
@@ -33,9 +31,9 @@ func NewSifBuilderFromURI(imagePath string, uri string) (b *SifBuilder, err erro
 		},
 	}
 
-	fmt.Println(d.Header["bootstrap"])
 	return NewSifBuilder(imagePath, d)
 }
+*/
 
 func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 	b = &SifBuilder{
@@ -49,25 +47,15 @@ func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 	}
 
 	uri := d.Header["bootstrap"] + "://" + d.Header["from"]
-	fmt.Println(uri)
 	b.p, err = NewProvisionerFromURI(uri)
-	if err != nil {
-		fmt.Println("big fucking error", err)
-	}
 
-	return b, nil
+	return b, err
 }
 
 func (b *SifBuilder) Build() {
-	fmt.Println(b.tmpfs.Rootfs())
-	fmt.Println(b.tmpfs)
-	fmt.Println("before provision")
 	b.p.Provision(b.tmpfs)
-	fmt.Println("After b.p.Provision()")
 	img, err := image.SIFFromSandbox(b.tmpfs, b.path)
-	fmt.Println("After SIFFromSandbox")
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 

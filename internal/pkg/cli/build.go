@@ -10,7 +10,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/golang/glog"
 	"github.com/singularityware/singularity/pkg/build"
@@ -28,19 +27,6 @@ var (
 )
 
 func doRemoteBuild(imagePath string, defPath string) {
-	// Parse the Deffile into json
-	defFile, err := os.Open(defPath)
-	if err != nil {
-		glog.Fatal(err)
-	}
-
-	definition, err := build.ParseDefinitionFile(defFile)
-	if err != nil {
-		glog.Fatal(err)
-	}
-
-	b := build.NewRemoteBuilder(imagePath, definition, false, RemoteURL)
-	b.Build()
 }
 
 func init() {
@@ -61,6 +47,10 @@ var buildCmd = &cobra.Command{
 	Use:  "build <image path> <build spec>",
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
+		var def build.Definition
+		var b build.Builder
+		var err error
+
 		if silent {
 			fmt.Println("Silent!")
 		}
@@ -69,22 +59,61 @@ var buildCmd = &cobra.Command{
 			fmt.Println("Sandbox!")
 		}
 
-		if Remote {
-			doRemoteBuild(args[0], args[1])
+		if ok, err := build.IsValidURI(args[1]); ok && err == nil {
+			// URI passed as arg[1]
+			def, err = build.NewDefinitionFromURI(args[1])
+			if err != nil {
+				glog.Error(err)
+				return
+			}
+		} else if !ok && err == nil {
+			// Non-URI passed as arg[1]
+			defFile, err := os.Open(args[1])
+			if err != nil {
+				glog.Error(err)
+				return
+			}
+
+			def, err = build.ParseDefinitionFile(defFile)
+			if err != nil {
+				glog.Error(err)
+				return
+			}
 		} else {
-			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
-				u := strings.SplitN(args[1], "://", 2)
-				fmt.Println(u)
-				b, err := build.NewSifBuilderFromURI(args[0], args[1])
-				if err != nil {
-					glog.Errorf("Image build system encountered an error: %s\n", err)
-					return
-				}
-				b.Build()
-			} else {
-				glog.Fatalf("%s", err)
+			// Error
+			glog.Error(err)
+			return
+		}
+
+		if Remote {
+			b = build.NewRemoteBuilder(args[0], def, false, RemoteURL)
+
+		} else {
+			b, err = build.NewSifBuilder(args[0], def)
+			if err != nil {
+				glog.Error(err)
+				return
 			}
 		}
+
+		b.Build()
+
+		/*
+			if Remote {
+				doRemoteBuild(args[0], args[1])
+			} else {
+				if ok, err := build.IsValidURI(args[1]); ok && err == nil {
+					u := strings.SplitN(args[1], "://", 2)
+					b, err := build.NewSifBuilderFromURI(args[0], args[1])
+					if err != nil {
+						glog.Errorf("Image build system encountered an error: %s\n", err)
+						return
+					}
+					b.Build()
+				} else {
+					glog.Fatalf("%s", err)
+				}
+			}*/
 
 	},
 	TraverseChildren: true,
