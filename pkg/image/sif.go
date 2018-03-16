@@ -9,6 +9,7 @@
 package image
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -36,10 +37,12 @@ func SIFFromSandbox(sandbox *Sandbox, imagePath string) (*SIF, error) {
 	os.Remove(squashfsPath)
 
 	mksquashfsCmd := exec.Command(mksquashfs, sandbox.Rootfs(), squashfsPath, "-noappend", "-all-root")
-	_, err = mksquashfsCmd.Output()
+	mksfsout, err := mksquashfsCmd.CombinedOutput()
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(string(mksfsout))
 
 	sif, err := exec.LookPath("sif")
 	if err != nil {
@@ -48,10 +51,12 @@ func SIFFromSandbox(sandbox *Sandbox, imagePath string) (*SIF, error) {
 	}
 
 	sifCmd := exec.Command(sif, "create", "-P", squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", imagePath)
-	_, err = sifCmd.CombinedOutput()
+	sifout, err := sifCmd.CombinedOutput()
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(string(sifout))
 
 	return &SIF{path: imagePath}, nil
 

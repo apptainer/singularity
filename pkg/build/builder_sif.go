@@ -8,7 +8,11 @@
 package build
 
 import (
+	//"fmt"
+	//"io/ioutil"
+	"os"
 	"path"
+	//"time"
 
 	"github.com/singularityware/singularity/pkg/image"
 )
@@ -19,26 +23,18 @@ type SifBuilder struct {
 	path  string
 	p     Provisioner
 	tmpfs *image.Sandbox
-}
 
-/*
-func NewSifBuilderFromURI(imagePath string, uri string) (b *SifBuilder, err error) {
-	u := strings.SplitN(uri, "://", 2)
-	d := Definition{
-		Header: map[string]string{
-			"bootstrap": u[0],
-			"from":      u[1],
-		},
-	}
-
-	return NewSifBuilder(imagePath, d)
+	Out      *os.File
+	outWrite *os.File
 }
-*/
 
 func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
+	r, w, _ := os.Pipe()
 	b = &SifBuilder{
 		Definition: d,
 		path:       imagePath,
+		Out:        r,
+		outWrite:   w,
 	}
 
 	b.tmpfs, err = image.TempSandbox(path.Base(imagePath) + "-")
@@ -53,6 +49,15 @@ func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 }
 
 func (b *SifBuilder) Build() {
+	oldstdout := os.Stdout
+	os.Stdout = b.outWrite
+
+	defer func() {
+		os.Stdout = oldstdout
+		b.Out.Close()
+		b.outWrite.Close()
+	}()
+
 	b.p.Provision(b.tmpfs)
 	img, err := image.SIFFromSandbox(b.tmpfs, b.path)
 	if err != nil {
@@ -60,6 +65,15 @@ func (b *SifBuilder) Build() {
 	}
 
 	b.Image = img
+
+	//b.Out.SetReadDeadline(time.Now().Add(time.Second))
+	//out, _ := ioutil.ReadAll(b.Out)
+
+	//b.outWrite.Close()
+	//b.Out.Close()
+	//os.Stdout = oldstdout
+
+	//fmt.Println(string(out))
 }
 
 func (b *SifBuilder) createSifFile() (err error) {
