@@ -10,6 +10,7 @@ package build
 import (
 	//"fmt"
 	//"io/ioutil"
+	"io"
 	"os"
 	"path"
 	//"time"
@@ -24,17 +25,25 @@ type SifBuilder struct {
 	p     Provisioner
 	tmpfs *image.Sandbox
 
-	Out      *os.File
+	Out      io.Reader
 	outWrite *os.File
+	outRead  *os.File
+	errWrite *os.File
+	errRead  *os.File
 }
 
 func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 	r, w, _ := os.Pipe()
+	er, ew, _ := os.Pipe()
+
 	b = &SifBuilder{
 		Definition: d,
 		path:       imagePath,
-		Out:        r,
+		Out:        io.MultiReader(r, er),
 		outWrite:   w,
+		errWrite:   ew,
+		outRead:    r,
+		errRead:    er,
 	}
 
 	b.tmpfs, err = image.TempSandbox(path.Base(imagePath) + "-")
@@ -50,12 +59,18 @@ func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 
 func (b *SifBuilder) Build() {
 	oldstdout := os.Stdout
+	oldstderr := os.Stderr
+
 	os.Stdout = b.outWrite
+	os.Stderr = b.errWrite
 
 	defer func() {
 		os.Stdout = oldstdout
-		b.Out.Close()
+		os.Stderr = oldstderr
+		b.outRead.Close()
 		b.outWrite.Close()
+		b.errRead.Close()
+		b.errWrite.Close()
 	}()
 
 	b.p.Provision(b.tmpfs)
@@ -65,15 +80,6 @@ func (b *SifBuilder) Build() {
 	}
 
 	b.Image = img
-
-	//b.Out.SetReadDeadline(time.Now().Add(time.Second))
-	//out, _ := ioutil.ReadAll(b.Out)
-
-	//b.outWrite.Close()
-	//b.Out.Close()
-	//os.Stdout = oldstdout
-
-	//fmt.Println(string(out))
 }
 
 func (b *SifBuilder) createSifFile() (err error) {
