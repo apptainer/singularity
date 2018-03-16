@@ -16,15 +16,14 @@ import (
 // CachedBuilder is the object that satisfies the Builder interface which is in charge
 // of quickly builder an image from a URI (i.e. docker://, shub://, etc...)
 type CachedBuilder struct {
-	P         Provisioner
-	imagePath string
-	Image     image.Image
+	P     Provisioner
+	Image *image.Sandbox
 }
 
-func NewCachedBuilder(image string, uri string) (c *CachedBuilder, err error) {
-	fmt.Printf("Building a cached image (%s) from source (%s)\n", image, uri)
+func NewCachedBuilder(path string, uri string) (c *CachedBuilder, err error) {
+	fmt.Printf("Building a cached image (%s) from source (%s)\n", path, uri)
 	c = &CachedBuilder{
-		imagePath: image,
+		Image: image.SandboxFromPath(path),
 	}
 
 	c.P, err = NewProvisionerFromURI(uri)
@@ -36,5 +35,5 @@ func NewCachedBuilder(image string, uri string) (c *CachedBuilder, err error) {
 }
 
 func (c *CachedBuilder) Build() {
-	c.P.Provision(c.imagePath)
+	c.P.Provision(c.Image)
 }

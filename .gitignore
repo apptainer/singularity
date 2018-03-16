@@ -6,6 +6,8 @@ singularity-*.tar.gz
 *.m4
 *.pyc
 
+vendor/
+trash.lock
 Makefile
 Makefile.in
 autom4te.cache/

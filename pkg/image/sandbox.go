@@ -9,6 +9,8 @@
 package image
 
 import (
+	"io/ioutil"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -16,9 +18,22 @@ type Sandbox struct {
 	rootfs string
 }
 
+func TempSandbox(name string) (i *Sandbox, err error) {
+	i = &Sandbox{}
+
+	i.rootfs, err = ioutil.TempDir("", name)
+	if err != nil {
+		return i, err
+	}
+
+	return i, nil
+}
+
 // SandboxFromPath returns a sandbox object of the directory located at path
 func SandboxFromPath(path string) *Sandbox {
-	return &Sandbox{}
+	return &Sandbox{
+		rootfs: path,
+	}
 }
 
 /* RuntimeImage Interface Methods */

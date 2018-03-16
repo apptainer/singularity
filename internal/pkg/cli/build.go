@@ -71,13 +71,15 @@ var buildCmd = &cobra.Command{
 		if Remote {
 			doRemoteBuild(args[0], args[1])
 		} else {
-			if build.IsValidURI(args[1]) {
+			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
 				b, err := build.NewCachedBuilder(args[0], args[1])
 				if err != nil {
 					glog.Errorf("Image build system encountered an error: %s\n", err)
 					return
 				}
 				b.Build()
+			} else {
+				glog.Fatalf("%s", err)
 			}
 		}
 
