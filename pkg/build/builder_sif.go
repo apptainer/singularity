@@ -39,7 +39,7 @@ func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 	b = &SifBuilder{
 		Definition: d,
 		path:       imagePath,
-		Out:        io.MultiReader(r, er),
+		Out:        io.MultiReader(er, r),
 		outWrite:   w,
 		errWrite:   ew,
 		outRead:    r,
@@ -67,9 +67,9 @@ func (b *SifBuilder) Build() {
 	defer func() {
 		os.Stdout = oldstdout
 		os.Stderr = oldstderr
-		b.outRead.Close()
+		//b.outRead.Close()
 		b.outWrite.Close()
-		b.errRead.Close()
+		//b.errRead.Close()
 		b.errWrite.Close()
 	}()
 
