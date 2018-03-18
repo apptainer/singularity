@@ -10,6 +10,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/internal/pkg/cruntime"
 	"github.com/spf13/cobra"
 )
 
@@ -89,16 +90,17 @@ func init() {
 
 // execCmd represents the exec command
 var execCmd = &cobra.Command{
-	Use: "exec [exec options...]",
+	Use: "exec [exec options...] <container> ...",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("exec called")
+		cruntime.DoSingularity(len(args), args)
 	},
 	Example: execExamples,
 }
 
 // shellCmd represents the shell command
 var shellCmd = &cobra.Command{
-	Use: "shell [shell options...]",
+	Use: "shell [shell options...] <container>",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("shell called")
 	},
@@ -107,7 +109,7 @@ var shellCmd = &cobra.Command{
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use: "run [run options]",
+	Use: "run [run options] <container>",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("run called")
 	},
