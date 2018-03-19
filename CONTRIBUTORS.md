@@ -29,6 +29,7 @@
     - Jason Stover <jason.stover@gmail.com>
     - Jeff Kriske <jekriske@gmail.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
+    - Justin Riley <justin_riley@harvard.edu>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Nathan Lin <nathan.lin@yale.edu>
@@ -39,4 +40,3 @@
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Yaroslav Halchenko <debian@onerussian.com>
-    - Justin Riley <justin_riley@harvard.edu>
