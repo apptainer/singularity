@@ -8,6 +8,8 @@
 
 package build
 
+import "strings"
+
 type Definition struct {
 	Header    map[string]string
 	ImageData imageData
@@ -42,6 +44,19 @@ type buildScripts struct {
 	Post  string
 }
 
+func NewDefinitionFromURI(uri string) (d Definition, err error) {
+	u := strings.SplitN(uri, "://", 2)
+
+	d = Definition{
+		Header: map[string]string{
+			"bootstrap": u[0],
+			"from":      u[1],
+		},
+	}
+
+	return d, nil
+}
+
 // validSections just contains a list of all the valid sections a definition file
 // could contain. If any others are found, an error will generate
 var validSections = map[string]bool{
@@ -61,8 +76,6 @@ var validSections = map[string]bool{
 var validHeaders = map[string]bool{
 	"bootstrap":  true,
 	"from":       true,
-	"registry":   true,
-	"namespace":  true,
 	"includecmd": true,
 	"mirrorurl":  true,
 	"osversion":  true,

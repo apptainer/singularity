@@ -9,65 +9,62 @@ package build
 
 import (
 	"fmt"
-	"net/url"
+	"strings"
+
+	"github.com/singularityware/singularity/pkg/image"
 )
+
+var validProvisioners = map[string]bool{
+	"docker": true,
+	"shub":   true,
+}
 
 // NewProvisionerFromURI is used for providing a provisioner for any command that accepts
 // a remote image source (e.g. singularity run docker://..., singularity build image.sif docker://...)
 func NewProvisionerFromURI(uri string) (p Provisioner, err error) {
-	u, err := url.ParseRequestURI(uri)
+	u := strings.SplitN(uri, ":", 2)
 
-	if u.Scheme == "" {
-		return nil, err
-	}
-
-	switch u.Scheme {
+	switch u[0] {
 	case "docker":
-		return NewDockerProvisioner(), nil
-	case "shub":
-		return NewSHubProvisioner(), nil
+		return NewDockerProvisioner(u[1])
+	//case "shub":
+	//	return NewSHubProvisioner()
 	default:
-		return nil, fmt.Errorf("Provisioner \"%s\" not supported", u.Scheme)
+		return nil, fmt.Errorf("Provisioner \"%s\" not supported", u[0])
 	}
 }
 
-func IsValidURI(uri string) bool {
-	_, err := url.ParseRequestURI(uri)
+func IsValidURI(uri string) (valid bool, err error) {
+	u := strings.SplitN(uri, ":", 2)
 
-	if err != nil {
-		return false
-	} else {
-		return true
+	if len(u) != 2 {
+		return false, nil
 	}
+
+	if _, ok := validProvisioners[u[0]]; ok {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("Invaled image URI: %s", uri)
 }
 
 // Provisioner is the interface used to represent how we convert any image
 // source into a chroot tree on disk. All necessary input (URL, etc...) should be
 // set up when we're creating the specific data structure.
 type Provisioner interface {
-	Provision(path string)
+	Provision(i *image.Sandbox) (err error)
 }
 
-// ===== Docker =====
-func NewDockerProvisioner() (d *DockerProvisioner) {
-	return &DockerProvisioner{}
-}
-
-type DockerProvisioner struct {
-}
-
-func (d *DockerProvisioner) Provision(path string) {
-
-}
-
+/*
 // ===== SHub =====
-func NewSHubProvisioner() (s *SHubProvisioner) {
-	return &SHubProvisioner{}
+func NewSHubProvisioner() (s SHubProvisioner, err error) {
+	return &SHubProvisioner{}, nil
 }
 
 type SHubProvisioner struct {
 }
 
-func (s *SHubProvisioner) Provision(path string) {
-
+func (s *SHubProvisioner) Provision(i image.Sandbox) (err error) {
+	return nil
 }
+*/

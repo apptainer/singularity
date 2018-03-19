@@ -9,6 +9,7 @@ package build
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -119,7 +120,7 @@ func (b *RemoteBuilder) Build() {
 				glog.Infoln("read:", err)
 				return
 			}
-			glog.Infof("recv: %s", message)
+			fmt.Printf("%s\n", message)
 		}
 	}()
 
