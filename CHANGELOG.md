@@ -14,6 +14,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ## [v2.4.5](https://github.com/singularityware/singularity/tree/release-2.4)
 
+### Security related fixes
  - Strip authorization header on http redirect to different domain when
    interacting with docker registries.
 
