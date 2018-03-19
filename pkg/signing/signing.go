@@ -1,4 +1,4 @@
-package main
+package signing
 
 import (
 	"bytes"
@@ -38,7 +38,7 @@ func main() {
 		}
 		buf := bytes.NewBufferString("Allo")
 		var conf packet.Config
-		conf.DefaultHash = crypto.SHA384 
+		conf.DefaultHash = crypto.SHA384
 		err = openpgp.DetachSignText(os.Stdout, e, buf, &conf)
 		if err != nil {
 			log.Fatal(err)
