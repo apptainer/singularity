@@ -9,6 +9,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/beorn7/perks"
+  packages = ["quantile"]
+  revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
+
+[[projects]]
+  branch = "master"
   name = "github.com/containers/image"
   packages = [
     "copy",
@@ -44,10 +50,12 @@
   revision = "aaa10cba3c246a9186e2160f4e12b21d8cf77c94"
 
 [[projects]]
+  branch = "master"
   name = "github.com/docker/distribution"
   packages = [
     ".",
     "digestset",
+    "metrics",
     "reference",
     "registry/api/errcode",
     "registry/api/v2",
@@ -57,18 +65,16 @@
     "registry/storage/cache",
     "registry/storage/cache/memory"
   ]
-  revision = "5f6282db7d65e6d72ad7c2cc66310724a57be716"
+  revision = "607ae5d128a82f280e8c7f453d5fb30c535bda17"
 
 [[projects]]
   name = "github.com/docker/docker"
   packages = [
     "api/types/versions",
-    "pkg/homedir",
-    "pkg/idtools",
-    "pkg/mount",
-    "pkg/system"
+    "pkg/homedir"
   ]
-  revision = "30eb4d8cdc422b023d5f11f29a82ecb73554183b"
+  revision = "092cba3727bb9b4a2f0e922cd6c0f93ea270e363"
+  version = "v1.13.1"
 
 [[projects]]
   name = "github.com/docker/docker-credential-helpers"
@@ -89,6 +95,12 @@
   version = "v0.3.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/docker/go-metrics"
+  packages = ["."]
+  revision = "399ea8c73916000c64c2c76e8da00ca82f8387ab"
+
+[[projects]]
   name = "github.com/docker/go-units"
   packages = ["."]
   revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
@@ -103,13 +115,20 @@
 [[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
-  revision = "04f313413ffd65ce25f2541bfd2b2ceec5c0908c"
+  revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
   name = "github.com/golang/glog"
   packages = ["."]
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+
+[[projects]]
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/google/uuid"
@@ -144,7 +163,14 @@
 [[projects]]
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
-  revision = "14207d285c6c197daabb5c9793d63e7af9ab2d50"
+  revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
+  version = "v0.0.2"
+
+[[projects]]
+  name = "github.com/matttproud/golang_protobuf_extensions"
+  packages = ["pbutil"]
+  revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -169,9 +195,10 @@
   version = "v1.0.1"
 
 [[projects]]
+  branch = "master"
   name = "github.com/opencontainers/image-tools"
   packages = ["image"]
-  revision = "master"
+  revision = "c95f76cbae7433449f3a09f329ef816a1a0d16b3"
 
 [[projects]]
   name = "github.com/opencontainers/runc"
@@ -188,19 +215,56 @@
 [[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "248dadf4e9068a0b3e79f02ed0a610d935de5302"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/client_golang"
+  packages = [
+    "prometheus",
+    "prometheus/promhttp"
+  ]
+  revision = "d49167c4b9f3c4451707560c5c71471ff5291aaa"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/client_model"
+  packages = ["go"]
+  revision = "99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/common"
+  packages = [
+    "expfmt",
+    "internal/bitbucket.org/ww/goautoneg",
+    "model"
+  ]
+  revision = "e4aa40a9169a88835b849a6efb71e05dc04b88f0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/prometheus/procfs"
+  packages = [
+    ".",
+    "internal/util",
+    "nfs",
+    "xfs"
+  ]
+  revision = "54d17b57dd7d4a3aa092476596b3f8a933bde349"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
-  revision = "202f25545ea4cf9b191ff7f846df5d87c9382c2b"
-  version = "v1.0.0"
+  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
+  version = "v1.0.5"
 
 [[projects]]
+  branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
-  version = "v0.0.1"
+  revision = "c439c4fa093711d42e1b01acb1235b52004753c1"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -239,6 +303,7 @@
   revision = "fba789b7e39ba524b9e60c45c37a50fae63a2a09"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/crypto"
   packages = [
     "cast5",
@@ -247,14 +312,16 @@
     "openpgp/elgamal",
     "openpgp/errors",
     "openpgp/packet",
-    "openpgp/s2k"
+    "openpgp/s2k",
+    "ssh/terminal"
   ]
-  revision = "453249f01cfeb54c3d549ddb75ff152ca243f9d8"
+  revision = "c3a3ad6d03f7a915c0f7e194b7152974bb73d287"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/net"
   packages = ["proxy"]
-  revision = "6b27048ae5e6ad1ef927e72e437531493de612fe"
+  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
 
 [[projects]]
   branch = "master"
@@ -263,22 +330,23 @@
     "unix",
     "windows"
   ]
-  revision = "d8e400bc7db4870d786864138af681469693d18c"
+  revision = "7ceb54c8418b8f9cdf0177b511d5cbb06e9fae39"
 
 [[projects]]
   name = "gopkg.in/cheggaaa/pb.v1"
   packages = ["."]
-  revision = "d7e6ca3010b6f084d8056847f55d7f572f180678"
-  version = "v1.0.7"
+  revision = "72b964305fba1230d3d818711138195f22b9ceea"
+  version = "v1.0.22"
 
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "a3f3340b5840cee44f372bddb5880fcbc419b46a"
+  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
+  version = "v2.1.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7952d76dea9cf42a14d7099f486cb5862c40f1503d0af651ad75c0982ecf1f58"
+  inputs-digest = "acba2b36f48d4a75748baf8d79c7a4c94aa92fbc78b2098b88d596b668ca13d3"
   solver-name = "gps-cdcl"
   solver-version = 1
