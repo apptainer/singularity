@@ -152,8 +152,6 @@ int do_singularity(int argc, char **argv) {
 */
 import "C"
 
-import ()
-
 const (
 	NS_PID = 1 << iota
 	NS_IPC
@@ -163,8 +161,7 @@ const (
 )
 
 func DoSingularity(argc int, argv []string) {
-	C.do_singularity(argc, argv)
-
+	//C.do_singularity(argc, argv)
 }
 
 func InitNamespaces(flags uint32) {
