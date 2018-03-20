@@ -9,11 +9,11 @@ buildtree=$coredir/buildtree
 # Singularity core C portion (libsycore.a)
 #
 if [ -d "$buildtree" ]; then
-	make -j `nproc` -C $buildtree
+	make -j `nproc 2>/dev/null || echo 1` -C $buildtree
 else
 	cd $coredir
 	./mconfig -b $buildtree
-	make -j `nproc` -C $buildtree
+	make -j `nproc 2>/dev/null || echo 1` -C $buildtree
 	cd $topdir
 fi
 
