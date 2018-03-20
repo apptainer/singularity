@@ -8,7 +8,7 @@ buildtree=$coredir/buildtree
 #
 # Singularity core C portion (libsycore.a)
 #
-if [ -d "$buildtree" ]; then
+if [ -d "$buildtree" -a -f "$buildtree/Makefile" ]; then
 	make -j `nproc 2>/dev/null || echo 1` -C $buildtree
 else
 	cd $coredir
@@ -24,4 +24,4 @@ CGO_CPPFLAGS="$CGO_CPPFLAGS -I$buildtree -I$coredir -I$coredir/lib"
 CGO_LDFLAGS="$CGO_LDFLAGS -L$buildtree/lib"
 export CGO_CPPFLAGS CGO_LDFLAGS
 
-go build -o singularity cmd/cli/cli.go
+go build -o $buildtree/singularity cmd/cli/cli.go
