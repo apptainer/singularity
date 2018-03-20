@@ -3,7 +3,6 @@ package signing
 import (
 	"bytes"
 	"crypto"
-	"fmt"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/packet"
 	"log"
@@ -22,7 +21,7 @@ import (
  * 6) record the KeyID used to sign into signature data object descriptor
  */
 
-func main() {
+func Sign() {
 	hpath := os.Getenv("HOME")
 	f, err := os.Open(hpath + "/pgp-secret")
 	if err != nil {
@@ -39,10 +38,10 @@ func main() {
 		buf := bytes.NewBufferString("Allo")
 		var conf packet.Config
 		conf.DefaultHash = crypto.SHA384
-		err = openpgp.DetachSignText(os.Stdout, e, buf, &conf)
+		err = openpgp.ArmoredDetachSignText(os.Stdout, e, buf, &conf)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("")
+		
 	}
 }

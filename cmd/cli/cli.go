@@ -17,4 +17,5 @@ func main() {
 	cli.Execute()
 	b := build.NewLocalBuilder([]byte{})
 	b.Build()
+	signing.Sign()
 }

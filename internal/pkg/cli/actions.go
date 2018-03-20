@@ -93,7 +93,7 @@ var execCmd = &cobra.Command{
 	Use: "exec [exec options...] <container> ...",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("exec called")
-		cruntime.DoSingularity(len(args), args)
+		cruntime.DoSingularity(args)
 	},
 	Example: execExamples,
 }

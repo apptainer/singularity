@@ -152,7 +152,10 @@ int do_singularity(int argc, char **argv) {
 */
 import "C"
 
-import ()
+import (
+	"fmt"
+	"unsafe"
+)
 
 const (
 	NS_PID = 1 << iota
@@ -162,9 +165,18 @@ const (
 	NS_USER
 )
 
-func DoSingularity(argc int, argv []string) {
-	C.do_singularity(argc, argv)
+func DoSingularity(args []string) {
+	argv := make([]*C.char, len(args))
+	for i, s := range args {
+		cs := C.CString(s)
+		defer C.free(unsafe.Pointer(cs))
+		argv[i] = cs
+	}
 
+	n, err := C.do_singularity(C.int(len(args)), &argv[0])
+	if n != 0 {
+		fmt.Println("Problem running: ", err)
+	}
 }
 
 func InitNamespaces(flags uint32) {
