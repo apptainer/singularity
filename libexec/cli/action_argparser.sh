@@ -123,6 +123,7 @@ while true; do
         ;;
         --nv)
             shift
+            SINGULARITY_NV=1
             export SINGULARITY_NV
             SINGULARITY_NVLIBLIST=`mktemp ${TMPDIR:-/tmp}/.singularity-nvliblist.XXXXXXXX`
             cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" > $SINGULARITY_NVLIBLIST
@@ -142,7 +143,7 @@ while true; do
             else
                 export SINGULARITY_CONTAINLIBS
             fi
-            if NVIDIA_SMI=$(which nvidia-smi >/dev/null 2>&1); then
+            if NVIDIA_SMI=$(which nvidia-smi 2>/dev/null); then
                 if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
                     SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${NVIDIA_SMI}"
                 else

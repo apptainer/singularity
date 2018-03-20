@@ -119,7 +119,6 @@ int _singularity_runtime_mount_dev(void) {
 
             while ( ( dp = readdir(dir) ) != NULL ) {
                 if ( strstr(dp->d_name, "nvidia") != NULL ) {
-                    singularity_message(2, "Binding device %s\n", joinpath("/dev", dp->d_name) );
                     bind_dev(sessiondir, joinpath("/dev", dp->d_name) );
                 }
             }
