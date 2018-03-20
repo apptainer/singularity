@@ -65,6 +65,48 @@ class TestApi(TestCase):
         token = client.update_token()
         self.assertEqual(token, None)
 
+    def test_get_token_url(self):
+        '''
+        test_get_token_url tests token url generation from a bearer auth
+        challenge
+        '''
+        realm = 'https://some-registry.io/auth'
+        service = "some-service"
+        scope = "some-scope"
+        expires_in = 9000
+
+        cases = (
+            [("realm", realm), ("service", service), ("scope", scope)],
+            [("service", service), ("scope", scope), ("realm", realm)],
+            [("scope", scope), ("realm", realm)],
+            [("realm", realm), ("service", service)],
+            [("realm", realm)],
+        )
+
+        for case in cases:
+            challenge = 'Bearer %s' % ','.join(
+                ['%s="%s"' % (k, v) for k, v in case]
+            )
+
+            target_params = [(k, v) for k, v in case if k != 'realm']
+            target_params.append(('expires_in', expires_in))
+            target_params.sort()
+
+            target_url = "{realm}?{query}".format(
+                realm=realm,
+                query='&'.join(
+                    ['%s=%s' % (k, v) for k, v in target_params]
+                )
+            )
+
+            token_url = self.client.get_token_url(
+                challenge,
+                expires_in,
+                sort_query_params=True
+            )
+
+            self.assertEqual(token_url, target_url)
+
     def test_get_manifest(self):
         '''test_get_manifest will obtain a library/repo manifest
         '''
