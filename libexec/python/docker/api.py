@@ -35,7 +35,8 @@ from sutils import (
     get_cache,
     change_tar_permissions,
     create_tar,
-    write_singularity_infos
+    write_singularity_infos,
+    parse_bearer_challenge
 )
 
 from defaults import (
@@ -163,27 +164,26 @@ class DockerApiConnection(ApiConnection):
                 sys.exit(1)
 
             challenge = response.headers["Www-Authenticate"]
-            regexp = '^Bearer\s+realm="(.+?)"'
-            regexp += '(?:,service="(.+?)")?'
-            regexp += '(?:,scope="(.+?)")?'
-            match = re.match(regexp, challenge)
 
-            if not match:
+            params = parse_bearer_challenge(challenge)
+
+            if not params or 'realm' not in params:
+                bot.debug("update_token: challenge = '%s'" % challenge)
                 bot.error("Unrecognized authentication challenge, exiting.")
                 sys.exit(1)
 
-            realm = match.group(1)
-            service = match.group(2) or ''
-            scope = (match.group(3) or '').split(',')[0]
+            realm = params.pop('realm')
 
-            token_url_params = ['expires_in=%s' % expires_in]
+            params['expires_in'] = expires_in
 
-            if service:
-                token_url_params.append('service=%s' % service)
-            if scope:
-                token_url_params.append('scope=%s' % scope)
+            query_fragment = '&'.join(
+                ['%s=%s' % (k, v) for k, v in params.items()]
+            )
 
-            self.token_url = "%s?%s" % (realm, '&'.join(token_url_params))
+            self.token_url = "{realm}?{query_fragment}".format(
+                realm=realm,
+                query_fragment=query_fragment
+            )
 
         headers = dict()
 
