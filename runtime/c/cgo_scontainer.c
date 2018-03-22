@@ -14,6 +14,7 @@
 #include <sys/prctl.h>
 #include <signal.h>
 #include <string.h>
+#include <sched.h>
 #include <errno.h>
 #include <linux/securebits.h>
 #include <linux/capability.h>
@@ -98,7 +99,7 @@ __attribute__((constructor)) static void init(void) {
         pfatal("Failed to spawn child");
     }
 
-    if ( cconf.userNS == 1 || cconf.isSuid == 0 ) {
+    if ( cconf.nsFlags & CLONE_NEWUSER || cconf.isSuid == 0 ) {
         return;
     }
 

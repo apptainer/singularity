@@ -29,8 +29,6 @@
 #include <sched.h>
 #include <sys/socket.h>
 #include <setjmp.h>
-#include <linux/securebits.h>
-#include <linux/capability.h>
 #include <sys/syscall.h>
 #include <dlfcn.h>
 
@@ -107,18 +105,32 @@ static void enter_namespace(pid_t pid, int nstype) {
     char buffer[256];
     char *namespace = NULL;
 
-    if ( nstype & CLONE_NEWPID ) {
+    switch(nstype) {
+    case CLONE_NEWPID:
         namespace = strdup("pid");
-    } else if ( nstype & CLONE_NEWNET ) {
+        break;
+    case CLONE_NEWNET:
         namespace = strdup("net");
-    } else if ( nstype & CLONE_NEWIPC ) {
+        break;
+    case CLONE_NEWIPC:
         namespace = strdup("ipc");
-    } else if ( nstype & CLONE_NEWNS ) {
+        break;
+    case CLONE_NEWNS:
         namespace = strdup("mnt");
-    } else if ( nstype & CLONE_NEWUTS ) {
+        break;
+    case CLONE_NEWUTS:
         namespace = strdup("uts");
-    } else if ( nstype & CLONE_NEWUSER ) {
+        break;
+    case CLONE_NEWUSER:
         namespace = strdup("user");
+        break;
+#ifdef CLONE_NEWCGROUP
+    case CLONE_NEWCGROUP:
+        namespace = strdup("cgroup");
+        break;
+#endif
+    default:
+        pfatal("No namespace type specified");
     }
 
     memset(buffer, 0, 256);
@@ -140,12 +152,11 @@ static void enter_namespace(pid_t pid, int nstype) {
     free(namespace);
 }
 
-static void setup_userns(const struct uidMapping uidMapping, const struct gidMapping gidMapping) {
+static void setup_userns(const struct uidMapping *uidMapping, const struct gidMapping *gidMapping) {
     FILE *map_fp;
-    uid_t containerUid = uidMapping.containerID;
-    uid_t hostUid = uidMapping.hostID;
-    gid_t containerGid = gidMapping.containerID;
-    gid_t hostGid = gidMapping.hostID;
+    int i;
+    struct uidMapping *uidmap;
+    struct gidMapping *gidmap;
 
     print(VERBOSE, "Create user namespace");
 
@@ -165,25 +176,38 @@ static void setup_userns(const struct uidMapping uidMapping, const struct gidMap
     }
 
     print(DEBUG, "Write to GID map");
-    map_fp = fopen("/proc/self/gid_map", "w+"); // Flawfinder: ignore
-    if ( map_fp != NULL ) {
-        fprintf(map_fp, "%i %i %i\n", containerGid, hostGid, gidMapping.size);
-        if ( fclose(map_fp) < 0 ) {
-            pfatal("Failed to write to GID map: %s\n", strerror(errno));
+    for ( i = 0; i < MAX_ID_MAPPING; i++ ) {
+        gidmap = (struct gidMapping *)&gidMapping[i];
+        if ( gidmap->size == 0 ) {
+            break;
         }
-    } else {
-        pfatal("Could not write parent info to gid_map: %s\n", strerror(errno));
+        map_fp = fopen("/proc/self/gid_map", "w+"); // Flawfinder: ignore
+        if ( map_fp != NULL ) {
+            print(DEBUG, "Write line '%i %i %i' to gid_map", gidmap->containerID, gidmap->hostID, gidmap->size);
+            fprintf(map_fp, "%i %i %i\n", gidmap->containerID, gidmap->hostID, gidmap->size);
+            if ( fclose(map_fp) < 0 ) {
+                pfatal("Failed to write to GID map: %s\n", strerror(errno));
+            }
+        } else {
+            pfatal("Could not write parent info to gid_map: %s\n", strerror(errno));
+        }
     }
 
     print(DEBUG, "Write to UID map");
-    map_fp = fopen("/proc/self/uid_map", "w+"); // Flawfinder: ignore
-    if ( map_fp != NULL ) {
-        fprintf(map_fp, "%i %i %i\n", containerUid, hostUid, uidMapping.size);
-        if ( fclose(map_fp) < 0 ) {
-            pfatal("Failed to write to UID map: %s\n", strerror(errno));
+    for ( i = 0; i < MAX_ID_MAPPING; i++ ) {
+        uidmap = (struct uidMapping *)&uidMapping[i];
+        if ( uidmap->size == 0 ) {
+            break;
         }
-    } else {
-        pfatal("Could not write parent info to uid_map: %s\n", strerror(errno));
+        map_fp = fopen("/proc/self/uid_map", "w+"); // Flawfinder: ignore
+        if ( map_fp != NULL ) {
+            fprintf(map_fp, "%i %i %i\n", uidmap->containerID, uidmap->hostID, uidmap->size);
+            if ( fclose(map_fp) < 0 ) {
+                pfatal("Failed to write to UID map: %s\n", strerror(errno));
+            }
+        } else {
+            pfatal("Could not write parent info to uid_map: %s\n", strerror(errno));
+        }
     }
 }
 
@@ -234,7 +258,7 @@ void do_nothing(int sig) {
 
 int main(int argc, char **argv) {
     char *json_stdin;
-    char *env[4] = {0};
+    char *env[8] = {0};
     int stage_socket[2];
     pid_t stage1, stage2;
     uid_t uid = getuid();
@@ -242,10 +266,20 @@ int main(int argc, char **argv) {
     struct cConfig config;
     sigset_t mask;
     char *loglevel;
+    char *runtime;
 
-    loglevel = getenv("SINGULARITY_MESSAGELEVEL");
+    loglevel = getenv("MESSAGELEVEL");
     if ( loglevel != NULL ) {
         loglevel = strdup(loglevel);
+    } else {
+        pfatal("MESSAGELEVEL environment variable isn't set");
+    }
+
+    runtime = getenv("SRUNTIME");
+    if ( runtime != NULL ) {
+        runtime = strdup(runtime);
+    } else {
+        pfatal("SRUNTIME environment variable isn't set");
     }
 
     print(VERBOSE, "Container runtime");
@@ -265,8 +299,13 @@ int main(int argc, char **argv) {
     environ = env;
 
     if ( loglevel != NULL ) {
-        setenv("SINGULARITY_MESSAGELEVEL", loglevel, 1);
+        setenv("MESSAGELEVEL", loglevel, 1);
         free(loglevel);
+    }
+
+    if ( runtime != NULL ) {
+        setenv("SRUNTIME", runtime, 1);
+        free(runtime);
     }
 
     print(DEBUG, "Check PR_SET_NO_NEW_PRIVS support");
@@ -326,7 +365,7 @@ int main(int argc, char **argv) {
 
         print(VERBOSE, "Execute scontainer stage 1");
 
-        execle("/tmp/scontainer", "/tmp/scontainer", "-stage", "1", "-socket", int2str(stage_socket[1]), NULL, environ);
+        execle("/tmp/scontainer", "/tmp/scontainer", NULL, environ);
         pfatal("Scontainer stage 1 execution failed");
     } else if ( stage1 > 0 ) {
         pid_t parent = getpid();
@@ -432,13 +471,13 @@ int main(int argc, char **argv) {
             }
         }
 
-        if ( config.userNS == 0 ) {
+        if ( (config.nsFlags & CLONE_NEWUSER) == 0 ) {
             priv_escalate();
         } else {
             if ( config.userPid ) {
                 enter_namespace(config.userPid, CLONE_NEWUSER);
             } else {
-                setup_userns(config.uidMapping, config.gidMapping);
+                setup_userns(&config.uidMapping[0], &config.gidMapping[0]);
             }
         }
 
@@ -467,6 +506,7 @@ int main(int argc, char **argv) {
 
         if ( stage2 == 0 ) {
             /* at this stage we are PID 1 if PID namespace requested */
+            unsigned char notification = 'S';
             int rpc_socket[2];
             pid_t child;
 
@@ -477,34 +517,42 @@ int main(int argc, char **argv) {
             if ( config.netPid ) {
                 enter_namespace(config.netPid, CLONE_NEWNET);
             } else {
-                print(VERBOSE, "Create net namespace");
-                if ( config.nsFlags & CLONE_NEWNET && unshare(CLONE_NEWNET) < 0 ) {
-                    pfatal("failed to create network namespace");
+                if ( config.nsFlags & CLONE_NEWNET ) {
+                    print(VERBOSE, "Create net namespace");
+                    if ( unshare(CLONE_NEWNET) < 0 ) {
+                        pfatal("failed to create network namespace");
+                    }
                 }
             }
             if ( config.utsPid ) {
                 enter_namespace(config.utsPid, CLONE_NEWUTS);
             } else {
-                print(VERBOSE, "Create uts namespace");
-                if ( config.nsFlags & CLONE_NEWUTS && unshare(CLONE_NEWUTS) < 0 ) {
-                    pfatal("failed to create uts namespace");
+                if ( config.nsFlags & CLONE_NEWUTS ) {
+                    print(VERBOSE, "Create uts namespace");
+                    if ( unshare(CLONE_NEWUTS) < 0 ) {
+                        pfatal("failed to create uts namespace");
+                    }
                 }
             }
             if ( config.ipcPid ) {
                 enter_namespace(config.ipcPid, CLONE_NEWIPC);
             } else {
-                print(VERBOSE, "Create ipc namespace");
-                if ( config.nsFlags & CLONE_NEWIPC && unshare(CLONE_NEWIPC) < 0 ) {
-                    pfatal("failed to create ipc namespace");
+                if ( config.nsFlags & CLONE_NEWIPC ) {
+                    print(VERBOSE, "Create ipc namespace");
+                    if ( unshare(CLONE_NEWIPC) < 0 ) {
+                        pfatal("failed to create ipc namespace");
+                    }
                 }
             }
 #ifdef CLONE_NEWCGROUP
             if ( config.cgroupPid ) {
                 enter_namespace(config.cgroupPid, CLONE_NEWCGROUP);
             } else {
-                print(VERBOSE, "Create cgroup namespace");
-                if ( config.nsFlags & CLONE_NEWCGROUP && unshare(CLONE_NEWCGROUP) < 0 ) {
-                    pfatal("failed to create cgroup namespace");
+                if ( config.nsFlags & CLONE_NEWCGROUP ) {
+                    print(VERBOSE, "Create cgroup namespace");
+                    if ( unshare(CLONE_NEWCGROUP) < 0 ) {
+                        pfatal("failed to create cgroup namespace");
+                    }
                 }
             }
 #endif
@@ -527,6 +575,10 @@ int main(int argc, char **argv) {
 
             close(stage_socket[0]);
 
+            if ( write(stage_socket[1], &notification, 1) != 1 ) {
+                pfatal("failed to send start notification to parent process");
+            }
+
             child = fork();
             if ( child == 0 ) {
                 void *handle;
@@ -539,7 +591,7 @@ int main(int argc, char **argv) {
 
                 /* return to host network namespace for network setup */
                 print(DEBUG, "Return to host network namespace");
-                if ( config.nsFlags & CLONE_NEWNET && config.userNS == 0 ) {
+                if ( config.nsFlags & CLONE_NEWNET && (config.nsFlags & CLONE_NEWUSER) == 0 ) {
                     enter_namespace(parent, CLONE_NEWNET);
                 }
 
@@ -560,7 +612,7 @@ int main(int argc, char **argv) {
                 if ( handle == NULL ) {
                     pfatal("Failed to load shared lib librpc.so");
                 }
-                rpcserver = (GoInt (*)(GoInt))dlsym(handle, "RpcServer");
+                rpcserver = (GoInt (*)(GoInt))dlsym(handle, "RPCServer");
                 if ( rpcserver == NULL ) {
                     pfatal("Failed to find symbol");
                 }
@@ -573,6 +625,7 @@ int main(int argc, char **argv) {
             } else if ( child > 0 ) {
                 setenv("SCONTAINER_STAGE", "2", 1);
                 setenv("SCONTAINER_SOCKET", int2str(stage_socket[1]), 1);
+                setenv("SCONTAINER_RPC_SOCKET", int2str(rpc_socket[0]), 1);
 
                 close(rpc_socket[1]);
 
@@ -583,15 +636,26 @@ int main(int argc, char **argv) {
                 }
 
                 print(VERBOSE, "Execute scontainer stage 2");
-                execle("/tmp/scontainer", "/tmp/scontainer", "-stage", "2", "-socket", int2str(stage_socket[1]), "-rpc", int2str(rpc_socket[0]), NULL, environ);
+                execle("/tmp/scontainer", "/tmp/scontainer", NULL, environ);
             }
             pfatal("Failed to execute container");
         } else if ( stage2 > 0 ) {
+            unsigned char notification;
+
+            setenv("SMASTER_INSTANCE", int2str(config.isInstance), 1);
+            setenv("SMASTER_CONTAINER_PID", int2str(stage2), 1);
+            setenv("SMASTER_SOCKET", int2str(stage_socket[0]), 1);
+
             config.containerPid = stage2;
 
             print(VERBOSE, "Spawn smaster process");
 
             close(stage_socket[1]);
+
+            /* wait start notification from child */
+            if ( read(stage_socket[0], &notification, 1) != 1 ) {
+                pfatal("failed to get start notification from child process");
+            }
 
             /* send runtime configuration to scontainer (CGO) */
             print(DEBUG, "Send C runtime configuration to scontainer stage 2");
@@ -606,7 +670,7 @@ int main(int argc, char **argv) {
             }
 
             print(VERBOSE, "Execute smaster process");
-            execl("/tmp/smaster", "/tmp/smaster", int2str(stage2), int2str(stage_socket[0]), NULL);
+            execle("/tmp/smaster", "/tmp/smaster", NULL, environ);
         }
         pfatal("Failed to create container namespaces");
     }

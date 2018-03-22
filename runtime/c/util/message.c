@@ -42,11 +42,11 @@ void _print(int level, const char *function, const char *file_in, int line, char
     va_list args;
 
     if ( messagelevel == -99 ) {
-        char *messagelevel_string = getenv("SINGULARITY_MESSAGELEVEL");
+        char *messagelevel_string = getenv("MESSAGELEVEL");
 
         if ( messagelevel_string == NULL ) {
             messagelevel = 5;
-            print(DEBUG, "SINGULARITY_MESSAGELEVEL undefined, setting level 5 (debug)");
+            print(DEBUG, "MESSAGELEVEL undefined, setting level 5 (debug)");
         } else {
             messagelevel = atoi(messagelevel_string); // Flawfinder: ignore
             if ( messagelevel > 9 ) {
