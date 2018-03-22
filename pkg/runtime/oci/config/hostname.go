@@ -1,24 +1,24 @@
 package config
 
-import(
-    "fmt"
+import (
+	"fmt"
 )
 
 type RuntimeOciHostname interface {
-    Get() string
-    Set(hostname string)
+	Get() string
+	Set(hostname string)
 }
 
 type DefaultRuntimeOciHostname struct {
-    RuntimeOciSpec *RuntimeOciSpec
+	RuntimeOciSpec *RuntimeOciSpec
 }
 
 func (c *DefaultRuntimeOciHostname) Get() string {
-    fmt.Println("Get hostname")
-    return c.RuntimeOciSpec.Hostname
+	fmt.Println("Get hostname")
+	return c.RuntimeOciSpec.Hostname
 }
 
 func (c *DefaultRuntimeOciHostname) Set(hostname string) {
-    fmt.Println("Set hostname to", hostname)
-    c.RuntimeOciSpec.Hostname = hostname
+	fmt.Println("Set hostname to", hostname)
+	c.RuntimeOciSpec.Hostname = hostname
 }

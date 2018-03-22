@@ -1,24 +1,24 @@
 package config
 
-import(
-    "fmt"
+import (
+	"fmt"
 )
 
 type RuntimeOciVersion interface {
-    Get() string
-    Set(name string)
+	Get() string
+	Set(name string)
 }
 
 type DefaultRuntimeOciVersion struct {
-    RuntimeOciSpec *RuntimeOciSpec
+	RuntimeOciSpec *RuntimeOciSpec
 }
 
 func (c *DefaultRuntimeOciVersion) Get() string {
-    fmt.Println("Get version")
-    return c.RuntimeOciSpec.Version
+	fmt.Println("Get version")
+	return c.RuntimeOciSpec.Version
 }
 
 func (c *DefaultRuntimeOciVersion) Set(version string) {
-    fmt.Println("Set version to", version)
-    c.RuntimeOciSpec.Version = version
+	fmt.Println("Set version to", version)
+	c.RuntimeOciSpec.Version = version
 }

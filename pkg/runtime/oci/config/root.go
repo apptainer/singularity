@@ -1,50 +1,50 @@
 package config
 
-import(
-    "github.com/opencontainers/runtime-spec/specs-go"
+import (
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 type RuntimeOciRoot interface {
-    GetSpec() *specs.Root
+	GetSpec() *specs.Root
 
-    GetPath() string
-    SetPath(path string)
+	GetPath() string
+	SetPath(path string)
 
-    GetReadOnly() bool
-    SetReadOnly(enabled bool)
+	GetReadOnly() bool
+	SetReadOnly(enabled bool)
 }
 
 type DefaultRuntimeOciRoot struct {
-    RuntimeOciSpec *RuntimeOciSpec
+	RuntimeOciSpec *RuntimeOciSpec
 }
 
 func (c *DefaultRuntimeOciRoot) init() {
-    if c.RuntimeOciSpec.Root == nil {
-        c.RuntimeOciSpec.Root = &specs.Root{}
-    }
+	if c.RuntimeOciSpec.Root == nil {
+		c.RuntimeOciSpec.Root = &specs.Root{}
+	}
 }
 
 func (c *DefaultRuntimeOciRoot) GetSpec() *specs.Root {
-    c.init()
-    return c.RuntimeOciSpec.Root
+	c.init()
+	return c.RuntimeOciSpec.Root
 }
 
 func (c *DefaultRuntimeOciRoot) GetPath() string {
-    c.init()
-    return c.RuntimeOciSpec.Root.Path
+	c.init()
+	return c.RuntimeOciSpec.Root.Path
 }
 
 func (c *DefaultRuntimeOciRoot) SetPath(path string) {
-    c.init()
-    c.RuntimeOciSpec.Root.Path = path
+	c.init()
+	c.RuntimeOciSpec.Root.Path = path
 }
 
 func (c *DefaultRuntimeOciRoot) GetReadOnly() bool {
-    c.init()
-    return c.RuntimeOciSpec.Root.Readonly
+	c.init()
+	return c.RuntimeOciSpec.Root.Readonly
 }
 
 func (c *DefaultRuntimeOciRoot) SetReadOnly(enabled bool) {
-    c.init()
-    c.RuntimeOciSpec.Root.Readonly = enabled
+	c.init()
+	c.RuntimeOciSpec.Root.Readonly = enabled
 }

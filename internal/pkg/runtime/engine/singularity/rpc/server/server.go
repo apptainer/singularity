@@ -10,8 +10,8 @@ package server
 
 import (
 	"fmt"
-	"github.com/singularityware/singularity/pkg/util/loop"
 	args "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/rpc"
+	"github.com/singularityware/singularity/pkg/util/loop"
 	"syscall"
 )
 

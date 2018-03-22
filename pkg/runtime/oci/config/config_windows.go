@@ -3,7 +3,7 @@ package config
 const Platform = "windows"
 
 type RuntimeOciPlatform struct {
-    Linux           interface{}
-    Solaris         interface{}
-    Windows         RuntimeOciWindows
+	Linux   interface{}
+	Solaris interface{}
+	Windows RuntimeOciWindows
 }
