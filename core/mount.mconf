@@ -1,0 +1,5 @@
+name := mount
+prog := mount
+csrc := mount.c
+depends := libimage libruntime libsif libutil
+extralibs := -luuid

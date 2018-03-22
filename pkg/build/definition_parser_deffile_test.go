@@ -9,224 +9,101 @@
 package build
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
+	"io"
 	"os"
-	"strings"
+	"reflect"
 	"testing"
 )
 
-func TestCleanUpFile(t *testing.T) {
-	testFiles := map[string]string{
-		"docker":      "./mock/docker/docker",
-		"debootstrap": "./mock/debootstrap/debootstrap",
-		"arch":        "./mock/arch/arch",
-		"yum":         "./mock/yum/yum",
-		"shub":        "./mock/shub/shub",
-		"localimage":  "./mock/localimage/localimage",
-		"busybox":     "./mock/busybox/busybox",
-		"zypper":      "./mock/zypper/zypper",
-	}
-	testResultFile := map[string]string{
-		"docker":      "/tmp/singularity_test_build_docker",
-		"debootstrap": "/tmp/singularity_test_build_debootstrap",
-		"arch":        "/tmp/singularity_test_build_arch",
-		"yum":         "/tmp/singularity_test_build_yum",
-		"shub":        "/tmp/singularity_test_build_shub",
-		"localimage":  "/tmp/singularity_test_build_localimage",
-		"busybox":     "/tmp/singularity_test_build_busybox",
-		"zypper":      "/tmp/singularity_test_build_zypper",
-	}
-	resultFile := map[string]string{
-		"docker":      "./mock/docker/result",
-		"debootstrap": "./mock/debootstrap/result",
-		"arch":        "./mock/arch/result",
-		"yum":         "./mock/yum/result",
-		"shub":        "./mock/shub/result",
-		"localimage":  "./mock/localimage/result",
-		"busybox":     "./mock/busybox/result",
-		"zypper":      "./mock/zypper/result",
-	}
-	type printSection func(*testing.T, *Deffile, *os.File)
-	sectionsPrinters := map[string]printSection{
-		"%help":        PrintHelpSection,
-		"%setup":       PrintSetupSection,
-		"%files":       PrintFilesSection,
-		"%labels":      PrintLabelsSection,
-		"%environment": PrintEnvSection,
-		"%post":        PrintPostSection,
-		"%runscript":   PrintRunscriptSection,
-		"%test":        PrintTestSection,
+func helperParseAndCompare(t *testing.T, defPath string, jsonPath string) (err error) {
+	defFile, err := os.Open(defPath)
+	defer defFile.Close()
+	if err != nil {
+		t.Error(err)
+		return
 	}
 
-	// Loop through the Deffiles
-	for k := range testFiles {
-		t.Logf("=>\tRunning test for Deffile:\t\t[%s]", k)
-		f, err := os.Create(testResultFile[k])
-		if err != nil {
-			t.Log(err)
-			t.Fail()
+	jsonFile, err := os.Open(jsonPath)
+	defer jsonFile.Close()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	defTest, err := ParseDefinitionFile(defFile)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	d := json.NewDecoder(jsonFile)
+	for {
+		var defCorrect Definition
+		if err := d.Decode(&defCorrect); err == io.EOF {
+			break
+		} else if err != nil {
+			t.Error(err)
+			return err
 		}
 
-		defer f.Close()
+		if !reflect.DeepEqual(defTest, defCorrect) {
+			return fmt.Errorf("Failed to correctly parse definition file: %s", defPath)
+		}
+	}
 
-		r, err := os.Open(testFiles[k])
+	return nil
+}
+
+func helperParseBad(t *testing.T, defPath string) (err error) {
+	defFile, err := os.Open(defPath)
+	defer defFile.Close()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	_, err = ParseDefinitionFile(defFile)
+	if err != nil {
+		return nil
+	} else {
+		return fmt.Errorf("ParseDefinitionFile incorrectly succeeded in parsing file: %s", defPath)
+	}
+}
+
+func TestParseDefinitionFile(t *testing.T) {
+	// Map[path]path.json
+	definitionFilesGood := map[string]string{
+		"./testdata_good/docker/docker":           "./testdata_good/docker/docker.json",
+		"./testdata_good/busybox/busybox":         "./testdata_good/busybox/busybox.json",
+		"./testdata_good/debootstrap/debootstrap": "./testdata_good/debootstrap/debootstrap.json",
+		"./testdata_good/arch/arch":               "./testdata_good/arch/arch.json",
+		"./testdata_good/localimage/localimage":   "./testdata_good/localimage/localimage.json",
+		"./testdata_good/shub/shub":               "./testdata_good/shub/shub.json",
+		"./testdata_good/yum/yum":                 "./testdata_good/yum/yum.json",
+		"./testdata_good/zypper/zypper":           "./testdata_good/zypper/zypper.json",
+	}
+
+	definitionFilesBad := []string{
+		"./testdata_bad/bad_section",
+		"./testdata_bad/json_input_1",
+		"./testdata_bad/json_input_2",
+		"./testdata_bad/empty",
+	}
+
+	for defPath, jsonPath := range definitionFilesGood {
+		err := helperParseAndCompare(t, defPath, jsonPath)
 		if err != nil {
 			t.Error(err)
 		}
-		defer r.Close()
+	}
 
-		Df, err := ParseDefFile(r)
+	for _, defPath := range definitionFilesBad {
+		err := helperParseBad(t, defPath)
 		if err != nil {
-			t.Log(err)
-			t.Fail()
+			t.Error(err)
 		}
-		// Write Deffile output to file
-		for _, k := range headerKeys {
-			v, ok := Df.Header[k]
-			if ok {
-				_, err := f.WriteString(fmt.Sprintf("%s:%s\n", k, v))
-				if err != nil {
-					t.Log(err)
-					t.Fail()
-				}
-			}
-		}
-		for _, key := range sectionsKeys {
-			printer := sectionsPrinters[key]
-			printer(t, &Df, f)
-		}
-		// And....compare the output (fingers crossed)
-		if !compareFiles(t, resultFile[k], testResultFile[k]) {
-			t.Logf("<=\tFailed to parse Deffinition file:\t[%s]", k)
-			t.Fail()
-		}
+
 	}
-}
-
-// compareFiles is a helper func to compare outputs
-func compareFiles(t *testing.T, resultFile, testFile string) bool {
-	rfile, err := os.Open(resultFile)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	defer rfile.Close()
-
-	tfile, err := os.Open(testFile)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	defer tfile.Close()
-
-	rscanner := bufio.NewScanner(rfile)
-	tscanner := bufio.NewScanner(tfile)
-	for tscanner.Scan() {
-		rscanner.Scan()
-		rline := rscanner.Text()
-		tline := tscanner.Text()
-		if strings.Compare(rline, tline) != 0 {
-			return false
-		}
-	}
-	return true
-}
-
-func PrintHelpSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%help:%s\n", def.Sections.help)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintSetupSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%setup:%s\n", def.Sections.setup)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintPostSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%post:%s\n", def.Sections.post)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintRunscriptSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%runscript:%s\n", def.Sections.runscript)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintTestSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%test:%s\n", def.Sections.test)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintEnvSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := fmt.Sprintf("%%environment:%s\n", def.Sections.env)
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintLabelsSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := "%labels" + "\n"
-
-	for k, v := range def.Sections.labels {
-		toPrint = toPrint + fmt.Sprintf("%s:%s\n", k, v)
-	}
-
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
-}
-
-func PrintFilesSection(t *testing.T, def *Deffile, file *os.File) {
-	toPrint := "%files" + "\n"
-
-	for k, v := range def.Sections.files {
-		toPrint = toPrint + fmt.Sprintf("%s:%s\n", k, v)
-	}
-
-	_, err := file.WriteString(toPrint)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	// Issue a `Sync` to flush writes to stable storage.
-	file.Sync()
 }

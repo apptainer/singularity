@@ -4,9 +4,10 @@
 src/*.o
 singularity-*.tar.gz
 *.m4
-config.*
 *.pyc
 
+vendor/
+trash.lock
 Makefile
 Makefile.in
 autom4te.cache/

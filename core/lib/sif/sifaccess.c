@@ -100,15 +100,15 @@ sif_hreadable(size_t value)
 	}
 
 	switch(divs) {
-		case 0: snprintf(conversion, 31, "%ld", value);
+		case 0: snprintf(conversion, 31, "%zd", value);
 			break;
-		case 1: snprintf(conversion, 31, "%ldKB", value);
+		case 1: snprintf(conversion, 31, "%zdKB", value);
 			break;
-		case 2: snprintf(conversion, 31, "%ldMB", value);
+		case 2: snprintf(conversion, 31, "%zdMB", value);
 			break;
-		case 3: snprintf(conversion, 31, "%ldGB", value);
+		case 3: snprintf(conversion, 31, "%zdGB", value);
 			break;
-		case 4: snprintf(conversion, 31, "%ldTB", value);
+		case 4: snprintf(conversion, 31, "%zdTB", value);
 			break;
 	}
 
@@ -120,6 +120,8 @@ sif_printrow(void *elem, void *data)
 {
 	static char fposbuf[26];
 	Sifdescriptor *desc = elem;
+
+	(void)data;
 
 	printf("%-4d ", desc->cm.id);
 	if(desc->cm.groupid == SIF_UNUSED_GROUP)
@@ -178,6 +180,8 @@ sif_printdesc(void *elem, void *data)
 {
 	Sifdescriptor *desc = elem;
 
+	(void)data;
+
 	printf("desc type: %s\n", sif_datastr(desc->cm.datatype));
 	printf("desc id: %d\n", desc->cm.id);
 	if(desc->cm.groupid == SIF_UNUSED_GROUP)
@@ -189,7 +193,7 @@ sif_printdesc(void *elem, void *data)
 	else
 		printf("link: %d\n", desc->cm.link);
 	printf("fileoff: %ld\n", desc->cm.fileoff);
-	printf("filelen: %ld\n", desc->cm.filelen);
+	printf("filelen: %zd\n", desc->cm.filelen);
 
 	switch(desc->cm.datatype){
 	case DATA_PARTITION:

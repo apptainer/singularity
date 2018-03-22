@@ -43,12 +43,12 @@
 #include "util/privilege.h"
 #include "util/suid.h"
 
-#include "./image.h"
-#include "./bind.h"
-#include "./squashfs/include.h"
-#include "./dir/include.h"
-#include "./ext3/include.h"
-#include "./sif/include.h"
+#include "image/image.h"
+#include "image/bind.h"
+#include "image/image_squashfs.h"
+#include "image/image_dir.h"
+#include "image/image_ext3.h"
+#include "image/image_sif.h"
 
 struct image_object singularity_image_init(char *path, int open_flags) {
     struct image_object image;
@@ -272,7 +272,7 @@ void singularity_limit_container_paths(struct image_object *image) {
     const char *limit_container_paths = singularity_config_get_value(LIMIT_CONTAINER_PATHS);
 
     if ( strcmp(limit_container_paths, "NULL") != 0 ) {
-        char image_path[PATH_MAX];
+        static char image_path[PATH_MAX];
         char *path_token = NULL;
         char *fd_path = NULL;
 

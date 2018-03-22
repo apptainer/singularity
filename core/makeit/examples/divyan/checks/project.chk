@@ -1,0 +1,5 @@
+#!/bin/sh -
+#
+# Divyan system configuration detection and cross-tool build
+#
+set -e

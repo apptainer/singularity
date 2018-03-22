@@ -1,0 +1,7 @@
+__TARGET__ := $(BUILDDIR)/__PATH__/__TARGET__
+
+$(__TARGET__): $(__NAME___OBJ) __DEPEND_T__
+	@echo " LD" $@
+	@mkdir -p $(@D)
+	$(V)$(CC) $(LDFLAGS) __LDFLAGS__ -o $@ $(__NAME___OBJ) -Wl,--start-group __DEPEND_L__ -Wl,--end-group __EXTRALIBS__
+	$(V)($(SIZE) $@ 2>/dev/null || true)

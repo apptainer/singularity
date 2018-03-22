@@ -41,7 +41,7 @@
 char *progname;
 
 static void
-usage()
+usage(void)
 {
 	fprintf(stderr, "usage: %s COMMAND OPTION FILE\n", progname);
 	fprintf(stderr, "\n\n");
@@ -61,6 +61,7 @@ usage()
 	fprintf(stderr, "\t\t-c CONTENT : freeform partition content string\n");
 	fprintf(stderr, "\t\t-f FSTYPE : filesystem type: EXT3, SQUASHFS\n");
 	fprintf(stderr, "\t\t-p PARTTYPE : filesystem partition type: SYSTEM, DATA, OVERLAY\n");
+	fprintf(stderr, "\t\t-u uuid : pass a uuid to use instead of generating a new one\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "example: sif -P /tmp/fs.squash -f \"SQUASHFS\" -p \"SYSTEM\" -c \"Linux\" /tmp/container.sif\n\n");
 }
@@ -302,6 +303,7 @@ cmd_create(int argc, char *argv[])
 	int eopts = 0;
 	int lopts = 0;
 	int popts = 0;
+	int extuuid = 0;
 	struct utsname name;
 	Sifcreateinfo createinfo = { };
 	Node *n;
@@ -310,7 +312,7 @@ cmd_create(int argc, char *argv[])
 	argc--;
 	argv++;
 
-	while((opt = getopt(argc, argv, "D:EL:P:")) != -1){ /* Flawfinder: ignore */
+	while((opt = getopt(argc, argv, "u:D:EL:P:")) != -1){ /* Flawfinder: ignore */
 		switch(opt){
 		case 'D':
 			n = ddescadd(&createinfo.deschead, optarg);
@@ -344,6 +346,14 @@ cmd_create(int argc, char *argv[])
 			}
 			popts++;
 			break;
+		case 'u':
+			if(uuid_parse(optarg, createinfo.uuid) < 0){
+				fprintf(stderr, "Make sure the uuid passed is correctly formated:\n");
+				fprintf(stderr, "Expecting format: %s\n", "`%08x-%04x-%04x-%04x-%012x'");
+				return -1;
+			}
+			extuuid = 1;
+			break;
 		default:
 			usage();
 			return -1;
@@ -365,7 +375,9 @@ cmd_create(int argc, char *argv[])
 	createinfo.launchstr = SIF_LAUNCH;
 	createinfo.sifversion = SIF_VERSION;
 	createinfo.arch = SIF_ARCH_AMD64;
-	uuid_generate(createinfo.uuid);
+	if(!extuuid)
+		uuid_generate(createinfo.uuid);
+
 	if(uname(&name) < 0){
 		fprintf(stderr, "Error: Calling uname failed\n");
 		return -1;
