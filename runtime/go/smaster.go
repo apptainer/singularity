@@ -40,10 +40,10 @@ func handleChild(pid int, child chan os.Signal, engine *runtime.RuntimeEngine) {
 	var status syscall.WaitStatus
 
 	select {
-	case _ = (<-child):
+	case _ = <-child:
 		syscall.Wait4(pid, &status, syscall.WNOHANG, nil)
 
-		engine.CleanupContainer()
+		//		engine.CleanupContainer()
 		/*
 		 * see https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle
 		 * we will run step 8/9 there
@@ -77,16 +77,16 @@ func main() {
 	}
 	runtimeName := tmp
 
-	/* hold a reference to container network namespace for cleanup */
-	_, err := os.Open("/proc/" + strconv.Itoa(containerPid) + "/ns/net")
-	if err != nil {
-		log.Fatalln("can't open network namespace:", err)
-	}
-
 	comm := os.NewFile(uintptr(socket), "socket")
 	bytes, err := ioutil.ReadAll(comm)
 	if err != nil {
 		log.Fatalln("smaster read configuration failed", err)
+	}
+
+	/* hold a reference to container network namespace for cleanup */
+	_, err = os.Open("/proc/" + strconv.Itoa(containerPid) + "/ns/net")
+	if err != nil {
+		log.Fatalln("can't open network namespace:", err)
 	}
 
 	engine, err := internalRuntime.NewRuntimeEngine(runtimeName, bytes)
@@ -95,7 +95,7 @@ func main() {
 	}
 
 	wg.Add(1)
-	go handleChild(containerPid, sigchild, engine)
+	go handleChild(containerPid, sigchild, nil) //engine)
 
 	if engine.IsRunAsInstance() {
 		wg.Add(1)

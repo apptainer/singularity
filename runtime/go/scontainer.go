@@ -42,7 +42,7 @@ func main() {
 	stage, _ := strconv.Atoi(tmp)
 
 	tmp, ok = os.LookupEnv("SCONTAINER_SOCKET")
-	if !ok {
+	if stage == 2 && !ok {
 		log.Fatalln("SCONTAINER_SOCKET environment variable isn't set")
 	}
 	socket, _ := strconv.Atoi(tmp)
@@ -68,11 +68,6 @@ func main() {
 
 	engine, err := runtime.NewRuntimeEngine(runtimeName, jsonBytes)
 	if err != nil {
-		log.Fatalln(err)
-	}
-
-	comm := os.NewFile(uintptr(socket), "comm")
-	if comm == nil {
 		log.Fatalln(err)
 	}
 
@@ -109,16 +104,10 @@ func main() {
 		}
 
 		jsonConf, _ := engine.GetConfig()
-
 		cconf.jsonConfSize = C.uint(len(jsonConf))
-
 		cconfPayload := C.GoBytes(unsafe.Pointer(&cconf), C.sizeof_struct_cConfig)
-		if _, err := comm.Write(cconfPayload); err != nil {
-			log.Fatalln("write C configuration failed")
-		}
-		if _, err := comm.Write(jsonConf); err != nil {
-			log.Fatalln("write json configuration failed")
-		}
+
+		os.Stdout.Write(append(cconfPayload, jsonConf...))
 	} else if stage == 2 {
 		/* wait childs process */
 		rpcChild := make(chan os.Signal, 1)
@@ -141,6 +130,15 @@ func main() {
 			os.Exit(0)
 		}
 
+		comm := os.NewFile(uintptr(socket), "comm")
+		if comm == nil {
+			log.Fatalln("failed to read on socket")
+		}
+
+		if _, err := comm.Write(jsonBytes); err != nil {
+			log.Fatalln(err)
+		}
+
 		if err := engine.PrestartProcess(); err != nil {
 			log.Fatalln("Container setup failed")
 		}
@@ -152,7 +150,7 @@ func main() {
 	sigloop:
 		for {
 			select {
-			case _ = (<-rpcChild):
+			case _ = <-rpcChild:
 				/*
 				 * waiting 2 childs signal there, since Linux can merge signals, we wait for all childs
 				 * when first SIGCHLD received

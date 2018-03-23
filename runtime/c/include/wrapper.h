@@ -9,6 +9,8 @@
 #ifndef _SINGULARITY_WRAPPER_H
 #define _SINGULARITY_WRAPPER_H
 
+#define MAX_JSON_SIZE   64*1024
+#define JOKER           42
 #define MAX_ID_MAPPING  5
 
 struct uidMapping {

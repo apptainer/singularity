@@ -39,7 +39,6 @@
 #include "librpc.h"
 
 #define CLONE_STACK_SIZE    1024*1024
-#define MAX_JSON_SIZE       64*1024
 #define BUFSIZE             512
 
 extern char **environ;
@@ -267,6 +266,8 @@ int main(int argc, char **argv) {
     sigset_t mask;
     char *loglevel;
     char *runtime;
+    int output[2];
+    int input[2];
 
     loglevel = getenv("MESSAGELEVEL");
     if ( loglevel != NULL ) {
@@ -334,26 +335,37 @@ int main(int argc, char **argv) {
     /* back to terminal stdin */
     if ( isatty(std) ) {
         print(DEBUG, "Run in terminal, restore stdin");
-        dup2(std, 0);
+        dup2(std, STDIN_FILENO);
     }
     close(std);
 
     print(DEBUG, "Set SIGCHLD signal handler");
     signal(SIGCHLD, &do_nothing);
 
-    /* for security reasons use socketpair only for process communications */
-    if ( socketpair(AF_UNIX, SOCK_DGRAM, 0, stage_socket) < 0 ) {
-        pfatal("Failed to create communication socket");
+    if ( pipe2(output, 0) < 0 ) {
+        pfatal("failed to create output process pipes");
+    }
+    if ( pipe2(input, 0) < 0 ) {
+        pfatal("failed to create input process pipes");
     }
 
     stage1 = fork();
     if ( stage1 == 0 ) {
         setenv("SCONTAINER_STAGE", "1", 1);
-        setenv("SCONTAINER_SOCKET", int2str(stage_socket[1]), 1);
+
+        close(output[0]);
+        close(input[1]);
+
+        if ( dup2(input[0], JOKER) < 0 ) {
+            pfatal("failed to create stdin pipe");
+        }
+        close(input[0]);
+        if ( dup2(output[1], STDOUT_FILENO) < 0 ) {
+            pfatal("failed to create stdout pipe");
+        }
+        close(output[1]);
 
         print(VERBOSE, "Spawn scontainer stage 1");
-
-        close(stage_socket[0]);
 
         /*
          *  stage1 is responsible for singularity configuration file parsing, handle user input,
@@ -374,23 +386,24 @@ int main(int argc, char **argv) {
         void *readbuf = &config;
         size_t readsize = sizeof(config);
 
-        close(stage_socket[1]);
+        close(output[1]);
+        close(input[0]);
 
-        fds.fd = stage_socket[0];
+        fds.fd = output[0];
         fds.events = POLLIN;
         fds.revents = 0;
 
         print(DEBUG, "Send C runtime configuration to scontainer stage 1");
 
         /* send runtime configuration to scontainer (CGO) */
-        if ( write(stage_socket[0], &config, sizeof(config)) != sizeof(config) ) {
+        if ( write(input[1], &config, sizeof(config)) != sizeof(config) ) {
             pfatal("Failed to send runtime configuration");
         }
 
         print(DEBUG, "Send JSON runtime configuration to scontainer stage 1");
 
         /* send json configuration to scontainer */
-        if ( write(stage_socket[0], json_stdin, config.jsonConfSize) != config.jsonConfSize ) {
+        if ( write(input[1], json_stdin, config.jsonConfSize) != config.jsonConfSize ) {
             pfatal("Copy json configuration failed");
         }
 
@@ -399,22 +412,23 @@ int main(int argc, char **argv) {
         while ( poll(&fds, 1, -1) >= 0 ) {
             if ( fds.revents == POLLIN ) {
                 int ret;
-
                 print(DEBUG, "Receiving configuration from scontainer stage 1");
-                if ( (ret = read(stage_socket[0], readbuf, readsize)) != readsize ) {
+                if ( (ret = read(output[0], &config, sizeof(config))) != sizeof(config) ) {
                     pfatal("Failed to read communication pipe %d", ret);
                 }
-                if ( readbuf == json_stdin ) {
-                    break;
-                }
-                readbuf = json_stdin;
-                readsize = config.jsonConfSize;
                 if ( config.jsonConfSize >= MAX_JSON_SIZE) {
                     pfatal("json configuration too big");
                 }
+                if ( (ret = read(output[0], json_stdin, config.jsonConfSize)) != config.jsonConfSize ) {
+                    pfatal("Failed to read communication pipe %d", ret);
+                }
                 json_stdin[config.jsonConfSize] = '\0';
             }
+            break;
         }
+
+        close(output[0]);
+        close(input[1]);
 
         print(DEBUG, "Wait completion of scontainer stage1");
         if ( wait(&status) != stage1 ) {
@@ -486,6 +500,10 @@ int main(int argc, char **argv) {
             pfatal("Failed to create communication socket");
         }
 
+        if ( pipe2(input, 0) < 0 ) {
+            pfatal("failed to create input pipes");
+        }
+
         /* enforce PID namespace if NO_NEW_PRIVS not supported  */
         if ( config.hasNoNewPrivs == 0 ) {
             print(VERBOSE, "No PR_SET_NO_NEW_PRIVS support, enforcing PID namespace");
@@ -506,7 +524,6 @@ int main(int argc, char **argv) {
 
         if ( stage2 == 0 ) {
             /* at this stage we are PID 1 if PID namespace requested */
-            unsigned char notification = 'S';
             int rpc_socket[2];
             pid_t child;
 
@@ -574,15 +591,14 @@ int main(int argc, char **argv) {
             }
 
             close(stage_socket[0]);
-
-            if ( write(stage_socket[1], &notification, 1) != 1 ) {
-                pfatal("failed to send start notification to parent process");
-            }
+            close(input[1]);
 
             child = fork();
             if ( child == 0 ) {
                 void *handle;
                 GoInt (*rpcserver)(GoInt socket);
+
+                close(input[0]);
 
                 print(VERBOSE, "Spawn RPC server");
 
@@ -627,24 +643,21 @@ int main(int argc, char **argv) {
                 setenv("SCONTAINER_SOCKET", int2str(stage_socket[1]), 1);
                 setenv("SCONTAINER_RPC_SOCKET", int2str(rpc_socket[0]), 1);
 
-                close(rpc_socket[1]);
-
-                /* send json configuration to smaster */
-                print(DEBUG, "Send JSON configuration to smaster");
-                if ( write(stage_socket[1], json_stdin, config.jsonConfSize) != config.jsonConfSize ) {
-                    pfatal("copy json configuration failed");
+                if ( dup2(input[0], JOKER) < 0 ) {
+                    pfatal("failed to create stdin pipe");
                 }
+                close(input[0]);
+                close(rpc_socket[1]);
 
                 print(VERBOSE, "Execute scontainer stage 2");
                 execle("/tmp/scontainer", "/tmp/scontainer", NULL, environ);
             }
             pfatal("Failed to execute container");
         } else if ( stage2 > 0 ) {
-            unsigned char notification;
-
-            setenv("SMASTER_INSTANCE", int2str(config.isInstance), 1);
             setenv("SMASTER_CONTAINER_PID", int2str(stage2), 1);
             setenv("SMASTER_SOCKET", int2str(stage_socket[0]), 1);
+
+            close(input[0]);
 
             config.containerPid = stage2;
 
@@ -652,20 +665,15 @@ int main(int argc, char **argv) {
 
             close(stage_socket[1]);
 
-            /* wait start notification from child */
-            if ( read(stage_socket[0], &notification, 1) != 1 ) {
-                pfatal("failed to get start notification from child process");
-            }
-
             /* send runtime configuration to scontainer (CGO) */
             print(DEBUG, "Send C runtime configuration to scontainer stage 2");
-            if ( write(stage_socket[0], &config, sizeof(config)) != sizeof(config) ) {
+            if ( write(input[1], &config, sizeof(config)) != sizeof(config) ) {
                 pfatal("failed to send runtime configuration");
             }
 
             /* send json configuration to scontainer */
             print(DEBUG, "Send JSON runtime configuration to scontainer stage 2");
-            if ( write(stage_socket[0], json_stdin, config.jsonConfSize) != config.jsonConfSize ) {
+            if ( write(input[1], json_stdin, config.jsonConfSize) != config.jsonConfSize ) {
                 pfatal("copy json configuration failed");
             }
 
