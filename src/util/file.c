@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <ftw.h>
 #include <time.h>
+#include <dirent.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -411,6 +412,58 @@ int copy_file(char * source, char * dest) {
     return(0);
 }
 
+// copy source (directory) to dest (parent directory of copy) recursively
+// excludes links 
+int copy_dir_r(char * source, char * dest) {
+    struct dirent *de;
+    DIR *src_dir = opendir(source);
+    char *base_dir = basename(source);
+    char *dest_copy = joinpath(dest, base_dir);
+
+    singularity_message(DEBUG, "Called copy_dir_r(%s, %s)\n", source, dest);
+
+    if (src_dir == NULL)
+    {
+        singularity_message(ERROR, "Could not open source directory: %s\n", source );
+        return(-1);
+    }
+
+    if ( is_dir(dest) < 0 ) {
+        singularity_message(ERROR, "Could not find parent directory for copy: %s\n", dest );
+        return(-1);
+    }
+
+    singularity_message(DEBUG, "Trying to create %s\n", dest_copy );
+    // TODO create a function to copy directory with appropriate ownership and 
+    // perms and use that instead
+    if ( s_mkpath( dest_copy, 0755 ) < 0 ) {
+        singularity_message(ERROR, "Could not create directory: %s\n", dest_copy );
+        return(-1);
+    } 
+
+    while ( (de = readdir(src_dir)) != NULL ) {
+        char *entry = de->d_name;
+        char *src_entry = joinpath(source, entry);
+        char *dest_dir = joinpath(dest, base_dir);
+        char *dest_entry = joinpath(dest_dir, entry);
+
+        if ( strcmp(entry, ".") == 0 || strcmp(entry, "..") == 0 ) {
+            continue;
+
+        } else if ( is_dir(src_entry) == 0 ) {
+            copy_dir_r(src_entry, dest_dir); // Did you mean: recursion?
+
+        } else if ( is_file(src_entry)  == 0 ) {
+            if ( copy_file(src_entry, dest_entry) < 0 ) {
+                singularity_message(ERROR, "Could not copy %s to %s\n", src_entry, dest_entry);
+                return(-1);
+            }
+        } 
+    }
+
+    closedir(src_dir);    
+    return 0;
+}
 
 int fileput(char *path, char *string) {
     FILE *fd;

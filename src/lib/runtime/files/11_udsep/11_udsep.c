@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/mount.h>
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -26,58 +27,65 @@
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/registry.h"
+#include "util/mount.h"
 
 #include "../file-bind.h"
 #include "../../runtime.h"
 
 
 int _singularity_runtime_files_11_user_defined_SINGULARITYENV_PATH(void) {
-    char *tmp_file;
-    char *containerdir = CONTAINER_FINALDIR;
-    char *tmpdir = singularity_registry_get("SESSIONDIR");
-    char *user_add_path = singularity_registry_get("USER_DEFINED_PREPEND");
+    char *container = CONTAINER_FINALDIR;
+    char *host = singularity_registry_get("SESSIONDIR");
+    char *containerenv = joinpath(container, "/.singularity.d/env");
+    char *hostenv = joinpath(host, "/env");
+    char *udsep = joinpath(host, "/env/11-user_defined_SINGULARITYENV_PATH.sh");
+    char *udsep_var = singularity_registry_get("USER_DEFINED_PREPEND");
 
     singularity_message(DEBUG, "Called _singularity_runtime_files_11-user_defined_SINGULARITYENV_PATH()\n");
 
-    if ( user_add_path == NULL ) {
+    if ( udsep_var == NULL ) {
         singularity_message(VERBOSE2, "No user defined SINGULARITYENV_PATH found.\n");
         return 0; 
     }
 
-    if ( tmpdir == NULL ) {
+    if ( host == NULL ) {
         singularity_message(ERROR, "Failed to obtain session directory\n");
         ABORT(255);
     }
 
-    tmp_file = joinpath(tmpdir, "/11-user_defined_SINGULARITYENV_PATH.sh");
-
-    singularity_message(VERBOSE2, "Creating empty /.singularity.d/env/11-user_defined_SINGULARITYENV_PATH.sh in %s\n", containerdir);
-    singularity_priv_escalate();
-    if ( ( fileput(joinpath(containerdir, "/.singularity.d/env/11-user_defined_SINGULARITYENV_PATH.sh"), "") ) !=0 ) {
-        singularity_priv_drop();
-        singularity_message(ERROR, "Failed to create empty /.singularity.d/env/11-user_defined_SINGULARITYENV_PATH.sh in containerdir: %s\n", strerror(errno));
+    // for systems without overlay support, first copy env dir from container
+    singularity_message(VERBOSE2, "Copying .singularity.d/env from %s to %s\n", container, host);
+    if ( ( copy_dir_r(containerenv, host ) ) !=0 ) {
+        singularity_message(ERROR, "Failed to copy .singularity.d/env from %s to %s\n", container, host);
         ABORT(255);
-    }
-    singularity_priv_drop();
+    } 
 
-    char *path_str = malloc(19 + strlen(user_add_path) + 1);
-    if ( path_str == NULL ) {
+    // create the string that should go into the new meta-data file
+    char *udsep_str = malloc(19 + strlen(udsep_var) + 1);
+    if ( udsep_str == NULL ) {
         singularity_message(ERROR, "Failed to allocate memory for user defined PATH\n");
         ABORT(255);
     }
-    strcpy(path_str, "export PATH=");
-    strcat(path_str, user_add_path);
-    strcat(path_str, ":$PATH\n\0"); 
+    strcpy(udsep_str, "export PATH=");
+    strcat(udsep_str, udsep_var);
+    strcat(udsep_str, ":$PATH\n\0"); 
 
-    singularity_message(VERBOSE2, "Creating template of /.singularity.d/env/11-user_defined_SINGULARITYENV_PATH.sh\n");
-    if ( ( fileput(tmp_file, path_str) ) !=0 ) {
-        singularity_message(ERROR, "Failed creating template 11-user_defined_SINGULARITYENV_PATH.sh file in tmpdir: %s\n", strerror(errno));
+    // create the new meta-data file on the host in the env dir
+    singularity_message(VERBOSE2, "Creating template of %s\n", udsep);
+    if ( ( fileput(udsep, udsep_str) ) !=0 ) {
+        free(udsep_str);
+        singularity_message(ERROR, "Failed creating template %s: %s\n", udsep, strerror(errno));
         ABORT(255);
     }
 
-    free(path_str);
+    free(udsep_str);
 
-    container_file_bind(tmp_file, "/.singularity.d/env/11-user_defined_SINGULARITYENV_PATH.sh");
+    // mount the env dir on the host over the env dir in the container
+    singularity_message(VERBOSE, "Mounting directory '%s' to '%s'\n", hostenv, containerenv);
+    if ( singularity_mount(hostenv, containerenv, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
+            singularity_message(ERROR, "There was an error binding %s to %s: %s\n", hostenv, containerenv, strerror(errno));
+            ABORT(255);
+    }
 
     return(0);
 }
