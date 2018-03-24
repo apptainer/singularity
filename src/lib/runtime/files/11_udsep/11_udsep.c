@@ -67,8 +67,8 @@ int _singularity_runtime_files_11_user_defined_SINGULARITYENV_PATH(void) {
         ABORT(255);
     }
     strcpy(udsep_str, "export PATH=");
-    strcat(udsep_str, udsep_var);
-    strcat(udsep_str, ":$PATH\n\0"); 
+    strcat(udsep_str, udsep_var);       // Flawfinder: ignore
+    strcat(udsep_str, ":$PATH\n\0");    // Flawfinder: ignore 
 
     // create the new meta-data file on the host in the env dir
     singularity_message(VERBOSE2, "Creating template of %s\n", udsep);
