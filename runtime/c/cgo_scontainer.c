@@ -90,6 +90,8 @@ __attribute__((constructor)) static void init(void) {
         pfatal("read json configuration failed");
     }
 
+    close(JOKER);
+
     if ( stage == 2 ) {
         child_stage2 = fork();
     }

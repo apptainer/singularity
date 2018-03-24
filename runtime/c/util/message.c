@@ -18,8 +18,6 @@
 
 #include "include/message.h"
 
-int messagelevel = -99;
-
 extern const char *__progname;
 
 int count_digit(int n) {
@@ -40,6 +38,7 @@ void _print(int level, const char *function, const char *file_in, int line, char
     char *prefix = NULL;
     char *color = NULL;
     va_list args;
+    static int messagelevel = -99;
 
     if ( messagelevel == -99 ) {
         char *messagelevel_string = getenv("MESSAGELEVEL");

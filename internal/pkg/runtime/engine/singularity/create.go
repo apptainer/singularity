@@ -1,5 +1,14 @@
 package runtime
 
+/*
+#include <unistd.h>
+#include "image/image.h"
+#include "util/config_parser.h"
+*/
+// #cgo CFLAGS: -I../c
+// #cgo LDFLAGS: -lsycore -luuid
+import "C"
+
 import (
 	"fmt"
 	"log"
@@ -37,39 +46,74 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 	rootfs := engine.OciConfig.RuntimeOciSpec.Root.Path
 
 	userNS := false
+	pidNS := false
 
 	for _, namespace := range engine.OciConfig.RuntimeOciSpec.Linux.Namespaces {
 		switch namespace.Type {
 		case specs.UserNamespace:
 			userNS = true
+		case specs.PIDNamespace:
+			pidNS = true
 		}
 	}
 
+	os.Setenv("SINGULARITY_MESSAGELEVEL", os.Getenv("MESSAGELEVEL"))
+	C.singularity_config_init()
+
+	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
+
+	info := new(loop.LoopInfo64)
+	mountType := ""
+
+	switch C.singularity_image_type(&imageObject) {
+	case 1:
+		mountType = "squashfs"
+		info.Offset = uint64(C.uint(imageObject.offset))
+		info.SizeLimit = uint64(C.uint(imageObject.size))
+	case 2:
+		mountType = "ext3"
+		info.Offset = uint64(C.uint(imageObject.offset))
+		info.SizeLimit = uint64(C.uint(imageObject.size))
+	}
+
 	if st.IsDir() == false && !userNS {
-		info := new(loop.LoopInfo64)
-		info.Offset = 31
-		info.Flags = loop.FlagsAutoClear
 		var number int
+		info.Flags = loop.FlagsAutoClear
 		number, err = rpcOps.LoopDevice(rootfs, os.O_RDONLY, *info)
 		if err != nil {
 			fmt.Println(err)
 		}
 		path := fmt.Sprintf("/dev/loop%d", number)
 		rootfs = "/tmp/testing"
-		_, err = rpcOps.Mount(path, rootfs, "squashfs", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
+		_, err = rpcOps.Mount(path, rootfs, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 		if err != nil {
-			fmt.Println("mount squashfs:", err)
+			fmt.Println("mount "+mountType, err)
 		}
 	}
 
-	_, err = rpcOps.Mount("proc", path.Join(rootfs, "proc"), "proc", syscall.MS_NOSUID, "")
-	if err != nil {
-		log.Fatalln("mount proc failed:", err)
+	if pidNS {
+		_, err = rpcOps.Mount("proc", path.Join(rootfs, "proc"), "proc", syscall.MS_NOSUID, "")
+		if err != nil {
+			log.Fatalln("mount proc failed:", err)
+		}
+	} else {
+		_, err = rpcOps.Mount("/proc", path.Join(rootfs, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+		if err != nil {
+			log.Fatalln("mount proc failed:", err)
+		}
 	}
-	_, err = rpcOps.Mount("sysfs", path.Join(rootfs, "sys"), "sysfs", syscall.MS_NOSUID, "")
-	if err != nil {
-		log.Fatalln("mount sys failed:", err)
+	if !userNS {
+		_, err = rpcOps.Mount("sysfs", path.Join(rootfs, "sys"), "sysfs", syscall.MS_NOSUID, "")
+		if err != nil {
+			log.Fatalln("mount sys failed:", err)
+		}
+	} else {
+		_, err = rpcOps.Mount("/sys", path.Join(rootfs, "sys"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+		if err != nil {
+			log.Fatalln("mount sys failed:", err)
+		}
 	}
+
 	_, err = rpcOps.Mount("/dev", path.Join(rootfs, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		log.Fatalln("mount dev failed:", err)

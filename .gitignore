@@ -93,3 +93,4 @@ src/*/*/*/*/.dirstamp
 
 build/*
 runtime/cli
+core/buildtree
