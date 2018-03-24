@@ -42,6 +42,7 @@ int is_chr(char *path);
 int s_mkpath(char *dir, mode_t mode);
 int s_rmdir(char *dir);
 int copy_file(char * source, char * dest);
+int copy_dir_r(char *source, char *dest);
 char *filecat(char *path);
 int fileput(char *path, char *string);
 int filelock(const char *const filepath, int *const fdptr);

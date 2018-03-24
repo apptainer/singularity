@@ -1,4 +1,4 @@
-SUBDIRS = passwd group resolvconf libs
+SUBDIRS = 11_udsep passwd group resolvconf libs
 
 MAINTAINERCLEANFILES = Makefile.in
 DISTCLEANFILES = Makefile
@@ -11,7 +11,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libinternal.la
 
-libinternal_la_LIBADD = passwd/libinternal.la group/libinternal.la resolvconf/libinternal.la libs/libinternal.la
+libinternal_la_LIBADD = 11_udsep/libinternal.la passwd/libinternal.la group/libinternal.la resolvconf/libinternal.la libs/libinternal.la
 libinternal_la_SOURCES = files.c file-bind.c
 
 EXTRA_DIST = file-bind.h files.h
