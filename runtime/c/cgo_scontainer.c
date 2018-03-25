@@ -14,6 +14,7 @@
 #include <sys/prctl.h>
 #include <signal.h>
 #include <string.h>
+#include <sched.h>
 #include <errno.h>
 #include <linux/securebits.h>
 #include <linux/capability.h>
@@ -43,7 +44,7 @@ static int capset(cap_user_header_t hdrp, const cap_user_data_t datap) {
     return syscall(__NR_capset, hdrp, datap);
 }
 
-char *json_conf = NULL;
+char *json_conf;
 struct cConfig cconf;
 pid_t child_stage2 = 0;
 
@@ -57,14 +58,10 @@ __attribute__((constructor)) static void init(void) {
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
     int stage = strtoul(getenv("SCONTAINER_STAGE"), NULL, 10);
-    int fd = strtoul(getenv("SCONTAINER_SOCKET"), NULL, 10);
     int ret;
 
     if ( stage <= 0 ) {
         pfatal("STAGE environement variable not set");
-    }
-    if ( fd < 0 ) {
-        pfatal("SOCKET environment variable not set");
     }
 
     print(DEBUG, "Entering in scontainer stage %d", stage);
@@ -75,8 +72,12 @@ __attribute__((constructor)) static void init(void) {
 
     print(DEBUG, "Read C runtime configuration for stage %d", stage);
 
-    if ( (ret = read(fd, &cconf, sizeof(cconf))) != sizeof(cconf) ) {
-        pfatal("read failed %d %d", ret, fd);
+    if ( (ret = read(JOKER, &cconf, sizeof(cconf))) != sizeof(cconf) ) {
+        pfatal("read from stdin failed");
+    }
+
+    if ( cconf.jsonConfSize >= MAX_JSON_SIZE ) {
+        pfatal("json configuration too big");
     }
 
     json_conf = (char *)malloc(cconf.jsonConfSize);
@@ -85,10 +86,11 @@ __attribute__((constructor)) static void init(void) {
     }
 
     print(DEBUG, "Read JSON runtime configuration for stage %d", stage);
-
-    if ( (ret = read(fd, json_conf, cconf.jsonConfSize)) != cconf.jsonConfSize ) {
+    if ( (ret = read(JOKER, json_conf, cconf.jsonConfSize)) != cconf.jsonConfSize ) {
         pfatal("read json configuration failed");
     }
+
+    close(JOKER);
 
     if ( stage == 2 ) {
         child_stage2 = fork();
@@ -98,7 +100,7 @@ __attribute__((constructor)) static void init(void) {
         pfatal("Failed to spawn child");
     }
 
-    if ( cconf.userNS == 1 || cconf.isSuid == 0 ) {
+    if ( cconf.nsFlags & CLONE_NEWUSER || cconf.isSuid == 0 ) {
         return;
     }
 

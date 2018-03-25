@@ -8,9 +8,14 @@
 package cli
 
 import (
-	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
 
-	"github.com/singularityware/singularity/internal/pkg/cruntime"
+	"github.com/opencontainers/runtime-spec/specs-go"
+	config "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/config"
+
 	"github.com/spf13/cobra"
 )
 
@@ -92,8 +97,8 @@ func init() {
 var execCmd = &cobra.Command{
 	Use: "exec [exec options...] <container> ...",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("exec called")
-		cruntime.DoSingularity(len(args), args)
+		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
+		execWrapper(cmd, args[0], a)
 	},
 	Example: execExamples,
 }
@@ -102,7 +107,8 @@ var execCmd = &cobra.Command{
 var shellCmd = &cobra.Command{
 	Use: "shell [shell options...] <container>",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("shell called")
+		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
+		execWrapper(cmd, args[0], a)
 	},
 	Example: shellExamples,
 }
@@ -111,6 +117,59 @@ var shellCmd = &cobra.Command{
 var runCmd = &cobra.Command{
 	Use: "run [run options] <container>",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("run called")
+		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
+		execWrapper(cmd, args[0], a)
 	},
+}
+
+func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
+	lvl := "0"
+	wrapper := "/tmp/wrapper-suid"
+
+	oci, runtime := config.NewSingularityConfig("new")
+	oci.Root.SetPath(image)
+	oci.Process.SetArgs(args)
+	oci.Process.SetNoNewPrivileges(true)
+
+	oci.RuntimeOciSpec.Linux = &specs.Linux{}
+	namespaces := []specs.LinuxNamespace{}
+	if NetNamespace {
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.NetworkNamespace})
+	}
+	if UtsNamespace {
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UTSNamespace})
+	}
+	if PidNamespace {
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.PIDNamespace})
+	}
+	if IpcNamespace {
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.IPCNamespace})
+	}
+	if UserNamespace {
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UserNamespace})
+		wrapper = "/tmp/wrapper"
+	}
+	oci.RuntimeOciSpec.Linux.Namespaces = namespaces
+
+	cmd := exec.Command(wrapper)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+    if verbose {
+        lvl = "2"
+    }
+	if debug {
+		lvl = "5"
+	}
+
+	cmd.Env = []string{"MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
+	j, err := runtime.GetConfig()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	cmd.Stdin = strings.NewReader(string(j))
+	err = cmd.Run()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

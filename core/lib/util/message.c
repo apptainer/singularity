@@ -34,32 +34,26 @@
 #include "util/util.h"
 #include "util/message.h"
 
-int messagelevel = -99;
-
 extern const char *__progname;
 
-static void message_init(void) {
-    char *messagelevel_string = getenv("SINGULARITY_MESSAGELEVEL"); // Flawfinder: ignore (need to get string, validation in atol())
-
-    openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
-
-    if ( messagelevel_string == NULL ) {
-        messagelevel = 5;
-        singularity_message(DEBUG, "SINGULARITY_MESSAGELEVEL undefined, setting level 5 (debug)\n");
-    } else {
-        messagelevel = atoi(messagelevel_string); // Flawfinder: ignore
-        if ( messagelevel > 9 ) {
-            messagelevel = 9;
-        }
-        singularity_message(VERBOSE, "Set messagelevel to: %d\n", messagelevel);
-    }
-
-}
-
-
 int singularity_message_level(void) {
-    if ( messagelevel == -1 ) {
-        message_init();
+    static int messagelevel = -99;
+
+    if ( messagelevel == -99 ) {
+        char *messagelevel_string = getenv("SINGULARITY_MESSAGELEVEL"); // Flawfinder: ignore (need to get string, validation in atol())
+
+        openlog("Singularity", LOG_CONS | LOG_NDELAY, LOG_LOCAL0);
+
+        if ( messagelevel_string == NULL ) {
+            messagelevel = 5;
+            singularity_message(DEBUG, "SINGULARITY_MESSAGELEVEL undefined, setting level 5 (debug)\n");
+        } else {
+            messagelevel = atoi(messagelevel_string); // Flawfinder: ignore
+            if ( messagelevel > 9 ) {
+                messagelevel = 9;
+            }
+            singularity_message(VERBOSE, "Set messagelevel to: %d\n", messagelevel);
+        }
     }
 
     return(messagelevel);
@@ -73,6 +67,7 @@ void _singularity_message(int level, const char *function, const char *file_in, 
     char *color = NULL;
     va_list args;
     va_start (args, format);
+    int messagelevel;
 
     (void)line;
 
@@ -83,9 +78,7 @@ void _singularity_message(int level, const char *function, const char *file_in, 
 
     va_end (args);
 
-    if ( messagelevel == -99 ) {
-        message_init();
-    }
+    messagelevel = singularity_message_level();
 
     while( ( ! isalpha(file[0]) ) && ( file[0] != '\0') ) {
         file++;

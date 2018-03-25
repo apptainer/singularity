@@ -8,75 +8,68 @@ your rights to use or distribute this software.
 package main
 
 import (
-    "encoding/json"
-    _ "fmt"
-    "log"
-    "os"
-    "os/exec"
-    "strings"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
 
-    specs "github.com/opencontainers/runtime-spec/specs-go"
-    //  image "github.com/sylabs/sy-go/pkg/image"
-    //  runtime "github.com/sylabs/sy-go/pkg/runtime"
+	"github.com/opencontainers/runtime-spec/specs-go"
+	config "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/config"
 )
 
 func main() {
-    args := os.Args[1:2]
+	args := os.Args[1:2]
 
-    spec := &specs.Spec{}
-    spec.Process = &specs.Process{}
-    spec.Root = &specs.Root{}
-    spec.Root.Path = os.Args[2]
-    spec.Process.Args = os.Args[3:]
-    spec.Process.NoNewPrivileges = false
-    spec.Linux = &specs.Linux{}
-    spec.Linux.Namespaces = []specs.LinuxNamespace{
-        specs.LinuxNamespace{Type: specs.PIDNamespace},
-        specs.LinuxNamespace{Type: specs.NetworkNamespace},
-        specs.LinuxNamespace{Type: specs.MountNamespace},
-        specs.LinuxNamespace{Type: specs.IPCNamespace},
-        specs.LinuxNamespace{Type: specs.UTSNamespace},
-    }
+	oci, runtime := config.NewSingularityConfig("new")
+	oci.Root.SetPath(os.Args[2])
+	oci.Process.SetArgs(os.Args[3:])
+	oci.Process.SetNoNewPrivileges(true)
 
-    for _, arg := range args {
-        switch arg {
-        case "suid":
-            cmd := exec.Command("/tmp/wrapper-suid")
-            cmd.Stdout = os.Stdout
-            cmd.Stderr = os.Stderr
+	oci.RuntimeOciSpec.Linux = &specs.Linux{}
+	oci.RuntimeOciSpec.Linux.Namespaces = []specs.LinuxNamespace{
+		specs.LinuxNamespace{Type: specs.PIDNamespace},
+		specs.LinuxNamespace{Type: specs.NetworkNamespace},
+		specs.LinuxNamespace{Type: specs.MountNamespace},
+		specs.LinuxNamespace{Type: specs.IPCNamespace},
+		specs.LinuxNamespace{Type: specs.UTSNamespace},
+	}
 
-            j, err := json.Marshal(spec)
-            if err != nil {
-                log.Fatalln(err)
-            }
+	for _, arg := range args {
+		switch arg {
+		case "suid":
+			cmd := exec.Command("/tmp/wrapper-suid")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Env = []string{"MESSAGELEVEL=0", "SRUNTIME=singularity"}
+			j, err := runtime.GetConfig()
+			if err != nil {
+				log.Fatalln(err)
+			}
 
-            cmd.Stdin = strings.NewReader(string(j))
-            err = cmd.Run()
-            if err != nil {
-                log.Fatalln(err)
-            }
+			cmd.Stdin = strings.NewReader(string(j))
+			err = cmd.Run()
+			if err != nil {
+				log.Fatalln(err)
+			}
 
-        case "userns":
-            cmd := exec.Command("/tmp/wrapper")
-            cmd.Stdout = os.Stdout
-            cmd.Stderr = os.Stderr
-            spec.Linux.Namespaces = append(spec.Linux.Namespaces, specs.LinuxNamespace{Type: specs.UserNamespace})
+		case "userns":
+			cmd := exec.Command("/tmp/wrapper")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Env = []string{"MESSAGELEVEL=0", "SRUNTIME=singularity"}
 
-            j, err := json.Marshal(spec)
-            if err != nil {
-                log.Fatalln(err)
-            }
+			oci.RuntimeOciSpec.Linux.Namespaces = append(oci.RuntimeOciSpec.Linux.Namespaces, specs.LinuxNamespace{Type: specs.UserNamespace})
 
-            cmd.Stdin = strings.NewReader(string(j))
-            err = cmd.Run()
-            if err != nil {
-                log.Fatalln(err)
-            }
-        }
-    }
-    /*
-        img := image.SandboxFromPath("/path/to/sandbox")
-        img.Root()
-        runtime.Shell(spec)
-        fmt.Println("Test")*/
+			j, err := runtime.GetConfig()
+			if err != nil {
+				log.Fatalln(err)
+			}
+
+			cmd.Stdin = strings.NewReader(string(j))
+			err = cmd.Run()
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
+	}
 }

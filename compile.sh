@@ -25,3 +25,6 @@ CGO_LDFLAGS="$CGO_LDFLAGS -L$buildtree/lib"
 export CGO_CPPFLAGS CGO_LDFLAGS
 
 go build --tags "containers_image_openpgp" -o $buildtree/singularity cmd/cli/cli.go
+
+cd runtime
+./setup.sh

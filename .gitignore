@@ -92,3 +92,5 @@ src/*/*/*/*/*.lo
 src/*/*/*/*/.dirstamp
 
 build/*
+runtime/cli
+core/buildtree
