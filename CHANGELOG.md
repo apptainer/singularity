@@ -22,6 +22,8 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Put /usr/local/{bin,sbin} in front of the default PATH
  - Adjustments to SCIF (Scientific Filesystem) integration for broader use
  - Fixed bug that did not export environment variables for apps with "-" in name
+ - Create /dev/fd and standard streams symlinks in /dev when using minimal dev
+   mount or when specifying -c/-C/--contain option
 
 ## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
 
