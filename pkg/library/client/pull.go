@@ -21,7 +21,6 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string) error 
 
 	fmt.Println(url)
 
-
 	out, err := os.Create(filePath)
 	if err != nil {
 		return err
