@@ -3,11 +3,27 @@ package client
 import (
 	"regexp"
 	"strings"
+	"io"
+	"encoding/json"
+	"github.com/sylabs/cloud-library/_vendor-20180228114403/github.com/golang/glog"
 )
 
+
+// JSONError - Struct for standard error returns over REST API
+type JSONError struct {
+	Code    int    `json:"code,omitempty"`
+	Status  string `json:"status,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+// JSONResponse - Top level container of a REST API response
+type JSONResponse struct {
+	Data  interface{} `json:"data"`
+	Error JSONError   `json:"error,omitempty"`
+}
+
 func isLibraryRef(libraryRef string) bool {
-	// TODO - THIS ISN'T A PERFECT MATCHER YET
-	match, _ := regexp.MatchString("(library://)?[a-zA-Z0-9-]+/[a-zA-Z0-9-]+/[a-zA-Z0-9-]+(:[a-zA-Z0-9-]*)?", libraryRef)
+	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[._-][a-z0-9]+)*)?$", libraryRef)
 	return match
 }
 
@@ -32,4 +48,11 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 
 }
 
-func parseBody ()
+func ParseBody(r io.Reader) (jRes JSONResponse) {
+	err := json.NewDecoder(r).Decode(&jRes)
+	if err != nil{
+		glog.Fatalf("The server returned a response that could not be decoded: %v", err)
+	}
+	return jRes
+}
+

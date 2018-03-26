@@ -14,10 +14,13 @@ import (
 func DownloadImage(filePath string, libraryRef string, libraryURL string) error {
 
 	if !isLibraryRef(libraryRef) {
-		log.Fatalf("Not a valid library URI: %s", libraryRef)
+		log.Fatalf("Not a valid library reference: %s", libraryRef)
 	}
 
 	url := libraryURL + "/v1/imagefile/" + strings.TrimPrefix(libraryRef, "library://")
+
+	fmt.Println(url)
+
 
 	out, err := os.Create(filePath)
 	if err != nil {
@@ -32,11 +35,13 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string) error 
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("Requested image was not found in the library")
+		return fmt.Errorf("The requested image was not found in the library")
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("Unexpected response from the library server: %d", res.StatusCode)
+		jRes := ParseBody(res.Body)
+		return fmt.Errorf("Download did not succeed: %d %s\n\t%v",
+			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 
 	bodySize := res.ContentLength

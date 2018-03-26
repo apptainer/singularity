@@ -21,7 +21,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 	baseURL = libraryURL
 
 	if !isLibraryRef(libraryRef) {
-		log.Printf("Not a valid library reference : %s", libraryRef)
+		log.Fatalf("Not a valid library reference: %s", libraryRef)
 	}
 
 	entity, collection, container, image := parseLibraryRef(libraryRef)
@@ -143,7 +143,7 @@ func createImage(name string, containerID string) (id string, err error) {
 func apiCreate(o interface{}, url string) (id string, err error) {
 	s, err := json.Marshal(o)
 	if err != nil {
-		return "", fmt.Errorf("Error endoding object to JSON:\n\t%s", err.Error())
+		return "", fmt.Errorf("Error encoding object to JSON:\n\t%v", err)
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
 	req.Header.Set("Content-Type", "application/json")
@@ -151,17 +151,19 @@ func apiCreate(o interface{}, url string) (id string, err error) {
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("Error making request to server:\n\t%s", err.Error())
+		return "", fmt.Errorf("Error making request to server:\n\t%v", err)
 	}
 	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Creation did not succeed, code %d", res.StatusCode)
+		jRes := ParseBody(res.Body)
+		return "", fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
+			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 
 	// Decode the returned created object to find its ID
 	c := make(map[string]map[string]interface{})
 	err = json.NewDecoder(res.Body).Decode(&c)
 	if err != nil {
-		return "", fmt.Errorf("Error decoding ID from server response:\n\t%s", err.Error())
+		return "", fmt.Errorf("Error decoding ID from server response:\n\t%v", err)
 	}
 
 	return c["data"]["id"].(string), nil
@@ -171,13 +173,13 @@ func apiCreate(o interface{}, url string) (id string, err error) {
 func apiExists(url string) (id string, err error) {
 	res, err := http.Get(url)
 	if err != nil {
-		return "", fmt.Errorf("Error making request to server:\n\t%s", err.Error())
+		return "", fmt.Errorf("Error making request to server:\n\t%v", err)
 	}
 	if res.StatusCode == http.StatusOK {
 		c := make(map[string]map[string]interface{})
 		json.NewDecoder(res.Body).Decode(&c)
 		if err != nil {
-			return "", fmt.Errorf("Error decoding ID from server response:\n\t%s", err.Error())
+			return "", fmt.Errorf("Error decoding ID from server response:\n\t%v", err)
 		}
 		return c["data"]["id"].(string), nil
 	}
@@ -191,7 +193,7 @@ func postFile(filePath string, imageID string) error {
 	w := multipart.NewWriter(&b)
 	f, err := os.Open(filePath)
 	if err != nil {
-		fmt.Errorf("Test could not open test file to upload")
+		fmt.Errorf("Could not open the image file to upload: %v", err)
 		return err
 	}
 	fi, _ := f.Stat()
@@ -201,11 +203,11 @@ func postFile(filePath string, imageID string) error {
 
 	fw, err := w.CreateFormFile("imagefile", filePath)
 	if err != nil {
-		fmt.Errorf("Test could not create form file")
+		fmt.Errorf("Could not prepare the image file upload: %v", err)
 		return err
 	}
 	if _, err = io.Copy(fw, f); err != nil {
-		fmt.Errorf("Test could copy test file into form file")
+		fmt.Errorf("Could not prepare the image file upload: %v", err)
 		return err
 	}
 
@@ -229,7 +231,9 @@ func postFile(filePath string, imageID string) error {
 		return fmt.Errorf("Error uploading file to server: %s", err.Error())
 	}
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("Upload did not succeed, status code: %d", res.StatusCode)
+		jRes := ParseBody(res.Body)
+		return fmt.Errorf("Sending file did not succeed: %d %s\n\t%v",
+			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 
 	return nil
