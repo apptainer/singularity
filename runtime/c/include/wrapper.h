@@ -9,6 +9,10 @@
 #ifndef _SINGULARITY_WRAPPER_H
 #define _SINGULARITY_WRAPPER_H
 
+#define MAX_JSON_SIZE   64*1024
+#define JOKER           42
+#define MAX_ID_MAPPING  5
+
 struct uidMapping {
     uid_t hostID;
     uid_t containerID;
@@ -38,12 +42,10 @@ struct cConfig {
     pid_t pidPid;
     unsigned char isSuid;
     unsigned char isInstance;
-    unsigned char isJoin;
     unsigned char noNewPrivs;
     unsigned char hasNoNewPrivs;
-    unsigned char userNS;
-    struct uidMapping uidMapping;
-    struct gidMapping gidMapping;
+    struct uidMapping uidMapping[MAX_ID_MAPPING];
+    struct gidMapping gidMapping[MAX_ID_MAPPING];
     unsigned int jsonConfSize;
 };
 

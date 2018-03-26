@@ -8,7 +8,7 @@
 
 package rpc
 
-import "loop"
+import "github.com/singularityware/singularity/pkg/util/loop"
 
 type MkdirArgs struct {
 	Path string

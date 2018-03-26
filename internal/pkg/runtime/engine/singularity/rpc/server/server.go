@@ -10,23 +10,23 @@ package server
 
 import (
 	"fmt"
-	"loop"
-	args "rpc"
+	args "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/rpc"
+	"github.com/singularityware/singularity/pkg/util/loop"
 	"syscall"
 )
 
-type RpcOps int
+type Methods int
 
-func (t *RpcOps) Mount(arguments *args.MountArgs, reply *int) error {
+func (t *Methods) Mount(arguments *args.MountArgs, reply *int) error {
 	return syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 }
 
-func (t *RpcOps) Mkdir(arguments *args.MkdirArgs, reply *int) error {
+func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) error {
 	fmt.Println("Mkdir requested")
 	return nil
 }
 
-func (t *RpcOps) Chroot(arguments *args.ChrootArgs, reply *int) error {
+func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 	if err := syscall.Chdir(arguments.Root); err != nil {
 		return fmt.Errorf("Failed to change directory to %s", arguments.Root)
 	}
@@ -45,7 +45,7 @@ func (t *RpcOps) Chroot(arguments *args.ChrootArgs, reply *int) error {
 	return nil
 }
 
-func (t *RpcOps) LoopDevice(arguments *args.LoopArgs, reply *int) error {
+func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	loopdev := new(loop.LoopDevice)
 
 	if err := loopdev.Attach(arguments.Image, arguments.Mode, reply); err != nil {

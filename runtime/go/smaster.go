@@ -9,23 +9,22 @@
 package main
 
 import (
-	"encoding/json"
-	_ "fmt"
-	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"io"
+	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"strconv"
 	"sync"
 	"syscall"
 	"time"
+
+	internalRuntime "github.com/singularityware/singularity/internal/pkg/runtime"
+	runtime "github.com/singularityware/singularity/pkg/runtime"
 )
 
-func instance(conn net.Conn, spec specs.Spec) {
+func runAsInstance(conn *os.File) {
 	data := make([]byte, 1)
-	conn.SetDeadline(time.Time{})
 
 	n, err := conn.Read(data)
 	if n == 0 && err != io.EOF {
@@ -37,30 +36,14 @@ func instance(conn net.Conn, spec specs.Spec) {
 	}
 }
 
-func handle_child(pid int, child chan os.Signal, spec specs.Spec) {
+func handleChild(pid int, child chan os.Signal, engine *runtime.RuntimeEngine) {
 	var status syscall.WaitStatus
-	userNS := false
-
-	for _, namespace := range spec.Linux.Namespaces {
-		switch namespace.Type {
-		case specs.UserNamespace:
-			userNS = true
-		}
-	}
-
-	/* hold a reference to container network namespace for cleanup */
-	if userNS == false {
-		netns, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
-		if err != nil {
-			log.Fatalln("can't open network namespace:", err)
-		}
-		_ = netns
-	}
 
 	select {
-	case _ = (<-child):
+	case _ = <-child:
 		syscall.Wait4(pid, &status, syscall.WNOHANG, nil)
 
+		//		engine.CleanupContainer()
 		/*
 		 * see https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle
 		 * we will run step 8/9 there
@@ -76,37 +59,51 @@ func main() {
 	sigchild := make(chan os.Signal, 1)
 	signal.Notify(sigchild, syscall.SIGCHLD)
 
-	pid, _ := strconv.Atoi(os.Args[1])
-	socket, _ := strconv.Atoi(os.Args[2])
+	tmp, ok := os.LookupEnv("SMASTER_CONTAINER_PID")
+	if !ok {
+		log.Fatalln("SMASTER_CONTAINER_PID environment variable isn't set")
+	}
+	containerPid, _ := strconv.Atoi(tmp)
 
-	comm := os.NewFile(uintptr(socket), "")
+	tmp, ok = os.LookupEnv("SMASTER_SOCKET")
+	if !ok {
+		log.Fatalln("SMASTER_SOCKET environment variable isn't set")
+	}
+	socket, _ := strconv.Atoi(tmp)
 
-	conn, _ := net.FileConn(comm)
-	comm.Close()
-	conn.SetDeadline(time.Now().Add(1 * time.Second))
+	tmp, ok = os.LookupEnv("SRUNTIME")
+	if !ok {
+		log.Fatalln("SRUNTIME environment variable isn't set")
+	}
+	runtimeName := tmp
 
-	var spec specs.Spec
-
-	decoder := json.NewDecoder(conn)
-	err := decoder.Decode(&spec)
+	comm := os.NewFile(uintptr(socket), "socket")
+	bytes, err := ioutil.ReadAll(comm)
 	if err != nil {
 		log.Fatalln("smaster read configuration failed", err)
 	}
 
-	wg.Add(1)
-	go handle_child(pid, sigchild, spec)
-	/*
-		if jconf.IsInstance {
-			wg.Add(1)
-			go instance(conn, spec)
+	/* hold a reference to container network namespace for cleanup */
+	_, err = os.Open("/proc/" + strconv.Itoa(containerPid) + "/ns/net")
+	if err != nil {
+		log.Fatalln("can't open network namespace:", err)
+	}
 
-			if jconf.UserNS {
-				fmt.Printf("To join instance: nsenter -t %d -U --preserve-credentials -m -p -u -i -n -r /bin/sh\n", pid)
-			} else {
-				fmt.Printf("To join instance: sudo nsenter -t %d -m -p -u -i -n -r /bin/sh\n", pid)
-			}
-		}
-	*/
+	engine, err := internalRuntime.NewRuntimeEngine(runtimeName, bytes)
+	if err != nil {
+		log.Fatalln("failed to initialize runtime:", err)
+	}
+
+	wg.Add(1)
+	go handleChild(containerPid, sigchild, nil) //engine)
+
+	if engine.IsRunAsInstance() {
+		wg.Add(1)
+		go runAsInstance(comm)
+	}
+
+	engine.MonitorContainer()
+
 	wg.Wait()
 	os.Exit(0)
 }
