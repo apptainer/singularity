@@ -8,14 +8,11 @@ your rights to use or distribute this software.
 package main
 
 import (
-	"github.com/singularityware/singularity/internal/pkg/cli"
-	"github.com/singularityware/singularity/pkg/build"
+	//	"github.com/singularityware/singularity/internal/pkg/cli"
+	//	"github.com/singularityware/singularity/pkg/build"
 	"github.com/singularityware/singularity/pkg/signing"
 )
 
 func main() {
-	cli.Execute()
-	b := build.NewLocalBuilder([]byte{})
-	b.Build()
 	signing.Sign()
 }
