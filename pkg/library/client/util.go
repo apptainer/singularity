@@ -13,7 +13,7 @@ func isLibraryRef(libraryRef string) bool {
 
 func parseLibraryRef(libraryRef string) (entity string, collection string, container string, image string) {
 
-	libraryRef = strings.TrimLeft(libraryRef, "library://")
+	libraryRef = strings.TrimPrefix(libraryRef, "library://")
 
 	refParts := strings.Split(libraryRef, "/")
 
@@ -31,3 +31,5 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 	return
 
 }
+
+func parseBody ()
