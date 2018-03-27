@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
 
     fd_cleanup(&close_fd);
 
-    singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
+    singularity_message(LOG, "USER=\"%s\", IMAGE=\"%s\", COMMAND=\"%s\"\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
 
     if ( command == NULL ) {
         singularity_message(INFO, "No action command verb was given, invoking 'shell'\n");

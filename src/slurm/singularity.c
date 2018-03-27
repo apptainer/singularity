@@ -231,7 +231,7 @@ static int setup_container(spank_t spank)
     envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
 
     command = singularity_registry_get("COMMAND");
-    singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
+    singularity_message(LOG, "USER=\"%s\", IMAGE=\"%s\", COMMAND=\"%s\"\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
 
     // At this point, the current process is in the runtime container environment.
     // Return control flow back to SLURM: when execv is invoked, it'll be done from
