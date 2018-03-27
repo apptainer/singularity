@@ -25,3 +25,4 @@ CGO_LDFLAGS="$CGO_LDFLAGS -L$buildtree/lib"
 export CGO_CPPFLAGS CGO_LDFLAGS
 
 go build -o singularity cmd/cli/cli.go
+go build -o generate_docs docs/generate_docs.go

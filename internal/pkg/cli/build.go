@@ -17,35 +17,39 @@ import (
 )
 
 var (
-	Remote    bool
-	RemoteURL string
-	Sandbox   bool
-	Writable  bool
-	Force     bool
-	NoTest    bool
-	Sections  []string
+	Remote      bool
+	RemoteURL   string
+	Sandbox     bool
+	Writable    bool
+	Force       bool
+	NoTest      bool
+	Sections    []string
+    MakeManPage bool
+    ManPageDir string
 )
 
 func doRemoteBuild(imagePath string, defPath string) {
 }
 
 func init() {
-	buildCmd.Flags().SetInterspersed(false)
-	singularityCmd.AddCommand(buildCmd)
+	BuildCmd.Flags().SetInterspersed(false)
+	singularityCmd.AddCommand(BuildCmd)
 
-	buildCmd.Flags().BoolVarP(&Sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
-	buildCmd.Flags().StringSliceVar(&Sections, "section", []string{}, "Only run specific section(s) of deffile")
-	buildCmd.Flags().BoolVarP(&Writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
-	buildCmd.Flags().BoolVarP(&Force, "force", "f", false, "")
-	buildCmd.Flags().BoolVarP(&NoTest, "notest", "T", false, "")
-	buildCmd.Flags().BoolVarP(&Remote, "remote", "r", false, "Build image remotely")
-	buildCmd.Flags().StringVar(&RemoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
+	BuildCmd.Flags().BoolVarP(&Sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
+	BuildCmd.Flags().StringSliceVar(&Sections, "section", []string{}, "Only run specific section(s) of deffile")
+	BuildCmd.Flags().BoolVarP(&Writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
+	BuildCmd.Flags().BoolVarP(&Force, "force", "f", false, "")
+	BuildCmd.Flags().BoolVarP(&NoTest, "notest", "T", false, "")
+	BuildCmd.Flags().BoolVarP(&Remote, "remote", "r", false, "Build image remotely")
+	BuildCmd.Flags().StringVar(&RemoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
 }
 
-// buildCmd represents the build command
-var buildCmd = &cobra.Command{
-	Use:  "build <image path> <build spec>",
+// BuildCmd represents the build command
+var BuildCmd = &cobra.Command{
+    Use: "build [local options...] <image path> <build spec>",
 	Args: cobra.ExactArgs(2),
+    Short: "build is the shiz",
+    Long: "no really, it's the fashizzle",
 	Run: func(cmd *cobra.Command, args []string) {
 		var def build.Definition
 		var b build.Builder
