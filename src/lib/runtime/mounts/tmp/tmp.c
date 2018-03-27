@@ -81,7 +81,7 @@ int _singularity_runtime_mount_tmp(void) {
     }
 
     if ( check_mounted("/tmp") < 0 ) {
-        if ( s_mkpath(tmp_source, 0755) < 0 ) {
+        if ( s_mkpath(tmp_source, 0755, NULL) < 0 ) {
             singularity_message(ERROR, "Could not create source /tmp directory %s: %s\n", tmp_source, strerror(errno));
             ABORT(255);
         }
@@ -109,7 +109,7 @@ int _singularity_runtime_mount_tmp(void) {
     }
 
     if ( check_mounted("/var/tmp") < 0 ) {
-        if ( s_mkpath(vartmp_source, 0755) < 0 ) {
+        if ( s_mkpath(vartmp_source, 0755, NULL) < 0 ) {
             singularity_message(ERROR, "Could not create source /var/tmp directory %s: %s\n", vartmp_source, strerror(errno));
             ABORT(255);
         }

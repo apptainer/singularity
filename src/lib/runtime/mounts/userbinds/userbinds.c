@@ -93,7 +93,6 @@ int _singularity_runtime_mount_userbinds(void) {
                 }
             }
 
-
             singularity_message(DEBUG, "Checking if bind point is already mounted: %s\n", dest);
             if ( check_mounted(dest) >= 0 ) {
                 singularity_message(WARNING, "Not mounting requested bind point (already mounted in container): %s\n", dest);
@@ -103,12 +102,17 @@ int _singularity_runtime_mount_userbinds(void) {
             if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
                 if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                     char *dir = dirname(strdup(dest));
+                    if ( strcmp(dir, "/") != 0 && check_mounted(dir) >= 0 ) {
+                        singularity_message(WARNING, "Nested bind detected, skip file creation\n");
+                        continue;
+                    }
+
                     if ( is_dir(joinpath(container_dir, dir)) < 0 ) {
                         singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
-                        if ( s_mkpath(joinpath(container_dir, dir), 0755) < 0 ) {
+                        if ( s_mkpath(joinpath(container_dir, dir), 0755, container_dir) < 0 ) {
                             singularity_priv_escalate();
                             singularity_message(VERBOSE3, "Retrying with privileges to create bind directory on overlay file system: %s\n", dest);
-                            if ( s_mkpath(joinpath(container_dir, dir), 0755) < 0 ) {
+                            if ( s_mkpath(joinpath(container_dir, dir), 0755, container_dir) < 0 ) {
                                 singularity_message(ERROR, "Could not create basedir for file bind %s: %s\n", dest, strerror(errno));
                                 continue;
                             }
@@ -135,10 +139,10 @@ int _singularity_runtime_mount_userbinds(void) {
             } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
                 if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                     singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
-                    if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
+                    if ( s_mkpath(joinpath(container_dir, dest), 0755, container_dir) < 0 ) {
                         singularity_priv_escalate();
                         singularity_message(VERBOSE3, "Retrying with privileges to create bind directory on overlay file system: %s\n", dest);
-                        if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
+                        if ( s_mkpath(joinpath(container_dir, dest), 0755, container_dir) < 0 ) {
                             singularity_priv_drop();
                             singularity_message(WARNING, "Skipping user bind, could not create bind point %s: %s\n", dest, strerror(errno));
                             continue;

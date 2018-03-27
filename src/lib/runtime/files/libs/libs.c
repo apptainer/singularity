@@ -75,7 +75,7 @@ int _singularity_runtime_files_libs(void) {
         }
 
         singularity_message(DEBUG, "Creating session libdir at: %s\n", libdir);
-        if ( s_mkpath(libdir, 0755) != 0 ) {
+        if ( s_mkpath(libdir, 0755, tmpdir) != 0 ) {
             singularity_message(ERROR, "Failed creating temp lib directory at: %s\n", libdir);
             ABORT(255);
         }
@@ -150,7 +150,7 @@ int _singularity_runtime_files_libs(void) {
             char *ld_path;
             singularity_message(DEBUG, "Attempting to create contained libdir\n");
             singularity_priv_escalate();
-            if ( s_mkpath(libdir_contained, 0755) != 0 ) {
+            if ( s_mkpath(libdir_contained, 0755, container_dir) != 0 ) {
                 singularity_message(ERROR, "Failed creating directory %s :%s\n", libdir_contained, strerror(errno));
                 ABORT(255);
             }

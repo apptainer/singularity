@@ -36,6 +36,8 @@ int singularity_mount(const char *source, const char *target,
                       const char *filesystemtype, unsigned long mountflags,
                       const void *data) {
     int ret;
+    int mount_errno;
+
     uid_t fsuid = 0;
 
     if ( ( mountflags & MS_BIND ) ) {
@@ -52,11 +54,14 @@ int singularity_mount(const char *source, const char *target,
         setfsuid(fsuid);
     }
     ret = mount(source, target, filesystemtype, mountflags, data);
+    mount_errno = errno;
+
     if ( singularity_priv_userns_enabled() == 0 && seteuid(singularity_priv_getuid()) < 0 ) {
         singularity_message(ERROR, "Failed to drop privileges: %s\n", strerror(errno));
         ABORT(255);
     }
 
+    errno = mount_errno;
     return ret;
 }
 
@@ -67,6 +72,7 @@ int check_mounted(char *mountpoint) {
     char *rootfs_dir = CONTAINER_FINALDIR;
     unsigned int mountpoint_len = strlength(mountpoint, PATH_MAX);
     char *real_mountpoint;
+    char procmounts[PATH_MAX];
 
     singularity_message(DEBUG, "Opening /proc/mounts\n");
     if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) { // Flawfinder: ignore
@@ -79,10 +85,20 @@ int check_mounted(char *mountpoint) {
         mountpoint[mountpoint_len-1] = '\0';
     }
 
-    real_mountpoint = realpath(mountpoint, NULL); // Flawfinder: ignore
+    real_mountpoint = realpath(joinpath(rootfs_dir, mountpoint), NULL); // Flawfinder: ignore
     if ( real_mountpoint == NULL ) {
-        // mountpoint doesn't exist
+        // mountpoint doesn't exists
         return(retval);
+    }
+
+    if ( snprintf(procmounts, PATH_MAX-1, "%s/proc/%d/mounts", rootfs_dir, getpid()) < 0 ) {
+        singularity_message(ERROR, "Can't construct path %s/proc/%d/mounts\n", rootfs_dir, getpid());
+        ABORT(255);
+    }
+
+    if ( strcmp(real_mountpoint, procmounts) == 0 ) {
+        singularity_message(ERROR, "Attempt to override /proc/mounts, aborting\n");
+        ABORT(255);
     }
 
     singularity_message(DEBUG, "Iterating through /proc/mounts\n");
@@ -91,7 +107,7 @@ int check_mounted(char *mountpoint) {
         char *mount = strtok(NULL, " ");
 
         // Check to see if mountpoint is already mounted
-        if ( strcmp(joinpath(rootfs_dir, real_mountpoint), mount) == 0 ) {
+        if ( strcmp(real_mountpoint, mount) == 0 ) {
             singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", mountpoint);
             retval = 1;
             break;

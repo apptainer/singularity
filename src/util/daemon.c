@@ -151,7 +151,7 @@ void daemon_init_start(void) {
     
     /* Check if /var/tmp/.singularity-daemon-[UID]/ directory exists, if not create it */
     if ( is_dir(dirname(daemon_file_dir)) == -1 ) {
-        s_mkpath(daemon_file_dir, 0755);
+        s_mkpath(daemon_file_dir, 0755, NULL);
     }
     
     /* Attempt to open lock on daemon file */
