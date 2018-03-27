@@ -45,6 +45,8 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string) error 
 
 	bodySize := res.ContentLength
 	bar := pb.New(int(bodySize)).SetUnits(pb.U_BYTES)
+	bar.ShowTimeLeft = true
+	bar.ShowSpeed = true
 	bar.Start()
 
 	// create proxy reader
