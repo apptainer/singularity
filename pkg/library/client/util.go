@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/sylabs/cloud-library/_vendor-20180228114403/github.com/golang/glog"
+	"github.com/golang/glog"
 )
 
 // JSONError - Struct for standard error returns over REST API
