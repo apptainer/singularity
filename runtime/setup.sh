@@ -7,11 +7,11 @@
 #  your rights to use or distribute this software.
 #
 
-export GOPATH=$PWD/go:$(go env GOPATH)
-go build -o ../build/scontainer go/scontainer.go
-go build -buildmode=c-shared -o ../build/librpc.so go/rpc.go
-go build -o ../build/smaster go/smaster.go
-go build -o cli tmpdev/cli.go
+export GOPATH=$(go env GOPATH)
+go build -ldflags="-s -w" -o ../build/scontainer go/scontainer.go
+go build -ldflags="-s -w" -buildmode=c-shared -o ../build/librpc.so go/rpc.go
+go build -ldflags="-s -w" -o ../build/smaster go/smaster.go
+go build -ldflags="-s -w" -o cli tmpdev/cli.go
 
 gcc c/wrapper.c c/util/message.c -o ../build/wrapper -Ic -I../build -L../build -ldl
 sudo rm -f /tmp/wrapper-suid /tmp/wrapper /tmp/scontainer /tmp/smaster /tmp/librpc.so
@@ -27,6 +27,5 @@ if [ ! -e "/tmp/testing.simg" ]; then
     mv testing.simg /tmp/
 fi
 if [ ! -e "/tmp/testing" ]; then
-    mkdir -p /tmp/testing
-    curl -s http://dl-cdn.alpinelinux.org/alpine/v3.7/releases/x86_64/alpine-minirootfs-3.7.0-x86_64.tar.gz | tar xzf - -C /tmp/testing 2>/dev/null
+    singularity build --sandbox /tmp/testing docker://alpine
 fi

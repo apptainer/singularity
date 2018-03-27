@@ -15,22 +15,16 @@ package main
 import "C"
 
 import (
-	"encoding/json"
-	"errors"
-	"flag"
-	"fmt"
-	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"log"
-	"loop"
 	"net"
-	"net/rpc"
 	"os"
 	"os/signal"
-	"path"
-	"rpc/client"
-	"strings"
+	"strconv"
 	"syscall"
 	"unsafe"
+
+	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/internal/pkg/runtime"
 )
 
 func bool2int(b bool) uint8 {
@@ -41,55 +35,60 @@ func bool2int(b bool) uint8 {
 }
 
 func main() {
-	var stage = flag.Int("stage", 0, "run stage 1 or 2")
-	var socket = flag.Int("socket", 0, "socket process communication descriptor")
-	var rpcfd = flag.Int("rpc", 0, "rpc communication descriptor")
-
-	flag.Parse()
-
-	if flag.NFlag() < 2 {
-		flag.Usage()
-		os.Exit(1)
+	tmp, ok := os.LookupEnv("SCONTAINER_STAGE")
+	if !ok {
+		log.Fatalln("SCONTAINER_STAGE environment variable isn't set")
 	}
+	stage, _ := strconv.Atoi(tmp)
 
-	if *stage == 0 || *socket == 0 {
-		err := errors.New("Bad arguments\n\n")
-		fmt.Print(err)
-
-		flag.Usage()
-		os.Exit(1)
+	tmp, ok = os.LookupEnv("SCONTAINER_SOCKET")
+	if stage == 2 && !ok {
+		log.Fatalln("SCONTAINER_SOCKET environment variable isn't set")
 	}
+	socket, _ := strconv.Atoi(tmp)
+
+	tmp, ok = os.LookupEnv("SCONTAINER_RPC_SOCKET")
+	if stage == 2 && !ok {
+		log.Fatalln("SCONTAINER_RPC_SOCKET environment variable isn't set")
+	}
+	rpcfd, _ := strconv.Atoi(tmp)
+
+	tmp, ok = os.LookupEnv("SRUNTIME")
+	if !ok {
+		log.Fatalln("SRUNTIME environment variable isn't set")
+	}
+	runtimeName := tmp
 
 	cconf := C.cconf
-	var spec specs.Spec
 
 	/* get json configuration */
-	jstr := C.GoStringN(C.json_conf, C.int(cconf.jsonConfSize))
-	C.free(unsafe.Pointer(C.json_conf))
+	jsonPointer := unsafe.Pointer(C.json_conf)
+	jsonBytes := C.GoBytes(jsonPointer, C.int(cconf.jsonConfSize))
+	C.free(jsonPointer)
 
-	decoder := json.NewDecoder(strings.NewReader(jstr))
-	err := decoder.Decode(&spec)
+	engine, err := runtime.NewRuntimeEngine(runtimeName, jsonBytes)
 	if err != nil {
-		log.Fatalln("read json configuration failed")
+		log.Fatalln(err)
 	}
 
-	comm := os.NewFile(uintptr(*socket), "comm")
+	if stage == 1 {
+		if err := engine.CheckConfig(); err != nil {
+			log.Fatalln(err)
+		}
 
-	if *stage == 1 {
-		cconf.isInstance = C.uchar(bool2int(false))
-		cconf.noNewPrivs = C.uchar(bool2int(spec.Process.NoNewPrivileges))
+		cconf.isInstance = C.uchar(bool2int(engine.IsRunAsInstance()))
+		cconf.noNewPrivs = C.uchar(bool2int(engine.OciConfig.RuntimeOciSpec.Process.NoNewPrivileges))
 
-		cconf.uidMapping.containerID = C.uid_t(os.Getuid())
-		cconf.uidMapping.hostID = C.uid_t(os.Getuid())
-		cconf.uidMapping.size = 1
-		cconf.gidMapping.containerID = C.gid_t(os.Getgid())
-		cconf.gidMapping.hostID = C.gid_t(os.Getgid())
-		cconf.gidMapping.size = 1
+		cconf.uidMapping[0].containerID = C.uid_t(os.Getuid())
+		cconf.uidMapping[0].hostID = C.uid_t(os.Getuid())
+		cconf.uidMapping[0].size = 1
+		cconf.gidMapping[0].containerID = C.gid_t(os.Getgid())
+		cconf.gidMapping[0].hostID = C.gid_t(os.Getgid())
+		cconf.gidMapping[0].size = 1
 
-		for _, namespace := range spec.Linux.Namespaces {
+		for _, namespace := range engine.OciConfig.RuntimeOciSpec.Linux.Namespaces {
 			switch namespace.Type {
 			case specs.UserNamespace:
-				cconf.userNS = C.uchar(bool2int(true))
 				cconf.nsFlags |= syscall.CLONE_NEWUSER
 			case specs.IPCNamespace:
 				cconf.nsFlags |= syscall.CLONE_NEWIPC
@@ -104,26 +103,17 @@ func main() {
 			}
 		}
 
-		jsonConf, err := json.Marshal(spec)
-		if err != nil {
-			log.Fatalln("serialize json configuration failed")
-		}
-
+		jsonConf, _ := engine.GetConfig()
 		cconf.jsonConfSize = C.uint(len(jsonConf))
-
 		cconfPayload := C.GoBytes(unsafe.Pointer(&cconf), C.sizeof_struct_cConfig)
-		if _, err := comm.Write(cconfPayload); err != nil {
-			log.Fatalln("write C configuration failed")
-		}
-		if _, err := comm.Write(jsonConf); err != nil {
-			log.Fatalln("write json configuration failed")
-		}
-	} else if *stage == 2 {
+
+		os.Stdout.Write(append(cconfPayload, jsonConf...))
+	} else if stage == 2 {
 		/* wait childs process */
 		rpcChild := make(chan os.Signal, 1)
 		signal.Notify(rpcChild, syscall.SIGCHLD)
 
-		rpcSocket := os.NewFile(uintptr(*rpcfd), "rpc")
+		rpcSocket := os.NewFile(uintptr(rpcfd), "rpc")
 
 		if C.child_stage2 == 0 {
 			conn, err := net.FileConn(rpcSocket)
@@ -132,81 +122,26 @@ func main() {
 				log.Fatalln("communication error")
 			}
 
-			rpcOps := new(client.RpcOps)
-			rpcOps.Client = rpc.NewClient(conn)
-
-			_, err = rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
-			if err != nil {
-				log.Fatalln("mount / failed:", err)
+			// send "creating" status notification to smaster
+			if err := engine.CreateContainer(conn); err != nil {
+				os.Exit(1)
 			}
-
-			st, err := os.Stat(spec.Root.Path)
-			if err != nil {
-				log.Fatalf("stat on %s failed\n", spec.Root.Path)
-			}
-
-			rootfs := spec.Root.Path
-
-			if st.IsDir() == false && cconf.userNS == C.uchar(0) {
-				info := new(loop.LoopInfo64)
-				info.Offset = 31
-				info.Flags = loop.FlagsAutoClear
-				var number int
-				number, err = rpcOps.LoopDevice(spec.Root.Path, os.O_RDONLY, *info)
-				if err != nil {
-					fmt.Println(err)
-				}
-				path := fmt.Sprintf("/dev/loop%d", number)
-				rootfs = "/tmp/testing"
-				_, err = rpcOps.Mount(path, rootfs, "squashfs", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
-				if err != nil {
-					fmt.Println("mount squashfs:", err)
-				}
-			}
-
-			_, err = rpcOps.Mount("proc", path.Join(rootfs, "proc"), "proc", syscall.MS_NOSUID, "")
-			if err != nil {
-				log.Fatalln("mount proc failed:", err)
-			}
-			_, err = rpcOps.Mount("sysfs", path.Join(rootfs, "sys"), "sysfs", syscall.MS_NOSUID, "")
-			if err != nil {
-				log.Fatalln("mount sys failed:", err)
-			}
-			_, err = rpcOps.Mount("/dev", path.Join(rootfs, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
-			if err != nil {
-				log.Fatalln("mount dev failed:", err)
-			}
-			_, err = rpcOps.Mount("/etc/passwd", path.Join(rootfs, "etc/passwd"), "", syscall.MS_BIND, "")
-			if err != nil {
-				log.Fatalln("mount /etc/passwd failed:", err)
-			}
-			_, err = rpcOps.Mount("/etc/group", path.Join(rootfs, "etc/group"), "", syscall.MS_BIND, "")
-			if err != nil {
-				log.Fatalln("mount /etc/group failed:", err)
-			}
-			_, err = rpcOps.Mount(rootfs, "/mnt", "", syscall.MS_BIND|syscall.MS_REC, "")
-			if err != nil {
-				log.Fatalln("mount failed:", err)
-			}
-			err = syscall.Chdir("/mnt")
-			if err != nil {
-				log.Fatalln("change directory failed:", err)
-			}
-			_, err = rpcOps.Chroot("/mnt")
-			if err != nil {
-				log.Fatalln("chroot failed:", err)
-			}
-			err = syscall.Chdir("/")
-			if err != nil {
-				log.Fatalln("change directory failed:", err)
-			}
-			if err := rpcOps.Client.Close(); err != nil {
-				log.Fatalln("Can't close connection with rpc server")
-			}
+			// send "created" status notification to smaster
 			os.Exit(0)
 		}
 
-		/* seccomp setup goes here */
+		comm := os.NewFile(uintptr(socket), "comm")
+		if comm == nil {
+			log.Fatalln("failed to read on socket")
+		}
+
+		if _, err := comm.Write(jsonBytes); err != nil {
+			log.Fatalln(err)
+		}
+
+		if err := engine.PrestartProcess(); err != nil {
+			log.Fatalln("Container setup failed")
+		}
 
 		code := 0
 		rpcSocket.Close()
@@ -215,7 +150,7 @@ func main() {
 	sigloop:
 		for {
 			select {
-			case _ = (<-rpcChild):
+			case _ = <-rpcChild:
 				/*
 				 * waiting 2 childs signal there, since Linux can merge signals, we wait for all childs
 				 * when first SIGCHLD received
@@ -239,24 +174,13 @@ func main() {
 		}
 
 		/* force close on exec on socket file descriptor to distinguish an exec success and error */
-		_, _, errsys := syscall.RawSyscall(syscall.SYS_FCNTL, uintptr(*socket), syscall.F_SETFD, syscall.FD_CLOEXEC)
+		_, _, errsys := syscall.RawSyscall(syscall.SYS_FCNTL, uintptr(socket), syscall.F_SETFD, syscall.FD_CLOEXEC)
 		if errsys != 0 {
 			log.Fatalln("set close-on-exec failed:", errsys)
 		}
 
-		if cconf.isInstance == C.uchar(0) {
-			os.Setenv("PS1", "shell> ")
-			args := spec.Process.Args
-			err := syscall.Exec(args[0], args, os.Environ())
-			if err != nil {
-				log.Fatalln("exec failed:", err)
-			}
-		} /* else {
-			err := syscall.Exec("/bin/sleep", []string{"/bin/sleep", "60"}, os.Environ())
-			if err != nil {
-				log.Fatalln("exec failed:", err)
-			}
-			os.Exit(1)
-		}*/
+		if err := engine.StartProcess(); err != nil {
+			log.Fatalln(err)
+		}
 	}
 }

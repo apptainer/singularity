@@ -11,29 +11,32 @@ package main
 import "C"
 
 import (
-	"fmt"
+	"log"
 	"net"
-	"net/rpc"
 	"os"
-	"rpc/server"
+
+	"github.com/singularityware/singularity/internal/pkg/runtime/rpc"
 )
 
-//export RpcServer
-func RpcServer(socket int) int {
+//export RPCServer
+func RPCServer(socket int) int {
+	tmp, ok := os.LookupEnv("SRUNTIME")
+	if !ok {
+		log.Fatalln("SRUNTIME environment variable isn't set")
+	}
+	runtime := tmp
+
 	comm := os.NewFile(uintptr(socket), "unix")
 
 	conn, err := net.FileConn(comm)
 	if err != nil {
-		fmt.Println("communication error")
-        return 1
+		log.Fatalln("communication error")
 	}
 	comm.Close()
 
-	rpcOps := new(server.RpcOps)
-	rpc.RegisterName("Privileged", rpcOps)
-	rpc.ServeConn(conn)
+	rpc.ServeRuntimeEngineRequests(runtime, conn)
 
-    return 0
+	return 0
 }
 
 func main() {}

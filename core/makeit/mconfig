@@ -76,7 +76,7 @@ if [ $# != 0 ]; then
 	usage_args
 	exit 2
 fi
-topdir=`dirname \`readlink mconfig\``
+topdir=`dirname \`readlink mconfig\`` || (echo "\`mconfig' needs to be symlinked at the top of the project."; exit 2)
 sourcedir=`readlink -f .`
 mfragsdir=$sourcedir/mlocal/frags
 mchecksdir=$sourcedir/mlocal/checks
