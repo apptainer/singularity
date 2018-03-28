@@ -215,6 +215,8 @@ func postFile(filePath string, imageID string) error {
 
 	// create and start bar
 	bar := pb.New(int(fileSize)).SetUnits(pb.U_BYTES)
+	bar.ShowTimeLeft = true
+	bar.ShowSpeed = true
 	bar.Start()
 	// create proxy reader
 	bodyProgress := bar.NewProxyReader(&b)
