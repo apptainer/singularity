@@ -54,10 +54,10 @@ int _singularity_runtime_mounts(void) {
     retval += _singularity_runtime_mount_kernelfs();
     retval += _singularity_runtime_mount_dev();
     retval += _singularity_runtime_mount_home();
-    retval += _singularity_runtime_mount_userbinds();
-    retval += _singularity_runtime_mount_tmp();
     retval += _singularity_runtime_mount_scratch();
+    retval += _singularity_runtime_mount_tmp();
     retval += _singularity_runtime_mount_cwd();
+    retval += _singularity_runtime_mount_userbinds();
 
     return(retval);
 }

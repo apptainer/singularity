@@ -39,7 +39,7 @@ int is_suid(char *path);
 int is_owner(char *path, uid_t uid);
 int is_blk(char *path);
 int is_chr(char *path);
-int s_mkpath(char *dir, mode_t mode);
+int s_mkpath(char *dir, mode_t mode, char *base);
 int s_rmdir(char *dir);
 int copy_file(char * source, char * dest);
 char *filecat(char *path);

@@ -48,10 +48,11 @@
 
 
 int _singularity_runtime_overlayfs(void) {
+    singularity_registry_set("OVERLAYFS_ENABLED", NULL);
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Creating overlay_final directory: %s\n", CONTAINER_FINALDIR);
-    if ( s_mkpath(CONTAINER_FINALDIR, 0755) < 0 ) {
+    if ( s_mkpath(CONTAINER_FINALDIR, 0755, NULL) < 0 ) {
         singularity_message(ERROR, "Failed creating overlay_final directory %s: %s\n", CONTAINER_FINALDIR, strerror(errno));
         ABORT(255);
     }
@@ -143,13 +144,13 @@ int _singularity_runtime_overlayfs(void) {
 
         singularity_priv_escalate();
         singularity_message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
-        if ( s_mkpath(overlay_upper, 0755) < 0 ) {
+        if ( s_mkpath(overlay_upper, 0755, overlay_mount) < 0 ) {
             singularity_message(ERROR, "Failed creating upper overlay directory %s: %s\n", overlay_upper, strerror(errno));
             ABORT(255);
         }
 
         singularity_message(DEBUG, "Creating overlay work directory: %s\n", overlay_work);
-        if ( s_mkpath(overlay_work, 0755) < 0 ) {
+        if ( s_mkpath(overlay_work, 0755, overlay_mount) < 0 ) {
             singularity_message(ERROR, "Failed creating overlay work directory %s: %s\n", overlay_work, strerror(errno));
             ABORT(255);
         }

@@ -281,7 +281,10 @@ int is_chr(char *path) {
 }
 
 
-int s_mkpath(char *dir, mode_t mode) {
+int s_mkpath(char *dir, mode_t mode, char *base) {
+    char *dupdir;
+    char *realdir;
+
     if (!dir) {
         return(-1);
     }
@@ -298,10 +301,31 @@ int s_mkpath(char *dir, mode_t mode) {
 
     if ( is_dir(dirname(strdupa(dir))) < 0 ) {
         singularity_message(DEBUG, "Creating parent directory: %s\n", dirname(strdupa(dir)));
-        if ( s_mkpath(dirname(strdupa(dir)), mode) < 0 ) {
+        if ( s_mkpath(dirname(strdupa(dir)), mode, base) < 0 ) {
             singularity_message(VERBOSE, "Failed to create parent directory %s\n", dir);
             return(-1);
         }
+    }
+
+    if ( base != NULL ) {
+        dupdir = strdup(dir);
+        if ( dupdir == NULL ) {
+            singularity_message(ERROR, "Failed to allocate memory\n");
+            ABORT(255);
+        }
+        realdir = realpath(dirname(dupdir), NULL); // Flawfinder: ignore
+        if ( realdir == NULL ) {
+            singularity_message(ERROR, "A component of the path is missing\n");
+            ABORT(255);
+        }
+        if ( strncmp(base, realdir, strlen(base)) != 0 ) {
+            free(dupdir);
+            free(realdir);
+            singularity_message(WARNING, "Skip creation of path, attempt to create directory outside of %s\n", base);
+            return(-1);
+        }
+        free(dupdir);
+        free(realdir);
     }
 
     singularity_message(DEBUG, "Creating directory: %s\n", dir);
