@@ -2,9 +2,10 @@ package signing
 
 import (
 	"bufio"
-	"bytes"
+	//	"bytes"
 	"crypto"
 	"fmt"
+	"github.com/singularityware/singularity/pkg/image"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/packet"
 	"log"
@@ -150,6 +151,19 @@ func genKeyPair(spath string, ppath string) error {
 	return nil
 }
 
+// XXX: replace that with acutal cli passwd grab
+func decryptKey(k *openpgp.Entity) error {
+	if k.PrivateKey.Encrypted == true {
+		k.PrivateKey.Decrypt([]byte("devkeys"))
+	}
+	return nil
+}
+
+// XXX: replace that with actual cli choice maker
+func selectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+	return el[0], nil
+}
+
 /*
  * Signing workflow:
  * 1) Look for cmd parameter:
@@ -162,7 +176,7 @@ func genKeyPair(spath string, ppath string) error {
  * 6) record the KeyID used to sign into signature data object descriptor
  */
 
-func Sign() error {
+func Sign(message []byte) error {
 	secretpath := os.Getenv("HOME") + "/.sypgp/pgp-secret"
 	pubpath := os.Getenv("HOME") + "/.sypgp/pgp-public"
 	f, err := os.Open(secretpath)
@@ -180,24 +194,47 @@ func Sign() error {
 		}
 	}
 	defer f.Close()
+
 	el, err := openpgp.ReadKeyRing(f)
 	if err != nil {
 		log.Println("Error while trying to read key ring: ", err)
 		return err
 	}
-	for _, e := range el {
-		if e.PrivateKey.Encrypted == true {
-			e.PrivateKey.Decrypt([]byte("devkeys"))
+
+	var k *openpgp.Entity
+	if len(el) > 1 {
+		if k, err = selectKey(el); err != nil {
+			return err
 		}
-		buf := bytes.NewBufferString("Allo")
+	} else {
+		k = el[0]
+	}
+	decryptKey(k)
+
+	containerPath := "/home/yanik/sdev/containers/img.sif"
+	var sinfo image.Sifinfo
+	if ret := image.SifLoad(containerPath, &sinfo, 0); ret != nil {
+		log.Println(err)
+		return err
+	}
+	image.SifPrintHeader(&sinfo)
+
+	if err = image.SifUnload(&sinfo); err != nil {
+		return err
+	}
+
+	/*
+		buf := bytes.NewBuffer(message)
 		var conf packet.Config
 		conf.DefaultHash = crypto.SHA384
-		err = openpgp.ArmoredDetachSignText(os.Stdout, e, buf, &conf)
+		err = openpgp.ArmoredDetachSignText(os.Stdout, k, buf, &conf)
 		if err != nil {
 			log.Fatal("Error while creating signature block: ", err)
 		}
-
-	}
-
+	*/
 	return nil
+}
+
+func Verify() (bool, error) {
+	return true, nil
 }

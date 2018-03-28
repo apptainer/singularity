@@ -14,5 +14,5 @@ import (
 )
 
 func main() {
-	signing.Sign()
+	signing.Sign([]byte("6d02c8a7d6b41cb821e23d7ca345da7da907e6325e303e4741d773080c075ebe96405432087f6c74682d73c479dc393a"))
 }
