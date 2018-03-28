@@ -23,6 +23,8 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Adjustments to SCIF (Scientific Filesystem) integration for broader use
  - Fixed bug that did not export environment variables for apps with "-" in name
  - Fix conflict between `--nv` and `--contain` options
+ - Removed overeager check for known invalid recipe file extension
+
 
 ## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
 
