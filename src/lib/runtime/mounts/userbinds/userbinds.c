@@ -70,6 +70,9 @@ int _singularity_runtime_mount_userbinds(void) {
 
         while ( current != NULL ) {
             int read_only = 0;
+            unsigned char nested = 0;
+            char *dir, *ptr;
+            char *dupdest;
             char *source = strtok_r(current, ":", &inside_token);
             char *dest = strtok_r(NULL, ":", &inside_token);
             char *opts = strtok_r(NULL, ":", &inside_token);
@@ -94,19 +97,31 @@ int _singularity_runtime_mount_userbinds(void) {
             }
 
             singularity_message(DEBUG, "Checking if bind point is already mounted: %s\n", dest);
-            if ( check_mounted(dest) >= 0 ) {
-                singularity_message(WARNING, "Not mounting requested bind point (already mounted in container): %s\n", dest);
+            dupdest = strdup(dest);
+            if ( dupdest == NULL ) {
+                singularity_message(ERROR, "Failed to allocate memory\n");
+                ABORT(255);
+            }
+            if ( strcmp(dest, "/") == 0 ) {
+                singularity_message(WARNING, "Attempt to bind %s to container root filesystem, bind point ignored\n", source);
                 continue;
             }
-
-            if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
-                if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
-                    char *dir = dirname(strdup(dest));
-                    if ( strcmp(dir, "/") != 0 && check_mounted(dir) >= 0 ) {
-                        singularity_message(WARNING, "Nested bind detected, skip file creation\n");
-                        continue;
+            for ( ptr = dupdest + 1; *ptr; ptr++ ) {
+                if ( *ptr == '/' ) {
+                    *ptr = '\0';
+                    if ( check_mounted(dupdest) >= 0 ) {
+                        singularity_message(WARNING, "Nested bind detected for %s, skip file/directory creation\n", dupdest);
+                        nested = 1;
+                        break;
                     }
+                    *ptr = '/';
+                }
+            }
+            free(dupdest);
 
+            if ( nested == 0 && ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
+                if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
+                    dir = dirname(strdup(dest));
                     if ( is_dir(joinpath(container_dir, dir)) < 0 ) {
                         singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
                         if ( s_mkpath(joinpath(container_dir, dir), 0755, container_dir) < 0 ) {
@@ -136,7 +151,7 @@ int _singularity_runtime_mount_userbinds(void) {
                     singularity_message(WARNING, "Skipping user bind, non existent bind point (file) in container: '%s'\n", dest);
                     continue;
                 }
-            } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
+            } else if ( nested == 0 && ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
                 if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                     singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
                     if ( s_mkpath(joinpath(container_dir, dest), 0755, container_dir) < 0 ) {
