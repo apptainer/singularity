@@ -48,6 +48,7 @@
 
 
 int _singularity_runtime_overlayfs(void) {
+    singularity_registry_set("OVERLAYFS_ENABLED", NULL);
 
     singularity_priv_escalate();
     singularity_message(DEBUG, "Creating overlay_final directory: %s\n", CONTAINER_FINALDIR);
