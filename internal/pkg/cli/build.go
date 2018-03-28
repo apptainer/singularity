@@ -26,9 +26,6 @@ var (
 	Sections  []string
 )
 
-func doRemoteBuild(imagePath string, defPath string) {
-}
-
 func init() {
 	buildCmd.Flags().SetInterspersed(false)
 	singularityCmd.AddCommand(buildCmd)
