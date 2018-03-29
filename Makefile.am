@@ -21,7 +21,7 @@ install-perms:
 all-local:
 	@echo
 	@echo "******"
-	@echo "  mksquashfs from squash-tools is required for full functionality"
+	@echo "  mksquashfs from squashfs-tools is required for full functionality"
 	@echo "******"
 	@echo
 
