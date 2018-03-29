@@ -6,6 +6,7 @@ singularity-*.tar.gz
 *.m4
 config.*
 *.pyc
+*.swp
 
 Makefile
 Makefile.in
