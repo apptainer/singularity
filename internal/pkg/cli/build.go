@@ -28,9 +28,6 @@ var (
     ManPageDir string
 )
 
-func doRemoteBuild(imagePath string, defPath string) {
-}
-
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
 	singularityCmd.AddCommand(BuildCmd)
