@@ -454,7 +454,7 @@ void fd_cleanup(void) {
         }
         fd_path[length] = '\0';
 
-        if ( is_dir(fd_path) < 0 ) {
+        if ( is_dir(fd_path) < 0 || is_sock(fd_path) < 0 ) {
             continue;
         }
         close(i);
