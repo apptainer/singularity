@@ -2,14 +2,17 @@ package signing
 
 import (
 	"bufio"
-	//	"bytes"
+	"bytes"
 	"crypto"
+	"crypto/sha512"
 	"fmt"
 	"github.com/singularityware/singularity/pkg/image"
 	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/clearsign"
 	"golang.org/x/crypto/openpgp/packet"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 // routine that outputs signature type (applies to vindex operation)
@@ -99,34 +102,39 @@ func genKeyPair(spath string, ppath string) error {
 	fmt.Println("No Private Keys found in SYPGP store, generating RSA pair for you.")
 
 	fmt.Print("Enter your name (e.g., John Doe) : ")
-	in := bufio.NewReader(os.Stdin)
-	name, err := in.ReadString('\n')
-	if err != nil {
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	name := scanner.Text()
+	if err := scanner.Err(); err != nil {
 		log.Println("Error while reading name from user: ", err)
 		return err
 	}
 
 	fmt.Print("Enter your email address (e.g., john.doe@example.com) : ")
-	email, err := in.ReadString('\n')
-	if err != nil {
+	scanner.Scan()
+	email := scanner.Text()
+	if err := scanner.Err(); err != nil {
 		log.Println("Error while reading email from user: ", err)
 		return err
 	}
 
 	fmt.Print("Enter optional comment (e.g., development keys) : ")
-	comment, err := in.ReadString('\n')
-	if err != nil {
+	scanner.Scan()
+	comment := scanner.Text()
+	if err := scanner.Err(); err != nil {
 		log.Println("Error while reading comment from user: ", err)
 		return err
 	}
 
+	log.Print("Generating Entity and Key Pair... ")
 	entity, err := openpgp.NewEntity(name, comment, email, conf)
 	if err != nil {
 		log.Println("Error while creating entity: ", err)
 		return err
 	}
+	log.Println("Done")
 
-	fs, err := os.Create(spath)
+	fs, err := os.OpenFile(spath, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		log.Println("Could not create private keyring file: ", err)
 		return err
@@ -137,7 +145,7 @@ func genKeyPair(spath string, ppath string) error {
 		return err
 	}
 
-	fp, err := os.Create(ppath)
+	fp, err := os.OpenFile(ppath, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		log.Println("Could not create public keyring file: ", err)
 		return err
@@ -164,6 +172,57 @@ func selectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	return el[0], nil
 }
 
+func SyPgpPath() string {
+	return filepath.Join(os.Getenv("HOME"), ".sypgp")
+}
+
+func SyPgpPathCheck() error {
+	if err := os.MkdirAll(SyPgpPath(), 0700); err != nil {
+		log.Println("could not create singularity PGP directory")
+		return err
+	}
+	return nil
+}
+
+func SifDataObjectHash(sinfo *image.Sifinfo) (*bytes.Buffer, error) {
+	var msg = new(bytes.Buffer)
+
+	part, err := image.SifGetPartition(sinfo, image.SIF_DEFAULT_GROUP)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	data, err := image.CByteRange(sinfo.Mapstart(), part.FileOff(), part.FileLen())
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	sum := sha512.Sum384(data)
+
+	fmt.Fprintf(msg, "SIFHASH:\n%x", sum)
+
+	return msg, nil
+}
+
+func SifAddSignature(sinfo *image.Sifinfo, signature []byte) error {
+	var e image.Eleminfo
+
+	part, err := image.SifGetPartition(sinfo, image.SIF_DEFAULT_GROUP)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	e.InitSignature(signature, part)
+
+	if err := image.SifPutDataObj(&e, sinfo); err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
 /*
  * Signing workflow:
  * 1) Look for cmd parameter:
@@ -175,10 +234,14 @@ func selectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
  * 5) store new hash in SIF
  * 6) record the KeyID used to sign into signature data object descriptor
  */
+func Sign(cpath string) error {
+	secretpath := filepath.Join(SyPgpPath(), "pgp-secret")
+	pubpath := filepath.Join(SyPgpPath(), "pgp-public")
 
-func Sign(message []byte) error {
-	secretpath := os.Getenv("HOME") + "/.sypgp/pgp-secret"
-	pubpath := os.Getenv("HOME") + "/.sypgp/pgp-public"
+	if err := SyPgpPathCheck(); err != nil {
+		return err
+	}
+
 	f, err := os.Open(secretpath)
 	if err != nil {
 		log.Println("Error trying to open secret keyring file: ", err)
@@ -211,30 +274,104 @@ func Sign(message []byte) error {
 	}
 	decryptKey(k)
 
-	containerPath := "/home/yanik/sdev/containers/img.sif"
 	var sinfo image.Sifinfo
-	if ret := image.SifLoad(containerPath, &sinfo, 0); ret != nil {
+	if err = image.SifLoad(cpath, &sinfo, 0); err != nil {
 		log.Println(err)
 		return err
 	}
-	image.SifPrintHeader(&sinfo)
+	defer image.SifUnload(&sinfo)
 
-	if err = image.SifUnload(&sinfo); err != nil {
+	msg, err := SifDataObjectHash(&sinfo)
+	if err != nil {
 		return err
 	}
 
-	/*
-		buf := bytes.NewBuffer(message)
-		var conf packet.Config
-		conf.DefaultHash = crypto.SHA384
-		err = openpgp.ArmoredDetachSignText(os.Stdout, k, buf, &conf)
-		if err != nil {
-			log.Fatal("Error while creating signature block: ", err)
-		}
-	*/
+	var signedmsg bytes.Buffer
+	plaintext, err := clearsign.Encode(&signedmsg, k.PrivateKey, nil)
+	if err != nil {
+		log.Printf("error from Encode: %s\n", err)
+		return err
+	}
+	if _, err := plaintext.Write(msg.Bytes()); err != nil {
+		log.Printf("error from Write: %s\n", err)
+		return err
+	}
+	if err := plaintext.Close(); err != nil {
+		log.Printf("error from Close: %s\n", err)
+		return err
+	}
+
+	if err = SifAddSignature(&sinfo, signedmsg.Bytes()); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func Verify() (bool, error) {
-	return true, nil
+func Verify(cpath string) error {
+	var sinfo image.Sifinfo
+	if err := image.SifLoad(cpath, &sinfo, 0); err != nil {
+		log.Println(err)
+		return err
+	}
+	defer image.SifUnload(&sinfo)
+
+	msg, err := SifDataObjectHash(&sinfo)
+	if err != nil {
+		return err
+	}
+
+	sig, err := image.SifGetSignature(&sinfo)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	data, err := image.CByteRange(sinfo.Mapstart(), sig.FileOff(), sig.FileLen())
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	block, _ := clearsign.Decode(data)
+	if block == nil {
+		log.Printf("failed to decode clearsign message\n")
+		return fmt.Errorf("failed to decode clearsign message\n")
+	}
+
+	if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), msg.Bytes()) {
+		log.Printf("Sif hash string mismatch -- don't use:\nsigned:     %s\ncalculated: %s", msg.String(), block.Plaintext)
+		return fmt.Errorf("Sif hash string mismatch -- don't use")
+	}
+
+	if err := SyPgpPathCheck(); err != nil {
+		return err
+	}
+
+	pubpath := filepath.Join(SyPgpPath(), "pgp-public")
+	f, err := os.Open(pubpath)
+	if err != nil {
+		log.Println("Error trying to open public keyring file: ", err)
+
+		/* XXX: Try to get KEY from KEYSERVER */
+	}
+	defer f.Close()
+
+	el, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		log.Println("Error while trying to read key ring: ", err)
+		return err
+	}
+
+	var signer *openpgp.Entity
+	if signer, err = openpgp.CheckDetachedSignature(el, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
+		log.Printf("failed to check signature: %s", err)
+		return err
+	}
+	fmt.Print("Authentic and signed by:\n")
+	for _, i := range signer.Identities {
+		fmt.Printf("\t%s\n", i.Name)
+	}
+
+	return nil
 }

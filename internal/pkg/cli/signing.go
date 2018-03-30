@@ -10,6 +10,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/pkg/signing"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +28,7 @@ var signCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
+		signing.Sign(args[0])
 	},
 }
 
@@ -36,5 +38,6 @@ var verifyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Verifying image: %s\n", args[0])
+		signing.Verify(args[0])
 	},
 }

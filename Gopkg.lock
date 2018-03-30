@@ -309,6 +309,7 @@
     "cast5",
     "openpgp",
     "openpgp/armor",
+    "openpgp/clearsign",
     "openpgp/elgamal",
     "openpgp/errors",
     "openpgp/packet",
@@ -347,6 +348,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "acba2b36f48d4a75748baf8d79c7a4c94aa92fbc78b2098b88d596b668ca13d3"
+  inputs-digest = "f56011c4fc79735c7adf0df8d1ba99ac9441ea0488c4ee2f474e19015598f855"
   solver-name = "gps-cdcl"
   solver-version = 1
