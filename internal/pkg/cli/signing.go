@@ -12,6 +12,7 @@ import (
 
 	"github.com/singularityware/singularity/pkg/signing"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 func init() {
@@ -28,7 +29,9 @@ var signCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
-		signing.Sign(args[0])
+		if err := signing.Sign(args[0]); err != nil {
+			os.Exit(2)
+		}
 	},
 }
 
@@ -38,6 +41,8 @@ var verifyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Verifying image: %s\n", args[0])
-		signing.Verify(args[0])
+		if err := signing.Verify(args[0]); err != nil {
+			os.Exit(2)
+		}
 	},
 }
