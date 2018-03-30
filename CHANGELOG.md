@@ -23,6 +23,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Adjustments to SCIF (Scientific Filesystem) integration for broader use
  - Fixed bug that did not export environment variables for apps with "-" in name
  - Close socket file descriptors in fd_cleanup
+ - Fix conflict between `--nv` and `--contain` options
 
 ## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
 
