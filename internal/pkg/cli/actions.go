@@ -154,9 +154,9 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	cmd := exec.Command(wrapper)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-    if verbose {
-        lvl = "2"
-    }
+	if verbose {
+		lvl = "2"
+	}
 	if debug {
 		lvl = "5"
 	}
