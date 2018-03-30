@@ -6,7 +6,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/golang/glog"
+	"bytes"
+	"fmt"
+	"net/http"
 )
 
 // JSONError - Struct for standard error returns over REST API
@@ -48,10 +50,22 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 
 }
 
-func ParseBody(r io.Reader) (jRes JSONResponse) {
-	err := json.NewDecoder(r).Decode(&jRes)
+// ParseErrorBody - Parse an API format rror out of the body
+func ParseErrorBody(r io.Reader) (jRes JSONResponse, err error) {
+	err = json.NewDecoder(r).Decode(&jRes)
 	if err != nil {
-		glog.Fatalf("The server returned a response that could not be decoded: %v", err)
+		return jRes, fmt.Errorf("The server returned a response that could not be decoded: %v", err)
 	}
+	return jRes, nil
+}
+
+// ParseErrorResponse - Create a JSONResponse out of a raw HTTP response
+func ParseErrorResponse(res *http.Response) (jRes JSONResponse) {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(res.Body)
+	s := buf.String()
+	jRes.Error.Code = res.StatusCode
+	jRes.Error.Status = http.StatusText(res.StatusCode)
+	jRes.Error.Message = s
 	return jRes
 }

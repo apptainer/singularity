@@ -154,7 +154,10 @@ func apiCreate(o interface{}, url string) (id string, err error) {
 		return "", fmt.Errorf("Error making request to server:\n\t%v", err)
 	}
 	if res.StatusCode != http.StatusOK {
-		jRes := ParseBody(res.Body)
+		jRes, err := ParseErrorBody(res.Body)
+		if err != nil {
+			jRes = ParseErrorResponse(res)
+		}
 		return "", fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
@@ -233,7 +236,10 @@ func postFile(filePath string, imageID string) error {
 		return fmt.Errorf("Error uploading file to server: %s", err.Error())
 	}
 	if res.StatusCode != http.StatusOK {
-		jRes := ParseBody(res.Body)
+		jRes, err := ParseErrorBody(res.Body)
+		if err != nil {
+			jRes = ParseErrorResponse(res)
+		}
 		return fmt.Errorf("Sending file did not succeed: %d %s\n\t%v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}

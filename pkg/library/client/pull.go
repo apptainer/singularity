@@ -3,10 +3,11 @@ package client
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	"log"
 
 	"github.com/cheggaaa/pb"
 )
@@ -38,7 +39,10 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string) error 
 	}
 
 	if res.StatusCode != http.StatusOK {
-		jRes := ParseBody(res.Body)
+		jRes, err := ParseErrorBody(res.Body)
+		if err != nil {
+			jRes = ParseErrorResponse(res)
+		}
 		return fmt.Errorf("Download did not succeed: %d %s\n\t%v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
