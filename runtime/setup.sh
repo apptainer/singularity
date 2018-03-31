@@ -8,6 +8,7 @@
 #
 
 export GOPATH=$(go env GOPATH)
+export BINPATH=$GOPATH/src/github.com/singularityware/singularity/core/buildtree
 go build -ldflags="-s -w" -o ../build/scontainer go/scontainer.go
 go build -ldflags="-s -w" -buildmode=c-shared -o ../build/librpc.so go/rpc.go
 go build -ldflags="-s -w" -o ../build/smaster go/smaster.go
@@ -23,9 +24,9 @@ cp ../build/librpc.so /tmp/
 sudo chown root:root /tmp/wrapper-suid && sudo chmod 4755 /tmp/wrapper-suid
 
 if [ ! -e "/tmp/testing.simg" ]; then
-    singularity pull --name testing.simg shub://GodloveD/busybox
+    "${BINPATH}"/singularity pull --name testing.simg shub://GodloveD/busybox
     mv testing.simg /tmp/
 fi
 if [ ! -e "/tmp/testing" ]; then
-    singularity build --sandbox /tmp/testing docker://alpine
+    "${BINPATH}"/singularity build --sandbox /tmp/testing docker://alpine
 fi
