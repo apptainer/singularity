@@ -37,7 +37,7 @@
 struct tempfile {
     FILE *fp;
     int fd;
-    char filename[64];
+    const char *filename;
 };
 
 char *envar_get(char *name, char *allowed, int len);
