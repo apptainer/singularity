@@ -11,7 +11,7 @@ unset ml
 unset BASH_ENV
 
 # These vars are provided to the user as a convenience.  They will be used to 
-# prepended, appended, or overwrite the PATH at runtime.  
+# prepended to, appended to, or overwrite the PATH at runtime.  
 if [ -n "${SINGULARITYENV_PREPEND_PATH:-}" ]; then 
     SING_USER_DEFINED_PREPEND_PATH="$SINGULARITYENV_PREPEND_PATH"
     export SING_USER_DEFINED_PREPEND_PATH
