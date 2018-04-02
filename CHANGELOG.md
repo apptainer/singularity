@@ -24,6 +24,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fixed bug that did not export environment variables for apps with "-" in name
  - Close socket file descriptors in fd_cleanup
  - Fix conflict between `--nv` and `--contain` options
+ - Changed behavior of SINGULARITYENV_PATH to overwrite container PATH and
+   added SINGULARITYENV_PREPEND_PATH and SINGULARITYENV_APPEND_PATH for users
+   wanting to prepend or append to the container PATH at runtime
 
 ## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
 
