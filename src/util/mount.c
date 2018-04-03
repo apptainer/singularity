@@ -100,6 +100,53 @@ int singularity_mount(const char *source, const char *target,
     return ret;
 }
 
+int check_proc_mount(char *mount, char *real_mountpoint) {
+    int retval = -1;
+
+    char *dup_mountpoint = strdup(real_mountpoint);
+    char *test_mountpoint = dup_mountpoint;
+
+    while ( ( retval < 0 ) && ( strcmp(test_mountpoint, "/") != 0 ) ) {
+        char *full_test_path = NULL;
+        char *tmp_test_path = joinpath(CONTAINER_FINALDIR, test_mountpoint);
+
+        if ( is_link(tmp_test_path) == 0 ) {
+            char *linktarget = realpath(tmp_test_path, NULL); // Flawfinder: ignore
+            if ( linktarget == NULL ) {
+                singularity_message(ERROR, "Could not identify the source of contained link: %s\n", test_mountpoint);
+                ABORT(255);
+            }
+            full_test_path = joinpath(CONTAINER_FINALDIR, linktarget);
+            singularity_message(DEBUG, "Parent directory is a link, resolved: %s->%s\n", tmp_test_path, full_test_path);
+            if ( strcmp(linktarget, "/") == 0 ) {
+                singularity_message(DEBUG, "Link is pointing to /, not allowed: %s\n", test_mountpoint);
+                retval = 1;
+            }
+            free(linktarget);
+        } else {
+            full_test_path = strdup(tmp_test_path);
+        }
+
+        if( retval < 0 )
+        {
+            // Check to see if mountpoint is already mounted
+            if ( strcmp(full_test_path, mount) == 0 ) {
+                singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", test_mountpoint);
+                retval = 1;
+            } else {
+                test_mountpoint = dirname(test_mountpoint);
+            }
+        }
+
+        free(tmp_test_path);
+        free(full_test_path);
+    }
+
+    free(dup_mountpoint);
+
+    return(retval);
+}
+
 int check_mounted(char *mountpoint) {
     int retval = -1;
     FILE *mounts;
@@ -121,55 +168,12 @@ int check_mounted(char *mountpoint) {
         mountpoint[mountpoint_len-1] = '\0';
     }
 
-
     singularity_message(DEBUG, "Iterating through /proc/mounts\n");
-    while ( fgets(line, MAX_LINE_LEN, mounts) != NULL ) {
+    while ( ( retval < 0 ) && ( fgets(line, MAX_LINE_LEN, mounts) != NULL ) ) {
         (void) strtok(strdup(line), " ");
         char *mount = strtok(NULL, " ");
 
-        char *test_mountpoint = strdup(real_mountpoint);
-
-        while ( strcmp(test_mountpoint, "/") != 0 ) {
-            char *full_test_path = NULL;
-            char *tmp_test_path = joinpath(rootfs_dir, test_mountpoint);
-
-            if ( is_link(tmp_test_path) == 0 ) {
-                char *linktarget = realpath(tmp_test_path, NULL); // Flawfinder: ignore
-                if ( linktarget == NULL ) {
-                    singularity_message(ERROR, "Could not identify the source of contained link: %s\n", test_mountpoint);
-                    ABORT(255);
-                }
-                full_test_path = joinpath(rootfs_dir, linktarget);
-                singularity_message(DEBUG, "Parent directory is a link, resolved: %s->%s\n", tmp_test_path, full_test_path);
-                if ( strcmp(linktarget, "/") == 0 ) {
-                    singularity_message(DEBUG, "Link is pointing to /, not allowed: %s\n", test_mountpoint);
-                    retval = 1;
-                    free(test_mountpoint);
-                    free(tmp_test_path);
-                    free(full_test_path);
-                    free(linktarget);
-                    goto DONE;
-                }
-                free(linktarget);
-            } else {
-                full_test_path = strdup(tmp_test_path);
-            }
-
-            // Check to see if mountpoint is already mounted
-            if ( strcmp(full_test_path, mount) == 0 ) {
-                singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", test_mountpoint);
-                retval = 1;
-                free(test_mountpoint);
-                free(tmp_test_path);
-                free(full_test_path);
-                goto DONE;
-            }
-            test_mountpoint = dirname(test_mountpoint);
-            free(tmp_test_path);
-            free(full_test_path);
-        }
-
-        free(test_mountpoint);
+        retval = check_proc_mount(mount, real_mountpoint);
 
         // Check to see if path is in container root
         if ( strncmp(rootfs_dir, mount, strlength(rootfs_dir, 1024)) != 0 ) {
@@ -182,7 +186,6 @@ int check_mounted(char *mountpoint) {
         }
     }
 
-    DONE:
     fclose(mounts);
     free(line);
     free(real_mountpoint);
