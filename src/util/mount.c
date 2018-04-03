@@ -98,7 +98,7 @@ int check_mounted(char *mountpoint) {
         (void) strtok(strdup(line), " ");
         char *mount = strtok(NULL, " ");
 
-	char *test_mountpoint = strdup(real_mountpoint);
+        char *test_mountpoint = strdup(real_mountpoint);
 
         while ( strcmp(test_mountpoint, "/") != 0 ) {
             // Check to see if mountpoint is already mounted
