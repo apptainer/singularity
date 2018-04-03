@@ -67,7 +67,7 @@ int check_mounted(char *mountpoint) {
     char *line = (char *)malloc(MAX_LINE_LEN);
     char *rootfs_dir = CONTAINER_FINALDIR;
     unsigned int mountpoint_len = strlength(mountpoint, PATH_MAX);
-    char *real_mountpoint;
+    char *real_mountpoint = strdup(mountpoint);
 
     singularity_message(DEBUG, "Checking if currently mounted: %s\n", mountpoint);
 
@@ -82,16 +82,6 @@ int check_mounted(char *mountpoint) {
         mountpoint[mountpoint_len-1] = '\0';
     }
 
-    if ( is_link(mountpoint) == 0 ) {
-        real_mountpoint = realpath(mountpoint, NULL); // Flawfinder: ignore
-        if ( real_mountpoint == NULL ) {
-            // mountpoint doesn't exist
-           singularity_message(DEBUG, "returning, real_mountpoint == NULL\n");
-            return(retval);
-        }
-    } else {
-        real_mountpoint = strdup(mountpoint);
-    }
 
     singularity_message(DEBUG, "Iterating through /proc/mounts\n");
     while ( fgets(line, MAX_LINE_LEN, mounts) != NULL ) {
@@ -101,14 +91,34 @@ int check_mounted(char *mountpoint) {
         char *test_mountpoint = strdup(real_mountpoint);
 
         while ( strcmp(test_mountpoint, "/") != 0 ) {
+            char *full_test_path = NULL;
+            char *tmp_test_path = joinpath(rootfs_dir, test_mountpoint);
+
+            if ( is_link(tmp_test_path) == 0 ) {
+                char *linktarget = realpath(tmp_test_path, NULL);
+                if ( linktarget == NULL ) {
+                    singularity_message(ERROR, "Could not identify the source of contained link: %s\n", test_mountpoint);
+                    ABORT(255);
+                }
+                full_test_path = joinpath(rootfs_dir, linktarget);
+                singularity_message(DEBUG, "parent directory is a link, resolved: %s->%s\n", joinpath(rootfs_dir, test_mountpoint), full_test_path);
+                if ( strcmp(linktarget, "/") == 0 ) {
+                    singularity_message(ERROR, "You shouldn't do that....\n");
+                    ABORT(255);
+                }
+            } else {
+                full_test_path = tmp_test_path;
+            }
+
             // Check to see if mountpoint is already mounted
-            if ( strcmp(joinpath(rootfs_dir, test_mountpoint), mount) == 0 ) {
+            if ( strcmp(full_test_path, mount) == 0 ) {
                 singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", test_mountpoint);
                 retval = 1;
                 free(test_mountpoint);
                 goto DONE;
             }
             test_mountpoint = dirname(test_mountpoint);
+
         }
 
         free(test_mountpoint);
