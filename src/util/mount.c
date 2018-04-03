@@ -170,7 +170,7 @@ int check_mounted(char *mountpoint) {
 
     singularity_message(DEBUG, "Iterating through /proc/mounts\n");
     while ( ( retval < 0 ) && ( fgets(line, MAX_LINE_LEN, mounts) != NULL ) ) {
-        (void) strtok(strdup(line), " ");
+        (void) strtok(line, " ");
         char *mount = strtok(NULL, " ");
 
         retval = check_proc_mount(mount, real_mountpoint);
