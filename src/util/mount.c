@@ -103,6 +103,7 @@ int check_mounted(char *mountpoint) {
             if ( strcmp(joinpath(rootfs_dir, test_mountpoint), mount) == 0 ) {
                 singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", test_mountpoint);
                 retval = 1;
+                free(test_mountpoint);
                 goto DONE;
             }
             test_mountpoint = dirname(test_mountpoint);
