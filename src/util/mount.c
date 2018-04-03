@@ -69,6 +69,8 @@ int check_mounted(char *mountpoint) {
     unsigned int mountpoint_len = strlength(mountpoint, PATH_MAX);
     char *real_mountpoint;
 
+    singularity_message(DEBUG, "Checking if currently mounted: %s\n", mountpoint);
+
     singularity_message(DEBUG, "Opening /proc/mounts\n");
     if ( ( mounts = fopen("/proc/mounts", "r") ) == NULL ) { // Flawfinder: ignore
         singularity_message(ERROR, "Could not open /proc/mounts: %s\n", strerror(errno));
