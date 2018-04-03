@@ -140,10 +140,14 @@ int check_mounted(char *mountpoint) {
                     ABORT(255);
                 }
                 full_test_path = joinpath(rootfs_dir, linktarget);
-                singularity_message(DEBUG, "parent directory is a link, resolved: %s->%s\n", joinpath(rootfs_dir, test_mountpoint), full_test_path);
+                singularity_message(DEBUG, "Parent directory is a link, resolved: %s->%s\n", tmp_test_path, full_test_path);
                 if ( strcmp(linktarget, "/") == 0 ) {
+                    singularity_message(DEBUG, "Link is pointing to /, not allowed: %s\n", test_mountpoint);
                     retval = 1;
                     free(test_mountpoint);
+                    free(tmp_test_path);
+                    free(full_test_path);
+                    free(linktarget);
                     goto DONE;
                 }
                 free(linktarget);
@@ -156,6 +160,8 @@ int check_mounted(char *mountpoint) {
                 singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", test_mountpoint);
                 retval = 1;
                 free(test_mountpoint);
+                free(tmp_test_path);
+                free(full_test_path);
                 goto DONE;
             }
             test_mountpoint = dirname(test_mountpoint);
