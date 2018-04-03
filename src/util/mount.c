@@ -85,7 +85,7 @@ int check_mounted(char *mountpoint) {
     if ( is_link(mountpoint) == 0 ) {
         real_mountpoint = realpath(mountpoint, NULL); // Flawfinder: ignore
         if ( real_mountpoint == NULL ) {
-            // mountpoint doesn't exists
+            // mountpoint doesn't exist
            singularity_message(DEBUG, "returning, real_mountpoint == NULL\n");
             return(retval);
         }
