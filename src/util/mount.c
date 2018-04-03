@@ -103,8 +103,9 @@ int check_mounted(char *mountpoint) {
                 full_test_path = joinpath(rootfs_dir, linktarget);
                 singularity_message(DEBUG, "parent directory is a link, resolved: %s->%s\n", joinpath(rootfs_dir, test_mountpoint), full_test_path);
                 if ( strcmp(linktarget, "/") == 0 ) {
-                    singularity_message(ERROR, "You shouldn't do that....\n");
-                    ABORT(255);
+                    retval = 1;
+                    free(test_mountpoint);
+                    goto DONE;
                 }
             } else {
                 full_test_path = tmp_test_path;
