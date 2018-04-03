@@ -37,10 +37,42 @@ int singularity_mount(const char *source, const char *target,
                       const char *filesystemtype, unsigned long mountflags,
                       const void *data) {
     int ret;
+    int mount_errno;
     uid_t fsuid = 0;
+    char dest[PATH_MAX];
+    char *realdest;
+    int target_fd = open(target, O_RDONLY);
+
+    if ( target_fd < 0 ) {
+        singularity_message(ERROR, "Target %s doesn't exist\n", target);
+        ABORT(255);
+    }
+
+    if ( snprintf(dest, PATH_MAX-1, "/proc/self/fd/%d", target_fd) < 0 ) {
+        singularity_message(ERROR, "Failed to determine path for target file descriptor\n");
+        ABORT(255);
+    }
 
     if ( ( mountflags & MS_BIND ) ) {
         fsuid = singularity_priv_getuid();
+    }
+
+    realdest = realpath(dest, NULL); // Flawfinder: ignore
+    if ( realdest == NULL ) {
+        singularity_message(ERROR, "Failed to get real path of %s %s\n", target, dest);
+        ABORT(255);
+    }
+
+    if ( (mountflags & MS_PRIVATE) == 0 && (mountflags & MS_SLAVE) == 0 ) {
+        if ( strncmp(realdest, CONTAINER_MOUNTDIR, strlen(CONTAINER_MOUNTDIR)) != 0 &&
+             strncmp(realdest, CONTAINER_FINALDIR, strlen(CONTAINER_FINALDIR)) != 0 &&
+             strncmp(realdest, CONTAINER_OVERLAY, strlen(CONTAINER_OVERLAY)) != 0 &&
+             strncmp(realdest, SESSIONDIR, strlen(SESSIONDIR)) != 0 ) {
+            singularity_message(VERBOSE, "Ignored, try to mount %s outside of container %s\n", target, realdest);
+            free(realdest);
+            close(target_fd);
+            return(0);
+        }
     }
 
     /* don't modify user groups */
@@ -52,12 +84,19 @@ int singularity_mount(const char *source, const char *target,
         /* NFS root_squash option set uid 0 to nobody, force use of real user ID */
         setfsuid(fsuid);
     }
-    ret = mount(source, target, filesystemtype, mountflags, data);
+
+    ret = mount(source, dest, filesystemtype, mountflags, data);
+    mount_errno = errno;
+
+    close(target_fd);
+    free(realdest);
+
     if ( singularity_priv_userns_enabled() == 0 && seteuid(singularity_priv_getuid()) < 0 ) {
         singularity_message(ERROR, "Failed to drop privileges: %s\n", strerror(errno));
         ABORT(255);
     }
 
+    errno = mount_errno;
     return ret;
 }
 
