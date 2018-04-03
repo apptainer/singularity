@@ -95,7 +95,7 @@ int check_mounted(char *mountpoint) {
             char *tmp_test_path = joinpath(rootfs_dir, test_mountpoint);
 
             if ( is_link(tmp_test_path) == 0 ) {
-                char *linktarget = realpath(tmp_test_path, NULL);
+                char *linktarget = realpath(tmp_test_path, NULL); // Flawfinder: ignore
                 if ( linktarget == NULL ) {
                     singularity_message(ERROR, "Could not identify the source of contained link: %s\n", test_mountpoint);
                     ABORT(255);
