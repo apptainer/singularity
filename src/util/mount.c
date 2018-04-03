@@ -107,8 +107,9 @@ int check_mounted(char *mountpoint) {
                     free(test_mountpoint);
                     goto DONE;
                 }
+                free(linktarget);
             } else {
-                full_test_path = tmp_test_path;
+                full_test_path = strdup(tmp_test_path);
             }
 
             // Check to see if mountpoint is already mounted
@@ -119,7 +120,8 @@ int check_mounted(char *mountpoint) {
                 goto DONE;
             }
             test_mountpoint = dirname(test_mountpoint);
-
+            free(tmp_test_path);
+            free(full_test_path);
         }
 
         free(test_mountpoint);
