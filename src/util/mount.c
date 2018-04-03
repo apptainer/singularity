@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <libgen.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -79,10 +80,15 @@ int check_mounted(char *mountpoint) {
         mountpoint[mountpoint_len-1] = '\0';
     }
 
-    real_mountpoint = realpath(mountpoint, NULL); // Flawfinder: ignore
-    if ( real_mountpoint == NULL ) {
-        // mountpoint doesn't exists
-        return(retval);
+    if ( is_link(mountpoint) == 0 ) {
+        real_mountpoint = realpath(mountpoint, NULL); // Flawfinder: ignore
+        if ( real_mountpoint == NULL ) {
+            // mountpoint doesn't exists
+           singularity_message(DEBUG, "returning, real_mountpoint == NULL\n");
+            return(retval);
+        }
+    } else {
+        real_mountpoint = strdup(mountpoint);
     }
 
     singularity_message(DEBUG, "Iterating through /proc/mounts\n");
@@ -90,12 +96,19 @@ int check_mounted(char *mountpoint) {
         (void) strtok(strdup(line), " ");
         char *mount = strtok(NULL, " ");
 
-        // Check to see if mountpoint is already mounted
-        if ( strcmp(joinpath(rootfs_dir, real_mountpoint), mount) == 0 ) {
-            singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", mountpoint);
-            retval = 1;
-            break;
+	char *test_mountpoint = strdup(real_mountpoint);
+
+        while ( strcmp(test_mountpoint, "/") != 0 ) {
+            // Check to see if mountpoint is already mounted
+            if ( strcmp(joinpath(rootfs_dir, test_mountpoint), mount) == 0 ) {
+                singularity_message(DEBUG, "Mountpoint is already mounted: %s\n", test_mountpoint);
+                retval = 1;
+                goto DONE;
+            }
+            test_mountpoint = dirname(test_mountpoint);
         }
+
+        free(test_mountpoint);
 
         // Check to see if path is in container root
         if ( strncmp(rootfs_dir, mount, strlength(rootfs_dir, 1024)) != 0 ) {
@@ -108,6 +121,7 @@ int check_mounted(char *mountpoint) {
         }
     }
 
+    DONE:
     fclose(mounts);
     free(line);
     free(real_mountpoint);
