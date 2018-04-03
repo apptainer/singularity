@@ -151,7 +151,6 @@ int check_mounted(char *mountpoint) {
     int retval = -1;
     FILE *mounts;
     char *line = (char *)malloc(MAX_LINE_LEN);
-    char *rootfs_dir = CONTAINER_FINALDIR;
     unsigned int mountpoint_len = strlength(mountpoint, PATH_MAX);
     char *real_mountpoint = strdup(mountpoint);
 
@@ -174,16 +173,6 @@ int check_mounted(char *mountpoint) {
         char *mount = strtok(NULL, " ");
 
         retval = check_proc_mount(mount, real_mountpoint);
-
-        // Check to see if path is in container root
-        if ( strncmp(rootfs_dir, mount, strlength(rootfs_dir, 1024)) != 0 ) {
-            continue;
-        }
-
-        // Check to see if path is ot the container root
-        if ( strcmp(mount, rootfs_dir) == 0 ) {
-            continue;
-        }
     }
 
     fclose(mounts);
