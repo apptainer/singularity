@@ -96,6 +96,10 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
     }
     l = strlen(target);
     // Add whiteout path up to .wh.
+    if (strlen(target) + strlen(token) > sizeof(target) - 1) {
+        singularity_message(ERROR, "Error with pathname too long\n");
+        ABORT(255);
+    }
     token_pos = strlen(wh_marker) - strlen(token);
     retval = snprintf(target + l, token_pos + 1, "%s", wh_marker);
     if (retval == -1 || retval >= sizeof(target) - l) {
