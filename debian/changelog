@@ -1,3 +1,23 @@
+singularity-container (2.5.0-1) unstable; urgency=high
+
+  * Restore docker-extract aufs whiteout handling that implements correct
+    extraction of docker container layers. This adds libarchive-devel as a
+    build time dep. At runtime libarchive is needed for whiteout handling. If
+    libarchive is not available at runtime will fall back to previous
+    extraction method.
+  * Put /usr/local/{bin,sbin} in front of the default PATH
+  * Adjustments to SCIF (Scientific Filesystem) integration for broader use
+  * Fixed bug that did not export environment variables for apps with "-" in 
+    name
+  * Close socket file descriptors in fd_cleanup
+  * Fix conflict between `--nv` and `--contain` options
+  * Changed behavior of SINGULARITYENV_PATH to overwrite container PATH and
+  * added SINGULARITYENV_PREPEND_PATH and SINGULARITYENV_APPEND_PATH for users
+    wanting to prepend or append to the container PATH at runtime
+  * Fix for check_mounted() to check parent directories #1436
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Wed, 04 Apr 2018 16:23:13 -0700
+
 singularity-container (2.4.4-1) unstable; urgency=high
 
   * This is point release to correct an error with the last point release.  
