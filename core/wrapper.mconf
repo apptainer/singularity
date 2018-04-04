@@ -1,0 +1,5 @@
+name := wrapper
+prog := wrapper
+csrc := wrapper.c
+depends := libutil
+extralibs := -ldl

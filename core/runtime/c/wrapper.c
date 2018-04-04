@@ -32,8 +32,8 @@
 #include <sys/syscall.h>
 #include <dlfcn.h>
 
-#include "include/wrapper.h"
-#include "include/message.h"
+#include "runtime/c/include/wrapper.h"
+#include "lib/util/message.h"
 
 // from build directory
 #include "librpc.h"

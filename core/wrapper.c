@@ -18,13 +18,13 @@
 #include <fcntl.h>
 #include <sys/mount.h>
 
-#include "util/file.h"
-#include "util/util.h"
-#include "util/registry.h"
-#include "util/config_parser.h"
-#include "util/capability.h"
-#include "util/privilege.h"
-#include "util/suid.h"
+#include "lib/util/file.h"
+#include "lib/util/util.h"
+#include "lib/util/registry.h"
+#include "lib/util/config_parser.h"
+#include "lib/util/capability.h"
+#include "lib/util/privilege.h"
+#include "lib/util/suid.h"
 #include "lib/image/image.h"
 #include "lib/runtime/runtime.h"
 
@@ -61,6 +61,7 @@ struct cmd_wrapper cmd_wrapper[] = {
 };
 
 int main(int argc, char **argv) {
+    (void)argc;
     int index;
     char *command;
     char *binary;
