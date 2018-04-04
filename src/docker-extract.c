@@ -47,7 +47,7 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
 
     if (is_dir(target) == 0) {
 
-        target_real = realpath(target, NULL);
+        target_real = realpath(target, NULL);  // Flawfinder: ignore
 
         if(target_real == NULL) {
             singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
@@ -114,7 +114,7 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
         return 0;
     }
 
-    target_real = realpath(target, NULL);
+    target_real = realpath(target, NULL);  // Flawfinder: ignore
 
     if(target_real == NULL) {
         singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
