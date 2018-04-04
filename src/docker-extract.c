@@ -6,8 +6,8 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/file.h>
-#include <sys/param.h>
 #include <sys/stat.h>
+#include <limits.h>
 #include <locale.h>
 #include <archive.h>
 #include <archive_entry.h>
@@ -27,7 +27,8 @@
 int apply_opaque(const char *opq_marker, char *rootfs_dir) {
     int retval = 0;
     char *token;
-    static char buf[MAXPATHLEN];
+    char target[PATH_MAX];
+    char target_real[PATH_MAX];
 
     token = strrchr(opq_marker, '/');
     if (token == NULL) {
@@ -35,8 +36,8 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
         ABORT(255);
     }
 
-    retval = snprintf(buf, sizeof(buf), "%s/%s", rootfs_dir, opq_marker);
-    if (retval == -1 || retval >= sizeof(buf)) {
+    retval = snprintf(target, sizeof(target), "%s/%s", rootfs_dir, opq_marker);
+    if (retval == -1 || retval >= sizeof(target)) {
         singularity_message(ERROR, "Error with pathname too long\n");
         ABORT(255);
     }
@@ -44,8 +45,18 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
     // Target may not exist - that's ok
     retval = 0;
 
-    if (is_dir(buf) == 0) {
-        retval = s_rmdir(buf);
+    if (is_dir(target) == 0) {
+
+        if(realpath(target, target_real) == NULL) {
+            singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
+            ABORT(255);
+        }
+    
+        if(strncmp(rootfs_dir, target_real, strlen(rootfs_dir)) != 0) {
+            singularity_message(ERROR, "Attempt to whiteout outside of rootfs %s - aborting.\n", target_real);
+        }
+
+        retval = s_rmdir(target_real);
     }
 
     return retval;
@@ -61,7 +72,9 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
     int retval = 0;
     char* token;
     size_t token_pos, l = 0;
-    char buf[MAXPATHLEN];
+    char target[PATH_MAX];
+    char target_real[PATH_MAX];
+    struct stat statbuf;
 
     token = strstr(wh_marker, ".wh.");
     if (token == NULL) {
@@ -70,36 +83,47 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
     }
 
     // Start with ROOTFS
-    retval = snprintf(buf, sizeof(buf), "%s/", rootfs_dir);
-    if (retval == -1 || retval >= sizeof(buf)) {
+    retval = snprintf(target, sizeof(target), "%s/", rootfs_dir);
+    if (retval == -1 || retval >= sizeof(target)) {
         singularity_message(ERROR, "Error with pathname too long\n");
         ABORT(255);
     }
-    l = strlen(buf);
+    l = strlen(target);
     // Add whiteout path up to .wh.
     token_pos = strlen(wh_marker) - strlen(token);
-    retval = snprintf(buf + l, token_pos + 1, "%s", wh_marker);
-    if (retval == -1 || retval >= sizeof(buf) - l) {
+    retval = snprintf(target + l, token_pos + 1, "%s", wh_marker);
+    if (retval == -1 || retval >= sizeof(target) - l) {
         singularity_message(ERROR, "Error with pathname too long\n");
         ABORT(255);
     }
-    l = strlen(buf);
+    l = strlen(target);
     // Concatenate suffix after .wh
-    retval = snprintf(buf + l, sizeof(buf) - l, "%s", token + 4);
-    if (retval == -1 || retval >= sizeof(buf) - l) {
+    retval = snprintf(target + l, sizeof(target) - l, "%s", token + 4);
+    if (retval == -1 || retval >= sizeof(target) - l) {
         singularity_message(ERROR, "Error with pathname too long\n");
         ABORT(255);
     }
 
     // Target may not exist - that's ok
-    retval = 0;
+    if (stat(target, &statbuf) < 0){
+        return 0;
+    }
 
-    if (is_dir(buf) == 0) {
-        retval = s_rmdir(buf);
-    } else if (is_file(buf) == 0 || is_link(buf) == 0) {
+    if(realpath(target, target_real) == NULL) {
+        singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
+        ABORT(255);
+    }
+ 
+    if(strncmp(rootfs_dir, target_real, strlen(rootfs_dir)) != 0) {
+        singularity_message(ERROR, "Attempt to whiteout outside of rootfs %s - aborting.\n", target_real);
+    }
+
+    if (is_dir(target_real) == 0) {
+        retval = s_rmdir(target_real);
+    } else if (is_file(target_real) == 0 || is_link(target_real) == 0) {
         singularity_message(DEBUG, "Removing whiteout-ed file: %s\n",
-                            buf);
-        retval = unlink(buf);
+                            target_real);
+        retval = unlink(target_real);
     }
 
     return retval;
@@ -111,7 +135,6 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
 int apply_whiteouts(char *tarfile, char *rootfs_dir) {
     int retval = 0;
     int errcode = 0;
-
     struct archive *a;
     struct archive_entry *entry;
 
@@ -130,6 +153,11 @@ int apply_whiteouts(char *tarfile, char *rootfs_dir) {
     while (archive_read_next_header(a, &entry) == ARCHIVE_OK) {
 
         const char *pathname = archive_entry_pathname(entry);
+
+        if (*pathname == '/') {
+            singularity_message(ERROR, "Archive contains absolute paths %s - aborting.\n", pathname);
+            ABORT(255);
+        }
 
         if (strstr(pathname, "/.wh..wh..opq")) {
             singularity_message(DEBUG, "Opaque Marker %s\n", pathname);
@@ -209,6 +237,9 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
     flags |= ARCHIVE_EXTRACT_ACL;
     flags |= ARCHIVE_EXTRACT_FFLAGS;
 
+    flags |= ARCHIVE_EXTRACT_SECURE_SYMLINKS;
+    flags |= ARCHIVE_EXTRACT_SECURE_NODOTDOT;
+
     a = archive_read_new();
     archive_read_support_format_all(a);
 #if ARCHIVE_VERSION_NUMBER <= 3000000
@@ -248,6 +279,11 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
 
         pathname = archive_entry_pathname(entry);
         pathtype = archive_entry_filetype(entry);
+
+        if (*pathname == '/') {
+            singularity_message(ERROR, "Archive contains absolute paths - aborting.\n");
+            ABORT(255);
+        }
 
         // Do not extract whiteout markers (handled in apply_whiteouts)
         // Do not extract sockers, chr/blk devices, pipes
