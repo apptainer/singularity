@@ -12,7 +12,7 @@ go build -ldflags="-s -w" -o ../build/scontainer go/scontainer.go
 go build -ldflags="-s -w" -buildmode=c-shared -o ../build/librpc.so go/rpc.go
 go build -ldflags="-s -w" -o ../build/smaster go/smaster.go
 go build -ldflags="-s -w" -o cli tmpdev/cli.go
-go build -ldflags="-s -w" -o generate_docs ../docs/generate_docs.go
+go build -ldflags="-s -w" -o makeDocs ../docs/makeDocs/makeDocs.go
 
 gcc c/wrapper.c c/util/message.c -o ../build/wrapper -Ic -I../build -L../build -ldl
 sudo rm -f /tmp/wrapper-suid /tmp/wrapper /tmp/scontainer /tmp/smaster /tmp/librpc.so
