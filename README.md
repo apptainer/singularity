@@ -1,3 +1,10 @@
+_Please note recent changes in the github repo branch structure.  If you want 
+to install a stable release of Singularity, please use a tag or a [release 
+tarball](https://github.com/singularityware/singularity/releases).  If you are
+a developer who would like to contribute to Singularity and you want to know
+which branch to submit your pull request to, please see notes on the branch
+reorganization [here](https://www.sylabs.io/2018/03/managing-singularity-branches/)._
+
 [![Build Status](https://travis-ci.org/singularityware/singularity.svg?branch=master)](https://travis-ci.org/singularityware/singularity)
 
 - [Guidelines for Contributing](CONTRIBUTING.md)
