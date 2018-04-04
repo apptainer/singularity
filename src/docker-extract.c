@@ -28,7 +28,7 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
     int retval = 0;
     char *token;
     char target[PATH_MAX];
-    char target_real[PATH_MAX];
+    char *target_real;
 
     token = strrchr(opq_marker, '/');
     if (token == NULL) {
@@ -47,7 +47,9 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
 
     if (is_dir(target) == 0) {
 
-        if(realpath(target, target_real) == NULL) {
+        target_real = realpath(target, NULL);
+
+        if(target_real == NULL) {
             singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
             ABORT(255);
         }
@@ -57,7 +59,10 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
         }
 
         retval = s_rmdir(target_real);
+
+        free(target_real);
     }
+
 
     return retval;
 }
@@ -73,7 +78,7 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
     char* token;
     size_t token_pos, l = 0;
     char target[PATH_MAX];
-    char target_real[PATH_MAX];
+    char *target_real;
     struct stat statbuf;
 
     token = strstr(wh_marker, ".wh.");
@@ -109,7 +114,9 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
         return 0;
     }
 
-    if(realpath(target, target_real) == NULL) {
+    target_real = realpath(target, NULL);
+
+    if(target_real == NULL) {
         singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
         ABORT(255);
     }
@@ -125,6 +132,8 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
                             target_real);
         retval = unlink(target_real);
     }
+
+    free(target_real);
 
     return retval;
 }
