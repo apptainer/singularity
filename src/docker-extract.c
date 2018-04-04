@@ -53,9 +53,10 @@ int apply_opaque(const char *opq_marker, char *rootfs_dir) {
             singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
             ABORT(255);
         }
-    
+
         if(strncmp(rootfs_dir, target_real, strlen(rootfs_dir)) != 0) {
             singularity_message(ERROR, "Attempt to whiteout outside of rootfs %s - aborting.\n", target_real);
+            ABORT(255);
         }
 
         retval = s_rmdir(target_real);
@@ -123,6 +124,7 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
  
     if(strncmp(rootfs_dir, target_real, strlen(rootfs_dir)) != 0) {
         singularity_message(ERROR, "Attempt to whiteout outside of rootfs %s - aborting.\n", target_real);
+        ABORT(255);
     }
 
     if (is_dir(target_real) == 0) {
