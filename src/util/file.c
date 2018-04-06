@@ -37,6 +37,7 @@
 #include <assert.h>
 #include <ftw.h>
 #include <time.h>
+#include <limits.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -430,16 +431,69 @@ int copy_file(char * source, char * dest) {
 
 
 int fileput(char *path, char *string) {
-    FILE *fd;
+    char *current = (char *)malloc(PATH_MAX);
+    char *dir = (char *)malloc(PATH_MAX);
+    char *dup_path = strdup(path);
+    char *bname = basename(dup_path);
+    char *dname = dirname(dup_path);
+    int fd;
+    size_t string_len = strlen(string);
 
-    singularity_message(DEBUG, "Called fileput(%s, %s)\n", path, string);
-    if ( ( fd = fopen(path, "w") ) == NULL ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
+    if ( current == NULL || dir == NULL ) {
+        singularity_message(ERROR, "Failed to allocate memory\n");
+        ABORT(255);
+    }
+
+    current[PATH_MAX-1] = '\0';
+    if ( getcwd(current, PATH_MAX-1) == NULL ) {
+        singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    if ( chdir(dname) < 0 ) {
+        singularity_message(ERROR, "Failed to go into directory %s: %s\n", dname, strerror(errno));
+        ABORT(255);
+    }
+
+    dir[PATH_MAX-1] = '\0';
+    if ( getcwd(dir, PATH_MAX-1) == NULL ) {
+        singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    if ( strncmp(dir, CONTAINER_MOUNTDIR, strlen(CONTAINER_MOUNTDIR)) != 0 &&
+         strncmp(dir, CONTAINER_FINALDIR, strlen(CONTAINER_FINALDIR)) != 0 &&
+         strncmp(dir, SESSIONDIR, strlen(SESSIONDIR)) != 0 ) {
+        singularity_message(WARNING, "Ignored, try to create file %s outside of container %s\n", path, dir);
+        free(dup_path);
+        free(current);
+        free(dir);
         return(-1);
     }
 
-    fprintf(fd, "%s", string);
-    fclose(fd);
+    singularity_message(DEBUG, "Called fileput(%s, %s)\n", path, string);
+    if ( ( fd = open(bname, O_CREAT|O_WRONLY|O_TRUNC|O_NOFOLLOW, 0644) ) < 0 ) { // Flawfinder: ignore
+        singularity_message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
+        free(dup_path);
+        free(current);
+        free(dir);
+        return(-1);
+    }
+
+    if ( chdir(current) < 0 ) {
+        singularity_message(ERROR, "Failed to return to directory %s: %s\n", current, strerror(errno));
+        ABORT(255);
+    }
+
+    if ( string_len > 0 && write(fd, string, string_len) < 0 ) {
+        singularity_message(ERROR, "Failed to write into file %s: %s\n", path, strerror(errno));
+        ABORT(255);
+    }
+
+    close(fd);
+    free(dup_path);
+    free(current);
+    free(dir);
 
     return(0);
 }

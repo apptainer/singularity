@@ -101,16 +101,11 @@ int _singularity_runtime_mount_binds(void) {
 
                 singularity_priv_escalate();
                 singularity_message(VERBOSE3, "Creating bind file on overlay file system: %s\n", dest);
-                FILE *tmp = fopen(joinpath(container_dir, dest), "w+"); // Flawfinder: ignore
+                if ( fileput(joinpath(container_dir, dest), "") != 0 ) {
+                    singularity_priv_drop();
+                    continue;
+                }
                 singularity_priv_drop();
-                if ( tmp == NULL ) {
-                    singularity_message(WARNING, "Could not create bind point file in container %s: %s\n", dest, strerror(errno));
-                    continue;
-                }
-                if ( fclose(tmp) != 0 ) {
-                    singularity_message(WARNING, "Could not close bind point file descriptor %s: %s\n", dest, strerror(errno));
-                    continue;
-                }
                 singularity_message(DEBUG, "Created bind file: %s\n", dest);
             } else {
                 singularity_message(WARNING, "Non existent bind point (file) in container: '%s'\n", dest);
