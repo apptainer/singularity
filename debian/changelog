@@ -1,3 +1,8 @@
+singularity-container (2.4.6-1) unstable; urgency=high
+
+  * Fix for check_mounted() to check parent directories #1436
+  * Free strdupped temporary variable in joinpath #1438
+
 singularity-container (2.4.5-1) unstable; urgency=high
 
   * Strip authorization header on http redirect to different domain when

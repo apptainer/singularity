@@ -12,7 +12,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
-## [v2.4.6-rc1](https://github.com/singularityware/singularity/releases/tag/2.4.6-rc1) (2018-04-04)
+## [v2.4.6](https://github.com/singularityware/singularity/releases/tag/2.4.6) (2018-04-04)
 
  - Fix for check_mounted() to check parent directories #1436
  - Free strdupped temporary variable in joinpath #1438
