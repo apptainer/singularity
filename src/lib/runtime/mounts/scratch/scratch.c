@@ -92,6 +92,12 @@ int _singularity_runtime_mount_scratch(void) {
         char *full_sourcedir_path = joinpath(sourcedir_path, basename(strdup(current)));
         char *full_destdir_path = joinpath(container_dir, current);
 
+        singularity_message(DEBUG, "Checking if bind point is already mounted: %s\n", current);
+        if ( check_mounted(current) >= 0 ) {
+            singularity_message(ERROR, "Not mounting requested scratch directory (already mounted in container): %s\n", current);
+            ABORT(255);
+        }
+
         if ( s_mkpath(full_sourcedir_path, 0750) < 0 ) {
              singularity_message(ERROR, "Could not create scratch working directory %s: %s\n", full_sourcedir_path, strerror(errno));
              ABORT(255);

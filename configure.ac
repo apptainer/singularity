@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.4.5],[gmkurtzer@gmail.com])
+AC_INIT([singularity],[2.4.6],[gmkurtzer@gmail.com])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
