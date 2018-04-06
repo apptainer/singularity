@@ -1,4 +1,4 @@
-singularity-container (2.4.6-1) unstable; urgency=high
+singularity-container (2.4.5.99rc2-1) unstable; urgency=high
 
   * Fix for check_mounted() to check parent directories #1436
   * Free strdupped temporary variable in joinpath #1438
