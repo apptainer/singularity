@@ -40,6 +40,7 @@
 #include <linux/limits.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <dirent.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -444,8 +445,11 @@ struct tempfile *make_logfile(char *label) {
 
 // close all file descriptors pointing to a directory
 void fd_cleanup(void) {
+    DIR *dir;
+    struct dirent *dirent;
     char *fd_path = (char *)malloc(PATH_MAX);
     int i;
+    long int max_fd = 0;
 
     singularity_message(DEBUG, "Cleanup file descriptor table\n");
 
@@ -454,8 +458,32 @@ void fd_cleanup(void) {
         ABORT(255);
     }
 
-    for ( i = 0; i <= sysconf(_SC_OPEN_MAX); i++ ) {
+    dir = opendir("/proc/self/fd");
+
+    if ( dir == NULL ) {
+        singularity_message(ERROR, "Failed to list directory /proc/self/fd: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    while ( ( dirent = readdir(dir) ) ) {
+        long int fd;
+
+        if ( strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0 ) {
+            continue;
+        }
+        if ( str2int(dirent->d_name, &fd) < 0 ) {
+            continue;
+        }
+        if ( fd > max_fd ) {
+            max_fd = fd;
+        }
+    }
+
+    closedir(dir);
+
+    for ( i = 0; i <= max_fd; i++ ) {
         int length;
+
         length = snprintf(fd_path, PATH_MAX-1, "/proc/self/fd/%d", i);
         if ( length < 0 ) {
             singularity_message(ERROR, "Failed to determine file descriptor path\n");
@@ -466,10 +494,9 @@ void fd_cleanup(void) {
         }
         fd_path[length] = '\0';
 
-        if ( is_dir(fd_path) < 0 || is_sock(fd_path) < 0 ) {
-            continue;
+        if ( is_dir(fd_path) == 0 || is_sock(fd_path) == 0 ) {
+            close(i);
         }
-        close(i);
     }
 
     free(fd_path);
