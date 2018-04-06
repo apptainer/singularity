@@ -57,6 +57,9 @@ int _singularity_runtime_overlayfs(void) {
     }
     singularity_priv_drop();
 
+    /* Don't remove the following line */
+    singularity_registry_set("OVERLAYFS_ENABLED", NULL);
+
     singularity_message(DEBUG, "Checking if overlayfs should be used\n");
     int try_overlay = ( strcmp("try", singularity_config_get_value(ENABLE_OVERLAY)) == 0 );
     if ( !try_overlay && ( singularity_config_get_bool_char(ENABLE_OVERLAY) <= 0 ) ) {
