@@ -22,6 +22,8 @@ var (
 	silent  bool
 	verbose bool
 	quiet   bool
+
+	Buildtree string
 )
 
 // singularity is the base command when called without any subcommands

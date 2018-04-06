@@ -9,11 +9,8 @@ package main
 
 import (
 	"github.com/singularityware/singularity/internal/pkg/cli"
-	"github.com/singularityware/singularity/pkg/build"
 )
 
 func main() {
 	cli.Execute()
-	b := build.NewLocalBuilder([]byte{})
-	b.Build()
 }

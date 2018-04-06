@@ -9,9 +9,9 @@
 package main
 
 /*
-#include "cgo_scontainer.c"
+#include "runtime/c/cgo_scontainer.c"
 */
-// #cgo CFLAGS: -I../c
+// #cgo LDFLAGS: -lsycore -luuid
 import "C"
 
 import (

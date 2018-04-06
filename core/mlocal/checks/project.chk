@@ -11,6 +11,7 @@ config_add_def PACKAGE_STRING \"singularity 3.0\"
 config_add_def PACKAGE_BUGREPORT \"gmkurtzer@gmail.com\"
 config_add_def PACKAGE_URL \"\"
 
+config_add_def BUILDDIR \"$builddir\"
 config_add_def PREFIX \"$prefix\"
 config_add_def EXECPREFIX PREFIX
 config_add_def BINDIR EXECPREFIX \"/bin\"

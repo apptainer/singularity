@@ -11,6 +11,7 @@ import (
 	//"fmt"
 	//"io/ioutil"
 	"io"
+	"log"
 	"os"
 	"path"
 	//"time"
@@ -76,6 +77,7 @@ func (b *SifBuilder) Build() {
 	b.p.Provision(b.tmpfs)
 	img, err := image.SIFFromSandbox(b.tmpfs, b.path)
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 

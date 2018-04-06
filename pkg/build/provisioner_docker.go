@@ -12,6 +12,7 @@ import (
 	"compress/gzip"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,31 +68,37 @@ func (p *DockerProvisioner) Provision(i *image.Sandbox) (err error) {
 
 	err = p.fetch(i)
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 
 	imgConfig, err := p.getConfig()
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 
 	err = p.unpackTmpfs(i)
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 
 	err = p.insertBaseEnv(i)
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 
 	err = p.insertRunScript(i, imgConfig)
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 
 	err = p.insertEnv(i, imgConfig)
 	if err != nil {
+		log.Fatal(err)
 		return
 	}
 

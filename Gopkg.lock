@@ -185,14 +185,14 @@
   version = "v1.0.0-rc1"
 
 [[projects]]
+  branch = "master"
   name = "github.com/opencontainers/image-spec"
   packages = [
     "schema",
     "specs-go",
     "specs-go/v1"
   ]
-  revision = "d60099175f88c47cd379c4738d158884749ed235"
-  version = "v1.0.1"
+  revision = "8e82844449a093ef49d824afad963a5e0a76b63b"
 
 [[projects]]
   branch = "master"
@@ -347,6 +347,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "acba2b36f48d4a75748baf8d79c7a4c94aa92fbc78b2098b88d596b668ca13d3"
+  inputs-digest = "31be1cee185b76f50a3d0db0397859a48d9f6cf06691daf30232b7fa23c8eb9f"
   solver-name = "gps-cdcl"
   solver-version = 1

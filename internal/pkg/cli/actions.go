@@ -8,6 +8,7 @@
 package cli
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -95,7 +96,8 @@ func init() {
 
 // execCmd represents the exec command
 var execCmd = &cobra.Command{
-	Use: "exec [exec options...] <container> ...",
+	Use:  "exec [exec options...] <container> ...",
+	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
@@ -105,7 +107,8 @@ var execCmd = &cobra.Command{
 
 // shellCmd represents the shell command
 var shellCmd = &cobra.Command{
-	Use: "shell [shell options...] <container>",
+	Use:  "shell [shell options...] <container>",
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
@@ -115,7 +118,8 @@ var shellCmd = &cobra.Command{
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use: "run [run options] <container>",
+	Use:  "run [run options...] <container>",
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
@@ -124,7 +128,12 @@ var runCmd = &cobra.Command{
 
 func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	lvl := "0"
-	wrapper := "/tmp/wrapper-suid"
+	if Buildtree == "" {
+		log.Fatal("buildtree not defined at compile time, exiting")
+	}
+
+	fmt.Println(Buildtree)
+	wrapper := Buildtree + "/wrapper-suid"
 
 	oci, runtime := config.NewSingularityConfig("new")
 	oci.Root.SetPath(image)
@@ -147,16 +156,16 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 	if UserNamespace {
 		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UserNamespace})
-		wrapper = "/tmp/wrapper"
+		wrapper = Buildtree + "/wrapper"
 	}
 	oci.RuntimeOciSpec.Linux.Namespaces = namespaces
 
 	cmd := exec.Command(wrapper)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-    if verbose {
-        lvl = "2"
-    }
+	if verbose {
+		lvl = "2"
+	}
 	if debug {
 		lvl = "5"
 	}
