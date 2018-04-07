@@ -50,13 +50,14 @@
 
 int _singularity_runtime_mount_cwd(void) {
     char *container_dir = CONTAINER_FINALDIR;
-    char *cwd_path = NULL;
+    char *cwd_path = (char *)malloc(PATH_MAX);
     int r;
 
     singularity_message(DEBUG, "Checking to see if we should mount current working directory\n");
 
     singularity_message(DEBUG, "Getting current working directory\n");
-    cwd_path = get_current_dir_name();
+    cwd_path[PATH_MAX-1] = '\0';
+    cwd_path = getcwd(cwd_path, PATH_MAX-1);
     if ( cwd_path == NULL ) {
         singularity_message(ERROR, "Could not obtain current directory path: %s\n", strerror(errno));
         ABORT(1);
