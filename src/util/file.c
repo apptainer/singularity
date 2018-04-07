@@ -341,7 +341,7 @@ int container_mkpath(char *dir, mode_t mode) {
     }
 
     if ( chdir("/") < 0 ) {
-        singularity_message(ERROR, "Failed to change to go in directory /: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to go in directory /: %s\n", strerror(errno));
         ABORT(255);
     }
 
@@ -394,7 +394,7 @@ int container_mkpath(char *dir, mode_t mode) {
                 }
             }
             if ( chdir(current_path) < 0 ) {
-                singularity_message(ERROR, "Failed to return to current directory: %s\n", strerror(errno));
+                singularity_message(ERROR, "Failed to return to current path %s: %s\n", current_path, strerror(errno));
                 ABORT(255);
             }
             free(current_path);
@@ -407,6 +407,13 @@ int container_mkpath(char *dir, mode_t mode) {
             last_ptr = ptr + 1;
             *ptr = '/';
         } else {
+            if ( chdir(current_path) < 0 ) {
+                singularity_message(ERROR, "Failed to return to current path %s: %s\n", current_path, strerror(errno));
+                ABORT(255);
+            }
+            free(current_path);
+            free(dir_path);
+            free(dupdir);
             break;
         }
     }
