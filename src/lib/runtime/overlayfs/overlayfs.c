@@ -146,13 +146,13 @@ int _singularity_runtime_overlayfs(void) {
 
         singularity_priv_escalate();
         singularity_message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
-        if ( s_mkpath(overlay_upper, 0755) < 0 ) {
+        if ( container_mkpath(overlay_upper, 0755) < 0 ) {
             singularity_message(ERROR, "Failed creating upper overlay directory %s: %s\n", overlay_upper, strerror(errno));
             ABORT(255);
         }
 
         singularity_message(DEBUG, "Creating overlay work directory: %s\n", overlay_work);
-        if ( s_mkpath(overlay_work, 0755) < 0 ) {
+        if ( container_mkpath(overlay_work, 0755) < 0 ) {
             singularity_message(ERROR, "Failed creating overlay work directory %s: %s\n", overlay_work, strerror(errno));
             ABORT(255);
         }

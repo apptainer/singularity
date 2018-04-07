@@ -90,7 +90,7 @@ int _singularity_runtime_mount_binds(void) {
                 if ( is_dir(basedir) != 0 ) {
                     singularity_message(DEBUG, "Creating base directory for file bind\n");
                     singularity_priv_escalate();
-                    if ( s_mkpath(basedir, 0755) != 0 ) {
+                    if ( container_mkpath(basedir, 0755) != 0 ) {
                         singularity_message(ERROR, "Failed creating base directory to bind file: %s\n", dest);
                         ABORT(255);
                     }
@@ -115,7 +115,7 @@ int _singularity_runtime_mount_binds(void) {
             if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                 singularity_priv_escalate();
                 singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
-                if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
+                if ( container_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
                     singularity_priv_drop();
                     singularity_message(WARNING, "Could not create bind point directory in container %s: %s\n", dest, strerror(errno));
                     continue;

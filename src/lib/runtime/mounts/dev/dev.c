@@ -65,7 +65,7 @@ int _singularity_runtime_mount_dev(void) {
             }
 
             singularity_priv_escalate();
-            ret = s_mkpath(joinpath(container_dir, "/dev"), 0755);
+            ret = container_mkpath(joinpath(container_dir, "/dev"), 0755);
             singularity_priv_drop();
 
             if ( ret < 0 ) {
@@ -75,13 +75,13 @@ int _singularity_runtime_mount_dev(void) {
         }
 
         singularity_message(DEBUG, "Creating temporary staged /dev\n");
-        if ( s_mkpath(devdir, 0755) != 0 ) {
+        if ( container_mkpath(devdir, 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating the session device directory %s: %s\n", devdir, strerror(errno));
             ABORT(255);
         }
 
         singularity_message(DEBUG, "Creating temporary staged /dev/shm\n");
-        if ( s_mkpath(joinpath(devdir, "/shm"), 0755) != 0 ) {
+        if ( container_mkpath(joinpath(devdir, "/shm"), 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating temporary /dev/shm %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
             ABORT(255);
         }
@@ -94,7 +94,7 @@ int _singularity_runtime_mount_dev(void) {
                 ABORT(255);
             }
             singularity_message(DEBUG, "Creating staged /dev/pts\n");
-            if ( s_mkpath(joinpath(devdir, "/pts"), 0755) != 0 ) {
+            if ( container_mkpath(joinpath(devdir, "/pts"), 0755) != 0 ) {
                 singularity_message(ERROR, "Failed creating /dev/pts %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
                 ABORT(255);
             }

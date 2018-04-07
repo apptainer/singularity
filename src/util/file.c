@@ -320,6 +320,101 @@ int s_mkpath(char *dir, mode_t mode) {
     return(0);
 }
 
+
+int container_mkpath(char *dir, mode_t mode) {
+    int ret = 0;
+    int loop = 1;
+    char *dir_path = (char *)malloc(PATH_MAX);
+    char *current_path = (char *)malloc(PATH_MAX);
+    char *dupdir = strdup(dir);
+    char *ptr, *last_ptr;
+
+    if ( dupdir == NULL || current_path == NULL || dir_path == NULL ) {
+        singularity_message(ERROR, "Failed to allocate memory\n");
+        ABORT(255);
+    }
+
+    current_path[PATH_MAX-1] = '\0';
+    if ( getcwd(current_path, PATH_MAX-1) == NULL ) {
+        singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    if ( chdir("/") < 0 ) {
+        singularity_message(ERROR, "Failed to change to go in directory /: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    dir_path[0] = '/';
+    dir_path[1] = '\0';
+    last_ptr = dupdir;
+
+    for ( ptr = dupdir + 1; ; ptr++ ) {
+        if ( *ptr == '/' ) {
+            *ptr = '\0';
+        } else if ( *ptr != '\0' ) {
+            continue;
+        } else {
+            loop = 0;
+        }
+
+        if ( chdir(dupdir) < 0 ) {
+            dir_path[PATH_MAX-1] = '\0';
+            if ( getcwd(dir_path, PATH_MAX-1) == NULL ) {
+                singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
+                ABORT(255);
+            }
+            if ( strncmp(dir_path, CONTAINER_MOUNTDIR, strlen(CONTAINER_MOUNTDIR)) != 0 &&
+                 strncmp(dir_path, CONTAINER_FINALDIR, strlen(CONTAINER_FINALDIR)) != 0 &&
+                 strncmp(dir_path, CONTAINER_OVERLAY, strlen(CONTAINER_OVERLAY)) != 0 &&
+                 strncmp(dir_path, SESSIONDIR, strlen(SESSIONDIR)) != 0 ) {
+                singularity_message(WARNING, "Trying to create directory %s outside of container in %s\n", last_ptr, dir_path);
+                ret = -1;
+            } else {
+                singularity_message(DEBUG, "Creating directory: %s/%s\n", dir_path, last_ptr);
+
+                mode_t mask = umask(0); // Flawfinder: ignore
+                ret = mkdir(last_ptr, mode);
+                umask(mask); // Flawfinder: ignore
+
+                if ( ret < 0 ) {
+                    if ( errno != EEXIST ) {
+                        singularity_message(DEBUG, "Opps, could not create directory %s: (%d) %s\n", dir, errno, strerror(errno));
+                    }
+                } else {
+                    if ( chdir(last_ptr) == 0 ) {
+                        if ( loop == 1 ) {
+                            last_ptr = ptr + 1;
+                            *ptr = '/';
+                            continue;
+                        }
+                    } else {
+                        ret = -1;
+                    }
+                }
+            }
+            if ( chdir(current_path) < 0 ) {
+                singularity_message(ERROR, "Failed to return to current directory: %s\n", strerror(errno));
+                ABORT(255);
+            }
+            free(current_path);
+            free(dir_path);
+            free(dupdir);
+
+            return(ret);
+        }
+        if ( loop == 1 ) {
+            last_ptr = ptr + 1;
+            *ptr = '/';
+        } else {
+            break;
+        }
+    }
+
+    return(ret);
+}
+
+
 int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     int retval;
 
