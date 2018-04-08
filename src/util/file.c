@@ -282,23 +282,6 @@ int is_chr(char *path) {
 }
 
 
-int is_sock(char *path) {
-    struct stat filestat;
-
-    // Stat path
-    if (stat(path, &filestat) < 0) {
-        return(-1);
-    }
-
-    // Test path
-    if ( S_ISSOCK(filestat.st_mode) ) {
-        return(0);
-    }
-
-    return(-1);
-}
-
-
 int s_mkpath(char *dir, mode_t mode) {
     if (!dir) {
         return(-1);
