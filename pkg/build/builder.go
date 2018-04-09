@@ -18,12 +18,6 @@ type Builder interface {
 	CopyFiles()*/
 }
 
-// Build is the driver function for all builders. Build will orchestrate the
-// different steps of the build process (prescript -> postscript, etc...)
-func Build(b Builder) {
-	b.Build()
-}
-
 // createMetadataFolder installs /.singularity.d/* directory in the container.
 // Serves as replacement of libexec/bootstrap-scripts/pre.sh
 /*
