@@ -7,11 +7,9 @@
 */
 package build
 
-import ()
-
-// Incomplete or incorrect list of functions for now
+// Builder ~incomplete or incorrect list of functions for now
 type Builder interface {
-	Build()
+	Build() error
 	/*Provisioner
 	CreateMetadata()
 	PreScript()
