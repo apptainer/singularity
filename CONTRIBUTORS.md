@@ -40,3 +40,4 @@
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Yaroslav Halchenko <debian@onerussian.com>
+    - Jeffrey Frey <frey@udel.edu>

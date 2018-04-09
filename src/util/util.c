@@ -377,60 +377,96 @@ void free_tempfile(struct tempfile *tf) {
 
 
 struct tempfile *make_tempfile(void) {
-   int fd;
-   struct tempfile *tf;
+    struct tempfile *tf = NULL;
+    int tempfile_fd = -1;
+    
+    /*
+     *  glibc states the suffix MUST be 6 'X' characters; other OS's implementation
+     *  of mkstemp() allow the suffix to be of arbitrary length.  Since this software
+     *  is destined to be used on Linux, just stick to 6 'X' characters.
+     *
+     *  "/tmp/vb.XXXXXX" = 14 characters + NUL = 15
+     */
+    char tempfile_name[16];
 
-   tf = malloc(sizeof(struct tempfile));
-   if (tf == NULL) {
-       singularity_message(ERROR, "Could not allocate memory for tempfile\n");
-       ABORT(255);
-   }
-
-   strncpy(tf->filename, "/tmp/vb.XXXXXXXXXX", sizeof(tf->filename) - 1);
-   tf->filename[sizeof(tf->filename) - 1] = '\0';
-   if ((fd = mkstemp(tf->filename)) == -1 || (tf->fp = fdopen(fd, "w+")) == NULL) {
-       if (fd != -1) {
-           unlink(tf->filename);
-           close(fd);
-       }
-       singularity_message(ERROR, "Could not create temp file\n");
-       ABORT(255);
-   }
-   return tf;
+    strncpy(tempfile_name, "/tmp/vb.XXXXXX", sizeof(tempfile_name));
+    if ( tempfile_name[sizeof(tempfile_name) - 1] != '\0' ) {
+        singularity_message(ERROR, "Temporary file name too long\n");
+        ABORT(255);
+    }
+    tempfile_fd = mkstemp(tempfile_name);
+    if ( tempfile_fd >= 0 ) {
+        FILE *tempfile_fp = fdopen(tempfile_fd, "w+");
+        
+        if ( tempfile_fp != NULL ) {
+            size_t tempfile_name_len = strlen(tempfile_name) + 1;
+            void *tf_ptr = malloc(sizeof(struct tempfile) + tempfile_name_len);
+            
+            if ( tf_ptr != NULL ) {
+                tf = (struct tempfile*)tf_ptr;
+                tf->filename = (const char*)(tf_ptr + sizeof(struct tempfile));
+                strncpy((char*)tf->filename, tempfile_name, tempfile_name_len);
+                tf->fd = tempfile_fd;
+                tf->fp = tempfile_fp;
+            } else {
+                fclose(tempfile_fp);
+                singularity_message(ERROR, "Could not allocate memory for tempfile\n");
+                ABORT(255);
+            }
+        } else {
+            unlink(tempfile_name);
+            close(tempfile_fd);
+        }
+    }
+    if ( tf == NULL ) {
+        singularity_message(ERROR, "Could not create temp file\n");
+        ABORT(255);
+    }
+    return tf;
 }
 
 
 struct tempfile *make_logfile(char *label) {
-    struct tempfile *tf;
-
+    struct tempfile *tf = NULL;
+    int tempfile_fd = -1;
+    size_t tempfile_name_len;
+    
     char *daemon = singularity_registry_get("DAEMON_NAME");
     char *image = basename(singularity_registry_get("IMAGE"));
-        
-    tf = malloc(sizeof(struct tempfile));
-    if (tf == NULL) {
+    void *tf_ptr;
+    
+    /* "/tmp/" + image + "." + daemon + "." + label + ".XXXXXX" + NUL */
+    tempfile_name_len = 5 + strlen(image) + 1 + strlen(daemon) + 1 + strlen(label) + 7 + 1;
+
+    /* Pre-allocate the tempfile pseudo-object: */
+    tf_ptr = malloc(sizeof(struct tempfile) + tempfile_name_len);
+    if ( tf_ptr == NULL ) {
         singularity_message(ERROR, "Could not allocate memory for tempfile\n");
         ABORT(255);
-    }    
-
-    if ( snprintf(tf->filename, sizeof(tf->filename) - 1, "/tmp/%s.%s.%s.XXXXXX", image, daemon, label) > sizeof(tf->filename) - 1 ) {
-        singularity_message(ERROR, "Label string too long\n");
-        ABORT(255);
     }
-    tf->filename[sizeof(tf->filename) - 1] = '\0';
+    tf = (struct tempfile*)tf_ptr;
+    tf->filename = (const char*)(tf_ptr + sizeof(struct tempfile));
+    snprintf((char*)tf->filename, tempfile_name_len, "/tmp/%s.%s.%s.XXXXXX", image, daemon, label);
 
-    if ( (tf->fd = mkstemp(tf->filename)) == -1 || (tf->fp = fdopen(tf->fd, "w+")) == NULL ) {
-        if (tf->fd != -1) {
-            unlink(tf->filename);
-            close(tf->fd);
+    tempfile_fd = mkstemp((char*)tf->filename);
+    if ( tempfile_fd >= 0 ) {
+        FILE *tempfile_fp = fdopen(tempfile_fd, "w+");
+        
+        if ( tempfile_fp != NULL ) {
+            tf->fp = tempfile_fp;
+            tf->fd = tempfile_fd;
+            
+            singularity_message(DEBUG, "Logging container's %s at: %s\n", label, tf->filename);
+            return tf;
         }
-        singularity_message(DEBUG, "Could not create log file, running silently\n");
-        return(NULL);
+        close(tempfile_fd);
+        unlink(tf->filename);
     }
-
-    singularity_message(DEBUG, "Logging container's %s at: %s\n", label, tf->filename);
-    
-    return(tf);
+    free(tf);
+    singularity_message(DEBUG, "Could not create log file, running silently\n");
+    return NULL;
 }
+
 
 // close all file descriptors pointing to a directory
 void fd_cleanup(void) {
