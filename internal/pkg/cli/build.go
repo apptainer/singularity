@@ -93,7 +93,10 @@ var buildCmd = &cobra.Command{
 			}
 		}
 
-		b.Build()
+		if err := b.Build(); err != nil {
+			glog.Error(err)
+			return
+		}
 
 		/*
 			if Remote {
