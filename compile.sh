@@ -3,7 +3,7 @@ set -e
 
 topdir=$PWD
 coredir=$topdir/core
-buildtree="/home/mibauer/buildtree"
+buildtree=$coredire/buildtree
 
 while true; do
     case ${1:-} in
