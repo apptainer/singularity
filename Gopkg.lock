@@ -11,7 +11,7 @@
   branch = "master"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
-  revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
+  revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
   branch = "master"
@@ -35,7 +35,7 @@
     "types",
     "version"
   ]
-  revision = "490d44adfcfb69a96f146af41ec9c631cdfd346b"
+  revision = "b327f751c16e4a189fdcde4ea36be67cc964c605"
 
 [[projects]]
   branch = "master"
@@ -47,7 +47,7 @@
     "pkg/mount",
     "pkg/system"
   ]
-  revision = "5d52f079f1709f0408a6c086c603d259b0e5da3e"
+  revision = "aaa10cba3c246a9186e2160f4e12b21d8cf77c94"
 
 [[projects]]
   branch = "master"
@@ -65,7 +65,7 @@
     "registry/storage/cache",
     "registry/storage/cache/memory"
   ]
-  revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
+  revision = "607ae5d128a82f280e8c7f453d5fb30c535bda17"
 
 [[projects]]
   name = "github.com/docker/docker"
@@ -103,8 +103,8 @@
 [[projects]]
   name = "github.com/docker/go-units"
   packages = ["."]
-  revision = "47565b4f722fb6ceae66b95f853feed578a4a51c"
-  version = "v0.3.3"
+  revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
+  version = "v0.3.2"
 
 [[projects]]
   branch = "master"
@@ -225,7 +225,7 @@
     "prometheus",
     "prometheus/promhttp"
   ]
-  revision = "e11c6ff8170beca9d5fd8b938e71165eeec53ac6"
+  revision = "d49167c4b9f3c4451707560c5c71471ff5291aaa"
 
 [[projects]]
   branch = "master"
@@ -241,7 +241,7 @@
     "internal/bitbucket.org/ww/goautoneg",
     "model"
   ]
-  revision = "38c53a9f4bfcd932d1b00bfc65e256a7fba6b37a"
+  revision = "e4aa40a9169a88835b849a6efb71e05dc04b88f0"
 
 [[projects]]
   branch = "master"
@@ -252,7 +252,7 @@
     "nfs",
     "xfs"
   ]
-  revision = "8b1c2da0d56deffdbb9e48d4414b4e674bd8083e"
+  revision = "54d17b57dd7d4a3aa092476596b3f8a933bde349"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -264,7 +264,7 @@
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "cd30c2a7e91a1d63fd9a0027accf18a681e9d50b"
+  revision = "c439c4fa093711d42e1b01acb1235b52004753c1"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -294,13 +294,13 @@
   branch = "master"
   name = "github.com/xeipuuv/gojsonschema"
   packages = ["."]
-  revision = "2c8e4be869c17540b336bab0ea18b8d73e6a28b7"
+  revision = "8bcffc811467a5f691810420385be6e66b35a317"
 
 [[projects]]
   branch = "master"
   name = "go4.org"
   packages = ["errorutil"]
-  revision = "12aee241e64e68a7ceffb342f85290bc3d69d083"
+  revision = "fba789b7e39ba524b9e60c45c37a50fae63a2a09"
 
 [[projects]]
   branch = "master"
@@ -316,16 +316,13 @@
     "openpgp/s2k",
     "ssh/terminal"
   ]
-  revision = "f70185d77e8278766928032ee1355e3da47e7181"
+  revision = "c3a3ad6d03f7a915c0f7e194b7152974bb73d287"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = [
-    "internal/socks",
-    "proxy"
-  ]
-  revision = "61147c48b25b599e5b561d2e9c4f3e1ef489ca41"
+  packages = ["proxy"]
+  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
 
 [[projects]]
   branch = "master"
@@ -334,7 +331,7 @@
     "unix",
     "windows"
   ]
-  revision = "3b87a42e500a6dc65dae1a55d0b641295971163e"
+  revision = "7ceb54c8418b8f9cdf0177b511d5cbb06e9fae39"
 
 [[projects]]
   name = "gopkg.in/cheggaaa/pb.v1"
@@ -345,8 +342,8 @@
 [[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
-  version = "v2.2.1"
+  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
+  version = "v2.1.1"
 
 [solve-meta]
   analyzer-name = "dep"

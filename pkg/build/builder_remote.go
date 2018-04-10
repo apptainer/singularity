@@ -94,7 +94,7 @@ func NewRemoteBuilder(p string, d Definition, isDetached bool, addr string) (b *
 }
 
 // Build is responsible for making the request via the REST API to the remote builder
-func (b *RemoteBuilder) Build() {
+func (b *RemoteBuilder) Build() (err error) {
 	b.doBuildRequest()
 
 	// Update buildURL to include UUID for status requests
@@ -103,7 +103,7 @@ func (b *RemoteBuilder) Build() {
 	// Dial websocket
 	c, _, err := websocket.DefaultDialer.Dial(b.ResponseData.WSURL, nil)
 	if err != nil {
-		glog.Fatal(err)
+		return err
 	}
 
 	// Output runtime
@@ -135,18 +135,18 @@ func (b *RemoteBuilder) Build() {
 			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
 				glog.Infoln("write close:", err)
-				return
+				return err
 			}
 			select {
 			case <-done:
 			case <-time.After(time.Second):
 			}
-			return
+			return nil
 		case _ = <-done:
 			glog.Infoln("Woohoo Your build complete! ")
 			b.doStatusRequest()
 			b.doPullRequest()
-			return
+			return nil
 		}
 
 	}

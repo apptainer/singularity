@@ -8,7 +8,7 @@ buildtree=$coredir/buildtree
 while true; do
     case ${1:-} in
 	--clean)
-	    rm -rf $buildtree
+	    sudo rm -rf $buildtree
 	    shift
 	;;
 	*)
@@ -37,10 +37,11 @@ CGO_CPPFLAGS="$CGO_CPPFLAGS -I$buildtree -I$coredir -I$coredir/lib"
 CGO_LDFLAGS="$CGO_LDFLAGS -L$buildtree/lib"
 export CGO_CPPFLAGS CGO_LDFLAGS
 
-go build -ldflags "-X github.com/singularityware/singularity/internal/pkg/cli.Buildtree=${buildtree}" --tags "containers_image_openpgp" -o $buildtree/singularity cmd/cli/cli.go
-go build -ldflags="-s -w" -o $buildtree/scontainer $coredir/runtime/go/scontainer.go
-go build -ldflags="-s -w" -o $buildtree/smaster $coredir/runtime/go/smaster.go
+go build -ldflags "-X github.com/singularityware/singularity/pkg/configs.Buildtree=${buildtree}" --tags "containers_image_openpgp" -o $buildtree/singularity $topdir/cmd/cli/cli.go
+go build -o $buildtree/sbuild $topdir/cmd/sbuild/sbuild.go
+go build -o $buildtree/scontainer $coredir/runtime/go/scontainer.go
+go build -o $buildtree/smaster $coredir/runtime/go/smaster.go
 
-cp $buildtree/wrapper $buildtree/wrapper-suid
+sudo cp $buildtree/wrapper $buildtree/wrapper-suid
 sudo chown root:root $buildtree/wrapper-suid && sudo chmod 4755 $buildtree/wrapper-suid
 
