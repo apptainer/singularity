@@ -63,7 +63,9 @@ func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 	return b, err
 }
 
-func (b *SifBuilder) Build() {
+// Build provisions a temporaly file system from a definition file
+// and build a SIF afterwards.
+func (b *SifBuilder) Build() (err error) {
 	oldstdout := os.Stdout
 	oldstderr := os.Stderr
 
@@ -79,14 +81,19 @@ func (b *SifBuilder) Build() {
 		b.errWrite.Close()
 	}()
 
-	b.p.Provision(b.tmpfs)
+	err := b.p.Provision(b.tmpfs)
+	if err != nil {
+		return err
+	}
+
 	img, err := image.SIFFromSandbox(b.tmpfs, b.path)
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
 	b.Image = img
+
+	return nil
 }
 
 func (b *SifBuilder) createSifFile() (err error) {

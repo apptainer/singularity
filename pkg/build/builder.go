@@ -7,23 +7,15 @@
 */
 package build
 
-import ()
-
-// Incomplete or incorrect list of functions for now
+// Builder ~incomplete or incorrect list of functions for now
 type Builder interface {
-	Build()
+	Build() error
 	/*Provisioner
 	CreateMetadata()
 	PreScript()
 	SetupScript()
 	PostScript()
 	CopyFiles()*/
-}
-
-// Build is the driver function for all builders. Build will orchestrate the
-// different steps of the build process (prescript -> postscript, etc...)
-func Build(b Builder) {
-	b.Build()
 }
 
 // createMetadataFolder installs /.singularity.d/* directory in the container.
