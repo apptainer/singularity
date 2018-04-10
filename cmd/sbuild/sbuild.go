@@ -5,9 +5,12 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
-
 package main
 
-func Main() {
+import (
+	"github.com/singularityware/singularity/internal/pkg/cli"
+)
 
+func main() {
+	cli.ExecuteSbuild()
 }

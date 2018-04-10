@@ -8,20 +8,25 @@
 package build
 
 import (
-	//"fmt"
-	//"io/ioutil"
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path"
-	//"time"
 
 	"github.com/singularityware/singularity/pkg/image"
 )
 
 type SifBuilder struct {
-	Definition
-	Image *image.SIF
+	Stdout *io.PipeReader
+	Stderr *io.PipeReader
+	Stdin  *io.PipeWriter
+	sbuild *exec.Cmd
+}
+
+type SifBuilder struct {
+	def   Definition
+	image *image.SIF
 	path  string
 	p     Provisioner
 	tmpfs *image.Sandbox
