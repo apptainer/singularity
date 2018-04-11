@@ -57,8 +57,7 @@ int _singularity_runtime_mount_cwd(void) {
 
     singularity_message(DEBUG, "Getting current working directory\n");
     cwd_path[PATH_MAX-1] = '\0';
-    cwd_path = getcwd(cwd_path, PATH_MAX-1);
-    if ( cwd_path == NULL ) {
+    if ( getcwd(cwd_path, PATH_MAX-1) == NULL ) {
         singularity_message(ERROR, "Could not obtain current directory path: %s\n", strerror(errno));
         ABORT(1);
     }
