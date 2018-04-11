@@ -6,6 +6,7 @@ singularity-*.tar.gz
 *.m4
 *.pyc
 
+.vscode
 vendor/
 trash.lock
 Makefile

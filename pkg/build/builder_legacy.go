@@ -64,7 +64,7 @@ func NewLegacyBuilder(p string, c context.Context, d Definition) (builder *Legac
 }
 
 func (b *LegacyBuilder) Build() (err error) {
-	err := b.Cmd.Start()
+	err = b.Cmd.Start()
 
 	if err != nil {
 		glog.Fatal(err)

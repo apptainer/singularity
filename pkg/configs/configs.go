@@ -5,9 +5,9 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+package configs
 
-package main
-
-func Main() {
-
-}
+var (
+	BUILDTREE  string
+	LIBEXECDIR string
+)

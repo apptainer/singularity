@@ -21,26 +21,31 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/config"
 	"github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/rpc/client"
+	"github.com/singularityware/singularity/pkg/configs"
 	"github.com/singularityware/singularity/pkg/util/loop"
 )
 
 func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 	if engine.RuntimeSpec.RuntimeName != config.Name {
 		log.Fatalln("engineName configuration doesn't match runtime name")
+		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 	rpcOps := &client.Rpc{rpc.NewClient(rpcConn), engine.RuntimeSpec.RuntimeName}
 	if rpcOps.Client == nil {
 		log.Fatalln("Failed to initialiaze RPC client")
+		return fmt.Errorf("Failed to initialiaze RPC client")
 	}
 
 	_, err := rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
 	if err != nil {
 		log.Fatalln("mount / failed:", err)
+		return err
 	}
 
 	st, err := os.Stat(engine.OciConfig.RuntimeOciSpec.Root.Path)
 	if err != nil {
 		log.Fatalf("stat on %s failed\n", engine.OciConfig.RuntimeOciSpec.Root.Path)
+		return err
 	}
 
 	rootfs := engine.OciConfig.RuntimeOciSpec.Root.Path
@@ -81,69 +86,82 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		info.Flags = loop.FlagsAutoClear
 		number, err = rpcOps.LoopDevice(rootfs, os.O_RDONLY, *info)
 		if err != nil {
-			fmt.Println(err)
+			log.Fatalln(err)
+			return err
 		}
 		path := fmt.Sprintf("/dev/loop%d", number)
-		rootfs = "/tmp/testing"
-		_, err = rpcOps.Mount(path, rootfs, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
+		_, err = rpcOps.Mount(path, configs.LIBEXECDIR, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 		if err != nil {
-			fmt.Println("mount "+mountType, err)
+			log.Fatalf("Failed to mount %s filesystem: %s\n", mountType, err)
+			return err
 		}
 	}
 
 	if pidNS {
-		_, err = rpcOps.Mount("proc", path.Join(rootfs, "proc"), "proc", syscall.MS_NOSUID, "")
+		_, err = rpcOps.Mount("proc", path.Join(configs.LIBEXECDIR, "proc"), "proc", syscall.MS_NOSUID, "")
 		if err != nil {
 			log.Fatalln("mount proc failed:", err)
+			return err
 		}
 	} else {
-		_, err = rpcOps.Mount("/proc", path.Join(rootfs, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+		_, err = rpcOps.Mount("/proc", path.Join(configs.LIBEXECDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 		if err != nil {
 			log.Fatalln("mount proc failed:", err)
+			return err
 		}
 	}
 	if !userNS {
-		_, err = rpcOps.Mount("sysfs", path.Join(rootfs, "sys"), "sysfs", syscall.MS_NOSUID, "")
+		_, err = rpcOps.Mount("sysfs", path.Join(configs.LIBEXECDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
 		if err != nil {
 			log.Fatalln("mount sys failed:", err)
+			return err
 		}
 	} else {
-		_, err = rpcOps.Mount("/sys", path.Join(rootfs, "sys"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+		_, err = rpcOps.Mount("/sys", path.Join(configs.LIBEXECDIR, "sys"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 		if err != nil {
 			log.Fatalln("mount sys failed:", err)
+			return err
 		}
 	}
 
-	_, err = rpcOps.Mount("/dev", path.Join(rootfs, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	_, err = rpcOps.Mount("/dev", path.Join(configs.LIBEXECDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		log.Fatalln("mount dev failed:", err)
+		return err
 	}
-	_, err = rpcOps.Mount("/etc/passwd", path.Join(rootfs, "etc/passwd"), "", syscall.MS_BIND, "")
+	_, err = rpcOps.Mount("/etc/passwd", path.Join(configs.LIBEXECDIR, "etc/passwd"), "", syscall.MS_BIND, "")
 	if err != nil {
 		log.Fatalln("mount /etc/passwd failed:", err)
+		return err
 	}
-	_, err = rpcOps.Mount("/etc/group", path.Join(rootfs, "etc/group"), "", syscall.MS_BIND, "")
+	_, err = rpcOps.Mount("/etc/group", path.Join(configs.LIBEXECDIR, "etc/group"), "", syscall.MS_BIND, "")
 	if err != nil {
 		log.Fatalln("mount /etc/group failed:", err)
+		return err
 	}
-	_, err = rpcOps.Mount(rootfs, "/mnt", "", syscall.MS_BIND|syscall.MS_REC, "")
+	_, err = rpcOps.Mount(configs.LIBEXECDIR, "/mnt", "", syscall.MS_BIND|syscall.MS_REC, "")
 	if err != nil {
 		log.Fatalln("mount failed:", err)
+		return err
 	}
 	err = syscall.Chdir("/mnt")
 	if err != nil {
 		log.Fatalln("change directory failed:", err)
+		return err
 	}
 	_, err = rpcOps.Chroot("/mnt")
 	if err != nil {
 		log.Fatalln("chroot failed:", err)
+		return err
 	}
 	err = syscall.Chdir("/")
 	if err != nil {
 		log.Fatalln("change directory failed:", err)
+		return err
 	}
 	if err := rpcOps.Client.Close(); err != nil {
-		log.Fatalln("Can't close connection with rpc server")
+		log.Fatalln("Can't close connection with rpc server:", err)
+		return err
 	}
 
 	return nil

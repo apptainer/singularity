@@ -10,9 +10,10 @@ package server
 
 import (
 	"fmt"
+	"syscall"
+
 	args "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/rpc"
 	"github.com/singularityware/singularity/pkg/util/loop"
-	"syscall"
 )
 
 type Methods int
