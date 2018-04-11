@@ -285,11 +285,11 @@ int main(int argc, char **argv) {
     int output[2];
     int input[2];
 
-    loglevel = getenv("MESSAGELEVEL");
+    loglevel = getenv("SINGULARITY_MESSAGELEVEL");
     if ( loglevel != NULL ) {
         loglevel = strdup(loglevel);
     } else {
-        singularity_message(ERROR, "MESSAGELEVEL environment variable isn't set\n");
+        singularity_message(ERROR, "SINGULARITY_MESSAGELEVEL environment variable isn't set\n");
         exit(1);
     }
 

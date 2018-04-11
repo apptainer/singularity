@@ -179,7 +179,7 @@ __attribute__((constructor)) static void init(void) {
 #endif
 
     if ( capset(&header, data) < 0 ) {
-        singularity_message(ERROR, "Failed to set processus capabilities\n");
+        singularity_message(ERROR, "Failed to set process capabilities\n");
         exit(1);
     }
 
