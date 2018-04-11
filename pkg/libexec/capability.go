@@ -9,9 +9,10 @@
 package libexec
 
 import (
-	capability "github.com/syndtr/gocapability/capability"
+//capability "github.com/syndtr/gocapability/capability"
 )
 
+/*
 func CapabilityAdd(caps []capability.Cap) {
 
 }
@@ -19,3 +20,4 @@ func CapabilityAdd(caps []capability.Cap) {
 func CapabilityDrop(caps []capability.Cap) {
 
 }
+*/
