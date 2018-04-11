@@ -319,7 +319,7 @@ int main(int argc, char **argv) {
     environ = env;
 
     if ( loglevel != NULL ) {
-        setenv("MESSAGELEVEL", loglevel, 1);
+        setenv("SINGULARITY_MESSAGELEVEL", loglevel, 1);
         free(loglevel);
     }
 

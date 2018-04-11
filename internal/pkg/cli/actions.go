@@ -8,7 +8,6 @@
 package cli
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -133,7 +132,6 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		log.Fatal("buildtree not defined at compile time, exiting")
 	}
 
-	fmt.Println(configs.BUILDTREE)
 	wrapper := configs.BUILDTREE + "/wrapper-suid"
 
 	oci, runtime := config.NewSingularityConfig("new")
@@ -171,7 +169,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		lvl = "5"
 	}
 
-	cmd.Env = []string{"MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
+	cmd.Env = []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
 	j, err := runtime.GetConfig()
 	if err != nil {
 		log.Fatalln(err)
