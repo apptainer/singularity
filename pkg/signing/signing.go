@@ -174,6 +174,48 @@ func SyPgpLoadPubKeyring() (openpgp.EntityList, error) {
 	return el, nil
 }
 
+func printEntity(e *openpgp.Entity) {
+	for _, v := range e.Identities {
+		fmt.Printf("U: %v %v %v\n", v.UserId.Name, v.UserId.Comment, v.UserId.Email)
+	}
+	fmt.Printf("C: %v\n", e.PrimaryKey.CreationTime)
+	fmt.Printf("F: %0X\n", e.PrimaryKey.Fingerprint)
+	bits, _ := e.PrimaryKey.BitLength()
+	fmt.Printf("L: %v\n", bits)
+}
+
+func printKeyrings() (err error) {
+	var privEntlist openpgp.EntityList
+	var pubEntlist openpgp.EntityList
+
+	if privEntlist, err = SyPgpLoadPrivKeyring(); err != nil {
+		return err
+	}
+
+	fmt.Println("PGP key private material:")
+	fmt.Println("")
+
+	for _, e := range privEntlist {
+		printEntity(e)
+		fmt.Println("--------")
+	}
+
+	if pubEntlist, err = SyPgpLoadPubKeyring(); err != nil {
+		return err
+	}
+
+	fmt.Println("")
+	fmt.Println("PGP key public material:")
+	fmt.Println("")
+
+	for _, e := range pubEntlist {
+		printEntity(e)
+		fmt.Println("--------")
+	}
+
+	return nil
+}
+
 func genKeyPair() error {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
