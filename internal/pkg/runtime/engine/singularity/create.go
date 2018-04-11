@@ -62,7 +62,6 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		}
 	}
 
-	os.Setenv("SINGULARITY_MESSAGELEVEL", os.Getenv("MESSAGELEVEL"))
 	C.singularity_config_init()
 
 	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
