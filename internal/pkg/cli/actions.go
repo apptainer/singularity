@@ -129,12 +129,12 @@ var runCmd = &cobra.Command{
 
 func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	lvl := "0"
-	if configs.Buildtree == "" {
+	if configs.BUILDTREE == "" {
 		log.Fatal("buildtree not defined at compile time, exiting")
 	}
 
-	fmt.Println(configs.Buildtree)
-	wrapper := configs.Buildtree + "/wrapper-suid"
+	fmt.Println(configs.BUILDTREE)
+	wrapper := configs.BUILDTREE + "/wrapper-suid"
 
 	oci, runtime := config.NewSingularityConfig("new")
 	oci.Root.SetPath(image)
@@ -157,7 +157,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 	if UserNamespace {
 		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UserNamespace})
-		wrapper = configs.Buildtree + "/wrapper"
+		wrapper = configs.BUILDTREE + "/wrapper"
 	}
 	oci.RuntimeOciSpec.Linux.Namespaces = namespaces
 

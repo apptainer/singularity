@@ -140,7 +140,7 @@ func main() {
 		}
 
 		if err := engine.PrestartProcess(); err != nil {
-			log.Fatalln("Container setup failed")
+			log.Fatalln("Container setup failed:", err)
 		}
 
 		code := 0
@@ -170,7 +170,7 @@ func main() {
 			}
 		}
 		if code != 0 {
-			log.Fatalln("Container setup failed")
+			log.Fatalln("Container setup failed:", code)
 		}
 
 		/* force close on exec on socket file descriptor to distinguish an exec success and error */

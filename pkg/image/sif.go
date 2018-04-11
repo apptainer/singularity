@@ -36,7 +36,7 @@ func SIFFromSandbox(sandbox *Sandbox, imagePath string) (*SIF, error) {
 	f.Close()
 	os.Remove(squashfsPath)
 
-	mksquashfsCmd := exec.Command(mksquashfs, sandbox.Rootfs(), squashfsPath, "-noappend", "-all-root")
+	mksquashfsCmd := exec.Command(mksquashfs, sandbox.Rootfs(), squashfsPath, "-noappend")
 	mksfsout, err := mksquashfsCmd.CombinedOutput()
 	if err != nil {
 		return nil, err

@@ -7,4 +7,7 @@
 */
 package configs
 
-var Buildtree string
+var (
+	BUILDTREE  string
+	LIBEXECDIR string
+)

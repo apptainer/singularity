@@ -45,7 +45,7 @@ func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 	b = &SifBuilder{}
 
 	builderJSON, err := json.Marshal(d)
-	b.sbuild = exec.Command(configs.Buildtree+"/sbuild", "sif", string(builderJSON), imagePath)
+	b.sbuild = exec.Command(configs.BUILDTREE+"/sbuild", "sif", string(builderJSON), imagePath)
 
 	b.outsrc, b.sbuild.Stdout = io.Pipe()
 	b.errsrc, b.sbuild.Stderr = io.Pipe()
