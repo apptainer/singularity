@@ -9,7 +9,7 @@ import (
 
 	"log"
 
-	"github.com/cheggaaa/pb"
+	"gopkg.in/cheggaaa/pb.v1"
 )
 
 func DownloadImage(filePath string, libraryRef string, libraryURL string) error {
