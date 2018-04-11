@@ -472,7 +472,6 @@ int main(int argc, char **argv) {
                 exit(1);
             }
         }
-        close(stage_socket[0]);
 
         /* block SIGCHLD signal handled later by scontainer/smaster */
         singularity_message(DEBUG, "Set child signal mask\n");
