@@ -84,7 +84,6 @@ var buildCmd = &cobra.Command{
 
 		if Remote {
 			b = build.NewRemoteBuilder(args[0], def, false, RemoteURL)
-
 		} else {
 			b, err = build.NewSifBuilder(args[0], def)
 			if err != nil {
