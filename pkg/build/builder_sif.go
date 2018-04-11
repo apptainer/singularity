@@ -75,7 +75,7 @@ func (b *SifBuilder) Build() (err error) {
 		b.errWrite.Close()
 	}()
 
-	err := b.p.Provision(b.tmpfs)
+	err = b.p.Provision(b.tmpfs)
 	if err != nil {
 		return err
 	}
