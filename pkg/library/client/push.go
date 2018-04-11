@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/cheggaaa/pb"
+	"gopkg.in/cheggaaa/pb.v1"
 	"gopkg.in/mgo.v2/bson"
 )
 
