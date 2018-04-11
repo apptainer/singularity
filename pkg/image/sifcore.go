@@ -19,8 +19,8 @@ package image
 #include <sif/sif.h>
 #include <sif/sifaccess.h>
 
-int
-fill_sigeinfo(void *signature, int siglen, Eleminfo *e, Sifpartition *desc)
+void
+fill_sigeinfo(void *fingerprint, void *signature, int siglen, Eleminfo *e, Sifpartition *desc)
 {
 	e->cm.datatype = DATA_SIGNATURE;
 	e->cm.groupid = SIF_UNUSED_GROUP;
@@ -28,6 +28,7 @@ fill_sigeinfo(void *signature, int siglen, Eleminfo *e, Sifpartition *desc)
 	e->cm.len = siglen;
 	e->sigdesc.signature = signature;
 	e->sigdesc.hashtype = HASH_SHA384;
+	memcpy(e->sigdesc.entity, fingerprint, 20);
 }
 
 Sifdescriptor *
@@ -119,8 +120,8 @@ type Eleminfo struct {
 	einfo C.Eleminfo
 }
 
-func (e *Eleminfo) InitSignature(signature []byte, part *Sifpartition) {
-	C.fill_sigeinfo(C.CBytes(signature), C.int(len(signature)), &e.einfo, part.part)
+func (e *Eleminfo) InitSignature(fingerprint [20]byte, signature []byte, part *Sifpartition) {
+	C.fill_sigeinfo(C.CBytes(fingerprint[:]), C.CBytes(signature), C.int(len(signature)), &e.einfo, part.part)
 }
 
 /*

@@ -63,7 +63,7 @@ usage(void)
 	fprintf(stderr, "\t\t-p PARTTYPE : filesystem partition type: SYSTEM, DATA, OVERLAY\n");
 	fprintf(stderr, "\t\t-u uuid : pass a uuid to use instead of generating a new one\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "example: sif -P /tmp/fs.squash -f \"SQUASHFS\" -p \"SYSTEM\" -c \"Linux\" /tmp/container.sif\n\n");
+	fprintf(stderr, "example: sif create -P /tmp/fs.squash -f \"SQUASHFS\" -p \"SYSTEM\" -c \"Linux\" /tmp/container.sif\n\n");
 }
 
 Node *

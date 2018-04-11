@@ -179,6 +179,7 @@ int
 sif_printdesc(void *elem, void *data)
 {
 	Sifdescriptor *desc = elem;
+	int i;
 
 	(void)data;
 
@@ -203,7 +204,11 @@ sif_printdesc(void *elem, void *data)
 		break;
 	case DATA_SIGNATURE:
 		printf("hashtype: %s\n", sif_hashstr(desc->sig.hashtype));
-		printf("entity: %s\n", desc->sig.entity);
+		printf("entity: ");
+		for(i = 0; i < 20; i++){
+			printf("%02hhX", desc->sig.entity[i]);
+		}
+		printf("\n");
 		break;
 	default:
 		break;
