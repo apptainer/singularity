@@ -48,7 +48,7 @@ BUILD OPTIONS:
     -T|--notest     Bootstrap without running tests in %test section
     -s|--section    Only run a given section within the recipe file (setup,
                     post, files, environment, test, labels, none)
-    -comp <comp>    select squashfs Compressors 
+    --comp <comp>   select squashfs Compressors 
                     available:
                         gzip (default)
                         lzma
