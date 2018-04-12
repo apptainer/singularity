@@ -174,43 +174,41 @@ func SyPgpLoadPubKeyring() (openpgp.EntityList, error) {
 	return el, nil
 }
 
-func printEntity(e *openpgp.Entity) {
+func printEntity(index int, e *openpgp.Entity) {
 	for _, v := range e.Identities {
-		fmt.Printf("U: %v %v %v\n", v.UserId.Name, v.UserId.Comment, v.UserId.Email)
+		fmt.Printf("%v) U: %v %v %v\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
 	}
-	fmt.Printf("C: %v\n", e.PrimaryKey.CreationTime)
-	fmt.Printf("F: %0X\n", e.PrimaryKey.Fingerprint)
+	fmt.Printf("   C: %v\n", e.PrimaryKey.CreationTime)
+	fmt.Printf("   F: %0X\n", e.PrimaryKey.Fingerprint)
 	bits, _ := e.PrimaryKey.BitLength()
-	fmt.Printf("L: %v\n", bits)
+	fmt.Printf("   L: %v\n", bits)
 }
 
-func printKeyrings() (err error) {
-	var privEntlist openpgp.EntityList
+func printPubKeyring() (err error) {
 	var pubEntlist openpgp.EntityList
-
-	if privEntlist, err = SyPgpLoadPrivKeyring(); err != nil {
-		return err
-	}
-
-	fmt.Println("PGP key private material:")
-	fmt.Println("")
-
-	for _, e := range privEntlist {
-		printEntity(e)
-		fmt.Println("--------")
-	}
 
 	if pubEntlist, err = SyPgpLoadPubKeyring(); err != nil {
 		return err
 	}
 
-	fmt.Println("")
-	fmt.Println("PGP key public material:")
-	fmt.Println("")
+	for i, e := range pubEntlist {
+		printEntity(i, e)
+		fmt.Println("   --------")
+	}
 
-	for _, e := range pubEntlist {
-		printEntity(e)
-		fmt.Println("--------")
+	return nil
+}
+
+func printPrivKeyring() (err error) {
+	var privEntlist openpgp.EntityList
+
+	if privEntlist, err = SyPgpLoadPrivKeyring(); err != nil {
+		return err
+	}
+
+	for i, e := range privEntlist {
+		printEntity(i, e)
+		fmt.Println("   --------")
 	}
 
 	return nil
@@ -286,14 +284,40 @@ func genKeyPair() error {
 // XXX: replace that with acutal cli passwd grab
 func decryptKey(k *openpgp.Entity) error {
 	if k.PrivateKey.Encrypted == true {
-		k.PrivateKey.Decrypt([]byte("devkeys"))
+		fmt.Print("Enter key passphrase: ")
+		scanner := bufio.NewScanner(os.Stdin)
+		scanner.Scan()
+		pass := scanner.Text()
+		if err := scanner.Err(); err != nil {
+			fmt.Println("error while reading passphrase from user", err)
+			return err
+		}
+
+		if err := k.PrivateKey.Decrypt([]byte(pass)); err != nil {
+			log.Println("error while decrypting key: ", err)
+			return err
+		}
 	}
 	return nil
 }
 
-// XXX: replace that with actual cli choice maker
 func selectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	return el[0], nil
+	var index int
+
+	printPrivKeyring()
+	fmt.Print("Enter # of signing key to use : ")
+	n, err := fmt.Scanf("%d", &index)
+	if err != nil || n != 1 {
+		log.Println("Error while reading key choice from user: ", err)
+		return nil, err
+	}
+
+	if index < 0 || index > len(el)-1 {
+		fmt.Println("invalid key choice")
+		return nil, fmt.Errorf("invalid key choice")
+	}
+
+	return el[index], nil
 }
 
 func SifDataObjectHash(sinfo *image.Sifinfo) (*bytes.Buffer, error) {
