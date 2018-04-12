@@ -29,6 +29,7 @@
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>  
+#include <linux/types.h>
 
 #include "util/message.h"
 #include "util/util.h"
@@ -36,10 +37,26 @@
 
 #include "../image.h"
 
+#define SQUASHFS_ZLIB   1
+#define SQUASHFS_LZMA   2
+#define SQUASHFS_LZO    3
+#define SQUASHFS_XZ     4
+#define SQUASHFS_LZ4    5
+
+struct squashfs_header {
+    __le32 magic;
+    __le32 inodes;
+    __le32 mkfs_time;
+    __le32 block_size;
+    __le32 fragments;
+    __le16 compression;
+};
+
 int _singularity_image_squashfs_init(struct image_object *image, int open_flags) {
     int image_fd;
     int ret;
     FILE *image_fp;
+    struct squashfs_header *s_header;
     static char buf[1024];
     char *p;
 
@@ -76,8 +93,41 @@ int _singularity_image_squashfs_init(struct image_object *image, int open_flags)
     /* if LAUNCH_STRING is present, figure out squashfs magic offset */
     p = strstr(buf, "hsqs");
     if ( p != NULL ) {
-        singularity_message(VERBOSE2, "File is a valid SquashFS image\n");
+        char *compression_type = NULL;
+
         image->offset = p - buf;
+
+        if ( ( image->offset + sizeof(struct squashfs_header) ) > sizeof(buf) ) {
+            singularity_message(VERBOSE, "File is not a valid SquashFS image\n");
+            return(-1);
+        }
+
+        singularity_message(VERBOSE2, "File is a valid SquashFS image\n");
+
+        s_header = (struct squashfs_header *)p;
+
+        switch( s_header->compression ) {
+        case SQUASHFS_LZMA:
+            compression_type = strdup("lzma");
+            break;
+        case SQUASHFS_LZO:
+            compression_type = strdup("lzo");
+            break;
+        case SQUASHFS_XZ:
+            compression_type = strdup("xz");
+            break;
+        case SQUASHFS_LZ4:
+            compression_type = strdup("lz4");
+            break;
+        default:
+            break;
+        }
+
+        if ( compression_type ) {
+            singularity_message(WARNING, "squashfs image was compressed with %s, if it failed to run, " \
+                                         "please contact image's author\n", compression_type);
+            free(compression_type);
+        }
     } else {
         close(image_fd);
         singularity_message(VERBOSE, "File is not a valid SquashFS image\n");
