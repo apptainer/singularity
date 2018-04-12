@@ -52,7 +52,7 @@ BUILD OPTIONS:
                     available:
                         gzip 
                         lzma
-                        lzo (default)
+                        lzo 
                         xz
 
 
