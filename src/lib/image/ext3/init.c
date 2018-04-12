@@ -39,7 +39,6 @@
 
 #include "../image.h"
 
-#define SINGULARITY     "singularity"
 #define BUFFER_SIZE     (1024*1024)
 #define MAX_LINE_LEN    2048
 
@@ -70,7 +69,6 @@ int _singularity_image_ext3_init(struct image_object *image, int open_flags) {
     int ret;
     int magicoff = 1080;
     FILE *image_fp;
-    char *bufptr;
     static char buf[2048];
     struct extfs_info *einfo;
 
@@ -98,10 +96,15 @@ int _singularity_image_ext3_init(struct image_object *image, int open_flags) {
     }
 
     /* if LAUNCH_STRING is present, figure out EXTFS magic offset */
-    bufptr = strstr(buf, SINGULARITY);
-    if ( bufptr != NULL ) {
-        magicoff += (bufptr + strlen(SINGULARITY) + 1 - buf);
-        image->offset = (bufptr + strlen(SINGULARITY) + 1 - buf);
+    if ( strstr(buf, "singularity") != NULL ) {
+        magicoff += strlen(buf);
+        image->offset = strlen(buf);
+    }
+
+    if ( ( magicoff + sizeof(struct extfs_info) ) > sizeof(buf) ) {
+        close(image_fd);
+        singularity_message(VERBOSE, "Can not find EXT3 information header");
+        return(-1);
     }
 
     einfo = (struct extfs_info *)&buf[magicoff];
