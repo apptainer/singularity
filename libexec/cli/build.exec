@@ -76,6 +76,7 @@ while true; do
             shift
         ;;
         --comp)
+            shift
             MKSQASHFS_LVL_OPTS="$1"
             shift
         ;;
@@ -382,7 +383,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         else
             OPTS=""
         fi
-        if [ -n "${MKSQASHFS_LVL_OPTS:-}"]; then
+        if [ -n "${MKSQASHFS_LVL_OPTS:-}" ]; then
             COMP="-comp $MKSQASHFS_LVL_OPTS" 
         else
             COMP=""
