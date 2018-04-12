@@ -50,9 +50,9 @@ BUILD OPTIONS:
                     post, files, environment, test, labels, none)
     --comp <comp>   select squashfs Compressors 
                     available:
-                        gzip (default)
+                        gzip 
                         lzma
-                        lzo
+                        lzo (default)
                         xz
 
 
