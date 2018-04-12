@@ -75,6 +75,10 @@ while true; do
             SINGULARITY_SANDBOX=1
             shift
         ;;
+        --comp)
+            MKSQASHFS_LVL_OPTS="$1"
+            shift
+        ;;
         -w|--writable)
             if [ "$USERID" != "0" ]; then
                 message ERROR "Writable images must be created as root\n"
@@ -378,7 +382,12 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         else
             OPTS=""
         fi
-        if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend $OPTS > /dev/null; then
+        if [ -n "${MKSQASHFS_LVL_OPTS:-}"]; then
+            COMP="-comp $MKSQASHFS_LVL_OPTS" 
+        else
+            COMP=""
+        fi
+        if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend $OPTS $COMP > /dev/null; then
             message ERROR "Failed squashing image, left template directory at: $SINGULARITY_ROOTFS\n"
             exit 1
         fi
