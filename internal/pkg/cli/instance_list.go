@@ -14,10 +14,10 @@ import (
 )
 
 func init() {
-	singularityCmd.AddCommand(instanceDotListCmd)
+	SingularityCmd.AddCommand(instanceDotListCmd)
 }
 
-var instanceListCmd = &cobra.Command{
+var InstanceListCmd = &cobra.Command{
 	Use:  "list [list options...] [patterns]",
 	Args: cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {

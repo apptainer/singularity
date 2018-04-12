@@ -14,14 +14,14 @@ import (
 )
 
 func init() {
-	signCmd.Flags().SetInterspersed(false)
+	SignCmd.Flags().SetInterspersed(false)
 	verifyCmd.Flags().SetInterspersed(false)
 
-	singularityCmd.AddCommand(signCmd)
-	singularityCmd.AddCommand(verifyCmd)
+	SingularityCmd.AddCommand(SignCmd)
+	SingularityCmd.AddCommand(verifyCmd)
 }
 
-var signCmd = &cobra.Command{
+var SignCmd = &cobra.Command{
 	Use:  "sign <image path>",
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

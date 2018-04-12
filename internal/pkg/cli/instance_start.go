@@ -31,7 +31,7 @@ var instanceStartExamples string = `
 
 func init() {
 	instanceStartCmds := []*cobra.Command{
-		instanceStartCmd,
+		InstanceStartCmd,
 		instanceDotStartCmd,
 	}
 
@@ -56,10 +56,10 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
 	}
 
-	singularityCmd.AddCommand(instanceDotStartCmd)
+	SingularityCmd.AddCommand(instanceDotStartCmd)
 }
 
-var instanceStartCmd = &cobra.Command{
+var InstanceStartCmd = &cobra.Command{
 	Use:  "start [start options...] <container path> <instance name>",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {

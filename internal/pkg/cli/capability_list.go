@@ -31,7 +31,7 @@ var capabilityListExamples string = `
 
 func init() {
 	capabilityListCmds := []*cobra.Command{
-		capabilityListCmd,
+		CapabilityListCmd,
 		capabilityDotListCmd,
 	}
 
@@ -39,10 +39,10 @@ func init() {
 		cmd.Flags().SetInterspersed(false)
 	}
 
-	singularityCmd.AddCommand(capabilityDotListCmd)
+	SingularityCmd.AddCommand(capabilityDotListCmd)
 }
 
-var capabilityListCmd = &cobra.Command{
+var CapabilityListCmd = &cobra.Command{
 	Use:  "list [list options...] <capabilities>",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {

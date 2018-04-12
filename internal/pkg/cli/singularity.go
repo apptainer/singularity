@@ -25,7 +25,7 @@ var (
 )
 
 // singularity is the base command when called without any subcommands
-var singularityCmd = &cobra.Command{
+var SingularityCmd = &cobra.Command{
 	Use:                   "singularity [global options...]",
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
@@ -39,7 +39,7 @@ the root command (singularity).
 */
 func Execute() {
 	//goflag.Parse()
-	if err := singularityCmd.Execute(); err != nil {
+	if err := SingularityCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
@@ -98,25 +98,25 @@ func PrintFlagUsages2(flagSet *pflag.FlagSet) (ret string) {
 */
 
 func init() {
-	singularityCmd.Flags().SetInterspersed(false)
-	singularityCmd.PersistentFlags().SetInterspersed(false)
+	SingularityCmd.Flags().SetInterspersed(false)
+	SingularityCmd.PersistentFlags().SetInterspersed(false)
 	//fmt.Printf("%s", PrintFlagUsages2(instanceStartCmd.LocalFlags()))
 	templateFuncs := template.FuncMap{
 		"TraverseParentsUses": TraverseParentsUses,
 	}
 
-	//singularityCmd.Flags().AddGoFlagSet(goflag.CommandLine)
+	//SingularityCmd.Flags().AddGoFlagSet(goflag.CommandLine)
 	//flag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	//goflag.Parse()
 
-	singularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
-	singularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
-	singularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
-	singularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
+	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
+	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
+	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
+	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
 
 	cobra.AddTemplateFuncs(templateFuncs)
 
-	singularityCmd.SetHelpTemplate(
+	SingularityCmd.SetHelpTemplate(
 		`{{.UsageString}}{{if .HasAvailableLocalFlags}}
 
 Options:
@@ -133,7 +133,7 @@ found at:
     https://docs.sylabs.io/
 `)
 
-	singularityCmd.SetUsageTemplate(
+	SingularityCmd.SetUsageTemplate(
 		`Usage:
   {{TraverseParentsUses . | trimTrailingWhitespaces}}{{if .HasAvailableSubCommands}} <command> 
 
@@ -141,7 +141,7 @@ Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}`)
 
 	/*
-			singularityCmd.SetHelpTemplate(
+			SingularityCmd.SetHelpTemplate(
 				`{{if .HasParent}}Usage:{{if .Runnable}}
 		  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
 		  {{.CommandPath}} [options...] <command>{{end}}{{else}}Usage:
@@ -169,7 +169,7 @@ Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
 		`)
 
 			/*
-						singularityCmd.SetHelpTemplate(`
+						SingularityCmd.SetHelpTemplate(`
 					USAGE: singularity [global options...] <command> [command options...] ...
 
 					GLOBAL OPTIONS:
@@ -212,7 +212,7 @@ Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
 					website: http://singularity.lbl.gov/
 					`)
 
-					singularityCmd.SetUsageTemplate(`
+					SingularityCmd.SetUsageTemplate(`
 				USAGE: singularity [global options...] <command> [command options...] ...
 				    `)
 	*/

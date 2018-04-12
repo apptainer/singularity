@@ -38,7 +38,7 @@ func init() {
 
 	BuildCmd.Flags().SetInterspersed(false)
     BuildCmd.SetHelpFunc(manHelp)
-	singularityCmd.AddCommand(BuildCmd)
+	SingularityCmd.AddCommand(BuildCmd)
 
 	BuildCmd.Flags().BoolVarP(&Sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
 	BuildCmd.Flags().StringSliceVar(&Sections, "section", []string{}, "Only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")

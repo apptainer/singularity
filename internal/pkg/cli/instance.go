@@ -12,13 +12,13 @@ import (
 )
 
 func init() {
-	singularityCmd.AddCommand(instanceCmd)
-	instanceCmd.AddCommand(instanceStartCmd)
-	instanceCmd.AddCommand(instanceStopCmd)
-	instanceCmd.AddCommand(instanceListCmd)
+	SingularityCmd.AddCommand(InstanceCmd)
+	InstanceCmd.AddCommand(InstanceStartCmd)
+	InstanceCmd.AddCommand(InstanceStopCmd)
+	InstanceCmd.AddCommand(InstanceListCmd)
 }
 
-var instanceCmd = &cobra.Command{
+var InstanceCmd = &cobra.Command{
 	Use: "instance",
 	Run: nil,
 	DisableFlagsInUseLine: true,

@@ -31,7 +31,7 @@ var capabilityAddExamples string = `
 
 func init() {
 	capabilityAddCmds := []*cobra.Command{
-		capabilityAddCmd,
+		CapabilityAddCmd,
 		capabilityDotAddCmd,
 	}
 
@@ -39,10 +39,10 @@ func init() {
 		cmd.Flags().SetInterspersed(false)
 	}
 
-	singularityCmd.AddCommand(capabilityDotAddCmd)
+	SingularityCmd.AddCommand(capabilityDotAddCmd)
 }
 
-var capabilityAddCmd = &cobra.Command{
+var CapabilityAddCmd = &cobra.Command{
 	Use:  "add [add options...] <capabilities>",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {

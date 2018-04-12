@@ -58,8 +58,8 @@ var runExamples string = `
 func init() {
 	actionCmds := []*cobra.Command{
 		ExecCmd,
-		shellCmd,
-		runCmd,
+		ShellCmd,
+		RunCmd,
 	}
 
 	for _, cmd := range actionCmds {
@@ -87,9 +87,9 @@ func init() {
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("allow-setuid"))
 	}
 
-	singularityCmd.AddCommand(ExecCmd)
-	singularityCmd.AddCommand(shellCmd)
-	singularityCmd.AddCommand(runCmd)
+	SingularityCmd.AddCommand(ExecCmd)
+	SingularityCmd.AddCommand(ShellCmd)
+	SingularityCmd.AddCommand(RunCmd)
 
 }
 
@@ -103,8 +103,8 @@ var ExecCmd = &cobra.Command{
 	Example: execExamples,
 }
 
-// shellCmd represents the shell command
-var shellCmd = &cobra.Command{
+// ShellCmd represents the shell command
+var ShellCmd = &cobra.Command{
 	Use: "shell [shell options...] <container>",
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
@@ -113,8 +113,8 @@ var shellCmd = &cobra.Command{
 	Example: shellExamples,
 }
 
-// runCmd represents the run command
-var runCmd = &cobra.Command{
+// RunCmd represents the run command
+var RunCmd = &cobra.Command{
 	Use: "run [run options] <container>",
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)

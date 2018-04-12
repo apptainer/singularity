@@ -14,10 +14,10 @@ import (
 )
 
 func init() {
-	singularityCmd.AddCommand(instanceDotStopCmd)
+	SingularityCmd.AddCommand(instanceDotStopCmd)
 }
 
-var instanceStopCmd = &cobra.Command{
+var InstanceStopCmd = &cobra.Command{
 	Use: "stop",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("stopping instance")

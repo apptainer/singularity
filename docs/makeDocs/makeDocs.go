@@ -16,18 +16,20 @@ import (
 
 func main () {
 
-    makeDoc("singularity-build", cli.BuildCmd)
-    //  makeDoc("singularity-capability", cli.capability)
-    //  makeDoc("singularity-capability-add", cli.capability_add)
-    //  makeDoc("singularity-capability-drop", cli.capability_drop)
-    //  makeDoc("singularity-capability-list", cli.capability_list)
-    makeDoc("singularity-exec", cli.ExecCmd)
-    //  makeDoc("singularity-instance", cli.instance)
-    //  makeDoc("singularity-instance-list", cli.insance_list)
-    //  makeDoc("singularity-instance-start", cli.instance_start)
-    //  makeDoc("singularity-instance-stop", cli.instance_stop)
-    //  makeDoc("singularity-signing", cli.singing)
-    //  makeDoc("singularity-singularity", cli.singularity)
+    makeDoc( "singularity-build",           cli.BuildCmd          )
+    makeDoc( "singularity-capability",      cli.CapabilityCmd     )
+    makeDoc( "singularity-capability-add",  cli.CapabilityAddCmd  )
+    makeDoc( "singularity-capability-drop", cli.CapabilityDropCmd )
+    makeDoc( "singularity-capability-list", cli.CapabilityListCmd )
+    makeDoc( "singularity-exec",            cli.ExecCmd           )
+    makeDoc( "singularity-instance",        cli.InstanceCmd       )
+    makeDoc( "singularity-instance-list",   cli.InstanceListCmd   )
+    makeDoc( "singularity-instance-start",  cli.InstanceStartCmd  )
+    makeDoc( "singularity-instance-stop",   cli.InstanceStopCmd   )
+    makeDoc( "singularity-run",             cli.RunCmd            )
+    makeDoc( "singularity-shell",           cli.ShellCmd          )
+    makeDoc( "singularity-signing",         cli.SignCmd           )
+    makeDoc( "singularity-singularity",     cli.SingularityCmd    )
 
 }
 
@@ -46,6 +48,5 @@ func makeDoc(title string, cmd *cobra.Command) {
         if err != nil {
             glog.Error("Failed to create man page for %s\n", title)
     }
-
 }
 

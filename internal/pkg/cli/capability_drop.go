@@ -31,7 +31,7 @@ var capabilityDropExamples string = `
 
 func init() {
 	capabilityDropCmds := []*cobra.Command{
-		capabilityDropCmd,
+		CapabilityDropCmd,
 		capabilityDotDropCmd,
 	}
 
@@ -41,10 +41,10 @@ func init() {
 		//cmd.Flags.StringVarP()
 	}
 
-	singularityCmd.AddCommand(capabilityDotDropCmd)
+	SingularityCmd.AddCommand(capabilityDotDropCmd)
 }
 
-var capabilityDropCmd = &cobra.Command{
+var CapabilityDropCmd = &cobra.Command{
 	Use:  "drop [drop options...] <capabilities>",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
