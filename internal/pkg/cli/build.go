@@ -10,7 +10,6 @@ package cli
 import (
 	"fmt"
 	"os"
-    // "os/exec"
 
 	"github.com/golang/glog"
 	"github.com/singularityware/singularity/pkg/build"
@@ -33,12 +32,12 @@ var (
 
 func init() {
 
-    newHelpCmd := func(c *cobra.Command, args []string) {
-        docs.DispManPg("ls")
+    manHelp := func(c *cobra.Command, args []string) {
+        docs.DispManPg("singularity-build")
     }
 
 	BuildCmd.Flags().SetInterspersed(false)
-    BuildCmd.SetHelpFunc(newHelpCmd)
+    BuildCmd.SetHelpFunc(manHelp)
 	singularityCmd.AddCommand(BuildCmd)
 
 	BuildCmd.Flags().BoolVarP(&Sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")

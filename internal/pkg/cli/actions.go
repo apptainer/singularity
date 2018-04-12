@@ -57,7 +57,7 @@ var runExamples string = `
 
 func init() {
 	actionCmds := []*cobra.Command{
-		execCmd,
+		ExecCmd,
 		shellCmd,
 		runCmd,
 	}
@@ -87,14 +87,14 @@ func init() {
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("allow-setuid"))
 	}
 
-	singularityCmd.AddCommand(execCmd)
+	singularityCmd.AddCommand(ExecCmd)
 	singularityCmd.AddCommand(shellCmd)
 	singularityCmd.AddCommand(runCmd)
 
 }
 
-// execCmd represents the exec command
-var execCmd = &cobra.Command{
+// ExecCmd represents the exec command
+var ExecCmd = &cobra.Command{
 	Use: "exec [exec options...] <container> ...",
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)

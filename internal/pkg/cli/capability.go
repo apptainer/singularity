@@ -19,7 +19,7 @@ func init() {
 }
 
 var capabilityCmd = &cobra.Command{
-	Use: "capability",
+	Use: "capability <subcommand>",
 	Run: nil,
 	DisableFlagsInUseLine: true,
 }
