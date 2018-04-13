@@ -113,14 +113,15 @@ int check_proc_mount(char *mount, char *real_mountpoint) {
         if ( is_link(tmp_test_path) == 0 ) {
             char *linktarget = realpath(tmp_test_path, NULL); // Flawfinder: ignore
             if ( linktarget == NULL ) {
-                singularity_message(ERROR, "Could not identify the source of contained link: %s\n", test_mountpoint);
-                ABORT(255);
-            }
-            full_test_path = joinpath(CONTAINER_FINALDIR, linktarget);
-            singularity_message(DEBUG, "Parent directory is a link, resolved: %s->%s\n", tmp_test_path, full_test_path);
-            if ( strcmp(linktarget, "/") == 0 ) {
-                singularity_message(DEBUG, "Link is pointing to /, not allowed: %s\n", test_mountpoint);
+                singularity_message(WARNING, "Skipping bind point within container (broken link): %s\n", test_mountpoint);
                 retval = 1;
+            } else {
+                full_test_path = joinpath(CONTAINER_FINALDIR, linktarget);
+                singularity_message(DEBUG, "Parent directory is a link, resolved: %s->%s\n", tmp_test_path, full_test_path);
+                if ( strcmp(linktarget, "/") == 0 ) {
+                    singularity_message(WARNING, "Skipping bind point within container (link is pointing to /): %s\n", test_mountpoint);
+                    retval = 1;
+                }
             }
             free(linktarget);
         } else {
