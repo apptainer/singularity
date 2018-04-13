@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <limits.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -112,8 +113,9 @@ void daemon_init_join(void) {
 
         daemon_file_parse();
                 
-        pid_path = (char *)malloc(2048 * sizeof(char *));
-        sprintf(pid_path, "/proc/%s", singularity_registry_get("DAEMON_PID")); //Flawfinder: ignore
+        pid_path = (char *)malloc(PATH_MAX * sizeof(char *));
+        pid_path[PATH_MAX-1] = '\0';
+        snprintf(pid_path, PATH_MAX-1, "/proc/%s", singularity_registry_get("DAEMON_PID")); //Flawfinder: ignore
 
         if ( daemon_is_owner(pid_path) == 0 ) {
             singularity_message(ERROR, "Unable to join instance: you are not the owner\n");
