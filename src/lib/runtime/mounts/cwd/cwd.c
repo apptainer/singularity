@@ -54,6 +54,10 @@ int _singularity_runtime_mount_cwd(void) {
     int r;
 
     singularity_message(DEBUG, "Checking to see if we should mount current working directory\n");
+    if ( cwd_path == NULL ) {
+        singularity_message(ERROR, "Could not allocate memory for current working directory\n");
+        ABORT(255);
+    }
 
     singularity_message(DEBUG, "Getting current working directory\n");
     cwd_path[PATH_MAX-1] = '\0';
