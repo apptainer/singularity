@@ -28,6 +28,7 @@ fill_sigeinfo(void *fingerprint, void *signature, int siglen, Eleminfo *e, Sifpa
 	e->cm.len = siglen;
 	e->sigdesc.signature = signature;
 	e->sigdesc.hashtype = HASH_SHA384;
+	memset(e->sigdesc.entity, 0, sizeof(e->sigdesc.entity));
 	memcpy(e->sigdesc.entity, fingerprint, 20);
 }
 
@@ -42,7 +43,7 @@ Sifsignature *
 getsignature(Sifinfo *info)
 {
 	Sifpartition *part;
-	Sifsignature *link;
+	Sifdescriptor *link;
 
 	part = sif_getpartition(info, SIF_DEFAULT_GROUP);
 	if(part == NULL){
@@ -50,13 +51,14 @@ getsignature(Sifinfo *info)
 		        sif_strerror(siferrno));
 		return NULL;
 	}
-	link = (Sifsignature *)sif_getlinkeddesc(info, part->cm.id);
+	link = sif_getlinkeddesc(info, part->cm.id);
 	if(link == NULL){
 		fprintf(stderr, "Cannot find signature for id %d: %s\n",
 		        part->cm.id, sif_strerror(siferrno));
 		return NULL;
 	}
-	return link;
+
+	return (Sifsignature *)link;
 }
 */
 import "C"
@@ -114,6 +116,12 @@ func (s *Sifsignature) FileOff() uint64 {
 
 func (s *Sifsignature) FileLen() uint64 {
 	return uint64(s.sig.cm.filelen)
+}
+
+func (s *Sifsignature) GetEntity() string {
+	fingerprint := C.GoBytes(unsafe.Pointer(&s.sig.entity[0]), 20)
+	str := fmt.Sprintf("%0X", fingerprint)
+	return str
 }
 
 type Eleminfo struct {

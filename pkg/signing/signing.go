@@ -8,11 +8,19 @@ import (
 	"fmt"
 	"github.com/singularityware/singularity/pkg/image"
 	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/clearsign"
 	"golang.org/x/crypto/openpgp/packet"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+)
+
+const (
+	syKeysAddr = "divyan.org:11371"
 )
 
 // routine that outputs signature type (applies to vindex operation)
@@ -96,33 +104,33 @@ func printSignatures(entity *openpgp.Entity) error {
 	return nil
 }
 
-func SyPgpDirPath() string {
+func syPgpDirPath() string {
 	return filepath.Join(os.Getenv("HOME"), ".sypgp")
 }
 
-func SyPgpSecretPath() string {
-	return filepath.Join(SyPgpDirPath(), "pgp-secret")
+func syPgpSecretPath() string {
+	return filepath.Join(syPgpDirPath(), "pgp-secret")
 }
 
-func SyPgpPublicPath() string {
-	return filepath.Join(SyPgpDirPath(), "pgp-public")
+func syPgpPublicPath() string {
+	return filepath.Join(syPgpDirPath(), "pgp-public")
 }
 
 // Create Singularity PGP home folder, secret and public keyring files
-func SyPgpPathsCheck() error {
-	if err := os.MkdirAll(SyPgpDirPath(), 0700); err != nil {
+func syPgpPathsCheck() error {
+	if err := os.MkdirAll(syPgpDirPath(), 0700); err != nil {
 		log.Println("could not create singularity PGP directory")
 		return err
 	}
 
-	fs, err := os.OpenFile(SyPgpSecretPath(), os.O_RDWR|os.O_CREATE, 0600)
+	fs, err := os.OpenFile(syPgpSecretPath(), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		log.Println("Could not create private keyring file: ", err)
 		return err
 	}
 	fs.Close()
 
-	fp, err := os.OpenFile(SyPgpPublicPath(), os.O_RDWR|os.O_CREATE, 0600)
+	fp, err := os.OpenFile(syPgpPublicPath(), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		log.Println("Could not create public keyring file: ", err)
 		return err
@@ -132,12 +140,12 @@ func SyPgpPathsCheck() error {
 	return nil
 }
 
-func SyPgpLoadPrivKeyring() (openpgp.EntityList, error) {
-	if err := SyPgpPathsCheck(); err != nil {
+func syPgpLoadPrivKeyring() (openpgp.EntityList, error) {
+	if err := syPgpPathsCheck(); err != nil {
 		return nil, err
 	}
 
-	f, err := os.Open(SyPgpSecretPath())
+	f, err := os.Open(syPgpSecretPath())
 	if err != nil {
 		log.Println("Error trying to open secret keyring file: ", err)
 		return nil, err
@@ -153,12 +161,12 @@ func SyPgpLoadPrivKeyring() (openpgp.EntityList, error) {
 	return el, nil
 }
 
-func SyPgpLoadPubKeyring() (openpgp.EntityList, error) {
-	if err := SyPgpPathsCheck(); err != nil {
+func syPgpLoadPubKeyring() (openpgp.EntityList, error) {
+	if err := syPgpPathsCheck(); err != nil {
 		return nil, err
 	}
 
-	f, err := os.Open(SyPgpPublicPath())
+	f, err := os.Open(syPgpPublicPath())
 	if err != nil {
 		log.Println("Error trying to open public keyring file: ", err)
 		return nil, err
@@ -187,7 +195,7 @@ func printEntity(index int, e *openpgp.Entity) {
 func printPubKeyring() (err error) {
 	var pubEntlist openpgp.EntityList
 
-	if pubEntlist, err = SyPgpLoadPubKeyring(); err != nil {
+	if pubEntlist, err = syPgpLoadPubKeyring(); err != nil {
 		return err
 	}
 
@@ -202,7 +210,7 @@ func printPubKeyring() (err error) {
 func printPrivKeyring() (err error) {
 	var privEntlist openpgp.EntityList
 
-	if privEntlist, err = SyPgpLoadPrivKeyring(); err != nil {
+	if privEntlist, err = syPgpLoadPrivKeyring(); err != nil {
 		return err
 	}
 
@@ -217,7 +225,7 @@ func printPrivKeyring() (err error) {
 func genKeyPair() error {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
-	if err := SyPgpPathsCheck(); err != nil {
+	if err := syPgpPathsCheck(); err != nil {
 		return err
 	}
 
@@ -254,7 +262,7 @@ func genKeyPair() error {
 	}
 	fmt.Println("Done")
 
-	fs, err := os.OpenFile(SyPgpSecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	fs, err := os.OpenFile(syPgpSecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Println("Could not open private keyring file for appending: ", err)
 		return err
@@ -266,7 +274,7 @@ func genKeyPair() error {
 		return err
 	}
 
-	fp, err := os.OpenFile(SyPgpPublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	fp, err := os.OpenFile(syPgpPublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Println("Could not open public keyring file for appending: ", err)
 		return err
@@ -320,7 +328,7 @@ func selectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	return el[index], nil
 }
 
-func SifDataObjectHash(sinfo *image.Sifinfo) (*bytes.Buffer, error) {
+func sifDataObjectHash(sinfo *image.Sifinfo) (*bytes.Buffer, error) {
 	var msg = new(bytes.Buffer)
 
 	part, err := image.SifGetPartition(sinfo, image.SIF_DEFAULT_GROUP)
@@ -341,7 +349,7 @@ func SifDataObjectHash(sinfo *image.Sifinfo) (*bytes.Buffer, error) {
 	return msg, nil
 }
 
-func SifAddSignature(fingerprint [20]byte, sinfo *image.Sifinfo, signature []byte) error {
+func sifAddSignature(fingerprint [20]byte, sinfo *image.Sifinfo, signature []byte) error {
 	var e image.Eleminfo
 
 	part, err := image.SifGetPartition(sinfo, image.SIF_DEFAULT_GROUP)
@@ -356,6 +364,70 @@ func SifAddSignature(fingerprint [20]byte, sinfo *image.Sifinfo, signature []byt
 		log.Println(err)
 		return err
 	}
+	return nil
+}
+
+func sykeysFetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, error) {
+	url := "http://" + sykeysAddr + "/pks/lookup?op=get&options=mr&search=0x" + fingerprint
+	log.Println("url :", url)
+	res, err := http.Get(url)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	el, err := openpgp.ReadArmoredKeyRing(res.Body)
+	res.Body.Close()
+	if err != nil {
+		log.Println("error while trying to read armored key ring: ", err)
+		return nil, err
+	}
+	if len(el) == 0 {
+		err = fmt.Errorf("no keys in keyring")
+		log.Println(err)
+		return nil, err
+	}
+	if len(el) > 1 {
+		err = fmt.Errorf("server returned more than one key for unique fingerprint")
+		log.Println(err)
+		return nil, err
+	}
+
+	return el, nil
+}
+
+func sykeysPushPubkey(entity *openpgp.Entity, sykeysAddr string) (err error) {
+	u := "http://" + sykeysAddr + "/pks/add"
+	w := bytes.NewBuffer(nil)
+
+	wr, err := armor.Encode(w, openpgp.PublicKeyType, nil)
+	if err != nil {
+		log.Println("armor.Encode failed")
+	}
+
+	err = entity.Serialize(wr)
+	if err != nil {
+		log.Println("can't serialize public key", err)
+		return err
+	}
+	wr.Close()
+
+	d := url.Values{}
+	d.Set("keytext", w.String())
+	resp, err := http.PostForm(u, d)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	text, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	fmt.Printf("%s", text)
+
 	return nil
 }
 
@@ -375,7 +447,7 @@ func Sign(cpath string) error {
 	var en *openpgp.Entity
 	var err error
 
-	if el, err = SyPgpLoadPrivKeyring(); err != nil {
+	if el, err = syPgpLoadPrivKeyring(); err != nil {
 		return err
 	} else if el == nil {
 		fmt.Println("No Private Keys found in SYPGP store, generating RSA pair for you.")
@@ -383,7 +455,12 @@ func Sign(cpath string) error {
 		if err != nil {
 			return err
 		}
-		if el, err = SyPgpLoadPrivKeyring(); err != nil || el == nil {
+		if el, err = syPgpLoadPrivKeyring(); err != nil || el == nil {
+			return err
+		}
+		fmt.Printf("Sending PGP public key material: %0X => %s.\n", el[0].PrimaryKey.Fingerprint, syKeysAddr)
+		err = sykeysPushPubkey(el[0], syKeysAddr)
+		if err != nil {
 			return err
 		}
 	}
@@ -404,7 +481,7 @@ func Sign(cpath string) error {
 	}
 	defer image.SifUnload(&sinfo)
 
-	msg, err := SifDataObjectHash(&sinfo)
+	msg, err := sifDataObjectHash(&sinfo)
 	if err != nil {
 		return err
 	}
@@ -424,7 +501,7 @@ func Sign(cpath string) error {
 		return err
 	}
 
-	if err = SifAddSignature(en.PrimaryKey.Fingerprint, &sinfo, signedmsg.Bytes()); err != nil {
+	if err = sifAddSignature(en.PrimaryKey.Fingerprint, &sinfo, signedmsg.Bytes()); err != nil {
 		return err
 	}
 
@@ -441,7 +518,7 @@ func Verify(cpath string) error {
 	}
 	defer image.SifUnload(&sinfo)
 
-	msg, err := SifDataObjectHash(&sinfo)
+	msg, err := sifDataObjectHash(&sinfo)
 	if err != nil {
 		return err
 	}
@@ -469,14 +546,31 @@ func Verify(cpath string) error {
 		return fmt.Errorf("Sif hash string mismatch -- don't use")
 	}
 
-	if el, err = SyPgpLoadPubKeyring(); err != nil {
+	if el, err = syPgpLoadPubKeyring(); err != nil {
 		return err
 	}
 
+	/* try to verify with local PGP store */
 	var signer *openpgp.Entity
 	if signer, err = openpgp.CheckDetachedSignature(el, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
 		log.Printf("failed to check signature: %s", err)
-		return err
+		/* verification with local keyring failed, try to fetch from key server */
+		log.Println("Contacting sykeys PGP key management services for:", sig.GetEntity())
+		syel, err := sykeysFetchPubkey(sig.GetEntity(), syKeysAddr)
+		if err != nil {
+			return err
+		}
+
+		block, _ := clearsign.Decode(data)
+		if block == nil {
+			log.Printf("failed to decode clearsign message\n")
+			return fmt.Errorf("failed to decode clearsign message\n")
+		}
+
+		if signer, err = openpgp.CheckDetachedSignature(syel, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
+			log.Printf("failed to check signature: %s", err)
+			return err
+		}
 	}
 	fmt.Print("Authentic and signed by:\n")
 	for _, i := range signer.Identities {
