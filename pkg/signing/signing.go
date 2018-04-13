@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	syKeysAddr = "divyan.org:11371"
+	syKeysAddr = "example.org:11371"
 )
 
 // routine that outputs signature type (applies to vindex operation)
@@ -476,7 +476,7 @@ func Sign(cpath string) error {
 
 	var sinfo image.Sifinfo
 	if err = image.SifLoad(cpath, &sinfo, 0); err != nil {
-		log.Println(err)
+		log.Println("error loading sif file:", cpath, err)
 		return err
 	}
 	defer image.SifUnload(&sinfo)
