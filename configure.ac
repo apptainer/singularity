@@ -358,6 +358,7 @@ AC_MSG_ERROR([unable to find libarchive, need package libarchive-devel (libarchi
 ])
 # we don't want the LIBS setting of AC_SEARCH_LIBS, override
 AC_SUBST(LIBS,"")
+CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([
    Makefile
