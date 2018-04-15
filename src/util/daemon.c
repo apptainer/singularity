@@ -108,14 +108,20 @@ void daemon_init_join(void) {
         ABORT(255);
         return;
     } else if ( lock_result == EALREADY ) {
+        long int pid;
+
         /* EALREADY is set when another process has a lock on the file. */
         singularity_message(DEBUG, "Another process has lock on daemon file\n");
 
         daemon_file_parse();
-                
+
         pid_path = (char *)malloc(PATH_MAX * sizeof(char *));
         pid_path[PATH_MAX-1] = '\0';
-        snprintf(pid_path, PATH_MAX-1, "/proc/%s", singularity_registry_get("DAEMON_PID")); //Flawfinder: ignore
+        if ( str2int(singularity_registry_get("DAEMON_PID"), &pid) < 0 ) {
+            singularity_message(ERROR, "Unable to convert DAEMON_PID\n");
+            ABORT(255);
+        }
+        snprintf(pid_path, PATH_MAX-1, "/proc/%lu", pid); //Flawfinder: ignore
 
         if ( daemon_is_owner(pid_path) == 0 ) {
             singularity_message(ERROR, "Unable to join instance: you are not the owner\n");
