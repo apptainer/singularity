@@ -381,7 +381,6 @@ struct tempfile *make_tempfile(void) {
    struct tempfile *tf;
    char *tmpdir = singularity_registry_get("TMPDIR");
 
-   printf("TMPDIR is: %s\n", tmpdir);
    if (tmpdir == NULL) {
        tmpdir = "/tmp";
    }
