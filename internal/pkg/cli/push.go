@@ -18,7 +18,7 @@ var (
 
 func init() {
 	pushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "http://localhost:5150", "")
-	singularityCmd.AddCommand(pushCmd)
+	SingularityCmd.AddCommand(pushCmd)
 }
 
 var pushCmd = &cobra.Command{

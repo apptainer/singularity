@@ -50,6 +50,7 @@ func init() {
 
 // BuildCmd represents the build command
 var BuildCmd = &cobra.Command{
+    DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(2),
 
     Use: `build [local options...] <IMAGE PATH> <BUILD SPEC>`,

@@ -18,7 +18,7 @@ var (
 
 func init() {
 	pullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "http://localhost:5150", "")
-	singularityCmd.AddCommand(pullCmd)
+	SingularityCmd.AddCommand(pullCmd)
 
 }
 
