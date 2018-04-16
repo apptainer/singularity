@@ -185,14 +185,14 @@
   version = "v1.0.0-rc1"
 
 [[projects]]
+  branch = "master"
   name = "github.com/opencontainers/image-spec"
   packages = [
     "schema",
     "specs-go",
     "specs-go/v1"
   ]
-  revision = "d60099175f88c47cd379c4738d158884749ed235"
-  version = "v1.0.1"
+  revision = "8e82844449a093ef49d824afad963a5e0a76b63b"
 
 [[projects]]
   branch = "master"
@@ -274,12 +274,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/syndtr/gocapability"
-  packages = ["capability"]
-  revision = "33e07d32887e1e06b7c025f27ce52f62c7990bc0"
-
-[[projects]]
-  branch = "master"
   name = "github.com/xeipuuv/gojsonpointer"
   packages = ["."]
   revision = "4e3ac2762d5f479393488629ee9370b50873b3a6"
@@ -309,6 +303,7 @@
     "cast5",
     "openpgp",
     "openpgp/armor",
+    "openpgp/clearsign",
     "openpgp/elgamal",
     "openpgp/errors",
     "openpgp/packet",
@@ -339,6 +334,15 @@
   version = "v1.0.22"
 
 [[projects]]
+  branch = "v2"
+  name = "gopkg.in/mgo.v2"
+  packages = [
+    "bson",
+    "internal/json"
+  ]
+  revision = "3f83fa5005286a7fe593b055f0d7771a7dce4655"
+
+[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
@@ -347,6 +351,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "acba2b36f48d4a75748baf8d79c7a4c94aa92fbc78b2098b88d596b668ca13d3"
+  inputs-digest = "8607bcf437ba2d692698568fb2a46eb20331e6e108e7ac11dade49213fea463b"
   solver-name = "gps-cdcl"
   solver-version = 1

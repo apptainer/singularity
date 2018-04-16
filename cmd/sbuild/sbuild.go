@@ -5,19 +5,12 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
-
-package libexec
+package main
 
 import (
-//capability "github.com/syndtr/gocapability/capability"
+	"github.com/singularityware/singularity/internal/pkg/cli"
 )
 
-/*
-func CapabilityAdd(caps []capability.Cap) {
-
+func main() {
+	cli.ExecuteSbuild()
 }
-
-func CapabilityDrop(caps []capability.Cap) {
-
-}
-*/

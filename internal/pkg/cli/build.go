@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/golang/glog"
 	"github.com/singularityware/singularity/pkg/build"
 	"github.com/spf13/cobra"
 
@@ -189,25 +188,25 @@ found at:
 			// URI passed as arg[1]
 			def, err = build.NewDefinitionFromURI(args[1])
 			if err != nil {
-				glog.Error(err)
+				fmt.Println("Error: ", err)
 				return
 			}
 		} else if !ok && err == nil {
 			// Non-URI passed as arg[1]
 			defFile, err := os.Open(args[1])
 			if err != nil {
-				glog.Error(err)
+				fmt.Println("Error: ", err)
 				return
 			}
 
 			def, err = build.ParseDefinitionFile(defFile)
 			if err != nil {
-				glog.Error(err)
+				fmt.Println("Error: ", err)
 				return
 			}
 		} else {
 			// Error
-			glog.Error(err)
+			fmt.Println("Error: ", err)
 			return
 		}
 
@@ -217,12 +216,15 @@ found at:
 		} else {
 			b, err = build.NewSifBuilder(args[0], def)
 			if err != nil {
-				glog.Error(err)
+				fmt.Println("Error: ", err)
 				return
 			}
 		}
 
-		b.Build()
+		if err := b.Build(); err != nil {
+			fmt.Println("Error: ", err)
+			return
+		}
 
 		/*
 			if Remote {

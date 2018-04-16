@@ -63,13 +63,15 @@ func NewLegacyBuilder(p string, c context.Context, d Definition) (builder *Legac
 	return
 }
 
-func (b *LegacyBuilder) Build() {
-	err := b.Cmd.Start()
+func (b *LegacyBuilder) Build() (err error) {
+	err = b.Cmd.Start()
 
 	if err != nil {
 		glog.Fatal(err)
-		return
+		return err
 	}
 
 	b.Proc = b.Cmd.Process
+
+	return nil
 }

@@ -9,6 +9,7 @@ singularity-*.tar.gz
 singularity
 generate_docs
 
+.vscode
 vendor/
 trash.lock
 Makefile

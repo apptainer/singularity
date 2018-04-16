@@ -15,6 +15,7 @@ import (
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	config "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/config"
+	"github.com/singularityware/singularity/pkg/configs"
 
 	"github.com/spf13/cobra"
 )
@@ -93,9 +94,10 @@ func init() {
 
 }
 
-// ExecCmd represents the exec command
+// execCmd represents the exec command
 var ExecCmd = &cobra.Command{
-	Use: "exec [exec options...] <container> ...",
+	Use:  "exec [exec options...] <container> ...",
+	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
@@ -103,9 +105,10 @@ var ExecCmd = &cobra.Command{
 	Example: execExamples,
 }
 
-// ShellCmd represents the shell command
+// shellCmd represents the shell command
 var ShellCmd = &cobra.Command{
-	Use: "shell [shell options...] <container>",
+	Use:  "shell [shell options...] <container>",
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
@@ -113,9 +116,10 @@ var ShellCmd = &cobra.Command{
 	Example: shellExamples,
 }
 
-// RunCmd represents the run command
+// runCmd represents the run command
 var RunCmd = &cobra.Command{
-	Use: "run [run options] <container>",
+	Use:  "run [run options...] <container>",
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
@@ -124,7 +128,11 @@ var RunCmd = &cobra.Command{
 
 func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	lvl := "0"
-	wrapper := "/tmp/wrapper-suid"
+	if configs.BUILDTREE == "" {
+		log.Fatal("buildtree not defined at compile time, exiting")
+	}
+
+	wrapper := configs.BUILDTREE + "/wrapper-suid"
 
 	oci, runtime := config.NewSingularityConfig("new")
 	oci.Root.SetPath(image)
@@ -147,21 +155,21 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 	if UserNamespace {
 		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UserNamespace})
-		wrapper = "/tmp/wrapper"
+		wrapper = configs.BUILDTREE + "/wrapper"
 	}
 	oci.RuntimeOciSpec.Linux.Namespaces = namespaces
 
 	cmd := exec.Command(wrapper)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-    if verbose {
-        lvl = "2"
-    }
+	if verbose {
+		lvl = "2"
+	}
 	if debug {
 		lvl = "5"
 	}
 
-	cmd.Env = []string{"MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
+	cmd.Env = []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
 	j, err := runtime.GetConfig()
 	if err != nil {
 		log.Fatalln(err)
