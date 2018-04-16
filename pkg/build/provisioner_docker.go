@@ -163,22 +163,55 @@ func (p *DockerProvisioner) insertRunScript(i *image.Sandbox, ociConfig imgspecv
 		return
 	}
 
-	_, err = f.WriteString(strings.Join(ociConfig.Entrypoint, " "))
-	if err != nil {
-		return
+	if len(ociConfig.Entrypoint) > 0 {
+		_, err = f.WriteString("OCI_ENTRYPOINT=\"" + strings.Join(ociConfig.Entrypoint, " ") + "\"\n")
+		if err != nil {
+			return
+		}
+	} else {
+		_, err = f.WriteString("OCI_ENTRYPOINT=\"\"\n")
+		if err != nil {
+			return
+		}
 	}
 
-	_, err = f.WriteString(" ")
-	if err != nil {
-		return
+	if len(ociConfig.Cmd) > 0 {
+		_, err = f.WriteString("OCI_CMD=\"" + strings.Join(ociConfig.Cmd, " ") + "\"\n")
+		if err != nil {
+			return
+		}
+	} else {
+		_, err = f.WriteString("OCI_CMD=\"\"\n")
+		if err != nil {
+			return
+		}
 	}
 
-	_, err = f.WriteString(strings.Join(ociConfig.Cmd, " "))
-	if err != nil {
-		return
-	}
+	_, err = f.WriteString(`# ENTRYPOINT only - run entrypoint plus args
+if [ -z "$OCI_CMD" ] && [ -n "$OCI_ENTRYPOINT" ]; then
+    SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} $@"
+fi
 
-	_, err = f.WriteString("\n")
+# CMD only - run CMD or override with args
+if [ -n "$OCI_CMD" ] && [ -z "$OCI_ENTRYPOINT" ]; then
+    if [ $# -gt 0 ]; then
+        SINGULARITY_OCI_RUN="$@"
+    else
+        SINGULARITY_OCI_RUN="${OCI_CMD}"
+    fi
+fi
+
+# ENTRYPOINT and CMD - run ENTRYPOINT with CMD as default args
+# override with user provided args
+if [ $# -gt 0 ]; then
+    SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} $@"
+else
+    SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
+fi
+
+exec $SINGULARITY_OCI_RUN
+
+`)
 	if err != nil {
 		return
 	}
