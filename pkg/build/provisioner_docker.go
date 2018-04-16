@@ -10,10 +10,12 @@ package build
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -228,6 +230,9 @@ func (p *DockerProvisioner) insertEnv(i *image.Sandbox, ociConfig imgspecv1.Imag
 // Untar takes a destination path and a reader; a tar reader loops over the tarfile
 // creating the file structure at 'dst' along the way, and writing any files
 func Untar(dst string, r io.Reader) error {
+
+	dstAbs := path.Clean(dst)
+
 	gzr, err := gzip.NewReader(r)
 	defer gzr.Close()
 	if err != nil {
@@ -255,7 +260,13 @@ func Untar(dst string, r io.Reader) error {
 		}
 
 		// the target location where the dir/file should be created
-		target := filepath.Join(dst, header.Name)
+		target := filepath.Join(dstAbs, header.Name)
+
+		// Make sure the target is inside the destination
+		targetAbs := path.Clean(target)
+		if !strings.HasPrefix(targetAbs, dstAbs) {
+			return fmt.Errorf("attempt to extract file %s outside of destination %s", header.Name, dst)
+		}
 
 		// the following switch could also be done using fi.Mode(), not sure if there
 		// a benefit of using one vs. the other.
