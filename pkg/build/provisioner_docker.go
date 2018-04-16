@@ -5,6 +5,7 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
 
 import (
@@ -29,7 +30,9 @@ import (
 	"github.com/singularityware/singularity/pkg/image"
 )
 
-// ===== Docker =====
+// NewDockerProvisioner returns a provisioner that can create a sandbox from a
+// docker registry URL. The provisioner uses containers/image for retrieval
+// and opencontainers/image-tools for OCI compliant extraction.
 func NewDockerProvisioner(src string) (p *DockerProvisioner, err error) {
 	p = &DockerProvisioner{}
 
@@ -57,6 +60,9 @@ func NewDockerProvisioner(src string) (p *DockerProvisioner, err error) {
 	return p, nil
 }
 
+// DockerProvisioner returns can create a sandbox from a
+// docker registry URL. The provisioner uses containers/image for retrieval
+// and opencontainers/image-tools for OCI compliant extraction.
 type DockerProvisioner struct {
 	src       string
 	srcRef    types.ImageReference
@@ -65,6 +71,9 @@ type DockerProvisioner struct {
 	policyCtx *signature.PolicyContext
 }
 
+// Provision a sandbox from a docker container reference using
+// source and destination information set on the DockerProvisioner
+// struct previously
 func (p *DockerProvisioner) Provision(i *image.Sandbox) (err error) {
 	defer os.RemoveAll(p.tmpfs)
 
