@@ -18,7 +18,7 @@ addons:
       - libarchive-dev
 
 before_install:
-  - 
+  - dep ensure -vendor-only
 
 install:
   - ./compile.sh --clean
