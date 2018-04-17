@@ -18,6 +18,8 @@ addons:
       - libarchive-dev
 
 before_install:
+  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+  - export PATH="${GOPATH}/bin:${PATH}"
   - dep ensure -vendor-only
 
 install:
