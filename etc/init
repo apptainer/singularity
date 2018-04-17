@@ -37,6 +37,3 @@ export SINGULARITYENV_PATH
 # Don't save the shell's HISTFILE
 SINGULARITYENV_HISTFILE=""
 export SINGULARITYENV_HISTFILE
-
-# Relax restrictive umasks that can cause several problems 
-umask 0002
