@@ -28,6 +28,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
    added SINGULARITYENV_PREPEND_PATH and SINGULARITYENV_APPEND_PATH for users
    wanting to prepend or append to the container PATH at runtime
  - Fix for check_mounted() to check parent directories #1436
+ - Reset umask to 0002 at start to corrrect several errors 
 
 ## [v2.4.6-rc1](https://github.com/singularityware/singularity/releases/tag/2.4.6-rc1) (2018-04-04)
 
