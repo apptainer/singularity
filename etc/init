@@ -32,8 +32,11 @@ fi
 # Provide a sane starting path within the container (unfortunately the same 
 # var name is recycled from above for legacy reasons)
 SINGULARITYENV_PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+export SINGULARITYENV_PATH 
 
 # Don't save the shell's HISTFILE
 SINGULARITYENV_HISTFILE=""
+export SINGULARITYENV_HISTFILE
 
-export SINGULARITYENV_PATH SINGULARITYENV_HISTFILE
+# Relax restrictive umasks that can cause several problems 
+umask 0002
