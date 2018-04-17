@@ -12,7 +12,7 @@ addons:
       - flawfinder
       - squashfs-tools
       - uuid-dev
-      - libuuiid1
+      - libuuid1
       - libssl-dev
       - libssl1.0.0
       - libarchive-dev
