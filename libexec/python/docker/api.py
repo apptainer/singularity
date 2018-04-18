@@ -24,6 +24,7 @@ perform publicly and display publicly, and to permit other to do so.
 import sys
 import math
 import os
+import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                 os.path.pardir)))  # noqa
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
@@ -73,6 +74,7 @@ class DockerApiConnection(ApiConnection):
     def __init__(self, **kwargs):
         self.auth = None
         self.token = None
+        self.tokenExpires = None
         self.token_url = None
         self.schemaVersion = None
         self.reverseLayers = False
@@ -172,12 +174,17 @@ class DockerApiConnection(ApiConnection):
             query_fragment=query_fragment
         )
 
-    def update_token(self, response=None, auth=None, expires_in=9000):
+    def update_token(self, response=None, auth=None, expires_in=300):
         '''update_token uses HTTP basic authentication to get a token for
         Docker registry API V2 operations. We get here if a 401 is
         returned for a request.
         https://docs.docker.com/registry/spec/auth/token/
         '''
+
+        if self.tokenExpires and self.tokenExpires > ( time.time() - 5 ):
+            bot.debug("Not renewing token - does not expire within 5s")
+            return
+
         if self.token_url is None:
 
             if response is None:
@@ -209,19 +216,31 @@ class DockerApiConnection(ApiConnection):
         elif self.auth is not None:
             headers.update(self.auth)
 
+        bot.debug("Requesting token from docker registry API")
+
         response = self.get(self.token_url,
                             default_headers=False,
                             headers=headers)
 
         try:
-            token = json.loads(response)["token"]
-            token = {"Authorization": "Bearer %s" % token}
+            data = json.loads(response)
+            token = {"Authorization": "Bearer %s" % data["token"]}
             self.token = token
+
+            # Default expiry from API is 60s
+            expires_in = 60
+            if 'expires_in' in data:
+                expires_in = data['expires_in']
+            # issued_at and expires_in are optional, so use the completion of
+            # token exchange (now)
+            self.tokenExpires = time.time() + expires_in
+            bot.debug( "Received token valid for %d - expiring at %d" % (expires_in, self.tokenExpires))
+
             self.update_headers(token)
 
-        except Exception:
-            bot.error("Error getting token for repository %s, exiting."
-                      % self.repo_name)
+        except Exception as e:
+            bot.error("Error getting token for repository %s, exiting.\n%s\n"
+                      % (self.repo_name, str(e)))
             sys.exit(1)
 
     def get_images(self, manifest=None):
