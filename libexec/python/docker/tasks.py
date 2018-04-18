@@ -46,11 +46,13 @@ def download_layer(client, image_id, cache_base):
     This is intended to be used by the multiprocessing function.
     If return_tmp is True, the temporary file is returned
     (intended to be renamed later)'''
+
+    # Token will only really be updated if within 5s of expiry
+    client.update_token()
     targz = client.get_layer(image_id=image_id,
                              download_folder=cache_base,  # return tmp when
                              return_tmp=PLUGIN_FIXPERMS)  # fix permissions
 
-    client.update_token()
     return targz
 
 
