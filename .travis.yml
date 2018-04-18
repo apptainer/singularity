@@ -27,4 +27,4 @@ install:
   - ./compile.sh --clean
 
 script:
-  - echo "Passed"
+  - go test ./tests/

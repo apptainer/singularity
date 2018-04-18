@@ -59,26 +59,26 @@ var buildCmd = &cobra.Command{
 			// URI passed as arg[1]
 			def, err = build.NewDefinitionFromURI(args[1])
 			if err != nil {
-				fmt.Println("Error: ", err)
-				return
+				fmt.Println("Unable to parse URI %s: ", args[1], err)
+				os.Exit(1)
 			}
 		} else if !ok && err == nil {
 			// Non-URI passed as arg[1]
 			defFile, err := os.Open(args[1])
 			if err != nil {
-				fmt.Println("Error: ", err)
-				return
+				fmt.Println("Unable to open file %s: ", args[1], err)
+				os.Exit(1)
 			}
 
 			def, err = build.ParseDefinitionFile(defFile)
 			if err != nil {
-				fmt.Println("Error: ", err)
-				return
+				fmt.Println("Failed to parse definition file %s: ", args[1], err)
+				os.Exit(1)
 			}
 		} else {
 			// Error
-			fmt.Println("Error: ", err)
-			return
+			fmt.Println("Unable to parse %s: ", args[1], err)
+			os.Exit(1)
 		}
 
 		if Remote {
@@ -87,14 +87,14 @@ var buildCmd = &cobra.Command{
 		} else {
 			b, err = build.NewSifBuilder(args[0], def)
 			if err != nil {
-				fmt.Println("Error: ", err)
-				return
+				fmt.Println("Failed to create SifBuilder object: ", err)
+				os.Exit(1)
 			}
 		}
 
 		if err := b.Build(); err != nil {
-			fmt.Println("Error: ", err)
-			return
+			fmt.Println("Failed to build image: ", err)
+			os.Exit(1)
 		}
 
 		/*
