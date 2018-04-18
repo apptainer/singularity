@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),  # noqa
                 os.path.pardir)))  # noqa
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from sutils import (
     add_http,
@@ -60,18 +60,20 @@ def download_layer(client, image_id, cache_base):
         os.remove(targz)
         return None
 
+
 def verify_layer(targz):
     '''check that a downloaded layer's sha256 checksum is OK
        correct checksum is in the filename:
            sha256:7d460157dea423c1e16c544fecad995439e12dd50c8db4a8e134fa245cd1846e.tar.gz
     '''
-    
+
     targz_basename = os.path.basename(targz)
 
     bot.debug("Verifying checksum for layer: %s" % targz_basename)
 
     if targz_basename[:6] != 'sha256':
-        bot.warning("Unknown hash function for layer (%s) - will not checksum" % targz_basename[:5])
+        bot.warning("Unknown hash function for layer (%s) - will not checksum"
+                    % targz_basename[:5])
         return true
 
     expected = targz_basename[7:71]
@@ -83,21 +85,21 @@ def verify_layer(targz):
             for block in iter(lambda: f.read(1048576), b''):
                 sha256.update(block)
     except Exception as e:
-        bot.error("Error computing checksum for layer (%s) - %s" % ( targz_basename, str(e) ))
+        bot.error("Error computing checksum for layer (%s) - %s"
+                  % (targz_basename, str(e)))
         return False
-
 
     computed = sha256.hexdigest()
 
-    bot.debug("Computed checksum %s, expected checksum %s" % (computed, expected))
+    bot.debug("Computed checksum %s, expected checksum %s"
+              % (computed, expected))
 
     if computed != expected:
-        bot.error("Downloaded layer %s does not match checksum" % targz_basename)
+        bot.error("Downloaded layer %s does not match checksum"
+                  % targz_basename)
         return False
 
     return True
-
-
 
 
 def change_permissions(tar_file, file_permission=None, folder_permission=None):

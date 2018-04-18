@@ -181,7 +181,7 @@ class DockerApiConnection(ApiConnection):
         https://docs.docker.com/registry/spec/auth/token/
         '''
 
-        if self.tokenExpires and self.tokenExpires > ( time.time() - 5 ):
+        if self.tokenExpires and self.tokenExpires > (time.time() - 5):
             bot.debug("Not renewing token - does not expire within 5s")
             return
 
@@ -234,7 +234,8 @@ class DockerApiConnection(ApiConnection):
             # issued_at and expires_in are optional, so use the completion of
             # token exchange (now)
             self.tokenExpires = time.time() + expires_in
-            bot.debug( "Received token valid for %d - expiring at %d" % (expires_in, self.tokenExpires))
+            bot.debug("Received token valid for %d - expiring at %d"
+                      % (expires_in, self.tokenExpires))
 
             self.update_headers(token)
 

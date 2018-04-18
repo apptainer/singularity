@@ -123,12 +123,13 @@ def IMPORT(image, auth=None, layerfile=None):
         # If a checksum failed for a layer we get None for that layer
         for layer in download_layers:
 
-            if layer == None:
-                bot.abort("Error during layer download - one or more layers failed to download correctly.")
+            if layer is None:
+                bot.abort("Error during layer download - one or more layers failed to download correctly.")  # noqa
                 sys.exit(1)
 
             if not os.path.exists(layer):
-                bot.abort("A downloaded layer file could not be found: %s" % layer)
+                bot.abort("A downloaded layer file could not be found: %s"
+                          % layer)
                 sys.exit(1)
 
     # Get Docker runscript
