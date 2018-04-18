@@ -337,6 +337,10 @@ class ApiConnection(object):
         else:
             request = Request(url=url,
                               headers=headers)
+
+            # Force User-Agent always
+            request.add_header('User-Agent', 'Singularity')
+
         return request
 
     def download_atomically(self,
