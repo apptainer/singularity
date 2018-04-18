@@ -74,7 +74,7 @@ def verify_layer(targz):
     if targz_basename[:6] != 'sha256':
         bot.warning("Unknown hash function for layer (%s) - will not checksum"
                     % targz_basename[:5])
-        return true
+        return True
 
     expected = targz_basename[7:71]
 
