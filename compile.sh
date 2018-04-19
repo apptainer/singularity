@@ -48,4 +48,18 @@ go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/smaster $coredir/runtime/go/
 
 sudo cp $buildtree/wrapper $buildtree/wrapper-suid
 sudo chown root:root $buildtree/wrapper-suid && sudo chmod 4755 $buildtree/wrapper-suid
-sudo -E go run docs/makeDocs/makeDocs.go /usr/share/man/man1
+
+DOCPATH=/usr/local/share/man/man1
+sudo mkdir -p "${DOCPATH}"
+CLEANUPMESSAGE="True"
+for doc in `ls "${DOCPATH}"/singularity*`; do 
+
+    if [ "${CLEANUPMESSAGE}" = "True" ]; then
+        echo "deleting ${DOCPATH}/singularity*"
+        CLEANUPMESSAGE="False"
+    fi 
+
+    sudo rm "${doc}" 
+
+done
+sudo -E go run docs/makeDocs/makeDocs.go "${DOCPATH}"

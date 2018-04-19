@@ -12,7 +12,7 @@ import (
     "fmt"
 
     "github.com/singularityware/singularity/internal/pkg/cli"
-    "github.com/spf13/cobra"
+    // "github.com/spf13/cobra"
     "github.com/spf13/cobra/doc"
     "golang.org/x/sys/unix"
 )
@@ -27,50 +27,29 @@ func main () {
         return
     }
 
+    // if the user supplied a directory argument try to save man pages there
     if argc > 1 {
         dir = argv[1]
+    // otherwise try to save in the $GOPATH if it exits (failing both of these
+    // options, default is to save into /tmp
     } else if gopath := os.Getenv("GOPATH"); len(gopath) > 0 {
         dir = gopath + "/src/github.com/singularityware/singularity/docs/man"
     }
 
     if err := unix.Access(dir, unix.W_OK); err != nil {
-        fmt.Printf("ERROR: Given directory does not exist or is not writable")
+        fmt.Printf("ERROR: Given directory does not exist or is not writable by calling user.")
         return
     }
 
     fmt.Printf("Creating Singularity man pages at %s\n", dir)
-    fmt.Printf("If you want to use them, copy them to /usr/share/man\n")
-
-    makeDoc( "singularity-build",           cli.BuildCmd,          dir)
-    makeDoc( "singularity-capability",      cli.CapabilityCmd,     dir)
-    makeDoc( "singularity-capability-add",  cli.CapabilityAddCmd,  dir)
-    makeDoc( "singularity-capability-drop", cli.CapabilityDropCmd, dir)
-    makeDoc( "singularity-capability-list", cli.CapabilityListCmd, dir)
-    makeDoc( "singularity-exec",            cli.ExecCmd,           dir)
-    makeDoc( "singularity-instance",        cli.InstanceCmd,       dir)
-    makeDoc( "singularity-instance-list",   cli.InstanceListCmd,   dir)
-    makeDoc( "singularity-instance-start",  cli.InstanceStartCmd,  dir)
-    makeDoc( "singularity-instance-stop",   cli.InstanceStopCmd,   dir)
-    makeDoc( "singularity-run",             cli.RunCmd,            dir)
-    makeDoc( "singularity-shell",           cli.ShellCmd,          dir)
-    makeDoc( "singularity-signing",         cli.SignCmd,           dir)
-    makeDoc( "singularity-singularity",     cli.SingularityCmd,    dir)
-
-}
-
-/*
-makeDoc will generate a man page of a given title for a given Singularity 
-command.  
-*/
-func makeDoc(title string, cmd *cobra.Command, dir string) {
 
     header := &doc.GenManHeader {
-        Title: title,
+        Title: "singularity",
         Section: "1",
     }
 
-    if err := doc.GenManTree(cmd, header, dir); err != nil {
-        fmt.Printf("ERROR: Failed to create man page for %s\n", title)
+    // works recursively on all sub-commands (thanks bauerm97)
+    if err := doc.GenManTree(cli.SingularityCmd, header, dir); err != nil {
+        fmt.Printf("ERROR: Failed to create man page for singularity\n" )
     }
 }
-
