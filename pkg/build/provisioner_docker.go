@@ -5,15 +5,18 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
 
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -27,7 +30,9 @@ import (
 	"github.com/singularityware/singularity/pkg/image"
 )
 
-// ===== Docker =====
+// NewDockerProvisioner returns a provisioner that can create a sandbox from a
+// docker registry URL. The provisioner uses containers/image for retrieval
+// and opencontainers/image-tools for OCI compliant extraction.
 func NewDockerProvisioner(src string) (p *DockerProvisioner, err error) {
 	p = &DockerProvisioner{}
 
@@ -55,6 +60,9 @@ func NewDockerProvisioner(src string) (p *DockerProvisioner, err error) {
 	return p, nil
 }
 
+// DockerProvisioner returns can create a sandbox from a
+// docker registry URL. The provisioner uses containers/image for retrieval
+// and opencontainers/image-tools for OCI compliant extraction.
 type DockerProvisioner struct {
 	src       string
 	srcRef    types.ImageReference
@@ -63,6 +71,9 @@ type DockerProvisioner struct {
 	policyCtx *signature.PolicyContext
 }
 
+// Provision a sandbox from a docker container reference using
+// source and destination information set on the DockerProvisioner
+// struct previously
 func (p *DockerProvisioner) Provision(i *image.Sandbox) (err error) {
 	defer os.RemoveAll(p.tmpfs)
 
@@ -261,6 +272,9 @@ func (p *DockerProvisioner) insertEnv(i *image.Sandbox, ociConfig imgspecv1.Imag
 // Untar takes a destination path and a reader; a tar reader loops over the tarfile
 // creating the file structure at 'dst' along the way, and writing any files
 func Untar(dst string, r io.Reader) error {
+
+	dstAbs := path.Clean(dst)
+
 	gzr, err := gzip.NewReader(r)
 	defer gzr.Close()
 	if err != nil {
@@ -288,7 +302,13 @@ func Untar(dst string, r io.Reader) error {
 		}
 
 		// the target location where the dir/file should be created
-		target := filepath.Join(dst, header.Name)
+		target := filepath.Join(dstAbs, header.Name)
+
+		// Make sure the target is inside the destination
+		targetAbs := path.Clean(target)
+		if !strings.HasPrefix(targetAbs, dstAbs) {
+			return fmt.Errorf("attempt to extract file %s outside of destination %s", header.Name, dst)
+		}
 
 		// the following switch could also be done using fi.Mode(), not sure if there
 		// a benefit of using one vs. the other.
