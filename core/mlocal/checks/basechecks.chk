@@ -177,7 +177,7 @@ if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
 fi
 if echo | $hstcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
 	-e __arm64__; then
-	tgt_arch=arm64
+	tgt_arch=aarch64
 fi
 if [ "$tgt_arch" != "" ]; then
 	echo $tgt_arch
