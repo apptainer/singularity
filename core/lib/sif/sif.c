@@ -111,7 +111,7 @@ sif_validate(Sifinfo *info)
 		currarch = SIF_ARCH_386;
 	else if(!strncmp(name.machine, "arm", 3) && sizeof(void *) == 4)
 		currarch = SIF_ARCH_ARM;
-	else if(!strncmp(name.machine, "arm", 3) && sizeof(void *) == 8)
+	else if(!strncmp(name.machine, "aarch64", 7))
 		currarch = SIF_ARCH_AARCH64;
 	else{
 		siferrno = SIF_EUARCH;

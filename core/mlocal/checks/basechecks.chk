@@ -175,6 +175,10 @@ if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
 	-e __x86_64__; then
 	tgt_arch=x86_64
 fi
+if echo | $hstcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
+	-e __arm64__; then
+	tgt_arch=aarch64
+fi
 if [ "$tgt_arch" != "" ]; then
 	echo $tgt_arch
 else
@@ -196,6 +200,11 @@ if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
 	-e __x86_64__; then
 	wordsize=64
 fi
+if echo | $hstcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
+	-e __arm64__; then
+	wordsize=64
+fi
+
 if [ "$wordsize" != "" ]; then
 	echo $wordsize
 else
