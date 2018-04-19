@@ -11,34 +11,34 @@ package build
 import "strings"
 
 type Definition struct {
-	Header    map[string]string
-	ImageData imageData
-	BuildData buildData
+	Header map[string]string
+	ImageData
+	BuildData
 }
 
-// imageData contains any scripts, metadata, etc... that needs to be
+// ImageData contains any scripts, metadata, etc... that needs to be
 // present in some from in the final built image
-type imageData struct {
+type ImageData struct {
 	Metadata []byte   //
 	Labels   []string //
-	imageScripts
+	ImageScripts
 }
 
-type imageScripts struct {
+type ImageScripts struct {
 	Help        string
 	Environment string
 	Runscript   string
 	Test        string
 }
 
-// buildData contains any scripts, metadata, etc... that the Builder may
+// BuildData contains any scripts, metadata, etc... that the Builder may
 // need to know only at build time to build the image
-type buildData struct {
+type BuildData struct {
 	Files map[string]string //
-	buildScripts
+	BuildScripts
 }
 
-type buildScripts struct {
+type BuildScripts struct {
 	Pre   string
 	Setup string
 	Post  string

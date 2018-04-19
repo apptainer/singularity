@@ -136,8 +136,8 @@ func doSections(s *bufio.Scanner, d *Definition, done chan error) {
 		files[key] = val
 	}
 
-	d.ImageData = imageData{
-		imageScripts: imageScripts{
+	d.ImageData = ImageData{
+		ImageScripts: ImageScripts{
 			Help:        sections["help"],
 			Environment: sections["environment"],
 			Runscript:   sections["runscript"],
@@ -145,7 +145,7 @@ func doSections(s *bufio.Scanner, d *Definition, done chan error) {
 		},
 	}
 	d.BuildData.Files = files
-	d.BuildData.buildScripts = buildScripts{
+	d.BuildData.BuildScripts = BuildScripts{
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
 		Post:  sections["post"],
