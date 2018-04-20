@@ -9,17 +9,43 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+    "github.com/singularityware/singularity/docs"
 )
 
+var instanceUse string = `instance <subcommand>`
+
+var instanceShort string = `
+command group for managing containers running in the background`
+
+var instanceLong string = `
+Instances allow you to run containers as background processes. This can be 
+useful for running services such as web servers or databases.`
+
+var instanceExample string = `
+All group commands have their own help output:
+
+$ singularity help instance.start
+$ singularity instance.start --help`
+
 func init() {
+
+    manHelp := func(c *cobra.Command, args []string) {
+        docs.DispManPg("singularity-instance")
+    }
+
 	SingularityCmd.AddCommand(InstanceCmd)
+    InstanceCmd.SetHelpFunc(manHelp)
 	InstanceCmd.AddCommand(InstanceStartCmd)
 	InstanceCmd.AddCommand(InstanceStopCmd)
 	InstanceCmd.AddCommand(InstanceListCmd)
 }
 
 var InstanceCmd = &cobra.Command{
-	Use: "instance",
 	Run: nil,
 	DisableFlagsInUseLine: true,
+
+	Use: instanceUse,
+    Short: instanceShort,
+    Long: instanceLong,
+    Example: instanceExample,
 }

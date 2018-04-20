@@ -31,9 +31,9 @@ Singularity my-sql.img> pwd
 /home/mibauer/mysql
 Singularity my-sql.img> ps
 PID TTY          TIME CMD
-1 pts/0    00:00:00 sinit
-2 pts/0    00:00:00 bash
-3 pts/0    00:00:00 ps
+  1 pts/0    00:00:00 sinit
+  2 pts/0    00:00:00 bash
+  3 pts/0    00:00:00 ps
 Singularity my-sql.img> 
 
 $ singularity capability.stop /tmp/my-sql.img mysql

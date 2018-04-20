@@ -13,7 +13,7 @@ import (
     "github.com/singularityware/singularity/docs"
 )
 
-var capabilityUse string = `capability <subcommands>`
+var capabilityUse string = `capability <subcommand>`
 
 var capabilityShort string = `
 command group supporting the management of Linux security capabilities on 
