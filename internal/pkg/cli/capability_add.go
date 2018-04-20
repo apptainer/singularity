@@ -45,7 +45,6 @@ func init() {
         docs.DispManPg("singularity-capability-add")
     }
 
-
 	capabilityAddCmds := []*cobra.Command{
 		CapabilityAddCmd,
 		// capabilityDotAddCmd,
@@ -61,6 +60,7 @@ func init() {
 
 var CapabilityAddCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
+    DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("adding capability")
 	},
