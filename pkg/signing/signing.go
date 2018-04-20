@@ -11,7 +11,6 @@ import (
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/clearsign"
 	"golang.org/x/crypto/openpgp/packet"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -368,18 +367,35 @@ func sifAddSignature(fingerprint [20]byte, sinfo *image.Sifinfo, signature []byt
 }
 
 func sykeysFetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, error) {
-	url := "http://" + sykeysAddr + "/pks/lookup?op=get&options=mr&search=0x" + fingerprint
-	log.Println("url :", url)
-	res, err := http.Get(url)
+	v := url.Values{}
+	v.Set("op", "get")
+	v.Set("options", "mr")
+	v.Set("search", "0x"+fingerprint)
+	u := url.URL{
+		Scheme:   "http",
+		Host:     sykeysAddr,
+		Path:     "pks/lookup",
+		RawQuery: v.Encode(),
+	}
+	urlStr := u.String()
+
+	log.Println("url:", urlStr)
+	resp, err := http.Get(urlStr)
 	if err != nil {
+		log.Println("error in http.Get:", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		err = fmt.Errorf("no matching keys found for fingerprint")
 		log.Println(err)
 		return nil, err
 	}
 
-	el, err := openpgp.ReadArmoredKeyRing(res.Body)
-	res.Body.Close()
+	el, err := openpgp.ReadArmoredKeyRing(resp.Body)
 	if err != nil {
-		log.Println("error while trying to read armored key ring: ", err)
+		log.Println("error while trying to read armored key ring:", err)
 		return nil, err
 	}
 	if len(el) == 0 {
@@ -397,51 +413,51 @@ func sykeysFetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityLis
 }
 
 func sykeysPushPubkey(entity *openpgp.Entity, sykeysAddr string) (err error) {
-	u := "http://" + sykeysAddr + "/pks/add"
 	w := bytes.NewBuffer(nil)
-
 	wr, err := armor.Encode(w, openpgp.PublicKeyType, nil)
 	if err != nil {
-		log.Println("armor.Encode failed")
+		log.Println("armor.Encode failed:", err)
 	}
 
 	err = entity.Serialize(wr)
 	if err != nil {
-		log.Println("can't serialize public key", err)
+		log.Println("can't serialize public key:", err)
 		return err
 	}
 	wr.Close()
 
-	d := url.Values{}
-	d.Set("keytext", w.String())
-	resp, err := http.PostForm(u, d)
-	if err != nil {
-		log.Println(err)
-		return err
+	v := url.Values{}
+	v.Set("keytext", w.String())
+	u := url.URL{
+		Scheme:   "http",
+		Host:     sykeysAddr,
+		Path:     "pks/add",
+		RawQuery: v.Encode(),
 	}
+	urlStr := u.String()
 
-	text, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	resp, err := http.PostForm(urlStr, v)
 	if err != nil {
+		log.Println("error in http.PostForm():", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("Key server did not accept PGP key")
 		log.Println(err)
 		return err
 	}
-	fmt.Printf("%s", text)
 
 	return nil
 }
 
-/*
- * Signing workflow:
- * 1) Look for cmd parameter:
- *    a. no keyid ? -> privkeys in store ? yes=offer from list, no=genkey
- *    b. keyid ? get key from store.
- * 2) read key with specified keyid
- * 3) compute data object(s) hash
- * 4) sign this hash
- * 5) store new hash in SIF
- * 6) record the KeyID used to sign into signature data object descriptor
- */
+// Sign takes the path of a container and generates a PGP signature block for
+// its system partition. Sign uses the private keys found in the default
+// location if available or helps the user by prompting with key generation
+// configuration options. In its current form, Sign also pushes public material
+// to a key server if enabled. This should be a separate step in the next round
+// of development.
 func Sign(cpath string) error {
 	var el openpgp.EntityList
 	var en *openpgp.Entity
@@ -508,6 +524,11 @@ func Sign(cpath string) error {
 	return nil
 }
 
+// Verify takes a container path and look for a verification block for a
+// system partition. If found, the signature block is used to verify the
+// partition hash against the signer's version. Verify takes care of looking
+// for PGP keys in the default local store or looks it up from a key server
+// if access is enabled.
 func Verify(cpath string) error {
 	var el openpgp.EntityList
 	var sinfo image.Sifinfo
@@ -537,8 +558,8 @@ func Verify(cpath string) error {
 
 	block, _ := clearsign.Decode(data)
 	if block == nil {
-		log.Printf("failed to decode clearsign message\n")
-		return fmt.Errorf("failed to decode clearsign message\n")
+		log.Println("failed to decode clearsign message")
+		return fmt.Errorf("failed to decode clearsign message")
 	}
 
 	if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), msg.Bytes()) {
@@ -563,8 +584,8 @@ func Verify(cpath string) error {
 
 		block, _ := clearsign.Decode(data)
 		if block == nil {
-			log.Printf("failed to decode clearsign message\n")
-			return fmt.Errorf("failed to decode clearsign message\n")
+			log.Println("failed to decode clearsign message")
+			return fmt.Errorf("failed to decode clearsign message")
 		}
 
 		if signer, err = openpgp.CheckDetachedSignature(syel, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
