@@ -93,15 +93,15 @@ ubuntu       3     2  0 20:02 pts/8    00:00:00 ps -ef`
 
 var runUse string = `run [run options...] <container>`
 
-var runShort string = ``
+var runShort string = `execute the commands in a container runscript`
 
 var runLong string = `
 This command will launch a Singularity container and execute a runscript
-if one is defined for that container. The runscript is a file at
-'/singularity'. If this file is present (and executable) then this
-command will execute that file within the container automatically. All
-arguments following the container name will be passed directly to the
-runscript.
+if one is defined for that container. The runscript is a metadata file within
+the container that containes shell commands. If the file is present (and 
+executable) then this command will execute that file within the container 
+automatically. All arguments following the container name will be passed 
+directly to the runscript.
 
 singularity run accepts the following container formats:` + formats
 
@@ -172,14 +172,11 @@ func init() {
 	SingularityCmd.AddCommand(ShellCmd)
 	SingularityCmd.AddCommand(RunCmd)
 
-    ExecCmd.Flags().SetInterspersed(false)
-    ShellCmd.Flags().SetInterspersed(false)
-    RunCmd.Flags().SetInterspersed(false)
-
 }
 
 // execCmd represents the exec command
 var ExecCmd = &cobra.Command{
+    DisableFlagsInUseLine: true,
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
@@ -194,6 +191,7 @@ var ExecCmd = &cobra.Command{
 
 // shellCmd represents the shell command
 var ShellCmd = &cobra.Command{
+    DisableFlagsInUseLine: true,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
@@ -208,6 +206,7 @@ var ShellCmd = &cobra.Command{
 
 // runCmd represents the run command
 var RunCmd = &cobra.Command{
+    DisableFlagsInUseLine: true,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
