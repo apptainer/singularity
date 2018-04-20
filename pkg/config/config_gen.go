@@ -5,9 +5,6 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
-package configs
+package config
 
-var (
-	BUILDTREE  string
-	LIBEXECDIR string
-)
+//go:generate go run confgen/gen.go "${buildtree}/config.h"

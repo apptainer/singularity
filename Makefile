@@ -2,8 +2,8 @@ topdir  = $(shell pwd)
 coredir = $(topdir)/core
 buildtree = $(coredir)/buildtree
 
-CONFIG_PKG = github.com/singularityware/singularity/pkg/configs
-CONFIG_LDFLAGS = -X $(CONFIG_PKG).BUILDTREE=$(buildtree) -X $(CONFIG_PKG).LIBEXECDIR=/tmp/testing
+#CONFIG_PKG = github.com/singularityware/singularity/pkg/configs
+#CONFIG_LDFLAGS = -X $(CONFIG_PKG).BUILDTREE=$(buildtree) -X $(CONFIG_PKG).LIBEXECDIR=/tmp/testing
 
 CGO_CPPFLAGS = -I$(buildtree) -I$(coredir) -I$(coredir)/lib
 CGO_LDFLAGS = -L$(buildtree)/lib
@@ -17,25 +17,25 @@ all: $(GO_BINS) c
 dep:
 	dep ensure -vendor-only
 
-$(buildtree)/singularity: c
+$(buildtree)/singularity: c $(topdir)/pkg/config/config.go
 	@echo "go build $(buildtree)/singularity"
 	@export CGO_CPPFLAGS="$(CGO_CPPFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" && \
-	go build -ldflags "$(CONFIG_LDFLAGS)" --tags "$(GO_TAGS)" -o $(buildtree)/singularity $(topdir)/cmd/cli/cli.go
+	go build --tags "$(GO_TAGS)" -o $(buildtree)/singularity $(topdir)/cmd/cli/cli.go
 
-$(buildtree)/sbuild: c
+$(buildtree)/sbuild: c $(topdir)/pkg/config/config.go
 	@echo "go build $(buildtree)/sbuild"
 	@export CGO_CPPFLAGS="$(CGO_CPPFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" && \
-	go build -ldflags "$(CONFIG_LDFLAGS)" -o $(buildtree)/sbuild $(topdir)/cmd/sbuild/sbuild.go
+	go build -o $(buildtree)/sbuild $(topdir)/cmd/sbuild/sbuild.go
 
-$(buildtree)/scontainer: c
+$(buildtree)/scontainer: c $(topdir)/pkg/config/config.go
 	@echo "go build $(buildtree)/scontainer"
 	@export CGO_CPPFLAGS="$(CGO_CPPFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" && \
-	go build -ldflags "$(CONFIG_LDFLAGS)" -o $(buildtree)/scontainer $(coredir)/runtime/go/scontainer.go
+	go build -o $(buildtree)/scontainer $(coredir)/runtime/go/scontainer.go
 
-$(buildtree)/smaster: c
+$(buildtree)/smaster: c $(topdir)/pkg/config/config.go
 	@echo "go build $(buildtree)/smaster"
 	@export CGO_CPPFLAGS="$(CGO_CPPFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS)" && \
-	go build -ldflags "$(CONFIG_LDFLAGS)" -o $(buildtree)/smaster $(coredir)/runtime/go/smaster.go
+	go build -o $(buildtree)/smaster $(coredir)/runtime/go/smaster.go
 
 $(buildtree)/librpc.so:
 	@echo "go build $(buildtree)/librpc.so"
@@ -47,5 +47,9 @@ c: $(buildtree)/Makefile $(buildtree)/librpc.so
 $(buildtree)/Makefile:
 	@cd $(coredir) && ./mconfig -b $(buildtree) && cd $(topdir)
 
+$(topdir)/pkg/config/config.go: c
+	@cd $(topdir)/pkg/config && buildtree=$(buildtree) go generate
+
 clean:
-	sudo rm -rf $(buildtree)
+	@sudo rm -rf $(buildtree)
+	@rm $(topdir)/pkg/config/config.go
