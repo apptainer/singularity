@@ -28,6 +28,8 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
    added SINGULARITYENV_PREPEND_PATH and SINGULARITYENV_APPEND_PATH for users
    wanting to prepend or append to the container PATH at runtime
  - Fix for check_mounted() to check parent directories #1436
+ - Added better checks for systems were NO_NEW_PRIVS is only partially 
+   backported
 
 ## [v2.4.6-rc1](https://github.com/singularityware/singularity/releases/tag/2.4.6-rc1) (2018-04-04)
 
