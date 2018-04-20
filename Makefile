@@ -11,7 +11,7 @@ CGO_LDFLAGS = -L$(buildtree)/lib
 GO_TAGS = "containers_image_openpgp"
 GO_BINS = $(buildtree)/singularity $(buildtree)/sbuild $(buildtree)/scontainer $(buildtree)/smaster
 
-.PHONEY: all dep c clean
+.PHONEY: all dep c clean install
 all: $(GO_BINS) c
 
 dep:
@@ -52,4 +52,7 @@ $(topdir)/pkg/config/config.go: c
 
 clean:
 	@sudo rm -rf $(buildtree)
-	@rm $(topdir)/pkg/config/config.go
+	@rm -f $(topdir)/pkg/config/config.go
+
+install:
+	
