@@ -44,6 +44,34 @@
 #include "util/message.h"
 #include "util/privilege.h"
 
+
+static struct stat st_overlaydir;
+static struct stat st_finaldir;
+static struct stat st_sessiondir;
+
+void container_statdir_update(unsigned char sessiondir_only) {
+    singularity_message(DEBUG, "Get stat for container directories\n");
+
+    if ( sessiondir_only == 0 ) {
+        if ( stat(CONTAINER_OVERLAY, &st_overlaydir) < 0 ) {
+            singularity_message(ERROR, "Failed to get stat for container overlaydir %s: %s\n", CONTAINER_OVERLAY, strerror(errno));
+            ABORT(255);
+        }
+        if ( stat(CONTAINER_FINALDIR, &st_finaldir) < 0 ) {
+            singularity_message(ERROR, "Failed to get stat for container finaldir %s: %s\n", CONTAINER_FINALDIR, strerror(errno));
+            ABORT(255);
+        }
+    } else {
+        memset(&st_overlaydir, 0, sizeof(struct stat));
+        memset(&st_finaldir, 0, sizeof(struct stat));
+    }
+
+    if ( stat(SESSIONDIR, &st_sessiondir) < 0 ) {
+        singularity_message(ERROR, "Failed to get stat for container sessiondir %s: %s\n", SESSIONDIR, strerror(errno));
+        ABORT(255);
+    }
+}
+
 char *file_id(char *path) {
     struct stat filestat;
     char *ret;
@@ -328,6 +356,7 @@ int container_mkpath(char *dir, mode_t mode) {
     char *current_path = (char *)malloc(PATH_MAX);
     char *dupdir = strdup(dir);
     char *ptr, *last_ptr;
+    struct stat st_dir;
 
     if ( dupdir == NULL || current_path == NULL || dir_path == NULL ) {
         singularity_message(ERROR, "Failed to allocate memory\n");
@@ -364,10 +393,11 @@ int container_mkpath(char *dir, mode_t mode) {
                 singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
                 ABORT(255);
             }
-            if ( strncmp(dir_path, CONTAINER_MOUNTDIR, strlen(CONTAINER_MOUNTDIR)) != 0 &&
-                 strncmp(dir_path, CONTAINER_FINALDIR, strlen(CONTAINER_FINALDIR)) != 0 &&
-                 strncmp(dir_path, CONTAINER_OVERLAY, strlen(CONTAINER_OVERLAY)) != 0 &&
-                 strncmp(dir_path, SESSIONDIR, strlen(SESSIONDIR)) != 0 ) {
+            if ( stat(".", &st_dir) < 0 ) {
+                singularity_message(ERROR, "Failed to get stat for current working directory %s: %s\n", dir_path, strerror(errno));
+                ABORT(255);
+            }
+            if ( st_dir.st_dev != st_overlaydir.st_dev && st_dir.st_dev != st_finaldir.st_dev && st_dir.st_dev != st_sessiondir.st_dev ) {
                 singularity_message(WARNING, "Trying to create directory %s outside of container in %s\n", last_ptr, dir_path);
                 ret = -1;
             } else {
@@ -523,6 +553,7 @@ int fileput(char *path, char *string) {
     char *dname = dirname(dup_path);
     int fd;
     size_t string_len = strlen(string);
+    struct stat st_dir;
 
     if ( current == NULL || dir == NULL ) {
         singularity_message(ERROR, "Failed to allocate memory\n");
@@ -546,9 +577,12 @@ int fileput(char *path, char *string) {
         ABORT(255);
     }
 
-    if ( strncmp(dir, CONTAINER_MOUNTDIR, strlen(CONTAINER_MOUNTDIR)) != 0 &&
-         strncmp(dir, CONTAINER_FINALDIR, strlen(CONTAINER_FINALDIR)) != 0 &&
-         strncmp(dir, SESSIONDIR, strlen(SESSIONDIR)) != 0 ) {
+    if ( stat(".", &st_dir) < 0 ) {
+        singularity_message(ERROR, "Failed to get stat for current working directory %s: %s\n", dir, strerror(errno));
+        ABORT(255);
+    }
+
+    if ( st_dir.st_dev != st_overlaydir.st_dev && st_dir.st_dev != st_finaldir.st_dev && st_dir.st_dev != st_sessiondir.st_dev ) {
         singularity_message(WARNING, "Ignored, try to create file %s outside of container %s\n", path, dir);
         free(dup_path);
         free(current);

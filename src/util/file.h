@@ -24,6 +24,7 @@
 #ifndef __FILE_H_
 #define __FILE_H_
 
+void container_statdir_update(unsigned char);
 char *file_id(char *path);
 char *file_devino(char *path);
 #include <sys/stat.h>

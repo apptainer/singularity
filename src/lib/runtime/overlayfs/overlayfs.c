@@ -144,6 +144,8 @@ int _singularity_runtime_overlayfs(void) {
             ABORT(255);
         }
 
+        container_statdir_update(0);
+
         singularity_priv_escalate();
         singularity_message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
         if ( container_mkpath(overlay_upper, 0755) < 0 ) {
@@ -178,6 +180,8 @@ int _singularity_runtime_overlayfs(void) {
         free(overlay_work);
         free(overlay_options);
 
+        container_statdir_update(0);
+
         if (result >= 0) {
             singularity_registry_set("OVERLAYFS_ENABLED", "1");
             return(0);
@@ -191,6 +195,8 @@ int _singularity_runtime_overlayfs(void) {
         singularity_message(ERROR, "Could not bind mount container to final home %s->%s: %s\n", CONTAINER_MOUNTDIR, CONTAINER_FINALDIR, strerror(errno));
         return 1;
     }
+
+    container_statdir_update(1);
 
     return(0);
 }

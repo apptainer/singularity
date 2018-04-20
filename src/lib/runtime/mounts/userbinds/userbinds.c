@@ -91,8 +91,8 @@ int _singularity_runtime_mount_userbinds(void) {
 
             singularity_message(DEBUG, "Checking if bind point is already mounted: %s\n", dest);
             if ( check_mounted(dest) >= 0 ) {
-                singularity_message(ERROR, "Not mounting requested bind point (already mounted in container): %s\n", dest);
-                ABORT(255);
+                singularity_message(WARNING, "Not mounting requested bind point (already mounted in container): %s\n", dest);
+                continue;
             }
 
             if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
