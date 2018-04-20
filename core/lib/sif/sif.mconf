@@ -1,5 +1,5 @@
 name := libsif
 lib := sif
-csrc :=	lib/sif/list.c
-	lib/sif/sifaccess.c
-	lib/sif/sif.c
+csrc :=	core/lib/sif/list.c
+	core/lib/sif/sifaccess.c
+	core/lib/sif/sif.c
