@@ -8,6 +8,7 @@ singularity-*.tar.gz
 
 .vscode
 vendor/
+buildtree/
 pkg/config/config.go
 trash.lock
 Makefile.in

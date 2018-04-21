@@ -195,7 +195,7 @@ echo "CPPFLAGS :=" >> $genmk
 for m in $found_modules; do
 	mod=`eval echo ${m##*./}`
 	modpath=`eval echo ${mod%/*}`
-	if [ `dirname "$modpath"` = "." ]; then
+	if [ `readlink --canonicalize "$modpath"` = `readlink --canonicalize "."` ]; then
 		modpath="."
 	fi
 	if [ ! -f $mod ]; then

@@ -18,6 +18,10 @@ import (
 	"github.com/singularityware/singularity/internal/pkg/runtime/rpc"
 )
 
+// If you update the CGo exported functions YOU MUST UPDATE
+// the core/runtime/c/include/librpc.h header file by compiling
+// the project and copying buildtree/librpc.h
+
 //export RPCServer
 func RPCServer(socket int) int {
 	tmp, ok := os.LookupEnv("SRUNTIME")

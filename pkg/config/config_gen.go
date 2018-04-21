@@ -7,4 +7,4 @@
 */
 package config
 
-//go:generate go run confgen/gen.go "${buildtree}/config.h"
+//go:generate go run confgen/gen.go "${BUILDDIR}/config.h"

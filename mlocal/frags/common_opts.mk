@@ -12,4 +12,4 @@ CFLAGS += -Wtype-limits -Wunused-parameter -Wunused-but-set-parameter
 CFLAGS += -Wno-discarded-qualifiers -Wno-incompatible-pointer-types
 CFLAGS += -pipe -fmessage-length=0
 
-CPPFLAGS += -include $(BUILDDIR)/config.h -iquote\$(SOURCEDIR) -iquote\$(SOURCEDIR)/lib
+CPPFLAGS += -include $(BUILDDIR)/config.h -iquote\$(SOURCEDIR) -iquote\$(SOURCEDIR)/core -iquote\$(SOURCEDIR)/core/lib

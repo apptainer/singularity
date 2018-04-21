@@ -1,11 +1,50 @@
 libsycore := $(BUILDDIR)/lib/libsycore.a
+librpc := $(BUILDDIR)/librpc.so $(BUILDDIR)/librpc.h
 
-all: cscope collect $(libsycore)
+go_BIN := $(BUILDDIR)/singularity $(BUILDDIR)/sbuild $(BUILDDIR)/scontainer $(BUILDDIR)/smaster
+go_OBJ := $(SOURCEDIR)/pkg/config/config.go
+
+go_TAG = "containers_image_openpgp"
+
+cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/core -I$(SOURCEDIR)/core/lib
+cgo_LDFLAGS = -L$(shell readlink --canonicalize $(BUILDDIR))/lib
+
+CLEANFILES += $(librpc) $(go_BIN) $(go_OBJ)
+
+all: cscope collect $(libsycore) $(librpc) $(go_BIN)
 
 $(libsycore): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsigning_OBJ) $(libsif_OBJ)
 	@echo " AR" $@
 	@mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsigning_OBJ) $(libsif_OBJ)
+
+$(librpc):
+	@echo " AR" $@
+	$(V)go build -ldflags="-s -w" -buildmode=c-shared -o $(BUILDDIR)/librpc.so $(SOURCEDIR)/core/runtime/go/rpc.go
+
+$(BUILDDIR)/singularity: $(go_OBJ)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+	go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/cli/cli.go
+
+$(BUILDDIR)/sbuild: $(go_OBJ)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+	go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/cmd/sbuild/sbuild.go
+
+$(BUILDDIR)/scontainer: $(go_OBJ)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+	go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/core/runtime/go/scontainer.go
+
+$(BUILDDIR)/smaster: $(go_OBJ)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+	go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/core/runtime/go/smaster.go
+
+$(go_OBJ): $(libsycore) $(BUILDDIR)/config.h
+	@rm -f $(go_OBJ)
+	$(V)export BUILDDIR=$(shell readlink --canonicalize $(BUILDDIR)) && cd $(SOURCEDIR)/pkg/config && go generate
 
 .PHONY: collect
 collect:
