@@ -87,6 +87,8 @@ void singularity_priv_init(void) {
 
     singularity_message(DEBUG, "Initializing user info\n");
 
+    singularity_priv_check_nonewprivs(); 
+
     if ( target_uid_str && !target_gid_str ) {
         singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
         ABORT(255);
@@ -97,7 +99,7 @@ void singularity_priv_init(void) {
             ABORT(255);
         }
         if (target_uid < 500) {
-            singularity_message(ERROR, "Target UID (%ld) must be 500 or greater to avoid system users.\n", target_uid);
+            singularity_message(ERROR, "Target UID (%ld) must be 500 or greater to avod system users.\n", target_uid);
             ABORT(255);
         }
         if (target_uid > UINT_MAX) { // Avoid anything greater than the traditional overflow UID.
