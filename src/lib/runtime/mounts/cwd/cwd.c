@@ -127,12 +127,6 @@ int _singularity_runtime_mount_cwd(void) {
         return(0);
     }
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-    singularity_message(WARNING, "Not mounting current directory: host does not support PR_SET_NO_NEW_PRIVS\n");
-    free(cwd_path);
-    return(0);
-#endif  
-
     singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", cwd_path, container_dir, cwd_path);
     r = singularity_mount(cwd_path, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
     if ( singularity_priv_userns_enabled() != 1 ) {

@@ -87,6 +87,8 @@ void singularity_priv_init(void) {
 
     singularity_message(DEBUG, "Initializing user info\n");
 
+    singularity_priv_check_nonewprivs(); 
+
     if ( target_uid_str && !target_gid_str ) {
         singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
         ABORT(255);
@@ -97,7 +99,7 @@ void singularity_priv_init(void) {
             ABORT(255);
         }
         if (target_uid < 500) {
-            singularity_message(ERROR, "Target UID (%ld) must be 500 or greater to avoid system users.\n", target_uid);
+            singularity_message(ERROR, "Target UID (%ld) must be 500 or greater to avod system users.\n", target_uid);
             ABORT(255);
         }
         if (target_uid > UINT_MAX) { // Avoid anything greater than the traditional overflow UID.
@@ -435,17 +437,12 @@ void singularity_priv_drop_perm(void) {
         ABORT(255);
     }
 
-#ifdef SINGULARITY_NO_NEW_PRIVS
     // Prevent the following processes to increase privileges
     singularity_message(DEBUG, "Setting NO_NEW_PRIVS to prevent future privilege escalations.\n");
     if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) {
         singularity_message(ERROR, "Could not set NO_NEW_PRIVS safeguard: %s\n", strerror(errno));
         ABORT(255);
     }
-#else  // SINGULARITY_NO_NEW_PRIVS
-    singularity_message(VERBOSE2, "Not enabling NO_NEW_PRIVS flag due to lack of compile-time support.\n");
-#endif
-
 
     singularity_message(DEBUG, "Finished dropping privileges\n");
 }
@@ -532,4 +529,15 @@ int singularity_priv_has_gid(gid_t gid) {
         }
     }
     return 0;
+}
+
+void singularity_priv_check_nonewprivs() {
+    if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) {
+        singularity_message(ERROR, "Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
+        ABORT(255);
+    }
+    if ( prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) != 1 ) {
+        singularity_message(ERROR, "Host kernel is outdated and does not support PR_GET_NO_NEW_PRIVS!\n");
+        ABORT(255);
+    }
 }

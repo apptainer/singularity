@@ -46,19 +46,6 @@
 
 int _singularity_runtime_ns_pid(void) {
 
-#ifdef SINGULARITY_NO_NEW_PRIVS
-    // Use PID namespace when NO_NEW_PRIVS is not supported
-    if ( singularity_config_get_bool(ALLOW_PID_NS) <= 0 ) {
-        singularity_message(VERBOSE2, "Not virtualizing PID namespace by configuration\n");
-        return(0);
-    }
-
-    if ( singularity_registry_get("UNSHARE_PID") == NULL ) {
-        singularity_message(VERBOSE2, "Not virtualizing PID namespace on user request\n");
-        return(0);
-    }
-#endif /* SINGULARITY_NO_NEW_PRIVS */
-
 #ifdef NS_CLONE_NEWPID
     singularity_message(DEBUG, "Using PID namespace: CLONE_NEWPID\n");
     

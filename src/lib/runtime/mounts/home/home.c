@@ -63,10 +63,6 @@ int _singularity_runtime_mount_home(void) {
 
     singularity_message(DEBUG, "Checking if home directories are being influenced by user\n");
     if ( singularity_registry_get("HOME") != NULL ) {
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting user requested home: host does not support PR_SET_NO_NEW_PRIVS\n");
-        ABORT(255);
-#endif
         singularity_message(DEBUG, "Checking if user bind control is allowed\n");
         if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
             singularity_message(ERROR, "Not mounting user requested home: User bind control is disallowed\n");
