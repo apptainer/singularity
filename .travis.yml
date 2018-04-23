@@ -25,6 +25,8 @@ before_install:
 
 install:
   - ./mconfig -b ./buildtree -p /usr/local
+  - make -j `nproc 2>/dev/null || echo 1` -C ./buildtree
+  - sudo make -C ./buildtree install
 
 script:
   - go test ./tests/

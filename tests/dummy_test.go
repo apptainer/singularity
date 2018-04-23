@@ -7,16 +7,18 @@ import (
 	"testing"
 )
 
-func Test_example(t *testing.T) {
-	fmt.Println("Hi there, this is a failing test!")
-}
-
 func Test_ImageBuild(t *testing.T) {
 	t.Run("Docker", docker)
 }
 
 func docker(t *testing.T) {
-	dockerBuild := exec.Command("../core/buildtree/singularity", "build", "image.sif", "docker://ubuntu")
+	singularity, err := exec.LookPath("singularity")
+	if err != nil {
+		t.Error("singularity is not installed on this system")
+		return
+	}
+
+	dockerBuild := exec.Command(singularity, "build", "image.sif", "docker://ubuntu")
 
 	if out, err := dockerBuild.CombinedOutput(); err != nil {
 		t.Error(string(out))
