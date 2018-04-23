@@ -41,8 +41,9 @@ CGO_CPPFLAGS="$CGO_CPPFLAGS -I$buildtree -I$csrcdir -I$csrcdir/lib"
 CGO_LDFLAGS="$CGO_LDFLAGS -L$buildtree/lib"
 export CGO_CPPFLAGS CGO_LDFLAGS
 
-go build -ldflags "${CONFIG_LDFLAGS}" --tags "containers_image_openpgp" -o $buildtree/singularity $topdir/src/cmd/cli/cli.go
-go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/sbuild $topdir/src/cmd/sbuild/sbuild.go
+go build -ldflags "${CONFIG_LDFLAGS}" --tags "containers_image_openpgp" -o $buildtree/singularity \
+	$topdir/src/cmd/singularity/cli.go $topdir/src/cmd/singularity/singularity.go
+go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/sbuild $topdir/src/cmd/sbuild/cli.go $topdir/src/cmd/sbuild/sbuild.go
 go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/scontainer $csrcdir/../startup/scontainer.go
 go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/smaster $csrcdir/../startup/smaster.go
 
