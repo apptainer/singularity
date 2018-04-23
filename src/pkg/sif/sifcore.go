@@ -5,7 +5,7 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
-package image
+package sif
 
 // #cgo LDFLAGS: -lsycore -luuid
 /*

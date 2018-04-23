@@ -18,6 +18,7 @@ import (
 
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/sif"
 )
 
 func pumpPipe(src *io.PipeReader, dest io.Writer) {
@@ -87,7 +88,7 @@ func (b *SifBuilder) Build() (err error) {
 
 type sifBuilder struct {
 	def   Definition
-	image *image.SIF
+	image *sif.SIF
 	path  string
 	p     Provisioner
 	tmpfs *image.Sandbox
@@ -122,7 +123,7 @@ func NewSifBuilderJSON(r io.Reader, imagePath string) (b *sifBuilder, err error)
 
 func (b *sifBuilder) Build() (err error) {
 	b.p.Provision(b.tmpfs)
-	img, err := image.SIFFromSandbox(b.tmpfs, b.path)
+	img, err := sif.SIFFromSandbox(b.tmpfs, b.path)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,7 @@
   your rights to use or distribute this software.
 */
 
-package image
+package sif
 
 import (
 	"fmt"
@@ -18,6 +18,7 @@ import (
 	"github.com/golang/glog"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/pkg/buildcfg"
+	image "github.com/singularityware/singularity/src/pkg/image"
 )
 
 type SIF struct {
@@ -25,7 +26,7 @@ type SIF struct {
 }
 
 // SIFFromSandbox converts the sandbox, s, to a SIF file
-func SIFFromSandbox(sandbox *Sandbox, imagePath string) (*SIF, error) {
+func SIFFromSandbox(sandbox *image.Sandbox, imagePath string) (*SIF, error) {
 	mksquashfs, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		glog.Error("mksquashfs is not installed on this system")

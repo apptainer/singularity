@@ -9,6 +9,7 @@ package build
 
 import (
 	"github.com/singularityware/singularity/src/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/sif"
 )
 
 type LocalBuilder struct {
@@ -18,7 +19,7 @@ type LocalBuilder struct {
 }
 
 func NewLocalBuilder(j []byte) LocalBuilder {
-	return LocalBuilder{image.Sandbox{}, &image.SIF{}, DefinitionFromJSON(j)}
+	return LocalBuilder{image.Sandbox{}, &sif.SIF{}, DefinitionFromJSON(j)}
 }
 
 func (*LocalBuilder) Build() {

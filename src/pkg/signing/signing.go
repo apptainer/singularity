@@ -6,7 +6,7 @@ import (
 	"crypto"
 	"crypto/sha512"
 	"fmt"
-	"github.com/singularityware/singularity/src/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/sif"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/clearsign"
@@ -327,16 +327,16 @@ func selectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	return el[index], nil
 }
 
-func sifDataObjectHash(sinfo *image.Sifinfo) (*bytes.Buffer, error) {
+func sifDataObjectHash(sinfo *sif.Sifinfo) (*bytes.Buffer, error) {
 	var msg = new(bytes.Buffer)
 
-	part, err := image.SifGetPartition(sinfo, image.SIF_DEFAULT_GROUP)
+	part, err := sif.SifGetPartition(sinfo, sif.SIF_DEFAULT_GROUP)
 	if err != nil {
 		log.Println(err)
 		return nil, err
 	}
 
-	data, err := image.CByteRange(sinfo.Mapstart(), part.FileOff(), part.FileLen())
+	data, err := sif.CByteRange(sinfo.Mapstart(), part.FileOff(), part.FileLen())
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -348,10 +348,10 @@ func sifDataObjectHash(sinfo *image.Sifinfo) (*bytes.Buffer, error) {
 	return msg, nil
 }
 
-func sifAddSignature(fingerprint [20]byte, sinfo *image.Sifinfo, signature []byte) error {
-	var e image.Eleminfo
+func sifAddSignature(fingerprint [20]byte, sinfo *sif.Sifinfo, signature []byte) error {
+	var e sif.Eleminfo
 
-	part, err := image.SifGetPartition(sinfo, image.SIF_DEFAULT_GROUP)
+	part, err := sif.SifGetPartition(sinfo, sif.SIF_DEFAULT_GROUP)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -359,7 +359,7 @@ func sifAddSignature(fingerprint [20]byte, sinfo *image.Sifinfo, signature []byt
 
 	e.InitSignature(fingerprint, signature, part)
 
-	if err := image.SifPutDataObj(&e, sinfo); err != nil {
+	if err := sif.SifPutDataObj(&e, sinfo); err != nil {
 		log.Println(err)
 		return err
 	}
@@ -490,12 +490,12 @@ func Sign(cpath string) error {
 	}
 	decryptKey(en)
 
-	var sinfo image.Sifinfo
-	if err = image.SifLoad(cpath, &sinfo, 0); err != nil {
+	var sinfo sif.Sifinfo
+	if err = sif.SifLoad(cpath, &sinfo, 0); err != nil {
 		log.Println("error loading sif file:", cpath, err)
 		return err
 	}
-	defer image.SifUnload(&sinfo)
+	defer sif.SifUnload(&sinfo)
 
 	msg, err := sifDataObjectHash(&sinfo)
 	if err != nil {
@@ -531,26 +531,26 @@ func Sign(cpath string) error {
 // if access is enabled.
 func Verify(cpath string) error {
 	var el openpgp.EntityList
-	var sinfo image.Sifinfo
+	var sinfo sif.Sifinfo
 
-	if err := image.SifLoad(cpath, &sinfo, 0); err != nil {
+	if err := sif.SifLoad(cpath, &sinfo, 0); err != nil {
 		log.Println(err)
 		return err
 	}
-	defer image.SifUnload(&sinfo)
+	defer sif.SifUnload(&sinfo)
 
 	msg, err := sifDataObjectHash(&sinfo)
 	if err != nil {
 		return err
 	}
 
-	sig, err := image.SifGetSignature(&sinfo)
+	sig, err := sif.SifGetSignature(&sinfo)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
 
-	data, err := image.CByteRange(sinfo.Mapstart(), sig.FileOff(), sig.FileLen())
+	data, err := sif.CByteRange(sinfo.Mapstart(), sig.FileOff(), sig.FileLen())
 	if err != nil {
 		log.Println(err)
 		return err
