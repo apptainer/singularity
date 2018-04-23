@@ -8,7 +8,7 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/pkg/libexec"
+	"github.com/singularityware/singularity/src/pkg/libexec"
 	"github.com/spf13/cobra"
 )
 

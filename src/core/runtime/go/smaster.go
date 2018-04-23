@@ -19,8 +19,8 @@ import (
 	"syscall"
 	"time"
 
-	internalRuntime "github.com/singularityware/singularity/internal/pkg/runtime"
-	runtime "github.com/singularityware/singularity/pkg/runtime"
+	internalRuntime "github.com/singularityware/singularity/src/internal/pkg/runtime"
+	runtime "github.com/singularityware/singularity/src/pkg/runtime"
 )
 
 func runAsInstance(conn *os.File) {

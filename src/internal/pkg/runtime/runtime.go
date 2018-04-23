@@ -2,9 +2,9 @@ package runtime
 
 import (
 	"fmt"
-	singularity "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity"
-	singularityConfig "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/config"
-	runtime "github.com/singularityware/singularity/pkg/runtime"
+	singularity "github.com/singularityware/singularity/src/internal/pkg/runtime/engine/singularity"
+	singularityConfig "github.com/singularityware/singularity/src/internal/pkg/runtime/engine/singularity/config"
+	runtime "github.com/singularityware/singularity/src/pkg/runtime"
 	"log"
 )
 

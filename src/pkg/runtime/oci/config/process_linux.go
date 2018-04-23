@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/pkg/util/capabilities"
+	"github.com/singularityware/singularity/src/pkg/util/capabilities"
 	"strings"
 )
 

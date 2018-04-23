@@ -6,7 +6,7 @@ import (
 	"crypto"
 	"crypto/sha512"
 	"fmt"
-	"github.com/singularityware/singularity/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/image"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/clearsign"

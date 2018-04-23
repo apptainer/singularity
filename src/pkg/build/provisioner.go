@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/singularityware/singularity/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/image"
 )
 
 var validProvisioners = map[string]bool{

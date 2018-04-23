@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/singularityware/singularity/pkg/build"
+	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/spf13/cobra"
 )
 

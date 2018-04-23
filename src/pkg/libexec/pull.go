@@ -10,7 +10,7 @@ package libexec
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/pkg/library/client"
+	"github.com/singularityware/singularity/src/pkg/library/client"
 	"log"
 )
 

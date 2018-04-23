@@ -8,7 +8,7 @@
 package build
 
 import (
-	"github.com/singularityware/singularity/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/image"
 )
 
 type LocalBuilder struct {

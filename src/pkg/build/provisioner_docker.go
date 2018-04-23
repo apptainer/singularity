@@ -27,8 +27,8 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
-	"github.com/singularityware/singularity/pkg/buildcfg"
-	"github.com/singularityware/singularity/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/image"
 )
 
 // NewDockerProvisioner returns a provisioner that can create a sandbox from a

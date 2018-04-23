@@ -9,7 +9,7 @@
 package libexec
 
 import (
-	image "github.com/singularityware/singularity/pkg/image"
+	image "github.com/singularityware/singularity/src/pkg/image"
 	//specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 

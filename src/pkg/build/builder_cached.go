@@ -10,7 +10,7 @@ package build
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/image"
 )
 
 // CachedBuilder is the object that satisfies the Builder interface which is in charge

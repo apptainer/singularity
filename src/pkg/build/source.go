@@ -9,7 +9,7 @@
 package build
 
 import (
-	"github.com/singularityware/singularity/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/image"
 )
 
 //TODO: Move each data type into provisioner_*.go

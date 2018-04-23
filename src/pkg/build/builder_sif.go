@@ -16,8 +16,8 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/singularityware/singularity/pkg/buildcfg"
-	"github.com/singularityware/singularity/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/image"
 )
 
 func pumpPipe(src *io.PipeReader, dest io.Writer) {

@@ -24,7 +24,7 @@ import (
 	"unsafe"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/internal/pkg/runtime"
+	"github.com/singularityware/singularity/src/internal/pkg/runtime"
 )
 
 func bool2int(b bool) uint8 {

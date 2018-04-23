@@ -1,9 +1,9 @@
 package runtime
 
 import (
-	singularityConfig "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/config"
-	config "github.com/singularityware/singularity/pkg/runtime/config"
-	oci "github.com/singularityware/singularity/pkg/runtime/oci/config"
+	singularityConfig "github.com/singularityware/singularity/src/internal/pkg/runtime/engine/singularity/config"
+	config "github.com/singularityware/singularity/src/pkg/runtime/config"
+	oci "github.com/singularityware/singularity/src/pkg/runtime/oci/config"
 )
 
 type RuntimeEngine struct {

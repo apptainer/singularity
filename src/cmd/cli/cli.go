@@ -8,7 +8,7 @@ your rights to use or distribute this software.
 package main
 
 import (
-	"github.com/singularityware/singularity/internal/pkg/cli"
+	"github.com/singularityware/singularity/src/internal/pkg/cli"
 )
 
 func main() {
