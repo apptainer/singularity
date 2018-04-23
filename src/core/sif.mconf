@@ -1,5 +1,5 @@
 name := sif
 prog := sif
 csrc := core/sif.c
-depends := libsif libsigning libutil
-extralibs := -luuid -lcrypto
+depends := libsif
+extralibs := -luuid

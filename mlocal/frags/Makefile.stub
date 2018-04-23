@@ -36,10 +36,10 @@ CLEANFILES += $(librpc) $(librpc_INSTALL) $(go_BIN) $(go_OBJ) $(go_INSTALL)
 
 all: cscope collect $(libsycore) $(librpc) $(go_BIN)
 
-$(libsycore): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsigning_OBJ) $(libsif_OBJ)
+$(libsycore): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	@echo " AR" $@
 	@mkdir -p $(@D)
-	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsigning_OBJ) $(libsif_OBJ)
+	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 
 # librpc
 $(librpc):

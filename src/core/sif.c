@@ -25,16 +25,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <unistd.h>
 
-#include <openssl/sha.h>
 #include <uuid/uuid.h>
 
 #include "lib/sif/list.h"
 #include "lib/sif/sif.h"
 #include "lib/sif/sifaccess.h"
-#include "lib/signing/crypt.h"
 
 #include "util/util.h"
 
@@ -51,8 +50,6 @@ usage(void)
 	fprintf(stderr, "header --  Display SIF header\n");
 	fprintf(stderr, "info   id  Print data object descriptor info\n");
 	fprintf(stderr, "list   --  List SIF data descriptors from an input SIF file\n");
-	fprintf(stderr, "sign   id  Cryptographically sign a data object from an input SIF file\n");
-	fprintf(stderr, "verify id  Verify the signature of a data object from an input SIF file\n");
 	fprintf(stderr, "\n\n");
 	fprintf(stderr, "create options:\n");
 	fprintf(stderr, "\t-D deffile : include definitions file `deffile'\n");
@@ -210,8 +207,6 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 	Siffstype fstype = -1;
 	Sifparttype parttype = -1;
 	struct stat st;
-	char *fstypestr;
-	char *parttypestr;
 
 	while((opt = getopt(argc, argv, "c:f:p:")) != -1){ /* Flawfinder: ignore */
 		switch(opt){
@@ -219,22 +214,19 @@ pdescadd(Node *head, char *fname, int argc, char *argv[])
 			strncpy(content, optarg, sizeof(content)-1);
 			break;
 		case 'f':
-			fstypestr = uppercase(optarg);
-			if(strncmp(fstypestr, "SQUASHFS", strlen("SQUASHFS")) == 0)
+			if(strncasecmp(optarg, "SQUASHFS", strlen("SQUASHFS")) == 0)
 				fstype = FS_SQUASH;
-			else if(strncmp(fstypestr, "EXT3", strlen("EXT3")) == 0)
+			else if(strncasecmp(optarg, "EXT3", strlen("EXT3")) == 0)
 				fstype = FS_EXT3;
 			else
 				fstype = 1000; /* unknown */
-			free(fstypestr);
 			break;
 		case 'p':
-			parttypestr = uppercase(optarg);
-			if(strncmp(parttypestr, "SYSTEM", strlen("SYSTEM")) == 0)
+			if(strncasecmp(optarg, "SYSTEM", strlen("SYSTEM")) == 0)
 				parttype = PART_SYSTEM;
-			else if(strncmp(parttypestr, "DATA", strlen("DATA")) == 0)
+			else if(strncasecmp(optarg, "DATA", strlen("DATA")) == 0)
 				parttype = PART_DATA;
-			else if(strncmp(parttypestr, "OVERLAY", strlen("OVERLAY")) == 0)
+			else if(strncasecmp(optarg, "OVERLAY", strlen("OVERLAY")) == 0)
 				parttype = PART_OVERLAY;
 			else
 				parttype = 1000; /* unknown */
@@ -431,147 +423,6 @@ cmd_list(int argc, char *argv[])
 }
 
 int
-cmd_sign(int argc, char *argv[])
-{
-	Sifinfo sif;
-	Eleminfo e;
-	Sifdescriptor *desc;
-	int id;
-	static char signedhash[SGN_MAXLEN];
-	static char hash[SGN_HASHLEN];
-	static char hashstr[SGN_HASHLEN*2+1];
-	static char sifhashstr[sizeof(SIFHASH_PREFIX)+SGN_HASHLEN*2+1];
-
-	if(argc < 4){
-		usage();
-		return -1;
-	}
-
-	id = atoi(argv[2]);
-
-	if (sif_load(argv[3], &sif, 0) < 0) {
-		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
-		return(-1);
-	}
-
-	desc = sif_getdescid(&sif, id);
-	if(desc == NULL){
-		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
-		        sif_strerror(siferrno));
-		sif_unload(&sif);
-		return -1;
-	}
-
-	if(sgn_hashbuffer(sif.mapstart+desc->cm.fileoff, desc->cm.filelen, hash) == NULL){
-		fprintf(stderr, "Error with computing hash: %s\n",
-		        sgn_strerror(sgnerrno));
-		sif_unload(&sif);
-		return -1;
-	}
-	sgn_hashtostr(hash, hashstr);
-	sgn_sifhashstr(hashstr, sifhashstr);
-
-	if(sgn_signhash(sifhashstr, signedhash) < 0){
-		fprintf(stderr, "Error signing partition hash: %s\n",
-		        sgn_strerror(sgnerrno));
-		sif_unload(&sif);
-		return -1;
-	};
-
-	e.cm.datatype = DATA_SIGNATURE;
-	e.cm.groupid = SIF_UNUSED_GROUP;
-	e.cm.link = id;
-	e.cm.len = strlen(signedhash)+1;
-	e.sigdesc.signature = strdup(signedhash);
-	e.sigdesc.hashtype = SNG_DEFAULT_HASH;
-
-	if(sif_putdataobj(&e, &sif) < 0){
-		fprintf(stderr, "Error adding new data object: %s\n",
-			sif_strerror(siferrno));
-		free(e.sigdesc.signature);
-		sif_unload(&sif);
-		return -1;
-	}
-	free(e.sigdesc.signature);
-
-	if(sif_unload(&sif) < 0){
-		fprintf(stderr, "Error releasing SIF file gracefully: %s\n",
-		        sif_strerror(siferrno));
-		return -1;
-	}
-
-	return 0;
-}
-
-int
-cmd_verify(int argc, char *argv[])
-{
-	Sifinfo sif;
-	Sifdescriptor *desc;
-	Sifdescriptor *link;
-	int id;
-	static char hash[SGN_HASHLEN];
-	static char hashstr[SGN_HASHLEN*2+1];
-	static char hashstr2[SGN_HASHLEN*2+1];
-
-	if(argc < 4){
-		usage();
-		return -1;
-	}
-
-	id = atoi(argv[2]);
-
-	if (sif_load(argv[3], &sif, 1) < 0) {
-		fprintf(stderr, "Cannot load SIF image: %s\n", sif_strerror(siferrno));
-		return(-1);
-	}
-
-	desc = sif_getdescid(&sif, id);
-	if(desc == NULL){
-		fprintf(stderr, "Cannot find descriptor %d from SIF file: %s\n", id,
-		        sif_strerror(siferrno));
-		sif_unload(&sif);
-		return -1;
-	}
-
-	link = sif_getlinkeddesc(&sif, desc->cm.id);
-	if(link == NULL){
-		fprintf(stderr, "Cannot find signature for id %d: %s\n",
-		        desc->cm.id, sif_strerror(siferrno));
-		sif_unload(&sif);
-		return -1;
-	}
-
-	if(sgn_verifyhash(sif.mapstart+link->cm.fileoff) < 0){
-		fprintf(stderr, "Signature verification failed: %s\n", sgn_strerror(sgnerrno));
-		sif_unload(&sif);
-		return -1;
-	}
-	if(sgn_getsignedhash(sif.mapstart+link->cm.fileoff, hashstr) < 0){
-		fprintf(stderr, "Could not find SIFHASH inside signature: %s\n",
-		        sgn_strerror(sgnerrno));
-		sif_unload(&sif);
-		return -1;
-	}
-	if(sgn_hashbuffer(sif.mapstart+desc->cm.fileoff, desc->cm.filelen, hash) == NULL){
-		fprintf(stderr, "Error with computing hash: %s\n",
-		        sgn_strerror(sgnerrno));
-		sif_unload(&sif);
-		return -1;
-	}
-	sgn_hashtostr(hash, hashstr2);
-
-	if(strcmp(hashstr, hashstr2) != 0){
-		sif_unload(&sif);
-		fprintf(stderr, "Computed and signed hash mismatch\n");
-		return -1;
-	}
-
-	sif_unload(&sif);
-	return 0;
-}
-
-int
 cmd_info(int argc, char *argv[])
 {
 	int id;
@@ -712,10 +563,6 @@ main(int argc, char *argv[])
 		return cmd_create(argc, argv);
 	if(strncmp(argv[1], "list", 4) == 0)
 		return cmd_list(argc, argv);
-	if(strncmp(argv[1], "sign", 4) == 0)
-		return cmd_sign(argc, argv);
-	if(strncmp(argv[1], "verify", 6) == 0)
-		return cmd_verify(argc, argv);
 	if(strncmp(argv[1], "info", 4) == 0)
 		return cmd_info(argc, argv);
 	if(strncmp(argv[1], "dump", 4) == 0)
