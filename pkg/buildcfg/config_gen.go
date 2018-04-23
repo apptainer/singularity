@@ -5,6 +5,6 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
-package config
+package buildcfg
 
 //go:generate go run confgen/gen.go "${BUILDDIR}/config.h"

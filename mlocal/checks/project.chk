@@ -15,8 +15,8 @@ config_add_def BUILDDIR \"$builddir\"
 config_add_def PREFIX \"$prefix\"
 config_add_def EXECPREFIX PREFIX
 config_add_def BINDIR EXECPREFIX \"/bin\"
-config_add_def SBINDIR EXECPREFIX \"/sbin\"
 config_add_def LIBEXECDIR EXECPREFIX \"/libexec\"
+config_add_def SBINDIR LIBEXECDIR \"/singularity/bin\"
 config_add_def DATAROOTDIR PREFIX \"/share\"
 config_add_def DATADIR DATAROOTDIR
 config_add_def SYSCONFDIR PREFIX \"/etc\"

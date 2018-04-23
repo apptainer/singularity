@@ -47,7 +47,7 @@ usage_args () {
 cmdline="`readlink -f $0` $*"
 
 # check line options
-args=`getopt b:c:C:dsSvx:h $*`
+args=`getopt p:b:c:C:dsSvx:h $*`
 if [ $? -ne 0 ]; then
 	usage_args
 	exit 2
@@ -149,6 +149,7 @@ cat >> $genmk << EOF
 BUILDDIR := .
 SOURCEDIR := $sourcedir
 CONTRIBDIR := $contribdir
+PREFIX := $prefix
 
 HOSTAR := ar
 HOSTCC := $hstcc

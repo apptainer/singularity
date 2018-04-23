@@ -15,7 +15,7 @@ import (
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	runtimeconfig "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/config"
-	"github.com/singularityware/singularity/pkg/config"
+	"github.com/singularityware/singularity/pkg/buildcfg"
 
 	"github.com/spf13/cobra"
 )
@@ -128,11 +128,11 @@ var runCmd = &cobra.Command{
 
 func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	lvl := "0"
-	if config.BUILDDIR == "" {
+	if buildcfg.BUILDDIR == "" {
 		log.Fatal("buildtree not defined at compile time, exiting")
 	}
 
-	wrapper := config.BUILDDIR + "/wrapper-suid"
+	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
 
 	oci, runtime := runtimeconfig.NewSingularityConfig("new")
 	oci.Root.SetPath(image)
@@ -155,7 +155,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 	if UserNamespace {
 		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UserNamespace})
-		wrapper = config.BUILDDIR + "/wrapper"
+		wrapper = buildcfg.SBINDIR + "/wrapper"
 	}
 	oci.RuntimeOciSpec.Linux.Namespaces = namespaces
 

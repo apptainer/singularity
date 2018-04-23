@@ -400,8 +400,8 @@ int main(int argc, char **argv) {
 
         singularity_message(VERBOSE, "Execute scontainer stage 1\n");
 
-        singularity_message(VERBOSE, BUILDDIR "/scontainer\n");
-        execle(BUILDDIR "/scontainer", BUILDDIR "/scontainer", NULL, environ);
+        singularity_message(VERBOSE, SBINDIR "/scontainer\n");
+        execle(SBINDIR "/scontainer", SBINDIR "/scontainer", NULL, environ);
         singularity_message(ERROR, "Scontainer stage 1 execution failed\n");
         exit(1);
     } else if ( stage1 > 0 ) {
@@ -665,8 +665,8 @@ int main(int argc, char **argv) {
                  * when using user namespace, so we won't be able to serve any privileged operations,
                  * a solution is to load rpc server as a shared library
                  */
-                singularity_message(DEBUG, "Load " BUILDDIR "/librpc.so\n");
-                handle = dlopen(BUILDDIR "/librpc.so", RTLD_LAZY);
+                singularity_message(DEBUG, "Load " LIBDIR "/librpc.so\n");
+                handle = dlopen(LIBDIR "/librpc.so", RTLD_LAZY);
                 if ( handle == NULL ) {
                     singularity_message(ERROR, "Failed to load shared lib librpc.so\n");
                     exit(1);
@@ -695,7 +695,7 @@ int main(int argc, char **argv) {
                 close(rpc_socket[1]);
 
                 singularity_message(VERBOSE, "Execute scontainer stage 2\n");
-                execle(BUILDDIR "/scontainer", BUILDDIR "/scontainer", NULL, environ);
+                execle(SBINDIR "/scontainer", SBINDIR "/scontainer", NULL, environ);
             }
             singularity_message(ERROR, "Failed to execute container\n");
             exit(1);
@@ -726,7 +726,7 @@ int main(int argc, char **argv) {
             }
 
             singularity_message(VERBOSE, "Execute smaster process\n");
-            execle(BUILDDIR "/smaster", BUILDDIR "/smaster", NULL, environ);
+            execle(SBINDIR "/smaster", SBINDIR "/smaster", NULL, environ);
         }
         singularity_message(ERROR, "Failed to create container namespaces\n");
         exit(1);

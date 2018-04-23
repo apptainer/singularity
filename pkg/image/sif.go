@@ -17,6 +17,7 @@ import (
 
 	"github.com/golang/glog"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/pkg/buildcfg"
 )
 
 type SIF struct {
@@ -44,11 +45,7 @@ func SIFFromSandbox(sandbox *Sandbox, imagePath string) (*SIF, error) {
 
 	fmt.Println(string(mksfsout))
 
-	sif, err := exec.LookPath("sif")
-	if err != nil {
-		glog.Error("sif is not installed on this system")
-		return nil, err
-	}
+	sif := buildcfg.SBINDIR + "/sif"
 
 	sifCmd := exec.Command(sif, "create", "-P", squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", imagePath)
 	sifout, err := sifCmd.CombinedOutput()
