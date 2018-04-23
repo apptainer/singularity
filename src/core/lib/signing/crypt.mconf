@@ -1,3 +1,0 @@
-name := libsigning
-lib := signing
-csrc :=	core/lib/signing/crypt.c
