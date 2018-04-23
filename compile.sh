@@ -2,7 +2,7 @@
 set -e
 
 topdir=$PWD
-coredir=$topdir/core
+coredir=$topdir/src/core
 buildtree=$coredir/buildtree
 
 CONFIG_PKG="github.com/singularityware/singularity/pkg/configs"
