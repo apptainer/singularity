@@ -24,7 +24,7 @@ import (
 	"unsafe"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/internal/pkg/runtime"
+	"github.com/singularityware/singularity/src/runtime/workflows"
 )
 
 func bool2int(b bool) uint8 {
@@ -66,7 +66,7 @@ func main() {
 	jsonBytes := C.GoBytes(jsonPointer, C.int(cconf.jsonConfSize))
 	C.free(jsonPointer)
 
-	engine, err := runtime.NewRuntimeEngine(runtimeName, jsonBytes)
+	engine, err := workflows.NewRuntimeEngine(runtimeName, jsonBytes)
 	if err != nil {
 		log.Fatalln(err)
 	}

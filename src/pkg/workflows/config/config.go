@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 
-	oci "github.com/singularityware/singularity/src/pkg/runtime/oci/config"
+	oci "github.com/singularityware/singularity/src/pkg/workflows/oci/config"
 )
 
 // Runtime template specification

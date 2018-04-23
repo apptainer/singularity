@@ -11,7 +11,7 @@ package client
 import (
 	"net/rpc"
 
-	args "github.com/singularityware/singularity/src/internal/pkg/runtime/engine/singularity/rpc"
+	args "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 )
 

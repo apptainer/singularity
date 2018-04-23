@@ -4,7 +4,7 @@ import (
 	"net"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	config "github.com/singularityware/singularity/src/pkg/runtime/config"
+	config "github.com/singularityware/singularity/src/pkg/workflows/config"
 )
 
 // Generic runtime engine

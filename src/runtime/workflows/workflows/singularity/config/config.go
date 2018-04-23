@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 
-	config "github.com/singularityware/singularity/src/pkg/runtime/config"
-	oci "github.com/singularityware/singularity/src/pkg/runtime/oci/config"
+	config "github.com/singularityware/singularity/src/pkg/workflows/config"
+	oci "github.com/singularityware/singularity/src/pkg/workflows/oci/config"
 )
 
 const Name = "singularity"

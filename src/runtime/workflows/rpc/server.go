@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	singularityConfig "github.com/singularityware/singularity/src/internal/pkg/runtime/engine/singularity/config"
-	singularityRpcServer "github.com/singularityware/singularity/src/internal/pkg/runtime/engine/singularity/rpc/server"
+	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
+	singularityRpcServer "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc/server"
 	"net"
 	"net/rpc"
 )

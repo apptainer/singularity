@@ -15,7 +15,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/singularityware/singularity/src/internal/pkg/runtime/rpc"
+	"github.com/singularityware/singularity/src/runtime/workflows/rpc"
 )
 
 // If you update the CGo exported functions YOU MUST UPDATE
