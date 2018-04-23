@@ -99,7 +99,7 @@ void singularity_priv_init(void) {
             ABORT(255);
         }
         if (target_uid < 500) {
-            singularity_message(ERROR, "Target UID (%ld) must be 500 or greater to avod system users.\n", target_uid);
+            singularity_message(ERROR, "Target UID (%ld) must be 500 or greater to avoid system users.\n", target_uid);
             ABORT(255);
         }
         if (target_uid > UINT_MAX) { // Avoid anything greater than the traditional overflow UID.
