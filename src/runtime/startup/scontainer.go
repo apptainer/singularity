@@ -9,7 +9,7 @@
 package main
 
 /*
-#include "runtime/c/cgo_scontainer.c"
+#include "startup/cgo_scontainer.c"
 */
 // #cgo LDFLAGS: -lsycore -luuid
 import "C"

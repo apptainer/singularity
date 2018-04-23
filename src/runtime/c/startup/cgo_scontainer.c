@@ -20,7 +20,7 @@
 #include <linux/capability.h>
 #include <sys/syscall.h>
 
-#include "include/wrapper.h"
+#include "startup/wrapper.h"
 
 #include "util/message.h"
 

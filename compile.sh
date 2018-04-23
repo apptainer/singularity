@@ -2,8 +2,8 @@
 set -e
 
 topdir=$PWD
-coredir=$topdir/src/core
-buildtree=$coredir/buildtree
+csrcdir=$topdir/src/runtime/c
+buildtree=$csrcdir/buildtree
 
 CONFIG_PKG="github.com/singularityware/singularity/pkg/configs"
 CONFIG_LDFLAGS="-X ${CONFIG_PKG}.BUILDTREE=${buildtree}"
@@ -27,9 +27,9 @@ done
 if [ -d "$buildtree" -a -f "$buildtree/Makefile" ]; then
 	make -j `nproc 2>/dev/null || echo 1` -C $buildtree
 else
-	cd $coredir
+	cd $csrcdir
 	./mconfig -b $buildtree
-	go build -ldflags="-s -w" -buildmode=c-shared -o $buildtree/librpc.so $coredir/runtime/go/rpc.go
+	go build -ldflags="-s -w" -buildmode=c-shared -o $buildtree/librpc.so $csrcdir/../startup/rpc.go
 	make -j `nproc 2>/dev/null || echo 1` -C $buildtree
 	cd $topdir
 fi
@@ -37,15 +37,14 @@ fi
 #
 # Go portion
 #
-CGO_CPPFLAGS="$CGO_CPPFLAGS -I$buildtree -I$coredir -I$coredir/lib"
+CGO_CPPFLAGS="$CGO_CPPFLAGS -I$buildtree -I$csrcdir -I$csrcdir/lib"
 CGO_LDFLAGS="$CGO_LDFLAGS -L$buildtree/lib"
 export CGO_CPPFLAGS CGO_LDFLAGS
 
 go build -ldflags "${CONFIG_LDFLAGS}" --tags "containers_image_openpgp" -o $buildtree/singularity $topdir/src/cmd/cli/cli.go
 go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/sbuild $topdir/src/cmd/sbuild/sbuild.go
-go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/scontainer $coredir/runtime/go/scontainer.go
-go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/smaster $coredir/runtime/go/smaster.go
+go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/scontainer $csrcdir/../startup/scontainer.go
+go build -ldflags "${CONFIG_LDFLAGS}" -o $buildtree/smaster $csrcdir/../startup/smaster.go
 
 sudo cp $buildtree/wrapper $buildtree/wrapper-suid
 sudo chown root:root $buildtree/wrapper-suid && sudo chmod 4755 $buildtree/wrapper-suid
-
