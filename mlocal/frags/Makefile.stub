@@ -19,6 +19,8 @@ wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
 
 sif_INSTALL := $(PREFIX)/libexec/singularity/bin/sif
 
+environment_INSTALL := $(PREFIX)/libexec/singularity/environment.tar
+
 go_BIN := $(singularity) $(sbuild) $(scontainer) $(smaster)
 go_OBJ := $(SOURCEDIR)/pkg/buildcfg/config.go
 go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL) $(scontainer_INSTALL) $(smaster_INSTALL)
@@ -28,7 +30,7 @@ go_TAG = "containers_image_openpgp"
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/core -I$(SOURCEDIR)/core/lib
 cgo_LDFLAGS = -L$(shell readlink -f $(BUILDDIR))/lib
 
-INSTALLFILES := $(smaster_INSTALL) $(scontainer_INSTALL) $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL)
+INSTALLFILES := $(smaster_INSTALL) $(scontainer_INSTALL) $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL)
 
 CLEANFILES += $(librpc) $(librpc_INSTALL) $(go_BIN) $(go_OBJ) $(go_INSTALL)
 
@@ -45,7 +47,7 @@ $(librpc):
 	$(V)go build -ldflags="-s -w" -buildmode=c-shared -o $(BUILDDIR)/librpc.so $(SOURCEDIR)/core/runtime/go/rpc.go
 $(librpc_INSTALL): $(librpc)
 	@echo " INSTALL" $@
-	@install -d `dirname $(librpc_INSTALL)`
+	install -d `dirname $(librpc_INSTALL)`
 	@cp $(librpc) $(librpc_INSTALL)
 
 # singularity
@@ -55,7 +57,7 @@ $(singularity): $(go_OBJ) $(libsycore)
 	go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/cli/cli.go
 $(singularity_INSTALL): $(singularity) $(librpc_INSTALL)
 	@echo " INSTALL" $@
-	@install -d `dirname $(singularity_INSTALL)`
+	install -d `dirname $(singularity_INSTALL)`
 	@install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # sbuild
@@ -65,7 +67,7 @@ $(sbuild): $(go_OBJ) $(libsycore)
 	go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/cmd/sbuild/sbuild.go
 $(sbuild_INSTALL): $(sbuild) $(librpc_INSTALL)
 	@echo " INSTALL" $@
-	@install -d `dirname $(sbuild_INSTALL)`
+	install -d `dirname $(sbuild_INSTALL)`
 	@install -m 0755 $(sbuild) $(sbuild_INSTALL)
 
 # scontainer
@@ -75,7 +77,7 @@ $(scontainer): $(go_OBJ) $(libsycore)
 	go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/core/runtime/go/scontainer.go
 $(scontainer_INSTALL): $(scontainer) $(librpc_INSTALL)
 	@echo " INSTALL" $@
-	@install -d `dirname $(scontainer_INSTALL)`
+	install -d `dirname $(scontainer_INSTALL)`
 	@install -m 0755 $(scontainer) $(scontainer_INSTALL)
 
 # smaster
@@ -85,7 +87,7 @@ $(smaster): $(go_OBJ) $(libsycore)
 	go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/core/runtime/go/smaster.go
 $(smaster_INSTALL): $(smaster) $(librpc_INSTALL)
 	@echo " INSTALL" $@
-	@install -d `dirname $(smaster_INSTALL)`
+	install -d `dirname $(smaster_INSTALL)`
 	@install -m 0755 $(smaster) $(smaster_INSTALL)
 
 # config.go
@@ -96,15 +98,23 @@ $(go_OBJ): $(libsycore) $(BUILDDIR)/config.h
 # wrappper & wrapper-suid install
 $(wrapper_INSTALL): $(wrapper)
 	@echo " INSTALL" $@
+	install -d `dirname $(wrapper_INSTALL)`
 	@install -m 0755 $(wrapper) $(wrapper_INSTALL)
 $(wrapper_suid_INSTALL): $(wrapper)
 	@echo " INSTALL SUID" $@
+	install -d `dirname $(wrapper_suid_INSTALL)`
 	@install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
 
 # sif install
 $(sif_INSTALL): $(sif)
 	@echo " INSTALL" $@
+	install -d `dirname $(sif_INSTALL)`
 	@install -m 0755 $(sif) $(sif_INSTALL)
+
+$(environment_INSTALL):
+	@echo " INSTALL" $@
+	install -d `dirname $(environment_INSTALL)`
+	@install -m 0644 $(SOURCEDIR)/environment.tar $(environment_INSTALL)
 
 .PHONY: collect
 collect:

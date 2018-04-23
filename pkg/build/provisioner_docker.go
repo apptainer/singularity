@@ -27,6 +27,7 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
+	"github.com/singularityware/singularity/pkg/buildcfg"
 	"github.com/singularityware/singularity/pkg/image"
 )
 
@@ -149,7 +150,7 @@ func (p *DockerProvisioner) unpackTmpfs(i *image.Sandbox) (err error) {
 }
 
 func (p *DockerProvisioner) insertBaseEnv(i *image.Sandbox) (err error) {
-	f, err := os.Open("environment.tar")
+	f, err := os.Open(buildcfg.LIBEXECDIR + "/environment.tar")
 	if err != nil {
 		return
 	}
