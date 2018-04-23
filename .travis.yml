@@ -24,7 +24,7 @@ before_install:
   - dep ensure -vendor-only
 
 install:
-  - ./compile.sh --clean
+  - ./mconfig -b ./buildtree -p /usr/local
 
 script:
   - go test ./tests/

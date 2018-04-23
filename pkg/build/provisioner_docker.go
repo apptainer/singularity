@@ -150,7 +150,7 @@ func (p *DockerProvisioner) unpackTmpfs(i *image.Sandbox) (err error) {
 }
 
 func (p *DockerProvisioner) insertBaseEnv(i *image.Sandbox) (err error) {
-	f, err := os.Open(buildcfg.LIBEXECDIR + "/environment.tar")
+	f, err := os.Open(buildcfg.LIBEXECDIR + "/singularity/environment.tar")
 	if err != nil {
 		return
 	}
