@@ -31,7 +31,7 @@
 void daemon_file_parse(void) {
     singularity_message(DEBUG, "reached file parse\n");
     char *key, *val;
-    char *line = (char *)malloc(2048 * sizeof(char *));
+    char *line = (char *)malloc(2048);
     FILE *file = fopen(singularity_registry_get("DAEMON_FILE"), "r");
 
     while( fgets(line, 2048, file) ) {
@@ -115,7 +115,11 @@ void daemon_init_join(void) {
 
         daemon_file_parse();
 
-        pid_path = (char *)malloc(PATH_MAX * sizeof(char *));
+        pid_path = (char *)malloc(PATH_MAX);
+        if ( pid_path == NULL ) {
+            singularity_message(ERROR, "Memory allocation failed for pid_path\n");
+            ABORT(255);
+        }
         pid_path[PATH_MAX-1] = '\0';
         if ( str2int(singularity_registry_get("DAEMON_PID"), &pid) < 0 ) {
             singularity_message(ERROR, "Unable to convert DAEMON_PID\n");
@@ -130,6 +134,8 @@ void daemon_init_join(void) {
 
         ns_path = joinpath(pid_path, "/ns");
 
+        free(pid_path);
+
         /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
         singularity_priv_escalate();
         if ( ( ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC) ) == -1 ) {
@@ -137,6 +143,8 @@ void daemon_init_join(void) {
             ABORT(255);
         }
         singularity_priv_drop();
+
+        free(ns_path);
 
         ns_fd_str = int2str(ns_fd);
 
@@ -152,7 +160,7 @@ void daemon_init_start(void) {
     char *daemon_file = singularity_registry_get("DAEMON_FILE");
     char *daemon_name = singularity_registry_get("DAEMON_NAME");
     char *daemon_file_dir = strdup(daemon_file);
-    char *daemon_pid = (char *)malloc(256 * sizeof(char));
+    char *daemon_pid = (char *)malloc(256);
     char *daemon_image;
     int daemon_fd;
     int lock;
