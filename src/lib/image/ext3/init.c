@@ -91,7 +91,7 @@ int _singularity_image_ext3_init(struct image_object *image, int open_flags) {
     buf[sizeof(buf)-1] = '\0';
     ret = fread(buf, 1, sizeof(buf)-1, image_fp);
     fclose(image_fp);
-    if ( ret != sizeof(buf) ) {
+    if ( ret != sizeof(buf)-1 ) {
         singularity_message(DEBUG, "Could not read the top of the image\n");
         return(-1);
     }
