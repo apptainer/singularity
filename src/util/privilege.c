@@ -87,8 +87,6 @@ void singularity_priv_init(void) {
 
     singularity_message(DEBUG, "Initializing user info\n");
 
-    singularity_priv_check_nonewprivs(); 
-
     if ( target_uid_str && !target_gid_str ) {
         singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
         ABORT(255);
