@@ -220,7 +220,8 @@ class DockerApiConnection(ApiConnection):
 
         response = self.get(self.token_url,
                             default_headers=False,
-                            headers=headers)
+                            headers=headers,
+                            updating_token=True)
 
         try:
             data = json.loads(response)
@@ -240,8 +241,9 @@ class DockerApiConnection(ApiConnection):
             self.update_headers(token)
 
         except Exception as e:
-            bot.error("Error getting token for repository %s, exiting.\n%s\n"
+            bot.error("Error getting token for repository %s, please check your credentials.\n%s\n"
                       % (self.repo_name, str(e)))
+
             sys.exit(1)
 
     def get_images(self, manifest=None):

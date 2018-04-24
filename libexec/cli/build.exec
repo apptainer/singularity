@@ -194,6 +194,10 @@ fi
 # if the container exists, build into it (or delete it if -F was passed)
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
     if eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
+        if [ "$SINGULARITY_CONTAINER_OUTPUT" = "/" ]; then
+            message ERROR "Not building a container into the host root / !\n"
+            ABORT 255
+        fi
         if [ -z "${SINGULARITY_FORCE:-}" ]; then
             message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
             SINGULARITY_BTSTRP_2EXISTING=1
