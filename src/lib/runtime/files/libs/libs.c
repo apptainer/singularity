@@ -60,11 +60,6 @@ int _singularity_runtime_files_libs(void) {
         char *tok = NULL;
         char *current = strtok_r(strdup(includelibs_string), ",", &tok);
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting libs: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return(0);
-#endif
-
         singularity_message(DEBUG, "Parsing SINGULARITY_CONTAINLIBS for user-specified libraries to include.\n");
 
         free(includelibs_string);

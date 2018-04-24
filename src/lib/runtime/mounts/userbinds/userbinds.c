@@ -56,11 +56,6 @@ int _singularity_runtime_mount_userbinds(void) {
             return(0);
         }
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Ignoring user bind request: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return(0);
-#endif
-
         singularity_message(DEBUG, "Parsing SINGULARITY_BINDPATH for user-specified bind mounts.\n");
         char *outside_token = NULL;
         char *inside_token = NULL;

@@ -65,11 +65,6 @@ int _singularity_runtime_mount_scratch(void) {
         return(0);
     }
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-    singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
-    return(0);
-#endif  
-
     singularity_message(DEBUG, "Checking SINGULARITY_WORKDIR from environment\n");
     if ( ( tmpdir_path = singularity_registry_get("WORKDIR") ) == NULL ) {
         if ( ( tmpdir_path = singularity_registry_get("SESSIONDIR") ) == NULL ) {
