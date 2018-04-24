@@ -87,8 +87,6 @@ void singularity_priv_init(void) {
 
     singularity_message(DEBUG, "Initializing user info\n");
 
-    singularity_priv_check_nonewprivs(); 
-
     if ( target_uid_str && !target_gid_str ) {
         singularity_message(ERROR, "A target UID is set (%s) but a target GID is not set (SINGULARITY_TARGET_GID).  Both must be specified.\n", target_uid_str);
         ABORT(255);
@@ -438,11 +436,7 @@ void singularity_priv_drop_perm(void) {
     }
 
     // Prevent the following processes to increase privileges
-    singularity_message(DEBUG, "Setting NO_NEW_PRIVS to prevent future privilege escalations.\n");
-    if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) {
-        singularity_message(ERROR, "Could not set NO_NEW_PRIVS safeguard: %s\n", strerror(errno));
-        ABORT(255);
-    }
+    singularity_priv_check_nonewprivs(); 
 
     singularity_message(DEBUG, "Finished dropping privileges\n");
 }
