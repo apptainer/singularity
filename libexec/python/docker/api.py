@@ -26,7 +26,7 @@ import math
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                 os.path.pardir)))  # noqa
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from base import ApiConnection
 
@@ -35,7 +35,8 @@ from sutils import (
     get_cache,
     change_tar_permissions,
     create_tar,
-    write_singularity_infos
+    write_singularity_infos,
+    parse_bearer_challenge
 )
 
 from defaults import (
@@ -142,7 +143,36 @@ class DockerApiConnection(ApiConnection):
         self.registry = image['registry']
         self.update_token()
 
-    def update_token(self, response=None, auth=None):
+    def get_token_url(self, challenge, expires_in, sort_query_params=False):
+        '''
+        Build token URL from auth challenge
+        '''
+        params = parse_bearer_challenge(challenge)
+
+        if not params or 'realm' not in params:
+            bot.debug("update_token: challenge = '%s'" % challenge)
+            bot.error("Unrecognized authentication challenge, exiting.")
+            sys.exit(1)
+
+        realm = params.pop('realm')
+
+        params['expires_in'] = expires_in
+
+        if sort_query_params:
+            items = sorted(params.items())
+        else:
+            items = params.items()
+
+        query_fragment = '&'.join(
+            ['%s=%s' % (k, v) for k, v in items]
+        )
+
+        return "{realm}?{query_fragment}".format(
+            realm=realm,
+            query_fragment=query_fragment
+        )
+
+    def update_token(self, response=None, auth=None, expires_in=9000):
         '''update_token uses HTTP basic authentication to get a token for
         Docker registry API V2 operations. We get here if a 401 is
         returned for a request.
@@ -163,19 +193,11 @@ class DockerApiConnection(ApiConnection):
                 sys.exit(1)
 
             challenge = response.headers["Www-Authenticate"]
-            regexp = '^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?'
-            match = re.match(regexp, challenge)
 
-            if not match:
-                bot.error("Unrecognized authentication challenge, exiting.")
-                sys.exit(1)
-
-            realm = match.group(1)
-            service = match.group(2)
-            scope = match.group(3).split(',')[0]
-
-            self.token_url = ("%s?service=%s&expires_in=9000&scope=%s"
-                              % (realm, service, scope))
+            self.token_url = self.get_token_url(
+                challenge,
+                expires_in=expires_in
+            )
 
         headers = dict()
 
@@ -189,7 +211,8 @@ class DockerApiConnection(ApiConnection):
 
         response = self.get(self.token_url,
                             default_headers=False,
-                            headers=headers)
+                            headers=headers,
+                            updating_token=True)
 
         try:
             token = json.loads(response)["token"]
@@ -198,7 +221,7 @@ class DockerApiConnection(ApiConnection):
             self.update_headers(token)
 
         except Exception:
-            bot.error("Error getting token for repository %s, exiting."
+            bot.error("Error getting token for repository %s, please check your credentials."
                       % self.repo_name)
             sys.exit(1)
 

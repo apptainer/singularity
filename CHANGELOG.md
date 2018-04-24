@@ -29,8 +29,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
    wanting to prepend or append to the container PATH at runtime
  - Fix for check_mounted() to check parent directories #1436
  - Throw errors at build and runtime if NO_NEW_PRIVS is not present and working
+ - Reset umask to 0022 at start to corrrect several errors 
 
-## [v2.4.6-rc1](https://github.com/singularityware/singularity/releases/tag/2.4.6-rc1) (2018-04-04)
+## [v2.4.6](https://github.com/singularityware/singularity/releases/tag/2.4.6) (2018-04-04)
 
  - Fix for check_mounted() to check parent directories #1436
  - Free strdupped temporary variable in joinpath #1438
@@ -247,3 +248,4 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Singularity containers run within existing resource contexts (CGroups and ulimits are maintained)
  - Support for scalable execution of MPI parallel jobs
  - Singularity containers are portable between Linux distributions
+
