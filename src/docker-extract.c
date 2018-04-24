@@ -432,5 +432,7 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+    free(rootfs_realpath);
+
     return (retval);
 }
