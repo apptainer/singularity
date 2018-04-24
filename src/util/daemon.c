@@ -40,6 +40,8 @@ void daemon_file_parse(void) {
         singularity_message(DEBUG, "Read key-val pair %s=%s\n", key, val);
         singularity_registry_set(key, val);
     }
+    fclose(file);
+    free(line);
 }
 
 void daemon_file_write(int fd, char *key, char *val) {
@@ -83,6 +85,7 @@ int daemon_is_owner(char *pid_path) {
 
     free(uid_check);
     free(line);
+    free(proc_status);
     fclose(status);
 
     return(retval);
@@ -169,6 +172,7 @@ void daemon_init_start(void) {
     if ( is_dir(dirname(daemon_file_dir)) == -1 ) {
         s_mkpath(daemon_file_dir, 0755);
     }
+    free(daemon_file_dir);
     
     /* Attempt to open lock on daemon file */
     lock = filelock(daemon_file, &daemon_fd);
@@ -200,6 +204,7 @@ void daemon_init_start(void) {
         daemon_file_write(daemon_fd, "DAEMON_ROOTFS", singularity_registry_get("ROOTFS"));
 
         singularity_registry_set("DAEMON_FD", int2str(daemon_fd));
+        free(daemon_pid);
     } else if( lock == EALREADY ) {
         /* Another daemon controls this file already */
         singularity_message(ERROR, "Daemon %s already exists: %s\n", daemon_name, strerror(errno));
