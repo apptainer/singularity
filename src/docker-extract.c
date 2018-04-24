@@ -368,6 +368,7 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
 int main(int argc, char **argv) {
     int retval = 0;
     char *rootfs_dir = singularity_registry_get("ROOTFS");
+    char *rootfs_realpath;
     char *tarfile = NULL;
 
     // Set UTF8 locale so that libarchive doesn't produce warnings for UTF8
@@ -394,6 +395,20 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+    rootfs_realpath = realpath(rootfs_dir, NULL);  // Flawfinder: ignore
+
+    if(rootfs_realpath == NULL) {
+        singularity_message(ERROR, "Error canonicalizing ROOTFS path %s - aborting.\n", rootfs_dir);
+        ABORT(255);
+    }
+
+    singularity_message(DEBUG, "ROOTFS %s canonicalized to %s\n", rootfs_dir, rootfs_realpath);
+
+    if( strlen(rootfs_realpath) == 1 && *rootfs_realpath == '/') {
+        singularity_message(ERROR, "Refusing to extract into host root / - aborting.\n");
+        ABORT(255);
+    }
+
     tarfile = argv[1];
 
     if (is_file(tarfile) < 0) {
@@ -402,7 +417,7 @@ int main(int argc, char **argv) {
     }
 
     singularity_message(DEBUG, "Applying whiteouts for tar file %s\n", tarfile);
-    retval = apply_whiteouts(tarfile, rootfs_dir);
+    retval = apply_whiteouts(tarfile, rootfs_realpath);
 
     if (retval != 0) {
         singularity_message(ERROR, "Error applying layer whiteouts\n");
@@ -410,7 +425,7 @@ int main(int argc, char **argv) {
     }
 
     singularity_message(DEBUG, "Extracting docker tar file %s\n", tarfile);
-    retval = extract_tar(tarfile, rootfs_dir);
+    retval = extract_tar(tarfile, rootfs_realpath);
 
     if (retval != 0) {
         singularity_message(ERROR, "Error extracting tar file\n");
