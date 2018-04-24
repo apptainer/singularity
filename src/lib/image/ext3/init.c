@@ -102,7 +102,7 @@ int _singularity_image_ext3_init(struct image_object *image, int open_flags) {
         image->offset = strlen(buf);
     }
 
-    if ( ( magicoff + sizeof(struct extfs_info) ) > sizeof(buf) ) {
+    if ( ( magicoff + sizeof(struct extfs_info) ) > ( sizeof(buf)-1 ) ) {
         close(image_fd);
         singularity_message(VERBOSE, "Can not find EXT3 information header");
         return(-1);
