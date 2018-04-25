@@ -30,6 +30,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fix for check_mounted() to check parent directories #1436
  - Throw errors at build and runtime if NO_NEW_PRIVS is not present and working
  - Reset umask to 0022 at start to corrrect several errors 
+ - Verify docker layers after download with sha256 checksum
+ - Do not make excessive requests for auth tokens to docker registries
+ - Fixed stripping whitespaces and empty new lines for the app commands
 
 ## [v2.4.6](https://github.com/singularityware/singularity/releases/tag/2.4.6) (2018-04-04)
 
@@ -50,6 +53,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ## [v2.4.3](https://github.com/singularityware/singularity/releases/tag/2.4.3) (2018-03-03)
 
+### Bug Fixes
+ - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Fixed bug that did not export environment variables for apps with "-" in name
  - Fix permission denied when binding directory located on NFS with root_squash enabled
  - Add capability to support all tar compression formats #1155
  - Handle docker layer aufs whiteout files correctly (requires libarchive).
