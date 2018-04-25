@@ -32,8 +32,8 @@
 #include <sys/syscall.h>
 #include <dlfcn.h>
 
-#include "runtime/c/include/wrapper.h"
-#include "runtime/c/include/librpc.h"
+#include "startup/wrapper.h"
+#include "startup/librpc.h"
 #include "lib/util/message.h"
 
 #define CLONE_STACK_SIZE    1024*1024

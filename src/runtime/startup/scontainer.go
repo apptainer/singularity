@@ -11,7 +11,7 @@ package main
 /*
 #include "startup/cgo_scontainer.c"
 */
-// #cgo LDFLAGS: -lsycore -luuid
+// #cgo LDFLAGS: -lruntime -luuid
 import "C"
 
 import (

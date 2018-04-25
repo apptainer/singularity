@@ -1,11 +1,11 @@
 name := libimage
 lib := image
-csrc :=	core/lib/image/bind.c
-	core/lib/image/dir_init.c
-	core/lib/image/dir_mount.c
-	core/lib/image/ext3_init.c
-	core/lib/image/ext3_mount.c
-	core/lib/image/image.c
-	core/lib/image/sif_init.c
-	core/lib/image/squashfs_init.c
-	core/lib/image/squashfs_mount.c
+csrc :=	src/runtime/c/lib/image/bind.c
+	src/runtime/c/lib/image/dir_init.c
+	src/runtime/c/lib/image/dir_mount.c
+	src/runtime/c/lib/image/ext3_init.c
+	src/runtime/c/lib/image/ext3_mount.c
+	src/runtime/c/lib/image/image.c
+	src/runtime/c/lib/image/sif_init.c
+	src/runtime/c/lib/image/squashfs_init.c
+	src/runtime/c/lib/image/squashfs_mount.c

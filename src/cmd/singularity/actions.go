@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	runtimeconfig "github.com/singularityware/singularity/src/internal/pkg/runtime/engine/singularity/config"
+	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 
 	"github.com/spf13/cobra"

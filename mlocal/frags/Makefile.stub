@@ -1,4 +1,4 @@
-libsycore := $(BUILDDIR)/lib/libsycore.a
+libruntime := $(BUILDDIR)/lib/libruntime.a
 librpc := $(BUILDDIR)/librpc.so #$(BUILDDIR)/librpc.h
 librpc_INSTALL := $(PREFIX)/lib/singularity/librpc.so
 
@@ -22,21 +22,21 @@ sif_INSTALL := $(PREFIX)/libexec/singularity/bin/sif
 environment_INSTALL := $(PREFIX)/libexec/singularity/environment.tar
 
 go_BIN := $(singularity) $(sbuild) $(scontainer) $(smaster)
-go_OBJ := $(SOURCEDIR)/pkg/buildcfg/config.go
+go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
 go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL) $(scontainer_INSTALL) $(smaster_INSTALL)
 
 go_TAG = "containers_image_openpgp"
 
-cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/core -I$(SOURCEDIR)/core/lib
+cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime/c -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L$(shell readlink -f $(BUILDDIR))/lib
 
 INSTALLFILES := $(smaster_INSTALL) $(scontainer_INSTALL) $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL)
 
 CLEANFILES += $(librpc) $(librpc_INSTALL) $(go_BIN) $(go_OBJ) $(go_INSTALL)
 
-all: cscope collect $(libsycore) $(librpc) $(go_BIN)
+all: cscope collect $(libruntime) $(librpc) $(go_BIN)
 
-$(libsycore): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
+$(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	@echo " AR" $@
 	@mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
@@ -44,56 +44,58 @@ $(libsycore): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 # librpc
 $(librpc):
 	@echo " AR" $@
-	$(V)go build -ldflags="-s -w" -buildmode=c-shared -o $(BUILDDIR)/librpc.so $(SOURCEDIR)/core/runtime/go/rpc.go
+	$(V)go build -ldflags="-s -w" -buildmode=c-shared -o $(BUILDDIR)/librpc.so \
+		$(SOURCEDIR)/src/runtime/startup/rpc.go
 $(librpc_INSTALL): $(librpc)
 	@echo " INSTALL" $@
 	install -d `dirname $(librpc_INSTALL)`
 	@cp $(librpc) $(librpc_INSTALL)
 
 # singularity
-$(singularity): $(go_OBJ) $(libsycore)
+$(singularity): $(go_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-	go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/cli/cli.go
+	go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity \
+		$(SOURCEDIR)/src/cmd/singularity/cli.go $(SOURCEDIR)/src/cmd/singularity/singularity.go
 $(singularity_INSTALL): $(singularity) $(librpc_INSTALL)
 	@echo " INSTALL" $@
 	install -d `dirname $(singularity_INSTALL)`
 	@install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # sbuild
-$(sbuild): $(go_OBJ) $(libsycore)
+$(sbuild): $(go_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-	go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/cmd/sbuild/sbuild.go
+	go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/src/cmd/sbuild/cli.go $(SOURCEDIR)/src/cmd/sbuild/sbuild.go
 $(sbuild_INSTALL): $(sbuild) $(librpc_INSTALL)
 	@echo " INSTALL" $@
 	install -d `dirname $(sbuild_INSTALL)`
 	@install -m 0755 $(sbuild) $(sbuild_INSTALL)
 
 # scontainer
-$(scontainer): $(go_OBJ) $(libsycore)
+$(scontainer): $(go_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-	go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/core/runtime/go/scontainer.go
+		go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/src/runtime/startup/scontainer.go
 $(scontainer_INSTALL): $(scontainer) $(librpc_INSTALL)
 	@echo " INSTALL" $@
 	install -d `dirname $(scontainer_INSTALL)`
 	@install -m 0755 $(scontainer) $(scontainer_INSTALL)
 
 # smaster
-$(smaster): $(go_OBJ) $(libsycore)
+$(smaster): $(go_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-	go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/core/runtime/go/smaster.go
+	go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/src/runtime/startup/smaster.go
 $(smaster_INSTALL): $(smaster) $(librpc_INSTALL)
 	@echo " INSTALL" $@
 	install -d `dirname $(smaster_INSTALL)`
 	@install -m 0755 $(smaster) $(smaster_INSTALL)
 
 # config.go
-$(go_OBJ): $(libsycore) $(BUILDDIR)/config.h
+$(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
 	@rm -f $(go_OBJ)
-	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/pkg/buildcfg && go generate
+	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
 # wrappper & wrapper-suid install
 $(wrapper_INSTALL): $(wrapper)

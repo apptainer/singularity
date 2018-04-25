@@ -7,7 +7,7 @@
 */
 package sif
 
-// #cgo LDFLAGS: -lsycore -luuid
+// #cgo LDFLAGS: -lruntime -luuid
 /*
 #include <sys/types.h>
 #include <stdio.h>

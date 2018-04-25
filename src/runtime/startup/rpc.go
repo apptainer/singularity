@@ -19,7 +19,7 @@ import (
 )
 
 // If you update the CGo exported functions YOU MUST UPDATE
-// the core/runtime/c/include/librpc.h header file by compiling
+// the src/runtime/c/startup/librpc.h header file by compiling
 // the project and copying buildtree/librpc.h
 
 //export RPCServer

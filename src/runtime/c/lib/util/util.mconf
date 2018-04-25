@@ -1,17 +1,17 @@
 name := libutil
 lib := util
-csrc :=	core/lib/util/capability.c
-	core/lib/util/daemon.c
-	core/lib/util/message.c
-	core/lib/util/registry.c
-	core/lib/util/signal.c
-	core/lib/util/cleanupd.c
-	core/lib/util/file.c
-	core/lib/util/mount.c
-	core/lib/util/sessiondir.c
-	core/lib/util/suid.c
-	core/lib/util/config_parser.c
-	core/lib/util/fork.c
-	core/lib/util/privilege.c
-	core/lib/util/setns.c
-	core/lib/util/util.c
+csrc :=	src/runtime/c/lib/util/capability.c
+	src/runtime/c/lib/util/daemon.c
+	src/runtime/c/lib/util/message.c
+	src/runtime/c/lib/util/registry.c
+	src/runtime/c/lib/util/signal.c
+	src/runtime/c/lib/util/cleanupd.c
+	src/runtime/c/lib/util/file.c
+	src/runtime/c/lib/util/mount.c
+	src/runtime/c/lib/util/sessiondir.c
+	src/runtime/c/lib/util/suid.c
+	src/runtime/c/lib/util/config_parser.c
+	src/runtime/c/lib/util/fork.c
+	src/runtime/c/lib/util/privilege.c
+	src/runtime/c/lib/util/setns.c
+	src/runtime/c/lib/util/util.c

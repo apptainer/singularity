@@ -6,7 +6,7 @@ package runtime
 #include "util/config_parser.h"
 */
 // #cgo CFLAGS: -I../c
-// #cgo LDFLAGS: -lsycore -luuid
+// #cgo LDFLAGS: -lruntime -luuid
 import "C"
 
 import (

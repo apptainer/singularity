@@ -17,7 +17,7 @@ import (
 
 	"github.com/golang/glog"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	image "github.com/singularityware/singularity/src/pkg/image"
 )
 
