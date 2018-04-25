@@ -93,7 +93,7 @@ int _singularity_runtime_mount_scratch(void) {
             ABORT(255);
         }
 
-        if ( s_mkpath(full_sourcedir_path, 0750) < 0 ) {
+        if ( container_mkpath(full_sourcedir_path, 0750) < 0 ) {
              singularity_message(ERROR, "Could not create scratch working directory %s: %s\n", full_sourcedir_path, strerror(errno));
              ABORT(255);
         }
@@ -102,7 +102,7 @@ int _singularity_runtime_mount_scratch(void) {
             if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                 singularity_priv_escalate();
                 singularity_message(DEBUG, "Creating scratch directory inside container\n");
-                r = s_mkpath(full_destdir_path, 0755);
+                r = container_mkpath(full_destdir_path, 0755);
                 singularity_priv_drop();
                 if ( r < 0 ) {
                     singularity_message(VERBOSE, "Skipping scratch directory mount, could not create dir inside container %s: %s\n", current, strerror(errno));

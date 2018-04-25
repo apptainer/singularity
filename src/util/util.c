@@ -40,6 +40,7 @@
 #include <linux/limits.h>
 #include <ctype.h>
 #include <pwd.h>
+#include <dirent.h>
 
 #include "config.h"
 #include "util/util.h"
@@ -442,35 +443,44 @@ struct tempfile *make_logfile(char *label) {
     return(tf);
 }
 
-// close all file descriptors pointing to a directory
+// close all file descriptors pointing to a directory or a socket
 void fd_cleanup(void) {
-    char *fd_path = (char *)malloc(PATH_MAX);
-    int i;
+    int fd_proc;
+    DIR *dir;
+    struct dirent *dirent;
 
     singularity_message(DEBUG, "Cleanup file descriptor table\n");
 
-    if ( fd_path == NULL ) {
-        singularity_message(ERROR, "Failed to allocate memory\n");
+    if ( ( fd_proc = open("/proc/self/fd", O_RDONLY) ) < 0 ) {
+        singularity_message(ERROR, "Failed to open directory /proc/self/fd: %s\n", strerror(errno));
         ABORT(255);
     }
 
-    for ( i = 0; i <= sysconf(_SC_OPEN_MAX); i++ ) {
-        int length;
-        length = snprintf(fd_path, PATH_MAX-1, "/proc/self/fd/%d", i);
-        if ( length < 0 ) {
-            singularity_message(ERROR, "Failed to determine file descriptor path\n");
-            ABORT(255);
-        }
-        if ( length > PATH_MAX-1 ) {
-            length = PATH_MAX-1;
-        }
-        fd_path[length] = '\0';
-
-        if ( is_dir(fd_path) < 0 || is_sock(fd_path) < 0 ) {
-            continue;
-        }
-        close(i);
+    if ( ( dir = fdopendir(fd_proc) ) == NULL ) {
+        singularity_message(ERROR, "Failed to list directory /proc/self/fd: %s\n", strerror(errno));
+        ABORT(255);
     }
 
-    free(fd_path);
+    while ( ( dirent = readdir(dir) ) ) {
+        struct stat st;
+        long int fd;
+
+        if ( strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0 ) {
+            continue;
+        }
+        if ( str2int(dirent->d_name, &fd) < 0 ) {
+            continue;
+        }
+        if ( fd == fd_proc || fstat(fd, &st) < 0 ) {
+            continue;
+        }
+        if ( S_ISDIR(st.st_mode) || S_ISSOCK(st.st_mode) ) {
+            close(fd);
+        }
+    }
+
+    if ( closedir(dir) < 0 ) {
+        singularity_message(ERROR, "Failed to close directory /proc/self/fd: %s\n", strerror(errno));
+        ABORT(255);
+    }
 }

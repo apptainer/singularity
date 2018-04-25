@@ -24,6 +24,7 @@
 #ifndef __FILE_H_
 #define __FILE_H_
 
+void container_statdir_update(unsigned char);
 char *file_id(char *path);
 char *file_devino(char *path);
 #include <sys/stat.h>
@@ -39,8 +40,8 @@ int is_suid(char *path);
 int is_owner(char *path, uid_t uid);
 int is_blk(char *path);
 int is_chr(char *path);
-int is_sock(char *path);
 int s_mkpath(char *dir, mode_t mode);
+int container_mkpath(char *dir, mode_t mode);
 int s_rmdir(char *dir);
 int copy_file(char * source, char * dest);
 char *filecat(char *path);
