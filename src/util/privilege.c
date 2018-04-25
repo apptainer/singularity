@@ -526,6 +526,7 @@ int singularity_priv_has_gid(gid_t gid) {
 }
 
 void singularity_priv_check_nonewprivs() {
+    singularity_message(DEBUG, "Setting NO_NEW_PRIVS to prevent future privilege escalations.\n");
     if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) {
         singularity_message(ERROR, "Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
         ABORT(255);
