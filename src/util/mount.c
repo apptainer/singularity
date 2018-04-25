@@ -33,6 +33,44 @@
 
 #define MAX_LINE_LEN 2048
 
+struct resolved_container_path {
+    char *mountdir;
+    char *finaldir;
+    char *overlay;
+    char *session;
+};
+
+static void resolve_container_path(struct resolved_container_path *container_path) {
+    if ( container_path->mountdir == NULL ) {
+        container_path->mountdir = realpath(CONTAINER_MOUNTDIR, NULL); // Flawfinder: ignore
+        if ( container_path->mountdir == NULL ) {
+            singularity_message(ERROR, "Failed to resolve path to %s\n", CONTAINER_MOUNTDIR);
+            ABORT(255);
+        }
+    }
+    if ( container_path->finaldir == NULL ) {
+        container_path->finaldir = realpath(CONTAINER_FINALDIR, NULL); // Flawfinder: ignore
+        if ( container_path->finaldir == NULL ) {
+            singularity_message(ERROR, "Failed to resolve path to %s\n", CONTAINER_FINALDIR);
+            ABORT(255);
+        }
+    }
+    if ( container_path->overlay == NULL ) {
+        container_path->overlay = realpath(CONTAINER_OVERLAY, NULL); // Flawfinder: ignore
+        if ( container_path->overlay == NULL ) {
+            singularity_message(ERROR, "Failed to resolve path to %s\n", CONTAINER_OVERLAY);
+            ABORT(255);
+        }
+    }
+    if ( container_path->session == NULL ) {
+        container_path->session = realpath(SESSIONDIR, NULL); // Flawfinder: ignore
+        if ( container_path->session == NULL ) {
+            singularity_message(ERROR, "Failed to resolve path to %s\n", SESSIONDIR);
+            ABORT(255);
+        }
+    }
+}
+
 int singularity_mount(const char *source, const char *target,
                       const char *filesystemtype, unsigned long mountflags,
                       const void *data) {
@@ -40,37 +78,49 @@ int singularity_mount(const char *source, const char *target,
     int mount_errno;
     uid_t fsuid = 0;
     char dest[PATH_MAX];
-    char *realdest;
-    int target_fd = open(target, O_RDONLY);
+    char *realdest, *realtarget;
+    int target_fd = -1;
+    static struct resolved_container_path container_path;
 
-    if ( target_fd < 0 ) {
-        singularity_message(ERROR, "Target %s doesn't exist\n", target);
-        ABORT(255);
-    }
+    resolve_container_path(&container_path);
 
-    if ( snprintf(dest, PATH_MAX-1, "/proc/self/fd/%d", target_fd) < 0 ) {
-        singularity_message(ERROR, "Failed to determine path for target file descriptor\n");
-        ABORT(255);
+    if ( ( mountflags & MS_REMOUNT ) == 0 ) {
+        target_fd = open(target, O_RDONLY);
+
+        if ( target_fd < 0 ) {
+            singularity_message(ERROR, "Target %s doesn't exist\n", target);
+            ABORT(255);
+        }
+
+        if ( snprintf(dest, PATH_MAX-1, "/proc/self/fd/%d", target_fd) < 0 ) {
+            singularity_message(ERROR, "Failed to determine path for target file descriptor\n");
+            ABORT(255);
+        }
+        realtarget = dest;
+    } else {
+        realtarget = (char *)target;
     }
 
     if ( ( mountflags & MS_BIND ) ) {
         fsuid = singularity_priv_getuid();
     }
 
-    realdest = realpath(dest, NULL); // Flawfinder: ignore
+    realdest = realpath(realtarget, NULL); // Flawfinder: ignore
     if ( realdest == NULL ) {
         singularity_message(ERROR, "Failed to get real path of %s %s\n", target, dest);
         ABORT(255);
     }
 
     if ( (mountflags & MS_PRIVATE) == 0 && (mountflags & MS_SLAVE) == 0 ) {
-        if ( strncmp(realdest, CONTAINER_MOUNTDIR, strlen(CONTAINER_MOUNTDIR)) != 0 &&
-             strncmp(realdest, CONTAINER_FINALDIR, strlen(CONTAINER_FINALDIR)) != 0 &&
-             strncmp(realdest, CONTAINER_OVERLAY, strlen(CONTAINER_OVERLAY)) != 0 &&
-             strncmp(realdest, SESSIONDIR, strlen(SESSIONDIR)) != 0 ) {
+        if ( strncmp(realdest, container_path.mountdir, strlen(container_path.mountdir)) != 0 &&
+             strncmp(realdest, container_path.finaldir, strlen(container_path.finaldir)) != 0 &&
+             strncmp(realdest, container_path.overlay, strlen(container_path.overlay)) != 0 &&
+             strncmp(realdest, container_path.session, strlen(container_path.session)) != 0 ) {
             singularity_message(VERBOSE, "Ignored, try to mount %s outside of container %s\n", target, realdest);
             free(realdest);
-            close(target_fd);
+            if ( target_fd >= 0 ) {
+                close(target_fd);
+            }
             return(0);
         }
     }
@@ -85,10 +135,12 @@ int singularity_mount(const char *source, const char *target,
         setfsuid(fsuid);
     }
 
-    ret = mount(source, dest, filesystemtype, mountflags, data);
+    ret = mount(source, realtarget, filesystemtype, mountflags, data);
     mount_errno = errno;
 
-    close(target_fd);
+    if ( target_fd >= 0 ) {
+        close(target_fd);
+    }
     free(realdest);
 
     if ( singularity_priv_userns_enabled() == 0 && seteuid(singularity_priv_getuid()) < 0 ) {
