@@ -102,7 +102,7 @@ get_section() {
                 # We already found it, still in section
                 if [[ "$FOUND" == "yes" ]]; then
                     if [ ! -z "${line}" ]; then
-                        echo $line
+                        printf "%s\n" "$line"
                     fi 
 
                 fi            
