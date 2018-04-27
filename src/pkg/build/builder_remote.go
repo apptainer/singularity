@@ -32,6 +32,7 @@ const (
 
 // RemoteBuilder contains the build request and response
 type RemoteBuilder struct {
+	authToken string
 	ImagePath string
 	Client    *http.Client
 	buildURL  url.URL
@@ -68,8 +69,9 @@ type ResponseData struct {
 }
 
 // NewRemoteBuilder initializes the RemoteBuilder struct
-func NewRemoteBuilder(p string, d Definition, isDetached bool, addr string) (b *RemoteBuilder) {
+func NewRemoteBuilder(p string, d Definition, isDetached bool, addr, at string) (b *RemoteBuilder) {
 	b = &RemoteBuilder{
+		authToken: at,
 		ImagePath: p,
 		Client:    &http.Client{},
 		buildURL: url.URL{
@@ -101,7 +103,9 @@ func (b *RemoteBuilder) Build() (err error) {
 	b.buildURL.Path = "build/" + b.ResponseData.ID.Hex()
 
 	// Dial websocket
-	c, _, err := websocket.DefaultDialer.Dial(b.ResponseData.WSURL, nil)
+	h := http.Header{}
+	h.Set("Authorization", fmt.Sprintf("Bearer %s", b.authToken))
+	c, _, err := websocket.DefaultDialer.Dial(b.ResponseData.WSURL, h)
 	if err != nil {
 		return err
 	}
@@ -165,6 +169,7 @@ func (b *RemoteBuilder) doBuildRequest() {
 	if err != nil {
 		panic(err)
 	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b.authToken))
 
 	// Do Build Request
 	b.Responses[build], err = b.Client.Do(req)
@@ -182,6 +187,7 @@ func (b *RemoteBuilder) doStatusRequest() {
 	if err != nil {
 		panic(err)
 	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b.authToken))
 
 	// Do Status Request
 	b.Responses[status], err = b.Client.Do(req)
@@ -200,6 +206,7 @@ func (b *RemoteBuilder) doPullRequest() {
 	if err != nil {
 		panic(err)
 	}
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b.authToken))
 
 	// Do Image Request
 	b.Responses[pull], err = b.Client.Do(req)
