@@ -89,7 +89,7 @@ int _singularity_runtime_mount_home(void) {
     }
 
     singularity_message(DEBUG, "Creating temporary directory to stage home: %s\n", joinpath(session_dir, home_dest));
-    if ( container_mkpath(joinpath(session_dir, home_dest), 0755) < 0 ) {
+    if ( container_mkpath_nopriv(joinpath(session_dir, home_dest), 0755) < 0 ) {
         singularity_message(ERROR, "Failed creating home directory stage %s: %s\n", joinpath(session_dir, home_dest), strerror(errno));
         ABORT(255);
     }
@@ -139,13 +139,11 @@ int _singularity_runtime_mount_home(void) {
     } else {
         singularity_message(DEBUG, "Staging home directory\n");
 
-        singularity_priv_escalate();
         singularity_message(DEBUG, "Creating home directory within container: %s\n", joinpath(container_dir, home_dest));
-        if ( container_mkpath(joinpath(container_dir, home_dest), 0755) < 0 ) {
+        if ( container_mkpath_priv(joinpath(container_dir, home_dest), 0755) < 0 ) {
             singularity_message(ERROR, "Failed creating home directory in container %s: %s\n", joinpath(container_dir, home_dest), strerror(errno));
             ABORT(255);
         }
-        singularity_priv_drop();
 
         singularity_message(VERBOSE, "Mounting staged home directory to container: %s -> %s\n", joinpath(session_dir, home_dest), joinpath(container_dir, home_dest));
         if ( singularity_mount(joinpath(session_dir, home_dest), joinpath(container_dir, home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
