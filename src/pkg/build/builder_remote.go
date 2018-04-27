@@ -176,9 +176,16 @@ func (b *RemoteBuilder) doBuildRequest() {
 	if err != nil {
 		panic(err)
 	}
+	if b.Responses[build].StatusCode != http.StatusCreated {
+		fmt.Fprintf(os.Stderr, "Remote Build Service returned error while creating build: %s\n", b.Responses[build].Status)
+		os.Exit(1)
+	}
 
 	// Parse Build Response
-	json.NewDecoder(b.Responses[build].Body).Decode(&b.ResponseData)
+	if err := json.NewDecoder(b.Responses[build].Body).Decode(&b.ResponseData); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to parse respose from Remote Build Service: %s\n", err)
+		os.Exit(1)
+	}
 }
 
 func (b *RemoteBuilder) doStatusRequest() {
@@ -193,6 +200,10 @@ func (b *RemoteBuilder) doStatusRequest() {
 	b.Responses[status], err = b.Client.Do(req)
 	if err != nil {
 		panic(err)
+	}
+	if b.Responses[status].StatusCode != http.StatusOK {
+		fmt.Fprintf(os.Stderr, "Remote Build Service returned error while getting build status: %s\n", b.Responses[status].Status)
+		os.Exit(1)
 	}
 
 	// Parse Status Response
@@ -212,6 +223,10 @@ func (b *RemoteBuilder) doPullRequest() {
 	b.Responses[pull], err = b.Client.Do(req)
 	if err != nil {
 		panic(err)
+	}
+	if b.Responses[pull].StatusCode != http.StatusOK {
+		fmt.Fprintf(os.Stderr, "Remote Build Service returned error while getting image file: %s\n", b.Responses[pull].Status)
+		os.Exit(1)
 	}
 
 	glog.Infof("Pulling image from %v to %v...", b.ResponseData.ImageURL, b.ImagePath)
