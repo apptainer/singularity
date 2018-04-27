@@ -19,10 +19,10 @@ import (
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
-	"github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc/client"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
+	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
+	"github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc/client"
 )
 
 func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {

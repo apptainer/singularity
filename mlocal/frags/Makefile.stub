@@ -21,6 +21,14 @@ sif_INSTALL := $(PREFIX)/libexec/singularity/bin/sif
 
 environment_INSTALL := $(PREFIX)/libexec/singularity/environment.tar
 
+config := $(BUILDDIR)/singularity.conf
+config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
+
+mountdir := $(PREFIX)/var/singularity/mnt/container
+finaldir := $(PREFIX)/var/singularity/mnt/final
+overlaydir := $(PREFIX)/var/singularity/mnt/overlay
+sessiondir := $(PREFIX)/var/singularity/mnt/session
+
 go_BIN := $(singularity) $(sbuild) $(scontainer) $(smaster)
 go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
 go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL) $(scontainer_INSTALL) $(smaster_INSTALL)
@@ -30,11 +38,11 @@ go_TAG = "containers_image_openpgp"
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime/c -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L$(shell readlink -f $(BUILDDIR))/lib
 
-INSTALLFILES := $(smaster_INSTALL) $(scontainer_INSTALL) $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL)
+INSTALLFILES := $(smaster_INSTALL) $(scontainer_INSTALL) $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
 
-CLEANFILES += $(librpc) $(librpc_INSTALL) $(go_BIN) $(go_OBJ) $(go_INSTALL)
+CLEANFILES += $(librpc) $(go_BIN) $(go_OBJ)
 
-all: cscope collect $(libruntime) $(librpc) $(go_BIN)
+all: cscope collect $(libruntime) $(librpc) $(go_BIN) $(config)
 
 $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	@echo " AR" $@
@@ -48,29 +56,28 @@ $(librpc):
 		$(SOURCEDIR)/src/runtime/startup/rpc.go
 $(librpc_INSTALL): $(librpc)
 	@echo " INSTALL" $@
-	install -d `dirname $(librpc_INSTALL)`
-	@cp $(librpc) $(librpc_INSTALL)
+	$(V)install -d `dirname $(librpc_INSTALL)`
+	$(V)install -m 0755 $(librpc) $(librpc_INSTALL)
 
 # singularity
 $(singularity): $(go_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-	go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity \
-		$(SOURCEDIR)/src/cmd/singularity/cli.go $(SOURCEDIR)/src/cmd/singularity/singularity.go
+	go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
 $(singularity_INSTALL): $(singularity) $(librpc_INSTALL)
 	@echo " INSTALL" $@
-	install -d `dirname $(singularity_INSTALL)`
-	@install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
+	$(V)install -d `dirname $(singularity_INSTALL)`
+	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # sbuild
 $(sbuild): $(go_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-	go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/src/cmd/sbuild/cli.go $(SOURCEDIR)/src/cmd/sbuild/sbuild.go
+	go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/src/cmd/sbuild/cli.go
 $(sbuild_INSTALL): $(sbuild) $(librpc_INSTALL)
 	@echo " INSTALL" $@
-	install -d `dirname $(sbuild_INSTALL)`
-	@install -m 0755 $(sbuild) $(sbuild_INSTALL)
+	$(V)install -d `dirname $(sbuild_INSTALL)`
+	$(V)install -m 0755 $(sbuild) $(sbuild_INSTALL)
 
 # scontainer
 $(scontainer): $(go_OBJ) $(libruntime)
@@ -79,8 +86,8 @@ $(scontainer): $(go_OBJ) $(libruntime)
 		go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/src/runtime/startup/scontainer.go
 $(scontainer_INSTALL): $(scontainer) $(librpc_INSTALL)
 	@echo " INSTALL" $@
-	install -d `dirname $(scontainer_INSTALL)`
-	@install -m 0755 $(scontainer) $(scontainer_INSTALL)
+	$(V)install -d `dirname $(scontainer_INSTALL)`
+	$(V)install -m 0755 $(scontainer) $(scontainer_INSTALL)
 
 # smaster
 $(smaster): $(go_OBJ) $(libruntime)
@@ -89,8 +96,8 @@ $(smaster): $(go_OBJ) $(libruntime)
 	go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/src/runtime/startup/smaster.go
 $(smaster_INSTALL): $(smaster) $(librpc_INSTALL)
 	@echo " INSTALL" $@
-	install -d `dirname $(smaster_INSTALL)`
-	@install -m 0755 $(smaster) $(smaster_INSTALL)
+	$(V)install -d `dirname $(smaster_INSTALL)`
+	$(V)install -m 0755 $(smaster) $(smaster_INSTALL)
 
 # config.go
 $(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
@@ -100,23 +107,49 @@ $(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
 # wrappper & wrapper-suid install
 $(wrapper_INSTALL): $(wrapper)
 	@echo " INSTALL" $@
-	install -d `dirname $(wrapper_INSTALL)`
-	@install -m 0755 $(wrapper) $(wrapper_INSTALL)
+	$(V)install -d `dirname $(wrapper_INSTALL)`
+	$(V)install -m 0755 $(wrapper) $(wrapper_INSTALL)
 $(wrapper_suid_INSTALL): $(wrapper)
 	@echo " INSTALL SUID" $@
-	install -d `dirname $(wrapper_suid_INSTALL)`
-	@install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
+	$(V)install -d `dirname $(wrapper_suid_INSTALL)`
+	$(V)install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
 
 # sif install
 $(sif_INSTALL): $(sif)
 	@echo " INSTALL" $@
-	install -d `dirname $(sif_INSTALL)`
-	@install -m 0755 $(sif) $(sif_INSTALL)
+	$(V)install -d `dirname $(sif_INSTALL)`
+	$(V)install -m 0755 $(sif) $(sif_INSTALL)
 
+#environment.tar install
 $(environment_INSTALL):
 	@echo " INSTALL" $@
-	install -d `dirname $(environment_INSTALL)`
-	@install -m 0644 $(SOURCEDIR)/environment.tar $(environment_INSTALL)
+	$(V)install -d `dirname $(environment_INSTALL)`
+	$(V)install -m 0644 $(SOURCEDIR)/environment.tar $(environment_INSTALL)
+
+#TODO: generate real config file and install, currently is just blank
+$(config):
+	$(V)touch $(config)
+
+$(config_INSTALL): $(config)
+	@echo " INSTALL" $@
+	$(V)install -d `dirname $(config_INSTALL)`
+	$(V)install -m 0644 $(config) $(config_INSTALL)
+
+$(mountdir):
+	@echo " INSTALL" $@
+	$(V)install -d $(mountdir)
+
+$(finaldir):
+	@echo " INSTALL" $@
+	$(V)install -d $(finaldir)
+
+$(overlaydir):
+	@echo " INSTALL" $@
+	$(V)install -d $(overlaydir)
+
+$(sessiondir):
+	@echo " INSTALL" $@
+	$(V)install -d $(sessiondir)
 
 .PHONY: collect
 collect:

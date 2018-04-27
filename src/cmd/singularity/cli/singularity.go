@@ -5,15 +5,13 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
-package main
+package cli
 
 import (
 	"os"
 	"text/template"
 
-	//"github.com/golang/glog"
 	"github.com/spf13/cobra"
-	//flag "github.com/spf13/pflag"
 )
 
 // Global variables for singularity CLI
@@ -38,7 +36,6 @@ appropriately.  This is called by main.main(). It only needs to happen once to
 the root command (singularity).
 */
 func ExecuteSingularity() {
-	//goflag.Parse()
 	if err := singularityCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

@@ -7,6 +7,8 @@
 */
 package main
 
+import "github.com/singularityware/singularity/src/cmd/sbuild/cli"
+
 func main() {
-	ExecuteSbuild()
+	cli.ExecuteSbuild()
 }
