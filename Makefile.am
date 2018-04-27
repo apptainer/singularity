@@ -19,11 +19,15 @@ install-perms:
 	@echo
 
 all-local:
+if !FOUND_MKSQUASHFS
 	@echo
 	@echo "******"
-	@echo "  mksquashfs from squash-tools is required for full functionality"
+	@echo "WARNING - mksquashfs was not found at configure time"
+	@echo "mksquashfs is required at runtime for full functionality"
+	@echo "Provided by distribution package squashfs-tools"
 	@echo "******"
 	@echo
+endif
 
 install-data-hook:
 	install -d -m 0755 $(DESTDIR)$(CONTAINER_MOUNTDIR)

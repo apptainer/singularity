@@ -435,17 +435,8 @@ void singularity_priv_drop_perm(void) {
         ABORT(255);
     }
 
-#ifdef SINGULARITY_NO_NEW_PRIVS
     // Prevent the following processes to increase privileges
-    singularity_message(DEBUG, "Setting NO_NEW_PRIVS to prevent future privilege escalations.\n");
-    if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) {
-        singularity_message(ERROR, "Could not set NO_NEW_PRIVS safeguard: %s\n", strerror(errno));
-        ABORT(255);
-    }
-#else  // SINGULARITY_NO_NEW_PRIVS
-    singularity_message(VERBOSE2, "Not enabling NO_NEW_PRIVS flag due to lack of compile-time support.\n");
-#endif
-
+    singularity_priv_check_nonewprivs(); 
 
     singularity_message(DEBUG, "Finished dropping privileges\n");
 }
@@ -532,4 +523,16 @@ int singularity_priv_has_gid(gid_t gid) {
         }
     }
     return 0;
+}
+
+void singularity_priv_check_nonewprivs() {
+    singularity_message(DEBUG, "Setting NO_NEW_PRIVS to prevent future privilege escalations.\n");
+    if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) {
+        singularity_message(ERROR, "Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
+        ABORT(255);
+    }
+    if ( prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) != 1 ) {
+        singularity_message(ERROR, "Host kernel is outdated and does not support PR_GET_NO_NEW_PRIVS!\n");
+        ABORT(255);
+    }
 }

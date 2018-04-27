@@ -88,9 +88,10 @@ int _singularity_image_ext3_init(struct image_object *image, int open_flags) {
     rewind(image_fp);
 
     // Get the first line from the config
-    ret = fread(buf, 1, sizeof(buf), image_fp);
+    buf[sizeof(buf)-1] = '\0';
+    ret = fread(buf, 1, sizeof(buf)-1, image_fp);
     fclose(image_fp);
-    if ( ret != sizeof(buf) ) {
+    if ( ret != sizeof(buf)-1 ) {
         singularity_message(DEBUG, "Could not read the top of the image\n");
         return(-1);
     }
@@ -99,6 +100,12 @@ int _singularity_image_ext3_init(struct image_object *image, int open_flags) {
     if ( strstr(buf, "singularity") != NULL ) {
         magicoff += strlen(buf);
         image->offset = strlen(buf);
+    }
+
+    if ( ( magicoff + sizeof(struct extfs_info) ) > ( sizeof(buf)-1 ) ) {
+        close(image_fd);
+        singularity_message(VERBOSE, "Can not find EXT3 information header");
+        return(-1);
     }
 
     einfo = (struct extfs_info *)&buf[magicoff];

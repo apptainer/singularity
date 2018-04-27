@@ -151,7 +151,7 @@ int _singularity_runtime_mount_hostfs(void) {
         if ( ( is_dir(mountpoint) == 0 ) && ( is_dir(joinpath(container_dir, mountpoint)) < 0 ) ) {
             if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                 singularity_priv_escalate();
-                if ( s_mkpath(joinpath(container_dir, mountpoint), 0755) < 0 ) {
+                if ( container_mkpath(joinpath(container_dir, mountpoint), 0755) < 0 ) {
                     singularity_priv_drop();
                     singularity_message(WARNING, "Could not create bind point directory in container %s: %s\n", mountpoint, strerror(errno));
                     continue;

@@ -11,6 +11,7 @@ Build-Depends:
  debhelper (>= 9),
  dh-autoreconf,
  help2man,
+ libarchive-dev,
  python,
 Standards-Version: 3.9.8
 Homepage: http://gmkurtzer.github.io/singularity

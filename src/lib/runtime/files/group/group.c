@@ -142,7 +142,7 @@ int _singularity_runtime_files_group(void) {
                 singularity_message(VERBOSE3, "Found supplementary group membership in: %d\n", gids[i]);
                 singularity_message(VERBOSE2, "Adding user's supplementary group ('%s') info to template group file\n", gr->gr_name);
                 fprintf(file_fp, "%s:x:%u:%s\n", gr->gr_name, gr->gr_gid, pwent->pw_name);
-            } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) ) {
+            } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) || (errno == ENOENT) ) {
                 singularity_message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gids[i]);
             } else {
                 singularity_message(ERROR, "Failed to lookup GID %d group entry: %s\n", gids[i], strerror(errno));

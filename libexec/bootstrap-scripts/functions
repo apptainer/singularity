@@ -70,12 +70,12 @@ singularity_section_get() {
 
 
 get_section() {
-
+ 
     SECTION="$1"
     RECIPE="$2"
     FOUND="no"
 
-    while read -r line
+    while IFS="" read -r line
     do
 
  
@@ -101,10 +101,7 @@ get_section() {
             else
                 # We already found it, still in section
                 if [[ "$FOUND" == "yes" ]]; then
-                    if [ ! -z "${line}" ]; then
-                        echo $line
-                    fi 
-
+                    echo $line
                 fi            
             fi
         fi
@@ -199,14 +196,14 @@ singularity_app_init() {
 
     # App specific variables should be exposed at run, shell, exec
     echo "
-    SINGULARITY_APPNAME=$APPNAME
-    SINGULARITY_APPROOT=\"/scif/apps/${APPNAME}\"
-    SINGULARITY_APPMETA=\"/scif/apps/${APPNAME}/scif\"
-    SINGULARITY_DATA=\"/scif/data\"
-    SINGULARITY_APPDATA=\"/scif/data/${APPNAME}\"
-    SINGULARITY_APPINPUT=\"/scif/data/${APPNAME}/input\"
-    SINGULARITY_APPOUTPUT=\"/scif/data/${APPNAME}/output\"
-    export SINGULARITY_APPDATA SINGULARITY_APPNAME SINGULARITY_APPROOT SINGULARITY_APPMETA SINGULARITY_APPINPUT SINGULARITY_APPOUTPUT SINGULARITY_DATA
+    SCIF_APPNAME=$APPNAME
+    SCIF_APPROOT=\"/scif/apps/${APPNAME}\"
+    SCIF_APPMETA=\"/scif/apps/${APPNAME}/scif\"
+    SCIF_DATA=\"/scif/data\"
+    SCIF_APPDATA=\"/scif/data/${APPNAME}\"
+    SCIF_APPINPUT=\"/scif/data/${APPNAME}/input\"
+    SCIF_APPOUTPUT=\"/scif/data/${APPNAME}/output\"
+    export SCIF_APPDATA SCIF_APPNAME SCIF_APPROOT SCIF_APPMETA SCIF_APPINPUT SCIF_APPOUTPUT SCIF_DATA
     " > "${APPMETA}/env/01-base.sh"
 
 }

@@ -10,14 +10,30 @@ unset ml
 # Bash env has been known to cause issues in containers
 unset BASH_ENV
 
-# Provide a sane path within the container
-if [ -z ${SINGULARITYENV_PATH+x} ]; then
-    SINGULARITYENV_PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
-else
-    SINGULARITYENV_PATH="$SINGULARITYENV_PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
-fi
+# These vars are provided to the user as a convenience.  They will be used to 
+# prepended to, appended to, or overwrite the PATH at runtime.  
+if [ -n "${SINGULARITYENV_PREPEND_PATH:-}" ]; then 
+    SING_USER_DEFINED_PREPEND_PATH="$SINGULARITYENV_PREPEND_PATH"
+    export SING_USER_DEFINED_PREPEND_PATH
+    unset SINGULARITYENV_PREPEND_PATH # so that it doesn't appear in env
+fi 
+
+if [ -n "${SINGULARITYENV_APPEND_PATH:-}" ]; then 
+    SING_USER_DEFINED_APPEND_PATH="$SINGULARITYENV_APPEND_PATH"
+    export SING_USER_DEFINED_APPEND_PATH
+    unset SINGULARITYENV_APPEND_PATH # so that it doesn't appear in env
+fi 
+
+if [ -n "${SINGULARITYENV_PATH:-}" ]; then 
+    SING_USER_DEFINED_PATH="$SINGULARITYENV_PATH"
+    export SING_USER_DEFINED_PATH
+fi 
+
+# Provide a sane starting path within the container (unfortunately the same 
+# var name is recycled from above for legacy reasons)
+SINGULARITYENV_PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+export SINGULARITYENV_PATH 
 
 # Don't save the shell's HISTFILE
 SINGULARITYENV_HISTFILE=""
-
-export SINGULARITYENV_PATH SINGULARITYENV_HISTFILE
+export SINGULARITYENV_HISTFILE

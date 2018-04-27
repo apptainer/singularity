@@ -16,6 +16,7 @@
 
 #Contributors:
 
+    - Afif Elghraoui <afif.elghraoui@nih.gov>
     - Amanda Duffy <aduffy@lenovo.com>
     - Ángel Bejarano <abejarano@ontropos.com>
     - Bernard Li <bernardli@lbl.gov>
@@ -23,6 +24,7 @@
     - Chris Hollowell <hollowec@bnl.gov>
     - Daniele Tamino <daniele.tamino@gmail.com>
     - Dave Love <d.love@liverpool.ac.uk>
+    - Diana Langenbach <dcl@dcl.sh>
     - Felix Abecassis <fabecassis@nvidia.com>
     - George Hartzell <hartzell@alerce.com>
     - Jarrod Johnson <jjohnson2@lenovo.com>
@@ -36,7 +38,9 @@
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
     - Petr Votava <votava.petr@gene.com>
+    - Rafal Gumienny <rafal.gumienny@gmail.com>
     - Ralph Castain <rhc@open-mpi.org>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
+    - Thomas Hamel <hmlth@t-hamel.fr>
     - Yaroslav Halchenko <debian@onerussian.com>

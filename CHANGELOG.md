@@ -12,6 +12,53 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.5.0](https://github.com/singularityware/singularity/releases/tag/2.5.0-rc1) (2018-04-04)
+
+### Security related fixes
+
+Patches are provided to prevent a malicious user with the ability to log in to 
+the host system and use the Singularity container runtime from carrying out any 
+of the following actions:
+
+ - Create world writable files in root-owned directories on the host system by 
+   manipulating symbolic links and bind mounts 
+ - Create folders outside of the container by manipulating symbolic links in 
+   conjunction with the `--nv` option or by bypassing check_mounted function 
+   with relative symlinks
+ - Bypass the `enable overlay = no` option in the `singularity.conf` 
+   configuration file by setting an environment variable
+ - Exploit buffer overflows in `src/util/daemon.c` and/or 
+   `src/lib/image/ext3/init.c` (reported by Erik Sjölund (DBB, Stockholm 
+   University, Sweden))
+ - Forge of the pid_path to join any Singularity namespace (reported by Erik 
+   Sjölund (DBB, Stockholm University, Sweden))
+
+### Implemented enhancements
+
+ - Restore docker-extract aufs whiteout handling that implements correct
+   extraction of docker container layers. This adds libarchive-devel as a
+   build time dep. At runtime libarchive is needed for whiteout handling. If
+   libarchive is not available at runtime will fall back to previous
+   extraction method.
+ - Changed behavior of SINGULARITYENV_PATH to overwrite container PATH and
+   added SINGULARITYENV_PREPEND_PATH and SINGULARITYENV_APPEND_PATH for users
+   wanting to prepend or append to the container PATH at runtime
+
+### Bug fixes
+
+ - Support pulls from the NVIDIA cloud docker registry (fix by Justin Riley, 
+   Harvard)
+ - Close socket file descriptors in fd_cleanup
+ - Fix conflict between `--nv` and `--contain` options
+ - Throw errors at build and runtime if NO_NEW_PRIVS is not present and working
+ - Reset umask to 0022 at start to corrrect several errors
+ - Verify docker layers after download with sha256 checksum
+ - Do not make excessive requests for auth tokens to docker registries
+ - Fixed stripping whitespaces and empty new lines for the app commands (fix by 
+   Rafal Gumienny, Biozentrum, Basel)
+ - Improved the way that working directory is mounted 
+ - Fixed an out of bounds array in src/lib/image/ext3/init.c
+
 ## [v2.4.6](https://github.com/singularityware/singularity/releases/tag/2.4.6) (2018-04-04)
 
  - Fix for check_mounted() to check parent directories #1436
@@ -31,6 +78,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ## [v2.4.3](https://github.com/singularityware/singularity/releases/tag/2.4.3) (2018-03-03)
 
+### Bug Fixes
+ - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Fixed bug that did not export environment variables for apps with "-" in name
  - Fix permission denied when binding directory located on NFS with root_squash enabled
  - Add capability to support all tar compression formats #1155
  - Handle docker layer aufs whiteout files correctly (requires libarchive).

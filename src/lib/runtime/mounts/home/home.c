@@ -63,10 +63,6 @@ int _singularity_runtime_mount_home(void) {
 
     singularity_message(DEBUG, "Checking if home directories are being influenced by user\n");
     if ( singularity_registry_get("HOME") != NULL ) {
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting user requested home: host does not support PR_SET_NO_NEW_PRIVS\n");
-        ABORT(255);
-#endif
         singularity_message(DEBUG, "Checking if user bind control is allowed\n");
         if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
             singularity_message(ERROR, "Not mounting user requested home: User bind control is disallowed\n");
@@ -93,7 +89,7 @@ int _singularity_runtime_mount_home(void) {
     }
 
     singularity_message(DEBUG, "Creating temporary directory to stage home: %s\n", joinpath(session_dir, home_dest));
-    if ( s_mkpath(joinpath(session_dir, home_dest), 0755) < 0 ) {
+    if ( container_mkpath(joinpath(session_dir, home_dest), 0755) < 0 ) {
         singularity_message(ERROR, "Failed creating home directory stage %s: %s\n", joinpath(session_dir, home_dest), strerror(errno));
         ABORT(255);
     }
@@ -145,7 +141,7 @@ int _singularity_runtime_mount_home(void) {
 
         singularity_priv_escalate();
         singularity_message(DEBUG, "Creating home directory within container: %s\n", joinpath(container_dir, home_dest));
-        if ( s_mkpath(joinpath(container_dir, home_dest), 0755) < 0 ) {
+        if ( container_mkpath(joinpath(container_dir, home_dest), 0755) < 0 ) {
             singularity_message(ERROR, "Failed creating home directory in container %s: %s\n", joinpath(container_dir, home_dest), strerror(errno));
             ABORT(255);
         }

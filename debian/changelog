@@ -1,3 +1,38 @@
+singularity-container (2.5.0) unstable; urgency=high
+
+  * Prevent a user from creating world writable files in root-owned directories 
+    on the host system by manipulating symbolic links and bind mounts 
+  * Prevent a user from creating folders outside of the container by 
+    manipulating symbolic links in conjunction with the `--nv` option or by 
+    bypassing check_mounted function with relative symlinks
+  * Prevent a user from bypassing the `enable overlay = no` option in the 
+    `singularity.conf` configuration file by setting an environment variable
+  * Prevent a user from exploiting buffer overflows in `src/util/daemon.c` 
+    and/or `src/lib/image/ext3/init.c` (reported by Erik Sjölund (DBB, 
+    Stockholm University, Sweden))
+  * Prevent a user from forging  of the pid_path to join any Singularity 
+    namespace (reported by Erik Sjölund (DBB, Stockholm University, Sweden))
+  * Restore docker-extract aufs whiteout handling that implements correct
+    extraction of docker container layers. This adds libarchive-devel as a
+    build time dep. At runtime libarchive is needed for whiteout handling. If
+    libarchive is not available at runtime will fall back to previous
+    extraction method.
+  * Changed behavior of SINGULARITYENV_PATH to overwrite container PATH and
+    added SINGULARITYENV_PREPEND_PATH and SINGULARITYENV_APPEND_PATH for users
+    wanting to prepend or append to the container PATH at runtime
+  * Support pulls from the NVIDIA cloud docker registry (fix by Justin Riley, 
+    Harvard)
+  * Close socket file descriptors in fd_cleanup
+  * Fix conflict between `--nv` and `--contain` options
+  * Throw errors at build and runtime if NO_NEW_PRIVS is not present and working
+  * Reset umask to 0022 at start to corrrect several errors
+  * Verify docker layers after download with sha256 checksum
+  * Do not make excessive requests for auth tokens to docker registries
+  * Fixed stripping whitespaces and empty new lines for the app commands (fix by 
+    Rafal Gumienny, Biozentrum, Basel)
+  * Improved the way that working directory is mounted 
+  * Fixed an out of bounds array in src/lib/image/ext3/init.c
+
 singularity-container (2.4.6-1) unstable; urgency=high
 
   * Fix for check_mounted() to check parent directories #1436

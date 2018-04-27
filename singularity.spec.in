@@ -36,6 +36,7 @@ Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
 BuildRequires: python
+BuildRequires: libarchive-devel
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
@@ -111,6 +112,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/mount
 %{_libexecdir}/singularity/bin/image-type
 %{_libexecdir}/singularity/bin/prepheader
+%{_libexecdir}/singularity/bin/docker-extract
 
 # Directories
 %{_libexecdir}/singularity/bootstrap-scripts
@@ -138,6 +140,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/test.*
 %{_libexecdir}/singularity/bin/action
 %{_libexecdir}/singularity/bin/start
+%{_libexecdir}/singularity/bin/docker-extract
 %{_libexecdir}/singularity/functions
 %{_libexecdir}/singularity/handlers
 %{_libexecdir}/singularity/image-handler.sh

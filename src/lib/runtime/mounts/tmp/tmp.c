@@ -64,12 +64,6 @@ int _singularity_runtime_mount_tmp(void) {
                 singularity_message(ERROR, "User bind control is disabled by system administrator\n");
                 ABORT(5);
             }
-
-#ifndef SINGULARITY_NO_NEW_PRIVS
-            singularity_message(WARNING, "Not mounting workdir: host does not support PR_SET_NO_NEW_PRIVS\n");
-            ABORT(255);
-#endif
-
             tmp_source = joinpath(tmpdirpath, "/tmp");
             vartmp_source = joinpath(tmpdirpath, "/var_tmp");
         } else {
