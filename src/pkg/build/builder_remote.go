@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type ReqTag string
@@ -56,15 +56,15 @@ type response struct {
 
 // ResponseData contains the details of an individual build
 type ResponseData struct {
-	ID           uuid.UUID  `json:"id"`
-	SubmitTime   time.Time  `json:"submitTime"`
-	IsComplete   bool       `json:"isComplete"`
-	CompleteTime *time.Time `json:"completeTime,omitempty"`
-	IsDetached   bool       `json:"isDetached"`
-	WSURL        string     `json:"wsURL,omitempty"`
-	ImageURL     string     `json:"imageURL,omitempty"`
-	ImagePath    string     `json:"-"`
-	Definition   Definition `json:"definition"`
+	ID           bson.ObjectId `json:"id"`
+	SubmitTime   time.Time     `json:"submitTime"`
+	IsComplete   bool          `json:"isComplete"`
+	CompleteTime *time.Time    `json:"completeTime,omitempty"`
+	IsDetached   bool          `json:"isDetached"`
+	WSURL        string        `json:"wsURL,omitempty"`
+	ImageURL     string        `json:"imageURL,omitempty"`
+	ImagePath    string        `json:"-"`
+	Definition   Definition    `json:"definition"`
 }
 
 // NewRemoteBuilder initializes the RemoteBuilder struct
@@ -98,7 +98,7 @@ func (b *RemoteBuilder) Build() (err error) {
 	b.doBuildRequest()
 
 	// Update buildURL to include UUID for status requests
-	b.buildURL.Path = "build/" + b.ResponseData.ID.String()
+	b.buildURL.Path = "build/" + b.ResponseData.ID.Hex()
 
 	// Dial websocket
 	c, _, err := websocket.DefaultDialer.Dial(b.ResponseData.WSURL, nil)
