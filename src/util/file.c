@@ -348,8 +348,7 @@ int s_mkpath(char *dir, mode_t mode) {
     return(0);
 }
 
-
-int container_mkpath(char *dir, mode_t mode) {
+static int container_mkpath(char *dir, mode_t mode, unsigned char privileged) {
     int ret = 0;
     int loop = 1;
     char *dir_path = (char *)malloc(PATH_MAX);
@@ -403,9 +402,17 @@ int container_mkpath(char *dir, mode_t mode) {
             } else {
                 singularity_message(DEBUG, "Creating directory: %s/%s\n", dir_path, last_ptr);
 
+                if ( privileged ) {
+                    singularity_priv_escalate();
+                }
+
                 mode_t mask = umask(0); // Flawfinder: ignore
                 ret = mkdir(last_ptr, mode);
                 umask(mask); // Flawfinder: ignore
+
+                if ( privileged ) {
+                    singularity_priv_drop();
+                }
 
                 if ( ret < 0 ) {
                     if ( errno != EEXIST ) {
@@ -451,6 +458,13 @@ int container_mkpath(char *dir, mode_t mode) {
     return(ret);
 }
 
+int container_mkpath_nopriv(char *dir, mode_t mode) {
+    return(container_mkpath(dir, mode, 0));
+}
+
+int container_mkpath_priv(char *dir, mode_t mode) {
+    return(container_mkpath(dir, mode, 1));
+}
 
 int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     int retval;
@@ -544,8 +558,7 @@ int copy_file(char * source, char * dest) {
     return(0);
 }
 
-
-int fileput(char *path, char *string) {
+static int fileput(char *path, char *string, unsigned char privileged) {
     char *current = (char *)malloc(PATH_MAX);
     char *dir = (char *)malloc(PATH_MAX);
     char *dup_path = strdup(path);
@@ -591,12 +604,24 @@ int fileput(char *path, char *string) {
     }
 
     singularity_message(DEBUG, "Called fileput(%s, %s)\n", path, string);
+
+    if ( privileged ) {
+        singularity_priv_escalate();
+    }
+
     if ( ( fd = open(bname, O_CREAT|O_WRONLY|O_TRUNC|O_NOFOLLOW, 0644) ) < 0 ) { // Flawfinder: ignore
+        if ( privileged ) {
+            singularity_priv_drop();
+        }
         singularity_message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
         free(dup_path);
         free(current);
         free(dir);
         return(-1);
+    }
+
+    if ( privileged ) {
+        singularity_priv_drop();
     }
 
     if ( chdir(current) < 0 ) {
@@ -615,6 +640,14 @@ int fileput(char *path, char *string) {
     free(dir);
 
     return(0);
+}
+
+int fileput_nopriv(char *path, char *string) {
+    return(fileput(path, string, 0));
+}
+
+int fileput_priv(char *path, char *string) {
+    return(fileput(path, string, 1));
 }
 
 char *filecat(char *path) {
