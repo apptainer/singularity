@@ -49,8 +49,6 @@
 int main(int argc, char **argv) {
     struct image_object image;
 
-    fd_cleanup();
-
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
     singularity_priv_init();
