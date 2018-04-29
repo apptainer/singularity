@@ -40,7 +40,7 @@ cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
 INSTALLFILES := $(smaster_INSTALL) $(scontainer_INSTALL) $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
 
-CLEANFILES += $(librpc) $(go_BIN) $(go_OBJ)
+CLEANFILES += $(libruntime) $(librpc) $(go_BIN) $(go_OBJ) $(BUILDDIR)/librpc.h
 
 all: cscope collect $(libruntime) $(librpc) $(go_BIN) $(config)
 
@@ -161,6 +161,11 @@ collect:
 			print path "/" $$0; next }{ print }' < $$i	\
 			>> $(BUILDDIR)/mergeddeps)			\
 	done
+
+.PHONY: dep
+dep:
+	@printf " GO DEPS\n"
+	$(V)(dep ensure -vendor-only >/dev/null 2>&1 || true)
 
 .PHONY: cscope
 cscope:
