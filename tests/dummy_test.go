@@ -1,25 +1,56 @@
 package tests
 
 import (
+	"fmt"
+	"os"
 	"os/exec"
 	"syscall"
 	"testing"
 )
 
+var singularity string
+
+func TestMain(m *testing.M) {
+	var err error
+	singularity, err = exec.LookPath("singularity")
+	if err != nil {
+		fmt.Println("singularity is not installed on this system")
+		os.Exit(1)
+	}
+
+	exitcode := m.Run()
+
+	if err := os.Remove("image.sif"); err != nil {
+		fmt.Printf("Unable to remove file: %s", err)
+	}
+
+	os.Exit(exitcode)
+}
+
 func Test_ImageBuild(t *testing.T) {
 	t.Run("Docker", docker)
+	t.Run("Exec", sExec)
 }
 
 func docker(t *testing.T) {
-	singularity, err := exec.LookPath("singularity")
-	if err != nil {
-		t.Error("singularity is not installed on this system")
-		return
-	}
-
 	dockerBuild := exec.Command(singularity, "build", "image.sif", "docker://ubuntu")
 
 	if out, err := dockerBuild.CombinedOutput(); err != nil {
+		t.Error(string(out))
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+				t.Errorf("Exit Status: %d", status.ExitStatus())
+			}
+		} else {
+			t.Errorf("cmd.Wait: %v", err)
+		}
+	}
+}
+
+func sExec(t *testing.T) {
+	singularityExec := exec.Command(singularity, "exec", "image.sif", "ps")
+
+	if out, err := singularityExec.CombinedOutput(); err != nil {
 		t.Error(string(out))
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {

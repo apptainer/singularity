@@ -665,8 +665,8 @@ int main(int argc, char **argv) {
                  * when using user namespace, so we won't be able to serve any privileged operations,
                  * a solution is to load rpc server as a shared library
                  */
-                singularity_message(DEBUG, "Load " LIBDIR "/librpc.so\n");
-                handle = dlopen(LIBDIR "/librpc.so", RTLD_LAZY);
+                singularity_message(DEBUG, "Load " LIBDIR "/singularity/librpc.so\n");
+                handle = dlopen(LIBDIR "/singularity/librpc.so", RTLD_LAZY);
                 if ( handle == NULL ) {
                     singularity_message(ERROR, "Failed to load shared lib librpc.so\n");
                     exit(1);
