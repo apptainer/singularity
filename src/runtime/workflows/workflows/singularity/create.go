@@ -2,10 +2,9 @@ package runtime
 
 /*
 #include <unistd.h>
-#include "image/image.h"
-#include "util/config_parser.h"
+#include "lib/image/image.h"
+#include "lib/util/config_parser.h"
 */
-// #cgo CFLAGS: -I../c
 // #cgo LDFLAGS: -lruntime -luuid
 import "C"
 
@@ -129,7 +128,11 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 			return err
 		}
 	}
-
+	_, err = rpcOps.Mount("/home", path.Join(buildcfg.CONTAINER_FINALDIR, "home"), "", syscall.MS_BIND, "")
+	if err != nil {
+		log.Fatalln("mount /home failed:", err)
+		return err
+	}
 	_, err = rpcOps.Mount("/dev", path.Join(buildcfg.CONTAINER_FINALDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		log.Fatalln("mount dev failed:", err)
@@ -150,7 +153,7 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		log.Fatalln("change directory failed:", err)
 		return err
 	}
-	_, err = rpcOps.Chroot(configs.CONTAINER_FINALDIR)
+	_, err = rpcOps.Chroot(buildcfg.CONTAINER_FINALDIR)
 	if err != nil {
 		log.Fatalln("chroot failed:", err)
 		return err

@@ -56,7 +56,7 @@ func (loop *LoopDevice) Attach(image string, mode int, number *int) error {
 		if err != nil {
 			continue
 		}
-		_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, file.Fd(), CmdSetFd, uintptr(unsafe.Pointer(img.Fd())))
+		_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, file.Fd(), CmdSetFd, uintptr(img.Fd()))
 		if esys != 0 {
 			file.Close()
 			continue

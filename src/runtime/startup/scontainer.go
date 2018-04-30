@@ -10,9 +10,8 @@ package main
 
 /*
 #include <sys/types.h>
-#include "startup/cgo_scontainer.c"
+#include "startup/wrapper.h"
 */
-// #cgo LDFLAGS: -lruntime -luuid
 import "C"
 
 import (
@@ -81,12 +80,7 @@ func SContainer(stage C.int, socket C.int, rpc_socket C.int, sruntime *C.char, c
 				cconf.nsFlags |= syscall.CLONE_NEWNS
 			}
 		}
-		/*
-			pid := 8970
-			cconf.mntPid = C.pid_t(pid)
-			cconf.ipcPid = C.pid_t(pid)
-			cconf.pidPid = C.pid_t(pid)
-		*/
+
 		jsonConf, _ := engine.GetConfig()
 		cconf.jsonConfSize = C.uint(len(jsonConf))
 		cconfPayload := C.GoBytes(unsafe.Pointer(cconf), C.sizeof_struct_cConfig)
@@ -114,16 +108,7 @@ func SContainer(stage C.int, socket C.int, rpc_socket C.int, sruntime *C.char, c
 			// send "created" status notification to smaster
 			os.Exit(0)
 		}
-		/*
-			comm := os.NewFile(uintptr(socket), "comm")
-			if comm == nil {
-				log.Fatalln("failed to read on socket")
-			}
 
-			if _, err := comm.Write(jsonBytes); err != nil {
-				log.Fatalln(err)
-			}
-		*/
 		if err := engine.PrestartProcess(); err != nil {
 			log.Fatalln("Container setup failed:", err)
 		}

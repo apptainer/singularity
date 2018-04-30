@@ -11,8 +11,8 @@ package client
 import (
 	"net/rpc"
 
-	args "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
+	args "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc"
 )
 
 type Rpc struct {

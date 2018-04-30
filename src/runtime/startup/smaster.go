@@ -10,7 +10,7 @@ package main
 
 /*
 #include <sys/types.h>
-#include "runtime/c/include/wrapper.h"
+#include "startup/wrapper.h"
 */
 import "C"
 
@@ -25,8 +25,8 @@ import (
 	"time"
 	"unsafe"
 
-	internalRuntime "github.com/singularityware/singularity/src/runtime/workflows"
 	runtime "github.com/singularityware/singularity/src/pkg/workflows"
+	internalRuntime "github.com/singularityware/singularity/src/runtime/workflows"
 )
 
 func runAsInstance(conn *os.File) {
