@@ -57,12 +57,12 @@ $(libstartup): $(go_OBJ) $(libruntime)
 wrapper_OBJ := \
 	$(BUILDDIR)/src/runtime/c/startup/wrapper.o \
 
-$(wrapper_OBJ): $(SOURCEDIR)/src/runtime/c/startup/wrapper.c
+$(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/c/startup/wrapper.c
 	@echo " CC src/runtime/c/startup/wrapper.c"
 	@mkdir -p $(@D)
 	$(V)$(CC) -Wp,-MMD,$(BUILDDIR)/src/runtime/c/startup/wrapper.o.d -I$(BUILDDIR) -c $(ARCH_CFLAGS) $(CFLAGS)  $(CPPFLAGS) -o $(BUILDDIR)/src/runtime/c/startup/wrapper.o $(SOURCEDIR)/src/runtime/c/startup/wrapper.c
 
-$(wrapper): $(libstartup) $(wrapper_OBJ)
+$(wrapper): $(wrapper_OBJ)
 	@echo " LD" $@
 	@mkdir -p $(@D)
 	$(V)$(CC) $(LDFLAGS)  -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread
