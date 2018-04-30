@@ -2,9 +2,9 @@ package workflows
 
 import (
 	"fmt"
+	runtime "github.com/singularityware/singularity/src/pkg/workflows"
 	singularity "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
-	runtime "github.com/singularityware/singularity/src/pkg/workflows"
 	"log"
 )
 
