@@ -1,0 +1,5 @@
+name := libsif
+lib := sif
+csrc :=	src/runtime/c/lib/sif/list.c
+	src/runtime/c/lib/sif/sifaccess.c
+	src/runtime/c/lib/sif/sif.c

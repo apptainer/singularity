@@ -1,0 +1,11 @@
+name := libimage
+lib := image
+csrc :=	src/runtime/c/lib/image/bind.c
+	src/runtime/c/lib/image/dir_init.c
+	src/runtime/c/lib/image/dir_mount.c
+	src/runtime/c/lib/image/ext3_init.c
+	src/runtime/c/lib/image/ext3_mount.c
+	src/runtime/c/lib/image/image.c
+	src/runtime/c/lib/image/sif_init.c
+	src/runtime/c/lib/image/squashfs_init.c
+	src/runtime/c/lib/image/squashfs_mount.c

@@ -8,8 +8,9 @@ singularity-*.tar.gz
 
 .vscode
 vendor/
+buildtree/
+src/pkg/buildcfg/config.go
 trash.lock
-Makefile
 Makefile.in
 autom4te.cache/
 bin/Makefile
