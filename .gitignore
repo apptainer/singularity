@@ -95,3 +95,4 @@ src/*/*/*/*/.dirstamp
 build/*
 runtime/cli
 core/buildtree
+pkg/configs/constants/constants.go

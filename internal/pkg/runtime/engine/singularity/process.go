@@ -17,7 +17,7 @@ func (engine *RuntimeEngine) StartProcess() error {
 	args := engine.OciConfig.RuntimeOciSpec.Process.Args
 	err := syscall.Exec(args[0], args, os.Environ())
 	if err != nil {
-		log.Fatalln("exec failed:", err)
+		log.Fatalf("exec %s failed: %s\n", args[0], err)
 	}
 	/*    }  else {
 	          err := syscall.Exec("/bin/sleep", []string{"/bin/sleep", "60"}, os.Environ())

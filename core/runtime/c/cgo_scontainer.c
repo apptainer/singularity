@@ -16,33 +16,17 @@
 #include <string.h>
 #include <sched.h>
 #include <errno.h>
-#include <linux/securebits.h>
-#include <linux/capability.h>
-#include <sys/syscall.h>
+
+#ifdef SINGULARITY_SECUREBITS
+#  include <linux/securebits.h>
+#else
+#  include "lib/util/securebits.h"
+#endif /* SINGULARITY_SECUREBITS */
 
 #include "include/wrapper.h"
 
-#include "util/message.h"
-
-// Support only 64 bits sets, since kernel 2.6.25
-#define CAPSET_MAX          40
-
-#ifdef _LINUX_CAPABILITY_VERSION_3
-#  define LINUX_CAPABILITY_VERSION  _LINUX_CAPABILITY_VERSION_3
-#elif defined(_LINUX_CAPABILITY_VERSION_2)
-#  define LINUX_CAPABILITY_VERSION  _LINUX_CAPABILITY_VERSION_2
-#else
-#  error Linux 64 bits capability set not supported
-#endif // _LINUX_CAPABILITY_VERSION_3
-
-
-static int capget(cap_user_header_t hdrp, cap_user_data_t datap) {
-    return syscall(__NR_capget, hdrp, datap);
-}
-
-static int capset(cap_user_header_t hdrp, const cap_user_data_t datap) {
-    return syscall(__NR_capset, hdrp, datap);
-}
+#include "lib/util/capability.h"
+#include "lib/util/message.h"
 
 char *json_conf;
 struct cConfig cconf;
@@ -68,31 +52,31 @@ __attribute__((constructor)) static void init(void) {
     singularity_message(DEBUG, "Entering in scontainer stage %d\n", stage);
 
     if ( prctl(PR_SET_PDEATHSIG, SIGKILL) < 0 ) {
-        singularity_message(ERROR, "Failed to set parent death signal\n");
+        singularity_message(ERROR, "Failed to set parent death signal: %s\n", strerror(errno));
         exit(1);
     }
 
     singularity_message(DEBUG, "Read C runtime configuration for stage %d \n", stage);
 
     if ( (ret = read(JOKER, &cconf, sizeof(cconf))) != sizeof(cconf) ) {
-        singularity_message(ERROR, "read from stdin failed\n");
+        singularity_message(ERROR, "Read C configuration from stdin failed: %s\n", strerror(errno));
         exit(1);
     }
 
     if ( cconf.jsonConfSize >= MAX_JSON_SIZE ) {
-        singularity_message(ERROR, "json configuration too big\n");
+        singularity_message(ERROR, "Json configuration too big\n");
         exit(1);
     }
 
     json_conf = (char *)malloc(cconf.jsonConfSize);
     if ( json_conf == NULL ) {
-        singularity_message(ERROR, "memory allocation failed\n");
+        singularity_message(ERROR, "Memory allocation failed: %s\n", strerror(errno));
         exit(1);
     }
 
     singularity_message(DEBUG, "Read JSON runtime configuration for stage %d\n", stage);
     if ( (ret = read(JOKER, json_conf, cconf.jsonConfSize)) != cconf.jsonConfSize ) {
-        singularity_message(ERROR, "read json configuration failed\n");
+        singularity_message(ERROR, "Read JSON configuration failed: %s\n", strerror(errno));
         exit(1);
     }
 
@@ -103,7 +87,7 @@ __attribute__((constructor)) static void init(void) {
     }
 
     if ( child_stage2 < 0 ) {
-        singularity_message(ERROR, "Failed to spawn child\n");
+        singularity_message(ERROR, "Failed to spawn child: %s\n", strerror(errno));
         exit(1);
     }
 
@@ -134,21 +118,17 @@ __attribute__((constructor)) static void init(void) {
     }
 
     if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
-        singularity_message(ERROR, "securebits: %s\n", strerror(errno));
+        singularity_message(ERROR, "Failed to set securebits: %s\n", strerror(errno));
         exit(1);
     }
 
-    if ( setresgid(gid, gid, gid) < 0 ) {
-        singularity_message(ERROR, "error gid\n");
-        exit(1);
-    }
     if ( setresuid(uid, uid, uid) < 0 ) {
-        singularity_message(ERROR, "error uid\n");
+        singularity_message(ERROR, "Failed to drop privileges: %s\n", strerror(errno));
         exit(1);
     }
 
     if ( prctl(PR_SET_PDEATHSIG, SIGKILL) < 0 ) {
-        singularity_message(ERROR, "failed to set parent death signal\n");
+        singularity_message(ERROR, "Failed to set parent death signal: %s\n", strerror(errno));
         exit(1);
     }
 
@@ -169,7 +149,7 @@ __attribute__((constructor)) static void init(void) {
         }
     }
 
-#ifdef PR_SET_NO_NEW_PRIVS
+#ifdef SINGULARITY_NO_NEW_PRIVS
     if ( cconf.noNewPrivs ) {
         if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 ) {
             singularity_message(ERROR, "Failed to set no new privs flag: %s\n", strerror(errno));
@@ -183,7 +163,7 @@ __attribute__((constructor)) static void init(void) {
         exit(1);
     }
 
-#ifdef PR_CAP_AMBIENT
+#ifdef USER_CAPABILITIES
     // set ambient capabilities if supported
     int i;
     for (i = 0; i <= CAPSET_MAX; i++ ) {

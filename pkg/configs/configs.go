@@ -7,7 +7,9 @@
 */
 package configs
 
-var (
-	BUILDTREE  string
-	LIBEXECDIR string
+import "github.com/singularityware/singularity/pkg/configs/constants"
+
+const (
+	BUILDTREE          = constants.BUILDDIR
+	CONTAINER_FINALDIR = constants.CONTAINER_FINALDIR
 )

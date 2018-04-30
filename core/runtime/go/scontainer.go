@@ -9,9 +9,9 @@
 package main
 
 /*
-#include "runtime/c/cgo_scontainer.c"
+#include <sys/types.h>
+#include "runtime/c/include/wrapper.h"
 */
-// #cgo LDFLAGS: -lsycore -luuid
 import "C"
 
 import (
@@ -19,7 +19,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"unsafe"
 
@@ -34,37 +33,16 @@ func bool2int(b bool) uint8 {
 	return 0
 }
 
-func main() {
-	tmp, ok := os.LookupEnv("SCONTAINER_STAGE")
-	if !ok {
-		log.Fatalln("SCONTAINER_STAGE environment variable isn't set")
-	}
-	stage, _ := strconv.Atoi(tmp)
+//export SContainer
+func SContainer(stage C.int, socket C.int, rpc_socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
+	rpcfd := rpc_socket
 
-	tmp, ok = os.LookupEnv("SCONTAINER_SOCKET")
-	if stage == 2 && !ok {
-		log.Fatalln("SCONTAINER_SOCKET environment variable isn't set")
-	}
-	socket, _ := strconv.Atoi(tmp)
+	cconf := config
 
-	tmp, ok = os.LookupEnv("SCONTAINER_RPC_SOCKET")
-	if stage == 2 && !ok {
-		log.Fatalln("SCONTAINER_RPC_SOCKET environment variable isn't set")
-	}
-	rpcfd, _ := strconv.Atoi(tmp)
-
-	tmp, ok = os.LookupEnv("SRUNTIME")
-	if !ok {
-		log.Fatalln("SRUNTIME environment variable isn't set")
-	}
-	runtimeName := tmp
-
-	cconf := C.cconf
+	runtimeName := C.GoString(sruntime)
 
 	/* get json configuration */
-	jsonPointer := unsafe.Pointer(C.json_conf)
-	jsonBytes := C.GoBytes(jsonPointer, C.int(cconf.jsonConfSize))
-	C.free(jsonPointer)
+	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(cconf.jsonConfSize))
 
 	engine, err := runtime.NewRuntimeEngine(runtimeName, jsonBytes)
 	if err != nil {
@@ -102,20 +80,26 @@ func main() {
 				cconf.nsFlags |= syscall.CLONE_NEWNS
 			}
 		}
-
+		/*
+			pid := 8970
+			cconf.mntPid = C.pid_t(pid)
+			cconf.ipcPid = C.pid_t(pid)
+			cconf.pidPid = C.pid_t(pid)
+		*/
 		jsonConf, _ := engine.GetConfig()
 		cconf.jsonConfSize = C.uint(len(jsonConf))
-		cconfPayload := C.GoBytes(unsafe.Pointer(&cconf), C.sizeof_struct_cConfig)
+		cconfPayload := C.GoBytes(unsafe.Pointer(cconf), C.sizeof_struct_cConfig)
 
 		os.Stdout.Write(append(cconfPayload, jsonConf...))
-	} else if stage == 2 {
+		os.Exit(0)
+	} else {
 		/* wait childs process */
 		rpcChild := make(chan os.Signal, 1)
 		signal.Notify(rpcChild, syscall.SIGCHLD)
 
 		rpcSocket := os.NewFile(uintptr(rpcfd), "rpc")
 
-		if C.child_stage2 == 0 {
+		if stage == 3 {
 			conn, err := net.FileConn(rpcSocket)
 			rpcSocket.Close()
 			if err != nil {
@@ -129,16 +113,16 @@ func main() {
 			// send "created" status notification to smaster
 			os.Exit(0)
 		}
+		/*
+			comm := os.NewFile(uintptr(socket), "comm")
+			if comm == nil {
+				log.Fatalln("failed to read on socket")
+			}
 
-		comm := os.NewFile(uintptr(socket), "comm")
-		if comm == nil {
-			log.Fatalln("failed to read on socket")
-		}
-
-		if _, err := comm.Write(jsonBytes); err != nil {
-			log.Fatalln(err)
-		}
-
+			if _, err := comm.Write(jsonBytes); err != nil {
+				log.Fatalln(err)
+			}
+		*/
 		if err := engine.PrestartProcess(); err != nil {
 			log.Fatalln("Container setup failed:", err)
 		}
@@ -149,6 +133,9 @@ func main() {
 		var status syscall.WaitStatus
 	sigloop:
 		for {
+			if cconf.mntPid != 0 {
+				break sigloop
+			}
 			select {
 			case _ = <-rpcChild:
 				/*

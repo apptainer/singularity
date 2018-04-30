@@ -57,18 +57,6 @@ else
 fi
 
 ########################
-# ns: CLONE_PID
-########################
-printf " checking: namespace: CLONE_PID... "
-if ! printf "#define _GNU_SOURCE\n#include <sched.h>\nint main() { unshare(CLONE_PID); }" | \
-   $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
-	echo "no"
-else
-	echo "yes"
-	config_add_def NS_CLONE_PID 1
-fi
-
-########################
 # ns: CLONE_FS
 ########################
 printf " checking: namespace: CLONE_FS... "
@@ -147,6 +135,18 @@ else
 fi
 
 ########################
+# ns: CLONE_NEWCGROUP
+########################
+printf " checking: namespace: CLONE_NEWCGROUP... "
+if ! printf "#define _GNU_SOURCE\n#include <sched.h>\nint main() { unshare(CLONE_NEWCGROUP); }" | \
+   $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
+    echo "no"
+else
+    echo "yes"
+    config_add_def NS_CLONE_NEWCGROUP 1
+fi
+
+########################
 # feature: NO_NEW_PRIVS
 ########################
 printf " checking: feature: NO_NEW_PRIVS... "
@@ -155,7 +155,7 @@ if ! printf "#include <sys/prctl.h>\nint main() { prctl(PR_SET_NO_NEW_PRIVS, 1, 
 	echo "no"
 else
 	echo "yes"
-	config_add_def DSINGULARITY_NO_NEW_PRIVS 1
+	config_add_def SINGULARITY_NO_NEW_PRIVS 1
 fi
 
 ########################

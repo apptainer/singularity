@@ -19,12 +19,8 @@ import (
 )
 
 //export RPCServer
-func RPCServer(socket int) int {
-	tmp, ok := os.LookupEnv("SRUNTIME")
-	if !ok {
-		log.Fatalln("SRUNTIME environment variable isn't set")
-	}
-	runtime := tmp
+func RPCServer(socket C.int, sruntime *C.char) {
+	runtime := C.GoString(sruntime)
 
 	comm := os.NewFile(uintptr(socket), "unix")
 
@@ -35,8 +31,5 @@ func RPCServer(socket int) int {
 	comm.Close()
 
 	rpc.ServeRuntimeEngineRequests(runtime, conn)
-
-	return 0
+	os.Exit(0)
 }
-
-func main() {}
