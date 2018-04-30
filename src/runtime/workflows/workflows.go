@@ -20,7 +20,7 @@ func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, e
 		return nil, fmt.Errorf("no runtime engine named %s found", name)
 	}
 	if err := engine.SetConfig(jsonConfig); err != nil {
-		return nil, fmt.Errorf("json parsing failed", err)
+		return nil, fmt.Errorf("json parsing failed: %v", err)
 	}
 	return engine, nil
 }
