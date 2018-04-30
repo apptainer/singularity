@@ -21,28 +21,28 @@ type Rpc struct {
 }
 
 func (t *Rpc) Mount(source string, target string, filesystem string, flags uintptr, data string) (int, error) {
-	arguments := &args.MountArgs{source, target, filesystem, flags, data}
+	arguments := &args.MountArgs{Source: source, Target: target, Filesystem: filesystem, Mountflags: flags, Data: data}
 	var reply int
 	err := t.Client.Call(t.Name+".Mount", arguments, &reply)
 	return reply, err
 }
 
 func (t *Rpc) Mkdir(path string) (int, error) {
-	arguments := &args.MkdirArgs{path}
+	arguments := &args.MkdirArgs{Path: path}
 	var reply int
 	err := t.Client.Call(t.Name+".Mkdir", arguments, &reply)
 	return reply, err
 }
 
 func (t *Rpc) Chroot(root string) (int, error) {
-	arguments := &args.ChrootArgs{root}
+	arguments := &args.ChrootArgs{Root: root}
 	var reply int
 	err := t.Client.Call(t.Name+".Chroot", arguments, &reply)
 	return reply, err
 }
 
 func (t *Rpc) LoopDevice(image string, mode int, info loop.LoopInfo64) (int, error) {
-	arguments := &args.LoopArgs{image, mode, info}
+	arguments := &args.LoopArgs{Image: image, Mode: mode, Info: info}
 	var reply int
 	err := t.Client.Call(t.Name+".LoopDevice", arguments, &reply)
 	return reply, err
