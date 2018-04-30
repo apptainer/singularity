@@ -30,4 +30,5 @@ install:
 
 script:
   - test -z $(go fmt ./...)
+  - go vet -all ./...
   - go test ./tests/
