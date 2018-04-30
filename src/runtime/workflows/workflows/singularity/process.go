@@ -14,6 +14,7 @@ func (engine *RuntimeEngine) PrestartProcess() error {
 func (engine *RuntimeEngine) StartProcess() error {
 	//    if cconf.isInstance == C.uchar(0) {
 	os.Setenv("PS1", "shell> ")
+	os.Chdir("/")
 	args := engine.OciConfig.RuntimeOciSpec.Process.Args
 	err := syscall.Exec(args[0], args, os.Environ())
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	args "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc"
 )
@@ -31,15 +32,23 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 	if err := syscall.Chdir(arguments.Root); err != nil {
 		return fmt.Errorf("Failed to change directory to %s", arguments.Root)
 	}
+
+	sylog.Printf(sylog.DEBUG, "Called pivot_root(%s, etc)\n", arguments.Root)
 	if err := syscall.PivotRoot(".", "etc"); err != nil {
 		return fmt.Errorf("pivot_root %s: %s", arguments.Root, err)
 	}
+
+	sylog.Printf(sylog.DEBUG, "Called chroot(%s)\n", arguments.Root)
 	if err := syscall.Chroot("."); err != nil {
 		return fmt.Errorf("chroot %s", err)
 	}
+
+	sylog.Printf(sylog.DEBUG, "Called unmount(etc, syscall.MNT_DETACH)\n")
 	if err := syscall.Unmount("etc", syscall.MNT_DETACH); err != nil {
 		return fmt.Errorf("unmount pivot_root dir %s", err)
 	}
+
+	sylog.Printf(sylog.DEBUG, "Called chdir(/)\n")
 	if err := syscall.Chdir("/"); err != nil {
 		return fmt.Errorf("chdir / %s", err)
 	}
