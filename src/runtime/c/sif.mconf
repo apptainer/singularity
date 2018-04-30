@@ -1,0 +1,5 @@
+name := sif
+prog := sif
+csrc := src/runtime/c/sif.c
+depends := libsif
+extralibs := -luuid

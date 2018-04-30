@@ -1,0 +1,17 @@
+name := libutil
+lib := util
+csrc :=	src/runtime/c/lib/util/capability.c
+	src/runtime/c/lib/util/daemon.c
+	src/runtime/c/lib/util/message.c
+	src/runtime/c/lib/util/registry.c
+	src/runtime/c/lib/util/signal.c
+	src/runtime/c/lib/util/cleanupd.c
+	src/runtime/c/lib/util/file.c
+	src/runtime/c/lib/util/mount.c
+	src/runtime/c/lib/util/sessiondir.c
+	src/runtime/c/lib/util/suid.c
+	src/runtime/c/lib/util/config_parser.c
+	src/runtime/c/lib/util/fork.c
+	src/runtime/c/lib/util/privilege.c
+	src/runtime/c/lib/util/setns.c
+	src/runtime/c/lib/util/util.c

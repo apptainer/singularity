@@ -1,6 +1,0 @@
-name := wrapper
-prog := wrapper
-csrc := runtime/c/wrapper.c
-depends := libutil libimage
-ldflags := -L. -Llib -Llib/image
-extralibs := -limage -lrpc -lpthread -lsycore -luuid
