@@ -29,4 +29,5 @@ install:
   - sudo make -C ./buildtree install
 
 script:
+  - test -z $(go fmt ./...)
   - go test ./tests/
