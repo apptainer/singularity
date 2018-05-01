@@ -146,19 +146,17 @@ int _singularity_runtime_overlayfs(void) {
 
         container_statdir_update(0);
 
-        singularity_priv_escalate();
         singularity_message(DEBUG, "Creating upper overlay directory: %s\n", overlay_upper);
-        if ( container_mkpath(overlay_upper, 0755) < 0 ) {
+        if ( container_mkpath_priv(overlay_upper, 0755) < 0 ) {
             singularity_message(ERROR, "Failed creating upper overlay directory %s: %s\n", overlay_upper, strerror(errno));
             ABORT(255);
         }
 
         singularity_message(DEBUG, "Creating overlay work directory: %s\n", overlay_work);
-        if ( container_mkpath(overlay_work, 0755) < 0 ) {
+        if ( container_mkpath_priv(overlay_work, 0755) < 0 ) {
             singularity_message(ERROR, "Failed creating overlay work directory %s: %s\n", overlay_work, strerror(errno));
             ABORT(255);
         }
-        singularity_priv_drop();
 
         singularity_message(VERBOSE, "Mounting overlay with options: %s\n", overlay_options);
         int result = singularity_mount("OverlayFS", overlay_final, "overlay", MS_NOSUID | MS_NODEV, overlay_options);
