@@ -33,22 +33,22 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 		return fmt.Errorf("Failed to change directory to %s", arguments.Root)
 	}
 
-	sylog.Printf(sylog.DEBUG, "Called pivot_root(%s, etc)\n", arguments.Root)
+	sylog.Debugf("Called pivot_root(%s, etc)\n", arguments.Root)
 	if err := syscall.PivotRoot(".", "etc"); err != nil {
 		return fmt.Errorf("pivot_root %s: %s", arguments.Root, err)
 	}
 
-	sylog.Printf(sylog.DEBUG, "Called chroot(%s)\n", arguments.Root)
+	sylog.Debugf("Called chroot(%s)\n", arguments.Root)
 	if err := syscall.Chroot("."); err != nil {
 		return fmt.Errorf("chroot %s", err)
 	}
 
-	sylog.Printf(sylog.DEBUG, "Called unmount(etc, syscall.MNT_DETACH)\n")
+	sylog.Debugf("Called unmount(etc, syscall.MNT_DETACH)\n")
 	if err := syscall.Unmount("etc", syscall.MNT_DETACH); err != nil {
 		return fmt.Errorf("unmount pivot_root dir %s", err)
 	}
 
-	sylog.Printf(sylog.DEBUG, "Called chdir(/)\n")
+	sylog.Debugf("Changing directory to / to avoid getpwd issues\n")
 	if err := syscall.Chdir("/"); err != nil {
 		return fmt.Errorf("chdir / %s", err)
 	}

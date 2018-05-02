@@ -91,7 +91,7 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		}
 
 		path := fmt.Sprintf("/dev/loop%d", number)
-		sylog.Printf(sylog.DEBUG, "Mounting loop device %s\n", path)
+		sylog.Debugf("Mounting loop device %s\n", path)
 
 		_, err = rpcOps.Mount(path, buildcfg.CONTAINER_MOUNTDIR, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 		if err != nil {
@@ -101,14 +101,14 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 	}
 
 	if pidNS {
-		sylog.Printf(sylog.DEBUG, "Mounting proc at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "proc"))
+		sylog.Debugf("Mounting proc at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "proc"))
 		_, err = rpcOps.Mount("proc", path.Join(buildcfg.CONTAINER_MOUNTDIR, "proc"), "proc", syscall.MS_NOSUID, "")
 		if err != nil {
 			log.Fatalln("mount proc failed:", err)
 			return err
 		}
 	} else {
-		sylog.Printf(sylog.DEBUG, "Mounting proc at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "proc"))
+		sylog.Debugf("Mounting proc at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "proc"))
 		_, err = rpcOps.Mount("/proc", path.Join(buildcfg.CONTAINER_MOUNTDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 		if err != nil {
 			log.Fatalln("mount proc failed:", err)
@@ -116,14 +116,14 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		}
 	}
 	if !userNS {
-		sylog.Printf(sylog.DEBUG, "Mounting sysfs at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "sys"))
+		sylog.Debugf("Mounting sysfs at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "sys"))
 		_, err = rpcOps.Mount("sysfs", path.Join(buildcfg.CONTAINER_MOUNTDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
 		if err != nil {
 			log.Fatalln("mount sys failed:", err)
 			return err
 		}
 	} else {
-		sylog.Printf(sylog.DEBUG, "Mounting sysfs at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "sys"))
+		sylog.Debugf("Mounting sysfs at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "sys"))
 		_, err = rpcOps.Mount("/sys", path.Join(buildcfg.CONTAINER_MOUNTDIR, "sys"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 		if err != nil {
 			log.Fatalln("mount sys failed:", err)
@@ -131,49 +131,49 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		}
 	}
 
-	sylog.Printf(sylog.DEBUG, "Mounting dev at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "dev"))
+	sylog.Debugf("Mounting dev at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "dev"))
 	_, err = rpcOps.Mount("/dev", path.Join(buildcfg.CONTAINER_MOUNTDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		log.Fatalln("mount dev failed:", err)
 		return err
 	}
 
-	sylog.Printf(sylog.DEBUG, "Mounting /etc/passwd at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/passwd"))
+	sylog.Debugf("Mounting /etc/passwd at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/passwd"))
 	_, err = rpcOps.Mount("/etc/passwd", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/passwd"), "", syscall.MS_BIND, "")
 	if err != nil {
 		log.Fatalln("mount /etc/passwd failed:", err)
 		return err
 	}
 
-	sylog.Printf(sylog.DEBUG, "Mounting /etc/group at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/group"))
+	sylog.Debugf("Mounting /etc/group at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/group"))
 	_, err = rpcOps.Mount("/etc/group", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/group"), "", syscall.MS_BIND, "")
 	if err != nil {
 		log.Fatalln("mount /etc/group failed:", err)
 		return err
 	}
 
-	sylog.Printf(sylog.DEBUG, "Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_MOUNTDIR, buildcfg.SESSIONDIR)
+	sylog.Debugf("Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_MOUNTDIR, buildcfg.SESSIONDIR)
 	_, err = rpcOps.Mount(buildcfg.CONTAINER_MOUNTDIR, buildcfg.SESSIONDIR, "", syscall.MS_BIND|syscall.MS_REC, "")
 	if err != nil {
 		log.Fatalln("mount failed:", err)
 		return err
 	}
 
-	sylog.Printf(sylog.DEBUG, "Chdir into %s\n", buildcfg.SESSIONDIR)
+	sylog.Debugf("Chdir into %s\n", buildcfg.SESSIONDIR)
 	err = syscall.Chdir(buildcfg.SESSIONDIR)
 	if err != nil {
 		log.Fatalln("change directory failed:", err)
 		return err
 	}
 
-	sylog.Printf(sylog.DEBUG, "Chroot into %s\n", buildcfg.SESSIONDIR)
+	sylog.Debugf("Chroot into %s\n", buildcfg.SESSIONDIR)
 	_, err = rpcOps.Chroot(buildcfg.SESSIONDIR)
 	if err != nil {
 		log.Fatalln("chroot failed:", err)
 		return err
 	}
 
-	sylog.Printf(sylog.DEBUG, "Chdir into / to avoid errors\n")
+	sylog.Debugf("Chdir into / to avoid errors\n")
 	err = syscall.Chdir("/")
 	if err != nil {
 		log.Fatalln("change directory failed:", err)
