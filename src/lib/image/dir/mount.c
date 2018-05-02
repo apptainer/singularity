@@ -43,6 +43,7 @@
 
 
 int _singularity_image_dir_mount(struct image_object *image, char *mount_point) {
+    int mntflags = MS_BIND | MS_NOSUID | MS_REC | MS_NODEV;
 
     if ( strcmp(image->path, "/") == 0 ) {
         singularity_message(ERROR, "Naughty naughty naughty...\n");
@@ -50,9 +51,19 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
     }
 
     singularity_message(DEBUG, "Mounting container directory %s->%s\n", image->path, mount_point);
-    if ( singularity_mount(image->path, mount_point, NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV, NULL) < 0 ) {
+    if ( singularity_mount(image->path, mount_point, NULL, mntflags, NULL) < 0 ) {
         singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
         return 1;
+    }
+
+    if ( singularity_priv_userns_enabled() != 1 ) {
+        if ( image->writable == 0 ) {
+            mntflags |= MS_RDONLY;
+        }
+        if ( singularity_mount(NULL, mount_point, NULL, MS_REMOUNT | mntflags, NULL) < 0 ) {
+            singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
+            return 1;
+        }
     }
 
     return(0);

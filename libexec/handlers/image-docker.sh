@@ -38,21 +38,23 @@ message 1 "Creating container runtime...\n"
 message 2 "Importing: base Singularity environment\n"
 zcat $SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar | (cd $SINGULARITY_ROOTFS; tar -xf -) || exit $?
 
+# Try to run docker-extract
+$SINGULARITY_libexecdir/singularity/bin/docker-extract >/dev/null 2>/dev/null
+# Code 127 if docker-extract is missing, or missing dynamic libs
+if [ $? -eq 127 ]; then
+    message WARNING "docker-extract failed, missing executable or libarchive\n"
+    message WARNING "Will use old layer extraction method - this does not handle whiteouts\n"
+    OLD_EXTRACTION="TRUE"
+fi
+
 for i in `cat "$SINGULARITY_CONTENTS"`; do
     name=`basename "$i"`
-    message 2 "Exploding layer: $name\n"
-    # Settings of file privileges must be buffered
-    files=$( zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --overwrite --exclude=dev/* -xvf -)) || exit $?
-    for file in $files; do
-        if [ -L "$SINGULARITY_ROOTFS/$file" ]; then
-            # Skipping symlinks
-            true
-        elif [ -f "$SINGULARITY_ROOTFS/$file" ]; then
-            chmod u+rw "$SINGULARITY_ROOTFS/$file" >/dev/null 2>&1
-        elif [ -d "$SINGULARITY_ROOTFS/$file" ]; then
-            chmod u+rwx "$SINGULARITY_ROOTFS/${file%/}" >/dev/null 2>&1
-        fi
-    done
+    message 1 "Exploding layer: $name\n"
+    if [ ! -z "${OLD_EXTRACTION:-}" ]; then
+        zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf -) || exit $?
+    else
+        $SINGULARITY_libexecdir/singularity/bin/docker-extract "$i" || exit $?
+    fi
 done
 
 rm -f "$SINGULARITY_CONTENTS"

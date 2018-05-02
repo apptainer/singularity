@@ -4,15 +4,15 @@
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
-# 
+#
 # Copyright (c) 2016-2017, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
+#
 # This software is licensed under a customized 3-clause BSD license.  Please
 # consult LICENSE file distributed with the sources of this project regarding
 # your rights to use or distribute this software.
-# 
+#
 # NOTICE.  This Software was developed under funding from the U.S. Department of
 # Energy and the U.S. Government consequently retains certain rights. As such,
 # the U.S. Government has been granted for itself and others acting on its
@@ -21,7 +21,6 @@
 # perform publicly and display publicly, and to permit other to do so. 
 # 
 # 
-
 
 ## Basic sanity
 if [ -z "$SINGULARITY_libexecdir" ]; then
@@ -175,7 +174,7 @@ if [ "$USERID" != "0" ]; then
     if [ -n "${SINGULARITY_SANDBOX:-}" ]; then
 
         # Sandbox with deffile is no go.
-        if eval is_deffile "${SINGULARITY_BUILDDEF}"; then 
+        if eval is_deffile "${SINGULARITY_BUILDDEF}"; then
             message ERROR "You must be the root user to sandbox from a Singularity recipe file\n"
             exit 1
 
@@ -195,12 +194,16 @@ fi
 # if the container exists, build into it (or delete it if -F was passed)
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
     if eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
-        if [ -z "${SINGULARITY_FORCE:-}" ]; then 
+        if [ "$SINGULARITY_CONTAINER_OUTPUT" = "/" ]; then
+            message ERROR "Not building a container into the host root / !\n"
+            ABORT 255
+        fi
+        if [ -z "${SINGULARITY_FORCE:-}" ]; then
             message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
             SINGULARITY_BTSTRP_2EXISTING=1
         elif [ -n "${SINGULARITY_FORCE:-}" ]; then
-            # this may be a directory, so rm -rf 
-            rm -rf "$SINGULARITY_CONTAINER_OUTPUT"
+            # this may be a directory, so rm -rf
+            rm -rf "$SINGULARITY_CONTAINER_OUTPUT" 2> /dev/null
         fi
     else
         message ERROR "$SINGULARITY_CONTAINER_OUTPUT is not an image file\n"
@@ -251,9 +254,23 @@ case $SINGULARITY_BUILDDEF in
         message 1 "Importing: base Singularity environment\n"
         zcat "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar" | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
 
+        # Try to run docker-extract
+        $SINGULARITY_libexecdir/singularity/bin/docker-extract >/dev/null 2>/dev/null
+        # Code 127 if docker-extract is missing, or missing dynamic libs
+        if [ $? -eq 127 ]; then
+            message WARNING "docker-extract failed, missing executable or libarchive\n"
+            message WARNING "Will use old layer extraction method - this does not handle whiteouts\n"
+            OLD_EXTRACTION="TRUE"
+        fi
+
         for i in `cat "$SINGULARITY_CONTENTS"`; do
-            message 1 "Importing: $i\n"
-            zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf - ) || exit $?
+            name=`basename "$i"`
+            message 1 "Exploding layer: $name\n"
+            if [ ! -z "${OLD_EXTRACTION:-}" ]; then
+                zcat "$i" | (cd "$SINGULARITY_ROOTFS"; tar --exclude=dev/* -xf -) || exit $?
+            else
+                $SINGULARITY_libexecdir/singularity/bin/docker-extract "$i" || exit $?
+            fi
         done
 
         SINGULARITY_BUILDDEF="$SINGULARITY_ROOTFS"
@@ -277,7 +294,7 @@ case $SINGULARITY_BUILDDEF in
         # relying on pull.py for error checking here
         ${SINGULARITY_libexecdir}/singularity/python/pull.py
 
-        # switch $SINGULARITY_CONTAINER from remote to local 
+        # switch $SINGULARITY_CONTAINER from remote to local
         SINGULARITY_BUILDDEF=`cat $SINGULARITY_CONTENTS`
         SINGULARITY_CLEANUP=1
     ;;
@@ -302,7 +319,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             ABORT 255
         fi
 
-    elif eval is_deffile "${SINGULARITY_BUILDDEF}"; then 
+    elif eval is_deffile "${SINGULARITY_BUILDDEF}"; then
         message 1 "Using container recipe deffile: $SINGULARITY_BUILDDEF\n"
         if [ "$USERID" != "0" ]; then
             message ERROR "You must be the root user to build from a Singularity recipe file\n"
@@ -347,7 +364,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
 
         if [ -z "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then
             CONTAINER_SIZE=`du -sm ${SINGULARITY_ROOTFS} | cut -f 1`
-            # using the let builtin instead of bc which is not guaranteed 
+            # using the let builtin instead of bc which is not guaranteed
             let "IMAGE_SIZE=(${CONTAINER_SIZE:-768} * 125)/100"
             if [ "$IMAGE_SIZE" -lt 10 ]; then
                 IMAGE_SIZE=10

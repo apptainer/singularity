@@ -37,11 +37,40 @@
 #include <assert.h>
 #include <ftw.h>
 #include <time.h>
+#include <limits.h>
 
 #include "config.h"
 #include "util/util.h"
 #include "util/message.h"
 #include "util/privilege.h"
+
+
+static struct stat st_overlaydir;
+static struct stat st_finaldir;
+static struct stat st_sessiondir;
+
+void container_statdir_update(unsigned char sessiondir_only) {
+    singularity_message(DEBUG, "Get stat for container directories\n");
+
+    if ( sessiondir_only == 0 ) {
+        if ( stat(CONTAINER_OVERLAY, &st_overlaydir) < 0 ) {
+            singularity_message(ERROR, "Failed to get stat for container overlaydir %s: %s\n", CONTAINER_OVERLAY, strerror(errno));
+            ABORT(255);
+        }
+        if ( stat(CONTAINER_FINALDIR, &st_finaldir) < 0 ) {
+            singularity_message(ERROR, "Failed to get stat for container finaldir %s: %s\n", CONTAINER_FINALDIR, strerror(errno));
+            ABORT(255);
+        }
+    } else {
+        memset(&st_overlaydir, 0, sizeof(struct stat));
+        memset(&st_finaldir, 0, sizeof(struct stat));
+    }
+
+    if ( stat(SESSIONDIR, &st_sessiondir) < 0 ) {
+        singularity_message(ERROR, "Failed to get stat for container sessiondir %s: %s\n", SESSIONDIR, strerror(errno));
+        ABORT(255);
+    }
+}
 
 char *file_id(char *path) {
     struct stat filestat;
@@ -319,6 +348,110 @@ int s_mkpath(char *dir, mode_t mode) {
     return(0);
 }
 
+
+int container_mkpath(char *dir, mode_t mode) {
+    int ret = 0;
+    int loop = 1;
+    char *dir_path = (char *)malloc(PATH_MAX);
+    char *current_path = (char *)malloc(PATH_MAX);
+    char *dupdir = strdup(dir);
+    char *ptr, *last_ptr;
+    struct stat st_dir;
+
+    if ( dupdir == NULL || current_path == NULL || dir_path == NULL ) {
+        singularity_message(ERROR, "Failed to allocate memory\n");
+        ABORT(255);
+    }
+
+    current_path[PATH_MAX-1] = '\0';
+    if ( getcwd(current_path, PATH_MAX-1) == NULL ) {
+        singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    if ( chdir("/") < 0 ) {
+        singularity_message(ERROR, "Failed to go in directory /: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    dir_path[0] = '/';
+    dir_path[1] = '\0';
+    last_ptr = dupdir;
+
+    for ( ptr = dupdir + 1; ; ptr++ ) {
+        if ( *ptr == '/' ) {
+            *ptr = '\0';
+        } else if ( *ptr != '\0' ) {
+            continue;
+        } else {
+            loop = 0;
+        }
+
+        if ( chdir(dupdir) < 0 ) {
+            dir_path[PATH_MAX-1] = '\0';
+            if ( getcwd(dir_path, PATH_MAX-1) == NULL ) {
+                singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
+                ABORT(255);
+            }
+            if ( stat(".", &st_dir) < 0 ) {
+                singularity_message(ERROR, "Failed to get stat for current working directory %s: %s\n", dir_path, strerror(errno));
+                ABORT(255);
+            }
+            if ( st_dir.st_dev != st_overlaydir.st_dev && st_dir.st_dev != st_finaldir.st_dev && st_dir.st_dev != st_sessiondir.st_dev ) {
+                singularity_message(WARNING, "Trying to create directory %s outside of container in %s\n", last_ptr, dir_path);
+                ret = -1;
+            } else {
+                singularity_message(DEBUG, "Creating directory: %s/%s\n", dir_path, last_ptr);
+
+                mode_t mask = umask(0); // Flawfinder: ignore
+                ret = mkdir(last_ptr, mode);
+                umask(mask); // Flawfinder: ignore
+
+                if ( ret < 0 ) {
+                    if ( errno != EEXIST ) {
+                        singularity_message(DEBUG, "Opps, could not create directory %s: (%d) %s\n", dir, errno, strerror(errno));
+                    }
+                } else {
+                    if ( chdir(last_ptr) == 0 ) {
+                        if ( loop == 1 ) {
+                            last_ptr = ptr + 1;
+                            *ptr = '/';
+                            continue;
+                        }
+                    } else {
+                        ret = -1;
+                    }
+                }
+            }
+            if ( chdir(current_path) < 0 ) {
+                singularity_message(ERROR, "Failed to return to current path %s: %s\n", current_path, strerror(errno));
+                ABORT(255);
+            }
+            free(current_path);
+            free(dir_path);
+            free(dupdir);
+
+            return(ret);
+        }
+        if ( loop == 1 ) {
+            last_ptr = ptr + 1;
+            *ptr = '/';
+        } else {
+            if ( chdir(current_path) < 0 ) {
+                singularity_message(ERROR, "Failed to return to current path %s: %s\n", current_path, strerror(errno));
+                ABORT(255);
+            }
+            free(current_path);
+            free(dir_path);
+            free(dupdir);
+            break;
+        }
+    }
+
+    return(ret);
+}
+
+
 int _unlink(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
     int retval;
 
@@ -413,16 +546,73 @@ int copy_file(char * source, char * dest) {
 
 
 int fileput(char *path, char *string) {
-    FILE *fd;
+    char *current = (char *)malloc(PATH_MAX);
+    char *dir = (char *)malloc(PATH_MAX);
+    char *dup_path = strdup(path);
+    char *bname = basename(dup_path);
+    char *dname = dirname(dup_path);
+    int fd;
+    size_t string_len = strlen(string);
+    struct stat st_dir;
 
-    singularity_message(DEBUG, "Called fileput(%s, %s)\n", path, string);
-    if ( ( fd = fopen(path, "w") ) == NULL ) { // Flawfinder: ignore
-        singularity_message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
+    if ( current == NULL || dir == NULL ) {
+        singularity_message(ERROR, "Failed to allocate memory\n");
+        ABORT(255);
+    }
+
+    current[PATH_MAX-1] = '\0';
+    if ( getcwd(current, PATH_MAX-1) == NULL ) {
+        singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    if ( chdir(dname) < 0 ) {
+        singularity_message(ERROR, "Failed to go into directory %s: %s\n", dname, strerror(errno));
+        ABORT(255);
+    }
+
+    dir[PATH_MAX-1] = '\0';
+    if ( getcwd(dir, PATH_MAX-1) == NULL ) {
+        singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    if ( stat(".", &st_dir) < 0 ) {
+        singularity_message(ERROR, "Failed to get stat for current working directory %s: %s\n", dir, strerror(errno));
+        ABORT(255);
+    }
+
+    if ( st_dir.st_dev != st_overlaydir.st_dev && st_dir.st_dev != st_finaldir.st_dev && st_dir.st_dev != st_sessiondir.st_dev ) {
+        singularity_message(WARNING, "Ignored, try to create file %s outside of container %s\n", path, dir);
+        free(dup_path);
+        free(current);
+        free(dir);
         return(-1);
     }
 
-    fprintf(fd, "%s", string);
-    fclose(fd);
+    singularity_message(DEBUG, "Called fileput(%s, %s)\n", path, string);
+    if ( ( fd = open(bname, O_CREAT|O_WRONLY|O_TRUNC|O_NOFOLLOW, 0644) ) < 0 ) { // Flawfinder: ignore
+        singularity_message(ERROR, "Could not write to %s: %s\n", path, strerror(errno));
+        free(dup_path);
+        free(current);
+        free(dir);
+        return(-1);
+    }
+
+    if ( chdir(current) < 0 ) {
+        singularity_message(ERROR, "Failed to return to directory %s: %s\n", current, strerror(errno));
+        ABORT(255);
+    }
+
+    if ( string_len > 0 && write(fd, string, string_len) < 0 ) {
+        singularity_message(ERROR, "Failed to write into file %s: %s\n", path, strerror(errno));
+        ABORT(255);
+    }
+
+    close(fd);
+    free(dup_path);
+    free(current);
+    free(dir);
 
     return(0);
 }

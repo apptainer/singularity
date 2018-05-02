@@ -22,6 +22,8 @@
 # 
 # 
 
+# Relax restrictive umasks that can cause several problems
+umask 0022
 
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
@@ -138,3 +140,4 @@ fi
 
 # We should never get here...
 exit 255
+

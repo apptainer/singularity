@@ -11,7 +11,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),  # noqa
                 os.path.pardir)))  # noqa
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from sutils import (
     add_http,
@@ -36,7 +36,9 @@ from helpers.json.main import ADD
 from message import bot
 from templates import get_template
 
+import hashlib
 import json
+import os
 import re
 
 
@@ -46,12 +48,58 @@ def download_layer(client, image_id, cache_base):
     This is intended to be used by the multiprocessing function.
     If return_tmp is True, the temporary file is returned
     (intended to be renamed later)'''
+
+    # Token will only really be updated if within 5s of expiry
+    client.update_token()
     targz = client.get_layer(image_id=image_id,
                              download_folder=cache_base,  # return tmp when
                              return_tmp=PLUGIN_FIXPERMS)  # fix permissions
+    if verify_layer(targz):
+        return targz
+    else:
+        os.remove(targz)
+        return None
 
-    client.update_token()
-    return targz
+
+def verify_layer(targz):
+    '''check that a downloaded layer's sha256 checksum is OK
+       correct checksum is in the filename:
+           sha256:7d460157dea423c1e16c544fecad995439e12dd50c8db4a8e134fa245cd1846e.tar.gz
+    '''
+
+    targz_basename = os.path.basename(targz)
+
+    bot.debug("Verifying checksum for layer: %s" % targz_basename)
+
+    if targz_basename[:6] != 'sha256':
+        bot.warning("Unknown hash function for layer (%s) - will not checksum"
+                    % targz_basename[:5])
+        return True
+
+    expected = targz_basename[7:71]
+
+    sha256 = hashlib.sha256()
+
+    try:
+        with open(targz, 'rb') as f:
+            for block in iter(lambda: f.read(1048576), b''):
+                sha256.update(block)
+    except Exception as e:
+        bot.error("Error computing checksum for layer (%s) - %s"
+                  % (targz_basename, str(e)))
+        return False
+
+    computed = sha256.hexdigest()
+
+    bot.debug("Computed checksum %s, expected checksum %s"
+              % (computed, expected))
+
+    if computed != expected:
+        bot.error("Downloaded layer %s does not match checksum"
+                  % targz_basename)
+        return False
+
+    return True
 
 
 def change_permissions(tar_file, file_permission=None, folder_permission=None):

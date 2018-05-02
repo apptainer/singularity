@@ -528,3 +528,21 @@ def write_singularity_infos(base_dir,
                                  extension)
     write_file(output_file, content)
     return output_file
+
+
+def parse_bearer_challenge(challenge):
+    '''
+    Parses a bearer challenge from a 'Www-Authenticate' header into a
+    dictionary of params. Supports realm, service, and scope bearer params
+    appearing in any order and assumes param values are double quoted.
+    '''
+    param_re = '((?:realm|service|scope)=".+?")'
+    regexp = '^Bearer\s+{param},?{param}?,?{param}?'.format(param=param_re)
+    match = re.match(regexp, challenge)
+    params = {}
+    if match:
+        for group in match.groups():
+            if group:
+                param, value = group.split('=', 1)
+                params[param] = value.strip('"')
+    return params

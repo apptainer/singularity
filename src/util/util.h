@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <linux/limits.h>
 
 #include "util/message.h"
 
@@ -37,7 +38,7 @@
 struct tempfile {
     FILE *fp;
     int fd;
-    char filename[64];
+    char filename[PATH_MAX];
 };
 
 char *envar_get(char *name, char *allowed, int len);

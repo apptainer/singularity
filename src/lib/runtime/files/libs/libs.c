@@ -60,11 +60,6 @@ int _singularity_runtime_files_libs(void) {
         char *tok = NULL;
         char *current = strtok_r(strdup(includelibs_string), ",", &tok);
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting libs: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return(0);
-#endif
-
         singularity_message(DEBUG, "Parsing SINGULARITY_CONTAINLIBS for user-specified libraries to include.\n");
 
         free(includelibs_string);
@@ -75,7 +70,7 @@ int _singularity_runtime_files_libs(void) {
         }
 
         singularity_message(DEBUG, "Creating session libdir at: %s\n", libdir);
-        if ( s_mkpath(libdir, 0755) != 0 ) {
+        if ( container_mkpath(libdir, 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating temp lib directory at: %s\n", libdir);
             ABORT(255);
         }
@@ -150,7 +145,7 @@ int _singularity_runtime_files_libs(void) {
             char *ld_path;
             singularity_message(DEBUG, "Attempting to create contained libdir\n");
             singularity_priv_escalate();
-            if ( s_mkpath(libdir_contained, 0755) != 0 ) {
+            if ( container_mkpath(libdir_contained, 0755) != 0 ) {
                 singularity_message(ERROR, "Failed creating directory %s :%s\n", libdir_contained, strerror(errno));
                 ABORT(255);
             }

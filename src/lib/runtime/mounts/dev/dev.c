@@ -31,6 +31,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <grp.h>
+#include <string.h>
+#include <dirent.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -52,6 +54,7 @@ int _singularity_runtime_mount_dev(void) {
     if ( ( singularity_registry_get("CONTAIN") != NULL ) || ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) ) {
         char *sessiondir = singularity_registry_get("SESSIONDIR");
         char *devdir = joinpath(sessiondir, "/dev");
+        char *nvopt = singularity_registry_get("NV"); 
 
         if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
             int ret;
@@ -62,7 +65,7 @@ int _singularity_runtime_mount_dev(void) {
             }
 
             singularity_priv_escalate();
-            ret = s_mkpath(joinpath(container_dir, "/dev"), 0755);
+            ret = container_mkpath(joinpath(container_dir, "/dev"), 0755);
             singularity_priv_drop();
 
             if ( ret < 0 ) {
@@ -72,13 +75,13 @@ int _singularity_runtime_mount_dev(void) {
         }
 
         singularity_message(DEBUG, "Creating temporary staged /dev\n");
-        if ( s_mkpath(devdir, 0755) != 0 ) {
+        if ( container_mkpath(devdir, 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating the session device directory %s: %s\n", devdir, strerror(errno));
             ABORT(255);
         }
 
         singularity_message(DEBUG, "Creating temporary staged /dev/shm\n");
-        if ( s_mkpath(joinpath(devdir, "/shm"), 0755) != 0 ) {
+        if ( container_mkpath(joinpath(devdir, "/shm"), 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating temporary /dev/shm %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
             ABORT(255);
         }
@@ -91,7 +94,7 @@ int _singularity_runtime_mount_dev(void) {
                 ABORT(255);
             }
             singularity_message(DEBUG, "Creating staged /dev/pts\n");
-            if ( s_mkpath(joinpath(devdir, "/pts"), 0755) != 0 ) {
+            if ( container_mkpath(joinpath(devdir, "/pts"), 0755) != 0 ) {
                 singularity_message(ERROR, "Failed creating /dev/pts %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
                 ABORT(255);
             }
@@ -102,6 +105,26 @@ int _singularity_runtime_mount_dev(void) {
         bind_dev(sessiondir, "/dev/zero");
         bind_dev(sessiondir, "/dev/random");
         bind_dev(sessiondir, "/dev/urandom");
+
+        /* if the user passed the --nv flag and the --contain flag, still bind
+        nvidia devices */
+        if ( nvopt != NULL ) {
+            DIR *dir;
+            struct dirent *dp; 
+
+            if ( ( dir = opendir("/dev") ) == NULL ) {
+                singularity_message(ERROR, "Could not open /dev on host system");
+                ABORT(255);
+            }
+
+            while ( ( dp = readdir(dir) ) != NULL ) {
+                if ( strstr(dp->d_name, "nvidia") != NULL ) {
+                    bind_dev(sessiondir, joinpath("/dev", dp->d_name) );
+                }
+            }
+
+            closedir(dir);
+        }
 
         singularity_message(DEBUG, "Mounting tmpfs for staged /dev/shm\n");
         if ( singularity_mount("/dev/shm", joinpath(devdir, "/shm"), "tmpfs", MS_NOSUID, "") < 0 ) {

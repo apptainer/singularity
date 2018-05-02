@@ -667,6 +667,35 @@ class TestUtils(TestCase):
             written_content = filey.read()
         self.assertEqual(content, written_content)
 
+    def test_bearer_challenge_parsing(self):
+        '''
+        test_bearer_challenge_parsing will test the parse_bearer_challenge
+        function
+        '''
+        from sutils import parse_bearer_challenge
+
+        realm = "https://some-registry.io/auth"
+        service = "some-service"
+        scope = "some-scope"
+
+        cases = (
+            [("realm", realm), ("service", service), ("scope", scope)],
+            [("service", service), ("scope", scope), ("realm", realm)],
+            [("scope", scope), ("realm", realm), ("service", service)],
+            [("scope", scope), ("realm", realm)],
+            [("realm", realm), ("service", service)],
+            [("scope", scope), ("service", service)],
+            [("service", service)],
+            [("scope", scope)],
+            [("realm", realm)],
+        )
+
+        for case in cases:
+            challenge = 'Bearer %s' % ','.join(
+                ['%s="%s"' % (k, v) for k, v in case]
+            )
+            self.assertEqual(parse_bearer_challenge(challenge), dict(case))
+
 
 # Supporting Test Functions
 def create_test_tar(tmpdir, compressed=True):

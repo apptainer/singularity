@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.4.6],[gmkurtzer@gmail.com])
+AC_INIT([singularity],[2.5.0],[gmkurtzer@gmail.com])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -42,7 +42,7 @@ AC_PROG_LIBTOOL(libtool)
 
 # Setting rpath if necessary
 if test "$libdir" = "\${exec_prefix}/lib"; then
-    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir)"
+    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir) -Wl,-z,relro,-z,now"
 fi
 
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
@@ -150,19 +150,28 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                   )
 
 AC_MSG_CHECKING([for feature: NO_NEW_PRIVS])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
                                      #include <sys/prctl.h>
                                    ]],
-                                   [[prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
-                                     prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0);]])],
+                                   [[if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0) {
+                                       return 1;
+                                   }
+                                   if ( prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) != 1) {
+                                       return 1;
+                                   }]])],
                       [
                           AC_MSG_RESULT([yes])
-                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_NO_NEW_PRIVS"
                       ], [
                           AC_MSG_RESULT([no])
+                          echo
+                          echo "ERROR!!!!!!"
+                          echo
+                          echo "This host does not support the NO_NEW_PRIVS prctl functions!"
+                          echo "The kernel must be updated to support Singularity securely."
+                          echo
+                          exit 255
                       ]
                   )
-
 
 AC_MSG_CHECKING([for feature: MS_SLAVE])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -253,6 +262,11 @@ AC_CHECK_FUNCS(setns, [
 
 AC_SUBST(SINGULARITY_DEFINES)
 
+
+AC_CHECK_PROG([mksquashfs],[mksquashfs],[yes],[no])
+AM_CONDITIONAL([FOUND_MKSQUASHFS], [test "x$mksquashfs" = xyes])
+AM_COND_IF([FOUND_MKSQUASHFS],,[AC_MSG_WARN([mksquashfs not found - needed at runtime for full build functionality])])
+
 # ---------------------------------------------------------------------
 # PYTHON
 # ---------------------------------------------------------------------
@@ -334,6 +348,17 @@ AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
 AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
 AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
 
+# check for libarchive needed by docker-extract
+AC_CHECK_HEADERS([archive.h],
+[archive_header_found=yes; break;])
+AS_IF([test "x$archive_header_found" != "xyes"],
+[AC_MSG_ERROR([Unable to find the libarchive headers, need package libarchive-devel (libarchive-dev on Debian/Ubuntu)])])
+AC_SEARCH_LIBS([archive_read_new], [archive], [], [
+AC_MSG_ERROR([unable to find libarchive, need package libarchive-devel (libarchive-de on Debian/Ubuntu)])
+])
+# we don't want the LIBS setting of AC_SEARCH_LIBS, override
+AC_SUBST(LIBS,"")
+CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([
    Makefile

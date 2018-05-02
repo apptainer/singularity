@@ -24,9 +24,10 @@ perform publicly and display publicly, and to permit other to do so.
 import sys
 import math
 import os
+import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                 os.path.pardir)))  # noqa
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) # noqa
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # noqa
 
 from base import ApiConnection
 
@@ -35,7 +36,8 @@ from sutils import (
     get_cache,
     change_tar_permissions,
     create_tar,
-    write_singularity_infos
+    write_singularity_infos,
+    parse_bearer_challenge
 )
 
 from defaults import (
@@ -72,6 +74,7 @@ class DockerApiConnection(ApiConnection):
     def __init__(self, **kwargs):
         self.auth = None
         self.token = None
+        self.tokenExpires = None
         self.token_url = None
         self.schemaVersion = None
         self.reverseLayers = False
@@ -142,12 +145,46 @@ class DockerApiConnection(ApiConnection):
         self.registry = image['registry']
         self.update_token()
 
-    def update_token(self, response=None, auth=None):
+    def get_token_url(self, challenge, expires_in, sort_query_params=False):
+        '''
+        Build token URL from auth challenge
+        '''
+        params = parse_bearer_challenge(challenge)
+
+        if not params or 'realm' not in params:
+            bot.debug("update_token: challenge = '%s'" % challenge)
+            bot.error("Unrecognized authentication challenge, exiting.")
+            sys.exit(1)
+
+        realm = params.pop('realm')
+
+        params['expires_in'] = expires_in
+
+        if sort_query_params:
+            items = sorted(params.items())
+        else:
+            items = params.items()
+
+        query_fragment = '&'.join(
+            ['%s=%s' % (k, v) for k, v in items]
+        )
+
+        return "{realm}?{query_fragment}".format(
+            realm=realm,
+            query_fragment=query_fragment
+        )
+
+    def update_token(self, response=None, auth=None, expires_in=300):
         '''update_token uses HTTP basic authentication to get a token for
         Docker registry API V2 operations. We get here if a 401 is
         returned for a request.
         https://docs.docker.com/registry/spec/auth/token/
         '''
+
+        if self.tokenExpires and self.tokenExpires > (time.time() - 5):
+            bot.debug("Not renewing token - does not expire within 5s")
+            return
+
         if self.token_url is None:
 
             if response is None:
@@ -163,19 +200,11 @@ class DockerApiConnection(ApiConnection):
                 sys.exit(1)
 
             challenge = response.headers["Www-Authenticate"]
-            regexp = '^Bearer\s+realm="(.+)",service="(.+)",scope="(.+)",?'
-            match = re.match(regexp, challenge)
 
-            if not match:
-                bot.error("Unrecognized authentication challenge, exiting.")
-                sys.exit(1)
-
-            realm = match.group(1)
-            service = match.group(2)
-            scope = match.group(3).split(',')[0]
-
-            self.token_url = ("%s?service=%s&expires_in=9000&scope=%s"
-                              % (realm, service, scope))
+            self.token_url = self.get_token_url(
+                challenge,
+                expires_in=expires_in
+            )
 
         headers = dict()
 
@@ -187,19 +216,34 @@ class DockerApiConnection(ApiConnection):
         elif self.auth is not None:
             headers.update(self.auth)
 
+        bot.debug("Requesting token from docker registry API")
+
         response = self.get(self.token_url,
                             default_headers=False,
-                            headers=headers)
+                            headers=headers,
+                            updating_token=True)
 
         try:
-            token = json.loads(response)["token"]
-            token = {"Authorization": "Bearer %s" % token}
+            data = json.loads(response)
+            token = {"Authorization": "Bearer %s" % data["token"]}
             self.token = token
+
+            # Default expiry from API is 60s
+            expires_in = 60
+            if 'expires_in' in data:
+                expires_in = data['expires_in']
+            # issued_at and expires_in are optional, so use the completion of
+            # token exchange (now)
+            self.tokenExpires = time.time() + expires_in
+            bot.debug("Received token valid for %d - expiring at %d"
+                      % (expires_in, self.tokenExpires))
+
             self.update_headers(token)
 
-        except Exception:
-            bot.error("Error getting token for repository %s, exiting."
-                      % self.repo_name)
+        except Exception as e:
+            bot.error("Error getting token for repository %s, please check your credentials.\n%s\n"
+                      % (self.repo_name, str(e)))
+
             sys.exit(1)
 
     def get_images(self, manifest=None):
