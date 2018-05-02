@@ -44,7 +44,7 @@ int container_file_bind(char *source, char *dest_path) {
     char *dest;
     char *containerdir = CONTAINER_FINALDIR;
 
-    singularity_message(DEBUG, "Called file_bind(%s, %s()\n", source, dest_path);
+    singularity_message(DEBUG, "Called file_bind(%s, %s)\n", source, dest_path);
 
     if ( containerdir == NULL ) {
         singularity_message(ERROR, "Failed to obtain container directory\n");
