@@ -99,7 +99,7 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		}
 	} else {
 		sylog.Debugf("Mounting image directory %s\n", rootfs)
-		_, err = rpcOps.Mount(rootfs, buildcfg.CONTAINER_FINALDIR, "", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
+		_, err = rpcOps.Mount(rootfs, buildcfg.CONTAINER_FINALDIR, "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 		if err != nil {
 			log.Fatalf("Failed to mount directory filesystem %s: %s\n", rootfs, err)
 			return err
