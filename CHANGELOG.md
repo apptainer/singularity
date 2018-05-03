@@ -12,7 +12,16 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
-## [v2.5.0](https://github.com/singularityware/singularity/releases/tag/2.5.0-rc1) (2018-04-04)
+## [v2.5.1](https://github.com/singularityware/singularity/releases/tag/2.5.1) (2018-05-03)
+
+### Bug fixes
+  - Corrected a permissions error when attempting to run Singularity from a 
+    directory on NFS with root_squash enabled  
+  - Fixed a bug that closed a socket early, preventing correct container 
+    execution on hosts using identity services like SSSD
+  - Fixed a regression that broke the debootstrap agent
+
+## [v2.5.0](https://github.com/singularityware/singularity/releases/tag/2.5.0) (2018-04-27)
 
 ### Security related fixes
 
