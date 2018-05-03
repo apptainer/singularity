@@ -1,0 +1,16 @@
+#!/bin/bash
+
+repo="github.com/singularityware/singularity/"
+gofiles=""
+
+for i in $(go list -f '{{ .Deps }}' $1 | tr -d '[]'); do
+    if [[ $i == $repo* ]]; then
+        for j in $(go list -f '{{ .GoFiles}} {{ .CgoFiles }}' $i | tr -d '[]'); do
+            path="$i/$j"
+            path=${path#$repo}
+            gofiles="$gofiles $2/$path"
+        done
+    fi
+done
+
+echo $gofiles
