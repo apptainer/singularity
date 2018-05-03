@@ -443,8 +443,8 @@ struct tempfile *make_logfile(char *label) {
     return(tf);
 }
 
-// close all file descriptors pointing to a directory or a socket
-void fd_cleanup(void) {
+// iter on /proc/self/fd and call close_fd callback to determine file descriptors to close
+void fd_cleanup(int (*close_fd)(int fd, struct stat *st)) {
     int fd_proc;
     DIR *dir;
     struct dirent *dirent;
@@ -474,7 +474,7 @@ void fd_cleanup(void) {
         if ( fd == fd_proc || fstat(fd, &st) < 0 ) {
             continue;
         }
-        if ( S_ISDIR(st.st_mode) || S_ISSOCK(st.st_mode) ) {
+        if ( close_fd(fd, &st) ) {
             close(fd);
         }
     }

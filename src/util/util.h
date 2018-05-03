@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <linux/limits.h>
 
 #include "util/message.h"
@@ -59,7 +60,7 @@ char *random_string(int length);
 void free_tempfile(struct tempfile *tf);
 struct tempfile *make_tempfile(void);
 struct tempfile *make_logfile(char *label);
-void fd_cleanup(void);
+void fd_cleanup(int (*close_fd)(int fd, struct stat *));
 
 // Given a const char * string containing a base-10 integer,
 // try to convert to an C integer.

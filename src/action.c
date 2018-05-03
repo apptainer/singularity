@@ -49,14 +49,18 @@
 #error SYSCONFDIR not defined
 #endif
 
+int close_fd(int fd, struct stat *st) {
+    if ( S_ISDIR(st->st_mode) || S_ISSOCK(st->st_mode) ) {
+        return(1);
+    }
+    return(0);
+}
 
 int main(int argc, char **argv) {
     struct image_object image;
     char *pwd = get_current_dir_name();
     char *target_pwd = NULL;
     char *command = NULL;
-
-    fd_cleanup();
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -101,7 +105,6 @@ int main(int argc, char **argv) {
     singularity_runtime_enter();
     
     singularity_runtime_environment();
-    
     singularity_priv_drop_perm();
 
     if ( ( target_pwd = singularity_registry_get("TARGET_PWD") ) != NULL ) {
@@ -144,6 +147,8 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
     envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
     envar_set("SINGULARITY_APPNAME", singularity_registry_get("APPNAME"), 1);
+
+    fd_cleanup(&close_fd);
 
     singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
 

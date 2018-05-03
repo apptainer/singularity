@@ -64,9 +64,7 @@ int _singularity_runtime_mount_dev(void) {
                 return(-1);
             }
 
-            singularity_priv_escalate();
-            ret = container_mkpath(joinpath(container_dir, "/dev"), 0755);
-            singularity_priv_drop();
+            ret = container_mkpath_priv(joinpath(container_dir, "/dev"), 0755);
 
             if ( ret < 0 ) {
                 singularity_message(ERROR, "Could not create /dev inside container\n");
@@ -75,13 +73,13 @@ int _singularity_runtime_mount_dev(void) {
         }
 
         singularity_message(DEBUG, "Creating temporary staged /dev\n");
-        if ( container_mkpath(devdir, 0755) != 0 ) {
+        if ( container_mkpath_nopriv(devdir, 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating the session device directory %s: %s\n", devdir, strerror(errno));
             ABORT(255);
         }
 
         singularity_message(DEBUG, "Creating temporary staged /dev/shm\n");
-        if ( container_mkpath(joinpath(devdir, "/shm"), 0755) != 0 ) {
+        if ( container_mkpath_nopriv(joinpath(devdir, "/shm"), 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating temporary /dev/shm %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
             ABORT(255);
         }
@@ -94,7 +92,7 @@ int _singularity_runtime_mount_dev(void) {
                 ABORT(255);
             }
             singularity_message(DEBUG, "Creating staged /dev/pts\n");
-            if ( container_mkpath(joinpath(devdir, "/pts"), 0755) != 0 ) {
+            if ( container_mkpath_nopriv(joinpath(devdir, "/pts"), 0755) != 0 ) {
                 singularity_message(ERROR, "Failed creating /dev/pts %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
                 ABORT(255);
             }
@@ -226,9 +224,7 @@ static int bind_dev(char *tmpdir, char *dev) {
             int ret;
             singularity_message(VERBOSE2, "Creating bind point within container: %s\n", dev);
 
-            singularity_priv_escalate();
-            ret = fileput(path, "");
-            singularity_priv_drop();
+            ret = fileput_priv(path, "");
 
             if ( ret < 0 ) {
                 singularity_message(WARNING, "Can not create %s: %s\n", dev, strerror(errno));

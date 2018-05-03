@@ -41,11 +41,13 @@ int is_owner(char *path, uid_t uid);
 int is_blk(char *path);
 int is_chr(char *path);
 int s_mkpath(char *dir, mode_t mode);
-int container_mkpath(char *dir, mode_t mode);
+int container_mkpath_nopriv(char *dir, mode_t mode);
+int container_mkpath_priv(char *dir, mode_t mode);
 int s_rmdir(char *dir);
 int copy_file(char * source, char * dest);
 char *filecat(char *path);
-int fileput(char *path, char *string);
+int fileput_nopriv(char *path, char *string);
+int fileput_priv(char *path, char *string);
 int filelock(const char *const filepath, int *const fdptr);
 char *basedir(char *dir);
 

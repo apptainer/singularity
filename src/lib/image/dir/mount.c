@@ -43,11 +43,15 @@
 
 
 int _singularity_image_dir_mount(struct image_object *image, char *mount_point) {
-    int mntflags = MS_BIND | MS_NOSUID | MS_REC | MS_NODEV;
+    int mntflags = MS_BIND | MS_NOSUID | MS_REC;
 
     if ( strcmp(image->path, "/") == 0 ) {
         singularity_message(ERROR, "Naughty naughty naughty...\n");
         ABORT(255);
+    }
+
+    if ( singularity_priv_getuid() != 0 ) {
+        mntflags |= MS_NODEV;
     }
 
     singularity_message(DEBUG, "Mounting container directory %s->%s\n", image->path, mount_point);
