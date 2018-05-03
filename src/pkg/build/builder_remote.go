@@ -77,7 +77,7 @@ func NewRemoteBuilder(p string, d Definition, isDetached bool, addr, at string) 
 		buildURL: url.URL{
 			Scheme: "http",
 			Host:   addr,
-			Path:   "build",
+			Path:   "/v1/build",
 		},
 		request: request{
 			RequestData: RequestData{
@@ -98,9 +98,6 @@ func NewRemoteBuilder(p string, d Definition, isDetached bool, addr, at string) 
 // Build is responsible for making the request via the REST API to the remote builder
 func (b *RemoteBuilder) Build() (err error) {
 	b.doBuildRequest()
-
-	// Update buildURL to include UUID for status requests
-	b.buildURL.Path = "build/" + b.ResponseData.ID.Hex()
 
 	// Dial websocket
 	h := http.Header{}
