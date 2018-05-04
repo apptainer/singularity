@@ -32,7 +32,7 @@ type JSONResponse struct {
 }
 
 func isLibraryRef(libraryRef string) bool {
-	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[._-][a-z0-9]+)*)?$", libraryRef)
+	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[,._-][a-z0-9]+)*)?$", libraryRef)
 	return match
 }
 
@@ -71,7 +71,7 @@ func IsTag(tag string) bool {
 	return match
 }
 
-func parseLibraryRef(libraryRef string) (entity string, collection string, container string, image string) {
+func parseLibraryRef(libraryRef string) (entity string, collection string, container string, tags []string) {
 
 	libraryRef = strings.TrimPrefix(libraryRef, "library://")
 
@@ -80,12 +80,17 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 	entity = refParts[0]
 	collection = refParts[1]
 	container = refParts[2]
-	image = "latest"
+
+	// Default tag is latest
+	tags = []string{"latest"}
 
 	if strings.Contains(container, ":") {
 		imageParts := strings.Split(container, ":")
 		container = imageParts[0]
-		image = imageParts[1]
+		tags = []string{imageParts[1]}
+		if strings.Contains(tags[0], ",") {
+			tags = strings.Split(tags[0], ",")
+		}
 	}
 
 	return

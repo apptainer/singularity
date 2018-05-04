@@ -38,7 +38,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 	}
 	log.Printf("Image hash computed as %s", imageHash)
 
-	entity, collection, container, _ := parseLibraryRef(libraryRef)
+	entity, collection, container, tags := parseLibraryRef(libraryRef)
 
 	entityID, err := entityExists(entity)
 	if err != nil {
@@ -93,7 +93,13 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 		return err
 	}
 
-	log.Printf("Upload Complete!")
+	err = setTags(containerID, imageID, tags)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Push Complete!")
+
 	return nil
 }
 
@@ -154,6 +160,21 @@ func createImage(hash string, containerID string) (id string, err error) {
 	return apiCreate(i, baseURL+"/v1/images")
 }
 
+func setTags(containerID string, imageID string, tags []string) error {
+	for _, tag := range tags {
+		log.Printf("Setting tag %s", tag)
+		imgTag := ImageTag{
+			tag,
+			bson.ObjectIdHex(imageID),
+		}
+		err := apiSetTag(baseURL+"/v1/tags/"+containerID, imgTag)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func apiCreate(o interface{}, url string) (id string, err error) {
 	s, err := json.Marshal(o)
 	if err != nil {
@@ -201,6 +222,36 @@ func apiExists(url string) (id string, err error) {
 		return c["data"]["id"].(string), nil
 	}
 	return "", nil
+}
+
+func apiGetTags(url string) (err error) {
+
+	return nil
+
+}
+
+func apiSetTag(url string, t ImageTag) (err error) {
+	s, err := json.Marshal(t)
+	if err != nil {
+		return fmt.Errorf("Error encoding object to JSON:\n\t%v", err)
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Error making request to server:\n\t%v", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		jRes, err := ParseErrorBody(res.Body)
+		if err != nil {
+			jRes = ParseErrorResponse(res)
+		}
+		return fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
+			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
+	}
+	return nil
 }
 
 func postFile(filePath string, imageID string) error {
