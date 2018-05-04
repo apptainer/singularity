@@ -120,6 +120,15 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/globalsign/mgo"
+  packages = [
+    "bson",
+    "internal/json"
+  ]
+  revision = "efe0945164a7e582241f37ae8983c075f8f2e870"
+
+[[projects]]
+  branch = "master"
   name = "github.com/golang/glog"
   packages = ["."]
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
@@ -351,6 +360,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8e2c4da71c4abfc0303f3072d27bce241b7aa2f856b2753f0b46660e8c7da8ce"
+  inputs-digest = "7df4c18f4790707ad1bc6d19cbe1c3377e38959d49082429b5833b517641d72a"
   solver-name = "gps-cdcl"
   solver-version = 1
