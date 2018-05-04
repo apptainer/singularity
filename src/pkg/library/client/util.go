@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/globalsign/mgo/bson"
 	"github.com/golang/glog"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // JSONError - Struct for standard error returns over REST API

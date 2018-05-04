@@ -18,8 +18,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/globalsign/mgo/bson"
 	"gopkg.in/cheggaaa/pb.v1"
-	"gopkg.in/mgo.v2/bson"
 )
 
 var baseURL string
