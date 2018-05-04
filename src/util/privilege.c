@@ -29,6 +29,19 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/prctl.h>
+
+/*
+ * Some distributions have a kernel that supports PR_SET_NO_NEW_PRIVS but
+ * the userspace does not have the defines in prctl.h
+ *
+ * #define them ourself. This still fails on kernels where NO_NEW_PRIVS is
+ * not supported
+ */
+#ifndef PR_SET_NO_NEW_PRIVS
+# define PR_SET_NO_NEW_PRIVS 38
+# define PR_GET_NO_NEW_PRIVS 39
+#endif
+
 #include <pwd.h>
 #include <errno.h> 
 #include <string.h>
