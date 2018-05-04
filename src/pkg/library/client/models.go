@@ -182,18 +182,6 @@ func (c *Collection) RemoveContainer(containerID bson.ObjectId) ([]bson.ObjectId
 	return c.Containers, nil
 }
 
-// GetEntity returns the parent entity for this collection
-func (c *Collection) GetEntity() (entity *Entity, err error) {
-	mm, err := Get("Entity", c.Entity.Hex())
-	if err != nil {
-		return nil, err
-	}
-	if mm == nil {
-		return nil, fmt.Errorf("No such entity: %s", c.Entity.Hex())
-	}
-	return mm.(*Entity), err
-}
-
 // Container - Third level of library. Inside a collection, holds images for
 // a particular container
 type Container struct {
@@ -233,18 +221,6 @@ func (c *Container) RemoveImage(imageID bson.ObjectId) ([]bson.ObjectId, error) 
 	}
 	c.Images = SliceWithoutID(c.Images, imageID)
 	return c.Images, nil
-}
-
-// GetCollection returns the parent collection for this container
-func (c *Container) GetCollection() (collection *Collection, err error) {
-	mm, err := Get("Collection", c.Collection.Hex())
-	if err != nil {
-		return nil, err
-	}
-	if mm == nil {
-		return nil, fmt.Errorf("No such collection: %s", c.Collection.Hex())
-	}
-	return mm.(*Collection), err
 }
 
 // GetImageTag gets the image ID associated with a provided tag
@@ -314,30 +290,6 @@ func (img Image) GetID() bson.ObjectId {
 func (img *Image) SetID(id bson.ObjectId) bson.ObjectId {
 	img.ID = id
 	return img.ID
-}
-
-// GetContainer returns the parent container for this image
-func (img *Image) GetContainer() (container *Container, err error) {
-	mm, err := Get("Container", img.Container.Hex())
-	if err != nil {
-		return nil, err
-	}
-	if mm == nil {
-		return nil, fmt.Errorf("No such container: %s", img.Container.Hex())
-	}
-	return mm.(*Container), err
-}
-
-// GetBlob returns the child Blob for this image
-func (img *Image) GetBlob() (blob *Blob, err error) {
-	mm, err := Get("Blob", img.Blob.Hex())
-	if err != nil {
-		return nil, err
-	}
-	if mm == nil {
-		return nil, fmt.Errorf("No such blob: %s", img.Blob.Hex())
-	}
-	return mm.(*Blob), err
 }
 
 // Blob - Binary data object (e.g. container image file) stored in a Backend
