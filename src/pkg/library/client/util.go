@@ -1,8 +1,11 @@
 package client
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"io"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -151,4 +154,29 @@ func PrettyPrint(v interface{}) {
 // BsonUTCNow returns a time.Time in UTC, with the precision supported by BSON
 func BsonUTCNow() time.Time {
 	return bson.Now().UTC()
+}
+
+// ImageHash returns the appropriate hash for a provided image file
+//   e.g. sif.<uuid> or sha256.<sha256>
+func ImageHash(filePath string) (result string, err error) {
+	// Currently using sha256 always
+	// TODO - use sif uuid for sif files!
+	return sha256sum(filePath)
+}
+
+// SHA256Sum computes the sha256sum of a file
+func sha256sum(filePath string) (result string, err error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hash := sha256.New()
+	_, err = io.Copy(hash, file)
+	if err != nil {
+		return "", err
+	}
+
+	return "sha256." + hex.EncodeToString(hash.Sum(nil)), nil
 }

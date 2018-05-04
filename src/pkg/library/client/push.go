@@ -32,7 +32,13 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 		log.Fatalf("Not a valid library reference: %s", libraryRef)
 	}
 
-	entity, collection, container, image := parseLibraryRef(libraryRef)
+	imageHash, err := ImageHash(filePath)
+	if err != nil {
+		return err
+	}
+	log.Printf("Image hash computed as %s", imageHash)
+
+	entity, collection, container, _ := parseLibraryRef(libraryRef)
 
 	entityID, err := entityExists(entity)
 	if err != nil {
@@ -67,13 +73,13 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 			return err
 		}
 	}
-	imageID, err := imageExists(entity, collection, container, image)
+	imageID, err := imageExists(entity, collection, container, imageHash)
 	if err != nil {
 		return err
 	}
 	if imageID == "" {
-		log.Printf("Image %s/%s/%s:%s does not exist in library - creating it.\n", entity, collection, container, image)
-		imageID, err = createImage(image, containerID)
+		log.Printf("Image %s/%s/%s:%s does not exist in library - creating it.\n", entity, collection, container, imageHash)
+		imageID, err = createImage(imageHash, containerID)
 		if err != nil {
 			return err
 		}
@@ -138,9 +144,9 @@ func createContainer(name string, collectionID string) (id string, err error) {
 	return apiCreate(c, baseURL+"/v1/containers")
 }
 
-func createImage(name string, containerID string) (id string, err error) {
+func createImage(hash string, containerID string) (id string, err error) {
 	i := Image{
-		Name:        name,
+		Hash:        hash,
 		Description: "No description",
 		Container:   bson.ObjectIdHex(containerID),
 	}
