@@ -19,6 +19,8 @@ import (
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
+// DownloadImage will retrieve an image from the Container Library,
+// saving it into the specified file
 func DownloadImage(filePath string, libraryRef string, libraryURL string, Force bool) error {
 
 	if !isLibraryPullRef(libraryRef) {

@@ -25,6 +25,7 @@ import (
 
 var baseURL string
 
+// UploadImage will push a specified image up to the Container Library,
 func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 
 	baseURL = libraryURL
@@ -289,8 +290,7 @@ func postFile(filePath string, imageID string) error {
 	w := multipart.NewWriter(&b)
 	f, err := os.Open(filePath)
 	if err != nil {
-		fmt.Errorf("Could not open the image file to upload: %v", err)
-		return err
+		return fmt.Errorf("Could not open the image file to upload: %v", err)
 	}
 	fi, _ := f.Stat()
 	fileSize := fi.Size()
@@ -299,12 +299,10 @@ func postFile(filePath string, imageID string) error {
 
 	fw, err := w.CreateFormFile("imagefile", filePath)
 	if err != nil {
-		fmt.Errorf("Could not prepare the image file upload: %v", err)
-		return err
+		return fmt.Errorf("Could not prepare the image file upload: %v", err)
 	}
 	if _, err = io.Copy(fw, f); err != nil {
-		fmt.Errorf("Could not prepare the image file upload: %v", err)
-		return err
+		return fmt.Errorf("Could not prepare the image file upload: %v", err)
 	}
 
 	w.Close()

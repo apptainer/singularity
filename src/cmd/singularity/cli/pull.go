@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	// PullLibraryURI holds the base URI to a Sylabs library API instance
 	PullLibraryURI string
 )
 
