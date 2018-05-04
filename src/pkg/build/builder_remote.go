@@ -103,7 +103,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	rd, err = rb.doStatusRequest(ctx, rd.ID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get status from remote build service")
-		sylog.Warningf("%v\n", err)
+		sylog.Warningf("%v", err)
 		return
 	}
 
@@ -119,17 +119,24 @@ func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err erro
 	if rb.AuthHeader != "" {
 		h.Set("Authorization", rb.AuthHeader)
 	}
-	ws, _, err := websocket.DefaultDialer.Dial(url, h)
+	c, _, err := websocket.DefaultDialer.Dial(url, h)
 	if err != nil {
 		return err
 	}
+	defer c.Close()
 
 	for {
-		mt, msg, err := ws.ReadMessage()
+		// Read from websocket
+		mt, msg, err := c.ReadMessage()
 		if err != nil {
-			return err
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+				return nil
+			} else {
+				return err
+			}
 		}
 
+		// Print to terminal
 		switch mt {
 		case websocket.TextMessage:
 			fmt.Printf("%s", msg)
@@ -150,7 +157,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, isDet
 	}
 
 	url := url.URL{Scheme: "http", Host: rb.HTTPAddr, Path: "/v1/build"}
-	req, err := http.NewRequest(http.MethodPost, url.String(), bytes.NewBuffer(b))
+	req, err := http.NewRequest(http.MethodPost, url.String(), bytes.NewReader(b))
 	if err != nil {
 		return
 	}
@@ -158,6 +165,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, isDet
 	if rb.AuthHeader != "" {
 		req.Header.Set("Authorization", rb.AuthHeader)
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	res, err := rb.Client.Do(req)
 	if err != nil {
@@ -166,7 +174,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, isDet
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusCreated {
-		err = fmt.Errorf("failed to create build: %v", res.Status)
+		err = errors.New(res.Status)
 		return
 	}
 
@@ -193,7 +201,7 @@ func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) 
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("failed to get build status: %v", res.Status)
+		err = errors.New(res.Status)
 		return
 	}
 
@@ -219,7 +227,7 @@ func (rb *RemoteBuilder) doPullRequest(ctx context.Context, url string, r io.Wri
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		err = fmt.Errorf("failed to get image: %v", res.Status)
+		err = errors.New(res.Status)
 		return
 	}
 
