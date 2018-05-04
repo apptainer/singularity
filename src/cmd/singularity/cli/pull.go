@@ -23,9 +23,13 @@ func init() {
 }
 
 var pullCmd = &cobra.Command{
-	Use:  "pull myimage.sif library://user/collection/container:tag",
-	Args: cobra.ExactArgs(2),
+	Use:  "pull [myimage.sif] library://user/collection/container[:tag]",
+	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
-		libexec.PullImage(args[0], args[1], PullLibraryURI)
+		if len(args) == 2 {
+			libexec.PullImage(args[0], args[1], PullLibraryURI)
+			return
+		}
+		libexec.PullImage("", args[0], PullLibraryURI)
 	},
 }

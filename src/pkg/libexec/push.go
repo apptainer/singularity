@@ -8,14 +8,11 @@
 package libexec
 
 import (
-	"fmt"
-
 	"github.com/singularityware/singularity/src/pkg/library/client"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 func PushImage(image string, library string, libraryURL string) {
-	fmt.Printf("Pushing image: \"%s\" to library: \"%s\"\n", image, library)
 	err := client.UploadImage(image, library, libraryURL)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)

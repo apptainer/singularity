@@ -25,6 +25,12 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string) error 
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
 	}
 
+	if filePath == "" {
+		_, _, container, tags := parseLibraryRef(libraryRef)
+		filePath = fmt.Sprintf("%s_%s.sif", container, tags[0])
+		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
+	}
+
 	url := libraryURL + "/v1/imagefile/" + strings.TrimPrefix(libraryRef, "library://")
 
 	sylog.Debugf("Pulling from URL: %s\n", url)
