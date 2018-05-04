@@ -152,6 +152,10 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
 AC_MSG_CHECKING([for feature: NO_NEW_PRIVS])
 AC_RUN_IFELSE([AC_LANG_PROGRAM([[
                                      #include <sys/prctl.h>
+                                     #ifndef PR_SET_NO_NEW_PRIVS
+                                     # define PR_SET_NO_NEW_PRIVS 38
+                                     # define PR_GET_NO_NEW_PRIVS 39
+                                     #endif
                                    ]],
                                    [[if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0) {
                                        return 1;
