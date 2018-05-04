@@ -42,7 +42,7 @@ AC_PROG_LIBTOOL(libtool)
 
 # Setting rpath if necessary
 if test "$libdir" = "\${exec_prefix}/lib"; then
-    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir)"
+    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir) -Wl,-z,relro,-z,now"
 fi
 
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
@@ -150,23 +150,32 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                   )
 
 AC_MSG_CHECKING([for feature: NO_NEW_PRIVS])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
                                      #include <sys/prctl.h>
                                      #ifndef PR_SET_NO_NEW_PRIVS
                                      # define PR_SET_NO_NEW_PRIVS 38
                                      # define PR_GET_NO_NEW_PRIVS 39
                                      #endif
                                    ]],
-                                   [[prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
-                                     prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0);]])],
+                                   [[if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0) {
+                                       return 1;
+                                   }
+                                   if ( prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) != 1) {
+                                       return 1;
+                                   }]])],
                       [
                           AC_MSG_RESULT([yes])
-                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_NO_NEW_PRIVS"
                       ], [
                           AC_MSG_RESULT([no])
+                          echo
+                          echo "ERROR!!!!!!"
+                          echo
+                          echo "This host does not support the NO_NEW_PRIVS prctl functions!"
+                          echo "The kernel must be updated to support Singularity securely."
+                          echo
+                          exit 255
                       ]
                   )
-
 
 AC_MSG_CHECKING([for feature: MS_SLAVE])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -353,6 +362,7 @@ AC_MSG_ERROR([unable to find libarchive, need package libarchive-devel (libarchi
 ])
 # we don't want the LIBS setting of AC_SEARCH_LIBS, override
 AC_SUBST(LIBS,"")
+CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([
    Makefile

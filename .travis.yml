@@ -7,6 +7,7 @@ addons:
       - python-pip
       - squashfs-tools
       - libarchive-dev
+      - debootstrap
 
 env:
   global:

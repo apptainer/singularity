@@ -49,16 +49,25 @@
 #define CHILD_FAILED    200
 
 int started = 0;
+int daemon_fd = -1;
+int cleanupd_fd = -1;
+struct tempfile *stdout_log, *stderr_log, *singularity_debug;
+
+int close_fd(int fd, struct stat *st) {
+    if ( fd == daemon_fd || fd == cleanupd_fd || fd == stdout_log->fd ||
+         fd == stderr_log->fd || fd == singularity_debug->fd ) {
+        return(0);
+    }
+    if ( S_ISFIFO(st->st_mode) != 0 ) {
+        return(0);
+    }
+    return(1);
+}
 
 int main(int argc, char **argv) {
-    int i, daemon_fd, cleanupd_fd;
-    struct tempfile *stdout_log, *stderr_log, *singularity_debug;
     struct image_object image;
     pid_t child;
     siginfo_t siginfo;
-    struct stat filestat;
-
-    fd_cleanup();
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -102,7 +111,15 @@ int main(int argc, char **argv) {
     singularity_daemon_init();
 
     singularity_message(DEBUG, "We are ready to recieve jobs, sending signal_go_ahead to parent\n");
-    
+
+    /*
+     * open file before entering in chroot because temporary
+     * folder may no be mounted in container
+     */
+    singularity_debug = make_logfile("singularity-debug");
+    stdout_log = make_logfile("stdout");
+    stderr_log = make_logfile("stderr");
+
     singularity_runtime_enter();
     singularity_priv_drop_perm();
 
@@ -115,27 +132,11 @@ int main(int argc, char **argv) {
 
     daemon_fd = atoi(singularity_registry_get("DAEMON_FD"));
     cleanupd_fd = atoi(singularity_registry_get("CLEANUPD_FD"));
-    
+
     /* Close all open fd's that may be present besides daemon info file fd */
     singularity_message(DEBUG, "Closing open fd's\n");
-    for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {        
-        if ( i != daemon_fd && i != cleanupd_fd ) {
-            if ( fstat(i, &filestat) == 0 ) {
-                if ( S_ISFIFO(filestat.st_mode) != 0 ) {
-                    continue;
-                }
-            }
-            close(i);
-        }
-    }
 
-    singularity_debug = make_logfile("singularity-debug");
-    stdout_log = make_logfile("stdout");
-    stderr_log = make_logfile("stderr");
-    
-    for( i = 0; i <= 2; i++ ) {
-        close(i);
-    }
+    fd_cleanup(&close_fd);
 
     if ( chdir("/") < 0 ) {
         singularity_message(ERROR, "Can't change directory to /\n");
@@ -152,12 +153,15 @@ int main(int argc, char **argv) {
     child = fork();
     
     if ( child == 0 ) {
+        close(singularity_debug->fd);
+
         /* Make standard output and standard error files to log stdout & stderr into */
         if ( stdout_log != NULL ) {
             if ( -1 == dup2(stdout_log->fd, 1) ) {
                 singularity_message(ERROR, "Unable to dup2(): %s\n", strerror(errno));
                 ABORT(255);
             }
+            close(stdout_log->fd);
         }
 
         if ( stderr_log != NULL ) {
@@ -165,6 +169,7 @@ int main(int argc, char **argv) {
                 singularity_message(ERROR, "Unable to dup2(): %s\n", strerror(errno));
                 ABORT(255);
             }
+            close(stderr_log->fd);
         }
 
         /* Unblock signals and execute startscript */
@@ -186,6 +191,9 @@ int main(int argc, char **argv) {
                 singularity_message(ERROR, "Unable to dup2(): %s\n", strerror(errno));
                 ABORT(255);
             }
+            close(singularity_debug->fd);
+            close(stdout_log->fd);
+            close(stderr_log->fd);
         }
 
         singularity_message(DEBUG, "Waiting for signals\n");

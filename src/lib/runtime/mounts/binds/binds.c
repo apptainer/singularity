@@ -89,26 +89,16 @@ int _singularity_runtime_mount_binds(void) {
                 singularity_message(DEBUG, "Checking base directory for file %s ('%s')\n", dest, basedir);
                 if ( is_dir(basedir) != 0 ) {
                     singularity_message(DEBUG, "Creating base directory for file bind\n");
-                    singularity_priv_escalate();
-                    if ( s_mkpath(basedir, 0755) != 0 ) {
+                    if ( container_mkpath_priv(basedir, 0755) != 0 ) {
                         singularity_message(ERROR, "Failed creating base directory to bind file: %s\n", dest);
                         ABORT(255);
                     }
-                    singularity_priv_drop();
                 }
 
                 free(basedir);
 
-                singularity_priv_escalate();
                 singularity_message(VERBOSE3, "Creating bind file on overlay file system: %s\n", dest);
-                FILE *tmp = fopen(joinpath(container_dir, dest), "w+"); // Flawfinder: ignore
-                singularity_priv_drop();
-                if ( tmp == NULL ) {
-                    singularity_message(WARNING, "Could not create bind point file in container %s: %s\n", dest, strerror(errno));
-                    continue;
-                }
-                if ( fclose(tmp) != 0 ) {
-                    singularity_message(WARNING, "Could not close bind point file descriptor %s: %s\n", dest, strerror(errno));
+                if ( fileput_priv(joinpath(container_dir, dest), "") != 0 ) {
                     continue;
                 }
                 singularity_message(DEBUG, "Created bind file: %s\n", dest);
@@ -118,14 +108,11 @@ int _singularity_runtime_mount_binds(void) {
             }
         } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
             if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
-                singularity_priv_escalate();
                 singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
-                if ( s_mkpath(joinpath(container_dir, dest), 0755) < 0 ) {
-                    singularity_priv_drop();
+                if ( container_mkpath_priv(joinpath(container_dir, dest), 0755) < 0 ) {
                     singularity_message(WARNING, "Could not create bind point directory in container %s: %s\n", dest, strerror(errno));
                     continue;
                 }
-                singularity_priv_drop();
             } else {
                 singularity_message(WARNING, "Non existent bind point (directory) in container: '%s'\n", dest);
                 continue;
