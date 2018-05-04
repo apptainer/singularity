@@ -8,51 +8,25 @@ package build
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"gopkg.in/mgo.v2/bson"
 )
-
-type ReqTag string
-
-const (
-	build  ReqTag = "builderinit"
-	status ReqTag = "statusrequest"
-	pull   ReqTag = "imagepull"
-)
-
-// RemoteBuilder contains the build request and response
-type RemoteBuilder struct {
-	authToken string
-	ImagePath string
-	Client    *http.Client
-	buildURL  url.URL
-	request
-	response
-}
-
-type request struct {
-	RequestData RequestData
-}
 
 // RequestData contains the info necessary for submitting a build to a remote service
 type RequestData struct {
 	Definition `json:"definition"`
 	IsDetached bool `json:"isDetached"`
-}
-
-type response struct {
-	ResponseData ResponseData
-	Responses    map[ReqTag]*http.Response
 }
 
 // ResponseData contains the details of an individual build
@@ -64,184 +38,196 @@ type ResponseData struct {
 	IsDetached   bool          `json:"isDetached"`
 	WSURL        string        `json:"wsURL,omitempty"`
 	ImageURL     string        `json:"imageURL,omitempty"`
-	ImagePath    string        `json:"-"`
 	Definition   Definition    `json:"definition"`
 }
 
-// NewRemoteBuilder initializes the RemoteBuilder struct
-func NewRemoteBuilder(p string, d Definition, isDetached bool, addr, at string) (b *RemoteBuilder) {
-	b = &RemoteBuilder{
-		authToken: at,
-		ImagePath: p,
-		Client:    &http.Client{},
-		buildURL: url.URL{
-			Scheme: "http",
-			Host:   addr,
-			Path:   "/v1/build",
-		},
-		request: request{
-			RequestData: RequestData{
-				Definition: d,
-				IsDetached: isDetached,
-			},
-		},
+// RemoteBuilder contains the build request and response
+type RemoteBuilder struct {
+	Client     http.Client
+	ImagePath  string
+	Definition Definition
+	IsDetached bool
+	HTTPAddr   string
+	AuthHeader string
+}
 
-		response: response{
-			ResponseData: ResponseData{},
-			Responses:    make(map[ReqTag]*http.Response),
+// NewRemoteBuilder creates a RemoteBuilder with the specified details.
+func NewRemoteBuilder(imagePath string, d Definition, isDetached bool, httpAddr, authToken string) (rb *RemoteBuilder) {
+	rb = &RemoteBuilder{
+		Client: http.Client{
+			Timeout: 30 * time.Second,
 		},
+		ImagePath:  imagePath,
+		Definition: d,
+		IsDetached: isDetached,
+		HTTPAddr:   httpAddr,
+	}
+	if authToken != "" {
+		rb.AuthHeader = fmt.Sprintf("Bearer %s", authToken)
 	}
 
 	return
 }
 
 // Build is responsible for making the request via the REST API to the remote builder
-func (b *RemoteBuilder) Build() (err error) {
-	b.doBuildRequest()
+func (rb *RemoteBuilder) Build() (err error) {
+	// TODO: this function should take in a context
+	ctx := context.TODO()
 
-	// Dial websocket
+	// Open the image file, since there isn't much point in doing the remote build if we can't write
+	// out the image.
+	f, err := os.OpenFile(rb.ImagePath, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		err = errors.Wrap(err, "failed to open image file")
+		return
+	}
+	defer f.Close()
+
+	// Send build request to Remote Build Service
+	rd, err := rb.doBuildRequest(ctx, rb.Definition, rb.IsDetached)
+	if err != nil {
+		err = errors.Wrap(err, "failed to post request to remote build service")
+		sylog.Warningf("%v", err)
+		return
+	}
+
+	// If we're doing an attached build, stream output and then download the resulting file
+	if !rb.IsDetached {
+		err = rb.streamOutput(ctx, rd.WSURL)
+		if err != nil {
+			err = errors.Wrap(err, "failed to stream output from remote build service")
+			sylog.Warningf("%v", err)
+			return
+		}
+	}
+
+	// TODO: if the build is detached, do we poll status until the build is complete? Return immediately?
+	rd, err = rb.doStatusRequest(ctx, rd.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get status from remote build service")
+		sylog.Warningf("%v\n", err)
+		return
+	}
+
+	// Retrieve the built image file
+	err = rb.doPullRequest(ctx, rd.ImageURL, f)
+
+	return
+}
+
+// streamOutput attaches via websocket and streams output to the console
+func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err error) {
 	h := http.Header{}
-	h.Set("Authorization", fmt.Sprintf("Bearer %s", b.authToken))
-	c, _, err := websocket.DefaultDialer.Dial(b.ResponseData.WSURL, h)
+	if rb.AuthHeader != "" {
+		h.Set("Authorization", rb.AuthHeader)
+	}
+	ws, _, err := websocket.DefaultDialer.Dial(url, h)
 	if err != nil {
 		return err
 	}
 
-	// Output runtime
-	done := make(chan struct{})
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt)
-
-	// Stream output
-	go func() {
-		defer close(done)
-		for {
-			_, message, err := c.ReadMessage()
-			if err != nil {
-				//glog.Infoln("read:", err)
-				return
-			}
-			fmt.Printf("%s\n", message)
-		}
-	}()
-
-	// Wait for completion or SIGTERM
 	for {
-		select {
-		case <-interrupt:
-			glog.Infoln("interrupt")
-
-			// Cleanly close the connection by sending a close message and then
-			// waiting (with timeout) for the server to close the connection.
-			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-			if err != nil {
-				glog.Infoln("write close:", err)
-				return err
-			}
-			select {
-			case <-done:
-			case <-time.After(time.Second):
-			}
-			return nil
-		case _ = <-done:
-			//glog.Infoln("Woohoo Your build complete! ")
-			b.doStatusRequest()
-			b.doPullRequest()
-			return nil
+		mt, msg, err := ws.ReadMessage()
+		if err != nil {
+			return err
 		}
 
-	}
-
-}
-
-func (b *RemoteBuilder) doBuildRequest() {
-	// Marshal RequestData into JSON format for Build Request
-	reqData, err := json.Marshal(b.RequestData)
-	if err != nil {
-		panic(err)
-	}
-
-	// Create Build Request
-	req, err := http.NewRequest("POST", b.buildURL.String(), bytes.NewBuffer(reqData))
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b.authToken))
-
-	// Do Build Request
-	b.Responses[build], err = b.Client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	if b.Responses[build].StatusCode != http.StatusCreated {
-		fmt.Fprintf(os.Stderr, "Remote Build Service returned error while creating build: %s\n", b.Responses[build].Status)
-		os.Exit(1)
-	}
-
-	// Parse Build Response
-	if err := json.NewDecoder(b.Responses[build].Body).Decode(&b.ResponseData); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to parse respose from Remote Build Service: %s\n", err)
-		os.Exit(1)
+		switch mt {
+		case websocket.TextMessage:
+			fmt.Printf("%s", msg)
+		case websocket.BinaryMessage:
+			fmt.Print("Ignoring binary message")
+		}
 	}
 }
 
-func (b *RemoteBuilder) doStatusRequest() {
-	// Create Status Request
-	req, err := http.NewRequest("GET", b.buildURL.String(), nil)
+// doBuildRequest creates a new build on a Remote Build Service
+func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, isDetached bool) (rd ResponseData, err error) {
+	b, err := json.Marshal(RequestData{
+		Definition: d,
+		IsDetached: isDetached,
+	})
 	if err != nil {
-		panic(err)
+		return
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b.authToken))
 
-	// Do Status Request
-	b.Responses[status], err = b.Client.Do(req)
+	url := url.URL{Scheme: "http", Host: rb.HTTPAddr, Path: "/v1/build"}
+	req, err := http.NewRequest(http.MethodPost, url.String(), bytes.NewBuffer(b))
 	if err != nil {
-		panic(err)
+		return
 	}
-	if b.Responses[status].StatusCode != http.StatusOK {
-		fmt.Fprintf(os.Stderr, "Remote Build Service returned error while getting build status: %s\n", b.Responses[status].Status)
-		os.Exit(1)
+	req = req.WithContext(ctx)
+	if rb.AuthHeader != "" {
+		req.Header.Set("Authorization", rb.AuthHeader)
 	}
 
-	// Parse Status Response
-	json.NewDecoder(b.Responses[status].Body).Decode(&b.ResponseData)
+	res, err := rb.Client.Do(req)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
 
+	if res.StatusCode != http.StatusCreated {
+		err = fmt.Errorf("failed to create build: %v", res.Status)
+		return
+	}
+
+	err = json.NewDecoder(res.Body).Decode(&rd)
+	return
 }
 
-func (b *RemoteBuilder) doPullRequest() {
-	// Create Image Request
-	req, err := http.NewRequest("GET", b.ResponseData.ImageURL, nil)
+// doStatusRequest gets the status of a build from the Remote Build Service
+func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) (rd ResponseData, err error) {
+	url := url.URL{Scheme: "http", Host: rb.HTTPAddr, Path: "/v1/build/" + id.Hex()}
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		panic(err)
+		return
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b.authToken))
+	req = req.WithContext(ctx)
+	if rb.AuthHeader != "" {
+		req.Header.Set("Authorization", rb.AuthHeader)
+	}
 
-	// Do Image Request
-	b.Responses[pull], err = b.Client.Do(req)
+	res, err := rb.Client.Do(req)
 	if err != nil {
-		panic(err)
+		return
 	}
-	if b.Responses[pull].StatusCode != http.StatusOK {
-		fmt.Fprintf(os.Stderr, "Remote Build Service returned error while getting image file: %s\n", b.Responses[pull].Status)
-		os.Exit(1)
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		err = fmt.Errorf("failed to get build status: %v", res.Status)
+		return
 	}
 
-	fmt.Printf("Pulling image from %v to %v...", b.ResponseData.ImageURL, b.ImagePath)
-
-	// Save image file to disk
-	imageFile, err := os.OpenFile(b.ImagePath, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		glog.Fatal(err)
-	}
-	io.Copy(imageFile, b.Responses[pull].Body)
-	imageFile.Close()
-
-	fmt.Printf("done!\n")
+	err = json.NewDecoder(res.Body).Decode(&rd)
+	return
 }
 
-/* ==================================================================================== */
+// doPullRequest retrieves an image from the specified URL and saves it to the specified path
+func (rb *RemoteBuilder) doPullRequest(ctx context.Context, url string, r io.Writer) (err error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return
+	}
+	req = req.WithContext(ctx)
+	if rb.AuthHeader != "" {
+		req.Header.Set("Authorization", rb.AuthHeader)
+	}
 
-// DefFileRequest is used by Singularity 2.x Python CLI to reqeuest a parsed Deffile
-type DefFileRequest struct {
-	RawDefFile string `json:"rawDefFile"`
+	res, err := rb.Client.Do(req)
+	if err != nil {
+		return
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		err = fmt.Errorf("failed to get image: %v", res.Status)
+		return
+	}
+
+	_, err = io.Copy(r, res.Body)
+	if err != nil {
+		err = errors.Wrap(err, "failed to write image")
+	}
+	return
 }
