@@ -11,13 +11,13 @@ import (
 	"fmt"
 
 	"github.com/singularityware/singularity/src/pkg/library/client"
-	"log"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 func PushImage(image string, library string, libraryURL string) {
 	fmt.Printf("Pushing image: \"%s\" to library: \"%s\"\n", image, library)
 	err := client.UploadImage(image, library, libraryURL)
 	if err != nil {
-		log.Fatalf("[ERROR] %s", err.Error())
+		sylog.Fatalf("%v\n", err)
 	}
 }

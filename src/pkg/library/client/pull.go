@@ -15,26 +15,27 @@ import (
 	"os"
 	"strings"
 
-	"log"
-
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
 func DownloadImage(filePath string, libraryRef string, libraryURL string) error {
 
 	if !isLibraryPullRef(libraryRef) {
-		log.Fatalf("Not a valid library reference: %s", libraryRef)
+		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
 	}
 
 	url := libraryURL + "/v1/imagefile/" + strings.TrimPrefix(libraryRef, "library://")
 
-	fmt.Println(url)
+	sylog.Debugf("Pulling from URL: %s\n", url)
 
 	out, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
+
+	sylog.Debugf("Created output file: %s\n", filePath)
 
 	res, err := http.Get(url)
 	if err != nil {
@@ -55,6 +56,8 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string) error 
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 
+	sylog.Debugf("OK response received, beginning body download\n", filePath)
+
 	bodySize := res.ContentLength
 	bar := pb.New(int(bodySize)).SetUnits(pb.U_BYTES)
 	bar.ShowTimeLeft = true
@@ -72,7 +75,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string) error 
 
 	bar.Finish()
 
-	log.Printf("Download Complete!")
+	sylog.Debugf("Download complete\n")
 
 	return nil
 

@@ -13,10 +13,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 
 	"github.com/globalsign/mgo/bson"
 	"gopkg.in/cheggaaa/pb.v1"
@@ -29,14 +30,14 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 	baseURL = libraryURL
 
 	if !isLibraryPushRef(libraryRef) {
-		log.Fatalf("Not a valid library reference: %s", libraryRef)
+		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
 	}
 
 	imageHash, err := ImageHash(filePath)
 	if err != nil {
 		return err
 	}
-	log.Printf("Image hash computed as %s", imageHash)
+	sylog.Debugf("Image hash computed as %s\n", imageHash)
 
 	entity, collection, container, tags := parseLibraryRef(libraryRef)
 
@@ -45,7 +46,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 		return err
 	}
 	if entityID == "" {
-		log.Printf("Entity %s does not exist in library - creating it.\n", entity)
+		sylog.Verbosef("Entity %s does not exist in library - creating it.\n", entity)
 		entityID, err = createEntity(entity)
 		if err != nil {
 			return err
@@ -56,7 +57,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 		return err
 	}
 	if collectionID == "" {
-		log.Printf("Collection %s/%s does not exist in library - creating it.\n", entity, collection)
+		sylog.Verbosef("Collection %s/%s does not exist in library - creating it.\n", entity, collection)
 		collectionID, err = createCollection(collection, entityID)
 		if err != nil {
 			return err
@@ -67,7 +68,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 		return err
 	}
 	if containerID == "" {
-		log.Printf("Container %s/%s/%s does not exist in library - creating it.\n", entity, collection, container)
+		sylog.Verbosef("Container %s/%s/%s does not exist in library - creating it.\n", entity, collection, container)
 		containerID, err = createContainer(container, collectionID)
 		if err != nil {
 			return err
@@ -78,27 +79,27 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 		return err
 	}
 	if imageID == "" {
-		log.Printf("Image %s/%s/%s:%s does not exist in library - creating it.\n", entity, collection, container, imageHash)
+		sylog.Verbosef("Image %s/%s/%s:%s does not exist in library - creating it.\n", entity, collection, container, imageHash)
 		imageID, err = createImage(imageHash, containerID)
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Println("This image already exists in the library - it will be overwritten.")
+		sylog.Warningf("This image already exists in the library - it will be overwritten.\n")
 	}
-	log.Printf("Now uploading %s to the library\n", filePath)
+	sylog.Infof("Now uploading %s to the library\n", filePath)
 
 	err = postFile(filePath, imageID)
 	if err != nil {
 		return err
 	}
+	sylog.Debugf("Upload completed OK\n")
 
+	sylog.Debugf("Setting tags against uploaded image\n")
 	err = setTags(containerID, imageID, tags)
 	if err != nil {
 		return err
 	}
-
-	log.Printf("Push Complete!")
 
 	return nil
 }
@@ -168,10 +169,10 @@ func setTags(containerID string, imageID string, tags []string) error {
 	}
 
 	for _, tag := range tags {
-		log.Printf("Setting tag %s", tag)
+		sylog.Infof("Setting tag %s\n", tag)
 
 		if existingImg, ok := existingTags[tag]; ok {
-			log.Printf("   Replaces existing tag against image %s", existingImg)
+			sylog.Warningf("%s replaces existing tag on image %s\n", tag, existingImg)
 		}
 
 		imgTag := ImageTag{
