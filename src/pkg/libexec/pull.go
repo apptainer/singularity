@@ -14,8 +14,8 @@ import (
 
 // PullImage is the function that is responsible for pulling an image from a Sylabs library. This will
 // eventually be integrated with the build system as a builder, but for now this is the palce to put it
-func PullImage(image string, library string, libraryURL string) {
-	err := client.DownloadImage(image, library, libraryURL)
+func PullImage(image string, library string, libraryURL string, Force bool) {
+	err := client.DownloadImage(image, library, libraryURL, Force)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)
 	}

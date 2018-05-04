@@ -19,7 +19,7 @@ import (
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
-func DownloadImage(filePath string, libraryRef string, libraryURL string) error {
+func DownloadImage(filePath string, libraryRef string, libraryURL string, Force bool) error {
 
 	if !isLibraryPullRef(libraryRef) {
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
@@ -35,7 +35,14 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string) error 
 
 	sylog.Debugf("Pulling from URL: %s\n", url)
 
-	out, err := os.Create(filePath)
+	if !Force {
+		if _, err := os.Stat(filePath); err == nil {
+			return fmt.Errorf("image file already exists - will not overwrite")
+		}
+	}
+
+	// Perms are 777 *prior* to umask
+	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 777)
 	if err != nil {
 		return err
 	}
