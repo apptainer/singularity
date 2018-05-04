@@ -31,7 +31,13 @@ type JSONResponse struct {
 	Error JSONError   `json:"error,omitempty"`
 }
 
-func isLibraryRef(libraryRef string) bool {
+func isLibraryPullRef(libraryRef string) bool {
+	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[._-][a-z0-9]+)*)?$", libraryRef)
+	return match
+}
+
+func isLibraryPushRef(libraryRef string) bool {
+	// For push we allow specifying multiple tags, delimited with ,
 	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[,._-][a-z0-9]+)*)?$", libraryRef)
 	return match
 }

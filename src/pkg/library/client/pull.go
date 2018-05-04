@@ -22,7 +22,7 @@ import (
 
 func DownloadImage(filePath string, libraryRef string, libraryURL string) error {
 
-	if !isLibraryRef(libraryRef) {
+	if !isLibraryPullRef(libraryRef) {
 		log.Fatalf("Not a valid library reference: %s", libraryRef)
 	}
 

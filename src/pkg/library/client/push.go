@@ -28,7 +28,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 
 	baseURL = libraryURL
 
-	if !isLibraryRef(libraryRef) {
+	if !isLibraryPushRef(libraryRef) {
 		log.Fatalf("Not a valid library reference: %s", libraryRef)
 	}
 
@@ -161,8 +161,19 @@ func createImage(hash string, containerID string) (id string, err error) {
 }
 
 func setTags(containerID string, imageID string, tags []string) error {
+	// Get existing tags, so we know which will be replaced
+	existingTags, err := apiGetTags(baseURL + "/v1/tags/" + containerID)
+	if err != nil {
+		return err
+	}
+
 	for _, tag := range tags {
 		log.Printf("Setting tag %s", tag)
+
+		if existingImg, ok := existingTags[tag]; ok {
+			log.Printf("   Replaces existing tag against image %s", existingImg)
+		}
+
 		imgTag := ImageTag{
 			tag,
 			bson.ObjectIdHex(imageID),
@@ -224,9 +235,25 @@ func apiExists(url string) (id string, err error) {
 	return "", nil
 }
 
-func apiGetTags(url string) (err error) {
-
-	return nil
+func apiGetTags(url string) (tags map[string]string, err error) {
+	res, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("Error making request to server:\n\t%v", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		jRes, err := ParseErrorBody(res.Body)
+		if err != nil {
+			jRes = ParseErrorResponse(res)
+		}
+		return nil, fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
+			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
+	}
+	c := make(map[string]map[string]string)
+	json.NewDecoder(res.Body).Decode(&c)
+	if err != nil {
+		return nil, fmt.Errorf("Error decoding ID from server response:\n\t%v", err)
+	}
+	return c["data"], nil
 
 }
 
