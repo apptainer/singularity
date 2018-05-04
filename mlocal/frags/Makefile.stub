@@ -1,23 +1,23 @@
 libruntime := $(BUILDDIR)/lib/libruntime.a
 librpc := $(BUILDDIR)/librpc.so
 librpc_INSTALL := $(PREFIX)/lib/singularity/librpc.so
-librpc_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go $(SOURCEDIR))
+librpc_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
-singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go $(SOURCEDIR))
+singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 
 sbuild := $(BUILDDIR)/sbuild
 sbuild_INSTALL := $(PREFIX)/libexec/singularity/bin/sbuild
-sbuild_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/sbuild/cli.go $(SOURCEDIR))
+sbuild_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/sbuild/cli.go)
 
 scontainer := $(BUILDDIR)/scontainer
 scontainer_INSTALL := $(PREFIX)/libexec/singularity/bin/scontainer
-scontainer_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer.go $(SOURCEDIR))
+scontainer_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer.go)
 
 smaster := $(BUILDDIR)/smaster
 smaster_INSTALL := $(PREFIX)/libexec/singularity/bin/smaster
-smaster_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go $(SOURCEDIR))
+smaster_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
 
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
 wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid

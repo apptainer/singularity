@@ -1,14 +1,14 @@
-#!/bin/bash
+#!/bin/sh
 
-repo="github.com/singularityware/singularity/"
+repo="github.com/singularityware/singularity"
 gofiles=""
+path=$(readlink -f $1)
 
-for i in $(go list -f '{{ .Deps }}' $1 | tr -d '[]'); do
-    if [[ $i == $repo* ]]; then
-        for j in $(go list -f '{{ .GoFiles}} {{ .CgoFiles }}' $i | tr -d '[]'); do
-            path="$i/$j"
-            path=${path#$repo}
-            gofiles="$gofiles $2/$path"
+for dep in $(go list -f '{{ .Deps }}' $1 | tr -d '[]'); do
+	if [ ! -n "${dep%$repo*}" ]; then
+		prefix=${path%$repo*}
+        for gofile in $(find $prefix$dep -name "*.go"); do
+            gofiles="$gofiles $gofile"
         done
     fi
 done
