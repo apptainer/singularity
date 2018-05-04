@@ -8,6 +8,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -94,7 +95,7 @@ var buildCmd = &cobra.Command{
 			}
 		}
 
-		if err := b.Build(); err != nil {
+		if err := b.Build(context.TODO()); err != nil {
 			fmt.Println("Failed to build image: ", err)
 			os.Exit(1)
 		}

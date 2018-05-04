@@ -4,6 +4,7 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
 
 import (
@@ -70,10 +71,7 @@ func NewRemoteBuilder(imagePath string, d Definition, isDetached bool, httpAddr,
 }
 
 // Build is responsible for making the request via the REST API to the remote builder
-func (rb *RemoteBuilder) Build() (err error) {
-	// TODO: this function should take in a context
-	ctx := context.TODO()
-
+func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	// Open the image file, since there isn't much point in doing the remote build if we can't write
 	// out the image.
 	f, err := os.OpenFile(rb.ImagePath, os.O_RDWR|os.O_CREATE, 0755)
