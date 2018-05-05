@@ -34,10 +34,6 @@
   name = "github.com/golang/glog"
 
 [[constraint]]
-  name = "github.com/google/uuid"
-  version = "0.2.0"
-
-[[constraint]]
   name = "github.com/gorilla/websocket"
   version = "1.2.0"
 
