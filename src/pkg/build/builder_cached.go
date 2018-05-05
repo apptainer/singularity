@@ -5,9 +5,11 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/singularityware/singularity/src/pkg/image"
@@ -34,6 +36,6 @@ func NewCachedBuilder(path string, uri string) (c *CachedBuilder, err error) {
 	return c, err
 }
 
-func (c *CachedBuilder) Build() {
+func (c *CachedBuilder) Build(ctx context.Context) {
 	c.P.Provision(c.Image)
 }

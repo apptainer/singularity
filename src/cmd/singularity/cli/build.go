@@ -8,6 +8,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -19,6 +20,7 @@ import (
 var (
 	Remote    bool
 	RemoteURL string
+	AuthToken string
 	Sandbox   bool
 	Writable  bool
 	Force     bool
@@ -37,6 +39,7 @@ func init() {
 	buildCmd.Flags().BoolVarP(&NoTest, "notest", "T", false, "")
 	buildCmd.Flags().BoolVarP(&Remote, "remote", "r", false, "Build image remotely")
 	buildCmd.Flags().StringVar(&RemoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
+	buildCmd.Flags().StringVar(&AuthToken, "auth-token", "", "Specify the auth token for the remote builder")
 }
 
 // buildCmd represents the build command
@@ -79,7 +82,7 @@ var buildCmd = &cobra.Command{
 		}
 
 		if Remote {
-			b = build.NewRemoteBuilder(args[0], def, false, RemoteURL)
+			b = build.NewRemoteBuilder(args[0], def, false, RemoteURL, AuthToken)
 		} else {
 			b, err = build.NewSifBuilder(args[0], def)
 			if err != nil {
@@ -87,7 +90,7 @@ var buildCmd = &cobra.Command{
 			}
 		}
 
-		if err := b.Build(); err != nil {
+		if err := b.Build(context.TODO()); err != nil {
 			sylog.Fatalf("failed to build image: %v", err)
 		}
 	},
