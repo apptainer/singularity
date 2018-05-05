@@ -1,1 +1,2 @@
-{"Header":{"bootstrap":"localimage","from":"/path/to/container/file/or/directory"},"ImageData":{"Metadata":null,"Labels":null,"Help":"","Environment":"","Runscript":"","Test":""},"BuildData":{"Files":{},"Pre":"","Setup":"","Post":""}}
+{"Header":{"bootstrap":"localimage","from":"/path/to/container/file/or/directory"},"Metadata":null,"Labels":null,"Help":"","Environment":"","Runscript":"","Test":"","Files":{},"Pre":"","Setup":"","Post":""}
+":"","Setup":"","Post":""}}
