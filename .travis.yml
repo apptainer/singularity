@@ -30,4 +30,4 @@ install:
 
 script:
   - test -z $(go fmt ./...)
-  - go test ./tests/
+  - go test ./...
