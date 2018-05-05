@@ -126,6 +126,13 @@ func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err erro
 	defer c.Close()
 
 	for {
+		// Check if context has expired
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		// Read from websocket
 		mt, msg, err := c.ReadMessage()
 		if err != nil {
