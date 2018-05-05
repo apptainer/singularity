@@ -53,7 +53,7 @@ $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 $(librpc):
 	@echo " AR" $@
 	$(V)go build -ldflags="-s -w" -buildmode=c-shared -o $(BUILDDIR)/librpc.so \
-		$(SOURCEDIR)/src/runtime/startup/rpc.go
+		$(SOURCEDIR)/src/runtime/startup/rpc/rpc.go
 $(librpc_INSTALL): $(librpc)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
@@ -83,7 +83,7 @@ $(sbuild_INSTALL): $(sbuild) $(librpc_INSTALL)
 $(scontainer): $(go_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/src/runtime/startup/scontainer.go
+		go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/src/runtime/startup/scontainer/scontainer.go
 $(scontainer_INSTALL): $(scontainer) $(librpc_INSTALL)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
@@ -93,7 +93,7 @@ $(scontainer_INSTALL): $(scontainer) $(librpc_INSTALL)
 $(smaster): $(go_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/src/runtime/startup/smaster.go
+		go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/src/runtime/startup/smaster/smaster.go
 $(smaster_INSTALL): $(smaster) $(librpc_INSTALL)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
