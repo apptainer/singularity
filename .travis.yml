@@ -24,9 +24,9 @@ before_install:
   - dep ensure -vendor-only
 
 install:
-  - ./mconfig -b ./buildtree -p /usr/local
-  - make -j `nproc 2>/dev/null || echo 1` -C ./buildtree
-  - sudo make -C ./buildtree install
+  - ./mconfig -p /usr/local
+  - make -j `nproc 2>/dev/null || echo 1` -C ./builddir
+  - sudo make -C ./builddir install
 
 script:
   - export CGO_CPPFLAGS="-I${GOPATH}/src/github.com/singularityware/singularity/builddir -I${GOPATH}/src/github.com/singularityware/singularity/src/runtime/c -I${GOPATH}/src/github.com/singularityware/singularity/src/runtime/c/lib"
