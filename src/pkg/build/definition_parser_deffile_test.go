@@ -58,8 +58,6 @@ func TestParseDefinitionFile(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(defTest, defCorrect) {
-				t.Log(defTest)
-				t.Log(defCorrect)
 				t.Fatal("parsed definition did not match reference")
 			}
 		})
