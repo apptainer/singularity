@@ -138,9 +138,8 @@ func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err erro
 		if err != nil {
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
 				return nil
-			} else {
-				return err
 			}
+			return err
 		}
 
 		// Print to terminal
