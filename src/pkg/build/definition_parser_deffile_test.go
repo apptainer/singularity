@@ -50,8 +50,6 @@ func TestParseDefinitionFile(t *testing.T) {
 				t.Fatal("failed to parse definition file:", err)
 			}
 
-			// json.NewEncoder(jsonFile).Encode(&defTest)
-
 			var defCorrect Definition
 			if err := json.NewDecoder(jsonFile).Decode(&defCorrect); err != nil {
 				t.Fatal("failed to parse JSON:", err)
@@ -84,7 +82,7 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 			defer defFile.Close()
 
 			if _, err = ParseDefinitionFile(defFile); err == nil {
-				t.Fatal("unexpected success parsing definition file", err)
+				t.Fatal("unexpected success parsing definition file")
 			}
 		})
 	}
