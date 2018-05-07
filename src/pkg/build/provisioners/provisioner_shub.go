@@ -115,32 +115,39 @@ func (p *ShubProvisioner) getManifest() (manifest *shubAPIResponse, err error) {
 
 }
 
+func (p *ShubProvisioner) unpackTmpfs(tmpfile string, i *image.Sandbox) (err error) {
+	//refs := []string{"name=tmp"}
+        sylog.Infof("Here we need to unpack %v to %v\n", tmpfile, i)
+	//err = imagetools.UnpackLayout(p.tmpfs, i.Rootfs(), "amd64", refs)
+	return err
+}
+
 // Download an image from Singularity Hub, writing as we download instead
 // of storing in memory
-func (p *ShubProvisioner) fetch(url string) (err error) {
+func (p *ShubProvisioner) fetch(url string) (image string, err error) {
 
     // Create temporary download name
-    tmpfile, err := ioutil.TempFile(p.tmpfs, "shub-image")
-    sylog.Infof("Created temporary file %v\n", tmpfile.Name())
+    tmpfile, err := ioutil.TempFile(p.tmpfs, "shub-container")
+    sylog.Infof("\nCreating temporary image file %v\n", tmpfile.Name())
     if err != nil {
-        return err
+        return "", err
     }
     defer tmpfile.Close()
 
     // Get the image data
     resp, err := http.Get(url)
     if err != nil {
-        return err
+        return "", err
     }
     defer resp.Body.Close()
 
     // Write the body to file
     _, err = io.Copy(tmpfile, resp.Body)
     if err != nil {
-        return err
+        return "", err
     }
 
-    return nil
+    return tmpfile.Name(), err
 }
 
 // NewShubProvisioner returns a provisioner that can dump a previously
@@ -156,7 +163,7 @@ func NewShubProvisioner(src string) (p *ShubProvisioner, err error) {
 		return &ShubProvisioner{}, err
 	}
 
-	p.tmpfs, err = ioutil.TempDir("", "temp-oci-")
+	p.tmpfs, err = ioutil.TempDir("", "temp-shub-")
 	if err != nil {
 		return &ShubProvisioner{}, err
 	}
@@ -190,19 +197,17 @@ func (p *ShubProvisioner) Provision(i *image.Sandbox) (err error) {
 	sylog.Infof("%v\n", manifest.Image)
 
 	// retrieve the image
-	err = p.fetch(manifest.Image)
+	tmpfile, err := p.fetch(manifest.Image)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	//err = p.unpackTmpfs(i)
-	//if err != nil {
-	//	log.Fatal(err)
-	//	return
-	//}
+	err = p.unpackTmpfs(tmpfile, i)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
 	return nil
-
-	return fmt.Errorf("Shub provisioner not implemented yet")
 }
