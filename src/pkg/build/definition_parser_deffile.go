@@ -16,6 +16,8 @@ import (
 	"log"
 	"strings"
 	"unicode"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // scanDefinitionFile is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
@@ -89,13 +91,11 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 	}
 }
 
-func doSections(s *bufio.Scanner, d *Definition, done chan error) {
+func doSections(s *bufio.Scanner, d *Definition) (err error) {
 	sections := make(map[string]string)
 
 	for s.Scan() {
-		if s.Err() != nil {
-			log.Println(s.Err())
-			done <- s.Err()
+		if err = s.Err(); err != nil {
 			return
 		}
 
@@ -108,9 +108,7 @@ func doSections(s *bufio.Scanner, d *Definition, done chan error) {
 		}
 	}
 
-	if s.Err() != nil {
-		log.Println(s.Err())
-		done <- s.Err()
+	if err = s.Err(); err != nil {
 		return
 	}
 
@@ -151,11 +149,10 @@ func doSections(s *bufio.Scanner, d *Definition, done chan error) {
 		Post:  sections["post"],
 	}
 
-	done <- nil
 	return
 }
 
-func doHeader(h string, d *Definition, done chan error) {
+func doHeader(h string, d *Definition) (err error) {
 	h = strings.TrimSpace(h)
 	toks := strings.Split(h, "\n")
 	d.Header = make(map[string]string)
@@ -168,13 +165,11 @@ func doHeader(h string, d *Definition, done chan error) {
 		linetoks := strings.SplitN(line, ":", 2)
 		key, val := strings.ToLower(strings.TrimSpace(linetoks[0])), strings.TrimSpace(linetoks[1])
 		if _, ok := validHeaders[key]; !ok {
-			done <- errors.New(fmt.Sprintf("Invalid header keyword found: %s", key))
-			return
+			return fmt.Errorf("invalid header keyword found: %s", key)
 		}
 		d.Header[key] = val
 	}
 
-	done <- nil
 	return
 }
 
@@ -182,8 +177,6 @@ func doHeader(h string, d *Definition, done chan error) {
 // and parse it into a Definition struct or return error if
 // the definition file has a bad section.
 func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
-	d = Definition{}
-
 	s := bufio.NewScanner(r)
 	s.Split(scanDefinitionFile)
 
@@ -197,29 +190,15 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 		return d, errors.New("Empty definition file")
 	}
 
-	hChan := make(chan error)
-	sChan := make(chan error)
-
-	go doHeader(s.Text(), &d, hChan)
-	go doSections(s, &d, sChan)
-
-	// We’ll use select to await both of these values simultaneously
-	// if one of the parser rutines returns error, ParseDefinitionFile
-	// will break and return an empty Definition with the error
-	for i := 0; i < 2; i++ {
-		select {
-		case headerErr := <-hChan:
-			if headerErr != nil {
-				return Definition{}, headerErr
-			}
-		case sectionsErr := <-sChan:
-			if sectionsErr != nil {
-				return Definition{}, sectionsErr
-			}
-		}
+	if err = doHeader(s.Text(), &d); err != nil {
+		sylog.Warningf("failed to parse DefFile header: %v", err)
+		return
+	}
+	if err = doSections(s, &d); err != nil {
+		sylog.Warningf("failed to parse DefFile sections: %v", err)
 	}
 
-	return d, nil
+	return
 }
 
 func writeSectionIfExists(w io.Writer, ident string, s string) {
