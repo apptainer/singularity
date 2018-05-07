@@ -1,1 +1,1 @@
-{"Header":{"bootstrap":"debootstrap","include":"somepackage","mirrorurl":"http://us.archive.ubuntu.com/ubuntu/","osversion":"xenial"},"ImageData":{"Metadata":null,"Labels":null,"Help":"","Environment":"","Runscript":"","Test":""},"BuildData":{"Files":{},"Pre":"","Setup":"","Post":""}}
+{"Header":{"bootstrap":"debootstrap","include":"somepackage","mirrorurl":"http://us.archive.ubuntu.com/ubuntu/","osversion":"xenial"},"Metadata":null,"Labels":null,"Help":"","Environment":"","Runscript":"","Test":"","Files":{},"Pre":"","Setup":"","Post":""}

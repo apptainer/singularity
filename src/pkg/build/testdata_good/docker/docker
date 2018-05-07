@@ -1,7 +1,5 @@
 Bootstrap: docker
 From: <registry>/<namespace>/<container>:<tag>@<digest>
-Registry: http://custom_registry
-Namespace: namespace
 IncludeCmd: yes
 
 # Some dummy comment 1
