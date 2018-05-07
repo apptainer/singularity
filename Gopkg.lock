@@ -140,12 +140,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/google/uuid"
-  packages = ["."]
-  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
-  version = "0.2"
-
-[[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
   revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
@@ -360,6 +354,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7df4c18f4790707ad1bc6d19cbe1c3377e38959d49082429b5833b517641d72a"
+  inputs-digest = "c8359effe8d1baf378c60d7aba96883422c531ce670373eb9e6741de05701b06"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -5,10 +5,12 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -57,7 +59,7 @@ func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 	return b, err
 }
 
-func (b *SifBuilder) Build() (err error) {
+func (b *SifBuilder) Build(ctx context.Context) (err error) {
 	err = b.sbuild.Start()
 	if err != nil {
 		return err
@@ -121,7 +123,7 @@ func NewSifBuilderJSON(r io.Reader, imagePath string) (b *sifBuilder, err error)
 	return b, err
 }
 
-func (b *sifBuilder) Build() (err error) {
+func (b *sifBuilder) Build(ctx context.Context) (err error) {
 	b.p.Provision(b.tmpfs)
 	img, err := sif.SIFFromSandbox(b.tmpfs, b.path)
 	if err != nil {
