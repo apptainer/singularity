@@ -18,6 +18,7 @@ import (
 //        "log"
 	"os"
         "time"
+        "strings"
 
 	"github.com/containers/image/docker"
 	"github.com/containers/image/types"
@@ -37,7 +38,7 @@ type ShubClient struct {
 // NewRemoteBuilder creates a RemoteBuilder with the specified details.
 func NewShubClient(uri string) (shubClient *ShubClient) {
 
-	sylog.Infof("%v", uri)
+	sylog.Infof("%v\n", uri)
 	httpAddr := fmt.Sprintf("www.singularity-hub.org")
 	shubClient = &ShubClient{
 		Client: http.Client{
@@ -55,13 +56,17 @@ func (p *ShubProvisioner) getManifest() (err error) {
 	// Create a new Singularity Hub client
 	sc := &ShubClient{}
 
+        // TODO: need to parse the tag / digest and send along too
+        uri := strings.Split(p.srcRef.StringWithinTransport(), ":")[0]
+
 	// Format the http address, coinciding with the image uri
-	httpAddr := fmt.Sprintf("/container/%s", p.srcRef)
-	sylog.Infof("%v", httpAddr)
+	httpAddr := fmt.Sprintf("www.singularity-hub.org/api/container%s/", uri)
+	sylog.Infof("%v\n", httpAddr)
 
 	// Create the request, add headers context
-	url := url.URL{Scheme: "http", Host: sc.HTTPAddr, Path: httpAddr}
-	req, err := http.NewRequest(http.MethodPost, url.String(), nil)
+	url := url.URL{Scheme: "https", Host: sc.HTTPAddr, Path: httpAddr}
+        sylog.Infof("%v\n", url)
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return
 	}
@@ -125,7 +130,6 @@ func (p *ShubProvisioner) Provision(i *image.Sandbox) (err error) {
 
 	// Get the image manifest
 	manifest := p.getManifest()
-	println(manifest)
 	sylog.Infof("%v", manifest)
 
 	// retrieve the image
