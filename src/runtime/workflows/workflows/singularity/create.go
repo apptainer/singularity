@@ -179,7 +179,7 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		sylog.Verbosef("Skipping bind of the host's /etc/group\n")
 	}
 
-	sylog.Debugf("Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_MOUNTDIR, buildcfg.SESSIONDIR)
+	sylog.Debugf("Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_MOUNTDIR, buildcfg.CONTAINER_FINALDIR)
 	_, err = rpcOps.Mount(buildcfg.CONTAINER_MOUNTDIR, buildcfg.CONTAINER_FINALDIR, "", syscall.MS_BIND|syscall.MS_REC, "")
 	if err != nil {
 		log.Fatalln("mount failed:", err)
