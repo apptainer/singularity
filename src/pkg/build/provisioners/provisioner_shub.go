@@ -12,10 +12,11 @@ import (
 	"encoding/json"
         "errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-//        "log"
+        "log"
 	"os"
         "time"
         "strings"
@@ -36,7 +37,7 @@ type shubAPIResponse struct {
 }
 
 
-// ShubClient contains the uri and client
+// ShubClient contains the uri and client, lowercase means not exported
 type shubClient struct {
 	Client   http.Client
 	ImageUri string
@@ -58,7 +59,9 @@ func NewshubClient(uri string) (sc *shubClient) {
 	return
 }
 
-func (p *ShubProvisioner) getManifest() (err error) {
+// getManifest will return the image manifest for a container uri
+// from Singularity Hub. We return the shubAPIResponse and error
+func (p *ShubProvisioner) getManifest() (manifest *shubAPIResponse, err error) {
 
 	// Create a new Singularity Hub client
 	sc := &shubClient{}
@@ -80,7 +83,7 @@ func (p *ShubProvisioner) getManifest() (err error) {
         sylog.Infof("%v\n", url)
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return
+                return nil, err
 	}
 
 	// Do the request, if status isn't success, return error
@@ -88,29 +91,56 @@ func (p *ShubProvisioner) getManifest() (err error) {
         sylog.Infof("response: %v\n", res)
 
 	if err != nil {
-		return
+                return nil, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		err = errors.New(res.Status)
-		return
+                return nil, err
 	}
 
         body, err := ioutil.ReadAll(res.Body)
-        sylog.Infof("body: %v\n", body)
         if err != nil {
-                return
+                return nil, err
         }
 
-        var manifest = new(shubAPIResponse)
-        sylog.Infof("manifest: %v\n", manifest)
         err = json.Unmarshal(body, &manifest)
+        sylog.Infof("manifest: %v\n", manifest.Image)
         if(err != nil){
-                return
+                return nil, err
         }
-        return
 
+        return manifest, err
+
+}
+
+// Download an image from Singularity Hub, writing as we download instead
+// of storing in memory
+func (p *ShubProvisioner) fetch(url string) (err error) {
+
+    // Create temporary download name
+    tmpfile, err := ioutil.TempFile(p.tmpfs, "shub-image")
+    sylog.Infof("Created temporary file %v\n", tmpfile.Name())
+    if err != nil {
+        return err
+    }
+    defer tmpfile.Close()
+
+    // Get the image data
+    resp, err := http.Get(url)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+
+    // Write the body to file
+    _, err = io.Copy(tmpfile, resp.Body)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
 
 // NewShubProvisioner returns a provisioner that can dump a previously
@@ -154,15 +184,17 @@ func (p *ShubProvisioner) Provision(i *image.Sandbox) (err error) {
 	defer os.RemoveAll(p.tmpfs)
 
 	// Get the image manifest
-	manifest := p.getManifest()
-	sylog.Infof("%v", manifest)
+	manifest, err := p.getManifest()
+
+        // The full Google Storage download media link
+	sylog.Infof("%v\n", manifest.Image)
 
 	// retrieve the image
-	//err = p.fetch(i)
-	//if err != nil {
-	//	log.Fatal(err)
-	//	return
-	//}
+	err = p.fetch(manifest.Image)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
 	//err = p.unpackTmpfs(i)
 	//if err != nil {
