@@ -10,16 +10,16 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
-    "github.com/singularityware/singularity/docs"
 )
 
-var	capabilityListUse string =`list [list options...] <capabilities>`
+var capabilityListUse string = `list [list options...] <capabilities>`
 
-var capabilityListShort string =`
+var capabilityListShort string = `
 list Linux capabilities on a container`
 
-var capabilityListLong string =`The capability list command allows you to see 
+var capabilityListLong string = `The capability list command allows you to see 
 what Linux capabilities are associated with your container.`
 
 var capabilityListExample string = `
@@ -40,9 +40,9 @@ Stopping /tmp/my-sql.img mysql`
 
 func init() {
 
-    manHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-capability-list")
-    }
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-capability-list")
+	}
 
 	capabilityListCmds := []*cobra.Command{
 		CapabilityListCmd,
@@ -51,7 +51,7 @@ func init() {
 
 	for _, cmd := range capabilityListCmds {
 		cmd.Flags().SetInterspersed(false)
-        cmd.SetHelpFunc(manHelp)
+		cmd.SetHelpFunc(manHelp)
 	}
 
 	// SingularityCmd.AddCommand(capabilityDotListCmd)
@@ -59,14 +59,14 @@ func init() {
 
 var CapabilityListCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
-    DisableFlagsInUseLine: true,
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("listping capability")
 	},
 
-    Use: capabilityListUse,
-    Short: capabilityListShort,
-    Long: capabilityListLong,
+	Use:     capabilityListUse,
+	Short:   capabilityListShort,
+	Long:    capabilityListLong,
 	Example: capabilityListExample,
 }
 

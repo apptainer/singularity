@@ -11,9 +11,28 @@ import (
 	"os"
 	"strings"
 
+	"github.com/singularityware/singularity/docs"
 	"github.com/singularityware/singularity/pkg/build"
 	"github.com/spf13/cobra"
 )
+
+var sbuildUse string = `sbuild <builder type> <definition json> <image path>`
+
+var sbuildShort string = ``
+
+var sbuildLong string = ``
+
+var sbuildExample string = ``
+
+func init() {
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-sbuild")
+	}
+
+	sbuildCmd.Flags().SetInterspersed(false)
+	sbuildCmd.SetHelpFunc(manHelp)
+	SingularityCmd.AddCommand(sbuildCmd)
+}
 
 // ExecuteSbuild executes the image build wrapper
 func ExecuteSbuild() {
@@ -23,8 +42,9 @@ func ExecuteSbuild() {
 }
 
 var sbuildCmd = &cobra.Command{
-	Use:  "sbuild <builder type> <definition json> <image path>",
+	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(3),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		var b build.Builder
 		var err error
@@ -40,4 +60,9 @@ var sbuildCmd = &cobra.Command{
 
 		b.Build()
 	},
+
+	Use:     sbuildUse,
+	Short:   sbuildShort,
+	Long:    sbuildLong,
+	Example: sbuildExample,
 }

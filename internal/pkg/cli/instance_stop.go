@@ -10,8 +10,8 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
-    "github.com/singularityware/singularity/docs"
 )
 
 var instanceStopUse string = `stop [stop options...] [instance]`
@@ -42,25 +42,25 @@ $ singularity instance.stop -s 15 mysql1`
 
 func init() {
 
-    manHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-capability-list")
-    }
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-capability-list")
+	}
 
 	// SingularityCmd.AddCommand(instanceDotStopCmd)
-    InstanceStopCmd.Flags().SetInterspersed(false)
-    InstanceStopCmd.SetHelpFunc(manHelp)
+	InstanceStopCmd.Flags().SetInterspersed(false)
+	InstanceStopCmd.SetHelpFunc(manHelp)
 }
 
 var InstanceStopCmd = &cobra.Command{
-    DisableFlagsInUseLine: true,
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("stopping instance")
 	},
 
-	Use: instanceStopUse,
-    Short: instanceStopShort,
-    Long: instanceStopLong,
-    Example: instanceStopExample,
+	Use:     instanceStopUse,
+	Short:   instanceStopShort,
+	Long:    instanceStopLong,
+	Example: instanceStopExample,
 }
 
 /*

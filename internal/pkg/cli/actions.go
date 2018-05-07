@@ -17,8 +17,8 @@ import (
 	config "github.com/singularityware/singularity/internal/pkg/runtime/engine/singularity/config"
 	"github.com/singularityware/singularity/pkg/configs"
 
+	"github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
-    "github.com/singularityware/singularity/docs"
 )
 
 var formats string = `
@@ -126,22 +126,22 @@ func init() {
 		RunCmd,
 	}
 
-    // TODO : the next n lines of code are repeating too much but I don't 
-    // know how to shorten them tonight 
-    execHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-exec")
-    }
-    ExecCmd.SetHelpFunc(execHelp)
+	// TODO : the next n lines of code are repeating too much but I don't
+	// know how to shorten them tonight
+	execHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-exec")
+	}
+	ExecCmd.SetHelpFunc(execHelp)
 
-    shellHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-shell")
-    }
-    ShellCmd.SetHelpFunc(shellHelp)
+	shellHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-shell")
+	}
+	ShellCmd.SetHelpFunc(shellHelp)
 
-    runHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-run")
-    }
-    RunCmd.SetHelpFunc(runHelp)
+	runHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-run")
+	}
+	RunCmd.SetHelpFunc(runHelp)
 
 	for _, cmd := range actionCmds {
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("bind"))
@@ -176,46 +176,46 @@ func init() {
 
 // execCmd represents the exec command
 var ExecCmd = &cobra.Command{
-    DisableFlagsInUseLine: true,
+	DisableFlagsInUseLine: true,
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
 	},
 
-	Use: execUse,
-    Short: execShort,
-    Long: execLong,
+	Use:     execUse,
+	Short:   execShort,
+	Long:    execLong,
 	Example: execExamples,
 }
 
 // shellCmd represents the shell command
 var ShellCmd = &cobra.Command{
-    DisableFlagsInUseLine: true,
+	DisableFlagsInUseLine: true,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
 	},
 
-	Use: shellUse,
-    Short: shellShort,
-    Long: shellLong,
+	Use:     shellUse,
+	Short:   shellShort,
+	Long:    shellLong,
 	Example: shellExamples,
 }
 
 // runCmd represents the run command
 var RunCmd = &cobra.Command{
-    DisableFlagsInUseLine: true,
+	DisableFlagsInUseLine: true,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
 	},
 
-	Use: runUse,
-    Short: runShort,
-    Long: runLong,
+	Use:     runUse,
+	Short:   runShort,
+	Long:    runLong,
 	Example: runExamples,
 }
 

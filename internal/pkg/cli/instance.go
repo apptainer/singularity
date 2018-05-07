@@ -8,8 +8,8 @@
 package cli
 
 import (
+	"github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
-    "github.com/singularityware/singularity/docs"
 )
 
 var instanceUse string = `instance <subcommand>`
@@ -29,12 +29,12 @@ $ singularity instance.start --help`
 
 func init() {
 
-    manHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-instance")
-    }
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-instance")
+	}
 
 	SingularityCmd.AddCommand(InstanceCmd)
-    InstanceCmd.SetHelpFunc(manHelp)
+	InstanceCmd.SetHelpFunc(manHelp)
 	InstanceCmd.AddCommand(InstanceStartCmd)
 	InstanceCmd.AddCommand(InstanceStopCmd)
 	InstanceCmd.AddCommand(InstanceListCmd)
@@ -44,8 +44,8 @@ var InstanceCmd = &cobra.Command{
 	Run: nil,
 	DisableFlagsInUseLine: true,
 
-	Use: instanceUse,
-    Short: instanceShort,
-    Long: instanceLong,
-    Example: instanceExample,
+	Use:     instanceUse,
+	Short:   instanceShort,
+	Long:    instanceLong,
+	Example: instanceExample,
 }

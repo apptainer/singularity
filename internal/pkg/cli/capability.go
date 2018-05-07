@@ -9,8 +9,8 @@
 package cli
 
 import (
+	"github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
-    "github.com/singularityware/singularity/docs"
 )
 
 var capabilityUse string = `capability <subcommand>`
@@ -32,12 +32,12 @@ $ singularity capability list --help
 
 func init() {
 
-    manHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-capability")
-    }
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-capability")
+	}
 
 	SingularityCmd.AddCommand(CapabilityCmd)
-    CapabilityCmd.SetHelpFunc(manHelp)
+	CapabilityCmd.SetHelpFunc(manHelp)
 	CapabilityCmd.AddCommand(CapabilityAddCmd)
 	CapabilityCmd.AddCommand(CapabilityDropCmd)
 	CapabilityCmd.AddCommand(CapabilityListCmd)
@@ -47,8 +47,8 @@ var CapabilityCmd = &cobra.Command{
 	Run: nil,
 	DisableFlagsInUseLine: true,
 
-    Use: capabilityUse,
-    Short: capabilityShort,
-    Long: capabilityLong,
-    Example: capabilityExample,
+	Use:     capabilityUse,
+	Short:   capabilityShort,
+	Long:    capabilityLong,
+	Example: capabilityExample,
 }

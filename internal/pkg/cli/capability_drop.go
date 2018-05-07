@@ -10,9 +10,10 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
-    "github.com/singularityware/singularity/docs"
 )
+
 var capabilityDropUse string = `drop [drop options...] <capabilities>`
 
 var capabilityDropShort string = `
@@ -42,9 +43,9 @@ Stopping /tmp/my-sql.img mysql`
 
 func init() {
 
-    manHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-capability-add")
-    }
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-capability-add")
+	}
 
 	capabilityDropCmds := []*cobra.Command{
 		CapabilityDropCmd,
@@ -53,7 +54,7 @@ func init() {
 
 	for _, cmd := range capabilityDropCmds {
 		cmd.Flags().SetInterspersed(false)
-        cmd.SetHelpFunc(manHelp)
+		cmd.SetHelpFunc(manHelp)
 	}
 
 	// SingularityCmd.AddCommand(capabilityDotDropCmd)
@@ -61,14 +62,14 @@ func init() {
 
 var CapabilityDropCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
-    DisableFlagsInUseLine: true,
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("dropping capability")
 	},
 
-    Use: capabilityDropUse,
-    Short: capabilityDropShort,
-    Long: capabilityDropLong,
+	Use:     capabilityDropUse,
+	Short:   capabilityDropShort,
+	Long:    capabilityDropLong,
 	Example: capabilityDropExample,
 }
 

@@ -14,7 +14,7 @@ import (
 	"github.com/singularityware/singularity/pkg/build"
 	"github.com/spf13/cobra"
 
-    "github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/docs"
 )
 
 var (
@@ -25,18 +25,18 @@ var (
 	Force       bool
 	NoTest      bool
 	Sections    []string
-    MakeManPage bool
-    ManPageDir string
+	MakeManPage bool
+	ManPageDir  string
 )
 
 func init() {
 
-    manHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-build")
-    }
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-build")
+	}
 
 	BuildCmd.Flags().SetInterspersed(false)
-    BuildCmd.SetHelpFunc(manHelp)
+	BuildCmd.SetHelpFunc(manHelp)
 	SingularityCmd.AddCommand(BuildCmd)
 
 	BuildCmd.Flags().BoolVarP(&Sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
@@ -50,15 +50,15 @@ func init() {
 
 // BuildCmd represents the build command
 var BuildCmd = &cobra.Command{
-    DisableFlagsInUseLine: true,
+	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(2),
 
-    Use: `build [local options...] <IMAGE PATH> <BUILD SPEC>`,
+	Use: `build [local options...] <IMAGE PATH> <BUILD SPEC>`,
 
-    Short: `The build command compiles a container per a recipe (definition file) or based
+	Short: `The build command compiles a container per a recipe (definition file) or based
 on a URI, location, or archive."`,
 
-    Long: `
+	Long: `
 
 IMAGE PATH:
 
@@ -86,7 +86,7 @@ Targets can also be remote and defined by a URI of the following formats:
     shub://     Build from a Singularity registry (Singularity Hub default)
     docker://   This points to a Docker registry (Docker Hub default)`,
 
-    Example: `
+	Example: `
 DEF FILE BASE OS:
 
     Singularity Hub:
@@ -172,7 +172,7 @@ found at:
     http://singularity.lbl.gov/
 `,
 
-// TODO: Can we plz move this to another file to keep the CLI the CLI
+	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
 		var def build.Definition
 		var b build.Builder

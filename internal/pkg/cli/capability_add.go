@@ -10,8 +10,8 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
-    "github.com/singularityware/singularity/docs"
 )
 
 var capabilityAddUse string = `add [add options...] <capabilities>`
@@ -41,9 +41,9 @@ Stopping /tmp/my-sql.img mysql`
 
 func init() {
 
-    manHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-capability-add")
-    }
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-capability-add")
+	}
 
 	capabilityAddCmds := []*cobra.Command{
 		CapabilityAddCmd,
@@ -52,7 +52,7 @@ func init() {
 
 	for _, cmd := range capabilityAddCmds {
 		cmd.Flags().SetInterspersed(false)
-        cmd.SetHelpFunc(manHelp)
+		cmd.SetHelpFunc(manHelp)
 	}
 
 	// SingularityCmd.AddCommand(capabilityDotAddCmd)
@@ -60,20 +60,20 @@ func init() {
 
 var CapabilityAddCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
-    DisableFlagsInUseLine: true,
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("adding capability")
 	},
 
-    Use: capabilityAddUse,
-    Short: capabilityAddShort,
-    Long: capabilityAddLong,
+	Use:     capabilityAddUse,
+	Short:   capabilityAddShort,
+	Long:    capabilityAddLong,
 	Example: capabilityAddExample,
 }
 
 /* I'd like to have a discussion about dropping the dot version of command
 groups.  Don't really want to support duplicate code that doesn't serve a real
-purpose and if we are going to drop them major release is the time. 
+purpose and if we are going to drop them major release is the time.
 var capabilityDotAddCmd = &cobra.Command{
 	Use:  "capability.add [options...] <capabilities>",
 	Args: cobra.MinimumNArgs(2),

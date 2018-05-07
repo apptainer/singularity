@@ -17,38 +17,38 @@ import (
 	"github.com/singularityware/singularity/docs"
 )
 
-var signUse string = `sign <image path>`
+var verifyUse string = `verify <image path>`
 
-var signShort string = ``
+var verifyShort string = ``
 
-var signLong string = ``
+var verifyLong string = ``
 
-var signExample string = ``
+var verifyExample string = ``
 
 func init() {
 	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-sign")
+		docs.DispManPg("singularity-verify")
 	}
 
-	SignCmd.Flags().SetInterspersed(false)
-	SignCmd.SetHelpFunc(manHelp)
-	SingularityCmd.AddCommand(SignCmd)
+	verifyCmd.Flags().SetInterspersed(false)
+	verifyCmd.SetHelpFunc(manHelp)
+	SingularityCmd.AddCommand(verifyCmd)
 }
 
-var SignCmd = &cobra.Command{
+var verifyCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
-		fmt.Printf("Signing image: %s\n", args[0])
-		if err := signing.Sign(args[0]); err != nil {
+		fmt.Printf("Verifying image: %s\n", args[0])
+		if err := signing.Verify(args[0]); err != nil {
 			os.Exit(2)
 		}
 	},
 
-	Use:     signUse,
-	Short:   signShort,
-	Long:    signLong,
-	Example: signExample,
+	Use:     verifyUse,
+	Short:   verifyShort,
+	Long:    verifyLong,
+	Example: verifyExample,
 }

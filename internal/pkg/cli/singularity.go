@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-    "github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/docs"
 )
 
 // Global variables for singularity CLI
@@ -25,11 +25,11 @@ var (
 
 func init() {
 
-    manHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity")
-    }
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity")
+	}
 
-    SingularityCmd.SetHelpFunc(manHelp)
+	SingularityCmd.SetHelpFunc(manHelp)
 	SingularityCmd.Flags().SetInterspersed(false)
 	SingularityCmd.PersistentFlags().SetInterspersed(false)
 
@@ -42,27 +42,26 @@ func init() {
 
 // singularity is the base command when called without any subcommands
 var SingularityCmd = &cobra.Command{
-	TraverseChildren: true,
+	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	Run: nil,
 
 	Use: "singularity [global options...]",
 
-    Short: `a Linux container platform optimized for High Performance Computing 
+	Short: `a Linux container platform optimized for High Performance Computing 
 (HPC) and Enterprise Performance Computing (EPC)`,
 
-    Long: `Singularity containers provide an application virtualization layer 
+	Long: `Singularity containers provide an application virtualization layer 
 enabling mobility of compute via both application and environment portability. 
 With Singularity one is capable of building a root file system and running that 
 root file system on any other Linux system where Singularity is installed.`,
 
-    Example: `
+	Example: `
 $ singularity help
     Will print a generalized usage summary and available commands.
 
 $ singularity help <command>
     Additional help for any Singularity subcommand can be seen by appending the subcommand name to the above command.`,
-
 }
 
 /*

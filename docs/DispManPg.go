@@ -12,16 +12,19 @@ import (
 	"fmt"
 	"os/exec"
 
-    "github.com/golang/glog"
+	"github.com/golang/glog"
 )
 
-// DispManPage will display the man page related to the first argument or an 
+// DispManPage will display the man page related to the first argument or an
 // error if the man page system is not installed and configured properly.
 func DispManPg(pg string) {
+	fmt.Println("=======")
+	fmt.Println(pg)
+	fmt.Println("=======")
 
 	out, err := exec.Command("man", pg).Output()
 	if err != nil {
-        glog.Info("ERROR: please make sure that 'man' is installed on your system and the \nsingularity man pages are on your MANPATH")
+		glog.Info("ERROR: please make sure that 'man' is installed on your system and the \nsingularity man pages are on your MANPATH")
 		glog.Fatal(err)
 	}
 

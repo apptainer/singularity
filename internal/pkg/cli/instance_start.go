@@ -10,8 +10,8 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
-    "github.com/singularityware/singularity/docs"
 )
 
 var instanceStartUse string = `start [start options...] <container path> <instance name>`
@@ -45,9 +45,9 @@ Stopping /tmp/my-sql.img mysql`
 
 func init() {
 
-    manHelp := func(c *cobra.Command, args []string) {
-        docs.DispManPg("singularity-instance-start")
-    }
+	manHelp := func(c *cobra.Command, args []string) {
+		docs.DispManPg("singularity-instance-start")
+	}
 
 	instanceStartCmds := []*cobra.Command{
 		InstanceStartCmd,
@@ -56,7 +56,7 @@ func init() {
 
 	for _, cmd := range instanceStartCmds {
 		cmd.Flags().SetInterspersed(false)
-        cmd.SetHelpFunc(manHelp)
+		cmd.SetHelpFunc(manHelp)
 
 		cmd.Flags().AddFlag(actionFlags.Lookup("bind"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
@@ -81,14 +81,14 @@ func init() {
 
 var InstanceStartCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
-    DisableFlagsInUseLine: true,
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("starting instance")
 	},
 
-	Use:  instanceStartUse,
-    Short: instanceStartShort,
-    Long: instanceStartLong,
+	Use:     instanceStartUse,
+	Short:   instanceStartShort,
+	Long:    instanceStartLong,
 	Example: instanceStartExample,
 }
 
