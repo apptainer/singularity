@@ -5,6 +5,7 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
 
 import (
@@ -24,7 +25,7 @@ import (
 // that designated by a line starting with %
 // If there are any Golang devs reading this, please improve your documentation for this. It's awful.
 func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	var inSection bool = false
+	inSection := false
 	var retbuf bytes.Buffer
 	advance = 0
 
@@ -51,25 +52,25 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 
 			if !ok {
 				// Invalid Section Identifier
-				return 0, nil, errors.New(fmt.Sprintf("Invalid section identifier found: %s", string(word)))
+				return 0, nil, fmt.Errorf("invalid section identifier found: %s", string(word))
+			}
+
+			// Valid Section Identifier
+			if inSection {
+				// Here we found the end of the section
+				return advance, retbuf.Bytes(), nil
+			} else if advance == 0 {
+				// When advance == 0 and we found a section identifier, that means we have already
+				// parsed the header out and left the % as the first character in the data. This means
+				// we can now parse into sections.
+				retbuf.Write(word[1:])
+				retbuf.WriteString("\n")
+				inSection = true
 			} else {
-				// Valid Section Identifier
-				if inSection {
-					// Here we found the end of the section
-					return advance, retbuf.Bytes(), nil
-				} else if advance == 0 {
-					// When advance == 0 and we found a section identifier, that means we have already
-					// parsed the header out and left the % as the first character in the data. This means
-					// we can now parse into sections.
-					retbuf.Write(word[1:])
-					retbuf.WriteString("\n")
-					inSection = true
-				} else {
-					// When advance != 0, that means we found the start of a section but there is
-					// data before it. We return the data up to the first % and that is the header
-					retbuf.WriteString(strings.TrimSpace(string(data[:advance])))
-					return advance, retbuf.Bytes(), nil
-				}
+				// When advance != 0, that means we found the start of a section but there is
+				// data before it. We return the data up to the first % and that is the header
+				retbuf.WriteString(strings.TrimSpace(string(data[:advance])))
+				return advance, retbuf.Bytes(), nil
 			}
 		} else {
 			// This line is not a section identifier
@@ -86,9 +87,10 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 
 	if !atEOF {
 		return 0, nil, nil
-	} else {
-		return advance, retbuf.Bytes(), nil
 	}
+
+	return advance, retbuf.Bytes(), nil
+
 }
 
 func doSections(s *bufio.Scanner, d *Definition) (err error) {
