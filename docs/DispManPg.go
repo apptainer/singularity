@@ -18,9 +18,6 @@ import (
 // DispManPage will display the man page related to the first argument or an
 // error if the man page system is not installed and configured properly.
 func DispManPg(pg string) {
-	fmt.Println("=======")
-	fmt.Println(pg)
-	fmt.Println("=======")
 
 	out, err := exec.Command("man", pg).Output()
 	if err != nil {
