@@ -28,23 +28,30 @@ import (
 )
 
 
+type shubAPIResponse struct {
+    Image string `json:"image"`
+    Name string `json:"name"`
+    Tag string `json:"tag"`
+    Version string `json:"version"`
+}
+
+
 // ShubClient contains the uri and client
-type ShubClient struct {
+type shubClient struct {
 	Client   http.Client
 	ImageUri string
 	HTTPAddr string
 }
 
 // NewRemoteBuilder creates a RemoteBuilder with the specified details.
-func NewShubClient(uri string) (shubClient *ShubClient) {
+func NewshubClient(uri string) (sc *shubClient) {
 
 	sylog.Infof("%v\n", uri)
-	httpAddr := fmt.Sprintf("www.singularity-hub.org")
-	shubClient = &ShubClient{
+	sc = &shubClient{
 		Client: http.Client{
 			Timeout: 30 * time.Second,
 		},
-		HTTPAddr: httpAddr,
+		HTTPAddr: "www.singularity-hub.org",
 		ImageUri: uri,
 	}
 
@@ -54,7 +61,7 @@ func NewShubClient(uri string) (shubClient *ShubClient) {
 func (p *ShubProvisioner) getManifest() (err error) {
 
 	// Create a new Singularity Hub client
-	sc := &ShubClient{}
+	sc := &shubClient{}
 
         // TODO: need to parse the tag / digest and send along too
         uri := strings.Split(p.srcRef.StringWithinTransport(), ":")[0]
@@ -64,7 +71,12 @@ func (p *ShubProvisioner) getManifest() (err error) {
 	sylog.Infof("%v\n", httpAddr)
 
 	// Create the request, add headers context
-	url := url.URL{Scheme: "https", Host: sc.HTTPAddr, Path: httpAddr}
+	url := url.URL{
+                Scheme: "https", 
+                Host: sc.HTTPAddr, 
+                Path: httpAddr,
+        }
+
         sylog.Infof("%v\n", url)
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
@@ -73,6 +85,8 @@ func (p *ShubProvisioner) getManifest() (err error) {
 
 	// Do the request, if status isn't success, return error
 	res, err := sc.Client.Do(req)
+        sylog.Infof("response: %v\n", res)
+
 	if err != nil {
 		return
 	}
@@ -83,8 +97,19 @@ func (p *ShubProvisioner) getManifest() (err error) {
 		return
 	}
 
-	err = json.NewDecoder(res.Body).Decode(&p)
-	return
+        body, err := ioutil.ReadAll(res.Body)
+        sylog.Infof("body: %v\n", body)
+        if err != nil {
+                return
+        }
+
+        var manifest = new(shubAPIResponse)
+        sylog.Infof("manifest: %v\n", manifest)
+        err = json.Unmarshal(body, &manifest)
+        if(err != nil){
+                return
+        }
+        return
 
 }
 
@@ -92,7 +117,7 @@ func (p *ShubProvisioner) getManifest() (err error) {
 // build Singularity image into a sandbox based on a URI
 func NewShubProvisioner(src string) (p *ShubProvisioner, err error) {
 
-	// Question for bauerm - where does this get called?
+	// Called in src/pkg/build/provisioner.go for shub uri
 	p = &ShubProvisioner{}
 
 	// Shub URI largely follows same namespace convention
