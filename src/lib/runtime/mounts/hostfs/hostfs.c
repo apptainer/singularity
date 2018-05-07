@@ -130,7 +130,11 @@ int _singularity_runtime_mount_hostfs(void) {
             continue;
         }
         if ( strncmp(mountpoint, container_dir, strlength(container_dir, PATH_MAX)) == 0 ) {
-            singularity_message(DEBUG, "Skipping container_dir (%s) based file system: %s,%s,%s\n", container_dir, source, mountpoint, filesystem);
+            singularity_message(DEBUG, "Skipping final_dir (%s) based file system: %s,%s,%s\n", container_dir, source, mountpoint, filesystem);
+            continue;
+        }
+        if ( strcmp(mountpoint, CONTAINER_MOUNTDIR) == 0 ) {
+            singularity_message(DEBUG, "Skipping container_dir (%s) based file system: %s,%s,%s\n", CONTAINER_MOUNTDIR, source, mountpoint, filesystem);
             continue;
         }
         if ( strcmp(filesystem, "tmpfs") == 0 ) {
@@ -141,7 +145,10 @@ int _singularity_runtime_mount_hostfs(void) {
             singularity_message(DEBUG, "Skipping cgroup file system: %s,%s,%s\n", source, mountpoint, filesystem);
             continue;
         }
-
+        if ( strcmp(filesystem, "ramfs") == 0 ) {
+            singularity_message(DEBUG, "Skipping ramfs file system: %s,%s,%s\n", source, mountpoint, filesystem);
+            continue;
+        }
         singularity_message(DEBUG, "Checking if host file system is already mounted: %s\n", mountpoint);
         if ( check_mounted(mountpoint) >= 0 ) {
             singularity_message(VERBOSE, "Not mounting host FS (already mounted in container): %s\n", mountpoint);

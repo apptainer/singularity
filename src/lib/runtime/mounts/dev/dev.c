@@ -55,6 +55,7 @@ int _singularity_runtime_mount_dev(void) {
         char *sessiondir = singularity_registry_get("SESSIONDIR");
         char *devdir = joinpath(sessiondir, "/dev");
         char *nvopt = singularity_registry_get("NV"); 
+        char memfs_type[] = "tmpfs";
 
         if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
             int ret;
@@ -124,10 +125,23 @@ int _singularity_runtime_mount_dev(void) {
             closedir(dir);
         }
 
+        if ( strcmp("tmpfs", singularity_config_get_value(MEMORY_FS_TYPE)) != 0 ) {
+            memcpy(memfs_type, "ramfs", 5);
+        }
+
         singularity_message(DEBUG, "Mounting tmpfs for staged /dev/shm\n");
-        if ( singularity_mount("/dev/shm", joinpath(devdir, "/shm"), "tmpfs", MS_NOSUID, "") < 0 ) {
+        if ( singularity_mount("/dev/shm", joinpath(devdir, "/shm"), memfs_type, MS_NOSUID, "") < 0 ) {
             singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
             ABORT(255);
+        }
+
+        if ( strcmp("tmpfs", memfs_type) != 0 ) {
+            singularity_priv_escalate();
+            if ( chmod(joinpath(devdir, "/shm"), S_IRWXU|S_IRWXG|S_IRWXO) < 0 ) { // Flawfinder: ignore not controllable by user
+                singularity_message(ERROR, "Failed to change permission for %s: %s\n", sessiondir, strerror(errno));
+                ABORT(255);
+            }
+            singularity_priv_drop();
         }
 
         if ( singularity_config_get_bool_char(MOUNT_DEVPTS) > 0 ) {
