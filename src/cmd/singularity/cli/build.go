@@ -13,6 +13,7 @@ import (
 	"os"
 
 	"github.com/singularityware/singularity/src/pkg/build"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
 
@@ -62,61 +63,36 @@ var buildCmd = &cobra.Command{
 			// URI passed as arg[1]
 			def, err = build.NewDefinitionFromURI(args[1])
 			if err != nil {
-				fmt.Println("Unable to parse URI %s: ", args[1], err)
-				os.Exit(1)
+				sylog.Fatalf("unable to parse URI %s: %v", args[1], err)
 			}
 		} else if !ok && err == nil {
 			// Non-URI passed as arg[1]
 			defFile, err := os.Open(args[1])
 			if err != nil {
-				fmt.Println("Unable to open file %s: ", args[1], err)
-				os.Exit(1)
+				sylog.Fatalf("unable to open file %s: %v", args[1], err)
 			}
+			defer defFile.Close()
 
 			def, err = build.ParseDefinitionFile(defFile)
 			if err != nil {
-				fmt.Println("Failed to parse definition file %s: ", args[1], err)
-				os.Exit(1)
+				sylog.Fatalf("failed to parse definition file %s: %v", args[1], err)
 			}
 		} else {
-			// Error
-			fmt.Println("Unable to parse %s: ", args[1], err)
-			os.Exit(1)
+			sylog.Fatalf("unable to parse %s: %v", args[1], err)
 		}
 
 		if Remote {
 			b = build.NewRemoteBuilder(args[0], def, false, RemoteURL, AuthToken)
-
 		} else {
 			b, err = build.NewSifBuilder(args[0], def)
 			if err != nil {
-				fmt.Println("Failed to create SifBuilder object: ", err)
-				os.Exit(1)
+				sylog.Fatalf("failed to create SifBuilder object: %v", err)
 			}
 		}
 
 		if err := b.Build(context.TODO()); err != nil {
-			fmt.Println("Failed to build image: ", err)
-			os.Exit(1)
+			sylog.Fatalf("failed to build image: %v", err)
 		}
-
-		/*
-			if Remote {
-				doRemoteBuild(args[0], args[1])
-			} else {
-				if ok, err := build.IsValidURI(args[1]); ok && err == nil {
-					u := strings.SplitN(args[1], "://", 2)
-					b, err := build.NewSifBuilderFromURI(args[0], args[1])
-					if err != nil {
-						glog.Errorf("Image build system encountered an error: %s\n", err)
-						return
-					}
-					b.Build()
-				} else {
-					glog.Fatalf("%s", err)
-				}
-			}*/
-
 	},
 	TraverseChildren: true,
 }
