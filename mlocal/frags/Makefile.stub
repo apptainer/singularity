@@ -1,18 +1,23 @@
 libruntime := $(BUILDDIR)/lib/libruntime.a
 librpc := $(BUILDDIR)/librpc.so
 librpc_INSTALL := $(PREFIX)/lib/singularity/librpc.so
+librpc_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc/rpc.go)
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
+singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 
 sbuild := $(BUILDDIR)/sbuild
 sbuild_INSTALL := $(PREFIX)/libexec/singularity/bin/sbuild
+sbuild_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/sbuild/cli.go)
 
 scontainer := $(BUILDDIR)/scontainer
 scontainer_INSTALL := $(PREFIX)/libexec/singularity/bin/scontainer
+scontainer_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer/scontainer.go)
 
 smaster := $(BUILDDIR)/smaster
 smaster_INSTALL := $(PREFIX)/libexec/singularity/bin/smaster
+smaster_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster/smaster.go)
 
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
 wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
@@ -50,7 +55,7 @@ $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 
 # librpc
-$(librpc):
+$(librpc): $(go_OBJ) $(librpc_OBJ)
 	@echo " AR" $@
 	$(V)go build -ldflags="-s -w" -buildmode=c-shared -o $(BUILDDIR)/librpc.so \
 		$(SOURCEDIR)/src/runtime/startup/rpc/rpc.go
@@ -60,7 +65,7 @@ $(librpc_INSTALL): $(librpc)
 	$(V)install -m 0755 $(librpc) $(librpc_INSTALL)
 
 # singularity
-$(singularity): $(go_OBJ) $(libruntime)
+$(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
@@ -70,7 +75,7 @@ $(singularity_INSTALL): $(singularity) $(librpc_INSTALL)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # sbuild
-$(sbuild): $(go_OBJ) $(libruntime)
+$(sbuild): $(go_OBJ) $(libruntime) $(sbuild_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/src/cmd/sbuild/cli.go
@@ -80,7 +85,7 @@ $(sbuild_INSTALL): $(sbuild) $(librpc_INSTALL)
 	$(V)install -m 0755 $(sbuild) $(sbuild_INSTALL)
 
 # scontainer
-$(scontainer): $(go_OBJ) $(libruntime)
+$(scontainer): $(go_OBJ) $(libruntime) $(scontainer_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/src/runtime/startup/scontainer/scontainer.go
@@ -90,7 +95,7 @@ $(scontainer_INSTALL): $(scontainer) $(librpc_INSTALL)
 	$(V)install -m 0755 $(scontainer) $(scontainer_INSTALL)
 
 # smaster
-$(smaster): $(go_OBJ) $(libruntime)
+$(smaster): $(go_OBJ) $(libruntime) $(smaster_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/src/runtime/startup/smaster/smaster.go
