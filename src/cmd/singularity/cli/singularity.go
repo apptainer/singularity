@@ -70,7 +70,7 @@ appropriately.  This is called by main.main(). It only needs to happen once to
 the root command (singularity).
 */
 func ExecuteSingularity() {
-	if err := singularityCmd.Execute(); err != nil {
+	if err := SingularityCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }

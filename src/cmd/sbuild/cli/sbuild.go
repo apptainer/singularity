@@ -33,7 +33,6 @@ func init() {
 
 	sbuildCmd.Flags().SetInterspersed(false)
 	sbuildCmd.SetHelpFunc(manHelp)
-	SingularityCmd.AddCommand(sbuildCmd)
 }
 
 // ExecuteSbuild executes the image build wrapper

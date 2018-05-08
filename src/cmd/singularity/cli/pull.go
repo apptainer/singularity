@@ -53,7 +53,6 @@ func init() {
 	pullCmd.SetHelpFunc(manHelp)
 	SingularityCmd.AddCommand(pullCmd)
 
-	pullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "http://localhost:5150", "")
 	pullCmd.Flags().BoolVarP(&Force, "force", "F", false, "overwrite an image file if it exists")
 	pullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "http://localhost:5150", "")
 }

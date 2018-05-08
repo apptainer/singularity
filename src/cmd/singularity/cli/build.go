@@ -47,7 +47,7 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&NoTest, "notest", "T", false, "Bootstrap without running tests in %test section")
 	BuildCmd.Flags().BoolVarP(&Remote, "remote", "r", false, "Build image remotely")
 	BuildCmd.Flags().StringVar(&RemoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
-	buildCmd.Flags().StringVar(&AuthToken, "auth-token", "", "Specify the auth token for the remote builder")
+	BuildCmd.Flags().StringVar(&AuthToken, "auth-token", "", "Specify the auth token for the remote builder")
 }
 
 // BuildCmd represents the build command
