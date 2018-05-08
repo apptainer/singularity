@@ -9,11 +9,10 @@
 package client
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
 	"os"
 
@@ -285,9 +284,6 @@ func apiSetTag(url string, t ImageTag) (err error) {
 
 func postFile(filePath string, imageID string) error {
 
-	var b bytes.Buffer
-
-	w := multipart.NewWriter(&b)
 	f, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("Could not open the image file to upload: %v", err)
@@ -297,15 +293,7 @@ func postFile(filePath string, imageID string) error {
 
 	defer f.Close()
 
-	fw, err := w.CreateFormFile("imagefile", filePath)
-	if err != nil {
-		return fmt.Errorf("Could not prepare the image file upload: %v", err)
-	}
-	if _, err = io.Copy(fw, f); err != nil {
-		return fmt.Errorf("Could not prepare the image file upload: %v", err)
-	}
-
-	w.Close()
+	b := bufio.NewReader(f)
 
 	// create and start bar
 	bar := pb.New(int(fileSize)).SetUnits(pb.U_BYTES)
@@ -313,11 +301,13 @@ func postFile(filePath string, imageID string) error {
 	bar.ShowSpeed = true
 	bar.Start()
 	// create proxy reader
-	bodyProgress := bar.NewProxyReader(&b)
+	bodyProgress := bar.NewProxyReader(b)
 	// Make an upload request
 	req, _ := http.NewRequest("POST", baseURL+"/v1/imagefile/"+imageID, bodyProgress)
 	// Don't forget to set the content type, this will contain the boundary.
-	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Content-Type", "application/octet-stream")
+	// Content length is required by the API
+	req.ContentLength = fileSize
 	client := &http.Client{}
 	res, err := client.Do(req)
 
