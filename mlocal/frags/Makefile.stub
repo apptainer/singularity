@@ -1,0 +1,185 @@
+libruntime := $(BUILDDIR)/lib/libruntime.a
+librpc := $(BUILDDIR)/librpc.so
+librpc_INSTALL := $(PREFIX)/lib/singularity/librpc.so
+
+singularity := $(BUILDDIR)/singularity
+singularity_INSTALL := $(PREFIX)/bin/singularity
+
+sbuild := $(BUILDDIR)/sbuild
+sbuild_INSTALL := $(PREFIX)/libexec/singularity/bin/sbuild
+
+scontainer := $(BUILDDIR)/scontainer
+scontainer_INSTALL := $(PREFIX)/libexec/singularity/bin/scontainer
+
+smaster := $(BUILDDIR)/smaster
+smaster_INSTALL := $(PREFIX)/libexec/singularity/bin/smaster
+
+wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
+wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
+
+sif_INSTALL := $(PREFIX)/libexec/singularity/bin/sif
+
+environment_INSTALL := $(PREFIX)/libexec/singularity/environment.tar
+
+config := $(BUILDDIR)/singularity.conf
+config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
+
+mountdir := $(PREFIX)/var/singularity/mnt/container
+finaldir := $(PREFIX)/var/singularity/mnt/final
+overlaydir := $(PREFIX)/var/singularity/mnt/overlay
+sessiondir := $(PREFIX)/var/singularity/mnt/session
+
+go_BIN := $(singularity) $(sbuild) $(scontainer) $(smaster)
+go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
+go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL) $(scontainer_INSTALL) $(smaster_INSTALL)
+
+go_TAG = "containers_image_openpgp"
+
+cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime/c -I$(SOURCEDIR)/src/runtime/c/lib
+cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
+
+INSTALLFILES := $(smaster_INSTALL) $(scontainer_INSTALL) $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
+
+CLEANFILES += $(libruntime) $(librpc) $(go_BIN) $(go_OBJ) $(BUILDDIR)/librpc.h
+
+all: cscope collect $(libruntime) $(librpc) $(go_BIN) $(config)
+
+$(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
+	@echo " AR" $@
+	@mkdir -p $(@D)
+	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
+
+# librpc
+$(librpc):
+	@echo " AR" $@
+	$(V)go build -ldflags="-s -w" -buildmode=c-shared -o $(BUILDDIR)/librpc.so \
+		$(SOURCEDIR)/src/runtime/startup/rpc/rpc.go
+$(librpc_INSTALL): $(librpc)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(librpc) $(librpc_INSTALL)
+
+# singularity
+$(singularity): $(go_OBJ) $(libruntime)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
+$(singularity_INSTALL): $(singularity) $(librpc_INSTALL)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
+
+# sbuild
+$(sbuild): $(go_OBJ) $(libruntime)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/src/cmd/sbuild/cli.go
+$(sbuild_INSTALL): $(sbuild) $(librpc_INSTALL)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(sbuild) $(sbuild_INSTALL)
+
+# scontainer
+$(scontainer): $(go_OBJ) $(libruntime)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/src/runtime/startup/scontainer/scontainer.go
+$(scontainer_INSTALL): $(scontainer) $(librpc_INSTALL)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(scontainer) $(scontainer_INSTALL)
+
+# smaster
+$(smaster): $(go_OBJ) $(libruntime)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/src/runtime/startup/smaster/smaster.go
+$(smaster_INSTALL): $(smaster) $(librpc_INSTALL)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(smaster) $(smaster_INSTALL)
+
+# config.go
+$(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
+	@rm -f $(go_OBJ)
+	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
+
+# wrappper & wrapper-suid install
+$(wrapper_INSTALL): $(wrapper)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(wrapper) $(wrapper_INSTALL)
+$(wrapper_suid_INSTALL): $(wrapper)
+	@echo " INSTALL SUID" $@
+	$(V)install -d $(@D)
+	$(V)install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
+
+# sif install
+$(sif_INSTALL): $(sif)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(sif) $(sif_INSTALL)
+
+#environment.tar install
+$(environment_INSTALL):
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $(SOURCEDIR)/environment.tar $(environment_INSTALL)
+
+#TODO: generate real config file and install, currently is just blank
+$(config):
+	$(V)touch $(config)
+
+$(config_INSTALL): $(config)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $(config) $(config_INSTALL)
+
+$(mountdir):
+	@echo " INSTALL" $@
+	$(V)install -d $(mountdir)
+
+$(finaldir):
+	@echo " INSTALL" $@
+	$(V)install -d $(finaldir)
+
+$(overlaydir):
+	@echo " INSTALL" $@
+	$(V)install -d $(overlaydir)
+
+$(sessiondir):
+	@echo " INSTALL" $@
+	$(V)install -d $(sessiondir)
+
+.PHONY: collect
+collect:
+	@printf " DEPENDS\n"
+	$(V)mkdir -p $(BUILDDIR)
+	$(V):>$(BUILDDIR)/mergeddeps
+	$(V)for i in `find $(BUILDDIR) -name '*.o.d'`; do		\
+		(awk -v path="$${i%/*.*}" '/^.+:/ {			\
+			print path "/" $$0; next }{ print }' < $$i	\
+			>> $(BUILDDIR)/mergeddeps)			\
+	done
+
+.PHONY: dep
+dep:
+	@printf " GO DEPS\n"
+	$(V)(dep ensure -vendor-only >/dev/null 2>&1 || true)
+
+.PHONY: cscope
+cscope:
+	@printf " CSCOPE\n"
+	$(V)(cscope -k -R -q -u -b -v `find $(SOURCEDIR) -name '*.[chS]'` \
+		>/dev/null 2>&1 || true)
+
+.PHONY: clean
+clean:
+	@printf " CLEAN\n"
+	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
+
+.PHONY: install
+install: $(INSTALLFILES)
+	@echo " DONE"
+
+-include $(BUILDDIR)/mergeddeps

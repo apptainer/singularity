@@ -11,8 +11,9 @@ generate_docs
 
 .vscode
 vendor/
+builddir/
+src/pkg/buildcfg/config.go
 trash.lock
-Makefile
 Makefile.in
 autom4te.cache/
 bin/Makefile
@@ -99,4 +100,3 @@ src/*/*/*/*/.dirstamp
 
 build/*
 runtime/cli
-core/buildtree

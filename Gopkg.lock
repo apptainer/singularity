@@ -126,6 +126,15 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/globalsign/mgo"
+  packages = [
+    "bson",
+    "internal/json"
+  ]
+  revision = "efe0945164a7e582241f37ae8983c075f8f2e870"
+
+[[projects]]
+  branch = "master"
   name = "github.com/golang/glog"
   packages = ["."]
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
@@ -135,12 +144,6 @@
   packages = ["proto"]
   revision = "925541529c1fa6821df4e44ce2723319eb2be768"
   version = "v1.0.0"
-
-[[projects]]
-  name = "github.com/google/uuid"
-  packages = ["."]
-  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
-  version = "0.2"
 
 [[projects]]
   name = "github.com/gorilla/context"
@@ -366,6 +369,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b553c13ddae79a6968a2156336633b4c9f3a742317ef25368c8bdc62810fbde2"
+  inputs-digest = "c8359effe8d1baf378c60d7aba96883422c531ce670373eb9e6741de05701b06"
   solver-name = "gps-cdcl"
   solver-version = 1

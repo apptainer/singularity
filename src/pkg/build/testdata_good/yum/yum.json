@@ -1,0 +1,1 @@
+{"Header":{"bootstrap":"yum","include":"yum","mirrorurl":"http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/","osversion":"7"},"Metadata":null,"Labels":null,"Help":"","Environment":"","Runscript":"","Test":"","Files":{},"Pre":"","Setup":"","Post":""}

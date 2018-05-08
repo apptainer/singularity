@@ -42,7 +42,7 @@ use `go get` to install it like so:
 $ go get -u -v github.com/golang/dep/cmd/dep
 ```
 
-And then you can install the golang dependencies like so:
+And then you can install the golang dependencies as part of the build later on or like so:
 
 ```
 $ cd $GOPATH/src/github.com/singularityware/singularity
@@ -54,52 +54,15 @@ Now you are ready to build Singularity:
 
 ```
 $ cd $GOPATH/src/github.com/singularityware/singularity
-$ ./compile.sh
+$ ./mconfig
+$ cd ./builddir
+$ make dep
+$ make
+$ sudo make install
 ```
 
-The binary will appear in `$GOPATH/src/github.com/singularityware/singularity/core/buildtree`
-You may copy it wherever you wish.
+To build in a different folder and to set the install prefix to a different path:
 
-## To compile and install Singularity from a [release tarball](https://github.com/singularityware/singularity/releases):
-Here, the version of Singularity that you want to install is given in <b>&lt;version&gt;</b>.  Please substitute as necessary.  
-<pre>
-$ version=<b>&lt;version&gt;</b>
-$ wget "https://github.com/singularityware/singularity/releases/download/${version}/singularity-${version}.tar.gz"
-$ tar -xvzf singularity-${version}.tar.gz
-$ cd singularity-${version}
-$ ./configure --prefix=/usr/local
-$ make
-$ sudo make install
-</pre>
-
-note: The `sudo` is very important for the `make install`. Failure to do this
-will result in a non-functioning or semi-functioning installation.
-
-## To compile and install Singularity (less than 3.0) from a Git clone:
-Here, the version of Singularity that you want to install is given in <b>&lt;version&gt;</b>.  Please substitute as necessary.  
-<pre>
-$ version=<b>&lt;version&gt;</b>
-$ git clone https://github.com/singularityware/singularity.git
-$ cd singularity
-$ git checkout tags/${version} -b ${version}
-$ ./autogen.sh
-$ ./configure --prefix=/usr/local
-$ make
-$ sudo make install
-</pre>
-
-note: The `sudo` is very important for the `make install`. Failure to do this
-will result in a non-functioning or semi-functioning installation.
-
-## To build an RPM of Singularity (less than 3.0) from a Git clone:
-Here, the version of Singularity that you want to install is given in <b>&lt;version&gt;</b>.  Please substitute as necessary.  
-<pre>
-$ version=<b>&lt;version&gt;</b>
-$ git clone https://github.com/singularityware/singularity.git
-$ cd singularity
-$ git checkout tags/${version} -b ${version}
-$ ./autogen.sh
-$ ./configure
-$ make dist
-$ rpmbuild -ta singularity-*.tar.gz
-</pre>
+```
+$ ./mconfig -p /usr/local -b ./buildtree
+```
