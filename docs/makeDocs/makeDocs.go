@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"os"
 
-    "github.com/singularityware/singularity/src/cmd/singularity/cli"
+	"github.com/singularityware/singularity/src/cmd/singularity/cli"
 	// "github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"golang.org/x/sys/unix"

@@ -20,14 +20,14 @@ import (
 )
 
 var (
-	Remote      bool
-	RemoteURL   string
+	Remote    bool
+	RemoteURL string
 	AuthToken string
-	Sandbox     bool
-	Writable    bool
-	Force       bool
-	NoTest      bool
-	Sections    []string
+	Sandbox   bool
+	Writable  bool
+	Force     bool
+	NoTest    bool
+	Sections  []string
 )
 
 func init() {
