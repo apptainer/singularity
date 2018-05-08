@@ -11,37 +11,37 @@ package build
 import "strings"
 
 type Definition struct {
-	Header map[string]string
-	ImageData
-	BuildData
+	Header    map[string]string `json:"header"`
+	ImageData `json:"imageData"`
+	BuildData `json:"buildData"`
 }
 
 // ImageData contains any scripts, metadata, etc... that needs to be
 // present in some from in the final built image
 type ImageData struct {
-	Metadata []byte   //
-	Labels   []string //
-	ImageScripts
+	Metadata     []byte   `json:"metadata"`
+	Labels       []string `json:"labels"`
+	ImageScripts `json:"imageScripts"`
 }
 
 type ImageScripts struct {
-	Help        string
-	Environment string
-	Runscript   string
-	Test        string
+	Help        string `json:"help"`
+	Environment string `json:"environment"`
+	Runscript   string `json:"runScript"`
+	Test        string `json:"test"`
 }
 
 // BuildData contains any scripts, metadata, etc... that the Builder may
 // need to know only at build time to build the image
 type BuildData struct {
-	Files map[string]string //
-	BuildScripts
+	Files        map[string]string `json:"files"`
+	BuildScripts `json:"buildScripts"`
 }
 
 type BuildScripts struct {
-	Pre   string
-	Setup string
-	Post  string
+	Pre   string `json:"pre"`
+	Setup string `json:"setup"`
+	Post  string `json:"post"`
 }
 
 func NewDefinitionFromURI(uri string) (d Definition, err error) {
