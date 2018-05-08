@@ -145,7 +145,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 		},
 	}
 	d.BuildData.Files = files
-	d.BuildData.BuildScripts = BuildScripts{
+	d.BuildData.Scripts = Scripts{
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
 		Post:  sections["post"],

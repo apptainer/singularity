@@ -10,10 +10,11 @@ package build
 
 import "strings"
 
+// Definition describes how to build an image.
 type Definition struct {
 	Header    map[string]string `json:"header"`
 	ImageData `json:"imageData"`
-	BuildData `json:"buildData"`
+	BuildData Data `json:"buildData"`
 }
 
 // ImageData contains any scripts, metadata, etc... that needs to be
@@ -24,6 +25,7 @@ type ImageData struct {
 	ImageScripts `json:"imageScripts"`
 }
 
+// ImageScripts contains scripts that are used after build time.
 type ImageScripts struct {
 	Help        string `json:"help"`
 	Environment string `json:"environment"`
@@ -31,19 +33,21 @@ type ImageScripts struct {
 	Test        string `json:"test"`
 }
 
-// BuildData contains any scripts, metadata, etc... that the Builder may
+// Data contains any scripts, metadata, etc... that the Builder may
 // need to know only at build time to build the image
-type BuildData struct {
-	Files        map[string]string `json:"files"`
-	BuildScripts `json:"buildScripts"`
+type Data struct {
+	Files   map[string]string `json:"files"`
+	Scripts `json:"buildScripts"`
 }
 
-type BuildScripts struct {
+// Scripts defines scripts that are used at build time.
+type Scripts struct {
 	Pre   string `json:"pre"`
 	Setup string `json:"setup"`
 	Post  string `json:"post"`
 }
 
+// NewDefinitionFromURI crafts a new Definition given a URI
 func NewDefinitionFromURI(uri string) (d Definition, err error) {
 	u := strings.SplitN(uri, "://", 2)
 
