@@ -131,14 +131,14 @@ int _singularity_runtime_mount_dev(void) {
 
         singularity_message(DEBUG, "Mounting tmpfs for staged /dev/shm\n");
         if ( singularity_mount("/dev/shm", joinpath(devdir, "/shm"), memfs_type, MS_NOSUID, "") < 0 ) {
-            singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
+            singularity_message(ERROR, "Failed to mount %s/shm: %s\n", devdir, strerror(errno));
             ABORT(255);
         }
 
         if ( strcmp("tmpfs", memfs_type) != 0 ) {
             singularity_priv_escalate();
             if ( chmod(joinpath(devdir, "/shm"), S_IRWXU|S_IRWXG|S_IRWXO) < 0 ) { // Flawfinder: ignore not controllable by user
-                singularity_message(ERROR, "Failed to change permission for %s: %s\n", sessiondir, strerror(errno));
+                singularity_message(ERROR, "Failed to change permission for %s/shm: %s\n", devdir, strerror(errno));
                 ABORT(255);
             }
             singularity_priv_drop();
