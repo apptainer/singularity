@@ -172,6 +172,21 @@ dep:
 	@printf " GO DEPS\n"
 	$(V)(dep ensure -vendor-only >/dev/null 2>&1 || true)
 
+.PHONY: test
+test:
+	@echo " TEST go fmt"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && test -z $(go fmt ./...)
+	@echo "       PASS"
+	@echo " TEST go vet"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && go vet -all ./...
+	@echo "       PASS"
+	@echo " TEST go test ./..."
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && go test -coverprofile cover.out -race -timeout 60s ./...
+	@echo "       PASS"
+
 .PHONY: cscope
 cscope:
 	@printf " CSCOPE\n"
