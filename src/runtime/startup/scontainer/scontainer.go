@@ -11,7 +11,8 @@ package main
 /*
 #include "startup/cgo_scontainer.c"
 */
-// #cgo LDFLAGS: -lruntime -luuid
+// #cgo CFLAGS: -I../../c -I../../c/lib
+// #cgo LDFLAGS: -L../../../../builddir/lib/ -lruntime -luuid
 import "C"
 
 import (
