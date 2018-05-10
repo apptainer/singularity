@@ -193,11 +193,11 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 	}
 
 	if err = doHeader(s.Text(), &d); err != nil {
-		sylog.Warningf("failed to parse DefFile header: %v", err)
+		sylog.Warningf("failed to parse DefFile header: %v\n", err)
 		return
 	}
 	if err = doSections(s, &d); err != nil {
-		sylog.Warningf("failed to parse DefFile sections: %v", err)
+		sylog.Warningf("failed to parse DefFile sections: %v\n", err)
 	}
 
 	return
