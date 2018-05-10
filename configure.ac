@@ -276,7 +276,7 @@ AS_IF([test "x$with_mksquashfs" != "x"],
        AS_IF([test "x$MKSQUASHFS_CHECK" == "xyes"],
              [
               AC_SUBST(MKSQUASHFS_PATH,"$with_mksquashfs/bin")
-              AC_MSG_RESULT([using $with_mksquashfs])
+              AC_MSG_RESULT([using $with_mksquashfs/bin])
              ],
              [
               AC_MSG_WARN([mksquashfs not found - needed at runtime for full build functionality])
