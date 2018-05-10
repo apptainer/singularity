@@ -286,7 +286,13 @@ AS_IF([test "x$with_mksquashfs" != "x"],
        AC_MSG_RESULT([no])
       ])
 
-AM_CONDITIONAL([FOUND_MKSQUASHFS],[test "x$MKSQUASHFS_CHECK" == "xyes"])
+AS_IF([test "x$with_mksquashfs" == "x"],
+      [
+       AC_CHECK_PROG([mksquashfs],[mksquashfs],[yes],[no])
+      ])
+
+AM_CONDITIONAL([FOUND_MKSQUASHFS],[test "x$MKSQUASHFS_CHECK" == "xyes" -o "x$mksquashfs" == "xyes"])
+AM_COND_IF([FOUND_MKSQUASHFS],,[AC_MSG_WARN([mksquashfs not found - needed at runtime for full build functionality])])
 
 # ---------------------------------------------------------------------
 # PYTHON
