@@ -36,6 +36,11 @@ else
     exit 1
 fi
 
+OLDPATH=${PATH}
+if [ -n "@MKSQUASHFS_PATH@" ]; then
+    PATH=${PATH}:@MKSQUASHFS_PATH@
+fi
+
 if ! singularity_which mksquashfs > /dev/null 2>&1; then
     message ERROR "You must install squashfs-tools to build images\n"
     ABORT 255
@@ -395,5 +400,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
 
     chmod a+x "$SINGULARITY_CONTAINER_OUTPUT"
 fi
+
+PATH=${OLDPATH}
 
 message 1 "Singularity container built: $SINGULARITY_CONTAINER_OUTPUT\n"

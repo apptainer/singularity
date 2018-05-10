@@ -435,6 +435,7 @@ AC_CONFIG_FILES([
    libexec/bootstrap-scripts/Makefile
    libexec/bootstrap-scripts/environment/Makefile
    libexec/cli/Makefile
+   libexec/cli/build.exec
    libexec/handlers/Makefile
    libexec/helpers/Makefile
    libexec/helpers/apps/Makefile
