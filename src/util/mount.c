@@ -77,20 +77,39 @@ int singularity_mount(const char *source, const char *target,
     int ret;
     int mount_errno;
     uid_t fsuid = 0;
-    char *realdest;
+    char dest[PATH_MAX];
+    char *realdest, *realtarget;
+    int target_fd = -1;
     static struct resolved_container_path container_path;
+
+    resolve_container_path(&container_path);
+
+    if ( ( mountflags & MS_REMOUNT ) == 0 ) {
+        target_fd = open(target, O_RDONLY);
+
+        if ( target_fd < 0 ) {
+            singularity_message(ERROR, "Target %s doesn't exist\n", target);
+            ABORT(255);
+        }
+
+        if ( snprintf(dest, PATH_MAX-1, "/proc/self/fd/%d", target_fd) < 0 ) {
+            singularity_message(ERROR, "Failed to determine path for target file descriptor\n");
+            ABORT(255);
+        }
+        realtarget = dest;
+    } else {
+        realtarget = (char *)target;
+    }
 
     if ( ( mountflags & MS_BIND ) ) {
         fsuid = singularity_priv_getuid();
     }
 
-    realdest = realpath(target, NULL); // Flawfinder: ignore
+    realdest = realpath(realtarget, NULL); // Flawfinder: ignore
     if ( realdest == NULL ) {
-        singularity_message(ERROR, "Failed to get real path of %s\n", target);
+        singularity_message(ERROR, "Failed to get real path of %s %s\n", target, dest);
         ABORT(255);
     }
-
-    resolve_container_path(&container_path);
 
     if ( (mountflags & MS_PRIVATE) == 0 && (mountflags & MS_SLAVE) == 0 ) {
         if ( strncmp(realdest, container_path.mountdir, strlen(container_path.mountdir)) != 0 &&
@@ -99,6 +118,9 @@ int singularity_mount(const char *source, const char *target,
              strncmp(realdest, container_path.session, strlen(container_path.session)) != 0 ) {
             singularity_message(VERBOSE, "Ignored, try to mount %s outside of container %s\n", target, realdest);
             free(realdest);
+            if ( target_fd >= 0 ) {
+                close(target_fd);
+            }
             return(0);
         }
     }
@@ -113,9 +135,12 @@ int singularity_mount(const char *source, const char *target,
         setfsuid(fsuid);
     }
 
-    ret = mount(source, realdest, filesystemtype, mountflags, data);
+    ret = mount(source, realtarget, filesystemtype, mountflags, data);
     mount_errno = errno;
 
+    if ( target_fd >= 0 ) {
+        close(target_fd);
+    }
     free(realdest);
 
     if ( singularity_priv_userns_enabled() == 0 && seteuid(singularity_priv_getuid()) < 0 ) {
