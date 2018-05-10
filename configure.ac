@@ -270,16 +270,20 @@ AC_MSG_CHECKING([--with-mksquashfs])
 AC_ARG_WITH([mksquashfs],
             AS_HELP_STRING([--with-mksquashfs], [Root location of mksquashfs install])
            )
-AS_IF([test "x$with_mksquashfs" != ""],
+AS_IF([test "x$with_mksquashfs" != "x"],
       [
        AC_CHECK_PROG([MKSQUASHFS_CHECK],[mksquashfs],[yes],[no],[$with_mksquashfs/bin])
        AS_IF([test "x$MKSQUASHFS_CHECK" == "xyes"],
              [
               AC_SUBST(MKSQUASHFS_PATH,"$with_mksquashfs/bin")
+              AC_MSG_RESULT([using $with_mksquashfs])
              ],
              [
               AC_MSG_WARN([mksquashfs not found - needed at runtime for full build functionality])
              ])
+      ],
+      [
+       AC_MSG_RESULT([no])
       ])
 
 AM_CONDITIONAL([FOUND_MKSQUASHFS],[test "x$MKSQUASHFS_CHECK" == "xyes"])
