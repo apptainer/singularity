@@ -266,10 +266,23 @@ AC_CHECK_FUNCS(setns, [
 
 AC_SUBST(SINGULARITY_DEFINES)
 
+AC_MSG_CHECKING([--with-mksquashfs])
+AC_ARG_WITH([mksquashfs],
+            AS_HELP_STRING([--with-mksquashfs], [Root location of mksquashfs install])
+           )
+AS_IF([test "x$with_mksquashfs" != ""],
+      [
+       AC_CHECK_PROG([MKSQUASHFS_CHECK],[mksquashfs],[yes],[no],[$with_mksquashfs/bin])
+       AS_IF([test "x$MKSQUASHFS_CHECK" == "xyes"],
+             [
+              AC_SUBST(MKSQUASHFS_PATH,"$with_mksquashfs/bin")
+             ],
+             [
+              AC_MSG_WARN([mksquashfs not found - needed at runtime for full build functionality])
+             ])
+      ])
 
-AC_CHECK_PROG([mksquashfs],[mksquashfs],[yes],[no])
-AM_CONDITIONAL([FOUND_MKSQUASHFS], [test "x$mksquashfs" = xyes])
-AM_COND_IF([FOUND_MKSQUASHFS],,[AC_MSG_WARN([mksquashfs not found - needed at runtime for full build functionality])])
+AM_CONDITIONAL([FOUND_MKSQUASHFS],[test "x$MKSQUASHFS_CHECK" == "xyes"])
 
 # ---------------------------------------------------------------------
 # PYTHON
