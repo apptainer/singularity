@@ -188,6 +188,7 @@ func setTags(containerID string, imageID string, tags []string) error {
 }
 
 func apiCreate(o interface{}, url string) (id string, err error) {
+	sylog.Debugf("apiCreate calling %s\n", url)
 	s, err := json.Marshal(o)
 	if err != nil {
 		return "", fmt.Errorf("Error encoding object to JSON:\n\t%v", err)
@@ -221,6 +222,7 @@ func apiCreate(o interface{}, url string) (id string, err error) {
 }
 
 func apiExists(url string) (id string, err error) {
+	sylog.Debugf("apiExists calling %s\n", url)
 	res, err := http.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("Error making request to server:\n\t%v", err)
@@ -237,6 +239,7 @@ func apiExists(url string) (id string, err error) {
 }
 
 func apiGetTags(url string) (tags map[string]string, err error) {
+	sylog.Debugf("apiGetTags calling %s\n", url)
 	res, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("Error making request to server:\n\t%v", err)
@@ -259,6 +262,7 @@ func apiGetTags(url string) (tags map[string]string, err error) {
 }
 
 func apiSetTag(url string, t ImageTag) (err error) {
+	sylog.Debugf("apiSetTag calling %s\n", url)
 	s, err := json.Marshal(t)
 	if err != nil {
 		return fmt.Errorf("Error encoding object to JSON:\n\t%v", err)
