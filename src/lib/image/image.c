@@ -70,7 +70,7 @@ struct image_object singularity_image_init(char *path, int open_flags) {
 
     real_path = realpath(path, NULL); // Flawfinder: ignore
     if ( real_path == NULL ) {
-        singularity_message(ERROR, "Image path %s doesn't exist\n", path);
+        singularity_message(ERROR, "Image path %s doesn't exist: %s\n", path, strerror(errno));
         ABORT(255);
     }
 
@@ -297,7 +297,7 @@ void singularity_limit_container_paths(struct image_object *image) {
 
             current_path = realpath(current, NULL); // Flawfinder: ignore
             if ( current_path == NULL ) {
-                singularity_message(WARNING, "Configuration limit container path contains an invalid path %s\n", current);
+                singularity_message(WARNING, "Configuration limit container path contains an invalid path %s: %s\n", current, strerror(errno));
                 ABORT(255);
             }
 
@@ -326,7 +326,7 @@ void singularity_limit_container_paths(struct image_object *image) {
 
                     current_path = realpath(current, NULL); // Flawfinder: ignore
                     if ( current_path == NULL ) {
-                        singularity_message(WARNING, "Configuration limit container path contains an invalid path %s\n", current);
+                        singularity_message(WARNING, "Configuration limit container path contains an invalid path %s: %s\n", current, strerror(errno));
                         ABORT(255);
                     }
                 }
