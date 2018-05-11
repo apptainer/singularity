@@ -95,3 +95,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	return nil
 
 }
+
+func verifyPull(file string, hash string) {
+
+}

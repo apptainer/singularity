@@ -143,9 +143,12 @@ func (b Blob) GetID() bson.ObjectId {
 	return b.ID
 }
 
-// ImageTag - A simple mapping from a string to bson ID. Not stored in the DB
+// ImageTag - A single mapping from a string to bson ID. Not stored in the DB
 // but used by API calls setting tags
 type ImageTag struct {
 	Tag     string
 	ImageID bson.ObjectId
 }
+
+// TagMap - A map of tags to imageIDs for a container
+type TagMap map[string]bson.ObjectId

@@ -18,19 +18,6 @@ import (
 	"github.com/golang/glog"
 )
 
-// JSONError - Struct for standard error returns over REST API
-type JSONError struct {
-	Code    int    `json:"code,omitempty"`
-	Status  string `json:"status,omitempty"`
-	Message string `json:"message,omitempty"`
-}
-
-// JSONResponse - Top level container of a REST API response
-type JSONResponse struct {
-	Data  interface{} `json:"data"`
-	Error JSONError   `json:"error,omitempty"`
-}
-
 func isLibraryPullRef(libraryRef string) bool {
 	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[._-][a-z0-9]+)*)?$", libraryRef)
 	return match

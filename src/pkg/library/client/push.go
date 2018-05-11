@@ -10,24 +10,17 @@ package client
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 
-	"github.com/globalsign/mgo/bson"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
-var baseURL string
-
 // UploadImage will push a specified image up to the Container Library,
 func UploadImage(filePath string, libraryRef string, libraryURL string) error {
-
-	baseURL = libraryURL
 
 	if !isLibraryPushRef(libraryRef) {
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
@@ -39,64 +32,73 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 	}
 	sylog.Debugf("Image hash computed as %s\n", imageHash)
 
-	entity, collection, container, tags := parseLibraryRef(libraryRef)
+	entityName, collectionName, containerName, tags := parseLibraryRef(libraryRef)
 
-	entityID, err := entityExists(entity)
+	// Find or create entity
+	entity, found, err := getEntity(libraryURL, entityName)
 	if err != nil {
 		return err
 	}
-	if entityID == "" {
-		sylog.Verbosef("Entity %s does not exist in library - creating it.\n", entity)
-		entityID, err = createEntity(entity)
+	if !found {
+		sylog.Verbosef("Entity %s does not exist in library - creating it.\n", entityName)
+		entity, err = createEntity(libraryURL, entityName)
 		if err != nil {
 			return err
 		}
 	}
-	collectionID, err := collectionExists(entity, collection)
+
+	// Find or create collection
+	collection, found, err := getCollection(libraryURL, entityName+"/"+collectionName)
 	if err != nil {
 		return err
 	}
-	if collectionID == "" {
-		sylog.Verbosef("Collection %s/%s does not exist in library - creating it.\n", entity, collection)
-		collectionID, err = createCollection(collection, entityID)
+	if !found {
+		sylog.Verbosef("Collection %s does not exist in library - creating it.\n", collectionName)
+		collection, err = createCollection(libraryURL, collectionName, entity.GetID().Hex())
 		if err != nil {
 			return err
 		}
 	}
-	containerID, err := containerExists(entity, collection, container)
+
+	// Find or create container
+	container, found, err := getContainer(libraryURL, entityName+"/"+collectionName+"/"+containerName)
 	if err != nil {
 		return err
 	}
-	if containerID == "" {
-		sylog.Verbosef("Container %s/%s/%s does not exist in library - creating it.\n", entity, collection, container)
-		containerID, err = createContainer(container, collectionID)
+	if !found {
+		sylog.Verbosef("Container %s does not exist in library - creating it.\n", containerName)
+		container, err = createContainer(libraryURL, containerName, collection.GetID().Hex())
 		if err != nil {
 			return err
 		}
 	}
-	imageID, err := imageExists(entity, collection, container, imageHash)
+
+	// Find or create image
+	image, found, err := getImage(libraryURL, entityName+"/"+collectionName+"/"+containerName+":"+imageHash)
 	if err != nil {
 		return err
 	}
-	if imageID == "" {
-		sylog.Verbosef("Image %s/%s/%s:%s does not exist in library - creating it.\n", entity, collection, container, imageHash)
-		imageID, err = createImage(imageHash, containerID)
+	if !found {
+		sylog.Verbosef("Image %s does not exist in library - creating it.\n", imageHash)
+		image, err = createImage(libraryURL, imageHash, container.GetID().Hex())
 		if err != nil {
 			return err
 		}
+	}
+
+	if !image.Uploaded {
+		sylog.Infof("Now uploading %s to the library\n", filePath)
+		err = postFile(libraryURL, filePath, image.GetID().Hex())
+		if err != nil {
+			return err
+		}
+		sylog.Debugf("Upload completed OK\n")
 	} else {
-		sylog.Warningf("This image already exists in the library - it will be overwritten.\n")
+		sylog.Infof("Image is already present in the library - not uploading.\n")
 	}
-	sylog.Infof("Now uploading %s to the library\n", filePath)
-
-	err = postFile(filePath, imageID)
-	if err != nil {
-		return err
-	}
-	sylog.Debugf("Upload completed OK\n")
 
 	sylog.Debugf("Setting tags against uploaded image\n")
-	err = setTags(containerID, imageID, tags)
+	err = setTags(libraryURL, container.GetID().Hex(), image.GetID().Hex(), tags)
 	if err != nil {
 		return err
 	}
@@ -104,189 +106,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 	return nil
 }
 
-func entityExists(entity string) (id string, err error) {
-	url := (baseURL + "/v1/entities/" + entity)
-	return apiExists(url)
-}
-
-func collectionExists(entity string, collection string) (id string, err error) {
-	url := baseURL + "/v1/collections/" + entity + "/" + collection
-	return apiExists(url)
-}
-
-func containerExists(entity string, collection string, container string) (id string, err error) {
-	url := baseURL + "/v1/containers/" + entity + "/" + collection + "/" + container
-	return apiExists(url)
-}
-
-func imageExists(entity string, collection string, container string, image string) (id string, err error) {
-	url := baseURL + "/v1/images/" + entity + "/" + collection + "/" + container + "/" + image
-	return apiExists(url)
-}
-
-func createEntity(name string) (id string, err error) {
-	e := Entity{
-		Name:        name,
-		Description: "No description",
-	}
-	return apiCreate(e, baseURL+"/v1/entities")
-
-}
-
-func createCollection(name string, entityID string) (id string, err error) {
-	c := Collection{
-		Name:        name,
-		Description: "No description",
-		Entity:      bson.ObjectIdHex(entityID),
-	}
-	return apiCreate(c, baseURL+"/v1/collections")
-}
-
-func createContainer(name string, collectionID string) (id string, err error) {
-	c := Container{
-		Name:        name,
-		Description: "No description",
-		Collection:  bson.ObjectIdHex(collectionID),
-	}
-	return apiCreate(c, baseURL+"/v1/containers")
-}
-
-func createImage(hash string, containerID string) (id string, err error) {
-	i := Image{
-		Hash:        hash,
-		Description: "No description",
-		Container:   bson.ObjectIdHex(containerID),
-	}
-
-	return apiCreate(i, baseURL+"/v1/images")
-}
-
-func setTags(containerID string, imageID string, tags []string) error {
-	// Get existing tags, so we know which will be replaced
-	existingTags, err := apiGetTags(baseURL + "/v1/tags/" + containerID)
-	if err != nil {
-		return err
-	}
-
-	for _, tag := range tags {
-		sylog.Infof("Setting tag %s\n", tag)
-
-		if existingImg, ok := existingTags[tag]; ok {
-			sylog.Warningf("%s replaces existing tag on image %s\n", tag, existingImg)
-		}
-
-		imgTag := ImageTag{
-			tag,
-			bson.ObjectIdHex(imageID),
-		}
-		err := apiSetTag(baseURL+"/v1/tags/"+containerID, imgTag)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func apiCreate(o interface{}, url string) (id string, err error) {
-	sylog.Debugf("apiCreate calling %s\n", url)
-	s, err := json.Marshal(o)
-	if err != nil {
-		return "", fmt.Errorf("Error encoding object to JSON:\n\t%v", err)
-	}
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("Error making request to server:\n\t%v", err)
-	}
-	if res.StatusCode != http.StatusOK {
-		jRes, err := ParseErrorBody(res.Body)
-		if err != nil {
-			jRes = ParseErrorResponse(res)
-		}
-		return "", fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
-			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
-	}
-
-	// Decode the returned created object to find its ID
-	c := make(map[string]map[string]interface{})
-	err = json.NewDecoder(res.Body).Decode(&c)
-	if err != nil {
-		return "", fmt.Errorf("Error decoding ID from server response:\n\t%v", err)
-	}
-
-	return c["data"]["id"].(string), nil
-
-}
-
-func apiExists(url string) (id string, err error) {
-	sylog.Debugf("apiExists calling %s\n", url)
-	res, err := http.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("Error making request to server:\n\t%v", err)
-	}
-	if res.StatusCode == http.StatusOK {
-		c := make(map[string]map[string]interface{})
-		json.NewDecoder(res.Body).Decode(&c)
-		if err != nil {
-			return "", fmt.Errorf("Error decoding ID from server response:\n\t%v", err)
-		}
-		return c["data"]["id"].(string), nil
-	}
-	return "", nil
-}
-
-func apiGetTags(url string) (tags map[string]string, err error) {
-	sylog.Debugf("apiGetTags calling %s\n", url)
-	res, err := http.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("Error making request to server:\n\t%v", err)
-	}
-	if res.StatusCode != http.StatusOK {
-		jRes, err := ParseErrorBody(res.Body)
-		if err != nil {
-			jRes = ParseErrorResponse(res)
-		}
-		return nil, fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
-			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
-	}
-	c := make(map[string]map[string]string)
-	json.NewDecoder(res.Body).Decode(&c)
-	if err != nil {
-		return nil, fmt.Errorf("Error decoding ID from server response:\n\t%v", err)
-	}
-	return c["data"], nil
-
-}
-
-func apiSetTag(url string, t ImageTag) (err error) {
-	sylog.Debugf("apiSetTag calling %s\n", url)
-	s, err := json.Marshal(t)
-	if err != nil {
-		return fmt.Errorf("Error encoding object to JSON:\n\t%v", err)
-	}
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("Error making request to server:\n\t%v", err)
-	}
-	if res.StatusCode != http.StatusOK {
-		jRes, err := ParseErrorBody(res.Body)
-		if err != nil {
-			jRes = ParseErrorResponse(res)
-		}
-		return fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
-			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
-	}
-	return nil
-}
-
-func postFile(filePath string, imageID string) error {
+func postFile(baseURL string, filePath string, imageID string) error {
 
 	f, err := os.Open(filePath)
 	if err != nil {
@@ -299,6 +119,9 @@ func postFile(filePath string, imageID string) error {
 	}
 	fileSize := fi.Size()
 
+	postURL := baseURL + "/v1/imagefile/" + imageID
+	sylog.Debugf("postFile calling %s\n", postURL)
+
 	b := bufio.NewReader(f)
 
 	// create and start bar
@@ -309,7 +132,7 @@ func postFile(filePath string, imageID string) error {
 	// create proxy reader
 	bodyProgress := bar.NewProxyReader(b)
 	// Make an upload request
-	req, _ := http.NewRequest("POST", baseURL+"/v1/imagefile/"+imageID, bodyProgress)
+	req, _ := http.NewRequest("POST", postURL, bodyProgress)
 	// Don't forget to set the content type, this will contain the boundary.
 	req.Header.Set("Content-Type", "application/octet-stream")
 	// Content length is required by the API
