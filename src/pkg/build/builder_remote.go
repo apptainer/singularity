@@ -85,7 +85,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	rd, err := rb.doBuildRequest(ctx, rb.Definition, rb.IsDetached)
 	if err != nil {
 		err = errors.Wrap(err, "failed to post request to remote build service")
-		sylog.Warningf("%v", err)
+		sylog.Warningf("%v\n", err)
 		return
 	}
 
@@ -94,7 +94,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		err = rb.streamOutput(ctx, rd.WSURL)
 		if err != nil {
 			err = errors.Wrap(err, "failed to stream output from remote build service")
-			sylog.Warningf("%v", err)
+			sylog.Warningf("%v\n", err)
 			return
 		}
 	}
@@ -103,7 +103,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	rd, err = rb.doStatusRequest(ctx, rd.ID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get status from remote build service")
-		sylog.Warningf("%v", err)
+		sylog.Warningf("%v\n", err)
 		return
 	}
 

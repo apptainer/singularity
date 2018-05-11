@@ -63,22 +63,22 @@ var buildCmd = &cobra.Command{
 			// URI passed as arg[1]
 			def, err = build.NewDefinitionFromURI(args[1])
 			if err != nil {
-				sylog.Fatalf("unable to parse URI %s: %v", args[1], err)
+				sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
 			}
 		} else if !ok && err == nil {
 			// Non-URI passed as arg[1]
 			defFile, err := os.Open(args[1])
 			if err != nil {
-				sylog.Fatalf("unable to open file %s: %v", args[1], err)
+				sylog.Fatalf("unable to open file %s: %v\n", args[1], err)
 			}
 			defer defFile.Close()
 
 			def, err = build.ParseDefinitionFile(defFile)
 			if err != nil {
-				sylog.Fatalf("failed to parse definition file %s: %v", args[1], err)
+				sylog.Fatalf("failed to parse definition file %s: %v\n", args[1], err)
 			}
 		} else {
-			sylog.Fatalf("unable to parse %s: %v", args[1], err)
+			sylog.Fatalf("unable to parse %s: %v\n", args[1], err)
 		}
 
 		if Remote {
@@ -86,12 +86,12 @@ var buildCmd = &cobra.Command{
 		} else {
 			b, err = build.NewSifBuilder(args[0], def)
 			if err != nil {
-				sylog.Fatalf("failed to create SifBuilder object: %v", err)
+				sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
 			}
 		}
 
 		if err := b.Build(context.TODO()); err != nil {
-			sylog.Fatalf("failed to build image: %v", err)
+			sylog.Fatalf("failed to build image: %v\n", err)
 		}
 	},
 	TraverseChildren: true,
