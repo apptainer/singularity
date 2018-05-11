@@ -9,10 +9,11 @@ package cli
 
 import (
 	"os"
+    "text/template"
 
 	"github.com/spf13/cobra"
 
-	"github.com/singularityware/singularity/docs"
+	// "github.com/singularityware/singularity/docs"
 )
 
 // Global variables for singularity CLI
@@ -25,13 +26,47 @@ var (
 
 func init() {
 
+    /*
 	manHelp := func(c *cobra.Command, args []string) {
 		docs.DispManPg("singularity")
 	}
 
 	SingularityCmd.SetHelpFunc(manHelp)
+    */
 	SingularityCmd.Flags().SetInterspersed(false)
 	SingularityCmd.PersistentFlags().SetInterspersed(false)
+    templateFuncs := template.FuncMap{
+        "TraverseParentsUses": TraverseParentsUses,
+    }
+    cobra.AddTemplateFuncs(templateFuncs)
+
+    SingularityCmd.SetHelpTemplate(
+`Usage:
+  {{.UseLine}}{{if .HasAvailableLocalFlags}}
+
+Options:
+{{.LocalFlags.FlagUsagesWrapped 80 | trimTrailingWhitespaces}}
+{{end}}{{if .HasAvailableInheritedFlags}}
+
+Global Options:
+{{.InheritedFlags.FlagUsagesWrapped 80 | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableSubCommands}}
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasExample}}
+
+Examples:{{.Example}}{{end}}
+
+For additional help or support, please visit:
+
+    https://docs.sylabs.io/
+`)
+
+    SingularityCmd.SetUsageTemplate(
+        `Usage:
+  {{TraverseParentsUses . | trimTrailingWhitespaces}}{{if .HasAvailableSubCommands}} <command>
+
+Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}`)
+
 
 	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
 	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
