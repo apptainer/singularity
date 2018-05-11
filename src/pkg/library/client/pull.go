@@ -33,7 +33,13 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
 	}
 
-	url := libraryURL + "/v1/imagefile/" + strings.TrimPrefix(libraryRef, "library://")
+	libraryRef = strings.TrimPrefix(libraryRef, "library://")
+
+	if strings.Index(libraryRef, ":") == -1 {
+		libraryRef += ":latest"
+	}
+
+	url := libraryURL + "/v1/imagefile/" + libraryRef
 
 	sylog.Debugf("Pulling from URL: %s\n", url)
 

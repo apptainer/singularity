@@ -19,7 +19,7 @@ import (
 )
 
 func isLibraryPullRef(libraryRef string) bool {
-	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[._-][a-z0-9]+)*)?$", libraryRef)
+	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){0,2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[._-][a-z0-9]+)*)?$", libraryRef)
 	return match
 }
 
@@ -70,9 +70,20 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 
 	refParts := strings.Split(libraryRef, "/")
 
-	entity = refParts[0]
-	collection = refParts[1]
-	container = refParts[2]
+	switch len(refParts) {
+	case 3:
+		entity = refParts[0]
+		collection = refParts[1]
+		container = refParts[2]
+	case 2:
+		entity = ""
+		collection = refParts[0]
+		container = refParts[1]
+	case 1:
+		entity = ""
+		collection = ""
+		container = refParts[0]
+	}
 
 	// Default tag is latest
 	tags = []string{"latest"}
