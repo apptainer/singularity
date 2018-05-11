@@ -44,28 +44,28 @@ static void resolve_container_path(struct resolved_container_path *container_pat
     if ( container_path->mountdir == NULL ) {
         container_path->mountdir = realpath(CONTAINER_MOUNTDIR, NULL); // Flawfinder: ignore
         if ( container_path->mountdir == NULL ) {
-            singularity_message(ERROR, "Failed to resolve path to %s\n", CONTAINER_MOUNTDIR);
+            singularity_message(ERROR, "Failed to resolve path to %s: %s\n", CONTAINER_MOUNTDIR, strerror(errno));
             ABORT(255);
         }
     }
     if ( container_path->finaldir == NULL ) {
         container_path->finaldir = realpath(CONTAINER_FINALDIR, NULL); // Flawfinder: ignore
         if ( container_path->finaldir == NULL ) {
-            singularity_message(ERROR, "Failed to resolve path to %s\n", CONTAINER_FINALDIR);
+            singularity_message(ERROR, "Failed to resolve path to %s: %s\n", CONTAINER_FINALDIR, strerror(errno));
             ABORT(255);
         }
     }
     if ( container_path->overlay == NULL ) {
         container_path->overlay = realpath(CONTAINER_OVERLAY, NULL); // Flawfinder: ignore
         if ( container_path->overlay == NULL ) {
-            singularity_message(ERROR, "Failed to resolve path to %s\n", CONTAINER_OVERLAY);
+            singularity_message(ERROR, "Failed to resolve path to %s: %s\n", CONTAINER_OVERLAY, strerror(errno));
             ABORT(255);
         }
     }
     if ( container_path->session == NULL ) {
         container_path->session = realpath(SESSIONDIR, NULL); // Flawfinder: ignore
         if ( container_path->session == NULL ) {
-            singularity_message(ERROR, "Failed to resolve path to %s\n", SESSIONDIR);
+            singularity_message(ERROR, "Failed to resolve path to %s: %s\n", SESSIONDIR, strerror(errno));
             ABORT(255);
         }
     }
@@ -86,7 +86,7 @@ int singularity_mount(const char *source, const char *target,
 
     realdest = realpath(target, NULL); // Flawfinder: ignore
     if ( realdest == NULL ) {
-        singularity_message(ERROR, "Failed to get real path of %s\n", target);
+        singularity_message(ERROR, "Failed to get real path of %s: %s\n", target, strerror(errno));
         ABORT(255);
     }
 
