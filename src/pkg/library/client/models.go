@@ -34,13 +34,13 @@ type ModelManager interface {
 // BaseModel - has an ID, soft deletion marker, and Audit struct
 type BaseModel struct {
 	ModelManager `bson:",omitempty" json:",omitempty"`
-	Deleted      bool      `bson:"IsDeleted" json:"IsDeleted"`
-	CreatedBy    string    `bson:"CreatedBy" json:"CreatedBy"`
-	CreatedAt    time.Time `bson:"CreatedAt" json:"CreatedAt"`
-	UpdatedBy    string    `bson:"UpdatedBy,omitempty" json:"UpdatedBy,omitempty"`
-	UpdatedAt    time.Time `bson:"UpdatedAt,omitempty" json:"UpdatedAt,omitempty"`
-	DeletedBy    string    `bson:"DeletedBy,omitempty" json:"DeletedBy,omitempty"`
-	DeletedAt    time.Time `bson:"DeletedAt,omitempty" json:"DeletedAt,omitempty"`
+	Deleted      bool      `bson:"deleted" json:"deleted"`
+	CreatedBy    string    `bson:"createdBy" json:"createdBy"`
+	CreatedAt    time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedBy    string    `bson:"updatedBy,omitempty" json:"updatedBy,omitempty"`
+	UpdatedAt    time.Time `bson:"updatedAt,omitempty" json:"updatedAt,omitempty"`
+	DeletedBy    string    `bson:"deletedBy,omitempty" json:"deletedBy,omitempty"`
+	DeletedAt    time.Time `bson:"deletedAt,omitempty" json:"deletedAt,omitempty"`
 }
 
 // IsDeleted - Convenience method to check soft deletion state if working with
@@ -279,6 +279,7 @@ type Image struct {
 	Container   bson.ObjectId `bson:"container" json:"container"`
 	Blob        bson.ObjectId `bson:"blob,omitempty" json:"blob,omitempty"`
 	Size        int64         `bson:"size" json:"size"`
+	Uploaded    bool          `bson:"uploaded" json:"uploaded"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
