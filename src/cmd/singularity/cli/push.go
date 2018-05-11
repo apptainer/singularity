@@ -16,8 +16,7 @@ import (
 
 var pushUse string = `push [push options...] <container image> [library://[user[collection/[container[:tag]]]]]`
 
-var pushShort string = `
-push a given contaier to a library URI`
+var pushShort string = `Push a container to a Library URI`
 
 var pushLong string = `
 The Singularity push command allows you to upload your sif image to a library

@@ -57,8 +57,7 @@ var BuildCmd = &cobra.Command{
 
 	Use: `build [local options...] <IMAGE PATH> <BUILD SPEC>`,
 
-	Short: `The build command compiles a container per a recipe (definition file) or based
-on a URI, location, or archive."`,
+	Short: `Build a new Singularity container`,
 
 	Long: `
 

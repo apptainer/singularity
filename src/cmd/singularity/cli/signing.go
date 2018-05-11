@@ -19,7 +19,7 @@ import (
 
 var signUse string = `sign <image path>`
 
-var signShort string = ``
+var signShort string = `Attach cryptographic signature to container`
 
 var signLong string = ``
 

@@ -16,8 +16,7 @@ import (
 
 var pullUse string = `pull [pull options...] [library://[user[collection/[<container>:tag]]]]`
 
-var pullShort string = `
-pull a contaier from a URI to PWD`
+var pullShort string = `Pull a contianer from a URI`
 
 var pullLong string = `
 SUPPORTED URIs:

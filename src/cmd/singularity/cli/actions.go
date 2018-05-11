@@ -46,7 +46,7 @@ docker://*          A container hosted on Docker Hub`
 
 var execUse string = `exec [exec options...] <container> ...`
 
-var execShort string = `execute any program within the given container image`
+var execShort string = `Execute a command within container`
 
 var execLong string = `
 singularity exec supports the following formats:` + formats
@@ -60,7 +60,7 @@ $ singularity exec instance://my_instance ps -ef`
 
 var shellUse string = `shell [shell options...] <container>`
 
-var shellShort string = `obtain an interactive shell (/bin/bash) within the container image`
+var shellShort string = `Run a Bourne shell within container`
 
 var shellLong string = `
 singularity shell supports the following formats:` + formats
@@ -93,7 +93,7 @@ ubuntu       3     2  0 20:02 pts/8    00:00:00 ps -ef`
 
 var runUse string = `run [run options...] <container>`
 
-var runShort string = `execute the commands in a container runscript`
+var runShort string = `Launch a runscript within container`
 
 var runLong string = `
 This command will launch a Singularity container and execute a runscript

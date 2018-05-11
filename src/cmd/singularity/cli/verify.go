@@ -19,7 +19,7 @@ import (
 
 var verifyUse string = `verify <image path>`
 
-var verifyShort string = ``
+var verifyShort string = `Verify cryptographic signature on container`
 
 var verifyLong string = ``
 

@@ -14,8 +14,7 @@ import (
 
 var instanceUse string = `instance <subcommand>`
 
-var instanceShort string = `
-command group for managing containers running in the background`
+var instanceShort string = `Manage containers running in the background`
 
 var instanceLong string = `
 Instances allow you to run containers as background processes. This can be 

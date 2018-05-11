@@ -15,9 +15,7 @@ import (
 
 var capabilityUse string = `capability <subcommand>`
 
-var capabilityShort string = `
-command group supporting the management of Linux security capabilities on 
-containers`
+var capabilityShort string = `Manage Linux capabilities`
 
 var capabilityLong string = `
 Capabilities allow you to have fine grained control over the permissions that 

@@ -41,8 +41,12 @@ func init() {
     cobra.AddTemplateFuncs(templateFuncs)
 
     SingularityCmd.SetHelpTemplate(
-`Usage:
-  {{.UseLine}}{{if .HasAvailableLocalFlags}}
+`{{.Short}}
+
+Usage:
+  {{.UseLine}}
+
+Description:{{.Long}}{{if .HasAvailableLocalFlags}}
 
 Options:
 {{.LocalFlags.FlagUsagesWrapped 80 | trimTrailingWhitespaces}}
@@ -55,9 +59,8 @@ Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "he
 
 Examples:{{.Example}}{{end}}
 
-For additional help or support, please visit:
 
-    https://docs.sylabs.io/
+For additional help or support, please visit https://docs.sylabs.io
 `)
 
     SingularityCmd.SetUsageTemplate(
@@ -83,20 +86,23 @@ var SingularityCmd = &cobra.Command{
 
 	Use: "singularity [global options...]",
 
-	Short: `a Linux container platform optimized for High Performance Computing 
-(HPC) and Enterprise Performance Computing (EPC)`,
+	Short: `
+Linux container platform optimized for High Performance Computing (HPC) and 
+Enterprise Performance Computing (EPC)`,
 
-	Long: `Singularity containers provide an application virtualization layer 
-enabling mobility of compute via both application and environment portability. 
-With Singularity one is capable of building a root file system and running that 
-root file system on any other Linux system where Singularity is installed.`,
+	Long: `
+  Singularity containers provide an application virtualization layer enabling 
+  mobility of compute via both application and environment portability. With 
+  Singularity one is capable of building a root file system and running that 
+  root file system on any other Linux system where Singularity is installed.`,
 
 	Example: `
-$ singularity help
-    Will print a generalized usage summary and available commands.
-
-$ singularity help <command>
-    Additional help for any Singularity subcommand can be seen by appending the subcommand name to the above command.`,
+  $ singularity help
+      Will print a generalized usage summary and available commands.
+  
+  $ singularity help <command>
+      Additional help for any Singularity subcommand can be seen by appending 
+      the subcommand name to the above command.`,
 }
 
 /*
