@@ -13,7 +13,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/singularityware/singularity/docs"
+	// "github.com/singularityware/singularity/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/spf13/cobra"
 )
@@ -27,12 +27,7 @@ var sbuildLong string = ``
 var sbuildExample string = ``
 
 func init() {
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-sbuild")
-	}
-
 	sbuildCmd.Flags().SetInterspersed(false)
-	sbuildCmd.SetHelpFunc(manHelp)
 }
 
 // ExecuteSbuild executes the image build wrapper

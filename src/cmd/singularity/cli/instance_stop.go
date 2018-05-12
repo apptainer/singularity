@@ -10,7 +10,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/docs"
+	// "github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
 )
 
@@ -41,14 +41,8 @@ $ singularity instance.stop -s TERM mysql1
 $ singularity instance.stop -s 15 mysql1`
 
 func init() {
-
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-capability-list")
-	}
-
 	// SingularityCmd.AddCommand(instanceDotStopCmd)
 	InstanceStopCmd.Flags().SetInterspersed(false)
-	InstanceStopCmd.SetHelpFunc(manHelp)
 }
 
 var InstanceStopCmd = &cobra.Command{

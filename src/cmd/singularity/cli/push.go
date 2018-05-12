@@ -11,7 +11,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/libexec"
 	"github.com/spf13/cobra"
 
-	"github.com/singularityware/singularity/docs"
+	// "github.com/singularityware/singularity/docs"
 )
 
 var pushUse string = `push [push options...] <container image> [library://[user[collection/[container[:tag]]]]]`
@@ -32,12 +32,7 @@ var (
 )
 
 func init() {
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-push")
-	}
-
 	pushCmd.Flags().SetInterspersed(false)
-	pushCmd.SetHelpFunc(manHelp)
 	SingularityCmd.AddCommand(pushCmd)
 
 	pushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "http://localhost:5150", "")

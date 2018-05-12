@@ -10,41 +10,12 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
+
+	"github.com/singularityware/singularity/docs"
 )
 
-var capabilityAddUse string = `add [add options...] <capabilities>`
-
-var capabilityAddShort string = `
-add Linux capabilities to a container at runtime`
-
-var capabilityAddLong string = `
-The capability add command allows you to grant fine grained Linux capabilities 
-to your container at runtime. For instance, `
-
-var capabilityAddExample string = `
-$ singularity capability.add /tmp/my-sql.img mysql
-
-$ singularity shell capability://mysql
-Singularity my-sql.img> pwd
-/home/mibauer/mysql
-Singularity my-sql.img> ps
-PID TTY          TIME CMD
-  1 pts/0    00:00:00 sinit
-  2 pts/0    00:00:00 bash
-  3 pts/0    00:00:00 ps
-Singularity my-sql.img> 
-
-$ singularity capability.stop /tmp/my-sql.img mysql
-Stopping /tmp/my-sql.img mysql`
-
 func init() {
-
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-capability-add")
-	}
-
 	capabilityAddCmds := []*cobra.Command{
 		CapabilityAddCmd,
 		// capabilityDotAddCmd,
@@ -52,7 +23,6 @@ func init() {
 
 	for _, cmd := range capabilityAddCmds {
 		cmd.Flags().SetInterspersed(false)
-		cmd.SetHelpFunc(manHelp)
 	}
 
 	// SingularityCmd.AddCommand(capabilityDotAddCmd)
@@ -65,10 +35,10 @@ var CapabilityAddCmd = &cobra.Command{
 		fmt.Println("adding capability")
 	},
 
-	Use:     capabilityAddUse,
-	Short:   capabilityAddShort,
-	Long:    capabilityAddLong,
-	Example: capabilityAddExample,
+	Use:     docs.CapabilityAddUse,
+	Short:   docs.CapabilityAddShort,
+	Long:    docs.CapabilityAddLong,
+	Example: docs.CapabilityAddExample,
 }
 
 /* I'd like to have a discussion about dropping the dot version of command

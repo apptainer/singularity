@@ -8,7 +8,7 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/docs"
+	// "github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
 )
 
@@ -27,13 +27,7 @@ $ singularity help instance.start
 $ singularity instance.start --help`
 
 func init() {
-
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-instance")
-	}
-
 	SingularityCmd.AddCommand(InstanceCmd)
-	InstanceCmd.SetHelpFunc(manHelp)
 	InstanceCmd.AddCommand(InstanceStartCmd)
 	InstanceCmd.AddCommand(InstanceStopCmd)
 	InstanceCmd.AddCommand(InstanceListCmd)

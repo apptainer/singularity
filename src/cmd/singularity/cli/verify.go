@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 
-	"github.com/singularityware/singularity/docs"
+	// "github.com/singularityware/singularity/docs"
 )
 
 var verifyUse string = `verify <image path>`
@@ -26,12 +26,7 @@ var verifyLong string = ``
 var verifyExample string = ``
 
 func init() {
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-verify")
-	}
-
 	verifyCmd.Flags().SetInterspersed(false)
-	verifyCmd.SetHelpFunc(manHelp)
 	SingularityCmd.AddCommand(verifyCmd)
 }
 

@@ -10,7 +10,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/docs"
+	// "github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +25,7 @@ existing container image that will begin running in the background. If a
 start.sh script is defined in the container metadata the commands in that
 script will be executed with the instance start command as well.
 
-singularity instance start accepts the following container formats` + formats
+singularity instance start accepts the following container formats` + "formats"
 
 var instanceStartExample string = `
 $ singularity instance.start /tmp/my-sql.img mysql
@@ -45,10 +45,6 @@ Stopping /tmp/my-sql.img mysql`
 
 func init() {
 
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-instance-start")
-	}
-
 	instanceStartCmds := []*cobra.Command{
 		InstanceStartCmd,
 		// instanceDotStartCmd,
@@ -56,7 +52,6 @@ func init() {
 
 	for _, cmd := range instanceStartCmds {
 		cmd.Flags().SetInterspersed(false)
-		cmd.SetHelpFunc(manHelp)
 
 		cmd.Flags().AddFlag(actionFlags.Lookup("bind"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("home"))

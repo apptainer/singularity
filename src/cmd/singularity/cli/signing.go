@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 
-	"github.com/singularityware/singularity/docs"
+	// "github.com/singularityware/singularity/docs"
 )
 
 var signUse string = `sign <image path>`
@@ -26,12 +26,7 @@ var signLong string = ``
 var signExample string = ``
 
 func init() {
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-sign")
-	}
-
 	SignCmd.Flags().SetInterspersed(false)
-	SignCmd.SetHelpFunc(manHelp)
 	SingularityCmd.AddCommand(SignCmd)
 }
 

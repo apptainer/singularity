@@ -10,7 +10,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/docs"
+	// "github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
 )
 
@@ -37,12 +37,7 @@ test2           16219     /home/mibauer/singularity/sinstance/test.img
 `
 
 func init() {
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity-instance-list")
-	}
-
 	InstanceListCmd.Flags().SetInterspersed(false)
-	InstanceListCmd.SetHelpFunc(manHelp)
 
 	// SingularityCmd.AddCommand(instanceDotListCmd)
 	InstanceListCmd.Flags().StringVarP(&User, "user", "u", "", `If running as root, list instances from "username">`)

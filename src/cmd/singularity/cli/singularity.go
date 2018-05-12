@@ -9,11 +9,11 @@ package cli
 
 import (
 	"os"
-    "text/template"
+    // "text/template"
 
 	"github.com/spf13/cobra"
 
-	// "github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/docs"
 )
 
 // Global variables for singularity CLI
@@ -25,51 +25,17 @@ var (
 )
 
 func init() {
-
-    /*
-	manHelp := func(c *cobra.Command, args []string) {
-		docs.DispManPg("singularity")
-	}
-
-	SingularityCmd.SetHelpFunc(manHelp)
-    */
 	SingularityCmd.Flags().SetInterspersed(false)
 	SingularityCmd.PersistentFlags().SetInterspersed(false)
+    /*
     templateFuncs := template.FuncMap{
         "TraverseParentsUses": TraverseParentsUses,
     }
     cobra.AddTemplateFuncs(templateFuncs)
+    */
 
-    SingularityCmd.SetHelpTemplate(
-`{{.Short}}
-
-Usage:
-  {{.UseLine}}
-
-Description:{{.Long}}{{if .HasAvailableLocalFlags}}
-
-Options:
-{{.LocalFlags.FlagUsagesWrapped 80 | trimTrailingWhitespaces}}
-{{end}}{{if .HasAvailableInheritedFlags}}
-
-Global Options:
-{{.InheritedFlags.FlagUsagesWrapped 80 | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableSubCommands}}
-Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasExample}}
-
-Examples:{{.Example}}{{end}}
-
-
-For additional help or support, please visit https://docs.sylabs.io
-`)
-
-    SingularityCmd.SetUsageTemplate(
-        `Usage:
-  {{TraverseParentsUses . | trimTrailingWhitespaces}}{{if .HasAvailableSubCommands}} <command>
-
-Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}`)
-
+    SingularityCmd.SetHelpTemplate(docs.HelpTemplate)
+    SingularityCmd.SetUsageTemplate(docs.UseTemplate)
 
 	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
 	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
@@ -84,25 +50,10 @@ var SingularityCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: nil,
 
-	Use: "singularity [global options...]",
-
-	Short: `
-Linux container platform optimized for High Performance Computing (HPC) and 
-Enterprise Performance Computing (EPC)`,
-
-	Long: `
-  Singularity containers provide an application virtualization layer enabling 
-  mobility of compute via both application and environment portability. With 
-  Singularity one is capable of building a root file system and running that 
-  root file system on any other Linux system where Singularity is installed.`,
-
-	Example: `
-  $ singularity help
-      Will print a generalized usage summary and available commands.
-  
-  $ singularity help <command>
-      Additional help for any Singularity subcommand can be seen by appending 
-      the subcommand name to the above command.`,
+	Use: docs.SingularityUse,
+	Short: docs.SingularityShort,
+	Long: docs.SingularityLong,
+	Example: docs.SingularityExample,
 }
 
 /*
