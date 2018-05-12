@@ -9,9 +9,7 @@ package docs
 
 // Global templates for help and usage strings
 const (
-
-    HelpTemplate string =
-`{{.Short}}
+	HelpTemplate string = `{{.Short}}
 
 Usage:
   {{.UseLine}}
@@ -33,13 +31,10 @@ Examples:{{.Example}}{{end}}
 For additional help or support, please visit https://docs.sylabs.io
 `
 
-    UseTemplate string =
-`Usage:
+	UseTemplate string = `Usage:
   {{TraverseParentsUses . | trimTrailingWhitespaces}}{{if .HasAvailableSubCommands}} <command>
 
 Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}
 `
-
 )
-

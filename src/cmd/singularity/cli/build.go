@@ -49,9 +49,9 @@ var BuildCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(2),
 
-	Use: docs.BuildUse,
-	Short: docs.BuildShort,
-	Long: docs.BuildLong,
+	Use:     docs.BuildUse,
+	Short:   docs.BuildShort,
+	Long:    docs.BuildLong,
 	Example: docs.BuildExample,
 
 	// TODO: Can we plz move this to another file to keep the CLI the CLI

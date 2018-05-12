@@ -9,7 +9,7 @@ package cli
 
 import (
 	"os"
-    // "text/template"
+	// "text/template"
 
 	"github.com/spf13/cobra"
 
@@ -27,15 +27,15 @@ var (
 func init() {
 	SingularityCmd.Flags().SetInterspersed(false)
 	SingularityCmd.PersistentFlags().SetInterspersed(false)
-    /*
-    templateFuncs := template.FuncMap{
-        "TraverseParentsUses": TraverseParentsUses,
-    }
-    cobra.AddTemplateFuncs(templateFuncs)
-    */
+	/*
+	   templateFuncs := template.FuncMap{
+	       "TraverseParentsUses": TraverseParentsUses,
+	   }
+	   cobra.AddTemplateFuncs(templateFuncs)
+	*/
 
-    SingularityCmd.SetHelpTemplate(docs.HelpTemplate)
-    SingularityCmd.SetUsageTemplate(docs.UseTemplate)
+	SingularityCmd.SetHelpTemplate(docs.HelpTemplate)
+	SingularityCmd.SetUsageTemplate(docs.UseTemplate)
 
 	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
 	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
@@ -50,9 +50,9 @@ var SingularityCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: nil,
 
-	Use: docs.SingularityUse,
-	Short: docs.SingularityShort,
-	Long: docs.SingularityLong,
+	Use:     docs.SingularityUse,
+	Short:   docs.SingularityShort,
+	Long:    docs.SingularityLong,
 	Example: docs.SingularityExample,
 }
 
