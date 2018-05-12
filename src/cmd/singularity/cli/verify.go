@@ -14,16 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 
-	// "github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/docs"
 )
-
-var verifyUse string = `verify <image path>`
-
-var verifyShort string = `Verify cryptographic signature on container`
-
-var verifyLong string = ``
-
-var verifyExample string = ``
 
 func init() {
 	verifyCmd.Flags().SetInterspersed(false)
@@ -42,8 +34,8 @@ var verifyCmd = &cobra.Command{
 		}
 	},
 
-	Use:     verifyUse,
-	Short:   verifyShort,
-	Long:    verifyLong,
-	Example: verifyExample,
+	Use:     docs.VerifyUse,
+	Short:   docs.VerifyShort,
+	Long:    docs.VerifyLong,
+	Example: docs.VerifyExample,
 }

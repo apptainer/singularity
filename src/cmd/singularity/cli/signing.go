@@ -14,16 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 
-	// "github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/docs"
 )
-
-var signUse string = `sign <image path>`
-
-var signShort string = `Attach cryptographic signature to container`
-
-var signLong string = ``
-
-var signExample string = ``
 
 func init() {
 	SignCmd.Flags().SetInterspersed(false)
@@ -42,8 +34,8 @@ var SignCmd = &cobra.Command{
 		}
 	},
 
-	Use:     signUse,
-	Short:   signShort,
-	Long:    signLong,
-	Example: signExample,
+	Use:     docs.SignUse,
+	Short:   docs.SignShort,
+	Long:    docs.SignLong,
+	Example: docs.SignExample,
 }

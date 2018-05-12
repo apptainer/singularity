@@ -10,38 +10,10 @@ package cli
 import (
 	"fmt"
 
-	// "github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
+
+	"github.com/singularityware/singularity/docs"
 )
-
-var instanceStartUse string = `start [start options...] <container path> <instance name>`
-
-var instanceStartShort string = `
-start a named instance of the given container image`
-
-var instanceStartLong string = `
-The instance start command allows you to create a new named instance from an 
-existing container image that will begin running in the background. If a 
-start.sh script is defined in the container metadata the commands in that
-script will be executed with the instance start command as well.
-
-singularity instance start accepts the following container formats` + "formats"
-
-var instanceStartExample string = `
-$ singularity instance.start /tmp/my-sql.img mysql
-
-$ singularity shell instance://mysql
-Singularity my-sql.img> pwd
-/home/mibauer/mysql
-Singularity my-sql.img> ps
-PID TTY          TIME CMD
-  1 pts/0    00:00:00 sinit
-  2 pts/0    00:00:00 bash
-  3 pts/0    00:00:00 ps
-Singularity my-sql.img> 
-
-$ singularity instance.stop /tmp/my-sql.img mysql
-Stopping /tmp/my-sql.img mysql`
 
 func init() {
 
@@ -81,10 +53,10 @@ var InstanceStartCmd = &cobra.Command{
 		fmt.Println("starting instance")
 	},
 
-	Use:     instanceStartUse,
-	Short:   instanceStartShort,
-	Long:    instanceStartLong,
-	Example: instanceStartExample,
+	Use:     docs.InstanceStartUse,
+	Short:   docs.InstanceStartShort,
+	Long:    docs.InstanceStartLong,
+	Example: docs.InstanceStartExample,
 }
 
 /*

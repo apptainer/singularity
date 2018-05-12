@@ -11,20 +11,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/libexec"
 	"github.com/spf13/cobra"
 
-	// "github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/docs"
 )
-
-var pushUse string = `push [push options...] <container image> [library://[user[collection/[container[:tag]]]]]`
-
-var pushShort string = `Push a container to a Library URI`
-
-var pushLong string = `
-The Singularity push command allows you to upload your sif image to a library
-of your choosing`
-
-var pushExample string = `
-$ singularity push /home/user/my.sif library://user/collection/my.sif:latest
-`
 
 var (
 	// PushLibraryURI holds the base URI to a Sylabs library API instance
@@ -46,8 +34,8 @@ var pushCmd = &cobra.Command{
 		libexec.PushImage(args[0], args[1], PushLibraryURI)
 	},
 
-	Use:     pushUse,
-	Short:   pushShort,
-	Long:    pushLong,
-	Example: pushExample,
+	Use:     docs.PushUse,
+	Short:   docs.PushShort,
+	Long:    docs.PushLong,
+	Example: docs.PushExample,
 }

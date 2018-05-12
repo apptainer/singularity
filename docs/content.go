@@ -297,6 +297,172 @@ Enterprise Performance Computing (EPC)`
   $ singularity exec instance://my_instance ps -ef`
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// instance
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    InstanceUse string = `instance <subcommand>`
+
+    InstanceShort string = `Manage containers running in the background`
+
+    InstanceLong string = `
+  Instances allow you to run containers as background processes. This can be
+  useful for running services such as web servers or databases.`
+
+    InstanceExample string = `
+  All group commands have their own help output:
+  
+  $ singularity help instance.start
+  $ singularity instance.start --help`
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// instance list
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    InstanceListUse string = `list [list options...] <container>`
+
+    InstanceListShort string = `List all running and named Singularity instances`
+
+InstanceListLong string = `
+  The instance list command allows you to view the Singularity container
+  instances that are currently running in the background.`
+
+InstanceListExample string = `
+  $ singularity instance.list
+  DAEMON NAME      PID      CONTAINER IMAGE
+  test            11963     /home/mibauer/singularity/sinstance/test.img
+  
+  $ sudo singularity instance.list -u mibauer
+  DAEMON NAME      PID      CONTAINER IMAGE
+  test            11963     /home/mibauer/singularity/sinstance/test.img
+  test2           16219     /home/mibauer/singularity/sinstance/test.img`
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// instance start
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    InstanceStartUse string = `start [start options...] <container path> <instance name>`
+
+    InstanceStartShort string = `Start a named instance of the given container image`
+
+    InstanceStartLong string = `
+  The instance start command allows you to create a new named instance from an
+  existing container image that will begin running in the background. If a
+  start.sh script is defined in the container metadata the commands in that
+  script will be executed with the instance start command as well.
+  
+  singularity instance start accepts the following container formats` + formats
+
+    InstanceStartExample string = `
+  $ singularity instance.start /tmp/my-sql.img mysql
+  
+  $ singularity shell instance://mysql
+  Singularity my-sql.img> pwd
+  /home/mibauer/mysql
+  Singularity my-sql.img> ps
+  PID TTY          TIME CMD
+    1 pts/0    00:00:00 sinit
+    2 pts/0    00:00:00 bash
+    3 pts/0    00:00:00 ps
+  Singularity my-sql.img>
+  
+  $ singularity instance.stop /tmp/my-sql.img mysql
+  Stopping /tmp/my-sql.img mysql`
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// instance stop
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    InstanceStopUse string = `stop [stop options...] [instance]`
+
+    InstanceStopShort string = `Stop a named instance of a given container image`
+
+    InstanceStopLong string = `
+  The command singularity instance stop allows you to stop and clean up a named,
+  running instance of a given container image.`
+
+    InstanceStopExample string = `
+  $ singularity instance.start my-sql.img mysql1
+  $ singularity instance.start my-sql.img mysql2
+  $ singularity instance.stop mysql*
+  Stopping mysql1 instance of my-sql.img (PID=23845)
+  Stopping mysql2 instance of my-sql.img (PID=23858)
+  
+  $ singularity instance.start my-sql.img mysql1
+  
+  Force instance to shutdown
+  $ singularity instance.stop -f mysql1 (may corrupt data)
+  
+  Send SIGTERM to the instance
+  $ singularity instance.stop -s SIGTERM mysql1
+  $ singularity instance.stop -s TERM mysql1
+  $ singularity instance.stop -s 15 mysql1`
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// pull
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    PullUse string = `pull [pull options...] [library://[user[collection/[<container>:tag]]]]`
+
+    PullShort string = `Pull a contianer from a URI`
+
+    PullLong string = `
+  SUPPORTED URIs:
+  
+    library: Pull an image from the currently configured library
+    shub: Pull an image using python from Singularity Hub to /home/vagrant/versioned/singularity
+    docker: Pull a docker image using python to /home/vagrant/versioned/singularity`
+
+    PullExample string = `
+  $ singularity pull docker://ubuntu:latest
+  
+  $ singularity pull shub://vsoch/singularity-images
+  Found image vsoch/singularity-images:mongo
+  Downloading image... vsoch-singularity-images-mongo.img
+  
+  $ singularity pull --name "meatballs.img" shub://vsoch/singularity-images
+  $ singularity pull --commit shub://vsoch/singularity-images
+  $ singularity pull --hash shub://vsoch/singularity-images`
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// push
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    PushUse string = `push [push options...] <container image> [library://[user[collection/[container[:tag]]]]]`
+
+    PushShort string = `Push a container to a Library URI`
+
+    PushLong string = `
+  The Singularity push command allows you to upload your sif image to a library
+  of your choosing`
+
+    PushExample string = `
+  $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// run
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    RunUse string = `run [run options...] <container>`
+
+    RunShort string = `Launch a runscript within container`
+
+    RunLong string = `
+  This command will launch a Singularity container and execute a runscript
+  if one is defined for that container. The runscript is a metadata file within
+  the container that containes shell commands. If the file is present (and
+  executable) then this command will execute that file within the container
+  automatically. All arguments following the container name will be passed
+  directly to the runscript.
+  
+  singularity run accepts the following container formats:` + formats
+
+    RunExamples string = `
+  # Here we see that the runscript prints "Hello world: "
+  $ singularity exec /tmp/Debian.img cat /singularity
+  #!/bin/sh
+  echo "Hello world: "
+  
+  # It runs with our inputs when we run the image
+  $ singularity run /tmp/Debian.img one two three
+  Hello world: one two three
+  
+  # Note that this does the same thing
+  $ ./tmp/Debian.img one two three`
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // shell
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ShellUse string = `shell [shell options...] <container>`
@@ -333,34 +499,30 @@ Enterprise Performance Computing (EPC)`
   ubuntu       3     2  0 20:02 pts/8    00:00:00 ps -ef`
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// run
+// sign
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    RunUse string = `run [run options...] <container>`
+    SignUse string = `sign <image path>`
 
-    RunShort string = `Launch a runscript within container`
+    SignShort string = `Attach cryptographic signature to container`
 
-    RunLong string = `
-  This command will launch a Singularity container and execute a runscript
-  if one is defined for that container. The runscript is a metadata file within
-  the container that containes shell commands. If the file is present (and
-  executable) then this command will execute that file within the container
-  automatically. All arguments following the container name will be passed
-  directly to the runscript.
-  
-  singularity run accepts the following container formats:` + formats
+    SignLong string = `
+  `
 
-    RunExamples string = `
-  # Here we see that the runscript prints "Hello world: "
-  $ singularity exec /tmp/Debian.img cat /singularity
-  #!/bin/sh
-  echo "Hello world: "
-  
-  # It runs with our inputs when we run the image
-  $ singularity run /tmp/Debian.img one two three
-  Hello world: one two three
-  
-  # Note that this does the same thing
-  $ ./tmp/Debian.img one two three`
+    SignExample string = `
+  `
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// verify
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    VerifyUse string = `verify <image path>`
+
+    VerifyShort string = `Verify cryptographic signature on container`
+
+    VerifyLong string = `
+  `
+
+    VerifyExample string = `
+  `
 
 )
 

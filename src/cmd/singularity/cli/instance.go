@@ -8,23 +8,10 @@
 package cli
 
 import (
-	// "github.com/singularityware/singularity/docs"
 	"github.com/spf13/cobra"
+
+	"github.com/singularityware/singularity/docs"
 )
-
-var instanceUse string = `instance <subcommand>`
-
-var instanceShort string = `Manage containers running in the background`
-
-var instanceLong string = `
-Instances allow you to run containers as background processes. This can be 
-useful for running services such as web servers or databases.`
-
-var instanceExample string = `
-All group commands have their own help output:
-
-$ singularity help instance.start
-$ singularity instance.start --help`
 
 func init() {
 	SingularityCmd.AddCommand(InstanceCmd)
@@ -37,8 +24,8 @@ var InstanceCmd = &cobra.Command{
 	Run: nil,
 	DisableFlagsInUseLine: true,
 
-	Use:     instanceUse,
-	Short:   instanceShort,
-	Long:    instanceLong,
-	Example: instanceExample,
+	Use:     docs.InstanceUse,
+	Short:   docs.InstanceShort,
+	Long:    docs.InstanceLong,
+	Example: docs.InstanceExample,
 }
