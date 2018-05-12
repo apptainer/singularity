@@ -13,7 +13,6 @@ import (
 	"os"
 	"strings"
 
-	// "github.com/singularityware/singularity/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/spf13/cobra"
 )
