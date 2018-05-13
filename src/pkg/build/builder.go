@@ -5,11 +5,14 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
+
+import "context"
 
 // Builder ~incomplete or incorrect list of functions for now
 type Builder interface {
-	Build() error
+	Build(ctx context.Context) error
 	/*Provisioner
 	CreateMetadata()
 	PreScript()

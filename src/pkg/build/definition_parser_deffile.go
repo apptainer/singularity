@@ -5,6 +5,7 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
 
 import (
@@ -16,13 +17,15 @@ import (
 	"log"
 	"strings"
 	"unicode"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // scanDefinitionFile is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
 // that designated by a line starting with %
 // If there are any Golang devs reading this, please improve your documentation for this. It's awful.
 func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	var inSection bool = false
+	inSection := false
 	var retbuf bytes.Buffer
 	advance = 0
 
@@ -49,25 +52,25 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 
 			if !ok {
 				// Invalid Section Identifier
-				return 0, nil, errors.New(fmt.Sprintf("Invalid section identifier found: %s", string(word)))
+				return 0, nil, fmt.Errorf("invalid section identifier found: %s", string(word))
+			}
+
+			// Valid Section Identifier
+			if inSection {
+				// Here we found the end of the section
+				return advance, retbuf.Bytes(), nil
+			} else if advance == 0 {
+				// When advance == 0 and we found a section identifier, that means we have already
+				// parsed the header out and left the % as the first character in the data. This means
+				// we can now parse into sections.
+				retbuf.Write(word[1:])
+				retbuf.WriteString("\n")
+				inSection = true
 			} else {
-				// Valid Section Identifier
-				if inSection {
-					// Here we found the end of the section
-					return advance, retbuf.Bytes(), nil
-				} else if advance == 0 {
-					// When advance == 0 and we found a section identifier, that means we have already
-					// parsed the header out and left the % as the first character in the data. This means
-					// we can now parse into sections.
-					retbuf.Write(word[1:])
-					retbuf.WriteString("\n")
-					inSection = true
-				} else {
-					// When advance != 0, that means we found the start of a section but there is
-					// data before it. We return the data up to the first % and that is the header
-					retbuf.WriteString(strings.TrimSpace(string(data[:advance])))
-					return advance, retbuf.Bytes(), nil
-				}
+				// When advance != 0, that means we found the start of a section but there is
+				// data before it. We return the data up to the first % and that is the header
+				retbuf.WriteString(strings.TrimSpace(string(data[:advance])))
+				return advance, retbuf.Bytes(), nil
 			}
 		} else {
 			// This line is not a section identifier
@@ -84,18 +87,17 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 
 	if !atEOF {
 		return 0, nil, nil
-	} else {
-		return advance, retbuf.Bytes(), nil
 	}
+
+	return advance, retbuf.Bytes(), nil
+
 }
 
-func doSections(s *bufio.Scanner, d *Definition, done chan error) {
+func doSections(s *bufio.Scanner, d *Definition) (err error) {
 	sections := make(map[string]string)
 
 	for s.Scan() {
-		if s.Err() != nil {
-			log.Println(s.Err())
-			done <- s.Err()
+		if err = s.Err(); err != nil {
 			return
 		}
 
@@ -108,9 +110,7 @@ func doSections(s *bufio.Scanner, d *Definition, done chan error) {
 		}
 	}
 
-	if s.Err() != nil {
-		log.Println(s.Err())
-		done <- s.Err()
+	if err = s.Err(); err != nil {
 		return
 	}
 
@@ -145,17 +145,16 @@ func doSections(s *bufio.Scanner, d *Definition, done chan error) {
 		},
 	}
 	d.BuildData.Files = files
-	d.BuildData.BuildScripts = BuildScripts{
+	d.BuildData.Scripts = Scripts{
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
 		Post:  sections["post"],
 	}
 
-	done <- nil
 	return
 }
 
-func doHeader(h string, d *Definition, done chan error) {
+func doHeader(h string, d *Definition) (err error) {
 	h = strings.TrimSpace(h)
 	toks := strings.Split(h, "\n")
 	d.Header = make(map[string]string)
@@ -168,13 +167,11 @@ func doHeader(h string, d *Definition, done chan error) {
 		linetoks := strings.SplitN(line, ":", 2)
 		key, val := strings.ToLower(strings.TrimSpace(linetoks[0])), strings.TrimSpace(linetoks[1])
 		if _, ok := validHeaders[key]; !ok {
-			done <- errors.New(fmt.Sprintf("Invalid header keyword found: %s", key))
-			return
+			return fmt.Errorf("invalid header keyword found: %s", key)
 		}
 		d.Header[key] = val
 	}
 
-	done <- nil
 	return
 }
 
@@ -182,8 +179,6 @@ func doHeader(h string, d *Definition, done chan error) {
 // and parse it into a Definition struct or return error if
 // the definition file has a bad section.
 func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
-	d = Definition{}
-
 	s := bufio.NewScanner(r)
 	s.Split(scanDefinitionFile)
 
@@ -197,29 +192,15 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 		return d, errors.New("Empty definition file")
 	}
 
-	hChan := make(chan error)
-	sChan := make(chan error)
-
-	go doHeader(s.Text(), &d, hChan)
-	go doSections(s, &d, sChan)
-
-	// We’ll use select to await both of these values simultaneously
-	// if one of the parser rutines returns error, ParseDefinitionFile
-	// will break and return an empty Definition with the error
-	for i := 0; i < 2; i++ {
-		select {
-		case headerErr := <-hChan:
-			if headerErr != nil {
-				return Definition{}, headerErr
-			}
-		case sectionsErr := <-sChan:
-			if sectionsErr != nil {
-				return Definition{}, sectionsErr
-			}
-		}
+	if err = doHeader(s.Text(), &d); err != nil {
+		sylog.Warningf("failed to parse DefFile header: %v\n", err)
+		return
+	}
+	if err = doSections(s, &d); err != nil {
+		sylog.Warningf("failed to parse DefFile sections: %v\n", err)
 	}
 
-	return d, nil
+	return
 }
 
 func writeSectionIfExists(w io.Writer, ident string, s string) {

@@ -2,10 +2,11 @@ package workflows
 
 import (
 	"fmt"
+	"log"
+
 	runtime "github.com/singularityware/singularity/src/pkg/workflows"
 	singularity "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
-	"log"
 )
 
 var engines map[string]*runtime.RuntimeEngine
@@ -20,7 +21,7 @@ func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, e
 		return nil, fmt.Errorf("no runtime engine named %s found", name)
 	}
 	if err := engine.SetConfig(jsonConfig); err != nil {
-		return nil, fmt.Errorf("json parsing failed: %s", err)
+		return nil, fmt.Errorf("json parsing failed: %v", err)
 	}
 	return engine, nil
 }

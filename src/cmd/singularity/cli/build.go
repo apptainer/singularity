@@ -8,16 +8,19 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/singularityware/singularity/src/pkg/build"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
 
 var (
 	Remote    bool
 	RemoteURL string
+	AuthToken string
 	Sandbox   bool
 	Writable  bool
 	Force     bool
@@ -36,6 +39,7 @@ func init() {
 	buildCmd.Flags().BoolVarP(&NoTest, "notest", "T", false, "")
 	buildCmd.Flags().BoolVarP(&Remote, "remote", "r", false, "Build image remotely")
 	buildCmd.Flags().StringVar(&RemoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
+	buildCmd.Flags().StringVar(&AuthToken, "auth-token", "", "Specify the auth token for the remote builder")
 }
 
 // buildCmd represents the build command
@@ -59,61 +63,36 @@ var buildCmd = &cobra.Command{
 			// URI passed as arg[1]
 			def, err = build.NewDefinitionFromURI(args[1])
 			if err != nil {
-				fmt.Printf("Unable to parse URI %s: %s\n", args[1], err)
-				os.Exit(1)
+				sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
 			}
 		} else if !ok && err == nil {
 			// Non-URI passed as arg[1]
 			defFile, err := os.Open(args[1])
 			if err != nil {
-				fmt.Printf("Unable to open file %s: %s\n", args[1], err)
-				os.Exit(1)
+				sylog.Fatalf("unable to open file %s: %v\n", args[1], err)
 			}
+			defer defFile.Close()
 
 			def, err = build.ParseDefinitionFile(defFile)
 			if err != nil {
-				fmt.Printf("Failed to parse definition file %s: %s\n", args[1], err)
-				os.Exit(1)
+				sylog.Fatalf("failed to parse definition file %s: %v\n", args[1], err)
 			}
 		} else {
-			// Error
-			fmt.Printf("Unable to parse %s: %s\n", args[1], err)
-			os.Exit(1)
+			sylog.Fatalf("unable to parse %s: %v\n", args[1], err)
 		}
 
 		if Remote {
-			b = build.NewRemoteBuilder(args[0], def, false, RemoteURL)
-
+			b = build.NewRemoteBuilder(args[0], def, false, RemoteURL, AuthToken)
 		} else {
 			b, err = build.NewSifBuilder(args[0], def)
 			if err != nil {
-				fmt.Println("Failed to create SifBuilder object: ", err)
-				os.Exit(1)
+				sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
 			}
 		}
 
-		if err := b.Build(); err != nil {
-			fmt.Println("Failed to build image: ", err)
-			os.Exit(1)
+		if err := b.Build(context.TODO()); err != nil {
+			sylog.Fatalf("failed to build image: %v\n", err)
 		}
-
-		/*
-			if Remote {
-				doRemoteBuild(args[0], args[1])
-			} else {
-				if ok, err := build.IsValidURI(args[1]); ok && err == nil {
-					u := strings.SplitN(args[1], "://", 2)
-					b, err := build.NewSifBuilderFromURI(args[0], args[1])
-					if err != nil {
-						glog.Errorf("Image build system encountered an error: %s\n", err)
-						return
-					}
-					b.Build()
-				} else {
-					glog.Fatalf("%s", err)
-				}
-			}*/
-
 	},
 	TraverseChildren: true,
 }

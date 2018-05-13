@@ -12,6 +12,8 @@ package main
 #include <sys/types.h>
 #include "startup/wrapper.h"
 */
+// #cgo CFLAGS: -I../../c -I../../c/lib
+// #cgo LDFLAGS: -L../../../../builddir/lib/ -lruntime -luuid
 import "C"
 
 import (

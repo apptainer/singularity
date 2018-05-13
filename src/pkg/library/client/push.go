@@ -1,3 +1,11 @@
+/*
+  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+
+  This software is licensed under a 3-clause BSD license.  Please
+  consult LICENSE file distributed with the sources of this project regarding
+  your rights to use or distribute this software.
+*/
+
 package client
 
 import (
@@ -5,33 +13,41 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
+
+	"github.com/globalsign/mgo/bson"
 	"gopkg.in/cheggaaa/pb.v1"
-	"gopkg.in/mgo.v2/bson"
 )
 
 var baseURL string
 
+// UploadImage will push a specified image up to the Container Library,
 func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 
 	baseURL = libraryURL
 
-	if !isLibraryRef(libraryRef) {
-		log.Fatalf("Not a valid library reference: %s", libraryRef)
+	if !isLibraryPushRef(libraryRef) {
+		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
 	}
 
-	entity, collection, container, image := parseLibraryRef(libraryRef)
+	imageHash, err := ImageHash(filePath)
+	if err != nil {
+		return err
+	}
+	sylog.Debugf("Image hash computed as %s\n", imageHash)
+
+	entity, collection, container, tags := parseLibraryRef(libraryRef)
 
 	entityID, err := entityExists(entity)
 	if err != nil {
 		return err
 	}
 	if entityID == "" {
-		log.Printf("Entity %s does not exist in library - creating it.\n", entity)
+		sylog.Verbosef("Entity %s does not exist in library - creating it.\n", entity)
 		entityID, err = createEntity(entity)
 		if err != nil {
 			return err
@@ -42,7 +58,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 		return err
 	}
 	if collectionID == "" {
-		log.Printf("Collection %s/%s does not exist in library - creating it.\n", entity, collection)
+		sylog.Verbosef("Collection %s/%s does not exist in library - creating it.\n", entity, collection)
 		collectionID, err = createCollection(collection, entityID)
 		if err != nil {
 			return err
@@ -53,33 +69,39 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 		return err
 	}
 	if containerID == "" {
-		log.Printf("Container %s/%s/%s does not exist in library - creating it.\n", entity, collection, container)
+		sylog.Verbosef("Container %s/%s/%s does not exist in library - creating it.\n", entity, collection, container)
 		containerID, err = createContainer(container, collectionID)
 		if err != nil {
 			return err
 		}
 	}
-	imageID, err := imageExists(entity, collection, container, image)
+	imageID, err := imageExists(entity, collection, container, imageHash)
 	if err != nil {
 		return err
 	}
 	if imageID == "" {
-		log.Printf("Image %s/%s/%s:%s does not exist in library - creating it.\n", entity, collection, container, image)
-		imageID, err = createImage(image, containerID)
+		sylog.Verbosef("Image %s/%s/%s:%s does not exist in library - creating it.\n", entity, collection, container, imageHash)
+		imageID, err = createImage(imageHash, containerID)
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Println("This image already exists in the library - it will be overwritten.")
+		sylog.Warningf("This image already exists in the library - it will be overwritten.\n")
 	}
-	log.Printf("Now uploading %s to the library\n", filePath)
+	sylog.Infof("Now uploading %s to the library\n", filePath)
 
 	err = postFile(filePath, imageID)
 	if err != nil {
 		return err
 	}
+	sylog.Debugf("Upload completed OK\n")
 
-	log.Printf("Upload Complete!")
+	sylog.Debugf("Setting tags against uploaded image\n")
+	err = setTags(containerID, imageID, tags)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -130,14 +152,40 @@ func createContainer(name string, collectionID string) (id string, err error) {
 	return apiCreate(c, baseURL+"/v1/containers")
 }
 
-func createImage(name string, containerID string) (id string, err error) {
+func createImage(hash string, containerID string) (id string, err error) {
 	i := Image{
-		Name:        name,
+		Hash:        hash,
 		Description: "No description",
 		Container:   bson.ObjectIdHex(containerID),
 	}
 
 	return apiCreate(i, baseURL+"/v1/images")
+}
+
+func setTags(containerID string, imageID string, tags []string) error {
+	// Get existing tags, so we know which will be replaced
+	existingTags, err := apiGetTags(baseURL + "/v1/tags/" + containerID)
+	if err != nil {
+		return err
+	}
+
+	for _, tag := range tags {
+		sylog.Infof("Setting tag %s\n", tag)
+
+		if existingImg, ok := existingTags[tag]; ok {
+			sylog.Warningf("%s replaces existing tag on image %s\n", tag, existingImg)
+		}
+
+		imgTag := ImageTag{
+			tag,
+			bson.ObjectIdHex(imageID),
+		}
+		err := apiSetTag(baseURL+"/v1/tags/"+containerID, imgTag)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func apiCreate(o interface{}, url string) (id string, err error) {
@@ -187,6 +235,52 @@ func apiExists(url string) (id string, err error) {
 		return c["data"]["id"].(string), nil
 	}
 	return "", nil
+}
+
+func apiGetTags(url string) (tags map[string]string, err error) {
+	res, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("Error making request to server:\n\t%v", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		jRes, err := ParseErrorBody(res.Body)
+		if err != nil {
+			jRes = ParseErrorResponse(res)
+		}
+		return nil, fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
+			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
+	}
+	c := make(map[string]map[string]string)
+	json.NewDecoder(res.Body).Decode(&c)
+	if err != nil {
+		return nil, fmt.Errorf("Error decoding ID from server response:\n\t%v", err)
+	}
+	return c["data"], nil
+
+}
+
+func apiSetTag(url string, t ImageTag) (err error) {
+	s, err := json.Marshal(t)
+	if err != nil {
+		return fmt.Errorf("Error encoding object to JSON:\n\t%v", err)
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Error making request to server:\n\t%v", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		jRes, err := ParseErrorBody(res.Body)
+		if err != nil {
+			jRes = ParseErrorResponse(res)
+		}
+		return fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
+			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
+	}
+	return nil
 }
 
 func postFile(filePath string, imageID string) error {

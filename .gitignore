@@ -8,7 +8,7 @@ singularity-*.tar.gz
 
 .vscode
 vendor/
-buildtree/
+builddir/
 src/pkg/buildcfg/config.go
 trash.lock
 Makefile.in
@@ -95,5 +95,8 @@ src/*/*/*/*/.dirstamp
 
 build/*
 runtime/cli
+<<<<<<< HEAD
 core/buildtree
 pkg/configs/constants/constants.go
+=======
+>>>>>>> upstream/development-3.0

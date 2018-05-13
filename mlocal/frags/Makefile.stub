@@ -1,12 +1,18 @@
 libruntime := $(BUILDDIR)/lib/libruntime.a
+
 libstartup := $(BUILDDIR)/lib/libstartup.a
 libstartup_HEADER := $(BUILDDIR)/lib/libstartup.h
+libstartup_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
+libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer.go)
+libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
+singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 
 sbuild := $(BUILDDIR)/sbuild
 sbuild_INSTALL := $(PREFIX)/libexec/singularity/bin/sbuild
+sbuild_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/sbuild/cli.go)
 
 wrapper := $(BUILDDIR)/src/runtime/c/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
@@ -35,7 +41,7 @@ cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
 INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
 
-CLEANFILES += $(libruntime) $(libstartup) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
+CLEANFILES += $(libruntime) $(libstartup) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
 
 all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config)
 
@@ -45,7 +51,7 @@ $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 
 # libstartup
-$(libstartup): $(go_OBJ) $(libruntime)
+$(libstartup): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
 	@echo " AR" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build -ldflags="-s -w" -buildmode=c-archive -o $@ \
@@ -69,7 +75,7 @@ $(wrapper): $(wrapper_OBJ)
 	$(V)($(SIZE) $@ 2>/dev/null || true)
 
 # singularity
-$(singularity): $(go_OBJ) $(libruntime) $(wrapper)
+$(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
@@ -79,7 +85,7 @@ $(singularity_INSTALL): $(singularity)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # sbuild
-$(sbuild): $(go_OBJ) $(libruntime) $(wrapper)
+$(sbuild): $(go_OBJ) $(libruntime) $(sbuild_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/src/cmd/sbuild/cli.go
@@ -155,6 +161,21 @@ collect:
 dep:
 	@printf " GO DEPS\n"
 	$(V)(dep ensure -vendor-only >/dev/null 2>&1 || true)
+
+.PHONY: test
+test:
+	@echo " TEST go fmt"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && test -z $(go fmt ./...)
+	@echo "       PASS"
+	@echo " TEST go vet"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && go vet -all ./...
+	@echo "       PASS"
+	@echo " TEST go test ./..."
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && go test -cover -race -timeout 60s ./...
+	@echo "       PASS"
 
 .PHONY: cscope
 cscope:

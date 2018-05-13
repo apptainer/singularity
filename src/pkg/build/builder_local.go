@@ -5,9 +5,12 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
 
 import (
+	"context"
+
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sif"
 )
@@ -22,6 +25,6 @@ func NewLocalBuilder(j []byte) LocalBuilder {
 	return LocalBuilder{image.Sandbox{}, &sif.SIF{}, DefinitionFromJSON(j)}
 }
 
-func (*LocalBuilder) Build() {
+func (*LocalBuilder) Build(ctx context.Context) {
 
 }
