@@ -95,8 +95,4 @@ src/*/*/*/*/.dirstamp
 
 build/*
 runtime/cli
-<<<<<<< HEAD
-core/buildtree
-pkg/configs/constants/constants.go
-=======
->>>>>>> upstream/development-3.0
+builddir
