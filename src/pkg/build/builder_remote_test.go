@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const (
