@@ -9,11 +9,11 @@
 package client
 
 import (
-	"net/http"
 	"encoding/json"
-	"testing"
+	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"testing"
 
 	"github.com/globalsign/mgo/bson"
 )
@@ -213,48 +213,47 @@ func Test_getCollection(t *testing.T) {
 	}
 }
 
-
 func Test_getContainer(t *testing.T) {
 
 	tests := []struct {
-		description      string
-		code             int
-		body             interface{}
-		reqCallback      func(*http.Request, *testing.T)
+		description     string
+		code            int
+		body            interface{}
+		reqCallback     func(*http.Request, *testing.T)
 		containerRef    string
 		expectContainer Container
-		expectFound      bool
-		expectError      bool
+		expectFound     bool
+		expectError     bool
 	}{
 		{
-			description:      "Container not found response",
-			code:             404,
-			body:             JSONResponse{Error: JSONError{Code: http.StatusNotFound, Status: http.StatusText(http.StatusNotFound)}},
-			reqCallback:      nil,
+			description:     "Container not found response",
+			code:            404,
+			body:            JSONResponse{Error: JSONError{Code: http.StatusNotFound, Status: http.StatusText(http.StatusNotFound)}},
+			reqCallback:     nil,
 			containerRef:    "notthere",
 			expectContainer: Container{},
-			expectFound:      false,
-			expectError:      false,
+			expectFound:     false,
+			expectError:     false,
 		},
 		{
-			description:      "Unauthorized response",
-			code:             401,
-			body:             JSONResponse{Error: JSONError{Code: http.StatusUnauthorized, Status: http.StatusText(http.StatusUnauthorized)}},
-			reqCallback:      nil,
+			description:     "Unauthorized response",
+			code:            401,
+			body:            JSONResponse{Error: JSONError{Code: http.StatusUnauthorized, Status: http.StatusText(http.StatusUnauthorized)}},
+			reqCallback:     nil,
 			containerRef:    "notmine",
 			expectContainer: Container{},
-			expectFound:      false,
-			expectError:      true,
+			expectFound:     false,
+			expectError:     true,
 		},
 		{
-			description:      "Valid Response",
-			code:             200,
-			body:             ContainerResponse{Data: Container{Name: "test"}, Error: JSONError{}},
-			reqCallback:      nil,
+			description:     "Valid Response",
+			code:            200,
+			body:            ContainerResponse{Data: Container{Name: "test"}, Error: JSONError{}},
+			reqCallback:     nil,
 			containerRef:    "test",
 			expectContainer: Container{Name: "test"},
-			expectFound:      true,
-			expectError:      false,
+			expectFound:     true,
+			expectError:     false,
 		},
 	}
 
@@ -297,44 +296,44 @@ func Test_getContainer(t *testing.T) {
 func Test_getImage(t *testing.T) {
 
 	tests := []struct {
-		description      string
-		code             int
-		body             interface{}
-		reqCallback      func(*http.Request, *testing.T)
+		description string
+		code        int
+		body        interface{}
+		reqCallback func(*http.Request, *testing.T)
 		imageRef    string
 		expectImage Image
-		expectFound      bool
-		expectError      bool
+		expectFound bool
+		expectError bool
 	}{
 		{
-			description:      "Image not found response",
-			code:             404,
-			body:             JSONResponse{Error: JSONError{Code: http.StatusNotFound, Status: http.StatusText(http.StatusNotFound)}},
-			reqCallback:      nil,
+			description: "Image not found response",
+			code:        404,
+			body:        JSONResponse{Error: JSONError{Code: http.StatusNotFound, Status: http.StatusText(http.StatusNotFound)}},
+			reqCallback: nil,
 			imageRef:    "notthere",
 			expectImage: Image{},
-			expectFound:      false,
-			expectError:      false,
+			expectFound: false,
+			expectError: false,
 		},
 		{
-			description:      "Unauthorized response",
-			code:             401,
-			body:             JSONResponse{Error: JSONError{Code: http.StatusUnauthorized, Status: http.StatusText(http.StatusUnauthorized)}},
-			reqCallback:      nil,
+			description: "Unauthorized response",
+			code:        401,
+			body:        JSONResponse{Error: JSONError{Code: http.StatusUnauthorized, Status: http.StatusText(http.StatusUnauthorized)}},
+			reqCallback: nil,
 			imageRef:    "notmine",
 			expectImage: Image{},
-			expectFound:      false,
-			expectError:      true,
+			expectFound: false,
+			expectError: true,
 		},
 		{
-			description:      "Valid Response",
-			code:             200,
-			body:             ImageResponse{Data: Image{Hash: "sha256.e50a30881ace3d5944f5661d222db7bee5296be9e4dc7c1fcb7604bcae926e88"}, Error: JSONError{}},
-			reqCallback:      nil,
+			description: "Valid Response",
+			code:        200,
+			body:        ImageResponse{Data: Image{Hash: "sha256.e50a30881ace3d5944f5661d222db7bee5296be9e4dc7c1fcb7604bcae926e88"}, Error: JSONError{}},
+			reqCallback: nil,
 			imageRef:    "test",
 			expectImage: Image{Hash: "sha256.e50a30881ace3d5944f5661d222db7bee5296be9e4dc7c1fcb7604bcae926e88"},
-			expectFound:      true,
-			expectError:      false,
+			expectFound: true,
+			expectError: false,
 		},
 	}
 
@@ -373,7 +372,6 @@ func Test_getImage(t *testing.T) {
 
 	}
 }
-
 
 func Test_createEntity(t *testing.T) {
 
@@ -437,33 +435,32 @@ func Test_createEntity(t *testing.T) {
 	}
 }
 
-
 func Test_createCollection(t *testing.T) {
 
 	tests := []struct {
-		description  string
-		code         int
-		body         interface{}
-		reqCallback  func(*http.Request, *testing.T)
+		description      string
+		code             int
+		body             interface{}
+		reqCallback      func(*http.Request, *testing.T)
 		collectionRef    string
 		expectCollection Collection
-		expectError  bool
+		expectError      bool
 	}{
 		{
-			description:  "Valid Request",
-			code:         http.StatusOK,
-			body:         CollectionResponse{Data: Collection{Name: "test"}, Error: JSONError{}},
+			description:      "Valid Request",
+			code:             http.StatusOK,
+			body:             CollectionResponse{Data: Collection{Name: "test"}, Error: JSONError{}},
 			collectionRef:    "test",
 			expectCollection: Collection{Name: "test"},
-			expectError:  false,
+			expectError:      false,
 		},
 		{
-			description:  "Error response",
-			code:         http.StatusInternalServerError,
-			body:         Collection{},
+			description:      "Error response",
+			code:             http.StatusInternalServerError,
+			body:             Collection{},
 			collectionRef:    "test",
 			expectCollection: Collection{},
-			expectError:  true,
+			expectError:      true,
 		},
 	}
 
@@ -500,33 +497,32 @@ func Test_createCollection(t *testing.T) {
 	}
 }
 
-
 func Test_createContainer(t *testing.T) {
 
 	tests := []struct {
-		description  string
-		code         int
-		body         interface{}
-		reqCallback  func(*http.Request, *testing.T)
+		description     string
+		code            int
+		body            interface{}
+		reqCallback     func(*http.Request, *testing.T)
 		containerRef    string
 		expectContainer Container
-		expectError  bool
+		expectError     bool
 	}{
 		{
-			description:  "Valid Request",
-			code:         http.StatusOK,
-			body:         ContainerResponse{Data: Container{Name: "test"}, Error: JSONError{}},
+			description:     "Valid Request",
+			code:            http.StatusOK,
+			body:            ContainerResponse{Data: Container{Name: "test"}, Error: JSONError{}},
 			containerRef:    "test",
 			expectContainer: Container{Name: "test"},
-			expectError:  false,
+			expectError:     false,
 		},
 		{
-			description:  "Error response",
-			code:         http.StatusInternalServerError,
-			body:         Container{},
+			description:     "Error response",
+			code:            http.StatusInternalServerError,
+			body:            Container{},
 			containerRef:    "test",
 			expectContainer: Container{},
-			expectError:  true,
+			expectError:     true,
 		},
 	}
 
@@ -566,29 +562,29 @@ func Test_createContainer(t *testing.T) {
 func Test_createImage(t *testing.T) {
 
 	tests := []struct {
-		description  string
-		code         int
-		body         interface{}
-		reqCallback  func(*http.Request, *testing.T)
+		description string
+		code        int
+		body        interface{}
+		reqCallback func(*http.Request, *testing.T)
 		imageRef    string
 		expectImage Image
-		expectError  bool
+		expectError bool
 	}{
 		{
-			description:  "Valid Request",
-			code:         http.StatusOK,
-			body:         ImageResponse{Data: Image{Hash: "sha256.e50a30881ace3d5944f5661d222db7bee5296be9e4dc7c1fcb7604bcae926e88"}, Error: JSONError{}},
+			description: "Valid Request",
+			code:        http.StatusOK,
+			body:        ImageResponse{Data: Image{Hash: "sha256.e50a30881ace3d5944f5661d222db7bee5296be9e4dc7c1fcb7604bcae926e88"}, Error: JSONError{}},
 			imageRef:    "test",
 			expectImage: Image{Hash: "sha256.e50a30881ace3d5944f5661d222db7bee5296be9e4dc7c1fcb7604bcae926e88"},
-			expectError:  false,
+			expectError: false,
 		},
 		{
-			description:  "Error response",
-			code:         http.StatusInternalServerError,
-			body:         Image{},
+			description: "Error response",
+			code:        http.StatusInternalServerError,
+			body:        Image{},
 			imageRef:    "test",
 			expectImage: Image{},
-			expectError:  true,
+			expectError: true,
 		},
 	}
 
@@ -625,7 +621,6 @@ func Test_createImage(t *testing.T) {
 	}
 }
 
-
 func Test_setTags(t *testing.T) {
 
 	tests := []struct {
@@ -633,24 +628,24 @@ func Test_setTags(t *testing.T) {
 		code         int
 		reqCallback  func(*http.Request, *testing.T)
 		containerRef string
-		imageRef    string
-		tags		[]string
+		imageRef     string
+		tags         []string
 		expectError  bool
 	}{
 		{
 			description:  "Valid Request",
 			code:         http.StatusOK,
 			containerRef: "test",
-			imageRef:    bson.NewObjectId().Hex(),
-			tags:	[]string{"tag1", "tag2", "tag3"},
+			imageRef:     bson.NewObjectId().Hex(),
+			tags:         []string{"tag1", "tag2", "tag3"},
 			expectError:  false,
 		},
 		{
 			description:  "Error response",
 			code:         http.StatusInternalServerError,
 			containerRef: "test",
-			imageRef:    bson.NewObjectId().Hex(),
-			tags:	[]string{"tag1", "tag2", "tag3"},
+			imageRef:     bson.NewObjectId().Hex(),
+			tags:         []string{"tag1", "tag2", "tag3"},
 			expectError:  true,
 		},
 	}

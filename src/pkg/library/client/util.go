@@ -6,7 +6,6 @@
   your rights to use or distribute this software.
 */
 
-
 package client
 
 import (
@@ -62,7 +61,6 @@ func IsImageHash(refPart string) bool {
 	}
 	return match
 }
-
 
 func parseLibraryRef(libraryRef string) (entity string, collection string, container string, tags []string) {
 

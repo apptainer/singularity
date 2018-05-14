@@ -9,14 +9,14 @@
 package client
 
 import (
-	"testing"
-	"net/http"
-	"net/http/httptest"
-	"io/ioutil"
-	"os"
+	"bufio"
 	"bytes"
 	"io"
-	"bufio"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
 )
 
 type mockRawService struct {
@@ -61,9 +61,8 @@ func (m *mockRawService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func Test_DownloadImage(t *testing.T) {
 
-
 	f, err := ioutil.TempFile(".", "test")
-	if err != nil{
+	if err != nil {
 		t.Fatalf("Error creating a temporary file for testing")
 	}
 	tempFile := f.Name()
@@ -71,29 +70,29 @@ func Test_DownloadImage(t *testing.T) {
 	os.Remove(tempFile)
 
 	tests := []struct {
-		name       string
-		libraryRef string
-		outFile string
-		force bool
-		code int
-		testFile string
+		name         string
+		libraryRef   string
+		outFile      string
+		force        bool
+		code         int
+		testFile     string
 		checkContent bool
-		expectError bool
+		expectError  bool
 	}{
 		{"Bad filename", "entity/collection/image:tag", "notadir/test.sif", false, http.StatusBadRequest, "test_data/test_sha256", false, true},
 		{"Bad library ref", "entity/collection/im,age:tag", tempFile, false, http.StatusBadRequest, "test_data/test_sha256", false, true},
-		{"Server error", "entity/collection/image:tag", tempFile, false, http.StatusInternalServerError, "test_data/test_sha256",  false, true},
-		{"Good Download", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256",  true, false},
-		{"Should not overwrite", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256",  true, true},
+		{"Server error", "entity/collection/image:tag", tempFile, false, http.StatusInternalServerError, "test_data/test_sha256", false, true},
+		{"Good Download", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256", true, false},
+		{"Should not overwrite", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256", true, true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
 			m := mockRawService{
-				t:           t,
-				code:        test.code,
-				testFile:    test.testFile,
-				httpPath:    "/v1/imagefile/" + test.libraryRef,
+				t:        t,
+				code:     test.code,
+				testFile: test.testFile,
+				httpPath: "/v1/imagefile/" + test.libraryRef,
 			}
 
 			m.Run()
@@ -110,14 +109,14 @@ func Test_DownloadImage(t *testing.T) {
 
 			if test.checkContent {
 				fileContent, err := ioutil.ReadFile(test.outFile)
-				if err != nil{
+				if err != nil {
 					t.Errorf("Error reading test output file: %v", err)
 				}
 				testContent, err := ioutil.ReadFile(test.testFile)
-				if err != nil{
+				if err != nil {
 					t.Errorf("Error reading test file: %v", err)
 				}
-				if ! bytes.Equal(fileContent, testContent) {
+				if !bytes.Equal(fileContent, testContent) {
 					t.Errorf("File contains '%v' - expected '%v'", fileContent, testContent)
 				}
 			}

@@ -9,8 +9,9 @@
 package client
 
 import (
-	"testing"
 	"net/http"
+	"testing"
+
 	"github.com/globalsign/mgo/bson"
 )
 
@@ -18,36 +19,36 @@ import (
 func Test_postFile(t *testing.T) {
 
 	tests := []struct {
-		description  string
-		imageRef   string
-		testFile     string
-		code         int
-		reqCallback  func(*http.Request, *testing.T)
-		expectError  bool
+		description string
+		imageRef    string
+		testFile    string
+		code        int
+		reqCallback func(*http.Request, *testing.T)
+		expectError bool
 	}{
 		{
-			description:  "Container not found response",
-			code:         404,
-			reqCallback:  nil,
-			imageRef: bson.NewObjectId().Hex(),
-			testFile:	"test_data/test_sha256",
-			expectError:  true,
+			description: "Container not found response",
+			code:        404,
+			reqCallback: nil,
+			imageRef:    bson.NewObjectId().Hex(),
+			testFile:    "test_data/test_sha256",
+			expectError: true,
 		},
 		{
-			description:  "Unauthorized response",
-			code:         401,
-			reqCallback:  nil,
-			imageRef: bson.NewObjectId().Hex(),
-			testFile:	"test_data/test_sha256",
-			expectError:  true,
+			description: "Unauthorized response",
+			code:        401,
+			reqCallback: nil,
+			imageRef:    bson.NewObjectId().Hex(),
+			testFile:    "test_data/test_sha256",
+			expectError: true,
 		},
 		{
-			description:  "Valid Response",
-			code:         200,
-			reqCallback:  nil,
-			imageRef: bson.NewObjectId().Hex(),
-			testFile:	"test_data/test_sha256",
-			expectError:  false,
+			description: "Valid Response",
+			code:        200,
+			reqCallback: nil,
+			imageRef:    bson.NewObjectId().Hex(),
+			testFile:    "test_data/test_sha256",
+			expectError: false,
 		},
 	}
 
@@ -56,9 +57,9 @@ func Test_postFile(t *testing.T) {
 		t.Run(test.description, func(t *testing.T) {
 
 			m := mockService{
-				t:           t,
-				code:        test.code,
-				httpPath:    "/v1/imagefile/" + test.imageRef,
+				t:        t,
+				code:     test.code,
+				httpPath: "/v1/imagefile/" + test.imageRef,
 			}
 
 			m.Run()

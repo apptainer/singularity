@@ -9,10 +9,11 @@
 package client
 
 import (
-	"testing"
+	"fmt"
 	"reflect"
 	"strings"
-	"fmt"
+	"testing"
+
 	"github.com/globalsign/mgo/bson"
 )
 
@@ -38,7 +39,6 @@ func Test_isLibraryPullRef(t *testing.T) {
 		{"Too many components", "library://entity/collection/extra/image:tag", false},
 		{"Bad character", "library://entity/collection/im,age:tag", false},
 		{"Bad initial character", "library://entity/collection/-image:tag", false},
-
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -48,7 +48,6 @@ func Test_isLibraryPullRef(t *testing.T) {
 		})
 	}
 }
-
 
 func Test_isLibraryPushRef(t *testing.T) {
 	tests := []struct {
@@ -69,7 +68,6 @@ func Test_isLibraryPushRef(t *testing.T) {
 		{"Bad character", "library://entity/collection/im,age:tag", false},
 		{"Bad initial character", "library://entity/collection/-image:tag", false},
 		{"No capitals", "library://Entity/collection/image:tag", false},
-
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -79,7 +77,6 @@ func Test_isLibraryPushRef(t *testing.T) {
 		})
 	}
 }
-
 
 func Test_IsRefPart(t *testing.T) {
 	tests := []struct {
@@ -94,7 +91,6 @@ func Test_IsRefPart(t *testing.T) {
 		{"Bad character", "abc,123", false},
 		{"Bad initial character", "-abc123", false},
 		{"No capitals", "Abc123", false},
-
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -119,7 +115,6 @@ func Test_IsImageHash(t *testing.T) {
 		{"sif too long", "sif.5574b72c-7705-49cc-874e-424fc3b78116a", false},
 		{"sif too short", "sif.5574b72c-7705-49cc-874e-424fc3b7811", false},
 		{"sif bad character", "sif.g574b72c-7705-49cc-874e-424fc3b78116", false},
-
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -130,38 +125,36 @@ func Test_IsImageHash(t *testing.T) {
 	}
 }
 
-
 func Test_parseLibraryRef(t *testing.T) {
 	tests := []struct {
 		name       string
 		libraryRef string
-		wantEnt	   string
-		wantCol	   string
+		wantEnt    string
+		wantCol    string
 		wantCon    string
 		wantTags   []string
 	}{
-		{"Good long ref 1", "library://entity/collection/image:tag", "entity", "collection", "image", []string{"tag"} },
-		{"Good long ref 2", "entity/collection/image:tag", "entity", "collection", "image", []string{"tag"} },
-		{"Good long ref latest", "library://entity/collection/image", "entity", "collection", "image", []string{"latest"} },
-		{"Good long ref multi tag", "library://entity/collection/image:tag1,tag2,tag3", "entity", "collection", "image", []string{"tag1", "tag2", "tag3"} },
-		{"Good short ref 1", "library://image:tag", "", "", "image", []string{"tag"} },
-		{"Good short ref 2", "image:tag", "", "", "image", []string{"tag"} },
-		{"Good short ref 3", "library://collection/image:tag", "", "collection", "image", []string{"tag"} },
-		{"Good short ref 4", "collection/image:tag", "", "collection", "image", []string{"tag"} },
-		{"Good short ref latest", "library://image", "", "", "image", []string{"latest"} },
-		{"Good short ref multi tag", "library://image:tag1,tag2,tag3", "", "", "image", []string{"tag1", "tag2", "tag3"} },
-
+		{"Good long ref 1", "library://entity/collection/image:tag", "entity", "collection", "image", []string{"tag"}},
+		{"Good long ref 2", "entity/collection/image:tag", "entity", "collection", "image", []string{"tag"}},
+		{"Good long ref latest", "library://entity/collection/image", "entity", "collection", "image", []string{"latest"}},
+		{"Good long ref multi tag", "library://entity/collection/image:tag1,tag2,tag3", "entity", "collection", "image", []string{"tag1", "tag2", "tag3"}},
+		{"Good short ref 1", "library://image:tag", "", "", "image", []string{"tag"}},
+		{"Good short ref 2", "image:tag", "", "", "image", []string{"tag"}},
+		{"Good short ref 3", "library://collection/image:tag", "", "collection", "image", []string{"tag"}},
+		{"Good short ref 4", "collection/image:tag", "", "collection", "image", []string{"tag"}},
+		{"Good short ref latest", "library://image", "", "", "image", []string{"latest"}},
+		{"Good short ref multi tag", "library://image:tag1,tag2,tag3", "", "", "image", []string{"tag1", "tag2", "tag3"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ent, col, con, tags := parseLibraryRef(tt.libraryRef)
-			if ent != tt.wantEnt{
+			if ent != tt.wantEnt {
 				t.Errorf("parseLibraryRef() = entity %v, want %v", ent, tt.wantEnt)
 			}
-			if col != tt.wantCol{
+			if col != tt.wantCol {
 				t.Errorf("parseLibraryRef() = collection %v, want %v", col, tt.wantCol)
 			}
-			if con != tt.wantCon{
+			if con != tt.wantCon {
 				t.Errorf("parseLibraryRef() = container %v, want %v", con, tt.wantCon)
 			}
 			if !reflect.DeepEqual(tags, tt.wantTags) {
@@ -174,8 +167,8 @@ func Test_parseLibraryRef(t *testing.T) {
 func Test_ParseErrorBody(t *testing.T) {
 
 	eb := JSONError{
-		Code: 500,
-		Status: "Internal Server Error",
+		Code:    500,
+		Status:  "Internal Server Error",
 		Message: "The server had a problem",
 	}
 	ebJSON := "{ \"error\": {\"code\": 500, \"status\": \"Internal Server Error\", \"message\": \"The server had a problem\"}}"
@@ -183,18 +176,18 @@ func Test_ParseErrorBody(t *testing.T) {
 
 	jRes, err := ParseErrorBody(r)
 
-	if err != nil{
+	if err != nil {
 		t.Errorf("Decoding good error response did not succeed: %v", err)
 	}
 
-	if !reflect.DeepEqual(jRes.Error, eb){
+	if !reflect.DeepEqual(jRes.Error, eb) {
 		t.Errorf("Decoding error body expected %v, got %v", eb, jRes)
 	}
 
 	ebJSON = "{ \"error {\"code\": 500, \"status\": \"Internal Server Error\", \"message\": \"The server had a problem\"}}"
 	jRes, err = ParseErrorBody(r)
 
-	if err == nil{
+	if err == nil {
 		t.Errorf("Decoding bad error response succeeded, but should return an error: %v", ebJSON)
 	}
 
@@ -236,19 +229,19 @@ func TestSliceWithoutID(t *testing.T) {
 	slice := []bson.ObjectId{a, b, c, d}
 
 	result := SliceWithoutID(slice, a)
-	if !reflect.DeepEqual( []bson.ObjectId{b, c, d}, result){
+	if !reflect.DeepEqual([]bson.ObjectId{b, c, d}, result) {
 		fmt.Errorf("error removing a from {a, b, c, d}, got: %v", result)
 	}
 	result = SliceWithoutID(slice, b)
-	if !reflect.DeepEqual( []bson.ObjectId{b, c, d}, result){
+	if !reflect.DeepEqual([]bson.ObjectId{b, c, d}, result) {
 		fmt.Errorf("error removing b from {a, b, c, d}, got: %v", result)
 	}
 	result = SliceWithoutID(slice, c)
-	if !reflect.DeepEqual( []bson.ObjectId{b, c, d}, result){
+	if !reflect.DeepEqual([]bson.ObjectId{b, c, d}, result) {
 		fmt.Errorf("error removing c from {a, b, c, d}, got: %v", result)
 	}
 	result = SliceWithoutID(slice, z)
-	if !reflect.DeepEqual( []bson.ObjectId{a, b, c, d}, result){
+	if !reflect.DeepEqual([]bson.ObjectId{a, b, c, d}, result) {
 		fmt.Errorf("error removing non-existent z from {a, b, c, d}, got: %v", result)
 	}
 }
@@ -279,22 +272,20 @@ func TestStringInSlice(t *testing.T) {
 
 }
 
-
-
 func Test_imageHash(t *testing.T) {
 
 	expectedSha256 := "sha256.d7d356079af905c04e5ae10711ecf3f5b34385e9b143c5d9ddbf740665ce2fb7"
 
 	shasum, err := ImageHash("no_such_file.txt")
-	if err == nil{
+	if err == nil {
 		t.Error("Invalid file must return an error")
 	}
 
 	shasum, err = ImageHash("test_data/test_sha256")
-	if err != nil{
+	if err != nil {
 		t.Errorf("ImageHash on valid file should not raise error: %v", err)
 	}
-	if shasum != expectedSha256{
+	if shasum != expectedSha256 {
 		t.Errorf("ImageHash returned %v - expected %v", shasum, expectedSha256)
 	}
 }
@@ -304,24 +295,15 @@ func Test_sha256sum(t *testing.T) {
 	expectedSha256 := "sha256.d7d356079af905c04e5ae10711ecf3f5b34385e9b143c5d9ddbf740665ce2fb7"
 
 	shasum, err := sha256sum("no_such_file.txt")
-	if err == nil{
+	if err == nil {
 		t.Error("Invalid file must return an error")
 	}
 
 	shasum, err = sha256sum("test_data/test_sha256")
-	if err != nil{
+	if err != nil {
 		t.Errorf("sha256sum on valid file should not raise error: %v", err)
 	}
-	if shasum != expectedSha256{
+	if shasum != expectedSha256 {
 		t.Errorf("sha256sum returned %v - expected %v", shasum, expectedSha256)
 	}
 }
-
-
-
-
-
-
-
-
-
