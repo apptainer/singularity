@@ -1,3 +1,12 @@
+/*
+  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+
+  This software is licensed under a 3-clause BSD license.  Please
+  consult LICENSE file distributed with the sources of this project regarding
+  your rights to use or distribute this software.
+*/
+
+
 package client
 
 import (
@@ -46,7 +55,7 @@ func IsImageHash(refPart string) bool {
 	// Legacy images will be sent with hash sha256.[a-f0-9]{64}
 	// SIF images will be sent with hash sif.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 	//  which is the unique SIF UUID
-	match, err := regexp.MatchString("^(sha256\\.[a-f0-9]{64})|(sif\\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", refPart)
+	match, err := regexp.MatchString("^((sha256\\.[a-f0-9]{64})|(sif\\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))$", refPart)
 	if err != nil {
 		glog.Errorf("Error in regex matching: %v", err)
 		return false
@@ -54,15 +63,6 @@ func IsImageHash(refPart string) bool {
 	return match
 }
 
-// IsTag returns true if the provided string is valid as a tag
-func IsTag(tag string) bool {
-	match, err := regexp.MatchString("^[a-z0-9]+(?:[._-][a-z0-9]+)*$", tag)
-	if err != nil {
-		glog.Errorf("Error in regex matching: %v", err)
-		return false
-	}
-	return match
-}
 
 func parseLibraryRef(libraryRef string) (entity string, collection string, container string, tags []string) {
 
