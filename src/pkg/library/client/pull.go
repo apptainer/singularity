@@ -49,15 +49,6 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 		}
 	}
 
-	// Perms are 777 *prior* to umask
-	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 777)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	sylog.Debugf("Created output file: %s\n", filePath)
-
 	res, err := http.Get(url)
 	if err != nil {
 		return err
@@ -77,7 +68,16 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 
-	sylog.Debugf("OK response received, beginning body download\n", filePath)
+	sylog.Debugf("OK response received, beginning body download\n")
+
+	// Perms are 777 *prior* to umask
+	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 777)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	sylog.Debugf("Created output file: %s\n", filePath)
 
 	bodySize := res.ContentLength
 	bar := pb.New(int(bodySize)).SetUnits(pb.U_BYTES)
