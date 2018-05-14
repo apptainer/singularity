@@ -198,7 +198,7 @@ func apiCreate(o interface{}, url string) (objJSON []byte, err error) {
 	if err != nil {
 		return []byte{}, fmt.Errorf("Error making request to server:\n\t%v", err)
 	}
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
 		jRes, err := ParseErrorBody(res.Body)
 		if err != nil {
 			jRes = ParseErrorResponse(res)
