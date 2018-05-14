@@ -18,10 +18,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // RequestData contains the info necessary for submitting a build to a remote service
