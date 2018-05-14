@@ -9,7 +9,6 @@
 package client
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -199,22 +198,22 @@ func TestIdInSlice(t *testing.T) {
 
 	slice := []bson.ObjectId{trueID, bson.NewObjectId(), bson.NewObjectId(), bson.NewObjectId()}
 	if !IDInSlice(trueID, slice) {
-		fmt.Errorf("should find %v in %v", trueID, slice)
+		t.Errorf("should find %v in %v", trueID, slice)
 	}
 
 	slice = []bson.ObjectId{bson.NewObjectId(), bson.NewObjectId(), trueID, bson.NewObjectId()}
 	if !IDInSlice(trueID, slice) {
-		fmt.Errorf("should find %v in %v", trueID, slice)
+		t.Errorf("should find %v in %v", trueID, slice)
 	}
 
 	slice = []bson.ObjectId{bson.NewObjectId(), bson.NewObjectId(), bson.NewObjectId(), trueID}
 	if !IDInSlice(trueID, slice) {
-		fmt.Errorf("should find %v in %v", trueID, slice)
+		t.Errorf("should find %v in %v", trueID, slice)
 	}
 
 	falseID := bson.NewObjectId()
 	if IDInSlice(falseID, slice) {
-		fmt.Errorf("should not find %v in %v", trueID, slice)
+		t.Errorf("should not find %v in %v", trueID, slice)
 	}
 
 }
@@ -230,19 +229,19 @@ func TestSliceWithoutID(t *testing.T) {
 
 	result := SliceWithoutID(slice, a)
 	if !reflect.DeepEqual([]bson.ObjectId{b, c, d}, result) {
-		fmt.Errorf("error removing a from {a, b, c, d}, got: %v", result)
+		t.Errorf("error removing a from {a, b, c, d}, got: %v", result)
 	}
 	result = SliceWithoutID(slice, b)
-	if !reflect.DeepEqual([]bson.ObjectId{b, c, d}, result) {
-		fmt.Errorf("error removing b from {a, b, c, d}, got: %v", result)
+	if !reflect.DeepEqual([]bson.ObjectId{a, c, d}, result) {
+		t.Errorf("error removing b from {a, b, c, d}, got: %v", result)
 	}
-	result = SliceWithoutID(slice, c)
-	if !reflect.DeepEqual([]bson.ObjectId{b, c, d}, result) {
-		fmt.Errorf("error removing c from {a, b, c, d}, got: %v", result)
+	result = SliceWithoutID(slice, d)
+	if !reflect.DeepEqual([]bson.ObjectId{a, b, c}, result) {
+		t.Errorf("error removing c from {a, b, c, d}, got: %v", result)
 	}
 	result = SliceWithoutID(slice, z)
 	if !reflect.DeepEqual([]bson.ObjectId{a, b, c, d}, result) {
-		fmt.Errorf("error removing non-existent z from {a, b, c, d}, got: %v", result)
+		t.Errorf("error removing non-existent z from {a, b, c, d}, got: %v", result)
 	}
 }
 
@@ -252,22 +251,22 @@ func TestStringInSlice(t *testing.T) {
 
 	slice := []string{trueID, bson.NewObjectId().Hex(), bson.NewObjectId().Hex(), bson.NewObjectId().Hex()}
 	if !StringInSlice(trueID, slice) {
-		fmt.Errorf("should find %v in %v", trueID, slice)
+		t.Errorf("should find %v in %v", trueID, slice)
 	}
 
 	slice = []string{bson.NewObjectId().Hex(), bson.NewObjectId().Hex(), trueID, bson.NewObjectId().Hex()}
 	if !StringInSlice(trueID, slice) {
-		fmt.Errorf("should find %v in %v", trueID, slice)
+		t.Errorf("should find %v in %v", trueID, slice)
 	}
 
 	slice = []string{bson.NewObjectId().Hex(), bson.NewObjectId().Hex(), bson.NewObjectId().Hex(), trueID}
 	if !StringInSlice(trueID, slice) {
-		fmt.Errorf("should find %v in %v", trueID, slice)
+		t.Errorf("should find %v in %v", trueID, slice)
 	}
 
 	falseID := bson.NewObjectId().Hex()
 	if StringInSlice(falseID, slice) {
-		fmt.Errorf("should not find %v in %v", trueID, slice)
+		t.Errorf("should not find %v in %v", trueID, slice)
 	}
 
 }
