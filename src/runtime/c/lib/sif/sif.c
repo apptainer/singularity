@@ -460,7 +460,7 @@ putpdesc(void *elem)
 	e->desc->cm.filelen = e->cm.len;
 	e->desc->part.fstype = e->partdesc.fstype;
 	e->desc->part.parttype = e->partdesc.parttype;
-	strncpy(e->desc->part.content, e->partdesc.content, sizeof(e->desc->part.content)-1);
+	strncpy(e->desc->part.content, e->partdesc.content, SIF_CONTENT_LEN);
 
 	/* write data object */
 	memcpy(e->info->mapstart + e->desc->cm.fileoff, e->partdesc.mapstart, e->desc->cm.filelen);
@@ -488,7 +488,7 @@ putsdesc(void *elem)
 	e->desc->cm.fileoff = e->info->header.dataoff + e->info->header.datalen;
 	e->desc->cm.filelen = e->cm.len;
 	e->desc->sig.hashtype = e->sigdesc.hashtype;
-	strncpy(e->desc->sig.entity, e->sigdesc.entity, sizeof(e->desc->sig.entity)-1);
+	strncpy(e->desc->sig.entity, e->sigdesc.entity, SIF_ENTITY_LEN);
 
 	/* write data object */
 	memcpy(e->info->mapstart + e->desc->cm.fileoff, e->sigdesc.signature, e->desc->cm.filelen);

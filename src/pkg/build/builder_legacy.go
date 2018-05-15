@@ -5,6 +5,7 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package build
 
 import (
@@ -63,7 +64,7 @@ func NewLegacyBuilder(p string, c context.Context, d Definition) (builder *Legac
 	return
 }
 
-func (b *LegacyBuilder) Build() (err error) {
+func (b *LegacyBuilder) Build(ctx context.Context) (err error) {
 	err = b.Cmd.Start()
 
 	if err != nil {

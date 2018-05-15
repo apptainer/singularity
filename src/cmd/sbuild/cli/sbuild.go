@@ -5,9 +5,11 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package cli
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -38,6 +40,6 @@ var sbuildCmd = &cobra.Command{
 			return
 		}
 
-		b.Build()
+		b.Build(context.TODO())
 	},
 }

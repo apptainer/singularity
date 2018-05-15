@@ -5,8 +5,8 @@ package runtime
 #include "image/image.h"
 #include "util/config_parser.h"
 */
-// #cgo CFLAGS: -I../c
-// #cgo LDFLAGS: -lruntime -luuid
+// #cgo CFLAGS: -I../../../c/lib
+// #cgo LDFLAGS: -L../../../../../builddir/lib -lruntime -luuid
 import "C"
 
 import (
@@ -31,7 +31,10 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		log.Fatalln("engineName configuration doesn't match runtime name")
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
-	rpcOps := &client.Rpc{rpc.NewClient(rpcConn), engine.RuntimeSpec.RuntimeName}
+	rpcOps := &client.Rpc{
+		Client: rpc.NewClient(rpcConn),
+		Name:   engine.RuntimeSpec.RuntimeName,
+	}
 	if rpcOps.Client == nil {
 		log.Fatalln("Failed to initialiaze RPC client")
 		return fmt.Errorf("Failed to initialiaze RPC client")

@@ -7,7 +7,8 @@
 */
 package sif
 
-// #cgo LDFLAGS: -lruntime -luuid
+// #cgo CFLAGS: -I../../runtime/c/lib
+// #cgo LDFLAGS: -L../../../builddir/lib -lruntime -luuid
 /*
 #include <sys/types.h>
 #include <stdio.h>
