@@ -14,10 +14,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
+
+// HTTP timeout in seconds
+const HTTP_TIMEOUT = 10
 
 func getEntity(baseURL string, entityRef string) (entity Entity, found bool, err error) {
 	url := (baseURL + "/v1/entities/" + entityRef)
@@ -188,36 +192,41 @@ func apiCreate(o interface{}, url string) (objJSON []byte, err error) {
 	sylog.Debugf("apiCreate calling %s\n", url)
 	s, err := json.Marshal(o)
 	if err != nil {
-		return []byte{}, fmt.Errorf("Error encoding object to JSON:\n\t%v", err)
+		return []byte{}, fmt.Errorf("error encoding object to JSON:\n\t%v", err)
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: (HTTP_TIMEOUT * time.Second),
+	}
 	res, err := client.Do(req)
 	if err != nil {
-		return []byte{}, fmt.Errorf("Error making request to server:\n\t%v", err)
+		return []byte{}, fmt.Errorf("error making request to server:\n\t%v", err)
 	}
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
 		jRes, err := ParseErrorBody(res.Body)
 		if err != nil {
 			jRes = ParseErrorResponse(res)
 		}
-		return []byte{}, fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
+		return []byte{}, fmt.Errorf("creation did not succeed: %d %s\n\t%v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 	objJSON, err = ioutil.ReadAll(res.Body)
 	if err != nil {
-		return []byte{}, fmt.Errorf("Error reading response from server:\n\t%v", err)
+		return []byte{}, fmt.Errorf("error reading response from server:\n\t%v", err)
 	}
 	return objJSON, nil
 }
 
 func apiGet(url string) (objJSON []byte, found bool, err error) {
 	sylog.Debugf("apiGet calling %s\n", url)
-	res, err := http.Get(url)
+	client := &http.Client{
+		Timeout: (HTTP_TIMEOUT * time.Second),
+	}
+	res, err := client.Get(url)
 	if err != nil {
-		return []byte{}, false, fmt.Errorf("Error making request to server:\n\t%v", err)
+		return []byte{}, false, fmt.Errorf("error making request to server:\n\t%v", err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode == http.StatusNotFound {
@@ -226,7 +235,7 @@ func apiGet(url string) (objJSON []byte, found bool, err error) {
 	if res.StatusCode == http.StatusOK {
 		objJSON, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			return []byte{}, false, fmt.Errorf("Error reading response from server:\n\t%v", err)
+			return []byte{}, false, fmt.Errorf("error reading response from server:\n\t%v", err)
 		}
 		return objJSON, true, nil
 	}
@@ -235,22 +244,25 @@ func apiGet(url string) (objJSON []byte, found bool, err error) {
 	if err != nil {
 		jRes = ParseErrorResponse(res)
 	}
-	return []byte{}, false, fmt.Errorf("Get did not succeed: %d %s\n\t%v",
+	return []byte{}, false, fmt.Errorf("get did not succeed: %d %s\n\t%v",
 		jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 }
 
 func apiGetTags(url string) (tags TagMap, err error) {
 	sylog.Debugf("apiGetTags calling %s\n", url)
-	res, err := http.Get(url)
+	client := &http.Client{
+		Timeout: (HTTP_TIMEOUT * time.Second),
+	}
+	res, err := client.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("Error making request to server:\n\t%v", err)
+		return nil, fmt.Errorf("error making request to server:\n\t%v", err)
 	}
 	if res.StatusCode != http.StatusOK {
 		jRes, err := ParseErrorBody(res.Body)
 		if err != nil {
 			jRes = ParseErrorResponse(res)
 		}
-		return nil, fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
+		return nil, fmt.Errorf("creation did not succeed: %d %s\n\t%v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 	var tagRes TagsResponse
@@ -266,22 +278,24 @@ func apiSetTag(url string, t ImageTag) (err error) {
 	sylog.Debugf("apiSetTag calling %s\n", url)
 	s, err := json.Marshal(t)
 	if err != nil {
-		return fmt.Errorf("Error encoding object to JSON:\n\t%v", err)
+		return fmt.Errorf("error encoding object to JSON:\n\t%v", err)
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: (HTTP_TIMEOUT * time.Second),
+	}
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Error making request to server:\n\t%v", err)
+		return fmt.Errorf("error making request to server:\n\t%v", err)
 	}
 	if res.StatusCode != http.StatusOK {
 		jRes, err := ParseErrorBody(res.Body)
 		if err != nil {
 			jRes = ParseErrorResponse(res)
 		}
-		return fmt.Errorf("Creation did not succeed: %d %s\n\t%v",
+		return fmt.Errorf("creation did not succeed: %d %s\n\t%v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 	return nil

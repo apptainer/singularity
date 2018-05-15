@@ -13,11 +13,14 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
-
 	"gopkg.in/cheggaaa/pb.v1"
 )
+
+// Timeout in seconds for the main upload (not api calls)
+const PUSH_TIMEOUT = 1800
 
 // UploadImage will push a specified image up to the Container Library,
 func UploadImage(filePath string, libraryRef string, libraryURL string) error {
@@ -137,7 +140,9 @@ func postFile(baseURL string, filePath string, imageID string) error {
 	req.Header.Set("Content-Type", "application/octet-stream")
 	// Content length is required by the API
 	req.ContentLength = fileSize
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: PUSH_TIMEOUT * time.Second,
+	}
 	res, err := client.Do(req)
 
 	bar.Finish()

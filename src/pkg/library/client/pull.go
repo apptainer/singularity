@@ -14,10 +14,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"gopkg.in/cheggaaa/pb.v1"
 )
+
+// Timeout for an image pull in seconds - could be a large download...
+const PULL_TIMEOUT = 1800
 
 // DownloadImage will retrieve an image from the Container Library,
 // saving it into the specified file
@@ -49,7 +53,11 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 		}
 	}
 
-	res, err := http.Get(url)
+	client := &http.Client{
+		Timeout: PULL_TIMEOUT * time.Second,
+	}
+
+	res, err := client.Get(url)
 	if err != nil {
 		return err
 	}
@@ -99,9 +107,5 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	sylog.Debugf("Download complete\n")
 
 	return nil
-
-}
-
-func verifyPull(file string, hash string) {
 
 }
