@@ -40,11 +40,8 @@
 #include "util/message.h"
 #include "util/registry.h"
 #include "util/config_parser.h"
-#include "util/privilege.h"
-#include "util/suid.h"
 
 #include "image/image.h"
-#include "image/bind.h"
 #include "image/image_squashfs.h"
 #include "image/image_dir.h"
 #include "image/image_ext3.h"
@@ -89,21 +86,21 @@ struct image_object singularity_image_init(char *path, int open_flags) {
     } else if ( _singularity_image_dir_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for directory\n");
         image.type = DIRECTORY;
-        if ( ( singularity_config_get_bool(ALLOW_CONTAINER_DIR) <= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
+        if ( ( singularity_config_get_bool(ALLOW_CONTAINER_DIR) <= 0 ) && ( getuid() != 0 ) ) {
             singularity_message(ERROR, "Configuration disallows users from running directory based containers\n");
             ABORT(255);
         }
     } else if ( _singularity_image_squashfs_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for squashfs\n");
         image.type = SQUASHFS;
-        if ( ( singularity_config_get_bool(ALLOW_CONTAINER_SQUASHFS) <= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
+        if ( ( singularity_config_get_bool(ALLOW_CONTAINER_SQUASHFS) <= 0 ) && ( getuid() != 0 ) ) {
             singularity_message(ERROR, "Configuration disallows users from running squashFS based containers\n");
             ABORT(255);
         }
     } else if ( _singularity_image_ext3_init(&image, open_flags) == 0 ) {
         singularity_message(DEBUG, "got image_init type for ext3\n");
         image.type = EXT3;
-        if ( ( singularity_config_get_bool(ALLOW_CONTAINER_EXTFS) <= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
+        if ( ( singularity_config_get_bool(ALLOW_CONTAINER_EXTFS) <= 0 ) && ( getuid() != 0 ) ) {
             singularity_message(ERROR, "Configuration disallows users from running extFS based containers\n");
             ABORT(255);
         }
@@ -121,7 +118,7 @@ struct image_object singularity_image_init(char *path, int open_flags) {
         ABORT(255);
     }
 
-    if ( ( singularity_suid_enabled() >= 0 ) && ( singularity_priv_getuid() != 0 ) ) {
+    if ( getuid() != 0 ) {
         singularity_limit_container_paths(&image);
         singularity_limit_container_owners(&image);
         singularity_limit_container_groups(&image);
@@ -156,28 +153,6 @@ int singularity_image_type(struct image_object *image) {
 
 int singularity_image_writable(struct image_object *image) {
     return(image->writable);
-}
-
-int singularity_image_mount(struct image_object *image, char *mount_point) {
-    if ( singularity_registry_get("DAEMON_JOIN") ) {
-        singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
-    }
-
-    singularity_message(DEBUG, "Figuring out which mount module to use...\n");
-    if ( image->type == SQUASHFS ) {
-        singularity_message(DEBUG, "Calling squashfs_mount\n");
-        return(_singularity_image_squashfs_mount(image, mount_point));
-    } else if ( image->type == DIRECTORY ) {
-        singularity_message(DEBUG, "Calling dir_mount\n");
-        return(_singularity_image_dir_mount(image, mount_point));
-    } else if ( image->type == EXT3 ) {
-        singularity_message(DEBUG, "Calling ext3_mount\n");
-        return(_singularity_image_ext3_mount(image, mount_point));
-    } else {
-        singularity_message(ERROR, "Can not mount file system of unknown type\n");
-        ABORT(255);
-    }
-    return(-1);
 }
 
 void singularity_limit_container_owners(struct image_object *image) {

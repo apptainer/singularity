@@ -40,46 +40,6 @@
 
 #include "util/util.h"
 #include "util/message.h"
-#include "util/privilege.h"
-
-char *file_id(char *path) {
-    struct stat filestat;
-    char *ret;
-    uid_t uid = singularity_priv_getuid();
-
-    singularity_message(DEBUG, "Called file_id(%s)\n", path);
-
-    // Stat path
-    if (lstat(path, &filestat) < 0) {
-        return(NULL);
-    }
-
-    ret = (char *) malloc(128);
-    snprintf(ret, 128, "%d.%d.%lu", (int)uid, (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
-
-    singularity_message(VERBOSE2, "Generated file_id: %s\n", ret);
-
-    singularity_message(DEBUG, "Returning file_id(%s) = %s\n", path, ret);
-    return(ret);
-}
-
-char *file_devino(char *path) {
-    struct stat filestat;
-    char *ret;
-
-    singularity_message(DEBUG, "Called file_devino(%s)\n", path);
-
-    // Stat path
-    if (lstat(path, &filestat) < 0) {
-        return(NULL);
-    }
-
-    ret = (char *) malloc(128);
-    snprintf(ret, 128, "%d.%lu", (int)filestat.st_dev, (long unsigned)filestat.st_ino); // Flawfinder: ignore
-
-    singularity_message(DEBUG, "Returning file_devino(%s) = %s\n", path, ret);
-    return(ret);
-}
 
 int chk_perms(char *path, mode_t mode) {
     struct stat filestat;
