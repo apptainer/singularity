@@ -36,7 +36,6 @@
 #include "file.h"
 #include "util.h"
 #include "registry.h"
-#include "privilege.h"
 #include "message.h"
 #include "config_parser.h"
 
@@ -186,14 +185,14 @@ static int capset(cap_user_header_t hdrp, const cap_user_data_t datap) {
 }
 
 static int singularity_capability_keep_privs(void) {
-    if ( singularity_priv_getuid() == 0 && singularity_registry_get("KEEP_PRIVS") != NULL ) {
+    if ( getuid() == 0 && singularity_registry_get("KEEP_PRIVS") != NULL ) {
         return(1);
     }
     return(0);
 }
 
 static int singularity_capability_no_privs(void) {
-    if ( singularity_priv_getuid() == 0 && singularity_registry_get("NO_PRIVS") != NULL ) {
+    if ( getuid() == 0 && singularity_registry_get("NO_PRIVS") != NULL ) {
         return(1);
     }
     return(0);
@@ -212,7 +211,7 @@ static void singularity_capability_set_securebits(int bits) {
             return;
         }
 
-        if ( singularity_priv_getuid() == 0 ) {
+        if ( getuid() == 0 ) {
             bits &= ~(SECBIT_NOROOT|SECBIT_NOROOT_LOCKED);
         }
 
@@ -353,7 +352,7 @@ static unsigned long long get_capabilities_from_file(char *ftype, char *id) {
 
 static unsigned long long get_user_file_capabilities(void) {
     unsigned long long caps = 0;
-    uid_t uid = singularity_priv_getuid();
+    uid_t uid = getuid();
     struct passwd *pw;
 
     pw = getpwuid(uid);
@@ -429,7 +428,7 @@ static unsigned long long setup_user_capabilities(void) {
 static int setup_capabilities(void) {
     int root_default_caps = get_root_default_capabilities();
 
-    if ( singularity_priv_getuid() == 0 ) {
+    if ( getuid() == 0 ) {
         if ( singularity_config_get_bool(ALLOW_ROOT_CAPABILITIES) <= 0 ) {
             singularity_registry_set("ADD_CAPS", NULL);
             unsetenv("SINGULARITY_ADD_CAPS");
@@ -529,7 +528,7 @@ void singularity_capability_init_minimal(void) {
 
 void singularity_capability_drop(void) {
     long int root_default_caps;
-    int root_user = (singularity_priv_getuid() == 0) ? 1 : 0;
+    int root_user = (getuid() == 0) ? 1 : 0;
 
     if ( singularity_registry_get("ROOT_DEFAULT_CAPS") == NULL ) {
         root_default_caps = setup_capabilities();
