@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	pushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "http://localhost:5150", "")
+	pushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "https://library.sylabs.io", "")
 	singularityCmd.AddCommand(pushCmd)
 }
 
