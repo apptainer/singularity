@@ -20,7 +20,7 @@ import (
 )
 
 // Timeout in seconds for the main upload (not api calls)
-const PUSH_TIMEOUT = 1800
+const pushTimeout = 1800
 
 // UploadImage will push a specified image up to the Container Library,
 func UploadImage(filePath string, libraryRef string, libraryURL string) error {
@@ -141,7 +141,7 @@ func postFile(baseURL string, filePath string, imageID string) error {
 	// Content length is required by the API
 	req.ContentLength = fileSize
 	client := &http.Client{
-		Timeout: PUSH_TIMEOUT * time.Second,
+		Timeout: pushTimeout * time.Second,
 	}
 	res, err := client.Do(req)
 

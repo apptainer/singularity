@@ -21,7 +21,7 @@ import (
 )
 
 // HTTP timeout in seconds
-const HTTP_TIMEOUT = 10
+const httpTimeout = 10
 
 func getEntity(baseURL string, entityRef string) (entity Entity, found bool, err error) {
 	url := (baseURL + "/v1/entities/" + entityRef)
@@ -33,8 +33,7 @@ func getEntity(baseURL string, entityRef string) (entity Entity, found bool, err
 		return entity, false, nil
 	}
 	var res EntityResponse
-	err = json.Unmarshal(entJSON, &res)
-	if err != nil {
+	if err := json.Unmarshal(entJSON, &res); err != nil {
 		return entity, false, fmt.Errorf("error decoding entity: %v", err)
 	}
 	return res.Data, found, nil
@@ -50,8 +49,7 @@ func getCollection(baseURL string, collectionRef string) (collection Collection,
 		return collection, false, nil
 	}
 	var res CollectionResponse
-	err = json.Unmarshal(colJSON, &res)
-	if err != nil {
+	if err := json.Unmarshal(colJSON, &res); err != nil {
 		return collection, false, fmt.Errorf("error decoding collection: %v", err)
 	}
 	return res.Data, found, nil
@@ -67,8 +65,7 @@ func getContainer(baseURL string, containerRef string) (container Container, fou
 		return container, false, nil
 	}
 	var res ContainerResponse
-	err = json.Unmarshal(conJSON, &res)
-	if err != nil {
+	if err := json.Unmarshal(conJSON, &res); err != nil {
 		return container, false, fmt.Errorf("error decoding container: %v", err)
 	}
 	return res.Data, found, nil
@@ -84,8 +81,7 @@ func getImage(baseURL string, imageRef string) (image Image, found bool, err err
 		return image, false, nil
 	}
 	var res ImageResponse
-	err = json.Unmarshal(imgJSON, &res)
-	if err != nil {
+	if err := json.Unmarshal(imgJSON, &res); err != nil {
 		return image, false, fmt.Errorf("error decoding image: %v", err)
 	}
 	return res.Data, found, nil
@@ -101,8 +97,7 @@ func createEntity(baseURL string, name string) (entity Entity, err error) {
 		return entity, err
 	}
 	var res EntityResponse
-	err = json.Unmarshal(entJSON, &res)
-	if err != nil {
+	if err := json.Unmarshal(entJSON, &res); err != nil {
 		return entity, fmt.Errorf("error decoding entity: %v", err)
 	}
 	return res.Data, nil
@@ -119,8 +114,7 @@ func createCollection(baseURL string, name string, entityID string) (collection 
 		return collection, err
 	}
 	var res CollectionResponse
-	err = json.Unmarshal(colJSON, &res)
-	if err != nil {
+	if err := json.Unmarshal(colJSON, &res); err != nil {
 		return collection, fmt.Errorf("error decoding collection: %v", err)
 	}
 	return res.Data, nil
@@ -137,8 +131,7 @@ func createContainer(baseURL string, name string, collectionID string) (containe
 		return container, err
 	}
 	var res ContainerResponse
-	err = json.Unmarshal(conJSON, &res)
-	if err != nil {
+	if err := json.Unmarshal(conJSON, &res); err != nil {
 		return container, fmt.Errorf("error decoding container: %v", err)
 	}
 	return res.Data, nil
@@ -155,8 +148,7 @@ func createImage(baseURL string, hash string, containerID string) (image Image, 
 		return image, err
 	}
 	var res ImageResponse
-	err = json.Unmarshal(imgJSON, &res)
-	if err != nil {
+	if err := json.Unmarshal(imgJSON, &res); err != nil {
 		return image, fmt.Errorf("error decoding image: %v", err)
 	}
 	return res.Data, nil
@@ -198,7 +190,7 @@ func apiCreate(o interface{}, url string) (objJSON []byte, err error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{
-		Timeout: (HTTP_TIMEOUT * time.Second),
+		Timeout: (httpTimeout * time.Second),
 	}
 	res, err := client.Do(req)
 	if err != nil {
@@ -222,7 +214,7 @@ func apiCreate(o interface{}, url string) (objJSON []byte, err error) {
 func apiGet(url string) (objJSON []byte, found bool, err error) {
 	sylog.Debugf("apiGet calling %s\n", url)
 	client := &http.Client{
-		Timeout: (HTTP_TIMEOUT * time.Second),
+		Timeout: (httpTimeout * time.Second),
 	}
 	res, err := client.Get(url)
 	if err != nil {
@@ -251,7 +243,7 @@ func apiGet(url string) (objJSON []byte, found bool, err error) {
 func apiGetTags(url string) (tags TagMap, err error) {
 	sylog.Debugf("apiGetTags calling %s\n", url)
 	client := &http.Client{
-		Timeout: (HTTP_TIMEOUT * time.Second),
+		Timeout: (httpTimeout * time.Second),
 	}
 	res, err := client.Get(url)
 	if err != nil {
@@ -284,7 +276,7 @@ func apiSetTag(url string, t ImageTag) (err error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{
-		Timeout: (HTTP_TIMEOUT * time.Second),
+		Timeout: (httpTimeout * time.Second),
 	}
 	res, err := client.Do(req)
 	if err != nil {

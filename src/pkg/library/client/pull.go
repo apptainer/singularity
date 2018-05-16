@@ -21,7 +21,7 @@ import (
 )
 
 // Timeout for an image pull in seconds - could be a large download...
-const PULL_TIMEOUT = 1800
+const pullTimeout = 1800
 
 // DownloadImage will retrieve an image from the Container Library,
 // saving it into the specified file
@@ -54,7 +54,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	}
 
 	client := &http.Client{
-		Timeout: PULL_TIMEOUT * time.Second,
+		Timeout: pullTimeout * time.Second,
 	}
 
 	res, err := client.Get(url)

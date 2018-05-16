@@ -17,6 +17,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 type mockRawService struct {
@@ -49,14 +51,16 @@ func (m *mockRawService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(m.code)
 	inFile, err := os.Open(m.testFile)
-
 	if err != nil {
 		m.t.Errorf("error opening file %v:", err)
 	}
-
 	defer inFile.Close()
 
 	_, err = io.Copy(w, bufio.NewReader(inFile))
+	if err != nil {
+		sylog.Fatalf("Test HTTP server unable to output file: %v", err)
+	}
+
 }
 
 func Test_DownloadImage(t *testing.T) {
