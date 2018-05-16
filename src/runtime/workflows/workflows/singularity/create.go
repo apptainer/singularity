@@ -21,6 +21,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/fs"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
 	"github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc/client"
@@ -84,6 +85,12 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		info.SizeLimit = uint64(C.uint(imageObject.size))
 	}
 
+	sessionOptions := fmt.Sprintf("size=%dm", engine.FileConfig.SessiondirMaxSize)
+	_, err = rpcOps.Mount("tmpfs", buildcfg.SESSIONDIR, "tmpfs", syscall.MS_NOSUID, sessionOptions)
+	if err != nil {
+		return fmt.Errorf("Failed to mount sessiondir: %s", err)
+	}
+
 	if st.IsDir() == false && !userNS {
 		var number int
 		info.Flags = loop.FlagsAutoClear
@@ -141,36 +148,56 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		return err
 	}
 
-	sylog.Debugf("Mounting /etc/passwd at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/passwd"))
-	_, err = rpcOps.Mount("/etc/passwd", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/passwd"), "", syscall.MS_BIND, "")
-	if err != nil {
-		log.Fatalln("mount /etc/passwd failed:", err)
-		return err
+	sylog.Debugf("Checking configuration option: 'config passwd'\n")
+	if engine.FileConfig.ConfigPasswd {
+		sylog.Debugf("Creating staging /etc/passwd\n")
+		if passwd, err := fs.ContainerPasswd(); err == nil {
+			sylog.Debugf("Mounting /etc/passwd at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/passwd"))
+			_, err = rpcOps.Mount(passwd, path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/passwd"), "", syscall.MS_BIND, "")
+			if err != nil {
+				log.Fatalln("mount /etc/passwd failed:", err)
+				return err
+			}
+		} else {
+			sylog.Verbosef("Skipping bind of the host's /etc/passwd: %s\n", err)
+		}
+	} else {
+		sylog.Verbosef("Skipping bind of the host's /etc/passwd\n")
 	}
 
-	sylog.Debugf("Mounting /etc/group at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/group"))
-	_, err = rpcOps.Mount("/etc/group", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/group"), "", syscall.MS_BIND, "")
-	if err != nil {
-		log.Fatalln("mount /etc/group failed:", err)
-		return err
+	sylog.Debugf("Checking configuration option: 'config group'\n")
+	if engine.FileConfig.ConfigGroup {
+		sylog.Debugf("Creating staging /etc/group\n")
+		if group, err := fs.ContainerGroup(); err == nil {
+			sylog.Debugf("Mounting /etc/group at %s\n", path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/group"))
+			_, err = rpcOps.Mount(group, path.Join(buildcfg.CONTAINER_MOUNTDIR, "etc/group"), "", syscall.MS_BIND, "")
+			if err != nil {
+				log.Fatalln("mount /etc/group failed:", err)
+				return err
+			}
+		} else {
+			sylog.Verbosef("Skipping bind of the host's /etc/group: %s\n", err)
+		}
+	} else {
+		sylog.Verbosef("Skipping bind of the host's /etc/group\n")
 	}
 
-	sylog.Debugf("Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_MOUNTDIR, buildcfg.SESSIONDIR)
-	_, err = rpcOps.Mount(buildcfg.CONTAINER_MOUNTDIR, buildcfg.SESSIONDIR, "", syscall.MS_BIND|syscall.MS_REC, "")
+	sylog.Debugf("Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_MOUNTDIR, buildcfg.CONTAINER_FINALDIR)
+	_, err = rpcOps.Mount(buildcfg.CONTAINER_MOUNTDIR, buildcfg.CONTAINER_FINALDIR, "", syscall.MS_BIND|syscall.MS_REC, "")
 	if err != nil {
 		log.Fatalln("mount failed:", err)
 		return err
 	}
 
-	sylog.Debugf("Chdir into %s\n", buildcfg.SESSIONDIR)
-	err = syscall.Chdir(buildcfg.SESSIONDIR)
+	sylog.Debugf("Chdir into %s\n", buildcfg.CONTAINER_FINALDIR)
+	err = syscall.Chdir(buildcfg.CONTAINER_FINALDIR)
 	if err != nil {
 		log.Fatalln("change directory failed:", err)
 		return err
 	}
 
-	sylog.Debugf("Chroot into %s\n", buildcfg.SESSIONDIR)
-	_, err = rpcOps.Chroot(buildcfg.SESSIONDIR)
+	sylog.Debugf("Chroot into %s\n", buildcfg.CONTAINER_FINALDIR)
+	_, err = rpcOps.Chroot(buildcfg.CONTAINER_FINALDIR)
 	if err != nil {
 		log.Fatalln("chroot failed:", err)
 		return err
