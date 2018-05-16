@@ -174,7 +174,7 @@ else
         exit 2;
     else
 	echo "yes"
-	config_add_def DSINGULARITY_NO_NEW_PRIVS 1
+	config_add_def SINGULARITY_NO_NEW_PRIVS 1
     fi
 fi
 /bin/rm -f ${nnp_c} /tmp/nnp_c
