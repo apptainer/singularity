@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	pullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "http://localhost:5150", "")
+	pullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "https://library.sylabs.io", "")
 	pullCmd.Flags().BoolVarP(&Force, "force", "F", false, "overwrite an image file if it exists")
 	singularityCmd.AddCommand(pullCmd)
 
