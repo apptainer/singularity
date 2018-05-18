@@ -2,8 +2,8 @@ package workflows
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	runtime "github.com/singularityware/singularity/src/pkg/workflows"
 	singularity "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
@@ -34,7 +34,7 @@ func registerRuntimeEngine(engine *runtime.RuntimeEngine, name string) {
 	engines[name] = engine
 	engine.RuntimeConfig = engine.InitConfig()
 	if engine.RuntimeConfig == nil {
-		log.Fatalf("failed to initialize %s engine\n", name)
+		sylog.Fatalf("failed to initialize %s engine\n", name)
 	}
 }
 
