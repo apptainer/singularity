@@ -1,3 +1,11 @@
+/*
+  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+
+  This software is licensed under a 3-clause BSD license.  Please
+  consult LICENSE file distributed with the sources of this project regarding
+  your rights to use or distribute this software.
+*/
+
 package user
 
 /*
@@ -9,6 +17,7 @@ package user
 import "C"
 import "fmt"
 import "unsafe"
+import "sync"
 
 // Passwd correspond to Go structure mapping C passwd structure
 type Passwd struct {
@@ -48,9 +57,17 @@ func convertCGroup(cGroup *C.struct_group) *Group {
 	}
 }
 
+var pwUIDMux sync.Mutex
+var pwNamMux sync.Mutex
+var grGIDMux sync.Mutex
+var grNamMux sync.Mutex
+
 // GetPwUID wraps C library getpwuid call and returns a pointer to Passwd structure
 // associated with user uid
 func GetPwUID(uid uint32) (*Passwd, error) {
+	pwUIDMux.Lock()
+	defer pwUIDMux.Unlock()
+
 	cPasswd, _ := C.getpwuid(C.__uid_t(uid))
 	if unsafe.Pointer(cPasswd) == nil {
 		return nil, fmt.Errorf("can't retrieve password information for uid %d", uid)
@@ -69,6 +86,9 @@ func GetPwNam(name string) (*Passwd, error) {
 	}
 	defer C.free(unsafe.Pointer(cName))
 
+	pwNamMux.Lock()
+	defer pwNamMux.Unlock()
+
 	cPasswd, _ := C.getpwnam(cName)
 	if unsafe.Pointer(cPasswd) == nil {
 		return nil, fmt.Errorf("can't retrieve password information for user %s", name)
@@ -80,6 +100,9 @@ func GetPwNam(name string) (*Passwd, error) {
 // GetGrGID wraps C library getgrgid call and returns a pointer to Group structure
 // associated with groud gid
 func GetGrGID(gid uint32) (*Group, error) {
+	grGIDMux.Lock()
+	defer grGIDMux.Unlock()
+
 	cGroup, _ := C.getgrgid(C.__gid_t(gid))
 	if unsafe.Pointer(cGroup) == nil {
 		return nil, fmt.Errorf("can't retrieve password information for uid %d", gid)
@@ -97,6 +120,9 @@ func GetGrNam(name string) (*Group, error) {
 		return nil, fmt.Errorf("failed to allocate memory")
 	}
 	defer C.free(unsafe.Pointer(cName))
+
+	grNamMux.Lock()
+	defer grNamMux.Unlock()
 
 	cGroup, _ := C.getgrnam(cName)
 	if unsafe.Pointer(cGroup) == nil {
