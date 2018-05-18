@@ -145,13 +145,13 @@ func SContainer(stage C.int, socket C.int, rpc_socket C.int, sruntime *C.char, c
 			}
 		}
 		if code != 0 {
-			sylog.Fatalf("container setup failed")
+			sylog.Fatalf("container setup failed\n")
 		}
 
 		/* force close on exec on socket file descriptor to distinguish an exec success and error */
 		_, _, errsys := syscall.RawSyscall(syscall.SYS_FCNTL, uintptr(socket), syscall.F_SETFD, syscall.FD_CLOEXEC)
 		if errsys != 0 {
-			sylog.Fatalf("set close-on-exec failed")
+			sylog.Fatalf("set close-on-exec failed\n")
 		}
 
 		if err := engine.StartProcess(); err != nil {
