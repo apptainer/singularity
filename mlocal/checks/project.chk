@@ -150,13 +150,34 @@ fi
 # feature: NO_NEW_PRIVS
 ########################
 printf " checking: feature: NO_NEW_PRIVS... "
-if ! printf "#include <sys/prctl.h>\nint main() { prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0); }" | \
-   $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
+nnp_c=`mktemp -t nnp_c_XXXXXX`
+cat > $nnp_c << "EOF"
+#include <sys/prctl.h>
+#ifndef PR_SET_NO_NEW_PRIVS
+# define PR_SET_NO_NEW_PRIVS 38
+# define PR_GET_NO_NEW_PRIVS 39
+#endif
+int main() {
+  if( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0 ) { return 1; }
+  if( prctl(PR_GET_NO_NEW_PRIVS, 0, 0, 0, 0) != 1 ) { return 1; }
+  return 0;
+}
+EOF
+if ! $tgtcc -x c -o /tmp/nnp_c ${nnp_c} >/dev/null 2>&1; then
 	echo "no"
+    echo "ERROR: Failed to compile NO_NEW_PRIVS test"
+    exit 2;
 else
+    if ! /tmp/nnp_c; then
+        echo "ERROR: Kernel does not support NO_NEW_PRIVS. Updated Kernel is required."
+        /bin/rm -f ${nnp_c} /tmp/nnp_c
+        exit 2;
+    else
 	echo "yes"
-	config_add_def DSINGULARITY_NO_NEW_PRIVS 1
+	config_add_def SINGULARITY_NO_NEW_PRIVS 1
+    fi
 fi
+/bin/rm -f ${nnp_c} /tmp/nnp_c
 
 ########################
 # feature: MS_SLAVE
