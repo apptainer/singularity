@@ -5,14 +5,16 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package cli
 
 import (
 	"fmt"
 
+	"os"
+
 	"github.com/singularityware/singularity/src/pkg/signing"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func init() {

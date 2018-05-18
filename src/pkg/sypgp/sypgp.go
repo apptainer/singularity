@@ -1,8 +1,10 @@
-// Copyright (c) 2018, SyLabs, Inc. All rights reserved.
-//
-// This software is licensed under a 3-clause BSD license.  Please
-// consult LICENSE file distributed with the sources of this project regarding
-// your rights to use or distribute this software.
+/*
+  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+
+  This software is licensed under a 3-clause BSD license.  Please
+  consult LICENSE file distributed with the sources of this project regarding
+  your rights to use or distribute this software.
+*/
 
 // Package sypgp implements the openpgp integration into the singularity project.
 package sypgp
@@ -12,14 +14,15 @@ import (
 	"bytes"
 	"crypto"
 	"fmt"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
-	"golang.org/x/crypto/openpgp/packet"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
+	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
+	"golang.org/x/crypto/openpgp/packet"
 )
 
 // routine that outputs signature type (applies to vindex operation)

@@ -5,6 +5,7 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package main
 
 import "github.com/singularityware/singularity/src/cmd/sbuild/cli"

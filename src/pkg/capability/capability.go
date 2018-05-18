@@ -5,11 +5,10 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package capability
 
-import (
 //"errors"
-)
 
 // This following comes from github.com/syndtr/gocapability
 // === Licensed Code ===
