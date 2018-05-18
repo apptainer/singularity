@@ -57,18 +57,6 @@ else
 fi
 
 ########################
-# ns: CLONE_PID
-########################
-printf " checking: namespace: CLONE_PID... "
-if ! printf "#define _GNU_SOURCE\n#include <sched.h>\nint main() { unshare(CLONE_PID); }" | \
-   $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
-	echo "no"
-else
-	echo "yes"
-	config_add_def NS_CLONE_PID 1
-fi
-
-########################
 # ns: CLONE_FS
 ########################
 printf " checking: namespace: CLONE_FS... "
@@ -144,6 +132,18 @@ if ! printf "#define _GNU_SOURCE\n#include <sched.h>\nint main() { unshare(CLONE
 else
 	echo "yes"
 	config_add_def NS_CLONE_NEWUTS 1
+fi
+
+########################
+# ns: CLONE_NEWCGROUP
+########################
+printf " checking: namespace: CLONE_NEWCGROUP... "
+if ! printf "#define _GNU_SOURCE\n#include <sched.h>\nint main() { unshare(CLONE_NEWCGROUP); }" | \
+   $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
+    echo "no"
+else
+    echo "yes"
+    config_add_def NS_CLONE_NEWCGROUP 1
 fi
 
 ########################

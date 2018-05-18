@@ -1,5 +1,0 @@
-name := wrapper
-prog := wrapper
-csrc := src/runtime/c/startup/wrapper.c
-depends := libutil
-extralibs := -ldl
