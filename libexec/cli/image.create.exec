@@ -96,8 +96,13 @@ if [ -f "$SINGULARITY_IMAGE" ]; then
     fi
 fi
 
+DDSTATUS="none"
+if dd --help | grep -q 'status=noxfer'; then
+    DDSTATUS="noxfer"
+fi
+
 message 1 "Creating empty ${SINGULARITY_IMAGESIZE:-768}MiB image file: $SINGULARITY_IMAGE\n"
-if ! dd if=/dev/zero of="$SINGULARITY_IMAGE" bs=1M count=${SINGULARITY_IMAGESIZE:-768} status=none; then
+if ! dd if=/dev/zero of="$SINGULARITY_IMAGE" bs=1M count=${SINGULARITY_IMAGESIZE:-768} status=${DDSTATUS}; then
     message ERROR "Failed creating image!\n"
     exit 1
 fi
