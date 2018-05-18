@@ -12,10 +12,10 @@ import (
 	"bytes"
 	"crypto"
 	"fmt"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -121,20 +121,20 @@ func PublicPath() string {
 // PathsCheck creates the sypgp home folder, secret and public keyring files
 func PathsCheck() error {
 	if err := os.MkdirAll(DirPath(), 0700); err != nil {
-		log.Println("could not create singularity PGP directory")
+		sylog.Errorf("could not create singularity PGP directory: %s\n", err)
 		return err
 	}
 
 	fs, err := os.OpenFile(SecretPath(), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
-		log.Println("Could not create private keyring file: ", err)
+		sylog.Errorf("could not create private keyring file: %s\n", err)
 		return err
 	}
 	fs.Close()
 
 	fp, err := os.OpenFile(PublicPath(), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
-		log.Println("Could not create public keyring file: ", err)
+		sylog.Errorf("could not create public keyring file: %s\n", err)
 		return err
 	}
 	fp.Close()
@@ -150,14 +150,14 @@ func LoadPrivKeyring() (openpgp.EntityList, error) {
 
 	f, err := os.Open(SecretPath())
 	if err != nil {
-		log.Println("Error trying to open secret keyring file: ", err)
+		sylog.Errorf("error trying to open secret keyring file: %s\n", err)
 		return nil, err
 	}
 	defer f.Close()
 
 	el, err := openpgp.ReadKeyRing(f)
 	if err != nil {
-		log.Println("Error while trying to read secret key ring: ", err)
+		sylog.Errorf("error while trying to read secret key ring: %s\n", err)
 		return nil, err
 	}
 
@@ -172,14 +172,14 @@ func LoadPubKeyring() (openpgp.EntityList, error) {
 
 	f, err := os.Open(PublicPath())
 	if err != nil {
-		log.Println("Error trying to open public keyring file: ", err)
+		sylog.Errorf("error trying to open public keyring file: %s\n", err)
 		return nil, err
 	}
 	defer f.Close()
 
 	el, err := openpgp.ReadKeyRing(f)
 	if err != nil {
-		log.Println("Error while trying to read public key ring: ", err)
+		sylog.Errorf("error while trying to read public key ring: %s\n", err)
 		return nil, err
 	}
 
@@ -200,7 +200,7 @@ func printPubKeyring() (err error) {
 	var pubEntlist openpgp.EntityList
 
 	if pubEntlist, err = LoadPubKeyring(); err != nil {
-		return err
+		return
 	}
 
 	for i, e := range pubEntlist {
@@ -208,14 +208,14 @@ func printPubKeyring() (err error) {
 		fmt.Println("   --------")
 	}
 
-	return nil
+	return
 }
 
 func printPrivKeyring() (err error) {
 	var privEntlist openpgp.EntityList
 
 	if privEntlist, err = LoadPrivKeyring(); err != nil {
-		return err
+		return
 	}
 
 	for i, e := range privEntlist {
@@ -223,7 +223,7 @@ func printPrivKeyring() (err error) {
 		fmt.Println("   --------")
 	}
 
-	return nil
+	return
 }
 
 // GenKeyPair generates a PGP key pair and store them in the sypgp home folder
@@ -239,7 +239,7 @@ func GenKeyPair() error {
 	scanner.Scan()
 	name := scanner.Text()
 	if err := scanner.Err(); err != nil {
-		log.Println("Error while reading name from user: ", err)
+		sylog.Errorf("error while reading name from user: %s\n", err)
 		return err
 	}
 
@@ -247,7 +247,7 @@ func GenKeyPair() error {
 	scanner.Scan()
 	email := scanner.Text()
 	if err := scanner.Err(); err != nil {
-		log.Println("Error while reading email from user: ", err)
+		sylog.Errorf("error while reading email from user: %s\n", err)
 		return err
 	}
 
@@ -255,39 +255,39 @@ func GenKeyPair() error {
 	scanner.Scan()
 	comment := scanner.Text()
 	if err := scanner.Err(); err != nil {
-		log.Println("Error while reading comment from user: ", err)
+		sylog.Errorf("error while reading comment from user: %s\n", err)
 		return err
 	}
 
 	fmt.Print("Generating Entity and PGP Key Pair... ")
 	entity, err := openpgp.NewEntity(name, comment, email, conf)
 	if err != nil {
-		log.Println("Error while creating entity: ", err)
+		sylog.Errorf("error while creating entity: %s\n", err)
 		return err
 	}
 	fmt.Println("Done")
 
 	fs, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
-		log.Println("Could not open private keyring file for appending: ", err)
+		sylog.Errorf("could not open private keyring file for appending: %s\n", err)
 		return err
 	}
 	defer fs.Close()
 
 	if err = entity.SerializePrivate(fs, nil); err != nil {
-		log.Println("Error while writing private entity to keyring file: ", err)
+		sylog.Errorf("error while writing private entity to keyring file: %s\n", err)
 		return err
 	}
 
 	fp, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
-		log.Println("Could not open public keyring file for appending: ", err)
+		sylog.Errorf("could not open public keyring file for appending: %s\n", err)
 		return err
 	}
 	defer fp.Close()
 
 	if err = entity.Serialize(fp); err != nil {
-		log.Println("Error while writing public entity to keyring file: ", err)
+		sylog.Errorf("error while writing public entity to keyring file: %s\n", err)
 		return err
 	}
 
@@ -303,12 +303,12 @@ func DecryptKey(k *openpgp.Entity) error {
 		scanner.Scan()
 		pass := scanner.Text()
 		if err := scanner.Err(); err != nil {
-			fmt.Println("error while reading passphrase from user", err)
+			sylog.Errorf("error while reading passphrase from user: %s\n", err)
 			return err
 		}
 
 		if err := k.PrivateKey.Decrypt([]byte(pass)); err != nil {
-			log.Println("error while decrypting key: ", err)
+			sylog.Errorf("error while decrypting key: %s\n", err)
 			return err
 		}
 	}
@@ -323,7 +323,7 @@ func SelectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	fmt.Print("Enter # of signing key to use : ")
 	n, err := fmt.Scanf("%d", &index)
 	if err != nil || n != 1 {
-		log.Println("Error while reading key choice from user: ", err)
+		sylog.Errorf("error while reading key choice from user: %s\n", err)
 		return nil, err
 	}
 
@@ -349,33 +349,33 @@ func FetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, err
 	}
 	urlStr := u.String()
 
-	log.Println("url:", urlStr)
+	sylog.Infof("url: %s\n", urlStr)
 	resp, err := http.Get(urlStr)
 	if err != nil {
-		log.Println("error in http.Get:", err)
+		sylog.Errorf("error in http.Get: %s\n", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		err = fmt.Errorf("no matching keys found for fingerprint")
-		log.Println(err)
+		err = fmt.Errorf("no matching keys found for fingerprint\n")
+		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
 
 	el, err := openpgp.ReadArmoredKeyRing(resp.Body)
 	if err != nil {
-		log.Println("error while trying to read armored key ring:", err)
+		sylog.Errorf("error while trying to read armored key ring: %s\n", err)
 		return nil, err
 	}
 	if len(el) == 0 {
-		err = fmt.Errorf("no keys in keyring")
-		log.Println(err)
+		err = fmt.Errorf("no keys in keyring\n")
+		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
 	if len(el) > 1 {
-		err = fmt.Errorf("server returned more than one key for unique fingerprint")
-		log.Println(err)
+		err = fmt.Errorf("server returned more than one key for unique fingerprint\n")
+		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
 
@@ -387,13 +387,13 @@ func PushPubkey(entity *openpgp.Entity, sykeysAddr string) (err error) {
 	w := bytes.NewBuffer(nil)
 	wr, err := armor.Encode(w, openpgp.PublicKeyType, nil)
 	if err != nil {
-		log.Println("armor.Encode failed:", err)
+		sylog.Errorf("armor.Encode failed: %s\n", err)
 	}
 
 	err = entity.Serialize(wr)
 	if err != nil {
-		log.Println("can't serialize public key:", err)
-		return err
+		sylog.Errorf("can't serialize public key: %s\n", err)
+		return
 	}
 	wr.Close()
 
@@ -409,16 +409,16 @@ func PushPubkey(entity *openpgp.Entity, sykeysAddr string) (err error) {
 
 	resp, err := http.PostForm(urlStr, v)
 	if err != nil {
-		log.Println("error in http.PostForm():", err)
-		return err
+		sylog.Errorf("error in http.PostForm(): %s\n", err)
+		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("Key server did not accept PGP key")
-		log.Println(err)
-		return err
+		sylog.Errorf("%s\n", err)
+		return
 	}
 
-	return nil
+	return
 }

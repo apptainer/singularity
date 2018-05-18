@@ -5,10 +5,10 @@ import (
 	"crypto/sha512"
 	"fmt"
 	"github.com/singularityware/singularity/src/pkg/sif"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/clearsign"
-	"log"
 )
 
 const (
@@ -20,13 +20,13 @@ func sifDataObjectHash(sinfo *sif.Sifinfo) (*bytes.Buffer, error) {
 
 	part, err := sif.SifGetPartition(sinfo, sif.SIF_DEFAULT_GROUP)
 	if err != nil {
-		log.Println(err)
+		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
 
 	data, err := sif.CByteRange(sinfo.Mapstart(), part.FileOff(), part.FileLen())
 	if err != nil {
-		log.Println(err)
+		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
 	sum := sha512.Sum384(data)
@@ -41,14 +41,14 @@ func sifAddSignature(fingerprint [20]byte, sinfo *sif.Sifinfo, signature []byte)
 
 	part, err := sif.SifGetPartition(sinfo, sif.SIF_DEFAULT_GROUP)
 	if err != nil {
-		log.Println(err)
+		sylog.Errorf("%s\n", err)
 		return err
 	}
 
 	e.InitSignature(fingerprint, signature, part)
 
 	if err := sif.SifPutDataObj(&e, sinfo); err != nil {
-		log.Println(err)
+		sylog.Errorf("%s\n", err)
 		return err
 	}
 	return nil
@@ -94,7 +94,7 @@ func Sign(cpath string) error {
 
 	var sinfo sif.Sifinfo
 	if err = sif.SifLoad(cpath, &sinfo, 0); err != nil {
-		log.Println("error loading sif file:", cpath, err)
+		sylog.Errorf("error loading sif file %s: %s\n", cpath, err)
 		return err
 	}
 	defer sif.SifUnload(&sinfo)
@@ -107,15 +107,15 @@ func Sign(cpath string) error {
 	var signedmsg bytes.Buffer
 	plaintext, err := clearsign.Encode(&signedmsg, en.PrivateKey, nil)
 	if err != nil {
-		log.Printf("error from Encode: %s\n", err)
+		sylog.Errorf("error from Encode: %s\n", err)
 		return err
 	}
 	if _, err = plaintext.Write(msg.Bytes()); err != nil {
-		log.Printf("error from Write: %s\n", err)
+		sylog.Errorf("error from Write: %s\n", err)
 		return err
 	}
 	if err = plaintext.Close(); err != nil {
-		log.Printf("error from Close: %s\n", err)
+		sylog.Errorf("error from Close: %s\n", err)
 		return err
 	}
 
@@ -136,7 +136,7 @@ func Verify(cpath string) error {
 	var sinfo sif.Sifinfo
 
 	if err := sif.SifLoad(cpath, &sinfo, 0); err != nil {
-		log.Println(err)
+		sylog.Errorf("%s\n", err)
 		return err
 	}
 	defer sif.SifUnload(&sinfo)
@@ -148,24 +148,24 @@ func Verify(cpath string) error {
 
 	sig, err := sif.SifGetSignature(&sinfo)
 	if err != nil {
-		log.Println(err)
+		sylog.Errorf("%s\n", err)
 		return err
 	}
 
 	data, err := sif.CByteRange(sinfo.Mapstart(), sig.FileOff(), sig.FileLen())
 	if err != nil {
-		log.Println(err)
+		sylog.Errorf("%s\n", err)
 		return err
 	}
 
 	block, _ := clearsign.Decode(data)
 	if block == nil {
-		log.Println("failed to decode clearsign message")
+		sylog.Errorf("failed to decode clearsign message\n")
 		return fmt.Errorf("failed to decode clearsign message")
 	}
 
 	if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), msg.Bytes()) {
-		log.Printf("Sif hash string mismatch -- don't use:\nsigned:     %s\ncalculated: %s", msg.String(), block.Plaintext)
+		sylog.Errorf("Sif hash string mismatch -- don't use:\nsigned:     %s\ncalculated: %s\n", msg.String(), block.Plaintext)
 		return fmt.Errorf("Sif hash string mismatch -- don't use")
 	}
 
@@ -176,9 +176,9 @@ func Verify(cpath string) error {
 	/* try to verify with local PGP store */
 	var signer *openpgp.Entity
 	if signer, err = openpgp.CheckDetachedSignature(el, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
-		log.Printf("failed to check signature: %s", err)
+		sylog.Errorf("failed to check signature: %s\n", err)
 		/* verification with local keyring failed, try to fetch from key server */
-		log.Println("Contacting sykeys PGP key management services for:", sig.GetEntity())
+		sylog.Infof("Contacting sykeys PGP key management services for: %s\n", sig.GetEntity())
 		syel, err := sypgp.FetchPubkey(sig.GetEntity(), syKeysAddr)
 		if err != nil {
 			return err
@@ -186,12 +186,12 @@ func Verify(cpath string) error {
 
 		block, _ := clearsign.Decode(data)
 		if block == nil {
-			log.Println("failed to decode clearsign message")
+			sylog.Errorf("failed to decode clearsign message\n")
 			return fmt.Errorf("failed to decode clearsign message")
 		}
 
 		if signer, err = openpgp.CheckDetachedSignature(syel, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
-			log.Printf("failed to check signature: %s", err)
+			sylog.Errorf("failed to check signature: %s\n", err)
 			return err
 		}
 	}
