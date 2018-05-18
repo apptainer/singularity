@@ -111,7 +111,7 @@ func writef(level messageLevel, format string, a ...interface{}) {
 	prefix := fmt.Sprintf("%s%-8s%s%-19s%-30s", messageColor, level, colorReset, uidStr, funcName)
 	message := fmt.Sprintf(format, a...)
 
-	message := strings.TrimSuffix(message, "\n")
+	message = strings.TrimSuffix(message, "\n")
 
 	fmt.Printf("%s%s\n", prefix, message)
 }
