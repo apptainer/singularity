@@ -41,9 +41,9 @@ cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
 INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
 
-CLEANFILES += $(libruntime) $(libstartup) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
+CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
 
-all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config)
+all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper)
 
 $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	@echo " AR" $@
@@ -68,7 +68,7 @@ $(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/c/startup/wrapper.c
 	@mkdir -p $(@D)
 	$(V)$(CC) -Wp,-MMD,$(BUILDDIR)/src/runtime/c/startup/wrapper.o.d -I$(BUILDDIR) -c $(ARCH_CFLAGS) $(CFLAGS)  $(CPPFLAGS) -o $(BUILDDIR)/src/runtime/c/startup/wrapper.o $(SOURCEDIR)/src/runtime/c/startup/wrapper.c
 
-$(wrapper): $(wrapper_OBJ)
+$(wrapper): $(wrapper_OBJ) $(libstartup)
 	@echo " LD" $@
 	@mkdir -p $(@D)
 	$(V)$(CC) $(LDFLAGS)  -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread
@@ -100,11 +100,11 @@ $(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
 # wrappper & wrapper-suid install
-$(wrapper_INSTALL): $(libstartup) $(wrapper)
+$(wrapper_INSTALL): $(wrapper)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(wrapper) $(wrapper_INSTALL)
-$(wrapper_suid_INSTALL): $(libstartup) $(wrapper)
+$(wrapper_suid_INSTALL): $(wrapper)
 	@echo " INSTALL SUID" $@
 	$(V)install -d $(@D)
 	$(V)install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)

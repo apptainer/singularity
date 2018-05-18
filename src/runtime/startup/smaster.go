@@ -16,7 +16,6 @@ import "C"
 
 import (
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -25,6 +24,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	runtime "github.com/singularityware/singularity/src/pkg/workflows"
 	internalRuntime "github.com/singularityware/singularity/src/runtime/workflows"
 )
@@ -75,12 +75,12 @@ func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.
 	/* hold a reference to container network namespace for cleanup */
 	_, err := os.Open("/proc/" + strconv.Itoa(containerPid) + "/ns/net")
 	if err != nil {
-		log.Fatalln("can't open network namespace:", err)
+		sylog.Fatalf("can't open network namespace: %s\n", err)
 	}
 
 	engine, err := internalRuntime.NewRuntimeEngine(runtimeName, jsonBytes)
 	if err != nil {
-		log.Fatalln("failed to initialize runtime:", err)
+		sylog.Fatalf("failed to initialize runtime: %s\n", err)
 	}
 
 	wg.Add(1)

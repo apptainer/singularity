@@ -17,7 +17,6 @@ package main
 import "C"
 
 import (
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -25,6 +24,7 @@ import (
 	"unsafe"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/workflows"
 )
 
@@ -48,12 +48,12 @@ func SContainer(stage C.int, socket C.int, rpc_socket C.int, sruntime *C.char, c
 
 	engine, err := workflows.NewRuntimeEngine(runtimeName, jsonBytes)
 	if err != nil {
-		log.Fatalln(err)
+		sylog.Fatalf("failed to initialize runtime engine: %s\n", err)
 	}
 
 	if stage == 1 {
 		if err := engine.CheckConfig(); err != nil {
-			log.Fatalln(err)
+			sylog.Fatalf("%s\n", err)
 		}
 
 		cconf.isInstance = C.uchar(bool2int(engine.IsRunAsInstance()))
@@ -100,19 +100,19 @@ func SContainer(stage C.int, socket C.int, rpc_socket C.int, sruntime *C.char, c
 			conn, err := net.FileConn(rpcSocket)
 			rpcSocket.Close()
 			if err != nil {
-				log.Fatalln("communication error")
+				sylog.Fatalf("socket communication error: %s\n", err)
 			}
 
 			// send "creating" status notification to smaster
 			if err := engine.CreateContainer(conn); err != nil {
-				os.Exit(1)
+				sylog.Fatalf("%s\n", err)
 			}
 			// send "created" status notification to smaster
 			os.Exit(0)
 		}
 
 		if err := engine.PrestartProcess(); err != nil {
-			log.Fatalln("Container setup failed:", err)
+			sylog.Fatalf("container setup failed: %s\n", err)
 		}
 
 		code := 0
@@ -145,17 +145,17 @@ func SContainer(stage C.int, socket C.int, rpc_socket C.int, sruntime *C.char, c
 			}
 		}
 		if code != 0 {
-			log.Fatalln("Container setup failed:", code)
+			sylog.Fatalf("container setup failed")
 		}
 
 		/* force close on exec on socket file descriptor to distinguish an exec success and error */
 		_, _, errsys := syscall.RawSyscall(syscall.SYS_FCNTL, uintptr(socket), syscall.F_SETFD, syscall.FD_CLOEXEC)
 		if errsys != 0 {
-			log.Fatalln("set close-on-exec failed:", errsys)
+			sylog.Fatalf("set close-on-exec failed")
 		}
 
 		if err := engine.StartProcess(); err != nil {
-			log.Fatalln(err)
+			sylog.Fatalf("%s\n", err)
 		}
 	}
 }

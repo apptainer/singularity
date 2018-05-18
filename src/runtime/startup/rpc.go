@@ -11,10 +11,10 @@ package main
 import "C"
 
 import (
-	"log"
 	"net"
 	"os"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/workflows/rpc"
 )
 
@@ -26,7 +26,7 @@ func RPCServer(socket C.int, sruntime *C.char) {
 
 	conn, err := net.FileConn(comm)
 	if err != nil {
-		log.Fatalln("communication error")
+		sylog.Fatalf("socket communication error: %s\n", err)
 	}
 	comm.Close()
 

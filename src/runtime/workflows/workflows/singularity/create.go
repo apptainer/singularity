@@ -11,7 +11,6 @@ import "C"
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"net/rpc"
 	"os"
@@ -28,7 +27,6 @@ import (
 
 func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 	if engine.RuntimeSpec.RuntimeName != runtimeconfig.Name {
-		log.Fatalln("engineName configuration doesn't match runtime name")
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
@@ -37,20 +35,17 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		Name:   engine.RuntimeSpec.RuntimeName,
 	}
 	if rpcOps.Client == nil {
-		log.Fatalln("Failed to initialiaze RPC client")
-		return fmt.Errorf("Failed to initialiaze RPC client")
+		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
 	_, err := rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
 	if err != nil {
-		log.Fatalln("mount / failed:", err)
-		return err
+		return fmt.Errorf("mount / failed: %s", err)
 	}
 
 	st, err := os.Stat(engine.OciConfig.RuntimeOciSpec.Root.Path)
 	if err != nil {
-		log.Fatalf("stat on %s failed\n", engine.OciConfig.RuntimeOciSpec.Root.Path)
-		return err
+		return fmt.Errorf("stat on %s failed", engine.OciConfig.RuntimeOciSpec.Root.Path)
 	}
 
 	rootfs := engine.OciConfig.RuntimeOciSpec.Root.Path
@@ -90,7 +85,6 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		info.Flags = loop.FlagsAutoClear
 		number, err = rpcOps.LoopDevice(rootfs, os.O_RDONLY, *info)
 		if err != nil {
-			log.Fatalln(err)
 			return err
 		}
 
@@ -98,15 +92,13 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		sylog.Debugf("Mounting loop device %s\n", path)
 		_, err = rpcOps.Mount(path, buildcfg.CONTAINER_FINALDIR, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 		if err != nil {
-			log.Fatalf("Failed to mount %s filesystem: %s\n", mountType, err)
-			return err
+			return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
 		}
 	} else {
 		sylog.Debugf("Mounting image directory %s\n", rootfs)
 		_, err = rpcOps.Mount(rootfs, buildcfg.CONTAINER_FINALDIR, "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 		if err != nil {
-			log.Fatalf("Failed to mount directory filesystem %s: %s\n", rootfs, err)
-			return err
+			return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)
 		}
 	}
 
@@ -114,91 +106,78 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		sylog.Debugf("Mounting proc at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
 		_, err = rpcOps.Mount("proc", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "proc", syscall.MS_NOSUID, "")
 		if err != nil {
-			log.Fatalln("mount proc failed:", err)
-			return err
+			return fmt.Errorf("mount proc failed: %s", err)
 		}
 	} else {
 		sylog.Debugf("Mounting proc at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
 		_, err = rpcOps.Mount("/proc", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 		if err != nil {
-			log.Fatalln("mount proc failed:", err)
-			return err
+			return fmt.Errorf("mount proc failed: %s", err)
 		}
 	}
 	if !userNS {
 		sylog.Debugf("Mounting sysfs at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
 		_, err = rpcOps.Mount("sysfs", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
 		if err != nil {
-			log.Fatalln("mount sys failed:", err)
-			return err
+			return fmt.Errorf("mount sys failed: %s", err)
 		}
 	} else {
 		sylog.Debugf("Mounting sysfs at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
 		_, err = rpcOps.Mount("/sys", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 		if err != nil {
-			log.Fatalln("mount sys failed:", err)
-			return err
+			return fmt.Errorf("mount sys failed: %s", err)
 		}
 	}
 
 	sylog.Debugf("Mounting home at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "home"))
 	_, err = rpcOps.Mount("/home", path.Join(buildcfg.CONTAINER_FINALDIR, "home"), "", syscall.MS_BIND, "")
 	if err != nil {
-		log.Fatalln("mount /home failed:", err)
-		return err
+		return fmt.Errorf("mount /home failed: %s", err)
 	}
 
 	sylog.Debugf("Mounting dev at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "dev"))
 	_, err = rpcOps.Mount("/dev", path.Join(buildcfg.CONTAINER_FINALDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
-		log.Fatalln("mount /dev failed:", err)
-		return err
+		return fmt.Errorf("mount /dev failed: %s", err)
 	}
 
 	sylog.Debugf("Mounting /etc/passwd at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"))
 	_, err = rpcOps.Mount("/etc/passwd", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"), "", syscall.MS_BIND, "")
 	if err != nil {
-		log.Fatalln("mount /etc/passwd failed:", err)
-		return err
+		return fmt.Errorf("mount /etc/passwd failed: %s", err)
 	}
 
 	sylog.Debugf("Mounting /etc/group at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"))
 	_, err = rpcOps.Mount("/etc/group", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"), "", syscall.MS_BIND, "")
 	if err != nil {
-		log.Fatalln("mount /etc/group failed:", err)
-		return err
+		return fmt.Errorf("mount /etc/group failed: %s", err)
 	}
 
 	sylog.Debugf("Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR)
 	_, err = rpcOps.Mount(buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR, "", syscall.MS_BIND|syscall.MS_REC, "")
 	if err != nil {
-		log.Fatalln("mount staging directory failed:", err)
-		return err
+		return fmt.Errorf("mount staging directory failed: %s", err)
 	}
 
 	sylog.Debugf("Chdir into %s\n", buildcfg.SESSIONDIR)
 	err = syscall.Chdir(buildcfg.SESSIONDIR)
 	if err != nil {
-		log.Fatalln("change directory failed:", err)
-		return err
+		return fmt.Errorf("change directory failed: %s", err)
 	}
 
 	sylog.Debugf("Chroot into %s\n", buildcfg.SESSIONDIR)
 	_, err = rpcOps.Chroot(buildcfg.SESSIONDIR)
 	if err != nil {
-		log.Fatalln("chroot failed:", err)
-		return err
+		return fmt.Errorf("chroot failed: %s", err)
 	}
 
 	sylog.Debugf("Chdir into / to avoid errors\n")
 	err = syscall.Chdir("/")
 	if err != nil {
-		log.Fatalln("change directory failed:", err)
-		return err
+		return fmt.Errorf("change directory failed: %s", err)
 	}
 	if err := rpcOps.Client.Close(); err != nil {
-		log.Fatalln("Can't close connection with rpc server:", err)
-		return err
+		return fmt.Errorf("can't close connection with rpc server: %s", err)
 	}
 
 	return nil
