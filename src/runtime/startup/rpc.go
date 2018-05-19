@@ -11,36 +11,25 @@ package main
 import "C"
 
 import (
-	"log"
 	"net"
 	"os"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/workflows/rpc"
 )
 
-// If you update the CGo exported functions YOU MUST UPDATE
-// the src/runtime/c/startup/librpc.h header file by compiling
-// the project and copying buildtree/librpc.h
-
 //export RPCServer
-func RPCServer(socket int) int {
-	tmp, ok := os.LookupEnv("SRUNTIME")
-	if !ok {
-		log.Fatalln("SRUNTIME environment variable isn't set")
-	}
-	runtime := tmp
+func RPCServer(socket C.int, sruntime *C.char) {
+	runtime := C.GoString(sruntime)
 
 	comm := os.NewFile(uintptr(socket), "unix")
 
 	conn, err := net.FileConn(comm)
 	if err != nil {
-		log.Fatalln("communication error")
+		sylog.Fatalf("socket communication error: %s\n", err)
 	}
 	comm.Close()
 
 	rpc.ServeRuntimeEngineRequests(runtime, conn)
-
-	return 0
+	os.Exit(0)
 }
-
-func main() {}

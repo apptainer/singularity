@@ -1,7 +1,7 @@
 package runtime
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"syscall"
 )
@@ -12,20 +12,12 @@ func (engine *RuntimeEngine) PrestartProcess() error {
 }
 
 func (engine *RuntimeEngine) StartProcess() error {
-	//    if cconf.isInstance == C.uchar(0) {
 	os.Setenv("PS1", "shell> ")
 	os.Chdir("/")
 	args := engine.OciConfig.RuntimeOciSpec.Process.Args
 	err := syscall.Exec(args[0], args, os.Environ())
 	if err != nil {
-		log.Fatalln("exec failed:", err)
+		return fmt.Errorf("exec %s failed: %s", args[0], err)
 	}
-	/*    }  else {
-	          err := syscall.Exec("/bin/sleep", []string{"/bin/sleep", "60"}, os.Environ())
-	          if err != nil {
-	              log.Fatalln("exec failed:", err)
-	          }
-	      }
-	*/
 	return nil
 }
