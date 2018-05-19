@@ -23,7 +23,9 @@ import (
 const pushTimeout = 1800
 
 // UploadImage will push a specified image up to the Container Library,
-func UploadImage(filePath string, libraryRef string, libraryURL string) error {
+func UploadImage(filePath string, libraryRef string, libraryURL string, tokenFile string) error {
+
+	authToken := readToken(tokenFile)
 
 	if !isLibraryPushRef(libraryRef) {
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
@@ -38,52 +40,52 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 	entityName, collectionName, containerName, tags := parseLibraryRef(libraryRef)
 
 	// Find or create entity
-	entity, found, err := getEntity(libraryURL, entityName)
+	entity, found, err := getEntity(libraryURL, authToken, entityName)
 	if err != nil {
 		return err
 	}
 	if !found {
 		sylog.Verbosef("Entity %s does not exist in library - creating it.\n", entityName)
-		entity, err = createEntity(libraryURL, entityName)
+		entity, err = createEntity(libraryURL, authToken, entityName)
 		if err != nil {
 			return err
 		}
 	}
 
 	// Find or create collection
-	collection, found, err := getCollection(libraryURL, entityName+"/"+collectionName)
+	collection, found, err := getCollection(libraryURL, authToken, entityName+"/"+collectionName)
 	if err != nil {
 		return err
 	}
 	if !found {
 		sylog.Verbosef("Collection %s does not exist in library - creating it.\n", collectionName)
-		collection, err = createCollection(libraryURL, collectionName, entity.GetID().Hex())
+		collection, err = createCollection(libraryURL, authToken, collectionName, entity.GetID().Hex())
 		if err != nil {
 			return err
 		}
 	}
 
 	// Find or create container
-	container, found, err := getContainer(libraryURL, entityName+"/"+collectionName+"/"+containerName)
+	container, found, err := getContainer(libraryURL, authToken, entityName+"/"+collectionName+"/"+containerName)
 	if err != nil {
 		return err
 	}
 	if !found {
 		sylog.Verbosef("Container %s does not exist in library - creating it.\n", containerName)
-		container, err = createContainer(libraryURL, containerName, collection.GetID().Hex())
+		container, err = createContainer(libraryURL, authToken, containerName, collection.GetID().Hex())
 		if err != nil {
 			return err
 		}
 	}
 
 	// Find or create image
-	image, found, err := getImage(libraryURL, entityName+"/"+collectionName+"/"+containerName+":"+imageHash)
+	image, found, err := getImage(libraryURL, authToken, entityName+"/"+collectionName+"/"+containerName+":"+imageHash)
 	if err != nil {
 		return err
 	}
 	if !found {
 		sylog.Verbosef("Image %s does not exist in library - creating it.\n", imageHash)
-		image, err = createImage(libraryURL, imageHash, container.GetID().Hex())
+		image, err = createImage(libraryURL, authToken, imageHash, container.GetID().Hex())
 		if err != nil {
 			return err
 		}
@@ -91,7 +93,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 
 	if !image.Uploaded {
 		sylog.Infof("Now uploading %s to the library\n", filePath)
-		err = postFile(libraryURL, filePath, image.GetID().Hex())
+		err = postFile(libraryURL, authToken, filePath, image.GetID().Hex())
 		if err != nil {
 			return err
 		}
@@ -101,7 +103,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 	}
 
 	sylog.Debugf("Setting tags against uploaded image\n")
-	err = setTags(libraryURL, container.GetID().Hex(), image.GetID().Hex(), tags)
+	err = setTags(libraryURL, authToken, container.GetID().Hex(), image.GetID().Hex(), tags)
 	if err != nil {
 		return err
 	}
@@ -109,7 +111,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string) error {
 	return nil
 }
 
-func postFile(baseURL string, filePath string, imageID string) error {
+func postFile(baseURL string, authToken string, filePath string, imageID string) error {
 
 	f, err := os.Open(filePath)
 	if err != nil {
@@ -136,8 +138,10 @@ func postFile(baseURL string, filePath string, imageID string) error {
 	bodyProgress := bar.NewProxyReader(b)
 	// Make an upload request
 	req, _ := http.NewRequest("POST", postURL, bodyProgress)
-	// Don't forget to set the content type, this will contain the boundary.
 	req.Header.Set("Content-Type", "application/octet-stream")
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
 	// Content length is required by the API
 	req.ContentLength = fileSize
 	client := &http.Client{

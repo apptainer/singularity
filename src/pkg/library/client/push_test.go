@@ -64,7 +64,7 @@ func Test_postFile(t *testing.T) {
 
 			m.Run()
 
-			err := postFile(m.baseURI, test.testFile, test.imageRef)
+			err := postFile(m.baseURI, testToken, test.testFile, test.imageRef)
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
