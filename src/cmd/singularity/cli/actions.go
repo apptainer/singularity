@@ -8,13 +8,12 @@
 package cli
 
 import (
-	"log"
 	"os"
-	"os/exec"
-	"strings"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/exec"
 	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
 
 	"github.com/spf13/cobra"
@@ -128,9 +127,6 @@ var runCmd = &cobra.Command{
 
 func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	lvl := "0"
-	if buildcfg.BUILDDIR == "" {
-		log.Fatal("buildtree not defined at compile time, exiting")
-	}
 
 	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
 
@@ -159,9 +155,6 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 	oci.RuntimeOciSpec.Linux.Namespaces = namespaces
 
-	cmd := exec.Command(wrapper)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	if verbose {
 		lvl = "2"
 	}
@@ -169,15 +162,23 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		lvl = "5"
 	}
 
-	cmd.Env = []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
-	j, err := runtime.GetConfig()
-	if err != nil {
-		log.Fatalln(err)
+	oci.Process.SetEnv(os.Environ())
+
+	if pwd, err := os.Getwd(); err == nil {
+		oci.Process.SetCwd(pwd)
+	} else {
+		sylog.Warningf("can't determine current working directory: %s", err)
 	}
 
-	cmd.Stdin = strings.NewReader(string(j))
-	err = cmd.Run()
+	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
+	progname := "singularity " + args[0]
+
+	configData, err := runtime.GetConfig()
 	if err != nil {
-		log.Fatalln(err)
+		sylog.Fatalf("%s", err)
+	}
+
+	if err := exec.Pipe(wrapper, []string{progname}, Env, configData); err != nil {
+		sylog.Fatalf("%s", err)
 	}
 }

@@ -107,10 +107,20 @@ static void priv_escalate(void) {
     }
 }
 
+static void set_parent_death_signal(int signo) {
+    singularity_message(DEBUG, "Set parent death signal to %d\n", signo);
+    if ( prctl(PR_SET_PDEATHSIG, signo) < 0 ) {
+        singularity_message(ERROR, "Failed to set parent death signal\n");
+        exit(1);
+    }
+}
+
 static void prepare_scontainer_stage(int stage) {
     uid_t uid = getuid();
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
+
+    set_parent_death_signal(SIGKILL);
 
     singularity_message(DEBUG, "Entering in scontainer stage %d\n", stage);
 
@@ -164,6 +174,8 @@ static void prepare_scontainer_stage(int stage) {
         singularity_message(ERROR, "Faile to drop privileges: %s\n", strerror(errno));
         exit(1);
     }
+
+    set_parent_death_signal(SIGKILL);
 
     int last_cap;
     for ( last_cap = CAPSET_MAX; ; last_cap-- ) {
@@ -439,7 +451,7 @@ static unsigned char is_suid(void) {
 
     /* use auxiliary vectors to determine if running privileged */
     memset(buffer, 0, 4096);
-    if ( read(proc_auxv, buffer, 4092) < 0 ) {
+    if ( read(proc_auxv, buffer, 4088) < 0 ) {
         singularity_message(ERROR, "Can't read auxiliary vectors: %s\n", strerror(errno));
         exit(1);
     }
@@ -457,14 +469,6 @@ static unsigned char is_suid(void) {
     close(proc_auxv);
 
     return suid;
-}
-
-static void set_parent_death_signal(int signo) {
-    singularity_message(DEBUG, "Set parent death signal to %d\n", signo);
-    if ( prctl(PR_SET_PDEATHSIG, signo) < 0 ) {
-        singularity_message(ERROR, "Failed to set parent death signal\n");
-        exit(1);
-    }
 }
 
 void do_nothing(int sig) {
