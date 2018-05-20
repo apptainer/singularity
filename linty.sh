@@ -11,6 +11,12 @@
 # exits. If both statements are TRUE, LINTY prints out a table of lint counts
 # for the packages that are listed in its configuration.
 
+if ! which golint >/dev/null; then
+	echo "ERROR: golint not found!"
+	echo "Please install by running 'go get golang.org/x/lint/golint'"
+	exit 3
+fi
+
 # Configuration file
 linty_config=".linty.conf"
 
