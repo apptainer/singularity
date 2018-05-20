@@ -25,7 +25,8 @@ import (
 	"github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc/client"
 )
 
-func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
+// CreateContainer creates a container
+func (engine *Engine) CreateContainer(rpcConn net.Conn) error {
 	if engine.RuntimeSpec.RuntimeName != runtimeconfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}

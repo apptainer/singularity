@@ -6,12 +6,14 @@ import (
 	"syscall"
 )
 
-func (engine *RuntimeEngine) PrestartProcess() error {
+// PrestartProcess runs pre-start tasks
+func (engine *Engine) PrestartProcess() error {
 	/* seccomp setup goes here */
 	return nil
 }
 
-func (engine *RuntimeEngine) StartProcess() error {
+// StartProcess starts the process
+func (engine *Engine) StartProcess() error {
 	os.Setenv("PS1", "shell> ")
 	os.Chdir("/")
 	args := engine.OciConfig.RuntimeOciSpec.Process.Args

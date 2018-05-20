@@ -1,5 +1,6 @@
 package runtime
 
-func (c *RuntimeEngine) CheckConfig() error {
+// CheckConfig checks the runtime engine config
+func (c *Engine) CheckConfig() error {
 	return nil
 }
