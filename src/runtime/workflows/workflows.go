@@ -11,7 +11,7 @@ import (
 
 var engines map[string]*runtime.RuntimeEngine
 
-// Instanciate a runtime engine based on json configuration
+// NewRuntimeEngine instantiates a runtime engine based on JSON configuration
 func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, error) {
 	var engine *runtime.RuntimeEngine
 
