@@ -59,6 +59,7 @@ func handleChild(pid int, child chan os.Signal, engine *runtime.RuntimeEngine) {
 	}
 }
 
+// SMaster initializes a runtime engine and runs it
 //export SMaster
 func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
 	var wg sync.WaitGroup
