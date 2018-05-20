@@ -30,7 +30,7 @@ func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
-	rpcOps := &client.Rpc{
+	rpcOps := &client.RPC{
 		Client: rpc.NewClient(rpcConn),
 		Name:   engine.RuntimeSpec.RuntimeName,
 	}
