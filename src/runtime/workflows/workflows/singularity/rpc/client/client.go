@@ -15,12 +15,14 @@ import (
 	args "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc"
 )
 
-type Rpc struct {
+// RPC holds the state necessary for remote procedure calls
+type RPC struct {
 	Client *rpc.Client
 	Name   string
 }
 
-func (t *Rpc) Mount(source string, target string, filesystem string, flags uintptr, data string) (int, error) {
+// Mount calls tme mount RPC using the supplied arguments
+func (t *RPC) Mount(source string, target string, filesystem string, flags uintptr, data string) (int, error) {
 	arguments := &args.MountArgs{
 		Source:     source,
 		Target:     target,
@@ -33,7 +35,8 @@ func (t *Rpc) Mount(source string, target string, filesystem string, flags uintp
 	return reply, err
 }
 
-func (t *Rpc) Mkdir(path string) (int, error) {
+// Mkdir calls the mkdir RPC using the supplied arguments
+func (t *RPC) Mkdir(path string) (int, error) {
 	arguments := &args.MkdirArgs{
 		Path: path,
 	}
@@ -42,7 +45,8 @@ func (t *Rpc) Mkdir(path string) (int, error) {
 	return reply, err
 }
 
-func (t *Rpc) Chroot(root string) (int, error) {
+// Chroot calls the chroot RPC using the supplied arguments
+func (t *RPC) Chroot(root string) (int, error) {
 	arguments := &args.ChrootArgs{
 		Root: root,
 	}
@@ -51,7 +55,8 @@ func (t *Rpc) Chroot(root string) (int, error) {
 	return reply, err
 }
 
-func (t *Rpc) LoopDevice(image string, mode int, info loop.LoopInfo64) (int, error) {
+// LoopDevice calls the loop device RPC using the supplied arguments
+func (t *RPC) LoopDevice(image string, mode int, info loop.LoopInfo64) (int, error) {
 	arguments := &args.LoopArgs{
 		Image: image,
 		Mode:  mode,

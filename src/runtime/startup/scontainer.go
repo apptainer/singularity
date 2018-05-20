@@ -35,9 +35,10 @@ func bool2int(b bool) uint8 {
 	return 0
 }
 
+// SContainer performs container startup
 //export SContainer
-func SContainer(stage C.int, socket C.int, rpc_socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
-	rpcfd := rpc_socket
+func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
+	rpcfd := rpcSocket
 
 	cconf := config
 

@@ -18,6 +18,7 @@ import (
 	"github.com/singularityware/singularity/src/runtime/workflows/rpc"
 )
 
+// RPCServer serves runtime engine requests
 //export RPCServer
 func RPCServer(socket C.int, sruntime *C.char) {
 	runtime := C.GoString(sruntime)
