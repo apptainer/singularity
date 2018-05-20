@@ -11,7 +11,7 @@ import (
 
 var engines map[string]*runtime.RuntimeEngine
 
-// Instanciate a runtime engine based on json configuration
+// NewRuntimeEngine instantiates a runtime engine based on JSON configuration
 func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, error) {
 	var engine *runtime.RuntimeEngine
 
@@ -40,6 +40,6 @@ func registerRuntimeEngine(engine *runtime.RuntimeEngine, name string) {
 
 func init() {
 	// initialize singularity engine
-	e := &singularity.RuntimeEngine{}
+	e := &singularity.Engine{}
 	registerRuntimeEngine(&runtime.RuntimeEngine{Runtime: e}, singularityConfig.Name)
 }
