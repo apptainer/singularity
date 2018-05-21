@@ -330,6 +330,7 @@ var capAuditRead = &capability{
     Allow reading the audit log via a multicast netlink socket.`,
 }
 
+// Map maps each capability name to a struct with details about the capability.
 var Map = map[string]*capability{
 	"CAP_CHOWN":            capChown,
 	"CAP_DAC_OVERRIDE":     capDacOverride,
