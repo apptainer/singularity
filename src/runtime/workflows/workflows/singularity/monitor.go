@@ -5,6 +5,7 @@
 
 package runtime
 
-func (c *RuntimeEngine) MonitorContainer() error {
+// MonitorContainer monitors a container
+func (c *Engine) MonitorContainer() error {
 	return nil
 }

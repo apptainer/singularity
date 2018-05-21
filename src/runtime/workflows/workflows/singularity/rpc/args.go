@@ -7,16 +7,19 @@ package rpc
 
 import "github.com/singularityware/singularity/src/pkg/util/loop"
 
+// MkdirArgs defines the arguments to mkdir
 type MkdirArgs struct {
 	Path string
 }
 
+// LoopArgs defines the arguments to create a loop device
 type LoopArgs struct {
 	Image string
 	Mode  int
 	Info  loop.LoopInfo64
 }
 
+// MountArgs defines the arguments to mount
 type MountArgs struct {
 	Source     string
 	Target     string
@@ -25,6 +28,7 @@ type MountArgs struct {
 	Data       string
 }
 
+// ChrootArgs defines the arguments to chroot
 type ChrootArgs struct {
 	Root string
 }

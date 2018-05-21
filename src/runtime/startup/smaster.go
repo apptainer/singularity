@@ -5,17 +5,23 @@
 
 package main
 
+/*
+#include <sys/types.h>
+#include "startup/wrapper.h"
+*/
+import "C"
+
 import (
 	"io"
-	"io/ioutil"
-	"log"
 	"os"
 	"os/signal"
 	"strconv"
 	"sync"
 	"syscall"
 	"time"
+	"unsafe"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	runtime "github.com/singularityware/singularity/src/pkg/workflows"
 	internalRuntime "github.com/singularityware/singularity/src/runtime/workflows"
 )
@@ -50,57 +56,44 @@ func handleChild(pid int, child chan os.Signal, engine *runtime.RuntimeEngine) {
 	}
 }
 
-func main() {
+// SMaster initializes a runtime engine and runs it
+//export SMaster
+func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
 	var wg sync.WaitGroup
 
 	sigchild := make(chan os.Signal, 1)
 	signal.Notify(sigchild, syscall.SIGCHLD)
 
-	tmp, ok := os.LookupEnv("SMASTER_CONTAINER_PID")
-	if !ok {
-		log.Fatalln("SMASTER_CONTAINER_PID environment variable isn't set")
-	}
-	containerPid, _ := strconv.Atoi(tmp)
-
-	tmp, ok = os.LookupEnv("SMASTER_SOCKET")
-	if !ok {
-		log.Fatalln("SMASTER_SOCKET environment variable isn't set")
-	}
-	socket, _ := strconv.Atoi(tmp)
-
-	tmp, ok = os.LookupEnv("SRUNTIME")
-	if !ok {
-		log.Fatalln("SRUNTIME environment variable isn't set")
-	}
-	runtimeName := tmp
+	containerPid := int(config.containerPid)
+	runtimeName := C.GoString(sruntime)
+	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(config.jsonConfSize))
 
 	comm := os.NewFile(uintptr(socket), "socket")
-	bytes, err := ioutil.ReadAll(comm)
-	if err != nil {
-		log.Fatalln("smaster read configuration failed", err)
-	}
 
 	/* hold a reference to container network namespace for cleanup */
-	_, err = os.Open("/proc/" + strconv.Itoa(containerPid) + "/ns/net")
+	_, err := os.Open("/proc/" + strconv.Itoa(containerPid) + "/ns/net")
 	if err != nil {
-		log.Fatalln("can't open network namespace:", err)
+		sylog.Fatalf("can't open network namespace: %s\n", err)
 	}
 
-	engine, err := internalRuntime.NewRuntimeEngine(runtimeName, bytes)
+	engine, err := internalRuntime.NewRuntimeEngine(runtimeName, jsonBytes)
 	if err != nil {
-		log.Fatalln("failed to initialize runtime:", err)
+		sylog.Fatalf("failed to initialize runtime: %s\n", err)
 	}
 
 	wg.Add(1)
 	go handleChild(containerPid, sigchild, nil) //engine)
+
+	wg.Add(1)
+	go engine.MonitorContainer()
 
 	if engine.IsRunAsInstance() {
 		wg.Add(1)
 		go runAsInstance(comm)
 	}
 
-	engine.MonitorContainer()
-
 	wg.Wait()
 	os.Exit(0)
 }
+
+func main() {}

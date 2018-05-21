@@ -16,13 +16,14 @@ import (
 var rpcServerMethods map[string]interface{}
 
 // Register RPC server methods for runtime engine
-func registerRuntimeRpcServerMethods(methods interface{}, name string) {
+func registerRuntimeRPCServerMethods(methods interface{}, name string) {
 	if rpcServerMethods == nil {
 		rpcServerMethods = make(map[string]interface{})
 	}
 	rpcServerMethods[name] = methods
 }
 
+// ServeRuntimeEngineRequests services runtime engine requests
 func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 	methods := rpcServerMethods[name]
 	rpc.RegisterName(name, methods)
@@ -32,5 +33,5 @@ func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 func init() {
 	// register singularity RPC methods
 	methods := new(singularityRpcServer.Methods)
-	registerRuntimeRpcServerMethods(methods, singularityConfig.Name)
+	registerRuntimeRPCServerMethods(methods, singularityConfig.Name)
 }
