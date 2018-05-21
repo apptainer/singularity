@@ -358,7 +358,7 @@ func FetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, err
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		err = fmt.Errorf("no matching keys found for fingerprint\n")
+		err = fmt.Errorf("no matching keys found for fingerprint")
 		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
@@ -369,12 +369,12 @@ func FetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, err
 		return nil, err
 	}
 	if len(el) == 0 {
-		err = fmt.Errorf("no keys in keyring\n")
+		err = fmt.Errorf("no keys in keyring")
 		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
 	if len(el) > 1 {
-		err = fmt.Errorf("server returned more than one key for unique fingerprint\n")
+		err = fmt.Errorf("server returned more than one key for unique fingerprint")
 		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
