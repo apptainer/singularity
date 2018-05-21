@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package main
 
@@ -35,9 +32,10 @@ func bool2int(b bool) uint8 {
 	return 0
 }
 
+// SContainer performs container startup
 //export SContainer
-func SContainer(stage C.int, socket C.int, rpc_socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
-	rpcfd := rpc_socket
+func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
+	rpcfd := rpcSocket
 
 	cconf := config
 

@@ -1,3 +1,8 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package workflows
 
 import (
@@ -11,7 +16,7 @@ import (
 
 var engines map[string]*runtime.RuntimeEngine
 
-// Instanciate a runtime engine based on json configuration
+// NewRuntimeEngine instantiates a runtime engine based on JSON configuration
 func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, error) {
 	var engine *runtime.RuntimeEngine
 
@@ -40,6 +45,6 @@ func registerRuntimeEngine(engine *runtime.RuntimeEngine, name string) {
 
 func init() {
 	// initialize singularity engine
-	e := &singularity.RuntimeEngine{}
+	e := &singularity.Engine{}
 	registerRuntimeEngine(&runtime.RuntimeEngine{Runtime: e}, singularityConfig.Name)
 }
