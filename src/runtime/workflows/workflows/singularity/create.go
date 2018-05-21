@@ -44,11 +44,6 @@ func (engine *Engine) CreateContainer(rpcConn net.Conn) error {
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	_, err := rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
-	if err != nil {
-		return fmt.Errorf("mount / failed: %s", err)
-	}
-
 	st, err := os.Stat(engine.OciConfig.RuntimeOciSpec.Root.Path)
 	if err != nil {
 		return fmt.Errorf("stat on %s failed", engine.OciConfig.RuntimeOciSpec.Root.Path)
