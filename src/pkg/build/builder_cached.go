@@ -19,6 +19,7 @@ type CachedBuilder struct {
 	Image *image.Sandbox
 }
 
+// NewCachedBuilder creates a new CachedBuilder
 func NewCachedBuilder(path string, uri string) (c *CachedBuilder, err error) {
 	fmt.Printf("Building a cached image (%s) from source (%s)\n", path, uri)
 	c = &CachedBuilder{
@@ -33,6 +34,7 @@ func NewCachedBuilder(path string, uri string) (c *CachedBuilder, err error) {
 	return c, err
 }
 
+// Build completes a build. The supplied context can be used for cancellation.
 func (c *CachedBuilder) Build(ctx context.Context) {
 	c.P.Provision(c.Image)
 }
