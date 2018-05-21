@@ -8,6 +8,7 @@ package build
 // build_definition_json.go:
 // Provide transformation from JSON -> Definition
 
+// DefinitionFromJSON creates a Definition coresponding to the supplied encoded JSON
 func DefinitionFromJSON(j []byte) Definition {
 	return Definition{}
 }
