@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package main
 
@@ -59,6 +56,7 @@ func handleChild(pid int, child chan os.Signal, engine *runtime.RuntimeEngine) {
 	}
 }
 
+// SMaster initializes a runtime engine and runs it
 //export SMaster
 func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
 	var wg sync.WaitGroup

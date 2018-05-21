@@ -1,3 +1,8 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package runtime
 
 import (
@@ -6,11 +11,13 @@ import (
 	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
 )
 
-type RuntimeEngine struct {
+// Engine describes a runtime engine
+type Engine struct {
 	singularityConfig.RuntimeEngineConfig
 }
 
-func (e *RuntimeEngine) InitConfig() *config.RuntimeConfig {
+// InitConfig initializes a runtime configuration
+func (e *Engine) InitConfig() *config.RuntimeConfig {
 	if e.FileConfig == nil {
 		e.FileConfig = &singularityConfig.Configuration{}
 		if err := config.Parser("/usr/local/etc/singularity/singularity.conf", e.FileConfig); err != nil {
@@ -22,6 +29,7 @@ func (e *RuntimeEngine) InitConfig() *config.RuntimeConfig {
 	return cfg
 }
 
-func (e *RuntimeEngine) IsRunAsInstance() bool {
+// IsRunAsInstance returns true if the runtime engine was run as an instance
+func (e *Engine) IsRunAsInstance() bool {
 	return false
 }

@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 // Package sylog implements a basic logger for Singularity Go code to log
 // messages in the same format as singularity_message() from C code
@@ -111,7 +108,9 @@ func writef(level messageLevel, format string, a ...interface{}) {
 	prefix := fmt.Sprintf("%s%-8s%s%-19s%-30s", messageColor, level, colorReset, uidStr, funcName)
 	message := fmt.Sprintf(format, a...)
 
-	fmt.Printf("%s%s", prefix, message)
+	message = strings.TrimSuffix(message, "\n")
+
+	fmt.Printf("%s%s\n", prefix, message)
 }
 
 // Fatalf is equivalent to a call to Errorf followed by os.Exit(255). Code that
