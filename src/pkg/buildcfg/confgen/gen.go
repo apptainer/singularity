@@ -15,7 +15,7 @@ import (
 	"text/template"
 )
 
-func ParseLine(s string) (d Define) {
+func parseLine(s string) (d Define) {
 	d = Define{
 		Words: strings.Fields(s),
 	}
@@ -23,10 +23,12 @@ func ParseLine(s string) (d Define) {
 	return
 }
 
+// Define is a struct that contains one line of configuration words.
 type Define struct {
 	Words []string
 }
 
+// WriteLine writes a line of configuration.
 func (d Define) WriteLine() (s string) {
 	s = "const " + d.Words[1] + " = " + d.Words[2]
 
@@ -63,7 +65,7 @@ func main() {
 	header := []Define{}
 	s := bufio.NewScanner(bytes.NewReader(inFile))
 	for s.Scan() {
-		header = append(header, ParseLine(s.Text()))
+		header = append(header, parseLine(s.Text()))
 	}
 
 	confgenTemplate.Execute(outFile, header)
