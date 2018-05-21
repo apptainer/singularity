@@ -7,7 +7,6 @@ package cli
 
 import (
 	"fmt"
-
 	"os"
 
 	"github.com/singularityware/singularity/src/pkg/signing"
