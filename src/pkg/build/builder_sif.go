@@ -31,7 +31,8 @@ func pumpPipe(src *io.PipeReader, dest io.Writer) {
 	return
 }
 
-type SifBuilder struct {
+// SIFBuilder is an interface that enables building a SIF image.
+type SIFBuilder struct {
 	Def    Definition
 	Stdout io.Writer
 	Stderr io.Writer
@@ -41,8 +42,9 @@ type SifBuilder struct {
 	sbuild *exec.Cmd
 }
 
-func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
-	b = &SifBuilder{}
+// NewSIFBuilder creates a new SIFBuilder.
+func NewSIFBuilder(imagePath string, d Definition) (b *SIFBuilder, err error) {
+	b = &SIFBuilder{}
 
 	builderJSON, err := json.Marshal(d)
 	b.sbuild = exec.Command(buildcfg.SBINDIR+"/sbuild", "sif", string(builderJSON), imagePath)
@@ -56,7 +58,8 @@ func NewSifBuilder(imagePath string, d Definition) (b *SifBuilder, err error) {
 	return b, err
 }
 
-func (b *SifBuilder) Build(ctx context.Context) (err error) {
+// Build completes a build. The supplied context can be used for cancellation.
+func (b *SIFBuilder) Build(ctx context.Context) (err error) {
 	err = b.sbuild.Start()
 	if err != nil {
 		return err
@@ -85,7 +88,8 @@ func (b *SifBuilder) Build(ctx context.Context) (err error) {
 	}
 }
 
-type sifBuilder struct {
+// SIFBuilder2 is an interface that enables building a SIF image.
+type SIFBuilder2 struct {
 	def   Definition
 	image *sif.SIF
 	path  string
@@ -93,9 +97,10 @@ type sifBuilder struct {
 	tmpfs *image.Sandbox
 }
 
-func NewSifBuilderJSON(r io.Reader, imagePath string) (b *sifBuilder, err error) {
+// NewSifBuilderJSON creates a new SIFBuilder2 using the supplied JSON.
+func NewSifBuilderJSON(r io.Reader, imagePath string) (b *SIFBuilder2, err error) {
 	var d Definition
-	b = &sifBuilder{}
+	b = &SIFBuilder2{}
 
 	decoder := json.NewDecoder(r)
 
@@ -120,7 +125,8 @@ func NewSifBuilderJSON(r io.Reader, imagePath string) (b *sifBuilder, err error)
 	return b, err
 }
 
-func (b *sifBuilder) Build(ctx context.Context) (err error) {
+// Build completes a build. The supplied context can be used for cancellation.
+func (b *SIFBuilder2) Build(ctx context.Context) (err error) {
 	b.p.Provision(b.tmpfs)
 	img, err := sif.SIFFromSandbox(b.tmpfs, b.path)
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 //TODO: Move each data type into provisioner_*.go
 
 // DOCKER
+
 // Docker represents the docker:// URI, pulling from docker hub or
 // a private docker registry
 type Docker struct {
@@ -34,8 +35,9 @@ func DockerFromHeader(h Definition) *Docker {
 }
 
 // SHUB
-// shub represents the shub:// URI, pulling from singularity hub
-type shub struct {
+
+// SHub represents the shub:// URI, pulling from singularity hub
+type SHub struct {
 	container string
 	registry  string
 	username  string
@@ -43,133 +45,140 @@ type shub struct {
 	digest    string
 }
 
-// Provision provisions a build environment from a shub object
-func (p *shub) Provision() {
+// Provision provisions a build environment from a SHub object
+func (p *SHub) Provision() {
 
 }
 
-// ShubFromHeader creates a shub object from a header
-func ShubFromHeader(def Definition) *shub {
+// ShubFromHeader creates a SHub object from a header
+func ShubFromHeader(def Definition) *SHub {
 	// TODO: Eduardo implement these
-	return &shub{}
+	return &SHub{}
 }
 
 // LOCALIMAGE
-// localImage represents bootstrapping from a local image file as a base
-type localImage struct {
+
+// LocalImage represents bootstrapping from a local image file as a base
+type LocalImage struct {
 	image.Image
 }
 
 // Provision provisions a build environment from a localImage object
-func (p *localImage) Provision() {
+func (p *LocalImage) Provision() {
 
 }
 
 // LocalImageFromHeader creates a localImage object from a header
-func LocalImageFromHeader(def Definition) *localImage {
+func LocalImageFromHeader(def Definition) *LocalImage {
 	// TODO: Eduardo implement these
-	return &localImage{}
+	return &LocalImage{}
 }
 
 // LOCALARCHIVE
-// localArchive represents bootstrapping from a local tar archive
-type localArchive struct {
+
+// LocalArchive represents bootstrapping from a local tar archive
+type LocalArchive struct {
 	path string
 }
 
 // Provision provisions a build environment from a localArchive object
-func (p *localArchive) Provision() {
+func (p *LocalArchive) Provision() {
 
 }
 
 // LocalArchiveFromHeader creates a localArchive object from a header
-func LocalArchiveFromHeader(def Definition) *localArchive {
+func LocalArchiveFromHeader(def Definition) *LocalArchive {
 	// TODO: Eduardo implement these
-	return &localArchive{}
+	return &LocalArchive{}
 }
 
 // DEBOOTSTRAP
-// debootstrap represents bootstrapping an apt based system (Debian, Ubuntu)
-type debootstrap struct {
+
+// Debootstrap represents bootstrapping an apt based system (Debian, Ubuntu)
+type Debootstrap struct {
 	url     string
 	include string
 }
 
-// Provision provisions a build environment from a debootstrap object
-func (p *debootstrap) Provision() {
+// Provision provisions a build environment from a Debootstrap object
+func (p *Debootstrap) Provision() {
 
 }
 
-// DebootstrapFromHeader creates a debootstrap object from a header
-func DebootstrapFromHeader(def Definition) *debootstrap {
+// DebootstrapFromHeader creates a Debootstrap object from a header
+func DebootstrapFromHeader(def Definition) *Debootstrap {
 	// TODO: Eduardo implement these
-	return &debootstrap{}
+	return &Debootstrap{}
 }
 
 // YUM
-// yum represents bootstrapping a yum based system (CentOS, Red Hat)
-type yum struct {
+
+// YUM represents bootstrapping a YUM based system (CentOS, Red Hat)
+type YUM struct {
 	url string
 }
 
-// Provision provisions a build environment from a yum object
-func (p *yum) Provision() {
+// Provision provisions a build environment from a YUM object
+func (p *YUM) Provision() {
 
 }
 
-// YumFromHeader creates a yum object from a header
-func YumFromHeader(def Definition) *yum {
+// YUMFromHeader creates a YUM object from a header
+func YUMFromHeader(def Definition) *YUM {
 	// TODO: Eduardo implement these
-	return &yum{}
+	return &YUM{}
 }
 
 // ARCH
-// arch represents bootstrapping an arch linux system
-type arch struct {
+
+// Arch represents bootstrapping an Arch linux system
+type Arch struct {
 }
 
-// Provision provisions a build environment from a arch object
-func (p *arch) Provision() {
+// Provision provisions a build environment from a Arch object
+func (p *Arch) Provision() {
 
 }
 
-// ArchFromHeader creates a arch object from a header
-func ArchFromHeader(def Definition) *arch {
+// ArchFromHeader creates a Arch object from a header
+func ArchFromHeader(def Definition) *Arch {
 	// TODO: Eduardo implement these
-	return &arch{}
+	return &Arch{}
 }
 
 // BUSYBOX
-// busybox represents bootstrapping a busybox system
-type busybox struct {
+
+// BusyBox represents bootstrapping a BusyBox system
+type BusyBox struct {
 	url string
 }
 
-// Provision provisions a build environment from a busybox object
-func (p *busybox) Provision() {
+// Provision provisions a build environment from a busyBusyBoxbox object
+func (p *BusyBox) Provision() {
 
 }
 
-// BusyboxFromHeader creates a busybox object from a header
-func BusyboxFromHeader(def Definition) *busybox {
+// BusyboxFromHeader creates a BusyBox object from a header
+func BusyboxFromHeader(def Definition) *BusyBox {
 	// TODO: Eduardo implement these
-	return &busybox{}
+	return &BusyBox{}
 }
 
 // ZYPPER
-// zypper represents bootstrapping a zypper based system (SUSE, OpenSUSE)
-type zypper struct {
+
+// Zypper represents bootstrapping a Zypper based system (SUSE, OpenSUSE)
+type Zypper struct {
 	url     string
 	include string
 }
 
 // Provision provisions a build environment from a zypper object
-func (p *zypper) Provision() {
+func (p *Zypper) Provision() {
 
 }
 
 // ZypperFromHeader creates a zypper object from a header
-func ZypperFromHeader(def Definition) *zypper {
+func ZypperFromHeader(def Definition) *Zypper {
 	// TODO: Eduardo implement these
-	return &zypper{}
+	return &Zypper{}
 }

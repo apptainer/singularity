@@ -32,6 +32,7 @@ func NewProvisionerFromURI(uri string) (p Provisioner, err error) {
 	}
 }
 
+// IsValidURI determines whether the supplied URI is valid.
 func IsValidURI(uri string) (valid bool, err error) {
 	u := strings.SplitN(uri, ":", 2)
 

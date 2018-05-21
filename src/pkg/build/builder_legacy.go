@@ -26,7 +26,8 @@ type LegacyBuilder struct {
 	Proc      *os.Process
 }
 
-func NewLegacyBuilder(p string, c context.Context, d Definition) (builder *LegacyBuilder, err error) {
+// NewLegacyBuilder creates a new LegacyBuilder. The supplied context can be used for cancellation.
+func NewLegacyBuilder(ctx context.Context, p string, d Definition) (builder *LegacyBuilder, err error) {
 	singularity, err := exec.LookPath("singularity")
 	if err != nil {
 		glog.Fatal("Singularity is not installed on this system")
@@ -42,7 +43,7 @@ func NewLegacyBuilder(p string, c context.Context, d Definition) (builder *Legac
 
 	builder = &LegacyBuilder{
 		Definition: d,
-		Cmd:        exec.CommandContext(c, singularity, "build", p, f.Name()),
+		Cmd:        exec.CommandContext(ctx, singularity, "build", p, f.Name()),
 		ImagePath:  p,
 	}
 
@@ -61,6 +62,7 @@ func NewLegacyBuilder(p string, c context.Context, d Definition) (builder *Legac
 	return
 }
 
+// Build completes a build. The supplied context can be used for cancellation.
 func (b *LegacyBuilder) Build(ctx context.Context) (err error) {
 	err = b.Cmd.Start()
 
