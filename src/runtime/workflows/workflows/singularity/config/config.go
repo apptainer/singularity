@@ -1,3 +1,8 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package config
 
 import (
@@ -7,8 +12,10 @@ import (
 	oci "github.com/singularityware/singularity/src/pkg/workflows/oci/config"
 )
 
+// Name is the name of the runtime.
 const Name = "singularity"
 
+// Configuration describes the runtime configuration.
 type Configuration struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
@@ -40,16 +47,19 @@ type Configuration struct {
 	AllowUserCapabilities   bool     `default:"no" authorized:"yes,no" directive:"allow user capabilities"`
 }
 
+// RuntimeEngineSpec is the specification of the runtime engine.
 type RuntimeEngineSpec struct {
 	TestField string `json:"testfield"`
 }
 
+// RuntimeEngineConfig is the configuration of the runtime engine.
 type RuntimeEngineConfig struct {
 	config.RuntimeConfig
 	RuntimeEngineSpec RuntimeEngineSpec `json:"runtimeConfig"`
 	FileConfig        *Configuration
 }
 
+// NewSingularityConfig returns a new Singularity configuration.
 func NewSingularityConfig(containerID string) (*oci.RuntimeOciConfig, *RuntimeEngineConfig) {
 	c := &Configuration{}
 	if err := config.Parser("/usr/local/etc/singularity/singularity.conf", c); err != nil {
@@ -63,9 +73,4 @@ func NewSingularityConfig(containerID string) (*oci.RuntimeOciConfig, *RuntimeEn
 	runtimecfg.RuntimeSpec.RuntimeEngineSpec = &runtimecfg.RuntimeEngineSpec
 	oci.DefaultRuntimeOciConfig(&cfg.OciConfig)
 	return &cfg.OciConfig, runtimecfg
-}
-
-func (c *RuntimeEngineConfig) Test() {
-	fmt.Println("Testfield:", c.RuntimeEngineSpec.TestField, "ociVersion:", c.RuntimeOciSpec.Version)
-	c.RuntimeEngineSpec.TestField = "testfield"
 }
