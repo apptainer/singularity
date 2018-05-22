@@ -1,10 +1,8 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
 package build
 
 import (
@@ -34,6 +32,7 @@ func NewProvisionerFromURI(uri string) (p Provisioner, err error) {
 	}
 }
 
+// IsValidURI determines whether the supplied URI is valid.
 func IsValidURI(uri string) (valid bool, err error) {
 	u := strings.SplitN(uri, ":", 2)
 

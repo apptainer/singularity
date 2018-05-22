@@ -107,10 +107,20 @@ static void priv_escalate(void) {
     }
 }
 
+static void set_parent_death_signal(int signo) {
+    singularity_message(DEBUG, "Set parent death signal to %d\n", signo);
+    if ( prctl(PR_SET_PDEATHSIG, signo) < 0 ) {
+        singularity_message(ERROR, "Failed to set parent death signal\n");
+        exit(1);
+    }
+}
+
 static void prepare_scontainer_stage(int stage) {
     uid_t uid = getuid();
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
+
+    set_parent_death_signal(SIGKILL);
 
     singularity_message(DEBUG, "Entering in scontainer stage %d\n", stage);
 
@@ -164,6 +174,8 @@ static void prepare_scontainer_stage(int stage) {
         singularity_message(ERROR, "Faile to drop privileges: %s\n", strerror(errno));
         exit(1);
     }
+
+    set_parent_death_signal(SIGKILL);
 
     int last_cap;
     for ( last_cap = CAPSET_MAX; ; last_cap-- ) {
@@ -439,7 +451,7 @@ static unsigned char is_suid(void) {
 
     /* use auxiliary vectors to determine if running privileged */
     memset(buffer, 0, 4096);
-    if ( read(proc_auxv, buffer, 4092) < 0 ) {
+    if ( read(proc_auxv, buffer, 4088) < 0 ) {
         singularity_message(ERROR, "Can't read auxiliary vectors: %s\n", strerror(errno));
         exit(1);
     }
@@ -457,14 +469,6 @@ static unsigned char is_suid(void) {
     close(proc_auxv);
 
     return suid;
-}
-
-static void set_parent_death_signal(int signo) {
-    singularity_message(DEBUG, "Set parent death signal to %d\n", signo);
-    if ( prctl(PR_SET_PDEATHSIG, signo) < 0 ) {
-        singularity_message(ERROR, "Failed to set parent death signal\n");
-        exit(1);
-    }
 }
 
 void do_nothing(int sig) {
@@ -708,6 +712,26 @@ __attribute__((constructor)) static void init(void) {
             config.nsFlags |= CLONE_NEWPID;
         }
 
+        if ( config.mntPid ) {
+            if ( enter_namespace(config.mntPid, CLONE_NEWNS) < 0 ) {
+                singularity_message(ERROR, "Failed to enter in mount namespace: %s\n", strerror(errno));
+                exit(1);
+            }
+        } else {
+            singularity_message(VERBOSE, "Unshare filesystem and create mount namespace\n");
+            if ( unshare(CLONE_FS) < 0 ) {
+                singularity_message(ERROR, "Failed to unshare filesystem: %s\n", strerror(errno));
+                exit(1);
+            }
+            if ( create_namespace(CLONE_NEWNS) < 0 ) {
+                singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
+                exit(1);
+            }
+
+            if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
+                singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+            }
+        }
         if ( config.pidPid ) {
             if ( enter_namespace(config.pidPid, CLONE_NEWPID) < 0 ) {
                 singularity_message(ERROR, "Failed to enter in pid namespace: %s\n", strerror(errno));
@@ -794,22 +818,6 @@ __attribute__((constructor)) static void init(void) {
                 }
             }
 #endif /* NS_CLONE_NEWCGROUP */
-            if ( config.mntPid ) {
-                if ( enter_namespace(config.mntPid, CLONE_NEWNS) < 0 ) {
-                    singularity_message(ERROR, "Failed to enter in mount namespace: %s\n", strerror(errno));
-                    exit(1);
-                }
-            } else {
-                singularity_message(VERBOSE, "Unshare filesystem and create mount namespace\n");
-                if ( unshare(CLONE_FS) < 0 ) {
-                    singularity_message(ERROR, "Failed to unshare filesystem: %s\n", strerror(errno));
-                    exit(1);
-                }
-                if ( create_namespace(CLONE_NEWNS) < 0 ) {
-                    singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
-                    exit(1);
-                }
-            }
 
             singularity_message(DEBUG, "Create RPC socketpair for communication between scontainer and RPC server\n");
             if ( socketpair(AF_UNIX, SOCK_STREAM, 0, rpc_socket) < 0 ) {
@@ -830,6 +838,10 @@ __attribute__((constructor)) static void init(void) {
 
                 close(stage_socket[1]);
                 close(rpc_socket[0]);
+
+                if ( mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0 ) {
+                    singularity_message(ERROR, "Failed to propagate as SLAVE: %s\n", strerror(errno));
+                }
 
                 /* return to host network namespace for network setup */
                 singularity_message(DEBUG, "Return to host network namespace\n");
@@ -879,6 +891,14 @@ __attribute__((constructor)) static void init(void) {
                 singularity_message(ERROR, "Child exit with unknown status\n");
                 exit(1);
             } else {
+                singularity_message(VERBOSE, "Create smaster mount namespace\n");
+                if ( create_namespace(CLONE_NEWNS) < 0 ) {
+                    singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
+                    exit(1);
+                }
+                if ( mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0 ) {
+                    singularity_message(ERROR, "Failed to propagate / mount as SLAVE: %s\n", strerror(errno));
+                }
                 execute = SMASTER;
                 return;
             }

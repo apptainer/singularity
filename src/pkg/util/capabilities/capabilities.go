@@ -1,3 +1,8 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package capabilities
 
 type capability struct {
@@ -325,6 +330,7 @@ var capAuditRead = &capability{
     Allow reading the audit log via a multicast netlink socket.`,
 }
 
+// Map maps each capability name to a struct with details about the capability.
 var Map = map[string]*capability{
 	"CAP_CHOWN":            capChown,
 	"CAP_DAC_OVERRIDE":     capDacOverride,

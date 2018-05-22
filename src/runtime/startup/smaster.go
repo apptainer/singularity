@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package main
 
@@ -42,29 +39,34 @@ func runAsInstance(conn *os.File) {
 	}
 }
 
-func handleChild(pid int, child chan os.Signal, engine *runtime.RuntimeEngine) {
+func handleChild(pid int, signal chan os.Signal, engine *runtime.RuntimeEngine) {
 	var status syscall.WaitStatus
 
 	select {
-	case _ = <-child:
+	case _ = <-signal:
 		syscall.Wait4(pid, &status, syscall.WNOHANG, nil)
 
-		//		engine.CleanupContainer()
-		/*
-		 * see https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle
-		 * we will run step 8/9 there
-		 */
+		if err := engine.CleanupContainer(); err != nil {
+			sylog.Errorf("container cleanup failed: %s", err)
+		}
 
-		os.Exit(status.ExitStatus())
+		if status.Exited() {
+			sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
+			os.Exit(status.ExitStatus())
+		} else if status.Signaled() {
+			sylog.Debugf("Child exited due to signal %d", status.Signal())
+			syscall.Kill(os.Getpid(), status.Signal())
+		}
 	}
 }
 
+// SMaster initializes a runtime engine and runs it
 //export SMaster
 func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
 	var wg sync.WaitGroup
 
-	sigchild := make(chan os.Signal, 1)
-	signal.Notify(sigchild, syscall.SIGCHLD)
+	sigchld := make(chan os.Signal, 1)
+	signal.Notify(sigchld, syscall.SIGCHLD)
 
 	containerPid := int(config.containerPid)
 	runtimeName := C.GoString(sruntime)
@@ -84,7 +86,7 @@ func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.
 	}
 
 	wg.Add(1)
-	go handleChild(containerPid, sigchild, nil) //engine)
+	go handleChild(containerPid, sigchld, engine)
 
 	wg.Add(1)
 	go engine.MonitorContainer()

@@ -1,3 +1,8 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package runtime
 
 /*
@@ -25,22 +30,18 @@ import (
 	"github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc/client"
 )
 
-func (engine *RuntimeEngine) CreateContainer(rpcConn net.Conn) error {
+// CreateContainer creates a container
+func (engine *Engine) CreateContainer(rpcConn net.Conn) error {
 	if engine.RuntimeSpec.RuntimeName != runtimeconfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
-	rpcOps := &client.Rpc{
+	rpcOps := &client.RPC{
 		Client: rpc.NewClient(rpcConn),
 		Name:   engine.RuntimeSpec.RuntimeName,
 	}
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialiaze RPC client")
-	}
-
-	_, err := rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
-	if err != nil {
-		return fmt.Errorf("mount / failed: %s", err)
 	}
 
 	st, err := os.Stat(engine.OciConfig.RuntimeOciSpec.Root.Path)

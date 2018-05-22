@@ -1,10 +1,8 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
 package cli
 
 import (
@@ -84,7 +82,7 @@ var buildCmd = &cobra.Command{
 		if Remote {
 			b = build.NewRemoteBuilder(args[0], def, false, RemoteURL, AuthToken)
 		} else {
-			b, err = build.NewSifBuilder(args[0], def)
+			b, err = build.NewSIFBuilder(args[0], def)
 			if err != nil {
 				sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
 			}
