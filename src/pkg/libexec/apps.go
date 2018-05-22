@@ -9,6 +9,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// AppList lists the available applications.
 func AppList(spec *specs.Spec) {
 
 }
