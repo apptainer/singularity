@@ -1,8 +1,7 @@
-// Copyright (c) 2018, SyLabs, Inc. All rights reserved.
-//
-// This software is licensed under a 3-clause BSD license.  Please
-// consult LICENSE file distributed with the sources of this project regarding
-// your rights to use or distribute this software.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 // Package sypgp implements the openpgp integration into the singularity project.
 package sypgp
@@ -12,14 +11,15 @@ import (
 	"bytes"
 	"crypto"
 	"fmt"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
-	"golang.org/x/crypto/openpgp/packet"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
+	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
+	"golang.org/x/crypto/openpgp/packet"
 )
 
 // routine that outputs signature type (applies to vindex operation)
@@ -358,7 +358,7 @@ func FetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, err
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		err = fmt.Errorf("no matching keys found for fingerprint\n")
+		err = fmt.Errorf("no matching keys found for fingerprint")
 		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
@@ -369,12 +369,12 @@ func FetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, err
 		return nil, err
 	}
 	if len(el) == 0 {
-		err = fmt.Errorf("no keys in keyring\n")
+		err = fmt.Errorf("no keys in keyring")
 		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
 	if len(el) > 1 {
-		err = fmt.Errorf("server returned more than one key for unique fingerprint\n")
+		err = fmt.Errorf("server returned more than one key for unique fingerprint")
 		sylog.Errorf("%s\n", err)
 		return nil, err
 	}

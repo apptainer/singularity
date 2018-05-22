@@ -1,9 +1,15 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package signing
 
 import (
 	"bytes"
 	"crypto/sha512"
 	"fmt"
+
 	"github.com/singularityware/singularity/src/pkg/sif"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/sypgp"
@@ -18,7 +24,7 @@ const (
 func sifDataObjectHash(sinfo *sif.Sifinfo) (*bytes.Buffer, error) {
 	var msg = new(bytes.Buffer)
 
-	part, err := sif.SifGetPartition(sinfo, sif.SIF_DEFAULT_GROUP)
+	part, err := sif.SifGetPartition(sinfo, sif.DefaultGroup)
 	if err != nil {
 		sylog.Errorf("%s\n", err)
 		return nil, err
@@ -39,7 +45,7 @@ func sifDataObjectHash(sinfo *sif.Sifinfo) (*bytes.Buffer, error) {
 func sifAddSignature(fingerprint [20]byte, sinfo *sif.Sifinfo, signature []byte) error {
 	var e sif.Eleminfo
 
-	part, err := sif.SifGetPartition(sinfo, sif.SIF_DEFAULT_GROUP)
+	part, err := sif.SifGetPartition(sinfo, sif.DefaultGroup)
 	if err != nil {
 		sylog.Errorf("%s\n", err)
 		return err

@@ -1,9 +1,14 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package workflows
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	runtime "github.com/singularityware/singularity/src/pkg/workflows"
 	singularity "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
@@ -11,7 +16,7 @@ import (
 
 var engines map[string]*runtime.RuntimeEngine
 
-// Instanciate a runtime engine based on json configuration
+// NewRuntimeEngine instantiates a runtime engine based on JSON configuration
 func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, error) {
 	var engine *runtime.RuntimeEngine
 
@@ -34,12 +39,12 @@ func registerRuntimeEngine(engine *runtime.RuntimeEngine, name string) {
 	engines[name] = engine
 	engine.RuntimeConfig = engine.InitConfig()
 	if engine.RuntimeConfig == nil {
-		log.Fatalf("failed to initialize %s engine\n", name)
+		sylog.Fatalf("failed to initialize %s engine\n", name)
 	}
 }
 
 func init() {
 	// initialize singularity engine
-	e := &singularity.RuntimeEngine{}
+	e := &singularity.Engine{}
 	registerRuntimeEngine(&runtime.RuntimeEngine{Runtime: e}, singularityConfig.Name)
 }

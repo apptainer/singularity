@@ -1,30 +1,27 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package main
 
 /*
-#include "startup/cgo_scontainer.c"
+#include <sys/types.h>
+#include "startup/wrapper.h"
 */
 // #cgo CFLAGS: -I../../c -I../../c/lib
 // #cgo LDFLAGS: -L../../../../builddir/lib/ -lruntime -luuid
 import "C"
 
 import (
-	"log"
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"unsafe"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/workflows"
 )
 
@@ -35,46 +32,26 @@ func bool2int(b bool) uint8 {
 	return 0
 }
 
-func main() {
-	tmp, ok := os.LookupEnv("SCONTAINER_STAGE")
-	if !ok {
-		log.Fatalln("SCONTAINER_STAGE environment variable isn't set")
-	}
-	stage, _ := strconv.Atoi(tmp)
+// SContainer performs container startup
+//export SContainer
+func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
+	rpcfd := rpcSocket
 
-	tmp, ok = os.LookupEnv("SCONTAINER_SOCKET")
-	if stage == 2 && !ok {
-		log.Fatalln("SCONTAINER_SOCKET environment variable isn't set")
-	}
-	socket, _ := strconv.Atoi(tmp)
+	cconf := config
 
-	tmp, ok = os.LookupEnv("SCONTAINER_RPC_SOCKET")
-	if stage == 2 && !ok {
-		log.Fatalln("SCONTAINER_RPC_SOCKET environment variable isn't set")
-	}
-	rpcfd, _ := strconv.Atoi(tmp)
-
-	tmp, ok = os.LookupEnv("SRUNTIME")
-	if !ok {
-		log.Fatalln("SRUNTIME environment variable isn't set")
-	}
-	runtimeName := tmp
-
-	cconf := C.cconf
+	runtimeName := C.GoString(sruntime)
 
 	/* get json configuration */
-	jsonPointer := unsafe.Pointer(C.json_conf)
-	jsonBytes := C.GoBytes(jsonPointer, C.int(cconf.jsonConfSize))
-	C.free(jsonPointer)
+	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(cconf.jsonConfSize))
 
 	engine, err := workflows.NewRuntimeEngine(runtimeName, jsonBytes)
 	if err != nil {
-		log.Fatalln(err)
+		sylog.Fatalf("failed to initialize runtime engine: %s\n", err)
 	}
 
 	if stage == 1 {
 		if err := engine.CheckConfig(); err != nil {
-			log.Fatalln(err)
+			sylog.Fatalf("%s\n", err)
 		}
 
 		cconf.isInstance = C.uchar(bool2int(engine.IsRunAsInstance()))
@@ -106,42 +83,34 @@ func main() {
 
 		jsonConf, _ := engine.GetConfig()
 		cconf.jsonConfSize = C.uint(len(jsonConf))
-		cconfPayload := C.GoBytes(unsafe.Pointer(&cconf), C.sizeof_struct_cConfig)
+		cconfPayload := C.GoBytes(unsafe.Pointer(cconf), C.sizeof_struct_cConfig)
 
 		os.Stdout.Write(append(cconfPayload, jsonConf...))
-	} else if stage == 2 {
+		os.Exit(0)
+	} else {
 		/* wait childs process */
 		rpcChild := make(chan os.Signal, 1)
 		signal.Notify(rpcChild, syscall.SIGCHLD)
 
 		rpcSocket := os.NewFile(uintptr(rpcfd), "rpc")
 
-		if C.child_stage2 == 0 {
+		if stage == 3 {
 			conn, err := net.FileConn(rpcSocket)
 			rpcSocket.Close()
 			if err != nil {
-				log.Fatalln("communication error")
+				sylog.Fatalf("socket communication error: %s\n", err)
 			}
 
 			// send "creating" status notification to smaster
 			if err := engine.CreateContainer(conn); err != nil {
-				os.Exit(1)
+				sylog.Fatalf("%s\n", err)
 			}
 			// send "created" status notification to smaster
 			os.Exit(0)
 		}
 
-		comm := os.NewFile(uintptr(socket), "comm")
-		if comm == nil {
-			log.Fatalln("failed to read on socket")
-		}
-
-		if _, err := comm.Write(jsonBytes); err != nil {
-			log.Fatalln(err)
-		}
-
 		if err := engine.PrestartProcess(); err != nil {
-			log.Fatalln("Container setup failed:", err)
+			sylog.Fatalf("container setup failed: %s\n", err)
 		}
 
 		code := 0
@@ -150,6 +119,9 @@ func main() {
 		var status syscall.WaitStatus
 	sigloop:
 		for {
+			if cconf.mntPid != 0 {
+				break sigloop
+			}
 			select {
 			case _ = <-rpcChild:
 				/*
@@ -171,17 +143,17 @@ func main() {
 			}
 		}
 		if code != 0 {
-			log.Fatalln("Container setup failed:", code)
+			sylog.Fatalf("container setup failed\n")
 		}
 
 		/* force close on exec on socket file descriptor to distinguish an exec success and error */
 		_, _, errsys := syscall.RawSyscall(syscall.SYS_FCNTL, uintptr(socket), syscall.F_SETFD, syscall.FD_CLOEXEC)
 		if errsys != 0 {
-			log.Fatalln("set close-on-exec failed:", errsys)
+			sylog.Fatalf("set close-on-exec failed\n")
 		}
 
 		if err := engine.StartProcess(); err != nil {
-			log.Fatalln(err)
+			sylog.Fatalf("%s\n", err)
 		}
 	}
 }
