@@ -16,7 +16,7 @@ type MkdirArgs struct {
 type LoopArgs struct {
 	Image string
 	Mode  int
-	Info  loop.LoopInfo64
+	Info  loop.Info64
 }
 
 // MountArgs defines the arguments to mount

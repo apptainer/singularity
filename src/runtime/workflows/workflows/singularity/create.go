@@ -67,7 +67,7 @@ func (engine *Engine) CreateContainer(rpcConn net.Conn) error {
 
 	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
 
-	info := new(loop.LoopInfo64)
+	info := new(loop.Info64)
 	mountType := ""
 
 	switch C.singularity_image_type(&imageObject) {

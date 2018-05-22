@@ -5,12 +5,16 @@
 
 package loop
 
+// Loop device flags values
 const (
 	FlagsReadOnly  = 1
 	FlagsAutoClear = 4
 	FlagsPartScan  = 8
 	FlagsDirectIO  = 16
+)
 
+// Loop device encryption types
+const (
 	CryptNone      = 0
 	CryptXor       = 1
 	CryptDes       = 2
@@ -22,7 +26,10 @@ const (
 	CryptSkipJack  = 10
 	CryptCryptoAPI = 18
 	CryptMax       = 20
+)
 
+// Loop device IOCTL commands
+const (
 	CmdSetFd       = 0x4C00
 	CmdClrFd       = 0x4C01
 	CmdSetStatus   = 0x4C02
@@ -34,7 +41,8 @@ const (
 	CmdSetDirectIO = 0x4C08
 )
 
-type LoopInfo64 struct {
+// Info64 contains information about a loop device.
+type Info64 struct {
 	Device         uint64
 	Inode          uint64
 	Rdevice        uint64
