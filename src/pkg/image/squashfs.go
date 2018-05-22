@@ -9,20 +9,22 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
-type squashfs struct {
+// SquashFS represents a SquashFS image
+type SquashFS struct {
 }
 
-// SquashFsFromSandbox converts the sandbox, s, to a SquashFS file
-func SquashFsFromSandbox(s *Sandbox) *squashfs {
-	return &squashfs{}
+// SquashFSFromSandbox converts the sandbox, s, to a SquashFS file
+func SquashFSFromSandbox(s *Sandbox) *SquashFS {
+	return &SquashFS{}
 }
 
-// SquashFsFromFile returns a squashfs object of the file located at path
-func SquashFsFromFile(path string) *squashfs {
-	return &squashfs{}
+// SquashFSFromFile returns a squashfs object of the file located at path
+func SquashFSFromFile(path string) *SquashFS {
+	return &SquashFS{}
 }
 
-func (i *squashfs) Root() *specs.Root {
+// Root returns the root specification.
+func (i *SquashFS) Root() *specs.Root {
 	return &specs.Root{}
 }
 
