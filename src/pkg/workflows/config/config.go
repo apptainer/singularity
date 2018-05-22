@@ -11,7 +11,7 @@ import (
 	oci "github.com/singularityware/singularity/src/pkg/workflows/oci/config"
 )
 
-// Runtime template specification
+// RuntimeSpec is the runtime template specification.
 type RuntimeSpec struct {
 	RuntimeName       string              `json:"runtimeName"`
 	ID                string              `json:"containerID"`
@@ -19,22 +19,22 @@ type RuntimeSpec struct {
 	RuntimeEngineSpec RuntimeEngineSpec   `json:"runtimeConfig"`
 }
 
-// Runtime engine specification
+// RuntimeEngineSpec is the runtime engine specification.
 type RuntimeEngineSpec interface{}
 
-// Runtime engine configuration
+// RuntimeEngineConfig is the runtime engine configuration.
 type RuntimeEngineConfig struct {
 	RuntimeEngineSpec
 }
 
-// Generic runtime configuration
+// RuntimeConfig is the generic runtime configuration.
 type RuntimeConfig struct {
 	RuntimeSpec
 	OciConfig    oci.RuntimeOciConfig
 	EngineConfig RuntimeEngineConfig
 }
 
-// Return runtime configuration in JSON format
+// GetConfig returns the runtime configuration in JSON format.
 func (r *RuntimeConfig) GetConfig() ([]byte, error) {
 	b, err := json.Marshal(r.RuntimeSpec)
 	if err != nil {
@@ -43,7 +43,7 @@ func (r *RuntimeConfig) GetConfig() ([]byte, error) {
 	return b, nil
 }
 
-// Set runtime configuration based on JSON input
+// SetConfig sets the runtime configuration based on JSON input.
 func (r *RuntimeConfig) SetConfig(jsonConfig []byte) error {
 	if r.RuntimeSpec.RuntimeOciSpec == nil {
 		r.RuntimeSpec.RuntimeOciSpec = &r.OciConfig.RuntimeOciSpec
