@@ -172,11 +172,11 @@ test:
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && go vet -all ./...
 	@echo "       PASS"
-	@echo " TEST LINTY"
+	@echo " TEST go lint"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && ./linty.sh
+		cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
 	@echo "       PASS"
-	@echo " TEST go test ./..."
+	@echo " TEST go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && go test -cover -race -timeout 60s ./...
 	@echo "       PASS"
