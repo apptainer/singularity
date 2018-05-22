@@ -39,7 +39,10 @@ fi
 MKSQUASHFS="@MKSQUASHFS_PATH@"
 
 if ! singularity_which ${MKSQUASHFS:-mksquashfs} > /dev/null 2>&1; then
-    message ERROR "You must install squashfs-tools to build images\n"
+    message ERROR "You must install squashfs-tools to build images or\n"
+    message ERROR "use the --with-mksquashfs option with the full path to the\n"
+    message ERROR "mksquashfs binary. For example:\n"
+    message ERROR "  --with-mksquashfs=/full/system/path/to/mksquashfs\n"
     ABORT 255
 fi
 
