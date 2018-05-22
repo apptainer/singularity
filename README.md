@@ -62,19 +62,23 @@ A Singularity container can be launched in a variety of different ways
 depending on what you wanted to do with it. A simple method might be to
 launch an interactive shell within the container image as follows:
 
+```shell
     [gmk@centos7-x64 demo]$ singularity shell /tmp/Centos-7.img 
     gmk@Centos-7.img demo> echo "Hello from within the container"
     Hello from within the container
     gmk@Centos-7.img demo> whoami
     gmk
     gmk@Centos-7.img demo> 
+```
 
 And if you wanted to do the same thing as root:
 
+```shell
     [gmk@centos7-x64 demo]$ sudo singularity shell -w /tmp/Centos-7.img 
     root@Centos-7.img demo> whoami
     root
     root@Centos-7.img demo> 
+```
 
 *note: By default, Singularity launches the container image in read
 only mode (so it can be easily launched in parallel). The -w option
@@ -85,6 +89,7 @@ Additionally relevant file systems on your host are automatically shared
 within the context of your container. This can be demonstrated as
 follows:
 
+```shell
     [gmk@centos7-x64 demo]$ pwd
     /home/gmk/demo
     [gmk@centos7-x64 demo]$ echo "world" > hello
@@ -93,6 +98,7 @@ follows:
     /home/gmk/demo
     gmk@Centos-7.img demo> cat hello
     world
+```
 
 Once the developer has completed their environment the image file can be
 compressed and copied to any other system that has Singularity installed.
@@ -126,20 +132,25 @@ modifications necessary.
 
 Here is an example of a very simple bootstrap definition file for CentOS:
 
+```yaml
     BootStrap: yum
     OSVersion: 7
     MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
     Include: yum
+```
 
 Once you have created your bootstrap definition, you can build your
 Singularity container image by first creating a blank image, and then
 bootstrapping using your definition file:
 
+```shell
     [gmk@centos7-x64 demo]$ sudo singularity create /tmp/Centos-7.img
     [gmk@centos7-x64 demo]$ sudo singularity bootstrap /tmp/Centos-7.img centos.def
+```
 
 From there we can immediately start using the container:
 
+```shell
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img cat /etc/redhat-release 
     CentOS Linux release 7.2.1511 (Core) 
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python --version
@@ -147,6 +158,7 @@ From there we can immediately start using the container:
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python hello.py 
     hello world
     [gmk@centos7-x64 demo]$ 
+```
 
 And if I do this same process again, while changing the **OSVersion**
 variable in the bootstrap definition to **6** (where previously it was
@@ -154,11 +166,13 @@ automatically ascertained by querying the RPM database), we can
 essentially build a CentOS-6 image in exactly the same manner as
 above. Doing so reveals this:
 
+```shell
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img cat /etc/redhat-release 
     CentOS release 6.7 (Final)
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img python --version
     Python 2.6.6
     [gmk@centos7-x64 demo]$ 
+```
 
 And as expected, the Python version we now see is what comes from by 
 default in CentOS-6.
