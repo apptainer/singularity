@@ -24,7 +24,7 @@ const (
 func sifDataObjectHash(sinfo *sif.Sifinfo) (*bytes.Buffer, error) {
 	var msg = new(bytes.Buffer)
 
-	part, err := sif.SifGetPartition(sinfo, sif.SIF_DEFAULT_GROUP)
+	part, err := sif.SifGetPartition(sinfo, sif.DefaultGroup)
 	if err != nil {
 		sylog.Errorf("%s\n", err)
 		return nil, err
@@ -45,7 +45,7 @@ func sifDataObjectHash(sinfo *sif.Sifinfo) (*bytes.Buffer, error) {
 func sifAddSignature(fingerprint [20]byte, sinfo *sif.Sifinfo, signature []byte) error {
 	var e sif.Eleminfo
 
-	part, err := sif.SifGetPartition(sinfo, sif.SIF_DEFAULT_GROUP)
+	part, err := sif.SifGetPartition(sinfo, sif.DefaultGroup)
 	if err != nil {
 		sylog.Errorf("%s\n", err)
 		return err
