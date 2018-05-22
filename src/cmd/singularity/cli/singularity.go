@@ -28,17 +28,16 @@ var singularityCmd = &cobra.Command{
 	Run: nil,
 }
 
-/*
-Execute adds all child commands to the root command and sets flags
-appropriately.  This is called by main.main(). It only needs to happen once to
-the root command (singularity).
-*/
+// ExecuteSingularity adds all child commands to the root command and sets
+// flags appropriately. This is called by main.main(). It only needs to happen
+// once to the root command (singularity).
 func ExecuteSingularity() {
 	if err := singularityCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
+// TraverseParentsUses traverses each parent recursively and appends its usage.
 func TraverseParentsUses(cmd *cobra.Command) string {
 	if cmd.HasParent() {
 		return TraverseParentsUses(cmd.Parent()) + cmd.Use + " "

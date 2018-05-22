@@ -16,28 +16,28 @@ import (
 )
 
 var (
-	Remote    bool
-	RemoteURL string
-	AuthToken string
-	Sandbox   bool
-	Writable  bool
-	Force     bool
-	NoTest    bool
-	Sections  []string
+	remote    bool
+	remoteURL string
+	authToken string
+	sandbox   bool
+	writable  bool
+	force     bool
+	noTest    bool
+	sections  []string
 )
 
 func init() {
 	buildCmd.Flags().SetInterspersed(false)
 	singularityCmd.AddCommand(buildCmd)
 
-	buildCmd.Flags().BoolVarP(&Sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
-	buildCmd.Flags().StringSliceVar(&Sections, "section", []string{}, "Only run specific section(s) of deffile")
-	buildCmd.Flags().BoolVarP(&Writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
-	buildCmd.Flags().BoolVarP(&Force, "force", "f", false, "")
-	buildCmd.Flags().BoolVarP(&NoTest, "notest", "T", false, "")
-	buildCmd.Flags().BoolVarP(&Remote, "remote", "r", false, "Build image remotely")
-	buildCmd.Flags().StringVar(&RemoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
-	buildCmd.Flags().StringVar(&AuthToken, "auth-token", "", "Specify the auth token for the remote builder")
+	buildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
+	buildCmd.Flags().StringSliceVar(&sections, "section", []string{}, "Only run specific section(s) of deffile")
+	buildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
+	buildCmd.Flags().BoolVarP(&force, "force", "f", false, "")
+	buildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "")
+	buildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
+	buildCmd.Flags().StringVar(&remoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
+	buildCmd.Flags().StringVar(&authToken, "auth-token", "", "Specify the auth token for the remote builder")
 }
 
 // buildCmd represents the build command
@@ -53,7 +53,7 @@ var buildCmd = &cobra.Command{
 			fmt.Println("Silent!")
 		}
 
-		if Sandbox {
+		if sandbox {
 			fmt.Println("Sandbox!")
 		}
 
@@ -79,8 +79,8 @@ var buildCmd = &cobra.Command{
 			sylog.Fatalf("unable to parse %s: %v\n", args[1], err)
 		}
 
-		if Remote {
-			b = build.NewRemoteBuilder(args[0], def, false, RemoteURL, AuthToken)
+		if remote {
+			b = build.NewRemoteBuilder(args[0], def, false, remoteURL, authToken)
 		} else {
 			b, err = build.NewSIFBuilder(args[0], def)
 			if err != nil {
