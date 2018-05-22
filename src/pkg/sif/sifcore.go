@@ -83,82 +83,95 @@ const (
 	DataSignature = C.DATA_SIGNATURE
 )
 
-type Sifdescriptor struct {
+// Descriptor represents a SIF descriptor.
+type Descriptor struct {
 	desc C.Sifdescriptor
 }
 
-type Sifinfo struct {
+// Info represents information about a SIF.
+type Info struct {
 	sinfo C.Sifinfo
 }
 
-func (s *Sifinfo) Mapstart() unsafe.Pointer {
-	return unsafe.Pointer(s.sinfo.mapstart)
+// Mapstart returns the start of the memory map of the opened SIF file.
+func (i *Info) Mapstart() unsafe.Pointer {
+	return unsafe.Pointer(i.sinfo.mapstart)
 }
 
-type Sifpartition struct {
+// Partition contains information about a SIF partition.
+type Partition struct {
 	part *C.Sifpartition
 }
 
-func (p *Sifpartition) FileOff() uint64 {
+// FileOff returns the offset of the start of the image file.
+func (p *Partition) FileOff() uint64 {
 	return uint64(p.part.cm.fileoff)
 }
-func (p *Sifpartition) FileLen() uint64 {
+
+// FileLen returns the length of the data in the file.
+func (p *Partition) FileLen() uint64 {
 	return uint64(p.part.cm.filelen)
 }
 
-type Sifsignature struct {
+// Signature describes a SIF signature block.
+type Signature struct {
 	sig *C.Sifsignature
 }
 
-func (s *Sifsignature) FileOff() uint64 {
+// FileOff returns the offset of the SIF signature block.
+func (s *Signature) FileOff() uint64 {
 	return uint64(s.sig.cm.fileoff)
 }
 
-func (s *Sifsignature) FileLen() uint64 {
+// FileLen returns the length of the SIF signature block.
+func (s *Signature) FileLen() uint64 {
 	return uint64(s.sig.cm.filelen)
 }
 
-func (s *Sifsignature) GetEntity() string {
+// GetEntity returns the fingerprint of the SIF signature block.
+func (s *Signature) GetEntity() string {
 	fingerprint := C.GoBytes(unsafe.Pointer(&s.sig.entity[0]), 20)
 	str := fmt.Sprintf("%0X", fingerprint)
 	return str
 }
 
+// Eleminfo describes information about a SIF element.
 type Eleminfo struct {
 	einfo C.Eleminfo
 }
 
-func (e *Eleminfo) InitSignature(fingerprint [20]byte, signature []byte, part *Sifpartition) {
+// InitSignature initializes a SIF element with signature details.
+func (e *Eleminfo) InitSignature(fingerprint [20]byte, signature []byte, part *Partition) {
 	C.fill_sigeinfo(C.CBytes(fingerprint[:]), C.CBytes(signature), C.int(len(signature)), &e.einfo, part.part)
 }
 
-/*
-Wrapper for sif_load()
-int sif_load(char *filename, Sifinfo *info, int rdonly)
-*/
-func SifLoad(filename string, info *Sifinfo, rdonly int) error {
+// Load loads a SIF image.
+//
+// Wrapper for sif_load()
+// int sif_load(char *filename, Sifinfo *info, int rdonly)
+func Load(filename string, info *Info, rdonly int) error {
 	if ret := C.sif_load(C.CString(filename), &info.sinfo, C.int(rdonly)); ret != 0 {
 		return fmt.Errorf("%s", C.GoString(C.sif_strerror(C.siferrno)))
 	}
 	return nil
 }
 
-/*
-Wrapper for sif_unload()
-int sif_unload(Sifinfo *info)
-*/
-func SifUnload(info *Sifinfo) error {
+// Unload unloads a SIF image.
+//
+// Wrapper for sif_unload()
+// int sif_unload(Sifinfo *info)
+func Unload(info *Info) error {
 	if ret := C.sif_unload(&info.sinfo); ret != 0 {
 		return fmt.Errorf("%s", C.GoString(C.sif_strerror(C.siferrno)))
 	}
 	return nil
 }
 
-/*
-Wrapper for sif_putdataobj()
-int sif_putdataobj(Eleminfo *e, Sifinfo *info)
-*/
-func SifPutDataObj(e *Eleminfo, info *Sifinfo) error {
+// PutDataObj adds an element to the SIF image.
+//
+// Wrapper for sif_putdataobj()
+// int sif_putdataobj(Eleminfo *e, Sifinfo *info)
+func PutDataObj(e *Eleminfo, info *Info) error {
 	if ret := C.sif_putdataobj(&e.einfo, &info.sinfo); ret != 0 {
 		return fmt.Errorf("%s", C.GoString(C.sif_strerror(C.siferrno)))
 	}
@@ -169,59 +182,61 @@ func SifPutDataObj(e *Eleminfo, info *Sifinfo) error {
  * This portion of the file is for sifaccess.c (search and extract) related wrappers
  */
 
-/*
-Wrapper for sif_printheader()
-void sif_printheader(Sifinfo *info);
-*/
-func SifPrintHeader(info *Sifinfo) {
+// PrintHeader prints the SIF header details
+//
+// Wrapper for sif_printheader()
+// void sif_printheader(Sifinfo *info);
+func PrintHeader(info *Info) {
 	C.sif_printheader(&info.sinfo)
 }
 
-/*
-Wrapper for sif_printlist()
-void sif_printlist(Sifinfo *info);
-*/
-func SifPrintList(info *Sifinfo) {
+// PrintList prints the list of SIF descriptors
+//
+// Wrapper for sif_printlist()
+// void sif_printlist(Sifinfo *info);
+func PrintList(info *Info) {
 	C.sif_printlist(&info.sinfo)
 }
 
-/*
-Wrapper for sif_getpartition()
-Sifpartition *sif_getpartition(Sifinfo *info, int groupid)
-*/
-func SifGetPartition(info *Sifinfo, groupid int) (*Sifpartition, error) {
+// GetPartition returns the Partition with the supplied groupid.
+//
+// Wrapper for sif_getpartition()
+// Sifpartition *sif_getpartition(Sifinfo *info, int groupid)
+func GetPartition(info *Info, groupid int) (*Partition, error) {
 	var ret *C.Sifpartition
 	if ret = C.sif_getpartition(&info.sinfo, C.int(groupid)); ret == nil {
 		return nil, fmt.Errorf("%s", C.GoString(C.sif_strerror(C.siferrno)))
 	}
-	return &Sifpartition{part: ret}, nil
+	return &Partition{part: ret}, nil
 }
 
-/*
-Wrapper for sif_getlinkeddesc()
-Sifdescriptor *sif_getlinkeddesc(Sifinfo *info, int id)
-*/
-func SifGetLinkedDesc(info *Sifinfo, desc *Sifdescriptor) (*Sifdescriptor, error) {
+// GetLinkedDesc returns the Descriptor lined to the supplied Descriptor.
+//
+// Wrapper for sif_getlinkeddesc()
+// Sifdescriptor *sif_getlinkeddesc(Sifinfo *info, int id)
+func GetLinkedDesc(info *Info, desc *Descriptor) (*Descriptor, error) {
 	var ret *C.Sifdescriptor
-	var link = new(Sifdescriptor)
+	var link = new(Descriptor)
 	if ret = C.getlinkeddesc(&info.sinfo, &desc.desc, &link.desc); ret == nil {
 		return nil, fmt.Errorf("%s", C.GoString(C.sif_strerror(C.siferrno)))
 	}
 	return link, nil
 }
 
-func SifGetSignature(info *Sifinfo) (*Sifsignature, error) {
+// GetSignature gets the SIF signature info.
+func GetSignature(info *Info) (*Signature, error) {
 	var ret *C.Sifsignature
 	if ret = C.getsignature(&info.sinfo); ret == nil {
 		return nil, fmt.Errorf("%s", C.GoString(C.sif_strerror(C.siferrno)))
 	}
-	return &Sifsignature{sig: ret}, nil
+	return &Signature{sig: ret}, nil
 }
 
 /*
  * General C <-> Go helpers
  */
 
+// CByteRange is a helper to get a byte slice given a pointer, offset, and length.
 func CByteRange(start unsafe.Pointer, offset uint64, len uint64) ([]byte, error) {
 	if len > uint64(C.int(^C.uint(0)>>1)) {
 		return nil, fmt.Errorf("%s", "error: partition is too large for hashing.")
