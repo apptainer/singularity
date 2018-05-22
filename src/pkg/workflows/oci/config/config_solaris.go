@@ -5,8 +5,10 @@
 
 package config
 
+// Platform represents the current platform
 const Platform = "solaris"
 
+// RuntimeOciPlatform is the OCI runtime platform.
 type RuntimeOciPlatform struct {
 	Linux   interface{}
 	Solaris RuntimeOciSolaris
