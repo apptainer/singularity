@@ -14,11 +14,11 @@ import (
 	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
 )
 
-var engines map[string]*runtime.RuntimeEngine
+var engines map[string]*runtime.Engine
 
 // NewRuntimeEngine instantiates a runtime engine based on JSON configuration
-func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, error) {
-	var engine *runtime.RuntimeEngine
+func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.Engine, error) {
+	var engine *runtime.Engine
 
 	engine = engines[name]
 
@@ -32,9 +32,9 @@ func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, e
 }
 
 // Register a runtime engine
-func registerRuntimeEngine(engine *runtime.RuntimeEngine, name string) {
+func registerRuntimeEngine(engine *runtime.Engine, name string) {
 	if engines == nil {
-		engines = make(map[string]*runtime.RuntimeEngine)
+		engines = make(map[string]*runtime.Engine)
 	}
 	engines[name] = engine
 	engine.RuntimeConfig = engine.InitConfig()
@@ -46,5 +46,5 @@ func registerRuntimeEngine(engine *runtime.RuntimeEngine, name string) {
 func init() {
 	// initialize singularity engine
 	e := &singularity.Engine{}
-	registerRuntimeEngine(&runtime.RuntimeEngine{Runtime: e}, singularityConfig.Name)
+	registerRuntimeEngine(&runtime.Engine{Runtime: e}, singularityConfig.Name)
 }

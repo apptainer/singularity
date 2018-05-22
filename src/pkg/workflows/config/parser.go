@@ -15,6 +15,7 @@ import (
 	"strings"
 )
 
+// Parser parses configuration found in the file with the specified path.
 func Parser(filepath string, f interface{}) error {
 	directives := make(map[string][]string)
 	c, _ := os.Open(filepath)
