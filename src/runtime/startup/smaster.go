@@ -39,7 +39,7 @@ func runAsInstance(conn *os.File) {
 	}
 }
 
-func handleChild(pid int, signal chan os.Signal, engine *runtime.RuntimeEngine) {
+func handleChild(pid int, signal chan os.Signal, engine *runtime.Engine) {
 	var status syscall.WaitStatus
 
 	select {
