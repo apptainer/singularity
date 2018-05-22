@@ -50,8 +50,13 @@
 #endif
 
 int close_fd(int fd, struct stat *st) {
-    if ( S_ISDIR(st->st_mode) || S_ISSOCK(st->st_mode) ) {
+    if ( S_ISDIR(st->st_mode) ) {
         return(1);
+    }
+    if ( singularity_registry_get("UNSHARE_NET") != NULL ) {
+        if ( S_ISSOCK(st->st_mode) ) {
+            return(1);
+        }
     }
     return(0);
 }

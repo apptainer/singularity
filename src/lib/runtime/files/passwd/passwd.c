@@ -72,15 +72,15 @@ int _singularity_runtime_files_passwd(void) {
         ABORT(255);
     }
 
-    if ( pwent == NULL ) {
-        singularity_message(ERROR, "Failed to obtain user identity information\n");
-        ABORT(255);
-    }
-
     singularity_message(DEBUG, "Checking configuration option: 'config passwd'\n");
     if ( singularity_config_get_bool(CONFIG_PASSWD) <= 0 ) {
         singularity_message(VERBOSE, "Skipping bind of the host's /etc/passwd\n");
         return(0);
+    }
+
+    if ( pwent == NULL ) {
+        singularity_message(ERROR, "Failed to obtain user identity information\n");
+        ABORT(255);
     }
 
     source_file = joinpath(containerdir, "/etc/passwd");
