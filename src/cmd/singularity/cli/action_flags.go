@@ -43,7 +43,7 @@ var (
 	DropCaps  []string
 )
 
-var actionFlags *pflag.FlagSet = pflag.NewFlagSet("ActionFlags", pflag.ExitOnError)
+var actionFlags = pflag.NewFlagSet("ActionFlags", pflag.ExitOnError)
 
 func getHomeDir() string {
 	usr, err := user.Current()

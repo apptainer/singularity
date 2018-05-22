@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var capabilityListExamples string = `
+var capabilityListExamples = `
       $ singularity capability.list /tmp/my-sql.img mysql
 
       $ singularity shell capability://mysql

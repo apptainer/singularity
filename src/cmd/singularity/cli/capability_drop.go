@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var capabilityDropExamples string = `
+var capabilityDropExamples = `
       $ singularity capability.drop /tmp/my-sql.img mysql
 
       $ singularity shell capability://mysql
