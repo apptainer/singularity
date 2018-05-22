@@ -11,10 +11,12 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// Sandbox represents a sandbox image.
 type Sandbox struct {
 	rootfs string
 }
 
+// TempSandbox creates a temporary sandbox at the supplied path.
 func TempSandbox(name string) (i *Sandbox, err error) {
 	i = &Sandbox{}
 
