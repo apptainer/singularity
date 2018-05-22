@@ -20,9 +20,9 @@ import (
 // HTTP timeout in seconds
 const httpTimeout = 10
 
-func getEntity(baseURL string, entityRef string) (entity Entity, found bool, err error) {
+func getEntity(baseURL string, authToken string, entityRef string) (entity Entity, found bool, err error) {
 	url := (baseURL + "/v1/entities/" + entityRef)
-	entJSON, found, err := apiGet(url)
+	entJSON, found, err := apiGet(url, authToken)
 	if err != nil {
 		return entity, false, err
 	}
@@ -36,9 +36,9 @@ func getEntity(baseURL string, entityRef string) (entity Entity, found bool, err
 	return res.Data, found, nil
 }
 
-func getCollection(baseURL string, collectionRef string) (collection Collection, found bool, err error) {
+func getCollection(baseURL string, authToken string, collectionRef string) (collection Collection, found bool, err error) {
 	url := baseURL + "/v1/collections/" + collectionRef
-	colJSON, found, err := apiGet(url)
+	colJSON, found, err := apiGet(url, authToken)
 	if err != nil {
 		return collection, false, err
 	}
@@ -52,9 +52,9 @@ func getCollection(baseURL string, collectionRef string) (collection Collection,
 	return res.Data, found, nil
 }
 
-func getContainer(baseURL string, containerRef string) (container Container, found bool, err error) {
+func getContainer(baseURL string, authToken string, containerRef string) (container Container, found bool, err error) {
 	url := baseURL + "/v1/containers/" + containerRef
-	conJSON, found, err := apiGet(url)
+	conJSON, found, err := apiGet(url, authToken)
 	if err != nil {
 		return container, false, err
 	}
@@ -68,9 +68,9 @@ func getContainer(baseURL string, containerRef string) (container Container, fou
 	return res.Data, found, nil
 }
 
-func getImage(baseURL string, imageRef string) (image Image, found bool, err error) {
+func getImage(baseURL string, authToken string, imageRef string) (image Image, found bool, err error) {
 	url := baseURL + "/v1/images/" + imageRef
-	imgJSON, found, err := apiGet(url)
+	imgJSON, found, err := apiGet(url, authToken)
 	if err != nil {
 		return image, false, err
 	}
@@ -84,12 +84,12 @@ func getImage(baseURL string, imageRef string) (image Image, found bool, err err
 	return res.Data, found, nil
 }
 
-func createEntity(baseURL string, name string) (entity Entity, err error) {
+func createEntity(baseURL string, authToken string, name string) (entity Entity, err error) {
 	e := Entity{
 		Name:        name,
 		Description: "No description",
 	}
-	entJSON, err := apiCreate(e, baseURL+"/v1/entities")
+	entJSON, err := apiCreate(e, baseURL+"/v1/entities", authToken)
 	if err != nil {
 		return entity, err
 	}
@@ -100,13 +100,13 @@ func createEntity(baseURL string, name string) (entity Entity, err error) {
 	return res.Data, nil
 }
 
-func createCollection(baseURL string, name string, entityID string) (collection Collection, err error) {
+func createCollection(baseURL string, authToken string, name string, entityID string) (collection Collection, err error) {
 	c := Collection{
 		Name:        name,
 		Description: "No description",
 		Entity:      bson.ObjectIdHex(entityID),
 	}
-	colJSON, err := apiCreate(c, baseURL+"/v1/collections")
+	colJSON, err := apiCreate(c, baseURL+"/v1/collections", authToken)
 	if err != nil {
 		return collection, err
 	}
@@ -117,13 +117,13 @@ func createCollection(baseURL string, name string, entityID string) (collection 
 	return res.Data, nil
 }
 
-func createContainer(baseURL string, name string, collectionID string) (container Container, err error) {
+func createContainer(baseURL string, authToken string, name string, collectionID string) (container Container, err error) {
 	c := Container{
 		Name:        name,
 		Description: "No description",
 		Collection:  bson.ObjectIdHex(collectionID),
 	}
-	conJSON, err := apiCreate(c, baseURL+"/v1/containers")
+	conJSON, err := apiCreate(c, baseURL+"/v1/containers", authToken)
 	if err != nil {
 		return container, err
 	}
@@ -134,13 +134,13 @@ func createContainer(baseURL string, name string, collectionID string) (containe
 	return res.Data, nil
 }
 
-func createImage(baseURL string, hash string, containerID string) (image Image, err error) {
+func createImage(baseURL string, authToken string, hash string, containerID string) (image Image, err error) {
 	i := Image{
 		Hash:        hash,
 		Description: "No description",
 		Container:   bson.ObjectIdHex(containerID),
 	}
-	imgJSON, err := apiCreate(i, baseURL+"/v1/images")
+	imgJSON, err := apiCreate(i, baseURL+"/v1/images", authToken)
 	if err != nil {
 		return image, err
 	}
@@ -151,9 +151,9 @@ func createImage(baseURL string, hash string, containerID string) (image Image, 
 	return res.Data, nil
 }
 
-func setTags(baseURL string, containerID string, imageID string, tags []string) error {
+func setTags(baseURL string, authToken string, containerID string, imageID string, tags []string) error {
 	// Get existing tags, so we know which will be replaced
-	existingTags, err := apiGetTags(baseURL + "/v1/tags/" + containerID)
+	existingTags, err := apiGetTags(baseURL+"/v1/tags/"+containerID, authToken)
 	if err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func setTags(baseURL string, containerID string, imageID string, tags []string) 
 			tag,
 			bson.ObjectIdHex(imageID),
 		}
-		err := apiSetTag(baseURL+"/v1/tags/"+containerID, imgTag)
+		err := apiSetTag(baseURL+"/v1/tags/"+containerID, authToken, imgTag)
 		if err != nil {
 			return err
 		}
@@ -177,7 +177,7 @@ func setTags(baseURL string, containerID string, imageID string, tags []string) 
 	return nil
 }
 
-func apiCreate(o interface{}, url string) (objJSON []byte, err error) {
+func apiCreate(o interface{}, url string, authToken string) (objJSON []byte, err error) {
 	sylog.Debugf("apiCreate calling %s\n", url)
 	s, err := json.Marshal(o)
 	if err != nil {
@@ -185,6 +185,9 @@ func apiCreate(o interface{}, url string) (objJSON []byte, err error) {
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
 	req.Header.Set("Content-Type", "application/json")
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
 
 	client := &http.Client{
 		Timeout: (httpTimeout * time.Second),
@@ -208,12 +211,19 @@ func apiCreate(o interface{}, url string) (objJSON []byte, err error) {
 	return objJSON, nil
 }
 
-func apiGet(url string) (objJSON []byte, found bool, err error) {
+func apiGet(url string, authToken string) (objJSON []byte, found bool, err error) {
 	sylog.Debugf("apiGet calling %s\n", url)
 	client := &http.Client{
 		Timeout: (httpTimeout * time.Second),
 	}
-	res, err := client.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return []byte{}, false, fmt.Errorf("error creating request to server:\n\t%v", err)
+	}
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return []byte{}, false, fmt.Errorf("error making request to server:\n\t%v", err)
 	}
@@ -237,12 +247,19 @@ func apiGet(url string) (objJSON []byte, found bool, err error) {
 		jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 }
 
-func apiGetTags(url string) (tags TagMap, err error) {
+func apiGetTags(url string, authToken string) (tags TagMap, err error) {
 	sylog.Debugf("apiGetTags calling %s\n", url)
 	client := &http.Client{
 		Timeout: (httpTimeout * time.Second),
 	}
-	res, err := client.Get(url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating request to server:\n\t%v", err)
+	}
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error making request to server:\n\t%v", err)
 	}
@@ -263,7 +280,7 @@ func apiGetTags(url string) (tags TagMap, err error) {
 
 }
 
-func apiSetTag(url string, t ImageTag) (err error) {
+func apiSetTag(url string, authToken string, t ImageTag) (err error) {
 	sylog.Debugf("apiSetTag calling %s\n", url)
 	s, err := json.Marshal(t)
 	if err != nil {
@@ -271,7 +288,9 @@ func apiSetTag(url string, t ImageTag) (err error) {
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
 	req.Header.Set("Content-Type", "application/json")
-
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
 	client := &http.Client{
 		Timeout: (httpTimeout * time.Second),
 	}

@@ -77,14 +77,15 @@ func Test_DownloadImage(t *testing.T) {
 		force        bool
 		code         int
 		testFile     string
+		tokenFile    string
 		checkContent bool
 		expectError  bool
 	}{
-		{"Bad filename", "entity/collection/image:tag", "notadir/test.sif", false, http.StatusBadRequest, "test_data/test_sha256", false, true},
-		{"Bad library ref", "entity/collection/im,age:tag", tempFile, false, http.StatusBadRequest, "test_data/test_sha256", false, true},
-		{"Server error", "entity/collection/image:tag", tempFile, false, http.StatusInternalServerError, "test_data/test_sha256", false, true},
-		{"Good Download", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256", true, false},
-		{"Should not overwrite", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256", true, true},
+		{"Bad filename", "entity/collection/image:tag", "notadir/test.sif", false, http.StatusBadRequest, "test_data/test_sha256", "test_data/test_token", false, true},
+		{"Bad library ref", "entity/collection/im,age:tag", tempFile, false, http.StatusBadRequest, "test_data/test_sha256", "test_data/test_token", false, true},
+		{"Server error", "entity/collection/image:tag", tempFile, false, http.StatusInternalServerError, "test_data/test_sha256", "test_data/test_token", false, true},
+		{"Good Download", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256", "test_data/test_token", true, false},
+		{"Should not overwrite", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256", "test_data/test_token", true, true},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -99,7 +100,7 @@ func Test_DownloadImage(t *testing.T) {
 			m.Run()
 			defer m.Stop()
 
-			err := DownloadImage(test.outFile, test.libraryRef, m.baseURI, test.force)
+			err := DownloadImage(test.outFile, test.libraryRef, m.baseURI, test.force, test.tokenFile)
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
