@@ -10,10 +10,9 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// PullImage is the function that is responsible for pulling an image from a Sylabs library. This will
-// eventually be integrated with the build system as a builder, but for now this is the palce to put it
-func PullImage(image string, library string, libraryURL string, Force bool) {
-	err := client.DownloadImage(image, library, libraryURL, Force)
+// PullImage is the function that is responsible for pulling an image from a Sylabs library.
+func PullImage(image string, library string, libraryURL string, force bool, tokenFile string) {
+	err := client.DownloadImage(image, library, libraryURL, force, tokenFile)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)
 	}

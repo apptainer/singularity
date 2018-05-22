@@ -10,8 +10,9 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-func PushImage(image string, library string, libraryURL string) {
-	err := client.UploadImage(image, library, libraryURL)
+// PushImage is the function that is responsible for pushing an image to the Sylabs library.
+func PushImage(image string, library string, libraryURL string, tokenFile string) {
+	err := client.UploadImage(image, library, libraryURL, tokenFile)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)
 	}

@@ -108,7 +108,7 @@ func Test_getEntity(t *testing.T) {
 
 			m.Run()
 
-			entity, found, err := getEntity(m.baseURI, test.entityRef)
+			entity, found, err := getEntity(m.baseURI, testToken, test.entityRef)
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
@@ -188,7 +188,7 @@ func Test_getCollection(t *testing.T) {
 
 			m.Run()
 
-			collection, found, err := getCollection(m.baseURI, test.collectionRef)
+			collection, found, err := getCollection(m.baseURI, testToken, test.collectionRef)
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
@@ -268,7 +268,7 @@ func Test_getContainer(t *testing.T) {
 
 			m.Run()
 
-			container, found, err := getContainer(m.baseURI, test.containerRef)
+			container, found, err := getContainer(m.baseURI, testToken, test.containerRef)
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
@@ -348,7 +348,7 @@ func Test_getImage(t *testing.T) {
 
 			m.Run()
 
-			image, found, err := getImage(m.baseURI, test.imageRef)
+			image, found, err := getImage(m.baseURI, testToken, test.imageRef)
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
@@ -413,7 +413,7 @@ func Test_createEntity(t *testing.T) {
 
 			m.Run()
 
-			entity, err := createEntity(m.baseURI, test.entityRef)
+			entity, err := createEntity(m.baseURI, testToken, test.entityRef)
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
@@ -475,7 +475,7 @@ func Test_createCollection(t *testing.T) {
 
 			m.Run()
 
-			collection, err := createCollection(m.baseURI, test.collectionRef, bson.NewObjectId().Hex())
+			collection, err := createCollection(m.baseURI, testToken, test.collectionRef, bson.NewObjectId().Hex())
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
@@ -537,7 +537,7 @@ func Test_createContainer(t *testing.T) {
 
 			m.Run()
 
-			container, err := createContainer(m.baseURI, test.containerRef, bson.NewObjectId().Hex())
+			container, err := createContainer(m.baseURI, testToken, test.containerRef, bson.NewObjectId().Hex())
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
@@ -599,7 +599,7 @@ func Test_createImage(t *testing.T) {
 
 			m.Run()
 
-			image, err := createImage(m.baseURI, test.imageRef, bson.NewObjectId().Hex())
+			image, err := createImage(m.baseURI, testToken, test.imageRef, bson.NewObjectId().Hex())
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
@@ -660,7 +660,7 @@ func Test_setTags(t *testing.T) {
 
 			m.Run()
 
-			err := setTags(m.baseURI, test.containerRef, test.imageRef, test.tags)
+			err := setTags(m.baseURI, testToken, test.containerRef, test.imageRef, test.tags)
 
 			if err != nil && !test.expectError {
 				t.Errorf("Unexpected error: %v", err)
