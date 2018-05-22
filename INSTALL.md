@@ -8,7 +8,7 @@ You must first install development and libraries to your host. Assuming Ubuntu
 (apply similar to RHEL derivatives):
 
 ```
-$ sudo apt-get update && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme-dev
+$ sudo apt-get update && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev
 ```
 
 ## Install golang
@@ -33,7 +33,7 @@ $ sudo tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
 Finally, set up your environment for go
 
 ```
-$ echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+$ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc
 $ echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc
 $ source ~/.bashrc
 ```
