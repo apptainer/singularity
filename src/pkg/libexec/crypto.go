@@ -10,11 +10,12 @@ import (
 	//specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// Sign signs the supplied image.
 func Sign(i image.Image) {
 
 }
 
-// Yanick please help define these function prototypes
+// Verify verifies the supplied image.
 func Verify(i image.Image) {
 
 }
