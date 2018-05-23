@@ -14,6 +14,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var sbuildUse string = `sbuild <builder type> <definition json> <image path>`
+
+var sbuildShort string = ``
+
+var sbuildLong string = ``
+
+var sbuildExample string = ``
+
+func init() {
+	sbuildCmd.Flags().SetInterspersed(false)
+}
+
 // ExecuteSbuild executes the image build wrapper
 func ExecuteSbuild() {
 	if err := sbuildCmd.Execute(); err != nil {
@@ -22,8 +34,9 @@ func ExecuteSbuild() {
 }
 
 var sbuildCmd = &cobra.Command{
-	Use:  "sbuild <builder type> <definition json> <image path>",
+	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(3),
+
 	Run: func(cmd *cobra.Command, args []string) {
 		var b build.Builder
 		var err error
@@ -39,4 +52,9 @@ var sbuildCmd = &cobra.Command{
 
 		b.Build(context.TODO())
 	},
+
+	Use:     sbuildUse,
+	Short:   sbuildShort,
+	Long:    sbuildLong,
+	Example: sbuildExample,
 }

@@ -7,17 +7,23 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/singularityware/singularity/docs"
 )
 
 func init() {
-	singularityCmd.AddCommand(capabilityCmd)
-	capabilityCmd.AddCommand(capabilityAddCmd)
-	capabilityCmd.AddCommand(capabilityDropCmd)
-	capabilityCmd.AddCommand(capabilityListCmd)
+	SingularityCmd.AddCommand(CapabilityCmd)
+	CapabilityCmd.AddCommand(CapabilityAddCmd)
+	CapabilityCmd.AddCommand(CapabilityDropCmd)
+	CapabilityCmd.AddCommand(CapabilityListCmd)
 }
 
-var capabilityCmd = &cobra.Command{
-	Use: "capability",
+var CapabilityCmd = &cobra.Command{
 	Run: nil,
 	DisableFlagsInUseLine: true,
+
+	Use:     docs.CapabilityUse,
+	Short:   docs.CapabilityShort,
+	Long:    docs.CapabilityLong,
+	Example: docs.CapabilityExample,
 }

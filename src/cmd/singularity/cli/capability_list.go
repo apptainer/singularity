@@ -9,52 +9,46 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/singularityware/singularity/docs"
 )
-
-var capabilityListExamples = `
-      $ singularity capability.list /tmp/my-sql.img mysql
-
-      $ singularity shell capability://mysql
-      Singularity my-sql.img> pwd
-      /home/mibauer/mysql
-      Singularity my-sql.img> ps
-      PID TTY          TIME CMD
-        1 pts/0    00:00:00 sinit
-        2 pts/0    00:00:00 bash
-        3 pts/0    00:00:00 ps
-      Singularity my-sql.img> 
-    
-      $ singularity capability.stop /tmp/my-sql.img mysql
-      Stopping /tmp/my-sql.img mysql`
 
 func init() {
 	capabilityListCmds := []*cobra.Command{
-		capabilityListCmd,
-		capabilityDotListCmd,
+		CapabilityListCmd,
+		// capabilityDotListCmd,
 	}
 
 	for _, cmd := range capabilityListCmds {
 		cmd.Flags().SetInterspersed(false)
 	}
 
-	singularityCmd.AddCommand(capabilityDotListCmd)
+	// SingularityCmd.AddCommand(capabilityDotListCmd)
 }
 
-var capabilityListCmd = &cobra.Command{
-	Use:  "list [list options...] <capabilities>",
+var CapabilityListCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("listping capability")
 	},
-	Example: capabilityListExamples,
+
+	Use:     docs.CapabilityListUse,
+	Short:   docs.CapabilityListShort,
+	Long:    docs.CapabilityListLong,
+	Example: docs.CapabilityListExample,
 }
 
+/*
 var capabilityDotListCmd = &cobra.Command{
-	Use:  "capability.list [options...] <capabilities>",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("listping capability")
 	},
+
+    Use: capabilityListUse,
+    Short: capabilityListShort,
+    Long: capabilityListLong,
 	Example: capabilityListExamples,
-	Hidden:  true,
 }
+*/
