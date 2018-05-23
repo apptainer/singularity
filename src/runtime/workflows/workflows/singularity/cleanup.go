@@ -11,6 +11,6 @@ package runtime
  */
 
 // CleanupContainer cleans up the container
-func (c *Engine) CleanupContainer() error {
+func (engine *Engine) CleanupContainer() error {
 	return nil
 }

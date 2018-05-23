@@ -83,6 +83,7 @@ func init() {
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("add-caps"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("drop-caps"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("allow-setuid"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("writable"))
 	}
 
 	singularityCmd.AddCommand(execCmd)
@@ -132,6 +133,8 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	oci.Root.SetPath(image)
 	oci.Process.SetArgs(args)
 	oci.Process.SetNoNewPrivileges(true)
+	runtime.SetImage(image)
+	runtime.SetBindPath(BindPaths)
 
 	oci.RuntimeOciSpec.Linux = &specs.Linux{}
 	namespaces := []specs.LinuxNamespace{}
