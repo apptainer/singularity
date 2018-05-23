@@ -485,6 +485,11 @@ __attribute__((constructor)) static void init(void) {
     char *runtime;
     int output[2];
 
+#ifndef SINGULARITY_NO_NEW_PRIVS
+    singularity_message(ERROR, "Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
+    exit(1);
+#endif
+
     loglevel = getenv("SINGULARITY_MESSAGELEVEL");
     if ( loglevel != NULL ) {
         loglevel = strdup(loglevel);
@@ -522,14 +527,6 @@ __attribute__((constructor)) static void init(void) {
         setenv("SINGULARITY_MESSAGELEVEL", loglevel, 1);
         free(loglevel);
     }
-
-#ifdef SINGULARITY_NO_NEW_PRIVS
-    singularity_message(DEBUG, "PR_SET_NO_NEW_PRIVS supported\n");
-    config.hasNoNewPrivs = 1;
-#else
-    singularity_message(DEBUG, "PR_SET_NO_NEW_PRIVS not supported\n");
-    config.hasNoNewPrivs = 0;
-#endif
 
     /* read json configuration from stdin */
     singularity_message(DEBUG, "Read json configuration from stdin\n");
