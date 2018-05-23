@@ -32,6 +32,14 @@
 #include <setjmp.h>
 #include <sys/syscall.h>
 
+#ifndef PR_SET_NO_NEW_PRIVS
+#define PR_SET_NO_NEW_PRIVS 38
+#endif
+
+#ifndef PR_GET_NO_NEW_PRIVS
+#define PR_GET_NO_NEW_PRIVS 39
+#endif
+
 #ifdef SINGULARITY_SECUREBITS
 #  include <linux/securebits.h>
 #else
@@ -701,12 +709,6 @@ __attribute__((constructor)) static void init(void) {
         if ( socketpair(AF_UNIX, SOCK_STREAM, 0, stage_socket) < 0 ) {
             singularity_message(ERROR, "Failed to create communication socket: %s\n", strerror(errno));
             exit(1);
-        }
-
-        /* enforce PID namespace if NO_NEW_PRIVS not supported  */
-        if ( config.hasNoNewPrivs == 0 ) {
-            singularity_message(VERBOSE, "No PR_SET_NO_NEW_PRIVS support, enforcing PID namespace\n");
-            config.nsFlags |= CLONE_NEWPID;
         }
 
         if ( config.mntPid ) {
