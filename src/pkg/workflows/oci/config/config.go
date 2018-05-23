@@ -9,8 +9,10 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// RuntimeOciSpec is the OCI runtime specification.
 type RuntimeOciSpec specs.Spec
 
+// RuntimeOciConfig is the OCI runtime configuration.
 type RuntimeOciConfig struct {
 	RuntimeOciSpec
 	Version     RuntimeOciVersion
