@@ -5,6 +5,7 @@
 
 package config
 
+// DefaultRuntimeOciConfig sets the default runtime OCI configuration.
 func DefaultRuntimeOciConfig(cfg *RuntimeOciConfig) error {
 	cfg.Version = &DefaultRuntimeOciVersion{RuntimeOciSpec: &cfg.RuntimeOciSpec}
 	cfg.Hostname = &DefaultRuntimeOciHostname{RuntimeOciSpec: &cfg.RuntimeOciSpec}

@@ -13,6 +13,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/util/capabilities"
 )
 
+// ProcessPlatform describes the platform process interface.
 type ProcessPlatform interface {
 	GetBoundingCapabilities() []string
 	SetBoundingCapabilities([]string) error
@@ -102,11 +103,13 @@ func (c *DefaultRuntimeOciProcess) initCapabilities() {
 	}
 }
 
+// GetBoundingCapabilities retrieves the bounding capabilities.
 func (c *DefaultRuntimeOciProcess) GetBoundingCapabilities() []string {
 	c.initCapabilities()
 	return c.RuntimeOciSpec.Process.Capabilities.Bounding
 }
 
+// SetBoundingCapabilities sets the bounding capabilities.
 func (c *DefaultRuntimeOciProcess) SetBoundingCapabilities(capabilities []string) error {
 	c.initCapabilities()
 	for _, capability := range capabilities {
@@ -117,21 +120,25 @@ func (c *DefaultRuntimeOciProcess) SetBoundingCapabilities(capabilities []string
 	return nil
 }
 
+// AddBoundingCapability adds a bounding capability.
 func (c *DefaultRuntimeOciProcess) AddBoundingCapability(capability string) error {
 	c.initCapabilities()
 	return addCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Bounding, boundingCapabilities)
 }
 
+// DelBoundingCapability deletes a bounding capability.
 func (c *DefaultRuntimeOciProcess) DelBoundingCapability(capability string) error {
 	c.initCapabilities()
 	return delCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Bounding, boundingCapabilities)
 }
 
+// GetEffectiveCapabilities retrieves the effective capabilities.
 func (c *DefaultRuntimeOciProcess) GetEffectiveCapabilities() []string {
 	c.initCapabilities()
 	return c.RuntimeOciSpec.Process.Capabilities.Effective
 }
 
+// SetEffectiveCapabilities sets the effective capabilities.
 func (c *DefaultRuntimeOciProcess) SetEffectiveCapabilities(capabilities []string) error {
 	c.initCapabilities()
 	for _, capability := range capabilities {
@@ -142,21 +149,25 @@ func (c *DefaultRuntimeOciProcess) SetEffectiveCapabilities(capabilities []strin
 	return nil
 }
 
+// AddEffectiveCapability adds an effective capability.
 func (c *DefaultRuntimeOciProcess) AddEffectiveCapability(capability string) error {
 	c.initCapabilities()
 	return addCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Effective, effectiveCapabilities)
 }
 
+// DelEffectiveCapability deletes an effective capability.
 func (c *DefaultRuntimeOciProcess) DelEffectiveCapability(capability string) error {
 	c.initCapabilities()
 	return delCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Effective, effectiveCapabilities)
 }
 
+// GetInheritableCapabilities retrieves the inheritable capabilities.
 func (c *DefaultRuntimeOciProcess) GetInheritableCapabilities() []string {
 	c.initCapabilities()
 	return []string{}
 }
 
+// SetInheritableCapabilities sets the inheritable capabilities.
 func (c *DefaultRuntimeOciProcess) SetInheritableCapabilities(capabilities []string) error {
 	c.initCapabilities()
 	for _, capability := range capabilities {
@@ -167,21 +178,25 @@ func (c *DefaultRuntimeOciProcess) SetInheritableCapabilities(capabilities []str
 	return nil
 }
 
+// AddInheritableCapability adds an inheritable capability.
 func (c *DefaultRuntimeOciProcess) AddInheritableCapability(capability string) error {
 	c.initCapabilities()
 	return addCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Inheritable, inheritableCapabilities)
 }
 
+// DelInheritableCapability deletes an inheritable capability.
 func (c *DefaultRuntimeOciProcess) DelInheritableCapability(capability string) error {
 	c.initCapabilities()
 	return delCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Inheritable, inheritableCapabilities)
 }
 
+// GetPermittedCapabilities retrieves the permitted capabilities.
 func (c *DefaultRuntimeOciProcess) GetPermittedCapabilities() []string {
 	c.initCapabilities()
 	return []string{}
 }
 
+// SetPermittedCapabilities sets the permitted capabilities.
 func (c *DefaultRuntimeOciProcess) SetPermittedCapabilities(capabilities []string) error {
 	c.initCapabilities()
 	for _, capability := range capabilities {
@@ -192,21 +207,25 @@ func (c *DefaultRuntimeOciProcess) SetPermittedCapabilities(capabilities []strin
 	return nil
 }
 
+// AddPermittedCapability adds a permitted capability.
 func (c *DefaultRuntimeOciProcess) AddPermittedCapability(capability string) error {
 	c.initCapabilities()
 	return addCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Permitted, permittedCapabilities)
 }
 
+// DelPermittedCapability deletes a permitted capability.
 func (c *DefaultRuntimeOciProcess) DelPermittedCapability(capability string) error {
 	c.initCapabilities()
 	return delCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Permitted, permittedCapabilities)
 }
 
+// GetAmbientCapabilities retrieves the ambient capabilities.
 func (c *DefaultRuntimeOciProcess) GetAmbientCapabilities() []string {
 	c.initCapabilities()
 	return []string{}
 }
 
+// SetAmbientCapabilities sets the ambient capabilities.
 func (c *DefaultRuntimeOciProcess) SetAmbientCapabilities(capabilities []string) error {
 	c.initCapabilities()
 	for _, capability := range capabilities {
@@ -217,71 +236,85 @@ func (c *DefaultRuntimeOciProcess) SetAmbientCapabilities(capabilities []string)
 	return nil
 }
 
+// AddAmbientCapability adds an ambient capability.
 func (c *DefaultRuntimeOciProcess) AddAmbientCapability(capability string) error {
 	c.initCapabilities()
 	return addCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Ambient, ambientCapabilities)
 }
 
+// DelAmbientCapability deletes an ambient capability.
 func (c *DefaultRuntimeOciProcess) DelAmbientCapability(capability string) error {
 	c.initCapabilities()
 	return delCapability(capability, &c.RuntimeOciSpec.Process.Capabilities.Ambient, ambientCapabilities)
 }
 
+// GetNoNewPrivileges gets the no new privileges flag.
 func (c *DefaultRuntimeOciProcess) GetNoNewPrivileges() bool {
 	c.init()
 	return c.RuntimeOciSpec.Process.NoNewPrivileges
 }
 
+// SetNoNewPrivileges sets the no new privileges flag.
 func (c *DefaultRuntimeOciProcess) SetNoNewPrivileges(enable bool) {
 	c.init()
 	c.RuntimeOciSpec.Process.NoNewPrivileges = enable
 }
 
+// GetApparmorProfile gets the apparmor profile.
 func (c *DefaultRuntimeOciProcess) GetApparmorProfile() string {
 	c.init()
 	return c.RuntimeOciSpec.Process.ApparmorProfile
 }
 
+// SetApparmorProfile sets the apparmor profile.
 func (c *DefaultRuntimeOciProcess) SetApparmorProfile(profile string) {
 	c.init()
 	c.RuntimeOciSpec.Process.ApparmorProfile = profile
 }
 
+// GetSelinuxLabel gets the selinux label.
 func (c *DefaultRuntimeOciProcess) GetSelinuxLabel() string {
 	c.init()
 	return c.RuntimeOciSpec.Process.SelinuxLabel
 }
 
+// SetSelinuxLabel sets the selinux label.
 func (c *DefaultRuntimeOciProcess) SetSelinuxLabel(label string) {
 	c.init()
 	c.RuntimeOciSpec.Process.SelinuxLabel = label
 }
 
+// GetOOMScoreAdj gets the OOM score adjustment value.
 func (c *DefaultRuntimeOciProcess) GetOOMScoreAdj() *int {
 	c.init()
 	return c.RuntimeOciSpec.Process.OOMScoreAdj
 }
 
+// SetOOMScoreAdj sets the OOM score adjustment value.
 func (c *DefaultRuntimeOciProcess) SetOOMScoreAdj(score int) {
 	c.init()
 	c.RuntimeOciSpec.Process.OOMScoreAdj = &score
 }
 
+// GetRlimits gets the POSIX rlimits.
 func (c *DefaultRuntimeOciProcess) GetRlimits() []specs.POSIXRlimit {
 	c.init()
 	return c.RuntimeOciSpec.Process.Rlimits
 }
 
+// SetRlimits sets the POSIX rlimits.
 func (c *DefaultRuntimeOciProcess) SetRlimits(limits []specs.POSIXRlimit) error {
 	c.init()
 	return nil
 }
 
+// AddRlimit adds a POSIX rlimit.
 func (c *DefaultRuntimeOciProcess) AddRlimit(rtype string, hard uint64, soft uint64) error {
 	c.init()
 	return nil
 }
 
+// DelRlimit deletes a POSIX rlimit.
 func (c *DefaultRuntimeOciProcess) DelRlimit(rtype string) error {
 	c.init()
 	return nil

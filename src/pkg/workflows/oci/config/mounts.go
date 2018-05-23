@@ -9,6 +9,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// RuntimeOciMounts describes the methods required for an OCI mount implementation.
 type RuntimeOciMounts interface {
 	GetSpec() *specs.Mount
 

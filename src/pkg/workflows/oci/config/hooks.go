@@ -11,6 +11,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// RuntimeOciHooks describes the methods required for an OCI hooks implementation.
 type RuntimeOciHooks interface {
 	GetSpec() *specs.Hook
 
