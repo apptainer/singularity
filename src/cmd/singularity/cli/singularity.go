@@ -9,7 +9,7 @@ package cli
 
 import (
 	"os"
-	// "text/template"
+	"text/template"
 
 	"github.com/spf13/cobra"
 
@@ -27,12 +27,11 @@ var (
 func init() {
 	SingularityCmd.Flags().SetInterspersed(false)
 	SingularityCmd.PersistentFlags().SetInterspersed(false)
-	/*
-	   templateFuncs := template.FuncMap{
-	       "TraverseParentsUses": TraverseParentsUses,
-	   }
-	   cobra.AddTemplateFuncs(templateFuncs)
-	*/
+
+	templateFuncs := template.FuncMap{
+		"TraverseParentsUses": TraverseParentsUses,
+	}
+	cobra.AddTemplateFuncs(templateFuncs)
 
 	SingularityCmd.SetHelpTemplate(docs.HelpTemplate)
 	SingularityCmd.SetUsageTemplate(docs.UseTemplate)
@@ -67,6 +66,7 @@ func ExecuteSingularity() {
 	}
 }
 
+// TraverseParentsUses walks the parent commands and outputs a properly formatted use string
 func TraverseParentsUses(cmd *cobra.Command) string {
 	if cmd.HasParent() {
 		return TraverseParentsUses(cmd.Parent()) + cmd.Use + " "
