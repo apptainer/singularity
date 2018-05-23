@@ -13,6 +13,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// RuntimeOciLinux describes the linux OCI runtime interface.
 type RuntimeOciLinux interface {
 	GetSpec() *specs.Linux
 
@@ -89,6 +90,7 @@ type RuntimeOciLinux interface {
 	DelIntelRdt() error
 }
 
+// LinuxResources describes the linux resources interface.
 type LinuxResources interface {
 	GetResourcesDevices() []specs.LinuxDeviceCgroup
 	SetResourcesDevices(devices []specs.LinuxDeviceCgroup) error
@@ -131,6 +133,7 @@ type LinuxResources interface {
 		DelResourcesRdma(name string) error*/
 }
 
+// LinuxSeccomp describes the linux seccomp interface.
 type LinuxSeccomp interface {
 	GetSeccomp() *specs.LinuxSeccomp
 	SetSeccomp(seccomp *specs.LinuxSeccomp) error
@@ -142,12 +145,14 @@ type LinuxSeccomp interface {
 	SetSeccompSyscalls(syscalls []specs.LinuxSyscall) error
 }
 
+// LinuxSyscall describes the linux system call interface.
 type LinuxSyscall interface {
 	Get() []specs.LinuxSyscall
 	Set(syscalls []specs.LinuxSyscall) error
 	Add(names []string, action specs.LinuxSeccompAction, args []specs.LinuxSeccompArg) error
 }
 
+// LinuxSeccompArg describes the linux seccomp argument interface.
 type LinuxSeccompArg interface {
 	Get() []specs.LinuxSeccompArg
 	Set(args []specs.LinuxSeccompArg) error
