@@ -17,14 +17,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var execExamples string = `
+var execExamples = `
       $ singularity exec /tmp/Debian.img cat /etc/debian_version
       $ singularity exec /tmp/Debian.img python ./hello_world.py
       $ cat hello_world.py | singularity exec /tmp/Debian.img python
       $ sudo singularity exec --writable /tmp/Debian.img apt-get update
       $ singularity exec instance://my_instance ps -ef`
 
-var shellExamples string = `
+var shellExamples = `
       $ singularity shell /tmp/Debian.img
       Singularity/Debian.img> pwd
       /home/gmk/test
@@ -50,7 +50,7 @@ var shellExamples string = `
       ubuntu       2     0  0 20:01 pts/8    00:00:00 /bin/bash --norc
       ubuntu       3     2  0 20:02 pts/8    00:00:00 ps -ef`
 
-var runExamples string = `
+var runExamples = `
 `
 
 func init() {

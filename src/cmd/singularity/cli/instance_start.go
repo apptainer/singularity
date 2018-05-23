@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var instanceStartExamples string = `
+var instanceStartExamples = `
       $ singularity instance.start /tmp/my-sql.img mysql
 
       $ singularity shell instance://mysql
