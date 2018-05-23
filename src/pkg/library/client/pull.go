@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package client
 
@@ -14,14 +11,20 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
+// Timeout for an image pull in seconds - could be a large download...
+const pullTimeout = 1800
+
 // DownloadImage will retrieve an image from the Container Library,
 // saving it into the specified file
-func DownloadImage(filePath string, libraryRef string, libraryURL string, Force bool) error {
+func DownloadImage(filePath string, libraryRef string, libraryURL string, Force bool, tokenFile string) error {
+
+	authToken := readToken(tokenFile)
 
 	if !isLibraryPullRef(libraryRef) {
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
@@ -33,7 +36,13 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
 	}
 
-	url := libraryURL + "/v1/imagefile/" + strings.TrimPrefix(libraryRef, "library://")
+	libraryRef = strings.TrimPrefix(libraryRef, "library://")
+
+	if strings.Index(libraryRef, ":") == -1 {
+		libraryRef += ":latest"
+	}
+
+	url := libraryURL + "/v1/imagefile/" + libraryRef
 
 	sylog.Debugf("Pulling from URL: %s\n", url)
 
@@ -43,16 +52,20 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 		}
 	}
 
-	// Perms are 777 *prior* to umask
-	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 777)
+	client := &http.Client{
+		Timeout: pullTimeout * time.Second,
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
 
-	sylog.Debugf("Created output file: %s\n", filePath)
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
 
-	res, err := http.Get(url)
+	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -71,7 +84,16 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 
-	sylog.Debugf("OK response received, beginning body download\n", filePath)
+	sylog.Debugf("OK response received, beginning body download\n")
+
+	// Perms are 777 *prior* to umask
+	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 777)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	sylog.Debugf("Created output file: %s\n", filePath)
 
 	bodySize := res.ContentLength
 	bar := pb.New(int(bodySize)).SetUnits(pb.U_BYTES)

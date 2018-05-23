@@ -1,3 +1,8 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package client
 
 import (
@@ -5,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -16,23 +22,11 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/golang/glog"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// JSONError - Struct for standard error returns over REST API
-type JSONError struct {
-	Code    int    `json:"code,omitempty"`
-	Status  string `json:"status,omitempty"`
-	Message string `json:"message,omitempty"`
-}
-
-// JSONResponse - Top level container of a REST API response
-type JSONResponse struct {
-	Data  interface{} `json:"data"`
-	Error JSONError   `json:"error,omitempty"`
-}
-
 func isLibraryPullRef(libraryRef string) bool {
-	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[._-][a-z0-9]+)*)?$", libraryRef)
+	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){0,2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[._-][a-z0-9]+)*)?$", libraryRef)
 	return match
 }
 
@@ -59,17 +53,7 @@ func IsImageHash(refPart string) bool {
 	// Legacy images will be sent with hash sha256.[a-f0-9]{64}
 	// SIF images will be sent with hash sif.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 	//  which is the unique SIF UUID
-	match, err := regexp.MatchString("^(sha256\\.[a-f0-9]{64})|(sif\\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", refPart)
-	if err != nil {
-		glog.Errorf("Error in regex matching: %v", err)
-		return false
-	}
-	return match
-}
-
-// IsTag returns true if the provided string is valid as a tag
-func IsTag(tag string) bool {
-	match, err := regexp.MatchString("^[a-z0-9]+(?:[._-][a-z0-9]+)*$", tag)
+	match, err := regexp.MatchString("^((sha256\\.[a-f0-9]{64})|(sif\\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))$", refPart)
 	if err != nil {
 		glog.Errorf("Error in regex matching: %v", err)
 		return false
@@ -83,9 +67,20 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 
 	refParts := strings.Split(libraryRef, "/")
 
-	entity = refParts[0]
-	collection = refParts[1]
-	container = refParts[2]
+	switch len(refParts) {
+	case 3:
+		entity = refParts[0]
+		collection = refParts[1]
+		container = refParts[2]
+	case 2:
+		entity = ""
+		collection = refParts[0]
+		container = refParts[1]
+	case 1:
+		entity = ""
+		collection = ""
+		container = refParts[0]
+	}
 
 	// Default tag is latest
 	tags = []string{"latest"}
@@ -190,4 +185,35 @@ func sha256sum(filePath string) (result string, err error) {
 	}
 
 	return "sha256." + hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+// readToken reads a sylabs JWT auth token from a file
+func readToken(tokenPath string) string {
+	buf, err := ioutil.ReadFile(tokenPath)
+	if err != nil {
+		sylog.Warningf("Couldn't read your Sylabs authentication token. Only pulls of public images will succeed.\n")
+		return ""
+	}
+
+	lines := strings.Split(string(buf), "\n")
+	if len(lines) < 1 {
+		sylog.Warningf("Token file is empty. Only pulls of public images will succeed.\n")
+		return ""
+	}
+
+	// A valid RSA signed token is at least 200 chars with no extra payload
+	token := lines[0]
+	if len(token) < 200 {
+		sylog.Warningf("Token is too short to be valid. Only pulls of public images will succeed.\n")
+		return ""
+	}
+
+	// A token should never be bigger than 4Kb - if it is we will have problems
+	// with header buffers
+	if len(token) > 4096 {
+		sylog.Warningf("Token is too large to be valid. Only pulls of public images will succeed.\n")
+		return ""
+	}
+
+	return token
 }

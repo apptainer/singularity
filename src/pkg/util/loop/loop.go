@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package loop
 
@@ -17,14 +14,16 @@ import (
 	"unsafe"
 )
 
+// MaxLoopDevices is the maxiumum number of loop devices that are supported
 const MaxLoopDevices = 256
 
-type LoopDevice struct {
+// Device describes a loop device
+type Device struct {
 	file *os.File
 }
 
-// Find a free loop device, open it and store file descriptor
-func (loop *LoopDevice) Attach(image string, mode int, number *int) error {
+// Attach finds a free loop device, opens it, and stores file descriptor
+func (loop *Device) Attach(image string, mode int, number *int) error {
 	var path string
 
 	runtime.LockOSThread()
@@ -72,8 +71,8 @@ func (loop *LoopDevice) Attach(image string, mode int, number *int) error {
 	return errors.New("No loop devices available")
 }
 
-// Set info status about image
-func (loop *LoopDevice) SetStatus(info *LoopInfo64) error {
+// SetStatus sets info status about image
+func (loop *Device) SetStatus(info *Info64) error {
 	_, _, err := syscall.Syscall(syscall.SYS_IOCTL, loop.file.Fd(), CmdSetStatus64, uintptr(unsafe.Pointer(info)))
 	if err != 0 {
 		return fmt.Errorf("Failed to set loop flags on loop device: %s", syscall.Errno(err))

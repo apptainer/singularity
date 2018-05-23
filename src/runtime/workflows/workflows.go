@@ -1,19 +1,24 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package workflows
 
 import (
 	"fmt"
-	"log"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	runtime "github.com/singularityware/singularity/src/pkg/workflows"
 	singularity "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
 )
 
-var engines map[string]*runtime.RuntimeEngine
+var engines map[string]*runtime.Engine
 
-// Instanciate a runtime engine based on json configuration
-func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, error) {
-	var engine *runtime.RuntimeEngine
+// NewRuntimeEngine instantiates a runtime engine based on JSON configuration
+func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.Engine, error) {
+	var engine *runtime.Engine
 
 	engine = engines[name]
 
@@ -27,19 +32,19 @@ func NewRuntimeEngine(name string, jsonConfig []byte) (*runtime.RuntimeEngine, e
 }
 
 // Register a runtime engine
-func registerRuntimeEngine(engine *runtime.RuntimeEngine, name string) {
+func registerRuntimeEngine(engine *runtime.Engine, name string) {
 	if engines == nil {
-		engines = make(map[string]*runtime.RuntimeEngine)
+		engines = make(map[string]*runtime.Engine)
 	}
 	engines[name] = engine
 	engine.RuntimeConfig = engine.InitConfig()
 	if engine.RuntimeConfig == nil {
-		log.Fatalf("failed to initialize %s engine\n", name)
+		sylog.Fatalf("failed to initialize %s engine\n", name)
 	}
 }
 
 func init() {
 	// initialize singularity engine
-	e := &singularity.RuntimeEngine{}
-	registerRuntimeEngine(&runtime.RuntimeEngine{Runtime: e}, singularityConfig.Name)
+	e := &singularity.Engine{}
+	registerRuntimeEngine(&runtime.Engine{Runtime: e}, singularityConfig.Name)
 }

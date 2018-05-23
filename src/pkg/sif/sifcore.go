@@ -1,13 +1,12 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
 package sif
 
-// #cgo LDFLAGS: -lruntime -luuid
+// #cgo CFLAGS: -I../../runtime/c/lib
+// #cgo LDFLAGS: -L../../../builddir/lib -lruntime -luuid
 /*
 #include <sys/types.h>
 #include <stdio.h>
@@ -72,15 +71,16 @@ import (
  * This portion of the file is for sif.c (internal SIF) related wrappers
  */
 
+// SIF-related constants
 const (
-	SIF_DEFAULT_GROUP = C.SIF_DEFAULT_GROUP
-	SIF_UNUSED_GROUP  = C.SIF_UNUSED_GROUP
+	DefaultGroup = C.SIF_DEFAULT_GROUP
+	UnusedGroup  = C.SIF_UNUSED_GROUP
 
-	DATA_DEFFILE   = C.DATA_DEFFILE
-	DATA_ENVVAR    = C.DATA_ENVVAR
-	DATA_LABELS    = C.DATA_LABELS
-	DATA_PARTITION = C.DATA_PARTITION
-	DATA_SIGNATURE = C.DATA_SIGNATURE
+	DataDefFile   = C.DATA_DEFFILE
+	DataEnvVar    = C.DATA_ENVVAR
+	DataLabels    = C.DATA_LABELS
+	DataPartition = C.DATA_PARTITION
+	DataSignature = C.DATA_SIGNATURE
 )
 
 type Sifdescriptor struct {

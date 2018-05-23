@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package build
 
@@ -22,6 +19,7 @@ type CachedBuilder struct {
 	Image *image.Sandbox
 }
 
+// NewCachedBuilder creates a new CachedBuilder
 func NewCachedBuilder(path string, uri string) (c *CachedBuilder, err error) {
 	fmt.Printf("Building a cached image (%s) from source (%s)\n", path, uri)
 	c = &CachedBuilder{
@@ -36,6 +34,7 @@ func NewCachedBuilder(path string, uri string) (c *CachedBuilder, err error) {
 	return c, err
 }
 
+// Build completes a build. The supplied context can be used for cancellation.
 func (c *CachedBuilder) Build(ctx context.Context) {
 	c.P.Provision(c.Image)
 }

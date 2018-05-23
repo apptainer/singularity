@@ -1,3 +1,8 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package runtime
 
 import (
@@ -7,19 +12,20 @@ import (
 	config "github.com/singularityware/singularity/src/pkg/workflows/config"
 )
 
-// Generic runtime engine
-type RuntimeEngine struct {
+// Engine describes the runtime engine
+type Engine struct {
 	*config.RuntimeConfig
 	Runtime
 }
 
-type RuntimeCLI struct {
+// CLI describes the runtime CLI
+type CLI struct {
 	*config.RuntimeConfig
-	OciRuntime
+	OCIRuntime
 }
 
-// OCI runtime operations
-type OciRuntime interface {
+// OCIRuntime describes the interface for an OCI runtime
+type OCIRuntime interface {
 	State(id string) *specs.State
 	Create(id string, bundle string)
 	Start(id string)

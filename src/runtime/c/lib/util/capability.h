@@ -9,15 +9,23 @@
  */
 
 
-#ifndef __CAPABILITY_H_
-#define __CAPABILITY_H_
+#ifndef __SINGULARITY_CAPABILITY_H_
+#define __SINGULARITY_CAPABILITY_H_
 
-void singularity_capability_init(void);
-void singularity_capability_init_minimal(void);
-void singularity_capability_init_default(void);
+#include <linux/capability.h>
 
-// Drop all capabilities
-void singularity_capability_drop(void);
-void singularity_capability_keep(void);
+#define CAPSET_MAX  40
+
+/* Support only 64 bits sets, since kernel 2.6.25 */
+#ifdef _LINUX_CAPABILITY_VERSION_3
+#  define LINUX_CAPABILITY_VERSION  _LINUX_CAPABILITY_VERSION_3
+#elif defined(_LINUX_CAPABILITY_VERSION_2)
+#  define LINUX_CAPABILITY_VERSION  _LINUX_CAPABILITY_VERSION_2
+#else
+#  error Linux 64 bits capability set not supported
+#endif /* _LINUX_CAPABILITY_VERSION_3 */
+
+int capget(cap_user_header_t, cap_user_data_t);
+int capset(cap_user_header_t, const cap_user_data_t);
 
 #endif /* __CAPABILITY_H_ */

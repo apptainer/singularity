@@ -1,9 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package build
 
@@ -18,10 +16,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"gopkg.in/mgo.v2/bson"
 )
 
 // RequestData contains the info necessary for submitting a build to a remote service
@@ -85,7 +83,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	rd, err := rb.doBuildRequest(ctx, rb.Definition, rb.IsDetached)
 	if err != nil {
 		err = errors.Wrap(err, "failed to post request to remote build service")
-		sylog.Warningf("%v", err)
+		sylog.Warningf("%v\n", err)
 		return
 	}
 
@@ -94,7 +92,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		err = rb.streamOutput(ctx, rd.WSURL)
 		if err != nil {
 			err = errors.Wrap(err, "failed to stream output from remote build service")
-			sylog.Warningf("%v", err)
+			sylog.Warningf("%v\n", err)
 			return
 		}
 	}
@@ -103,7 +101,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	rd, err = rb.doStatusRequest(ctx, rd.ID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get status from remote build service")
-		sylog.Warningf("%v", err)
+		sylog.Warningf("%v\n", err)
 		return
 	}
 

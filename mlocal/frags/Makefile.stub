@@ -1,7 +1,10 @@
 libruntime := $(BUILDDIR)/lib/libruntime.a
-librpc := $(BUILDDIR)/librpc.so
-librpc_INSTALL := $(PREFIX)/lib/singularity/librpc.so
-librpc_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc/rpc.go)
+
+libstartup := $(BUILDDIR)/lib/libstartup.a
+libstartup_HEADER := $(BUILDDIR)/lib/libstartup.h
+libstartup_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
+libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer.go)
+libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
@@ -11,14 +14,7 @@ sbuild := $(BUILDDIR)/sbuild
 sbuild_INSTALL := $(PREFIX)/libexec/singularity/bin/sbuild
 sbuild_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/sbuild/cli.go)
 
-scontainer := $(BUILDDIR)/scontainer
-scontainer_INSTALL := $(PREFIX)/libexec/singularity/bin/scontainer
-scontainer_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer/scontainer.go)
-
-smaster := $(BUILDDIR)/smaster
-smaster_INSTALL := $(PREFIX)/libexec/singularity/bin/smaster
-smaster_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster/smaster.go)
-
+wrapper := $(BUILDDIR)/src/runtime/c/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
 wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
 
@@ -34,42 +30,56 @@ finaldir := $(PREFIX)/var/singularity/mnt/final
 overlaydir := $(PREFIX)/var/singularity/mnt/overlay
 sessiondir := $(PREFIX)/var/singularity/mnt/session
 
-go_BIN := $(singularity) $(sbuild) $(scontainer) $(smaster)
+go_BIN := $(singularity) $(sbuild)
 go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
-go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL) $(scontainer_INSTALL) $(smaster_INSTALL)
+go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL)
 
 go_TAG = "containers_image_openpgp"
 
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime/c -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
-INSTALLFILES := $(smaster_INSTALL) $(scontainer_INSTALL) $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
 
-CLEANFILES += $(libruntime) $(librpc) $(go_BIN) $(go_OBJ) $(BUILDDIR)/librpc.h
+CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
 
-all: cscope collect $(libruntime) $(librpc) $(go_BIN) $(config)
+all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper)
 
 $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	@echo " AR" $@
 	@mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 
-# librpc
-$(librpc): $(go_OBJ) $(librpc_OBJ)
+# libstartup
+$(libstartup): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
 	@echo " AR" $@
-	$(V)go build -ldflags="-s -w" -buildmode=c-shared -o $(BUILDDIR)/librpc.so \
-		$(SOURCEDIR)/src/runtime/startup/rpc/rpc.go
-$(librpc_INSTALL): $(librpc)
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0755 $(librpc) $(librpc_INSTALL)
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		go build -ldflags="-s -w" -buildmode=c-archive -o $@ \
+		$(SOURCEDIR)/src/runtime/startup/scontainer.go \
+		$(SOURCEDIR)/src/runtime/startup/smaster.go \
+		$(SOURCEDIR)/src/runtime/startup/rpc.go
+
+# wrapper
+wrapper_OBJ := \
+	$(BUILDDIR)/src/runtime/c/startup/wrapper.o \
+
+$(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/c/startup/wrapper.c
+	@echo " CC src/runtime/c/startup/wrapper.c"
+	@mkdir -p $(@D)
+	$(V)$(CC) -Wp,-MMD,$(BUILDDIR)/src/runtime/c/startup/wrapper.o.d -I$(BUILDDIR) -c $(ARCH_CFLAGS) $(CFLAGS)  $(CPPFLAGS) -o $(BUILDDIR)/src/runtime/c/startup/wrapper.o $(SOURCEDIR)/src/runtime/c/startup/wrapper.c
+
+$(wrapper): $(wrapper_OBJ) $(libstartup)
+	@echo " LD" $@
+	@mkdir -p $(@D)
+	$(V)$(CC) $(LDFLAGS)  -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread
+	$(V)($(SIZE) $@ 2>/dev/null || true)
 
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
-$(singularity_INSTALL): $(singularity) $(librpc_INSTALL)
+$(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
@@ -79,30 +89,10 @@ $(sbuild): $(go_OBJ) $(libruntime) $(sbuild_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/src/cmd/sbuild/cli.go
-$(sbuild_INSTALL): $(sbuild) $(librpc_INSTALL)
+$(sbuild_INSTALL): $(sbuild)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(sbuild) $(sbuild_INSTALL)
-
-# scontainer
-$(scontainer): $(go_OBJ) $(libruntime) $(scontainer_OBJ)
-	@echo " GO" $@
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -o $(BUILDDIR)/scontainer $(SOURCEDIR)/src/runtime/startup/scontainer/scontainer.go
-$(scontainer_INSTALL): $(scontainer) $(librpc_INSTALL)
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0755 $(scontainer) $(scontainer_INSTALL)
-
-# smaster
-$(smaster): $(go_OBJ) $(libruntime) $(smaster_OBJ)
-	@echo " GO" $@
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -o $(BUILDDIR)/smaster $(SOURCEDIR)/src/runtime/startup/smaster/smaster.go
-$(smaster_INSTALL): $(smaster) $(librpc_INSTALL)
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0755 $(smaster) $(smaster_INSTALL)
 
 # config.go
 $(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
@@ -171,6 +161,25 @@ collect:
 dep:
 	@printf " GO DEPS\n"
 	$(V)(dep ensure -vendor-only >/dev/null 2>&1 || true)
+
+.PHONY: test
+test:
+	@echo " TEST go fmt"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && test -z $(go fmt ./...)
+	@echo "       PASS"
+	@echo " TEST go vet"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && go vet -all ./...
+	@echo "       PASS"
+	@echo " TEST LINTY"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && ./linty.sh
+	@echo "       PASS"
+	@echo " TEST go test ./..."
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && go test -cover -race -timeout 60s ./...
+	@echo "       PASS"
 
 .PHONY: cscope
 cscope:

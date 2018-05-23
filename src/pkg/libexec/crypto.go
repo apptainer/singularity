@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package libexec
 
@@ -13,11 +10,12 @@ import (
 	//specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// Sign signs the supplied image.
 func Sign(i image.Image) {
 
 }
 
-// Yanick please help define these function prototypes
+// Verify verifies the supplied image.
 func Verify(i image.Image) {
 
 }

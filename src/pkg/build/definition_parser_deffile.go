@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package build
 
@@ -145,7 +142,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 		},
 	}
 	d.BuildData.Files = files
-	d.BuildData.BuildScripts = BuildScripts{
+	d.BuildData.Scripts = Scripts{
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
 		Post:  sections["post"],
@@ -193,11 +190,11 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 	}
 
 	if err = doHeader(s.Text(), &d); err != nil {
-		sylog.Warningf("failed to parse DefFile header: %v", err)
+		sylog.Warningf("failed to parse DefFile header: %v\n", err)
 		return
 	}
 	if err = doSections(s, &d); err != nil {
-		sylog.Warningf("failed to parse DefFile sections: %v", err)
+		sylog.Warningf("failed to parse DefFile sections: %v\n", err)
 	}
 
 	return

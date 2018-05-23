@@ -49,7 +49,6 @@ int singularity_image_fd(struct image_object *object);
 char *singularity_image_loopdev(struct image_object *object);
 char *singularity_image_name(struct image_object *object);
 char *singularity_image_path(struct image_object *object);
-char *singularity_image_bind(struct image_object *object);
 int singularity_image_writable(struct image_object *object);
 int singularity_image_type(struct image_object *object);
 

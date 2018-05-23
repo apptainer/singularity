@@ -1,10 +1,8 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
 package cli
 
 import (
@@ -55,11 +53,9 @@ var SingularityCmd = &cobra.Command{
 	Example: docs.SingularityExample,
 }
 
-/*
-Execute adds all child commands to the root command and sets flags
-appropriately.  This is called by main.main(). It only needs to happen once to
-the root command (singularity).
-*/
+// ExecuteSingularity adds all child commands to the root command and sets
+// flags appropriately. This is called by main.main(). It only needs to happen
+// once to the root command (singularity).
 func ExecuteSingularity() {
 	if err := SingularityCmd.Execute(); err != nil {
 		os.Exit(1)

@@ -1,14 +1,16 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
 package cli
 
 import (
+	"os/user"
+	"path"
+
 	"github.com/singularityware/singularity/src/pkg/libexec"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 
 	"github.com/singularityware/singularity/docs"
@@ -17,26 +19,36 @@ import (
 var (
 	// PullLibraryURI holds the base URI to a Sylabs library API instance
 	PullLibraryURI string
+
+	// PullTokenFile holds the path to the sylabs auth token
+	PullTokenFile string
 )
 
 func init() {
-	pullCmd.Flags().SetInterspersed(false)
-	SingularityCmd.AddCommand(pullCmd)
+	PullCmd.Flags().SetInterspersed(false)
+	usr, err := user.Current()
+	if err != nil {
+		sylog.Fatalf("Couldn't determine user home directory: %v", err)
+	}
+	defaultTokenFile := path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
-	pullCmd.Flags().BoolVarP(&Force, "force", "F", false, "overwrite an image file if it exists")
-	pullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "http://localhost:5150", "")
+	PullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "https://library.sylabs.io", "")
+	PullCmd.Flags().StringVar(&PullTokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
+
+	SingularityCmd.AddCommand(pullCmd)
 }
 
-var pullCmd = &cobra.Command{
+var PullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args: cobra.RangeArgs(1, 2),
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 2 {
-			libexec.PullImage(args[0], args[1], PullLibraryURI, Force)
+			libexec.PullImage(args[0], args[1], PullLibraryURI, force, PullTokenFile)
 			return
 		}
-		libexec.PullImage("", args[0], PullLibraryURI, Force)
+		libexec.PullImage("", args[0], PullLibraryURI, force, PullTokenFile)
 	},
 
 	Use:     docs.PullUse,
