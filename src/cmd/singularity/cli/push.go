@@ -33,12 +33,12 @@ func init() {
 	}
 
 	defaultTokenFile := path.Join(usr.HomeDir, ".singularity", "sylabs-token")
-	pushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "https://library.sylabs.io", "")
-	pushCmd.Flags().StringVar(&PushTokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
-	SingularityCmd.AddCommand(pushCmd)
+	PushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "https://library.sylabs.io", "")
+	PushCmd.Flags().StringVar(&PushTokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	SingularityCmd.AddCommand(PushCmd)
 }
 
-var pushCmd = &cobra.Command{
+var PushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(2),
 

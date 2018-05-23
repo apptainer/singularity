@@ -36,7 +36,7 @@ func init() {
 	PullCmd.Flags().StringVar(&PullTokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 
-	SingularityCmd.AddCommand(pullCmd)
+	SingularityCmd.AddCommand(PullCmd)
 }
 
 var PullCmd = &cobra.Command{
