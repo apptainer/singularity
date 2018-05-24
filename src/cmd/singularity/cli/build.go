@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -19,6 +20,7 @@ var (
 	remote    bool
 	remoteURL string
 	authToken string
+	json      bool
 	sandbox   bool
 	writable  bool
 	force     bool
@@ -32,6 +34,7 @@ func init() {
 
 	buildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
 	buildCmd.Flags().StringSliceVar(&sections, "section", []string{}, "Only run specific section(s) of deffile")
+	buildCmd.Flags().BoolVar(&json, "json", false, "Interpret build definition as JSON")
 	buildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
 	buildCmd.Flags().BoolVarP(&force, "force", "f", false, "")
 	buildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "")
@@ -57,34 +60,41 @@ var buildCmd = &cobra.Command{
 			fmt.Println("Sandbox!")
 		}
 
-		if ok, err := build.IsValidURI(args[1]); ok && err == nil {
-			// URI passed as arg[1]
-			def, err = build.NewDefinitionFromURI(args[1])
+		if json {
+			b, err = build.NewSIFBuilderJSON(args[0], strings.NewReader(args[1]))
 			if err != nil {
-				sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
-			}
-		} else if !ok && err == nil {
-			// Non-URI passed as arg[1]
-			defFile, err := os.Open(args[1])
-			if err != nil {
-				sylog.Fatalf("unable to open file %s: %v\n", args[1], err)
-			}
-			defer defFile.Close()
-
-			def, err = build.ParseDefinitionFile(defFile)
-			if err != nil {
-				sylog.Fatalf("failed to parse definition file %s: %v\n", args[1], err)
+				return
 			}
 		} else {
-			sylog.Fatalf("unable to parse %s: %v\n", args[1], err)
-		}
+			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
+				// URI passed as arg[1]
+				def, err = build.NewDefinitionFromURI(args[1])
+				if err != nil {
+					sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
+				}
+			} else if !ok && err == nil {
+				// Non-URI passed as arg[1]
+				defFile, err := os.Open(args[1])
+				if err != nil {
+					sylog.Fatalf("unable to open file %s: %v\n", args[1], err)
+				}
+				defer defFile.Close()
 
-		if remote {
-			b = build.NewRemoteBuilder(args[0], def, false, remoteURL, authToken)
-		} else {
-			b, err = build.NewSIFBuilder(args[0], def)
-			if err != nil {
-				sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
+				def, err = build.ParseDefinitionFile(defFile)
+				if err != nil {
+					sylog.Fatalf("failed to parse definition file %s: %v\n", args[1], err)
+				}
+			} else {
+				sylog.Fatalf("unable to parse %s: %v\n", args[1], err)
+			}
+
+			if remote {
+				b = build.NewRemoteBuilder(args[0], def, false, remoteURL, authToken)
+			} else {
+				b, err = build.NewSIFBuilder(args[0], def)
+				if err != nil {
+					sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
+				}
 			}
 		}
 
