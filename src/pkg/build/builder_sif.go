@@ -128,7 +128,7 @@ func NewSifBuilderJSON(r io.Reader, imagePath string) (b *SIFBuilder2, err error
 // Build completes a build. The supplied context can be used for cancellation.
 func (b *SIFBuilder2) Build(ctx context.Context) (err error) {
 	b.p.Provision(b.tmpfs)
-	img, err := sif.SIFFromSandbox(b.tmpfs, b.path)
+	img, err := sif.FromSandbox(b.tmpfs, b.path)
 	if err != nil {
 		return err
 	}

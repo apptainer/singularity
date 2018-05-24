@@ -21,10 +21,10 @@ const (
 	syKeysAddr = "example.org:11371"
 )
 
-func sifDataObjectHash(sinfo *sif.Sifinfo) (*bytes.Buffer, error) {
+func sifDataObjectHash(sinfo *sif.Info) (*bytes.Buffer, error) {
 	var msg = new(bytes.Buffer)
 
-	part, err := sif.SifGetPartition(sinfo, sif.DefaultGroup)
+	part, err := sif.GetPartition(sinfo, sif.DefaultGroup)
 	if err != nil {
 		sylog.Errorf("%s\n", err)
 		return nil, err
@@ -42,10 +42,10 @@ func sifDataObjectHash(sinfo *sif.Sifinfo) (*bytes.Buffer, error) {
 	return msg, nil
 }
 
-func sifAddSignature(fingerprint [20]byte, sinfo *sif.Sifinfo, signature []byte) error {
+func sifAddSignature(fingerprint [20]byte, sinfo *sif.Info, signature []byte) error {
 	var e sif.Eleminfo
 
-	part, err := sif.SifGetPartition(sinfo, sif.DefaultGroup)
+	part, err := sif.GetPartition(sinfo, sif.DefaultGroup)
 	if err != nil {
 		sylog.Errorf("%s\n", err)
 		return err
@@ -53,7 +53,7 @@ func sifAddSignature(fingerprint [20]byte, sinfo *sif.Sifinfo, signature []byte)
 
 	e.InitSignature(fingerprint, signature, part)
 
-	if err := sif.SifPutDataObj(&e, sinfo); err != nil {
+	if err := sif.PutDataObj(&e, sinfo); err != nil {
 		sylog.Errorf("%s\n", err)
 		return err
 	}
@@ -98,12 +98,12 @@ func Sign(cpath string) error {
 	}
 	sypgp.DecryptKey(en)
 
-	var sinfo sif.Sifinfo
-	if err = sif.SifLoad(cpath, &sinfo, 0); err != nil {
+	var sinfo sif.Info
+	if err = sif.Load(cpath, &sinfo, 0); err != nil {
 		sylog.Errorf("error loading sif file %s: %s\n", cpath, err)
 		return err
 	}
-	defer sif.SifUnload(&sinfo)
+	defer sif.Unload(&sinfo)
 
 	msg, err := sifDataObjectHash(&sinfo)
 	if err != nil {
@@ -139,20 +139,20 @@ func Sign(cpath string) error {
 // if access is enabled.
 func Verify(cpath string) error {
 	var el openpgp.EntityList
-	var sinfo sif.Sifinfo
+	var sinfo sif.Info
 
-	if err := sif.SifLoad(cpath, &sinfo, 0); err != nil {
+	if err := sif.Load(cpath, &sinfo, 0); err != nil {
 		sylog.Errorf("%s\n", err)
 		return err
 	}
-	defer sif.SifUnload(&sinfo)
+	defer sif.Unload(&sinfo)
 
 	msg, err := sifDataObjectHash(&sinfo)
 	if err != nil {
 		return err
 	}
 
-	sig, err := sif.SifGetSignature(&sinfo)
+	sig, err := sif.GetSignature(&sinfo)
 	if err != nil {
 		sylog.Errorf("%s\n", err)
 		return err
