@@ -13,15 +13,16 @@ import (
 	"github.com/singularityware/singularity/docs"
 )
 
-var User string
+var uid string
 
 func init() {
 	InstanceListCmd.Flags().SetInterspersed(false)
 
 	// SingularityCmd.AddCommand(instanceDotListCmd)
-	InstanceListCmd.Flags().StringVarP(&User, "user", "u", "", `If running as root, list instances from "username">`)
+	InstanceListCmd.Flags().StringVarP(&uid, "user", "u", "", `If running as root, list instances from "username">`)
 }
 
+// InstanceListCmd singularity instance list
 var InstanceListCmd = &cobra.Command{
 	Args: cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {

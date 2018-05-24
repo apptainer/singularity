@@ -19,6 +19,7 @@ func init() {
 	SingularityCmd.AddCommand(SignCmd)
 }
 
+// SignCmd singularity sign
 var SignCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(1),

@@ -26,6 +26,7 @@ func init() {
 	// SingularityCmd.AddCommand(capabilityDotListCmd)
 }
 
+// CapabilityListCmd singularity capability list
 var CapabilityListCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
 	DisableFlagsInUseLine: true,

@@ -18,6 +18,7 @@ func init() {
 	CapabilityCmd.AddCommand(CapabilityListCmd)
 }
 
+// CapabilityCmd is the capability command
 var CapabilityCmd = &cobra.Command{
 	Run: nil,
 	DisableFlagsInUseLine: true,

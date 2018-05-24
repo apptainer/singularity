@@ -41,7 +41,7 @@ func init() {
 
 }
 
-// singularity is the base command when called without any subcommands
+// SingularityCmd is the base command when called without any subcommands
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,

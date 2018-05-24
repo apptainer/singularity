@@ -5,6 +5,7 @@
   consult LICENSE file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
+
 package cli
 
 import (
@@ -18,11 +19,12 @@ import (
 )
 
 func init() {
-	verifyCmd.Flags().SetInterspersed(false)
-	SingularityCmd.AddCommand(verifyCmd)
+	VerifyCmd.Flags().SetInterspersed(false)
+	SingularityCmd.AddCommand(VerifyCmd)
 }
 
-var verifyCmd = &cobra.Command{
+// VerifyCmd singularity verify
+var VerifyCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(1),
 

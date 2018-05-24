@@ -14,13 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var sbuildUse string = `sbuild <builder type> <definition json> <image path>`
-
-var sbuildShort string = ``
-
-var sbuildLong string = ``
-
-var sbuildExample string = ``
+var sbuildUse = `sbuild <builder type> <definition json> <image path>`
 
 func init() {
 	sbuildCmd.Flags().SetInterspersed(false)
@@ -53,8 +47,5 @@ var sbuildCmd = &cobra.Command{
 		b.Build(context.TODO())
 	},
 
-	Use:     sbuildUse,
-	Short:   sbuildShort,
-	Long:    sbuildLong,
-	Example: sbuildExample,
+	Use: sbuildUse,
 }

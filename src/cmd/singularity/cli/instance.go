@@ -18,6 +18,7 @@ func init() {
 	InstanceCmd.AddCommand(InstanceListCmd)
 }
 
+// InstanceCmd singularity instance
 var InstanceCmd = &cobra.Command{
 	Run: nil,
 	DisableFlagsInUseLine: true,

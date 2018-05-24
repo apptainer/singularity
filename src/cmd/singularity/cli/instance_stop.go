@@ -18,6 +18,7 @@ func init() {
 	InstanceStopCmd.Flags().SetInterspersed(false)
 }
 
+// InstanceStopCmd singularity instance stop
 var InstanceStopCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {

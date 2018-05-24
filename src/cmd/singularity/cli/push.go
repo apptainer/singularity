@@ -38,6 +38,7 @@ func init() {
 	SingularityCmd.AddCommand(PushCmd)
 }
 
+// PushCmd singularity push
 var PushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(2),
