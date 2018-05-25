@@ -17,34 +17,33 @@ import (
 func init() {
 	sifCmd.Flags().SetInterspersed(false)
 	singularityCmd.AddCommand(sifCmd)
+
+	sifCmd.AddCommand(sifCreate)
+	sifCreate.Flags().StringVarP(&deffile, "deffile", "D","", "include definitions file 'deffile'")
+	sifCreate.Flags().StringVarP(&partfile, "partfile", "P","", "include file system partition `partfile'")
+	sifCreate.Flags().StringVarP(&content, "CONTENT", "c","", "freeform partition content string")
+	sifCreate.Flags().StringVarP(&fstype, "FSTYPE", "f","", "filesystem type: EXT3, SQUASHFS")
+	sifCreate.Flags().StringVarP(&parttype, "PARTTYPE", "p","", "filesystem partition type: SYSTEM, DATA, OVERLAY")
+	sifCreate.Flags().StringVarP(&uuID, "uuid", "u","", "pass a uuid to use instead of generating a new one")
 }
 
-var sifExample = `
+var sifCreateExample = `
 sif create -P /tmp/fs.squash -f "SQUASHFS" -p "SYSTEM" -c "Linux" /tmp/container.sif`
 
 var sifCmd = &cobra.Command{
-	Use: "sif COMMAND OPTION FILE",
-	Long: `
-	create --  Create a new sif file with input data objects
-	del    id  Delete a specified set of descriptor+object
-	dump   id  Display data object content
-	header --  Display SIF header
-	info   id  Print data object descriptor info
-	list   --  List SIF data descriptors from an input SIF file
+	Use:  "sif [command] [option] <file>",
+	Args: cobra.MinimumNArgs(1),
+	Run: nil,
+}
 
-
-	create options:
-        -D deffile : include definitions file 'deffile'
-        -E : include environment variables
-        -P partfile : include file system partition 'partfile'
-                -c CONTENT : freeform partition content string
-                -f FSTYPE : filesystem type: EXT3, SQUASHFS
-                -p PARTTYPE : filesystem partition type: SYSTEM, DATA, OVERLAY
-                -u uuid : pass a uuid to use instead of generating a new one`,
+var sifCreate := &cobra.Command{
+	Use:  "create [option] <file>",
+	Short: "Create a new sif file with input data objects",
+	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		var sif = buildcfg.SBINDIR + "/sif"
 
-		sifCmd := exec.Command(sif, args...)
+		sifCmd := exec.Command(sif, "create",args...)
 		sifCmd.Stdout = os.Stdout
 		sifCmd.Stderr = os.Stderr
 
@@ -55,5 +54,25 @@ var sifCmd = &cobra.Command{
 			sylog.Fatalf("%v", err)
 		}
 	},
-	Example: sifExample,
+	Example: sifCreateExample,
+}
+
+var sifCreate := &cobra.Command{
+	Use:  "create [option] <file>",
+	Short: "List SIF data descriptors from an input SIF file",
+	Args: cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		var sif = buildcfg.SBINDIR + "/sif"
+
+		sifCmd := exec.Command(sif, "list",args...)
+		sifCmd.Stdout = os.Stdout
+		sifCmd.Stderr = os.Stderr
+
+		if err := sifCmd.Start(); err != nil {
+			sylog.Fatalf("%v", err)
+		}
+		if err := sifCmd.Wait(); err != nil {
+			sylog.Fatalf("%v", err)
+		}
+	},
 }
