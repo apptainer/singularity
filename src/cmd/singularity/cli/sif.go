@@ -34,7 +34,6 @@ var sif = buildcfg.SBINDIR + "/sif"
 var sifCmd = &cobra.Command{
 	Use:    "sif COMMAND OPTION FILE",
 	Hidden: true,
-	Args:   cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if len(args) == 0 {
