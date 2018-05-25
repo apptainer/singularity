@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -20,13 +19,6 @@ func init() {
 	sifCmd.Flags().SetInterspersed(false)
 	singularityCmd.AddCommand(sifCmd)
 
-	// -D deffile : include definitions file `deffile'
-	// -E : include environment variables
-	// -P partfile : include file system partition `partfile'
-	// 		-c CONTENT : freeform partition content string
-	// 		-f FSTYPE : filesystem type: EXT3, SQUASHFS
-	// 		-p PARTTYPE : filesystem partition type: SYSTEM, DATA, OVERLAY
-	// 		-u uuid : pass a uuid to use instead of generating a new one
 }
 
 var sif = buildcfg.SBINDIR + "/sif"
@@ -35,14 +27,6 @@ var sifCmd = &cobra.Command{
 	Use:    "sif COMMAND OPTION FILE",
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		if len(args) == 0 {
-			out, err := exec.Command(sif).Output()
-			if err != nil {
-				sylog.Fatal(err)
-			}
-			fmt.Println(out)
-		}
 
 		sifCmd := exec.Command(sif, args...)
 		sifCmd.Stdout = os.Stdout
