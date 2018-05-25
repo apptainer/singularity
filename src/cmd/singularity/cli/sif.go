@@ -20,8 +20,7 @@ func init() {
 }
 
 var sifCmd = &cobra.Command{
-	Use:    "sif COMMAND OPTION FILE",
-	Hidden: true,
+	Use: "sif COMMAND OPTION FILE",
 	Run: func(cmd *cobra.Command, args []string) {
 		var sif = buildcfg.SBINDIR + "/sif"
 
