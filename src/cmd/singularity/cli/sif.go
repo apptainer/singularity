@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -34,6 +35,14 @@ var sifCmd = &cobra.Command{
 	Use:    "sif COMMAND OPTION FILE",
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		if len(args) == 0 {
+			out, err := exec.Command(sif).Output()
+			if err != nil {
+				sylog.Fatal(err)
+			}
+			fmt.Println(out)
+		}
 
 		sifCmd := exec.Command(sif, args...)
 		sifCmd.Stdout = os.Stdout
