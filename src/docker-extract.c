@@ -148,7 +148,7 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
 
 
         // First check fully resolved *parent dir* does not escape the ROOTFS
-        parent_real = realpath(parent, NULL);
+        parent_real = realpath(parent, NULL);   // Flawfinder: ignore
         if(parent_real == NULL) {
             singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
             ABORT(255);
