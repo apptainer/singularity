@@ -32,7 +32,7 @@ var sifCmd = &cobra.Command{
 			sylog.Fatalf("%v", err)
 		}
 		if err := sifCmd.Wait(); err != nil {
-			sylog.Errorf("%v", err)
+			sylog.Fatalf("%v", err)
 		}
 	},
 }
