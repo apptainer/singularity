@@ -10,17 +10,11 @@ singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 
-sbuild := $(BUILDDIR)/sbuild
-sbuild_INSTALL := $(PREFIX)/libexec/singularity/bin/sbuild
-sbuild_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/sbuild/cli.go)
-
 wrapper := $(BUILDDIR)/src/runtime/c/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
 wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
 
 sif_INSTALL := $(PREFIX)/libexec/singularity/bin/sif
-
-environment_INSTALL := $(PREFIX)/libexec/singularity/environment.tar
 
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
@@ -34,12 +28,12 @@ go_BIN := $(singularity) $(sbuild)
 go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
 go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL)
 
-go_TAG = "containers_image_openpgp"
+go_TAG = "containers_image_openpgp singularity_sif"
 
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime/c -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
-INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
 
 CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
 
@@ -78,21 +72,11 @@ $(wrapper): $(wrapper_OBJ) $(libstartup)
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build --tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
+		go build -tags $(go_TAG) -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
-
-# sbuild
-$(sbuild): $(go_OBJ) $(libruntime) $(sbuild_OBJ)
-	@echo " GO" $@
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/src/cmd/sbuild/cli.go
-$(sbuild_INSTALL): $(sbuild)
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0755 $(sbuild) $(sbuild_INSTALL)
 
 # config.go
 $(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
@@ -114,12 +98,6 @@ $(sif_INSTALL): $(sif)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(sif) $(sif_INSTALL)
-
-#environment.tar install
-$(environment_INSTALL):
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0644 $(SOURCEDIR)/environment.tar $(environment_INSTALL)
 
 #TODO: generate real config file and install, currently is just blank
 $(config):
@@ -146,6 +124,10 @@ $(sessiondir):
 	@echo " INSTALL" $@
 	$(V)install -d $(sessiondir)
 
+.PHONY: man
+man:
+	$(V)go run -tags $(go_TAG) $(SOURCEDIR)/docs/makeDocs/makeDocs.go $(PREFIX)/share/man/man1
+
 .PHONY: collect
 collect:
 	@printf " DEPENDS\n"
@@ -170,15 +152,15 @@ test:
 	@echo "       PASS"
 	@echo " TEST go vet"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go vet -all ./...
+		cd $(SOURCEDIR) && go vet -tags $(go_TAG) -all ./...
 	@echo "       PASS"
-	@echo " TEST LINTY"
+	@echo " TEST go lint"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && ./linty.sh
+		cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
 	@echo "       PASS"
-	@echo " TEST go test ./..."
+	@echo " TEST go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -cover -race -timeout 60s ./...
+		cd $(SOURCEDIR) && go test -count=1 -tags $(go_TAG) -cover -race -timeout 60s ./...
 	@echo "       PASS"
 
 .PHONY: cscope
