@@ -19,6 +19,9 @@ func init() {
 	singularityCmd.AddCommand(sifCmd)
 }
 
+var sifExample = `
+sif create -P /tmp/fs.squash -f "SQUASHFS" -p "SYSTEM" -c "Linux" /tmp/container.sif`
+
 var sifCmd = &cobra.Command{
 	Use: "sif COMMAND OPTION FILE",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -35,4 +38,5 @@ var sifCmd = &cobra.Command{
 			sylog.Fatalf("%v", err)
 		}
 	},
+	Example: sifExample,
 }
