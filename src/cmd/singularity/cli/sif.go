@@ -9,31 +9,28 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	sifCmd.Flags().SetInterspersed(false)
 	singularityCmd.AddCommand(sifCmd)
-
 }
-
-var sif = buildcfg.SBINDIR + "/sif"
 
 var sifCmd = &cobra.Command{
 	Use:    "sif COMMAND OPTION FILE",
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
+		var sif = buildcfg.SBINDIR + "/sif"
 
 		sifCmd := exec.Command(sif, args...)
 		sifCmd.Stdout = os.Stdout
 		sifCmd.Stderr = os.Stderr
 
 		if err := sifCmd.Start(); err != nil {
-			sylog.Errorf("%v", err)
+			sylog.Fatalf("%v", err)
 		}
 		if err := sifCmd.Wait(); err != nil {
 			sylog.Errorf("%v", err)

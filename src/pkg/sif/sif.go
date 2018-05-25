@@ -43,10 +43,10 @@ func FromSandbox(sandbox *image.Sandbox, imagePath string) (*SIF, error) {
 
 	fmt.Println(string(mksfsout))
 
-	sif := []string{"sif", "create", "-P",
+	args := []string{"sif", "create", "-P",
 		squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c",
 		"LINUX", imagePath}
-	sifCmd := exec.Command("singularity", sif...)
+	sifCmd := exec.Command("singularity", args...)
 	sifout, err := sifCmd.CombinedOutput()
 	if err != nil {
 		return nil, err
