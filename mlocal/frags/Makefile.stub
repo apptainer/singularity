@@ -10,10 +10,6 @@ singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 
-sbuild := $(BUILDDIR)/sbuild
-sbuild_INSTALL := $(PREFIX)/libexec/singularity/bin/sbuild
-sbuild_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/sbuild/cli.go)
-
 wrapper := $(BUILDDIR)/src/runtime/c/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
 wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
@@ -81,16 +77,6 @@ $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
-
-# sbuild
-$(sbuild): $(go_OBJ) $(libruntime) $(sbuild_OBJ)
-	@echo " GO" $@
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -o $(BUILDDIR)/sbuild $(SOURCEDIR)/src/cmd/sbuild/cli.go
-$(sbuild_INSTALL): $(sbuild)
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0755 $(sbuild) $(sbuild_INSTALL)
 
 # config.go
 $(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
@@ -170,7 +156,7 @@ test:
 	@echo "       PASS"
 	@echo " TEST go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -tags $(go_TAG) -cover -race -timeout 60s ./...
+		cd $(SOURCEDIR) && go test -count=1 -tags $(go_TAG) -cover -race -timeout 60s ./...
 	@echo "       PASS"
 
 .PHONY: cscope
