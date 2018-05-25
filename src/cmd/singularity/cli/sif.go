@@ -51,8 +51,13 @@ var sifCreate = &cobra.Command{
 		}
 
 		sifCmd := exec.Command(sif, args...)
-		sifout, err := sifCmd.CombinedOutput()
-		if err != nil {
+		sifCmd.Stdout = os.Stdout
+		sifCmd.Stderr = os.Stderr
+
+		if err := sifCmd.Start(); err != nil {
+			sylog.Errorf("%v", err)
+		}
+		if err := sifCmd.Wait(); err != nil {
 			sylog.Errorf("%v", err)
 		}
 
