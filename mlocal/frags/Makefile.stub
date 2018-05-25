@@ -20,8 +20,6 @@ wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
 
 sif_INSTALL := $(PREFIX)/libexec/singularity/bin/sif
 
-environment_INSTALL := $(PREFIX)/libexec/singularity/environment.tar
-
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
 
@@ -39,7 +37,7 @@ go_TAG = "containers_image_openpgp singularity_sif"
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime/c -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
-INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(environment_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
 
 CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
 
@@ -114,12 +112,6 @@ $(sif_INSTALL): $(sif)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(sif) $(sif_INSTALL)
-
-#environment.tar install
-$(environment_INSTALL):
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0644 $(SOURCEDIR)/environment.tar $(environment_INSTALL)
 
 #TODO: generate real config file and install, currently is just blank
 $(config):
