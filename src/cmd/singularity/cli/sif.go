@@ -6,12 +6,14 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"fmt"
 	"os"
+	"os/exec"
 
-	"github.com/spf13/cobra"
+	"github.com/singularityware/singularity/src/pkg/sylog"
+
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/spf13/cobra"
 )
 
 func init() {
@@ -19,7 +21,6 @@ func init() {
 	singularityCmd.AddCommand(signCmd)
 
 	sifCmd.AddCommand(sifCreate)
-	sifCreate.
 	// -D deffile : include definitions file `deffile'
 	// -E : include environment variables
 	// -P partfile : include file system partition `partfile'
@@ -29,7 +30,7 @@ func init() {
 	// 		-u uuid : pass a uuid to use instead of generating a new one
 }
 
-var sif = buildcfg.SBINDIR + "/sif" 
+var sif = buildcfg.SBINDIR + "/sif"
 
 var sifCmd = &cobra.Command{
 	Use:    "sif COMMAND OPTION FILE",
@@ -49,11 +50,11 @@ var sifCreate = &cobra.Command{
 			os.Exit(2)
 		}
 
-		sifCmd := exec.Command(sif, args[:])
+		sifCmd := exec.Command(sif, args...)
 		sifout, err := sifCmd.CombinedOutput()
-	if err != nil {
-		sylog.Errorf("%v",err)
-	}  
+		if err != nil {
+			sylog.Errorf("%v", err)
+		}
 
 	},
 }
