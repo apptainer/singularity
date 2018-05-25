@@ -20,7 +20,6 @@ func init() {
 	sifCmd.Flags().SetInterspersed(false)
 	singularityCmd.AddCommand(signCmd)
 
-	sifCmd.AddCommand(sifCreate)
 	// -D deffile : include definitions file `deffile'
 	// -E : include environment variables
 	// -P partfile : include file system partition `partfile'
@@ -34,13 +33,6 @@ var sif = buildcfg.SBINDIR + "/sif"
 
 var sifCmd = &cobra.Command{
 	Use:    "sif COMMAND OPTION FILE",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
-	Run:    nil,
-}
-
-var sifCreate = &cobra.Command{
-	Use:    "sif create OPTION FILE",
 	Hidden: true,
 	Args:   cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
