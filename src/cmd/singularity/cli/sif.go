@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -36,11 +35,6 @@ var sifCmd = &cobra.Command{
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if len(args) == 0 {
-			fmt.Println("Error: At least one partition (-P) is required")
-			os.Exit(2)
-		}
-
 		sifCmd := exec.Command(sif, args...)
 		sifCmd.Stdout = os.Stdout
 		sifCmd.Stderr = os.Stderr
@@ -51,6 +45,5 @@ var sifCmd = &cobra.Command{
 		if err := sifCmd.Wait(); err != nil {
 			sylog.Errorf("%v", err)
 		}
-
 	},
 }
