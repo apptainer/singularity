@@ -18,7 +18,7 @@ import (
 
 func init() {
 	sifCmd.Flags().SetInterspersed(false)
-	singularityCmd.AddCommand(signCmd)
+	singularityCmd.AddCommand(sifCmd)
 
 	// -D deffile : include definitions file `deffile'
 	// -E : include environment variables
