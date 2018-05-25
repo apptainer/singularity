@@ -63,7 +63,7 @@ var buildCmd = &cobra.Command{
 		if json {
 			b, err = build.NewSIFBuilderJSON(args[0], strings.NewReader(args[1]))
 			if err != nil {
-				return
+				sylog.Fatalf("Unable to parse JSON: %v\n", err)
 			}
 		} else {
 			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
