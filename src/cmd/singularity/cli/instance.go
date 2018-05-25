@@ -7,17 +7,24 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/singularityware/singularity/docs"
 )
 
 func init() {
-	singularityCmd.AddCommand(instanceCmd)
-	instanceCmd.AddCommand(instanceStartCmd)
-	instanceCmd.AddCommand(instanceStopCmd)
-	instanceCmd.AddCommand(instanceListCmd)
+	SingularityCmd.AddCommand(InstanceCmd)
+	InstanceCmd.AddCommand(InstanceStartCmd)
+	InstanceCmd.AddCommand(InstanceStopCmd)
+	InstanceCmd.AddCommand(InstanceListCmd)
 }
 
-var instanceCmd = &cobra.Command{
-	Use: "instance",
+// InstanceCmd singularity instance
+var InstanceCmd = &cobra.Command{
 	Run: nil,
 	DisableFlagsInUseLine: true,
+
+	Use:     docs.InstanceUse,
+	Short:   docs.InstanceShort,
+	Long:    docs.InstanceLong,
+	Example: docs.InstanceExample,
 }

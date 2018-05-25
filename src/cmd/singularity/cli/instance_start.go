@@ -9,28 +9,15 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/singularityware/singularity/docs"
 )
 
-var instanceStartExamples = `
-      $ singularity instance.start /tmp/my-sql.img mysql
-
-      $ singularity shell instance://mysql
-      Singularity my-sql.img> pwd
-      /home/mibauer/mysql
-      Singularity my-sql.img> ps
-      PID TTY          TIME CMD
-        1 pts/0    00:00:00 sinit
-        2 pts/0    00:00:00 bash
-        3 pts/0    00:00:00 ps
-      Singularity my-sql.img> 
-    
-      $ singularity instance.stop /tmp/my-sql.img mysql
-      Stopping /tmp/my-sql.img mysql`
-
 func init() {
+
 	instanceStartCmds := []*cobra.Command{
-		instanceStartCmd,
-		instanceDotStartCmd,
+		InstanceStartCmd,
+		// instanceDotStartCmd,
 	}
 
 	for _, cmd := range instanceStartCmds {
@@ -54,24 +41,31 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
 	}
 
-	singularityCmd.AddCommand(instanceDotStartCmd)
+	SingularityCmd.AddCommand(InstanceStartCmd)
 }
 
-var instanceStartCmd = &cobra.Command{
-	Use:  "start [start options...] <container path> <instance name>",
+// InstanceStartCmd singularity instance start
+var InstanceStartCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("starting instance")
 	},
-	Example: instanceStartExamples,
+
+	Use:     docs.InstanceStartUse,
+	Short:   docs.InstanceStartShort,
+	Long:    docs.InstanceStartLong,
+	Example: docs.InstanceStartExample,
 }
 
+/*
 var instanceDotStartCmd = &cobra.Command{
 	Use:  "instance.start [options...] <container path> <instance name>",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("starting instance")
 	},
-	Example: instanceStartExamples,
+	Example: instanceStartExample,
 	Hidden:  true,
 }
+*/
