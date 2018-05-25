@@ -178,7 +178,7 @@ test:
 	@echo "       PASS"
 	@echo " TEST go test ./..."
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -cover -race -timeout 60s ./...
+		cd $(SOURCEDIR) && go test -tags $(go_TAG) -cover -race -timeout 60s ./...
 	@echo "       PASS"
 
 .PHONY: cscope
