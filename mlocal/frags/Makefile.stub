@@ -170,7 +170,7 @@ test:
 	@echo "       PASS"
 	@echo " TEST go vet"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go vet -all ./...
+		cd $(SOURCEDIR) && go vet -tags $(go_TAG) -all ./...
 	@echo "       PASS"
 	@echo " TEST LINTY"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
