@@ -26,7 +26,6 @@ var (
 func init() {
 	sifCmd.Flags().SetInterspersed(false)
 	singularityCmd.AddCommand(sifCmd)
-
 	// Create
 	sifCmd.AddCommand(sifCreate)
 	sifCreate.Flags().StringVarP(&deffile, "deffile", "D", "", "include definitions file 'deffile'")
