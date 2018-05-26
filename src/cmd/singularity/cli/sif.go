@@ -24,26 +24,26 @@ var (
 )
 
 func init() {
-	sifCmd.Flags().SetInterspersed(false)
-	singularityCmd.AddCommand(sifCmd)
+	SifCmd.Flags().SetInterspersed(false)
+	SingularityCmd.AddCommand(SifCmd)
 	// Create
-	sifCmd.AddCommand(sifCreate)
-	sifCreate.Flags().StringVarP(&deffile, "deffile", "D", "", "include definitions file 'deffile'")
-	sifCreate.Flags().StringVarP(&partfile, "partfile", "P", "", "include file system partition `partfile'")
-	sifCreate.Flags().StringVarP(&content, "CONTENT", "c", "", "freeform partition content string")
-	sifCreate.Flags().StringVarP(&fstype, "FSTYPE", "f", "", "filesystem type: EXT3, SQUASHFS")
-	sifCreate.Flags().StringVarP(&parttype, "PARTTYPE", "p", "", "filesystem partition type: SYSTEM, DATA, OVERLAY")
-	sifCreate.Flags().StringVarP(&uuID, "uuid", "u", "", "pass a uuid to use instead of generating a new one")
+	SifCmd.AddCommand(SifCreate)
+	SifCreate.Flags().StringVarP(&deffile, "deffile", "D", "", "include definitions file 'deffile'")
+	SifCreate.Flags().StringVarP(&partfile, "partfile", "P", "", "include file system partition `partfile'")
+	SifCreate.Flags().StringVarP(&content, "CONTENT", "c", "", "freeform partition content string")
+	SifCreate.Flags().StringVarP(&fstype, "FSTYPE", "f", "", "filesystem type: EXT3, SQUASHFS")
+	SifCreate.Flags().StringVarP(&parttype, "PARTTYPE", "p", "", "filesystem partition type: SYSTEM, DATA, OVERLAY")
+	SifCreate.Flags().StringVarP(&uuID, "uuid", "u", "", "pass a uuid to use instead of generating a new one")
 	// List
-	sifCmd.AddCommand(sifList)
+	SifCmd.AddCommand(SifList)
 	// Dump
-	sifCmd.AddCommand(sifDump)
+	SifCmd.AddCommand(SifDump)
 	// Header ifHeader
-	sifCmd.AddCommand(sifHeader)
+	SifCmd.AddCommand(SifHeader)
 	// Info
-	sifCmd.AddCommand(sifInfo)
+	SifCmd.AddCommand(SifInfo)
 	// Del
-	sifCmd.AddCommand(sifDel)
+	SifCmd.AddCommand(SifDel)
 }
 
 var sif = buildcfg.SBINDIR + "/sif"
@@ -93,16 +93,20 @@ start of data in file: 3328
 length of data in file: 1MB
 ============================================`
 )
-var sifCmd = &cobra.Command{
+
+// SifCmd represent the sif CLI cmd
+var SifCmd = &cobra.Command{
 	Use:  "sif",
 	Args: cobra.MinimumNArgs(1),
 	Run:  nil,
 }
 
-var sifCreate = &cobra.Command{
-	Use:   "create [option] <file>",
-	Short: "Create a new sif file with input data objects",
-	Args:  cobra.MinimumNArgs(1),
+// SifCreate sif create cmd
+var SifCreate = &cobra.Command{
+	Use:     "create [option] <file>",
+	Short:   "Create a new sif file with input data objects",
+	Example: sifCreateExample,
+	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var argc []string
 		argc = append(argc, "create")
@@ -122,21 +126,21 @@ var sifCreate = &cobra.Command{
 			argc = append(argc, []string{"-c", uuID}...)
 		}
 		argc = append(argc, args...)
-		sifCmd := exec.Command(sif, argc...)
-		sifCmd.Stdout = os.Stdout
-		sifCmd.Stderr = os.Stderr
+		SifCmd := exec.Command(sif, argc...)
+		SifCmd.Stdout = os.Stdout
+		SifCmd.Stderr = os.Stderr
 
-		if err := sifCmd.Start(); err != nil {
+		if err := SifCmd.Start(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
-		if err := sifCmd.Wait(); err != nil {
+		if err := SifCmd.Wait(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
 	},
-	Example: sifCreateExample,
 }
 
-var sifList = &cobra.Command{
+// SifList sif list subcommand
+var SifList = &cobra.Command{
 	Use:     "list <file>",
 	Short:   "List SIF data descriptors from an input SIF file",
 	Example: sifListExample,
@@ -144,20 +148,21 @@ var sifList = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argc := []string{"list", args[0]}
-		sifCmd := exec.Command(sif, argc...)
-		sifCmd.Stdout = os.Stdout
-		sifCmd.Stderr = os.Stderr
+		SifCmd := exec.Command(sif, argc...)
+		SifCmd.Stdout = os.Stdout
+		SifCmd.Stderr = os.Stderr
 
-		if err := sifCmd.Start(); err != nil {
+		if err := SifCmd.Start(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
-		if err := sifCmd.Wait(); err != nil {
+		if err := SifCmd.Wait(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
 	},
 }
 
-var sifInfo = &cobra.Command{
+// SifInfo sif info subcommand
+var SifInfo = &cobra.Command{
 	Use:     "info [id] <file>",
 	Short:   "Print data object descriptor info",
 	Example: sifInfoExample,
@@ -165,20 +170,21 @@ var sifInfo = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argc := append([]string{"info"}, args...)
-		sifCmd := exec.Command(sif, argc...)
-		sifCmd.Stdout = os.Stdout
-		sifCmd.Stderr = os.Stderr
+		SifCmd := exec.Command(sif, argc...)
+		SifCmd.Stdout = os.Stdout
+		SifCmd.Stderr = os.Stderr
 
-		if err := sifCmd.Start(); err != nil {
+		if err := SifCmd.Start(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
-		if err := sifCmd.Wait(); err != nil {
+		if err := SifCmd.Wait(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
 	},
 }
 
-var sifDump = &cobra.Command{
+// SifDump sif dump subcommand
+var SifDump = &cobra.Command{
 	Use:     "dump [id] <file>",
 	Short:   "Display data object content",
 	Example: sifInfoExample,
@@ -186,20 +192,21 @@ var sifDump = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argc := append([]string{"info"}, args...)
-		sifCmd := exec.Command(sif, argc...)
-		sifCmd.Stdout = os.Stdout
-		sifCmd.Stderr = os.Stderr
+		SifCmd := exec.Command(sif, argc...)
+		SifCmd.Stdout = os.Stdout
+		SifCmd.Stderr = os.Stderr
 
-		if err := sifCmd.Start(); err != nil {
+		if err := SifCmd.Start(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
-		if err := sifCmd.Wait(); err != nil {
+		if err := SifCmd.Wait(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
 	},
 }
 
-var sifDel = &cobra.Command{
+// SifDel sif del subcommand
+var SifDel = &cobra.Command{
 	Use:     "del [id] <file>",
 	Short:   "Delete a specified set of descriptor+object",
 	Example: sifInfoExample,
@@ -207,20 +214,21 @@ var sifDel = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argc := append([]string{"del"}, args...)
-		sifCmd := exec.Command(sif, argc...)
-		sifCmd.Stdout = os.Stdout
-		sifCmd.Stderr = os.Stderr
+		SifCmd := exec.Command(sif, argc...)
+		SifCmd.Stdout = os.Stdout
+		SifCmd.Stderr = os.Stderr
 
-		if err := sifCmd.Start(); err != nil {
+		if err := SifCmd.Start(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
-		if err := sifCmd.Wait(); err != nil {
+		if err := SifCmd.Wait(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
 	},
 }
 
-var sifHeader = &cobra.Command{
+// SifHeader sif header subcommand
+var SifHeader = &cobra.Command{
 	Use:     "header <file>",
 	Short:   "Display SIF header",
 	Example: sifHeaderExample,
@@ -228,14 +236,14 @@ var sifHeader = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argc := []string{"list", args[0]}
-		sifCmd := exec.Command(sif, argc...)
-		sifCmd.Stdout = os.Stdout
-		sifCmd.Stderr = os.Stderr
+		SifCmd := exec.Command(sif, argc...)
+		SifCmd.Stdout = os.Stdout
+		SifCmd.Stderr = os.Stderr
 
-		if err := sifCmd.Start(); err != nil {
+		if err := SifCmd.Start(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
-		if err := sifCmd.Wait(); err != nil {
+		if err := SifCmd.Wait(); err != nil {
 			sylog.Fatalf("%v", err)
 		}
 	},
