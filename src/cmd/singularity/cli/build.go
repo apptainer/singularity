@@ -14,6 +14,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
+
+	"github.com/singularityware/singularity/docs"
 )
 
 var (
@@ -29,24 +31,31 @@ var (
 )
 
 func init() {
-	buildCmd.Flags().SetInterspersed(false)
-	singularityCmd.AddCommand(buildCmd)
+	BuildCmd.Flags().SetInterspersed(false)
+	SingularityCmd.AddCommand(BuildCmd)
 
-	buildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
-	buildCmd.Flags().StringSliceVar(&sections, "section", []string{}, "Only run specific section(s) of deffile")
-	buildCmd.Flags().BoolVar(&json, "json", false, "Interpret build definition as JSON")
-	buildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
-	buildCmd.Flags().BoolVarP(&force, "force", "f", false, "")
-	buildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "")
-	buildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
-	buildCmd.Flags().StringVar(&remoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
-	buildCmd.Flags().StringVar(&authToken, "auth-token", "", "Specify the auth token for the remote builder")
+	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
+	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{}, "Only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
+	BuildCmd.Flags().BoolVar(&json, "json", false, "Interpret build definition as JSON")
+	BuildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
+	BuildCmd.Flags().BoolVarP(&force, "force", "f", false, "Delete and overwrite an image if it currently exists")
+	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
+	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
+	BuildCmd.Flags().StringVar(&remoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
+	BuildCmd.Flags().StringVar(&authToken, "auth-token", "", "Specify the auth token for the remote builder")
 }
 
-// buildCmd represents the build command
-var buildCmd = &cobra.Command{
-	Use:  "build <image path> <build spec>",
+// BuildCmd represents the build command
+var BuildCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
 	Args: cobra.ExactArgs(2),
+
+	Use:     docs.BuildUse,
+	Short:   docs.BuildShort,
+	Long:    docs.BuildLong,
+	Example: docs.BuildExample,
+
+	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
 		var def build.Definition
 		var b build.Builder

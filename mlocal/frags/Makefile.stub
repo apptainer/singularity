@@ -124,6 +124,10 @@ $(sessiondir):
 	@echo " INSTALL" $@
 	$(V)install -d $(sessiondir)
 
+.PHONY: man
+man:
+	$(V)go run -tags $(go_TAG) $(SOURCEDIR)/docs/makeDocs/makeDocs.go $(PREFIX)/share/man/man1
+
 .PHONY: collect
 collect:
 	@printf " DEPENDS\n"
