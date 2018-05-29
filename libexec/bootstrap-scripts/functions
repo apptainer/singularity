@@ -101,10 +101,7 @@ get_section() {
             else
                 # We already found it, still in section
                 if [[ "$FOUND" == "yes" ]]; then
-                    if [ ! -z "${line}" ]; then
-                        printf "%s\n" "$line"
-                    fi 
-
+                    printf "%s\n" "$line"
                 fi            
             fi
         fi
