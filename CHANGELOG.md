@@ -6,7 +6,6 @@ and **Merged pull requests**. All closed issued and bug fixes should be
 represented by the pull requests that fixed them. This log originated with Singularity 2.4
 and changes prior to that are (unfortunately) done retrospectively. Critical items to know are:
 
- - fixed * expansion during app runscript creation
  - renamed, deprecated, or removed commands
  - defaults that are changed
  - backward incompatible changes (recipe file format? image file format?)
