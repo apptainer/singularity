@@ -48,6 +48,7 @@ type Configuration struct {
 	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
 	AllowRootCapabilities   bool     `default:"yes" authorized:"yes,no" directive:"allow root capabilities"`
 	AllowUserCapabilities   bool     `default:"no" authorized:"yes,no" directive:"allow user capabilities"`
+	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 }
 
 // RuntimeEngineSpec is the specification of the runtime engine configuration.
