@@ -122,8 +122,7 @@ int _singularity_runtime_files_group(void) {
         // According to the man page, all of the above errno's can indicate this situation.
         singularity_message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gid);
     } else {
-        singularity_message(ERROR, "Failed to lookup GID %d group entry: %s\n", gid, strerror(errno));
-        ABORT(255);
+        singularity_message(WARNING, "Failed to lookup GID %d group entry: %s\n", gid, strerror(errno));
     }
 
 
@@ -145,8 +144,7 @@ int _singularity_runtime_files_group(void) {
             } else if ( (errno == 0) || (errno == ESRCH) || (errno == EBADF) || (errno == EPERM) || (errno == ENOENT) ) {
                 singularity_message(VERBOSE3, "Skipping GID %d as group entry does not exist.\n", gids[i]);
             } else {
-                singularity_message(ERROR, "Failed to lookup GID %d group entry: %s\n", gids[i], strerror(errno));
-                ABORT(255);
+                singularity_message(WARNING, "Failed to lookup GID %d group entry: %s\n", gids[i], strerror(errno));
             }
         } else {
             singularity_message(VERBOSE, "Group id '%d' is out of bounds\n", gids[i]);
