@@ -146,7 +146,7 @@ var SifDump = &cobra.Command{
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		argc := append([]string{"info"}, args...)
+		argc := append([]string{"dump"}, args...)
 		SifCmd := exec.Command(sif, argc...)
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
