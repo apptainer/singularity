@@ -10,7 +10,7 @@ singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 
-wrapper := $(BUILDDIR)/src/runtime/startup/wrapper
+wrapper := $(BUILDDIR)/src/runtime/startup/c/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
 wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
 
@@ -57,10 +57,10 @@ $(libstartup): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
 wrapper_OBJ := \
 	$(BUILDDIR)/src/runtime/startup/wrapper.o \
 
-$(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/startup/wrapper.c
-	@echo " CC src/runtime/startup/wrapper.c"
+$(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/startup/c/wrapper.c
+	@echo " CC src/runtime/startup/c/wrapper.c"
 	@mkdir -p $(@D)
-	$(V)$(CC) -Wp,-MMD,$(BUILDDIR)/src/runtime/startup/wrapper.o.d -I$(BUILDDIR) -c $(ARCH_CFLAGS) $(CFLAGS)  $(CPPFLAGS) -o $(BUILDDIR)/src/runtime/startup/wrapper.o $(SOURCEDIR)/src/runtime/startup/wrapper.c
+	$(V)$(CC) -Wp,-MMD,$(BUILDDIR)/src/runtime/startup/wrapper.o.d -I$(BUILDDIR) -c $(ARCH_CFLAGS) $(CFLAGS)  $(CPPFLAGS) -o $(BUILDDIR)/src/runtime/startup/wrapper.o $(SOURCEDIR)/src/runtime/startup/c/wrapper.c
 
 $(wrapper): $(wrapper_OBJ) $(libstartup)
 	@echo " LD" $@
@@ -160,8 +160,7 @@ test:
 	@echo "       PASS"
 	@echo " TEST go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -count=1 -tags $(go_TAG) -cover -race -timeout 60s \
-			`go list ./...|grep -v "runtime/startup"`
+		cd $(SOURCEDIR) && go test -count=1 -tags $(go_TAG) -cover -race -timeout 60s ./...
 	@echo "       PASS"
 
 .PHONY: cscope
