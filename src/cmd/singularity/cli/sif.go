@@ -63,25 +63,25 @@ var SifCreate = &cobra.Command{
 	Example: docs.SifCreateExample,
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		var argc []string
-		argc = append(argc, "create")
+		var argv []string
+		argv = append(argc, "create")
 		if partfile != "" {
-			argc = append(argc, []string{"-P", partfile}...)
+			argv = append(argc, []string{"-P", partfile}...)
 		}
 		if fstype != "" {
-			argc = append(argc, []string{"-f", fstype}...)
+			argv = append(argc, []string{"-f", fstype}...)
 		}
 		if parttype != "" {
-			argc = append(argc, []string{"-p", parttype}...)
+			argv = append(argc, []string{"-p", parttype}...)
 		}
 		if content != "" {
-			argc = append(argc, []string{"-c", content}...)
+			argv = append(argc, []string{"-c", content}...)
 		}
 		if uuid != "" {
-			argc = append(argc, []string{"-c", uuid}...)
+			argv = append(argc, []string{"-c", uuid}...)
 		}
-		argc = append(argc, args...)
-		SifCmd := exec.Command(sif, argc...)
+		argv = append(argc, args...)
+		SifCmd := exec.Command(sif, argv...)
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
 
@@ -102,8 +102,8 @@ var SifList = &cobra.Command{
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		argc := []string{"list", args[0]}
-		SifCmd := exec.Command(sif, argc...)
+		argv := []string{"list", args[0]}
+		SifCmd := exec.Command(sif, argv...)
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
 
@@ -124,8 +124,8 @@ var SifInfo = &cobra.Command{
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		argc := append([]string{"info"}, args...)
-		SifCmd := exec.Command(sif, argc...)
+		argv := append([]string{"info"}, args...)
+		SifCmd := exec.Command(sif, argv...)
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
 
@@ -145,8 +145,8 @@ var SifDump = &cobra.Command{
 	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		argc := append([]string{"dump"}, args...)
-		SifCmd := exec.Command(sif, argc...)
+		argv := append([]string{"dump"}, args...)
+		SifCmd := exec.Command(sif, argv...)
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
 
@@ -166,8 +166,8 @@ var SifDel = &cobra.Command{
 	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		argc := append([]string{"del"}, args...)
-		SifCmd := exec.Command(sif, argc...)
+		argv := append([]string{"del"}, args...)
+		SifCmd := exec.Command(sif, argv...)
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
 
@@ -188,8 +188,8 @@ var SifHeader = &cobra.Command{
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		argc := []string{"header", args[0]}
-		SifCmd := exec.Command(sif, argc...)
+		argv := []string{"header", args[0]}
+		SifCmd := exec.Command(sif, argv...)
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
 
