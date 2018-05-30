@@ -64,23 +64,23 @@ var SifCreate = &cobra.Command{
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var argv []string
-		argv = append(argc, "create")
+		argv = append(argv, "create")
 		if partfile != "" {
-			argv = append(argc, []string{"-P", partfile}...)
+			argv = append(argv, []string{"-P", partfile}...)
 		}
 		if fstype != "" {
-			argv = append(argc, []string{"-f", fstype}...)
+			argv = append(argv, []string{"-f", fstype}...)
 		}
 		if parttype != "" {
-			argv = append(argc, []string{"-p", parttype}...)
+			argv = append(argv, []string{"-p", parttype}...)
 		}
 		if content != "" {
-			argv = append(argc, []string{"-c", content}...)
+			argv = append(argv, []string{"-c", content}...)
 		}
 		if uuid != "" {
-			argv = append(argc, []string{"-c", uuid}...)
+			argv = append(argv, []string{"-c", uuid}...)
 		}
-		argv = append(argc, args...)
+		argv = append(argv, args...)
 		SifCmd := exec.Command(sif, argv...)
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
