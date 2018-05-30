@@ -140,10 +140,9 @@ var SifInfo = &cobra.Command{
 
 // SifDump sif dump subcommand
 var SifDump = &cobra.Command{
-	Use:     docs.SifDumpUse,
-	Short:   docs.SifDumpShort,
-	Example: docs.SifInfoExample,
-	Args:    cobra.MinimumNArgs(2),
+	Use:   docs.SifDumpUse,
+	Short: docs.SifDumpShort,
+	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argc := append([]string{"dump"}, args...)
@@ -162,10 +161,9 @@ var SifDump = &cobra.Command{
 
 // SifDel sif del subcommand
 var SifDel = &cobra.Command{
-	Use:     docs.SifDelUse,
-	Short:   docs.SifDelShort,
-	Example: docs.SifInfoExample,
-	Args:    cobra.MinimumNArgs(2),
+	Use:   docs.SifDelUse,
+	Short: docs.SifDelShort,
+	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argc := append([]string{"del"}, args...)
