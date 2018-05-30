@@ -142,7 +142,7 @@ var SifInfo = &cobra.Command{
 var SifDump = &cobra.Command{
 	Use:     docs.SifDumpUse,
 	Short:   docs.SifDumpShort,
-	Example: docs.sifInfoExample,
+	Example: docs.SifInfoExample,
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -164,7 +164,7 @@ var SifDump = &cobra.Command{
 var SifDel = &cobra.Command{
 	Use:     docs.SifDelUse,
 	Short:   docs.SifDelShort,
-	Example: docs.sifInfoExample,
+	Example: docs.SifInfoExample,
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -186,7 +186,7 @@ var SifDel = &cobra.Command{
 var SifHeader = &cobra.Command{
 	Use:     docs.SifHeaderUse,
 	Short:   docs.SifHeaderShort,
-	Example: docs.sifHeaderExample,
+	Example: docs.SifHeaderExample,
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
