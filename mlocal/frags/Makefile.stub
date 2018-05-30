@@ -10,7 +10,7 @@ singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 
-wrapper := $(BUILDDIR)/src/runtime/c/wrapper
+wrapper := $(BUILDDIR)/src/runtime/startup/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
 wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
 
@@ -30,7 +30,7 @@ go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL)
 
 go_TAG = "containers_image_openpgp singularity_sif"
 
-cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime/c -I$(SOURCEDIR)/src/runtime/c/lib
+cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
 INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
@@ -55,12 +55,12 @@ $(libstartup): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
 
 # wrapper
 wrapper_OBJ := \
-	$(BUILDDIR)/src/runtime/c/startup/wrapper.o \
+	$(BUILDDIR)/src/runtime/startup/wrapper.o \
 
-$(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/c/startup/wrapper.c
-	@echo " CC src/runtime/c/startup/wrapper.c"
+$(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/startup/wrapper.c
+	@echo " CC src/runtime/startup/wrapper.c"
 	@mkdir -p $(@D)
-	$(V)$(CC) -Wp,-MMD,$(BUILDDIR)/src/runtime/c/startup/wrapper.o.d -I$(BUILDDIR) -c $(ARCH_CFLAGS) $(CFLAGS)  $(CPPFLAGS) -o $(BUILDDIR)/src/runtime/c/startup/wrapper.o $(SOURCEDIR)/src/runtime/c/startup/wrapper.c
+	$(V)$(CC) -Wp,-MMD,$(BUILDDIR)/src/runtime/startup/wrapper.o.d -I$(BUILDDIR) -c $(ARCH_CFLAGS) $(CFLAGS)  $(CPPFLAGS) -o $(BUILDDIR)/src/runtime/startup/wrapper.o $(SOURCEDIR)/src/runtime/startup/wrapper.c
 
 $(wrapper): $(wrapper_OBJ) $(libstartup)
 	@echo " LD" $@
@@ -160,7 +160,8 @@ test:
 	@echo "       PASS"
 	@echo " TEST go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -count=1 -tags $(go_TAG) -cover -race -timeout 60s ./...
+		cd $(SOURCEDIR) && go test -count=1 -tags $(go_TAG) -cover -race -timeout 60s \
+			`go list ./...|grep -v "runtime/startup"`
 	@echo "       PASS"
 
 .PHONY: cscope

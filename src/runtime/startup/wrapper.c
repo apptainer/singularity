@@ -35,12 +35,12 @@
 #ifdef SINGULARITY_SECUREBITS
 #  include <linux/securebits.h>
 #else
-#  include "lib/util/securebits.h"
+#  include "c/lib/util/securebits.h"
 #endif /* SINGULARITY_SECUREBITS */
 
-#include "lib/util/capability.h"
-#include "lib/util/message.h"
-#include "lib/util/util.h"
+#include "c/lib/util/capability.h"
+#include "c/lib/util/message.h"
+#include "c/lib/util/util.h"
 
 #include "startup/wrapper.h"
 
