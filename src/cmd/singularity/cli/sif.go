@@ -190,7 +190,7 @@ var SifHeader = &cobra.Command{
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		argc := []string{"list", args[0]}
+		argc := []string{"header", args[0]}
 		SifCmd := exec.Command(sif, argc...)
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
