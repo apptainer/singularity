@@ -531,7 +531,7 @@ Enterprise Performance Computing (EPC)`
 	SifCreateShort string = "Create a new sif file with input data objects"
 	SifListUse     string = "list <file>"
 	SifListShort   string = "List SIF data descriptors from an input SIF file"
-	SifinfoUse     string = "info [id] <file>"
+	SifInfoUse     string = "info [id] <file>"
 	SifInfoShort   string = "Print data object descriptor info"
 	SifDumpUse     string = "dump [id] <file>"
 	SifDumpShort   string = "Display data object content"

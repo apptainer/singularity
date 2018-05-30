@@ -98,7 +98,7 @@ var SifCreate = &cobra.Command{
 var SifList = &cobra.Command{
 	Use:     docs.SifListUse,
 	Short:   docs.SifListShort,
-	Example: sifListExample,
+	Example: docs.SifListExample,
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -120,7 +120,7 @@ var SifList = &cobra.Command{
 var SifInfo = &cobra.Command{
 	Use:     docs.SifInfoUse,
 	Short:   docs.SifInfoShort,
-	Example: sifInfoExample,
+	Example: docs.SifInfoExample,
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -142,7 +142,7 @@ var SifInfo = &cobra.Command{
 var SifDump = &cobra.Command{
 	Use:     docs.SifDumpUse,
 	Short:   docs.SifDumpShort,
-	Example: sifInfoExample,
+	Example: docs.sifInfoExample,
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -164,7 +164,7 @@ var SifDump = &cobra.Command{
 var SifDel = &cobra.Command{
 	Use:     docs.SifDelUse,
 	Short:   docs.SifDelShort,
-	Example: sifInfoExample,
+	Example: docs.sifInfoExample,
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
@@ -186,7 +186,7 @@ var SifDel = &cobra.Command{
 var SifHeader = &cobra.Command{
 	Use:     docs.SifHeaderUse,
 	Short:   docs.SifHeaderShort,
-	Example: sifHeaderExample,
+	Example: docs.sifHeaderExample,
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
