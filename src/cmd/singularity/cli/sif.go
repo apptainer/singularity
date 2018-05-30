@@ -21,7 +21,7 @@ var (
 	content  string
 	fstype   string
 	parttype string
-	uuID     string
+	uuid     string
 )
 
 func init() {
@@ -34,7 +34,7 @@ func init() {
 	SifCreate.Flags().StringVarP(&content, "CONTENT", "c", "", "freeform partition content string")
 	SifCreate.Flags().StringVarP(&fstype, "FSTYPE", "f", "", "filesystem type: EXT3, SQUASHFS")
 	SifCreate.Flags().StringVarP(&parttype, "PARTTYPE", "p", "", "filesystem partition type: SYSTEM, DATA, OVERLAY")
-	SifCreate.Flags().StringVarP(&uuID, "uuid", "u", "", "pass a uuid to use instead of generating a new one")
+	SifCreate.Flags().StringVarP(&uuid, "uuid", "u", "", "pass a uuid to use instead of generating a new one")
 	// List
 	SifCmd.AddCommand(SifList)
 	// Dump
@@ -77,8 +77,8 @@ var SifCreate = &cobra.Command{
 		if content != "" {
 			argc = append(argc, []string{"-c", content}...)
 		}
-		if uuID != "" {
-			argc = append(argc, []string{"-c", uuID}...)
+		if uuid != "" {
+			argc = append(argc, []string{"-c", uuid}...)
 		}
 		argc = append(argc, args...)
 		SifCmd := exec.Command(sif, argc...)
