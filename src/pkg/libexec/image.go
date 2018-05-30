@@ -10,22 +10,27 @@ import (
 	//specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// ImageCreate creates an image.
 func ImageCreate() image.Image {
 	return image.SandboxFromPath("/path/to/sandbox")
 }
 
+// ImageBuild builds an image.
 func ImageBuild() image.Image {
 	return image.SandboxFromPath("/path/to/sandbox")
 }
 
+// ImageExpand expands an image.
 func ImageExpand() image.Image {
 	return image.SandboxFromPath("/path/to/sandbox")
 }
 
+// ImageImport imports an image.
 func ImageImport() {
 
 }
 
+// ImageExport exports an image.
 func ImageExport() {
 
 }

@@ -9,57 +9,23 @@ import (
 	"os"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/docs"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
 	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
-
 	"github.com/spf13/cobra"
 )
 
-var execExamples = `
-      $ singularity exec /tmp/Debian.img cat /etc/debian_version
-      $ singularity exec /tmp/Debian.img python ./hello_world.py
-      $ cat hello_world.py | singularity exec /tmp/Debian.img python
-      $ sudo singularity exec --writable /tmp/Debian.img apt-get update
-      $ singularity exec instance://my_instance ps -ef`
-
-var shellExamples = `
-      $ singularity shell /tmp/Debian.img
-      Singularity/Debian.img> pwd
-      /home/gmk/test
-      Singularity/Debian.img> exit
-      
-      $ singularity shell -C /tmp/Debian.img
-      Singularity/Debian.img> pwd
-      /home/gmk
-      Singularity/Debian.img> ls -l
-      total 0
-      Singularity/Debian.img> exit
-      
-      $ sudo singularity shell -w /tmp/Debian.img
-      $ sudo singularity shell --writable /tmp/Debian.img
-      
-      $ singularity shell instance://my_instance 
-      
-      $ singularity shell instance://my_instance
-      Singularity: Invoking an interactive shell within container...
-      Singularity container:~> ps -ef
-      UID        PID  PPID  C STIME TTY          TIME CMD
-      ubuntu       1     0  0 20:00 ?        00:00:00 /usr/local/bin/singularity/bin/sinit
-      ubuntu       2     0  0 20:01 pts/8    00:00:00 /bin/bash --norc
-      ubuntu       3     2  0 20:02 pts/8    00:00:00 ps -ef`
-
-var runExamples = `
-`
-
 func init() {
 	actionCmds := []*cobra.Command{
-		execCmd,
-		shellCmd,
-		runCmd,
+		ExecCmd,
+		ShellCmd,
+		RunCmd,
 	}
 
+	// TODO : the next n lines of code are repeating too much but I don't
+	// know how to shorten them tonight
 	for _, cmd := range actionCmds {
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("bind"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("contain"))
@@ -86,44 +52,58 @@ func init() {
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("writable"))
 	}
 
-	singularityCmd.AddCommand(execCmd)
-	singularityCmd.AddCommand(shellCmd)
-	singularityCmd.AddCommand(runCmd)
+	SingularityCmd.AddCommand(ExecCmd)
+	SingularityCmd.AddCommand(ShellCmd)
+	SingularityCmd.AddCommand(RunCmd)
 
 }
 
-// execCmd represents the exec command
-var execCmd = &cobra.Command{
-	Use:  "exec [exec options...] <container> ...",
+// ExecCmd represents the exec command
+var ExecCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
 	},
-	Example: execExamples,
+
+	Use:     docs.ExecUse,
+	Short:   docs.ExecShort,
+	Long:    docs.ExecLong,
+	Example: docs.ExecExamples,
 }
 
-// shellCmd represents the shell command
-var shellCmd = &cobra.Command{
-	Use:  "shell [shell options...] <container>",
+// ShellCmd represents the shell command
+var ShellCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
 	},
-	Example: shellExamples,
+
+	Use:     docs.ShellUse,
+	Short:   docs.ShellShort,
+	Long:    docs.ShellLong,
+	Example: docs.ShellExamples,
 }
 
-// runCmd represents the run command
-var runCmd = &cobra.Command{
-	Use:  "run [run options...] <container>",
+// RunCmd represents the run command
+var RunCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
 	},
+
+	Use:     docs.RunUse,
+	Short:   docs.RunShort,
+	Long:    docs.RunLong,
+	Example: docs.RunExamples,
 }
 
+// TODO: Let's stick this in another file so that that CLI is just CLI
 func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	lvl := "0"
 

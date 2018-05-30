@@ -9,54 +9,45 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"github.com/singularityware/singularity/docs"
 )
-
-var capabilityDropExamples = `
-      $ singularity capability.drop /tmp/my-sql.img mysql
-
-      $ singularity shell capability://mysql
-      Singularity my-sql.img> pwd
-      /home/mibauer/mysql
-      Singularity my-sql.img> ps
-      PID TTY          TIME CMD
-        1 pts/0    00:00:00 sinit
-        2 pts/0    00:00:00 bash
-        3 pts/0    00:00:00 ps
-      Singularity my-sql.img> 
-    
-      $ singularity capability.stop /tmp/my-sql.img mysql
-      Stopping /tmp/my-sql.img mysql`
 
 func init() {
 	capabilityDropCmds := []*cobra.Command{
-		capabilityDropCmd,
-		capabilityDotDropCmd,
+		CapabilityDropCmd,
+		// capabilityDotDropCmd,
 	}
 
 	for _, cmd := range capabilityDropCmds {
 		cmd.Flags().SetInterspersed(false)
-
-		//cmd.Flags.StringVarP()
 	}
 
-	singularityCmd.AddCommand(capabilityDotDropCmd)
+	// SingularityCmd.AddCommand(capabilityDotDropCmd)
 }
 
-var capabilityDropCmd = &cobra.Command{
-	Use:  "drop [drop options...] <capabilities>",
+// CapabilityDropCmd singularity capability drop
+var CapabilityDropCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("dropping capability")
 	},
-	Example: capabilityDropExamples,
+
+	Use:     docs.CapabilityDropUse,
+	Short:   docs.CapabilityDropShort,
+	Long:    docs.CapabilityDropLong,
+	Example: docs.CapabilityDropExample,
 }
 
+/*
 var capabilityDotDropCmd = &cobra.Command{
 	Use:  "capability.drop [options...] <capabilities>",
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("dropping capability")
 	},
-	Example: capabilityDropExamples,
+	Example: capabilityDropExample,
 	Hidden:  true,
 }
+*/
