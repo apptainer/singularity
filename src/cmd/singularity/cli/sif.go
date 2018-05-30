@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/singularityware/singularity/docs"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
@@ -47,65 +48,19 @@ func init() {
 }
 
 var sif = buildcfg.SBINDIR + "/sif"
-var (
-	sifCreateExample = `
-sif create -P /tmp/fs.squash -f "SQUASHFS" -p "SYSTEM" -c "Linux" /tmp/container.sif`
-	sifListExample = `
-sif list /tmp/container.sif
-Container uuid: 2b88f62f-be4f-4143-8a7a-061c49a68249
-Created on: Fri May 25 17:23:04 2018
-Modified on: Fri May 25 17:23:04 2018
-----------------------------------------------------
-
-Descriptor list:
-ID   |GROUP   |LINK    |SIF POSITION (start-end)  |TYPE
-------------------------------------------------------------------------------
-1    |1       |NONE    |3328-2010367              |FS.Img (Squashfs/System)`
-	sifInfoExample = `
-sif info 1 container.sif
-Descriptor info:
----------------------------
-desc type: FS.Img
-desc id: 1
-group id: 1
-link: NONE
-fileoff: 3328
-filelen: 2007040
-fstype: Squashfs
-parttype: System
-content: LINUX
----------------------------`
-	sifHeaderExample = `
-sif header hah.sif
-================ SIF Header ================
-launch: #!/usr/bin/env run-singularity
-
-magic: SIF_MAGIC
-version: 0
-arch: AMD64
-uuid: 2b88f62f-be4f-4143-8a7a-061c49a68249
-creation time: Fri May 25 17:23:04 2018
-modification time: Fri May 25 17:23:04 2018
-number of descriptors: 1
-start of descriptors in file: 120
-length of descriptors in file: 104
-start of data in file: 3328
-length of data in file: 1MB
-============================================`
-)
 
 // SifCmd represent the sif CLI cmd
 var SifCmd = &cobra.Command{
-	Use:  "sif",
+	Use:  docs.SifUse,
 	Args: cobra.MinimumNArgs(1),
 	Run:  nil,
 }
 
 // SifCreate sif create cmd
 var SifCreate = &cobra.Command{
-	Use:     "create [option] <file>",
-	Short:   "Create a new sif file with input data objects",
-	Example: sifCreateExample,
+	Use:     docs.SifCreateUse,
+	Short:   docs.SifCreateShort,
+	Example: docs.SifCreateExample,
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var argc []string
@@ -141,8 +96,8 @@ var SifCreate = &cobra.Command{
 
 // SifList sif list subcommand
 var SifList = &cobra.Command{
-	Use:     "list <file>",
-	Short:   "List SIF data descriptors from an input SIF file",
+	Use:     docs.SifListUse,
+	Short:   docs.SifListShort,
 	Example: sifListExample,
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -163,8 +118,8 @@ var SifList = &cobra.Command{
 
 // SifInfo sif info subcommand
 var SifInfo = &cobra.Command{
-	Use:     "info [id] <file>",
-	Short:   "Print data object descriptor info",
+	Use:     docs.SifInfoUse,
+	Short:   docs.SifInfoShort,
 	Example: sifInfoExample,
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -185,8 +140,8 @@ var SifInfo = &cobra.Command{
 
 // SifDump sif dump subcommand
 var SifDump = &cobra.Command{
-	Use:     "dump [id] <file>",
-	Short:   "Display data object content",
+	Use:     docs.SifDumpUse,
+	Short:   docs.SifDumpShort,
 	Example: sifInfoExample,
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -207,8 +162,8 @@ var SifDump = &cobra.Command{
 
 // SifDel sif del subcommand
 var SifDel = &cobra.Command{
-	Use:     "del [id] <file>",
-	Short:   "Delete a specified set of descriptor+object",
+	Use:     docs.SifDelUse,
+	Short:   docs.SifDelShort,
 	Example: sifInfoExample,
 	Args:    cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -229,8 +184,8 @@ var SifDel = &cobra.Command{
 
 // SifHeader sif header subcommand
 var SifHeader = &cobra.Command{
-	Use:     "header <file>",
-	Short:   "Display SIF header",
+	Use:     docs.SifHeaderUse,
+	Short:   docs.SifHeaderShort,
 	Example: sifHeaderExample,
 	Args:    cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

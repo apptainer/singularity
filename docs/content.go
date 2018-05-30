@@ -523,4 +523,65 @@ Enterprise Performance Computing (EPC)`
 
 	VerifyExample string = `
   `
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// sif
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	SifUse         string = "sif"
+	SifCreateUse   string = "create [option] <file>"
+	SifCreateShort string = "Create a new sif file with input data objects"
+	SifListUse     string = "list <file>"
+	SifListShort   string = "List SIF data descriptors from an input SIF file"
+	SifinfoUse     string = "info [id] <file>"
+	SifInfoShort   string = "Print data object descriptor info"
+	SifDumpUse     string = "dump [id] <file>"
+	SifDumpShort   string = "Display data object content"
+	SifDelUse      string = "del [id] <file>"
+	SifDelShort    string = "Delete a specified set of descriptor+object"
+	SifHeaderUse   string = "header <file>"
+	SifHeaderShort string = "Display SIF header"
+
+	SifCreateExample string = `
+singularity sif create -P /tmp/fs.squash -f "SQUASHFS" -p "SYSTEM" -c "Linux" /tmp/container.sif`
+	SifListExample string = `
+singularity sif list /tmp/container.sif
+Container uuid: 2b88f62f-be4f-4143-8a7a-061c49a68249
+Created on: Fri May 25 17:23:04 2018
+Modified on: Fri May 25 17:23:04 2018
+----------------------------------------------------
+
+Descriptor list:
+ID   |GROUP   |LINK    |SIF POSITION (start-end)  |TYPE
+------------------------------------------------------------------------------
+1    |1       |NONE    |3328-2010367              |FS.Img (Squashfs/System)`
+	SifInfoExample string = `
+singularity sif info 1 container.sif
+Descriptor info:
+---------------------------
+desc type: FS.Img
+desc id: 1
+group id: 1
+link: NONE
+fileoff: 3328
+filelen: 2007040
+fstype: Squashfs
+parttype: System
+content: LINUX
+---------------------------`
+	SifHeaderExample string = `
+singularity sif header hah.sif
+================ SIF Header ================
+launch: #!/usr/bin/env run-singularity
+
+magic: SIF_MAGIC
+version: 0
+arch: AMD64
+uuid: 2b88f62f-be4f-4143-8a7a-061c49a68249
+creation time: Fri May 25 17:23:04 2018
+modification time: Fri May 25 17:23:04 2018
+number of descriptors: 1
+start of descriptors in file: 120
+length of descriptors in file: 104
+start of data in file: 3328
+length of data in file: 1MB
+============================================`
 )
