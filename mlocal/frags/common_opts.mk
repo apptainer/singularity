@@ -15,5 +15,5 @@ CFLAGS += -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --par
 
 LDFLAGS += -Wl,-z,relro,-z,now
 
-CPPFLAGS += -include $(BUILDDIR)/config.h -iquote\$(SOURCEDIR)/src/runtime/c
+CPPFLAGS += -include $(BUILDDIR)/config.h -iquote\$(SOURCEDIR)/src/runtime
 CPPFLAGS += -iquote\$(SOURCEDIR)/src/runtime/c/lib
