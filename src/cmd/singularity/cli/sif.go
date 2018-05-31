@@ -51,9 +51,10 @@ var sif = buildcfg.SBINDIR + "/sif"
 
 // SifCmd represent the sif CLI cmd
 var SifCmd = &cobra.Command{
-	Use:  docs.SifUse,
-	Args: cobra.MinimumNArgs(1),
-	Run:  nil,
+	Use:   docs.SifUse,
+	Short: docs.SifShort,
+	Args:  cobra.MinimumNArgs(1),
+	Run:   nil,
 }
 
 // SifCreate sif create cmd

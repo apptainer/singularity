@@ -527,6 +527,7 @@ Enterprise Performance Computing (EPC)`
 	// sif
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	SifUse         string = "sif"
+	SifShort       string = "Singularity image file format management"
 	SifCreateUse   string = "create [option] <file>"
 	SifCreateShort string = "Create a new sif file with input data objects"
 	SifListUse     string = "list <file>"
