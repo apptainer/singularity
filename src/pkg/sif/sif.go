@@ -13,7 +13,6 @@ import (
 
 	"github.com/golang/glog"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
 )
 
@@ -44,9 +43,7 @@ func FromSandbox(sandbox *image.Sandbox, imagePath string) (*SIF, error) {
 		return nil, err
 	}
 
-	sif := buildcfg.SBINDIR + "/sif"
-
-	sifCmd := exec.Command(sif, "create", "-P", squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", imagePath)
+	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", imagePath)
 	sifCmd.Stdin = os.Stdin
 	sifCmd.Stdout = os.Stdout
 	sifCmd.Stderr = os.Stderr
