@@ -18,18 +18,15 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// main singularity command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	SingularityUse string = `singularity [global options...]`
-
+	SingularityUse   string = `singularity [global options...]`
 	SingularityShort string = `
 Linux container platform optimized for High Performance Computing (HPC) and
 Enterprise Performance Computing (EPC)`
-
 	SingularityLong string = `
   Singularity containers provide an application virtualization layer enabling
   mobility of compute via both application and environment portability. With
   Singularity one is capable of building a root file system and running that
   root file system on any other Linux system where Singularity is installed.`
-
 	SingularityExample string = `
   $ singularity help
       Will print a generalized usage summary and available commands.
@@ -41,11 +38,9 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// build
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	BuildUse string = `build [local options...] <IMAGE PATH> <BUILD SPEC>`
-
+	BuildUse   string = `build [local options...] <IMAGE PATH> <BUILD SPEC>`
 	BuildShort string = `Build a new Singularity container`
-
-	BuildLong string = `
+	BuildLong  string = `
 
   IMAGE PATH:
   
@@ -76,7 +71,6 @@ Enterprise Performance Computing (EPC)`
   
       shub://     Build from a Singularity registry (Singularity Hub default)
       docker://   This points to a Docker registry (Docker Hub default)`
-
 	BuildExample string = `
 
   DEF FILE BASE OS:
@@ -160,14 +154,11 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CapabilityUse string = `capability <subcommand>`
-
+	CapabilityUse   string = `capability <subcommand>`
 	CapabilityShort string = `Manage Linux capabilities on containers`
-
-	CapabilityLong string = `
+	CapabilityLong  string = `
   Capabilities allow you to have fine grained control over the permissions that
   your containers need to run. For instance, if you need to `
-
 	CapabilityExample string = `
   All group commands have their own help output:
   
@@ -177,14 +168,11 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability add
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CapabilityAddUse string = `add [add options...] <capabilities>`
-
+	CapabilityAddUse   string = `add [add options...] <capabilities>`
 	CapabilityAddShort string = `add Linux capabilities to a container`
-
-	CapabilityAddLong string = `
+	CapabilityAddLong  string = `
   The capability add command allows you to grant fine grained Linux 
   capabilities to your container at runtime. For instance, `
-
 	CapabilityAddExample string = `
   $ singularity capability.add /tmp/my-sql.img mysql
   
@@ -204,16 +192,13 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability drop
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CapabilityDropUse string = `drop [drop options...] <capabilities>`
-
+	CapabilityDropUse   string = `drop [drop options...] <capabilities>`
 	CapabilityDropShort string = `remove Linux capabilities from your container`
-
-	CapabilityDropLong string = `
+	CapabilityDropLong  string = `
   The capability drop command allows you to remove Linux capabilities from your
   container with fine grained precision. This way you can ensure that your
   container is as secure as it can be given the functions it must carry out. For
   instance, `
-
 	CapabilityDropExample string = `
   $ singularity capability.drop /tmp/my-sql.img mysql
   
@@ -233,13 +218,10 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability drop
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CapabilityListUse string = `list [list options...] <capabilities>`
-
+	CapabilityListUse   string = `list [list options...] <capabilities>`
 	CapabilityListShort string = `list Linux capabilities on a container`
-
-	CapabilityListLong string = `The capability list command allows you to see
+	CapabilityListLong  string = `The capability list command allows you to see
   what Linux capabilities are associated with your container.`
-
 	CapabilityListExample string = `
   $ singularity capability.list /tmp/my-sql.img mysql
   
@@ -281,14 +263,10 @@ Enterprise Performance Computing (EPC)`
   shub://*            A container hosted on Singularity Hub
   
   docker://*          A container hosted on Docker Hub`
-
-	ExecUse string = `exec [exec options...] <container> ...`
-
+	ExecUse   string = `exec [exec options...] <container> ...`
 	ExecShort string = `Execute a command within container`
-
-	ExecLong string = `
+	ExecLong  string = `
   singularity exec supports the following formats:` + formats
-
 	ExecExamples string = `
   $ singularity exec /tmp/Debian.img cat /etc/debian_version
   $ singularity exec /tmp/Debian.img python ./hello_world.py
@@ -299,14 +277,11 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceUse string = `instance <subcommand>`
-
+	InstanceUse   string = `instance <subcommand>`
 	InstanceShort string = `Manage containers running in the background`
-
-	InstanceLong string = `
+	InstanceLong  string = `
   Instances allow you to run containers as background processes. This can be
   useful for running services such as web servers or databases.`
-
 	InstanceExample string = `
   All group commands have their own help output:
   
@@ -316,14 +291,11 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceListUse string = `list [list options...] <container>`
-
+	InstanceListUse   string = `list [list options...] <container>`
 	InstanceListShort string = `List all running and named Singularity instances`
-
-	InstanceListLong string = `
+	InstanceListLong  string = `
   The instance list command allows you to view the Singularity container
   instances that are currently running in the background.`
-
 	InstanceListExample string = `
   $ singularity instance.list
   DAEMON NAME      PID      CONTAINER IMAGE
@@ -337,18 +309,15 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance start
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceStartUse string = `start [start options...] <container path> <instance name>`
-
+	InstanceStartUse   string = `start [start options...] <container path> <instance name>`
 	InstanceStartShort string = `Start a named instance of the given container image`
-
-	InstanceStartLong string = `
+	InstanceStartLong  string = `
   The instance start command allows you to create a new named instance from an
   existing container image that will begin running in the background. If a
   start.sh script is defined in the container metadata the commands in that
   script will be executed with the instance start command as well.
   
   singularity instance start accepts the following container formats` + formats
-
 	InstanceStartExample string = `
   $ singularity instance.start /tmp/my-sql.img mysql
   
@@ -368,14 +337,11 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance stop
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceStopUse string = `stop [stop options...] [instance]`
-
+	InstanceStopUse   string = `stop [stop options...] [instance]`
 	InstanceStopShort string = `Stop a named instance of a given container image`
-
-	InstanceStopLong string = `
+	InstanceStopLong  string = `
   The command singularity instance stop allows you to stop and clean up a named,
   running instance of a given container image.`
-
 	InstanceStopExample string = `
   $ singularity instance.start my-sql.img mysql1
   $ singularity instance.start my-sql.img mysql2
@@ -396,17 +362,14 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PullUse string = `pull [pull options...] [library://[user[collection/[<container>:tag]]]]`
-
+	PullUse   string = `pull [pull options...] [library://[user[collection/[<container>:tag]]]]`
 	PullShort string = `Pull a contianer from a URI`
-
-	PullLong string = `
+	PullLong  string = `
   SUPPORTED URIs:
   
     library: Pull an image from the currently configured library
     shub: Pull an image using python from Singularity Hub to /home/vagrant/versioned/singularity
     docker: Pull a docker image using python to /home/vagrant/versioned/singularity`
-
 	PullExample string = `
   $ singularity pull docker://ubuntu:latest
   
@@ -421,25 +384,20 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PushUse string = `push [push options...] <container image> [library://[user[collection/[container[:tag]]]]]`
-
+	PushUse   string = `push [push options...] <container image> [library://[user[collection/[container[:tag]]]]]`
 	PushShort string = `Push a container to a Library URI`
-
-	PushLong string = `
+	PushLong  string = `
   The Singularity push command allows you to upload your sif image to a library
   of your choosing`
-
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// run
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RunUse string = `run [run options...] <container>`
-
+	RunUse   string = `run [run options...] <container>`
 	RunShort string = `Launch a runscript within container`
-
-	RunLong string = `
+	RunLong  string = `
   This command will launch a Singularity container and execute a runscript
   if one is defined for that container. The runscript is a metadata file within
   the container that containes shell commands. If the file is present (and
@@ -448,7 +406,6 @@ Enterprise Performance Computing (EPC)`
   directly to the runscript.
   
   singularity run accepts the following container formats:` + formats
-
 	RunExamples string = `
   # Here we see that the runscript prints "Hello world: "
   $ singularity exec /tmp/Debian.img cat /singularity
@@ -465,13 +422,10 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// shell
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	ShellUse string = `shell [shell options...] <container>`
-
+	ShellUse   string = `shell [shell options...] <container>`
 	ShellShort string = `Run a Bourne shell within container`
-
-	ShellLong string = `
+	ShellLong  string = `
   singularity shell supports the following formats:` + formats
-
 	ShellExamples string = `
   $ singularity shell /tmp/Debian.img
   Singularity/Debian.img> pwd
@@ -501,33 +455,37 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// sign
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	SignUse string = `sign <image path>`
-
+	SignUse   string = `sign <image path>`
 	SignShort string = `Attach cryptographic signature to container`
-
-	SignLong string = `
+	SignLong  string = `
   `
-
 	SignExample string = `
   `
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// verify
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	VerifyUse string = `verify <image path>`
-
+	VerifyUse   string = `verify <image path>`
 	VerifyShort string = `Verify cryptographic signature on container`
-
-	VerifyLong string = `
+	VerifyLong  string = `
   `
-
 	VerifyExample string = `
   `
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// sif
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	SifUse         string = "sif"
-	SifShort       string = "Singularity image file format management"
+	SifUse   string = "sif"
+	SifShort string = "Singularity image file format management"
+	SifLong  string = `
+  Singularity image file(SIF) is a file format tailored to container images. It allows 
+  the storage of different parts that makes up a container. A SIF file resembles a 
+  general file system by its structure. A global header identifies the SIF file and 
+  holds information about what one can expect to find in the container file. Next to 
+  this is a list of data object descriptors that hold information for each region of 
+  data that a SIF file contains. The primary goal of the descriptors is to identify 
+  the kind of data stored and where to find it within the container file. 
+  Following those descriptors is the actual data for these descriptors namely the OS 
+  partition image, recipe, environment variables and signature blocks.`
 	SifCreateUse   string = "create [option] <file>"
 	SifCreateShort string = "Create a new sif file with input data objects"
 	SifListUse     string = "list <file>"

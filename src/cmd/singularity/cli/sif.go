@@ -53,6 +53,7 @@ var sif = buildcfg.SBINDIR + "/sif"
 var SifCmd = &cobra.Command{
 	Use:   docs.SifUse,
 	Short: docs.SifShort,
+	Long:  docs.SifLong,
 	Args:  cobra.MinimumNArgs(1),
 	Run:   nil,
 }
@@ -62,7 +63,7 @@ var SifCreate = &cobra.Command{
 	Use:     docs.SifCreateUse,
 	Short:   docs.SifCreateShort,
 	Example: docs.SifCreateExample,
-	Args:    cobra.MinimumNArgs(1),
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var argv []string
 		argv = append(argv, "create")
@@ -100,7 +101,7 @@ var SifList = &cobra.Command{
 	Use:     docs.SifListUse,
 	Short:   docs.SifListShort,
 	Example: docs.SifListExample,
-	Args:    cobra.MinimumNArgs(1),
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argv := []string{"list", args[0]}
@@ -122,7 +123,7 @@ var SifInfo = &cobra.Command{
 	Use:     docs.SifInfoUse,
 	Short:   docs.SifInfoShort,
 	Example: docs.SifInfoExample,
-	Args:    cobra.MinimumNArgs(2),
+	Args:    cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argv := append([]string{"info"}, args...)
@@ -143,7 +144,7 @@ var SifInfo = &cobra.Command{
 var SifDump = &cobra.Command{
 	Use:   docs.SifDumpUse,
 	Short: docs.SifDumpShort,
-	Args:  cobra.MinimumNArgs(2),
+	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argv := append([]string{"dump"}, args...)
@@ -164,7 +165,7 @@ var SifDump = &cobra.Command{
 var SifDel = &cobra.Command{
 	Use:   docs.SifDelUse,
 	Short: docs.SifDelShort,
-	Args:  cobra.MinimumNArgs(2),
+	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argv := append([]string{"del"}, args...)
@@ -186,7 +187,7 @@ var SifHeader = &cobra.Command{
 	Use:     docs.SifHeaderUse,
 	Short:   docs.SifHeaderShort,
 	Example: docs.SifHeaderExample,
-	Args:    cobra.MinimumNArgs(1),
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		argv := []string{"header", args[0]}
