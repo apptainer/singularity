@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 
-	"github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/src/docs"
 )
 
 func init() {
