@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
