@@ -11,11 +11,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
-
-	"github.com/singularityware/singularity/src/docs"
 )
 
 var (
@@ -32,7 +31,6 @@ var (
 
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
-	SingularityCmd.AddCommand(BuildCmd)
 
 	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
 	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{}, "Only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
@@ -42,7 +40,8 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
 	BuildCmd.Flags().StringVar(&remoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
-	BuildCmd.Flags().StringVar(&authToken, "auth-token", "", "Specify the auth token for the remote builder")
+
+	SingularityCmd.AddCommand(BuildCmd)
 }
 
 // BuildCmd represents the build command

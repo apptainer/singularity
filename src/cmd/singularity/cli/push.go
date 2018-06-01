@@ -6,34 +6,21 @@
 package cli
 
 import (
-	"os/user"
-	"path"
-
-	"github.com/singularityware/singularity/src/pkg/libexec"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/spf13/cobra"
 	"github.com/singularityware/singularity/src/docs"
+	"github.com/singularityware/singularity/src/pkg/libexec"
+	"github.com/spf13/cobra"
 )
 
 var (
 	// PushLibraryURI holds the base URI to a Sylabs library API instance
 	PushLibraryURI string
-
-	// PushTokenFile holds the path to the sylabs auth token
-	PushTokenFile string
 )
 
 func init() {
 	PushCmd.Flags().SetInterspersed(false)
 
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Fatalf("Couldn't determine user home directory: %v", err)
-	}
-
-	defaultTokenFile := path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 	PushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "https://library.sylabs.io", "")
-	PushCmd.Flags().StringVar(&PushTokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+
 	SingularityCmd.AddCommand(PushCmd)
 }
 
@@ -43,7 +30,7 @@ var PushCmd = &cobra.Command{
 	Args: cobra.ExactArgs(2),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		libexec.PushImage(args[0], args[1], PushLibraryURI, PushTokenFile)
+		libexec.PushImage(args[0], args[1], PushLibraryURI, TokenFile)
 	},
 
 	Use:     docs.PushUse,

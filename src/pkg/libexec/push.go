@@ -11,8 +11,8 @@ import (
 )
 
 // PushImage is the function that is responsible for pushing an image to the Sylabs library.
-func PushImage(image string, library string, libraryURL string, tokenFile string) {
-	err := client.UploadImage(image, library, libraryURL, tokenFile)
+func PushImage(image string, library string, libraryURL string, authToken string) {
+	err := client.UploadImage(image, library, libraryURL, authToken)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)
 	}

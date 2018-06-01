@@ -6,11 +6,7 @@
 package cli
 
 import (
-	"os/user"
-	"path"
-
 	"github.com/singularityware/singularity/src/pkg/libexec"
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 	"github.com/singularityware/singularity/src/docs"
 )
@@ -18,21 +14,12 @@ import (
 var (
 	// PullLibraryURI holds the base URI to a Sylabs library API instance
 	PullLibraryURI string
-
-	// PullTokenFile holds the path to the sylabs auth token
-	PullTokenFile string
 )
 
 func init() {
 	PullCmd.Flags().SetInterspersed(false)
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Fatalf("Couldn't determine user home directory: %v", err)
-	}
-	defaultTokenFile := path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
 	PullCmd.Flags().StringVar(&PullLibraryURI, "libraryuri", "https://library.sylabs.io", "")
-	PullCmd.Flags().StringVar(&PullTokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 
 	SingularityCmd.AddCommand(PullCmd)
@@ -45,7 +32,7 @@ var PullCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 2 {
-			libexec.PullImage(args[0], args[1], PullLibraryURI, force, PullTokenFile)
+			libexec.PullImage(args[0], args[1], PullLibraryURI, force, TokenFile)
 			return
 		}
 		libexec.PullImage("", args[0], PullLibraryURI, force, PullTokenFile)

@@ -7,9 +7,14 @@ package cli
 
 import (
 	"os"
+	"os/user"
+	"path"
+	"strings"
 	"text/template"
 
 	"github.com/singularityware/singularity/src/docs"
+	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/auth"
 	"github.com/spf13/cobra"
 )
 
@@ -19,6 +24,13 @@ var (
 	silent  bool
 	verbose bool
 	quiet   bool
+)
+
+var (
+	// TokenFile holds the path to the sylabs auth token file
+	tokenFile string
+	// authToken holds the sylabs auth token
+	authToken string
 )
 
 func init() {
@@ -38,6 +50,20 @@ func init() {
 	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
 	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
 
+	usr, err := user.Current()
+	if err != nil {
+		sylog.Fatalf("Couldn't determine user home directory: %v", err)
+	}
+	defaultTokenFile := path.Join(usr.HomeDir, ".singularity", "sylabs-token")
+	// authToken priority default_file < env < file_flag
+	authToken = auth.ReadToken(defaultTokenFile)
+	SingularityCmd.Flags().StringVar(&TokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	if val := os.Getenv("SYLABS_TOKEN"); val != "" {
+		authToken = val
+	}
+	if i := strings.Compare(tokenFile, defaultTokenFile); i != 0 {
+		authToken = auth.ReadToken(TokenFile)
+	}
 }
 
 // SingularityCmd is the base command when called without any subcommands
