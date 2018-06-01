@@ -12,7 +12,6 @@ import (
 	"github.com/singularityware/singularity/src/pkg/libexec"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
-
 	"github.com/singularityware/singularity/src/docs"
 )
 

@@ -9,9 +9,8 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/spf13/cobra"
-
 	"github.com/singularityware/singularity/src/docs"
+	"github.com/spf13/cobra"
 )
 
 // Global variables for singularity CLI
