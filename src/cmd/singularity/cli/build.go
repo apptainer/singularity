@@ -20,7 +20,6 @@ import (
 var (
 	remote    bool
 	remoteURL string
-	authToken string
 	json      bool
 	sandbox   bool
 	writable  bool

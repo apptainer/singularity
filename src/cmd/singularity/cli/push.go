@@ -30,7 +30,7 @@ var PushCmd = &cobra.Command{
 	Args: cobra.ExactArgs(2),
 
 	Run: func(cmd *cobra.Command, args []string) {
-		libexec.PushImage(args[0], args[1], PushLibraryURI, TokenFile)
+		libexec.PushImage(args[0], args[1], PushLibraryURI, tokenFile)
 	},
 
 	Use:     docs.PushUse,

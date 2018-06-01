@@ -57,12 +57,12 @@ func init() {
 	defaultTokenFile := path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 	// authToken priority default_file < env < file_flag
 	authToken = auth.ReadToken(defaultTokenFile)
-	SingularityCmd.Flags().StringVar(&TokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	SingularityCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
 	if val := os.Getenv("SYLABS_TOKEN"); val != "" {
 		authToken = val
 	}
 	if i := strings.Compare(tokenFile, defaultTokenFile); i != 0 {
-		authToken = auth.ReadToken(TokenFile)
+		authToken = auth.ReadToken(tokenFile)
 	}
 }
 
