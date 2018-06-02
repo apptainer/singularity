@@ -199,10 +199,6 @@ static void prepare_scontainer_stage(int stage) {
             singularity_message(ERROR, "Failed to set no new privs flag: %s\n", strerror(errno));
             exit(1);
         }
-        if ( prctl(PR_GET_NO_NEW_PRIVS, 0, 0 ,0, 0) != 1 ) {
-            singularity_message(ERROR, "Aborting, failed to set no new privs flag: %s\n", strerror(errno));
-            exit(1);
-        }
     }
 
     if ( capset(&header, data) < 0 ) {
