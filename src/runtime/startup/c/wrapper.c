@@ -194,12 +194,14 @@ static void prepare_scontainer_stage(int stage) {
         }
     }
 
+#ifdef SINGULARITY_NO_NEW_PRIVS
     if ( config.noNewPrivs ) {
         if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 ) {
             singularity_message(ERROR, "Failed to set no new privs flag: %s\n", strerror(errno));
             exit(1);
         }
     }
+#endif
 
     if ( capset(&header, data) < 0 ) {
         singularity_message(ERROR, "Failed to set process capabilities\n");
