@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/signing"
 	"github.com/spf13/cobra"
 )

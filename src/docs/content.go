@@ -216,7 +216,7 @@ Enterprise Performance Computing (EPC)`
   Stopping /tmp/my-sql.img mysql`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// capability drop
+	// capability list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityListUse   string = `list [list options...] <capabilities>`
 	CapabilityListShort string = `list Linux capabilities on a container`

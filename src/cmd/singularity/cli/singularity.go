@@ -9,7 +9,7 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
 )
 
