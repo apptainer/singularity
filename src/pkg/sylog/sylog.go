@@ -110,7 +110,7 @@ func writef(level messageLevel, format string, a ...interface{}) {
 
 	message = strings.TrimSuffix(message, "\n")
 
-	fmt.Printf("%s%s\n", prefix, message)
+	fmt.Fprintf(os.Stderr, "%s%s\n", prefix, message)
 }
 
 // Fatalf is equivalent to a call to Errorf followed by os.Exit(255). Code that

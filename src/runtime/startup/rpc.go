@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/runtime/workflows/rpc"
+	"github.com/singularityware/singularity/src/runtime/engines/rpc"
 )
 
 // RPCServer serves runtime engine requests

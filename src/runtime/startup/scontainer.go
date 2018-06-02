@@ -22,7 +22,8 @@ import (
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/runtime/workflows"
+	"github.com/singularityware/singularity/src/runtime/engines"
+	_ "github.com/singularityware/singularity/src/runtime/engines/all"
 )
 
 func bool2int(b bool) uint8 {
@@ -42,20 +43,23 @@ func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, co
 	runtimeName := C.GoString(sruntime)
 
 	/* get json configuration */
+	sylog.Debugf("cconf.jsonConfSize: %d\n", C.int(cconf.jsonConfSize))
 	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(cconf.jsonConfSize))
 
-	engine, err := workflows.NewRuntimeEngine(runtimeName, jsonBytes)
+	launcher, err := engines.NewContainerLauncher(runtimeName, jsonBytes)
 	if err != nil {
 		sylog.Fatalf("failed to initialize runtime engine: %s\n", err)
 	}
 
 	if stage == 1 {
-		if err := engine.CheckConfig(); err != nil {
+		sylog.Debugf("Entering scontainer stage 1\n")
+
+		if err := launcher.CheckConfig(); err != nil {
 			sylog.Fatalf("%s\n", err)
 		}
 
-		cconf.isInstance = C.uchar(bool2int(engine.IsRunAsInstance()))
-		cconf.noNewPrivs = C.uchar(bool2int(engine.OciConfig.RuntimeOciSpec.Process.NoNewPrivileges))
+		cconf.isInstance = C.uchar(bool2int(launcher.IsRunAsInstance()))
+		cconf.noNewPrivs = C.uchar(bool2int(launcher.OciConfig.RuntimeOciSpec.Process.NoNewPrivileges))
 
 		cconf.uidMapping[0].containerID = C.uid_t(os.Getuid())
 		cconf.uidMapping[0].hostID = C.uid_t(os.Getuid())
@@ -64,7 +68,7 @@ func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, co
 		cconf.gidMapping[0].hostID = C.gid_t(os.Getgid())
 		cconf.gidMapping[0].size = 1
 
-		for _, namespace := range engine.OciConfig.RuntimeOciSpec.Linux.Namespaces {
+		for _, namespace := range launcher.OciConfig.RuntimeOciSpec.Linux.Namespaces {
 			switch namespace.Type {
 			case specs.UserNamespace:
 				cconf.nsFlags |= syscall.CLONE_NEWUSER
@@ -81,8 +85,9 @@ func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, co
 			}
 		}
 
-		jsonConf, _ := engine.GetConfig()
+		jsonConf, _ := launcher.GetConfig()
 		cconf.jsonConfSize = C.uint(len(jsonConf))
+		sylog.Debugf("jsonConfSize = %v\n", cconf.jsonConfSize)
 		cconfPayload := C.GoBytes(unsafe.Pointer(cconf), C.sizeof_struct_cConfig)
 
 		os.Stdout.Write(append(cconfPayload, jsonConf...))
@@ -102,14 +107,14 @@ func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, co
 			}
 
 			// send "creating" status notification to smaster
-			if err := engine.CreateContainer(conn); err != nil {
+			if err := launcher.CreateContainer(conn); err != nil {
 				sylog.Fatalf("%s\n", err)
 			}
 			// send "created" status notification to smaster
 			os.Exit(0)
 		}
 
-		if err := engine.PrestartProcess(); err != nil {
+		if err := launcher.PrestartProcess(); err != nil {
 			sylog.Fatalf("container setup failed: %s\n", err)
 		}
 
@@ -152,7 +157,7 @@ func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, co
 			sylog.Fatalf("set close-on-exec failed\n")
 		}
 
-		if err := engine.StartProcess(); err != nil {
+		if err := launcher.StartProcess(); err != nil {
 			sylog.Fatalf("%s\n", err)
 		}
 	}

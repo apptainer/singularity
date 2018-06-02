@@ -3,9 +3,14 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package runtime
+package singularity
 
-// CheckConfig checks the runtime engine config
-func (c *Engine) CheckConfig() error {
+/*
+ * see https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle
+ * we will run step 8/9 there
+ */
+
+// CleanupContainer cleans up the container
+func (c *Engine) CleanupContainer() error {
 	return nil
 }

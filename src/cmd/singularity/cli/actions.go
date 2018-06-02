@@ -13,7 +13,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
-	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
+	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
 	"github.com/spf13/cobra"
 )
 
@@ -108,7 +108,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 
 	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
 
-	oci, runtime := runtimeconfig.NewSingularityConfig("new")
+	oci, runtime := singularityConfig.NewSingularityConfig("new")
 	oci.Root.SetPath(image)
 	oci.Process.SetArgs(args)
 	oci.Process.SetNoNewPrivileges(true)
