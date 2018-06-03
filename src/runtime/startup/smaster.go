@@ -22,8 +22,8 @@ import (
 	"unsafe"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	runtime "github.com/singularityware/singularity/src/pkg/workflows"
-	internalRuntime "github.com/singularityware/singularity/src/runtime/workflows"
+	"github.com/singularityware/singularity/src/runtime/engines"
+	_ "github.com/singularityware/singularity/src/runtime/engines/all"
 )
 
 func runAsInstance(conn *os.File) {
@@ -39,14 +39,14 @@ func runAsInstance(conn *os.File) {
 	}
 }
 
-func handleChild(pid int, signal chan os.Signal, engine *runtime.Engine) {
+func handleChild(pid int, signal chan os.Signal, launcher *engines.ContainerLauncher) {
 	var status syscall.WaitStatus
 
 	select {
 	case _ = <-signal:
 		syscall.Wait4(pid, &status, syscall.WNOHANG, nil)
 
-		if err := engine.CleanupContainer(); err != nil {
+		if err := launcher.CleanupContainer(); err != nil {
 			sylog.Errorf("container cleanup failed: %s", err)
 		}
 
@@ -80,18 +80,19 @@ func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.
 		sylog.Fatalf("can't open network namespace: %s\n", err)
 	}
 
-	engine, err := internalRuntime.NewRuntimeEngine(runtimeName, jsonBytes)
+	launcher, err := engines.NewContainerLauncher(runtimeName, jsonBytes)
+
 	if err != nil {
 		sylog.Fatalf("failed to initialize runtime: %s\n", err)
 	}
 
 	wg.Add(1)
-	go handleChild(containerPid, sigchld, engine)
+	go handleChild(containerPid, sigchld, launcher)
 
 	wg.Add(1)
-	go engine.MonitorContainer()
+	go launcher.MonitorContainer()
 
-	if engine.IsRunAsInstance() {
+	if launcher.IsRunAsInstance() {
 		wg.Add(1)
 		go runAsInstance(comm)
 	}

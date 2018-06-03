@@ -3,9 +3,8 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package runtime
+package all
 
-// MonitorContainer monitors a container
-func (c *Engine) MonitorContainer() error {
-	return nil
-}
+import (
+	_ "github.com/singularityware/singularity/src/runtime/engines/singularity" // singularity engine
+)

@@ -9,8 +9,8 @@ import (
 	"net"
 	"net/rpc"
 
-	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
-	singularityRpcServer "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc/server"
+	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
+	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
 )
 
 var rpcServerMethods map[string]interface{}

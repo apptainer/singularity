@@ -3,12 +3,13 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package runtime
+package singularity
 
 import (
-	config "github.com/singularityware/singularity/src/pkg/workflows/config"
-	oci "github.com/singularityware/singularity/src/pkg/workflows/oci/config"
-	singularityConfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
+	"github.com/singularityware/singularity/src/runtime/engines"
+	config "github.com/singularityware/singularity/src/runtime/engines/config"
+	oci "github.com/singularityware/singularity/src/runtime/engines/oci/config"
+	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
 )
 
 // Engine describes a runtime engine
@@ -32,4 +33,8 @@ func (e *Engine) InitConfig() *config.RuntimeConfig {
 // IsRunAsInstance returns true if the runtime engine was run as an instance
 func (e *Engine) IsRunAsInstance() bool {
 	return false
+}
+
+func init() {
+	engines.Register(&Engine{}, "singularity")
 }

@@ -3,38 +3,26 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package runtime
+package engines
 
 import (
 	"net"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	config "github.com/singularityware/singularity/src/pkg/workflows/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
 )
 
-// Engine describes the runtime engine
-type Engine struct {
+// ContainerLauncher is a struct containing the unique combination of an Engine
+// with a RuntimeConfig. Together, this unique combination can launch one container
+// or potentially set of containers.
+type ContainerLauncher struct {
+	Engine
 	*config.RuntimeConfig
-	Runtime
 }
 
-// CLI describes the runtime CLI
-type CLI struct {
-	*config.RuntimeConfig
-	OCIRuntime
-}
-
-// OCIRuntime describes the interface for an OCI runtime
-type OCIRuntime interface {
-	State(id string) *specs.State
-	Create(id string, bundle string)
-	Start(id string)
-	Kill(id string, signal int)
-	Delete(id string)
-}
-
-// Runtime operations
-type Runtime interface {
+// Engine is an interface describing necessary runtime operations to launch a
+// container process. An Engine *uses* a RuntimeConfig to *launch* a container.
+type Engine interface {
 	// intialize configuration and return it/
 	InitConfig() *config.RuntimeConfig
 	// call in stage1
@@ -51,4 +39,19 @@ type Runtime interface {
 	MonitorContainer() error
 	// call in smaster for container cleanup
 	CleanupContainer() error
+}
+
+// CLI describes the runtime CLI
+type CLI struct {
+	*config.RuntimeConfig
+	OCIRuntime
+}
+
+// OCIRuntime describes the interface for an OCI runtime
+type OCIRuntime interface {
+	State(id string) *specs.State
+	Create(id string, bundle string)
+	Start(id string)
+	Kill(id string, signal int)
+	Delete(id string)
 }

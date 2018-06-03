@@ -3,7 +3,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package runtime
+package singularity
 
 /*
 #include <unistd.h>
@@ -26,13 +26,13 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
-	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
-	"github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc/client"
+	"github.com/singularityware/singularity/src/runtime/engines/singularity/config"
+	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 )
 
 // CreateContainer creates a container
 func (engine *Engine) CreateContainer(rpcConn net.Conn) error {
-	if engine.RuntimeSpec.RuntimeName != runtimeconfig.Name {
+	if engine.RuntimeSpec.RuntimeName != config.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 

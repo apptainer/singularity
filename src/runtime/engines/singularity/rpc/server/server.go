@@ -11,7 +11,7 @@ import (
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
-	args "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc"
+	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
 )
 
 // Methods is a receiver type
