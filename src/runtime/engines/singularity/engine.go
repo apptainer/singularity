@@ -6,9 +6,8 @@
 package singularity
 
 import (
-	"github.com/singularityware/singularity/src/runtime/engines"
-	config "github.com/singularityware/singularity/src/runtime/engines/config"
-	oci "github.com/singularityware/singularity/src/runtime/engines/oci/config"
+	config "github.com/singularityware/singularity/src/runtime/engines/common/config"
+	oci "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
 )
 
@@ -33,8 +32,4 @@ func (e *Engine) InitConfig() *config.RuntimeConfig {
 // IsRunAsInstance returns true if the runtime engine was run as an instance
 func (e *Engine) IsRunAsInstance() bool {
 	return false
-}
-
-func init() {
-	engines.Register(&Engine{}, "singularity")
 }

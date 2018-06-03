@@ -9,6 +9,7 @@ package main
 #include <sys/types.h>
 #include "startup/c/wrapper.h"
 */
+// #cgo CFLAGS: -I..
 import "C"
 
 import (
@@ -23,7 +24,6 @@ import (
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines"
-	_ "github.com/singularityware/singularity/src/runtime/engines/all"
 )
 
 func runAsInstance(conn *os.File) {

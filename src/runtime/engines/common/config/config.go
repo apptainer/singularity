@@ -8,7 +8,7 @@ package config
 import (
 	"encoding/json"
 
-	oci "github.com/singularityware/singularity/src/runtime/engines/oci/config"
+	oci "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
 )
 
 // RuntimeSpec is the runtime template specification.
