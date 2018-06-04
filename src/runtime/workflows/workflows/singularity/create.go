@@ -7,8 +7,8 @@ package runtime
 
 /*
 #include <unistd.h>
-#include "lib/image/image.h"
-#include "lib/util/config_parser.h"
+#include "c/lib/image/image.h"
+#include "c/lib/util/config_parser.h"
 */
 // #cgo CFLAGS: -I../../../c/lib
 // #cgo LDFLAGS: -L../../../../../builddir/lib -lruntime -luuid

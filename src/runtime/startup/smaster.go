@@ -7,7 +7,7 @@ package main
 
 /*
 #include <sys/types.h>
-#include "startup/wrapper.h"
+#include "startup/c/wrapper.h"
 */
 import "C"
 
