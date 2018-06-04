@@ -8,6 +8,7 @@ package cli
 import (
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/libexec"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
 
@@ -30,6 +31,9 @@ var PushCmd = &cobra.Command{
 	Args: cobra.ExactArgs(2),
 
 	Run: func(cmd *cobra.Command, args []string) {
+		if authWarning != "" {
+			sylog.Fatalf("Unable to push image to library reference %v: %v", args[1], authWarning)
+		}
 		libexec.PushImage(args[0], args[1], PushLibraryURI, authToken)
 	},
 

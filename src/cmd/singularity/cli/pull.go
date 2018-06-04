@@ -6,9 +6,10 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/pkg/libexec"
-	"github.com/spf13/cobra"
 	"github.com/singularityware/singularity/src/docs"
+	"github.com/singularityware/singularity/src/pkg/libexec"
+	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -31,6 +32,9 @@ var PullCmd = &cobra.Command{
 	Args: cobra.RangeArgs(1, 2),
 
 	Run: func(cmd *cobra.Command, args []string) {
+		if authWarning != "" {
+			sylog.Warningf("%v", authWarning)
+		}
 		if len(args) == 2 {
 			libexec.PullImage(args[0], args[1], PullLibraryURI, force, authToken)
 			return

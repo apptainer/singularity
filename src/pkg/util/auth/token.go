@@ -10,6 +10,7 @@ package auth
 
 import (
 	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -22,6 +23,11 @@ const (
 
 // ReadToken reads a sylabs JWT auth token from a file
 func ReadToken(tokenPath string) (token, warning string) {
+	// check if token file exist
+	if _, err := os.Stat(tokenPath); os.IsNotExist(err) {
+		return "", "Authentication token file not found"
+	}
+
 	buf, err := ioutil.ReadFile(tokenPath)
 	if err != nil {
 		return "", "Couldn't read your Sylabs authentication token. Only pulls of public images will succeed.\n"
