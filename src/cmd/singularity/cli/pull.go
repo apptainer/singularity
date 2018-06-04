@@ -32,10 +32,10 @@ var PullCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 2 {
-			libexec.PullImage(args[0], args[1], PullLibraryURI, force, tokenFile)
+			libexec.PullImage(args[0], args[1], PullLibraryURI, force, authToken)
 			return
 		}
-		libexec.PullImage("", args[0], PullLibraryURI, force, tokenFile)
+		libexec.PullImage("", args[0], PullLibraryURI, force, authToken)
 	},
 
 	Use:     docs.PullUse,
