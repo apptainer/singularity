@@ -11,37 +11,31 @@ package auth
 import (
 	"io/ioutil"
 	"strings"
-
-	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // ReadToken reads a sylabs JWT auth token from a file
-func ReadToken(tokenPath string) string {
+func ReadToken(tokenPath string) (token, warning string) {
 	buf, err := ioutil.ReadFile(tokenPath)
 	if err != nil {
-		sylog.Warningf("Couldn't read your Sylabs authentication token. Only pulls of public images will succeed.\n")
-		return ""
+		return "", "Couldn't read your Sylabs authentication token. Only pulls of public images will succeed.\n"
 	}
 
 	lines := strings.Split(string(buf), "\n")
 	if len(lines) < 1 {
-		sylog.Warningf("Token file is empty. Only pulls of public images will succeed.\n")
-		return ""
+		return "", "Token file is empty. Only pulls of public images will succeed.\n"
 	}
 
 	// A valid RSA signed token is at least 200 chars with no extra payload
-	token := lines[0]
+	token = lines[0]
 	if len(token) < 200 {
-		sylog.Warningf("Token is too short to be valid. Only pulls of public images will succeed.\n")
-		return ""
+		return "", "Token is too short to be valid. Only pulls of public images will succeed.\n"
 	}
 
 	// A token should never be bigger than 4Kb - if it is we will have problems
 	// with header buffers
 	if len(token) > 4096 {
-		sylog.Warningf("Token is too large to be valid. Only pulls of public images will succeed.\n")
-		return ""
+		return "", "Token is too large to be valid. Only pulls of public images will succeed.\n"
 	}
 
-	return token
+	return
 }
