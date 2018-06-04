@@ -7,11 +7,11 @@ package singularity
 
 /*
 #include <unistd.h>
-#include "c/lib/image/image.h"
-#include "c/lib/util/config_parser.h"
+#include "image/image.h"
+#include "util/config_parser.h"
 */
-// #cgo CFLAGS: -I../../../c/lib
-// #cgo LDFLAGS: -L../../../../../builddir/lib -lruntime -luuid
+// #cgo CFLAGS: -I../../c/lib
+// #cgo LDFLAGS: -L../../../../builddir/lib -lruntime -luuid
 import "C"
 
 import (

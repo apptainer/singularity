@@ -8,8 +8,8 @@ package config
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	oci "github.com/singularityware/singularity/src/runtime/engines/oci/config"
+	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	oci "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
 )
 
 // Name is the name of the runtime.
