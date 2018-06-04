@@ -16,19 +16,23 @@ const (
 
 func Test_ReadToken(t *testing.T) {
 
-	result := ReadToken("/no/such/file")
+	result, w := ReadToken("/no/such/file")
 	if result != "" {
 		t.Errorf("readToken from invalid file must give empty string")
 	}
 
-	result = ReadToken("test_data/test_token_toosmall")
-	if result != "" {
+	result, w = ReadToken("test_data/test_token_toosmall")
+	if w != WarningTokenTooShort {
 		t.Errorf("readToken from file with bad (too small) token must give empty string")
 	}
 
-	result = ReadToken(testTokenPath)
+	result, w = ReadToken("test_data/test_token_toolong")
+	if w != WarningTokenToolong {
+		t.Errorf("readToken from file with bad (too long) token must give empty string")
+	}
+
+	result, _ = ReadToken(testTokenPath)
 	if result != testToken {
 		t.Errorf("readToken from valid file must match expected result")
 	}
-
 }

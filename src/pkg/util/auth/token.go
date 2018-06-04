@@ -13,6 +13,13 @@ import (
 	"strings"
 )
 
+var (
+	// WarningTokenTooShort Warning return for token shorter than 200 b
+	WarningTokenTooShort = "Token is too short to be valid. Only pulls of public images will succeed"
+	// WarningTokenToolong Warning return for token longer than 4096 b
+	WarningTokenToolong = "Token is too large to be valid. Only pulls of public images will succeed"
+)
+
 // ReadToken reads a sylabs JWT auth token from a file
 func ReadToken(tokenPath string) (token, warning string) {
 	buf, err := ioutil.ReadFile(tokenPath)
@@ -28,13 +35,13 @@ func ReadToken(tokenPath string) (token, warning string) {
 	// A valid RSA signed token is at least 200 chars with no extra payload
 	token = lines[0]
 	if len(token) < 200 {
-		return "", "Token is too short to be valid. Only pulls of public images will succeed.\n"
+		return "", WarningTokenTooShort
 	}
 
 	// A token should never be bigger than 4Kb - if it is we will have problems
 	// with header buffers
 	if len(token) > 4096 {
-		return "", "Token is too large to be valid. Only pulls of public images will succeed.\n"
+		return "", WarningTokenToolong
 	}
 
 	return
