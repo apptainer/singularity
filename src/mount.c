@@ -76,8 +76,6 @@ int main(int argc, char **argv) {
 
     singularity_image_mount(&image, CONTAINER_MOUNTDIR);
 
-    singularity_runtime_overlayfs();
-
     singularity_priv_drop_perm();
 
     envar_set("SINGULARITY_MOUNTPOINT", CONTAINER_FINALDIR, 1);
