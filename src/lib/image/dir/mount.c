@@ -68,7 +68,7 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
         ABORT(255);
     }
 
-    realdir = realpath(".", NULL);
+    realdir = realpath(".", NULL); // Flawfinder: ignore
     if ( realdir == NULL ) {
         singularity_message(ERROR, "Failed to resolve path for directory %s: %s\n", image->path, strerror(errno));
         ABORT(255);
