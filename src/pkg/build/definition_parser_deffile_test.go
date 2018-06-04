@@ -37,7 +37,7 @@ func TestScanDefinitionFile(t *testing.T) {
 			deffile := test.defPath
 			r, err := os.Open(deffile)
 			if err != nil {
-				t.Fatal("unable to open file %s: %v\n", deffile, err)
+				t.Fatal("failed to read deffile:", err)
 			}
 			defer r.Close()
 
