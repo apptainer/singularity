@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-var (
+const (
 	// WarningTokenTooShort Warning return for token shorter than 200 b
 	WarningTokenTooShort = "Token is too short to be valid. Only pulls of public images will succeed"
 	// WarningTokenToolong Warning return for token longer than 4096 b
