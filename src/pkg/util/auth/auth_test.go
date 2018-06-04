@@ -26,11 +26,6 @@ func Test_ReadToken(t *testing.T) {
 		t.Errorf("readToken from file with bad (too small) token must give empty string")
 	}
 
-	result, w = ReadToken("test_data/test_token_toolong")
-	if w != WarningTokenToolong {
-		t.Errorf("readToken from file with bad (too long) token must give empty string")
-	}
-
 	result, _ = ReadToken(testTokenPath)
 	if result != testToken {
 		t.Errorf("readToken from valid file must match expected result")
