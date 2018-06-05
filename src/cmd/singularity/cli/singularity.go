@@ -28,7 +28,7 @@ var (
 
 var (
 	// TokenFile holds the path to the sylabs auth token file
-	tokenFile string
+	defaultTokenFile, tokenFile string
 	// authToken holds the sylabs auth token
 	authToken, authWarning string
 )
