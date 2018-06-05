@@ -16,26 +16,30 @@ import (
 
 const (
 	// WarningTokenTooShort Warning return for token shorter than 200 b
-	WarningTokenTooShort = "Token is too short to be valid. Only pulls of public images will succeed"
+	WarningTokenTooShort = "Token is too short to be valid"
 	// WarningTokenToolong Warning return for token longer than 4096 b
-	WarningTokenToolong = "Token is too large to be valid. Only pulls of public images will succeed"
+	WarningTokenToolong = "Token is too large to be valid"
+	// WarningEmptyToken Warning return for empty token string
+	WarningEmptyToken = "Token file is empty"
+	// WarningTokenFileNotFound token file not found
+	WarningTokenFileNotFound = "Authentication token file not found"
 )
 
 // ReadToken reads a sylabs JWT auth token from a file
 func ReadToken(tokenPath string) (token, warning string) {
 	// check if token file exist
 	if _, err := os.Stat(tokenPath); os.IsNotExist(err) {
-		return "", "Authentication token file not found"
+		return "", WarningTokenFileNotFound
 	}
 
 	buf, err := ioutil.ReadFile(tokenPath)
 	if err != nil {
-		return "", "Couldn't read your Sylabs authentication token. Only pulls of public images will succeed.\n"
+		return "", "Couldn't read your Sylabs authentication token"
 	}
 
 	lines := strings.Split(string(buf), "\n")
 	if len(lines) < 1 {
-		return "", "Token file is empty. Only pulls of public images will succeed.\n"
+		return "", WarningEmptyToken
 	}
 
 	// A valid RSA signed token is at least 200 chars with no extra payload

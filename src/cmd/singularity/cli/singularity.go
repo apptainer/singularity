@@ -100,4 +100,7 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 	if authToken == "" {
 		authToken, authWarning = auth.ReadToken(defaultTokenFile)
 	}
+	if authToken == "" && authWarning != "" {
+		sylog.Warningf("%v : Only pulls of public images will succeed", authWarning)
+	}
 }
