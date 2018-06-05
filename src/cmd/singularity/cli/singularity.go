@@ -62,7 +62,7 @@ func init() {
 	}
 	if i := strings.Compare(tokenFile, defaultTokenFile); i != 0 {
 		authToken, authWarning = auth.ReadToken(tokenFile)
-	} else {
+	} else if authToken != "" {
 		authToken, authWarning = auth.ReadToken(defaultTokenFile)
 	}
 }
