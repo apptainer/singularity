@@ -12,7 +12,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
-## [current master](https://github.com/bleuchien/singularity)
+## [current master](https://github.com/singularityware/singularity)
 
 ### Bug fixes
   - fixed * expansion during app runscript creation #1486
