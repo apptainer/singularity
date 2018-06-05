@@ -27,6 +27,6 @@ sed -i 's,^prefix=.*,prefix=/usr,' test.sh
 sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
 sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
 useradd -u 1000 testuser
-echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
+echo "Defaults:testuser env_keep=DOCKER_HOST umask=0777 umask_override=1" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
 su testuser -c "make test"
