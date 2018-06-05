@@ -49,12 +49,6 @@ func init() {
 	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
 	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
 	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
-
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Fatalf("Couldn't determine user home directory: %v", err)
-	}
-	defaultTokenFile := path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 	SingularityCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
 }
 
@@ -91,6 +85,12 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 // sylabsToken process the authentication Token
 // priority default_file < env < file_flag
 func sylabsToken(cmd *cobra.Command, args []string) {
+	usr, err := user.Current()
+	if err != nil {
+		sylog.Fatalf("Couldn't determine user home directory: %v", err)
+	}
+	defaultTokenFile := path.Join(usr.HomeDir, ".singularity", "sylabs-token")
+
 	if val := os.Getenv("SYLABS_TOKEN"); val != "" {
 		authToken = val
 	}
