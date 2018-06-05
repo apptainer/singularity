@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	config "github.com/singularityware/singularity/src/runtime/engines/common/config"
 	oci "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
@@ -13,23 +14,24 @@ import (
 
 // Engine describes a runtime engine
 type Engine struct {
-	singularityConfig.RuntimeEngineConfig
+	singularityConfig.EngineConfig
 }
 
 // InitConfig initializes a runtime configuration
-func (e *Engine) InitConfig() *config.RuntimeConfig {
-	if e.FileConfig == nil {
-		e.FileConfig = &singularityConfig.Configuration{}
-		if err := config.Parser("/usr/local/etc/singularity/singularity.conf", e.FileConfig); err != nil {
+func (engine *Engine) InitConfig() *config.RuntimeConfig {
+	if engine.FileConfig == nil {
+		engine.FileConfig = &singularityConfig.Configuration{}
+		if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", engine.FileConfig); err != nil {
 			return nil
 		}
 	}
-	cfg := &e.RuntimeConfig
+	cfg := &engine.RuntimeConfig
+	cfg.RuntimeEngineSpec = &engine.RuntimeEngineSpec
 	oci.DefaultRuntimeOciConfig(&cfg.OciConfig)
 	return cfg
 }
 
 // IsRunAsInstance returns true if the runtime engine was run as an instance
-func (e *Engine) IsRunAsInstance() bool {
+func (engine *Engine) IsRunAsInstance() bool {
 	return false
 }
