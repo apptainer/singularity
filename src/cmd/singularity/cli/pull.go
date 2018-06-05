@@ -29,8 +29,8 @@ func init() {
 // PullCmd singularity pull
 var PullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.RangeArgs(1, 2),
-
+	Args:   cobra.RangeArgs(1, 2),
+	PreRun: sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		if authWarning != "" {
 			sylog.Warningf("%v", authWarning)

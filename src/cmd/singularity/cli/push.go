@@ -28,11 +28,11 @@ func init() {
 // PushCmd singularity push
 var PushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.ExactArgs(2),
-
+	Args:   cobra.ExactArgs(2),
+	PreRun: sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		if authWarning != "" {
-			sylog.Fatalf("Unable to push image to library reference %v: %v", args[1], authWarning)
+			sylog.Fatalf("Unable to push image to %v %v", args[1], authWarning)
 		}
 		libexec.PushImage(args[0], args[1], PushLibraryURI, authToken)
 	},

@@ -52,7 +52,7 @@ var BuildCmd = &cobra.Command{
 	Short:   docs.BuildShort,
 	Long:    docs.BuildLong,
 	Example: docs.BuildExample,
-
+	PreRun:  sylabsToken,
 	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
 		var def build.Definition
