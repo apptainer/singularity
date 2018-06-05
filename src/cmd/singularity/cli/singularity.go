@@ -64,7 +64,7 @@ func init() {
 		authToken, authWarning = auth.ReadToken(tokenFile)
 	}
 	if authToken != "" {
-		authToken, warning = auth.ReadToken(defaultTokenFile)
+		authToken, authWarning = auth.ReadToken(defaultTokenFile)
 	}
 }
 
