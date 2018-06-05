@@ -26,7 +26,8 @@ yum install -y libtool sudo which e2fsprogs
 sed -i 's,^prefix=.*,prefix=/usr,' test.sh
 sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
 sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
-useradd testuser
+useradd -u 1000 testuser
 echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
+echo "Defaults umask=0777" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
-su testuser -c "make test"
+sudo -u testuser make test
