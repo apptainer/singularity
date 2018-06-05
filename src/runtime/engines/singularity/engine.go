@@ -14,7 +14,7 @@ import (
 
 // Engine describes a runtime engine
 type Engine struct {
-	singularityConfig.RuntimeEngineConfig
+	singularityConfig.EngineConfig
 }
 
 // InitConfig initializes a runtime configuration
