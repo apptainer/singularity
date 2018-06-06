@@ -89,7 +89,7 @@ int _singularity_runtime_mount_scratch(struct mountlist *mountlist) {
         }
 
         singularity_message(VERBOSE, "Queuing bind mount of '%s' to '%s'\n", full_sourcedir_path, current);
-        mountlist_add(mountlist, full_sourcedir_path, strdup(current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
+        mountlist_add(mountlist, full_sourcedir_path, strdup(current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, 0);
 
         current = strtok_r(NULL, ",", &outside_token);
 

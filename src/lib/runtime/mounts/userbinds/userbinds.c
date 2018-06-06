@@ -86,7 +86,7 @@ int _singularity_runtime_mount_userbinds(struct mountlist *mountlist) {
 
 
             singularity_message(VERBOSE, "Queuing bind mount of '%s' to '%s'\n", source, dest);
-            mountlist_add(mountlist, strdup(source), strdup(dest), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|read_only, NULL);
+            mountlist_add(mountlist, strdup(source), strdup(dest), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|read_only, 0);
         }
 
         free(bind_path_string);

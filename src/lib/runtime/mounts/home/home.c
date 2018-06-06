@@ -119,11 +119,11 @@ int _singularity_runtime_mount_home(struct mountlist *mountlist) {
         }
 
         singularity_message(VERBOSE, "Queuing bind mount of staged home directory base to container's base dir: %s/%s -> %s\n", session_dir, homedir_base, homedir_base);
-        mountlist_add(mountlist, joinpath(session_dir, homedir_base), strdup(homedir_base), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL);
+        mountlist_add(mountlist, joinpath(session_dir, homedir_base), strdup(homedir_base), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, 0);
 
     } else {
         singularity_message(VERBOSE, "Queuing bind mount of staged home directory to container: %s/%s -> %s\n", session_dir, home_dest, home_dest);
-        mountlist_add(mountlist, joinpath(session_dir, home_dest), strdup(home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL);
+        mountlist_add(mountlist, joinpath(session_dir, home_dest), strdup(home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, 0);
     }
 
     envar_set("HOME", home_dest, 1);
