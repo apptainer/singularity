@@ -45,9 +45,6 @@ func TestScanDefinitionFile(t *testing.T) {
 			s.Split(scanDefinitionFile)
 			for s.Scan() && s.Text() == "" && s.Err() == nil {
 			}
-			// debug
-			// fmt.Printf("%v\n", s.Bytes())
-			// fmt.Printf("%v\n", s.Text())
 
 			b, err := ioutil.ReadFile(test.sections)
 			if err != nil {
@@ -61,10 +58,6 @@ func TestScanDefinitionFile(t *testing.T) {
 			if err := json.Unmarshal(b, &d); err != nil {
 				t.Fatal("failed to unmarshal JSON:", err)
 			}
-			// debug
-			// nums := []byte(d[0].Header)
-			// fmt.Printf("%v\n", nums)
-			// fmt.Printf("%s\n", d[0].Header)
 
 			// Right now this only does the header, but the json files are
 			// written with all of the sections in mind so that could be added.
