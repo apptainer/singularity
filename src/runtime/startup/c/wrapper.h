@@ -43,7 +43,6 @@ struct cConfig {
     unsigned char isSuid;
     unsigned char isInstance;
     unsigned char noNewPrivs;
-    unsigned char hasNoNewPrivs;
     struct uidMapping uidMapping[MAX_ID_MAPPING];
     struct gidMapping gidMapping[MAX_ID_MAPPING];
     unsigned int jsonConfSize;
