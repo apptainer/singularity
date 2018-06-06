@@ -150,7 +150,6 @@ int _singularity_runtime_mount_hostfs(struct mountlist *mountlist) {
 
         singularity_message(VERBOSE, "Queuing bind mount of '%s'(%s) to '%s'\n", mountpoint, filesystem, mountpoint);
         mountlist_add(mountlist, NULL, strdup(mountpoint), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, 0);
-
     }
 
     free(line);
