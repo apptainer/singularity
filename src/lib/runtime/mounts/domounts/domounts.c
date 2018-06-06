@@ -67,7 +67,7 @@ int _singularity_runtime_domounts(struct mountlist *mountlist) {
             }
             if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
                 char *basedir = strdup(target);
-                basedir = dirname(target);
+                basedir = dirname(basedir);
 
                 singularity_message(DEBUG, "Checking base directory for file %s ('%s')\n", target, basedir);
                 if ( is_dir(basedir) != 0 ) {
