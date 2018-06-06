@@ -57,8 +57,7 @@ int _singularity_image_dir_mount(struct image_object *image, char *mount_point) 
         ABORT(255);
     }
 
-    current[PATH_MAX-1] = '\0';
-    if ( getcwd(current, PATH_MAX-1) == NULL ) {
+    if ( getcwd(current, PATH_MAX) == NULL ) {
         singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
         ABORT(255);
     }
