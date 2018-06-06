@@ -205,7 +205,7 @@ int _singularity_runtime_mount_dev(struct mountlist *mountlist) {
         }
 
         singularity_message(DEBUG, "Queuing bind mount of minimal staged /dev to mount into container\n");
-        mountlist_add(mountlist, devdir, strdup("/dev"), NULL, MS_BIND|MS_REC, NULL);
+        mountlist_add(mountlist, devdir, strdup("/dev"), NULL, MS_BIND|MS_REC, 0);
 
         free(sessiondir);
 
@@ -215,7 +215,7 @@ int _singularity_runtime_mount_dev(struct mountlist *mountlist) {
     singularity_message(DEBUG, "Checking configuration file for 'mount dev'\n");
     if ( singularity_config_get_bool_char(MOUNT_DEV) > 0 ) {
         singularity_message(VERBOSE, "Queuing bind mount of /dev\n");
-        mountlist_add(mountlist, NULL, strdup("/dev"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL);
+        mountlist_add(mountlist, NULL, strdup("/dev"), NULL, MS_BIND|MS_NOSUID|MS_REC, 0);
         return(0);
     }
 

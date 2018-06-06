@@ -78,7 +78,7 @@ int _singularity_runtime_mount_tmp(struct mountlist *mountlist) {
     }
     if ( is_dir(tmp_source) == 0 ) {
         singularity_message(VERBOSE, "Queuing bind mount of /tmp\n");
-        mountlist_add(mountlist, strdup(tmp_source), strdup("/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
+        mountlist_add(mountlist, strdup(tmp_source), strdup("/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, 0);
     } else {
         singularity_message(VERBOSE, "Could not mount host's /tmp directory (%s): does not exist\n", tmp_source);
     }
@@ -89,7 +89,7 @@ int _singularity_runtime_mount_tmp(struct mountlist *mountlist) {
     }
     if ( is_dir(vartmp_source) == 0 ) {
         singularity_message(VERBOSE, "Queuing bind mount of /var/tmp\n");
-        mountlist_add(mountlist, strdup(vartmp_source), strdup("/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
+        mountlist_add(mountlist, strdup(vartmp_source), strdup("/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, 0);
     } else {
         singularity_message(VERBOSE, "Could not mount host's /var/tmp directory (%s): does not exist\n", vartmp_source);
     }

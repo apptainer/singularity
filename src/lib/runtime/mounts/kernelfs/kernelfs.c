@@ -50,10 +50,10 @@ int _singularity_runtime_mount_kernelfs(struct mountlist *mountlist) {
     if ( singularity_config_get_bool(MOUNT_PROC) > 0 ) {
         if ( singularity_registry_get("PIDNS_ENABLED") == NULL ) {
             singularity_message(VERBOSE, "Queuing bind mount of host /proc\n");
-            mountlist_add(mountlist, NULL, strdup("/proc"), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL);
+            mountlist_add(mountlist, NULL, strdup("/proc"), NULL, MS_BIND | MS_NOSUID | MS_REC, 0);
         } else {
             singularity_message(VERBOSE, "Queuing mount of new procfs\n");
-            mountlist_add(mountlist, strdup("proc"), strdup("/proc"), "proc", MS_NOSUID, NULL);
+            mountlist_add(mountlist, strdup("proc"), strdup("/proc"), "proc", MS_NOSUID, 0);
         }
     } else {
         singularity_message(VERBOSE, "Skipping /proc mount\n");
@@ -65,10 +65,10 @@ int _singularity_runtime_mount_kernelfs(struct mountlist *mountlist) {
     if ( singularity_config_get_bool(MOUNT_SYS) > 0 ) {
         if ( singularity_priv_userns_enabled() == 1 ) {
             singularity_message(VERBOSE, "Queuing bind mount of /sys\n");
-            mountlist_add(mountlist, NULL, strdup("/sys"), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL);
+            mountlist_add(mountlist, NULL, strdup("/sys"), NULL, MS_BIND | MS_NOSUID | MS_REC, 0);
         } else {
             singularity_message(VERBOSE, "Queuing mount of new sysfs\n");
-            mountlist_add(mountlist, strdup("sysfs"), strdup("/sys"), "sysfs", MS_NOSUID, NULL);
+            mountlist_add(mountlist, strdup("sysfs"), strdup("/sys"), "sysfs", MS_NOSUID, 0);
         }
     } else {
         singularity_message(VERBOSE, "Skipping /sys mount\n");
