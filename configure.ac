@@ -415,6 +415,7 @@ AC_CONFIG_FILES([
    src/lib/runtime/mounts/tmp/Makefile
    src/lib/runtime/mounts/userbinds/Makefile
    src/lib/runtime/mounts/scratch/Makefile
+   src/lib/runtime/mounts/domounts/Makefile
    src/lib/runtime/enter/Makefile
    src/lib/runtime/enter/chroot/Makefile
    src/lib/runtime/environment/Makefile
