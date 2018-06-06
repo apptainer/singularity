@@ -6,11 +6,68 @@
 package build
 
 import (
+	"bufio"
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 )
+
+func TestScanDefinitionFile(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		defPath  string
+		sections string
+	}{
+		{"Arch", "./testdata_good/arch/arch", "./testdata_good/arch/arch_sections.json"},
+		{"BusyBox", "./testdata_good/busybox/busybox", "./testdata_good/busybox/busybox_sections.json"},
+		{"Debootstrap", "./testdata_good/debootstrap/debootstrap", "./testdata_good/debootstrap/debootstrap_sections.json"},
+		{"Docker", "./testdata_good/docker/docker", "./testdata_good/docker/docker_sections.json"},
+		{"LocalImage", "./testdata_good/localimage/localimage", "./testdata_good/localimage/localimage_sections.json"},
+		{"Shub", "./testdata_good/shub/shub", "./testdata_good/shub/shub_sections.json"},
+		{"Yum", "./testdata_good/yum/yum", "./testdata_good/yum/yum_sections.json"},
+		{"Zypper", "./testdata_good/zypper/zypper", "./testdata_good/zypper/zypper_sections.json"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+
+			deffile := test.defPath
+			r, err := os.Open(deffile)
+			if err != nil {
+				t.Fatal("failed to read deffile:", err)
+			}
+			defer r.Close()
+
+			s := bufio.NewScanner(r)
+			s.Split(scanDefinitionFile)
+			for s.Scan() && s.Text() == "" && s.Err() == nil {
+			}
+
+			b, err := ioutil.ReadFile(test.sections)
+			if err != nil {
+				t.Fatal("failed to read JSON:", err)
+			}
+
+			type DefFileSections struct {
+				Header string
+			}
+			var d []DefFileSections
+			if err := json.Unmarshal(b, &d); err != nil {
+				t.Fatal("failed to unmarshal JSON:", err)
+			}
+
+			// Right now this only does the header, but the json files are
+			// written with all of the sections in mind so that could be added.
+			if s.Text() != d[0].Header {
+				t.Fatal("scanDefinitionFile does not produce same header as reference")
+			}
+
+		})
+	}
+}
 
 func TestParseDefinitionFile(t *testing.T) {
 	tests := []struct {
