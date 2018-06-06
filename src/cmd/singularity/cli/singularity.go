@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/user"
 	"path"
-	"strings"
 	"text/template"
 
 	"github.com/singularityware/singularity/src/docs"
@@ -53,7 +52,7 @@ func init() {
 	if err != nil {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
 	}
-	defaultTokenFile := path.Join(usr.HomeDir, ".singularity", "sylabs-token")
+	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
 	SingularityCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
 }
@@ -94,13 +93,13 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 	if val := os.Getenv("SYLABS_TOKEN"); val != "" {
 		authToken = val
 	}
-	if i := strings.Compare(tokenFile, defaultTokenFile); i != 0 {
+	if tokenFile != defaultTokenFile {
 		authToken, authWarning = auth.ReadToken(tokenFile)
 	}
 	if authToken == "" {
 		authToken, authWarning = auth.ReadToken(defaultTokenFile)
 	}
-	if authToken == "" && authWarning != "" {
+	if authToken == "" && authWarning == auth.WarningTokenFileNotFound {
 		sylog.Warningf("%v : Only pulls of public images will succeed", authWarning)
 	}
 }
