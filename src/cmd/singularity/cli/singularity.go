@@ -7,9 +7,13 @@ package cli
 
 import (
 	"os"
+	"os/user"
+	"path"
 	"text/template"
 
 	"github.com/singularityware/singularity/src/docs"
+	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/auth"
 	"github.com/spf13/cobra"
 )
 
@@ -19,6 +23,13 @@ var (
 	silent  bool
 	verbose bool
 	quiet   bool
+)
+
+var (
+	// TokenFile holds the path to the sylabs auth token file
+	defaultTokenFile, tokenFile string
+	// authToken holds the sylabs auth token
+	authToken, authWarning string
 )
 
 func init() {
@@ -37,7 +48,13 @@ func init() {
 	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
 	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
 	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
+	usr, err := user.Current()
+	if err != nil {
+		sylog.Fatalf("Couldn't determine user home directory: %v", err)
+	}
+	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
+	SingularityCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
 }
 
 // SingularityCmd is the base command when called without any subcommands
@@ -68,4 +85,21 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 	}
 
 	return cmd.Use + " "
+}
+
+// sylabsToken process the authentication Token
+// priority default_file < env < file_flag
+func sylabsToken(cmd *cobra.Command, args []string) {
+	if val := os.Getenv("SYLABS_TOKEN"); val != "" {
+		authToken = val
+	}
+	if tokenFile != defaultTokenFile {
+		authToken, authWarning = auth.ReadToken(tokenFile)
+	}
+	if authToken == "" {
+		authToken, authWarning = auth.ReadToken(defaultTokenFile)
+	}
+	if authToken == "" && authWarning == auth.WarningTokenFileNotFound {
+		sylog.Warningf("%v : Only pulls of public images will succeed", authWarning)
+	}
 }

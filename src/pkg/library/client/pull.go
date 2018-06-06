@@ -22,9 +22,7 @@ const pullTimeout = 1800
 
 // DownloadImage will retrieve an image from the Container Library,
 // saving it into the specified file
-func DownloadImage(filePath string, libraryRef string, libraryURL string, Force bool, tokenFile string) error {
-
-	authToken := readToken(tokenFile)
+func DownloadImage(filePath string, libraryRef string, libraryURL string, Force bool, authToken string) error {
 
 	if !isLibraryPullRef(libraryRef) {
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
