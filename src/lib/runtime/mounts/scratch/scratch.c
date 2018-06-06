@@ -41,17 +41,15 @@
 #include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
-#include "util/mount.h"
+#include "util/mountlist.h"
 
 #include "../../runtime.h"
 
 
-int _singularity_runtime_mount_scratch(void) {
-    char *container_dir = CONTAINER_FINALDIR;
+int _singularity_runtime_mount_scratch(struct mountlist *mountlist) {
     char *scratchdir_path;
     char *tmpdir_path;
     char *sourcedir_path;
-    int r;
 
     singularity_message(DEBUG, "Getting SINGULARITY_SCRATCHDIR from environment\n");
     if ( ( scratchdir_path = singularity_registry_get("SCRATCHDIR") ) == NULL ) {
@@ -78,54 +76,20 @@ int _singularity_runtime_mount_scratch(void) {
     free(tmpdir_path);
 
     char *outside_token = NULL;
-    char *current = strtok_r(strdup(scratchdir_path), ",", &outside_token);
-
-    free(scratchdir_path);
+    char *current = strtok_r(scratchdir_path, ",", &outside_token);
 
     while ( current != NULL ) {
-
-        char *full_sourcedir_path = joinpath(sourcedir_path, basename(strdup(current)));
-        char *full_destdir_path = joinpath(container_dir, current);
-
-        singularity_message(DEBUG, "Checking if bind point is already mounted: %s\n", current);
-        if ( check_mounted(current) >= 0 ) {
-            singularity_message(ERROR, "Not mounting requested scratch directory (already mounted in container): %s\n", current);
-            ABORT(255);
-        }
+        char *current_copy = strdup(current);
+        char *full_sourcedir_path = joinpath(sourcedir_path, basename(current_copy));
+        free(current_copy);
 
         if ( container_mkpath_nopriv(full_sourcedir_path, 0750) < 0 ) {
              singularity_message(ERROR, "Could not create scratch working directory %s: %s\n", full_sourcedir_path, strerror(errno));
              ABORT(255);
         }
 
-        if ( is_dir(full_destdir_path) != 0 ) {
-            if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
-                singularity_message(DEBUG, "Creating scratch directory inside container\n");
-                r = container_mkpath_priv(full_destdir_path, 0755);
-                if ( r < 0 ) {
-                    singularity_message(VERBOSE, "Skipping scratch directory mount, could not create dir inside container %s: %s\n", current, strerror(errno));
-                    current = strtok_r(NULL, ",", &outside_token);
-                    continue;
-                }
-            } else {
-                singularity_message(WARNING, "Skipping scratch directory mount, target directory does not exist: %s\n", current);
-                current = strtok_r(NULL, ",", &outside_token);
-                continue;
-            }
-        }
-
-        singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", full_sourcedir_path, container_dir, current);
-        r = singularity_mount(full_sourcedir_path, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
-        if ( singularity_priv_userns_enabled() != 1 ) {
-            r += singularity_mount(NULL, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL);
-        }
-        if ( r < 0 ) {
-            singularity_message(WARNING, "Could not bind scratch directory into container %s: %s\n", full_sourcedir_path, strerror(errno));
-            ABORT(255);
-        }
-
-        free(full_sourcedir_path);
-        free(full_destdir_path);
+        singularity_message(VERBOSE, "Queuing bind mount of '%s' to '%s'\n", full_sourcedir_path, current);
+        mountlist_add(mountlist, full_sourcedir_path, strdup(current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
 
         current = strtok_r(NULL, ",", &outside_token);
 
@@ -134,6 +98,8 @@ int _singularity_runtime_mount_scratch(void) {
             current = strtok_r(NULL, ",", &outside_token);
         }
     }
+
+    free(scratchdir_path);
     return(0);
 }
 

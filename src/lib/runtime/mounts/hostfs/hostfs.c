@@ -37,20 +37,18 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
-#include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
-#include "util/mount.h"
+#include "util/mountlist.h"
 
 #include "../../runtime.h"
 
 #define MAX_LINE_LEN 4096
 
 
-int _singularity_runtime_mount_hostfs(void) {
+int _singularity_runtime_mount_hostfs(struct mountlist *mountlist) {
     FILE *mounts;
     char *line = NULL;
-    char *container_dir = CONTAINER_FINALDIR;
 
     if ( singularity_config_get_bool(MOUNT_HOSTFS) <= 0 ) {
         singularity_message(DEBUG, "Not mounting host file systems per configuration\n");
@@ -88,7 +86,7 @@ int _singularity_runtime_mount_hostfs(void) {
             singularity_message(VERBOSE3, "Skipping blank or comment line in /proc/mounts\n");
             continue;
         }
-        if ( ( source = strtok(strdup(line), " ") ) == NULL ) {
+        if ( ( source = strtok(line, " ") ) == NULL ) {
             singularity_message(VERBOSE3, "Could not obtain mount source from /proc/mounts: %s\n", line);
             continue;
         }
@@ -129,8 +127,8 @@ int _singularity_runtime_mount_hostfs(void) {
             singularity_message(DEBUG, "Skipping /var based file system: %s,%s,%s\n", source, mountpoint, filesystem);
             continue;
         }
-        if ( strncmp(mountpoint, container_dir, strlength(container_dir, PATH_MAX)) == 0 ) {
-            singularity_message(DEBUG, "Skipping final_dir (%s) based file system: %s,%s,%s\n", container_dir, source, mountpoint, filesystem);
+        if ( strncmp(mountpoint, CONTAINER_FINALDIR, strlength(CONTAINER_FINALDIR, PATH_MAX)) == 0 ) {
+            singularity_message(DEBUG, "Skipping final_dir (%s) based file system: %s,%s,%s\n", CONTAINER_FINALDIR, source, mountpoint, filesystem);
             continue;
         }
         if ( strcmp(mountpoint, CONTAINER_MOUNTDIR) == 0 ) {
@@ -149,36 +147,9 @@ int _singularity_runtime_mount_hostfs(void) {
             singularity_message(DEBUG, "Skipping ramfs file system: %s,%s,%s\n", source, mountpoint, filesystem);
             continue;
         }
-        singularity_message(DEBUG, "Checking if host file system is already mounted: %s\n", mountpoint);
-        if ( check_mounted(mountpoint) >= 0 ) {
-            singularity_message(VERBOSE, "Not mounting host FS (already mounted in container): %s\n", mountpoint);
-            continue;
-        }
 
-        if ( ( is_dir(mountpoint) == 0 ) && ( is_dir(joinpath(container_dir, mountpoint)) < 0 ) ) {
-            if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
-                if ( container_mkpath_priv(joinpath(container_dir, mountpoint), 0755) < 0 ) {
-                    singularity_message(WARNING, "Could not create bind point directory in container %s: %s\n", mountpoint, strerror(errno));
-                    continue;
-                }
-            } else {
-                singularity_message(WARNING, "Non existent 'bind point' directory in container: '%s'\n", mountpoint);
-                continue;
-            }
-        }
-
-
-        singularity_message(VERBOSE, "Binding '%s'(%s) to '%s/%s'\n", mountpoint, filesystem, container_dir, mountpoint);
-        if ( singularity_mount(mountpoint, joinpath(container_dir, mountpoint), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
-            singularity_message(ERROR, "There was an error binding the path %s: %s\n", mountpoint, strerror(errno));
-            ABORT(255);
-        }
-        if ( singularity_priv_userns_enabled() != 1 ) {
-            if ( singularity_mount(NULL, joinpath(container_dir, mountpoint), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
-                singularity_message(ERROR, "There was an error remounting the path %s: %s\n", mountpoint, strerror(errno));
-                ABORT(255);
-            }
-        }
+        singularity_message(VERBOSE, "Queuing bind mount of '%s'(%s) to '%s'\n", mountpoint, filesystem, mountpoint);
+        mountlist_add(mountlist, NULL, strdup(mountpoint), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
 
     }
 
