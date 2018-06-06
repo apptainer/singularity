@@ -8,47 +8,40 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
 )
 
-var capabilityAddExamples = `
-      $ singularity capability.add /tmp/my-sql.img mysql
-
-      $ singularity shell capability://mysql
-      Singularity my-sql.img> pwd
-      /home/mibauer/mysql
-      Singularity my-sql.img> ps
-      PID TTY          TIME CMD
-        1 pts/0    00:00:00 sinit
-        2 pts/0    00:00:00 bash
-        3 pts/0    00:00:00 ps
-      Singularity my-sql.img> 
-    
-      $ singularity capability.stop /tmp/my-sql.img mysql
-      Stopping /tmp/my-sql.img mysql`
-
 func init() {
 	capabilityAddCmds := []*cobra.Command{
-		capabilityAddCmd,
-		capabilityDotAddCmd,
+		CapabilityAddCmd,
+		// capabilityDotAddCmd,
 	}
 
 	for _, cmd := range capabilityAddCmds {
 		cmd.Flags().SetInterspersed(false)
 	}
 
-	singularityCmd.AddCommand(capabilityDotAddCmd)
+	// SingularityCmd.AddCommand(capabilityDotAddCmd)
 }
 
-var capabilityAddCmd = &cobra.Command{
-	Use:  "add [add options...] <capabilities>",
+// CapabilityAddCmd singularity capability add
+var CapabilityAddCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("adding capability")
 	},
-	Example: capabilityAddExamples,
+
+	Use:     docs.CapabilityAddUse,
+	Short:   docs.CapabilityAddShort,
+	Long:    docs.CapabilityAddLong,
+	Example: docs.CapabilityAddExample,
 }
 
+/* I'd like to have a discussion about dropping the dot version of command
+groups.  Don't really want to support duplicate code that doesn't serve a real
+purpose and if we are going to drop them major release is the time.
 var capabilityDotAddCmd = &cobra.Command{
 	Use:  "capability.add [options...] <capabilities>",
 	Args: cobra.MinimumNArgs(2),
@@ -58,3 +51,4 @@ var capabilityDotAddCmd = &cobra.Command{
 	Example: capabilityAddExamples,
 	Hidden:  true,
 }
+*/

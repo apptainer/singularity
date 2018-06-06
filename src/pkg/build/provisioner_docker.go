@@ -6,15 +6,10 @@
 package build
 
 import (
-	"archive/tar"
-	"compress/gzip"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/containers/image/copy"
@@ -24,8 +19,8 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // NewDockerProvisioner returns a provisioner that can create a sandbox from a
@@ -147,16 +142,11 @@ func (p *DockerProvisioner) unpackTmpfs(i *image.Sandbox) (err error) {
 }
 
 func (p *DockerProvisioner) insertBaseEnv(i *image.Sandbox) (err error) {
-	f, err := os.Open(buildcfg.LIBEXECDIR + "/singularity/environment.tar")
-	if err != nil {
-		return
+	rootPath := path.Clean(i.Rootfs())
+	if err = makeBaseEnv(rootPath); err != nil {
+		sylog.Errorf("%v", err)
 	}
-
-	defer f.Close()
-
-	err = Untar(i.Rootfs(), f)
-
-	return nil
+	return
 }
 
 func (p *DockerProvisioner) insertRunScript(i *image.Sandbox, ociConfig imgspecv1.ImageConfig) (err error) {
@@ -264,77 +254,4 @@ func (p *DockerProvisioner) insertEnv(i *image.Sandbox, ociConfig imgspecv1.Imag
 	}
 
 	return nil
-}
-
-//
-// Untar takes a destination path and a reader; a tar reader loops over the tarfile
-// creating the file structure at 'dst' along the way, and writing any files
-func Untar(dst string, r io.Reader) error {
-
-	dstAbs := path.Clean(dst)
-
-	gzr, err := gzip.NewReader(r)
-	defer gzr.Close()
-	if err != nil {
-		return err
-	}
-
-	tr := tar.NewReader(gzr)
-
-	for {
-		header, err := tr.Next()
-
-		switch {
-
-		// if no more files are found return
-		case err == io.EOF:
-			return nil
-
-		// return any other error
-		case err != nil:
-			return err
-
-		// if the header is nil, just skip it (not sure how this happens)
-		case header == nil:
-			continue
-		}
-
-		// the target location where the dir/file should be created
-		target := filepath.Join(dstAbs, header.Name)
-
-		// Make sure the target is inside the destination
-		targetAbs := path.Clean(target)
-		if !strings.HasPrefix(targetAbs, dstAbs) {
-			return fmt.Errorf("attempt to extract file %s outside of destination %s", header.Name, dst)
-		}
-
-		// the following switch could also be done using fi.Mode(), not sure if there
-		// a benefit of using one vs. the other.
-		// fi := header.FileInfo()
-
-		// check the file type
-		switch header.Typeflag {
-
-		// if its a dir and it doesn't exist create it
-		case tar.TypeDir:
-			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
-					return err
-				}
-			}
-
-		// if it's a file create it
-		case tar.TypeReg:
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-
-			// copy over contents
-			if _, err := io.Copy(f, tr); err != nil {
-				return err
-			}
-		}
-	}
 }

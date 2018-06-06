@@ -8,20 +8,29 @@ package cli
 import (
 	"fmt"
 
+	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	singularityCmd.AddCommand(instanceDotStopCmd)
+	// SingularityCmd.AddCommand(instanceDotStopCmd)
+	InstanceStopCmd.Flags().SetInterspersed(false)
 }
 
-var instanceStopCmd = &cobra.Command{
-	Use: "stop",
+// InstanceStopCmd singularity instance stop
+var InstanceStopCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("stopping instance")
 	},
+
+	Use:     docs.InstanceStopUse,
+	Short:   docs.InstanceStopShort,
+	Long:    docs.InstanceStopLong,
+	Example: docs.InstanceStopExample,
 }
 
+/*
 var instanceDotStopCmd = &cobra.Command{
 	Use:    "instance.stop",
 	Hidden: true,
@@ -29,3 +38,4 @@ var instanceDotStopCmd = &cobra.Command{
 		fmt.Println("stopping instance")
 	},
 }
+*/

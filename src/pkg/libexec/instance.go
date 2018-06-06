@@ -9,14 +9,17 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// InstanceStart starts an instance.
 func InstanceStart(spec *specs.Spec) {
 
 }
 
+// InstanceStop stops an instance.
 func InstanceStop(spec *specs.Spec) {
 
 }
 
+// InstanceList lists the running instances.
 func InstanceList() []specs.State {
 	return nil
 }

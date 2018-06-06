@@ -6,7 +6,6 @@
 package sif
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,16 +13,16 @@ import (
 
 	"github.com/golang/glog"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	image "github.com/singularityware/singularity/src/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/image"
 )
 
+// SIF describes a SIF image.
 type SIF struct {
 	path string
 }
 
-// SIFFromSandbox converts the sandbox, s, to a SIF file
-func SIFFromSandbox(sandbox *image.Sandbox, imagePath string) (*SIF, error) {
+// FromSandbox converts the sandbox, s, to a SIF file.
+func FromSandbox(sandbox *image.Sandbox, imagePath string) (*SIF, error) {
 	mksquashfs, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		glog.Error("mksquashfs is not installed on this system")
@@ -36,40 +35,43 @@ func SIFFromSandbox(sandbox *image.Sandbox, imagePath string) (*SIF, error) {
 	os.Remove(squashfsPath)
 
 	mksquashfsCmd := exec.Command(mksquashfs, sandbox.Rootfs(), squashfsPath, "-noappend")
-	mksfsout, err := mksquashfsCmd.CombinedOutput()
+	mksquashfsCmd.Stdin = os.Stdin
+	mksquashfsCmd.Stdout = os.Stdout
+	mksquashfsCmd.Stderr = os.Stderr
+	err = mksquashfsCmd.Run()
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println(string(mksfsout))
-
-	sif := buildcfg.SBINDIR + "/sif"
-
-	sifCmd := exec.Command(sif, "create", "-P", squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", imagePath)
-	sifout, err := sifCmd.CombinedOutput()
+	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", imagePath)
+	sifCmd.Stdin = os.Stdin
+	sifCmd.Stdout = os.Stdout
+	sifCmd.Stderr = os.Stderr
+	err = sifCmd.Run()
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(string(sifout))
 
 	return &SIF{path: imagePath}, nil
 
 }
 
-// SIFFromPath returns a SIF object of the file located at path
-func SIFFromPath(path string) *SIF {
+// FromPath returns a SIF object of the file located at path.
+func FromPath(path string) *SIF {
 	return &SIF{}
 }
 
-func SIFFromReadSeeker(f io.ReadSeeker) *SIF {
+// FromReadSeeker returns a SIF object from the supplied ReadSeeker.
+func FromReadSeeker(f io.ReadSeeker) *SIF {
 	return &SIF{}
 }
 
+// Root returns the root specification of the SIF.
 func (i *SIF) Root() *specs.Root {
 	return &specs.Root{}
 }
 
+// Rootfs returns the root FS of the SIF.
 func (i *SIF) Rootfs() string {
 	return i.path
 }

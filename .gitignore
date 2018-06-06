@@ -5,6 +5,9 @@ src/*.o
 singularity-*.tar.gz
 *.m4
 *.pyc
+*.swp
+singularity
+generate_docs
 
 .vscode
 vendor/
@@ -37,6 +40,8 @@ singularity.spec
 src/util/config_defaults.h
 test.sh
 secbuildimg.sh
+
+docs/man/singularity*
 
 src/action
 src/action-suid
@@ -95,4 +100,6 @@ src/*/*/*/*/.dirstamp
 
 build/*
 runtime/cli
-builddir
+
+src/pkg/library/client/test[0-9]*
+src/pkg/build/test.img
