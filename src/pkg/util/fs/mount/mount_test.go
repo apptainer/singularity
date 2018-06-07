@@ -258,7 +258,8 @@ func TestRemount(t *testing.T) {
 }
 
 func TestImport(t *testing.T) {
-	points := &Points{}
+	mountLabel := "system_u:object_r:removable_t"
+	points := &Points{Context: mountLabel}
 
 	validImport := []specs.Mount{
 		{
@@ -272,6 +273,18 @@ func TestImport(t *testing.T) {
 			Destination: "/mnt",
 			Type:        "",
 			Options:     []string{"rbind", "nosuid", "remount"},
+		},
+		{
+			Source:      "proc",
+			Destination: "/proc",
+			Type:        "proc",
+			Options:     []string{"nosuid", "nodev"},
+		},
+		{
+			Source:      "sysfs",
+			Destination: "/sys",
+			Type:        "sysfs",
+			Options:     []string{"nosuid", "nodev"},
 		},
 		{
 			Source:      "",
@@ -312,28 +325,55 @@ func TestImport(t *testing.T) {
 		t.Errorf("wrong number of bind mount point found")
 	}
 	fs := points.GetAllFS()
-	if len(fs) != 1 {
+	if len(fs) != 3 {
 		t.Errorf("wrong number of filesystem mount point found")
 	}
 	points.Remove("/mnt")
 	all = points.GetAll()
-	if len(all) != 3 {
-		t.Errorf("returned a wrong number of mount points %d instead of %d", len(all), 3)
+	if len(all) != 5 {
+		t.Errorf("returned a wrong number of mount points %d instead of 5", len(all))
 	}
 	points.Remove("/tmp")
 	all = points.GetAll()
-	if len(all) != 2 {
-		t.Errorf("returned a wrong number of mount points %d instead of %d", len(all), 2)
+	if len(all) != 4 {
+		t.Errorf("returned a wrong number of mount points %d instead of 4", len(all))
 	}
 	points.Remove("/opt")
 	all = points.GetAll()
-	if len(all) != 1 {
-		t.Errorf("returned a wrong number of mount points %d instead of %d", len(all), 1)
+	if len(all) != 3 {
+		t.Errorf("returned a wrong number of mount points %d instead of 3", len(all))
 	}
 	points.Remove("/tmp/image")
 	all = points.GetAll()
+	if len(all) != 2 {
+		t.Errorf("returned a wrong number of mount points %d instead of 2", len(all))
+	}
+
+	proc := points.Get("/proc")
+	if len(proc) != 1 {
+		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(proc))
+	}
+	for _, option := range proc[0].Options {
+		if option == "context="+mountLabel {
+			t.Errorf("context should not be set for proc filesystem")
+		}
+	}
+	points.Remove("/proc")
+
+	sys := points.Get("/sys")
+	if len(sys) != 1 {
+		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(sys))
+	}
+	for _, option := range sys[0].Options {
+		if option == "context="+mountLabel {
+			t.Errorf("context should not be set for sysfs filesystem")
+		}
+	}
+	points.Remove("/sys")
+
+	all = points.GetAll()
 	if len(all) != 0 {
-		t.Errorf("returned a wrong number of mount points %d instead of %d", len(all), 0)
+		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}
 	points.RemoveAll()
 
@@ -354,4 +394,57 @@ func TestImport(t *testing.T) {
 	if err := points.Import(invalidImport); err == nil {
 		t.Errorf("import should failed")
 	}
+
+	validForceContextImport := []specs.Mount{
+		{
+			Source:      "/",
+			Destination: "/tmp",
+			Type:        "tmpfs",
+			Options:     []string{"nosuid", "nodev", "mode=1777"},
+		},
+	}
+
+	if err := points.Import(validForceContextImport); err != nil {
+		t.Fatalf("%s", err)
+	}
+	tmp := points.Get("/tmp")
+	if len(tmp) != 1 {
+		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(tmp))
+	}
+	hasContext := false
+	for _, option := range tmp[0].Options {
+		if option == "context="+mountLabel {
+			hasContext = true
+		}
+	}
+	if !hasContext {
+		t.Errorf("context should be set /tmp mount point")
+	}
+	points.RemoveAll()
+
+	validContextImport := []specs.Mount{
+		{
+			Source:      "/",
+			Destination: "/tmp",
+			Type:        "tmpfs",
+			Options:     []string{"nosuid", "nodev", "mode=1777", "context=" + mountLabel},
+		},
+	}
+	if err := points.Import(validContextImport); err != nil {
+		t.Fatalf("%s", err)
+	}
+	tmp = points.Get("/tmp")
+	if len(tmp) != 1 {
+		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(tmp))
+	}
+	numContext := 0
+	for _, option := range tmp[0].Options {
+		if option == "context="+mountLabel {
+			numContext++
+		}
+	}
+	if numContext != 1 {
+		t.Errorf("context option is set %d times for /tmp mount point %s", numContext, tmp[0])
+	}
+	points.RemoveAll()
 }

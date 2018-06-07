@@ -52,18 +52,23 @@ var mountFlags = []struct {
 	{"sync", 0},
 }
 
-var authorizedImage = []string{
-	"ext3",
-	"squashfs",
+type fsContext struct {
+	context bool
 }
 
-var authorizedFS = []string{
-	"overlay",
-	"tmpfs",
-	"ramfs",
-	"sysfs",
-	"proc",
-	"devpts",
+var authorizedImage = map[string]fsContext{
+	"ext3":     {true},
+	"squashfs": {true},
+}
+
+var authorizedFS = map[string]fsContext{
+	"overlay": {true},
+	"tmpfs":   {true},
+	"ramfs":   {true},
+	"devpts":  {true},
+	"sysfs":   {false},
+	"proc":    {false},
+	"mqueue":  {false},
 }
 
 // ConvertOptions converts an options string into a pair of mount flags and mount options
@@ -91,11 +96,14 @@ func ConvertOptions(options []string) (uintptr, []string) {
 
 // Points defines and stores a set of mount points
 type Points struct {
-	points []specs.Mount
+	Context string
+	points  []specs.Mount
 }
 
 func (p *Points) add(source string, dest string, fstype string, flags uintptr, options string) error {
 	var bind = false
+	//var setContext = false
+
 	mountOptions := []string{}
 
 	if dest == "" {
@@ -116,11 +124,22 @@ func (p *Points) add(source string, dest string, fstype string, flags uintptr, o
 			}
 		}
 	}
+	setContext := true
 	for _, option := range strings.Split(options, ",") {
 		o := strings.TrimSpace(option)
 		if o != "" {
+			if strings.HasPrefix(o, "context=") {
+				setContext = false
+			}
 			mountOptions = append(mountOptions, o)
 		}
+	}
+	if fstype != "" && setContext {
+		setContext = authorizedFS[fstype].context
+	}
+	if setContext {
+		context := fmt.Sprintf("context=%s", p.Context)
+		mountOptions = append(mountOptions, context)
 	}
 	p.points = append(p.points, specs.Mount{
 		Source:      source,
@@ -213,6 +232,7 @@ func (p *Points) Import(points []specs.Mount) error {
 				continue
 			}
 		}
+		p.RemoveAll()
 		return fmt.Errorf("can't import mount points list: %s", err)
 	}
 	return nil
@@ -229,13 +249,7 @@ func (p *Points) AddImage(source string, dest string, fstype string, flags uintp
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
 		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for image mount points")
 	}
-	authorized := false
-	for _, fs := range authorizedImage {
-		if fstype == fs {
-			authorized = true
-		}
-	}
-	if !authorized {
+	if _, ok := authorizedImage[fstype]; !ok {
 		return fmt.Errorf("mount %s image is not authorized", fstype)
 	}
 	options := fmt.Sprintf("loop,offset=%d,errors=remount-ro", offset)
@@ -246,7 +260,7 @@ func (p *Points) AddImage(source string, dest string, fstype string, flags uintp
 func (p *Points) GetAllImages() []specs.Mount {
 	images := []specs.Mount{}
 	for _, point := range p.points {
-		for _, fs := range authorizedImage {
+		for fs := range authorizedImage {
 			if fs == point.Type {
 				images = append(images, point)
 				break
@@ -331,13 +345,7 @@ func (p *Points) AddFS(dest string, fstype string, flags uintptr, options string
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
 		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for FS mount points")
 	}
-	authorized := false
-	for _, fs := range authorizedFS {
-		if fstype == fs {
-			authorized = true
-		}
-	}
-	if !authorized {
+	if _, ok := authorizedFS[fstype]; !ok {
 		return fmt.Errorf("mount %s file system is not authorized", fstype)
 	}
 	return p.add(fstype, dest, fstype, flags, options)
@@ -347,8 +355,8 @@ func (p *Points) AddFS(dest string, fstype string, flags uintptr, options string
 func (p *Points) GetAllFS() []specs.Mount {
 	fs := []specs.Mount{}
 	for _, point := range p.points {
-		for _, filesystem := range authorizedFS {
-			if filesystem == point.Type && point.Type != "overlay" {
+		for fstype := range authorizedFS {
+			if fstype == point.Type && point.Type != "overlay" {
 				fs = append(fs, point)
 			}
 		}
