@@ -42,7 +42,7 @@ type mockService struct {
 
 var upgrader = websocket.Upgrader{}
 
-func newResponse(m *mockService, id bson.ObjectId, d Definition, isDetached bool) ResponseData {
+func newResponse(m *mockService, id bson.ObjectId, d Definition) ResponseData {
 	wsURL := url.URL{
 		Scheme: "ws",
 		Host:   m.httpAddr,
@@ -57,7 +57,6 @@ func newResponse(m *mockService, id bson.ObjectId, d Definition, isDetached bool
 	return ResponseData{
 		ID:         id,
 		Definition: d,
-		IsDetached: isDetached,
 		WSURL:      wsURL.String(),
 		ImageURL:   imageURL.String(),
 	}
@@ -74,7 +73,7 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(m.buildResponseCode)
 		if m.buildResponseCode == http.StatusCreated {
 			id := bson.NewObjectId()
-			json.NewEncoder(w).Encode(newResponse(m, id, rd.Definition, rd.IsDetached))
+			json.NewEncoder(w).Encode(newResponse(m, id, rd.Definition))
 		}
 	} else if r.Method == http.MethodGet && strings.HasPrefix(r.RequestURI, buildPath) {
 		// Mock status endpoint
@@ -84,7 +83,7 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(m.statusResponseCode)
 		if m.statusResponseCode == http.StatusOK {
-			json.NewEncoder(w).Encode(newResponse(m, bson.ObjectIdHex(id), Definition{}, false))
+			json.NewEncoder(w).Encode(newResponse(m, bson.ObjectIdHex(id), Definition{}))
 		}
 	} else if r.Method == http.MethodGet && strings.HasPrefix(r.RequestURI, imagePath) {
 		// Mock get image endpoint
@@ -198,14 +197,10 @@ func TestDoBuildRequest(t *testing.T) {
 		expectSuccess bool
 		responseCode  int
 		ctx           context.Context
-		isDetached    bool
 	}{
-		{"SuccessAttached", true, http.StatusCreated, context.Background(), false},
-		{"SuccessDetached", true, http.StatusCreated, context.Background(), true},
-		{"NotFoundAttached", false, http.StatusNotFound, context.Background(), false},
-		{"NotFoundDetached", false, http.StatusNotFound, context.Background(), true},
-		{"ContextExpiredAttached", false, http.StatusCreated, ctx, false},
-		{"ContextExpiredDetached", false, http.StatusCreated, ctx, true},
+		{"SuccessAttached", true, http.StatusCreated, context.Background()},
+		{"NotFoundAttached", false, http.StatusNotFound, context.Background()},
+		{"ContextExpiredAttached", false, http.StatusCreated, ctx},
 	}
 
 	// Start a mock server
@@ -224,15 +219,21 @@ func TestDoBuildRequest(t *testing.T) {
 			m.buildResponseCode = test.responseCode
 
 			// Call the handler
-			rd, err := rb.doBuildRequest(test.ctx, Definition{}, test.isDetached)
+			rd, err := rb.doBuildRequest(test.ctx, Definition{})
 
 			if test.expectSuccess {
 				// Ensure the handler returned no error, and the response is as expected
 				if err != nil {
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				if rd.IsDetached != test.isDetached {
-					t.Fatalf("unexpected value for isDetached: %v/%v", rd.IsDetached, test.isDetached)
+				if !rd.ID.Valid() {
+					t.Fatalf("invalid ID")
+				}
+				if rd.WSURL == "" {
+					t.Errorf("empty websocket URL")
+				}
+				if rd.ImageURL == "" {
+					t.Errorf("empty image URL")
 				}
 			} else {
 				// Ensure the handler returned an error
@@ -289,6 +290,12 @@ func TestDoStatusRequest(t *testing.T) {
 				}
 				if rd.ID != id {
 					t.Errorf("mismatched ID: %v/%v", rd.ID, id)
+				}
+				if rd.WSURL == "" {
+					t.Errorf("empty websocket URL")
+				}
+				if rd.ImageURL == "" {
+					t.Errorf("empty image URL")
 				}
 			} else {
 				// Ensure the handler returned an error
