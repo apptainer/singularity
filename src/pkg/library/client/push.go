@@ -20,9 +20,7 @@ import (
 const pushTimeout = 1800
 
 // UploadImage will push a specified image up to the Container Library,
-func UploadImage(filePath string, libraryRef string, libraryURL string, tokenFile string) error {
-
-	authToken := readToken(tokenFile)
+func UploadImage(filePath string, libraryRef string, libraryURL string, authToken string) error {
 
 	if !isLibraryPushRef(libraryRef) {
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)

@@ -13,11 +13,6 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-const (
-	testToken     = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM"
-	testTokenPath = "test_data/test_token"
-)
-
 func Test_isLibraryPullRef(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -307,23 +302,4 @@ func Test_sha256sum(t *testing.T) {
 	if shasum != expectedSha256 {
 		t.Errorf("sha256sum returned %v - expected %v", shasum, expectedSha256)
 	}
-}
-
-func Test_readToken(t *testing.T) {
-
-	result := readToken("/no/such/file")
-	if result != "" {
-		t.Errorf("readToken from invalid file must give empty string")
-	}
-
-	result = readToken("test_data/test_token_toosmall")
-	if result != "" {
-		t.Errorf("readToken from file with bad (too small) token must give empty string")
-	}
-
-	result = readToken(testTokenPath)
-	if result != testToken {
-		t.Errorf("readToken from valid file must match expected result")
-	}
-
 }

@@ -24,20 +24,24 @@ import (
 
 // RequestData contains the info necessary for submitting a build to a remote service
 type RequestData struct {
-	Definition `json:"definition"`
-	IsDetached bool `json:"isDetached"`
+	Definition  `json:"definition"`
+	CallbackURL string `json:"callbackURL"`
 }
 
 // ResponseData contains the details of an individual build
 type ResponseData struct {
-	ID           bson.ObjectId `json:"id"`
-	SubmitTime   time.Time     `json:"submitTime"`
-	IsComplete   bool          `json:"isComplete"`
-	CompleteTime *time.Time    `json:"completeTime,omitempty"`
-	IsDetached   bool          `json:"isDetached"`
-	WSURL        string        `json:"wsURL,omitempty"`
-	ImageURL     string        `json:"imageURL,omitempty"`
-	Definition   Definition    `json:"definition"`
+	ID            bson.ObjectId `json:"id"`
+	CreatedBy     string        `json:"createdBy"`
+	SubmitTime    time.Time     `json:"submitTime"`
+	StartTime     *time.Time    `json:"startTime,omitempty" bson:",omitempty"`
+	IsComplete    bool          `json:"isComplete"`
+	CompleteTime  *time.Time    `json:"completeTime,omitempty"`
+	ImageSize     int64         `json:"imageSize,omitempty"`
+	ImageChecksum string        `json:"imageChecksum,omitempty"`
+	Definition    Definition    `json:"definition"`
+	CallbackURL   string        `json:"callbackURL"`
+	ImageURL      string        `json:"imageURL,omitempty" bson:"-"`
+	WSURL         string        `json:"wsURL,omitempty" bson:"-"`
 }
 
 // RemoteBuilder contains the build request and response
@@ -80,7 +84,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	defer f.Close()
 
 	// Send build request to Remote Build Service
-	rd, err := rb.doBuildRequest(ctx, rb.Definition, rb.IsDetached)
+	rd, err := rb.doBuildRequest(ctx, rb.Definition)
 	if err != nil {
 		err = errors.Wrap(err, "failed to post request to remote build service")
 		sylog.Warningf("%v\n", err)
@@ -151,10 +155,9 @@ func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err erro
 }
 
 // doBuildRequest creates a new build on a Remote Build Service
-func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, isDetached bool) (rd ResponseData, err error) {
+func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition) (rd ResponseData, err error) {
 	b, err := json.Marshal(RequestData{
 		Definition: d,
-		IsDetached: isDetached,
 	})
 	if err != nil {
 		return
