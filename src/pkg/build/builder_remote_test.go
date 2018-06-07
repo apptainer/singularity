@@ -219,7 +219,7 @@ func TestDoBuildRequest(t *testing.T) {
 			m.buildResponseCode = test.responseCode
 
 			// Call the handler
-			rd, err := rb.doBuildRequest(test.ctx, Definition{})
+			rd, err := rb.doBuildRequest(test.ctx)
 
 			if test.expectSuccess {
 				// Ensure the handler returned no error, and the response is as expected

@@ -27,8 +27,9 @@ func isLibraryPullRef(libraryRef string) bool {
 	return match
 }
 
-func isLibraryPushRef(libraryRef string) bool {
-	// For push we allow specifying multiple tags, delimited with ,
+// IsLibraryPushRef check if the given library reference is valid
+// For push we allow specifying multiple tags, delimited with ","
+func IsLibraryPushRef(libraryRef string) bool {
 	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[,._-][a-z0-9]+)*)?$", libraryRef)
 	return match
 }
@@ -58,7 +59,8 @@ func IsImageHash(refPart string) bool {
 	return match
 }
 
-func parseLibraryRef(libraryRef string) (entity string, collection string, container string, tags []string) {
+// ParseLibraryRef takes a library reference string and slipts it into entity, collection, container and tags.
+func ParseLibraryRef(libraryRef string) (entity string, collection string, container string, tags []string) {
 
 	libraryRef = strings.TrimPrefix(libraryRef, "library://")
 

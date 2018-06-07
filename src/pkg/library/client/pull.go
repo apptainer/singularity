@@ -29,7 +29,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	}
 
 	if filePath == "" {
-		_, _, container, tags := parseLibraryRef(libraryRef)
+		_, _, container, tags := ParseLibraryRef(libraryRef)
 		filePath = fmt.Sprintf("%s_%s.sif", container, tags[0])
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
 	}

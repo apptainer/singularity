@@ -67,7 +67,7 @@ func Test_isLibraryPushRef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isLibraryPushRef(tt.libraryRef); got != tt.want {
+			if got := IsLibraryPushRef(tt.libraryRef); got != tt.want {
 				t.Errorf("isLibraryPushRef() = %v, want %v", got, tt.want)
 			}
 		})
@@ -143,7 +143,7 @@ func Test_parseLibraryRef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ent, col, con, tags := parseLibraryRef(tt.libraryRef)
+			ent, col, con, tags := ParseLibraryRef(tt.libraryRef)
 			if ent != tt.wantEnt {
 				t.Errorf("parseLibraryRef() = entity %v, want %v", ent, tt.wantEnt)
 			}

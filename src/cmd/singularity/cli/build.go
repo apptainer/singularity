@@ -26,6 +26,7 @@ var (
 	writable  bool
 	force     bool
 	noTest    bool
+	detached  bool
 	sections  []string
 )
 
@@ -39,6 +40,7 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&force, "force", "f", false, "Delete and overwrite an image if it currently exists")
 	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
+	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "Run build in background and print build ID")
 	BuildCmd.Flags().StringVar(&remoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
 
 	SingularityCmd.AddCommand(BuildCmd)
@@ -101,7 +103,7 @@ var BuildCmd = &cobra.Command{
 					authWarning != auth.WarningTokenToolong &&
 					authWarning != auth.WarningTokenTooShort {
 					if authToken != "" {
-						b = build.NewRemoteBuilder(args[0], def, false, remoteURL, authToken)
+						b = build.NewRemoteBuilder(args[0], def, detached, remoteURL, authToken)
 					}
 				} else {
 					sylog.Fatalf("Unable to submit build job: %v", authWarning)
