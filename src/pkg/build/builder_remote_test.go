@@ -6,7 +6,6 @@
 package build
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -219,7 +218,7 @@ func TestDoBuildRequest(t *testing.T) {
 			m.buildResponseCode = test.responseCode
 
 			// Call the handler
-			rd, err := rb.doBuildRequest(test.ctx, Definition{})
+			rd, err := rb.doBuildRequest(test.ctx)
 
 			if test.expectSuccess {
 				// Ensure the handler returned no error, and the response is as expected
@@ -296,62 +295,6 @@ func TestDoStatusRequest(t *testing.T) {
 				}
 				if rd.ImageURL == "" {
 					t.Errorf("empty image URL")
-				}
-			} else {
-				// Ensure the handler returned an error
-				if err == nil {
-					t.Fatalf("unexpected success")
-				}
-			}
-		})
-	}
-}
-
-func TestDoPullRequest(t *testing.T) {
-	// Craft an expired context
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
-	defer cancel()
-
-	// Table of tests to run
-	tests := []struct {
-		description   string
-		expectSuccess bool
-		responseCode  int
-		ctx           context.Context
-	}{
-		{"Success", true, http.StatusOK, context.Background()},
-		{"NotFound", false, http.StatusNotFound, context.Background()},
-		{"ContextExpired", false, http.StatusOK, ctx},
-	}
-
-	// Start a mock server
-	m := mockService{t: t}
-	s := httptest.NewServer(&m)
-	defer s.Close()
-
-	// Enough of a struct to test with
-	rb := RemoteBuilder{}
-
-	// Craft URL to image
-	path := fmt.Sprintf("/v1/image/%v", bson.NewObjectId().Hex())
-	url := url.URL{Scheme: "http", Host: s.Listener.Addr().String(), Path: path}
-
-	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
-			m.imageResponseCode = test.responseCode
-			b := bytes.Buffer{}
-
-			// Call the handler
-			err := rb.doPullRequest(test.ctx, url.String(), &b)
-
-			if test.expectSuccess {
-				// Ensure the handler returned no error, and the image was written as expected
-				if err != nil {
-					t.Fatalf("unexpected failure: %v", err)
-				}
-				if 0 != strings.Compare(imageContents, b.String()) {
-					t.Errorf("unexpected image contents '%v'/'%v'", b.String(), imageContents)
 				}
 			} else {
 				// Ensure the handler returned an error
