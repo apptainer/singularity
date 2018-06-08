@@ -22,12 +22,16 @@ import (
 	"github.com/golang/glog"
 )
 
-func isLibraryPullRef(libraryRef string) bool {
+// IsLibraryPullRef returns true if the provided string is a valid library
+// reference for a pull operation.
+func IsLibraryPullRef(libraryRef string) bool {
 	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){0,2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[._-][a-z0-9]+)*)?$", libraryRef)
 	return match
 }
 
-func isLibraryPushRef(libraryRef string) bool {
+// IsLibraryPushRef returns true if the provided string is a valid library
+// reference for a push operation.
+func IsLibraryPushRef(libraryRef string) bool {
 	// For push we allow specifying multiple tags, delimited with ,
 	match, _ := regexp.MatchString("^(library://)?([a-z0-9]+(?:[._-][a-z0-9]+)*/){2}([a-z0-9]+(?:[._-][a-z0-9]+)*)(:[a-z0-9]+(?:[,._-][a-z0-9]+)*)?$", libraryRef)
 	return match
