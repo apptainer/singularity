@@ -51,7 +51,13 @@ type RemoteBuilder struct {
 	Definition Definition
 	IsDetached bool
 	HTTPAddr   string
-	AuthHeader string
+	AuthToken  string
+}
+
+func (rb *RemoteBuilder) setAuthHeader(h http.Header) {
+	if rb.AuthToken != "" {
+		h.Set("Authorization", fmt.Sprintf("Bearer %s", rb.AuthToken))
+	}
 }
 
 // NewRemoteBuilder creates a RemoteBuilder with the specified details.
@@ -64,9 +70,7 @@ func NewRemoteBuilder(imagePath string, d Definition, isDetached bool, httpAddr,
 		Definition: d,
 		IsDetached: isDetached,
 		HTTPAddr:   httpAddr,
-	}
-	if authToken != "" {
-		rb.AuthHeader = fmt.Sprintf("Bearer %s", authToken)
+		AuthToken:  authToken,
 	}
 
 	return
@@ -118,9 +122,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 // streamOutput attaches via websocket and streams output to the console
 func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err error) {
 	h := http.Header{}
-	if rb.AuthHeader != "" {
-		h.Set("Authorization", rb.AuthHeader)
-	}
+	rb.setAuthHeader(h)
 	c, _, err := websocket.DefaultDialer.Dial(url, h)
 	if err != nil {
 		return err
@@ -169,9 +171,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition) (rd R
 		return
 	}
 	req = req.WithContext(ctx)
-	if rb.AuthHeader != "" {
-		req.Header.Set("Authorization", rb.AuthHeader)
-	}
+	rb.setAuthHeader(req.Header)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := rb.Client.Do(req)
@@ -197,9 +197,7 @@ func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) 
 		return
 	}
 	req = req.WithContext(ctx)
-	if rb.AuthHeader != "" {
-		req.Header.Set("Authorization", rb.AuthHeader)
-	}
+	rb.setAuthHeader(req.Header)
 
 	res, err := rb.Client.Do(req)
 	if err != nil {
@@ -223,9 +221,7 @@ func (rb *RemoteBuilder) doPullRequest(ctx context.Context, url string, r io.Wri
 		return
 	}
 	req = req.WithContext(ctx)
-	if rb.AuthHeader != "" {
-		req.Header.Set("Authorization", rb.AuthHeader)
-	}
+	rb.setAuthHeader(req.Header)
 
 	res, err := rb.Client.Do(req)
 	if err != nil {
