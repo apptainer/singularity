@@ -38,7 +38,7 @@ func Test_isLibraryPullRef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isLibraryPullRef(tt.libraryRef); got != tt.want {
+			if got := IsLibraryPullRef(tt.libraryRef); got != tt.want {
 				t.Errorf("isLibraryPullRef() = %v, want %v", got, tt.want)
 			}
 		})
@@ -67,7 +67,7 @@ func Test_isLibraryPushRef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := isLibraryPushRef(tt.libraryRef); got != tt.want {
+			if got := IsLibraryPushRef(tt.libraryRef); got != tt.want {
 				t.Errorf("isLibraryPushRef() = %v, want %v", got, tt.want)
 			}
 		})
