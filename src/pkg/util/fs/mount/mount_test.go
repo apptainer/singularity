@@ -16,44 +16,44 @@ func TestImage(t *testing.T) {
 	points := &Points{}
 
 	if err := points.AddImage("", "/fake", "ext3", 0, 0); err == nil {
-		t.Errorf("should failed with empty source")
+		t.Errorf("should have failed with empty source")
 	}
 	if err := points.AddImage("/fake", "", "ext3", 0, 0); err == nil {
-		t.Errorf("should failed with empty destination")
+		t.Errorf("should have failed with empty destination")
 	}
 
 	if err := points.AddImage("fake", "/", "ext3", 0, 0); err == nil {
-		t.Errorf("should failed as source is not an absolute path")
+		t.Errorf("should have failed as source is not an absolute path")
 	}
 	if err := points.AddImage("/", "fake", "ext3", 0, 0); err == nil {
-		t.Errorf("should failed as destination is not an absolute path")
+		t.Errorf("should have failed as destination is not an absolute path")
 	}
 
 	if err := points.AddImage("", "/", "ext3", 0, 0); err == nil {
-		t.Errorf("should failed with empty source")
+		t.Errorf("should have failed with empty source")
 	}
 	if err := points.AddImage("/fake", "/", "xfs", 0, 0); err == nil {
-		t.Errorf("should failed with bad filesystem type")
+		t.Errorf("should have failed with bad filesystem type")
 	}
 	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_BIND, 0); err == nil {
-		t.Errorf("should failed with bad bind flag")
+		t.Errorf("should have failed with bad bind flag")
 	}
 	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REMOUNT, 0); err == nil {
-		t.Errorf("should failed with bad remount flag")
+		t.Errorf("should have failed with bad remount flag")
 	}
 	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REC, 0); err == nil {
-		t.Errorf("should failed with bad recursive flag")
+		t.Errorf("should have failed with bad recursive flag")
 	}
 	if err := points.AddImage("/fake", "/", "ext3", 0, 0); err != nil {
-		t.Errorf("should pass with ext3 filesystem")
+		t.Errorf("should have passed with ext3 filesystem")
 	}
 	if err := points.AddImage("/fake", "/", "squashfs", 0, 0); err != nil {
-		t.Errorf("should failed with squashfs filesystem")
+		t.Errorf("should have failed with squashfs filesystem")
 	}
 	points.RemoveAll()
 
 	if err := points.AddImage("/fake", "/", "squashfs", syscall.MS_NOSUID, 31); err != nil {
-		t.Fatalf("should failed with squashfs filesystem")
+		t.Fatalf("should have failed with squashfs filesystem")
 	}
 	images := points.GetAllImages()
 	if len(images) != 1 {
@@ -84,33 +84,33 @@ func TestOverlay(t *testing.T) {
 	points := &Points{}
 
 	if err := points.AddOverlay("", 0, "/", "", ""); err == nil {
-		t.Errorf("should failed with empty destination")
+		t.Errorf("should have failed with empty destination")
 	}
 	if err := points.AddOverlay("/fake", 0, "", "/upper", "/work"); err == nil {
-		t.Errorf("should failed with empty lowerdir")
+		t.Errorf("should have failed with empty lowerdir")
 	}
 	if err := points.AddOverlay("/fake", 0, "/lower", "/upper", ""); err == nil {
-		t.Errorf("should failed with empty workdir")
+		t.Errorf("should have failed with empty workdir")
 	}
 
 	if err := points.AddOverlay("/", 0, "lower", "", ""); err == nil {
-		t.Errorf("should failed as lowerdir is not an absolute path")
+		t.Errorf("should have failed as lowerdir is not an absolute path")
 	}
 	if err := points.AddOverlay("/", 0, "/lower", "upper", "/work"); err == nil {
-		t.Errorf("should failed as upperdir is not an absolute path")
+		t.Errorf("should have failed as upperdir is not an absolute path")
 	}
 	if err := points.AddOverlay("/", 0, "/lower", "/upper", "work"); err == nil {
-		t.Errorf("should failed as workdir is not an absolute path")
+		t.Errorf("should have failed as workdir is not an absolute path")
 	}
 
 	if err := points.AddOverlay("/fake", syscall.MS_BIND, "/lower", "", ""); err == nil {
-		t.Errorf("should failed with bad bind flag")
+		t.Errorf("should have failed with bad bind flag")
 	}
 	if err := points.AddOverlay("/fake", syscall.MS_REMOUNT, "/lower", "", ""); err == nil {
-		t.Errorf("should failed with bad remount flag")
+		t.Errorf("should have failed with bad remount flag")
 	}
 	if err := points.AddOverlay("/fake", syscall.MS_REC, "/lower", "", ""); err == nil {
-		t.Errorf("should failed with bad recursive flag")
+		t.Errorf("should have failed with bad recursive flag")
 	}
 	points.RemoveAll()
 
@@ -147,26 +147,26 @@ func TestFS(t *testing.T) {
 	points := &Points{}
 
 	if err := points.AddFS("", "tmpfs", 0, ""); err == nil {
-		t.Errorf("should failed with empty destination")
+		t.Errorf("should have failed with empty destination")
 	}
 	if err := points.AddFS("fake", "tmpfs", 0, ""); err == nil {
-		t.Errorf("should failed as destination is not an absolute path")
+		t.Errorf("should have failed as destination is not an absolute path")
 	}
 
 	if err := points.AddFS("fake", "tmpfs", syscall.MS_BIND, ""); err == nil {
-		t.Errorf("should failed with bad bind flag")
+		t.Errorf("should have failed with bad bind flag")
 	}
 	if err := points.AddFS("fake", "tmpfs", syscall.MS_REMOUNT, ""); err == nil {
-		t.Errorf("should failed with bad remount flag")
+		t.Errorf("should have failed with bad remount flag")
 	}
 	if err := points.AddFS("fake", "tmpfs", syscall.MS_REC, ""); err == nil {
-		t.Errorf("should failed with bad recursive flag")
+		t.Errorf("should have failed with bad recursive flag")
 	}
 
 	points.RemoveAll()
 
 	if err := points.AddFS("/fields/of", "cows", 0, ""); err == nil {
-		t.Errorf("should failed as filesystem is not authorized")
+		t.Errorf("should have failed as filesystem is not authorized")
 	}
 
 	fs := points.GetAllFS()
@@ -198,14 +198,14 @@ func TestBind(t *testing.T) {
 	points := &Points{}
 
 	if err := points.AddBind("/", "", 0); err == nil {
-		t.Errorf("should failed with empty destination")
+		t.Errorf("should have failed with empty destination")
 	}
 
 	if err := points.AddBind("fake", "/", 0); err == nil {
-		t.Errorf("should failed as source is not an absolute path")
+		t.Errorf("should have failed as source is not an absolute path")
 	}
 	if err := points.AddBind("/", "fake", 0); err == nil {
-		t.Errorf("should failed as destination is not an absolute path")
+		t.Errorf("should have failed as destination is not an absolute path")
 	}
 	points.RemoveAll()
 
@@ -249,10 +249,10 @@ func TestRemount(t *testing.T) {
 	points := &Points{}
 
 	if err := points.AddRemount("", 0); err == nil {
-		t.Errorf("should failed with empty destination")
+		t.Errorf("should have failed with empty destination")
 	}
 	if err := points.AddRemount("fake", 0); err == nil {
-		t.Errorf("should failed as destination is not an absolute path")
+		t.Errorf("should have failed as destination is not an absolute path")
 	}
 	points.RemoveAll()
 }
