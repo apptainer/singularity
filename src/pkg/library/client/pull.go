@@ -24,7 +24,7 @@ const pullTimeout = 1800
 // saving it into the specified file
 func DownloadImage(filePath string, libraryRef string, libraryURL string, Force bool, authToken string) error {
 
-	if !isLibraryPullRef(libraryRef) {
+	if !IsLibraryPullRef(libraryRef) {
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
 	}
 
