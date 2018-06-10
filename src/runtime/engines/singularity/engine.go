@@ -6,32 +6,30 @@
 package singularity
 
 import (
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"encoding/json"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	config "github.com/singularityware/singularity/src/runtime/engines/common/config"
-	oci "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
 )
 
-// Engine describes a runtime engine
-type Engine struct {
-	singularityConfig.EngineConfig
+// EngineOperations describes a runtime engine
+type EngineOperations struct {
+	CommonConfig *config.Common                  `json:"-"`
+	EngineConfig *singularityConfig.EngineConfig `json:"engineConfig"`
 }
 
-// InitConfig initializes a runtime configuration
-func (engine *Engine) InitConfig() *config.RuntimeConfig {
-	if engine.FileConfig == nil {
-		engine.FileConfig = &singularityConfig.Configuration{}
-		if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", engine.FileConfig); err != nil {
-			return nil
-		}
+// InitConfig stores the pointer to config.Common
+func (e *EngineOperations) InitConfig(cfg *config.Common) {
+	e.CommonConfig = cfg
+
+	if err := json.Unmarshal(cfg.EngineConfig, e.EngineConfig); err != nil {
+		sylog.Fatalf("Unable to initialze Singularity engine config: %s\n", err)
 	}
-	cfg := &engine.RuntimeConfig
-	cfg.RuntimeEngineSpec = &engine.RuntimeEngineSpec
-	oci.DefaultRuntimeOciConfig(&cfg.OciConfig)
-	return cfg
+
 }
 
 // IsRunAsInstance returns true if the runtime engine was run as an instance
-func (engine *Engine) IsRunAsInstance() bool {
+func (engine *EngineOperations) IsRunAsInstance() bool {
 	return false
 }

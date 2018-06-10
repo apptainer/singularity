@@ -5,7 +5,17 @@
 
 package singularity
 
+import (
+	"fmt"
+
+	"github.com/singularityware/singularity/src/runtime/engines/singularity/config"
+)
+
 // CheckConfig checks the runtime engine config
-func (engine *Engine) CheckConfig() error {
+func (engine *EngineOperations) CheckConfig() error {
+	if engine.CommonConfig.EngineName != config.Name {
+		return fmt.Errorf("incorrect engine")
+	}
+
 	return nil
 }

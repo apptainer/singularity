@@ -6,18 +6,16 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	oci "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
 )
 
 // Name is the name of the runtime.
 const Name = "singularity"
 
-// Configuration describes the runtime configuration.
-type Configuration struct {
+// FileConfiguration describes the singularity.conf file options
+type FileConfiguration struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
 	AllowPidNs              bool     `default:"yes" authorized:"yes,no" directive:"allow pid ns"`
@@ -50,8 +48,9 @@ type Configuration struct {
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 }
 
-// RuntimeEngineSpec is the specification of the runtime engine configuration.
-type RuntimeEngineSpec struct {
+// EngineConfig is the specification of the runtime engine configuration. This is
+// parsed from `json:"engineConfig"` within config.CommonEngineConfig
+type EngineConfig struct {
 	Image            string   `json:"image"`
 	WritableImage    bool     `json:"writableImage,omitempty"`
 	OverlayImage     string   `json:"overlayImage,omitempty"`
@@ -75,247 +74,240 @@ type RuntimeEngineSpec struct {
 	KeepPrivs        bool     `json:"keepPrivs,omitempty"`
 	NoPrivs          bool     `json:"noPrivs,omitempty"`
 	Home             string   `json:"home,omitempty"`
+
+	FileConfig *FileConfiguration `json:"fileConfig"`
 }
 
-// EngineConfig is the configuration of the engine.
-type EngineConfig struct {
-	config.RuntimeConfig
-	RuntimeEngineSpec RuntimeEngineSpec `json:"runtimeConfig"`
-	FileConfig        *Configuration
-}
-
-// NewSingularityConfig returns a new Singularity configuration.
-func NewSingularityConfig(containerID string) (*oci.RuntimeOciConfig, *EngineConfig) {
-	c := &Configuration{}
+// NewSingularityConfig returns singularity.EngineConfig with a parsed FileConfig
+func NewSingularityConfig() *EngineConfig {
+	c := &FileConfiguration{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
-		fmt.Println(err)
+		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
 	}
-	runtimecfg := &EngineConfig{FileConfig: c}
-	cfg := &runtimecfg.RuntimeConfig
-	runtimecfg.RuntimeSpec.ID = containerID
-	runtimecfg.RuntimeSpec.RuntimeName = Name
-	runtimecfg.RuntimeSpec.RuntimeOciSpec = &cfg.OciConfig.RuntimeOciSpec
-	runtimecfg.RuntimeSpec.RuntimeEngineSpec = &runtimecfg.RuntimeEngineSpec
-	oci.DefaultRuntimeOciConfig(&cfg.OciConfig)
-	return &cfg.OciConfig, runtimecfg
+
+	ret := &EngineConfig{
+		FileConfig: c,
+	}
+
+	return ret
 }
 
 // SetImage sets the container image path to be used by container.
 func (r *EngineConfig) SetImage(name string) {
-	r.RuntimeEngineSpec.Image = name
+	r.Image = name
 }
 
 // GetImage retrieves the container image path.
 func (r *EngineConfig) GetImage() string {
-	return r.RuntimeEngineSpec.Image
+	return r.Image
 }
 
 // SetWritableImage defines the container image as writable or not.
 func (r *EngineConfig) SetWritableImage(writable bool) {
-	r.RuntimeEngineSpec.WritableImage = writable
+	r.WritableImage = writable
 }
 
 // GetWritableImage returns if the container image is writable or not.
 func (r *EngineConfig) GetWritableImage() bool {
-	return r.RuntimeEngineSpec.WritableImage
+	return r.WritableImage
 }
 
 // SetOverlayImage sets the overlay image path to be used on top of container image.
 func (r *EngineConfig) SetOverlayImage(name string) {
-	r.RuntimeEngineSpec.OverlayImage = name
+	r.OverlayImage = name
 }
 
 // GetOverlayImage retrieves the overlay image path.
 func (r *EngineConfig) GetOverlayImage() string {
-	return r.RuntimeEngineSpec.OverlayImage
+	return r.OverlayImage
 }
 
 // SetOverlayFsEnabled defines if overlay filesystem is enabled or not.
 func (r *EngineConfig) SetOverlayFsEnabled(enabled bool) {
-	r.RuntimeEngineSpec.OverlayFsEnabled = enabled
+	r.OverlayFsEnabled = enabled
 }
 
 // GetOverlayFsEnabled returns if overlay filesystem is enabled or not.
 func (r *EngineConfig) GetOverlayFsEnabled() bool {
-	return r.RuntimeEngineSpec.OverlayFsEnabled
+	return r.OverlayFsEnabled
 }
 
 // SetContain sets contain flag.
 func (r *EngineConfig) SetContain(contain bool) {
-	r.RuntimeEngineSpec.Contain = contain
+	r.Contain = contain
 }
 
 // GetContain returns if contain flag is set or not.
 func (r *EngineConfig) GetContain() bool {
-	return r.RuntimeEngineSpec.Contain
+	return r.Contain
 }
 
 // SetNv sets nv flag to bind cuda libraries into container.
 func (r *EngineConfig) SetNv(nv bool) {
-	r.RuntimeEngineSpec.Nv = nv
+	r.Nv = nv
 }
 
 // GetNv returns if nv flag is set or not.
 func (r *EngineConfig) GetNv() bool {
-	return r.RuntimeEngineSpec.Nv
+	return r.Nv
 }
 
 // SetWorkdir sets a work directory path.
 func (r *EngineConfig) SetWorkdir(name string) {
-	r.RuntimeEngineSpec.Workdir = name
+	r.Workdir = name
 }
 
 // GetWorkdir retrieves the work directory path.
 func (r *EngineConfig) GetWorkdir() string {
-	return r.RuntimeEngineSpec.Workdir
+	return r.Workdir
 }
 
 // SetScratchDir set a scratch directory path.
 func (r *EngineConfig) SetScratchDir(scratchdir []string) {
-	r.RuntimeEngineSpec.ScratchDir = scratchdir
+	r.ScratchDir = scratchdir
 }
 
 // GetScratchDir retrieves the scratch directory path.
 func (r *EngineConfig) GetScratchDir() []string {
-	return r.RuntimeEngineSpec.ScratchDir
+	return r.ScratchDir
 }
 
 // SetHomeDir sets the home directory path.
 func (r *EngineConfig) SetHomeDir(name string) {
-	r.RuntimeEngineSpec.HomeDir = name
+	r.HomeDir = name
 }
 
 // GetHomeDir retrieves the home directory path.
 func (r *EngineConfig) GetHomeDir() string {
-	return r.RuntimeEngineSpec.HomeDir
+	return r.HomeDir
 }
 
 // SetBindPath sets paths to bind into container.
 func (r *EngineConfig) SetBindPath(bindpath []string) {
-	r.RuntimeEngineSpec.BindPath = bindpath
+	r.BindPath = bindpath
 }
 
 // GetBindPath retrieves bind paths.
 func (r *EngineConfig) GetBindPath() []string {
-	return r.RuntimeEngineSpec.BindPath
+	return r.BindPath
 }
 
 // SetCommand sets action command to execute.
 func (r *EngineConfig) SetCommand(command string) {
-	r.RuntimeEngineSpec.Command = command
+	r.Command = command
 }
 
 // GetCommand retrieves action command.
 func (r *EngineConfig) GetCommand() string {
-	return r.RuntimeEngineSpec.Command
+	return r.Command
 }
 
 // SetShell sets shell to be used by shell command.
 func (r *EngineConfig) SetShell(shell string) {
-	r.RuntimeEngineSpec.Shell = shell
+	r.Shell = shell
 }
 
 // GetShell retrieves shell for shell command.
 func (r *EngineConfig) GetShell() string {
-	return r.RuntimeEngineSpec.Shell
+	return r.Shell
 }
 
 // SetTmpDir sets temporary directory path.
 func (r *EngineConfig) SetTmpDir(name string) {
-	r.RuntimeEngineSpec.TmpDir = name
+	r.TmpDir = name
 }
 
 // GetTmpDir retrieves temporary directory path.
 func (r *EngineConfig) GetTmpDir() string {
-	return r.RuntimeEngineSpec.TmpDir
+	return r.TmpDir
 }
 
 // SetInstance sets if container run as instance or not.
 func (r *EngineConfig) SetInstance(instance bool) {
-	r.RuntimeEngineSpec.IsInstance = instance
+	r.IsInstance = instance
 }
 
 // GetInstance returns if container run as instance or not.
 func (r *EngineConfig) GetInstance() bool {
-	return r.RuntimeEngineSpec.IsInstance
+	return r.IsInstance
 }
 
 // SetBootInstance sets boot flag to execute /sbin/init as main instance process.
 func (r *EngineConfig) SetBootInstance(boot bool) {
-	r.RuntimeEngineSpec.BootInstance = boot
+	r.BootInstance = boot
 }
 
 // GetBootInstance returns if boot flag is set or not
 func (r *EngineConfig) GetBootInstance() bool {
-	return r.RuntimeEngineSpec.BootInstance
+	return r.BootInstance
 }
 
 // SetAddCaps sets bounding/effective/permitted/inheritable/ambient capabilities to add.
 func (r *EngineConfig) SetAddCaps(caps string) {
-	r.RuntimeEngineSpec.AddCaps = caps
+	r.AddCaps = caps
 }
 
 // GetAddCaps retrieves bounding/effective/permitted/inheritable/ambient capabilities to add.
 func (r *EngineConfig) GetAddCaps() string {
-	return r.RuntimeEngineSpec.AddCaps
+	return r.AddCaps
 }
 
 // SetDropCaps sets bounding/effective/permitted/inheritable/ambient capabilities to drop.
 func (r *EngineConfig) SetDropCaps(caps string) {
-	r.RuntimeEngineSpec.DropCaps = caps
+	r.DropCaps = caps
 }
 
 // GetDropCaps retrieves bounding/effective/permitted/inheritable/ambient capabilities to drop.
 func (r *EngineConfig) GetDropCaps() string {
-	return r.RuntimeEngineSpec.DropCaps
+	return r.DropCaps
 }
 
 // SetHostname sets hostname to use in container.
 func (r *EngineConfig) SetHostname(hostname string) {
-	r.RuntimeEngineSpec.Hostname = hostname
+	r.Hostname = hostname
 }
 
 // GetHostname retrieves hostname to use in container.
 func (r *EngineConfig) GetHostname() string {
-	return r.RuntimeEngineSpec.Hostname
+	return r.Hostname
 }
 
 // SetAllowSUID sets allow-suid flag to allow to run setuid binary inside container.
 func (r *EngineConfig) SetAllowSUID(allow bool) {
-	r.RuntimeEngineSpec.AllowSUID = allow
+	r.AllowSUID = allow
 }
 
 // GetAllowSUID returns if allow-suid is set or not.
 func (r *EngineConfig) GetAllowSUID() bool {
-	return r.RuntimeEngineSpec.AllowSUID
+	return r.AllowSUID
 }
 
 // SetKeepPrivs sets keep-privs flag to allow root to retain all privileges.
 func (r *EngineConfig) SetKeepPrivs(keep bool) {
-	r.RuntimeEngineSpec.KeepPrivs = keep
+	r.KeepPrivs = keep
 }
 
 // GetKeepPrivs returns if keep-privs is set or not
 func (r *EngineConfig) GetKeepPrivs() bool {
-	return r.RuntimeEngineSpec.KeepPrivs
+	return r.KeepPrivs
 }
 
 // SetNoPrivs set no-privs flag to force root user to lose all privileges.
 func (r *EngineConfig) SetNoPrivs(nopriv bool) {
-	r.RuntimeEngineSpec.NoPrivs = nopriv
+	r.NoPrivs = nopriv
 }
 
 // GetNoPrivs return if no-privs flag is set or not
 func (r *EngineConfig) GetNoPrivs() bool {
-	return r.RuntimeEngineSpec.NoPrivs
+	return r.NoPrivs
 }
 
 // SetHome set user home directory
 func (r *EngineConfig) SetHome(home string) {
-	r.RuntimeEngineSpec.Home = home
+	r.Home = home
 }
 
 // GetHome retrieves user home directory
 func (r *EngineConfig) GetHome() string {
-	return r.RuntimeEngineSpec.Home
+	return r.Home
 }

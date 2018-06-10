@@ -6,6 +6,6 @@
 package singularity
 
 // MonitorContainer monitors a container
-func (engine *Engine) MonitorContainer() error {
+func (engine *EngineOperations) MonitorContainer() error {
 	return nil
 }

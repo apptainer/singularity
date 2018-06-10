@@ -11,6 +11,6 @@ package singularity
  */
 
 // CleanupContainer cleans up the container
-func (engine *Engine) CleanupContainer() error {
+func (engine *EngineOperations) CleanupContainer() error {
 	return nil
 }

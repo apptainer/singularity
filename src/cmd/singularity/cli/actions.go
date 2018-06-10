@@ -13,6 +13,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
+	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	ociConfig "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
 	"github.com/spf13/cobra"
 )
@@ -109,12 +111,14 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 
 	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
 
-	oci, runtime := singularityConfig.NewSingularityConfig("new")
+	engineConfig := singularityConfig.NewSingularityConfig()
+	oci := &ociConfig.RuntimeOciConfig{}
+
 	oci.Root.SetPath(image)
 	oci.Process.SetArgs(args)
 	oci.Process.SetNoNewPrivileges(true)
-	runtime.SetImage(image)
-	runtime.SetBindPath(BindPaths)
+	engineConfig.SetImage(image)
+	engineConfig.SetBindPath(BindPaths)
 
 	oci.RuntimeOciSpec.Linux = &specs.Linux{}
 	namespaces := []specs.LinuxNamespace{}
@@ -154,9 +158,21 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
 	progname := "singularity " + args[0]
 
-	configData, err := runtime.GetConfig()
+	engineConfigData, err := json.Marshal(engineConfig)
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		sylog.Fatalf("CLI Failed to marsahl engineConfig: %s\n", err)
+	}
+
+	cfg := &config.CommonEngineConfig{
+		EngineName:   "singularity",
+		ContainerID:  "new",
+		OciConfig:    oci,
+		EngineConfig: engineConfigData,
+	}
+
+	configData, err := json.Marshal(cfg)
+	if err != nil {
+		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
 	if err := exec.Pipe(wrapper, []string{progname}, Env, configData); err != nil {

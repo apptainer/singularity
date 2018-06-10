@@ -6,17 +6,17 @@
 package engines
 
 import (
-	"fmt"
+	"encoding/json"
 	"net"
 	"net/rpc"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	singularity "github.com/singularityware/singularity/src/runtime/engines/singularity"
 	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
 	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
 )
 
+/*
 // ContainerLauncher is a struct containing the unique combination of an Engine
 // with a RuntimeConfig. Together, this unique combination can launch one container
 // or potentially set of containers.
@@ -24,12 +24,19 @@ type ContainerLauncher struct {
 	Engine
 	*config.RuntimeConfig
 }
+*/
 
-// Engine is an interface describing necessary runtime operations to launch a
+// Engine is
+type Engine struct {
+	EngineOperations
+	*config.Common
+}
+
+// EngineOperations is an interface describing necessary runtime operations to launch a
 // container process. An Engine *uses* a RuntimeConfig to *launch* a container.
-type Engine interface {
+type EngineOperations interface {
 	// intialize configuration and return it/
-	InitConfig() *config.RuntimeConfig
+	InitConfig(*config.Common)
 	// call in stage1
 	CheckConfig() error
 	// are we run as instance
@@ -46,43 +53,33 @@ type Engine interface {
 	CleanupContainer() error
 }
 
-// registeredEngines contains a map relating an Engine name to a ContainerLauncher
-// created with a default config. A new ContainerLauncher can later override the config
-// to enable different container process launchings
-var registeredEngines map[string]*ContainerLauncher
-
-// registerEngine is used to register a specific engine in the registeredEngines
-// map. This should be called from the init() function of a package implementing
-// a data type satisfying the Engine interface
-func registerEngine(e Engine, name string) {
-	l := &ContainerLauncher{
-		Engine:        e,
-		RuntimeConfig: e.InitConfig(),
+func NewEngine(b []byte) (*Engine, error) {
+	e := &Engine{
+		Common: &config.Common{},
 	}
 
-	registeredEngines[name] = l
-	if l.RuntimeConfig == nil {
-		sylog.Fatalf("failed to initialize %s engine\n", name)
-	}
-}
-
-// NewContainerLauncher will return a ContainerLauncher that uses the Engine named "name"
-// and the config contained in "jsonConfig"
-func NewContainerLauncher(name string, jsonConfig []byte) (launcher *ContainerLauncher, err error) {
-	sylog.Debugf("Attempting to create ContainerLauncher using %s Engine\n", name)
-	launcher, ok := registeredEngines[name]
-
-	if !ok {
-		sylog.Errorf("Runtime engine %s does not exist", name)
-		return nil, fmt.Errorf("runtime engine %s does not exist", name)
-	}
-
-	if err := launcher.SetConfig(jsonConfig); err != nil {
-		sylog.Errorf("Unable to set %s runtime config: %v\n", name, err)
+	if err := json.Unmarshal(b, e); err != nil {
 		return nil, err
 	}
 
-	return launcher, nil
+	return e, nil
+}
+
+func (e *Engine) UnmarshalJSON(b []byte) error {
+	if err := json.Unmarshal(b, e.Common); err != nil {
+		return err
+	}
+
+	e.EngineOperations = registeredEngineOperations[e.EngineName]
+	e.InitConfig(e.Common)
+
+	return nil
+}
+
+var registeredEngineOperations map[string]EngineOperations
+
+func registerEngineOperations(e EngineOperations, name string) {
+	registeredEngineOperations[name] = e
 }
 
 // registerEngineRPCMethods contains a map relating an Engine name to a set
@@ -103,16 +100,10 @@ func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 }
 
 func init() {
-	registeredEngines = make(map[string]*ContainerLauncher)
+	registeredEngineOperations = make(map[string]EngineOperations)
 	registeredEngineRPCMethods = make(map[string]interface{})
 
-	// Registers engines there to compose another engine and inherit
-	// parent engine methods, useful to override some Engine interface
-	// methods to alter execution by keeping the core engine.
-	// Since Singularity is the core, we must ensure it's the first
-	// registered
-	engine := &singularity.Engine{}
 	methods := new(singularityRpcServer.Methods)
-	registerEngine(engine, singularityConfig.Name)
+	registerEngineOperations(&singularity.EngineOperations{EngineConfig: singularityConfig.NewSingularityConfig()}, "singularity")
 	registerEngineRPCMethods(methods, singularityConfig.Name)
 }

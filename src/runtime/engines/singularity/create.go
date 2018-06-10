@@ -31,30 +31,30 @@ import (
 )
 
 // CreateContainer creates a container
-func (engine *Engine) CreateContainer(rpcConn net.Conn) error {
-	if engine.RuntimeSpec.RuntimeName != config.Name {
+func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
+	if engine.CommonConfig.EngineName != config.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
 	rpcOps := &client.RPC{
 		Client: rpc.NewClient(rpcConn),
-		Name:   engine.RuntimeSpec.RuntimeName,
+		Name:   engine.CommonConfig.EngineName,
 	}
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	st, err := os.Stat(engine.OciConfig.RuntimeOciSpec.Root.Path)
+	st, err := os.Stat(engine.CommonConfig.OciConfig.RuntimeOciSpec.Root.Path)
 	if err != nil {
-		return fmt.Errorf("stat on %s failed", engine.OciConfig.RuntimeOciSpec.Root.Path)
+		return fmt.Errorf("stat on %s failed", engine.CommonConfig.OciConfig.RuntimeOciSpec.Root.Path)
 	}
 
-	rootfs := engine.OciConfig.RuntimeOciSpec.Root.Path
+	rootfs := engine.CommonConfig.OciConfig.RuntimeOciSpec.Root.Path
 
 	userNS := false
 	pidNS := false
 
-	for _, namespace := range engine.OciConfig.RuntimeOciSpec.Linux.Namespaces {
+	for _, namespace := range engine.CommonConfig.OciConfig.RuntimeOciSpec.Linux.Namespaces {
 		switch namespace.Type {
 		case specs.UserNamespace:
 			userNS = true

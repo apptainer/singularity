@@ -13,6 +13,7 @@ package main
 import "C"
 
 import (
+	"encoding/json"
 	"net"
 	"os"
 	"os/signal"
@@ -44,7 +45,7 @@ func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, co
 	sylog.Debugf("cconf.jsonConfSize: %d\n", C.int(cconf.jsonConfSize))
 	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(cconf.jsonConfSize))
 
-	launcher, err := engines.NewContainerLauncher(runtimeName, jsonBytes)
+	launcher, err := engines.NewEngine(jsonBytes)
 	if err != nil {
 		sylog.Fatalf("failed to initialize runtime engine: %s\n", err)
 	}
@@ -83,7 +84,7 @@ func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, co
 			}
 		}
 
-		jsonConf, _ := launcher.GetConfig()
+		jsonConf, _ := json.Marshal(launcher.Common)
 		cconf.jsonConfSize = C.uint(len(jsonConf))
 		sylog.Debugf("jsonConfSize = %v\n", cconf.jsonConfSize)
 		cconfPayload := C.GoBytes(unsafe.Pointer(cconf), C.sizeof_struct_cConfig)
