@@ -6,29 +6,29 @@
 package build
 
 import (
-    "testing"
+	"testing"
 )
 
 // TestPull tests if we can pull an ubuntu image from dockerhub
-func TestPull(t *testing.T) {
-    dp := &DockerPuller{}
+func TestConveyor(t *testing.T) {
+	dc := &DockerConveyor{}
 
-    if err := dp.Pull("//ubuntu:18.04"); err !=nil {
-        t.Fatal("failed to pull:", err)
-    }
+	if err := dc.Get("//ubuntu:18.04"); err != nil {
+		t.Fatal("failed to pull:", err)
+	}
 }
 
 // TestFurnish checks if we can create a Kitchen
-func TestFurnish(t *testing.T) {
-    dpf := &DockerPullFurnisher{}
+func TestPacker(t *testing.T) {
+	dcp := &DockerConveyorPacker{}
 
-    if err := dpf.Pull("//ubuntu:18.04"); err !=nil {
-        t.Fatal("failed to pull:", err)
-    }
+	if err := dcp.Get("//ubuntu:18.04"); err != nil {
+		t.Fatal("failed to pull:", err)
+	}
 
-    _, err := dpf.Furnish()
+	_, err := dcp.Pack()
 
-    if err !=nil {
-        t.Fatal("failed to furnish:", err)
-    }
+	if err != nil {
+		t.Fatal("failed to furnish:", err)
+	}
 }

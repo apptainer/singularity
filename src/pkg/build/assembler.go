@@ -9,22 +9,22 @@ import (
 	"fmt"
 )
 
-// validChefs contains of list of know Chefs
-var validChefs = map[string]bool{
-    "SIF":      true,
-    "sandbox":  true,
+// validAssemblers contains of list of know Assemblers
+var validAssemblers = map[string]bool{
+	"SIF":     true,
+	"sandbox": true,
 }
 
-// Chef is responsible for cooking up an image from a kitchen
-type Chef interface {
-	Cook(*Kitchen, string) (error)
+// Assembler is responsible for assembling an image from a bundle
+type Assembler interface {
+	Assemble(*Bundle, string) error
 }
 
-// IsValidChef returns whether or not the given chef is valid
-func IsValidChef(c string) (valid bool, err error) {
-	if _, ok := validChefs[c]; ok {
+// IsValidAssembler returns whether or not the given Assembler is valid
+func IsValidAssembler(c string) (valid bool, err error) {
+	if _, ok := validAssemblers[c]; ok {
 		return true, nil
 	}
 
-	return false, fmt.Errorf("Invalid chef %s", c)
+	return false, fmt.Errorf("Invalid Assembler %s", c)
 }

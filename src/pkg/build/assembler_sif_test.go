@@ -6,27 +6,27 @@
 package build
 
 import (
-    "testing"
+	"testing"
 )
 
 // TestChef sees if we can build a SIF image from a docker://ubuntu:18.04 based kitchen to /tmp
-func TestChef(t *testing.T) {
-    dpf := &DockerPullFurnisher{}
+func TestAssembler(t *testing.T) {
+	dcp := &DockerConveyorPacker{}
 
-    if err := dpf.Pull("//ubuntu:18.04"); err !=nil {
-        t.Fatal("failed to pull:", err)
-    }
+	if err := dcp.Get("//ubuntu:18.04"); err != nil {
+		t.Fatal("Conveyor failed to get:", err)
+	}
 
-    k, err := dpf.Furnish()
+	k, err := dcp.Pack()
 
-    if err != nil {
-        t.Fatal("failed to furnish:", err)
-    }
+	if err != nil {
+		t.Fatal("Packer failed to pack:", err)
+	}
 
-    c := &SIFChef{}
+	a := &SIFAssembler{}
 
-    err = c.Cook(k, "/tmp/docker_chef_test.sif")
-    if err != nil {
-        t.Fatal("failed to cook:", err)
-    }
+	err = a.Assemble(k, "/tmp/docker_assemble_test.sif")
+	if err != nil {
+		t.Fatal("Assembler failed to assemble:", err)
+	}
 }

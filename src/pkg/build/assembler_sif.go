@@ -13,13 +13,13 @@ import (
 	"github.com/golang/glog"
 )
 
-
-type SIFChef struct {
-
+// SIFAssembler doesnt store anything
+type SIFAssembler struct {
 }
 
-func (c *SIFChef) Cook(k *Kitchen, path string) (err error) {
-    mksquashfs, err := exec.LookPath("mksquashfs")
+// Assemble creates a SIF image from a Bundle
+func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
+	mksquashfs, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		glog.Error("mksquashfs is not installed on this system")
 		return err
@@ -31,7 +31,7 @@ func (c *SIFChef) Cook(k *Kitchen, path string) (err error) {
 	os.Remove(f.Name())
 	os.Remove(squashfsPath)
 
-	mksquashfsCmd := exec.Command(mksquashfs, k.Rootfs(), squashfsPath, "-noappend")
+	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPath, "-noappend")
 	mksquashfsCmd.Stdin = os.Stdin
 	mksquashfsCmd.Stdout = os.Stdout
 	mksquashfsCmd.Stderr = os.Stderr

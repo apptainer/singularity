@@ -6,24 +6,24 @@
 package build
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
-	"io/ioutil"
-	"time"
 	"strconv"
+	"time"
 )
 
-// Kitchen is the temporary build environment used during the image
-// building process. A Kitchen is the programmatic representation of
-// the directory structure which will constitute this environment.
+// Bundle is the temporary build environment used during the image
+// building process. A Bundle is the programmatic representation of
+// the directory structure which will constitute this environmenb.
 // /tmp/...:
 //     fs/ - A chroot filesystem
 //     .singularity.d/ - Container metadata (from 2.x image format)
 //     config.json (optional) - Contain information for OCI image bundle
-//     etc... - The Kitchen dir can theoretically contain arbitrary directories,
+//     etc... - The Bundle dir can theoretically contain arbitrary directories,
 //              files, etc... which can be interpreted by the Chef
-type Kitchen struct {
-	// FSObjects is a map of the filesystem objects contained in the Kitchen. An object
+type Bundle struct {
+	// FSObjects is a map of the filesystem objects contained in the Bundle. An object
 	// will be built as one section of a SIF file.
 	//
 	// Known FSObjects labels:
@@ -36,30 +36,30 @@ type Kitchen struct {
 	path        string
 }
 
-// NewKitchen creates a Kitchen environment
+// NewBundle creates a Bundle environment
 // TODO: choose appropriate location for TempDir, currently using /tmp
-func NewKitchen() (k *Kitchen, err error) {
-	k = &Kitchen{}
+func NewBundle() (b *Bundle, err error) {
+	b = &Bundle{}
 
-	dir, err := ioutil.TempDir("", "sbuild-"+strconv.FormatInt(time.Now().Unix(),10)+"-")
+	dir, err := ioutil.TempDir("", "sbuild-"+strconv.FormatInt(time.Now().Unix(), 10)+"-")
 	if err != nil {
 		return nil, err
 	}
 
-	k.path = dir
+	b.path = dir
 
-	k.FSObjects = map[string]string{
+	b.FSObjects = map[string]string{
 		"rootfs": "fs",
 	}
 
-	if err = os.MkdirAll(filepath.Join(k.path, k.FSObjects["rootfs"]), 0755); err != nil {
+	if err = os.MkdirAll(filepath.Join(b.path, b.FSObjects["rootfs"]), 0755); err != nil {
 		return
 	}
 
-	return k, nil
+	return b, nil
 }
 
-// Rootfs give the path to the root filesystem in the kitchen
-func (k *Kitchen) Rootfs() (string) {
-	return filepath.Join(k.path, k.FSObjects["rootfs"])
+// Rootfs give the path to the root filesystem in the Bundle
+func (b *Bundle) Rootfs() string {
+	return filepath.Join(b.path, b.FSObjects["rootfs"])
 }
