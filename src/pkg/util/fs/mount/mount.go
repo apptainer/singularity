@@ -102,7 +102,6 @@ type Points struct {
 
 func (p *Points) add(source string, dest string, fstype string, flags uintptr, options string) error {
 	var bind = false
-	//var setContext = false
 
 	mountOptions := []string{}
 
