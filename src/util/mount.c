@@ -127,7 +127,7 @@ int singularity_mount(const char *source, const char *target,
     return ret;
 }
 
-int check_mounted(char *mountpoint) {
+int check_mounted(const char *mountpoint) {
     int retval = -1;
     FILE *mounts;
     char *line = (char *)malloc(MAX_LINE_LEN);
