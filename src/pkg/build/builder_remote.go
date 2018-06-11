@@ -10,21 +10,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
-	"os"
+	"strings"
 	"time"
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
+	"github.com/singularityware/singularity/src/pkg/library/client"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // RequestData contains the info necessary for submitting a build to a remote service
 type RequestData struct {
 	Definition  `json:"definition"`
+	LibraryRef  string `json:"libraryRef"`
+	LibraryURL  string `json:"libraryURL"`
 	CallbackURL string `json:"callbackURL"`
 }
 
@@ -39,34 +41,42 @@ type ResponseData struct {
 	ImageSize     int64         `json:"imageSize,omitempty"`
 	ImageChecksum string        `json:"imageChecksum,omitempty"`
 	Definition    Definition    `json:"definition"`
-	CallbackURL   string        `json:"callbackURL"`
-	ImageURL      string        `json:"imageURL,omitempty" bson:"-"`
 	WSURL         string        `json:"wsURL,omitempty" bson:"-"`
+	LibraryRef    string        `json:"libraryRef"`
+	LibraryURL    string        `json:"libraryURL"`
+	CallbackURL   string        `json:"callbackURL"`
 }
 
 // RemoteBuilder contains the build request and response
 type RemoteBuilder struct {
 	Client     http.Client
 	ImagePath  string
+	Force      bool
+	LibraryURL string
 	Definition Definition
 	IsDetached bool
 	HTTPAddr   string
-	AuthHeader string
+	AuthToken  string
+}
+
+func (rb *RemoteBuilder) setAuthHeader(h http.Header) {
+	if rb.AuthToken != "" {
+		h.Set("Authorization", fmt.Sprintf("Bearer %s", rb.AuthToken))
+	}
 }
 
 // NewRemoteBuilder creates a RemoteBuilder with the specified details.
-func NewRemoteBuilder(imagePath string, d Definition, isDetached bool, httpAddr, authToken string) (rb *RemoteBuilder) {
+func NewRemoteBuilder(imagePath, libraryURL string, d Definition, isDetached bool, httpAddr, authToken string) (rb *RemoteBuilder) {
 	rb = &RemoteBuilder{
 		Client: http.Client{
 			Timeout: 30 * time.Second,
 		},
 		ImagePath:  imagePath,
+		LibraryURL: libraryURL,
 		Definition: d,
 		IsDetached: isDetached,
 		HTTPAddr:   httpAddr,
-	}
-	if authToken != "" {
-		rb.AuthHeader = fmt.Sprintf("Bearer %s", authToken)
+		AuthToken:  authToken,
 	}
 
 	return
@@ -74,21 +84,19 @@ func NewRemoteBuilder(imagePath string, d Definition, isDetached bool, httpAddr,
 
 // Build is responsible for making the request via the REST API to the remote builder
 func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
-	// Open the image file, since there isn't much point in doing the remote build if we can't write
-	// out the image.
-	f, err := os.OpenFile(rb.ImagePath, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		err = errors.Wrap(err, "failed to open image file")
-		return
+	var libraryRef string
+
+	if strings.HasPrefix(rb.ImagePath, "library://") {
+		// Image destination is Library.
+		libraryRef = rb.ImagePath
 	}
-	defer f.Close()
 
 	// Send build request to Remote Build Service
-	rd, err := rb.doBuildRequest(ctx, rb.Definition)
+	rd, err := rb.doBuildRequest(ctx, rb.Definition, libraryRef)
 	if err != nil {
 		err = errors.Wrap(err, "failed to post request to remote build service")
-		sylog.Warningf("%v\n", err)
-		return
+		sylog.Warningf("%v", err)
+		return err
 	}
 
 	// If we're doing an attached build, stream output and then download the resulting file
@@ -96,31 +104,36 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		err = rb.streamOutput(ctx, rd.WSURL)
 		if err != nil {
 			err = errors.Wrap(err, "failed to stream output from remote build service")
-			sylog.Warningf("%v\n", err)
-			return
+			sylog.Warningf("%v", err)
+			return err
+		}
+
+		// Get build status
+		rd, err = rb.doStatusRequest(ctx, rd.ID)
+		if err != nil {
+			err = errors.Wrap(err, "failed to get status from remote build service")
+			sylog.Warningf("%v", err)
+			return err
+		}
+
+		// If image destination is local file, pull image.
+		if !strings.HasPrefix(rb.ImagePath, "library://") {
+			err = client.DownloadImage(rb.ImagePath, rd.LibraryRef, rd.LibraryURL, rb.Force, rb.AuthToken)
+			if err != nil {
+				err = errors.Wrap(err, "failed to pull image file")
+				sylog.Warningf("%v", err)
+				return err
+			}
 		}
 	}
 
-	// TODO: if the build is detached, do we poll status until the build is complete? Return immediately?
-	rd, err = rb.doStatusRequest(ctx, rd.ID)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get status from remote build service")
-		sylog.Warningf("%v\n", err)
-		return
-	}
-
-	// Retrieve the built image file
-	err = rb.doPullRequest(ctx, rd.ImageURL, f)
-
-	return
+	return nil
 }
 
 // streamOutput attaches via websocket and streams output to the console
 func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err error) {
 	h := http.Header{}
-	if rb.AuthHeader != "" {
-		h.Set("Authorization", rb.AuthHeader)
-	}
+	rb.setAuthHeader(h)
 	c, _, err := websocket.DefaultDialer.Dial(url, h)
 	if err != nil {
 		return err
@@ -155,9 +168,17 @@ func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err erro
 }
 
 // doBuildRequest creates a new build on a Remote Build Service
-func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition) (rd ResponseData, err error) {
+func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, libraryRef string) (rd ResponseData, err error) {
+	if libraryRef != "" && !client.IsLibraryPushRef(libraryRef) {
+		err = fmt.Errorf("invalid library reference: %v", rb.ImagePath)
+		sylog.Warningf("%v", err)
+		return ResponseData{}, err
+	}
+
 	b, err := json.Marshal(RequestData{
 		Definition: d,
+		LibraryRef: libraryRef,
+		LibraryURL: rb.LibraryURL,
 	})
 	if err != nil {
 		return
@@ -169,9 +190,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition) (rd R
 		return
 	}
 	req = req.WithContext(ctx)
-	if rb.AuthHeader != "" {
-		req.Header.Set("Authorization", rb.AuthHeader)
-	}
+	rb.setAuthHeader(req.Header)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := rb.Client.Do(req)
@@ -197,9 +216,7 @@ func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) 
 		return
 	}
 	req = req.WithContext(ctx)
-	if rb.AuthHeader != "" {
-		req.Header.Set("Authorization", rb.AuthHeader)
-	}
+	rb.setAuthHeader(req.Header)
 
 	res, err := rb.Client.Do(req)
 	if err != nil {
@@ -213,34 +230,5 @@ func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) 
 	}
 
 	err = json.NewDecoder(res.Body).Decode(&rd)
-	return
-}
-
-// doPullRequest retrieves an image from the specified URL and saves it to the specified path
-func (rb *RemoteBuilder) doPullRequest(ctx context.Context, url string, r io.Writer) (err error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return
-	}
-	req = req.WithContext(ctx)
-	if rb.AuthHeader != "" {
-		req.Header.Set("Authorization", rb.AuthHeader)
-	}
-
-	res, err := rb.Client.Do(req)
-	if err != nil {
-		return
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		err = errors.New(res.Status)
-		return
-	}
-
-	_, err = io.Copy(r, res.Body)
-	if err != nil {
-		err = errors.Wrap(err, "failed to write image")
-	}
 	return
 }

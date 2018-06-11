@@ -102,4 +102,3 @@ build/*
 runtime/cli
 
 src/pkg/library/client/test[0-9]*
-src/pkg/build/test.img

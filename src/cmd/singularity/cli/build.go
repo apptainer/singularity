@@ -14,7 +14,6 @@ import (
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/auth"
 	"github.com/spf13/cobra"
 )
 
@@ -97,16 +96,12 @@ var BuildCmd = &cobra.Command{
 			}
 
 			if remote {
-				if authWarning != auth.WarningEmptyToken &&
-					authWarning != auth.WarningTokenToolong &&
-					authWarning != auth.WarningTokenTooShort {
-					if authToken != "" {
-						b = build.NewRemoteBuilder(args[0], def, false, remoteURL, authToken)
-					}
+				// Submiting a remote build requires a valid authToken
+				if authToken != "" {
+					b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
 				} else {
 					sylog.Fatalf("Unable to submit build job: %v", authWarning)
 				}
-
 			} else {
 				b, err = build.NewSIFBuilder(args[0], def)
 				if err != nil {
