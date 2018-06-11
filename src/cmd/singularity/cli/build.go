@@ -101,7 +101,7 @@ var BuildCmd = &cobra.Command{
 					authWarning != auth.WarningTokenToolong &&
 					authWarning != auth.WarningTokenTooShort {
 					if authToken != "" {
-						b = build.NewRemoteBuilder(args[0], def, false, remoteURL, authToken)
+						b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
 					}
 				} else {
 					sylog.Fatalf("Unable to submit build job: %v", authWarning)
