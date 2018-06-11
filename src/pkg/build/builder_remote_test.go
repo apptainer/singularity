@@ -44,23 +44,26 @@ type mockService struct {
 
 var upgrader = websocket.Upgrader{}
 
-func newResponse(m *mockService, id bson.ObjectId, d Definition) ResponseData {
+func newResponse(m *mockService, id bson.ObjectId, d Definition, libraryRef string) ResponseData {
 	wsURL := url.URL{
 		Scheme: "ws",
 		Host:   m.httpAddr,
 		Path:   fmt.Sprintf("%s%s", wsPath, id.Hex()),
 	}
-	imageURL := url.URL{
+	libraryURL := url.URL{
 		Scheme: "http",
 		Host:   m.httpAddr,
-		Path:   fmt.Sprintf("%s/%s", imagePath, id.Hex()),
+	}
+	if libraryRef == "" {
+		libraryRef = "library://user/collection/image"
 	}
 
 	return ResponseData{
 		ID:         id,
 		Definition: d,
 		WSURL:      wsURL.String(),
-		ImageURL:   imageURL.String(),
+		LibraryURL: libraryURL.String(),
+		LibraryRef: libraryRef,
 	}
 }
 
@@ -75,7 +78,7 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(m.buildResponseCode)
 		if m.buildResponseCode == http.StatusCreated {
 			id := bson.NewObjectId()
-			json.NewEncoder(w).Encode(newResponse(m, id, rd.Definition))
+			json.NewEncoder(w).Encode(newResponse(m, id, rd.Definition, rd.LibraryRef))
 		}
 	} else if r.Method == http.MethodGet && strings.HasPrefix(r.RequestURI, buildPath) {
 		// Mock status endpoint
@@ -85,7 +88,7 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(m.statusResponseCode)
 		if m.statusResponseCode == http.StatusOK {
-			json.NewEncoder(w).Encode(newResponse(m, bson.ObjectIdHex(id), Definition{}))
+			json.NewEncoder(w).Encode(newResponse(m, bson.ObjectIdHex(id), Definition{}, ""))
 		}
 	} else if r.Method == http.MethodGet && strings.HasPrefix(r.RequestURI, imagePath) {
 		// Mock get image endpoint
@@ -172,6 +175,7 @@ func TestBuild(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 			rb := NewRemoteBuilder(test.imagePath, "", Definition{}, test.isDetached, s.Listener.Addr().String(), authToken)
+			rb.Force = true
 
 			// Set the response codes for each stage of the build
 			m.buildResponseCode = test.buildResponseCode
@@ -247,8 +251,11 @@ func TestDoBuildRequest(t *testing.T) {
 				if rd.WSURL == "" {
 					t.Errorf("empty websocket URL")
 				}
-				if rd.ImageURL == "" {
-					t.Errorf("empty image URL")
+				if rd.LibraryRef == "" {
+					t.Errorf("empty Library ref")
+				}
+				if rd.LibraryURL == "" {
+					t.Errorf("empty Library URL")
 				}
 			} else {
 				// Ensure the handler returned an error
@@ -309,8 +316,11 @@ func TestDoStatusRequest(t *testing.T) {
 				if rd.WSURL == "" {
 					t.Errorf("empty websocket URL")
 				}
-				if rd.ImageURL == "" {
-					t.Errorf("empty image URL")
+				if rd.LibraryRef == "" {
+					t.Errorf("empty Library ref")
+				}
+				if rd.LibraryURL == "" {
+					t.Errorf("empty Library URL")
 				}
 			} else {
 				// Ensure the handler returned an error

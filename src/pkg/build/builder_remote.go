@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -43,15 +42,17 @@ type ResponseData struct {
 	ImageSize     int64         `json:"imageSize,omitempty"`
 	ImageChecksum string        `json:"imageChecksum,omitempty"`
 	Definition    Definition    `json:"definition"`
-	CallbackURL   string        `json:"callbackURL"`
-	ImageURL      string        `json:"imageURL,omitempty" bson:"-"`
 	WSURL         string        `json:"wsURL,omitempty" bson:"-"`
+	LibraryRef    string        `json:"libraryRef"`
+	LibraryURL    string        `json:"libraryURL"`
+	CallbackURL   string        `json:"callbackURL"`
 }
 
 // RemoteBuilder contains the build request and response
 type RemoteBuilder struct {
 	Client     http.Client
 	ImagePath  string
+	Force      bool
 	LibraryURL string
 	Definition Definition
 	IsDetached bool
@@ -85,21 +86,10 @@ func NewRemoteBuilder(imagePath, libraryURL string, d Definition, isDetached boo
 // Build is responsible for making the request via the REST API to the remote builder
 func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	var libraryRef string
-	var f *os.File
 
 	if strings.HasPrefix(rb.ImagePath, "library://") {
 		// Image destination is Library.
 		libraryRef = rb.ImagePath
-	} else {
-		// Image destination is local file. Open that now, since there isn't much point in doing
-		// the remote build if we can't write out the image.
-		f, err = os.OpenFile(rb.ImagePath, os.O_RDWR|os.O_CREATE, 0755)
-		if err != nil {
-			err = errors.Wrap(err, "failed to open image file")
-			sylog.Warningf("%v", err)
-			return err
-		}
-		defer f.Close()
 	}
 
 	// Send build request to Remote Build Service
@@ -128,8 +118,8 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		}
 
 		// If image destination is local file, pull image.
-		if f != nil {
-			err = rb.doPullRequest(ctx, rd.ImageURL, f)
+		if !strings.HasPrefix(rb.ImagePath, "library://") {
+			err = client.DownloadImage(rb.ImagePath, rd.LibraryRef, rd.LibraryURL, rb.Force, rb.AuthToken)
 			if err != nil {
 				err = errors.Wrap(err, "failed to pull image file")
 				sylog.Warningf("%v", err)
