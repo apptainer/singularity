@@ -32,13 +32,9 @@ const (
 // ReadToken reads a sylabs JWT auth token from a file
 func ReadToken(tokenPath string) (token, warning string) {
 	// check if token file exist
-	tokenFile, err := os.Stat(tokenPath)
+	_, err := os.Stat(tokenPath)
 	if os.IsNotExist(err) {
 		return "", WarningTokenFileNotFound
-	}
-
-	if tokenFile.IsDir() {
-		return "", WarningPathIsDir
 	}
 
 	buf, err := ioutil.ReadFile(tokenPath)

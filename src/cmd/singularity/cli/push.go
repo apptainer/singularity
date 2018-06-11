@@ -31,7 +31,7 @@ var PushCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(2),
 	PreRun: sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if authWarning == "" || authToken != "" {
+		if authWarning == "" {
 			libexec.PushImage(args[0], args[1], PushLibraryURI, authToken)
 		} else {
 			sylog.Fatalf("Couldn't push image to library: %v", authWarning)
