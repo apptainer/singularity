@@ -319,7 +319,7 @@ static int underlay_mounts(struct mountlist *mountlist) {
         ABORT(255);
     }
     errno = 0;
-    if ( ( access(final_dir, W_OK) == 0 || (errno != EROFS && errno != EACCES) ) { // Flawfinder: ignore (precautionary confirmation, not necessary)
+    if ( access(final_dir, W_OK) == 0 || (errno != EROFS && errno != EACCES) ) { // Flawfinder: ignore (precautionary confirmation, not necessary)
         singularity_message(ERROR, "Failed to write-protect the final directory %s: %s\n", final_dir, strerror(errno));
         ABORT(255);
     }
