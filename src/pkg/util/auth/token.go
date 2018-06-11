@@ -23,6 +23,10 @@ const (
 	WarningEmptyToken = "Token file is empty"
 	// WarningTokenFileNotFound token file not found
 	WarningTokenFileNotFound = "Authentication token file not found"
+	// WarningCouldntReadFile Warning return for issues when reading file
+	WarningCouldntReadFile = "Couldn't read your Sylabs authentication token"
+	// WarningPathIsDir return when given tokenFile path is a directory
+	WarningPathIsDir = "Given token file path points to a directory not a file"
 )
 
 // ReadToken reads a sylabs JWT auth token from a file
@@ -34,12 +38,12 @@ func ReadToken(tokenPath string) (token, warning string) {
 	}
 
 	if tokenFile.IsDir() {
-		return "", "Given token file path points to a directory not a file"
+		return "", WarningPathIsDir
 	}
 
 	buf, err := ioutil.ReadFile(tokenPath)
 	if err != nil {
-		return "", "Couldn't read your Sylabs authentication token"
+		return "", WarningCouldntReadFile
 	}
 
 	lines := strings.Split(string(buf), "\n")

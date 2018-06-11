@@ -9,7 +9,6 @@ import (
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/libexec"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/auth"
 	"github.com/spf13/cobra"
 )
 
@@ -32,15 +31,11 @@ var PushCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(2),
 	PreRun: sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if authWarning != auth.WarningEmptyToken &&
-			authWarning != auth.WarningTokenToolong &&
-			authWarning != auth.WarningTokenTooShort {
-			if authToken != "" {
-				libexec.PushImage(args[0], args[1], PushLibraryURI, authToken)
-				return
-			}
+		if authWarning == "" || authToken != "" {
+			libexec.PushImage(args[0], args[1], PushLibraryURI, authToken)
+		} else {
+			sylog.Fatalf("Couldn't push image to library: %v", authWarning)
 		}
-		sylog.Fatalf("Couldn't push image to library: %v", authWarning)
 	},
 
 	Use:     docs.PushUse,
