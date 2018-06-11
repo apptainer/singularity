@@ -200,16 +200,18 @@ func TestLoadSeccompConfig(t *testing.T) {
 	if err := LoadSeccompConfig(defaultProfile()); err != nil {
 		t.Errorf("%s", err)
 	}
-	// with default action as ActErrno mount don't return error
-	if err := syscall.Mount("/etc", "/mnt", "", syscall.MS_BIND, ""); err != nil {
-		t.Errorf("mount syscall allowed: %s", err)
-	}
-	// without MS_NODEV, mount don't return error here too
-	if err := syscall.Mount("/etc", "/mnt", "", syscall.MS_BIND|syscall.MS_NOSUID, ""); err != nil {
-		t.Errorf("mount syscall allowed: %s", err)
-	}
-	// by passing MS_NOSUID and MS_NODEV, mount is allowed by the filter and returns permission denied
-	if err := syscall.Mount("/etc", "/mnt", "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV, ""); err == nil {
-		t.Errorf("mount syscall filter failed")
+	if hasConditionSupport {
+		// with default action as ActErrno mount don't return error
+		if err := syscall.Mount("/etc", "/mnt", "", syscall.MS_BIND, ""); err != nil {
+			t.Errorf("mount syscall allowed: %s", err)
+		}
+		// without MS_NODEV, mount don't return error here too
+		if err := syscall.Mount("/etc", "/mnt", "", syscall.MS_BIND|syscall.MS_NOSUID, ""); err != nil {
+			t.Errorf("mount syscall allowed: %s", err)
+		}
+		// by passing MS_NOSUID and MS_NODEV, mount is allowed by the filter and returns permission denied
+		if err := syscall.Mount("/etc", "/mnt", "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV, ""); err == nil {
+			t.Errorf("mount syscall filter failed")
+		}
 	}
 }

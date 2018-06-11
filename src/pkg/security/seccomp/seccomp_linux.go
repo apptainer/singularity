@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	lseccomp "github.com/seccomp/libseccomp-golang"
 )
@@ -58,8 +60,15 @@ func prctl(option uintptr, arg2 uintptr, arg3 uintptr, arg4 uintptr, arg5 uintpt
 	return err
 }
 
+func hasConditionSupport() bool {
+	major, minor, micro := lseccomp.GetLibraryVersion()
+	return (major > 2) || (major == 2 && minor >= 2) || (major == 2 && minor == 2 && micro >= 1)
+}
+
 // LoadSeccompConfig loads seccomp configuration filter for the current process
 func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
+	supportCondition := true
+
 	if err := prctl(syscall.PR_GET_SECCOMP, 0, 0, 0, 0); err == syscall.EINVAL {
 		return fmt.Errorf("can't load seccomp filter: not supported by kernel")
 	}
@@ -74,6 +83,11 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 
 	if len(config.DefaultAction) == 0 {
 		return fmt.Errorf("a defaultAction must be provided")
+	}
+
+	supportCondition = hasConditionSupport()
+	if supportCondition == false {
+		sylog.Warningf("seccomp rule conditions are not supported with libseccomp under 2.2.1")
 	}
 
 	scmpAction, ok := scmpActionMap[config.DefaultAction]
@@ -113,7 +127,7 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 				continue
 			}
 
-			if len(syscall.Args) == 0 {
+			if len(syscall.Args) == 0 || supportCondition == false {
 				if err := filter.AddRule(sysNr, scmpAction); err != nil {
 					return fmt.Errorf("failed adding seccomp rule for syscall %s: %s", sysName, err)
 				}
