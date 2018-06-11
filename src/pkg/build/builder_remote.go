@@ -99,7 +99,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		return err
 	}
 
-	fmt.Printf("\t+-> Build job submited with ID:\t%v\n", rd.ID)
+	fmt.Printf("\t+-> Build job submited with ID:\t%v\n", rd.ID.Hex())
 
 	// If we're doing an attached build, stream output and then download the resulting file
 	if !rb.IsDetached {
