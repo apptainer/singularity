@@ -200,7 +200,7 @@ func TestLoadSeccompConfig(t *testing.T) {
 	if err := LoadSeccompConfig(defaultProfile()); err != nil {
 		t.Errorf("%s", err)
 	}
-	if hasConditionSupport {
+	if hasConditionSupport() {
 		// with default action as ActErrno mount don't return error
 		if err := syscall.Mount("/etc", "/mnt", "", syscall.MS_BIND, ""); err != nil {
 			t.Errorf("mount syscall allowed: %s", err)
