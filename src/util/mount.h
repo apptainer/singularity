@@ -20,6 +20,6 @@
 int singularity_mount(const char *source, const char *target,
                       const char *filesystemtype, unsigned long mountflags,
                       const void *data);
-int check_mounted(char *mountpoint);
+int check_mounted(const char *mountpoint);
 
 #endif /* __MOUNT_H_ */
