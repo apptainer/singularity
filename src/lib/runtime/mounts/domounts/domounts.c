@@ -109,7 +109,7 @@ static void mount_missing(char *image_path, char *underlay_path, char *sub_path)
         if ( is_link(source) == 0 ) {
             if ( statret < 0 ) {
                 char link[PATH_MAX+1];
-                ssize_t linksize = readlink(source, link, PATH_MAX);
+                ssize_t linksize = readlink(source, link, PATH_MAX); // Flawfinder: ignore not controllable by user
                 if ( linksize <= 0 ) {
                     singularity_message(WARNING, "Failure reading link info from %s, skipping: %s\n", source, strerror(errno));
                 } else { 
@@ -319,7 +319,7 @@ static int underlay_mounts(struct mountlist *mountlist) {
         ABORT(255);
     }
     errno = 0;
-    if ( access(final_dir, W_OK) == 0 || (errno != EROFS && errno != EACCES) ) {
+    if ( ( access(final_dir, W_OK) == 0 || (errno != EROFS && errno != EACCES) ) { // Flawfinder: ignore (precautionary confirmation, not necessary)
         singularity_message(ERROR, "Failed to write-protect the final directory %s: %s\n", final_dir, strerror(errno));
         ABORT(255);
     }
