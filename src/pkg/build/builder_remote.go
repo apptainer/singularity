@@ -10,7 +10,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -231,32 +230,5 @@ func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) 
 	}
 
 	err = json.NewDecoder(res.Body).Decode(&rd)
-	return
-}
-
-// doPullRequest retrieves an image from the specified URL and saves it to the specified path
-func (rb *RemoteBuilder) doPullRequest(ctx context.Context, url string, r io.Writer) (err error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return
-	}
-	req = req.WithContext(ctx)
-	rb.setAuthHeader(req.Header)
-
-	res, err := rb.Client.Do(req)
-	if err != nil {
-		return
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		err = errors.New(res.Status)
-		return
-	}
-
-	_, err = io.Copy(r, res.Body)
-	if err != nil {
-		err = errors.Wrap(err, "failed to write image")
-	}
 	return
 }
