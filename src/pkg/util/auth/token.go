@@ -25,8 +25,6 @@ const (
 	WarningTokenFileNotFound = "Authentication token file not found"
 	// WarningCouldntReadFile Warning return for issues when reading file
 	WarningCouldntReadFile = "Couldn't read your Sylabs authentication token"
-	// WarningPathIsDir return when given tokenFile path is a directory
-	WarningPathIsDir = "Given token file path points to a directory not a file"
 )
 
 // ReadToken reads a sylabs JWT auth token from a file
