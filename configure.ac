@@ -404,7 +404,6 @@ AC_CONFIG_FILES([
    src/lib/runtime/files/group/Makefile
    src/lib/runtime/files/passwd/Makefile
    src/lib/runtime/files/resolvconf/Makefile
-   src/lib/runtime/files/libs/Makefile
    src/lib/runtime/mounts/Makefile
    src/lib/runtime/mounts/cwd/Makefile
    src/lib/runtime/mounts/dev/Makefile
@@ -412,6 +411,7 @@ AC_CONFIG_FILES([
    src/lib/runtime/mounts/home/Makefile
    src/lib/runtime/mounts/hostfs/Makefile
    src/lib/runtime/mounts/kernelfs/Makefile
+   src/lib/runtime/mounts/libs/Makefile
    src/lib/runtime/mounts/tmp/Makefile
    src/lib/runtime/mounts/userbinds/Makefile
    src/lib/runtime/mounts/scratch/Makefile
