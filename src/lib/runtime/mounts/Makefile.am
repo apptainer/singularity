@@ -1,4 +1,4 @@
-SUBDIRS = binds cwd dev domounts home hostfs kernelfs scratch tmp userbinds
+SUBDIRS = binds cwd dev domounts home hostfs kernelfs libs scratch tmp userbinds
 
 MAINTAINERCLEANFILES = Makefile.in
 DISTCLEANFILES = Makefile
@@ -11,7 +11,7 @@ AM_CPPFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATEDIR=\"$(localstatedir)\
 
 noinst_LTLIBRARIES = libinternal.la
 
-libinternal_la_LIBADD = binds/libinternal.la cwd/libinternal.la dev/libinternal.la domounts/libinternal.la home/libinternal.la hostfs/libinternal.la kernelfs/libinternal.la scratch/libinternal.la tmp/libinternal.la userbinds/libinternal.la
+libinternal_la_LIBADD = binds/libinternal.la cwd/libinternal.la dev/libinternal.la domounts/libinternal.la home/libinternal.la hostfs/libinternal.la kernelfs/libinternal.la libs/libinternal.la scratch/libinternal.la tmp/libinternal.la userbinds/libinternal.la
 libinternal_la_SOURCES = mounts.c
 
 EXTRA_DIST = mounts.h

@@ -44,6 +44,7 @@
 #include "./cwd/cwd.h"
 #include "./userbinds/userbinds.h"
 #include "./scratch/scratch.h"
+#include "./libs/libs.h"
 #include "./domounts/domounts.h"
 
 
@@ -62,6 +63,7 @@ int _singularity_runtime_mounts(void) {
     retval += _singularity_runtime_mount_tmp(&mountlist);
     retval += _singularity_runtime_mount_scratch(&mountlist);
     retval += _singularity_runtime_mount_cwd(&mountlist);
+    retval += _singularity_runtime_mount_libs(&mountlist);
 
     retval += _singularity_runtime_domounts(&mountlist);
 
