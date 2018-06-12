@@ -95,7 +95,7 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 var VersionCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Singularity version %v alpha", buildcfg.PACKAGE_VERSION)
+		fmt.Printf("Singularity version %v alpha\n", buildcfg.PACKAGE_VERSION)
 	},
 
 	Use: "version",
