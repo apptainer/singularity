@@ -16,7 +16,7 @@ reorganization [here](https://www.sylabs.io/2018/03/managing-singularity-branche
 # Singularity - Enabling users to have full control of their environment.
 
 Starting a Singularity container "swaps" out the host
-operating system environment for one of the user controls!
+operating system environment for one the user controls!
 
 Let's say you are running Ubuntu on your workstation or server, but you
 have an application which only runs on Red Hat Enterprise Linux 6.3.
@@ -28,12 +28,12 @@ root access, and allow you to run that application in its native environment!
 Singularity is a container platform focused on supporting "Mobility of
 Compute".
 
-The mobility of Compute encapsulates the development to compute model where
+Mobility of Compute encapsulates the development to compute model where
 developers can work in an environment of their choosing and creation, and
 when the developer needs additional compute resources, this environment
 can easily be copied and executed on other platforms. Additionally, as the
-primary use case for Singularity is targeted towards computational portability,
-many of the barriers to entry of other container solutions do not apply to
+primary use case for Singularity is targeted towards computational portability.
+Many of the barriers to entry of other container solutions do not apply to
 Singularity, making it an ideal solution for users (both computational and
 non-computational) and HPC centers.
 
@@ -52,8 +52,8 @@ container image (and not on the metadata server!).
 ## Mobility of Compute
 With Singularity, developers who like to be able to easily control their
 own environment will love Singularity's flexibility. Singularity does not
-provide a pathway for escalation of privilege (as do other containers
-platforms which are thus not applicable for multi-tenant resources) so
+provide a pathway for escalation of privilege (as do other container
+platforms which are thus not appropriate for multi-tenant resources) so
 you must be able to become root on the host system (or virtual machine)
 in order to modify the container.
 
@@ -93,7 +93,7 @@ follows:
     gmk@Centos-7.img demo> cat hello
     world
 
-Once, the developer has completed their environment the image file can
+Once the developer has completed their environment, the image file can
 be compressed and copied to any other system that has Singularity installed.
 If you do not have root on that system, you will not be able to make any
 changes to the image once on that system. But you will be able to use the
@@ -106,15 +106,15 @@ long as the binary format is the same). You can generate your image on
 Debian or CentOS, and run it on Mint or Slackware.
 
 Within a particular container, one can include their programs, data,
-scripts and pipelines and thus portable to any other architecture
+scripts and pipelines and thus port a workflow to any other architecture
 compatible Linux system or distribution.
 
 ## Bootstrapping new images
 Generally, when bootstrapping an image from scratch, you must build it from
 a compatible host. This is because you must use the distribution specific
-tools it comes with (e.g. Red Hat does not provide Debian's de-bootstrap).
-But once, the image has been bootstrapped and includes the necessary bits
-to be self-hosting (e.g. YUM on CentOS and apt-get on Debian/Ubuntu) then
+tools it comes with (e.g. Red Hat does not provide Debian's debootstrap by
+default). But once the image has been bootstrapped and includes the necessary 
+bits to be self-hosting (e.g. YUM on CentOS and apt-get on Debian/Ubuntu) then
 the process of managing the container can be implemented from within the
 container.
 
@@ -161,7 +161,6 @@ above. Doing so reveals this:
 
 And as expected, the Python version we now see is what comes from by 
 default in CentOS-6.
-
 
 # Cite as:
 
