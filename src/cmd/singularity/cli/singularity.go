@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 	"path"
@@ -55,6 +56,8 @@ func init() {
 	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
 	SingularityCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	VersionCmd.Flags().SetInterspersed(false)
+	SingularityCmd.AddCommand(VersionCmd)
 }
 
 // SingularityCmd is the base command when called without any subcommands
@@ -85,6 +88,16 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 	}
 
 	return cmd.Use + " "
+}
+
+// VersionCmd displays installed singularity version
+var VersionCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("Singularity version %v alpha", buildcfg.PACKAGE_VERSION)
+	},
+
+	Use: "version",
 }
 
 // sylabsToken process the authentication Token
