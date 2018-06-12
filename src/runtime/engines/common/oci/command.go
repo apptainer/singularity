@@ -16,6 +16,6 @@ type Command interface {
 
 // CLI describes the runtime CLI
 type CLI struct {
-	*config.RuntimeConfig
+	*config.Common
 	Command
 }
