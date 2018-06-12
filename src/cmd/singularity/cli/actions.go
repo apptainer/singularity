@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/docs"
+	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"

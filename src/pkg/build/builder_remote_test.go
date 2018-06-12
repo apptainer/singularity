@@ -6,13 +6,14 @@
 package build
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -42,24 +43,26 @@ type mockService struct {
 
 var upgrader = websocket.Upgrader{}
 
-func newResponse(m *mockService, id bson.ObjectId, d Definition, isDetached bool) ResponseData {
+func newResponse(m *mockService, id bson.ObjectId, d Definition, libraryRef string) ResponseData {
 	wsURL := url.URL{
 		Scheme: "ws",
 		Host:   m.httpAddr,
 		Path:   fmt.Sprintf("%s%s", wsPath, id.Hex()),
 	}
-	imageURL := url.URL{
+	libraryURL := url.URL{
 		Scheme: "http",
 		Host:   m.httpAddr,
-		Path:   fmt.Sprintf("%s/%s", imagePath, id.Hex()),
+	}
+	if libraryRef == "" {
+		libraryRef = "library://user/collection/image"
 	}
 
 	return ResponseData{
 		ID:         id,
 		Definition: d,
-		IsDetached: isDetached,
 		WSURL:      wsURL.String(),
-		ImageURL:   imageURL.String(),
+		LibraryURL: libraryURL.String(),
+		LibraryRef: libraryRef,
 	}
 }
 
@@ -74,7 +77,7 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(m.buildResponseCode)
 		if m.buildResponseCode == http.StatusCreated {
 			id := bson.NewObjectId()
-			json.NewEncoder(w).Encode(newResponse(m, id, rd.Definition, rd.IsDetached))
+			json.NewEncoder(w).Encode(newResponse(m, id, rd.Definition, rd.LibraryRef))
 		}
 	} else if r.Method == http.MethodGet && strings.HasPrefix(r.RequestURI, buildPath) {
 		// Mock status endpoint
@@ -84,7 +87,7 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(m.statusResponseCode)
 		if m.statusResponseCode == http.StatusOK {
-			json.NewEncoder(w).Encode(newResponse(m, bson.ObjectIdHex(id), Definition{}, false))
+			json.NewEncoder(w).Encode(newResponse(m, bson.ObjectIdHex(id), Definition{}, ""))
 		}
 	} else if r.Method == http.MethodGet && strings.HasPrefix(r.RequestURI, imagePath) {
 		// Mock get image endpoint
@@ -120,31 +123,13 @@ func TestBuild(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
 	defer cancel()
 
-	// Table of tests to run
-	tests := []struct {
-		description        string
-		expectSuccess      bool
-		imagePath          string
-		buildResponseCode  int
-		wsResponseCode     int
-		wsCloseCode        int
-		statusResponseCode int
-		imageResponseCode  int
-		ctx                context.Context
-		isDetached         bool
-	}{
-		{"SuccessAttached", true, "test.img", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
-		{"SuccessDetached", true, "test.img", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), true},
-		{"BadImagePath", false, "/tmp/bad/", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), true},
-		{"AddBuildFailure", false, "test.img", http.StatusUnauthorized, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), true},
-		{"WebsocketFailure", false, "test.img", http.StatusCreated, http.StatusUnauthorized, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
-		{"WebsocketAbnormalClosure", false, "test.img", http.StatusCreated, http.StatusOK, websocket.CloseAbnormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
-		{"GetStatusFailureAttached", false, "test.img", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusUnauthorized, http.StatusOK, context.Background(), false},
-		{"GetStatusFailureDetached", false, "test.img", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusUnauthorized, http.StatusOK, context.Background(), true},
-		{"GetImageFailureAttached", false, "test.img", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusUnauthorized, context.Background(), false},
-		{"GetImageFailureDetached", false, "test.img", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusUnauthorized, context.Background(), true},
-		{"ContextExpired", false, "test.img", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, ctx, true},
+	// Create a temporary file for testing
+	f, err := ioutil.TempFile("/tmp", "TestBuild")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
 	}
+	f.Close()
+	defer os.Remove(f.Name())
 
 	// Start a mock server
 	m := mockService{t: t}
@@ -157,10 +142,39 @@ func TestBuild(t *testing.T) {
 	// Mock server address is fixed for all tests
 	m.httpAddr = s.Listener.Addr().String()
 
+	// Table of tests to run
+	tests := []struct {
+		description        string
+		expectSuccess      bool
+		imagePath          string
+		libraryURL         string
+		buildResponseCode  int
+		wsResponseCode     int
+		wsCloseCode        int
+		statusResponseCode int
+		imageResponseCode  int
+		ctx                context.Context
+		isDetached         bool
+	}{
+		{"SuccessAttached", true, f.Name(), "", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
+		{"SuccessDetached", true, f.Name(), "", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), true},
+		{"SuccessLibraryRef", true, "library://user/collection/image", "", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
+		{"SuccessLibraryRefURL", true, "library://user/collection/image", m.httpAddr, http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
+		{"BadImagePath", false, "/tmp/bad/", "", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
+		{"BadLibraryRef", false, "library://bad", "", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
+		{"AddBuildFailure", false, f.Name(), "", http.StatusUnauthorized, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
+		{"WebsocketFailure", false, f.Name(), "", http.StatusCreated, http.StatusUnauthorized, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
+		{"WebsocketAbnormalClosure", false, f.Name(), "", http.StatusCreated, http.StatusOK, websocket.CloseAbnormalClosure, http.StatusOK, http.StatusOK, context.Background(), false},
+		{"GetStatusFailure", false, f.Name(), "", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusUnauthorized, http.StatusOK, context.Background(), false},
+		{"GetImageFailure", false, f.Name(), "", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusUnauthorized, context.Background(), false},
+		{"ContextExpired", false, f.Name(), "", http.StatusCreated, http.StatusOK, websocket.CloseNormalClosure, http.StatusOK, http.StatusOK, ctx, false},
+	}
+
 	// Loop over test cases
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			rb := NewRemoteBuilder(test.imagePath, Definition{}, test.isDetached, s.Listener.Addr().String(), authToken)
+			rb := NewRemoteBuilder(test.imagePath, "", Definition{}, test.isDetached, s.Listener.Addr().String(), authToken)
+			rb.Force = true
 
 			// Set the response codes for each stage of the build
 			m.buildResponseCode = test.buildResponseCode
@@ -196,16 +210,15 @@ func TestDoBuildRequest(t *testing.T) {
 	tests := []struct {
 		description   string
 		expectSuccess bool
+		libraryRef    string
 		responseCode  int
 		ctx           context.Context
-		isDetached    bool
 	}{
-		{"SuccessAttached", true, http.StatusCreated, context.Background(), false},
-		{"SuccessDetached", true, http.StatusCreated, context.Background(), true},
-		{"NotFoundAttached", false, http.StatusNotFound, context.Background(), false},
-		{"NotFoundDetached", false, http.StatusNotFound, context.Background(), true},
-		{"ContextExpiredAttached", false, http.StatusCreated, ctx, false},
-		{"ContextExpiredDetached", false, http.StatusCreated, ctx, true},
+		{"SuccessAttached", true, "", http.StatusCreated, context.Background()},
+		{"SuccessLibraryRef", true, "library://user/collection/image", http.StatusCreated, context.Background()},
+		{"BadLibraryRef", false, "library://bad", http.StatusCreated, context.Background()},
+		{"NotFoundAttached", false, "", http.StatusNotFound, context.Background()},
+		{"ContextExpiredAttached", false, "", http.StatusCreated, ctx},
 	}
 
 	// Start a mock server
@@ -224,15 +237,24 @@ func TestDoBuildRequest(t *testing.T) {
 			m.buildResponseCode = test.responseCode
 
 			// Call the handler
-			rd, err := rb.doBuildRequest(test.ctx, Definition{}, test.isDetached)
+			rd, err := rb.doBuildRequest(test.ctx, Definition{}, test.libraryRef)
 
 			if test.expectSuccess {
 				// Ensure the handler returned no error, and the response is as expected
 				if err != nil {
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				if rd.IsDetached != test.isDetached {
-					t.Fatalf("unexpected value for isDetached: %v/%v", rd.IsDetached, test.isDetached)
+				if !rd.ID.Valid() {
+					t.Fatalf("invalid ID")
+				}
+				if rd.WSURL == "" {
+					t.Errorf("empty websocket URL")
+				}
+				if rd.LibraryRef == "" {
+					t.Errorf("empty Library ref")
+				}
+				if rd.LibraryURL == "" {
+					t.Errorf("empty Library URL")
 				}
 			} else {
 				// Ensure the handler returned an error
@@ -290,61 +312,14 @@ func TestDoStatusRequest(t *testing.T) {
 				if rd.ID != id {
 					t.Errorf("mismatched ID: %v/%v", rd.ID, id)
 				}
-			} else {
-				// Ensure the handler returned an error
-				if err == nil {
-					t.Fatalf("unexpected success")
+				if rd.WSURL == "" {
+					t.Errorf("empty websocket URL")
 				}
-			}
-		})
-	}
-}
-
-func TestDoPullRequest(t *testing.T) {
-	// Craft an expired context
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
-	defer cancel()
-
-	// Table of tests to run
-	tests := []struct {
-		description   string
-		expectSuccess bool
-		responseCode  int
-		ctx           context.Context
-	}{
-		{"Success", true, http.StatusOK, context.Background()},
-		{"NotFound", false, http.StatusNotFound, context.Background()},
-		{"ContextExpired", false, http.StatusOK, ctx},
-	}
-
-	// Start a mock server
-	m := mockService{t: t}
-	s := httptest.NewServer(&m)
-	defer s.Close()
-
-	// Enough of a struct to test with
-	rb := RemoteBuilder{}
-
-	// Craft URL to image
-	path := fmt.Sprintf("/v1/image/%v", bson.NewObjectId().Hex())
-	url := url.URL{Scheme: "http", Host: s.Listener.Addr().String(), Path: path}
-
-	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
-			m.imageResponseCode = test.responseCode
-			b := bytes.Buffer{}
-
-			// Call the handler
-			err := rb.doPullRequest(test.ctx, url.String(), &b)
-
-			if test.expectSuccess {
-				// Ensure the handler returned no error, and the image was written as expected
-				if err != nil {
-					t.Fatalf("unexpected failure: %v", err)
+				if rd.LibraryRef == "" {
+					t.Errorf("empty Library ref")
 				}
-				if 0 != strings.Compare(imageContents, b.String()) {
-					t.Errorf("unexpected image contents '%v'/'%v'", b.String(), imageContents)
+				if rd.LibraryURL == "" {
+					t.Errorf("empty Library URL")
 				}
 			} else {
 				// Ensure the handler returned an error

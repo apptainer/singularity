@@ -66,7 +66,6 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 			} else {
 				// When advance != 0, that means we found the start of a section but there is
 				// data before it. We return the data up to the first % and that is the header
-				retbuf.WriteString(strings.TrimSpace(string(data[:advance])))
 				return advance, retbuf.Bytes(), nil
 			}
 		} else {
