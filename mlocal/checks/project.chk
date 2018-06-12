@@ -6,8 +6,8 @@ set -e
 
 config_add_def PACKAGE_NAME \"singularity\"
 config_add_def PACKAGE_TARNAME \"singularity\"
-config_add_def PACKAGE_VERSION \"3.0\"
-config_add_def PACKAGE_STRING \"singularity 3.0\"
+config_add_def PACKAGE_VERSION \"3.0.0\"
+config_add_def PACKAGE_STRING \"singularity 3.0.0\"
 config_add_def PACKAGE_BUGREPORT \"support@sylabs.io\"
 config_add_def PACKAGE_URL \"\"
 
