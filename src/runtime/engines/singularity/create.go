@@ -26,13 +26,12 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity/config"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 )
 
 // CreateContainer creates a container
 func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
-	if engine.CommonConfig.EngineName != config.Name {
+	if engine.CommonConfig.EngineName != Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 

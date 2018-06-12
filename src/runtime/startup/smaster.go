@@ -39,14 +39,14 @@ func runAsInstance(conn *os.File) {
 	}
 }
 
-func handleChild(pid int, signal chan os.Signal, launcher *engines.ContainerLauncher) {
+func handleChild(pid int, signal chan os.Signal, engine *engines.Engine) {
 	var status syscall.WaitStatus
 
 	select {
 	case _ = <-signal:
 		syscall.Wait4(pid, &status, syscall.WNOHANG, nil)
 
-		if err := launcher.CleanupContainer(); err != nil {
+		if err := engine.CleanupContainer(); err != nil {
 			sylog.Errorf("container cleanup failed: %s", err)
 		}
 
@@ -69,7 +69,7 @@ func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.
 	signal.Notify(sigchld, syscall.SIGCHLD)
 
 	containerPid := int(config.containerPid)
-	runtimeName := C.GoString(sruntime)
+	//runtimeName := C.GoString(sruntime)
 	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(config.jsonConfSize))
 
 	comm := os.NewFile(uintptr(socket), "socket")
@@ -80,19 +80,19 @@ func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.
 		sylog.Fatalf("can't open network namespace: %s\n", err)
 	}
 
-	launcher, err := engines.NewContainerLauncher(runtimeName, jsonBytes)
+	engine, err := engines.NewEngine(jsonBytes)
 
 	if err != nil {
 		sylog.Fatalf("failed to initialize runtime: %s\n", err)
 	}
 
 	wg.Add(1)
-	go handleChild(containerPid, sigchld, launcher)
+	go handleChild(containerPid, sigchld, engine)
 
 	wg.Add(1)
-	go launcher.MonitorContainer()
+	go engine.MonitorContainer()
 
-	if launcher.IsRunAsInstance() {
+	if engine.IsRunAsInstance() {
 		wg.Add(1)
 		go runAsInstance(comm)
 	}

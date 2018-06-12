@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -15,7 +16,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/util/exec"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	ociConfig "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
-	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
+	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	"github.com/spf13/cobra"
 )
 
@@ -111,8 +112,9 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 
 	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
 
-	engineConfig := singularityConfig.NewSingularityConfig()
+	engineConfig := singularity.NewConfig()
 	oci := &ociConfig.RuntimeOciConfig{}
+	_ = ociConfig.DefaultRuntimeOciConfig(oci) // must call this to initialize fields in RuntimeOciConfig
 
 	oci.Root.SetPath(image)
 	oci.Process.SetArgs(args)
@@ -158,16 +160,11 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
 	progname := "singularity " + args[0]
 
-	engineConfigData, err := json.Marshal(engineConfig)
-	if err != nil {
-		sylog.Fatalf("CLI Failed to marsahl engineConfig: %s\n", err)
-	}
-
-	cfg := &config.CommonEngineConfig{
+	cfg := &config.Common{
 		EngineName:   "singularity",
 		ContainerID:  "new",
 		OciConfig:    oci,
-		EngineConfig: engineConfigData,
+		EngineConfig: engineConfig,
 	}
 
 	configData, err := json.Marshal(cfg)

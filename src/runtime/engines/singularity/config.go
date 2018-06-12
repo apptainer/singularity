@@ -3,9 +3,11 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package config
+package singularity
 
 import (
+	"encoding/json"
+
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
@@ -15,7 +17,7 @@ import (
 const Name = "singularity"
 
 // FileConfiguration describes the singularity.conf file options
-type FileConfiguration struct {
+type FileConfig struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
 	AllowPidNs              bool     `default:"yes" authorized:"yes,no" directive:"allow pid ns"`
@@ -48,9 +50,8 @@ type FileConfiguration struct {
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 }
 
-// EngineConfig is the specification of the runtime engine configuration. This is
-// parsed from `json:"engineConfig"` within config.CommonEngineConfig
-type EngineConfig struct {
+// JSONConfig stores engine specific confguration that is allowed to be set by the user
+type JSONConfig struct {
 	Image            string   `json:"image"`
 	WritableImage    bool     `json:"writableImage,omitempty"`
 	OverlayImage     string   `json:"overlayImage,omitempty"`
@@ -74,240 +75,258 @@ type EngineConfig struct {
 	KeepPrivs        bool     `json:"keepPrivs,omitempty"`
 	NoPrivs          bool     `json:"noPrivs,omitempty"`
 	Home             string   `json:"home,omitempty"`
+}
 
-	FileConfig *FileConfiguration `json:"fileConfig"`
+type EngineConfig struct {
+	JSON *JSONConfig `json:"jsonConfig"`
+	File *FileConfig `json:"-"`
+}
+
+func (e *EngineConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(e.JSON)
+}
+
+func (e *EngineConfig) UnmarshalJSON(b []byte) error {
+	c := &FileConfig{}
+	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
+		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
+	}
+
+	e.File = c
+	return json.Unmarshal(b, e.JSON)
 }
 
 // NewSingularityConfig returns singularity.EngineConfig with a parsed FileConfig
-func NewSingularityConfig() *EngineConfig {
-	c := &FileConfiguration{}
+func NewConfig() *EngineConfig {
+	c := &FileConfig{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
 		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
 	}
 
 	ret := &EngineConfig{
-		FileConfig: c,
+		JSON: &JSONConfig{},
+		File: c,
 	}
 
 	return ret
 }
 
-// SetImage sets the container image path to be used by container.
+// SetImage sets the container image path to be used by container.JSON.
 func (r *EngineConfig) SetImage(name string) {
-	r.Image = name
+	r.JSON.Image = name
 }
 
 // GetImage retrieves the container image path.
 func (r *EngineConfig) GetImage() string {
-	return r.Image
+	return r.JSON.Image
 }
 
 // SetWritableImage defines the container image as writable or not.
 func (r *EngineConfig) SetWritableImage(writable bool) {
-	r.WritableImage = writable
+	r.JSON.WritableImage = writable
 }
 
 // GetWritableImage returns if the container image is writable or not.
 func (r *EngineConfig) GetWritableImage() bool {
-	return r.WritableImage
+	return r.JSON.WritableImage
 }
 
 // SetOverlayImage sets the overlay image path to be used on top of container image.
 func (r *EngineConfig) SetOverlayImage(name string) {
-	r.OverlayImage = name
+	r.JSON.OverlayImage = name
 }
 
 // GetOverlayImage retrieves the overlay image path.
 func (r *EngineConfig) GetOverlayImage() string {
-	return r.OverlayImage
+	return r.JSON.OverlayImage
 }
 
 // SetOverlayFsEnabled defines if overlay filesystem is enabled or not.
 func (r *EngineConfig) SetOverlayFsEnabled(enabled bool) {
-	r.OverlayFsEnabled = enabled
+	r.JSON.OverlayFsEnabled = enabled
 }
 
 // GetOverlayFsEnabled returns if overlay filesystem is enabled or not.
 func (r *EngineConfig) GetOverlayFsEnabled() bool {
-	return r.OverlayFsEnabled
+	return r.JSON.OverlayFsEnabled
 }
 
 // SetContain sets contain flag.
 func (r *EngineConfig) SetContain(contain bool) {
-	r.Contain = contain
+	r.JSON.Contain = contain
 }
 
 // GetContain returns if contain flag is set or not.
 func (r *EngineConfig) GetContain() bool {
-	return r.Contain
+	return r.JSON.Contain
 }
 
-// SetNv sets nv flag to bind cuda libraries into container.
+// SetNv sets nv flag to bind cuda libraries into container.JSON.
 func (r *EngineConfig) SetNv(nv bool) {
-	r.Nv = nv
+	r.JSON.Nv = nv
 }
 
 // GetNv returns if nv flag is set or not.
 func (r *EngineConfig) GetNv() bool {
-	return r.Nv
+	return r.JSON.Nv
 }
 
 // SetWorkdir sets a work directory path.
 func (r *EngineConfig) SetWorkdir(name string) {
-	r.Workdir = name
+	r.JSON.Workdir = name
 }
 
 // GetWorkdir retrieves the work directory path.
 func (r *EngineConfig) GetWorkdir() string {
-	return r.Workdir
+	return r.JSON.Workdir
 }
 
 // SetScratchDir set a scratch directory path.
 func (r *EngineConfig) SetScratchDir(scratchdir []string) {
-	r.ScratchDir = scratchdir
+	r.JSON.ScratchDir = scratchdir
 }
 
 // GetScratchDir retrieves the scratch directory path.
 func (r *EngineConfig) GetScratchDir() []string {
-	return r.ScratchDir
+	return r.JSON.ScratchDir
 }
 
 // SetHomeDir sets the home directory path.
 func (r *EngineConfig) SetHomeDir(name string) {
-	r.HomeDir = name
+	r.JSON.HomeDir = name
 }
 
 // GetHomeDir retrieves the home directory path.
 func (r *EngineConfig) GetHomeDir() string {
-	return r.HomeDir
+	return r.JSON.HomeDir
 }
 
-// SetBindPath sets paths to bind into container.
+// SetBindPath sets paths to bind into container.JSON.
 func (r *EngineConfig) SetBindPath(bindpath []string) {
-	r.BindPath = bindpath
+	r.JSON.BindPath = bindpath
 }
 
 // GetBindPath retrieves bind paths.
 func (r *EngineConfig) GetBindPath() []string {
-	return r.BindPath
+	return r.JSON.BindPath
 }
 
 // SetCommand sets action command to execute.
 func (r *EngineConfig) SetCommand(command string) {
-	r.Command = command
+	r.JSON.Command = command
 }
 
 // GetCommand retrieves action command.
 func (r *EngineConfig) GetCommand() string {
-	return r.Command
+	return r.JSON.Command
 }
 
 // SetShell sets shell to be used by shell command.
 func (r *EngineConfig) SetShell(shell string) {
-	r.Shell = shell
+	r.JSON.Shell = shell
 }
 
 // GetShell retrieves shell for shell command.
 func (r *EngineConfig) GetShell() string {
-	return r.Shell
+	return r.JSON.Shell
 }
 
 // SetTmpDir sets temporary directory path.
 func (r *EngineConfig) SetTmpDir(name string) {
-	r.TmpDir = name
+	r.JSON.TmpDir = name
 }
 
 // GetTmpDir retrieves temporary directory path.
 func (r *EngineConfig) GetTmpDir() string {
-	return r.TmpDir
+	return r.JSON.TmpDir
 }
 
 // SetInstance sets if container run as instance or not.
 func (r *EngineConfig) SetInstance(instance bool) {
-	r.IsInstance = instance
+	r.JSON.IsInstance = instance
 }
 
 // GetInstance returns if container run as instance or not.
 func (r *EngineConfig) GetInstance() bool {
-	return r.IsInstance
+	return r.JSON.IsInstance
 }
 
 // SetBootInstance sets boot flag to execute /sbin/init as main instance process.
 func (r *EngineConfig) SetBootInstance(boot bool) {
-	r.BootInstance = boot
+	r.JSON.BootInstance = boot
 }
 
 // GetBootInstance returns if boot flag is set or not
 func (r *EngineConfig) GetBootInstance() bool {
-	return r.BootInstance
+	return r.JSON.BootInstance
 }
 
 // SetAddCaps sets bounding/effective/permitted/inheritable/ambient capabilities to add.
 func (r *EngineConfig) SetAddCaps(caps string) {
-	r.AddCaps = caps
+	r.JSON.AddCaps = caps
 }
 
 // GetAddCaps retrieves bounding/effective/permitted/inheritable/ambient capabilities to add.
 func (r *EngineConfig) GetAddCaps() string {
-	return r.AddCaps
+	return r.JSON.AddCaps
 }
 
 // SetDropCaps sets bounding/effective/permitted/inheritable/ambient capabilities to drop.
 func (r *EngineConfig) SetDropCaps(caps string) {
-	r.DropCaps = caps
+	r.JSON.DropCaps = caps
 }
 
 // GetDropCaps retrieves bounding/effective/permitted/inheritable/ambient capabilities to drop.
 func (r *EngineConfig) GetDropCaps() string {
-	return r.DropCaps
+	return r.JSON.DropCaps
 }
 
-// SetHostname sets hostname to use in container.
+// SetHostname sets hostname to use in container.JSON.
 func (r *EngineConfig) SetHostname(hostname string) {
-	r.Hostname = hostname
+	r.JSON.Hostname = hostname
 }
 
-// GetHostname retrieves hostname to use in container.
+// GetHostname retrieves hostname to use in container.JSON.
 func (r *EngineConfig) GetHostname() string {
-	return r.Hostname
+	return r.JSON.Hostname
 }
 
-// SetAllowSUID sets allow-suid flag to allow to run setuid binary inside container.
+// SetAllowSUID sets allow-suid flag to allow to run setuid binary inside container.JSON.
 func (r *EngineConfig) SetAllowSUID(allow bool) {
-	r.AllowSUID = allow
+	r.JSON.AllowSUID = allow
 }
 
 // GetAllowSUID returns if allow-suid is set or not.
 func (r *EngineConfig) GetAllowSUID() bool {
-	return r.AllowSUID
+	return r.JSON.AllowSUID
 }
 
 // SetKeepPrivs sets keep-privs flag to allow root to retain all privileges.
 func (r *EngineConfig) SetKeepPrivs(keep bool) {
-	r.KeepPrivs = keep
+	r.JSON.KeepPrivs = keep
 }
 
 // GetKeepPrivs returns if keep-privs is set or not
 func (r *EngineConfig) GetKeepPrivs() bool {
-	return r.KeepPrivs
+	return r.JSON.KeepPrivs
 }
 
 // SetNoPrivs set no-privs flag to force root user to lose all privileges.
 func (r *EngineConfig) SetNoPrivs(nopriv bool) {
-	r.NoPrivs = nopriv
+	r.JSON.NoPrivs = nopriv
 }
 
 // GetNoPrivs return if no-privs flag is set or not
 func (r *EngineConfig) GetNoPrivs() bool {
-	return r.NoPrivs
+	return r.JSON.NoPrivs
 }
 
 // SetHome set user home directory
 func (r *EngineConfig) SetHome(home string) {
-	r.Home = home
+	r.JSON.Home = home
 }
 
 // GetHome retrieves user home directory
 func (r *EngineConfig) GetHome() string {
-	return r.Home
+	return r.JSON.Home
 }

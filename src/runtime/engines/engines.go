@@ -10,69 +10,87 @@ import (
 	"net"
 	"net/rpc"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	singularity "github.com/singularityware/singularity/src/runtime/engines/singularity"
-	singularityConfig "github.com/singularityware/singularity/src/runtime/engines/singularity/config"
+	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
 )
 
-/*
-// ContainerLauncher is a struct containing the unique combination of an Engine
-// with a RuntimeConfig. Together, this unique combination can launch one container
-// or potentially set of containers.
-type ContainerLauncher struct {
-	Engine
-	*config.RuntimeConfig
-}
-*/
-
-// Engine is
+// Engine is the combination of an EngineOperations and a config.Common. The singularity
+// startup routines (src/runtime/startup/*) can spawn a container process from this type
 type Engine struct {
 	EngineOperations
 	*config.Common
 }
 
-// EngineOperations is an interface describing necessary runtime operations to launch a
-// container process. An Engine *uses* a RuntimeConfig to *launch* a container.
+// EngineOperations is an interface describing necessary operations to launch a
+// container process.
 type EngineOperations interface {
-	// intialize configuration and return it/
+	// Config returns the current EngineConfig, used to populate the Common struct
+	Config() config.EngineConfig
+	// InitConfig is responsible for storing the parse config.Common inside
+	// the EngineOperations implementation.
 	InitConfig(*config.Common)
-	// call in stage1
+	// CheckConfig is called in stage1 to validate the values of the configuration
 	CheckConfig() error
-	// are we run as instance
+	// IsRunAsInstance returns whether or not the container is an instance or batch
 	IsRunAsInstance() bool
-	// call in child stage2
+	// CreateContainer is called in stage2-child and does mount operations, etc... to
+	// set up the container environment for the payload proc
 	CreateContainer(rpcConn net.Conn) error
-	// call in parent stage2 before waiting stage2 child
+	// PrestartProcess is called in stage2-parent before waiting on stage2-child and can do
+	// some set-up operations before the container proc is spawned
 	PrestartProcess() error
-	// call in parent stage2 after stage2 child exit
+	// StartProcess is called in stage2-parent after waiting on stage2-child exit. It is
+	// responsible for exec'ing the payload proc in the container
 	StartProcess() error
-	// call in smaster once container is created
+	// MonitorContainer is called in smaster once the container proc has been spawned. It
+	// will typically block until the container proc exists
 	MonitorContainer() error
-	// call in smaster for container cleanup
+	// CleanupContainer is called in smaster after the MontiorContainer returns. It is responsible
+	// for ensuring that the container has been properly torn down
 	CleanupContainer() error
 }
 
 func NewEngine(b []byte) (*Engine, error) {
-	e := &Engine{
-		Common: &config.Common{},
-	}
-
-	if err := json.Unmarshal(b, e); err != nil {
+	// Parse json []byte into map to first grab engineName value
+	jsonMap := make(map[string]interface{})
+	if err := json.Unmarshal(b, &jsonMap); err != nil {
 		return nil, err
 	}
 
+	// Convert engineName from interface{} to string type
+	engineName := jsonMap["engineName"].(string)
+
+	// Ensure engineName exists
+	if _, ok := registeredEngineOperations[engineName]; !ok {
+		sylog.Fatalf("Engine named %s not found, failing\n", engineName)
+	}
+
+	// Create empty Engine object with properly initialized EngineConfig && EngineOperations
+	e := &Engine{
+		EngineOperations: registeredEngineOperations[engineName],
+		Common: &config.Common{
+			EngineConfig: registeredEngineOperations[engineName].Config(),
+		},
+	}
+
+	// Use Unmarshal func on Engine type to convert JSON into filled Engine struct
+	if err := json.Unmarshal(b, e); err != nil {
+		return nil, err
+	}
 	return e, nil
 }
 
 func (e *Engine) UnmarshalJSON(b []byte) error {
+	// Unmarshal into e.Common
 	if err := json.Unmarshal(b, e.Common); err != nil {
+		sylog.Errorf("Unable to parse JSON into e.Common: %s\n", err)
 		return err
 	}
 
-	e.EngineOperations = registeredEngineOperations[e.EngineName]
+	// Initialize the EngineOperations config pointers
 	e.InitConfig(e.Common)
-
 	return nil
 }
 
@@ -104,6 +122,6 @@ func init() {
 	registeredEngineRPCMethods = make(map[string]interface{})
 
 	methods := new(singularityRpcServer.Methods)
-	registerEngineOperations(&singularity.EngineOperations{EngineConfig: singularityConfig.NewSingularityConfig()}, "singularity")
-	registerEngineRPCMethods(methods, singularityConfig.Name)
+	registerEngineOperations(&singularity.EngineOperations{EngineConfig: singularity.NewConfig()}, "singularity")
+	registerEngineRPCMethods(methods, singularity.Name)
 }
