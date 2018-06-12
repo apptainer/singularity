@@ -10,15 +10,9 @@ import (
 	"strings"
 )
 
-// validConveyorPackers contains a list of known ConveyorPackers
-var validConveyorPackers = map[string]bool{
-	"library":     true,
-	"docker":      true,
-	"shub":        true,
-	"debootstrap": true,
-	"yum":         true,
-	"squashfs":    true,
-	"sif":         true,
+// validURIs contains a list of known uris
+var validURIs = map[string]bool{
+	"docker": true,
 }
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...)
@@ -38,17 +32,17 @@ type ConveyorPacker interface {
 	Packer
 }
 
-// IsValidConveyorPacker returns whether or not the given source is valid
-func IsValidConveyorPacker(source string) (valid bool, err error) {
+// IsValidURI returns whether or not the given source is valid
+func IsValidURI(source string) (valid bool, err error) {
 	u := strings.SplitN(source, ":", 2)
 
 	if len(u) != 2 {
 		return false, nil
 	}
 
-	if _, ok := validConveyorPackers[u[0]]; ok {
+	if _, ok := validURIs[u[0]]; ok {
 		return true, nil
 	}
 
-	return false, fmt.Errorf("Invalid ConveyorPacker %s", source)
+	return false, fmt.Errorf("Invalid URI %s", source)
 }

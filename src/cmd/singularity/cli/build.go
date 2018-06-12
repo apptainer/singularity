@@ -57,8 +57,10 @@ var BuildCmd = &cobra.Command{
 	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
 		var def build.Definition
-		var b build.Builder
 		var err error
+
+		var bundle *build.Bundle
+		var cp build.ConveyorPacker
 
 		if silent {
 			fmt.Println("Silent!")
@@ -69,19 +71,38 @@ var BuildCmd = &cobra.Command{
 		}
 
 		if json {
-			b, err = build.NewSIFBuilderJSON(args[0], strings.NewReader(args[1]))
-			if err != nil {
-				sylog.Fatalf("Unable to parse JSON: %v\n", err)
-			}
+			// b, err = build.NewSIFBuilderJSON(args[0], strings.NewReader(args[1]))
+			// if err != nil {
+			// 	sylog.Fatalf("Unable to parse JSON: %v\n", err)
+			// }
+			sylog.Fatalf("Build from JSON not implemented")
 		} else {
 			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
 				// URI passed as arg[1]
-				def, err = build.NewDefinitionFromURI(args[1])
-				if err != nil {
-					sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
+				// def, err = build.NewDefinitionFromURI(args[1])
+				// if err != nil {
+				// 	sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
+				// }
+
+				cp = &build.DockerConveyorPacker{}
+
+				u := strings.SplitN(args[1], ":", 2)
+
+				if len(u) != 2 {
+					return
 				}
+
+				if err = cp.Get(u[1]); err != nil {
+					sylog.Fatalf("Conveyor failed to get:", err)
+				}
+
+				bundle, err = cp.Pack()
+				if err != nil {
+					sylog.Fatalf("Packer failed to pack:", err)
+				}
+
 			} else if !ok && err == nil {
-				// Non-URI passed as arg[1]
+				// // Non-URI passed as arg[1]
 				defFile, err := os.Open(args[1])
 				if err != nil {
 					sylog.Fatalf("unable to open file %s: %v\n", args[1], err)
@@ -92,11 +113,13 @@ var BuildCmd = &cobra.Command{
 				if err != nil {
 					sylog.Fatalf("failed to parse definition file %s: %v\n", args[1], err)
 				}
+
 			} else {
 				sylog.Fatalf("unable to parse %s: %v\n", args[1], err)
 			}
 
 			if remote {
+				var b *build.RemoteBuilder
 				if authWarning != auth.WarningEmptyToken &&
 					authWarning != auth.WarningTokenToolong &&
 					authWarning != auth.WarningTokenTooShort {
@@ -107,17 +130,27 @@ var BuildCmd = &cobra.Command{
 					sylog.Fatalf("Unable to submit build job: %v", authWarning)
 				}
 
-			} else {
-				b, err = build.NewSIFBuilder(args[0], def)
-				if err != nil {
-					sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
+				if err := b.Build(context.TODO()); err != nil {
+					sylog.Fatalf("failed to build image: %v\n", err)
 				}
+
+			} else {
+
+				a := &build.SIFAssembler{}
+
+				err = a.Assemble(bundle, args[0])
+				if err != nil {
+					sylog.Fatalf("Assembler failed to assemble:", err)
+				}
+
+				// b, err = build.NewSIFBuilder(args[0], def)
+				// if err != nil {
+				// 	sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
+				// }
+
 			}
 		}
 
-		if err := b.Build(context.TODO()); err != nil {
-			sylog.Fatalf("failed to build image: %v\n", err)
-		}
 	},
 	TraverseChildren: true,
 }
