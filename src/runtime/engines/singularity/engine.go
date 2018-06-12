@@ -28,6 +28,6 @@ func (e *EngineOperations) Config() config.EngineConfig {
 }
 
 // IsRunAsInstance returns true if the runtime engine was run as an instance
-func (engine *EngineOperations) IsRunAsInstance() bool {
+func (e *EngineOperations) IsRunAsInstance() bool {
 	return false
 }

@@ -30,6 +30,7 @@ type Common struct {
 	EngineConfig EngineConfig `json:"engineConfig"`
 }
 
+// EngineConfig is the interface an EngineConfig must implement
 type EngineConfig interface {
 	UnmarshalJSON([]byte) error
 	MarshalJSON() ([]byte, error)

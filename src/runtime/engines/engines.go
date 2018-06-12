@@ -52,6 +52,7 @@ type EngineOperations interface {
 	CleanupContainer() error
 }
 
+// NewEngine returns the engine described by the JSON []byte configuration
 func NewEngine(b []byte) (*Engine, error) {
 	// Parse json []byte into map to first grab engineName value
 	jsonMap := make(map[string]interface{})
@@ -82,6 +83,7 @@ func NewEngine(b []byte) (*Engine, error) {
 	return e, nil
 }
 
+// UnmarshalJSON is for json.Unmarshaler
 func (e *Engine) UnmarshalJSON(b []byte) error {
 	// Unmarshal into e.Common
 	if err := json.Unmarshal(b, e.Common); err != nil {

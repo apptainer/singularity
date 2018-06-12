@@ -27,12 +27,14 @@ type RuntimeOciConfig struct {
 	RuntimeOciPlatform
 }
 
+// MarshalJSON is for json.Marshaler
 func (c *RuntimeOciConfig) MarshalJSON() ([]byte, error) {
 	b, err := json.Marshal(&c.RuntimeOciSpec)
 
 	return b, err
 }
 
+// UnmarshalJSON is for json.Unmarshaler
 func (c *RuntimeOciConfig) UnmarshalJSON(b []byte) error {
 	spec := &RuntimeOciSpec{}
 

@@ -20,7 +20,7 @@ import (
 var (
 	remote    bool
 	remoteURL string
-	isJson    bool
+	isJSON    bool
 	sandbox   bool
 	writable  bool
 	force     bool
@@ -33,7 +33,7 @@ func init() {
 
 	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
 	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{}, "Only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
-	BuildCmd.Flags().BoolVar(&isJson, "json", false, "Interpret build definition as JSON")
+	BuildCmd.Flags().BoolVar(&isJSON, "json", false, "Interpret build definition as JSON")
 	BuildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
 	BuildCmd.Flags().BoolVarP(&force, "force", "f", false, "Delete and overwrite an image if it currently exists")
 	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
@@ -67,7 +67,7 @@ var BuildCmd = &cobra.Command{
 			fmt.Println("Sandbox!")
 		}
 
-		if isJson {
+		if isJSON {
 			b, err = build.NewSIFBuilderJSON(args[0], strings.NewReader(args[1]))
 			if err != nil {
 				sylog.Fatalf("Unable to parse JSON: %v\n", err)

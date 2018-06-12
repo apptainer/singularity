@@ -16,7 +16,7 @@ import (
 // Name is the name of the runtime.
 const Name = "singularity"
 
-// FileConfiguration describes the singularity.conf file options
+// FileConfig describes the singularity.conf file options
 type FileConfig struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
@@ -77,15 +77,18 @@ type JSONConfig struct {
 	Home             string   `json:"home,omitempty"`
 }
 
+// EngineConfig stores both the JSONConfig and the FileConfig
 type EngineConfig struct {
 	JSON *JSONConfig `json:"jsonConfig"`
 	File *FileConfig `json:"-"`
 }
 
+// MarshalJSON is for json.Marshaler
 func (e *EngineConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(e.JSON)
 }
 
+// UnmarshalJSON is for json.Marshaler
 func (e *EngineConfig) UnmarshalJSON(b []byte) error {
 	c := &FileConfig{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
@@ -96,7 +99,7 @@ func (e *EngineConfig) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, e.JSON)
 }
 
-// NewSingularityConfig returns singularity.EngineConfig with a parsed FileConfig
+// NewConfig returns singularity.EngineConfig with a parsed FileConfig
 func NewConfig() *EngineConfig {
 	c := &FileConfig{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
@@ -111,222 +114,222 @@ func NewConfig() *EngineConfig {
 	return ret
 }
 
-// SetImage sets the container image path to be used by container.JSON.
-func (r *EngineConfig) SetImage(name string) {
-	r.JSON.Image = name
+// SetImage sets the container image path to be used by containee.JSON.
+func (e *EngineConfig) SetImage(name string) {
+	e.JSON.Image = name
 }
 
 // GetImage retrieves the container image path.
-func (r *EngineConfig) GetImage() string {
-	return r.JSON.Image
+func (e *EngineConfig) GetImage() string {
+	return e.JSON.Image
 }
 
 // SetWritableImage defines the container image as writable or not.
-func (r *EngineConfig) SetWritableImage(writable bool) {
-	r.JSON.WritableImage = writable
+func (e *EngineConfig) SetWritableImage(writable bool) {
+	e.JSON.WritableImage = writable
 }
 
 // GetWritableImage returns if the container image is writable or not.
-func (r *EngineConfig) GetWritableImage() bool {
-	return r.JSON.WritableImage
+func (e *EngineConfig) GetWritableImage() bool {
+	return e.JSON.WritableImage
 }
 
 // SetOverlayImage sets the overlay image path to be used on top of container image.
-func (r *EngineConfig) SetOverlayImage(name string) {
-	r.JSON.OverlayImage = name
+func (e *EngineConfig) SetOverlayImage(name string) {
+	e.JSON.OverlayImage = name
 }
 
 // GetOverlayImage retrieves the overlay image path.
-func (r *EngineConfig) GetOverlayImage() string {
-	return r.JSON.OverlayImage
+func (e *EngineConfig) GetOverlayImage() string {
+	return e.JSON.OverlayImage
 }
 
 // SetOverlayFsEnabled defines if overlay filesystem is enabled or not.
-func (r *EngineConfig) SetOverlayFsEnabled(enabled bool) {
-	r.JSON.OverlayFsEnabled = enabled
+func (e *EngineConfig) SetOverlayFsEnabled(enabled bool) {
+	e.JSON.OverlayFsEnabled = enabled
 }
 
 // GetOverlayFsEnabled returns if overlay filesystem is enabled or not.
-func (r *EngineConfig) GetOverlayFsEnabled() bool {
-	return r.JSON.OverlayFsEnabled
+func (e *EngineConfig) GetOverlayFsEnabled() bool {
+	return e.JSON.OverlayFsEnabled
 }
 
 // SetContain sets contain flag.
-func (r *EngineConfig) SetContain(contain bool) {
-	r.JSON.Contain = contain
+func (e *EngineConfig) SetContain(contain bool) {
+	e.JSON.Contain = contain
 }
 
 // GetContain returns if contain flag is set or not.
-func (r *EngineConfig) GetContain() bool {
-	return r.JSON.Contain
+func (e *EngineConfig) GetContain() bool {
+	return e.JSON.Contain
 }
 
-// SetNv sets nv flag to bind cuda libraries into container.JSON.
-func (r *EngineConfig) SetNv(nv bool) {
-	r.JSON.Nv = nv
+// SetNv sets nv flag to bind cuda libraries into containee.JSON.
+func (e *EngineConfig) SetNv(nv bool) {
+	e.JSON.Nv = nv
 }
 
 // GetNv returns if nv flag is set or not.
-func (r *EngineConfig) GetNv() bool {
-	return r.JSON.Nv
+func (e *EngineConfig) GetNv() bool {
+	return e.JSON.Nv
 }
 
 // SetWorkdir sets a work directory path.
-func (r *EngineConfig) SetWorkdir(name string) {
-	r.JSON.Workdir = name
+func (e *EngineConfig) SetWorkdir(name string) {
+	e.JSON.Workdir = name
 }
 
 // GetWorkdir retrieves the work directory path.
-func (r *EngineConfig) GetWorkdir() string {
-	return r.JSON.Workdir
+func (e *EngineConfig) GetWorkdir() string {
+	return e.JSON.Workdir
 }
 
 // SetScratchDir set a scratch directory path.
-func (r *EngineConfig) SetScratchDir(scratchdir []string) {
-	r.JSON.ScratchDir = scratchdir
+func (e *EngineConfig) SetScratchDir(scratchdir []string) {
+	e.JSON.ScratchDir = scratchdir
 }
 
 // GetScratchDir retrieves the scratch directory path.
-func (r *EngineConfig) GetScratchDir() []string {
-	return r.JSON.ScratchDir
+func (e *EngineConfig) GetScratchDir() []string {
+	return e.JSON.ScratchDir
 }
 
 // SetHomeDir sets the home directory path.
-func (r *EngineConfig) SetHomeDir(name string) {
-	r.JSON.HomeDir = name
+func (e *EngineConfig) SetHomeDir(name string) {
+	e.JSON.HomeDir = name
 }
 
 // GetHomeDir retrieves the home directory path.
-func (r *EngineConfig) GetHomeDir() string {
-	return r.JSON.HomeDir
+func (e *EngineConfig) GetHomeDir() string {
+	return e.JSON.HomeDir
 }
 
-// SetBindPath sets paths to bind into container.JSON.
-func (r *EngineConfig) SetBindPath(bindpath []string) {
-	r.JSON.BindPath = bindpath
+// SetBindPath sets paths to bind into containee.JSON.
+func (e *EngineConfig) SetBindPath(bindpath []string) {
+	e.JSON.BindPath = bindpath
 }
 
 // GetBindPath retrieves bind paths.
-func (r *EngineConfig) GetBindPath() []string {
-	return r.JSON.BindPath
+func (e *EngineConfig) GetBindPath() []string {
+	return e.JSON.BindPath
 }
 
 // SetCommand sets action command to execute.
-func (r *EngineConfig) SetCommand(command string) {
-	r.JSON.Command = command
+func (e *EngineConfig) SetCommand(command string) {
+	e.JSON.Command = command
 }
 
 // GetCommand retrieves action command.
-func (r *EngineConfig) GetCommand() string {
-	return r.JSON.Command
+func (e *EngineConfig) GetCommand() string {
+	return e.JSON.Command
 }
 
 // SetShell sets shell to be used by shell command.
-func (r *EngineConfig) SetShell(shell string) {
-	r.JSON.Shell = shell
+func (e *EngineConfig) SetShell(shell string) {
+	e.JSON.Shell = shell
 }
 
 // GetShell retrieves shell for shell command.
-func (r *EngineConfig) GetShell() string {
-	return r.JSON.Shell
+func (e *EngineConfig) GetShell() string {
+	return e.JSON.Shell
 }
 
 // SetTmpDir sets temporary directory path.
-func (r *EngineConfig) SetTmpDir(name string) {
-	r.JSON.TmpDir = name
+func (e *EngineConfig) SetTmpDir(name string) {
+	e.JSON.TmpDir = name
 }
 
 // GetTmpDir retrieves temporary directory path.
-func (r *EngineConfig) GetTmpDir() string {
-	return r.JSON.TmpDir
+func (e *EngineConfig) GetTmpDir() string {
+	return e.JSON.TmpDir
 }
 
 // SetInstance sets if container run as instance or not.
-func (r *EngineConfig) SetInstance(instance bool) {
-	r.JSON.IsInstance = instance
+func (e *EngineConfig) SetInstance(instance bool) {
+	e.JSON.IsInstance = instance
 }
 
 // GetInstance returns if container run as instance or not.
-func (r *EngineConfig) GetInstance() bool {
-	return r.JSON.IsInstance
+func (e *EngineConfig) GetInstance() bool {
+	return e.JSON.IsInstance
 }
 
 // SetBootInstance sets boot flag to execute /sbin/init as main instance process.
-func (r *EngineConfig) SetBootInstance(boot bool) {
-	r.JSON.BootInstance = boot
+func (e *EngineConfig) SetBootInstance(boot bool) {
+	e.JSON.BootInstance = boot
 }
 
 // GetBootInstance returns if boot flag is set or not
-func (r *EngineConfig) GetBootInstance() bool {
-	return r.JSON.BootInstance
+func (e *EngineConfig) GetBootInstance() bool {
+	return e.JSON.BootInstance
 }
 
 // SetAddCaps sets bounding/effective/permitted/inheritable/ambient capabilities to add.
-func (r *EngineConfig) SetAddCaps(caps string) {
-	r.JSON.AddCaps = caps
+func (e *EngineConfig) SetAddCaps(caps string) {
+	e.JSON.AddCaps = caps
 }
 
 // GetAddCaps retrieves bounding/effective/permitted/inheritable/ambient capabilities to add.
-func (r *EngineConfig) GetAddCaps() string {
-	return r.JSON.AddCaps
+func (e *EngineConfig) GetAddCaps() string {
+	return e.JSON.AddCaps
 }
 
 // SetDropCaps sets bounding/effective/permitted/inheritable/ambient capabilities to drop.
-func (r *EngineConfig) SetDropCaps(caps string) {
-	r.JSON.DropCaps = caps
+func (e *EngineConfig) SetDropCaps(caps string) {
+	e.JSON.DropCaps = caps
 }
 
 // GetDropCaps retrieves bounding/effective/permitted/inheritable/ambient capabilities to drop.
-func (r *EngineConfig) GetDropCaps() string {
-	return r.JSON.DropCaps
+func (e *EngineConfig) GetDropCaps() string {
+	return e.JSON.DropCaps
 }
 
-// SetHostname sets hostname to use in container.JSON.
-func (r *EngineConfig) SetHostname(hostname string) {
-	r.JSON.Hostname = hostname
+// SetHostname sets hostname to use in containee.JSON.
+func (e *EngineConfig) SetHostname(hostname string) {
+	e.JSON.Hostname = hostname
 }
 
-// GetHostname retrieves hostname to use in container.JSON.
-func (r *EngineConfig) GetHostname() string {
-	return r.JSON.Hostname
+// GetHostname retrieves hostname to use in containee.JSON.
+func (e *EngineConfig) GetHostname() string {
+	return e.JSON.Hostname
 }
 
-// SetAllowSUID sets allow-suid flag to allow to run setuid binary inside container.JSON.
-func (r *EngineConfig) SetAllowSUID(allow bool) {
-	r.JSON.AllowSUID = allow
+// SetAllowSUID sets allow-suid flag to allow to run setuid binary inside containee.JSON.
+func (e *EngineConfig) SetAllowSUID(allow bool) {
+	e.JSON.AllowSUID = allow
 }
 
 // GetAllowSUID returns if allow-suid is set or not.
-func (r *EngineConfig) GetAllowSUID() bool {
-	return r.JSON.AllowSUID
+func (e *EngineConfig) GetAllowSUID() bool {
+	return e.JSON.AllowSUID
 }
 
 // SetKeepPrivs sets keep-privs flag to allow root to retain all privileges.
-func (r *EngineConfig) SetKeepPrivs(keep bool) {
-	r.JSON.KeepPrivs = keep
+func (e *EngineConfig) SetKeepPrivs(keep bool) {
+	e.JSON.KeepPrivs = keep
 }
 
 // GetKeepPrivs returns if keep-privs is set or not
-func (r *EngineConfig) GetKeepPrivs() bool {
-	return r.JSON.KeepPrivs
+func (e *EngineConfig) GetKeepPrivs() bool {
+	return e.JSON.KeepPrivs
 }
 
 // SetNoPrivs set no-privs flag to force root user to lose all privileges.
-func (r *EngineConfig) SetNoPrivs(nopriv bool) {
-	r.JSON.NoPrivs = nopriv
+func (e *EngineConfig) SetNoPrivs(nopriv bool) {
+	e.JSON.NoPrivs = nopriv
 }
 
 // GetNoPrivs return if no-privs flag is set or not
-func (r *EngineConfig) GetNoPrivs() bool {
-	return r.JSON.NoPrivs
+func (e *EngineConfig) GetNoPrivs() bool {
+	return e.JSON.NoPrivs
 }
 
 // SetHome set user home directory
-func (r *EngineConfig) SetHome(home string) {
-	r.JSON.Home = home
+func (e *EngineConfig) SetHome(home string) {
+	e.JSON.Home = home
 }
 
 // GetHome retrieves user home directory
-func (r *EngineConfig) GetHome() string {
-	return r.JSON.Home
+func (e *EngineConfig) GetHome() string {
+	return e.JSON.Home
 }
