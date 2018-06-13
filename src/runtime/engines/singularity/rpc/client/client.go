@@ -9,7 +9,7 @@ import (
 	"net/rpc"
 
 	"github.com/singularityware/singularity/src/pkg/util/loop"
-	args "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc"
+	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
 )
 
 // RPC holds the state necessary for remote procedure calls

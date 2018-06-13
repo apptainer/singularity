@@ -6,6 +6,8 @@
 package config
 
 import (
+	"encoding/json"
+
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -23,4 +25,23 @@ type RuntimeOciConfig struct {
 	Hooks       RuntimeOciHooks
 	Annotations RuntimeOciAnnotations
 	RuntimeOciPlatform
+}
+
+// MarshalJSON is for json.Marshaler
+func (c *RuntimeOciConfig) MarshalJSON() ([]byte, error) {
+	b, err := json.Marshal(&c.RuntimeOciSpec)
+
+	return b, err
+}
+
+// UnmarshalJSON is for json.Unmarshaler
+func (c *RuntimeOciConfig) UnmarshalJSON(b []byte) error {
+	spec := &RuntimeOciSpec{}
+
+	if err := json.Unmarshal(b, spec); err != nil {
+		return err
+	}
+
+	c.RuntimeOciSpec = *spec
+	return nil
 }
