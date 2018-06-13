@@ -143,6 +143,7 @@ collect:
 dep:
 	@printf " GO DEPS\n"
 	$(V)(dep ensure -vendor-only >/dev/null 2>&1 || true)
+	$(V)(patch --silent ../vendor/github.com/opencontainers/image-tools/image/manifest.go ../patches/image_tools_manifest.go.patch)
 
 .PHONY: test
 test:
