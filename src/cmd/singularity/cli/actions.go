@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -13,7 +14,9 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
-	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
+	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	ociConfig "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
+	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	"github.com/spf13/cobra"
 )
 
@@ -49,6 +52,7 @@ func init() {
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("add-caps"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("drop-caps"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("allow-setuid"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("writable"))
 	}
 
 	SingularityCmd.AddCommand(ExecCmd)
@@ -108,10 +112,15 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 
 	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
 
-	oci, runtime := runtimeconfig.NewSingularityConfig("new")
+	engineConfig := singularity.NewConfig()
+	oci := &ociConfig.RuntimeOciConfig{}
+	_ = ociConfig.DefaultRuntimeOciConfig(oci) // must call this to initialize fields in RuntimeOciConfig
+
 	oci.Root.SetPath(image)
 	oci.Process.SetArgs(args)
 	oci.Process.SetNoNewPrivileges(true)
+	engineConfig.SetImage(image)
+	engineConfig.SetBindPath(BindPaths)
 
 	oci.RuntimeOciSpec.Linux = &specs.Linux{}
 	namespaces := []specs.LinuxNamespace{}
@@ -151,9 +160,16 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
 	progname := "singularity " + args[0]
 
-	configData, err := runtime.GetConfig()
+	cfg := &config.Common{
+		EngineName:   "singularity",
+		ContainerID:  "new",
+		OciConfig:    oci,
+		EngineConfig: engineConfig,
+	}
+
+	configData, err := json.Marshal(cfg)
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
 	if err := exec.Pipe(wrapper, []string{progname}, Env, configData); err != nil {

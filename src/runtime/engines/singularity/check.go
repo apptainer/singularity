@@ -3,9 +3,17 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package runtime
+package singularity
 
-// MonitorContainer monitors a container
-func (c *Engine) MonitorContainer() error {
+import (
+	"fmt"
+)
+
+// CheckConfig checks the runtime engine config
+func (engine *EngineOperations) CheckConfig() error {
+	if engine.CommonConfig.EngineName != Name {
+		return fmt.Errorf("incorrect engine")
+	}
+
 	return nil
 }
