@@ -14,7 +14,6 @@ MOUNT OPTIONS:
     -w|--writable       By default all Singularity containers are available as
                         read only. This option makes the file system accessible
                         as read/write.
-    -o|--overlay        Use a persistent overlayFS via a writable image
 
 EXAMPLES:
 
