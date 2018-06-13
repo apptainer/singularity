@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -69,10 +70,10 @@ var BuildCmd = &cobra.Command{
 		}
 
 		if json {
-			// b, err = build.NewSIFBuilderJSON(args[0], strings.NewReader(args[1]))
-			// if err != nil {
-			// 	sylog.Fatalf("Unable to parse JSON: %v\n", err)
-			// }
+			def, err = build.NewDefinitionFromJSON(strings.NewReader(args[1]))
+			if err != nil {
+				sylog.Fatalf("Unable to parse JSON: %v\n", err)
+			}
 			sylog.Fatalf("Build from JSON not implemented")
 		} else {
 			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
@@ -80,23 +81,6 @@ var BuildCmd = &cobra.Command{
 				def, err = build.NewDefinitionFromURI(args[1])
 				if err != nil {
 					sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
-				}
-
-				cp = &build.DockerConveyorPacker{}
-
-				u := strings.SplitN(args[1], ":", 2)
-
-				if len(u) != 2 {
-					return
-				}
-
-				if err = cp.Get(&def); err != nil {
-					sylog.Fatalf("Conveyor failed to get:", err)
-				}
-
-				bundle, err = cp.Pack()
-				if err != nil {
-					sylog.Fatalf("Packer failed to pack:", err)
 				}
 
 			} else if !ok && err == nil {
@@ -115,29 +99,37 @@ var BuildCmd = &cobra.Command{
 			} else {
 				sylog.Fatalf("unable to parse %s: %v\n", args[1], err)
 			}
+		}
 
-			if remote {
-				// Submiting a remote build requires a valid authToken
-				if authToken != "" {
-					b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
-				} else {
-					sylog.Fatalf("Unable to submit build job: %v", authWarning)
-				}
+		cp = &build.DockerConveyorPacker{}
+
+		if err = cp.Get(&def); err != nil {
+			sylog.Fatalf("Conveyor failed to get:", err)
+		}
+
+		bundle, err = cp.Pack()
+		if err != nil {
+			sylog.Fatalf("Packer failed to pack:", err)
+		}
+
+		if remote {
+			// Submiting a remote build requires a valid authToken
+			var b *build.RemoteBuilder
+			if authToken != "" {
+				b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
 			} else {
-
-				a := &build.SIFAssembler{}
-
-				err = a.Assemble(bundle, args[0])
-				if err != nil {
-					sylog.Fatalf("Assembler failed to assemble:", err)
-				}
-
-				// b, err = build.NewSIFBuilder(args[0], def)
-				// if err != nil {
-				// 	sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
-				// }
-
+				sylog.Fatalf("Unable to submit build job: %v", authWarning)
 			}
+			b.Build(context.TODO())
+		} else {
+
+			a := &build.SIFAssembler{}
+
+			err = a.Assemble(bundle, args[0])
+			if err != nil {
+				sylog.Fatalf("Assembler failed to assemble:", err)
+			}
+
 		}
 
 	},
