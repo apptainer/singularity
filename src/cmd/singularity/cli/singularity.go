@@ -91,6 +91,17 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 	return cmd.Use + " "
 }
 
+// VersionCmd displays installed singularity version
+var VersionCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("%v-%v\n", buildcfg.PACKAGE_VERSION, buildcfg.GIT_VERSION)
+	},
+
+	Use:   "version",
+	Short: "Show application version",
+}
+
 // sylabsToken process the authentication Token
 // priority default_file < env < file_flag
 func sylabsToken(cmd *cobra.Command, args []string) {
