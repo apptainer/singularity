@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-utils.py: python helper for singularity command line tool
+sutils.py: python helper for singularity command line tool
 
 Copyright (c) 2016-2017, Vanessa Sochat. All rights reserved.
 
