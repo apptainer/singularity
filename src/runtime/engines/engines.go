@@ -7,10 +7,10 @@ package engines
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/rpc"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
@@ -61,11 +61,14 @@ func NewEngine(b []byte) (*Engine, error) {
 	}
 
 	// Convert engineName from interface{} to string type
+	if _, ok := jsonMap["engineName"]; !ok {
+		return nil, fmt.Errorf("engineName field not found")
+	}
 	engineName := jsonMap["engineName"].(string)
 
 	// Ensure engineName exists
 	if _, ok := registeredEngineOperations[engineName]; !ok {
-		sylog.Fatalf("Engine named %s not found, failing\n", engineName)
+		return nil, fmt.Errorf("Engine name %s not found, failing", engineName)
 	}
 
 	// Create empty Engine object with properly initialized EngineConfig && EngineOperations
@@ -76,24 +79,13 @@ func NewEngine(b []byte) (*Engine, error) {
 		},
 	}
 
-	// Use Unmarshal func on Engine type to convert JSON into filled Engine struct
-	if err := json.Unmarshal(b, e); err != nil {
-		return nil, err
-	}
-	return e, nil
-}
-
-// UnmarshalJSON is for json.Unmarshaler
-func (e *Engine) UnmarshalJSON(b []byte) error {
-	// Unmarshal into e.Common
+	// Now parse Common JSON configuration with EngineConfig associated
+	// to corresponding engine
 	if err := json.Unmarshal(b, e.Common); err != nil {
-		sylog.Errorf("Unable to parse JSON into e.Common: %s\n", err)
-		return err
+		return nil, fmt.Errorf("Unable to parse JSON into e.Common: %s", err)
 	}
-
-	// Initialize the EngineOperations config pointers
 	e.InitConfig(e.Common)
-	return nil
+	return e, nil
 }
 
 var registeredEngineOperations map[string]EngineOperations
@@ -124,6 +116,6 @@ func init() {
 	registeredEngineRPCMethods = make(map[string]interface{})
 
 	methods := new(singularityRpcServer.Methods)
-	registerEngineOperations(&singularity.EngineOperations{EngineConfig: singularity.NewConfig()}, "singularity")
+	registerEngineOperations(&singularity.EngineOperations{EngineConfig: singularity.NewConfig()}, singularity.Name)
 	registerEngineRPCMethods(methods, singularity.Name)
 }

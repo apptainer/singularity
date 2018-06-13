@@ -62,14 +62,13 @@ func handleChild(pid int, signal chan os.Signal, engine *engines.Engine) {
 
 // SMaster initializes a runtime engine and runs it
 //export SMaster
-func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
+func SMaster(socket C.int, config *C.struct_cConfig, jsonC *C.char) {
 	var wg sync.WaitGroup
 
 	sigchld := make(chan os.Signal, 1)
 	signal.Notify(sigchld, syscall.SIGCHLD)
 
 	containerPid := int(config.containerPid)
-	//runtimeName := C.GoString(sruntime)
 	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(config.jsonConfSize))
 
 	comm := os.NewFile(uintptr(socket), "socket")

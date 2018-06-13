@@ -158,10 +158,10 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 
 	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
-	progname := "singularity " + args[0]
+	progname := "Singularity runtime parent"
 
 	cfg := &config.Common{
-		EngineName:   "singularity",
+		EngineName:   singularity.Name,
 		ContainerID:  "new",
 		OciConfig:    oci,
 		EngineConfig: engineConfig,

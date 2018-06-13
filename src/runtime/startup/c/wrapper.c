@@ -915,19 +915,19 @@ int main(int argc, char **argv) {
     switch(execute) {
     case SCONTAINER_STAGE1:
         singularity_message(VERBOSE, "Execute scontainer stage 1\n");
-        SContainer(1, 0, 0, sruntime, &config, json_stdin);
+        SContainer(1, 0, 0, &config, json_stdin);
         break;
     case SCONTAINER_STAGE2:
         singularity_message(VERBOSE, "Execute scontainer stage 2\n");
-        SContainer(2, stage_socket[1], rpc_socket[0], sruntime, &config, json_stdin);
+        SContainer(2, stage_socket[1], rpc_socket[0], &config, json_stdin);
         break;
     case SCONTAINER_STAGE3:
         singularity_message(VERBOSE, "Execute scontainer stage 3\n");
-        SContainer(3, stage_socket[1], rpc_socket[0], sruntime, &config, json_stdin);
+        SContainer(3, stage_socket[1], rpc_socket[0], &config, json_stdin);
         break;
     case SMASTER:
         singularity_message(VERBOSE, "Execute smaster process\n");
-        SMaster(stage_socket[0], sruntime, &config, json_stdin);
+        SMaster(stage_socket[0], &config, json_stdin);
         break;
     case RPC_SERVER:
         singularity_message(VERBOSE, "Serve RPC requests\n");
