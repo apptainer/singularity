@@ -118,6 +118,17 @@ def change_permissions(tar_file, file_permission=None, folder_permission=None):
     return final_tar
 
 
+def shell_escape(s):
+    r"""Given bl"a, returns "bl\\"a".
+    """
+    if isinstance(s, bytes):
+        s = s.decode('utf-8')
+    return '"%s"' % (s.replace('\\', '\\\\')
+                      .replace('"', '\\"')
+                      .replace('`', '\\`')
+                      .replace('$', '\\$'))
+
+
 def extract_runscript(manifest, includecmd=False):
     '''create_runscript will write a bash script with default "ENTRYPOINT"
     into the base_dir. If includecmd is True, CMD is used instead. For both.
@@ -147,7 +158,7 @@ def extract_runscript(manifest, includecmd=False):
         if not isinstance(cmd, list):
             cmd = [cmd]
 
-        cmd = " ".join(['"%s"' % x for x in cmd])
+        cmd = " ".join(shell_escape(x) for x in cmd)
 
         if not RUNSCRIPT_COMMAND_ASIS:
             cmd = 'exec %s "$@"' % cmd
