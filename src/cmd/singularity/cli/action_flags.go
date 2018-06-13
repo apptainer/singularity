@@ -7,8 +7,9 @@ package cli
 
 import (
 	"log"
-	"os/user"
+	"os"
 
+	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/spf13/pflag"
 )
 
@@ -17,7 +18,7 @@ var (
 	BindPaths   []string
 	HomePath    string
 	OverlayPath string
-	ScratchPath string
+	ScratchPath []string
 	WorkdirPath string
 	PwdPath     string
 	ShellPath   string
@@ -28,6 +29,7 @@ var (
 	IsCleanEnv   bool
 	IsContained  bool
 	IsContainAll bool
+	IsWritable   bool
 	Nvidia       bool
 
 	NetNamespace  bool
@@ -46,13 +48,13 @@ var (
 var actionFlags = pflag.NewFlagSet("ActionFlags", pflag.ExitOnError)
 
 func getHomeDir() string {
-	usr, err := user.Current()
+	user, err := user.GetPwUID(uint32(os.Getuid()))
 	if err != nil {
 		log.Fatal(err)
 		return ""
 	}
 
-	return usr.HomeDir
+	return user.Dir
 }
 
 func init() {
@@ -77,7 +79,7 @@ func initPathVars() {
 	actionFlags.SetAnnotation("overlay", "argtag", []string{"<path>"})
 
 	// -S|--scratch
-	actionFlags.StringVarP(&ScratchPath, "scratch", "S", "", "Include a scratch directory within the container that is linked to a temporary dir (use -W to force location)")
+	actionFlags.StringSliceVarP(&ScratchPath, "scratch", "S", []string{}, "Include a scratch directory within the container that is linked to a temporary dir (use -W to force location)")
 	actionFlags.SetAnnotation("scratch", "argtag", []string{"<path>"})
 
 	// -W|--workdir
@@ -85,12 +87,12 @@ func initPathVars() {
 	actionFlags.SetAnnotation("workdir", "argtag", []string{"<path>"})
 
 	// -s|--shell
-	actionFlags.StringVarP(&ScratchPath, "shell", "s", "", "Path to program to use for interactive shell")
+	actionFlags.StringVarP(&ShellPath, "shell", "s", "", "Path to program to use for interactive shell")
 	actionFlags.SetAnnotation("shell", "argtag", []string{"<path>"})
 
 	// --pwd
-	actionFlags.StringVar(&ScratchPath, "pwd", "", "Include a scratch directory within the container that is linked to a temporary dir (use -W to force location).")
-	actionFlags.SetAnnotation("scratch", "argtag", []string{"<path>"})
+	actionFlags.StringVar(&PwdPath, "pwd", "", "Initial working directory for payload process inside the container")
+	actionFlags.SetAnnotation("pwd", "argtag", []string{"<path>"})
 
 	// --hostname
 	actionFlags.StringVar(&Hostname, "hostname", "", "Set container hostname")
@@ -116,6 +118,9 @@ func initBoolVars() {
 
 	// --nv
 	actionFlags.BoolVar(&Nvidia, "nv", false, "Enable experimental Nvidia support")
+
+	// -w|--writable
+	actionFlags.BoolVarP(&IsWritable, "writable", "w", false, "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.")
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support

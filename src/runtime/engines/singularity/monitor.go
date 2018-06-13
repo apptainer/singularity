@@ -3,14 +3,9 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package runtime
+package singularity
 
-/*
- * see https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle
- * we will run step 8/9 there
- */
-
-// CleanupContainer cleans up the container
-func (c *Engine) CleanupContainer() error {
+// MonitorContainer monitors a container
+func (engine *EngineOperations) MonitorContainer() error {
 	return nil
 }

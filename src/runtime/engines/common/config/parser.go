@@ -120,7 +120,7 @@ func Parser(filepath string, f interface{}) error {
 					if l != 1 {
 						directives[dir] = s
 					}
-				} else if l == 0 && c == nil && def != "" {
+				} else if (l == 0 || c == nil) && def != "" {
 					s := strings.Split(def, ",")
 					l = len(s)
 					directives[dir] = s
