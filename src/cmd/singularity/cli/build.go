@@ -79,10 +79,10 @@ var BuildCmd = &cobra.Command{
 		} else {
 			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
 				// URI passed as arg[1]
-				// def, err = build.NewDefinitionFromURI(args[1])
-				// if err != nil {
-				// 	sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
-				// }
+				def, err = build.NewDefinitionFromURI(args[1])
+				if err != nil {
+					sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
+				}
 
 				cp = &build.DockerConveyorPacker{}
 
@@ -92,7 +92,7 @@ var BuildCmd = &cobra.Command{
 					return
 				}
 
-				if err = cp.Get(u[1]); err != nil {
+				if err = cp.Get(&def); err != nil {
 					sylog.Fatalf("Conveyor failed to get:", err)
 				}
 
@@ -102,7 +102,7 @@ var BuildCmd = &cobra.Command{
 				}
 
 			} else if !ok && err == nil {
-				// // Non-URI passed as arg[1]
+				// Non-URI passed as arg[1]
 				defFile, err := os.Open(args[1])
 				if err != nil {
 					sylog.Fatalf("unable to open file %s: %v\n", args[1], err)

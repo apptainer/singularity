@@ -24,6 +24,7 @@ import (
 
 // DockerConveyor holds stuff that needs to be packed into the bundle
 type DockerConveyor struct {
+	recipe    *Definition
 	srcRef    types.ImageReference
 	tmpfs     string
 	tmpfsRef  types.ImageReference
@@ -37,13 +38,17 @@ type DockerConveyorPacker struct {
 }
 
 // Get downloads container information from Dockerhub
-func (c *DockerConveyor) Get(src string) (err error) {
+func (c *DockerConveyor) Get(recipe *Definition) (err error) {
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
 	c.policyCtx, err = signature.NewPolicyContext(policy)
 	if err != nil {
 		return
 	}
 
+	c.recipe = recipe
+
+	//prepending slashes to src for ParseReference expected string format
+	src := "//" + recipe.Header["from"]
 	c.srcRef, err = docker.ParseReference(src)
 	if err != nil {
 		return
@@ -104,6 +109,9 @@ func (cp *DockerConveyorPacker) Pack() (b *Bundle, err error) {
 		log.Fatal(err)
 		return
 	}
+
+	//not sure if i need a deep copy here, just being safe
+	b.Recipe = *cp.recipe
 
 	return b, nil
 }
