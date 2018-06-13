@@ -34,12 +34,10 @@ func bool2int(b bool) uint8 {
 
 // SContainer performs container startup
 //export SContainer
-func SContainer(stage C.int, socket C.int, rpcSocket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
+func SContainer(stage C.int, socket C.int, rpcSocket C.int, config *C.struct_cConfig, jsonC *C.char) {
 	rpcfd := rpcSocket
 
 	cconf := config
-
-	//runtimeName := C.GoString(sruntime)
 
 	/* get json configuration */
 	sylog.Debugf("cconf.jsonConfSize: %d\n", C.int(cconf.jsonConfSize))

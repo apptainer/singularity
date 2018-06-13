@@ -90,12 +90,6 @@ func (e *EngineConfig) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON is for json.Marshaler
 func (e *EngineConfig) UnmarshalJSON(b []byte) error {
-	c := &FileConfig{}
-	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
-		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
-	}
-
-	e.File = c
 	return json.Unmarshal(b, e.JSON)
 }
 
