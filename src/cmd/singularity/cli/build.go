@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -14,7 +13,6 @@ import (
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/auth"
 	"github.com/spf13/cobra"
 )
 
@@ -119,21 +117,12 @@ var BuildCmd = &cobra.Command{
 			}
 
 			if remote {
-				var b *build.RemoteBuilder
-				if authWarning != auth.WarningEmptyToken &&
-					authWarning != auth.WarningTokenToolong &&
-					authWarning != auth.WarningTokenTooShort {
-					if authToken != "" {
-						b = build.NewRemoteBuilder(args[0], def, false, remoteURL, authToken)
-					}
+				// Submiting a remote build requires a valid authToken
+				if authToken != "" {
+					b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
 				} else {
 					sylog.Fatalf("Unable to submit build job: %v", authWarning)
 				}
-
-				if err := b.Build(context.TODO()); err != nil {
-					sylog.Fatalf("failed to build image: %v\n", err)
-				}
-
 			} else {
 
 				a := &build.SIFAssembler{}
