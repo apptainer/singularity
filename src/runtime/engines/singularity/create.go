@@ -43,22 +43,24 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	st, err := os.Stat(engine.CommonConfig.OciConfig.RuntimeOciSpec.Root.Path)
+	st, err := os.Stat(engine.EngineConfig.GetImage())
 	if err != nil {
-		return fmt.Errorf("stat on %s failed", engine.CommonConfig.OciConfig.RuntimeOciSpec.Root.Path)
+		return fmt.Errorf("stat on %s failed", engine.EngineConfig.GetImage())
 	}
 
-	rootfs := engine.CommonConfig.OciConfig.RuntimeOciSpec.Root.Path
+	rootfs := engine.EngineConfig.GetImage()
 
 	userNS := false
 	pidNS := false
 
-	for _, namespace := range engine.CommonConfig.OciConfig.RuntimeOciSpec.Linux.Namespaces {
-		switch namespace.Type {
-		case specs.UserNamespace:
-			userNS = true
-		case specs.PIDNamespace:
-			pidNS = true
+	if engine.CommonConfig.OciConfig.Linux != nil {
+		for _, namespace := range engine.CommonConfig.OciConfig.Linux.Namespaces {
+			switch namespace.Type {
+			case specs.UserNamespace:
+				userNS = true
+			case specs.PIDNamespace:
+				pidNS = true
+			}
 		}
 	}
 
