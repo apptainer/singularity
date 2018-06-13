@@ -13,7 +13,7 @@ import (
 
 // TestPull tests if we can pull an ubuntu image from dockerhub
 func TestConveyor(t *testing.T) {
-	def, err := NewDefinitionFromURI("docker://ubuntu:18.04")
+	def, err := NewDefinitionFromURI("docker://centos")
 	if err != nil {
 		sylog.Fatalf("unable to parse URI docker://ubuntu:18.04: %v\n", err)
 	}

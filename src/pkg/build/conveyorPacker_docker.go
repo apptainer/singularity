@@ -110,7 +110,6 @@ func (cp *DockerConveyorPacker) Pack() (b *Bundle, err error) {
 		return
 	}
 
-	//not sure if i need a deep copy here, just being safe
 	b.Recipe = *cp.recipe
 
 	return b, nil
