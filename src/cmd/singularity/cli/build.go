@@ -55,11 +55,7 @@ var BuildCmd = &cobra.Command{
 	PreRun:  sylabsToken,
 	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
-		var def build.Definition
 		var err error
-
-		var bundle *build.Bundle
-		var cp build.ConveyorPacker
 		var a build.Assembler
 
 		if silent {
@@ -70,37 +66,7 @@ var BuildCmd = &cobra.Command{
 			fmt.Println("Sandbox!")
 		}
 
-		if isJSON {
-			def, err = build.NewDefinitionFromJSON(strings.NewReader(args[1]))
-			if err != nil {
-				sylog.Fatalf("Unable to parse JSON: %v\n", err)
-			}
-			sylog.Fatalf("Build from JSON not implemented")
-		} else {
-			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
-				// URI passed as arg[1]
-				def, err = build.NewDefinitionFromURI(args[1])
-				if err != nil {
-					sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
-				}
-
-			} else if !ok && err == nil {
-				// Non-URI passed as arg[1]
-				defFile, err := os.Open(args[1])
-				if err != nil {
-					sylog.Fatalf("unable to open file %s: %v\n", args[1], err)
-				}
-				defer defFile.Close()
-
-				def, err = build.ParseDefinitionFile(defFile)
-				if err != nil {
-					sylog.Fatalf("failed to parse definition file %s: %v\n", args[1], err)
-				}
-
-			} else {
-				sylog.Fatalf("unable to parse %s: %v\n", args[1], err)
-			}
-		}
+		def := makeDefinition(args[1], isJSON)
 
 		if remote {
 			// Submiting a remote build requires a valid authToken
@@ -111,26 +77,13 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf("Unable to submit build job: %v", authWarning)
 			}
 			b.Build(context.TODO())
+
 		} else {
-			//build locally
-			switch def.Header["bootstrap"] {
-			case "docker":
-				cp = &build.DockerConveyorPacker{}
-			default:
-				sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
-			}
-
-			if err = cp.Get(def); err != nil {
-				sylog.Fatalf("Conveyor failed to get:", err)
-			}
-
-			bundle, err = cp.Pack()
-			if err != nil {
-				sylog.Fatalf("Packer failed to pack:", err)
-			}
+			//local build
+			bundle := makeBundle(def)
 
 			if sandbox {
-				sylog.Fatalf("Cannot build to sandbox... yet", err)
+				sylog.Fatalf("Cannot build to sandbox... yet")
 			} else {
 				a = &build.SIFAssembler{}
 			}
@@ -139,9 +92,70 @@ var BuildCmd = &cobra.Command{
 			if err != nil {
 				sylog.Fatalf("Assembler failed to assemble:", err)
 			}
-
 		}
 
 	},
 	TraverseChildren: true,
+}
+
+// getDefinition creates definition object from various input sources
+func makeDefinition(source string, isJSON bool) build.Definition {
+	var err error
+	var def build.Definition
+
+	if isJSON {
+		def, err = build.NewDefinitionFromJSON(strings.NewReader(source))
+		if err != nil {
+			sylog.Fatalf("Unable to parse JSON: %v\n", err)
+		}
+
+	} else if ok, err := build.IsValidURI(source); ok && err == nil {
+		// URI passed as arg[1]
+		def, err = build.NewDefinitionFromURI(source)
+		if err != nil {
+			sylog.Fatalf("unable to parse URI %s: %v\n", source, err)
+		}
+
+	} else if !ok && err == nil {
+		// Non-URI passed as arg[1]
+		defFile, err := os.Open(source)
+		if err != nil {
+			sylog.Fatalf("unable to open file %s: %v\n", source, err)
+		}
+		defer defFile.Close()
+
+		def, err = build.ParseDefinitionFile(defFile)
+		if err != nil {
+			sylog.Fatalf("failed to parse definition file %s: %v\n", source, err)
+		}
+
+	} else {
+		sylog.Fatalf("unable to parse %s: %v\n", source, err)
+	}
+
+	return def
+}
+
+// makeBundle creates a bundle by Getting and Packing from the proper source
+func makeBundle(def build.Definition) *build.Bundle {
+	var err error
+	var cp build.ConveyorPacker
+
+	switch def.Header["bootstrap"] {
+	case "docker":
+		cp = &build.DockerConveyorPacker{}
+	default:
+		sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
+	}
+
+	if err = cp.Get(def); err != nil {
+		sylog.Fatalf("Conveyor failed to get:", err)
+	}
+
+	bundle, err := cp.Pack()
+	if err != nil {
+		sylog.Fatalf("Packer failed to pack:", err)
+	}
+
+	return bundle
 }

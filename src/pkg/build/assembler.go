@@ -15,7 +15,11 @@ var validAssemblers = map[string]bool{
 	"sandbox": true,
 }
 
-// Assembler is responsible for assembling an image from a bundle
+// Assembler is responsible for assembling an image from a bundle.
+// For example a bundle may be holding multiple file systems indended
+// to be separate partitions within a SIF image. The assembler would need
+// to detect these directories and make sure it properly assembles the SIF
+// with them as partitions
 type Assembler interface {
 	Assemble(*Bundle, string) error
 }
