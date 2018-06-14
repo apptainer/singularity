@@ -99,10 +99,12 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		return err
 	}
 
-	fmt.Printf("\t+-> Build job submited with ID:\t%v\n", rd.ID.Hex())
-
-	fmt.Printf("Once your build has completed, your image will be available at %v\nOr you can pull it with the CLI by running\nsingularity pull --library-uri %v library://%v/build/image",
-		rd.LibraryURL, rd.LibraryURL, rd.ID.Hex())
+	// If we're doing an detached build, print help on how to download the image
+	if rb.IsDetached {
+		fmt.Printf("Build submitted! Once it is complete, the image can be retrieved by running:\n\n")
+		fmt.Printf("singularity pull --library-uri %v library://%v/build/image\n", rd.LibraryURL, rd.LibraryRef)
+		fmt.Printf("Alternatively, you can download it from a browser at %v/library/%v", rd.LibraryURL, rd.LibraryRef)
+	}
 
 	// If we're doing an attached build, stream output and then download the resulting file
 	if !rb.IsDetached {
