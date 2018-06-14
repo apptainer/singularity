@@ -60,6 +60,7 @@ var BuildCmd = &cobra.Command{
 
 		var bundle *build.Bundle
 		var cp build.ConveyorPacker
+		var a build.Assembler
 
 		if silent {
 			fmt.Println("Silent!")
@@ -101,7 +102,23 @@ var BuildCmd = &cobra.Command{
 			}
 		}
 
-		cp = &build.DockerConveyorPacker{}
+		if remote {
+			// Submiting a remote build requires a valid authToken
+			var b *build.RemoteBuilder
+			if authToken != "" {
+				b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
+			} else {
+				sylog.Fatalf("Unable to submit build job: %v", authWarning)
+			}
+			b.Build(context.TODO())
+		}
+
+		switch def.Header["bootstrap"] {
+		case "docker":
+			cp = &build.DockerConveyorPacker{}
+		default:
+			sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
+		}
 
 		if err = cp.Get(&def); err != nil {
 			sylog.Fatalf("Conveyor failed to get:", err)
@@ -112,24 +129,15 @@ var BuildCmd = &cobra.Command{
 			sylog.Fatalf("Packer failed to pack:", err)
 		}
 
-		if remote {
-			// Submiting a remote build requires a valid authToken
-			var b *build.RemoteBuilder
-			if authToken != "" {
-				b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
-			} else {
-				sylog.Fatalf("Unable to submit build job: %v", authWarning)
-			}
-			b.Build(context.TODO())
+		if sandbox {
+			sylog.Fatalf("Cannot build to sandbox... yet", err)
 		} else {
+			a = &build.SIFAssembler{}
+		}
 
-			a := &build.SIFAssembler{}
-
-			err = a.Assemble(bundle, args[0])
-			if err != nil {
-				sylog.Fatalf("Assembler failed to assemble:", err)
-			}
-
+		err = a.Assemble(bundle, args[0])
+		if err != nil {
+			sylog.Fatalf("Assembler failed to assemble:", err)
 		}
 
 	},
