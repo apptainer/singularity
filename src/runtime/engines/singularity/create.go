@@ -3,15 +3,15 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package runtime
+package singularity
 
 /*
 #include <unistd.h>
-#include "c/lib/image/image.h"
-#include "c/lib/util/config_parser.h"
+#include "image/image.h"
+#include "util/config_parser.h"
 */
-// #cgo CFLAGS: -I../../../c/lib
-// #cgo LDFLAGS: -L../../../../../builddir/lib -lruntime -luuid
+// #cgo CFLAGS: -I../../c/lib
+// #cgo LDFLAGS: -L../../../../builddir/lib -lruntime -luuid
 import "C"
 
 import (
@@ -26,35 +26,34 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
-	runtimeconfig "github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/config"
-	"github.com/singularityware/singularity/src/runtime/workflows/workflows/singularity/rpc/client"
+	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 )
 
 // CreateContainer creates a container
-func (engine *Engine) CreateContainer(rpcConn net.Conn) error {
-	if engine.RuntimeSpec.RuntimeName != runtimeconfig.Name {
+func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
+	if engine.CommonConfig.EngineName != Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
 	rpcOps := &client.RPC{
 		Client: rpc.NewClient(rpcConn),
-		Name:   engine.RuntimeSpec.RuntimeName,
+		Name:   engine.CommonConfig.EngineName,
 	}
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	st, err := os.Stat(engine.OciConfig.RuntimeOciSpec.Root.Path)
+	st, err := os.Stat(engine.CommonConfig.OciConfig.RuntimeOciSpec.Root.Path)
 	if err != nil {
-		return fmt.Errorf("stat on %s failed", engine.OciConfig.RuntimeOciSpec.Root.Path)
+		return fmt.Errorf("stat on %s failed", engine.CommonConfig.OciConfig.RuntimeOciSpec.Root.Path)
 	}
 
-	rootfs := engine.OciConfig.RuntimeOciSpec.Root.Path
+	rootfs := engine.CommonConfig.OciConfig.RuntimeOciSpec.Root.Path
 
 	userNS := false
 	pidNS := false
 
-	for _, namespace := range engine.OciConfig.RuntimeOciSpec.Linux.Namespaces {
+	for _, namespace := range engine.CommonConfig.OciConfig.RuntimeOciSpec.Linux.Namespaces {
 		switch namespace.Type {
 		case specs.UserNamespace:
 			userNS = true

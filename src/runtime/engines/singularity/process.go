@@ -3,7 +3,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package runtime
+package singularity
 
 import (
 	"fmt"
@@ -12,19 +12,19 @@ import (
 )
 
 // PrestartProcess runs pre-start tasks
-func (engine *Engine) PrestartProcess() error {
+func (engine *EngineOperations) PrestartProcess() error {
 	/* seccomp setup goes here */
 	return nil
 }
 
 // StartProcess starts the process
-func (engine *Engine) StartProcess() error {
+func (engine *EngineOperations) StartProcess() error {
 	os.Setenv("PS1", "shell> ")
 
 	os.Chdir("/")
 
-	args := engine.OciConfig.RuntimeOciSpec.Process.Args
-	env := engine.OciConfig.RuntimeOciSpec.Process.Env
+	args := engine.CommonConfig.OciConfig.RuntimeOciSpec.Process.Args
+	env := engine.CommonConfig.OciConfig.RuntimeOciSpec.Process.Env
 
 	err := syscall.Exec(args[0], args, env)
 	if err != nil {

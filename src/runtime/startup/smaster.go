@@ -9,6 +9,7 @@ package main
 #include <sys/types.h>
 #include "startup/c/wrapper.h"
 */
+// #cgo CFLAGS: -I..
 import "C"
 
 import (
@@ -22,8 +23,7 @@ import (
 	"unsafe"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	runtime "github.com/singularityware/singularity/src/pkg/workflows"
-	internalRuntime "github.com/singularityware/singularity/src/runtime/workflows"
+	"github.com/singularityware/singularity/src/runtime/engines"
 )
 
 func runAsInstance(conn *os.File) {
@@ -39,7 +39,7 @@ func runAsInstance(conn *os.File) {
 	}
 }
 
-func handleChild(pid int, signal chan os.Signal, engine *runtime.Engine) {
+func handleChild(pid int, signal chan os.Signal, engine *engines.Engine) {
 	var status syscall.WaitStatus
 
 	select {
@@ -62,14 +62,13 @@ func handleChild(pid int, signal chan os.Signal, engine *runtime.Engine) {
 
 // SMaster initializes a runtime engine and runs it
 //export SMaster
-func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.char) {
+func SMaster(socket C.int, config *C.struct_cConfig, jsonC *C.char) {
 	var wg sync.WaitGroup
 
 	sigchld := make(chan os.Signal, 1)
 	signal.Notify(sigchld, syscall.SIGCHLD)
 
 	containerPid := int(config.containerPid)
-	runtimeName := C.GoString(sruntime)
 	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(config.jsonConfSize))
 
 	comm := os.NewFile(uintptr(socket), "socket")
@@ -80,7 +79,8 @@ func SMaster(socket C.int, sruntime *C.char, config *C.struct_cConfig, jsonC *C.
 		sylog.Fatalf("can't open network namespace: %s\n", err)
 	}
 
-	engine, err := internalRuntime.NewRuntimeEngine(runtimeName, jsonBytes)
+	engine, err := engines.NewEngine(jsonBytes)
+
 	if err != nil {
 		sylog.Fatalf("failed to initialize runtime: %s\n", err)
 	}
