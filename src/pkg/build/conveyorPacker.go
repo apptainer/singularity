@@ -17,7 +17,7 @@ var validURIs = map[string]bool{
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...)
 type Conveyor interface {
-	Get(*Definition) error
+	Get(Definition) error
 }
 
 // Packer is the type which is responsible for installing the chroot directory,
