@@ -103,7 +103,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	if rb.IsDetached {
 		fmt.Printf("Build submitted! Once it is complete, the image can be retrieved by running:\n\n")
 		fmt.Printf("\tsingularity pull --library-uri %v %v\n\n", rd.LibraryURL, rd.LibraryRef)
-		fmt.Printf("Alternatively, you can download it from a browser at %v/library/%v\n", rd.LibraryURL, rd.LibraryRef)
+		fmt.Printf("Alternatively, you can access it from a browser at %v/library\n", rd.LibraryURL)
 	}
 
 	// If we're doing an attached build, stream output and then download the resulting file
