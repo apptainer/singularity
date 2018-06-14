@@ -13,6 +13,7 @@ import (
 	"text/template"
 
 	"github.com/singularityware/singularity/src/docs"
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/auth"
 	"github.com/spf13/cobra"
