@@ -21,7 +21,7 @@ var (
 	remote     bool
 	builderURL string
 	libraryURL string
-	json       bool
+	isJSON     bool
 	sandbox    bool
 	writable   bool
 	force      bool
