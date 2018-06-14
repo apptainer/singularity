@@ -12,7 +12,7 @@ import (
 )
 
 // TestPull tests if we can pull an ubuntu image from dockerhub
-func TestDockerConveyor(t *testing.T) {
+func TestShubConveyor(t *testing.T) {
 	def, err := NewDefinitionFromURI("docker://centos")
 	if err != nil {
 		sylog.Fatalf("unable to parse URI docker://ubuntu:18.04: %v\n", err)
@@ -26,7 +26,7 @@ func TestDockerConveyor(t *testing.T) {
 }
 
 // TestFurnish checks if we can create a Kitchen
-func TestDockerPacker(t *testing.T) {
+func TestShubPacker(t *testing.T) {
 	def, err := NewDefinitionFromURI("docker://ubuntu:18.04")
 	if err != nil {
 		sylog.Fatalf("unable to parse URI docker://ubuntu:18.04: %v\n", err)
