@@ -20,7 +20,7 @@ func TestConveyor(t *testing.T) {
 
 	dc := &DockerConveyor{}
 
-	if err := dc.Get(&def); err != nil {
+	if err := dc.Get(def); err != nil {
 		t.Fatal("failed to pull:", err)
 	}
 }
@@ -34,7 +34,7 @@ func TestPacker(t *testing.T) {
 
 	dcp := &DockerConveyorPacker{}
 
-	if err := dcp.Get(&def); err != nil {
+	if err := dcp.Get(def); err != nil {
 		t.Fatal("failed to pull:", err)
 	}
 

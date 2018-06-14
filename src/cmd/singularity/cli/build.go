@@ -120,7 +120,7 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
 			}
 
-			if err = cp.Get(&def); err != nil {
+			if err = cp.Get(def); err != nil {
 				sylog.Fatalf("Conveyor failed to get:", err)
 			}
 

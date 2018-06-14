@@ -20,7 +20,7 @@ func TestAssembler(t *testing.T) {
 
 	dcp := &DockerConveyorPacker{}
 
-	if err := dcp.Get(&def); err != nil {
+	if err := dcp.Get(def); err != nil {
 		t.Fatal("failed to pull:", err)
 	}
 
