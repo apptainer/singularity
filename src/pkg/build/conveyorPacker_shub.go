@@ -11,11 +11,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/containers/image/docker"
+	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/types"
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -52,6 +55,7 @@ func newshubClient(uri string) (sc *shubClient) {
 
 // ShubConveyor holds data to be packed into a bundle.
 type ShubConveyor struct {
+	recipe   Definition
 	src      string
 	srcRef   types.ImageReference
 	tmpfs    string
@@ -64,13 +68,57 @@ type ShubConveyorPacker struct {
 }
 
 // Get downloads container information from Singularityhub
-func (c *ShubConveyor) Get(recipe *Definition) (err error) {
-	return
+func (c *ShubConveyor) Get(recipe Definition) (err error) {
+
+	c.recipe = recipe
+
+	//prepending slashes to src for ParseReference expected string format
+	src := "//" + recipe.Header["from"]
+
+	// Shub URI largely follows same namespace convention
+	c.srcRef, err = docker.ParseReference(src)
+	if err != nil {
+		return
+	}
+
+	c.tmpfs, err = ioutil.TempDir("", "temp-shub-")
+	if err != nil {
+		return
+	}
+
+	c.tmpfsRef, err = oci.ParseReference(c.tmpfs + ":" + "tmp")
+	if err != nil {
+		return
+	}
+
+	// Get the image manifest
+	manifest, err := c.getManifest()
+
+	// The full Google Storage download media link
+	sylog.Infof("%v\n", manifest.Image)
+
+	// retrieve the image
+	//tmpfile, err := c.fetch(manifest.Image)
+	_, err = c.fetch(manifest.Image)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	return nil
 }
 
 // Pack puts relevant objects in a Bundle!
 func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
-	return
+	//defer os.RemoveAll(p.tmpfs)
+
+	//err = cp.unpackTmpfs(tmpfile, i)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	return nil, nil
 }
 
 // Download an image from Singularity Hub, writing as we download instead
