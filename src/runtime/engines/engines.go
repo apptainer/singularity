@@ -35,13 +35,10 @@ type EngineOperations interface {
 	CheckConfig() error
 	// IsRunAsInstance returns whether or not the container is an instance or batch
 	IsRunAsInstance() bool
-	// CreateContainer is called in stage2-child and does mount operations, etc... to
+	// CreateContainer is called in smaster and does mount operations, etc... to
 	// set up the container environment for the payload proc
 	CreateContainer(rpcConn net.Conn) error
-	// PrestartProcess is called in stage2-parent before waiting on stage2-child and can do
-	// some set-up operations before the container proc is spawned
-	PrestartProcess() error
-	// StartProcess is called in stage2-parent after waiting on stage2-child exit. It is
+	// StartProcess is called in stage2 after waiting on RPC server exit. It is
 	// responsible for exec'ing the payload proc in the container
 	StartProcess() error
 	// MonitorContainer is called in smaster once the container proc has been spawned. It
