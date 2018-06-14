@@ -20,7 +20,7 @@ var (
 func init() {
 	PushCmd.Flags().SetInterspersed(false)
 
-	PushCmd.Flags().StringVar(&PushLibraryURI, "libraryuri", "https://library.sylabs.io", "")
+	PushCmd.Flags().StringVar(&PushLibraryURI, "library", "https://library.sylabs.io", "")
 
 	SingularityCmd.AddCommand(PushCmd)
 }
