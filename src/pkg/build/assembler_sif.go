@@ -10,7 +10,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/golang/glog"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // SIFAssembler doesnt store anything
@@ -21,7 +21,7 @@ type SIFAssembler struct {
 func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 	mksquashfs, err := exec.LookPath("mksquashfs")
 	if err != nil {
-		glog.Error("mksquashfs is not installed on this system")
+		sylog.Errorf("mksquashfs is not installed on this system")
 		return err
 	}
 
