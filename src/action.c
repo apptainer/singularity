@@ -33,6 +33,7 @@
 
 #include "config.h"
 #include "util/file.h"
+#include "util/fork.h"
 #include "util/util.h"
 #include "util/daemon.h"
 #include "util/registry.h"

@@ -38,6 +38,7 @@
 
 #include "util/privilege.h"
 #include "util/message.h"
+#include "util/suid.h"
 #include "util/util.h"
 
 int signal_rpipe = -1;
