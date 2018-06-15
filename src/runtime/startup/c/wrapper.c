@@ -658,7 +658,7 @@ __attribute__((constructor)) static void init(void) {
             }
         } else {
             sigset_t usrmask;
-            struct sigaction action = {0};
+            static struct sigaction action;
 
             action.sa_sigaction = &do_exit;
             action.sa_flags = SA_SIGINFO|SA_RESTART;
