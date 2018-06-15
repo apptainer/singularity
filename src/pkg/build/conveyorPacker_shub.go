@@ -91,12 +91,13 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 		return
 	}
 
+	fmt.Println("HERE1")
 	// Get the image manifest
 	manifest, err := c.getManifest()
-
+	fmt.Println("HERE2")
 	// The full Google Storage download media link
 	sylog.Infof("%v\n", manifest.Image)
-
+	fmt.Println("HERE3")
 	// retrieve the image
 	//tmpfile, err := c.fetch(manifest.Image)
 	_, err = c.fetch(manifest.Image)

@@ -7,21 +7,23 @@ package build
 
 import (
 	"testing"
+)
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
+const (
+	shubURI = "shub://singularityhub/ubuntu"
 )
 
 // TestPull tests if we can pull an ubuntu image from dockerhub
 func TestShubConveyor(t *testing.T) {
-	def, err := NewDefinitionFromURI("shub://centos")
+	def, err := NewDefinitionFromURI(shubURI)
 	if err != nil {
-		sylog.Fatalf("unable to parse URI docker://ubuntu:18.04: %v\n", err)
+		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
 	}
 
-	dc := &DockerConveyor{}
+	sc := &ShubConveyor{}
 
-	if err := dc.Get(def); err != nil {
-		t.Fatal("failed to pull:", err)
+	if err := sc.Get(def); err != nil {
+		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
 }
 
@@ -29,7 +31,7 @@ func TestShubConveyor(t *testing.T) {
 // func TestShubPacker(t *testing.T) {
 // 	def, err := NewDefinitionFromURI("docker://ubuntu:18.04")
 // 	if err != nil {
-// 		sylog.Fatalf("unable to parse URI docker://ubuntu:18.04: %v\n", err)
+// 		t.Fatalf("unable to parse URI docker://ubuntu:18.04: %v\n", err)
 // 	}
 
 // 	dcp := &DockerConveyorPacker{}
