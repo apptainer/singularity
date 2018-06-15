@@ -42,7 +42,7 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&force, "force", "f", false, "Delete and overwrite an image if it currently exists")
 	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
-	BuildCmd.Flags().BoolVarP(&detached, "detached", "r", false, "Submit build job and print nuild ID (no real-time logs)")
+	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "Submit build job and print nuild ID (no real-time logs)")
 	BuildCmd.Flags().StringVar(&builderURL, "builder", defbuilderURL, "Specify the URL of the remote builder")
 	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "")
 
