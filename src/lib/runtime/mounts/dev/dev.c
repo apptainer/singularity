@@ -105,6 +105,30 @@ int _singularity_runtime_mount_dev(void) {
         bind_dev(sessiondir, "/dev/random");
         bind_dev(sessiondir, "/dev/urandom");
 
+        /* if the user passed the --nv flag and the --contain flag, still bind
+        nvidia devices */
+        if ( nvopt != NULL ) {
+            DIR *dir;
+            struct dirent *dp; 
+
+            if ( ( dir = opendir("/dev") ) == NULL ) {
+                singularity_message(ERROR, "Could not open /dev on host system");
+                ABORT(255);
+            }
+
+            while ( ( dp = readdir(dir) ) != NULL ) {
+                if ( strstr(dp->d_name, "nvidia") != NULL ) {
+                    bind_dev(sessiondir, joinpath("/dev", dp->d_name) );
+                }
+            }
+
+            closedir(dir);
+        }
+
+        if ( strcmp("tmpfs", singularity_config_get_value(MEMORY_FS_TYPE)) != 0 ) {
+            memcpy(memfs_type, "ramfs", 5);
+        }
+
         if ( symlink("/proc/self/fd", joinpath(devdir, "/fd")) < 0 ) {
             singularity_message(ERROR, "Failed create symlink /dev/fd: %s\n", strerror(errno));
             ABORT(255);
