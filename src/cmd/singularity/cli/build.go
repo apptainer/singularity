@@ -18,15 +18,19 @@ import (
 )
 
 var (
-	remote    bool
-	remoteURL string
-	isJSON    bool
-	sandbox   bool
-	writable  bool
-	force     bool
-	noTest    bool
-	sections  []string
+	remote     bool
+	builderURL string
+	detached   bool
+	libraryURL string
+	isJSON     bool
+	sandbox    bool
+	writable   bool
+	force      bool
+	noTest     bool
+	sections   []string
 )
+
+const defbuilderURL = "localhost:5050"
 
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
@@ -38,7 +42,9 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&force, "force", "f", false, "Delete and overwrite an image if it currently exists")
 	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
-	BuildCmd.Flags().StringVar(&remoteURL, "remote-url", "localhost:5050", "Specify the URL of the remote builder")
+	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "Submit build job and print nuild ID (no real-time logs)")
+	BuildCmd.Flags().StringVar(&builderURL, "builder", defbuilderURL, "Specify the URL of the remote builder")
+	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "")
 
 	SingularityCmd.AddCommand(BuildCmd)
 }
@@ -68,11 +74,11 @@ var BuildCmd = &cobra.Command{
 
 		def := makeDefinition(args[1], isJSON)
 
-		if remote {
+		if remote || builderURL != defbuilderURL {
 			// Submiting a remote build requires a valid authToken
 			var b *build.RemoteBuilder
 			if authToken != "" {
-				b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
+				b = build.NewRemoteBuilder(args[0], libraryURL, def, detached, builderURL, authToken)
 			} else {
 				sylog.Fatalf("Unable to submit build job: %v", authWarning)
 			}
@@ -92,6 +98,19 @@ var BuildCmd = &cobra.Command{
 			if err != nil {
 				sylog.Fatalf("Assembler failed to assemble:", err)
 			}
+			// if remote || builderURL != defbuilderURL {
+			// 	// Submiting a remote build requires a valid authToken
+			// 	if authToken != "" {
+			// 		b = build.NewRemoteBuilder(args[0], libraryURL, def, detached, builderURL, authToken)
+			// 	} else {
+			// 		sylog.Fatalf("Unable to submit build job: %v", authWarning)
+			// 	}
+			// } else {
+			// 	b, err = build.NewSIFBuilder(args[0], def)
+			// 	if err != nil {
+			// 		sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
+			// 	}
+			// }
 		}
 
 	},

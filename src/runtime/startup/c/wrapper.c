@@ -854,7 +854,10 @@ __attribute__((constructor)) static void init(void) {
 
                 /* Use setfsuid to address issue about root_squash filesystems option */
                 if ( config.isSuid ) {
-                    setfsuid(uid);
+                    if ( setfsuid(uid) != 0 ) {
+                        singularity_message(ERROR, "Previous filesystem UID is not equal to 0\n");
+                        exit(1);
+                    }
                     if ( setfsuid(-1) != uid ) {
                         singularity_message(ERROR, "Failed to set filesystem uid to %d\n", uid);
                         exit(1);
