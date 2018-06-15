@@ -103,7 +103,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	libraryRefRaw := strings.TrimPrefix(rd.LibraryRef, "library://")
 	if rb.IsDetached {
 		fmt.Printf("Build submitted! Once it is complete, the image can be retrieved by running:\n\n")
-		fmt.Printf("\tsingularity pull --library-uri %v library://%v\n\n", rd.LibraryURL, libraryRefRaw)
+		fmt.Printf("\tsingularity pull --library %v library://%v\n\n", rd.LibraryURL, libraryRefRaw)
 		fmt.Printf("Alternatively, you can access it from a browser at:\n %v/library/%v\n", rd.LibraryURL, libraryRefRaw)
 	}
 
