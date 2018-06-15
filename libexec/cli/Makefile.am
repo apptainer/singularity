@@ -49,4 +49,6 @@ dist_cliexec_DATA = apps.info \
                     shell.info \
                     test.info
 
-MAINTAINERCLEANFILES = Makefile.in
+MAINTAINERCLEANFILES = Makefile.in build.exec
+DISTCLEANFILES = build.exec
+

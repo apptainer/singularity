@@ -25,6 +25,7 @@ libexec/Makefile
 libexec/Makefile.in
 libexec/cli/Makefile
 libexec/cli/Makefile.in
+libexec/cli/build.exec
 libexec/mods/Makefile
 libexec/mods/Makefile.in
 libexec/bootstrap-scripts/environment/environment.tar
