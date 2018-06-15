@@ -68,6 +68,7 @@ var SingularityCmd = &cobra.Command{
 	Run: nil,
 
 	Use:     docs.SingularityUse,
+	Version: fmt.Sprintf("%v-%v\n", buildcfg.PACKAGE_VERSION, buildcfg.GIT_VERSION),
 	Short:   docs.SingularityShort,
 	Long:    docs.SingularityLong,
 	Example: docs.SingularityExample,
