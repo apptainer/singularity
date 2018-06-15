@@ -75,6 +75,7 @@ static struct PRIV_INFO {
     char *username;
     int dropped_groups;
     int target_mode;  // Set to 1 if we are running in "target mode" (admin specifies UID/GID)
+    int dropped_perm;
 } uinfo;
 
 
@@ -451,9 +452,15 @@ void singularity_priv_drop_perm(void) {
     // Prevent the following processes to increase privileges
     singularity_priv_check_nonewprivs(); 
 
+    uinfo.dropped_perm = 1;
+
     singularity_message(DEBUG, "Finished dropping privileges\n");
 }
 
+
+int singularity_priv_dropped_perm(void) {
+    return uinfo.dropped_perm;
+}
 
 int singularity_priv_userns_enabled(void) {
     return uinfo.userns_ready;

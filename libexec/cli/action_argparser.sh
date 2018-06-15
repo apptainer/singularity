@@ -105,6 +105,11 @@ while true; do
             SINGULARITY_UNSHARE_PID=1
             export SINGULARITY_UNSHARE_PID
         ;;
+        --noinit)
+            shift
+            SINGULARITY_NOSHIMINIT=1
+            export SINGULARITY_NOSHIMINIT
+        ;;
         -i|--ipc)
             shift
             SINGULARITY_UNSHARE_IPC=1
