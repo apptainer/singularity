@@ -12,9 +12,11 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
-## [current master](https://github.com/singularityware/singularity)
+## [v2.5.2](https://github.com/singularityware/singularity/releases/tag/2.5.2)
 
 ### Bug fixes
+  - Create /dev/fd and standard streams symlinks in /dev when using minimal dev
+    mount or when specifying -c/-C/--contain option
   - fixed * expansion during app runscript creation #1486
 
 ## [v2.5.1](https://github.com/singularityware/singularity/releases/tag/2.5.1) (2018-05-03)
