@@ -98,19 +98,6 @@ var BuildCmd = &cobra.Command{
 			if err != nil {
 				sylog.Fatalf("Assembler failed to assemble:", err)
 			}
-			// if remote || builderURL != defbuilderURL {
-			// 	// Submiting a remote build requires a valid authToken
-			// 	if authToken != "" {
-			// 		b = build.NewRemoteBuilder(args[0], libraryURL, def, detached, builderURL, authToken)
-			// 	} else {
-			// 		sylog.Fatalf("Unable to submit build job: %v", authWarning)
-			// 	}
-			// } else {
-			// 	b, err = build.NewSIFBuilder(args[0], def)
-			// 	if err != nil {
-			// 		sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
-			// 	}
-			// }
 		}
 
 	},
