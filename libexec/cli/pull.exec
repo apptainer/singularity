@@ -141,7 +141,7 @@ case "$SINGULARITY_CONTAINER" in
             message WARNING "Container will be sized appropriately for Docker image.\n"
         fi
 
-         if [ -f "$SINGULARITY_IMAGE" ]; then
+        if [ -f "$SINGULARITY_IMAGE" ]; then
             if [ -n "${OVERWRITE:-}" ]; then
                 message 2 "Removing existing file\n"
                 rm -f "$SINGULARITY_IMAGE"
@@ -151,8 +151,13 @@ case "$SINGULARITY_CONTAINER" in
             fi
         fi
 
-         if [ -x "${SINGULARITY_bindir}/singularity" ]; then
-             ${SINGULARITY_bindir}/singularity build ${SINGULARITY_IMAGE} ${SINGULARITY_CONTAINER}
+        DBGFLAG=""
+        if [ "x${SINGULARITY_MESSAGELEVEL}" == "x5" ]; then
+            DBGFLAG="-d"
+        fi
+
+        if [ -x "${SINGULARITY_bindir}/singularity" ]; then
+             ${SINGULARITY_bindir}/singularity ${DBGFLAG} build ${SINGULARITY_IMAGE} ${SINGULARITY_CONTAINER}
              RETVAL=$?
          else
              message ERROR "Could not locate the Singularity binary: $SINGULARITY_home/singularity\n"

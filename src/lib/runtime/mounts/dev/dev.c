@@ -31,6 +31,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <grp.h>
+#include <string.h>
+#include <dirent.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -52,6 +54,8 @@ int _singularity_runtime_mount_dev(void) {
     if ( ( singularity_registry_get("CONTAIN") != NULL ) || ( strcmp("minimal", singularity_config_get_value(MOUNT_DEV)) == 0 ) ) {
         char *sessiondir = singularity_registry_get("SESSIONDIR");
         char *devdir = joinpath(sessiondir, "/dev");
+        char *nvopt = singularity_registry_get("NV"); 
+        char memfs_type[] = "tmpfs";
 
         if ( is_dir(joinpath(container_dir, "/dev")) < 0 ) {
             int ret;
@@ -61,9 +65,7 @@ int _singularity_runtime_mount_dev(void) {
                 return(-1);
             }
 
-            singularity_priv_escalate();
-            ret = s_mkpath(joinpath(container_dir, "/dev"), 0755);
-            singularity_priv_drop();
+            ret = container_mkpath_priv(joinpath(container_dir, "/dev"), 0755);
 
             if ( ret < 0 ) {
                 singularity_message(ERROR, "Could not create /dev inside container\n");
@@ -72,13 +74,13 @@ int _singularity_runtime_mount_dev(void) {
         }
 
         singularity_message(DEBUG, "Creating temporary staged /dev\n");
-        if ( s_mkpath(devdir, 0755) != 0 ) {
+        if ( container_mkpath_nopriv(devdir, 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating the session device directory %s: %s\n", devdir, strerror(errno));
             ABORT(255);
         }
 
         singularity_message(DEBUG, "Creating temporary staged /dev/shm\n");
-        if ( s_mkpath(joinpath(devdir, "/shm"), 0755) != 0 ) {
+        if ( container_mkpath_nopriv(joinpath(devdir, "/shm"), 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating temporary /dev/shm %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
             ABORT(255);
         }
@@ -91,7 +93,7 @@ int _singularity_runtime_mount_dev(void) {
                 ABORT(255);
             }
             singularity_message(DEBUG, "Creating staged /dev/pts\n");
-            if ( s_mkpath(joinpath(devdir, "/pts"), 0755) != 0 ) {
+            if ( container_mkpath_nopriv(joinpath(devdir, "/pts"), 0755) != 0 ) {
                 singularity_message(ERROR, "Failed creating /dev/pts %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
                 ABORT(255);
             }
@@ -121,9 +123,18 @@ int _singularity_runtime_mount_dev(void) {
         }
 
         singularity_message(DEBUG, "Mounting tmpfs for staged /dev/shm\n");
-        if ( singularity_mount("/dev/shm", joinpath(devdir, "/shm"), "tmpfs", MS_NOSUID, "") < 0 ) {
-            singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
+        if ( singularity_mount("/dev/shm", joinpath(devdir, "/shm"), memfs_type, MS_NOSUID, "") < 0 ) {
+            singularity_message(ERROR, "Failed to mount %s/shm: %s\n", devdir, strerror(errno));
             ABORT(255);
+        }
+
+        if ( strcmp("tmpfs", memfs_type) != 0 ) {
+            singularity_priv_escalate();
+            if ( chmod(joinpath(devdir, "/shm"), S_IRWXU|S_IRWXG|S_IRWXO) < 0 ) { // Flawfinder: ignore not controllable by user
+                singularity_message(ERROR, "Failed to change permission for %s/shm: %s\n", devdir, strerror(errno));
+                ABORT(255);
+            }
+            singularity_priv_drop();
         }
 
         if ( singularity_config_get_bool_char(MOUNT_DEVPTS) > 0 ) {
@@ -220,9 +231,7 @@ static int bind_dev(char *tmpdir, char *dev) {
             int ret;
             singularity_message(VERBOSE2, "Creating bind point within container: %s\n", dev);
 
-            singularity_priv_escalate();
-            ret = fileput(path, "");
-            singularity_priv_drop();
+            ret = fileput_priv(path, "");
 
             if ( ret < 0 ) {
                 singularity_message(WARNING, "Can not create %s: %s\n", dev, strerror(errno));

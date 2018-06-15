@@ -52,6 +52,11 @@ int singularity_sessiondir(void) {
     long int sessiondir_size = 0;
     int sessiondir_size_str_len;
     int sessiondir_size_str_usd;
+    char memfs_type[] = "tmpfs";
+
+    if ( strcmp("tmpfs", singularity_config_get_value(MEMORY_FS_TYPE)) != 0 ) {
+        memcpy(memfs_type, "ramfs", 5);
+    }
 
     if ( singularity_registry_get("DAEMON_JOIN") ) {
         singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
@@ -90,9 +95,18 @@ int singularity_sessiondir(void) {
     }
 
     singularity_message(DEBUG, "Mounting sessiondir tmpfs: %s\n", sessiondir);
-    if ( singularity_mount("tmpfs", sessiondir, "tmpfs", MS_NOSUID, sessiondir_size_str) < 0 ){
+    if ( singularity_mount(memfs_type, sessiondir, memfs_type, MS_NOSUID, sessiondir_size_str) < 0 ){
         singularity_message(ERROR, "Failed to mount sessiondir tmpfs %s: %s\n", sessiondir, strerror(errno));
         ABORT(255);
+    }
+
+    if ( strcmp("tmpfs", memfs_type) != 0 ) {
+        singularity_priv_escalate();
+        if ( chmod(sessiondir, S_IRWXU|S_IRWXG|S_IRWXO) < 0 ) { // Flawfinder: ignore, not controllable by user
+            singularity_message(ERROR, "Failed to change permission for %s: %s\n", sessiondir, strerror(errno));
+            ABORT(255);
+        }
+        singularity_priv_drop();
     }
 
     singularity_registry_set("SESSIONDIR", sessiondir);

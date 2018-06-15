@@ -101,8 +101,13 @@ if ! touch "$SINGULARITY_IMAGE" >/dev/null 2>&1; then
     ABORT 255
 fi
 
+DDSTATUS="none"
+if dd --help | grep -q 'status=noxfer'; then
+    DDSTATUS="noxfer"
+fi
+
 message 1 "Expanding image by ${SINGULARITY_IMAGESIZE:-768}MB\n"
-if ! dd if=/dev/zero bs=1M count=${SINGULARITY_IMAGESIZE:-768} status=none >> "$SINGULARITY_IMAGE"; then
+if ! dd if=/dev/zero bs=1M count=${SINGULARITY_IMAGESIZE:-768} status=${DDSTATUS} >> "$SINGULARITY_IMAGE"; then
     message ERROR "Failed expanding image!\n"
     exit 1
 fi

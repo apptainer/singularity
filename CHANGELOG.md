@@ -12,27 +12,84 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
-## [v2.5](https://github.com/singularityware/singularity/tree/release-2.5)
+## [v2.5.1](https://github.com/singularityware/singularity/releases/tag/2.5.1) (2018-05-03)
+
+### Bug fixes
+  - Corrected a permissions error when attempting to run Singularity from a 
+    directory on NFS with root_squash enabled  
+  - Fixed a bug that closed a socket early, preventing correct container 
+    execution on hosts using identity services like SSSD
+  - Fixed a regression that broke the debootstrap agent
+
+## [v2.5.0](https://github.com/singularityware/singularity/releases/tag/2.5.0) (2018-04-27)
+
+### Security related fixes
+
+Patches are provided to prevent a malicious user with the ability to log in to 
+the host system and use the Singularity container runtime from carrying out any 
+of the following actions:
+
+ - Create world writable files in root-owned directories on the host system by 
+   manipulating symbolic links and bind mounts 
+ - Create folders outside of the container by manipulating symbolic links in 
+   conjunction with the `--nv` option or by bypassing check_mounted function 
+   with relative symlinks
+ - Bypass the `enable overlay = no` option in the `singularity.conf` 
+   configuration file by setting an environment variable
+ - Exploit buffer overflows in `src/util/daemon.c` and/or 
+   `src/lib/image/ext3/init.c` (reported by Erik Sjölund (DBB, Stockholm 
+   University, Sweden))
+ - Forge of the pid_path to join any Singularity namespace (reported by Erik 
+   Sjölund (DBB, Stockholm University, Sweden))
+
+### Implemented enhancements
 
  - Restore docker-extract aufs whiteout handling that implements correct
-     extraction of docker container layers. This adds libarchive-devel as a
-     build time dep. At runtime libarchive is needed for whiteout handling. If
-     libarchive is not available at runtime will fall back to previous
-     extraction method. 
- - Put /usr/local/{bin,sbin} in front of the default PATH
- - Adjustments to SCIF (Scientific Filesystem) integration for broader use
- - Fixed bug that did not export environment variables for apps with "-" in name
- - Create /dev/fd and standard streams symlinks in /dev when using minimal dev
-   mount or when specifying -c/-C/--contain option
+   extraction of docker container layers. This adds libarchive-devel as a
+   build time dep. At runtime libarchive is needed for whiteout handling. If
+   libarchive is not available at runtime will fall back to previous
+   extraction method.
+ - Changed behavior of SINGULARITYENV_PATH to overwrite container PATH and
+   added SINGULARITYENV_PREPEND_PATH and SINGULARITYENV_APPEND_PATH for users
+   wanting to prepend or append to the container PATH at runtime
 
-## [v2.4.4](https://github.com/singularityware/singularity/tree/release-2.4)
+### Bug fixes
+
+ - Support pulls from the NVIDIA cloud docker registry (fix by Justin Riley, 
+   Harvard)
+ - Close socket file descriptors in fd_cleanup
+ - Fix conflict between `--nv` and `--contain` options
+ - Throw errors at build and runtime if NO_NEW_PRIVS is not present and working
+ - Reset umask to 0022 at start to corrrect several errors
+ - Verify docker layers after download with sha256 checksum
+ - Do not make excessive requests for auth tokens to docker registries
+ - Fixed stripping whitespaces and empty new lines for the app commands (fix by 
+   Rafal Gumienny, Biozentrum, Basel)
+ - Improved the way that working directory is mounted 
+ - Fixed an out of bounds array in src/lib/image/ext3/init.c
+
+## [v2.4.6](https://github.com/singularityware/singularity/releases/tag/2.4.6) (2018-04-04)
+
+ - Fix for check_mounted() to check parent directories #1436
+ - Free strdupped temporary variable in joinpath #1438
+
+## [v2.4.5](https://github.com/singularityware/singularity/releases/tag/2.4.5) (2018-03-19)
+
+### Security related fixes
+ - Strip authorization header on http redirect to different domain when
+   interacting with docker registries.
+
+## [v2.4.4](https://github.com/singularityware/singularity/releases/tag/2.4.4) (2018-03-03)
 
  - Removed capability to handle docker layer aufs whiteout files correctly as
    it increased potential attack surface on some distros (with apologies to 
    users who requested it).
 
-## [v2.4.3](https://github.com/singularityware/singularity/tree/release-2.4)
+## [v2.4.3](https://github.com/singularityware/singularity/releases/tag/2.4.3) (2018-03-03)
 
+### Bug Fixes
+ - Put /usr/local/{bin,sbin} in front of the default PATH
+ - Fixed bug that did not export environment variables for apps with "-" in name
  - Fix permission denied when binding directory located on NFS with root_squash enabled
  - Add capability to support all tar compression formats #1155
  - Handle docker layer aufs whiteout files correctly (requires libarchive).
@@ -45,13 +102,14 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fix non-root build from docker containers with non-writable file/dir permissions
  - Fix race condition between container exit and cleanupd while removing runtime directory
 
-## [v2.4.2](https://github.com/singularityware/singularity/tree/release-2.4)
+## [v2.4.2](https://github.com/singularityware/singularity/releases/tag/2.4.2) (2017-12-05)
 
  - This fixed an issue for support of older distributions and kernels with regards to `setns()`
    functionality.
  - Fixed autofs bug path (lost during merge)
+ - Added json format to instance.list with flag --json
 
-## [v2.4.1](https://github.com/singularityware/singularity/tree/release-2.4) (2017-11-22)
+## [v2.4.1](https://github.com/singularityware/singularity/releases/tag/2.4.1) (2017-11-22)
 
 ### apprun script backslash removal fix
  - Fixed the unwanted removal of backslashes in apprun scripts
@@ -84,7 +142,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Fix terminal echo problem when using PID namespace and killing shell
  - Fix SuSE squashFS package name in RPM spec
 
-## [v2.4](https://github.com/singularityware/singularity/tree/v2.4) (2017-10-02)
+## [v2.4](https://github.com/singularityware/singularity/releases/tag/2.4) (2017-10-02)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3.2...2.4)
 
 ### Implemented enhancements
@@ -113,19 +171,19 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - `export` is being deprecated and added to the image command group, `image.export`
  - the `shub://` URI no longer supports an integer to reference a container
 
-## [v2.3.2](https://github.com/singularityware/singularity/tree/v2.3.2) (2017-09-15)
+## [v2.3.2](https://github.com/singularityware/singularity/releases/tag/2.3.2) (2017-09-15)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3.1...2.3.2)
 
 ### Implemented enhancements
  - Quick fix to support manifest lists when pulling from Docker Hub
 
-## [v2.3.1](https://github.com/singularityware/singularity/tree/v2.3.1) (2017-06-26)
+## [v2.3.1](https://github.com/singularityware/singularity/releases/tag/2.3.1) (2017-06-26)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.3...2.3.1)
 
 ### Security Fix
  - A fix was implemented to address an escalation pathway and various identified bugs and potential race conditions.
 
-## [v2.3](https://github.com/singularityware/singularity/tree/v2.3) (2017-05-31)
+## [v2.3](https://github.com/singularityware/singularity/releases/tag/2.3) (2017-05-31)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.2.1...2.3)
 
 ### Implemented enhancements
@@ -137,7 +195,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 - Added ability to pull images from Singularity Hub and Docker
 - Containers now have labels, and are inspect'able
 
-## [v2.2.1](https://github.com/singularityware/singularity/tree/v2.2.1) (2017-02-14)
+## v2.2.1 (2017-02-14)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.2...2.2.1)
 
 ### Security Fix
@@ -148,7 +206,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Cleaned up `*printf()` usage
  - Catch if user's group is not properly defined
 
-## [v2.2](https://github.com/singularityware/singularity/tree/v2.2) (2016-10-11)
+## v2.2 (2016-10-11)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.1.2...2.2)
 
 ### Implemented enhancements
@@ -162,14 +220,14 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - All Singularity 2.x containers continue to be supported with this release.
 
 
-## [v2.1.2](https://github.com/singularityware/singularity/tree/v2.1.2) (2016-08-04)
+## v2.1.2 (2016-08-04)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.1.1...2.1.2)
 
 ### Bug Fixes
  - Fix for kernel panic on corrupt images
  - Fixes build warning
 
-## [v2.1.1](https://github.com/singularityware/singularity/tree/v2.1.1) (2016-08-03)
+## v2.1.1 (2016-08-03)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.1...2.1.1)
 
 ### Bug Fixes
@@ -177,7 +235,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 - Remove need to obtain a shared lock on the image (was failing on some shared file systems)
 - Move creation of a container's /environment to the beginning of the bootstrap (so it can be modified via a bootstrap definition file
 
-## [v2.1](https://github.com/singularityware/singularity/tree/v2.1) (2016-07-28)
+## v2.1 (2016-07-28)
 [Full Changelog](https://github.com/singularityware/singularity/compare/2.0...2.1)
 
 ### Implemented enhancements
@@ -197,7 +255,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 - Resolved some issues with image file de-looping
 - Fixed bugs related to very restrictive umasks set
 
-## [v2.0](https://github.com/singularityware/singularity/tree/v2.0) (2016-06-01)
+## v2.0 (2016-06-01)
 [Full Changelog](https://github.com/singularityware/singularity/compare/1.x...2.0)
 
 ### Implemented enhancements
@@ -210,7 +268,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Support for native X11
 
 
-## [v1.x](https://github.com/singularityware/singularity/tree/v1.x) (2016-04-06)
+## v1.x (2016-04-06)
 
 ### Implemented enhancements
 
@@ -231,3 +289,4 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Singularity containers run within existing resource contexts (CGroups and ulimits are maintained)
  - Support for scalable execution of MPI parallel jobs
  - Singularity containers are portable between Linux distributions
+

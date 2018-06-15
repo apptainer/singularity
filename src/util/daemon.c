@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <limits.h>
 
 #include "config.h"
 #include "util/file.h"
@@ -30,7 +31,7 @@
 void daemon_file_parse(void) {
     singularity_message(DEBUG, "reached file parse\n");
     char *key, *val;
-    char *line = (char *)malloc(2048 * sizeof(char *));
+    char *line = (char *)malloc(2048);
     FILE *file = fopen(singularity_registry_get("DAEMON_FILE"), "r");
 
     while( fgets(line, 2048, file) ) {
@@ -39,6 +40,8 @@ void daemon_file_parse(void) {
         singularity_message(DEBUG, "Read key-val pair %s=%s\n", key, val);
         singularity_registry_set(key, val);
     }
+    fclose(file);
+    free(line);
 }
 
 void daemon_file_write(int fd, char *key, char *val) {
@@ -82,6 +85,7 @@ int daemon_is_owner(char *pid_path) {
 
     free(uid_check);
     free(line);
+    free(proc_status);
     fclose(status);
 
     return(retval);
@@ -107,13 +111,24 @@ void daemon_init_join(void) {
         ABORT(255);
         return;
     } else if ( lock_result == EALREADY ) {
+        long int pid;
+
         /* EALREADY is set when another process has a lock on the file. */
         singularity_message(DEBUG, "Another process has lock on daemon file\n");
 
         daemon_file_parse();
-                
-        pid_path = (char *)malloc(2048 * sizeof(char *));
-        sprintf(pid_path, "/proc/%s", singularity_registry_get("DAEMON_PID")); //Flawfinder: ignore
+
+        pid_path = (char *)malloc(PATH_MAX);
+        if ( pid_path == NULL ) {
+            singularity_message(ERROR, "Memory allocation failed for pid_path\n");
+            ABORT(255);
+        }
+        pid_path[PATH_MAX-1] = '\0';
+        if ( str2int(singularity_registry_get("DAEMON_PID"), &pid) < 0 ) {
+            singularity_message(ERROR, "Unable to convert DAEMON_PID\n");
+            ABORT(255);
+        }
+        snprintf(pid_path, PATH_MAX-1, "/proc/%lu", pid); //Flawfinder: ignore
 
         if ( daemon_is_owner(pid_path) == 0 ) {
             singularity_message(ERROR, "Unable to join instance: you are not the owner\n");
@@ -122,6 +137,8 @@ void daemon_init_join(void) {
 
         ns_path = joinpath(pid_path, "/ns");
 
+        free(pid_path);
+
         /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
         singularity_priv_escalate();
         if ( ( ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC) ) == -1 ) {
@@ -129,6 +146,8 @@ void daemon_init_join(void) {
             ABORT(255);
         }
         singularity_priv_drop();
+
+        free(ns_path);
 
         ns_fd_str = int2str(ns_fd);
 
@@ -144,7 +163,7 @@ void daemon_init_start(void) {
     char *daemon_file = singularity_registry_get("DAEMON_FILE");
     char *daemon_name = singularity_registry_get("DAEMON_NAME");
     char *daemon_file_dir = strdup(daemon_file);
-    char *daemon_pid = (char *)malloc(256 * sizeof(char));
+    char *daemon_pid = (char *)malloc(256);
     char *daemon_image;
     int daemon_fd;
     int lock;
@@ -153,6 +172,7 @@ void daemon_init_start(void) {
     if ( is_dir(dirname(daemon_file_dir)) == -1 ) {
         s_mkpath(daemon_file_dir, 0755);
     }
+    free(daemon_file_dir);
     
     /* Attempt to open lock on daemon file */
     lock = filelock(daemon_file, &daemon_fd);
@@ -184,6 +204,7 @@ void daemon_init_start(void) {
         daemon_file_write(daemon_fd, "DAEMON_ROOTFS", singularity_registry_get("ROOTFS"));
 
         singularity_registry_set("DAEMON_FD", int2str(daemon_fd));
+        free(daemon_pid);
     } else if( lock == EALREADY ) {
         /* Another daemon controls this file already */
         singularity_message(ERROR, "Daemon %s already exists: %s\n", daemon_name, strerror(errno));

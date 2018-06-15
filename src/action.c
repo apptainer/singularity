@@ -29,9 +29,11 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <sys/prctl.h>
 
 #include "config.h"
 #include "util/file.h"
+#include "util/fork.h"
 #include "util/util.h"
 #include "util/daemon.h"
 #include "util/registry.h"
@@ -49,14 +51,23 @@
 #error SYSCONFDIR not defined
 #endif
 
+int close_fd(int fd, struct stat *st) {
+    if ( S_ISDIR(st->st_mode) ) {
+        return(1);
+    }
+    if ( singularity_registry_get("UNSHARE_NET") != NULL ) {
+        if ( S_ISSOCK(st->st_mode) ) {
+            return(1);
+        }
+    }
+    return(0);
+}
 
 int main(int argc, char **argv) {
     struct image_object image;
     char *pwd = get_current_dir_name();
     char *target_pwd = NULL;
     char *command = NULL;
-
-    fd_cleanup();
 
     singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"));
 
@@ -101,8 +112,27 @@ int main(int argc, char **argv) {
     singularity_runtime_enter();
     
     singularity_runtime_environment();
-    
     singularity_priv_drop_perm();
+
+    if ( singularity_registry_get("DAEMON_JOIN") == NULL  &&
+         singularity_registry_get("PIDNS_ENABLED") != NULL &&
+         singularity_registry_get("NOSHIMINIT") == NULL ) {
+
+        // At this point, we are now PID 1; when we later exec the payload,
+        // it will also be PID 1.  Unfortunately, PID 1 in Linux has special
+        // signal handling rules (the _only_ signal that will terminate the
+        // process is SIGKILL; all other signals are ignored).  Hence, we fork
+        // one more time.  This makes PID 1 a shim process and the payload
+        // process PID 2 (meaning that the payload gets the "normal" signal
+        // handling rules it would expect).
+
+        // Set the name of the process for ps
+        prctl(PR_SET_NAME, "shim-init", 0, 0, 0);
+        // And for ps -f
+        strncpy(argv[0], "shim-init", strlen(argv[0]));
+
+        singularity_fork_run(0);
+    }
 
     if ( ( target_pwd = singularity_registry_get("TARGET_PWD") ) != NULL ) {
         singularity_message(DEBUG, "Attempting to chdir to TARGET_PWD: %s\n", target_pwd);
@@ -144,6 +174,8 @@ int main(int argc, char **argv) {
     envar_set("SINGULARITY_NAME", singularity_image_name(&image), 1);
     envar_set("SINGULARITY_SHELL", singularity_registry_get("SHELL"), 1);
     envar_set("SINGULARITY_APPNAME", singularity_registry_get("APPNAME"), 1);
+
+    fd_cleanup(&close_fd);
 
     singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
 

@@ -78,6 +78,11 @@ int _singularity_runtime_files_passwd(void) {
         return(0);
     }
 
+    if ( pwent == NULL ) {
+        singularity_message(ERROR, "Failed to obtain user identity information\n");
+        ABORT(255);
+    }
+
     source_file = joinpath(containerdir, "/etc/passwd");
     tmp_file = joinpath(tmpdir, "/passwd");
 

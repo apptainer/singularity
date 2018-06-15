@@ -24,21 +24,23 @@
     - Chris Hollowell <hollowec@bnl.gov>
     - Daniele Tamino <daniele.tamino@gmail.com>
     - Dave Love <d.love@liverpool.ac.uk>
+    - Diana Langenbach <dcl@dcl.sh>
     - Felix Abecassis <fabecassis@nvidia.com>
     - George Hartzell <hartzell@alerce.com>
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jason.stover@gmail.com>
     - Jeff Kriske <jekriske@gmail.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
+    - Justin Riley <justin_riley@harvard.edu>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
     - Petr Votava <votava.petr@gene.com>
+    - Rafal Gumienny <rafal.gumienny@gmail.com>
     - Ralph Castain <rhc@open-mpi.org>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
-    - Justin Riley <justin_riley@harvard.edu>

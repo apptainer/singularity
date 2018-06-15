@@ -1,7 +1,7 @@
 environmentdir = $(libexecdir)/singularity/bootstrap-scripts/
 
 CLEANFILES = environment.tar
-EXTRA_DIST = 01-base.sh 90-environment.sh 95-apps.sh 99-base.sh exec run runscript shell test start startscript
+EXTRA_DIST = 01-base.sh 90-environment.sh 95-apps.sh 99-base.sh 99-runtimevars.sh exec run runscript shell test start startscript
 
 dist_environment_DATA = environment.tar
 
@@ -35,6 +35,7 @@ environment.tar:
 	install -m 0755 90-environment.sh newroot/.singularity.d/env/
 	install -m 0755 95-apps.sh newroot/.singularity.d/env/
 	install -m 0755 99-base.sh newroot/.singularity.d/env/
+	install -m 0755 99-runtimevars.sh newroot/.singularity.d/env/
 	ln -sf .singularity.d/env/90-environment.sh newroot/environment
 	ln -sf .singularity.d/runscript newroot/singularity
 	ln -sf .singularity.d/actions/exec newroot/.exec

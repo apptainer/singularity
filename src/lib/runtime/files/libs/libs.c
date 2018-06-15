@@ -60,11 +60,6 @@ int _singularity_runtime_files_libs(void) {
         char *tok = NULL;
         char *current = strtok_r(strdup(includelibs_string), ",", &tok);
 
-#ifndef SINGULARITY_NO_NEW_PRIVS
-        singularity_message(WARNING, "Not mounting libs: host does not support PR_SET_NO_NEW_PRIVS\n");
-        return(0);
-#endif
-
         singularity_message(DEBUG, "Parsing SINGULARITY_CONTAINLIBS for user-specified libraries to include.\n");
 
         free(includelibs_string);
@@ -75,7 +70,7 @@ int _singularity_runtime_files_libs(void) {
         }
 
         singularity_message(DEBUG, "Creating session libdir at: %s\n", libdir);
-        if ( s_mkpath(libdir, 0755) != 0 ) {
+        if ( container_mkpath_nopriv(libdir, 0755) != 0 ) {
             singularity_message(ERROR, "Failed creating temp lib directory at: %s\n", libdir);
             ABORT(255);
         }
@@ -130,7 +125,7 @@ int _singularity_runtime_files_libs(void) {
 
             singularity_message(DEBUG, "Binding library source here: %s -> %s\n", source, dest);
 
-            if ( fileput(dest, "") != 0 ) {
+            if ( fileput_nopriv(dest, "") != 0 ) {
                 singularity_message(ERROR, "Failed creating file at %s: %s\n", dest, strerror(errno));
                 ABORT(255);
             }
@@ -149,12 +144,10 @@ int _singularity_runtime_files_libs(void) {
         if ( is_dir(libdir_contained) != 0 ) {
             char *ld_path;
             singularity_message(DEBUG, "Attempting to create contained libdir\n");
-            singularity_priv_escalate();
-            if ( s_mkpath(libdir_contained, 0755) != 0 ) {
+            if ( container_mkpath_priv(libdir_contained, 0755) != 0 ) {
                 singularity_message(ERROR, "Failed creating directory %s :%s\n", libdir_contained, strerror(errno));
                 ABORT(255);
             }
-            singularity_priv_drop();
             ld_path = envar_path("LD_LIBRARY_PATH");
             if ( ld_path == NULL ) {
                 singularity_message(DEBUG, "Setting LD_LIBRARY_PATH to '/.singularity.d/libs'\n");

@@ -194,6 +194,10 @@ fi
 # if the container exists, build into it (or delete it if -F was passed)
 if [ -e "$SINGULARITY_CONTAINER_OUTPUT" ]; then
     if eval is_image "${SINGULARITY_CONTAINER_OUTPUT}"; then
+        if [ "$SINGULARITY_CONTAINER_OUTPUT" = "/" ]; then
+            message ERROR "Not building a container into the host root / !\n"
+            ABORT 255
+        fi
         if [ -z "${SINGULARITY_FORCE:-}" ]; then
             message 1 "Building into existing container: $SINGULARITY_CONTAINER_OUTPUT\n"
             SINGULARITY_BTSTRP_2EXISTING=1
@@ -248,7 +252,7 @@ case $SINGULARITY_BUILDDEF in
         export SINGULARITY_CONTAINER SINGULARITY_CONTENTS
         eval_abort "$SINGULARITY_libexecdir/singularity/python/import.py"
         message 1 "Importing: base Singularity environment\n"
-        zcat "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar" | tar xBf - -C "${SINGULARITY_ROOTFS}" || exit $?
+        zcat "$SINGULARITY_libexecdir/singularity/bootstrap-scripts/environment.tar" | tar xf - -C "${SINGULARITY_ROOTFS}" || exit $?
 
         # Try to run docker-extract
         $SINGULARITY_libexecdir/singularity/bin/docker-extract >/dev/null 2>/dev/null
@@ -310,7 +314,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
     elif eval is_image "${SINGULARITY_BUILDDEF}"; then
         message 1 "Building from local image: $SINGULARITY_BUILDDEF\n"
         nonroot_build_warning
-        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" 2>/dev/null | tar xBf - -C "${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
+        if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_BUILDDEF}" 2>/dev/null | tar xf - -C "${SINGULARITY_ROOTFS}" >/dev/null 2>&1; then
             message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
             ABORT 255
         fi
@@ -322,7 +326,7 @@ if [ -f "${SINGULARITY_BUILDDEF:-}" ]; then
             exit 1
         fi
         if [ -n "${SINGULARITY_BTSTRP_2EXISTING:-}" ]; then # we are bootstrapping to an existing image and need to populate the rootfs
-            if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER_OUTPUT}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+            if ! eval "${SINGULARITY_bindir}"/singularity image.export "${SINGULARITY_CONTAINER_OUTPUT}" | tar xf - -C "${SINGULARITY_ROOTFS}"; then
                 message ERROR "Failed to export contents of ${SINGULARITY_BUILDDEF} to ${SINGULARITY_ROOTFS}\n"
                 ABORT 255
             fi
