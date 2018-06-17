@@ -11,7 +11,7 @@
   branch = "master"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
-  revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
+  revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
   branch = "master"
@@ -20,10 +20,15 @@
     "copy",
     "directory/explicitfilepath",
     "docker",
+    "docker/archive",
+    "docker/daemon",
     "docker/policyconfiguration",
     "docker/reference",
+    "docker/tarfile",
     "image",
+    "internal/tmpdir",
     "manifest",
+    "oci/archive",
     "oci/internal",
     "oci/layout",
     "pkg/compression",
@@ -35,19 +40,24 @@
     "types",
     "version"
   ]
-  revision = "b327f751c16e4a189fdcde4ea36be67cc964c605"
+  revision = "2e4f799f5eba49a2498d2793cfb2a4bc823ca3f6"
 
 [[projects]]
   branch = "master"
   name = "github.com/containers/storage"
   packages = [
+    "pkg/archive",
     "pkg/fileutils",
     "pkg/homedir",
     "pkg/idtools",
+    "pkg/ioutils",
+    "pkg/longpath",
     "pkg/mount",
+    "pkg/pools",
+    "pkg/promise",
     "pkg/system"
   ]
-  revision = "aaa10cba3c246a9186e2160f4e12b21d8cf77c94"
+  revision = "88d80428f9b146f8f9fe7e2e8cc8688a5aae1a4e"
 
 [[projects]]
   name = "github.com/cpuguy83/go-md2man"
@@ -71,13 +81,28 @@
     "registry/storage/cache",
     "registry/storage/cache/memory"
   ]
-  revision = "607ae5d128a82f280e8c7f453d5fb30c535bda17"
+  revision = "749f6afb4572201e3c37325d0ffedb6f32be8950"
 
 [[projects]]
   name = "github.com/docker/docker"
   packages = [
+    "api/types",
+    "api/types/blkiodev",
+    "api/types/container",
+    "api/types/events",
+    "api/types/filters",
+    "api/types/mount",
+    "api/types/network",
+    "api/types/reference",
+    "api/types/registry",
+    "api/types/strslice",
+    "api/types/swarm",
+    "api/types/time",
     "api/types/versions",
-    "pkg/homedir"
+    "api/types/volume",
+    "client",
+    "pkg/homedir",
+    "pkg/tlsconfig"
   ]
   revision = "092cba3727bb9b4a2f0e922cd6c0f93ea270e363"
   version = "v1.13.1"
@@ -94,6 +119,7 @@
 [[projects]]
   name = "github.com/docker/go-connections"
   packages = [
+    "nat",
     "sockets",
     "tlsconfig"
   ]
@@ -109,8 +135,8 @@
 [[projects]]
   name = "github.com/docker/go-units"
   packages = ["."]
-  revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
-  version = "v0.3.2"
+  revision = "47565b4f722fb6ceae66b95f853feed578a4a51c"
+  version = "v0.3.3"
 
 [[projects]]
   branch = "master"
@@ -142,20 +168,20 @@
 [[projects]]
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
-  version = "v1.0.0"
+  revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
-  revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
-  version = "v1.1"
+  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/gorilla/mux"
   packages = ["."]
-  revision = "53c1911da2b537f792e7cafcb446b05ffe33b996"
-  version = "v1.6.1"
+  revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
+  version = "v1.6.2"
 
 [[projects]]
   name = "github.com/gorilla/websocket"
@@ -178,8 +204,8 @@
 [[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
   packages = ["pbutil"]
-  revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
-  version = "v1.0.0"
+  revision = "c12348ce28de40eed0136aa2b644d0ee0650e56c"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -201,7 +227,7 @@
     "specs-go",
     "specs-go/v1"
   ]
-  revision = "8e82844449a093ef49d824afad963a5e0a76b63b"
+  revision = "e562b04403929d582d449ae5386ff79dd7961a11"
 
 [[projects]]
   branch = "master"
@@ -211,7 +237,10 @@
 
 [[projects]]
   name = "github.com/opencontainers/runc"
-  packages = ["libcontainer/user"]
+  packages = [
+    "libcontainer/system",
+    "libcontainer/user"
+  ]
   revision = "baf6536d6259209c3edfa2b22237af82942d3dfa"
   version = "v0.1.1"
 
@@ -229,12 +258,21 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/pquerna/ffjson"
+  packages = [
+    "fflib/v1",
+    "fflib/v1/internal"
+  ]
+  revision = "d49c2bc1aa135aad0c6f4fc2056623ec78f5d5ac"
+
+[[projects]]
+  branch = "master"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
     "prometheus/promhttp"
   ]
-  revision = "d49167c4b9f3c4451707560c5c71471ff5291aaa"
+  revision = "faf4ec335fe01ae5a6a0eaa34a5a9333bfbd1a30"
 
 [[projects]]
   branch = "master"
@@ -250,7 +288,7 @@
     "internal/bitbucket.org/ww/goautoneg",
     "model"
   ]
-  revision = "e4aa40a9169a88835b849a6efb71e05dc04b88f0"
+  revision = "7600349dcfe1abd18d72d3a1770870d9800a7801"
 
 [[projects]]
   branch = "master"
@@ -261,7 +299,7 @@
     "nfs",
     "xfs"
   ]
-  revision = "54d17b57dd7d4a3aa092476596b3f8a933bde349"
+  revision = "7d6f385de8bea29190f15ba9931442a0eaef9af7"
 
 [[projects]]
   name = "github.com/russross/blackfriday"
@@ -306,13 +344,13 @@
   branch = "master"
   name = "github.com/xeipuuv/gojsonschema"
   packages = ["."]
-  revision = "8bcffc811467a5f691810420385be6e66b35a317"
+  revision = "9ff6d6c47f3f5de55acc6f464d6e3719b02818ae"
 
 [[projects]]
   branch = "master"
   name = "go4.org"
   packages = ["errorutil"]
-  revision = "fba789b7e39ba524b9e60c45c37a50fae63a2a09"
+  revision = "9599cf28b011184741f249bd9f9330756b506cbc"
 
 [[projects]]
   branch = "master"
@@ -333,8 +371,13 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["proxy"]
-  revision = "6078986fec03a1dcc236c34816c71b0e05018fda"
+  packages = [
+    "context",
+    "context/ctxhttp",
+    "internal/socks",
+    "proxy"
+  ]
+  revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
 
 [[projects]]
   branch = "master"
@@ -360,6 +403,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9e2bf91fc75cfd7e4f48c2eaa75af97d959ee531670b07b3ba5fad2525d5bdac"
+  inputs-digest = "855e81ee3ad2cd455f1a41a2d1b5d5e6b4ec1a49ec0ca54e7dcab875b783a39c"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -148,8 +148,8 @@ func makeBundle(def build.Definition) *build.Bundle {
 	var cp build.ConveyorPacker
 
 	switch def.Header["bootstrap"] {
-	case "docker":
-		cp = &build.DockerConveyorPacker{}
+	case "docker", "docker-archive", "docker-daemon", "oci":
+		cp = &build.OCIConveyorPacker{}
 	default:
 		sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
 	}

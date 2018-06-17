@@ -34,7 +34,7 @@ func TestPacker(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
 	}
 
-	dcp := &DockerConveyorPacker{}
+	dcp := &OCIConveyorPacker{}
 
 	if err := dcp.Get(def); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)

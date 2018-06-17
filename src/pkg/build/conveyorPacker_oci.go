@@ -6,6 +6,8 @@
 package build
 
 import (
+	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,6 +15,8 @@ import (
 
 	"github.com/containers/image/copy"
 	"github.com/containers/image/docker"
+	dockerarchive "github.com/containers/image/docker/archive"
+	ociarchive "github.com/containers/image/oci/archive"
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/signature"
 	"github.com/containers/image/types"
@@ -22,8 +26,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// DockerConveyor holds stuff that needs to be packed into the bundle
-type DockerConveyor struct {
+// OCIConveyor holds stuff that needs to be packed into the bundle
+type OCIConveyor struct {
 	recipe    Definition
 	srcRef    types.ImageReference
 	tmpfs     string
@@ -32,13 +36,13 @@ type DockerConveyor struct {
 	imgConfig imgspecv1.ImageConfig
 }
 
-// DockerConveyorPacker only needs to hold the conveyor to have the needed data to pack
-type DockerConveyorPacker struct {
-	DockerConveyor
+// OCIConveyorPacker only needs to hold the conveyor to have the needed data to pack
+type OCIConveyorPacker struct {
+	OCIConveyor
 }
 
-// Get downloads container information from Dockerhub
-func (c *DockerConveyor) Get(recipe Definition) (err error) {
+// Get downloads container information from the specified source
+func (c *OCIConveyor) Get(recipe Definition) (err error) {
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
 	c.policyCtx, err = signature.NewPolicyContext(policy)
 	if err != nil {
@@ -47,11 +51,22 @@ func (c *DockerConveyor) Get(recipe Definition) (err error) {
 
 	c.recipe = recipe
 
-	//prepending slashes to src for ParseReference expected string format
-	src := "//" + recipe.Header["from"]
-	c.srcRef, err = docker.ParseReference(src)
+	switch recipe.Header["bootstrap"] {
+	case "docker":
+		ref := "//" + recipe.Header["from"]
+		c.srcRef, err = docker.ParseReference(ref)
+	case "docker-archive":
+		c.srcRef, err = dockerarchive.ParseReference(recipe.Header["from"])
+	case "oci":
+		c.srcRef, err = oci.ParseReference(recipe.Header["from"])
+	case "oci-archive":
+		c.srcRef, err = ociarchive.ParseReference(recipe.Header["from"])
+	default:
+		return fmt.Errorf("OCI ConveyerPacker does not support %s", recipe.Header["bootstrap"])
+	}
+
 	if err != nil {
-		return
+		return fmt.Errorf("Invalid image source: %v", err)
 	}
 
 	c.tmpfs, err = ioutil.TempDir("", "temp-oci-")
@@ -80,7 +95,7 @@ func (c *DockerConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *DockerConveyorPacker) Pack() (b *Bundle, err error) {
+func (cp *OCIConveyorPacker) Pack() (b *Bundle, err error) {
 	b, err = NewBundle()
 	if err != nil {
 		return
@@ -115,8 +130,8 @@ func (cp *DockerConveyorPacker) Pack() (b *Bundle, err error) {
 	return b, nil
 }
 
-func (c *DockerConveyor) fetch() (err error) {
-	err = copy.Image(c.policyCtx, c.tmpfsRef, c.srcRef, &copy.Options{
+func (c *OCIConveyor) fetch() (err error) {
+	err = copy.Image(context.Background(), c.policyCtx, c.tmpfsRef, c.srcRef, &copy.Options{
 		ReportWriter: os.Stderr,
 	})
 	if err != nil {
@@ -126,14 +141,14 @@ func (c *DockerConveyor) fetch() (err error) {
 	return nil
 }
 
-func (c *DockerConveyor) getConfig() (imgspecv1.ImageConfig, error) {
-	img, err := c.tmpfsRef.NewImage(nil)
+func (c *OCIConveyor) getConfig() (imgspecv1.ImageConfig, error) {
+	img, err := c.tmpfsRef.NewImage(context.Background(), nil)
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}
 	defer img.Close()
 
-	imgSpec, err := img.OCIConfig()
+	imgSpec, err := img.OCIConfig(context.Background())
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}
@@ -141,20 +156,20 @@ func (c *DockerConveyor) getConfig() (imgspecv1.ImageConfig, error) {
 	return imgSpec.Config, nil
 }
 
-func (cp *DockerConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
+func (cp *OCIConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 	refs := []string{"name=tmp"}
 	err = imagetools.UnpackLayout(cp.tmpfs, b.Rootfs(), "amd64", refs)
 	return err
 }
 
-func (cp *DockerConveyorPacker) insertBaseEnv(b *Bundle) (err error) {
+func (cp *OCIConveyorPacker) insertBaseEnv(b *Bundle) (err error) {
 	if err = makeBaseEnv(b.Rootfs()); err != nil {
 		sylog.Errorf("%v", err)
 	}
 	return
 }
 
-func (cp *DockerConveyorPacker) insertRunScript(b *Bundle) (err error) {
+func (cp *OCIConveyorPacker) insertRunScript(b *Bundle) (err error) {
 	f, err := os.Create(b.Rootfs() + "/.singularity.d/runscript")
 	if err != nil {
 		return
@@ -230,7 +245,7 @@ exec $SINGULARITY_OCI_RUN
 	return nil
 }
 
-func (cp *DockerConveyorPacker) insertEnv(b *Bundle) (err error) {
+func (cp *OCIConveyorPacker) insertEnv(b *Bundle) (err error) {
 	f, err := os.Create(b.Rootfs() + "/.singularity.d/env/10-docker2singularity.sh")
 	if err != nil {
 		return
