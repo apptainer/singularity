@@ -10,11 +10,26 @@ import (
 )
 
 const (
-	shubURI = "shub://singularityhub/ubuntu"
+	shubURI = "shub://truatpasteurdotfr/singularity-alpine"
 )
 
 // TestPull tests if we can pull an ubuntu image from dockerhub
 func TestShubConveyor(t *testing.T) {
+	def, err := NewDefinitionFromURI(shubURI)
+	if err != nil {
+		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
+	}
+
+	sc := &ShubConveyor{}
+
+	if err := sc.Get(def); err != nil {
+		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
+	}
+
+}
+
+// TestFurnish checks if we can create a Kitchen
+func TestShubPacker(t *testing.T) {
 	def, err := NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
@@ -26,31 +41,8 @@ func TestShubConveyor(t *testing.T) {
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
 
-	b, err := scp.Pack()
+	_, err = scp.Pack()
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", shubURI, err)
 	}
-
-	t.Fatalf(b.Rootfs())
-
 }
-
-// // TestFurnish checks if we can create a Kitchen
-// func TestShubPacker(t *testing.T) {
-// 	def, err := NewDefinitionFromURI("docker://ubuntu:18.04")
-// 	if err != nil {
-// 		t.Fatalf("unable to parse URI docker://ubuntu:18.04: %v\n", err)
-// 	}
-
-// 	dcp := &DockerConveyorPacker{}
-
-// 	if err := dcp.Get( def); err != nil {
-// 		t.Fatal("failed to pull:", err)
-// 	}
-
-// 	_, err = dcp.Pack()
-
-// 	if err != nil {
-// 		t.Fatal("failed to furnish:", err)
-// 	}
-// }
