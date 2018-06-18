@@ -9,39 +9,27 @@ import (
 	"encoding/json"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/opencontainers/runtime-tools/generate"
 )
-
-// RuntimeOciSpec is the OCI runtime specification.
-type RuntimeOciSpec specs.Spec
 
 // RuntimeOciConfig is the OCI runtime configuration.
 type RuntimeOciConfig struct {
-	RuntimeOciSpec
-	Version     RuntimeOciVersion
-	Process     RuntimeOciProcess
-	Root        RuntimeOciRoot
-	Hostname    RuntimeOciHostname
-	Mounts      RuntimeOciMounts
-	Hooks       RuntimeOciHooks
-	Annotations RuntimeOciAnnotations
-	RuntimeOciPlatform
+	generate.Generator
+	specs.Spec
 }
 
 // MarshalJSON is for json.Marshaler
 func (c *RuntimeOciConfig) MarshalJSON() ([]byte, error) {
-	b, err := json.Marshal(&c.RuntimeOciSpec)
+	b, err := json.Marshal(&c.Spec)
 
 	return b, err
 }
 
 // UnmarshalJSON is for json.Unmarshaler
 func (c *RuntimeOciConfig) UnmarshalJSON(b []byte) error {
-	spec := &RuntimeOciSpec{}
-
-	if err := json.Unmarshal(b, spec); err != nil {
+	if err := json.Unmarshal(b, &c.Spec); err != nil {
 		return err
 	}
-
-	c.RuntimeOciSpec = *spec
+	c.Generator = generate.NewFromSpec(&c.Spec)
 	return nil
 }
