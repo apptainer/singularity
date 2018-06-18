@@ -8,8 +8,10 @@ package cli
 import (
 	"encoding/json"
 	"os"
+	"strings"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/opencontainers/runtime-tools/generate"
+
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -113,34 +115,31 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
 
 	engineConfig := singularity.NewConfig()
-	oci := &ociConfig.RuntimeOciConfig{}
-	_ = ociConfig.DefaultRuntimeOciConfig(oci) // must call this to initialize fields in RuntimeOciConfig
 
-	oci.Root.SetPath(image)
-	oci.Process.SetArgs(args)
-	oci.Process.SetNoNewPrivileges(true)
+	oci := &ociConfig.RuntimeOciConfig{}
+	generator := generate.NewFromSpec(&oci.Spec)
+
+	generator.SetProcessArgs(args)
+
 	engineConfig.SetImage(image)
 	engineConfig.SetBindPath(BindPaths)
 
-	oci.RuntimeOciSpec.Linux = &specs.Linux{}
-	namespaces := []specs.LinuxNamespace{}
 	if NetNamespace {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.NetworkNamespace})
+		generator.AddOrReplaceLinuxNamespace("network", "")
 	}
 	if UtsNamespace {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UTSNamespace})
+		generator.AddOrReplaceLinuxNamespace("uts", "")
 	}
 	if PidNamespace {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.PIDNamespace})
+		generator.AddOrReplaceLinuxNamespace("pid", "")
 	}
 	if IpcNamespace {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.IPCNamespace})
+		generator.AddOrReplaceLinuxNamespace("ipc", "")
 	}
 	if UserNamespace {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UserNamespace})
+		generator.AddOrReplaceLinuxNamespace("user", "")
 		wrapper = buildcfg.SBINDIR + "/wrapper"
 	}
-	oci.RuntimeOciSpec.Linux.Namespaces = namespaces
 
 	if verbose {
 		lvl = "2"
@@ -149,10 +148,17 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		lvl = "5"
 	}
 
-	oci.Process.SetEnv(os.Environ())
+	for _, env := range os.Environ() {
+		e := strings.SplitN(env, "=", 2)
+		if len(e) != 2 {
+			sylog.Verbosef("can't process environment variable %s", env)
+			continue
+		}
+		generator.AddProcessEnv(e[0], e[1])
+	}
 
 	if pwd, err := os.Getwd(); err == nil {
-		oci.Process.SetCwd(pwd)
+		generator.SetProcessCwd(pwd)
 	} else {
 		sylog.Warningf("can't determine current working directory: %s", err)
 	}
