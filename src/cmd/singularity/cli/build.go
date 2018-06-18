@@ -150,6 +150,8 @@ func makeBundle(def build.Definition) *build.Bundle {
 	switch def.Header["bootstrap"] {
 	case "docker":
 		cp = &build.DockerConveyorPacker{}
+	case "shub":
+		cp = &build.ShubConveyorPacker{}
 	default:
 		sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
 	}

@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 	"syscall"
 	"time"
@@ -104,15 +105,13 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 		return
 	}
 
-	fmt.Println("HERE1")
 	// Get the image manifest
 	manifest, err := c.getManifest()
-	fmt.Println("HERE2")
+
 	// The full Google Storage download media link
 	sylog.Infof("%v\n", manifest.Image)
-	fmt.Println("HERE3")
+
 	// retrieve the image
-	//tmpfile, err := c.fetch(manifest.Image)
 	c.tmpfile, err = c.fetch(manifest.Image)
 	if err != nil {
 		log.Fatal(err)
@@ -124,7 +123,7 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 
 // Pack puts relevant objects in a Bundle!
 func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
-	//defer os.RemoveAll(p.tmpfs)
+	defer os.RemoveAll(cp.tmpfs)
 
 	b, err = NewBundle()
 
@@ -133,7 +132,9 @@ func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
 		log.Fatal(err)
 		return
 	}
-	fmt.Println("PACK IS DONE")
+
+	b.Recipe = cp.recipe
+
 	return b, nil
 }
 
@@ -225,15 +226,17 @@ func (cp *ShubConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 
 	rootfs := cp.tmpfile
 
+	tmpmnt, err := ioutil.TempDir(cp.tmpfs, "mnt")
+
+	//leverage C code to properly mount squashfs image
 	C.singularity_config_init()
 
 	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
 
 	info := new(loop.Info64)
-	mountType := ""
 
 	C.singularity_image_type(&imageObject)
-	mountType = "squashfs"
+
 	info.Offset = uint64(C.uint(imageObject.offset))
 	info.SizeLimit = uint64(C.uint(imageObject.size))
 
@@ -244,24 +247,32 @@ func (cp *ShubConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 		Mode:  os.O_RDONLY,
 		Info:  *info,
 	}
-	err = ShubLoopDevice(arguments)
+	err = getLoopDevice(arguments)
 	if err != nil {
 		return err
 	}
 
 	path := fmt.Sprintf("/dev/loop%d", number)
-	sylog.Debugf("Mounting loop device %s to %s\n", path, b.Rootfs())
-	err = syscall.Mount(path, b.Rootfs(), mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
+	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
+	err = syscall.Mount(path, tmpmnt, "squashfs", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
 		fmt.Println("Mount Failed", err.Error())
 		return err
 	}
-	fmt.Println("HERE")
+	defer syscall.Unmount(tmpmnt, 0)
+
+	//copy filesystem into bundle rootfs
+	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.Rootfs())
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
-// ShubLoopDevice attaches a loop device with the specified arguments
-func ShubLoopDevice(arguments *args.LoopArgs) error {
+// getLoopDevice attaches a loop device with the specified arguments
+func getLoopDevice(arguments *args.LoopArgs) error {
 	var reply int
 	reply = 1
 	loopdev := new(loop.Device)
@@ -275,60 +286,3 @@ func ShubLoopDevice(arguments *args.LoopArgs) error {
 	}
 	return nil
 }
-
-/*
-// NewShubProvisioner returns a provisioner that can dump a previously
-// build Singularity image into a sandbox based on a URI
-func NewShubProvisioner(src string) (p *ShubProvisioner, err error) {
-
-	// Called in src/pkg/build/provisioner.go for shub uri
-	p = &ShubProvisioner{}
-
-	// Shub URI largely follows same namespace convention
-	p.srcRef, err = docker.ParseReference(src)
-	if err != nil {
-		return &ShubProvisioner{}, err
-	}
-
-	p.tmpfs, err = ioutil.TempDir("", "temp-shub-")
-	if err != nil {
-		return &ShubProvisioner{}, err
-	}
-
-	p.tmpfsRef, err = oci.ParseReference(p.tmpfs + ":" + "tmp")
-	if err != nil {
-		return &ShubProvisioner{}, err
-	}
-
-	return p, nil
-}
-
-// Provision provisions a sandbox from the Shub source URI into the location
-// specified by i.
-func (p *ShubProvisioner) Provision(i *image.Sandbox) (err error) {
-
-	defer os.RemoveAll(p.tmpfs)
-
-	// Get the image manifest
-	manifest, err := p.getManifest()
-
-	// The full Google Storage download media link
-	sylog.Infof("%v\n", manifest.Image)
-
-	// retrieve the image
-	tmpfile, err := p.fetch(manifest.Image)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	err = p.unpackTmpfs(tmpfile, i)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	return nil
-}
-
-*/
