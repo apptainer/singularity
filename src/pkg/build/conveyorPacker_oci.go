@@ -16,6 +16,7 @@ import (
 	"github.com/containers/image/copy"
 	"github.com/containers/image/docker"
 	dockerarchive "github.com/containers/image/docker/archive"
+	dockerdaemon "github.com/containers/image/docker/daemon"
 	ociarchive "github.com/containers/image/oci/archive"
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/signature"
@@ -57,6 +58,8 @@ func (c *OCIConveyor) Get(recipe Definition) (err error) {
 		c.srcRef, err = docker.ParseReference(ref)
 	case "docker-archive":
 		c.srcRef, err = dockerarchive.ParseReference(recipe.Header["from"])
+	case "docker-daemon":
+		c.srcRef, err = dockerdaemon.ParseReference(recipe.Header["from"])
 	case "oci":
 		c.srcRef, err = oci.ParseReference(recipe.Header["from"])
 	case "oci-archive":
