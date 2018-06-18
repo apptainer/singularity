@@ -5,6 +5,15 @@
 
 package build
 
+/*
+#include <unistd.h>
+#include "image/image.h"
+#include "util/config_parser.h"
+*/
+// #cgo CFLAGS: -I../../runtime/c/lib
+// #cgo LDFLAGS: -L../../../builddir/lib -lruntime -luuid
+import "C"
+
 import (
 	"encoding/json"
 	"errors"
@@ -14,14 +23,17 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/containers/image/docker"
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/types"
-	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/loop"
+	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
 )
 
 type shubAPIResponse struct {
@@ -60,6 +72,7 @@ type ShubConveyor struct {
 	srcRef   types.ImageReference
 	tmpfs    string
 	tmpfsRef types.ImageReference
+	tmpfile  string
 }
 
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
@@ -100,7 +113,7 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 	fmt.Println("HERE3")
 	// retrieve the image
 	//tmpfile, err := c.fetch(manifest.Image)
-	_, err = c.fetch(manifest.Image)
+	c.tmpfile, err = c.fetch(manifest.Image)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -113,13 +126,15 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
 	//defer os.RemoveAll(p.tmpfs)
 
-	//err = cp.unpackTmpfs(tmpfile, i)
+	b, err = NewBundle()
+
+	err = cp.unpackTmpfs(b)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-
-	return nil, nil
+	fmt.Println("PACK IS DONE")
+	return b, nil
 }
 
 // Download an image from Singularity Hub, writing as we download instead
@@ -206,11 +221,59 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 
 }
 
-func (cp *ShubConveyorPacker) unpackTmpfs(tmpfile string, i *image.Sandbox) (err error) {
-	//refs := []string{"name=tmp"}
-	sylog.Infof("Here we need to unpack %v to %v\n", tmpfile, i)
-	//err = imagetools.UnpackLayout(p.tmpfs, i.Rootfs(), "amd64", refs)
+func (cp *ShubConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
+
+	rootfs := cp.tmpfile
+
+	C.singularity_config_init()
+
+	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
+
+	info := new(loop.Info64)
+	mountType := ""
+
+	C.singularity_image_type(&imageObject)
+	mountType = "squashfs"
+	info.Offset = uint64(C.uint(imageObject.offset))
+	info.SizeLimit = uint64(C.uint(imageObject.size))
+
+	var number int
+	info.Flags = loop.FlagsAutoClear
+	arguments := &args.LoopArgs{
+		Image: rootfs,
+		Mode:  os.O_RDONLY,
+		Info:  *info,
+	}
+	err = ShubLoopDevice(arguments)
+	if err != nil {
+		return err
+	}
+
+	path := fmt.Sprintf("/dev/loop%d", number)
+	sylog.Debugf("Mounting loop device %s to %s\n", path, b.Rootfs())
+	err = syscall.Mount(path, b.Rootfs(), mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
+	if err != nil {
+		fmt.Println("Mount Failed", err.Error())
+		return err
+	}
+	fmt.Println("HERE")
 	return err
+}
+
+// ShubLoopDevice attaches a loop device with the specified arguments
+func ShubLoopDevice(arguments *args.LoopArgs) error {
+	var reply int
+	reply = 1
+	loopdev := new(loop.Device)
+
+	if err := loopdev.Attach(arguments.Image, arguments.Mode, &reply); err != nil {
+		return err
+	}
+
+	if err := loopdev.SetStatus(&arguments.Info); err != nil {
+		return err
+	}
+	return nil
 }
 
 /*
