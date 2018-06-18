@@ -15,6 +15,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/containerd/continuity"
+  packages = ["pathdriver"]
+  revision = "246e49050efdf45e8f17fbbcf1547ee376f9939e"
+
+[[projects]]
+  branch = "master"
   name = "github.com/containers/image"
   packages = [
     "copy",
@@ -86,26 +92,29 @@
 [[projects]]
   name = "github.com/docker/docker"
   packages = [
+    "api",
     "api/types",
     "api/types/blkiodev",
     "api/types/container",
     "api/types/events",
     "api/types/filters",
+    "api/types/image",
     "api/types/mount",
     "api/types/network",
-    "api/types/reference",
     "api/types/registry",
     "api/types/strslice",
     "api/types/swarm",
+    "api/types/swarm/runtime",
     "api/types/time",
     "api/types/versions",
     "api/types/volume",
     "client",
     "pkg/homedir",
-    "pkg/tlsconfig"
+    "pkg/idtools",
+    "pkg/mount",
+    "pkg/system"
   ]
-  revision = "092cba3727bb9b4a2f0e922cd6c0f93ea270e363"
-  version = "v1.13.1"
+  revision = "da99009bbb1165d1ac5688b5c81d2f589d418341"
 
 [[projects]]
   name = "github.com/docker/docker-credential-helpers"
@@ -158,6 +167,12 @@
     "internal/json"
   ]
   revision = "efe0945164a7e582241f37ae8983c075f8f2e870"
+
+[[projects]]
+  name = "github.com/gogo/protobuf"
+  packages = ["proto"]
+  revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -403,6 +418,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "855e81ee3ad2cd455f1a41a2d1b5d5e6b4ec1a49ec0ca54e7dcab875b783a39c"
+  inputs-digest = "2439e951698f061f2ef0a3e5b407f05665fad8a2dd85a378aeae113dbd3d36ad"
   solver-name = "gps-cdcl"
   solver-version = 1
