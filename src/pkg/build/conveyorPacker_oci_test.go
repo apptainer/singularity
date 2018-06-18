@@ -20,9 +20,9 @@ func TestConveyor(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
 	}
 
-	dc := &DockerConveyor{}
+	oc := &OCIConveyor{}
 
-	if err := dc.Get(def); err != nil {
+	if err := oc.Get(def); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)
 	}
 }
@@ -34,13 +34,13 @@ func TestPacker(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
 	}
 
-	dcp := &OCIConveyorPacker{}
+	ocp := &OCIConveyorPacker{}
 
-	if err := dcp.Get(def); err != nil {
+	if err := ocp.Get(def); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)
 	}
 
-	_, err = dcp.Pack()
+	_, err = ocp.Pack()
 
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", dockerURI, err)
