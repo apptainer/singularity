@@ -582,11 +582,11 @@ __attribute__((constructor)) static void init(void) {
          *  stage1 is responsible for singularity configuration file parsing, handle user input,
          *  read capabilities, check what namespaces is required.
          */
-        if ( config.isSuid ) {
+        if ( config.isSuid || geteuid() == 0 ) {
             priv_escalate();
+            prepare_scontainer_stage(1);
         }
 
-        prepare_scontainer_stage(1);
         return;
     } else if ( stage_pid < 0 ) {
         singularity_message(ERROR, "Failed to spawn scontainer stage 1\n");
@@ -660,7 +660,7 @@ __attribute__((constructor)) static void init(void) {
             sigset_t usrmask;
             static struct sigaction action;
 
-            action.sa_sigaction = &do_exit;
+            action.sa_sigaction = (void *)&do_exit;
             action.sa_flags = SA_SIGINFO|SA_RESTART;
 
             sigemptyset(&usrmask);

@@ -17,6 +17,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -26,42 +27,82 @@ import (
 	"github.com/singularityware/singularity/src/runtime/engines"
 )
 
-func runAsInstance(socket uintptr, engine *engines.Engine) {
-	data := make([]byte, 1)
+// SMaster initializes a runtime engine and runs it
+//export SMaster
+func SMaster(socket C.int, instanceSocket C.int, netFd C.int, config *C.struct_cConfig, jsonC *C.char) {
+	var wg sync.WaitGroup
 
-	comm := os.NewFile(socket, "instance-socket")
-	conn, err := net.FileConn(comm)
-	comm.Close()
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals)
 
-	n, err := conn.Read(data)
-	if n == 0 && err != io.EOF {
-		syscall.Kill(syscall.Getppid(), syscall.SIGUSR2)
+	containerPid := int(config.containerPid)
+	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(config.jsonConfSize))
+
+	engine, err := engines.NewEngine(jsonBytes)
+	if err != nil {
 		if err := engine.CleanupContainer(); err != nil {
 			sylog.Errorf("container cleanup failed: %s", err)
 		}
-		sylog.Fatalf("failed to spawn instance")
-	} else {
-		/* sleep a bit to see if child exit */
-		time.Sleep(100 * time.Millisecond)
-		syscall.Kill(syscall.Getppid(), syscall.SIGUSR1)
+		sylog.Fatalf("failed to initialize runtime: %s\n", err)
 	}
-}
 
-func handleChild(pid int, signal chan os.Signal, engine *engines.Engine) {
-	var status syscall.WaitStatus
+	go func() {
+		comm := os.NewFile(uintptr(socket), "socket")
+		conn, err := net.FileConn(comm)
+		if err != nil {
+			sylog.Fatalf("Failed to copy unix socket descriptor")
+		}
+		comm.Close()
+
+		runtime.LockOSThread()
+		if err := engine.CreateContainer(conn); err != nil {
+			if err := engine.CleanupContainer(); err != nil {
+				sylog.Errorf("container cleanup failed: %s", err)
+			}
+			sylog.Fatalf("%s", err)
+		} else {
+			wg.Add(1)
+			engine.MonitorContainer()
+			wg.Done()
+		}
+		runtime.Goexit()
+	}()
+
+	if engine.IsRunAsInstance() {
+		data := make([]byte, 1)
+
+		comm := os.NewFile(uintptr(instanceSocket), "instance-socket")
+		conn, err := net.FileConn(comm)
+		comm.Close()
+
+		_, err = conn.Read(data)
+		if err == io.EOF {
+			go func() {
+				/* sleep a bit to see if child exit */
+				time.Sleep(100 * time.Millisecond)
+				syscall.Kill(syscall.Getppid(), syscall.SIGUSR1)
+			}()
+		}
+		conn.Close()
+	}
 
 	for {
-		select {
-		case _ = <-signal:
-			if wpid, err := syscall.Wait4(pid, &status, syscall.WNOHANG, nil); err != nil {
+		s := <-signals
+		switch s {
+		case syscall.SIGCHLD:
+			var status syscall.WaitStatus
+
+			if wpid, err := syscall.Wait4(containerPid, &status, syscall.WNOHANG, nil); err != nil {
 				sylog.Errorf("failed while waiting child: %s", err)
-			} else if wpid != pid {
+			} else if wpid != containerPid {
 				continue
 			}
 
 			if err := engine.CleanupContainer(); err != nil {
 				sylog.Errorf("container cleanup failed: %s", err)
 			}
+
+			wg.Wait()
 
 			if status.Exited() {
 				sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
@@ -76,53 +117,14 @@ func handleChild(pid int, signal chan os.Signal, engine *engines.Engine) {
 				sylog.Debugf("Child exited due to signal %d", status.Signal())
 				syscall.Kill(os.Getpid(), status.Signal())
 			}
+		default:
+			if err := engine.CleanupContainer(); err != nil {
+				sylog.Errorf("container cleanup failed: %s", err)
+			}
+
+			wg.Wait()
 		}
 	}
-}
-
-// SMaster initializes a runtime engine and runs it
-//export SMaster
-func SMaster(socket C.int, instanceSocket C.int, netFd C.int, config *C.struct_cConfig, jsonC *C.char) {
-	var wg sync.WaitGroup
-
-	sigchld := make(chan os.Signal, 1)
-	signal.Notify(sigchld, syscall.SIGCHLD)
-
-	os.Setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin")
-
-	containerPid := int(config.containerPid)
-	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(config.jsonConfSize))
-
-	comm := os.NewFile(uintptr(socket), "socket")
-	conn, err := net.FileConn(comm)
-	comm.Close()
-
-	engine, err := engines.NewEngine(jsonBytes)
-	if err != nil {
-		if err := engine.CleanupContainer(); err != nil {
-			sylog.Errorf("container cleanup failed: %s", err)
-		}
-		sylog.Fatalf("failed to initialize runtime: %s\n", err)
-	}
-
-	if engine.IsRunAsInstance() {
-		go runAsInstance(uintptr(instanceSocket), engine)
-	}
-
-	go handleChild(containerPid, sigchld, engine)
-
-	if err := engine.CreateContainer(conn); err != nil {
-		if err := engine.CleanupContainer(); err != nil {
-			sylog.Errorf("container cleanup failed: %s", err)
-		}
-		sylog.Fatalf("%s", err)
-	}
-
-	wg.Add(1)
-	go engine.MonitorContainer()
-	wg.Wait()
-
-	os.Exit(0)
 }
 
 func main() {}
