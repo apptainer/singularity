@@ -139,18 +139,14 @@ int _singularity_runtime_mount_userbinds(void) {
                 ABORT(255);
             }
             if ( read_only ) {
-                if ( singularity_priv_userns_enabled() == 1 ) {
-                    singularity_message(WARNING, "Can not make bind mount read only within the user namespace: %s\n", dest);
-                } else {
-                    singularity_message(VERBOSE, "Remounting %s read-only\n", dest);
-                    if ( singularity_mount(NULL, joinpath(container_dir, dest), NULL, MS_RDONLY|MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
-                        singularity_message(ERROR, "There was an error write-protecting the path %s: %s\n", source, strerror(errno));
-                        ABORT(255);
-                    }
-                    if ( access(joinpath(container_dir, dest), W_OK) == 0 || (errno != EROFS && errno != EACCES) ) { // Flawfinder: ignore (precautionary confirmation, not necessary)
-                        singularity_message(ERROR, "Failed to write-protect the path %s: %s\n", source, strerror(errno));
-                        ABORT(255);
-                    }
+                singularity_message(VERBOSE, "Remounting %s read-only\n", dest);
+                if ( singularity_mount(NULL, joinpath(container_dir, dest), NULL, MS_RDONLY|MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
+                    singularity_message(ERROR, "There was an error write-protecting the path %s: %s\n", source, strerror(errno));
+                    ABORT(255);
+                }
+                if ( access(joinpath(container_dir, dest), W_OK) == 0 || (errno != EROFS && errno != EACCES) ) { // Flawfinder: ignore (precautionary confirmation, not necessary)
+                    singularity_message(ERROR, "Failed to write-protect the path %s: %s\n", source, strerror(errno));
+                    ABORT(255);
                 }
             } else {
                 if ( singularity_priv_userns_enabled() <= 0 ) {
