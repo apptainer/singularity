@@ -15,5 +15,6 @@ func (engine *EngineOperations) CheckConfig() error {
 		return fmt.Errorf("incorrect engine")
 	}
 
+	engine.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
 	return nil
 }

@@ -52,7 +52,7 @@ func SContainer(stage C.int, config *C.struct_cConfig, jsonC *C.char) {
 		}
 
 		cconf.isInstance = C.uchar(bool2int(engine.IsRunAsInstance()))
-		cconf.noNewPrivs = C.uchar(bool2int(engine.OciConfig.RuntimeOciSpec.Process.NoNewPrivileges))
+		cconf.noNewPrivs = C.uchar(bool2int(engine.OciConfig.Process.NoNewPrivileges))
 
 		cconf.uidMapping[0].containerID = C.uid_t(os.Getuid())
 		cconf.uidMapping[0].hostID = C.uid_t(os.Getuid())
@@ -61,23 +61,24 @@ func SContainer(stage C.int, config *C.struct_cConfig, jsonC *C.char) {
 		cconf.gidMapping[0].hostID = C.gid_t(os.Getgid())
 		cconf.gidMapping[0].size = 1
 
-		for _, namespace := range engine.OciConfig.RuntimeOciSpec.Linux.Namespaces {
-			switch namespace.Type {
-			case specs.UserNamespace:
-				cconf.nsFlags |= syscall.CLONE_NEWUSER
-			case specs.IPCNamespace:
-				cconf.nsFlags |= syscall.CLONE_NEWIPC
-			case specs.UTSNamespace:
-				cconf.nsFlags |= syscall.CLONE_NEWUTS
-			case specs.PIDNamespace:
-				cconf.nsFlags |= syscall.CLONE_NEWPID
-			case specs.NetworkNamespace:
-				cconf.nsFlags |= syscall.CLONE_NEWNET
-			case specs.MountNamespace:
-				cconf.nsFlags |= syscall.CLONE_NEWNS
+		if engine.OciConfig.Linux != nil {
+			for _, namespace := range engine.OciConfig.Linux.Namespaces {
+				switch namespace.Type {
+				case specs.UserNamespace:
+					cconf.nsFlags |= syscall.CLONE_NEWUSER
+				case specs.IPCNamespace:
+					cconf.nsFlags |= syscall.CLONE_NEWIPC
+				case specs.UTSNamespace:
+					cconf.nsFlags |= syscall.CLONE_NEWUTS
+				case specs.PIDNamespace:
+					cconf.nsFlags |= syscall.CLONE_NEWPID
+				case specs.NetworkNamespace:
+					cconf.nsFlags |= syscall.CLONE_NEWNET
+				case specs.MountNamespace:
+					cconf.nsFlags |= syscall.CLONE_NEWNS
+				}
 			}
 		}
-
 		jsonConf, _ := json.Marshal(engine.Common)
 		cconf.jsonConfSize = C.uint(len(jsonConf))
 		sylog.Debugf("jsonConfSize = %v\n", cconf.jsonConfSize)

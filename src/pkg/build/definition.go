@@ -5,7 +5,11 @@
 
 package build
 
-import "strings"
+import (
+	"encoding/json"
+	"io"
+	"strings"
+)
 
 // Definition describes how to build an image.
 type Definition struct {
@@ -53,6 +57,21 @@ func NewDefinitionFromURI(uri string) (d Definition, err error) {
 			"bootstrap": u[0],
 			"from":      u[1],
 		},
+	}
+
+	return d, nil
+}
+
+// NewDefinitionFromJSON creates a new Definition using the supplied JSON.
+func NewDefinitionFromJSON(r io.Reader) (d Definition, err error) {
+	decoder := json.NewDecoder(r)
+
+	for {
+		if err = decoder.Decode(&d); err == io.EOF {
+			break
+		} else if err != nil {
+			return
+		}
 	}
 
 	return d, nil

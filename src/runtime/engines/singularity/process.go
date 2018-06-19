@@ -17,8 +17,8 @@ func (engine *EngineOperations) StartProcess() error {
 
 	os.Chdir("/")
 
-	args := engine.CommonConfig.OciConfig.RuntimeOciSpec.Process.Args
-	env := engine.CommonConfig.OciConfig.RuntimeOciSpec.Process.Env
+	args := engine.CommonConfig.OciConfig.Process.Args
+	env := engine.CommonConfig.OciConfig.Process.Env
 
 	err := syscall.Exec(args[0], args, env)
 	if err != nil {
