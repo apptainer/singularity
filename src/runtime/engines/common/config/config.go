@@ -6,6 +6,8 @@
 package config
 
 import (
+	"encoding/json"
+
 	oci "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
 )
 
@@ -22,6 +24,6 @@ type Common struct {
 
 // EngineConfig is the interface an EngineConfig must implement
 type EngineConfig interface {
-	UnmarshalJSON([]byte) error
-	MarshalJSON() ([]byte, error)
+	json.Marshaler
+	json.Unmarshaler
 }

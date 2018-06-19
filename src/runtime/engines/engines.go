@@ -12,6 +12,7 @@ import (
 	"net/rpc"
 
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
 )
@@ -113,9 +114,15 @@ func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 
 func init() {
 	registeredEngineOperations = make(map[string]EngineOperations)
+
+	// register singularity engine
+	registerEngineOperations(&singularity.EngineOperations{EngineConfig: singularity.NewConfig()}, singularity.Name)
+	// register imgbuild engine
+	registerEngineOperations(&imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig}, imgbuild.Name)
+
 	registeredEngineRPCMethods = make(map[string]interface{})
 
+	// register singularity rpcmethods
 	methods := new(singularityRpcServer.Methods)
-	registerEngineOperations(&singularity.EngineOperations{EngineConfig: singularity.NewConfig()}, singularity.Name)
 	registerEngineRPCMethods(methods, singularity.Name)
 }
