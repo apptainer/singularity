@@ -148,13 +148,15 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		lvl = "5"
 	}
 
-	for _, env := range os.Environ() {
-		e := strings.SplitN(env, "=", 2)
-		if len(e) != 2 {
-			sylog.Verbosef("can't process environment variable %s", env)
-			continue
+	if !IsCleanEnv {
+		for _, env := range os.Environ() {
+			e := strings.SplitN(env, "=", 2)
+			if len(e) != 2 {
+				sylog.Verbosef("can't process environment variable %s", env)
+				continue
+			}
+			generator.AddProcessEnv(e[0], e[1])
 		}
-		generator.AddProcessEnv(e[0], e[1])
 	}
 
 	if pwd, err := os.Getwd(); err == nil {
