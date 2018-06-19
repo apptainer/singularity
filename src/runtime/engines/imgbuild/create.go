@@ -50,7 +50,7 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 
 	C.singularity_config_init()
 
-	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
+	_ := C.singularity_image_init(C.CString(rootfs), 0)
 
 	if st.IsDir() == false {
 		return fmt.Errorf("%s is not a directory", rootfs)
@@ -99,6 +99,8 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 	if err != nil {
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
+
+	// do all bind mounts requested
 
 	sylog.Debugf("Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR)
 	_, err = rpcOps.Mount(buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR, "", syscall.MS_BIND|syscall.MS_REC, "")

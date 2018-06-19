@@ -23,7 +23,7 @@ func (e *EngineOperations) StartProcess() error {
 
 	post := exec.Command("/bin/sh", "-c", e.EngineConfig.Def.BuildData.Post)
 
-	_, err := cmd.Output()
+	_, err := post.Output()
 
 	if err != nil {
 		sylog.Errorf("Error running script: %v", err)
