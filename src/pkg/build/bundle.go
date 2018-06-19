@@ -34,6 +34,7 @@ type Bundle struct {
 	JSONObjects map[string][]byte
 	Recipe      Definition
 	path        string
+	//EngineConfig imgbuild.EngineConfig
 }
 
 // NewBundle creates a Bundle environment
@@ -49,11 +50,14 @@ func NewBundle() (b *Bundle, err error) {
 	b.path = dir
 
 	b.FSObjects = map[string]string{
-		"rootfs": "fs",
+		"rootfs":         "fs",
+		".singularity.d": ".singularity.d",
 	}
 
-	if err = os.MkdirAll(filepath.Join(b.path, b.FSObjects["rootfs"]), 0755); err != nil {
-		return
+	for _, fso := range b.FSObjects {
+		if err = os.MkdirAll(filepath.Join(b.path, fso), 0755); err != nil {
+			return
+		}
 	}
 
 	return b, nil
