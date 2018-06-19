@@ -1,4 +1,5 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018, Vanessa Sochat. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -235,10 +236,20 @@ func (cp *ShubConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 
 	info := new(loop.Info64)
 
-	C.singularity_image_type(&imageObject)
+	mountType := ""
 
-	info.Offset = uint64(C.uint(imageObject.offset))
-	info.SizeLimit = uint64(C.uint(imageObject.size))
+	switch C.singularity_image_type(&imageObject) {
+	case 1:
+		mountType = "squashfs"
+		info.Offset = uint64(C.uint(imageObject.offset))
+		info.SizeLimit = uint64(C.uint(imageObject.size))
+	case 2:
+		mountType = "ext3"
+		info.Offset = uint64(C.uint(imageObject.offset))
+		info.SizeLimit = uint64(C.uint(imageObject.size))
+	default:
+		sylog.Fatalf("Invalid image format from shub")
+	}
 
 	var number int
 	info.Flags = loop.FlagsAutoClear
@@ -254,9 +265,9 @@ func (cp *ShubConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 
 	path := fmt.Sprintf("/dev/loop%d", number)
 	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
-	err = syscall.Mount(path, tmpmnt, "squashfs", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
+	err = syscall.Mount(path, tmpmnt, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
-		fmt.Println("Mount Failed", err.Error())
+		sylog.Fatalf("Mount Failed", err.Error())
 		return err
 	}
 	defer syscall.Unmount(tmpmnt, 0)
