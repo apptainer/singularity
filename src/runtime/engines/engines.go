@@ -118,7 +118,7 @@ func init() {
 	// register singularity engine
 	registerEngineOperations(&singularity.EngineOperations{EngineConfig: singularity.NewConfig()}, singularity.Name)
 	// register imgbuild engine
-	registerEngineOperations(&imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig}, imgbuild.Name)
+	registerEngineOperations(&imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig{}}, imgbuild.Name)
 
 	registeredEngineRPCMethods = make(map[string]interface{})
 
