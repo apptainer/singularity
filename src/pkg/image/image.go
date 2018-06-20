@@ -13,6 +13,11 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
+const (
+	launchString = "singularity"
+	bufferSize   = 2048
+)
+
 var registeredFormats = make(map[string]format, 0)
 
 // Image ...
